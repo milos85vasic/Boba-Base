@@ -1,0 +1,67 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    name: mkdocs build (strict)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install MkDocs Material + plugins
+        run: |
+          python -m pip install --upgrade pip
+          pip install 'mkdocs-material>=9.5' \
+                      'mkdocs-include-markdown-plugin' \
+                      'mkdocs-mermaid2-plugin'
+
+      - name: Build (strict)
+        run: mkdocs build --strict
+
+  deploy:
+    name: Build and deploy to gh-pages
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install MkDocs Material + plugins
+        run: |
+          python -m pip install --upgrade pip
+          pip install 'mkdocs-material>=9.5' \
+                      'mkdocs-include-markdown-plugin' \
+                      'mkdocs-mermaid2-plugin'
+
+      - name: Build (strict)
+        run: mkdocs build --strict
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./website/site
+          publish_branch: gh-pages
+          keep_files: false
