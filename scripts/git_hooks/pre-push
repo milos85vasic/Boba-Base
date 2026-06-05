@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
@@ -8,7 +9,7 @@ WORKTREE="$TEMP_DIR/worktree"
 git worktree add "$WORKTREE" HEAD >/dev/null 2>&1
 trap 'git worktree remove "$WORKTREE" >/dev/null 2>&1; rm -rf "$TEMP_DIR"' EXIT
 
-COMMIT_HOOK="$(dirname "$0")/pre-commit"
+COMMIT_HOOK="${SCRIPT_DIR}/pre-commit"
 if [ -x "$COMMIT_HOOK" ]; then
   cd "$WORKTREE"
   if ! "$COMMIT_HOOK"; then

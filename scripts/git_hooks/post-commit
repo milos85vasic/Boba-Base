@@ -13,10 +13,15 @@ fi
 
 MUTATION_DETECTED="no"
 
+# Build pattern strings indirectly to avoid self-matching (§11.4.75)
+M1="MUT""ATED"
+M2="// alwa""ys pass"
+M3="# MUT""ATION"
+
 MUTATION_PATTERNS=(
-  'MUTATED'
-  '// always pass'
-  '# MUTATION'
+  "$M1"
+  "$M2"
+  "$M3"
 )
 
 for pattern in "${MUTATION_PATTERNS[@]}"; \

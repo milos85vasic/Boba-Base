@@ -20,7 +20,7 @@ cd "$(dirname "$0")/.."
 mode="${1:-all}"
 shift || true
 
-hermetic_dirs=(tests/unit tests/contract tests/concurrency tests/property tests/memory tests/observability)
+hermetic_dirs=(tests/unit tests/contract tests/concurrency tests/property tests/memory tests/observability tests/stress tests/chaos)
 live_dirs=(tests/integration tests/e2e)
 all_dirs=("${hermetic_dirs[@]}" "${live_dirs[@]}")
 
@@ -36,6 +36,13 @@ case "$mode" in
     hermetic)
         echo ">> Running hermetic suites with coverage"
         exec python3 -m pytest "${hermetic_dirs[@]}" \
+            --import-mode=importlib \
+            "${COVERAGE_FLAGS[@]}" \
+            -q --timeout=120 -p no:randomly -p no:anyio "$@"
+        ;;
+    stress)
+        echo ">> Running stress + chaos tests with coverage"
+        exec python3 -m pytest tests/stress tests/chaos \
             --import-mode=importlib \
             "${COVERAGE_FLAGS[@]}" \
             -q --timeout=120 -p no:randomly -p no:anyio "$@"
@@ -61,7 +68,7 @@ case "$mode" in
         ;;
     *)
         echo "unknown mode: $mode" >&2
-        echo "usage: scripts/run-tests.sh [all|hermetic|live|--]" >&2
+        echo "usage: scripts/run-tests.sh [all|hermetic|live|stress|--]" >&2
         exit 2
         ;;
 esac

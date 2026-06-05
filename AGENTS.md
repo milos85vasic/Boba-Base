@@ -3,6 +3,8 @@
 > Base agent rules: `constitution/AGENTS.md` — READ IT FIRST.
 > The base file is authoritative for any topic not covered here.
 > Project-specific rules below extend them; they never weaken them.
+>
+> **Propagated clauses:** §11.4.10, §11.4.30, §11.4.44, §11.4.65, §11.4.75, §11.4.85, §11.4.109, §11.4.113, §11.4.125, §11.4.78
 
 Compact instruction file for AI agents working in this repo.
 For deeper narrative docs see `CLAUDE.md`, `docs/USER_MANUAL.md`, `docs/PLUGINS.md`, `docs/SECURITY.md`.

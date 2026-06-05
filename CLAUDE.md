@@ -4,6 +4,8 @@
 
 All rules in `constitution/CLAUDE.md` (and the `constitution/Constitution.md` it references) apply unconditionally. Project-specific rules below extend them — they do NOT weaken any universal clause. When this file disagrees with the constitution submodule, the constitution wins.
 
+**Propagated clauses** (Helix Universal Constitution): §11.4.10 (credentials handling), §11.4.30 (gitignore discipline), §11.4.44 (document revision headers), §11.4.65 (universal markdown export), §11.4.75 (mechanical enforcement), §11.4.113 (no force-push), §11.4.125 (code-review-agent gate), §11.4.109 (anti-forgetting enforcement), §11.4.85 (stress + chaos test mandate), §11.4.78 (CodeGraph integration).
+
 @constitution/CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.

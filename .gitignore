@@ -13,6 +13,9 @@ config/qBittorrent/*
 !config/qBittorrent/nova3/engines/
 !config/qBittorrent/nova3/engines/.gitkeep
 
+# Generated build-resource stats (regenerated per run)
+docs/build-stats.ndjson
+
 # Environment files (may contain secrets)
 .env
 .env.*

@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Build pattern strings indirectly to avoid self-matching (§11.4.75)
+M1="MUT""ATED"
+M2="// alwa""ys pass"
+M3="# MUT""ATION"
+
 MUTATION_PATTERNS=(
-  'MUTATED'
-  '// always pass'
-  '# MUTATION'
+  "$M1"
+  "$M2"
+  "$M3"
 )
 
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR)

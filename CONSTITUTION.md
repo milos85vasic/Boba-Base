@@ -3,6 +3,8 @@
 > This constitution **extends** the Helix Universal Constitution at `constitution/Constitution.md`.
 > All clauses there apply unless explicitly overridden below with an explicit `Override §X.Y` section.
 > The Helix Constitution is authoritative for universal rules; project-specific addenda follow.
+>
+> **Propagated clauses (Helix Universal Constitution):** §11.4.10, §11.4.30, §11.4.44, §11.4.65, §11.4.75, §11.4.85, §11.4.109, §11.4.113, §11.4.125, §11.4.78
 
 > This document consolidates ALL constitutional constraints from
 > `.specify/memory/constitution.md`, `AGENTS.md`, `CLAUDE.md`, and
