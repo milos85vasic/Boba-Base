@@ -1,0 +1,195 @@
+<h1 id="perceived-host-suspension-investigation">2026-04-27 — “Perceived
+host suspension” investigation</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<h2 id="tldr">TL;DR</h2>
+<p>User reported the host appeared to suspend / log out / hibernate
+during a long work session. <strong>Systematic investigation found no
+evidence of any host-level power transition.</strong> The host has been
+continuously up for 7h08m at the time of investigation, single user
+session unbroken since 15:42, all CONST-033 hardening intact, zero
+<code>will suspend</code> broadcasts since the 2026-04-26 fix.</p>
+<p>The most likely actual experience: <strong>GUI screen lock / display
+blank</strong> (an X11/GNOME-shell layer behavior NOT subject to systemd
+power-management), OR a brief GUI freeze caused by a foreign podman
+container hitting its own 1 GB memory cgroup limit and OOM-killing its
+workers — which is exactly what the container’s own resource limit is
+designed to do (containment, not host impact).</p>
+<p><strong>No code we wrote contributed.</strong> The CONST-033
+source-tree challenge passes; nothing in this project invokes any
+forbidden host-power call directly or indirectly.</p>
+<h2 id="triple-check-evidence">Triple-check evidence</h2>
+<h3 id="source-tree-clean-const-033-layer-5">1. Source-tree clean
+(CONST-033 layer 5)</h3>
+<pre><code>$ bash challenges/scripts/no_suspend_calls_challenge.sh
+=== no_suspend_calls_challenge ===
+Scanner: scripts/host-power-management/check-no-suspend-calls.sh
+Root:    /run/media/milosvasic/DATA4TB/Projects/Boba
+OK: no forbidden host-power-management calls
+=== summary: PASS ===</code></pre>
+<h3 id="host-hardened-const-033-layer-4">2. Host hardened (CONST-033
+layer 4)</h3>
+<pre><code>$ bash challenges/scripts/host_no_auto_suspend_challenge.sh
+[1/4] sleep / suspend / hibernate / hybrid-sleep targets masked? PASS
+[2/4] AllowSuspend=no in sleep.conf or drop-in?                  PASS
+[3/4] logind IdleAction safe? (IdleAction=ignore)                 PASS
+[4/4] &#39;will suspend&#39; broadcasts since 2026-04-26 fix:    0       PASS
+=== summary: 4 pass, 0 fail ===</code></pre>
+<h3 id="no-host-level-suspend-shutdown-reboot-occurred">3. No host-level
+suspend / shutdown / reboot occurred</h3>
+<pre><code>$ uptime
+ 22:50:55 up  7:08,  1 user,  load average: 0.62, 0.87, 2.01</code></pre>
+<p>7h08m continuous uptime — no suspend, no resume, no reboot since the
+workday started. The reported “stuck or suspended” perception is
+incompatible with the host’s actual state.</p>
+<h3 id="no-user-session-terminated">4. No user session terminated</h3>
+<pre><code>$ journalctl --user --since today | grep -iE &quot;logout|terminated|signed|session.*close&quot;
+# only su (root) sessions closing — milosvasic session unbroken since 15:42 login</code></pre>
+<h3 id="memory-state-currently-healthy">5. Memory state currently
+healthy</h3>
+<pre><code>$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:            62Gi        11Gi       3.0Gi       4.7Gi        53Gi        51Gi
+Swap:           15Gi       361Mi        15Gi
+
+$ cat /proc/pressure/memory
+some avg10=0.01 avg60=0.03 avg300=0.00 total=102743908</code></pre>
+<p>51 GiB available, ~zero memory pressure. Nothing approaching OOM
+territory at the host level.</p>
+<h3 id="the-one-oom-event-found">6. The one OOM event found</h3>
+<pre><code>$ journalctl -k --since &quot;24 hours ago&quot; | grep -iE &quot;oom|killed process&quot;
+Apr 27 21:41:35 nezha kernel: oom-kill:constraint=CONSTRAINT_MEMCG, ...
+  oom_memcg=/user.slice/user-1000.slice/user@1000.service/user.slice/
+            user-libpod_pod_41847d97.../libpod-d2fcb8aa.../scope
+Apr 27 21:41:35 nezha kernel: Memory cgroup out of memory: Killed process
+  598707 (python3) total-vm:1108616kB anon-rss:70736kB ... oom_score_adj:200
+Apr 27 21:41:35 nezha kernel: memory: usage 1048568kB, limit 1048576kB</code></pre>
+<p>Decoded: - A <strong>container</strong> (libpod-d2fcb8aa…) inside a
+<strong>pod</strong> (libpod_pod_41847d97…) hit its own <strong>1048576
+kB = 1 GB cgroup memory limit</strong>. - The kernel killed the
+container’s <code>python3</code> worker (oom_score_adj=200, well above
+any host process). - This is <strong>exactly the design intent of cgroup
+memory limits</strong> — contain the blast radius to the container’s own
+slice. Host memory remained healthy. - The hash <code>d2fcb8aa...</code>
+does not match any container we created in this Boba session.
+<code>podman inspect d2fcb8aa9aa7</code> reports “no such object” — the
+OOM-killed container has been GC’d. The pod hash
+<code>41847d97...</code> likewise doesn’t appear in
+<code>podman pod ps -a</code>. - Most likely owner: a foreign project’s
+container (the host runs many: 364 podman images, 25 containers across
+<code>helixgitpx_*</code>, <code>helixflow-*</code>,
+<code>proxy-*</code>, <code>lava-*</code>, <code>metube-*</code>, etc.)
+— NOT this Boba project.</p>
+<h3 id="boba-projects-own-podman-footprint">7. Boba project’s own podman
+footprint</h3>
+<pre><code>$ podman images localhost/boba-jackett
+REPOSITORY              TAG   IMAGE ID      CREATED      SIZE
+localhost/boba-jackett  dev   51d69d8198a1  About 1h ago 22.8 MB
+
+$ podman ps -a | grep -iE &quot;boba|jackett&quot;
+jackett        lscr.io/linuxserver/jackett:latest    Exited
+boba-jackett   localhost/boba_boba-jackett:latest    Exited</code></pre>
+<p>Both Boba containers are STOPPED. Our Dockerfile.jackett-built image
+is 22.8 MB (modernc/sqlite pure-Go, no CGO). Compose-defined limits
+(<code>mem_limit: 256m</code>, <code>pids_limit: 256</code>,
+<code>oom_score_adj: 500</code>) ensure that even if our container OOMs,
+it dies BEFORE other workloads.</p>
+<h2 id="root-cause-most-likely">Root cause: most likely</h2>
+<p>Three candidate explanations for the user’s experience, ranked by
+evidence:</p>
+<ol type="1">
+<li><p><strong>GNOME / X11 screen lock or display blank.</strong> Not a
+host suspend; a different layer entirely. CONST-033 covers systemd power
+targets but does NOT cover gsettings session locking. The session would
+appear “frozen” when really it just blanked the display. Coming back to
+it = “did it sleep?” Verifiable via
+<code>gsettings get org.gnome.desktop.session idle-delay</code> and
+<code>gsettings get org.gnome.desktop.screensaver lock-enabled</code> —
+out of scope for the project’s CONST-033 ban (those settings don’t
+change power state), but worth user-side audit for ergonomics.</p></li>
+<li><p><strong>GNOME shell briefly unresponsive while the foreign podman
+container reached its OOM cap.</strong> The <code>Mullvad VPN</code>
+“Frame has assigned frame counter but no frame drawn time” warnings at
+22:33:13 in gnome-shell logs hint at compositor stalls around the same
+era. Brief stalls can present as “the screen froze for a
+moment”.</p></li>
+<li><p><strong>Some foreign automation hit a memory ceiling.</strong>
+The OOM-killed container is from another project. No code in this Boba
+session can create a container in someone else’s pod hash.</p></li>
+</ol>
+<p><strong>No evidence supports</strong> an actual host suspend,
+hibernate, or session logout.</p>
+<h2 id="could-podman-docker-themselves-cause-host-suspension">Could
+podman / docker themselves cause host suspension?</h2>
+<p>Investigated: - <strong>Rootless podman</strong> (used here): runs
+entirely in user-mode. No systemd power-management interaction. The
+OOM-killer respects cgroup memory limits and kills containers, NOT the
+host or the user session. - <strong>Docker daemon</strong> (not used
+here): runs as root via systemd. Docker has never been observed to
+invoke power transitions; no upstream code path exists for it. -
+<strong>systemd-oomd</strong> (not enabled on this host —
+<code>systemd-oomd</code> user unit reports <code>No entries</code>): if
+enabled on a future host, it CAN kill entire cgroup slices including the
+user@1000 slice when system-wide pressure exceeds thresholds. That
+presents as a logout from the user’s perspective. Mitigation: keep
+memory/pids limits on EVERY container, set <code>oom_score_adj</code> on
+long-running containers to be killed BEFORE the user session.</p>
+<p><strong>Verdict:</strong> podman on this host is safe by default. The
+cgroup OOM event proved containment worked (foreign container killed;
+host + user session unaffected).</p>
+<h2 id="recurrence-prevention-defense-in-depth">Recurrence prevention
+(defense in depth)</h2>
+<ol type="1">
+<li><p><strong>Container hygiene.</strong> Every podman service in
+<code>docker-compose.yml</code> already has <code>mem_limit</code>,
+<code>pids_limit</code>, <code>oom_score_adj: 500</code> — confirmed
+present on the new <code>boba-jackett</code> service from Task 24.
+Continue this pattern for every new service.</p></li>
+<li><p><strong>Resource limits on test runs (CONST-09).</strong> Already
+enforced: <code>GOMAXPROCS=2 nice -n 19 ionice -c 3</code> on every
+<code>go test</code> invocation.</p></li>
+<li><p><strong>Background process cleanup.</strong> Always
+<code>kill</code> smoke-test binaries explicitly before claiming a task
+complete. Lingering background processes from prior smoke tests are
+themselves a memory-pressure source. Discovered one such leak this
+session (a Task-22 smoke binary left running on :7189) — cleaned
+up.</p></li>
+<li><p><strong>Periodic podman GC.</strong> Disk usage shows 176 GB in
+<code>~/.local/share/containers</code>, with 25 stopped containers and
+39 GB reclaimable. A <code>podman system prune -a --volumes</code>
+should be a periodic user-level maintenance task. NOT something this
+project automates (cross-project blast radius), but worth flagging in
+CLAUDE.md.</p></li>
+<li><p><strong>GUI screen-lock / display-blank policy</strong>
+(user-environment tier, not project-tier): if the user wants no display
+blanking either,
+<code>gsettings set org.gnome.desktop.session idle-delay 0</code> and
+similar. Out of scope for this project’s constitutional rules but worth
+a user-side toggle if the experience repeats.</p></li>
+</ol>
+<h2 id="doctrine-added-this-commit">Doctrine added (this commit)</h2>
+<p>The investigation findings are codified in: -
+<code>CONSTITUTION.md</code> § “CONST-033 Operational Note —
+Distinguishing Host Suspension from Adjacent Phenomena” -
+<code>CLAUDE.md</code> and <code>AGENTS.md</code> — short
+cross-references to the operational note + reminder to triple-check
+before assuming we caused a perceived power event.</p>
+<h2 id="container-clean-rebuild-action-taken">Container clean-rebuild
+action taken</h2>
+<p>Per user request, after the investigation: - Stopped Boba’s
+<code>boba-jackett</code> and <code>jackett</code> containers. - Removed
+our locally-built <code>localhost/boba-jackett:dev</code> image AND the
+compose-built <code>localhost/boba_boba-jackett:latest</code> image. -
+Will rebuild via <code>./start.sh -p</code> cycle when the user starts
+the stack next (per the project’s “no manual container commands” CONST
+rule — the orchestrator brings everything up).</p>
+<h2 id="status">Status</h2>
+<ul>
+<li>✅ No host suspend / hibernate / logout occurred.</li>
+<li>✅ No code we shipped contributes any direct or indirect risk of
+host power transition.</li>
+<li>✅ Both CONST-033 challenges PASS (source-tree + host-state).</li>
+<li>✅ Foreign OOM event was contained at the cgroup boundary as
+designed.</li>
+<li>✅ Doctrine codified for future incident triage.</li>
+</ul>

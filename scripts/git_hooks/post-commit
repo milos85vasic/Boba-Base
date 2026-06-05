@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+AUDIT_LOG=".git/ATMO_CONSTITUTION_AUDIT_LOG"
+COMMIT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+BYPASS_MARKER=".git/ATMO_LAST_BYPASS_ATTEMPT"
+BYPASS_FLAG="no"
+
+if [ -f "$BYPASS_MARKER" ]; then
+  BYPASS_FLAG="yes"
+  rm -f "$BYPASS_MARKER"
+fi
+
+MUTATION_DETECTED="no"
+
+MUTATION_PATTERNS=(
+  'MUTATED'
+  '// always pass'
+  '# MUTATION'
+)
+
+for pattern in "${MUTATION_PATTERNS[@]}"; \
+do
+  if git diff-tree --no-commit-id -r "$COMMIT_HASH" 2>/dev/null | grep -q "$pattern"; then
+    MUTATION_DETECTED="yes"
+    break
+  fi
+done
+
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+{
+  echo "[$TIMESTAMP] commit=$COMMIT_HASH bypass=$BYPASS_FLAG mutation=$MUTATION_DETECTED"
+  if [ "$MUTATION_DETECTED" = "yes" ]; then
+    echo "  WARNING: mutation marker detected in committed files — §11.4.75 violation"
+  fi
+} >> "$AUDIT_LOG"
+
+exit 0

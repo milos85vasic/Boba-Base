@@ -1,0 +1,227 @@
+<h1 id="concurrency-model">Concurrency Model</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>qBittorrent-Fixed’s merge service is an
+<strong>asyncio-first</strong> FastAPI app with a small amount of
+thread-based plumbing for the legacy download-proxy. This document is
+the reference for how the pieces fit together, where the hot spots are,
+and where the pending hardening lives.</p>
+<h2 id="the-two-thread-daemon">The two-thread daemon</h2>
+<p><code>download-proxy/src/main.py</code> launches two daemon threads
+in a single Python process:</p>
+<pre><code>Thread 1: start_original_proxy()   — legacy HTTP server on :7186
+Thread 2: start_fastapi_server()   — uvicorn on :7187, own asyncio loop
+Main:     while True: time.sleep(60)</code></pre>
+<p>The main thread keeps the process alive;
+<code>KeyboardInterrupt</code> logs and exits. <strong>Graceful shutdown
+is pending Phase 3</strong> — today a <code>SIGTERM</code> races the two
+threads and can drop in-flight requests. See <a
+href="architecture/shutdown-sequence.mmd"><code>architecture/shutdown-sequence.mmd</code></a>
+for the target sequence.</p>
+<p>Reference: <code>download-proxy/src/main.py:69-83</code>.</p>
+<h2 id="search-fan-out">Search fan-out</h2>
+<p>The hot path. <code>SearchOrchestrator.search()</code> in
+<code>download-proxy/src/merge_service/search.py:270</code> fans out one
+coroutine per tracker:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>search_results <span class="op">=</span> <span class="cf">await</span> asyncio.gather(<span class="op">*</span>[_search_one(t) <span class="cf">for</span> t <span class="kw">in</span> trackers])</span></code></pre></div>
+<p>(<code>search.py:308</code>).</p>
+<p>Characteristics:</p>
+<ul>
+<li><strong>~40 trackers</strong> run <strong>fully
+concurrently</strong> today — no Semaphore cap.</li>
+<li>Each <code>_search_one(t)</code> stores its results incrementally in
+<code>self._tracker_results[search_id][tracker.name]</code> so the SSE
+stream can surface partial results before <code>gather()</code>
+returns.</li>
+<li><code>asyncio.gather</code> propagates exceptions unless each task
+catches its own; the code does catch per-tracker so one failing tracker
+does not abort the merge.</li>
+</ul>
+<p><strong>Pending hardening (Phase 3):</strong></p>
+<ul>
+<li>Introduce <code>asyncio.Semaphore(MAX_CONCURRENT_TRACKERS)</code> —
+env var <code>MAX_CONCURRENT_TRACKERS</code>, default
+<strong>5</strong>. Status: <strong>pending</strong>.</li>
+<li>Wrap each per-tracker coroutine in
+<code>tenacity.AsyncRetrying</code> for exponential back-off (currently
+a failed tracker returns <code>[]</code> immediately).</li>
+<li>Add <code>pybreaker.CircuitBreaker</code> per tracker so a
+misbehaving tracker is fast-failed for a cool-down window instead of
+slowing the whole search on every query.</li>
+</ul>
+<h2 id="subprocess-based-plugin-execution">Subprocess-based plugin
+execution</h2>
+<p>Public trackers run out-of-process via
+<code>asyncio.create_subprocess_exec("python3", "-c", &lt;script&gt;, …)</code>
+with a <strong>10-second hard timeout</strong>
+(<code>search.py:407</code>). The subprocess gets its own
+<code>asyncio.subprocess.Pipe</code> for stdout/stderr. If it times
+out:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> asyncio.wait_for(proc.communicate(), timeout<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> proc <span class="kw">and</span> proc.returncode <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    proc.kill()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> proc.wait()</span></code></pre></div>
+<p>Phase 2 replaces this with an in-process
+<code>ProcessPoolExecutor</code> that keeps one warm worker per tracker
+and enforces resource limits.</p>
+<h2 id="ttl-caches-for-ephemeral-dicts">TTL caches for ephemeral
+dicts</h2>
+<p>Several dicts grow unbounded today:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Dict</th>
+<th>File</th>
+<th>Growth hazard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_active_searches</code></td>
+<td><code>search.py:233</code></td>
+<td>One entry per search forever</td>
+</tr>
+<tr>
+<td><code>_last_merged_results</code></td>
+<td><code>search.py:235</code></td>
+<td>One tuple per search forever</td>
+</tr>
+<tr>
+<td><code>_tracker_results</code></td>
+<td><code>search.py:236</code></td>
+<td>One nested dict per search forever</td>
+</tr>
+<tr>
+<td><code>_tracker_sessions</code></td>
+<td><code>search.py:234</code></td>
+<td>One entry per authenticated tracker; overwritten, not leaked, but
+aiohttp sessions never close</td>
+</tr>
+<tr>
+<td><code>_pending_captchas</code></td>
+<td><code>api/auth.py:24</code></td>
+<td>Grows on every <code>/captcha</code> call</td>
+</tr>
+<tr>
+<td><code>_execution_logs</code></td>
+<td><code>api/hooks.py:56</code></td>
+<td>Capped at 200 via <code>LOGS_MAX</code> (good)</td>
+</tr>
+<tr>
+<td><code>streaming seen_hashes</code></td>
+<td><code>api/streaming.py</code></td>
+<td>Per-SSE-generator set, mutated concurrently</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pending hardening (Phase 3):</strong></p>
+<ul>
+<li>Replace each dict with
+<code>cachetools.TTLCache(maxsize=..., ttl=...)</code>.</li>
+<li>Close <code>aiohttp.ClientSession</code> at the end of each tracker
+search (currently reused across calls; at minimum add a
+<code>close()</code> on orchestrator shutdown).</li>
+<li>Lock <code>_execution_logs</code> append with
+<code>asyncio.Lock</code> — currently a data race if two hooks finish
+concurrently.</li>
+</ul>
+<h2 id="retry-circuit-breaker">Retry + circuit-breaker</h2>
+<p><strong>Today:</strong> zero use of <code>tenacity</code>,
+<code>backoff</code>, or <code>async-timeout</code> anywhere in the
+code. A single request failure surfaces as a zero-result tracker.</p>
+<p><strong>Phase 3 target:</strong></p>
+<ul>
+<li><code>tenacity.AsyncRetrying</code> wrapping every outbound HTTP
+call (aiohttp + subprocess). Exponential back-off with jitter, max 3
+attempts.</li>
+<li><code>pybreaker.CircuitBreaker</code> per tracker, opening after 5
+consecutive failures and closing after a 60 s recovery probe.</li>
+<li>Both pieces share a single <code>TrackerHealth</code> dataclass so
+<code>/api/v1/trackers/health</code> can expose the current state.</li>
+</ul>
+<h2 id="streaming-sse">Streaming (SSE)</h2>
+<p><code>download-proxy/src/api/streaming.py</code> (222 lines) owns the
+live <code>/api/v1/search/stream/{search_id}</code> endpoint.
+Behaviour:</p>
+<ul>
+<li>Each client gets its own generator with a local
+<code>seen_hashes: set()</code>.</li>
+<li>The generator polls
+<code>orchestrator.get_live_results(search_id)</code> in a
+<code>while True: await asyncio.sleep(0.5)</code> loop.</li>
+<li>Deduplication happens client-side (<code>seen_hashes</code>).</li>
+<li><strong>Gap:</strong> no disconnect detection — the generator keeps
+polling even after the HTTP client drops. Phase 3 adds a
+<code>await request.is_disconnected()</code> check at the top of the
+loop.</li>
+</ul>
+<h2 id="graceful-shutdown">Graceful shutdown</h2>
+<p><strong>Target sequence</strong> (Phase 3 target, not yet
+implemented):</p>
+<ol type="1">
+<li><code>SIGTERM</code> received by the container.</li>
+<li>Signal handler sets a global <code>_shutting_down</code> flag.</li>
+<li>FastAPI rejects new requests (503) and cancels in-flight search
+tasks via a shared <code>asyncio.Event</code>.</li>
+<li><code>aiohttp.ClientSession</code> instances close.</li>
+<li><code>asyncio.Task</code>s are awaited with a 5 s grace period.</li>
+<li>Daemon threads are joined with <code>join(timeout=5)</code>.</li>
+<li>Process exits 0.</li>
+</ol>
+<p>See <a
+href="architecture/shutdown-sequence.mmd"><code>architecture/shutdown-sequence.mmd</code></a>
+for the target sequence diagram.</p>
+<h2 id="concurrency-tests">Concurrency tests</h2>
+<ul>
+<li><strong>Unit</strong> —
+<code>tests/unit/test_merge_trackers.py</code> exercises the
+orchestrator happy path.</li>
+<li><strong>Performance</strong> —
+<code>tests/performance/test_concurrent_search.py</code> benchmarks the
+gather fan-out.</li>
+<li><strong>Stress</strong> —
+<code>tests/stress/test_search_stress.py</code> runs the orchestrator at
+elevated load.</li>
+<li><strong>Benchmarks</strong> —
+<code>tests/benchmark/test_search_benchmark.py</code> and
+<code>test_deduplication_benchmark.py</code> track p50/p95
+regressions.</li>
+<li><strong>Pending (Phase 3)</strong> — <code>tests/concurrency/</code>
+uses pytest-randomly + pytest-repeat to surface asyncio race
+conditions.</li>
+</ul>
+<h2 id="observability-hooks">Observability hooks</h2>
+<p>Once the Prometheus/Grafana stack is up (see <a
+href="OBSERVABILITY.md"><code>OBSERVABILITY.md</code></a>), the
+following metrics surface the concurrency health:</p>
+<ul>
+<li><code>qbit_merge_active_searches</code> — gauge</li>
+<li><code>qbit_merge_tracker_requests_total</code> — counter, labelled
+by tracker</li>
+<li><code>qbit_merge_search_duration_seconds_bucket</code> —
+histogram</li>
+<li><code>qbit_merge_circuit_breaker_state</code> — gauge (0 = closed, 1
+= half, 2 = open), labelled by tracker</li>
+</ul>
+<h2 id="references">References</h2>
+<ul>
+<li>Fan-out site —
+<code>download-proxy/src/merge_service/search.py:308</code></li>
+<li>Daemon threads — <code>download-proxy/src/main.py:69-83</code></li>
+<li>SSE generator —
+<code>download-proxy/src/api/streaming.py</code></li>
+<li>In-memory caches —
+<code>download-proxy/src/merge_service/search.py</code>,
+<code>download-proxy/src/api/auth.py</code>,
+<code>download-proxy/src/api/hooks.py</code></li>
+<li>Sequence diagram — <a
+href="architecture/shutdown-sequence.mmd"><code>architecture/shutdown-sequence.mmd</code></a></li>
+</ul>

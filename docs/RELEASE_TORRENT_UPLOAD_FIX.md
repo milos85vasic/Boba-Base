@@ -1,5 +1,8 @@
 # Release Report: Torrent File Upload Fix
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 **Date:** 2026-04-03  
 **Severity:** Critical (complete loss of .torrent file upload functionality)  
 **Status:** Fixed, tested, deployed

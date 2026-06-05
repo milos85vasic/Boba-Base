@@ -1,0 +1,217 @@
+<h1 id="security">Security</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>This document defines the threat model, credential-handling rules,
+and scanner stack for qBittorrent-Fixed. It complements the constitution
+(<code>.specify/memory/constitution.md</code>, Principle III —
+Credential &amp; Secret Security, and Principle VIII — IPTorrents
+Freeleech Policy).</p>
+<h2 id="threat-model">Threat model</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Actor</th>
+<th>Asset at risk</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Public internet</td>
+<td>WebUI on :7185</td>
+<td>Bound to host network; constitution III mandates credential change
+before exposing beyond LAN. Reverse-proxy with basic auth or VPN is the
+operator’s responsibility.</td>
+</tr>
+<tr>
+<td>Local users on host</td>
+<td><code>.env</code>, <code>~/.qbit.env</code></td>
+<td>File-system ACLs; <code>.env</code> is <code>rw-------</code>.
+Gitleaks in CI catches leaked commits.</td>
+</tr>
+<tr>
+<td>Malicious plugin</td>
+<td>Merge service process</td>
+<td>Plugins run in a subprocess with a 10-second timeout. A crashing
+plugin cannot crash the orchestrator. Phase 2 moves to
+<code>ProcessPoolExecutor</code> with resource limits.</td>
+</tr>
+<tr>
+<td>Credential capture in logs</td>
+<td>Tracker username/password/cookies</td>
+<td>Logger never formats credentials; env vars are read directly, never
+serialised to logs.</td>
+</tr>
+<tr>
+<td>CSRF / XSS against WebUI</td>
+<td>qBittorrent WebUI (admin/admin)</td>
+<td>Known-issue: WebUI credentials are hardcoded
+<code>admin</code>/<code>admin</code> per constitution III. Operator
+<strong>must</strong> change on first deploy and not expose the service
+publicly.</td>
+</tr>
+<tr>
+<td>Stolen SSE stream</td>
+<td>Live search results on :7187</td>
+<td><code>/api/v1/search/stream</code> requires the search_id returned
+by POST (unguessable UUID); an attacker still needs to race the search
+initiator. Phase 3 adds per-client bearer tokens.</td>
+</tr>
+<tr>
+<td>Downgrade / replay</td>
+<td>Tracker cookies in session storage</td>
+<td>In-memory dict <code>_tracker_sessions</code>; cookies never
+persisted to disk. Phase 2.3 adds <strong>Fernet-at-rest</strong>
+encryption for saved cookies — status: <strong>pending</strong>.</td>
+</tr>
+<tr>
+<td>Supply-chain</td>
+<td>Python / Node.js / container deps</td>
+<td>Dependency audit + SAST + secret scan via the seven-scanner stack
+(<code>docs/SCANNING.md</code>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="credential-storage">Credential storage</h2>
+<ul>
+<li><strong>Env vars only.</strong> No credential lands in
+<code>config/</code> that is not immediately re-readable from the
+environment.</li>
+<li><strong>Priority order</strong> (highest first): shell env →
+<code>./.env</code> → <code>~/.qbit.env</code> → container env block.
+Later sources do <em>not</em> override earlier ones.</li>
+<li><strong>qBittorrent WebUI login</strong> is saved to
+<code>config/download-proxy/qbittorrent_creds.json</code> when the user
+checks “Remember me”. The file is <code>rw-------</code> and
+gitignored.</li>
+<li><strong>Tracker sessions</strong> (<code>_tracker_sessions</code>
+dict in <code>download-proxy/src/merge_service/search.py</code>) are
+in-memory. They evaporate on container restart. Phase 2.3 will persist
+them encrypted with Fernet — the spec is written but the implementation
+is <strong>pending</strong>.</li>
+</ul>
+<h2 id="adminadmin-default"><code>admin</code>/<code>admin</code>
+default</h2>
+<p>Per constitution Principle III, the WebUI and the proxy default to
+<code>admin</code>/<code>admin</code> so fresh deploys are immediately
+usable on a trusted LAN. This is <strong>intentional</strong> and
+documented. The project’s <code>.gitleaks.toml</code> allowlists the
+literal <code>admin:admin</code> pair so the secret scanner does not
+fire on documentation that shows it.</p>
+<p><strong>Mitigation when exposing the service beyond LAN:</strong></p>
+<ol type="1">
+<li>Run <code>init-qbit-password.sh</code> to set a strong qBittorrent
+password.</li>
+<li>Update <code>.env</code> with <code>QBITTORRENT_USER</code> /
+<code>QBITTORRENT_PASS</code>.</li>
+<li>Rebuild-reboot (CLAUDE.md mandate).</li>
+<li>Front the stack with a reverse proxy requiring its own auth.</li>
+</ol>
+<h2 id="allowed-origins">Allowed origins</h2>
+<p>The FastAPI app currently sets:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>CORSMiddleware(allow_origins<span class="op">=</span>[<span class="st">&quot;*&quot;</span>])</span></code></pre></div>
+<p>at <code>download-proxy/src/api/__init__.py:68</code>. This is
+knowingly over-permissive to ease local development. Phase 3 of the
+completion-initiative plan tightens it to a configurable allowlist
+driven by the <code>ALLOWED_ORIGINS</code> env var
+(comma-separated).</p>
+<h2 id="captcha-handling">CAPTCHA handling</h2>
+<p>RuTracker periodically presents a CAPTCHA on login. The merge service
+proxies it through the <code>/api/v1/auth/rutracker/*</code> endpoints
+in <code>download-proxy/src/api/auth.py</code>:</p>
+<ul>
+<li><code>GET /auth/rutracker/status</code> — returns whether a session
+cookie exists.</li>
+<li><code>GET /auth/rutracker/captcha</code> — fetches the current
+CAPTCHA image from RuTracker, stores the challenge under a random token
+in the in-memory <code>_pending_captchas</code> dict, returns the image
+as base64 with the token.</li>
+<li><code>POST /auth/rutracker/login</code> — user submits the token +
+the decoded text; the service replays the login.</li>
+<li><code>POST /auth/rutracker/cookie</code> — user pastes a browser
+cookie directly (bypasses CAPTCHA for headless operation).</li>
+</ul>
+<p>Pending challenges live in <code>_pending_captchas</code> with no TTL
+— Phase 3 replaces this with a TTL cache to prevent memory growth.</p>
+<h2 id="iptorrents-freeleech-policy-constitution-viii">IPTorrents
+freeleech policy (constitution VIII)</h2>
+<p>Automated tests and downloads MUST only use IPTorrents results
+flagged <code>freeleech</code>. A freeleech result is displayed as
+<code>IPTorrents [free]</code> in the tracker-display field of
+<code>SearchResult</code>. Non-freeleech downloads <strong>cost
+ratio</strong> and are never triggered by automation.</p>
+<p>Enforcement:</p>
+<ul>
+<li><code>download-proxy/src/merge_service/search.py::_parse_iptorrents_html</code>
+detects <code>class="free"</code> and sets
+<code>SearchResult.freeleech = True</code>.</li>
+<li>The deduplicator refuses to merge non-freeleech IPTorrents results
+with results from other trackers
+(<code>download-proxy/src/merge_service/deduplicator.py</code>).</li>
+<li><code>tests/unit/test_freeleech.py</code> guards the rules.</li>
+</ul>
+<h2 id="scanner-stack">Scanner stack</h2>
+<p>Seven scanners cover dependencies, SAST, secrets, and quality.
+Details in <a href="SCANNING.md"><code>SCANNING.md</code></a>:</p>
+<ul>
+<li><code>pip-audit</code> — Python runtime deps.</li>
+<li><code>bandit</code> — Python SAST.</li>
+<li><code>ruff</code> — lint + async/security rules.</li>
+<li><code>semgrep</code> — multi-language SAST.</li>
+<li><code>trivy</code> — filesystem CVE + misconfig + secret.</li>
+<li><code>gitleaks</code> — git-history secret scan.</li>
+<li><code>snyk</code> — commercial dep + SAST (needs token).</li>
+<li><code>sonarqube</code> — quality gate upload (via opt-in
+compose).</li>
+</ul>
+<p>All run locally via <code>scripts/scan.sh</code> and in CI
+(<code>.github/workflows/security.yml</code>). Reports land under
+<code>artifacts/scans/&lt;UTC timestamp&gt;/</code>.</p>
+<h2 id="waiver-policy">Waiver policy</h2>
+<p>Any <code>.snyk</code> ignore, <code>.trivyignore</code> entry, or
+semgrep inline-disable <strong>must</strong> carry:</p>
+<ol type="1">
+<li>Finding ID / CVE / rule ID.</li>
+<li>Reason.</li>
+<li>Expiry date (<code># expires: YYYY-MM-DD</code>).</li>
+</ol>
+<p>Phase 2 introduces
+<code>tests/unit/test_scan_waivers_have_expiry.py</code> which will fail
+on anything older than its expiry or missing the reason annotation.</p>
+<h2 id="triage-slos">Triage SLOs</h2>
+<ul>
+<li><strong>Critical</strong> — blocks merge; same-day fix or file a
+CVE-waiver PR.</li>
+<li><strong>High</strong> — blocks release; fix in current sprint.</li>
+<li><strong>Medium</strong> — tracked in <code>ISSUES.md</code>;
+opportunistic.</li>
+<li><strong>Low / info</strong> — documented, ignored unless it bleeds
+into higher.</li>
+</ul>
+<h2 id="known-gaps-pending">Known gaps (pending)</h2>
+<ul>
+<li>Fernet-at-rest for tracker cookies — Phase 2.3.</li>
+<li>Allowed-origin allowlist — Phase 3.</li>
+<li>TTL on <code>_pending_captchas</code> — Phase 3.</li>
+<li>Bearer-token per-client SSE — Phase 3.</li>
+<li>Per-subprocess resource limit (ulimit, prlimit) for plugin execution
+— Phase 2.</li>
+</ul>
+<h2 id="related-documents">Related documents</h2>
+<ul>
+<li><a href="SCANNING.md"><code>SCANNING.md</code></a> — scanner
+invocation and CI integration.</li>
+<li><a href="QUALITY_STACK.md"><code>QUALITY_STACK.md</code></a> —
+opt-in compose file.</li>
+<li><a href="CONCURRENCY.md"><code>CONCURRENCY.md</code></a> — graceful
+shutdown and retry behaviour that interacts with security.</li>
+<li><a
+href="../.specify/memory/constitution.md"><code>../.specify/memory/constitution.md</code></a>
+— Principles III and VIII.</li>
+</ul>

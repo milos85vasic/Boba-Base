@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MUTATION_PATTERNS=(
+  'MUTATED'
+  '// always pass'
+  '# MUTATION'
+)
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+violations=0
+
+while IFS= read -r file; do
+  [ -f "$file" ] || continue
+  for pattern in "${MUTATION_PATTERNS[@]}"; do
+    if grep -n "$pattern" "$file" >/dev/null 2>&1; then
+      echo "CONSTITUTION-§11.4.75: mutation marker '$pattern' found in $file"
+      grep -n "$pattern" "$file"
+      violations=$((violations + 1))
+    fi
+  done
+done <<< "$STAGED"
+
+if [ "$violations" -gt 0 ]; then
+  echo "CONSTITUTION-§11.4.75: commit blocked — $violations mutation marker(s) detected."
+  echo "Use 'git commit --no-verify' only with a Bypass-rationale footer."
+  exit 1
+fi
+
+exit 0

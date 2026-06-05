@@ -1,0 +1,252 @@
+<h1 id="boba-system-database">Boba System Database</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>The <code>boba-jackett</code> Go service (port <code>7189</code>)
+owns a SQLite system database at <code>config/boba.db</code> (default;
+override with <code>BOBA_DB_PATH</code>). Sensitive columns are
+encrypted with <code>BOBA_MASTER_KEY</code> (AES-256-GCM).</p>
+<p>This document is the canonical reference for the schema, the master
+key lifecycle, backup, file permissions, and recovery from
+corruption.</p>
+<h2 id="schema-reference">1. Schema reference</h2>
+<p>Defined in
+<code>qBitTorrent-go/internal/db/migrations/001_init.sql</code>. See the
+spec at
+<code>docs/superpowers/specs/2026-04-27-jackett-management-ui-and-system-db-design.md</code>
+§ 5 for full normative text.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Table</th>
+<th>Purpose</th>
+<th>Encrypted columns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>credentials</code></td>
+<td>Per-tracker credential bundle. <code>kind</code> is
+<code>userpass</code> or <code>cookie</code>. Holds
+<code>username_enc</code>, <code>password_enc</code>,
+<code>cookies_enc</code> (any combination per <code>kind</code>). Tracks
+<code>created_at</code>, <code>updated_at</code>,
+<code>last_used_at</code>.</td>
+<td><code>username_enc</code>, <code>password_enc</code>,
+<code>cookies_enc</code></td>
+</tr>
+<tr>
+<td><code>indexers</code></td>
+<td>Local registry of indexers configured at Jackett. Each row points
+(optionally) at a <code>credentials</code> row by
+<code>linked_credential_name</code>. Tracks
+<code>enabled_for_search</code>, <code>last_jackett_sync_at</code>,
+<code>last_test_status</code>, <code>last_test_at</code>.</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>catalog_cache</code></td>
+<td>Snapshot of Jackett’s indexer catalog (last refresh). UI browse +
+filter source. <code>template_fields_json</code> is the per-indexer
+config template fetched from Jackett.</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>autoconfig_runs</code></td>
+<td>Append-only history of every auto-config run. Stores
+<code>ran_at</code>, counts, redacted <code>result_summary_json</code>,
+<code>errors_json</code>. Indexed by <code>ran_at DESC</code> for the UI
+runs page.</td>
+<td>none (summary is already redacted)</td>
+</tr>
+<tr>
+<td><code>indexer_map_overrides</code></td>
+<td>Explicit <code>env_name → indexer_id</code> map. Highest precedence
+in the matcher (beats fuzzy matching).</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>schema_migrations</code></td>
+<td>Schema version tracking; row <code>1</code> corresponds to
+<code>001_init.sql</code>.</td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<h3 id="indexes">Indexes</h3>
+<ul>
+<li><code>idx_indexers_linked_cred</code> on
+<code>indexers(linked_credential_name)</code></li>
+<li><code>idx_catalog_cached_at</code> on
+<code>catalog_cache(cached_at)</code></li>
+<li><code>idx_runs_ran_at</code> on
+<code>autoconfig_runs(ran_at DESC)</code></li>
+</ul>
+<h3 id="pragmas">Pragmas</h3>
+<p>The DB is opened with WAL journaling, foreign keys on, and
+busy-timeout sufficient for the bootstrap import + UI write rate.</p>
+<h2 id="master-key-lifecycle">2. Master key lifecycle</h2>
+<h3 id="auto-generation-canonical-path">Auto-generation (canonical
+path)</h3>
+<p><code>BOBA_MASTER_KEY</code> is a 32-byte hex AES-256-GCM key. It is
+generated <strong>exactly once</strong>, on first boot, by
+<code>internal/bootstrap.EnsureMasterKey</code> (see
+<code>qBitTorrent-go/internal/bootstrap/bootstrap.go</code>).</p>
+<p><code>start.sh</code> also calls an
+<code>ensure_boba_master_key</code> helper as a belt-and-suspenders so
+the variable is present in the host’s <code>.env</code> even if the
+container has not yet booted.</p>
+<p>The two-step write (key generated in memory, then written to .env)
+was collapsed into a single atomic <code>envfile.Atomic</code> write at
+commit <code>c0f20bc</code> to eliminate a silent data-loss window. The
+regression guard is
+<code>TestEnsureMasterKeyDoesNotDuplicateHeader</code> in
+<code>qBitTorrent-go/internal/bootstrap/bootstrap_test.go</code>.</p>
+<h3 id="manual-rotation">Manual rotation</h3>
+<p>To rotate the master key without losing credentials:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Stop the service (use the orchestrator, never raw podman/docker)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-stop   <span class="co"># or your orchestrator&#39;s equivalent</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Decrypt all rows with the OLD key, re-encrypt with a NEW key.</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#    Use the rotate subcommand:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/boba-jackett</span> rotate-key <span class="dt">\</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--db</span> /config/boba.db <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">--old-key</span> <span class="st">&quot;</span><span class="va">$OLD_KEY</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">--new-key</span> <span class="st">&quot;</span><span class="va">$NEW_KEY</span><span class="st">&quot;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Atomically update .env (envfile.Atomic uses tmpfile + fsync + rename)</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/boba-jackett</span> envfile-replace BOBA_MASTER_KEY <span class="st">&quot;</span><span class="va">$NEW_KEY</span><span class="st">&quot;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Start the service</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-start</span></code></pre></div>
+<p>(Implementation note: a <code>rotate-key</code> subcommand is the
+canonical place for this operation; if not yet present in the binary,
+follow the “loss recovery” path below using <code>.env</code> as the
+source of truth.)</p>
+<h3 id="loss-recovery">Loss recovery</h3>
+<p>There is <strong>no recovery</strong> from
+<code>BOBA_MASTER_KEY</code> loss alone. Encrypted rows in
+<code>credentials</code> become permanently undecipherable.</p>
+<p>The only recovery path: the original
+<code>&lt;NAME&gt;_USERNAME</code> / <code>&lt;NAME&gt;_PASSWORD</code>
+/ <code>&lt;NAME&gt;_COOKIES</code> triples in <code>.env</code> (or
+wherever they were originally entered) are still present. To
+re-bootstrap:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Stop the service</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Move the now-useless DB out of the way</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db config/boba.db.lost</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Generate a new master key (or let bootstrap do it)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sed</span> <span class="at">-i</span> <span class="st">&#39;/^BOBA_MASTER_KEY=/d&#39;</span> .env</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Start the service — bootstrap.EnsureMasterKey will generate a fresh</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#    key and re-import credentials from .env into a brand new boba.db.</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-start</span></code></pre></div>
+<p>UI-only edits made after the original bootstrap are NOT recoverable —
+they were never written back to <code>.env</code>.</p>
+<h2 id="backup-procedure">3. Backup procedure</h2>
+<p>Two acceptable approaches.</p>
+<p><strong>Cold backup (service stopped):</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-stop</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> config/boba.db config/boba.db.bak</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env .env.bak</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-start</span></code></pre></div>
+<p><strong>Hot backup (service running):</strong> use SQLite’s online
+<code>.backup</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sqlite3</span> config/boba.db <span class="st">&quot;.backup config/boba.db.bak&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env .env.bak</span></code></pre></div>
+<p><code>.backup</code> respects WAL semantics and produces a
+transactionally consistent snapshot. <strong>Always back up
+<code>boba.db.bak</code> and <code>.env.bak</code> together</strong> —
+the DB is useless without the matching master key, and the master key is
+useless without the DB.</p>
+<p>Both files MUST be stored with mode <code>0600</code> (or stricter)
+on persistent media; treat them as you would a private SSH key.</p>
+<h2 id="file-permissions">4. File permissions</h2>
+<p>Both files MUST be <code>0600</code> (owner read/write only):</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Enforced by</th>
+<th>Code reference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>config/boba.db</code> (and <code>-wal</code>,
+<code>-shm</code> siblings)</td>
+<td><code>db.Open</code> chmods on first open if mode is wider</td>
+<td><code>qBitTorrent-go/internal/db/conn.go</code> line ~53</td>
+</tr>
+<tr>
+<td><code>.env</code></td>
+<td><code>internal/envfile.Atomic</code> writes with mode
+<code>0600</code></td>
+<td><code>qBitTorrent-go/internal/envfile/write.go</code></td>
+</tr>
+</tbody>
+</table>
+<p>The Layer 4 security challenge
+<code>boba_db_file_perms_challenge.sh</code> is the regression guard —
+it MUST PASS before any release. The corresponding Go test is
+<code>qBitTorrent-go/internal/db/credential_leak_test.go</code>.</p>
+<p>The DB file mode bug (modernc.org/sqlite creating
+<code>boba.db</code> <code>0644</code>) was caught at commit
+<code>8405167</code> and fixed in <code>db.Open</code> with
+<code>os.Chmod(path, 0o600)</code>. See also
+<code>docs/issues/fixed/BUGFIXES.md</code>.</p>
+<h2 id="recovery-from-a-corrupted-db">5. Recovery from a corrupted
+DB</h2>
+<p>If <code>boba.db</code> becomes corrupted (truncated, partial writes,
+foreign-key violations from manual edits, etc.), the recovery path
+is:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Stop the service (orchestrator)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-stop</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Move the broken DB aside (DO NOT delete — keep it for forensics)</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db config/boba.db.broken</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Also move WAL/SHM if present</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db-wal config/boba.db-wal.broken <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db-shm config/boba.db-shm.broken <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Restart — bootstrap.EnsureMasterKey notices the missing DB,</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">#    re-creates the schema (migration 001), then re-imports any</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">#    credentials still present in .env.</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-start</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Verify</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7189/healthz <span class="kw">|</span> <span class="ex">jq</span> .</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7189/api/v1/credentials <span class="kw">|</span> <span class="ex">jq</span> <span class="st">&#39;length&#39;</span></span></code></pre></div>
+<p>Anything entered via the UI after the original bootstrap and before
+the corruption is unrecoverable from <code>.env</code> alone — see § 2
+“Loss recovery”. Always pair regular backups (§ 3) with this recovery
+path.</p>
+<h2 id="related-files">6. Related files</h2>
+<ul>
+<li>Schema source:
+<code>qBitTorrent-go/internal/db/migrations/001_init.sql</code></li>
+<li>Open / chmod logic:
+<code>qBitTorrent-go/internal/db/conn.go</code></li>
+<li>Master key bootstrap:
+<code>qBitTorrent-go/internal/bootstrap/bootstrap.go</code></li>
+<li>Atomic .env writer:
+<code>qBitTorrent-go/internal/envfile/write.go</code></li>
+<li>Credential repo:
+<code>qBitTorrent-go/internal/db/credentials.go</code></li>
+<li>Bug history: <code>docs/issues/fixed/BUGFIXES.md</code></li>
+<li>Integration overview: <code>docs/JACKETT_INTEGRATION.md</code> §
+Auto-Configuration</li>
+</ul>

@@ -1,5 +1,8 @@
 # Data Model
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 qBittorrent-Fixed has **no relational database**. All persistent state
 lives in qBittorrent itself (handled by the upstream image) and in a
 handful of JSON files under `config/`. The runtime data model is

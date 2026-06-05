@@ -1,5 +1,8 @@
 # boba-jackett — Definition of Done sweep (Phase 7 Task 47)
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 **Date:** 2026-04-27
 **Plan:** `docs/superpowers/plans/2026-04-27-jackett-management-ui-and-system-db.md`
 **Spec:** `docs/superpowers/specs/2026-04-27-jackett-management-ui-and-system-db-design.md` § 11

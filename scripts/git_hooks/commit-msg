@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+COMMIT_MSG_FILE="$1"
+BYPASS_MARKER=".git/ATMO_LAST_BYPASS_ATTEMPT"
+
+if [ -f "$BYPASS_MARKER" ]; then
+  if ! grep -qi "^Bypass-rationale:" "$COMMIT_MSG_FILE"; then
+    echo "CONSTITUTION-§11.4.75: --no-verify bypass detected but commit message"
+    echo "lacks a 'Bypass-rationale:' footer."
+    echo ""
+    echo "Add e.g.:"
+    echo ""
+    echo "  Bypass-rationale: https://github.com/issues/12345 rationale"
+    exit 1
+  fi
+  rm -f "$BYPASS_MARKER"
+fi
+
+exit 0

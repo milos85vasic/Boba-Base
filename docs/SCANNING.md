@@ -1,5 +1,8 @@
 # Scanning
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 qBittorrent-Fixed runs **seven scanners** that cover dependencies,
 static analysis, secrets, and quality gates. They all run locally
 (via `scripts/scan.sh`) and in CI (`.github/workflows/security.yml`).

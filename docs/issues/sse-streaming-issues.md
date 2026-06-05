@@ -1,5 +1,8 @@
 # SSE Streaming Issues — RESOLVED
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 ## Issue Summary
 
 Real-time streaming of search results via Server-Sent Events (SSE) was not working in the browser. The root cause was identified and fixed.

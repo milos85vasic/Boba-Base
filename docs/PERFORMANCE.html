@@ -1,0 +1,225 @@
+<h1 id="performance">Performance</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>This document is the reference for performance testing, load testing,
+stress testing, and the target service-level objectives (SLOs) for the
+merge service.</p>
+<h2 id="test-suites">Test suites</h2>
+<h3 id="pytest-benchmark-latency-microbench">pytest-benchmark (latency,
+microbench)</h3>
+<p>Directory: <code>tests/benchmark/</code></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Under test</th>
+<th>Micro-metric</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_search_benchmark.py</code></td>
+<td><code>SearchOrchestrator.search</code> end-to-end</td>
+<td>wall clock per call</td>
+</tr>
+<tr>
+<td><code>test_deduplication_benchmark.py</code></td>
+<td><code>Deduplicator.merge_results</code> on synthetic result
+sets</td>
+<td>wall clock + per-op rate</td>
+</tr>
+</tbody>
+</table>
+<p>Invocation:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> tests/benchmark/ <span class="at">--benchmark-only</span> <span class="at">-v</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Comparing against a saved baseline:</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> tests/benchmark/ <span class="at">--benchmark-compare</span></span></code></pre></div>
+<p>Output lands in <code>.benchmarks/</code> per pytest-benchmark’s
+default layout and is uploaded by the nightly CI workflow.</p>
+<h3 id="performance-suite-concurrent-behaviour">Performance suite
+(concurrent behaviour)</h3>
+<p>Directory: <code>tests/performance/</code></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Scenario</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_concurrent_search.py</code></td>
+<td>5–20 concurrent searches against the live stack; asserts no
+deadlocks, no result corruption, latency under the gate</td>
+</tr>
+</tbody>
+</table>
+<p>Invocation:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> tests/performance/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
+<h3 id="locust-load-profile">Locust load profile</h3>
+<p>Directory: <code>tests/load/</code> — <strong>pending Phase
+6.</strong></p>
+<p>Planned user profiles:</p>
+<table>
+<thead>
+<tr>
+<th>Profile</th>
+<th>Users</th>
+<th>Spawn rate</th>
+<th>Think time</th>
+<th>Target endpoint</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>browser_user</code></td>
+<td>50</td>
+<td>1/s</td>
+<td>2–5 s</td>
+<td><code>POST /search</code>, then SSE stream</td>
+</tr>
+<tr>
+<td><code>api_user</code></td>
+<td>50</td>
+<td>2/s</td>
+<td>0 s</td>
+<td><code>POST /search</code>, <code>GET /search/{id}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Invocation once the suite exists:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">locust</span> <span class="at">-f</span> tests/load/locustfile.py <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">--host</span> http://localhost:7187 <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>       <span class="at">--users</span> 100 <span class="at">--spawn-rate</span> 5 <span class="dt">\</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">--run-time</span> 10m <span class="at">--headless</span></span></code></pre></div>
+<p>Results land in <code>artifacts/load/&lt;timestamp&gt;/</code>.</p>
+<h3 id="stress-suite">Stress suite</h3>
+<p>Directory: <code>tests/stress/</code></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Scenario</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_search_stress.py</code></td>
+<td>Sustained 100–1000 VU load; asserts graceful degradation and
+recovery</td>
+</tr>
+</tbody>
+</table>
+<p>Invocation:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> tests/stress/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
+<h2 id="target-slos">Target SLOs</h2>
+<p>These come from the completion-initiative plan (Part D, Phase 6) and
+are the acceptance criteria for the service once Phase 6 ships.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>SLO</th>
+<th>Target</th>
+<th>Measured by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p50 search latency at 10 VU</td>
+<td>&lt; 500 ms</td>
+<td><code>tests/performance/test_concurrent_search.py</code></td>
+</tr>
+<tr>
+<td>p95 search latency at 100 VU</td>
+<td><strong>&lt; 2000 ms</strong></td>
+<td>Locust (<code>tests/load/</code>)</td>
+</tr>
+<tr>
+<td>Error rate at 100 VU</td>
+<td>&lt; 0.1 %</td>
+<td>Locust</td>
+</tr>
+<tr>
+<td>Graceful degradation at 1000 VU</td>
+<td>no 5xx cascade; 429 or 503 returned</td>
+<td><code>tests/stress/</code> + chaos probes</td>
+</tr>
+<tr>
+<td>Recovery after chaos fault</td>
+<td><strong>&lt; 60 s</strong> to resume p95 target</td>
+<td><code>tests/stress/</code> + toxiproxy (<code>tests/chaos/</code>,
+pending)</td>
+</tr>
+<tr>
+<td>SSE connection stability</td>
+<td>&gt; 95 % of streams complete</td>
+<td><code>tests/integration/test_realtime_streaming.py</code></td>
+</tr>
+<tr>
+<td>Deduplicator throughput</td>
+<td>&gt; 10 000 results/sec</td>
+<td><code>tests/benchmark/test_deduplication_benchmark.py</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="instrumentation">Instrumentation</h2>
+<p><code>tests/instrumentation/</code> is reserved for cross-cutting
+perf instrumentation helpers (timers, scrape utilities). Empty
+today.</p>
+<h2 id="metric-sources">Metric sources</h2>
+<p>The p95 and recovery SLOs are measured from Prometheus:</p>
+<pre><code># p95 search duration
+histogram_quantile(
+  0.95,
+  sum by (le) (rate(qbit_merge_search_duration_seconds_bucket[5m]))
+)
+
+# Active-searches recovery
+qbit_merge_active_searches</code></pre>
+<p>See <a href="OBSERVABILITY.md"><code>OBSERVABILITY.md</code></a>.</p>
+<h2 id="ci-integration">CI integration</h2>
+<ul>
+<li><code>nightly.yml</code> runs the benchmark suite and uploads the
+JSON to artifacts.</li>
+<li>A regression gate is <strong>pending</strong> — Phase 6 wires
+pytest-benchmark’s <code>--benchmark-compare-fail=mean:10%</code> so a
+10 % regression fails the build.</li>
+</ul>
+<h2 id="gotchas">Gotchas</h2>
+<ul>
+<li>The <code>pytest-timeout</code> global 30-second cap applies to
+benchmark tests unless they declare
+<code>@pytest.mark.timeout(300)</code>. Long-running stress tests will
+time out silently otherwise.</li>
+<li>Locust users reuse HTTP connections by default; set
+<code>LOCUST_ENABLE_CONN_POOLING=0</code> to force a fresh connection
+per request when reproducing session-handling bugs.</li>
+<li>When running against a live stack on the same host, CPU contention
+between the locust workers and the merge service skews p95. Prefer a
+two-host setup or constrain locust with <code>taskset</code>.</li>
+<li>Chaos probes (toxiproxy) require the <code>tests/chaos/</code> suite
+which is pending — stress runs today only simulate load, not network
+faults.</li>
+</ul>

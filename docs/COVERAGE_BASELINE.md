@@ -1,5 +1,8 @@
 # Coverage Baseline
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 Last updated at commit `da7da4a` on 2026-04-22 (Phase 10 verification).
 
 ## Summary

@@ -1,5 +1,8 @@
 # Security
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 This document defines the threat model, credential-handling rules, and
 scanner stack for qBittorrent-Fixed. It complements the constitution
 (`.specify/memory/constitution.md`, Principle III — Credential &

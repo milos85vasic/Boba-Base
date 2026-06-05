@@ -1,0 +1,127 @@
+<h1 id="scanning">Scanning</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>qBittorrent-Fixed runs <strong>seven scanners</strong> that cover
+dependencies, static analysis, secrets, and quality gates. They all run
+locally (via <code>scripts/scan.sh</code>) and in CI
+(<code>.github/workflows/security.yml</code>).</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Scanner</th>
+<th>Surface</th>
+<th>Invocation</th>
+<th>Runs in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pip-audit</td>
+<td>Python runtime deps</td>
+<td>host</td>
+<td>push, nightly, weekly</td>
+</tr>
+<tr>
+<td>bandit</td>
+<td>Python SAST</td>
+<td>host (<code>pip install 'bandit[toml]'</code>)</td>
+<td>push, weekly</td>
+</tr>
+<tr>
+<td>ruff</td>
+<td>Python lint + ASYNC/S rules</td>
+<td>host</td>
+<td>every push</td>
+</tr>
+<tr>
+<td>semgrep</td>
+<td>Multi-language SAST (project + registry rules)</td>
+<td>compose run-once</td>
+<td>weekly, push on source change</td>
+</tr>
+<tr>
+<td>trivy</td>
+<td>FS CVE + misconfig + secret scan</td>
+<td>compose run-once</td>
+<td>weekly, push on deps</td>
+</tr>
+<tr>
+<td>gitleaks</td>
+<td>Secret scan (git history)</td>
+<td>compose run-once</td>
+<td>every push</td>
+</tr>
+<tr>
+<td>snyk</td>
+<td>Commercial dep + SAST (needs token)</td>
+<td>compose run-once</td>
+<td>weekly</td>
+</tr>
+<tr>
+<td>sonarqube</td>
+<td>Quality gate upload (needs token)</td>
+<td>sonar-scanner (host)</td>
+<td>weekly</td>
+</tr>
+</tbody>
+</table>
+<h2 id="local-run">Local run</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run everything — non-interactive, will skip snyk/sonar if tokens are unset</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/scan.sh</span> <span class="at">--all</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Run a subset</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/scan.sh</span> pip-audit bandit ruff</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Compose-based scanners need the quality profile up:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE_CMD</span> <span class="at">-f</span> docker-compose.yml <span class="at">-f</span> docker-compose.quality.yml <span class="dt">\</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">--profile</span> run-once up <span class="at">--remove-orphans</span> <span class="at">--abort-on-container-exit</span></span></code></pre></div>
+<p>Reports land in <code>artifacts/scans/&lt;UTC timestamp&gt;/</code>
+as SARIF/JSON. CI uploads them to the GitHub Security tab.</p>
+<h2 id="non-interactive-invariants">Non-interactive invariants</h2>
+<p><code>scripts/scan.sh</code> <strong>never</strong> prompts, reads
+stdin, escalates privileges, or calls <code>sudo</code>.
+<code>tests/unit/test_scan_script_non_interactive.py</code> guards the
+invariant; the CI <code>syntax</code> workflow enforces it.</p>
+<h2 id="secrets">Secrets</h2>
+<ul>
+<li><code>SNYK_TOKEN</code> — if unset, the snyk container exits 0 with
+a warning.</li>
+<li><code>SONAR_TOKEN</code> / <code>SONAR_HOST_URL</code> — if unset,
+the sonar upload is skipped.</li>
+<li><code>.env</code> and <code>.env.*</code> are gitignored;
+<code>.gitleaks.toml</code> allowlists only the constitution-mandated
+<code>admin:admin</code> default.</li>
+</ul>
+<h2 id="waivers">Waivers</h2>
+<p>Any <code>.snyk</code> ignore, <code>.trivyignore</code> entry, or
+semgrep inline-disable <strong>must</strong> carry:</p>
+<ol type="1">
+<li>Finding ID / CVE / rule ID.</li>
+<li>Reason.</li>
+<li>Expiry date (<code># expires: YYYY-MM-DD</code>).</li>
+</ol>
+<p><code>tests/unit/test_scan_waivers_have_expiry.py</code> (added in
+Phase 2) will fail on anything older than its expiry or missing the
+reason/expiry annotation.</p>
+<h2 id="triage-policy">Triage policy</h2>
+<ul>
+<li><strong>Critical</strong> → blocks merge; fix or file CVE-waiver PR
+same day.</li>
+<li><strong>High</strong> → blocks release; fix in current sprint.</li>
+<li><strong>Medium</strong> → tracked in <code>ISSUES.md</code>; fixed
+opportunistically.</li>
+<li><strong>Low/info</strong> → documented, ignored unless it bleeds
+into higher.</li>
+</ul>
+<h2 id="observability-hooks">Observability hooks</h2>
+<p>Prometheus + Grafana are part of the same
+<code>docker-compose.quality.yml</code> file under the
+<code>observability</code> profile. See <a
+href="OBSERVABILITY.md"><code>docs/OBSERVABILITY.md</code></a>.</p>

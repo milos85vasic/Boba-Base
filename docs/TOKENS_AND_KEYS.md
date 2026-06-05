@@ -1,5 +1,8 @@
 # Tokens, API Keys & Environment Variables
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 Single source of truth for every credential, token, and API key the
 platform consumes. **Mandatory** rows fail the service at boot if
 unset; **Optional** rows gate specific features and degrade silently.

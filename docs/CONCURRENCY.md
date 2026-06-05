@@ -1,5 +1,8 @@
 # Concurrency Model
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 qBittorrent-Fixed's merge service is an **asyncio-first** FastAPI app
 with a small amount of thread-based plumbing for the legacy
 download-proxy. This document is the reference for how the pieces fit

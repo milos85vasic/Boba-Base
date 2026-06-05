@@ -1,5 +1,8 @@
 # Systematic Debugging Session — 2026-04-19
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 Applied the `superpowers:systematic-debugging` skill against the
 11-issue set from the prior subagent's work. Separated "claimed
 fixed" from "verified fixed" and found one genuine residual bug

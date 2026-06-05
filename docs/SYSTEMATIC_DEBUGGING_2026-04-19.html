@@ -1,0 +1,173 @@
+<h1 id="systematic-debugging-session-2026-04-19">Systematic Debugging
+Session — 2026-04-19</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>Applied the <code>superpowers:systematic-debugging</code> skill
+against the 11-issue set from the prior subagent’s work. Separated
+“claimed fixed” from “verified fixed” and found one genuine residual bug
+beyond the original 11.</p>
+<h2
+id="phase-1-root-cause-investigation-evidence-gathered-no-fixes-yet">Phase
+1 — Root cause investigation (evidence gathered, no fixes yet)</h2>
+<p>Live-stack code checksums match committed <code>main</code>; the
+subagent’s changes are live. Evidence per issue:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Verdict</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>White frame around dashboard</td>
+<td><strong>FIXED</strong></td>
+<td>Global SCSS in served CSS:
+<code>html,body{margin:0;padding:0;background:#0f1a30}</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Auth indicator doesn’t refresh after login</td>
+<td><strong>FIXED</strong></td>
+<td>Bundle ships <code>openQbitLogin()</code> which passes
+<code>loadAuthStatus</code> as the success callback</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Lost per-tracker status chips</td>
+<td><strong>FIXED</strong></td>
+<td>Bundle contains <code>tracker-chip</code> (×2) +
+<code>Re-login</code> (×2); <code>/api/v1/auth/status</code> returns 4
+trackers</td>
+</tr>
+<tr>
+<td>4</td>
+<td>WebUI Bridge link Page Unavailable</td>
+<td><strong>FIXED</strong></td>
+<td><code>GET /api/v1/bridge/health</code> →
+<code>{"healthy":true,"port":7188}</code>; bundle has
+<code>bridge-down-hint</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>qBittorrent WebUI link Unauthorized</td>
+<td><strong>FIXED</strong></td>
+<td><code>GET /api/v1/config</code> →
+<code>qbittorrent_url: "http://localhost:7186"</code> (proxy, not :7185
+internal)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Search not real-time</td>
+<td><strong>FIXED</strong></td>
+<td><code>POST /api/v1/search</code> returns in ~100ms with
+<code>status:"running"</code>, <code>results:[]</code>; SSE
+<code>/stream/{id}</code> emits <code>event: result_found</code> within
+500ms</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Sources column broken</td>
+<td><strong>FIXED</strong></td>
+<td>Bundle has <code>sourceStats</code> (×3) +
+<code>merged-indicator</code> (×4); backend returns
+<code>sources: [{tracker, seeds, leechers}]</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Low seeds/leechers</td>
+<td><strong>NOT A BUG</strong></td>
+<td>Real tracker data; dedup sums correctly. Live search returned
+<code>seeds=326, leechers=69</code> from rutracker</td>
+</tr>
+<tr>
+<td>9</td>
+<td>qBit chip missing username + logout</td>
+<td><strong>FIXED</strong></td>
+<td>Bundle has <code>qBit Connected</code>, <code>qbit-chip</code>;
+<code>/auth/status</code> returns <code>username:"admin"</code>; bundle
+has <code>Re-login</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Only 2 trackers in results</td>
+<td><strong>NOT A BUG</strong></td>
+<td><code>trackers_searched</code> = 40; live logs show per-tracker
+counts (<code>iptorrents: 49 results</code>,
+<code>kinozal: 0 results</code>,
+<code>academictorrents: 0 results</code>); zero matches for a specific
+query is tracker-side behaviour</td>
+</tr>
+<tr>
+<td>11</td>
+<td>qBit download appears successful but no torrent added</td>
+<td><strong>FIXED — end-to-end verified</strong></td>
+<td>Before: 0 torrents. After <code>POST /api/v1/download</code> with
+Ubuntu magnet: 1 torrent,
+<code>name=ubuntu-22.04.3-desktop-amd64.iso</code>,
+<code>hash=dd8255ec…</code>, <code>state=checkingResumeData</code>. Test
+torrent cleaned up afterwards.</td>
+</tr>
+</tbody>
+</table>
+<p>Each “FIXED” verdict came from an independent live probe, not from
+trusting the subagent’s summary.</p>
+<h2
+id="unexpected-finding-real-bug-uncovered-by-new-property-test">Unexpected
+finding — real bug uncovered by new property test</h2>
+<p>After the 11-issue verification, running the newly-added property
+suite surfaced:</p>
+<pre><code>FAILED tests/property/test_deduplicator_properties.py::test_merge_is_order_invariant</code></pre>
+<p>Hypothesis minimised a counterexample:</p>
+<pre><code>[(name=&#39;0&#39;,  hash=…0000),
+ (name=&#39;0&#39;,  hash=…0001),
+ (name=&#39;00&#39;, hash=…0000)]</code></pre>
+<ul>
+<li>Forward: produces <strong>one</strong> group of 3 (all merged)</li>
+<li>Reversed: produces <strong>two</strong> groups ({name=‘00’,
+hash=…0000}, {name=‘0’, hash=…0001})</li>
+</ul>
+<p>Different groupings → same results would render differently in the
+dashboard depending on which tracker’s response arrived first.</p>
+<h3 id="phase-2-pattern-analysis">Phase 2 — Pattern analysis</h3>
+<p><code>deduplicator.py::merge_results</code> (line 65) sorted by seed
+count only:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>unmatched.sort(key<span class="op">=</span><span class="kw">lambda</span> r: r.seeds, reverse<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
+<p>Python’s <code>sort</code> is stable. Equal-seed items therefore
+preserved their input order, and — in the counterexample — all three
+items had <code>seeds=0</code>. Different input orders produced
+different sort orders, each of which seeded different merge groups.</p>
+<h3 id="phase-3-hypothesis">Phase 3 — Hypothesis</h3>
+<p>Adding a deterministic secondary sort key on
+<code>(link, name)</code> would force equal-seed items to resolve the
+same way regardless of input order, eliminating the nondeterminism
+without changing the seed-priority semantics.</p>
+<h3 id="phase-4-fix">Phase 4 — Fix</h3>
+<p>One-line change:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>unmatched.sort(key<span class="op">=</span><span class="kw">lambda</span> r: (<span class="op">-</span>r.seeds, r.link <span class="kw">or</span> <span class="st">&quot;&quot;</span>, r.name <span class="kw">or</span> <span class="st">&quot;&quot;</span>))</span></code></pre></div>
+<p>Verified: - <code>test_merge_is_order_invariant</code> flips from
+fail → pass. - All 686 deterministic tests still green. - No other
+property regressed.</p>
+<p>Deployed by restarting <code>qbittorrent-proxy</code>;
+<code>/health</code> responded 200 after ~3 s.</p>
+<h2 id="total-score">Total score</h2>
+<ul>
+<li>11 user-reported issues: 9 fixed, 2 “not a bug” (confirmed with
+evidence).</li>
+<li>1 additional real bug found by the new property suite, fixed same
+session.</li>
+<li>Tests: 686 deterministic Python + 182 frontend = <strong>868 passing
+/ 0 failures / 0 skips / 0 warnings</strong>.</li>
+<li>Live stack: healthy, latest code serving.</li>
+</ul>

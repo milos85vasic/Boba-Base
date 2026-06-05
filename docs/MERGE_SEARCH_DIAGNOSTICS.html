@@ -1,0 +1,309 @@
+<h1 id="merge-search-diagnostics">Merge-Search Diagnostics</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>This document explains how the merge service reports per-tracker
+failures so operators can distinguish “nothing wrong, niche board has no
+hits for this query” from “upstream is dead” from “plugin is
+crashing.”</p>
+<p>Context: prior to 2026-04-23 a search for <code>linux</code> returned
+137 total hits and 37 of 40 trackers returned zero with <strong>no
+explanation</strong>. The root cause was a monkeypatch targeting the
+wrong <code>novaprinter</code> module (see commit <code>e8b904d</code>),
+but the deeper problem was visibility:
+<code>TrackerSearchStat.error</code> was always <code>None</code> on
+empty trackers, so operators couldn’t tell whether an empty chip meant
+“nothing to see” or “broken.” This doc describes the diagnostic pipeline
+that replaces that opacity.</p>
+<h2 id="data-flow">Data flow</h2>
+<pre><code>plugin subprocess stderr ──▶ _classify_plugin_stderr()
+                              │
+                              ▼
+                       _last_public_tracker_diag[tracker]
+                              │
+                              ▼
+                       _search_one() pops + writes to
+                              │
+                              ▼
+                  TrackerSearchStat.{error,error_type,notes}
+                              │
+                              ▼
+           API response `tracker_stats[]` + SSE `tracker_completed`
+                              │
+                              ▼
+      dashboard chip badge + tracker-stat-dialog &quot;Error&quot; section</code></pre>
+<p>Every public-tracker subprocess runs in isolation in a Python 3.12
+process spawned by <code>_search_public_tracker</code>
+(<code>download-proxy/src/merge_service/search.py</code>). Whatever the
+plugin writes to stderr is captured after the subprocess exits (or is
+killed at the deadline) and passed through
+<code>_classify_plugin_stderr</code> to produce a structured
+diagnostic.</p>
+<h3 id="subprocess-lifecycle">Subprocess lifecycle</h3>
+<ol type="1">
+<li><p><strong>Spawn</strong> —
+<code>asyncio.create_subprocess_exec(..., start_new_session=True)</code>
+gives the plugin its own process group so any threads or forked workers
+can be terminated together.</p></li>
+<li><p><strong>Stream</strong> — stdout is read line-by-line with a
+per-read timeout. Each NDJSON row is parsed as it arrives; partial
+results are preserved even if the deadline fires mid-scrape.</p></li>
+<li><p><strong>Deadline</strong> — when
+<code>PUBLIC_TRACKER_DEADLINE_SECONDS</code> is reached the loop breaks
+with <code>killed_by_deadline=True</code>.</p></li>
+<li><p><strong>Kill</strong> — <code>proc.kill()</code> (SIGKILL to the
+direct child) followed by
+<code>os.killpg(os.getpgid(proc.pid), signal.SIGKILL)</code> (SIGKILL to
+the entire process group). This catches plugins that spawn child
+processes or background threads.</p></li>
+<li><p><strong>Wait</strong> —
+<code>asyncio.wait_for(proc.wait(), timeout=5.0)</code> waits up to 5
+seconds for the process to actually die. If it doesn’t, we log a warning
+and abandon the zombie — the orchestrator must NEVER hang waiting for a
+defunct subprocess.</p></li>
+<li><p><strong>Stderr</strong> —
+<code>asyncio.wait_for(proc.stderr.read(), timeout=5.0)</code> reads
+stderr with the same 5-second cap. If the pipe is still open (zombie),
+we abandon it and move on.</p></li>
+<li><p><strong>Backstop</strong> — <code>_search_tracker</code> wraps
+the entire <code>_search_public_tracker</code> call in an outer
+<code>asyncio.wait_for(..., deadline+10)</code> so even if every
+internal cleanup step has a bug, the coroutine always returns.</p></li>
+<li><p><strong>Gather defence</strong> — <code>_run_search</code> uses
+<code>asyncio.gather(..., return_exceptions=True)</code> so one tracker
+failing (or hanging) cannot prevent the rest of the fan-out from
+completing.</p></li>
+</ol>
+<h2 id="error-classes-error_type">Error classes
+(<code>error_type</code>)</h2>
+<table>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 51%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th><code>error_type</code></th>
+<th>Meaning</th>
+<th>Operator action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>upstream_http_403</code></td>
+<td>Remote tracker returned 403 Forbidden</td>
+<td>Likely geoblock or CDN WAF. Try VPN.</td>
+</tr>
+<tr>
+<td><code>upstream_http_404</code></td>
+<td>Remote tracker returned 404 Not Found</td>
+<td>Domain moved — update <code>PUBLIC_TRACKERS</code> URL</td>
+</tr>
+<tr>
+<td><code>upstream_timeout</code></td>
+<td>Remote gateway timed out</td>
+<td>Transient — retry or bump
+<code>PUBLIC_TRACKER_DEADLINE_SECONDS</code></td>
+</tr>
+<tr>
+<td><code>dns_failure</code></td>
+<td>Tracker hostname does not resolve</td>
+<td>Domain is dead — move to <code>DEAD_PUBLIC_TRACKERS</code></td>
+</tr>
+<tr>
+<td><code>tls_failure</code></td>
+<td>TLS handshake with upstream failed</td>
+<td>Cert issue upstream. No action.</td>
+</tr>
+<tr>
+<td><code>upstream_incomplete</code></td>
+<td>Upstream closed connection mid-response</td>
+<td>Transient — retry</td>
+</tr>
+<tr>
+<td><code>plugin_env_missing</code></td>
+<td>Plugin needs a file/dir not present in the container</td>
+<td>Check plugin source; add dir to Dockerfile</td>
+</tr>
+<tr>
+<td><code>plugin_parse_failure</code></td>
+<td>Plugin regex/JSON parse failed (upstream HTML rotated)</td>
+<td>Patch plugin regex</td>
+</tr>
+<tr>
+<td><code>plugin_crashed</code></td>
+<td>Plugin raised an uncategorised exception</td>
+<td>Read <code>notes.stderr_tail</code> for traceback</td>
+</tr>
+<tr>
+<td><code>deadline_timeout</code></td>
+<td>Plugin was still running after per-tracker deadline</td>
+<td>Bump deadline or split the work</td>
+</tr>
+<tr>
+<td><code>auth_failure</code></td>
+<td>Private tracker login returned no session cookie</td>
+<td>Check credentials in <code>.env</code>; may be transient
+CAPTCHA</td>
+</tr>
+<tr>
+<td><code>upstream_captcha</code></td>
+<td>Private tracker served a CAPTCHA page instead of results</td>
+<td>Wait a few minutes and retry; rotate IP if persistent</td>
+</tr>
+</tbody>
+</table>
+<p>When the plugin runs cleanly but doesn’t emit any rows,
+<code>error_type</code> is <code>None</code> and <code>status</code>
+stays at <code>empty</code>. This is the “genuinely no hits for this
+query on this board” path — e.g. searching <code>linux</code> on an
+anime-only tracker.</p>
+<h2 id="environment-variables">Environment variables</h2>
+<h3
+id="public_tracker_deadline_seconds"><code>PUBLIC_TRACKER_DEADLINE_SECONDS</code></h3>
+<p>Default: <code>60</code>. Clamped to <code>[5, 120]</code>.</p>
+<p>How long each public-tracker subprocess may run before it is
+SIGKILLed. Because <code>_search_public_tracker</code> streams results
+as NDJSON with <code>sys.stdout.flush()</code>, partial results are
+preserved even if the deadline fires mid-scrape. When that happens,
+<code>TrackerSearchStat.notes["deadline_hit"] = True</code> and the
+dashboard chip shows a stopwatch icon.</p>
+<p>Raise this if you have slow upstreams and are willing to wait — but
+remember that the orchestrator runs up to
+<code>MAX_CONCURRENT_TRACKERS</code> fan-out tasks at a time, so
+wall-clock latency grows with
+<code>deadline × ceil(trackers / max_concurrent)</code>.</p>
+<h3 id="enable_dead_trackers"><code>ENABLE_DEAD_TRACKERS</code></h3>
+<p>Default: <code>1</code> (all trackers exposed; dead ones filtered by
+<code>DEAD_PUBLIC_TRACKERS</code>).</p>
+<p>Public trackers that are empirically known-dead as of 2026-04-23 live
+in <code>DEAD_PUBLIC_TRACKERS</code> in <code>search.py</code> and are
+excluded from the fan-out. Set <code>ENABLE_DEAD_TRACKERS=0</code> to
+hide them. Set <code>ENABLE_DEAD_TRACKERS=1</code> (default) to include
+them for testing whether an upstream has recovered, or when operating
+through a proxy/VPN that bypasses geoblocks.</p>
+<p>The known-dead list:</p>
+<ul>
+<li>HTTP 403 (Cloudflare/geoblock): <code>eztv</code>,
+<code>bt4g</code>, <code>extratorrent</code>, <code>one337x</code>,
+<code>bitru</code></li>
+<li>HTTP 404 (site down): <code>ali213</code></li>
+<li>Gateway timeout: <code>audiobookbay</code></li>
+<li>DNS failure (domain dead): <code>pctorrent</code>,
+<code>yihua</code></li>
+<li>TLS failure: <code>xfsub</code></li>
+<li>Plugin crash (site down): none</li>
+<li>API changed: <code>anilibra</code> (returns 400 Unknown query)</li>
+<li>Site rebrand/redesign: <code>solidtorrents</code> (→ bitsearch.to),
+<code>therarbg</code> (new HTML), <code>gamestorrents</code> (WordPress
+redesign), <code>btsow</code> (JS redirect challenge)</li>
+<li>Upstream dead: <code>torrentfunk</code> (HTTP 500)</li>
+</ul>
+<p>These plugins are still installed and the classifier still reports
+their real reasons when <code>ENABLE_DEAD_TRACKERS=1</code>, so it’s
+easy to spot when an upstream starts working again and move the entry
+out of the set.</p>
+<h3
+id="max_concurrent_trackers"><code>MAX_CONCURRENT_TRACKERS</code></h3>
+<p>Default: <code>5</code>. Semaphore-bounded fan-out width. Wall-clock
+latency is approximately
+<code>deadline × (tracker_count / max_concurrent)</code> in the worst
+case. Lower this on constrained hosts to keep memory bounded.</p>
+<h3
+id="max_concurrent_searches"><code>MAX_CONCURRENT_SEARCHES</code></h3>
+<p>Default: <code>8</code>. Per-orchestrator cap on the number of
+in-flight <code>_run_search</code> fan-outs. When saturated, both
+<code>POST /api/v1/search</code> and
+<code>POST /api/v1/search/sync</code> return HTTP 429 with a
+<code>retry shortly</code> hint so callers back off rather than piling
+more subprocess work on a starving event loop.</p>
+<p>Stress tests revealed that without this cap, 50 rapid POSTs would
+spawn 50 × 24 = 1200 simultaneous subprocess spawns and even
+<code>/health</code> stopped responding. With the cap in place the
+service remains responsive (at most 8 × 24 = ~200 subprocesses
+mid-flight, plus the 5-per-fan-out semaphore actually runs closer to
+40).</p>
+<h2 id="dashboard-chip-legend">Dashboard chip legend</h2>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 84%" />
+</colgroup>
+<thead>
+<tr>
+<th>Icon</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>✓ N</code></td>
+<td>Success — N results</td>
+</tr>
+<tr>
+<td><code>∅</code></td>
+<td>Empty — plugin ran cleanly, found nothing for this query</td>
+</tr>
+<tr>
+<td><code>⚠</code></td>
+<td>Error — hover for <code>error_type</code>, click for full
+dialog</td>
+</tr>
+<tr>
+<td><code>⏱</code></td>
+<td>Deadline hit — results are truncated to whatever flushed</td>
+</tr>
+<tr>
+<td><code>🔒</code></td>
+<td>Authenticated session used</td>
+</tr>
+</tbody>
+</table>
+<p>Click any chip to open the <strong>tracker-stat dialog</strong> which
+shows the full <code>TrackerSearchStat</code> including
+<code>notes.stderr_tail</code> for crashed plugins.</p>
+<h2 id="rebuild-restart-contract">Rebuild / restart contract</h2>
+<p><code>docker-compose.yml</code> bind-mounts
+<code>./download-proxy/</code> into the container at
+<code>/config/download-proxy</code>. That means:</p>
+<ul>
+<li><strong>Python source changes in
+<code>download-proxy/src/</code></strong> →
+<code>podman restart qbittorrent-proxy</code> picks them up; no rebuild
+needed.</li>
+<li><strong>Plugin changes in <code>plugins/</code></strong> →
+<code>./install-plugin.sh</code> copies them into
+<code>./config/qBittorrent/nova3/engines/</code>, which is also
+bind-mounted; restart again picks them up.</li>
+<li><strong><code>docker-compose.yml</code> /
+<code>start-proxy.sh</code> / env changes</strong> →
+<code>podman compose down &amp;&amp; podman compose up -d</code>.</li>
+</ul>
+<p>Full rebuild (<code>podman build</code>) is only necessary when the
+base image (<code>python:3.12-alpine</code>) itself needs to change.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<p><strong>All public trackers return 0.</strong> The subprocess capture
+is broken. First thing to check: does the script in
+<code>_search_public_tracker</code> still do
+<code>import novaprinter as _np</code>? If it says
+<code>engines.novaprinter</code>, you’ve reintroduced the
+37-empty-trackers bug. See commit <code>e8b904d</code>.</p>
+<p><strong>One tracker goes to 0 intermittently.</strong> Look at
+<code>tracker_stats[].error</code>. If it’s consistently
+<code>upstream_http_403</code>, the geoblock probably caught you; if it
+bounces between <code>success</code> and <code>upstream_timeout</code>,
+the upstream is rate-limiting.</p>
+<p><strong><code>results_count</code> is capped at some suspicious round
+number.</strong> Check <code>notes.deadline_hit</code>. If true, raise
+<code>PUBLIC_TRACKER_DEADLINE_SECONDS</code>.</p>
+<p><strong>Search hangs forever — one tracker is stuck in
+cleanup.</strong> Prior to 2026-04-24 a plugin in an uninterruptible
+sleep state could deadlock the entire orchestrator because
+<code>stderr.read()</code> was called before <code>proc.wait()</code>.
+The fix reordered cleanup, added process-group kills, and wrapped every
+blocking call in a 5-second timeout. If you still see hangs, check the
+logs for the warning
+<code>"proc.wait() timed out during cleanup — abandoning zombie"</code>.</p>
+<p><strong>I added a tracker but it never appears in the
+fan-out.</strong> It’s probably in <code>DEAD_PUBLIC_TRACKERS</code>.
+Move it out, or set <code>ENABLE_DEAD_TRACKERS=1</code> temporarily.</p>

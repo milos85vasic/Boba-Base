@@ -1,0 +1,1432 @@
+<h1 id="qbittorrent-backend-migration-pythonfastapi-gogin">qBitTorrent
+Backend Migration: Python/FastAPI → Go/Gin</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p><strong>Version:</strong> 1.0.0<br />
+<strong>Date:</strong> 2026-04-22<br />
+<strong>Author:</strong> Migration Task Force<br />
+<strong>Status:</strong> Production‑Ready Blueprint</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#1-project-analysis--pre-migration-checklist">Project
+Analysis &amp; Pre‑Migration Checklist</a><br />
+</li>
+<li><a href="#2-go-project-initialization--structure">Go Project
+Initialization &amp; Structure</a><br />
+</li>
+<li><a href="#3-data-models-translation-pydantic--go-structs">Data
+Models Translation (Pydantic → Go Structs)</a><br />
+</li>
+<li><a href="#4-configuration-management">Configuration
+Management</a><br />
+</li>
+<li><a href="#5-qbittorrent-api-client-implementation">qBittorrent API
+Client Implementation</a><br />
+</li>
+<li><a href="#6-core-business-logic-migration">Core Business Logic
+Migration</a>
+<ul>
+<li>6.1 Merge Search Service<br />
+</li>
+<li>6.2 Private Tracker Bridge (<code>webui-bridge.py</code>)<br />
+</li>
+<li>6.3 Server‑Sent Events (SSE) Streaming<br />
+</li>
+</ul></li>
+<li><a href="#7-http-api-endpoints-with-gin">HTTP API Endpoints with
+Gin</a><br />
+</li>
+<li><a href="#8-middleware--cross-cutting-concerns">Middleware &amp;
+Cross‑Cutting Concerns</a><br />
+</li>
+<li><a href="#9-testing-strategy--implementation">Testing Strategy &amp;
+Implementation</a><br />
+</li>
+<li><a href="#10-docker--deployment-configuration">Docker &amp;
+Deployment Configuration</a><br />
+</li>
+<li><a href="#11-plugin-system-compatibility-assurance">Plugin System
+Compatibility Assurance</a><br />
+</li>
+<li><a href="#12-post-migration-validation-checklist">Post‑Migration
+Validation Checklist</a><br />
+</li>
+<li><a href="#13-appendix-file-by-file-migration-map">Appendix:
+File‑by‑File Migration Map</a></li>
+</ol>
+<hr />
+<h2 id="project-analysis-premigration-checklist">1. Project Analysis
+&amp; Pre‑Migration Checklist</h2>
+<h3 id="source-of-truth">1.1 Source of Truth</h3>
+<ul>
+<li><strong>OpenAPI Specification</strong>:
+<code>http://localhost:7187/openapi.json</code><br />
+This file defines every endpoint, request/response schema, and error
+code.<br />
+<strong>Action</strong>: Export it and keep it open for reference.</li>
+<li><strong>Existing Shell Scripts</strong>: <code>start.sh</code>,
+<code>install-plugin.sh</code>, <code>stop.sh</code> remain
+<strong>unchanged</strong>.</li>
+<li><strong>Angular Frontend</strong>: Located in
+<code>frontend/</code>. No code changes required.</li>
+</ul>
+<h3 id="python-code-audit-hypothetical-based-on-openapi">1.2 Python Code
+Audit (Hypothetical – Based on OpenAPI)</h3>
+<p>The Python backend consists of: - <code>main.py</code> – FastAPI
+application entry point. - <code>app/api/search.py</code> –
+<code>/api/v1/search</code> endpoint with SSE streaming. -
+<code>app/api/hooks.py</code> – Hook registration and trigger logic. -
+<code>app/api/bridge.py</code> – Private tracker authentication and
+download. - <code>app/core/config.py</code> – Environment variable
+loading. - <code>app/models/*.py</code> – Pydantic models for
+requests/responses.</p>
+<h3 id="dependencies-to-replace">1.3 Dependencies to Replace</h3>
+<table>
+<thead>
+<tr>
+<th>Python Dependency</th>
+<th>Go Replacement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fastapi</code></td>
+<td><code>gin-gonic/gin</code></td>
+</tr>
+<tr>
+<td><code>uvicorn</code></td>
+<td>Built‑in <code>net/http</code> server</td>
+</tr>
+<tr>
+<td><code>pydantic</code></td>
+<td>Struct tags + <code>validator</code> package</td>
+</tr>
+<tr>
+<td><code>httpx</code> / <code>requests</code></td>
+<td><code>net/http</code> + custom client</td>
+</tr>
+<tr>
+<td><code>asyncio</code></td>
+<td>Goroutines + channels</td>
+</tr>
+<tr>
+<td><code>python-dotenv</code></td>
+<td><code>godotenv</code> or <code>viper</code></td>
+</tr>
+<tr>
+<td><code>sse-starlette</code></td>
+<td>Manual SSE with <code>http.Flusher</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="plugin-system-status">1.4 Plugin System Status</h3>
+<ul>
+<li><strong>Nova3 search plugins</strong> are Python scripts executed
+<strong>by the qBittorrent client itself</strong>, not by our
+backend.</li>
+<li>Our backend only calls qBittorrent’s Web API
+(<code>/api/v2/search/start</code>, <code>/api/v2/search/results</code>,
+etc.).</li>
+<li><strong>Conclusion</strong>: Plugins will work unchanged. The
+migration only affects the orchestrator.</li>
+</ul>
+<hr />
+<h2 id="go-project-initialization-structure">2. Go Project
+Initialization &amp; Structure</h2>
+<h3 id="initialize-module">2.1 Initialize Module</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> qBitTorrent-go <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> qBitTorrent-go</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> mod init github.com/milos85vasic/qBitTorrent-go</span></code></pre></div>
+<h3 id="directory-layout">2.2 Directory Layout</h3>
+<pre><code>.
+├── cmd/
+│   ├── qbittorrent-proxy/      # Main REST API server
+│   │   └── main.go
+│   └── webui-bridge/           # Private tracker bridge (separate binary)
+│       └── main.go
+├── internal/
+│   ├── api/                    # Gin handlers grouped by feature
+│   │   ├── search.go
+│   │   ├── hooks.go
+│   │   ├── bridge.go
+│   │   └── health.go
+│   ├── client/                 # qBittorrent Web API client
+│   │   ├── client.go
+│   │   ├── auth.go
+│   │   ├── torrents.go
+│   │   └── search.go
+│   ├── config/                 # Configuration structs and loader
+│   │   └── config.go
+│   ├── models/                 # Shared data structures
+│   │   ├── torrent.go
+│   │   ├── search.go
+│   │   └── hook.go
+│   ├── service/                # Business logic
+│   │   ├── merge_search.go
+│   │   ├── sse_broker.go
+│   │   └── bridge_auth.go
+│   └── middleware/             # Gin middleware
+│       ├── cors.go
+│       ├── logging.go
+│       └── auth.go
+├── pkg/                        # Public reusable packages (if any)
+├── scripts/                    # Build/deploy scripts
+│   └── build.sh
+├── frontend/                   # Angular frontend (unchanged)
+├── .env.example
+├── Dockerfile
+├── docker-compose.yml
+├── go.mod
+└── go.sum</code></pre>
+<hr />
+<h2 id="data-models-translation-pydantic-go-structs">3. Data Models
+Translation (Pydantic → Go Structs)</h2>
+<h3 id="example-torrent-model">3.1 Example: <code>Torrent</code>
+Model</h3>
+<p><strong>Python (Pydantic) –
+<code>app/models/torrent.py</code></strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> typing <span class="im">import</span> Optional</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Torrent(BaseModel):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">hash</span>: <span class="bu">str</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    size: <span class="bu">int</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    progress: <span class="bu">float</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    state: Optional[<span class="bu">str</span>] <span class="op">=</span> <span class="va">None</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    category: Optional[<span class="bu">str</span>] <span class="op">=</span> <span class="va">None</span></span></code></pre></div>
+<p><strong>Go – <code>internal/models/torrent.go</code></strong></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> models</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Torrent <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    Hash     <span class="dt">string</span>  <span class="st">`json:&quot;hash&quot;`</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    Name     <span class="dt">string</span>  <span class="st">`json:&quot;name&quot;`</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    Size     <span class="dt">int64</span>   <span class="st">`json:&quot;size&quot;`</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    Progress <span class="dt">float64</span> <span class="st">`json:&quot;progress&quot;`</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    State    <span class="op">*</span><span class="dt">string</span> <span class="st">`json:&quot;state,omitempty&quot;`</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    Category <span class="op">*</span><span class="dt">string</span> <span class="st">`json:&quot;category,omitempty&quot;`</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="search-requestresponse-models">3.2 Search Request/Response
+Models</h3>
+<p><strong>From OpenAPI:</strong> - <code>POST /api/v1/search</code>
+expects:
+<code>json   { "query": "ubuntu", "plugins": ["all"], "category": "all" }</code>
+- Response: Stream of SSE events with <code>Torrent</code> objects.</p>
+<p><strong>Go – <code>internal/models/search.go</code></strong></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> models</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> SearchRequest <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    Query    <span class="dt">string</span>   <span class="st">`json:&quot;query&quot; binding:&quot;required&quot;`</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    Plugins  <span class="op">[]</span><span class="dt">string</span> <span class="st">`json:&quot;plugins&quot; binding:&quot;required&quot;`</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    Category <span class="dt">string</span>   <span class="st">`json:&quot;category&quot;`</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    Limit    <span class="dt">int</span>      <span class="st">`json:&quot;limit,omitempty&quot;`</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> SearchResult <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    Tracker  <span class="dt">string</span>   <span class="st">`json:&quot;tracker&quot;`</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    Torrents <span class="op">[]</span>Torrent <span class="st">`json:&quot;torrents&quot;`</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="hook-model">3.3 Hook Model</h3>
+<p><strong>Go – <code>internal/models/hook.go</code></strong></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> models</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Hook <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    ID       <span class="dt">string</span>            <span class="st">`json:&quot;id&quot;`</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    URL      <span class="dt">string</span>            <span class="st">`json:&quot;url&quot; binding:&quot;required,url&quot;`</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    Secret   <span class="dt">string</span>            <span class="st">`json:&quot;secret,omitempty&quot;`</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    Events   <span class="op">[]</span><span class="dt">string</span>          <span class="st">`json:&quot;events&quot; binding:&quot;required&quot;`</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    Headers  <span class="kw">map</span><span class="op">[</span><span class="dt">string</span><span class="op">]</span><span class="dt">string</span> <span class="st">`json:&quot;headers,omitempty&quot;`</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    Enabled  <span class="dt">bool</span>              <span class="st">`json:&quot;enabled&quot;`</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<hr />
+<h2 id="configuration-management">4. Configuration Management</h2>
+<h3 id="configuration-struct">4.1 Configuration Struct</h3>
+<p><strong>File:</strong> <code>internal/config/config.go</code></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> config</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;log&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;os&quot;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;strconv&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/joho/godotenv&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Config <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    QBittorrentURL      <span class="dt">string</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    QBittorrentUsername  <span class="dt">string</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    QBittorrentPassword  <span class="dt">string</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    ServerPort           <span class="dt">string</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    BridgePort           <span class="dt">string</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    LogLevel             <span class="dt">string</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    SSETimeout           <span class="dt">int</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    PluginTimeout        <span class="dt">int</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    PrivateTrackerConfig <span class="kw">map</span><span class="op">[</span><span class="dt">string</span><span class="op">]</span>TrackerAuth</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> TrackerAuth <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    Username <span class="dt">string</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    Password <span class="dt">string</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    LoginURL <span class="dt">string</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> Load<span class="op">()</span> <span class="op">*</span>Config <span class="op">{</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    _ <span class="op">=</span> godotenv<span class="op">.</span>Load<span class="op">()</span> <span class="co">// Ignore error if .env missing</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">&amp;</span>Config<span class="op">{</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>        QBittorrentURL<span class="op">:</span>      getEnv<span class="op">(</span><span class="st">&quot;QBITTORRENT_URL&quot;</span><span class="op">,</span> <span class="st">&quot;http://localhost:8080&quot;</span><span class="op">),</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>        QBittorrentUsername<span class="op">:</span> getEnv<span class="op">(</span><span class="st">&quot;QBITTORRENT_USERNAME&quot;</span><span class="op">,</span> <span class="st">&quot;admin&quot;</span><span class="op">),</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>        QBittorrentPassword<span class="op">:</span> getEnv<span class="op">(</span><span class="st">&quot;QBITTORRENT_PASSWORD&quot;</span><span class="op">,</span> <span class="st">&quot;adminadmin&quot;</span><span class="op">),</span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>        ServerPort<span class="op">:</span>          getEnv<span class="op">(</span><span class="st">&quot;SERVER_PORT&quot;</span><span class="op">,</span> <span class="st">&quot;7187&quot;</span><span class="op">),</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a>        BridgePort<span class="op">:</span>          getEnv<span class="op">(</span><span class="st">&quot;BRIDGE_PORT&quot;</span><span class="op">,</span> <span class="st">&quot;7188&quot;</span><span class="op">),</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>        LogLevel<span class="op">:</span>            getEnv<span class="op">(</span><span class="st">&quot;LOG_LEVEL&quot;</span><span class="op">,</span> <span class="st">&quot;info&quot;</span><span class="op">),</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>        SSETimeout<span class="op">:</span>          getEnvAsInt<span class="op">(</span><span class="st">&quot;SSE_TIMEOUT&quot;</span><span class="op">,</span> <span class="dv">30</span><span class="op">),</span></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>        PluginTimeout<span class="op">:</span>       getEnvAsInt<span class="op">(</span><span class="st">&quot;PLUGIN_TIMEOUT&quot;</span><span class="op">,</span> <span class="dv">10</span><span class="op">),</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Load private tracker credentials from env like TRACKER_IPT_USERNAME, etc.</span></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>        PrivateTrackerConfig<span class="op">:</span> loadTrackerAuth<span class="op">(),</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> getEnv<span class="op">(</span>key<span class="op">,</span> fallback <span class="dt">string</span><span class="op">)</span> <span class="dt">string</span> <span class="op">{</span></span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> value<span class="op">,</span> exists <span class="op">:=</span> os<span class="op">.</span>LookupEnv<span class="op">(</span>key<span class="op">);</span> exists <span class="op">{</span></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> value</span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fallback</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> getEnvAsInt<span class="op">(</span>key <span class="dt">string</span><span class="op">,</span> fallback <span class="dt">int</span><span class="op">)</span> <span class="dt">int</span> <span class="op">{</span></span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> value<span class="op">,</span> exists <span class="op">:=</span> os<span class="op">.</span>LookupEnv<span class="op">(</span>key<span class="op">);</span> exists <span class="op">{</span></span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> i<span class="op">,</span> err <span class="op">:=</span> strconv<span class="op">.</span>Atoi<span class="op">(</span>value<span class="op">);</span> err <span class="op">==</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span> i</span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fallback</span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> loadTrackerAuth<span class="op">()</span> <span class="kw">map</span><span class="op">[</span><span class="dt">string</span><span class="op">]</span>TrackerAuth <span class="op">{</span></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Implementation to read env vars like TRACKER_IPT_USERNAME etc.</span></span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Returns map[trackerID]TrackerAuth</span></span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">make</span><span class="op">(</span><span class="kw">map</span><span class="op">[</span><span class="dt">string</span><span class="op">]</span>TrackerAuth<span class="op">)</span></span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="environment-file-example">4.2 Environment File Example</h3>
+<p><strong>.env.example</strong></p>
+<pre><code>QBITTORRENT_URL=http://localhost:8080
+QBITTORRENT_USERNAME=admin
+QBITTORRENT_PASSWORD=adminadmin
+SERVER_PORT=7187
+BRIDGE_PORT=7188
+LOG_LEVEL=debug
+SSE_TIMEOUT=30
+PLUGIN_TIMEOUT=10
+TRACKER_IPT_USERNAME=your_ipt_user
+TRACKER_IPT_PASSWORD=your_ipt_pass</code></pre>
+<hr />
+<h2 id="qbittorrent-api-client-implementation">5. qBittorrent API Client
+Implementation</h2>
+<h3 id="client-structure">5.1 Client Structure</h3>
+<p><strong>File:</strong> <code>internal/client/client.go</code></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> client</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;bytes&quot;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;encoding/json&quot;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;fmt&quot;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;io&quot;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http&quot;</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http/cookiejar&quot;</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/url&quot;</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;sync&quot;</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;time&quot;</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Client <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    BaseURL    <span class="op">*</span>url<span class="op">.</span>URL</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    HTTPClient <span class="op">*</span>http<span class="op">.</span>Client</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    mu         sync<span class="op">.</span>RWMutex</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    sid        <span class="dt">string</span> <span class="co">// qBittorrent session cookie value</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> NewClient<span class="op">(</span>baseURL<span class="op">,</span> username<span class="op">,</span> password <span class="dt">string</span><span class="op">)</span> <span class="op">(*</span>Client<span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    u<span class="op">,</span> err <span class="op">:=</span> url<span class="op">.</span>Parse<span class="op">(</span>baseURL<span class="op">)</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> err</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    jar<span class="op">,</span> _ <span class="op">:=</span> cookiejar<span class="op">.</span>New<span class="op">(</span><span class="ot">nil</span><span class="op">)</span></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    c <span class="op">:=</span> <span class="op">&amp;</span>Client<span class="op">{</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>        BaseURL<span class="op">:</span> u<span class="op">,</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>        HTTPClient<span class="op">:</span> <span class="op">&amp;</span>http<span class="op">.</span>Client<span class="op">{</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>            Jar<span class="op">:</span>     jar<span class="op">,</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>            Timeout<span class="op">:</span> <span class="dv">30</span> <span class="op">*</span> time<span class="op">.</span>Second<span class="op">,</span></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>        <span class="op">},</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> c<span class="op">.</span>Login<span class="op">(</span>username<span class="op">,</span> password<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> err</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> c<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="authentication">5.2 Authentication</h3>
+<p><strong>File:</strong> <code>internal/client/auth.go</code></p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> client</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;fmt&quot;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/url&quot;</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> Login<span class="op">(</span>username<span class="op">,</span> password <span class="dt">string</span><span class="op">)</span> <span class="dt">error</span> <span class="op">{</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    loginURL <span class="op">:=</span> c<span class="op">.</span>BaseURL<span class="op">.</span>ResolveReference<span class="op">(&amp;</span>url<span class="op">.</span>URL<span class="op">{</span>Path<span class="op">:</span> <span class="st">&quot;/api/v2/auth/login&quot;</span><span class="op">})</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    data <span class="op">:=</span> url<span class="op">.</span>Values<span class="op">{}</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    data<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;username&quot;</span><span class="op">,</span> username<span class="op">)</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    data<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;password&quot;</span><span class="op">,</span> password<span class="op">)</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    resp<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>HTTPClient<span class="op">.</span>PostForm<span class="op">(</span>loginURL<span class="op">.</span>String<span class="op">(),</span> data<span class="op">)</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> err</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> resp<span class="op">.</span>Body<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> resp<span class="op">.</span>StatusCode <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;login failed: %s&quot;</span><span class="op">,</span> resp<span class="op">.</span>Status<span class="op">)</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Extract SID cookie (qBittorrent sets &quot;SID&quot;)</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _<span class="op">,</span> cookie <span class="op">:=</span> <span class="kw">range</span> c<span class="op">.</span>HTTPClient<span class="op">.</span>Jar<span class="op">.</span>Cookies<span class="op">(</span>loginURL<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> cookie<span class="op">.</span>Name <span class="op">==</span> <span class="st">&quot;SID&quot;</span> <span class="op">{</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>mu<span class="op">.</span>Lock<span class="op">()</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>sid <span class="op">=</span> cookie<span class="op">.</span>Value</span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>mu<span class="op">.</span>Unlock<span class="op">()</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ot">nil</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> IsAuthenticated<span class="op">()</span> <span class="dt">bool</span> <span class="op">{</span></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a>    c<span class="op">.</span>mu<span class="op">.</span>RLock<span class="op">()</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> c<span class="op">.</span>mu<span class="op">.</span>RUnlock<span class="op">()</span></span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> c<span class="op">.</span>sid <span class="op">!=</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="search-endpoints">5.3 Search Endpoints</h3>
+<p><strong>File:</strong> <code>internal/client/search.go</code></p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> client</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;encoding/json&quot;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;fmt&quot;</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/url&quot;</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;strconv&quot;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/models&quot;</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="co">// StartSearch starts a new search job and returns its ID.</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> StartSearch<span class="op">(</span>query <span class="dt">string</span><span class="op">,</span> plugins <span class="op">[]</span><span class="dt">string</span><span class="op">,</span> category <span class="dt">string</span><span class="op">)</span> <span class="op">(</span><span class="dt">int</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    searchURL <span class="op">:=</span> c<span class="op">.</span>BaseURL<span class="op">.</span>ResolveReference<span class="op">(&amp;</span>url<span class="op">.</span>URL<span class="op">{</span>Path<span class="op">:</span> <span class="st">&quot;/api/v2/search/start&quot;</span><span class="op">})</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    data <span class="op">:=</span> url<span class="op">.</span>Values<span class="op">{}</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    data<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;pattern&quot;</span><span class="op">,</span> query<span class="op">)</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    data<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;category&quot;</span><span class="op">,</span> category<span class="op">)</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _<span class="op">,</span> p <span class="op">:=</span> <span class="kw">range</span> plugins <span class="op">{</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>        data<span class="op">.</span>Add<span class="op">(</span><span class="st">&quot;plugins&quot;</span><span class="op">,</span> p<span class="op">)</span></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>    resp<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>HTTPClient<span class="op">.</span>PostForm<span class="op">(</span>searchURL<span class="op">.</span>String<span class="op">(),</span> data<span class="op">)</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">,</span> err</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> resp<span class="op">.</span>Body<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> resp<span class="op">.</span>StatusCode <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;search start failed: %s&quot;</span><span class="op">,</span> resp<span class="op">.</span>Status<span class="op">)</span></span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> result <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>        ID <span class="dt">int</span> <span class="st">`json:&quot;id&quot;`</span></span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> json<span class="op">.</span>NewDecoder<span class="op">(</span>resp<span class="op">.</span>Body<span class="op">).</span>Decode<span class="op">(&amp;</span>result<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">,</span> err</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> result<span class="op">.</span>ID<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a><span class="co">// GetSearchResults retrieves results for a given search ID.</span></span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> GetSearchResults<span class="op">(</span>searchID <span class="dt">int</span><span class="op">,</span> limit<span class="op">,</span> offset <span class="dt">int</span><span class="op">)</span> <span class="op">([]</span>models<span class="op">.</span>Torrent<span class="op">,</span> <span class="dt">int</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>    resultsURL <span class="op">:=</span> c<span class="op">.</span>BaseURL<span class="op">.</span>ResolveReference<span class="op">(&amp;</span>url<span class="op">.</span>URL<span class="op">{</span>Path<span class="op">:</span> <span class="st">&quot;/api/v2/search/results&quot;</span><span class="op">})</span></span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>    q <span class="op">:=</span> resultsURL<span class="op">.</span>Query<span class="op">()</span></span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>    q<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;id&quot;</span><span class="op">,</span> strconv<span class="op">.</span>Itoa<span class="op">(</span>searchID<span class="op">))</span></span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> limit <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">{</span></span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>        q<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;limit&quot;</span><span class="op">,</span> strconv<span class="op">.</span>Itoa<span class="op">(</span>limit<span class="op">))</span></span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> offset <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">{</span></span>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>        q<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;offset&quot;</span><span class="op">,</span> strconv<span class="op">.</span>Itoa<span class="op">(</span>offset<span class="op">))</span></span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a>    resultsURL<span class="op">.</span>RawQuery <span class="op">=</span> q<span class="op">.</span>Encode<span class="op">()</span></span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-55"><a href="#cb11-55" aria-hidden="true" tabindex="-1"></a>    resp<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>HTTPClient<span class="op">.</span>Get<span class="op">(</span>resultsURL<span class="op">.</span>String<span class="op">())</span></span>
+<span id="cb11-56"><a href="#cb11-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb11-57"><a href="#cb11-57" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> err</span>
+<span id="cb11-58"><a href="#cb11-58" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-59"><a href="#cb11-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> resp<span class="op">.</span>Body<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb11-60"><a href="#cb11-60" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-61"><a href="#cb11-61" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> resp<span class="op">.</span>StatusCode <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb11-62"><a href="#cb11-62" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to get results: %s&quot;</span><span class="op">,</span> resp<span class="op">.</span>Status<span class="op">)</span></span>
+<span id="cb11-63"><a href="#cb11-63" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-64"><a href="#cb11-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-65"><a href="#cb11-65" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> response <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb11-66"><a href="#cb11-66" aria-hidden="true" tabindex="-1"></a>        Results <span class="op">[]</span>models<span class="op">.</span>Torrent <span class="st">`json:&quot;results&quot;`</span></span>
+<span id="cb11-67"><a href="#cb11-67" aria-hidden="true" tabindex="-1"></a>        Total   <span class="dt">int</span>              <span class="st">`json:&quot;total&quot;`</span></span>
+<span id="cb11-68"><a href="#cb11-68" aria-hidden="true" tabindex="-1"></a>        Status  <span class="dt">string</span>           <span class="st">`json:&quot;status&quot;`</span></span>
+<span id="cb11-69"><a href="#cb11-69" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-70"><a href="#cb11-70" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> json<span class="op">.</span>NewDecoder<span class="op">(</span>resp<span class="op">.</span>Body<span class="op">).</span>Decode<span class="op">(&amp;</span>response<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb11-71"><a href="#cb11-71" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> err</span>
+<span id="cb11-72"><a href="#cb11-72" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-73"><a href="#cb11-73" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response<span class="op">.</span>Results<span class="op">,</span> response<span class="op">.</span>Total<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb11-74"><a href="#cb11-74" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb11-75"><a href="#cb11-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-76"><a href="#cb11-76" aria-hidden="true" tabindex="-1"></a><span class="co">// StopSearch stops a running search.</span></span>
+<span id="cb11-77"><a href="#cb11-77" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> StopSearch<span class="op">(</span>searchID <span class="dt">int</span><span class="op">)</span> <span class="dt">error</span> <span class="op">{</span></span>
+<span id="cb11-78"><a href="#cb11-78" aria-hidden="true" tabindex="-1"></a>    stopURL <span class="op">:=</span> c<span class="op">.</span>BaseURL<span class="op">.</span>ResolveReference<span class="op">(&amp;</span>url<span class="op">.</span>URL<span class="op">{</span>Path<span class="op">:</span> <span class="st">&quot;/api/v2/search/stop&quot;</span><span class="op">})</span></span>
+<span id="cb11-79"><a href="#cb11-79" aria-hidden="true" tabindex="-1"></a>    data <span class="op">:=</span> url<span class="op">.</span>Values<span class="op">{}</span></span>
+<span id="cb11-80"><a href="#cb11-80" aria-hidden="true" tabindex="-1"></a>    data<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;id&quot;</span><span class="op">,</span> strconv<span class="op">.</span>Itoa<span class="op">(</span>searchID<span class="op">))</span></span>
+<span id="cb11-81"><a href="#cb11-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-82"><a href="#cb11-82" aria-hidden="true" tabindex="-1"></a>    resp<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>HTTPClient<span class="op">.</span>PostForm<span class="op">(</span>stopURL<span class="op">.</span>String<span class="op">(),</span> data<span class="op">)</span></span>
+<span id="cb11-83"><a href="#cb11-83" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb11-84"><a href="#cb11-84" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> err</span>
+<span id="cb11-85"><a href="#cb11-85" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-86"><a href="#cb11-86" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> resp<span class="op">.</span>Body<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb11-87"><a href="#cb11-87" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> resp<span class="op">.</span>StatusCode <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb11-88"><a href="#cb11-88" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to stop search: %s&quot;</span><span class="op">,</span> resp<span class="op">.</span>Status<span class="op">)</span></span>
+<span id="cb11-89"><a href="#cb11-89" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-90"><a href="#cb11-90" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ot">nil</span></span>
+<span id="cb11-91"><a href="#cb11-91" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb11-92"><a href="#cb11-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-93"><a href="#cb11-93" aria-hidden="true" tabindex="-1"></a><span class="co">// ListPlugins returns all installed search plugins.</span></span>
+<span id="cb11-94"><a href="#cb11-94" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> ListPlugins<span class="op">()</span> <span class="op">([]</span><span class="kw">map</span><span class="op">[</span><span class="dt">string</span><span class="op">]</span><span class="kw">interface</span><span class="op">{},</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb11-95"><a href="#cb11-95" aria-hidden="true" tabindex="-1"></a>    pluginsURL <span class="op">:=</span> c<span class="op">.</span>BaseURL<span class="op">.</span>ResolveReference<span class="op">(&amp;</span>url<span class="op">.</span>URL<span class="op">{</span>Path<span class="op">:</span> <span class="st">&quot;/api/v2/search/plugins&quot;</span><span class="op">})</span></span>
+<span id="cb11-96"><a href="#cb11-96" aria-hidden="true" tabindex="-1"></a>    resp<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>HTTPClient<span class="op">.</span>Get<span class="op">(</span>pluginsURL<span class="op">.</span>String<span class="op">())</span></span>
+<span id="cb11-97"><a href="#cb11-97" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb11-98"><a href="#cb11-98" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> err</span>
+<span id="cb11-99"><a href="#cb11-99" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-100"><a href="#cb11-100" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> resp<span class="op">.</span>Body<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb11-101"><a href="#cb11-101" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> resp<span class="op">.</span>StatusCode <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb11-102"><a href="#cb11-102" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to list plugins: %s&quot;</span><span class="op">,</span> resp<span class="op">.</span>Status<span class="op">)</span></span>
+<span id="cb11-103"><a href="#cb11-103" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-104"><a href="#cb11-104" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> plugins <span class="op">[]</span><span class="kw">map</span><span class="op">[</span><span class="dt">string</span><span class="op">]</span><span class="kw">interface</span><span class="op">{}</span></span>
+<span id="cb11-105"><a href="#cb11-105" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> json<span class="op">.</span>NewDecoder<span class="op">(</span>resp<span class="op">.</span>Body<span class="op">).</span>Decode<span class="op">(&amp;</span>plugins<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb11-106"><a href="#cb11-106" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> err</span>
+<span id="cb11-107"><a href="#cb11-107" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb11-108"><a href="#cb11-108" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> plugins<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb11-109"><a href="#cb11-109" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="torrent-management-endpoints">5.4 Torrent Management
+Endpoints</h3>
+<p><strong>File:</strong> <code>internal/client/torrents.go</code></p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> client</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;encoding/json&quot;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;fmt&quot;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/url&quot;</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/models&quot;</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="co">// GetTorrents returns a list of all torrents.</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> GetTorrents<span class="op">()</span> <span class="op">([]</span>models<span class="op">.</span>Torrent<span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    infoURL <span class="op">:=</span> c<span class="op">.</span>BaseURL<span class="op">.</span>ResolveReference<span class="op">(&amp;</span>url<span class="op">.</span>URL<span class="op">{</span>Path<span class="op">:</span> <span class="st">&quot;/api/v2/torrents/info&quot;</span><span class="op">})</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    resp<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>HTTPClient<span class="op">.</span>Get<span class="op">(</span>infoURL<span class="op">.</span>String<span class="op">())</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> err</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> resp<span class="op">.</span>Body<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> resp<span class="op">.</span>StatusCode <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;failed to get torrents: %s&quot;</span><span class="op">,</span> resp<span class="op">.</span>Status<span class="op">)</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> torrents <span class="op">[]</span>models<span class="op">.</span>Torrent</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> json<span class="op">.</span>NewDecoder<span class="op">(</span>resp<span class="op">.</span>Body<span class="op">).</span>Decode<span class="op">(&amp;</span>torrents<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> err</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> torrents<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a><span class="co">// AddTorrent adds a new torrent from URL or file.</span></span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>c <span class="op">*</span>Client<span class="op">)</span> AddTorrent<span class="op">(</span>torrentURL<span class="op">,</span> savepath<span class="op">,</span> category <span class="dt">string</span><span class="op">)</span> <span class="dt">error</span> <span class="op">{</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>    addURL <span class="op">:=</span> c<span class="op">.</span>BaseURL<span class="op">.</span>ResolveReference<span class="op">(&amp;</span>url<span class="op">.</span>URL<span class="op">{</span>Path<span class="op">:</span> <span class="st">&quot;/api/v2/torrents/add&quot;</span><span class="op">})</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>    data <span class="op">:=</span> url<span class="op">.</span>Values<span class="op">{}</span></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>    data<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;urls&quot;</span><span class="op">,</span> torrentURL<span class="op">)</span></span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> savepath <span class="op">!=</span> <span class="st">&quot;&quot;</span> <span class="op">{</span></span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>        data<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;savepath&quot;</span><span class="op">,</span> savepath<span class="op">)</span></span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> category <span class="op">!=</span> <span class="st">&quot;&quot;</span> <span class="op">{</span></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>        data<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;category&quot;</span><span class="op">,</span> category<span class="op">)</span></span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>    resp<span class="op">,</span> err <span class="op">:=</span> c<span class="op">.</span>HTTPClient<span class="op">.</span>PostForm<span class="op">(</span>addURL<span class="op">.</span>String<span class="op">(),</span> data<span class="op">)</span></span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> err</span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> resp<span class="op">.</span>Body<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> resp<span class="op">.</span>StatusCode <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;add torrent failed: %s&quot;</span><span class="op">,</span> resp<span class="op">.</span>Status<span class="op">)</span></span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ot">nil</span></span>
+<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<hr />
+<h2 id="core-business-logic-migration">6. Core Business Logic
+Migration</h2>
+<h3 id="merge-search-service">6.1 Merge Search Service</h3>
+<p><strong>Goal:</strong> Replace Python <code>asyncio.gather</code>
+with goroutines to query multiple plugins concurrently and stream
+results via SSE.</p>
+<p><strong>File:</strong>
+<code>internal/service/merge_search.go</code></p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> service</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;context&quot;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;fmt&quot;</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;sync&quot;</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;time&quot;</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/client&quot;</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/models&quot;</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/rs/zerolog/log&quot;</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> MergeSearchService <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    qbitClient <span class="op">*</span>client<span class="op">.</span>Client</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> NewMergeSearchService<span class="op">(</span>qc <span class="op">*</span>client<span class="op">.</span>Client<span class="op">)</span> <span class="op">*</span>MergeSearchService <span class="op">{</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">&amp;</span>MergeSearchService<span class="op">{</span>qbitClient<span class="op">:</span> qc<span class="op">}</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="co">// SearchResultBatch represents a batch of torrents from a tracker.</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> SearchResultBatch <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    Tracker  <span class="dt">string</span></span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>    Torrents <span class="op">[]</span>models<span class="op">.</span>Torrent</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>    Error    <span class="dt">error</span></span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="co">// Search performs concurrent searches across all specified plugins.</span></span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>s <span class="op">*</span>MergeSearchService<span class="op">)</span> Search<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> req models<span class="op">.</span>SearchRequest<span class="op">)</span> <span class="op">(&lt;-</span><span class="kw">chan</span> SearchResultBatch<span class="op">,</span> <span class="dt">error</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span><span class="op">(</span>req<span class="op">.</span>Plugins<span class="op">)</span> <span class="op">==</span> <span class="dv">0</span> <span class="op">{</span></span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="ot">nil</span><span class="op">,</span> fmt<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;no plugins specified&quot;</span><span class="op">)</span></span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a>    out <span class="op">:=</span> <span class="bu">make</span><span class="op">(</span><span class="kw">chan</span> SearchResultBatch<span class="op">,</span> <span class="bu">len</span><span class="op">(</span>req<span class="op">.</span>Plugins<span class="op">))</span></span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> wg sync<span class="op">.</span>WaitGroup</span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _<span class="op">,</span> plugin <span class="op">:=</span> <span class="kw">range</span> req<span class="op">.</span>Plugins <span class="op">{</span></span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>        wg<span class="op">.</span>Add<span class="op">(</span><span class="dv">1</span><span class="op">)</span></span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">go</span> <span class="kw">func</span><span class="op">(</span>p <span class="dt">string</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a>            <span class="cf">defer</span> wg<span class="op">.</span>Done<span class="op">()</span></span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a>            s<span class="op">.</span>searchPlugin<span class="op">(</span>ctx<span class="op">,</span> req<span class="op">,</span> p<span class="op">,</span> out<span class="op">)</span></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>        <span class="op">}(</span>plugin<span class="op">)</span></span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-46"><a href="#cb13-46" aria-hidden="true" tabindex="-1"></a>    <span class="cf">go</span> <span class="kw">func</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb13-47"><a href="#cb13-47" aria-hidden="true" tabindex="-1"></a>        wg<span class="op">.</span>Wait<span class="op">()</span></span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a>        <span class="bu">close</span><span class="op">(</span>out<span class="op">)</span></span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a>    <span class="op">}()</span></span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> out<span class="op">,</span> <span class="ot">nil</span></span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>s <span class="op">*</span>MergeSearchService<span class="op">)</span> searchPlugin<span class="op">(</span>ctx context<span class="op">.</span>Context<span class="op">,</span> req models<span class="op">.</span>SearchRequest<span class="op">,</span> plugin <span class="dt">string</span><span class="op">,</span> out <span class="kw">chan</span><span class="op">&lt;-</span> SearchResultBatch<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Create a timeout context for this plugin search</span></span>
+<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>    pluginCtx<span class="op">,</span> cancel <span class="op">:=</span> context<span class="op">.</span>WithTimeout<span class="op">(</span>ctx<span class="op">,</span> time<span class="op">.</span>Duration<span class="op">(</span>s<span class="op">.</span>qbitClient<span class="op">.</span>PluginTimeout<span class="op">)*</span>time<span class="op">.</span>Second<span class="op">)</span></span>
+<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> cancel<span class="op">()</span></span>
+<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Start search on qBittorrent</span></span>
+<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>    searchID<span class="op">,</span> err <span class="op">:=</span> s<span class="op">.</span>qbitClient<span class="op">.</span>StartSearch<span class="op">(</span>req<span class="op">.</span>Query<span class="op">,</span> <span class="op">[]</span><span class="dt">string</span><span class="op">{</span>plugin<span class="op">},</span> req<span class="op">.</span>Category<span class="op">)</span></span>
+<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a>        out <span class="op">&lt;-</span> SearchResultBatch<span class="op">{</span>Tracker<span class="op">:</span> plugin<span class="op">,</span> Error<span class="op">:</span> err<span class="op">}</span></span>
+<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> <span class="kw">func</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a>        _ <span class="op">=</span> s<span class="op">.</span>qbitClient<span class="op">.</span>StopSearch<span class="op">(</span>searchID<span class="op">)</span></span>
+<span id="cb13-67"><a href="#cb13-67" aria-hidden="true" tabindex="-1"></a>    <span class="op">}()</span></span>
+<span id="cb13-68"><a href="#cb13-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-69"><a href="#cb13-69" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Poll for results until completion or context done</span></span>
+<span id="cb13-70"><a href="#cb13-70" aria-hidden="true" tabindex="-1"></a>    ticker <span class="op">:=</span> time<span class="op">.</span>NewTicker<span class="op">(</span><span class="dv">500</span> <span class="op">*</span> time<span class="op">.</span>Millisecond<span class="op">)</span></span>
+<span id="cb13-71"><a href="#cb13-71" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> ticker<span class="op">.</span>Stop<span class="op">()</span></span>
+<span id="cb13-72"><a href="#cb13-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-73"><a href="#cb13-73" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> allTorrents <span class="op">[]</span>models<span class="op">.</span>Torrent</span>
+<span id="cb13-74"><a href="#cb13-74" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> <span class="op">{</span></span>
+<span id="cb13-75"><a href="#cb13-75" aria-hidden="true" tabindex="-1"></a>        <span class="cf">select</span> <span class="op">{</span></span>
+<span id="cb13-76"><a href="#cb13-76" aria-hidden="true" tabindex="-1"></a>        <span class="cf">case</span> <span class="op">&lt;-</span>pluginCtx<span class="op">.</span>Done<span class="op">():</span></span>
+<span id="cb13-77"><a href="#cb13-77" aria-hidden="true" tabindex="-1"></a>            out <span class="op">&lt;-</span> SearchResultBatch<span class="op">{</span>Tracker<span class="op">:</span> plugin<span class="op">,</span> Error<span class="op">:</span> pluginCtx<span class="op">.</span>Err<span class="op">()}</span></span>
+<span id="cb13-78"><a href="#cb13-78" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb13-79"><a href="#cb13-79" aria-hidden="true" tabindex="-1"></a>        <span class="cf">case</span> <span class="op">&lt;-</span>ticker<span class="op">.</span>C<span class="op">:</span></span>
+<span id="cb13-80"><a href="#cb13-80" aria-hidden="true" tabindex="-1"></a>            torrents<span class="op">,</span> total<span class="op">,</span> err <span class="op">:=</span> s<span class="op">.</span>qbitClient<span class="op">.</span>GetSearchResults<span class="op">(</span>searchID<span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="bu">len</span><span class="op">(</span>allTorrents<span class="op">))</span></span>
+<span id="cb13-81"><a href="#cb13-81" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb13-82"><a href="#cb13-82" aria-hidden="true" tabindex="-1"></a>                log<span class="op">.</span>Warn<span class="op">().</span>Err<span class="op">(</span>err<span class="op">).</span>Str<span class="op">(</span><span class="st">&quot;plugin&quot;</span><span class="op">,</span> plugin<span class="op">).</span>Msg<span class="op">(</span><span class="st">&quot;failed to fetch results&quot;</span><span class="op">)</span></span>
+<span id="cb13-83"><a href="#cb13-83" aria-hidden="true" tabindex="-1"></a>                <span class="cf">continue</span></span>
+<span id="cb13-84"><a href="#cb13-84" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb13-85"><a href="#cb13-85" aria-hidden="true" tabindex="-1"></a>            allTorrents <span class="op">=</span> <span class="bu">append</span><span class="op">(</span>allTorrents<span class="op">,</span> torrents<span class="op">...)</span></span>
+<span id="cb13-86"><a href="#cb13-86" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Send batch immediately for SSE streaming</span></span>
+<span id="cb13-87"><a href="#cb13-87" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">len</span><span class="op">(</span>torrents<span class="op">)</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">{</span></span>
+<span id="cb13-88"><a href="#cb13-88" aria-hidden="true" tabindex="-1"></a>                out <span class="op">&lt;-</span> SearchResultBatch<span class="op">{</span>Tracker<span class="op">:</span> plugin<span class="op">,</span> Torrents<span class="op">:</span> torrents<span class="op">}</span></span>
+<span id="cb13-89"><a href="#cb13-89" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb13-90"><a href="#cb13-90" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Check if search is complete (status &quot;Stopped&quot; or all results fetched)</span></span>
+<span id="cb13-91"><a href="#cb13-91" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">len</span><span class="op">(</span>allTorrents<span class="op">)</span> <span class="op">&gt;=</span> total <span class="op">||</span> total <span class="op">==</span> <span class="dv">0</span> <span class="op">{</span></span>
+<span id="cb13-92"><a href="#cb13-92" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span></span>
+<span id="cb13-93"><a href="#cb13-93" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb13-94"><a href="#cb13-94" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb13-95"><a href="#cb13-95" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb13-96"><a href="#cb13-96" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3
+id="private-tracker-bridge-webui-bridge.py-cmdwebui-bridgemain.go">6.2
+Private Tracker Bridge (<code>webui-bridge.py</code> →
+<code>cmd/webui-bridge/main.go</code>)</h3>
+<p><strong>Purpose:</strong> Handle authentication to private trackers
+and download <code>.torrent</code> files that require login.</p>
+<p><strong>File:</strong> <code>cmd/webui-bridge/main.go</code></p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> main</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;bytes&quot;</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;fmt&quot;</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;io&quot;</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http&quot;</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http/cookiejar&quot;</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/url&quot;</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;os&quot;</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;strings&quot;</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;time&quot;</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/gin-gonic/gin&quot;</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/config&quot;</span></span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> trackerAuth <span class="op">=</span> <span class="kw">map</span><span class="op">[</span><span class="dt">string</span><span class="op">]</span>config<span class="op">.</span>TrackerAuth<span class="op">{</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;iptorrents&quot;</span><span class="op">:</span> <span class="op">{</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>        LoginURL<span class="op">:</span> <span class="st">&quot;https://iptorrents.com/torrents/&quot;</span><span class="op">,</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Username/Password loaded from env</span></span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">},</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Add other trackers...</span></span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>    cfg <span class="op">:=</span> config<span class="op">.</span>Load<span class="op">()</span></span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>    r <span class="op">:=</span> gin<span class="op">.</span>Default<span class="op">()</span></span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Health endpoint</span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>GET<span class="op">(</span><span class="st">&quot;/bridge/health&quot;</span><span class="op">,</span> <span class="kw">func</span><span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusOK<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;status&quot;</span><span class="op">:</span> <span class="st">&quot;ok&quot;</span><span class="op">})</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>    <span class="op">})</span></span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Download endpoint</span></span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>GET<span class="op">(</span><span class="st">&quot;/bridge/download&quot;</span><span class="op">,</span> downloadHandler<span class="op">(</span>cfg<span class="op">))</span></span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>Run<span class="op">(</span><span class="st">&quot;:&quot;</span> <span class="op">+</span> cfg<span class="op">.</span>BridgePort<span class="op">)</span></span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> downloadHandler<span class="op">(</span>cfg <span class="op">*</span>config<span class="op">.</span>Config<span class="op">)</span> gin<span class="op">.</span>HandlerFunc <span class="op">{</span></span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">func</span><span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>        tracker <span class="op">:=</span> c<span class="op">.</span>Query<span class="op">(</span><span class="st">&quot;tracker&quot;</span><span class="op">)</span></span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>        torrentURL <span class="op">:=</span> c<span class="op">.</span>Query<span class="op">(</span><span class="st">&quot;url&quot;</span><span class="op">)</span></span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> tracker <span class="op">==</span> <span class="st">&quot;&quot;</span> <span class="op">||</span> torrentURL <span class="op">==</span> <span class="st">&quot;&quot;</span> <span class="op">{</span></span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusBadRequest<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;error&quot;</span><span class="op">:</span> <span class="st">&quot;tracker and url required&quot;</span><span class="op">})</span></span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Load tracker-specific auth</span></span>
+<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a>        auth<span class="op">,</span> ok <span class="op">:=</span> cfg<span class="op">.</span>PrivateTrackerConfig<span class="op">[</span>tracker<span class="op">]</span></span>
+<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="op">!</span>ok <span class="op">{</span></span>
+<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusNotFound<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;error&quot;</span><span class="op">:</span> <span class="st">&quot;tracker not configured&quot;</span><span class="op">})</span></span>
+<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Create HTTP client with cookie jar</span></span>
+<span id="cb14-58"><a href="#cb14-58" aria-hidden="true" tabindex="-1"></a>        jar<span class="op">,</span> _ <span class="op">:=</span> cookiejar<span class="op">.</span>New<span class="op">(</span><span class="ot">nil</span><span class="op">)</span></span>
+<span id="cb14-59"><a href="#cb14-59" aria-hidden="true" tabindex="-1"></a>        client <span class="op">:=</span> <span class="op">&amp;</span>http<span class="op">.</span>Client<span class="op">{</span></span>
+<span id="cb14-60"><a href="#cb14-60" aria-hidden="true" tabindex="-1"></a>            Jar<span class="op">:</span>     jar<span class="op">,</span></span>
+<span id="cb14-61"><a href="#cb14-61" aria-hidden="true" tabindex="-1"></a>            Timeout<span class="op">:</span> <span class="dv">30</span> <span class="op">*</span> time<span class="op">.</span>Second<span class="op">,</span></span>
+<span id="cb14-62"><a href="#cb14-62" aria-hidden="true" tabindex="-1"></a>            CheckRedirect<span class="op">:</span> <span class="kw">func</span><span class="op">(</span>req <span class="op">*</span>http<span class="op">.</span>Request<span class="op">,</span> via <span class="op">[]*</span>http<span class="op">.</span>Request<span class="op">)</span> <span class="dt">error</span> <span class="op">{</span></span>
+<span id="cb14-63"><a href="#cb14-63" aria-hidden="true" tabindex="-1"></a>                <span class="co">// Preserve cookies across redirects</span></span>
+<span id="cb14-64"><a href="#cb14-64" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span> <span class="ot">nil</span></span>
+<span id="cb14-65"><a href="#cb14-65" aria-hidden="true" tabindex="-1"></a>            <span class="op">},</span></span>
+<span id="cb14-66"><a href="#cb14-66" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-67"><a href="#cb14-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-68"><a href="#cb14-68" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Perform login</span></span>
+<span id="cb14-69"><a href="#cb14-69" aria-hidden="true" tabindex="-1"></a>        loginData <span class="op">:=</span> url<span class="op">.</span>Values<span class="op">{}</span></span>
+<span id="cb14-70"><a href="#cb14-70" aria-hidden="true" tabindex="-1"></a>        loginData<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;username&quot;</span><span class="op">,</span> auth<span class="op">.</span>Username<span class="op">)</span></span>
+<span id="cb14-71"><a href="#cb14-71" aria-hidden="true" tabindex="-1"></a>        loginData<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;password&quot;</span><span class="op">,</span> auth<span class="op">.</span>Password<span class="op">)</span></span>
+<span id="cb14-72"><a href="#cb14-72" aria-hidden="true" tabindex="-1"></a>        loginReq<span class="op">,</span> _ <span class="op">:=</span> http<span class="op">.</span>NewRequest<span class="op">(</span><span class="st">&quot;POST&quot;</span><span class="op">,</span> auth<span class="op">.</span>LoginURL<span class="op">,</span> strings<span class="op">.</span>NewReader<span class="op">(</span>loginData<span class="op">.</span>Encode<span class="op">()))</span></span>
+<span id="cb14-73"><a href="#cb14-73" aria-hidden="true" tabindex="-1"></a>        loginReq<span class="op">.</span>Header<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;Content-Type&quot;</span><span class="op">,</span> <span class="st">&quot;application/x-www-form-urlencoded&quot;</span><span class="op">)</span></span>
+<span id="cb14-74"><a href="#cb14-74" aria-hidden="true" tabindex="-1"></a>        loginReq<span class="op">.</span>Header<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;User-Agent&quot;</span><span class="op">,</span> <span class="st">&quot;Mozilla/5.0&quot;</span><span class="op">)</span></span>
+<span id="cb14-75"><a href="#cb14-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-76"><a href="#cb14-76" aria-hidden="true" tabindex="-1"></a>        loginResp<span class="op">,</span> err <span class="op">:=</span> client<span class="op">.</span>Do<span class="op">(</span>loginReq<span class="op">)</span></span>
+<span id="cb14-77"><a href="#cb14-77" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb14-78"><a href="#cb14-78" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusInternalServerError<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;error&quot;</span><span class="op">:</span> <span class="st">&quot;login failed: &quot;</span> <span class="op">+</span> err<span class="op">.</span>Error<span class="op">()})</span></span>
+<span id="cb14-79"><a href="#cb14-79" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb14-80"><a href="#cb14-80" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-81"><a href="#cb14-81" aria-hidden="true" tabindex="-1"></a>        <span class="cf">defer</span> loginResp<span class="op">.</span>Body<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb14-82"><a href="#cb14-82" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> loginResp<span class="op">.</span>StatusCode <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb14-83"><a href="#cb14-83" aria-hidden="true" tabindex="-1"></a>            body<span class="op">,</span> _ <span class="op">:=</span> io<span class="op">.</span>ReadAll<span class="op">(</span>loginResp<span class="op">.</span>Body<span class="op">)</span></span>
+<span id="cb14-84"><a href="#cb14-84" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusUnauthorized<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;error&quot;</span><span class="op">:</span> fmt<span class="op">.</span>Sprintf<span class="op">(</span><span class="st">&quot;login rejected: %s&quot;</span><span class="op">,</span> body<span class="op">)})</span></span>
+<span id="cb14-85"><a href="#cb14-85" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb14-86"><a href="#cb14-86" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-87"><a href="#cb14-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-88"><a href="#cb14-88" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Now download the torrent file</span></span>
+<span id="cb14-89"><a href="#cb14-89" aria-hidden="true" tabindex="-1"></a>        downloadReq<span class="op">,</span> _ <span class="op">:=</span> http<span class="op">.</span>NewRequest<span class="op">(</span><span class="st">&quot;GET&quot;</span><span class="op">,</span> torrentURL<span class="op">,</span> <span class="ot">nil</span><span class="op">)</span></span>
+<span id="cb14-90"><a href="#cb14-90" aria-hidden="true" tabindex="-1"></a>        downloadReq<span class="op">.</span>Header<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;User-Agent&quot;</span><span class="op">,</span> <span class="st">&quot;Mozilla/5.0&quot;</span><span class="op">)</span></span>
+<span id="cb14-91"><a href="#cb14-91" aria-hidden="true" tabindex="-1"></a>        downloadResp<span class="op">,</span> err <span class="op">:=</span> client<span class="op">.</span>Do<span class="op">(</span>downloadReq<span class="op">)</span></span>
+<span id="cb14-92"><a href="#cb14-92" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb14-93"><a href="#cb14-93" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusInternalServerError<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;error&quot;</span><span class="op">:</span> <span class="st">&quot;download failed: &quot;</span> <span class="op">+</span> err<span class="op">.</span>Error<span class="op">()})</span></span>
+<span id="cb14-94"><a href="#cb14-94" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb14-95"><a href="#cb14-95" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-96"><a href="#cb14-96" aria-hidden="true" tabindex="-1"></a>        <span class="cf">defer</span> downloadResp<span class="op">.</span>Body<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb14-97"><a href="#cb14-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-98"><a href="#cb14-98" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> downloadResp<span class="op">.</span>StatusCode <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb14-99"><a href="#cb14-99" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>JSON<span class="op">(</span>downloadResp<span class="op">.</span>StatusCode<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;error&quot;</span><span class="op">:</span> <span class="st">&quot;torrent not found&quot;</span><span class="op">})</span></span>
+<span id="cb14-100"><a href="#cb14-100" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb14-101"><a href="#cb14-101" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-102"><a href="#cb14-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-103"><a href="#cb14-103" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Stream the torrent file to the client</span></span>
+<span id="cb14-104"><a href="#cb14-104" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Header<span class="op">(</span><span class="st">&quot;Content-Disposition&quot;</span><span class="op">,</span> <span class="st">&quot;attachment; filename=torrent.torrent&quot;</span><span class="op">)</span></span>
+<span id="cb14-105"><a href="#cb14-105" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Header<span class="op">(</span><span class="st">&quot;Content-Type&quot;</span><span class="op">,</span> <span class="st">&quot;application/x-bittorrent&quot;</span><span class="op">)</span></span>
+<span id="cb14-106"><a href="#cb14-106" aria-hidden="true" tabindex="-1"></a>        _<span class="op">,</span> err <span class="op">=</span> io<span class="op">.</span>Copy<span class="op">(</span>c<span class="op">.</span>Writer<span class="op">,</span> downloadResp<span class="op">.</span>Body<span class="op">)</span></span>
+<span id="cb14-107"><a href="#cb14-107" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb14-108"><a href="#cb14-108" aria-hidden="true" tabindex="-1"></a>            log<span class="op">.</span>Error<span class="op">().</span>Err<span class="op">(</span>err<span class="op">).</span>Msg<span class="op">(</span><span class="st">&quot;failed to stream torrent file&quot;</span><span class="op">)</span></span>
+<span id="cb14-109"><a href="#cb14-109" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb14-110"><a href="#cb14-110" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb14-111"><a href="#cb14-111" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="serversent-events-sse-streaming">6.3 Server‑Sent Events (SSE)
+Streaming</h3>
+<p><strong>File:</strong>
+<code>internal/service/sse_broker.go</code></p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> service</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;fmt&quot;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;io&quot;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;sync&quot;</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/gin-gonic/gin&quot;</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/rs/zerolog/log&quot;</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> SSEBroker <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    clients <span class="kw">map</span><span class="op">[</span><span class="kw">chan</span> <span class="dt">string</span><span class="op">]</span><span class="dt">bool</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>    mu      sync<span class="op">.</span>RWMutex</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> NewSSEBroker<span class="op">()</span> <span class="op">*</span>SSEBroker <span class="op">{</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">&amp;</span>SSEBroker<span class="op">{</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>        clients<span class="op">:</span> <span class="bu">make</span><span class="op">(</span><span class="kw">map</span><span class="op">[</span><span class="kw">chan</span> <span class="dt">string</span><span class="op">]</span><span class="dt">bool</span><span class="op">),</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a><span class="co">// Subscribe adds a client channel and returns a function to unsubscribe.</span></span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>b <span class="op">*</span>SSEBroker<span class="op">)</span> Subscribe<span class="op">()</span> <span class="op">(</span><span class="kw">chan</span> <span class="dt">string</span><span class="op">,</span> <span class="kw">func</span><span class="op">())</span> <span class="op">{</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>    b<span class="op">.</span>mu<span class="op">.</span>Lock<span class="op">()</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> b<span class="op">.</span>mu<span class="op">.</span>Unlock<span class="op">()</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    ch <span class="op">:=</span> <span class="bu">make</span><span class="op">(</span><span class="kw">chan</span> <span class="dt">string</span><span class="op">,</span> <span class="dv">10</span><span class="op">)</span></span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>    b<span class="op">.</span>clients<span class="op">[</span>ch<span class="op">]</span> <span class="op">=</span> <span class="ot">true</span></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ch<span class="op">,</span> <span class="kw">func</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>        b<span class="op">.</span>mu<span class="op">.</span>Lock<span class="op">()</span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">defer</span> b<span class="op">.</span>mu<span class="op">.</span>Unlock<span class="op">()</span></span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>        <span class="bu">delete</span><span class="op">(</span>b<span class="op">.</span>clients<span class="op">,</span> ch<span class="op">)</span></span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>        <span class="bu">close</span><span class="op">(</span>ch<span class="op">)</span></span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a><span class="co">// Publish sends a message to all subscribed clients.</span></span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>b <span class="op">*</span>SSEBroker<span class="op">)</span> Publish<span class="op">(</span>event <span class="dt">string</span><span class="op">,</span> data <span class="dt">string</span><span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a>    b<span class="op">.</span>mu<span class="op">.</span>RLock<span class="op">()</span></span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> b<span class="op">.</span>mu<span class="op">.</span>RUnlock<span class="op">()</span></span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a>    msg <span class="op">:=</span> fmt<span class="op">.</span>Sprintf<span class="op">(</span><span class="st">&quot;event: %s</span><span class="ch">\n</span><span class="st">data: %s</span><span class="ch">\n\n</span><span class="st">&quot;</span><span class="op">,</span> event<span class="op">,</span> data<span class="op">)</span></span>
+<span id="cb15-42"><a href="#cb15-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ch <span class="op">:=</span> <span class="kw">range</span> b<span class="op">.</span>clients <span class="op">{</span></span>
+<span id="cb15-43"><a href="#cb15-43" aria-hidden="true" tabindex="-1"></a>        <span class="cf">select</span> <span class="op">{</span></span>
+<span id="cb15-44"><a href="#cb15-44" aria-hidden="true" tabindex="-1"></a>        <span class="cf">case</span> ch <span class="op">&lt;-</span> msg<span class="op">:</span></span>
+<span id="cb15-45"><a href="#cb15-45" aria-hidden="true" tabindex="-1"></a>        <span class="cf">default</span><span class="op">:</span></span>
+<span id="cb15-46"><a href="#cb15-46" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Client is slow, drop message</span></span>
+<span id="cb15-47"><a href="#cb15-47" aria-hidden="true" tabindex="-1"></a>            log<span class="op">.</span>Warn<span class="op">().</span>Msg<span class="op">(</span><span class="st">&quot;dropping SSE message for slow client&quot;</span><span class="op">)</span></span>
+<span id="cb15-48"><a href="#cb15-48" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb15-49"><a href="#cb15-49" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-50"><a href="#cb15-50" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb15-51"><a href="#cb15-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-52"><a href="#cb15-52" aria-hidden="true" tabindex="-1"></a><span class="co">// GinHandler returns a Gin handler that streams SSE.</span></span>
+<span id="cb15-53"><a href="#cb15-53" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> <span class="op">(</span>b <span class="op">*</span>SSEBroker<span class="op">)</span> GinHandler<span class="op">()</span> gin<span class="op">.</span>HandlerFunc <span class="op">{</span></span>
+<span id="cb15-54"><a href="#cb15-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">func</span><span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb15-55"><a href="#cb15-55" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Header<span class="op">(</span><span class="st">&quot;Content-Type&quot;</span><span class="op">,</span> <span class="st">&quot;text/event-stream&quot;</span><span class="op">)</span></span>
+<span id="cb15-56"><a href="#cb15-56" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Header<span class="op">(</span><span class="st">&quot;Cache-Control&quot;</span><span class="op">,</span> <span class="st">&quot;no-cache&quot;</span><span class="op">)</span></span>
+<span id="cb15-57"><a href="#cb15-57" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Header<span class="op">(</span><span class="st">&quot;Connection&quot;</span><span class="op">,</span> <span class="st">&quot;keep-alive&quot;</span><span class="op">)</span></span>
+<span id="cb15-58"><a href="#cb15-58" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Header<span class="op">(</span><span class="st">&quot;Access-Control-Allow-Origin&quot;</span><span class="op">,</span> <span class="st">&quot;*&quot;</span><span class="op">)</span></span>
+<span id="cb15-59"><a href="#cb15-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-60"><a href="#cb15-60" aria-hidden="true" tabindex="-1"></a>        ch<span class="op">,</span> unsubscribe <span class="op">:=</span> b<span class="op">.</span>Subscribe<span class="op">()</span></span>
+<span id="cb15-61"><a href="#cb15-61" aria-hidden="true" tabindex="-1"></a>        <span class="cf">defer</span> unsubscribe<span class="op">()</span></span>
+<span id="cb15-62"><a href="#cb15-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-63"><a href="#cb15-63" aria-hidden="true" tabindex="-1"></a>        clientGone <span class="op">:=</span> c<span class="op">.</span>Request<span class="op">.</span>Context<span class="op">().</span>Done<span class="op">()</span></span>
+<span id="cb15-64"><a href="#cb15-64" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> <span class="op">{</span></span>
+<span id="cb15-65"><a href="#cb15-65" aria-hidden="true" tabindex="-1"></a>            <span class="cf">select</span> <span class="op">{</span></span>
+<span id="cb15-66"><a href="#cb15-66" aria-hidden="true" tabindex="-1"></a>            <span class="cf">case</span> <span class="op">&lt;-</span>clientGone<span class="op">:</span></span>
+<span id="cb15-67"><a href="#cb15-67" aria-hidden="true" tabindex="-1"></a>                log<span class="op">.</span>Info<span class="op">().</span>Msg<span class="op">(</span><span class="st">&quot;SSE client disconnected&quot;</span><span class="op">)</span></span>
+<span id="cb15-68"><a href="#cb15-68" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span></span>
+<span id="cb15-69"><a href="#cb15-69" aria-hidden="true" tabindex="-1"></a>            <span class="cf">case</span> msg <span class="op">:=</span> <span class="op">&lt;-</span>ch<span class="op">:</span></span>
+<span id="cb15-70"><a href="#cb15-70" aria-hidden="true" tabindex="-1"></a>                _<span class="op">,</span> err <span class="op">:=</span> io<span class="op">.</span>WriteString<span class="op">(</span>c<span class="op">.</span>Writer<span class="op">,</span> msg<span class="op">)</span></span>
+<span id="cb15-71"><a href="#cb15-71" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb15-72"><a href="#cb15-72" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">return</span></span>
+<span id="cb15-73"><a href="#cb15-73" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb15-74"><a href="#cb15-74" aria-hidden="true" tabindex="-1"></a>                c<span class="op">.</span>Writer<span class="op">.</span>Flush<span class="op">()</span></span>
+<span id="cb15-75"><a href="#cb15-75" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb15-76"><a href="#cb15-76" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb15-77"><a href="#cb15-77" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb15-78"><a href="#cb15-78" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<hr />
+<h2 id="http-api-endpoints-with-gin">7. HTTP API Endpoints with Gin</h2>
+<h3 id="main-application-setup">7.1 Main Application Setup</h3>
+<p><strong>File:</strong> <code>cmd/qbittorrent-proxy/main.go</code></p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> main</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;context&quot;</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;encoding/json&quot;</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http&quot;</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;time&quot;</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/gin-gonic/gin&quot;</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/api&quot;</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/client&quot;</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/config&quot;</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/middleware&quot;</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/models&quot;</span></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/service&quot;</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/rs/zerolog/log&quot;</span></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    cfg <span class="op">:=</span> config<span class="op">.</span>Load<span class="op">()</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Initialize qBittorrent client</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    qbitClient<span class="op">,</span> err <span class="op">:=</span> client<span class="op">.</span>NewClient<span class="op">(</span>cfg<span class="op">.</span>QBittorrentURL<span class="op">,</span> cfg<span class="op">.</span>QBittorrentUsername<span class="op">,</span> cfg<span class="op">.</span>QBittorrentPassword<span class="op">)</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>        log<span class="op">.</span>Fatal<span class="op">().</span>Err<span class="op">(</span>err<span class="op">).</span>Msg<span class="op">(</span><span class="st">&quot;failed to connect to qBittorrent&quot;</span><span class="op">)</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Initialize services</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>    searchService <span class="op">:=</span> service<span class="op">.</span>NewMergeSearchService<span class="op">(</span>qbitClient<span class="op">)</span></span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>    sseBroker <span class="op">:=</span> service<span class="op">.</span>NewSSEBroker<span class="op">()</span></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Gin router</span></span>
+<span id="cb16-33"><a href="#cb16-33" aria-hidden="true" tabindex="-1"></a>    r <span class="op">:=</span> gin<span class="op">.</span>Default<span class="op">()</span></span>
+<span id="cb16-34"><a href="#cb16-34" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>Use<span class="op">(</span>middleware<span class="op">.</span>CORS<span class="op">())</span></span>
+<span id="cb16-35"><a href="#cb16-35" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>Use<span class="op">(</span>middleware<span class="op">.</span>Logger<span class="op">())</span></span>
+<span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Health check</span></span>
+<span id="cb16-38"><a href="#cb16-38" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>GET<span class="op">(</span><span class="st">&quot;/health&quot;</span><span class="op">,</span> <span class="kw">func</span><span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-39"><a href="#cb16-39" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusOK<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;status&quot;</span><span class="op">:</span> <span class="st">&quot;ok&quot;</span><span class="op">})</span></span>
+<span id="cb16-40"><a href="#cb16-40" aria-hidden="true" tabindex="-1"></a>    <span class="op">})</span></span>
+<span id="cb16-41"><a href="#cb16-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-42"><a href="#cb16-42" aria-hidden="true" tabindex="-1"></a>    <span class="co">// API v1 group</span></span>
+<span id="cb16-43"><a href="#cb16-43" aria-hidden="true" tabindex="-1"></a>    v1 <span class="op">:=</span> r<span class="op">.</span>Group<span class="op">(</span><span class="st">&quot;/api/v1&quot;</span><span class="op">)</span></span>
+<span id="cb16-44"><a href="#cb16-44" aria-hidden="true" tabindex="-1"></a>    <span class="op">{</span></span>
+<span id="cb16-45"><a href="#cb16-45" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Search endpoint with SSE streaming</span></span>
+<span id="cb16-46"><a href="#cb16-46" aria-hidden="true" tabindex="-1"></a>        v1<span class="op">.</span>POST<span class="op">(</span><span class="st">&quot;/search&quot;</span><span class="op">,</span> <span class="kw">func</span><span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb16-47"><a href="#cb16-47" aria-hidden="true" tabindex="-1"></a>            <span class="kw">var</span> req models<span class="op">.</span>SearchRequest</span>
+<span id="cb16-48"><a href="#cb16-48" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> err <span class="op">:=</span> c<span class="op">.</span>ShouldBindJSON<span class="op">(&amp;</span>req<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb16-49"><a href="#cb16-49" aria-hidden="true" tabindex="-1"></a>                c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusBadRequest<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;error&quot;</span><span class="op">:</span> err<span class="op">.</span>Error<span class="op">()})</span></span>
+<span id="cb16-50"><a href="#cb16-50" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span></span>
+<span id="cb16-51"><a href="#cb16-51" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb16-52"><a href="#cb16-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-53"><a href="#cb16-53" aria-hidden="true" tabindex="-1"></a>            <span class="co">// Set up SSE</span></span>
+<span id="cb16-54"><a href="#cb16-54" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>Header<span class="op">(</span><span class="st">&quot;Content-Type&quot;</span><span class="op">,</span> <span class="st">&quot;text/event-stream&quot;</span><span class="op">)</span></span>
+<span id="cb16-55"><a href="#cb16-55" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>Header<span class="op">(</span><span class="st">&quot;Cache-Control&quot;</span><span class="op">,</span> <span class="st">&quot;no-cache&quot;</span><span class="op">)</span></span>
+<span id="cb16-56"><a href="#cb16-56" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>Header<span class="op">(</span><span class="st">&quot;Connection&quot;</span><span class="op">,</span> <span class="st">&quot;keep-alive&quot;</span><span class="op">)</span></span>
+<span id="cb16-57"><a href="#cb16-57" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>Writer<span class="op">.</span>Flush<span class="op">()</span></span>
+<span id="cb16-58"><a href="#cb16-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-59"><a href="#cb16-59" aria-hidden="true" tabindex="-1"></a>            ctx<span class="op">,</span> cancel <span class="op">:=</span> context<span class="op">.</span>WithTimeout<span class="op">(</span>c<span class="op">.</span>Request<span class="op">.</span>Context<span class="op">(),</span> time<span class="op">.</span>Duration<span class="op">(</span>cfg<span class="op">.</span>SSETimeout<span class="op">)*</span>time<span class="op">.</span>Second<span class="op">)</span></span>
+<span id="cb16-60"><a href="#cb16-60" aria-hidden="true" tabindex="-1"></a>            <span class="cf">defer</span> cancel<span class="op">()</span></span>
+<span id="cb16-61"><a href="#cb16-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-62"><a href="#cb16-62" aria-hidden="true" tabindex="-1"></a>            results<span class="op">,</span> err <span class="op">:=</span> searchService<span class="op">.</span>Search<span class="op">(</span>ctx<span class="op">,</span> req<span class="op">)</span></span>
+<span id="cb16-63"><a href="#cb16-63" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb16-64"><a href="#cb16-64" aria-hidden="true" tabindex="-1"></a>                sseBroker<span class="op">.</span>Publish<span class="op">(</span><span class="st">&quot;error&quot;</span><span class="op">,</span> err<span class="op">.</span>Error<span class="op">())</span></span>
+<span id="cb16-65"><a href="#cb16-65" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span></span>
+<span id="cb16-66"><a href="#cb16-66" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb16-67"><a href="#cb16-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-68"><a href="#cb16-68" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> batch <span class="op">:=</span> <span class="kw">range</span> results <span class="op">{</span></span>
+<span id="cb16-69"><a href="#cb16-69" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> batch<span class="op">.</span>Error <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb16-70"><a href="#cb16-70" aria-hidden="true" tabindex="-1"></a>                    sseBroker<span class="op">.</span>Publish<span class="op">(</span><span class="st">&quot;error&quot;</span><span class="op">,</span> batch<span class="op">.</span>Error<span class="op">.</span>Error<span class="op">())</span></span>
+<span id="cb16-71"><a href="#cb16-71" aria-hidden="true" tabindex="-1"></a>                    <span class="cf">continue</span></span>
+<span id="cb16-72"><a href="#cb16-72" aria-hidden="true" tabindex="-1"></a>                <span class="op">}</span></span>
+<span id="cb16-73"><a href="#cb16-73" aria-hidden="true" tabindex="-1"></a>                data<span class="op">,</span> _ <span class="op">:=</span> json<span class="op">.</span>Marshal<span class="op">(</span>batch<span class="op">)</span></span>
+<span id="cb16-74"><a href="#cb16-74" aria-hidden="true" tabindex="-1"></a>                sseBroker<span class="op">.</span>Publish<span class="op">(</span><span class="st">&quot;results&quot;</span><span class="op">,</span> <span class="dt">string</span><span class="op">(</span>data<span class="op">))</span></span>
+<span id="cb16-75"><a href="#cb16-75" aria-hidden="true" tabindex="-1"></a>                c<span class="op">.</span>Writer<span class="op">.</span>Flush<span class="op">()</span></span>
+<span id="cb16-76"><a href="#cb16-76" aria-hidden="true" tabindex="-1"></a>            <span class="op">}</span></span>
+<span id="cb16-77"><a href="#cb16-77" aria-hidden="true" tabindex="-1"></a>            sseBroker<span class="op">.</span>Publish<span class="op">(</span><span class="st">&quot;done&quot;</span><span class="op">,</span> <span class="st">&quot;{}&quot;</span><span class="op">)</span></span>
+<span id="cb16-78"><a href="#cb16-78" aria-hidden="true" tabindex="-1"></a>        <span class="op">})</span></span>
+<span id="cb16-79"><a href="#cb16-79" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-80"><a href="#cb16-80" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Hook management endpoints (stub)</span></span>
+<span id="cb16-81"><a href="#cb16-81" aria-hidden="true" tabindex="-1"></a>        hooks <span class="op">:=</span> v1<span class="op">.</span>Group<span class="op">(</span><span class="st">&quot;/hooks&quot;</span><span class="op">)</span></span>
+<span id="cb16-82"><a href="#cb16-82" aria-hidden="true" tabindex="-1"></a>        <span class="op">{</span></span>
+<span id="cb16-83"><a href="#cb16-83" aria-hidden="true" tabindex="-1"></a>            hooks<span class="op">.</span>GET<span class="op">(</span><span class="st">&quot;&quot;</span><span class="op">,</span> api<span class="op">.</span>ListHooks<span class="op">)</span></span>
+<span id="cb16-84"><a href="#cb16-84" aria-hidden="true" tabindex="-1"></a>            hooks<span class="op">.</span>POST<span class="op">(</span><span class="st">&quot;&quot;</span><span class="op">,</span> api<span class="op">.</span>CreateHook<span class="op">)</span></span>
+<span id="cb16-85"><a href="#cb16-85" aria-hidden="true" tabindex="-1"></a>            hooks<span class="op">.</span>DELETE<span class="op">(</span><span class="st">&quot;/:id&quot;</span><span class="op">,</span> api<span class="op">.</span>DeleteHook<span class="op">)</span></span>
+<span id="cb16-86"><a href="#cb16-86" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb16-87"><a href="#cb16-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-88"><a href="#cb16-88" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Private tracker bridge proxy (if needed)</span></span>
+<span id="cb16-89"><a href="#cb16-89" aria-hidden="true" tabindex="-1"></a>        v1<span class="op">.</span>GET<span class="op">(</span><span class="st">&quot;/bridge/download&quot;</span><span class="op">,</span> api<span class="op">.</span>ProxyBridgeDownload<span class="op">(</span>cfg<span class="op">))</span></span>
+<span id="cb16-90"><a href="#cb16-90" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-91"><a href="#cb16-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-92"><a href="#cb16-92" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Start server</span></span>
+<span id="cb16-93"><a href="#cb16-93" aria-hidden="true" tabindex="-1"></a>    log<span class="op">.</span>Info<span class="op">().</span>Str<span class="op">(</span><span class="st">&quot;port&quot;</span><span class="op">,</span> cfg<span class="op">.</span>ServerPort<span class="op">).</span>Msg<span class="op">(</span><span class="st">&quot;starting server&quot;</span><span class="op">)</span></span>
+<span id="cb16-94"><a href="#cb16-94" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> r<span class="op">.</span>Run<span class="op">(</span><span class="st">&quot;:&quot;</span> <span class="op">+</span> cfg<span class="op">.</span>ServerPort<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb16-95"><a href="#cb16-95" aria-hidden="true" tabindex="-1"></a>        log<span class="op">.</span>Fatal<span class="op">().</span>Err<span class="op">(</span>err<span class="op">).</span>Msg<span class="op">(</span><span class="st">&quot;server failed&quot;</span><span class="op">)</span></span>
+<span id="cb16-96"><a href="#cb16-96" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb16-97"><a href="#cb16-97" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="hook-handlers-example">7.2 Hook Handlers Example</h3>
+<p><strong>File:</strong> <code>internal/api/hooks.go</code></p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> api</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http&quot;</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/gin-gonic/gin&quot;</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/models&quot;</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="kw">var</span> hooksStore <span class="op">=</span> <span class="bu">make</span><span class="op">(</span><span class="kw">map</span><span class="op">[</span><span class="dt">string</span><span class="op">]</span>models<span class="op">.</span>Hook<span class="op">)</span> <span class="co">// In production, use a database</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> ListHooks<span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    hooks <span class="op">:=</span> <span class="bu">make</span><span class="op">([]</span>models<span class="op">.</span>Hook<span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="bu">len</span><span class="op">(</span>hooksStore<span class="op">))</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _<span class="op">,</span> h <span class="op">:=</span> <span class="kw">range</span> hooksStore <span class="op">{</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>        hooks <span class="op">=</span> <span class="bu">append</span><span class="op">(</span>hooks<span class="op">,</span> h<span class="op">)</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusOK<span class="op">,</span> hooks<span class="op">)</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> CreateHook<span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> hook models<span class="op">.</span>Hook</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">:=</span> c<span class="op">.</span>ShouldBindJSON<span class="op">(&amp;</span>hook<span class="op">);</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusBadRequest<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;error&quot;</span><span class="op">:</span> err<span class="op">.</span>Error<span class="op">()})</span></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a>    hook<span class="op">.</span>ID <span class="op">=</span> generateID<span class="op">()</span></span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>    hook<span class="op">.</span>Enabled <span class="op">=</span> <span class="ot">true</span></span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>    hooksStore<span class="op">[</span>hook<span class="op">.</span>ID<span class="op">]</span> <span class="op">=</span> hook</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>    c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusCreated<span class="op">,</span> hook<span class="op">)</span></span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> DeleteHook<span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>    id <span class="op">:=</span> c<span class="op">.</span>Param<span class="op">(</span><span class="st">&quot;id&quot;</span><span class="op">)</span></span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> _<span class="op">,</span> ok <span class="op">:=</span> hooksStore<span class="op">[</span>id<span class="op">];</span> <span class="op">!</span>ok <span class="op">{</span></span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>JSON<span class="op">(</span>http<span class="op">.</span>StatusNotFound<span class="op">,</span> gin<span class="op">.</span>H<span class="op">{</span><span class="st">&quot;error&quot;</span><span class="op">:</span> <span class="st">&quot;hook not found&quot;</span><span class="op">})</span></span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span></span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a>    <span class="bu">delete</span><span class="op">(</span>hooksStore<span class="op">,</span> id<span class="op">)</span></span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a>    c<span class="op">.</span>Status<span class="op">(</span>http<span class="op">.</span>StatusNoContent<span class="op">)</span></span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<hr />
+<h2 id="middleware-crosscutting-concerns">8. Middleware &amp;
+Cross‑Cutting Concerns</h2>
+<h3 id="cors-middleware">8.1 CORS Middleware</h3>
+<p><strong>File:</strong> <code>internal/middleware/cors.go</code></p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> middleware</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="st">&quot;github.com/gin-gonic/gin&quot;</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> CORS<span class="op">()</span> gin<span class="op">.</span>HandlerFunc <span class="op">{</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">func</span><span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Writer<span class="op">.</span>Header<span class="op">().</span>Set<span class="op">(</span><span class="st">&quot;Access-Control-Allow-Origin&quot;</span><span class="op">,</span> <span class="st">&quot;*&quot;</span><span class="op">)</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Writer<span class="op">.</span>Header<span class="op">().</span>Set<span class="op">(</span><span class="st">&quot;Access-Control-Allow-Credentials&quot;</span><span class="op">,</span> <span class="st">&quot;true&quot;</span><span class="op">)</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Writer<span class="op">.</span>Header<span class="op">().</span>Set<span class="op">(</span><span class="st">&quot;Access-Control-Allow-Headers&quot;</span><span class="op">,</span> <span class="st">&quot;Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With&quot;</span><span class="op">)</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Writer<span class="op">.</span>Header<span class="op">().</span>Set<span class="op">(</span><span class="st">&quot;Access-Control-Allow-Methods&quot;</span><span class="op">,</span> <span class="st">&quot;POST, OPTIONS, GET, PUT, DELETE&quot;</span><span class="op">)</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> c<span class="op">.</span>Request<span class="op">.</span>Method <span class="op">==</span> <span class="st">&quot;OPTIONS&quot;</span> <span class="op">{</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>            c<span class="op">.</span>AbortWithStatus<span class="op">(</span><span class="dv">204</span><span class="op">)</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Next<span class="op">()</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="structured-logging-with-zerolog">8.2 Structured Logging with
+Zerolog</h3>
+<p><strong>File:</strong>
+<code>internal/middleware/logging.go</code></p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> middleware</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;time&quot;</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/gin-gonic/gin&quot;</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/rs/zerolog/log&quot;</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> Logger<span class="op">()</span> gin<span class="op">.</span>HandlerFunc <span class="op">{</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">func</span><span class="op">(</span>c <span class="op">*</span>gin<span class="op">.</span>Context<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>        start <span class="op">:=</span> time<span class="op">.</span>Now<span class="op">()</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>        path <span class="op">:=</span> c<span class="op">.</span>Request<span class="op">.</span>URL<span class="op">.</span>Path</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>        raw <span class="op">:=</span> c<span class="op">.</span>Request<span class="op">.</span>URL<span class="op">.</span>RawQuery</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>        c<span class="op">.</span>Next<span class="op">()</span></span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>        latency <span class="op">:=</span> time<span class="op">.</span>Since<span class="op">(</span>start<span class="op">)</span></span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> raw <span class="op">!=</span> <span class="st">&quot;&quot;</span> <span class="op">{</span></span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>            path <span class="op">=</span> path <span class="op">+</span> <span class="st">&quot;?&quot;</span> <span class="op">+</span> raw</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>        log<span class="op">.</span>Info<span class="op">().</span></span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>            Str<span class="op">(</span><span class="st">&quot;method&quot;</span><span class="op">,</span> c<span class="op">.</span>Request<span class="op">.</span>Method<span class="op">).</span></span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>            Str<span class="op">(</span><span class="st">&quot;path&quot;</span><span class="op">,</span> path<span class="op">).</span></span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>            Int<span class="op">(</span><span class="st">&quot;status&quot;</span><span class="op">,</span> c<span class="op">.</span>Writer<span class="op">.</span>Status<span class="op">()).</span></span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>            Dur<span class="op">(</span><span class="st">&quot;latency&quot;</span><span class="op">,</span> latency<span class="op">).</span></span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>            Str<span class="op">(</span><span class="st">&quot;client_ip&quot;</span><span class="op">,</span> c<span class="op">.</span>ClientIP<span class="op">()).</span></span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>            Msg<span class="op">(</span><span class="st">&quot;request&quot;</span><span class="op">)</span></span>
+<span id="cb19-30"><a href="#cb19-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb19-31"><a href="#cb19-31" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<hr />
+<h2 id="testing-strategy-implementation">9. Testing Strategy &amp;
+Implementation</h2>
+<h3 id="unit-tests-for-qbittorrent-client">9.1 Unit Tests for
+qBittorrent Client</h3>
+<p><strong>File:</strong>
+<code>internal/client/client_test.go</code></p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> client</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http&quot;</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http/httptest&quot;</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;testing&quot;</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> TestLogin<span class="op">(</span>t <span class="op">*</span>testing<span class="op">.</span>T<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>    server <span class="op">:=</span> httptest<span class="op">.</span>NewServer<span class="op">(</span>http<span class="op">.</span>HandlerFunc<span class="op">(</span><span class="kw">func</span><span class="op">(</span>w http<span class="op">.</span>ResponseWriter<span class="op">,</span> r <span class="op">*</span>http<span class="op">.</span>Request<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> r<span class="op">.</span>URL<span class="op">.</span>Path <span class="op">==</span> <span class="st">&quot;/api/v2/auth/login&quot;</span> <span class="op">&amp;&amp;</span> r<span class="op">.</span>Method <span class="op">==</span> <span class="st">&quot;POST&quot;</span> <span class="op">{</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>            http<span class="op">.</span>SetCookie<span class="op">(</span>w<span class="op">,</span> <span class="op">&amp;</span>http<span class="op">.</span>Cookie<span class="op">{</span>Name<span class="op">:</span> <span class="st">&quot;SID&quot;</span><span class="op">,</span> Value<span class="op">:</span> <span class="st">&quot;test-sid&quot;</span><span class="op">})</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>            w<span class="op">.</span>WriteHeader<span class="op">(</span>http<span class="op">.</span>StatusOK<span class="op">)</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">return</span></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">}</span></span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>        w<span class="op">.</span>WriteHeader<span class="op">(</span>http<span class="op">.</span>StatusNotFound<span class="op">)</span></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    <span class="op">}))</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">defer</span> server<span class="op">.</span>Close<span class="op">()</span></span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    client<span class="op">,</span> err <span class="op">:=</span> NewClient<span class="op">(</span>server<span class="op">.</span>URL<span class="op">,</span> <span class="st">&quot;user&quot;</span><span class="op">,</span> <span class="st">&quot;pass&quot;</span><span class="op">)</span></span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> err <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>        t<span class="op">.</span>Fatalf<span class="op">(</span><span class="st">&quot;expected no error, got %v&quot;</span><span class="op">,</span> err<span class="op">)</span></span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">!</span>client<span class="op">.</span>IsAuthenticated<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>        t<span class="op">.</span>Error<span class="op">(</span><span class="st">&quot;expected client to be authenticated&quot;</span><span class="op">)</span></span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="integration-test-for-search-flow">9.2 Integration Test for
+Search Flow</h3>
+<p><strong>File:</strong> <code>internal/api/search_test.go</code></p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">package</span> api</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="op">(</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;bytes&quot;</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;encoding/json&quot;</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http&quot;</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;net/http/httptest&quot;</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;testing&quot;</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/gin-gonic/gin&quot;</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;github.com/milos85vasic/qBitTorrent-go/internal/models&quot;</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="op">)</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> TestSearchEndpoint<span class="op">(</span>t <span class="op">*</span>testing<span class="op">.</span>T<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    gin<span class="op">.</span>SetMode<span class="op">(</span>gin<span class="op">.</span>TestMode<span class="op">)</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    r <span class="op">:=</span> gin<span class="op">.</span>Default<span class="op">()</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">// ... setup dependencies and routes</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    body<span class="op">,</span> _ <span class="op">:=</span> json<span class="op">.</span>Marshal<span class="op">(</span>models<span class="op">.</span>SearchRequest<span class="op">{</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>        Query<span class="op">:</span>   <span class="st">&quot;linux&quot;</span><span class="op">,</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>        Plugins<span class="op">:</span> <span class="op">[]</span><span class="dt">string</span><span class="op">{</span><span class="st">&quot;all&quot;</span><span class="op">},</span></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    <span class="op">})</span></span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>    req<span class="op">,</span> _ <span class="op">:=</span> http<span class="op">.</span>NewRequest<span class="op">(</span><span class="st">&quot;POST&quot;</span><span class="op">,</span> <span class="st">&quot;/api/v1/search&quot;</span><span class="op">,</span> bytes<span class="op">.</span>NewReader<span class="op">(</span>body<span class="op">))</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    req<span class="op">.</span>Header<span class="op">.</span>Set<span class="op">(</span><span class="st">&quot;Content-Type&quot;</span><span class="op">,</span> <span class="st">&quot;application/json&quot;</span><span class="op">)</span></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>    w <span class="op">:=</span> httptest<span class="op">.</span>NewRecorder<span class="op">()</span></span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>ServeHTTP<span class="op">(</span>w<span class="op">,</span> req<span class="op">)</span></span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> w<span class="op">.</span>Code <span class="op">!=</span> http<span class="op">.</span>StatusOK <span class="op">{</span></span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>        t<span class="op">.</span>Errorf<span class="op">(</span><span class="st">&quot;expected 200, got %d&quot;</span><span class="op">,</span> w<span class="op">.</span>Code<span class="op">)</span></span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Additional SSE parsing tests...</span></span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="run-tests">9.3 Run Tests</h3>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> test ./... <span class="at">-v</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> test <span class="at">-race</span> ./...</span></code></pre></div>
+<hr />
+<h2 id="docker-deployment-configuration">10. Docker &amp; Deployment
+Configuration</h2>
+<h3 id="multistage-dockerfile">10.1 Multi‑Stage Dockerfile</h3>
+<p><strong>File:</strong> <code>Dockerfile</code></p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build stage</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> golang:1.23-alpine <span class="kw">AS</span> builder</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> go.mod go.sum ./</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">go</span> mod download</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> . .</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="va">CGO_ENABLED</span><span class="op">=</span>0 <span class="va">GOOS</span><span class="op">=</span>linux <span class="ex">go</span> build <span class="at">-o</span> /qbittorrent-proxy ./cmd/qbittorrent-proxy</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="va">CGO_ENABLED</span><span class="op">=</span>0 <span class="va">GOOS</span><span class="op">=</span>linux <span class="ex">go</span> build <span class="at">-o</span> /webui-bridge ./cmd/webui-bridge</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Final stage</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> alpine:3.19</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apk</span> <span class="at">--no-cache</span> add ca-certificates tzdata</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> <span class="op">--from=builder</span> /qbittorrent-proxy .</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> <span class="op">--from=builder</span> /webui-bridge .</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> .env.example .env</span>
+<span id="cb23-17"><a href="#cb23-17" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 7187 7188</span>
+<span id="cb23-18"><a href="#cb23-18" aria-hidden="true" tabindex="-1"></a><span class="kw">CMD</span> [<span class="st">&quot;/app/qbittorrent-proxy&quot;</span>]</span></code></pre></div>
+<h3 id="docker-compose">10.2 Docker Compose</h3>
+<p><strong>File:</strong> <code>docker-compose.yml</code></p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">&#39;3.8&#39;</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">services</span><span class="kw">:</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">qbittorrent</span><span class="kw">:</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">image</span><span class="kw">:</span><span class="at"> linuxserver/qbittorrent:latest</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> qbittorrent</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> PUID=1000</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> PGID=1000</span></span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> TZ=Europe/London</span></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> WEBUI_PORT=8080</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> ./config/qbittorrent:/config</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> ./downloads:/downloads</span></span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> ./plugins:/config/qBittorrent/nova3/engines</span></span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ports</span><span class="kw">:</span></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;8080:8080&quot;</span></span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;6881:6881&quot;</span></span>
+<span id="cb24-18"><a href="#cb24-18" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;6881:6881/udp&quot;</span></span>
+<span id="cb24-19"><a href="#cb24-19" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span>
+<span id="cb24-20"><a href="#cb24-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-21"><a href="#cb24-21" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">backend</span><span class="kw">:</span></span>
+<span id="cb24-22"><a href="#cb24-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">build</span><span class="kw">:</span><span class="at"> .</span></span>
+<span id="cb24-23"><a href="#cb24-23" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> qbittorrent-proxy</span></span>
+<span id="cb24-24"><a href="#cb24-24" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ports</span><span class="kw">:</span></span>
+<span id="cb24-25"><a href="#cb24-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;7187:7187&quot;</span></span>
+<span id="cb24-26"><a href="#cb24-26" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;7188:7188&quot;</span></span>
+<span id="cb24-27"><a href="#cb24-27" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb24-28"><a href="#cb24-28" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> QBITTORRENT_URL=http://qbittorrent:8080</span></span>
+<span id="cb24-29"><a href="#cb24-29" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> QBITTORRENT_USERNAME=admin</span></span>
+<span id="cb24-30"><a href="#cb24-30" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> QBITTORRENT_PASSWORD=adminadmin</span></span>
+<span id="cb24-31"><a href="#cb24-31" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">depends_on</span><span class="kw">:</span></span>
+<span id="cb24-32"><a href="#cb24-32" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> qbittorrent</span></span>
+<span id="cb24-33"><a href="#cb24-33" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb24-34"><a href="#cb24-34" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> ./plugins:/plugins:ro</span></span>
+<span id="cb24-35"><a href="#cb24-35" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span>
+<span id="cb24-36"><a href="#cb24-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-37"><a href="#cb24-37" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">frontend</span><span class="kw">:</span></span>
+<span id="cb24-38"><a href="#cb24-38" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">build</span><span class="kw">:</span><span class="at"> ./frontend</span></span>
+<span id="cb24-39"><a href="#cb24-39" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> qbittorrent-frontend</span></span>
+<span id="cb24-40"><a href="#cb24-40" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">ports</span><span class="kw">:</span></span>
+<span id="cb24-41"><a href="#cb24-41" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="st">&quot;80:80&quot;</span></span>
+<span id="cb24-42"><a href="#cb24-42" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">depends_on</span><span class="kw">:</span></span>
+<span id="cb24-43"><a href="#cb24-43" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> backend</span></span>
+<span id="cb24-44"><a href="#cb24-44" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span></code></pre></div>
+<h3 id="update-start.sh">10.3 Update <code>start.sh</code></h3>
+<p>The existing <code>start.sh</code> script should be updated to build
+the Go binaries and Docker images. Example snippet:</p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;Building Go backend...&quot;</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> build <span class="at">-o</span> bin/qbittorrent-proxy ./cmd/qbittorrent-proxy</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> build <span class="at">-o</span> bin/webui-bridge ./cmd/webui-bridge</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;Building Angular frontend...&quot;</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npm</span> install <span class="kw">&amp;&amp;</span> <span class="ex">npm</span> run build <span class="at">--prod</span> <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> ..</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;Starting services with Docker Compose...&quot;</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="ex">docker-compose</span> up <span class="at">-d</span> <span class="at">--build</span></span></code></pre></div>
+<hr />
+<h2 id="plugin-system-compatibility-assurance">11. Plugin System
+Compatibility Assurance</h2>
+<h3 id="how-plugins-are-called">11.1 How Plugins Are Called</h3>
+<p>The Go backend <strong>does not execute</strong> the Python Nova3
+plugins. It delegates all search tasks to the qBittorrent client via its
+Web API. The qBittorrent client has its own Python interpreter and runs
+the plugins exactly as before.</p>
+<h3 id="verification-steps">11.2 Verification Steps</h3>
+<ol type="1">
+<li><strong>List plugins</strong> via Go backend:
+<code>GET /api/v2/search/plugins</code> (proxied to qBittorrent).</li>
+<li><strong>Start a search</strong> with
+<code>POST /api/v1/search</code> – this internally calls qBittorrent’s
+<code>/api/v2/search/start</code>.</li>
+<li><strong>Observe results</strong> – the SSE stream contains torrents
+parsed by the plugins.</li>
+</ol>
+<h3 id="plugin-installation">11.3 Plugin Installation</h3>
+<p>The <code>install-plugin.sh</code> script remains unchanged. It
+copies plugin files into the volume mounted to qBittorrent’s
+<code>nova3/engines</code> directory. The Go backend does not
+interfere.</p>
+<h3 id="edge-cases">11.4 Edge Cases</h3>
+<ul>
+<li><strong>Private trackers requiring login</strong>: The
+<code>webui-bridge</code> service handles authentication and provides a
+download endpoint. The Go backend proxies download requests to this
+bridge.</li>
+<li><strong>Plugin timeouts</strong>: The Go service respects the
+<code>PLUGIN_TIMEOUT</code> environment variable and cancels the context
+if a plugin hangs.</li>
+</ul>
+<hr />
+<h2 id="postmigration-validation-checklist">12. Post‑Migration
+Validation Checklist</h2>
+<table>
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 20%" />
+<col style="width: 70%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Item</th>
+<th>Verification Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>All <code>/api/v1/*</code> endpoints respond with expected status
+codes</td>
+<td>Run <code>curl</code> against each endpoint</td>
+</tr>
+<tr>
+<td>2</td>
+<td>SSE search stream delivers results from multiple trackers</td>
+<td>Use browser EventSource or <code>curl -N</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Hook registration and triggering works</td>
+<td>Register a test webhook and verify payload</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Private tracker downloads succeed</td>
+<td>Test with a configured tracker (e.g., IPT)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Angular frontend loads and interacts correctly</td>
+<td>Manual UI testing</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Existing Nova3 plugins are listed and used</td>
+<td>Check search results contain expected tracker names</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Logs are structured and contain correlation IDs</td>
+<td>Inspect Docker logs</td>
+</tr>
+<tr>
+<td>8</td>
+<td>No memory leaks or goroutine leaks under load</td>
+<td>Run with <code>pprof</code> and monitor</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Docker images build successfully</td>
+<td><code>docker-compose build</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Environment variables are correctly parsed</td>
+<td>Add debug endpoint to dump config</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="appendix-filebyfile-migration-map">13. Appendix: File‑by‑File
+Migration Map</h2>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 42%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Python File</th>
+<th>Go Equivalent</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main.py</code></td>
+<td><code>cmd/qbittorrent-proxy/main.go</code></td>
+<td>Gin router setup, service wiring</td>
+</tr>
+<tr>
+<td><code>app/api/search.py</code></td>
+<td><code>internal/api/search.go</code> (and
+<code>service/merge_search.go</code>)</td>
+<td>SSE streaming, concurrent plugin calls</td>
+</tr>
+<tr>
+<td><code>app/api/hooks.py</code></td>
+<td><code>internal/api/hooks.go</code></td>
+<td>CRUD for webhooks</td>
+</tr>
+<tr>
+<td><code>app/api/bridge.py</code></td>
+<td><code>cmd/webui-bridge/main.go</code></td>
+<td>Private tracker auth &amp; download</td>
+</tr>
+<tr>
+<td><code>app/models/*.py</code></td>
+<td><code>internal/models/*.go</code></td>
+<td>Structs with JSON tags</td>
+</tr>
+<tr>
+<td><code>app/core/config.py</code></td>
+<td><code>internal/config/config.go</code></td>
+<td>Environment loading with godotenv</td>
+</tr>
+<tr>
+<td><code>webui-bridge.py</code></td>
+<td><code>cmd/webui-bridge/main.go</code></td>
+<td>Standalone microservice</td>
+</tr>
+<tr>
+<td><code>requirements.txt</code></td>
+<td><code>go.mod</code></td>
+<td>Dependency management</td>
+</tr>
+<tr>
+<td><code>openapi.json</code></td>
+<td>N/A (source of truth)</td>
+<td>Used for API contract validation</td>
+</tr>
+<tr>
+<td><code>start.sh</code></td>
+<td><code>scripts/build.sh</code> + updated <code>start.sh</code></td>
+<td>Build and orchestrate</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><strong>End of Migration Guide</strong></p>
+<p>This document provides a complete, actionable plan. Follow each
+section sequentially, and refer to the file map and code examples to
+ensure every line of Python logic is translated into Go. The result will
+be a performant, maintainable backend that works seamlessly with your
+existing Angular frontend and qBittorrent plugins.</p>

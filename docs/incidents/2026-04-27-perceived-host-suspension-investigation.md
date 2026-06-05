@@ -1,5 +1,8 @@
 # 2026-04-27 — "Perceived host suspension" investigation
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 ## TL;DR
 
 User reported the host appeared to suspend / log out / hibernate during a long

@@ -1,0 +1,199 @@
+<h1 id="observability">Observability</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>The Prometheus + Grafana stack lives in
+<code>docker-compose.quality.yml</code> under the
+<code>observability</code> profile. It is <strong>opt-in</strong> and
+does not run as part of the product’s two-container topology
+(constitution Principle I — see <a
+href="QUALITY_STACK.md"><code>QUALITY_STACK.md</code></a> for the
+rationale).</p>
+<h2 id="stack">Stack</h2>
+<pre><code>prometheus          image: prom/prometheus:latest
+                    profile: observability
+                    port: 127.0.0.1:9090 (UI + scrape)
+                    retention: 7 days
+                    config: observability/prometheus.yml
+
+grafana             image: grafana/grafana-oss:latest
+                    profile: observability
+                    port: 127.0.0.1:3000
+                    dashboards: observability/dashboards/
+                    datasources: observability/datasources/
+                    default auth: admin / ${GRAFANA_PASSWORD:-admin}</code></pre>
+<p>Both bind to <code>127.0.0.1</code> only — not exposed to the LAN by
+default.</p>
+<h2 id="starting-the-stack">Starting the stack</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Bring the stack up alongside the product</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE_CMD</span> <span class="at">-f</span> docker-compose.yml <span class="at">-f</span> docker-compose.quality.yml <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>             <span class="at">--profile</span> observability up <span class="at">-d</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Stop only the observability services (product stays running)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE_CMD</span> <span class="at">-f</span> docker-compose.quality.yml <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>             <span class="at">--profile</span> observability down</span></code></pre></div>
+<p><code>$COMPOSE_CMD</code> is the runtime-detected binary
+(<code>podman compose</code> / <code>docker compose</code>) — see
+<code>start.sh</code> for the detection logic.</p>
+<h2 id="viewing-dashboards">Viewing dashboards</h2>
+<ol type="1">
+<li>Start the stack as above.</li>
+<li>Browse to http://127.0.0.1:3000.</li>
+<li>Log in with <code>admin</code> / <code>admin</code> (or the value of
+<code>GRAFANA_PASSWORD</code>).</li>
+<li>Open the pre-provisioned <strong>“Merge Search Service”</strong>
+dashboard (UID: <code>qbit-merge-search</code>, source:
+<code>observability/dashboards/merge-search.json</code>).</li>
+</ol>
+<p>Dashboards are auto-provisioned via
+<code>observability/dashboards/default.yml</code> and re-read on
+restart.</p>
+<h2 id="metric-names">Metric names</h2>
+<p>The merge service exposes Prometheus metrics at
+<code>GET /metrics</code> on port 7187 (Phase 6 wires the scrape config
+— until then the Grafana dashboard charts a static sample). Names:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Type</th>
+<th>Labels</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qbit_merge_active_searches</code></td>
+<td>gauge</td>
+<td>—</td>
+<td>Searches currently running through the orchestrator</td>
+</tr>
+<tr>
+<td><code>qbit_merge_tracker_requests_total</code></td>
+<td>counter</td>
+<td><code>tracker</code>, <code>outcome</code></td>
+<td>Per-tracker request counter, outcome ∈ {success, error,
+timeout}</td>
+</tr>
+<tr>
+<td><code>qbit_merge_search_duration_seconds_bucket</code></td>
+<td>histogram</td>
+<td>—</td>
+<td>End-to-end search latency distribution</td>
+</tr>
+<tr>
+<td><code>qbit_merge_circuit_breaker_state</code></td>
+<td>gauge</td>
+<td><code>tracker</code></td>
+<td>Circuit-breaker state per tracker; 0=closed, 1=half-open,
+2=open</td>
+</tr>
+</tbody>
+</table>
+<p>The pre-provisioned dashboard panels:</p>
+<ol type="1">
+<li><strong>Active searches</strong> (stat) —
+<code>qbit_merge_active_searches</code></li>
+<li><strong>Tracker requests per second</strong> (timeseries) —
+<code>rate(qbit_merge_tracker_requests_total[1m])</code> legend
+<code>{{tracker}}</code></li>
+<li><strong>Search duration p95</strong> (timeseries) —
+<code>histogram_quantile(0.95, sum by (le)(rate(qbit_merge_search_duration_seconds_bucket[5m])))</code></li>
+<li><strong>Circuit breakers</strong> (stat grid) —
+<code>qbit_merge_circuit_breaker_state</code> grouped by
+<code>tracker</code></li>
+</ol>
+<p>Inspect <code>observability/dashboards/merge-search.json</code> for
+the full panel definitions.</p>
+<h2 id="prometheus-scrape-config">Prometheus scrape config</h2>
+<p><code>observability/prometheus.yml</code> declares the merge service
+as a scrape target at <code>localhost:7187/metrics</code>. Scrape
+interval: 15 s.</p>
+<h2 id="how-tests-assert-metric-existence">How tests assert metric
+existence</h2>
+<p><code>tests/observability/</code> (pending Phase 6) asserts:</p>
+<ol type="1">
+<li><code>GET /metrics</code> returns 200 with
+<code>text/plain; version=0.0.4</code>.</li>
+<li>Every metric name in the table above appears in the response
+body.</li>
+<li>The <code>/metrics</code> endpoint is NOT CORS-exposed (should 403
+from a different origin).</li>
+<li>Scraping the metric while a search is in flight shows
+<code>qbit_merge_active_searches &gt; 0</code>.</li>
+</ol>
+<p>Until Phase 6 lands the tests directory is empty and the
+observability stack runs against a stub.</p>
+<h2 id="opentelemetry">OpenTelemetry</h2>
+<p><strong>Pending.</strong> The plan introduces OpenTelemetry tracing
+that exports to the Grafana Tempo datasource. Status: not yet
+implemented.</p>
+<h2 id="logging">Logging</h2>
+<p><code>download-proxy/src/main.py</code> configures the Python stdlib
+logger:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>logging.basicConfig(level<span class="op">=</span>logging.INFO,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                    <span class="bu">format</span><span class="op">=</span><span class="st">&quot;</span><span class="sc">%(asctime)s</span><span class="st"> - </span><span class="sc">%(levelname)s</span><span class="st"> - </span><span class="sc">%(message)s</span><span class="st">&quot;</span>)</span></code></pre></div>
+<p>No structured logging framework today. Phase 6 target: switch to
+<code>structlog</code> with JSON output for ingestion by Loki.</p>
+<h2 id="healthchecks">Healthchecks</h2>
+<p>Separate from metrics but operationally relevant:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Service</th>
+<th>Endpoint</th>
+<th>Interval</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qbittorrent</code></td>
+<td><code>curl -sf http://localhost:7185/</code></td>
+<td>30 s</td>
+</tr>
+<tr>
+<td><code>qbittorrent-proxy</code></td>
+<td><code>curl -sf http://localhost:7186/</code></td>
+<td>30 s</td>
+</tr>
+<tr>
+<td>Merge service</td>
+<td><code>GET http://localhost:7187/health</code></td>
+<td>fixture-gated</td>
+</tr>
+<tr>
+<td><code>webui-bridge.py</code></td>
+<td><code>GET http://localhost:7188/health</code></td>
+<td>fixture-gated</td>
+</tr>
+</tbody>
+</table>
+<p>Integration tests rely on these (see
+<code>tests/fixtures/services.py</code>).</p>
+<h2 id="gotchas">Gotchas</h2>
+<ul>
+<li>Prometheus retention is <strong>7 days</strong>. Longer history
+requires an upstream like Thanos or Mimir.</li>
+<li>Grafana dashboards read from
+<code>./observability/dashboards/</code> — edit the JSON in-place and
+restart Grafana to pick up changes.</li>
+<li>If <code>GRAFANA_PASSWORD</code> / <code>SONAR_DB_PASSWORD</code> /
+<code>SNYK_TOKEN</code> are unset, the quality compose file still comes
+up but the relevant service either uses its default (“admin”) or skips
+(snyk container exits 0).</li>
+<li>Tests that assert <code>qbit_merge_active_searches &gt; 0</code>
+must hold a reference to the in-flight search so it does not complete
+before the assertion.</li>
+</ul>

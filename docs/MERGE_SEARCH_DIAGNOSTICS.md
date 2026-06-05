@@ -1,5 +1,8 @@
 # Merge-Search Diagnostics
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 This document explains how the merge service reports per-tracker failures
 so operators can distinguish "nothing wrong, niche board has no hits for
 this query" from "upstream is dead" from "plugin is crashing."

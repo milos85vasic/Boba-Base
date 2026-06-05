@@ -1,0 +1,737 @@
+<h1 id="qbittorrent-fixed-user-manual">qBitTorrent-Fixed User
+Manual</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<h2 id="complete-guide-to-using-all-12-search-plugins">Complete Guide to
+Using All 12 Search Plugins</h2>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#quick-start">Quick Start</a></li>
+<li><a href="#plugin-overview">Plugin Overview</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#using-the-webui">Using the WebUI</a></li>
+<li><a href="#using-private-trackers">Using Private Trackers</a></li>
+<li><a href="#merge-search-service">Merge Search Service</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#testing">Testing</a></li>
+<li><a href="#faq">FAQ</a></li>
+</ol>
+<hr />
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="installation">1. Installation</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clone and setup</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/yourusername/qBitTorrent-Fixed.git</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> qBitTorrent-Fixed</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Run automated setup</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">./setup.sh</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Configure credentials (optional, for private trackers)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ex">vim</span> .env</span></code></pre></div>
+<h3 id="start-everything">2. Start Everything</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Terminal 1: Start qBittorrent</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Terminal 2: Start WebUI Bridge (for private trackers)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> webui-bridge.py</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Access WebUI</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ex">http://localhost:7186</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Login: admin / admin</span></span></code></pre></div>
+<h4 id="go-backend-optional">Go Backend (Optional)</h4>
+<p>The Go/Gin backend replaces the Python FastAPI merge service and
+webui-bridge:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Start with Go backend instead of Python</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> compose <span class="at">--profile</span> go up <span class="at">-d</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Or build and run locally</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> qBitTorrent-go <span class="kw">&amp;&amp;</span> <span class="ex">./scripts/build.sh</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="ex">./qbittorrent-proxy</span>   <span class="co"># Starts merge service on port 7187</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="ex">./webui-bridge</span>        <span class="co"># Starts bridge on port 7188</span></span></code></pre></div>
+<h3 id="verify-installation">3. Verify Installation</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run all tests</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./run-all-tests.sh</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check plugin status</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> tests/final_verification.py</span></code></pre></div>
+<hr />
+<h2 id="plugin-overview">Plugin Overview</h2>
+<h3 id="public-trackers-9-plugins">Public Trackers (9 plugins)</h3>
+<p>These work immediately without configuration:</p>
+<table>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Content Type</th>
+<th>WebUI</th>
+<th>Magnet Links</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>The Pirate Bay</strong></td>
+<td>General</td>
+<td>✅</td>
+<td>✅</td>
+<td>Most popular</td>
+</tr>
+<tr>
+<td><strong>EZTV</strong></td>
+<td>TV Shows</td>
+<td>✅</td>
+<td>✅</td>
+<td>Best for TV</td>
+</tr>
+<tr>
+<td><strong>Rutor</strong></td>
+<td>Russian</td>
+<td>✅</td>
+<td>✅</td>
+<td>Russian content</td>
+</tr>
+<tr>
+<td><strong>LimeTorrents</strong></td>
+<td>General</td>
+<td>✅</td>
+<td>❌</td>
+<td>Verified torrents</td>
+</tr>
+<tr>
+<td><strong>Solid Torrents</strong></td>
+<td>General</td>
+<td>✅</td>
+<td>✅</td>
+<td>Fast search</td>
+</tr>
+<tr>
+<td><strong>TorrentProject</strong></td>
+<td>General</td>
+<td>✅</td>
+<td>❌</td>
+<td>Comprehensive</td>
+</tr>
+<tr>
+<td><strong>torrents-csv</strong></td>
+<td>General</td>
+<td>✅</td>
+<td>✅</td>
+<td>Open database</td>
+</tr>
+<tr>
+<td><strong>TorLock</strong></td>
+<td>General</td>
+<td>✅</td>
+<td>✅</td>
+<td>No fake torrents</td>
+</tr>
+<tr>
+<td><strong>Jackett</strong></td>
+<td>Meta</td>
+<td>✅</td>
+<td>❌</td>
+<td>Aggregates multiple</td>
+</tr>
+</tbody>
+</table>
+<h3 id="private-trackers-3-plugins">Private Trackers (3 plugins)</h3>
+<p>These require credentials:</p>
+<table>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Content Type</th>
+<th>Credentials Required</th>
+<th>Best For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RuTracker</strong></td>
+<td>Russian</td>
+<td>Username/Password</td>
+<td>Russian content</td>
+</tr>
+<tr>
+<td><strong>Kinozal</strong></td>
+<td>Movies/TV</td>
+<td>Username/Password</td>
+<td>Movies and TV</td>
+</tr>
+<tr>
+<td><strong>NNMClub</strong></td>
+<td>General</td>
+<td>Cookies</td>
+<td>General content</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="configuration">Configuration</h2>
+<h3 id="setting-up-credentials">Setting Up Credentials</h3>
+<p>Edit <code>.env</code> file:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Public trackers (no configuration needed)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Private trackers (optional, for WebUI support)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="va">RUTRACKER_USERNAME</span><span class="op">=</span>your_rutracker_username</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="va">RUTRACKER_PASSWORD</span><span class="op">=</span>your_rutracker_password</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="va">KINOZAL_USERNAME</span><span class="op">=</span>your_kinozal_username</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="va">KINOZAL_PASSWORD</span><span class="op">=</span>your_kinozal_password</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># For NNMClub, get cookies from browser:</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Login to nnmclub.to in browser</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Open developer tools (F12)</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Go to Application/Storage &gt; Cookies</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Copy uid and pass cookies</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="va">NNMCLUB_COOKIES</span><span class="op">=</span><span class="st">&quot;uid=123456; pass=abcdef1234567890abcdef1234567890&quot;</span></span></code></pre></div>
+<h3 id="environment-variables">Environment Variables</h3>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 28%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QBITTORRENT_DATA_DIR</code></td>
+<td><code>/mnt/DATA</code></td>
+<td>Download directory</td>
+</tr>
+<tr>
+<td><code>QBITTORRENT_HOST</code></td>
+<td><code>localhost</code></td>
+<td>qBittorrent host</td>
+</tr>
+<tr>
+<td><code>QBITTORRENT_PORT</code></td>
+<td><code>7185</code></td>
+<td>qBittorrent WebUI port</td>
+</tr>
+<tr>
+<td><code>MERGE_SERVICE_PORT</code></td>
+<td><code>7187</code></td>
+<td>Merge Search Service port</td>
+</tr>
+<tr>
+<td><code>MERGE_SERVICE_HOST</code></td>
+<td><code>0.0.0.0</code></td>
+<td>Merge service bind address</td>
+</tr>
+<tr>
+<td><code>PROXY_PORT</code></td>
+<td><code>7186</code></td>
+<td>Download proxy port</td>
+</tr>
+<tr>
+<td><code>BRIDGE_PORT</code></td>
+<td><code>7188</code></td>
+<td>WebUI Bridge port</td>
+</tr>
+<tr>
+<td><code>LOG_LEVEL</code></td>
+<td><code>INFO</code></td>
+<td>Logging level</td>
+</tr>
+<tr>
+<td><code>ALLOWED_ORIGINS</code></td>
+<td>—</td>
+<td>CORS origins (comma-separated, no wildcards in prod)</td>
+</tr>
+<tr>
+<td><code>MAX_CONCURRENT_SEARCHES</code></td>
+<td><code>5</code></td>
+<td>Concurrent tracker search cap</td>
+</tr>
+<tr>
+<td><code>DISABLE_THEME_INJECTION</code></td>
+<td>—</td>
+<td>Set to <code>1</code> to disable cross-app theme</td>
+</tr>
+<tr>
+<td><code>OMDB_API_KEY</code></td>
+<td>—</td>
+<td>OMDb metadata API key</td>
+</tr>
+<tr>
+<td><code>TMDB_API_KEY</code></td>
+<td>—</td>
+<td>TMDB metadata API key</td>
+</tr>
+<tr>
+<td><code>ANILIST_CLIENT_ID</code></td>
+<td>—</td>
+<td>AniList API client ID</td>
+</tr>
+</tbody>
+</table>
+<h3 id="install-paths">Install Paths</h3>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>config/qBittorrent/</code></td>
+<td>qBittorrent configuration (auto-created by container)</td>
+</tr>
+<tr>
+<td><code>config/qBittorrent/nova3/engines/</code></td>
+<td>Search plugin engine files</td>
+</tr>
+<tr>
+<td><code>config/download-proxy/</code></td>
+<td>Download proxy config + hooks</td>
+</tr>
+<tr>
+<td><code>config/merge-service/</code></td>
+<td>Scheduler persistence (<code>scheduling.json</code>)</td>
+</tr>
+<tr>
+<td><code>plugins/</code></td>
+<td>Plugin source of truth (canonical)</td>
+</tr>
+<tr>
+<td><code>plugins/community/</code></td>
+<td>Non-canonical/community plugins</td>
+</tr>
+<tr>
+<td><code>frontend/</code></td>
+<td>Angular 21 dashboard source</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cli-flags">CLI Flags</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span> <span class="at">-p</span>       <span class="co"># Pull images before starting</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span> <span class="at">-s</span>       <span class="co"># Show container status after starting</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span> <span class="at">-v</span>       <span class="co"># Verbose output</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span> <span class="at">-r</span>        <span class="co"># Remove containers after stopping</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span> <span class="at">--purge</span>   <span class="co"># Remove containers AND images</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./ci.sh</span>             <span class="co"># Full CI pipeline</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="ex">./ci.sh</span> <span class="at">--quick</span>     <span class="co"># Syntax + unit tests only</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="ex">./ci.sh</span> <span class="at">--tests-only</span> <span class="co"># Skip syntax checks</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/run-tests.sh</span> hermetic  <span class="co"># Fast tests (no services)</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/run-tests.sh</span> live      <span class="co"># Tests requiring running containers</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/run-tests.sh</span> all       <span class="co"># Everything</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/scan.sh</span> <span class="at">--all</span>          <span class="co"># Run all security scanners</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/scan.sh</span> pip-audit ruff <span class="co"># Run specific scanners</span></span></code></pre></div>
+<h3 id="plugin-installation">Plugin Installation</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--all</span>              <span class="co"># Install all plugins</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> rutracker rutor    <span class="co"># Install specific plugins</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--verify</span>           <span class="co"># Verify all plugins installed</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--local</span> <span class="at">--all</span>      <span class="co"># Install for desktop app</span></span></code></pre></div>
+<p>Plugins are copied from <code>plugins/X.py</code> →
+<code>config/qBittorrent/nova3/engines/X.py</code>. Always edit the
+source in <code>plugins/</code> — the engines directory is clobbered on
+reinstall.</p>
+<hr />
+<h2 id="using-the-webui">Using the WebUI</h2>
+<h3 id="basic-search">Basic Search</h3>
+<ol type="1">
+<li>Open <code>http://localhost:7186</code></li>
+<li>Login with admin/admin</li>
+<li>Click “Search” tab</li>
+<li>Enter search term (e.g., “ubuntu”)</li>
+<li>Select plugin from dropdown</li>
+<li>Click “Search”</li>
+</ol>
+<h3 id="downloading-torrents">Downloading Torrents</h3>
+<h4 id="public-trackers-piratebay-eztv-etc.">Public Trackers (PirateBay,
+EZTV, etc.)</h4>
+<ol type="1">
+<li>Search for content</li>
+<li>Click download icon (⬇️)</li>
+<li>Torrent appears in Transfer list</li>
+<li>Download starts automatically</li>
+</ol>
+<h4 id="private-trackers-rutracker-kinozal-nnmclub">Private Trackers
+(RuTracker, Kinozal, NNMClub)</h4>
+<p><strong>Option A: Using WebUI Bridge (Recommended)</strong></p>
+<ol type="1">
+<li>Start WebUI Bridge: <code>python3 webui-bridge.py</code></li>
+<li>Search for content</li>
+<li>Click download icon</li>
+<li>Bridge handles authentication automatically</li>
+</ol>
+<p><strong>Option B: Using Desktop App</strong></p>
+<ol type="1">
+<li>Install plugins locally:
+<code>./install-plugin.sh --local --all</code></li>
+<li>Open qBittorrent Desktop App</li>
+<li>Go to View → Search Engine</li>
+<li>Downloads work without bridge</li>
+</ol>
+<p><strong>Option C: Manual Download</strong></p>
+<ol type="1">
+<li>Search in WebUI</li>
+<li>Note the torrent name</li>
+<li>Go to tracker website directly</li>
+<li>Download .torrent file</li>
+<li>Upload to qBittorrent WebUI</li>
+</ol>
+<hr />
+<h2 id="using-private-trackers">Using Private Trackers</h2>
+<h3 id="rutracker">RuTracker</h3>
+<p><strong>Requirements:</strong> - Active account on rutracker.org -
+Valid username and password</p>
+<p><strong>Setup:</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add to .env</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">RUTRACKER_USERNAME</span><span class="op">=</span>your_username</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="va">RUTRACKER_PASSWORD</span><span class="op">=</span>your_password</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Restart container</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="ex">./restart.sh</span></span></code></pre></div>
+<p><strong>Usage:</strong> 1. Enable RuTracker in Search Plugins 2.
+Search for Russian content 3. Click download (works with WebUI
+Bridge)</p>
+<p><strong>Tips:</strong> - RuTracker has the best Russian content -
+Very reliable for software and movies - Works best with WebUI Bridge</p>
+<h3 id="kinozal">Kinozal</h3>
+<p><strong>Requirements:</strong> - Active account on kinozal.tv - Valid
+username and password</p>
+<p><strong>Setup:</strong></p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Add to .env</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="va">KINOZAL_USERNAME</span><span class="op">=</span>your_username</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="va">KINOZAL_PASSWORD</span><span class="op">=</span>your_password</span></code></pre></div>
+<p><strong>Usage:</strong> 1. Enable Kinozal in Search Plugins 2. Search
+for movies/TV shows 3. Works with WebUI Bridge</p>
+<h3 id="nnmclub">NNMClub</h3>
+<p><strong>Requirements:</strong> - Active account on nnmclub.to -
+Cookie-based authentication</p>
+<p><strong>Setup:</strong></p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get cookies from browser</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Add to .env</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="va">NNMCLUB_COOKIES</span><span class="op">=</span><span class="st">&quot;uid=your_uid; pass=your_pass_hash&quot;</span></span></code></pre></div>
+<p><strong>Getting Cookies:</strong> 1. Login to nnmclub.to in browser
+2. Press F12 (Developer Tools) 3. Go to Application/Storage → Cookies 4.
+Find <code>uid</code> and <code>pass</code> cookies 5. Copy values to
+.env</p>
+<hr />
+<h2 id="merge-search-service">Merge Search Service</h2>
+<p>The Merge Search Service is a unified search interface that queries
+multiple private trackers simultaneously, deduplicates results, and
+presents them in a single dashboard.</p>
+<h3 id="what-it-does">What It Does</h3>
+<ul>
+<li>Searches <strong>RuTracker</strong>, <strong>Kinozal</strong>, and
+<strong>NNMClub</strong> in parallel</li>
+<li>Deduplicates results that appear on multiple trackers</li>
+<li>Detects quality tags (e.g., 1080p, 4K, WEB-DL, Blu-ray)
+automatically</li>
+<li>Proxied downloads handle authentication cookies transparently</li>
+</ul>
+<h3 id="accessing-the-dashboard">Accessing the Dashboard</h3>
+<p>Open your browser to:</p>
+<pre><code>http://localhost:7187/</code></pre>
+<p>The dashboard runs inside the <code>qbittorrent-proxy</code>
+container and is available whenever containers are running. With the Go
+backend (<code>--profile go</code>), the same dashboard is served by the
+Go binary.</p>
+<h3 id="dashboard-usage">Dashboard Usage</h3>
+<ol type="1">
+<li><strong>Search</strong> — Enter a query and press Search. Results
+from all configured trackers appear in a single list.</li>
+<li><strong>Download</strong> — Click the download button on any result.
+The proxy intercepts the tracker URL and fetches the .torrent file using
+stored credentials.</li>
+<li><strong>Active Torrents</strong> — The dashboard shows currently
+active downloads from the qBittorrent instance.</li>
+</ol>
+<h3 id="api-endpoints-power-users">API Endpoints (Power Users)</h3>
+<table>
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 25%" />
+<col style="width: 41%" />
+</colgroup>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/search?q=&lt;query&gt;</code></td>
+<td>GET</td>
+<td>Search all configured trackers</td>
+</tr>
+<tr>
+<td><code>/api/search?q=&lt;query&gt;&amp;tracker=rutracker</code></td>
+<td>GET</td>
+<td>Search a specific tracker</td>
+</tr>
+<tr>
+<td><code>/api/download</code></td>
+<td>POST</td>
+<td>Download a torrent by URL</td>
+</tr>
+<tr>
+<td><code>/api/torrents/active</code></td>
+<td>GET</td>
+<td>List active downloads</td>
+</tr>
+<tr>
+<td><code>/api/health</code></td>
+<td>GET</td>
+<td>Service health check</td>
+</tr>
+</tbody>
+</table>
+<p>Example:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="st">&quot;http://localhost:7187/api/search?q=ubuntu&amp;tracker=rutracker&quot;</span></span></code></pre></div>
+<h3 id="configuration-1">Configuration</h3>
+<p>The merge service uses the same environment variables as the plugins.
+Set these in <code>.env</code>:</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="va">RUTRACKER_USERNAME</span><span class="op">=</span>your_username</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="va">RUTRACKER_PASSWORD</span><span class="op">=</span>your_password</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="va">KINOZAL_USERNAME</span><span class="op">=</span>your_username</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="va">KINOZAL_PASSWORD</span><span class="op">=</span>your_password</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="va">NNMCLUB_COOKIES</span><span class="op">=</span><span class="st">&quot;uid=123456; pass=abcdef1234567890&quot;</span></span></code></pre></div>
+<p>Restart containers after changing credentials:
+<code>./stop.sh -r &amp;&amp; ./start.sh</code></p>
+<h3 id="quality-detection">Quality Detection</h3>
+<p>The service automatically detects quality tags from torrent
+names:</p>
+<ul>
+<li><strong>Resolution</strong>: 4K, 2160p, 1080p, 720p, 480p</li>
+<li><strong>Source</strong>: Blu-ray, WEB-DL, WEBRip, HDTV, CAM, TS</li>
+<li><strong>Codec</strong>: HEVC, H.265, H.264, x265, x264</li>
+<li><strong>Audio</strong>: Atmos, DTS-HD, DTS, AAC, FLAC</li>
+</ul>
+<p>Results are tagged and can be filtered by quality in the
+dashboard.</p>
+<h3 id="known-limitations">Known Limitations</h3>
+<ul>
+<li><strong>Credentials required</strong> — RuTracker and Kinozal need
+valid username/password. NNMClub needs browser cookies. Trackers without
+configured credentials are skipped.</li>
+<li><strong>RuTracker CAPTCHA</strong> — If RuTracker presents a
+CAPTCHA, login will fail. Solve it in a browser first, then retry.</li>
+<li><strong>Rate limiting</strong> — Tracker websites may rate-limit
+frequent requests. The service includes basic throttling.</li>
+<li><strong>No public trackers</strong> — The merge service only covers
+private trackers. Use the qBittorrent search tab for public tracker
+plugins.</li>
+</ul>
+<hr />
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="issue-plugin-not-showing-in-webui">Issue: Plugin Not Showing in
+WebUI</h3>
+<p><strong>Solution:</strong></p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--all</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> restart qbittorrent</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Hard refresh browser (Ctrl+Shift+R)</span></span></code></pre></div>
+<h3 id="issue-download-doesnt-start-private-trackers">Issue: Download
+Doesn’t Start (Private Trackers)</h3>
+<p><strong>Cause:</strong> WebUI bypasses authentication</p>
+<p><strong>Solutions:</strong></p>
+<ol type="1">
+<li><p><strong>Use WebUI Bridge (Recommended)</strong></p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> webui-bridge.py</span></code></pre></div></li>
+<li><p><strong>Use Desktop App</strong></p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--local</span> <span class="at">--all</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Then use Desktop App</span></span></code></pre></div></li>
+<li><p><strong>Check Credentials</strong></p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> .env</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify username/password are correct</span></span></code></pre></div></li>
+</ol>
+<h3 id="issue-search-returns-no-results">Issue: Search Returns No
+Results</h3>
+<p><strong>Check:</strong> 1. Internet connection 2. Plugin is enabled
+in Search tab 3. Try different search terms 4. Check container logs:
+<code>podman logs qbittorrent</code> 5. Check proxy logs:
+<code>podman logs qbittorrent-proxy</code> 6. Verify tracker
+credentials: <code>curl http://localhost:7187/health</code></p>
+<h3 id="issue-merge-service-returns-503">Issue: Merge Service Returns
+503</h3>
+<p><strong>Cause:</strong> Service shutting down or not started</p>
+<p><strong>Check:</strong></p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> logs qbittorrent-proxy <span class="kw">|</span> <span class="fu">tail</span> <span class="at">-20</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> http://localhost:7187/health</span></code></pre></div>
+<h3 id="issue-cors-errors-in-browser-console">Issue: CORS Errors in
+Browser Console</h3>
+<p><strong>Fix:</strong> Set <code>ALLOWED_ORIGINS</code> in
+<code>.env</code>:</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="va">ALLOWED_ORIGINS</span><span class="op">=</span>http://localhost:4200,http://localhost:7187</span></code></pre></div>
+<h3 id="issue-column-data-shows-zeros">Issue: Column Data Shows
+Zeros</h3>
+<p><strong>Status:</strong> Fixed in this version. All plugins return
+real data for seeds, leech, and size.</p>
+<h3 id="issue-container-wont-start">Issue: Container Won’t Start</h3>
+<p><strong>Solution:</strong></p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Full reset</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span> <span class="at">-r</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> system prune <span class="at">-f</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span></span></code></pre></div>
+<h3 id="issue-rutracker-login-fails-captcha">Issue: RuTracker Login
+Fails (CAPTCHA)</h3>
+<p><strong>Fix:</strong> Solve the CAPTCHA in a browser first, then
+retry. Cookies expire periodically.</p>
+<h3 id="issue-security-scan-failures">Issue: Security Scan Failures</h3>
+<p><strong>Fix:</strong> Run scanners individually to identify the
+issue:</p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/scan.sh</span> pip-audit ruff</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Check artifacts/scans/ for SARIF reports</span></span></code></pre></div>
+<hr />
+<h2 id="testing">Testing</h2>
+<h3 id="run-all-tests">Run All Tests</h3>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Comprehensive test suite</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./run-all-tests.sh</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Individual tests</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ tests/e2e/ <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> tests/final_verification.py</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
+<h3 id="test-results">Test Results</h3>
+<p>Tests cover: - ✅ Plugin structure validation - ✅ Search
+functionality - ✅ Download functionality - ✅ Column data validation
+(seeds, leech, size) - ✅ Authentication handling</p>
+<p>Expected result: <strong>100% success rate</strong></p>
+<hr />
+<h2 id="faq">FAQ</h2>
+<h3 id="q-why-create-a-fork-instead-of-fixing-upstream">Q: Why create a
+fork instead of fixing upstream?</h3>
+<p><strong>A:</strong> The WebUI limitation is in qBittorrent’s core
+design. This fork provides a working solution while maintaining
+compatibility.</p>
+<h3 id="q-do-i-need-to-run-webui-bridge">Q: Do I need to run WebUI
+Bridge?</h3>
+<p><strong>A:</strong> Only if you want to use private trackers
+(RuTracker, Kinozal, NNMClub) in WebUI. Public trackers work without
+it.</p>
+<h3 id="q-is-this-legal">Q: Is this legal?</h3>
+<p><strong>A:</strong> The software itself is legal (Apache 2.0
+license). Usage depends on your local laws and the content you
+download.</p>
+<h3 id="q-will-this-break-with-qbittorrent-updates">Q: Will this break
+with qBittorrent updates?</h3>
+<p><strong>A:</strong> The plugin API is stable. Updates to qBittorrent
+should not break functionality.</p>
+<h3 id="q-can-i-add-more-plugins">Q: Can I add more plugins?</h3>
+<p><strong>A:</strong> Yes! See <code>docs/PLUGINS.md</code> for adding
+custom plugins.</p>
+<h3 id="q-why-does-rutracker-work-in-desktop-app-but-not-webui">Q: Why
+does RuTracker work in Desktop App but not WebUI?</h3>
+<p><strong>A:</strong> Desktop App uses nova2dl.py with authentication.
+WebUI sends URLs directly without auth. The WebUI Bridge fixes this.</p>
+<h3 id="q-how-do-i-update-plugins">Q: How do I update plugins?</h3>
+<p><strong>A:</strong></p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--all</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./restart.sh</span></span></code></pre></div>
+<h3 id="q-where-are-downloads-saved">Q: Where are downloads saved?</h3>
+<p><strong>A:</strong> Default: <code>/mnt/DATA</code> (configurable in
+<code>.env</code>)</p>
+<p>Structure:</p>
+<pre><code>/mnt/DATA/
+├── Incomplete/          # Partial downloads
+├── Torrents/
+│   ├── All/            # All .torrent files
+│   └── Completed/      # Completed .torrent files
+└── [completed files]   # Finished downloads</code></pre>
+<hr />
+<h2 id="advanced-topics">Advanced Topics</h2>
+<h3 id="custom-plugin-development">Custom Plugin Development</h3>
+<p>See <code>docs/PLUGIN_DEVELOPMENT.md</code> for creating custom
+search plugins.</p>
+<h3 id="webui-bridge-configuration">WebUI Bridge Configuration</h3>
+<p>Edit <code>webui-bridge.py</code>:</p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>QBITTORRENT_HOST <span class="op">=</span> <span class="st">&#39;localhost&#39;</span>  <span class="co"># Change if remote</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>QBITTORRENT_PORT <span class="op">=</span> <span class="dv">7186</span>         <span class="co"># WebUI port</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>BRIDGE_PORT <span class="op">=</span> <span class="dv">7188</span>              <span class="co"># Bridge port</span></span></code></pre></div>
+<h3 id="backup-and-restore">Backup and Restore</h3>
+<p><strong>Backup:</strong></p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Config</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> czf qbittorrent-backup-<span class="va">$(</span><span class="fu">date</span> +%Y%m%d<span class="va">)</span>.tar.gz config/</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Plugins</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> czf plugins-backup-<span class="va">$(</span><span class="fu">date</span> +%Y%m%d<span class="va">)</span>.tar.gz plugins/</span></code></pre></div>
+<p><strong>Restore:</strong></p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> xzf qbittorrent-backup-YYYYMMDD.tar.gz</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tar</span> xzf plugins-backup-YYYYMMDD.tar.gz</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./restart.sh</span></span></code></pre></div>
+<hr />
+<h2 id="support">Support</h2>
+<h3 id="getting-help">Getting Help</h3>
+<ol type="1">
+<li><strong>Documentation:</strong> Read all docs in <code>docs/</code>
+folder</li>
+<li><strong>Tests:</strong> Run <code>./run-all-tests.sh</code> to
+diagnose issues</li>
+<li><strong>Logs:</strong> Check
+<code>podman logs qbittorrent</code></li>
+<li><strong>Issues:</strong> Report on GitHub</li>
+</ol>
+<h3 id="contributing">Contributing</h3>
+<ol type="1">
+<li>Fork the repository</li>
+<li>Create a feature branch</li>
+<li>Make changes</li>
+<li>Run tests: <code>./run-all-tests.sh</code></li>
+<li>Submit pull request</li>
+</ol>
+<hr />
+<h2 id="version-history">Version History</h2>
+<h3 id="v2.0.0-current">v2.0.0 (Current)</h3>
+<ul>
+<li>✅ All 12 plugins working</li>
+<li>✅ WebUI Bridge for private trackers</li>
+<li>✅ Comprehensive test suite</li>
+<li>✅ Full documentation</li>
+</ul>
+<h3 id="v1.0.0">v1.0.0</h3>
+<ul>
+<li>Initial release</li>
+<li>4 Russian trackers</li>
+</ul>
+<hr />
+<p><strong>Last Updated:</strong> March 2025<br />
+<strong>Version:</strong> 2.0.0<br />
+<strong>License:</strong> Apache 2.0</p>

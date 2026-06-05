@@ -1,5 +1,8 @@
 # Completion Status — Part A Cross-Check
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 Maps each §A finding from the completion initiative plan to its resolution.
 
 | §A Finding | Issue | Resolution | Commit(s) |

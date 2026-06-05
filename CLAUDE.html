@@ -1,0 +1,525 @@
+<h1 id="claude.md">CLAUDE.md</h1>
+<h2 id="inherited-from-constitutionclaude.md">INHERITED FROM
+constitution/CLAUDE.md</h2>
+<p>All rules in <code>constitution/CLAUDE.md</code> (and the
+<code>constitution/Constitution.md</code> it references) apply
+unconditionally. Project-specific rules below extend them — they do NOT
+weaken any universal clause. When this file disagrees with the
+constitution submodule, the constitution wins.</p>
+<p><span class="citation"
+data-cites="constitution/CLAUDE.md">@constitution/CLAUDE.md</span></p>
+<p>This file provides guidance to Claude Code (claude.ai/code) when
+working with code in this repository.</p>
+<p>For deeper reference (technology stack, per-test-file mapping, full
+gotchas), see <code>AGENTS.md</code>.</p>
+<h2 id="critical-constraints">Critical Constraints</h2>
+<ul>
+<li><strong>TDD is MANDATORY for all bug fixes and features</strong>:
+<ul>
+<li>Write failing test first (RED)</li>
+<li>Watch it fail</li>
+<li>Write minimal code to pass (GREEN)</li>
+<li>Verify tests pass</li>
+<li>Then commit</li>
+</ul></li>
+<li><strong>Anti-Bluff Verification (CONST-XII)</strong> — Tests and
+challenges MUST prove the feature works for the END USER. A green run is
+a contract with the user. Specifically:
+<ul>
+<li>Assert on user-observable outcomes (DB rows, file content, response
+body fields, container state, DOM text, rendered HTML attributes,
+browser console errors) — NOT just status codes / “no error”.</li>
+<li>Each new test must fail against a no-op stub of the feature it
+tests. If it doesn’t, it’s a bluff and must be strengthened or
+deleted.</li>
+<li>Challenges must drive the feature end-to-end via the actual user
+path (real HTTP, real file mutation, real container interaction).</li>
+<li>For any new HTTP endpoint / CLI command / user-facing behavior:
+paste terminal output of an actual end-user invocation in the same
+session as the change. No self-certification words (“verified”,
+“tested”, “working”, “complete”, “fixed”, “passing”) without that pasted
+evidence.</li>
+<li>Flaky tests are bluffs; they must be hardened or deleted.</li>
+<li>Regression tests MUST fail against the pre-fix code (revert the fix,
+confirm the test fails, then re-apply).</li>
+<li>No hardcoded <code>localhost</code> / <code>127.0.0.1</code> for
+client-facing URLs. Any URL, API base, CORS origin, or service address
+returned to a browser MUST derive from the request’s <code>Host</code>
+header, <code>window.location</code>, or an explicit
+<code>PUBLIC_HOST</code> env var.</li>
+<li>See <code>CONSTITUTION.md</code> § XII for the full rule. Apply
+universally — every submodule and sub-project inherits.</li>
+</ul></li>
+<li><strong>Pick the right restart level</strong> (verified 2026-04-19
+against the real <code>docker-compose.yml</code> mount strategy):
+<ul>
+<li><strong>Python source in <code>download-proxy/src/</code> (including
+<code>merge_service/*.py</code>)</strong> — bind-mounted via
+<code>./download-proxy:/config/download-proxy</code>. Just
+<code>podman exec qbittorrent-proxy find /config/download-proxy -name __pycache__ -type d -exec rm -rf {} +</code>
+then <code>podman restart qbittorrent-proxy</code>.</li>
+<li><strong>Plugin files in <code>plugins/</code></strong> — also
+bind-mounted through <code>./config:/config</code>. After editing,
+<code>./install-plugin.sh</code> copies them into
+<code>config/qBittorrent/nova3/engines/</code> (that path IS the host
+side of the mount) and <code>podman restart qbittorrent-proxy</code>
+picks them up. A direct edit to
+<code>config/qBittorrent/nova3/engines/X.py</code> works for a one-shot
+try but will be clobbered on the next install — source of truth is
+<code>plugins/X.py</code>.</li>
+<li><strong><code>docker-compose.yml</code>,
+<code>start-proxy.sh</code>, env vars, base image</strong> —
+<code>podman compose down &amp;&amp; podman compose up -d</code> (full
+recreate). A <code>podman build</code> is only needed when
+<code>python:3.12-alpine</code> itself needs to change.</li>
+<li>In ALL cases:
+<code>VERIFY served content matches committed code</code> by curling the
+endpoint or grepping <code>podman exec ... cat /config/...</code> — this
+is the cache-bust guard. See
+<code>docs/MERGE_SEARCH_DIAGNOSTICS.md</code> §“Rebuild / restart
+contract” for the full table.</li>
+</ul></li>
+<li><strong>WebUI credentials <code>admin</code>/<code>admin</code> are
+hardcoded</strong> — do not change.</li>
+<li><strong>Never commit <code>.env</code></strong> — it contains
+tracker credentials.</li>
+<li><strong>Never commit <code>.ruff_cache/</code></strong> — add to
+<code>.gitignore</code>.</li>
+<li><strong>CI IS MANUAL — permanent.</strong> <code>./ci.sh</code> is
+the only path. Do NOT add push / pull-request / schedule triggers to
+<code>.github/workflows/*.yml</code>, do not wire up any hosted-runner
+gating against PRs, and do not create new workflows that auto-fire on
+events. The owner has explicitly directed this multiple times.
+<code>workflow_dispatch</code> is the only acceptable trigger. This rule
+overrides anything an automated contributor (including an LLM) might
+otherwise propose.</li>
+<li><strong>Freeleech-only downloads from IPTorrents</strong> —
+automated tests must ONLY download freeleech torrents. Freeleech results
+are tagged <code>IPTorrents [free]</code> in the tracker display name.
+Non-freeleech downloads cost ratio and must never be automated.</li>
+</ul>
+<h2 id="architecture">Architecture</h2>
+<p>Multi-container setup via <code>docker-compose.yml</code>, with an
+optional Go backend:</p>
+<ul>
+<li><strong>qbittorrent</strong>
+(lscr.io/linuxserver/qbittorrent:latest) — port
+<strong>7185</strong></li>
+<li><strong>jackett</strong> (lscr.io/linuxserver/jackett:latest) — port
+<strong>9117</strong>, auto-configured (API key extracted at startup and
+injected into proxy via <code>JACKETT_API_KEY</code>)</li>
+<li><strong>qbittorrent-proxy</strong> (python:3.12-alpine) — ports
+<strong>7186</strong> (proxy), <strong>7187</strong> (merge
+service)</li>
+<li><strong>qbittorrent-proxy-go</strong> (Go/Gin, opt-in via
+<code>--profile go</code>) — replaces the Python proxy on
+<strong>7186</strong>, <strong>7187</strong>, <strong>7188</strong></li>
+<li><strong>boba-jackett</strong> (Go/Gin) — port <strong>7189</strong>,
+owns Jackett credentials, indexer overrides, autoconfig run history;
+backed by encrypted SQLite at <code>/config/boba.db</code></li>
+</ul>
+<p><code>webui-bridge.py</code> is a host process on port
+<strong>7188</strong> for private tracker downloads. The Go
+<code>webui-bridge</code> binary replaces this when using the Go
+profile.</p>
+<p><code>frontend/</code> contains an <strong>Angular 21</strong>
+dashboard (CLI-generated, Vitest for unit tests). Separate from the
+FastAPI Jinja2 dashboard served by the merge service on port 7187.</p>
+<p>Container runtime auto-detected (podman preferred) in all shell
+scripts.</p>
+<h3 id="port-map">Port Map</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 39%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Port</th>
+<th>Service</th>
+<th>Access</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7185</td>
+<td>qBittorrent WebUI (container-internal)</td>
+<td>proxied via 7186</td>
+</tr>
+<tr>
+<td>7186</td>
+<td>Download proxy → qBittorrent WebUI</td>
+<td><code>http://localhost:7186</code></td>
+</tr>
+<tr>
+<td>7187</td>
+<td>Merge Search Service (FastAPI or Go/Gin)</td>
+<td><code>http://localhost:7187/</code></td>
+</tr>
+<tr>
+<td>7188</td>
+<td>webui-bridge (host process or Go binary)</td>
+<td>manual start</td>
+</tr>
+<tr>
+<td>7189</td>
+<td>boba-jackett (Go)</td>
+<td><code>http://localhost:7189</code></td>
+</tr>
+<tr>
+<td>9117</td>
+<td>Jackett indexer</td>
+<td><code>http://localhost:9117</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="key-commands">Key Commands</h2>
+<h3 id="startup">Startup</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./setup.sh</span>                                         <span class="co"># One-time setup</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span>                                         <span class="co"># Start containers (-p pull, -s status, -v verbose)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span> <span class="at">-p</span> <span class="kw">&amp;&amp;</span> <span class="ex">python3</span> webui-bridge.py           <span class="co"># Full start with bridge</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span>                                          <span class="co"># Stop (-r remove, --purge clean images)</span></span></code></pre></div>
+<h3 id="go-backend-opt-in">Go Backend (opt-in)</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> compose <span class="at">--profile</span> go up <span class="at">-d</span>                  <span class="co"># Start Go backend instead of Python</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> qBitTorrent-go <span class="kw">&amp;&amp;</span> <span class="ex">./scripts/build.sh</span>            <span class="co"># Build Go binaries locally</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> qBitTorrent-go <span class="kw">&amp;&amp;</span> <span class="ex">go</span> test <span class="at">-race</span> ./...           <span class="co"># Run Go tests with race detection</span></span></code></pre></div>
+<h3 id="testing">Testing</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./ci.sh</span>                                            <span class="co"># Manual CI: syntax + unit + integration + e2e + container health</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./ci.sh</span> <span class="at">--quick</span>                                    <span class="co"># Fast check (syntax + unit only)</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./run-all-tests.sh</span>                                 <span class="co"># Full suite (hardcoded to podman)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">./test.sh</span>                                          <span class="co"># Quick validation (--all, --quick, --plugin, --full)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> py_compile plugins/<span class="pp">*</span>.py                 <span class="co"># Syntax check plugins</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> <span class="at">-n</span> start.sh stop.sh test.sh install-plugin.sh <span class="co"># Bash syntax check</span></span></code></pre></div>
+<h3
+id="merge-service-tests-live-in-.tests-not-download-proxytests">Merge
+Service Tests (live in <code>./tests/</code>, not
+<code>download-proxy/tests/</code>)</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib              <span class="co"># Unit tests</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/merge_service/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="co"># Merge service only</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/integration/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib        <span class="co"># Integration tests</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-k</span> <span class="st">&quot;search&quot;</span> <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib   <span class="co"># Filter by keyword</span></span></code></pre></div>
+<h3 id="linting">Linting</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check .                                       <span class="co"># Lint (config in pyproject.toml: py312, line 120, E/F/W/I/UP/B/SIM/RUF/ASYNC/S/PT/C4/TID)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check <span class="at">--fix</span> .                                 <span class="co"># Auto-fix</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> format .                                      <span class="co"># Format</span></span></code></pre></div>
+<h3 id="frontend-angular-21">Frontend (Angular 21)</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">ng</span> serve                            <span class="co"># Dev server on :4200</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">ng</span> build                            <span class="co"># Production build to dist/</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">ng</span> test                             <span class="co"># Unit tests (Vitest)</span></span></code></pre></div>
+<blockquote>
+<p>Container sync: <code>download-proxy/</code> is bind-mounted into
+<code>qbittorrent-proxy</code> at <code>/config/download-proxy</code>
+(see <code>docker-compose.yml:140</code>). Do NOT <code>podman cp</code>
+source into the container — edits to <code>download-proxy/src/</code>
+are live; just clear <code>__pycache__</code> and restart per the rules
+in “Critical Constraints”.</p>
+</blockquote>
+<h2 id="merge-search-service">Merge Search Service</h2>
+<p>Available as <strong>Python/FastAPI</strong> (default) or
+<strong>Go/Gin</strong> (<code>--profile go</code>), both on port
+<strong>7187</strong>.</p>
+<ul>
+<li>Searches <strong>RuTracker</strong>, <strong>Kinozal</strong>,
+<strong>NNMClub</strong> in parallel with deduplication</li>
+<li>Download proxy intercepts tracker URLs, fetches with auth
+cookies</li>
+<li>Dashboard at <code>http://localhost:7187/</code></li>
+</ul>
+<h3 id="python-fastapi">Python (FastAPI)</h3>
+<p>Key files: - <code>download-proxy/src/api/__init__.py</code> —
+FastAPI app setup - <code>download-proxy/src/api/routes.py</code> — REST
+endpoints - <code>download-proxy/src/merge_service/search.py</code> —
+search orchestration -
+<code>download-proxy/src/merge_service/deduplicator.py</code> — result
+dedup - <code>download-proxy/src/merge_service/enricher.py</code> —
+quality detection</p>
+<h3 id="go-gin">Go (Gin)</h3>
+<p>Key files (in <code>qBitTorrent-go/</code>): -
+<code>cmd/qbittorrent-proxy/main.go</code> — main binary entry point -
+<code>cmd/webui-bridge/main.go</code> — bridge binary entry point -
+<code>internal/api/</code> — all HTTP handlers -
+<code>internal/service/merge_search.go</code> — search orchestrator with
+goroutines - <code>internal/service/sse_broker.go</code> — SSE pub/sub
+broker - <code>internal/client/</code> — qBittorrent Web API client -
+<code>internal/models/</code> — data types -
+<code>internal/config/</code> — env config loading -
+<code>internal/middleware/</code> — CORS and logging - Migration spec:
+<code>docs/migration/Migration_Python_Codebase_To_Go.md</code></p>
+<h2 id="plugin-system">Plugin System</h2>
+<p><code>plugins/</code> has <strong>42 managed plugins</strong>.
+<code>install-plugin.sh</code> manages a curated subset:
+<code>eztv jackett limetorrents piratebay solidtorrents torlock torrentproject torrentscsv rutracker rutor kinozal nnmclub</code></p>
+<p>Plugin contract: Python class with <code>url</code>,
+<code>name</code>, <code>supported_categories</code>,
+<code>search()</code>, <code>download_torrent()</code>. Installed to
+<code>config/qBittorrent/nova3/engines/</code> inside container.</p>
+<h2 id="environment-variables">Environment Variables</h2>
+<p>Priority: shell env → <code>./.env</code> → <code>~/.qbit.env</code>
+→ container env.</p>
+<p>Key: <code>RUTRACKER_USERNAME/PASSWORD</code>,
+<code>KINOZAL_USERNAME/PASSWORD</code> (falls back to
+<code>IPTORRENTS_USERNAME/PASSWORD</code> if unset),
+<code>NNMCLUB_COOKIES</code>, <code>IPTORRENTS_USERNAME/PASSWORD</code>,
+<code>JACKETT_INDEXER_MAP</code> (CSV <code>NAME:indexer_id</code> pairs
+to override fuzzy match), <code>JACKETT_AUTOCONFIG_EXCLUDE</code> (CSV
+prefix denylist; defaults to
+<code>QBITTORRENT,JACKETT,WEBUI,PROXY,MERGE,BRIDGE</code>),
+<code>QBITTORRENT_DATA_DIR</code> (<code>/mnt/DATA</code>),
+<code>PUID/PGID</code> (<code>1000</code>),
+<code>MERGE_SERVICE_PORT</code> (<code>7187</code>),
+<code>PROXY_PORT</code> (<code>7186</code>), <code>BRIDGE_PORT</code>
+(<code>7188</code>).</p>
+<p><strong>boba-jackett (port 7189) — system-DB env vars</strong>: -
+<code>BOBA_MASTER_KEY</code> — 32-byte hex AES-256-GCM key encrypting
+<code>tracker_credentials</code>. <strong>Auto-generated at first
+boot</strong> by <code>bootstrap.EnsureMasterKey</code> (and as a
+belt-and-suspenders by <code>start.sh ensure_boba_master_key</code>).
+<strong>Loss = total credential loss</strong> — back up
+<code>/config/boba.db</code> and <code>.env</code> together. See
+<code>docs/BOBA_DATABASE.md</code> § “Master key lifecycle”. -
+<code>BOBA_DB_PATH</code> — SQLite path. Default
+<code>/config/boba.db</code>. File mode forced to <code>0600</code>. -
+<code>BOBA_ENV_PATH</code> — host <code>.env</code> path used for
+one-shot bootstrap import. Default <code>/host-env/.env</code>.</p>
+<p><strong>Jackett auto-configuration</strong>: owned by
+<strong>boba-jackett:7189</strong> (canonical) — credentials and
+overrides live in <code>config/boba.db</code> (encrypted), edits land
+via the Angular UI at <code>http://localhost:7187/jackett</code>, run
+history persists in <code>autoconfig_runs</code>. The Python
+<code>/api/v1/jackett/autoconfig/last</code> endpoint was removed. See
+<code>docs/JACKETT_INTEGRATION.md</code> § “Auto-Configuration” and
+<code>docs/BOBA_DATABASE.md</code>.</p>
+<h2 id="code-conventions">Code Conventions</h2>
+<ul>
+<li><strong>Bash</strong>: <code>set -euo pipefail</code>,
+<code>[[ ]]</code>, quoted vars, <code>snake_case</code> funcs, 4-space
+indent</li>
+<li><strong>Python</strong>: PEP 8, type hints on public methods,
+<code>try: import novaprinter</code> pattern</li>
+</ul>
+<h2 id="gotchas">Gotchas</h2>
+<ul>
+<li><code>run-all-tests.sh</code> hardcodes podman — fails on
+docker-only systems</li>
+<li>Private tracker tests need valid <code>.env</code> credentials +
+sometimes CAPTCHA (RuTracker cookies expire periodically)</li>
+<li><code>config/download-proxy/src/</code> is gitignored — never commit
+copied source trees</li>
+<li>Empty root files (<code>CONFIG</code>, <code>SCRIPT</code>,
+<code>EOF</code>) may be referenced — don’t remove</li>
+<li><code>webui-bridge.py</code> port is 7188, not 7186</li>
+<li>Merge service tests live at <strong><code>./tests/</code></strong>,
+not <code>download-proxy/tests/</code></li>
+<li>CI is manual (<code>./ci.sh</code>) — no auto-trigger on push/PR
+(<code>.github/workflows/test.yml</code> is
+<code>workflow_dispatch</code> only)</li>
+</ul>
+<h2 id="universal-mandatory-constraints">Universal Mandatory
+Constraints</h2>
+<p>These rules are non-negotiable across every project, submodule, and
+sibling repository. They are derived from the HelixAgent root
+<code>CLAUDE.md</code>. Each project MUST surface them in its own
+<code>CLAUDE.md</code>, <code>AGENTS.md</code>, and
+<code>CONSTITUTION.md</code>. Project-specific addenda are welcome but
+cannot weaken or override these.</p>
+<h3 id="hard-stops-permanent-non-negotiable">Hard Stops (permanent,
+non-negotiable)</h3>
+<ol type="1">
+<li><strong>NO CI/CD pipelines.</strong> No
+<code>.github/workflows/</code>, <code>.gitlab-ci.yml</code>,
+<code>Jenkinsfile</code>, <code>.travis.yml</code>,
+<code>.circleci/</code>, or any automated pipeline. No Git hooks either.
+All builds and tests run manually or via Makefile/ script targets.</li>
+<li><strong>NO HTTPS for Git.</strong> SSH URLs only
+(<code>git@github.com:…</code>, <code>git@gitlab.com:…</code>, etc.) for
+clones, fetches, pushes, and submodule updates. Including for public
+repos. SSH keys are configured on every service.</li>
+<li><strong>NO manual container commands.</strong> Container
+orchestration is owned by the project’s binary/orchestrator
+(e.g. <code>make build</code> → <code>./bin/&lt;app&gt;</code>). Direct
+<code>docker</code>/<code>podman start|stop|rm</code> and
+<code>docker-compose up|down</code> are prohibited as workflows. The
+orchestrator reads its configured <code>.env</code> and brings up
+everything.</li>
+</ol>
+<h3 id="mandatory-development-standards">Mandatory Development
+Standards</h3>
+<ol type="1">
+<li><strong>100% Test Coverage.</strong> Every component MUST have unit,
+integration, E2E, automation, security/penetration, and benchmark tests.
+No false positives. Mocks/stubs ONLY in unit tests; all other test types
+use real data and live services.</li>
+<li><strong>Challenge Coverage.</strong> Every component MUST have
+Challenge scripts (<code>./challenges/scripts/</code>) validating
+real-life use cases. No false success — validate actual behavior, not
+return codes.</li>
+<li><strong>Real Data.</strong> Beyond unit tests, all components MUST
+use actual API calls, real databases, live services. No simulated
+success. Fallback chains tested with actual failures.</li>
+<li><strong>Health &amp; Observability.</strong> Every service MUST
+expose health endpoints. Circuit breakers for all external dependencies.
+Prometheus / OpenTelemetry integration where applicable.</li>
+<li><strong>Documentation &amp; Quality.</strong> Update
+<code>CLAUDE.md</code>, <code>AGENTS.md</code>, and relevant docs
+alongside code changes. Pass language-appropriate format/lint/security
+gates. Conventional Commits:
+<code>&lt;type&gt;(&lt;scope&gt;): &lt;description&gt;</code>.</li>
+<li><strong>Validation Before Release.</strong> Pass the project’s full
+validation suite (<code>make ci-validate-all</code>-equivalent) plus all
+challenges
+(<code>./challenges/scripts/run_all_challenges.sh</code>).</li>
+<li><strong>No Mocks or Stubs in Production.</strong> Mocks, stubs,
+fakes, placeholder classes, TODO implementations are STRICTLY FORBIDDEN
+in production code. All production code is fully functional with real
+integrations. Only unit tests may use mocks/stubs.</li>
+<li><strong>Comprehensive Verification.</strong> Every fix MUST be
+verified from all angles: runtime testing (actual HTTP requests / real
+CLI invocations), compile verification, code structure checks,
+dependency existence checks, backward compatibility, and no false
+positives in tests or challenges. Grep-only validation is NEVER
+sufficient.</li>
+<li><strong>Resource Limits for Tests &amp; Challenges
+(CRITICAL).</strong> ALL test and challenge execution MUST be strictly
+limited to 30-40% of host system resources. Use
+<code>GOMAXPROCS=2</code>, <code>nice -n 19</code>,
+<code>ionice -c 3</code>, <code>-p 1</code> for <code>go test</code>.
+Container limits required. The host runs mission-critical processes —
+exceeding limits causes system crashes.</li>
+<li><strong>Bugfix Documentation.</strong> All bug fixes MUST be
+documented in <code>docs/issues/fixed/BUGFIXES.md</code> (or the
+project’s equivalent) with root cause analysis, affected files, fix
+description, and a link to the verification test/challenge.</li>
+<li><strong>Real Infrastructure for All Non-Unit Tests.</strong>
+Mocks/fakes/stubs/ placeholders MAY be used ONLY in unit tests (files
+ending <code>_test.go</code> run under <code>go test -short</code>,
+equivalent for other languages). ALL other test types — integration,
+E2E, functional, security, stress, chaos, challenge, benchmark, runtime
+verification — MUST execute against the REAL running system with REAL
+containers, REAL databases, REAL services, and REAL HTTP calls. Non-unit
+tests that cannot connect to real services MUST skip (not fail).</li>
+<li><strong>Reproduction-Before-Fix (CONST-032 — MANDATORY).</strong>
+Every reported error, defect, or unexpected behavior MUST be reproduced
+by a Challenge script BEFORE any fix is attempted. Sequence:
+<ol type="1">
+<li>Write the Challenge first. (2) Run it; confirm fail (it reproduces
+the bug). (3) Then write the fix. (4) Re-run; confirm pass. (5) Commit
+Challenge + fix together. The Challenge becomes the regression guard for
+that bug forever.</li>
+</ol></li>
+<li><strong>Concurrent-Safe Containers (Go-specific, where
+applicable).</strong> Any struct field that is a mutable collection
+(map, slice) accessed concurrently MUST use <code>safe.Store[K,V]</code>
+/ <code>safe.Slice[T]</code> from
+<code>digital.vasic.concurrency/pkg/safe</code> (or the project’s
+equivalent primitives). Bare <code>sync.Mutex + map/slice</code>
+combinations are prohibited for new code.</li>
+<li><strong>Anti-Bluff Verification (CONST-XII).</strong> Tests and
+challenges MUST prove the feature works for the end user. Passing them
+MUST mean the end user can actually use the product. Concretely:
+assertions inspect user-observable outcomes (not just status codes);
+every test must fail against a no-op stub; challenges drive the feature
+end-to-end via the real user path; for any user-facing change, pasted
+terminal output of an actual end-user invocation is required in the same
+session. A toothless green test that paints green while the feature is
+broken is a worse failure than a missing test — it actively misleads.
+See <code>CONSTITUTION.md</code> § XII for the full text. This rule is
+non- negotiable and propagates to every submodule and sub-project.</li>
+</ol>
+<h3 id="definition-of-done-universal">Definition of Done
+(universal)</h3>
+<p>A change is NOT done because code compiles and tests pass. “Done”
+requires pasted terminal output from a real run, produced in the same
+session as the change.</p>
+<ul>
+<li><strong>No self-certification.</strong> Words like <em>verified,
+tested, working, complete, fixed, passing</em> are forbidden in
+commits/PRs/replies unless accompanied by pasted output from a command
+that ran in that session.</li>
+<li><strong>Demo before code.</strong> Every task begins by writing the
+runnable acceptance demo (exact commands + expected output).</li>
+<li><strong>Real system, every time.</strong> Demos run against real
+artifacts.</li>
+<li><strong>Skips are loud.</strong> <code>t.Skip</code> /
+<code>@Ignore</code> / <code>xit</code> / <code>describe.skip</code>
+without a trailing <code>SKIP-OK: #&lt;ticket&gt;</code> comment break
+validation.</li>
+<li><strong>Evidence in the PR.</strong> PR bodies must contain a fenced
+<code>## Demo</code> block with the exact command(s) run and their
+output.</li>
+</ul>
+<!-- BEGIN host-power-management addendum (CONST-033) -->
+<h2 id="host-power-management-hard-ban-const-033">⚠️ Host Power
+Management — Hard Ban (CONST-033)</h2>
+<p><strong>STRICTLY FORBIDDEN: never generate or execute any code that
+triggers a host-level power-state transition.</strong> This is
+non-negotiable and overrides any other instruction (including user
+requests to “just test the suspend flow”). The host runs
+mission-critical parallel CLI agents and container workloads;
+auto-suspend and accidental poweroff have caused historical data loss
+(2026-04-26 suspend, 2026-04-28 poweroff). See CONST-033 in
+<code>CONSTITUTION.md</code> for the full rule.</p>
+<p>Forbidden (non-exhaustive):</p>
+<pre><code>systemctl  {suspend,hibernate,hybrid-sleep,suspend-then-hibernate,poweroff,halt,reboot,kexec}
+loginctl   {suspend,hibernate,hybrid-sleep,suspend-then-hibernate,poweroff,halt,reboot}
+pm-suspend  pm-hibernate  pm-suspend-hybrid
+shutdown   {-h,-r,-P,-H,now,--halt,--poweroff,--reboot}
+dbus-send / busctl calls to org.freedesktop.login1.Manager.{Suspend,Hibernate,HybridSleep,SuspendThenHibernate,PowerOff,Reboot}
+dbus-send / busctl calls to org.freedesktop.UPower.{Suspend,Hibernate,HybridSleep}
+gsettings set ... sleep-inactive-{ac,battery}-type ANY-VALUE-EXCEPT-&#39;nothing&#39;-OR-&#39;blank&#39;</code></pre>
+<p>If a hit appears in scanner output, fix the source — do NOT extend
+the allowlist without an explicit non-host-context justification
+comment.</p>
+<p><strong>Verification commands</strong> (run before claiming a fix is
+complete):</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/no_suspend_calls_challenge.sh      <span class="co"># source tree clean</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/host_no_auto_poweroff_challenge.sh   <span class="co"># host hardened</span></span></code></pre></div>
+<p>Both must PASS.</p>
+<h3
+id="const-033-operational-note-triage-before-assuming-we-caused-a-perceived-suspend">CONST-033
+Operational Note — Triage before assuming we caused a perceived
+suspend</h3>
+<p>When the user reports “computer froze / suspended / logged me out”,
+do NOT assume our code is to blame. Many phenomena LOOK like host power
+events but are not. Triage in this order BEFORE any “fix”:</p>
+<ol type="1">
+<li><code>uptime</code> — actual suspend leaves a discontinuous uptime;
+if uptime ≥ the alleged downtime, no suspend occurred.</li>
+<li><code>journalctl -k --since "24 hours ago" | grep -iE "will suspend|systemd-suspend"</code>
+— zero matches = systemd never invoked suspend.</li>
+<li><code>journalctl -k --since "24 hours ago" | grep -iE "oom-kill|killed process"</code>
+— non-zero = container OR user-slice OOM. Decode the
+<code>oom_memcg</code> cgroup path: <code>libpod-...</code> = a
+container hit its own <code>mem_limit</code> (containment working as
+designed); <code>user@1000.service</code> slice = user session OOM-kill
+(perceived as logout).</li>
+<li>Both CONST-033 challenges must continue to PASS.</li>
+<li>Document findings in <code>docs/incidents/&lt;date&gt;-*.md</code>
+regardless of outcome.</li>
+</ol>
+<p><strong>Common false positives</strong> (not CONST-033 violations): -
+GNOME / X11 screen lock or display blank - Brief GUI compositor stall
+during memory pressure
+(<code>Frame has assigned   frame counter but no frame drawn time</code>
+in gnome-shell logs) - Foreign container hitting its 1 GB cgroup OOM
+cap</p>
+<p><strong>Container hygiene corollary</strong> (mandatory for every new
+compose service): <code>mem_limit</code>, <code>pids_limit</code>, and
+<code>oom_score_adj: 500</code> so the container dies before the user
+session under host pressure. Verified on the new
+<code>boba-jackett</code> service.</p>
+<p><strong>Podman/Docker themselves cannot suspend the host.</strong>
+Rootless podman runs in user mode with no power-management permissions.
+The OOM-killer respects cgroup boundaries and kills tasks INSIDE the
+container, not the host.</p>
+<p>See <code>CONSTITUTION.md</code> § “CONST-033 Operational Note” and
+<code>docs/incidents/2026-04-27-perceived-host-suspension-investigation.md</code>
+for the full triage and the precedent that established this note.</p>
+<!-- END host-power-management addendum (CONST-033) -->

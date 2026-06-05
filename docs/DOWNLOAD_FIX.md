@@ -1,5 +1,8 @@
 # RuTracker Plugin Download Fix
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 ## Problem
 
 Downloads from RuTracker plugin were not starting in qBittorrent. The search worked and torrents could be sent to download, but they never actually started downloading. Direct upload of torrent files or magnet links worked fine.

@@ -1,5 +1,8 @@
 # Quality Stack
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 `docker-compose.quality.yml` is a **separate, opt-in** compose file
 holding SonarQube, Prometheus, Grafana, and the one-shot scanner
 containers (semgrep/trivy/gitleaks/snyk).

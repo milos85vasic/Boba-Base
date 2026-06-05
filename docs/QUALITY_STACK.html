@@ -1,0 +1,106 @@
+<h1 id="quality-stack">Quality Stack</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p><code>docker-compose.quality.yml</code> is a <strong>separate,
+opt-in</strong> compose file holding SonarQube, Prometheus, Grafana, and
+the one-shot scanner containers (semgrep/trivy/gitleaks/snyk).</p>
+<h2 id="why-separate-from-the-main-docker-compose.yml">Why separate from
+the main <code>docker-compose.yml</code>?</h2>
+<p>The platform constitution
+(<code>.specify/memory/constitution.md</code> Principle I —
+Container-First Architecture) defines the product topology as exactly
+<strong>two containers</strong>: <code>qbittorrent</code> and
+<code>download-proxy</code>, plus one optional host process
+(<code>webui-bridge.py</code>). Adding SonarQube, Postgres (for Sonar),
+Prometheus, Grafana, and four scanner images would silently extend that
+topology from 2 → 8 runtime services, which would violate the
+principle.</p>
+<p>Keeping the quality services in a <strong>separate compose
+file</strong> means:</p>
+<ol type="1">
+<li>The product is still a two-container deploy. <code>./start.sh</code>
+launches only those two.</li>
+<li>Quality tooling is explicit and scope-limited:
+<code>-f docker-compose.yml -f docker-compose.quality.yml</code> only
+when the developer wants it.</li>
+<li>Profiles (<code>quality</code>, <code>run-once</code>,
+<code>observability</code>, …) gate each service so nothing starts by
+accident.</li>
+<li>The constitution does not need an amendment for quality tooling,
+since no product service depends on it.</li>
+</ol>
+<p>See <code>docs/SCANNING.md</code> for scanner usage and
+<code>docs/OBSERVABILITY.md</code> for the Prometheus/Grafana story.</p>
+<h2 id="profiles">Profiles</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Profile</th>
+<th>Services</th>
+<th>When to use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>quality</code></td>
+<td>sonarqube, sonar-db</td>
+<td>Continuous quality gate host</td>
+</tr>
+<tr>
+<td><code>sonarqube</code></td>
+<td>sonarqube, sonar-db</td>
+<td>Alias for above</td>
+</tr>
+<tr>
+<td><code>run-once</code></td>
+<td>semgrep, trivy, gitleaks, snyk</td>
+<td>Scheduled / on-demand scans</td>
+</tr>
+<tr>
+<td><code>semgrep</code>, <code>trivy</code>, <code>gitleaks</code>,
+<code>snyk</code></td>
+<td>single scanner each</td>
+<td>Target one tool</td>
+</tr>
+<tr>
+<td><code>observability</code></td>
+<td>prometheus, grafana</td>
+<td>Metric collection + dashboards</td>
+</tr>
+</tbody>
+</table>
+<h2 id="environment-variables">Environment variables</h2>
+<pre><code>SONAR_DB_USER=sonar              # default
+SONAR_DB_PASSWORD=sonar          # default — override in production
+SONAR_TOKEN=…                    # CI upload
+SONAR_HOST_URL=http://localhost:9000
+SNYK_TOKEN=…                     # optional
+GRAFANA_USER=admin               # default
+GRAFANA_PASSWORD=admin           # default — override in production</code></pre>
+<h2 id="ports">Ports</h2>
+<p>All quality services bind to <code>127.0.0.1:</code> only so they are
+not exposed to the LAN:</p>
+<ul>
+<li><code>9000</code> SonarQube UI</li>
+<li><code>9090</code> Prometheus</li>
+<li><code>3000</code> Grafana</li>
+</ul>
+<h2 id="lifecycle">Lifecycle</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Bring up SonarQube (~2 min cold start)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE_CMD</span> <span class="at">-f</span> docker-compose.yml <span class="at">-f</span> docker-compose.quality.yml <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">--profile</span> sonarqube up <span class="at">-d</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Run observability stack</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE_CMD</span> <span class="at">-f</span> docker-compose.yml <span class="at">-f</span> docker-compose.quality.yml <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">--profile</span> observability up <span class="at">-d</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Stop quality services (product stays running)</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE_CMD</span> <span class="at">-f</span> docker-compose.quality.yml <span class="at">--profile</span> quality down</span></code></pre></div>
+<p><code>./scripts/scan.sh</code> wraps these lifecycle commands for
+scanner one-shots.</p>

@@ -1,0 +1,529 @@
+<h1 id="testing-guide">Testing Guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>This is the <strong>authoritative test-type catalogue</strong> for
+qBittorrent-Fixed. Every testable module in the repo must have coverage
+in every applicable row below. The catalogue is derived from Part C of
+the completion-initiative plan
+(<code>docs/superpowers/plans/2026-04-19-completion-initiative.md</code>).</p>
+<h2 id="test-types">Test types</h2>
+<table>
+<colgroup>
+<col style="width: 4%" />
+<col style="width: 8%" />
+<col style="width: 15%" />
+<col style="width: 15%" />
+<col style="width: 16%" />
+<col style="width: 39%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Type</th>
+<th>Framework</th>
+<th>Directory</th>
+<th>How to run</th>
+<th>Coverage / report lands in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Unit (Python)</td>
+<td>pytest + pytest-asyncio</td>
+<td><code>tests/unit/</code></td>
+<td><code>pytest tests/unit/ -v --import-mode=importlib</code></td>
+<td><code>htmlcov/</code>, <code>coverage.xml</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Unit (Frontend)</td>
+<td>Vitest + Angular Testing Library</td>
+<td><code>frontend/src/**/*.spec.ts</code></td>
+<td><code>cd frontend &amp;&amp; ng test</code></td>
+<td><code>frontend/coverage/</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Integration (API)</td>
+<td>pytest + httpx.AsyncClient</td>
+<td><code>tests/integration/</code></td>
+<td><code>pytest tests/integration/ -v --import-mode=importlib</code></td>
+<td><code>htmlcov/</code>, <code>coverage.xml</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Integration (Plugin ↔︎ nova3)</td>
+<td>pytest + vcrpy (record/replay)</td>
+<td><code>tests/integration/plugins/</code> (pending Phase 4)</td>
+<td><code>pytest tests/integration/plugins/ -v</code></td>
+<td><code>htmlcov/</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>End-to-end (browser)</td>
+<td>Playwright (Python)</td>
+<td><code>tests/e2e/</code></td>
+<td><code>pytest tests/e2e/ -v</code></td>
+<td><code>artifacts/e2e/</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>End-to-end (API flow)</td>
+<td>pytest + live compose</td>
+<td><code>tests/e2e/</code> (fixture-gated)</td>
+<td><code>pytest tests/e2e/ -v --import-mode=importlib</code></td>
+<td><code>htmlcov/</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Contract (OpenAPI)</td>
+<td>schemathesis</td>
+<td><code>tests/contract/</code></td>
+<td><code>schemathesis run http://localhost:7187/openapi.json</code></td>
+<td><code>artifacts/contract/</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Property-based</td>
+<td>hypothesis</td>
+<td><code>tests/property/</code> (pending)</td>
+<td><code>pytest tests/property/ -v</code></td>
+<td><code>htmlcov/</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Fuzz</td>
+<td>hypothesis + atheris (optional)</td>
+<td><code>tests/fuzz/</code> (pending)</td>
+<td><code>pytest tests/fuzz/ -v</code></td>
+<td><code>artifacts/fuzz/</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Mutation</td>
+<td>mutmut</td>
+<td>runs against <code>download-proxy/src/</code> (pending)</td>
+<td><code>mutmut run</code></td>
+<td><code>html/mutmut.html</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>Security</td>
+<td>pytest + bandit + semgrep rules</td>
+<td><code>tests/security/</code></td>
+<td><code>pytest tests/security/ -v</code></td>
+<td><code>htmlcov/</code> + <code>artifacts/scans/</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>Performance (latency)</td>
+<td>pytest-benchmark</td>
+<td><code>tests/performance/</code>, <code>tests/benchmark/</code></td>
+<td><code>pytest tests/performance/ tests/benchmark/ -v --benchmark-only</code></td>
+<td><code>.benchmarks/</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>Load (throughput)</td>
+<td>Locust</td>
+<td><code>tests/load/</code> (pending Phase 6)</td>
+<td><code>locust -f tests/load/locustfile.py</code></td>
+<td><code>artifacts/load/</code></td>
+</tr>
+<tr>
+<td>14</td>
+<td>Stress (overload)</td>
+<td>Locust + chaos probes</td>
+<td><code>tests/stress/</code></td>
+<td><code>pytest tests/stress/ -v</code></td>
+<td><code>artifacts/stress/</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td>Chaos (fault injection)</td>
+<td>toxiproxy + pytest</td>
+<td><code>tests/chaos/</code> (pending)</td>
+<td><code>pytest tests/chaos/ -v</code></td>
+<td><code>artifacts/chaos/</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>Concurrency (race)</td>
+<td>pytest-randomly + pytest-repeat + asyncio ops</td>
+<td><code>tests/concurrency/</code> (pending)</td>
+<td><code>pytest tests/concurrency/ -v --count=10</code></td>
+<td><code>htmlcov/</code></td>
+</tr>
+<tr>
+<td>17</td>
+<td>Memory leak</td>
+<td>tracemalloc + pytest + objgraph</td>
+<td><code>tests/memory/</code> (pending)</td>
+<td><code>pytest tests/memory/ -v</code></td>
+<td><code>artifacts/memory/</code></td>
+</tr>
+<tr>
+<td>18</td>
+<td>Deadlock / timeout</td>
+<td>pytest-timeout (hard cap all tests)</td>
+<td>global</td>
+<td><code>pytest -v</code> (30 s timeout is the default in
+pyproject.toml)</td>
+<td>test log</td>
+</tr>
+<tr>
+<td>19</td>
+<td>Smoke</td>
+<td>pytest</td>
+<td><code>tests/smoke/</code> (pending)</td>
+<td><code>pytest tests/smoke/ -v</code></td>
+<td><code>htmlcov/</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td>Monitoring / metrics</td>
+<td>pytest + Prometheus scrape asserts</td>
+<td><code>tests/observability/</code> (pending)</td>
+<td><code>pytest tests/observability/ -v</code></td>
+<td><code>htmlcov/</code></td>
+</tr>
+<tr>
+<td>21</td>
+<td>Infra / compose</td>
+<td>pytest-docker + compose-config validator</td>
+<td><code>tests/infra/</code> (pending)</td>
+<td><code>pytest tests/infra/ -v</code></td>
+<td><code>htmlcov/</code></td>
+</tr>
+<tr>
+<td>22</td>
+<td>Accessibility</td>
+<td>Playwright + axe-core</td>
+<td><code>tests/a11y/</code> (pending)</td>
+<td><code>pytest tests/a11y/ -v</code></td>
+<td><code>artifacts/a11y/</code></td>
+</tr>
+<tr>
+<td>23</td>
+<td>Visual regression</td>
+<td>Playwright snapshots</td>
+<td><code>tests/visual/</code> (pending)</td>
+<td><code>pytest tests/visual/ --update-snapshots</code></td>
+<td><code>tests/visual/__snapshots__/</code></td>
+</tr>
+<tr>
+<td>24</td>
+<td>Documentation link check</td>
+<td>pytest + linkchecker</td>
+<td><code>tests/docs/</code> (pending)</td>
+<td><code>pytest tests/docs/ -v</code></td>
+<td><code>artifacts/docs/</code></td>
+</tr>
+<tr>
+<td>25</td>
+<td>Type-check (static)</td>
+<td>mypy –strict + tsc –noEmit</td>
+<td>CI job</td>
+<td><code>mypy download-proxy/src plugins</code> /
+<code>cd frontend &amp;&amp; tsc --noEmit</code></td>
+<td>CI log</td>
+</tr>
+<tr>
+<td>26</td>
+<td>Lint (static)</td>
+<td>ruff + eslint + shellcheck + hadolint + yamllint</td>
+<td>CI job</td>
+<td><code>ruff check .</code> /
+<code>cd frontend &amp;&amp; ng lint</code> /
+<code>shellcheck *.sh</code></td>
+<td>CI log</td>
+</tr>
+<tr>
+<td>27</td>
+<td>Dependency audit</td>
+<td>pip-audit + npm audit + Snyk + Trivy</td>
+<td>CI job</td>
+<td><code>pip-audit -r download-proxy/requirements.txt</code> /
+<code>snyk test</code></td>
+<td><code>artifacts/scans/</code></td>
+</tr>
+<tr>
+<td>28</td>
+<td>SAST</td>
+<td>Semgrep + Bandit + SonarQube</td>
+<td>CI job</td>
+<td><code>semgrep scan --config=auto</code> /
+<code>bandit -r download-proxy/src</code></td>
+<td><code>artifacts/scans/</code></td>
+</tr>
+<tr>
+<td>29</td>
+<td>Secret scan</td>
+<td>Gitleaks + TruffleHog</td>
+<td>CI job</td>
+<td><code>gitleaks detect</code></td>
+<td><code>artifacts/scans/</code></td>
+</tr>
+<tr>
+<td>30</td>
+<td>License compliance</td>
+<td>pip-licenses + license-checker</td>
+<td>CI job</td>
+<td><code>pip-licenses</code> /
+<code>cd frontend &amp;&amp; license-checker</code></td>
+<td><code>artifacts/licenses/</code></td>
+</tr>
+</tbody>
+</table>
+<p>Rows marked <em>pending</em> are scaffolded by the
+completion-initiative plan phases (see the plan document for the phase
+that ships each one).</p>
+<h2 id="where-tests-live">Where tests live</h2>
+<ul>
+<li><strong>Top-level <code>tests/</code></strong> — all merge-service
+tests, <em>not</em> <code>download-proxy/tests/</code> (which does not
+exist).</li>
+<li><strong><code>frontend/src/**/*.spec.ts</code></strong> — co-located
+Angular unit tests.</li>
+<li><strong>CI jobs</strong> —
+<code>.github/workflows/{syntax,unit,integration,nightly,security}.yml</code>.</li>
+</ul>
+<h2 id="service-availability-fixtures">Service-availability
+fixtures</h2>
+<p>Since Phase 0 the following fixtures <strong>start the compose
+stack</strong> rather than skip when services are down (converted 71
+runtime skips to fixture-gated executions, per commit
+<code>55d29ce</code>):</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fixture</th>
+<th>Starts</th>
+<th>Asserts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>merge_service_live</code></td>
+<td><code>qbittorrent-proxy</code></td>
+<td><code>GET http://localhost:7187/health</code> → 200</td>
+</tr>
+<tr>
+<td><code>qbittorrent_live</code></td>
+<td><code>qbittorrent</code></td>
+<td><code>GET http://localhost:7186/</code> → 200</td>
+</tr>
+<tr>
+<td><code>webui_bridge_live</code></td>
+<td><code>webui-bridge.py</code></td>
+<td><code>GET http://localhost:7188/health</code> → 200</td>
+</tr>
+<tr>
+<td><code>all_services_live</code></td>
+<td>all three</td>
+<td>all of the above</td>
+</tr>
+</tbody>
+</table>
+<p>Defined in <code>tests/fixtures/services.py</code> and wired into
+<code>tests/conftest.py</code>.</p>
+<h2 id="how-to-add-a-new-test-tdd-cadence">How to add a new test (TDD
+cadence)</h2>
+<p>The CLAUDE.md critical constraint is non-negotiable:</p>
+<ol type="1">
+<li><p><strong>RED</strong> — write the failing test first. Name it
+after the behaviour, not the implementation. Put it in the directory
+that matches the test type from the catalogue above.</p></li>
+<li><p><strong>Watch it fail</strong> — run the test in isolation
+(<code>pytest tests/unit/test_new_thing.py::test_specific_case -v</code>)
+and confirm the failure reason is the one you want (NOT an import error,
+NOT a fixture error).</p></li>
+<li><p><strong>GREEN</strong> — write the minimum production code to
+make the test pass. No refactors yet.</p></li>
+<li><p><strong>Verify</strong> — run the whole affected test directory
+to prove nothing else regressed.</p></li>
+<li><p><strong>Rebuild-reboot</strong> — if the change touched container
+code, follow the CLAUDE.md REBUILD AND REBOOT constraint:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec qbittorrent-proxy find / <span class="at">-name</span> __pycache__ <span class="at">-type</span> d <span class="at">-exec</span> rm <span class="at">-rf</span> {} + <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span> <span class="at">-p</span></span></code></pre></div>
+<p>Curl-check the served content matches the committed code.</p></li>
+<li><p><strong>Commit</strong> — one behaviour per commit. Commit
+message follows <code>&lt;type&gt;(phase-N): &lt;subject&gt;</code> when
+part of a phased plan.</p></li>
+</ol>
+<h2 id="coverage-gate">Coverage gate</h2>
+<ul>
+<li><code>pyproject.toml</code> contains
+<code>[tool.coverage.report]</code> with <code>fail_under</code> set to
+the current gate (Phase 0 starts low; Phase 5 raises it module-by-module
+to 100 %).</li>
+<li>The baseline zero point is captured in <a
+href="COVERAGE_BASELINE.md"><code>COVERAGE_BASELINE.md</code></a>.</li>
+<li>HTML reports land in <code>htmlcov/</code>; XML (for SonarQube) in
+<code>coverage.xml</code>.</li>
+</ul>
+<h2 id="ci-entry-points">CI entry points</h2>
+<ul>
+<li><strong>Local full pipeline</strong> — <code>./ci.sh</code></li>
+<li><strong>Quick loop</strong> — <code>./ci.sh --quick</code></li>
+<li><strong>Hardcoded-podman runner</strong> —
+<code>./run-all-tests.sh</code> (note: hardcodes podman, will fail on
+docker-only systems — see CLAUDE.md gotcha)</li>
+<li><strong>Single-file</strong> —
+<code>./test.sh --plugin &lt;name&gt;</code> or
+<code>./test.sh --full</code></li>
+</ul>
+<h2 id="per-tracker-search-stats">Per-tracker search stats</h2>
+<p>Tests that cover <code>TrackerSearchStat</code> and the
+<code>tracker_started</code> / <code>tracker_completed</code> SSE events
+live across four suites:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test file</th>
+<th>Type</th>
+<th>What it pins</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit/merge_service/test_tracker_stats.py</code></td>
+<td>Unit</td>
+<td><code>TrackerSearchStat</code> defaults, status transitions (pending
+→ running → success / empty / error / timeout), <code>duration_ms</code>
+bookkeeping, auth-flag provenance, and sorted <code>to_dict()</code>
+serialisation.</td>
+</tr>
+<tr>
+<td><code>tests/unit/api_layer/test_tracker_stats_sse.py</code></td>
+<td>Unit (streaming)</td>
+<td>The SSE poll loop emits <code>tracker_started</code> exactly once on
+pending→running and <code>tracker_completed</code> exactly once per
+terminal flip; gracefully degrades when metadata predates
+<code>tracker_stats</code>.</td>
+</tr>
+<tr>
+<td><code>tests/property/test_tracker_stats_properties.py</code></td>
+<td>Property (Hypothesis)</td>
+<td>sum of <code>results_count</code> == <code>total_results</code>,
+every completed stat has <code>duration_ms &gt;= 0</code>,
+<code>set(tracker_stats keys) == set(trackers_searched)</code>, failed
+trackers retain <code>error_type</code> + <code>error</code>.</td>
+</tr>
+<tr>
+<td><code>tests/contract/test_tracker_stats_contract.py</code></td>
+<td>Contract</td>
+<td><code>POST /api/v1/search</code>,
+<code>POST /api/v1/search/sync</code>, and
+<code>GET /api/v1/search/{id}</code> all expose the 15-field
+<code>tracker_stats</code> payload on <code>SearchResponse</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The frontend dialog + chip bar are covered by
+<code>frontend/src/app/components/tracker-stat-dialog/tracker-stat-dialog.component.spec.ts</code>
+and the <code>tracker stats bar</code> describe block in
+<code>frontend/src/app/components/dashboard/dashboard.component.spec.ts</code>.</p>
+<h2 id="runtime-theme-palette-system">Runtime theme (palette
+system)</h2>
+<p>The runtime-switchable palette system (see <a
+href="DESIGN_SYSTEM.md"><code>docs/DESIGN_SYSTEM.md</code></a>) is
+guarded by a four-tier test bundle — every tier asserts
+<em>observable</em> state (DOM, CSS variables, localStorage, Playwright
+computed style) per the “no false positives” mandate:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test file</th>
+<th>Type</th>
+<th>What it pins</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit/test_palette_catalog.py</code></td>
+<td>Unit (parametric)</td>
+<td>Every palette has both variants, every one of the 15 tokens is a
+valid CSS colour, ids are unique, <code>DEFAULT_PALETTE_ID</code>
+resolves, Darcula accent is <code>#9d001e</code>. Per-palette
+parametrisation names the offender.</td>
+</tr>
+<tr>
+<td><code>tests/unit/test_theme_wiring.py</code></td>
+<td>Unit (integration)</td>
+<td><code>:root</code> fallback block covers every token; dashboard SCSS
+uses <code>var(--color-*)</code> instead of
+<code>$accent</code>/<code>$bg-*</code> Sass variables; dashboard
+template includes <code>&lt;app-theme-picker&gt;</code>;
+<code>TOKEN_CSS_VAR</code> map covers every var.</td>
+</tr>
+<tr>
+<td><code>frontend/src/app/services/theme.service.spec.ts</code></td>
+<td>Unit (Vitest)</td>
+<td>System-dark detection, stored-state hydration, unknown-id fallback,
+<code>setPalette</code> writes all 15 tokens with exact values to
+<code>documentElement.style</code>, <code>toggleMode</code> flips signal
++ <code>data-mode</code> + <code>color-scheme</code>,
+<code>prefers-color-scheme</code> change listener respects
+<code>modeIsUserChosen</code> flag.</td>
+</tr>
+<tr>
+<td><code>frontend/src/app/components/theme-picker/theme-picker.component.spec.ts</code></td>
+<td>Unit (Vitest)</td>
+<td>One menu item per palette, swatches render with
+accent/contrast/bg/text colours, clicking an item calls
+<code>setPalette</code>, clicking outside closes the menu, active
+palette has <code>.active</code> +
+<code>aria-checked="true"</code>.</td>
+</tr>
+<tr>
+<td><code>tests/e2e/test_theme_runtime.py</code></td>
+<td>End-to-end (Playwright)</td>
+<td>Live dashboard at <code>:7187</code>: picking a new palette changes
+<code>--color-accent</code> (+3 others) on <code>&lt;html&gt;</code> to
+the catalogue value AND writes <code>qbit.theme</code> into
+localStorage. Skips with a loud message when the served bundle predates
+the theme-picker.</td>
+</tr>
+</tbody>
+</table>
+<p>Whenever the <code>TrackerSearchStat</code> shape changes, run
+<code>./scripts/freeze-openapi.sh</code> to refresh
+<code>docs/api/openapi.json</code> so the contract test
+<code>test_frozen_and_live_have_same_schemas</code> stays green.</p>
+<h2 id="gotchas">Gotchas</h2>
+<ul>
+<li><code>pytest</code> needs <code>--import-mode=importlib</code> for
+the merge service — the project is not a Python package (no
+<code>__init__.py</code> at the root).</li>
+<li>Integration tests with
+<code>requests.get("http://localhost:7187/").ok</code> guards are
+<strong>obsolete</strong> since Phase 0 — use the live fixtures instead.
+<code>tests/unit/test_no_runtime_service_skips.py</code> enforces
+this.</li>
+<li><code>pytest-timeout</code> hard-caps every test at 30 seconds.
+Stress and load tests that legitimately run longer must override with
+<code>@pytest.mark.timeout(...)</code>.</li>
+<li>The CI workflow is <strong>no longer manual-only</strong> since
+Phase 0.4 — push and PR triggers the syntax / unit / integration
+workflows. Only the <code>nightly.yml</code> and
+<code>security.yml</code> are scheduled.</li>
+</ul>

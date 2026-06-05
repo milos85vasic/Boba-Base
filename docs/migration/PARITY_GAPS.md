@@ -1,5 +1,8 @@
 # Python → Go Parity Gaps
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 **Last audited:** 2026-04-27 (commit `5f12be0`)
 **Audit method:** side-by-side read of public surface (`grep -E "^func"` on Go,
 module-level inspection on Python). No behavior testing performed.

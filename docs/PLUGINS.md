@@ -1,5 +1,8 @@
 # qBitTorrent Search Plugins Documentation
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 This document provides comprehensive documentation for all included search plugins.
 
 ## Table of Contents

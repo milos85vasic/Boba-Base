@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TEMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TEMP_DIR"' EXIT
+
+WORKTREE="$TEMP_DIR/worktree"
+git worktree add "$WORKTREE" HEAD >/dev/null 2>&1
+trap 'git worktree remove "$WORKTREE" >/dev/null 2>&1; rm -rf "$TEMP_DIR"' EXIT
+
+COMMIT_HOOK="$(dirname "$0")/pre-commit"
+if [ -x "$COMMIT_HOOK" ]; then
+  cd "$WORKTREE"
+  if ! "$COMMIT_HOOK"; then
+    echo "CONSTITUTION-§11.4.75: push blocked — pre-commit checks would fail on HEAD."
+    exit 1
+  fi
+fi
+
+exit 0

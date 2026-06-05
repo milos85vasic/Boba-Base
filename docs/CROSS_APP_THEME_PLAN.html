@@ -1,0 +1,197 @@
+<h1 id="cross-app-theme-plan">Cross-app Theme Plan</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p><strong>Problem.</strong> The Angular dashboard at <code>:7187</code>
+is themed end-to-end (Darcula + 7 other palettes, per-element drop
+shadows). The qBittorrent WebUI proxied at <code>:7186</code> is
+<strong>qBittorrent’s own code</strong> — it ignores our design system
+entirely. Our users see two different-looking apps.</p>
+<p><strong>Goal.</strong> Any theme change made in the Angular dashboard
+must immediately propagate to the qBittorrent WebUI (and any future app
+we proxy). No user action required. Persisted. Works across page reloads
+and browser tabs.</p>
+<h2 id="architecture">Architecture</h2>
+<pre><code> ┌──────────────────────────┐       ┌──────────────────────────┐
+ │  Angular dashboard :7187 │       │ qBittorrent WebUI :7186  │
+ │  ThemeService            │       │ (qBittorrent&#39;s own HTML) │
+ │  localStorage + signals  │       │                          │
+ └───────────┬──────────────┘       └──────────┬───────────────┘
+             │                                 │
+             ▼                                 ▼
+         GET/PUT /api/v1/theme          GET /__qbit_theme__/skin.css
+         SSE /api/v1/theme/stream      GET /__qbit_theme__/bootstrap.js
+             │                                 │
+             └──────────┬──────────────────────┘
+                        ▼
+              Merge service (shared state)
+              + download-proxy HTML injector</code></pre>
+<h2 id="four-phase-plan">Four-phase plan</h2>
+<h3 id="phase-a-shared-theme-state-backend">Phase A — shared theme state
+(backend)</h3>
+<p>Add to <code>download-proxy/src/api/routes.py</code>:</p>
+<ul>
+<li><code>GET  /api/v1/theme</code> →
+<code>{paletteId, mode, updatedAt}</code></li>
+<li><code>PUT  /api/v1/theme</code> body <code>{paletteId, mode}</code>
+→ 200 <code>{paletteId, mode, updatedAt}</code></li>
+<li><code>GET  /api/v1/theme/stream</code> → SSE, emits
+<code>theme</code> event on every PUT</li>
+</ul>
+<p>Persist to <code>config/merge-service/theme.json</code> (gitignored).
+Validate <code>paletteId</code> against the catalog list (ported to a
+backend constant), <code>mode</code> ∈ <code>{light, dark}</code>.</p>
+<h3 id="phase-b-angular-themeservice-sync">Phase B — Angular
+ThemeService sync</h3>
+<p><code>frontend/src/app/services/theme.service.ts</code>:</p>
+<ul>
+<li>On construct: if localStorage empty, <code>GET /api/v1/theme</code>;
+seed signals from server; else push local → server to claim the
+state.</li>
+<li><code>setPalette/setMode/toggleMode</code> → debounced
+<code>PUT /api/v1/theme</code>.</li>
+<li>Subscribe to <code>/api/v1/theme/stream</code>; when the server’s
+<code>updatedAt</code> is newer than our last write, adopt the server
+state (tab-to-tab
+<ul>
+<li>WebUI-to-dashboard sync).</li>
+</ul></li>
+</ul>
+<h3
+id="phase-c-qbittorrent-webui-injection-pluginsdownload_proxy.py">Phase
+C — qBittorrent WebUI injection
+(<code>plugins/download_proxy.py</code>)</h3>
+<p>The legacy HTTP proxy at <code>:7186</code> already rewrites select
+routes. Extend <code>proxy_to_qbittorrent</code> so that responses with
+<code>Content-Type: text/html</code> have this injected immediately
+before <code>&lt;/head&gt;</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">link</span><span class="ot"> rel</span><span class="op">=</span><span class="st">&quot;stylesheet&quot;</span><span class="ot"> href</span><span class="op">=</span><span class="st">&quot;/__qbit_theme__/skin.css&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">script</span><span class="ot"> src</span><span class="op">=</span><span class="st">&quot;/__qbit_theme__/bootstrap.js&quot;</span><span class="ot"> defer</span><span class="dt">&gt;&lt;/</span><span class="kw">script</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>Handle two new proxy-local routes (not forwarded to qBittorrent):</p>
+<ul>
+<li><code>GET /__qbit_theme__/skin.css</code> — CSS bridge. Declares
+every <code>--color-*</code> variable on <code>:root</code> with
+sensible fallbacks, then overrides qBittorrent’s top-level selectors:
+<code>body</code>, <code>#desktop</code>, <code>#mainWindowTabs</code>,
+<code>.filterTitle</code>, <code>.sidebar</code>,
+<code>.scrollbar</code>, <code>dialog</code>, button/hover states,
+tables.</li>
+<li><code>GET /__qbit_theme__/bootstrap.js</code> — JS bridge. On load:
+<ol type="1">
+<li><code>fetch('/api/v1/theme')</code> via the merge service (CORS: we
+add the <code>:7186</code> origin to the allow-list).</li>
+<li>Apply returned tokens to <code>document.documentElement.style</code>
+(same shape as Angular ThemeService).</li>
+<li>Open <code>EventSource('/api/v1/theme/stream')</code> and re-apply
+on every event so live dashboard palette swaps are mirrored.</li>
+</ol></li>
+</ul>
+<p>The download-proxy needs to know where the merge service is; env
+<code>MERGE_SERVICE_URL</code> (default
+<code>http://localhost:7187</code>).</p>
+<h3 id="phase-d-tests-no-false-positives">Phase D — tests (no false
+positives)</h3>
+<ol type="1">
+<li><strong>Unit — theme state endpoint</strong>
+(<code>tests/unit/merge_service/test_theme_endpoint.py</code>)
+<ul>
+<li>GET returns default
+<code>{paletteId: 'darcula', mode: 'dark'}</code> on first call</li>
+<li>PUT persists; GET reflects</li>
+<li>PUT rejects unknown paletteId with 422</li>
+<li>PUT rejects mode ∉ {light, dark} with 422</li>
+</ul></li>
+<li><strong>Unit — SSE emission</strong>
+(<code>tests/unit/api_layer/test_theme_stream.py</code>)
+<ul>
+<li>Generator emits <code>event: theme</code> with the new payload
+within one poll cycle of a PUT.</li>
+</ul></li>
+<li><strong>Unit — HTML injection</strong>
+(<code>tests/unit/test_webui_theme_injector.py</code>)
+<ul>
+<li>Given qBittorrent-shaped HTML, inject before
+<code>&lt;/head&gt;</code>; output contains both new tags exactly once;
+<code>Content-Length</code> rewritten.</li>
+<li>Idempotent: calling the injector twice leaves the page with only one
+<code>&lt;link&gt;</code> and one <code>&lt;script&gt;</code> tag for
+the bridge.</li>
+<li>Non-HTML responses pass through unchanged.</li>
+</ul></li>
+<li><strong>Contract</strong> — curling
+<code>http://localhost:7186/</code> returns a page whose HTML contains
+the two bridge-asset references.</li>
+<li><strong>Playwright e2e</strong>
+(<code>tests/e2e/test_crossapp_theme.py</code>) — real computed-style
+assertions, skipped cleanly until the stack is rebuilt + restarted:
+<ul>
+<li>Open <code>:7187</code>, click Nord in the dropdown.</li>
+<li>Open a second page at <code>:7186</code>; wait up to 5 s for
+<code>getComputedStyle(document.body).backgroundColor</code> to match
+Nord’s <code>bg-primary</code> (converted from <code>#2e3440</code> to
+<code>rgb(46, 52, 64)</code>).</li>
+<li>Switch to Gruvbox in the dashboard; assert <code>:7186</code> body
+colour flips to Gruvbox’s <code>#282828</code> within 5 s.</li>
+<li>Assert the <code>localStorage['qbit.theme']</code> on
+<code>:7187</code> AND the <code>window.__qbitTheme</code> side-channel
+on <code>:7186</code> both show <code>paletteId: gruvbox</code>.</li>
+</ul></li>
+<li><strong>Property</strong> — round-trip any palette id through
+PUT/GET; the server echoes the same id and it round-trips through the
+CSS-var name list without dropping tokens.</li>
+</ol>
+<h2 id="final-verification-checklist">Final verification checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />794 Python tests still green + the
+new suites (expected +~15)</label></li>
+<li><label><input type="checkbox" />246 frontend tests still green (+
+cross-app sync spec if any)</label></li>
+<li><label><input type="checkbox" />Rebuilt Angular bundle + restarted
+<code>qbittorrent-proxy</code></label></li>
+<li><label><input type="checkbox" /><code>curl :7186/</code> contains
+<code>/__qbit_theme__/skin.css</code> +
+<code>/__qbit_theme__/bootstrap.js</code></label></li>
+<li><label><input type="checkbox" />Playwright e2e passes (not skipped)
+— real palette swap on both ports</label></li>
+<li><label><input type="checkbox" />Commits + pushes to origin + github
++ upstream</label></li>
+</ul>
+<h2 id="rollback">Rollback</h2>
+<p>If anything in this phase breaks qBittorrent WebUI functionality, set
+env <code>DISABLE_THEME_INJECTION=1</code> and restart the proxy — the
+injector becomes a passthrough. Documented in <a
+href="TOKENS_AND_KEYS.md"><code>docs/TOKENS_AND_KEYS.md</code></a>
+§7.</p>
+<h2 id="outcome-shipped-2026-04-19">Outcome (shipped 2026-04-19)</h2>
+<p>Landed in four commits on <code>main</code>:</p>
+<ul>
+<li><code>feat(backend): shared theme state + /api/v1/theme SSE for cross-app sync</code></li>
+<li><code>feat(proxy): inject theme CSS+JS into qBittorrent WebUI at :7186</code></li>
+<li><code>feat(frontend): ThemeService syncs to backend + subscribes to SSE</code></li>
+<li><code>fix(proxy): decompress gzip + relax CSP connect-src for theme bridge</code></li>
+</ul>
+<p>Two live-debug discoveries that the plan had not anticipated:</p>
+<ul>
+<li><strong>gzip</strong> — qBittorrent returns
+<code>Content-Encoding: gzip</code> when the browser sends
+<code>Accept-Encoding: gzip</code>. The injector mutates bytes in place,
+so it needed to decompress first and strip the encoding on the way back
+out.</li>
+<li><strong>CSP</strong> — qBittorrent’s Content-Security-Policy ships
+without a <code>connect-src</code> directive; browsers then enforce
+<code>default-src 'self'</code>, blocking the bridge’s
+<code>fetch('/api/v1/theme')</code> + <code>EventSource(...)</code>
+calls cross-origin. The proxy now rewrites the CSP header to add
+<code>connect-src</code> with the merge-service origin.</li>
+</ul>
+<p>Verification (2026-04-19 @ main):</p>
+<ul>
+<li>837 Python tests green
+(<code>tests/unit tests/e2e tests/contract tests/property tests/memory tests/concurrency tests/observability</code>).</li>
+<li>255 frontend tests green
+(<code>npx ng test --watch=false</code>).</li>
+<li>The Playwright e2e <strong>passed</strong> — not skipped. Real
+palette swap on both :7187 and :7186, verified via
+<code>getComputedStyle(...)</code> on the proxied WebUI + the
+<code>window.__qbitTheme</code> side-channel.</li>
+</ul>

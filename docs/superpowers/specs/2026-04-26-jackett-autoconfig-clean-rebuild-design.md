@@ -1,5 +1,8 @@
 # Jackett Auto-Configuration + Clean-Slate Rebuild — Design
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 **Date:** 2026-04-26
 **Author:** brainstorming session (Claude + project owner)
 **Status:** approved, ready for implementation plan

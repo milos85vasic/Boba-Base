@@ -1,0 +1,308 @@
+<h1 id="contributing-guide">Contributing Guide</h1>
+<p>Thank you for your interest in contributing to this project! This
+document provides guidelines and instructions for contributing.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#code-of-conduct">Code of Conduct</a></li>
+<li><a href="#getting-started">Getting Started</a></li>
+<li><a href="#development-setup">Development Setup</a></li>
+<li><a href="#how-to-contribute">How to Contribute</a></li>
+<li><a href="#coding-standards">Coding Standards</a></li>
+<li><a href="#testing">Testing</a></li>
+<li><a href="#commit-guidelines">Commit Guidelines</a></li>
+<li><a href="#pull-request-process">Pull Request Process</a></li>
+</ul>
+<h2 id="code-of-conduct">Code of Conduct</h2>
+<ul>
+<li>Be respectful and inclusive</li>
+<li>Focus on constructive feedback</li>
+<li>Help others learn and grow</li>
+</ul>
+<h2 id="getting-started">Getting Started</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>Git</li>
+<li>Docker or Podman</li>
+<li>Bash shell</li>
+<li>Python 3.x (for plugin development)</li>
+</ul>
+<h3 id="fork-and-clone">Fork and Clone</h3>
+<ol type="1">
+<li><p>Fork the repository on GitHub</p></li>
+<li><p>Clone your fork:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone git@github.com:YOUR_USERNAME/qBitTorrent.git</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> qBitTorrent</span></code></pre></div></li>
+<li><p>Add upstream remote:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> remote add upstream git@github.com:milos85vasic/qBitTorrent.git</span></code></pre></div></li>
+</ol>
+<h2 id="development-setup">Development Setup</h2>
+<ol type="1">
+<li><p>Create configuration files:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env.example .env</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Edit .env with your test credentials</span></span></code></pre></div></li>
+<li><p>Make scripts executable:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x <span class="pp">*</span>.sh tests/<span class="pp">*</span>.sh</span></code></pre></div></li>
+<li><p>Run tests to verify setup:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./test.sh</span> <span class="at">--all</span></span></code></pre></div></li>
+</ol>
+<h2 id="how-to-contribute">How to Contribute</h2>
+<h3 id="reporting-issues">Reporting Issues</h3>
+<ol type="1">
+<li>Check existing issues first</li>
+<li>Use the issue template</li>
+<li>Include:
+<ul>
+<li>Steps to reproduce</li>
+<li>Expected behavior</li>
+<li>Actual behavior</li>
+<li>Environment details (OS, container runtime)</li>
+</ul></li>
+</ol>
+<h3 id="suggesting-features">Suggesting Features</h3>
+<ol type="1">
+<li>Open a discussion or issue</li>
+<li>Describe the feature and use case</li>
+<li>Explain why it would benefit the project</li>
+</ol>
+<h3 id="submitting-code">Submitting Code</h3>
+<ol type="1">
+<li><p>Create a feature branch:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> checkout <span class="at">-b</span> feature/your-feature-name</span></code></pre></div></li>
+<li><p>Make your changes</p></li>
+<li><p>Run tests:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./test.sh</span> <span class="at">--full</span></span></code></pre></div></li>
+<li><p>Commit your changes</p></li>
+<li><p>Push and create a pull request</p></li>
+</ol>
+<h2 id="coding-standards">Coding Standards</h2>
+<h3 id="bash-scripts">Bash Scripts</h3>
+<ul>
+<li>Use <code>set -euo pipefail</code> for strict mode</li>
+<li>Add help text with <code>-h, --help</code> flags</li>
+<li>Quote all variables</li>
+<li>Use meaningful variable names</li>
+<li>Add color output for user feedback</li>
+<li>Check for command availability</li>
+</ul>
+<p>Example:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/bash</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">set</span> <span class="at">-euo</span> pipefail</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="va">SCRIPT_DIR</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$(</span><span class="bu">cd</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">dirname</span> <span class="st">&quot;</span><span class="va">${BASH_SOURCE</span><span class="op">[</span><span class="dv">0</span><span class="op">]</span><span class="va">}</span><span class="st">&quot;</span><span class="va">)</span><span class="st">&quot;</span> <span class="kw">&amp;&amp;</span> <span class="bu">pwd</span><span class="va">)</span><span class="st">&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="st">&quot;</span><span class="va">$SCRIPT_DIR</span><span class="st">&quot;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="va">RED</span><span class="op">=</span><span class="st">&#39;\033[0;31m&#39;</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="va">GREEN</span><span class="op">=</span><span class="st">&#39;\033[0;32m&#39;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="va">NC</span><span class="op">=</span><span class="st">&#39;\033[0m&#39;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="fu">print_error()</span> <span class="kw">{</span> <span class="bu">echo</span> <span class="at">-e</span> <span class="st">&quot;</span><span class="va">${RED}</span><span class="st">[ERROR]</span><span class="va">${NC}</span><span class="st"> </span><span class="va">$1</span><span class="st">&quot;</span><span class="kw">;</span> <span class="kw">}</span></span></code></pre></div>
+<h3 id="python-plugin-code">Python (Plugin Code)</h3>
+<ul>
+<li>Follow PEP 8 style guide</li>
+<li>Use type hints where appropriate</li>
+<li>Add docstrings to functions and classes</li>
+<li>Handle exceptions gracefully</li>
+<li>Support environment variables for configuration</li>
+</ul>
+<p>Example:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_credentials() <span class="op">-&gt;</span> <span class="bu">tuple</span>[<span class="bu">str</span>, <span class="bu">str</span>]:</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Load credentials from environment or config files.</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">    </span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">    Returns:</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">        Tuple of (username, password)</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    username <span class="op">=</span> os.environ.get(<span class="st">&quot;RUTRACKER_USERNAME&quot;</span>, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    password <span class="op">=</span> os.environ.get(<span class="st">&quot;RUTRACKER_PASSWORD&quot;</span>, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> username, password</span></code></pre></div>
+<h3 id="python-merge-service">Python (Merge Service)</h3>
+<ul>
+<li>FastAPI with async handlers</li>
+<li><code>aiohttp</code> for outbound HTTP requests</li>
+<li><code>sys.path</code> setup for test imports using
+<code>importlib.util</code></li>
+<li>No comments in code (project convention)</li>
+</ul>
+<h3 id="yamldocker-compose">YAML/Docker Compose</h3>
+<ul>
+<li>Use 2-space indentation</li>
+<li>Include inline comments</li>
+<li>Use descriptive service names</li>
+<li>Document environment variables</li>
+</ul>
+<h3 id="documentation">Documentation</h3>
+<ul>
+<li>Keep README.md updated</li>
+<li>Update USER_MANUAL.md for user-facing changes</li>
+<li>Update AGENTS.md for development changes</li>
+<li>Use clear, concise language</li>
+</ul>
+<p>Merge service source files to document: -
+<code>download-proxy/src/merge_service/search.py</code> — search
+orchestration and tracker parsing -
+<code>download-proxy/src/api/routes.py</code> — API endpoint definitions
+- <code>download-proxy/src/api/__init__.py</code> — API module setup</p>
+<h2 id="testing">Testing</h2>
+<h3 id="before-committing">Before Committing</h3>
+<p>Always run tests before committing:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick validation</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./test.sh</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Full test suite</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ex">./test.sh</span> <span class="at">--full</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Or comprehensive tests</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./tests/run_tests.sh</span></span></code></pre></div>
+<h3 id="test-categories">Test Categories</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Command</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quick</td>
+<td><code>./test.sh</code></td>
+<td>Basic validation</td>
+</tr>
+<tr>
+<td>All</td>
+<td><code>./test.sh --all</code></td>
+<td>All validation tests</td>
+</tr>
+<tr>
+<td>Plugin</td>
+<td><code>./test.sh --plugin</code></td>
+<td>Plugin configuration</td>
+</tr>
+<tr>
+<td>Full</td>
+<td><code>./test.sh --full</code></td>
+<td>Complete test suite</td>
+</tr>
+</tbody>
+</table>
+<h3 id="merge-service-tests">Merge Service Tests</h3>
+<p>Run the merge service test suite:</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/merge_service/ tests/integration/test_merge_api.py <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
+<h3 id="adding-tests">Adding Tests</h3>
+<ol type="1">
+<li>Add test functions to <code>tests/run_tests.sh</code></li>
+<li>Follow naming convention: <code>test_&lt;category&gt;()</code></li>
+<li>Use assertion functions</li>
+<li>Document the test purpose</li>
+</ol>
+<h2 id="commit-guidelines">Commit Guidelines</h2>
+<h3 id="commit-message-format">Commit Message Format</h3>
+<pre><code>&lt;type&gt;: &lt;subject&gt;
+
+&lt;body (optional)&gt;</code></pre>
+<h3 id="types">Types</h3>
+<ul>
+<li><code>feat</code>: New feature</li>
+<li><code>fix</code>: Bug fix</li>
+<li><code>docs</code>: Documentation changes</li>
+<li><code>style</code>: Code style changes (formatting)</li>
+<li><code>refactor</code>: Code refactoring</li>
+<li><code>test</code>: Adding or updating tests</li>
+<li><code>chore</code>: Maintenance tasks</li>
+</ul>
+<h3 id="examples">Examples</h3>
+<pre><code>feat: add support for custom RuTracker mirrors
+
+- Add RUTRACKER_MIRRORS environment variable
+- Update plugin to use configurable mirrors
+- Add documentation for mirror configuration</code></pre>
+<pre><code>fix: resolve credential loading from ~/.qbit.env
+
+- Fix path expansion for home directory
+- Add fallback to project .env file
+- Add test for credential loading</code></pre>
+<h2 id="pull-request-process">Pull Request Process</h2>
+<ol type="1">
+<li><p><strong>Create a Branch</strong></p>
+<ul>
+<li>Use descriptive branch names</li>
+<li>One feature/fix per branch</li>
+</ul></li>
+<li><p><strong>Make Changes</strong></p>
+<ul>
+<li>Follow coding standards</li>
+<li>Add/update tests</li>
+<li>Update documentation</li>
+</ul></li>
+<li><p><strong>Test Thoroughly</strong></p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./test.sh</span> <span class="at">--full</span></span></code></pre></div></li>
+<li><p><strong>Commit Changes</strong></p>
+<ul>
+<li>Use meaningful commit messages</li>
+<li>Reference issues if applicable</li>
+</ul></li>
+<li><p><strong>Push and Create PR</strong></p>
+<ul>
+<li>Push to your fork</li>
+<li>Create pull request against main</li>
+<li>Fill out PR template</li>
+</ul></li>
+<li><p><strong>Code Review</strong></p>
+<ul>
+<li>Respond to feedback</li>
+<li>Make requested changes</li>
+<li>Keep discussion constructive</li>
+</ul></li>
+<li><p><strong>Merge</strong></p>
+<ul>
+<li>PR will be merged after approval</li>
+<li>Ensure CI passes</li>
+</ul></li>
+</ol>
+<h3 id="pr-checklist">PR Checklist</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Code follows project style
+guidelines</label></li>
+<li><label><input type="checkbox" />Tests pass locally</label></li>
+<li><label><input type="checkbox" />Documentation updated</label></li>
+<li><label><input type="checkbox" />Commit messages follow
+guidelines</label></li>
+<li><label><input type="checkbox" />No sensitive data in
+commits</label></li>
+<li><label><input type="checkbox" />Branch is up to date with
+main</label></li>
+</ul>
+<h2 id="security">Security</h2>
+<h3 id="reporting-security-issues">Reporting Security Issues</h3>
+<p>Do NOT open public issues for security vulnerabilities.</p>
+<p>Email security issues to the maintainer or use GitHub Security
+Advisories.</p>
+<h3 id="security-guidelines">Security Guidelines</h3>
+<ul>
+<li>Never commit credentials or secrets</li>
+<li>Use <code>.env</code> files (in <code>.gitignore</code>)</li>
+<li>Sanitize logs of sensitive data</li>
+<li>Follow principle of least privilege</li>
+</ul>
+<h2 id="questions">Questions?</h2>
+<ul>
+<li>Open a GitHub Discussion</li>
+<li>Check existing issues</li>
+<li>Review documentation in <code>docs/</code></li>
+</ul>
+<h2 id="license">License</h2>
+<p>By contributing, you agree that your contributions will be licensed
+under the Apache License 2.0.</p>
+<hr />
+<p>Thank you for contributing! 🎉</p>

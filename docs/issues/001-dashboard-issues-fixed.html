@@ -1,0 +1,336 @@
+<h1 id="dashboard-issues-fixed---april-2026">Dashboard Issues Fixed -
+April 2026</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<h2 id="summary">Summary</h2>
+<p>Five critical issues discovered during manual testing have been
+identified, reproduced with failing tests (TDD), fixed, and verified
+across unit, integration, and e2e test suites.</p>
+<p><strong>Total tests added:</strong> 52 new tests<br />
+<strong>Total tests passing:</strong> 460 (all suites)<br />
+<strong>Root cause:</strong> Public tracker subprocess script contained
+an undefined variable reference (<code>{tracker_name}</code>), causing
+ALL public trackers to silently return 0 results. This cascaded into
+broken type detection, zero seeds/leechers, missing quality data, and
+extremely slow searches.</p>
+<hr />
+<h2 id="issue-1-plus-button-download-button-with-merged-sources">Issue
+1: Plus Button → Download Button with Merged Sources</h2>
+<h3 id="problem">Problem</h3>
+<p>The <code>+</code> button label was unclear. The Magnet button
+generated a generic magnet link ignoring actual source URLs. The
+Download button did not produce files containing fully merged
+sources.</p>
+<h3 id="fix">Fix</h3>
+<ul>
+<li><strong>Renamed button:</strong> <code>+</code> →
+<code>Download</code> across dashboard
+(<code>dashboard.html</code>)</li>
+<li><strong>Fixed magnet generation:</strong>
+<code>/api/v1/magnet</code> endpoint now:
+<ul>
+<li>Extracts ALL <code>btih</code> hashes from all source magnet
+URLs</li>
+<li>Extracts ALL <code>tr=</code> (tracker) parameters from source
+magnets</li>
+<li>Merges them into a single magnet with unique trackers + fallback
+public trackers</li>
+<li>Fixed hash regex order (<code>{40}</code> before <code>{32}</code>)
+to correctly match 40-char hashes</li>
+</ul></li>
+<li><strong>Frontend integration:</strong> <code>generateMagnet()</code>
+now calls backend <code>/api/v1/magnet</code> asynchronously</li>
+<li><strong>Button reset:</strong> All timeout handlers reset button
+text to <code>Download</code> instead of <code>+</code></li>
+</ul>
+<h3 id="tests">Tests</h3>
+<ul>
+<li><code>tests/unit/test_download_merged.py</code> — 6 tests</li>
+<li><code>tests/integration/test_manual_issues.py::TestIssue1DownloadButton</code>
+— 4 tests</li>
+<li><code>tests/integration/test_dashboard_automation.py::TestDashboardIssue1DownloadButton</code>
+— 3 tests</li>
+<li><code>tests/e2e/test_dashboard_issues.py::TestE2EIssue1DownloadMergedSources</code>
+— 2 tests</li>
+</ul>
+<hr />
+<h2 id="issue-2-type-column-broken-seedsleechers-columns-broken">Issue
+2: Type Column Broken + Seeds/Leechers Columns Broken</h2>
+<h3 id="problem-1">Problem</h3>
+<ul>
+<li>All results showed <code>Unknown</code> type</li>
+<li>Most results showed <code>0</code> seeds and leechers</li>
+<li>Type detection did not cover enough patterns</li>
+</ul>
+<h3 id="root-cause">Root Cause</h3>
+<p>The public tracker subprocess script in
+<code>SearchOrchestrator._search_public_tracker()</code> had a critical
+bug:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ss">f&quot;_mod = importlib.import_module(f&#39;engines.</span><span class="ch">{{</span><span class="ss">tracker_name</span><span class="ch">}}</span><span class="ss">&#39;)</span><span class="ch">\n</span><span class="ss">&quot;</span></span></code></pre></div>
+<p>The <code>{{tracker_name}}</code> in the outer f-string produced
+<code>{tracker_name}</code> in the subprocess script. Inside the
+subprocess, <code>tracker_name</code> was undefined, causing a
+<code>NameError</code> that was silently caught. <strong>All 33+ public
+trackers returned 0 results.</strong> Only private trackers worked,
+giving the appearance of “3 trackers from 40+”.</p>
+<h3 id="fix-1">Fix</h3>
+<ul>
+<li><p><strong>Subprocess script:</strong> Changed to hardcoded tracker
+names:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ss">f&quot;_mod = importlib.import_module(&#39;engines.</span><span class="sc">{</span>tracker_name<span class="sc">}</span><span class="ss">&#39;)</span><span class="ch">\n</span><span class="ss">&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ss">f&quot;_cls = getattr(_mod, &#39;</span><span class="sc">{</span>tracker_name<span class="sc">}</span><span class="ss">&#39;)</span><span class="ch">\n</span><span class="ss">&quot;</span></span></code></pre></div></li>
+<li><p><strong>Refined type detection</strong>
+(<code>deduplicator.py</code> <code>_detect_content_type</code>):</p>
+<ul>
+<li>Added <strong>ebook</strong> detection: <code>epub</code>,
+<code>pdf</code>, <code>mobi</code>, <code>azw3</code>,
+<code>cbz</code>, <code>cbr</code>, <code>djvu</code></li>
+<li>Expanded <strong>music</strong> detection with more formats:
+<code>alac</code>, <code>m4a</code>, <code>wma</code>,
+<code>v2</code></li>
+<li>Added genre keyword detection without parentheses:
+<code>rock</code>, <code>pop</code>, <code>metal</code>,
+<code>jazz</code>, <code>blues</code>, <code>folk</code>,
+<code>hip hop</code>, <code>electronic</code>, <code>dance</code>,
+<code>classical</code>, <code>hard rock</code>, <code>indie</code>,
+<code>rap</code>, <code>soul</code>, <code>r&amp;b</code>,
+<code>country</code>, <code>techno</code>, <code>trance</code>,
+<code>house</code>, <code>dubstep</code>, <code>ambient</code>,
+<code>reggae</code>, <code>punk</code>, <code>funk</code>,
+<code>disco</code>, <code>metalcore</code>,
+<code>progressive</code></li>
+<li>Ebook detection runs before music detection to prevent
+<code>cbr</code> (comic format) from being misclassified as music
+(constant bitrate)</li>
+</ul></li>
+<li><p><strong>Fixed name normalization</strong>
+(<code>_normalize_name</code>): Year regex was <code>\d{4}</code> which
+stripped resolution numbers like <code>1080</code>. Fixed to
+<code>\b(19|20)\d{2}\b</code> so only actual years are removed.</p></li>
+</ul>
+<h3 id="tests-1">Tests</h3>
+<ul>
+<li><code>tests/unit/test_public_tracker_subprocess.py</code> — 6
+tests</li>
+<li><code>tests/unit/test_content_type_refinement.py</code> — 12
+tests</li>
+<li><code>tests/integration/test_manual_issues.py::TestIssue2TypeColumn</code>
+— 3 tests</li>
+<li><code>tests/integration/test_manual_issues.py::TestIssue3SeedsLeechers</code>
+— 3 tests</li>
+<li><code>tests/integration/test_dashboard_automation.py::TestDashboardIssue2TypeAndSeeds</code>
+— 2 tests</li>
+<li><code>tests/e2e/test_dashboard_issues.py::TestE2EIssue2TypeAndSeeds</code>
+— 2 tests</li>
+</ul>
+<hr />
+<h2 id="issue-3-quality-column-broken">Issue 3: Quality Column
+Broken</h2>
+<h3 id="problem-2">Problem</h3>
+<p>All search results showed <code>Unknown</code> quality.</p>
+<h3 id="root-cause-1">Root Cause</h3>
+<p>Same as Issue 2 — public trackers returning 0 results meant no
+quality markers were present in result names. Additionally: -
+<code>BDRip</code> was not mapped to <code>full_hd</code> -
+<code>MergedResult.best_quality</code> was never populated</p>
+<h3 id="fix-2">Fix</h3>
+<ul>
+<li><strong>Quality mapping</strong> (<code>api/routes.py</code>
+<code>_detect_quality</code>):
+<ul>
+<li>Added <code>BDRip</code> → <code>full_hd</code></li>
+<li>Added <code>BDRemux</code> → <code>uhd_4k</code></li>
+<li>Added <code>WEBRip</code> → <code>hd</code></li>
+<li>Added <code>HDRip</code> → <code>hd</code></li>
+<li>Added <code>DVDRip</code> → <code>sd</code></li>
+</ul></li>
+<li><strong>Enricher</strong> (<code>merge_service/enricher.py</code>
+<code>detect_quality</code>):
+<ul>
+<li>Added <code>bdrip</code> and <code>bd-remux</code> to BluRay
+detection</li>
+</ul></li>
+<li><strong>MergedResult.best_quality</strong>
+(<code>deduplicator.py</code>):
+<ul>
+<li>New <code>_update_best_quality()</code> method computes the best
+quality among all sources using weight mapping</li>
+<li>Called automatically after every merge group is finalized</li>
+<li>Weight map:
+<code>unknown=1, sd=2, hd=3, full_hd=4, uhd_4k=5, uhd_8k=6</code></li>
+</ul></li>
+</ul>
+<h3 id="tests-2">Tests</h3>
+<ul>
+<li><code>tests/unit/test_quality_detection.py</code> — 9 tests</li>
+<li><code>tests/integration/test_dashboard_automation.py::TestDashboardIssue3Quality</code>
+— 2 tests</li>
+<li><code>tests/e2e/test_dashboard_issues.py::TestE2EIssue3Quality</code>
+— 1 test</li>
+</ul>
+<hr />
+<h2 id="issue-4-search-stuck-only-3-trackers-responding">Issue 4: Search
+Stuck / Only 3 Trackers Responding</h2>
+<h3 id="problem-3">Problem</h3>
+<p>Searching “linux” took many minutes and only returned results from ~3
+trackers instead of 40+.</p>
+<h3 id="root-cause-2">Root Cause</h3>
+<p>The public tracker subprocess <code>NameError</code> (see Issue 2)
+caused all public trackers to fail silently. The orchestrator waited for
+all tracker subprocesses to complete (with 10s timeout each), making
+searches appear to hang. Only private trackers (rutracker, kinozal,
+nnmclub, iptorrents — whichever had credentials) returned results.</p>
+<h3 id="fix-3">Fix</h3>
+<ul>
+<li><strong>Fixed subprocess script</strong> (see Issue 2)</li>
+<li>Search now correctly queries all 33+ public trackers plus enabled
+private trackers concurrently</li>
+</ul>
+<h3 id="tests-3">Tests</h3>
+<ul>
+<li><code>tests/unit/test_public_tracker_subprocess.py::TestSearchOrchestratorTrackerCount</code>
+— 2 tests</li>
+<li><code>tests/integration/test_manual_issues.py::TestIssue4SearchPerformance</code>
+— 2 tests</li>
+<li><code>tests/integration/test_dashboard_automation.py::TestDashboardIssue4SearchPerformance</code>
+— 2 tests</li>
+<li><code>tests/e2e/test_dashboard_issues.py::TestE2EIssue4SearchCompletes</code>
+— 2 tests</li>
+</ul>
+<hr />
+<h2 id="issue-5-sorting-broken">Issue 5: Sorting Broken</h2>
+<h3 id="problem-4">Problem</h3>
+<ul>
+<li>Sorting by columns did not work correctly</li>
+<li>Unknown type was always at the end regardless of sort direction</li>
+<li>Quality sorting did not use proper weights</li>
+<li>No backend sorting support</li>
+</ul>
+<h3 id="fix-4">Fix</h3>
+<ul>
+<li><strong>Frontend sorting</strong> (<code>dashboard.html</code>):
+<ul>
+<li>Type sort: <code>unknown</code> now goes to <strong>end</strong> in
+<code>asc</code> mode and <strong>beginning</strong> in
+<code>desc</code> mode</li>
+<li>Quality sort: Added <code>uhd_8k: 6</code> weight to the
+mapping</li>
+<li>Name sort: Already case-insensitive (unchanged)</li>
+<li>Action column: Already non-sortable (unchanged)</li>
+</ul></li>
+<li><strong>Backend sorting</strong> (<code>api/routes.py</code>):
+<ul>
+<li><code>SearchRequest</code> now accepts <code>sort_by</code> and
+<code>sort_order</code> parameters</li>
+<li>Default: <code>sort_by="seeds"</code>,
+<code>sort_order="desc"</code></li>
+<li>Supported columns: <code>name</code>, <code>type</code>,
+<code>size</code>, <code>seeds</code>, <code>leechers</code>,
+<code>quality</code>, <code>sources</code></li>
+<li>Quality uses weight map for numeric comparison</li>
+<li>Size parses to bytes for numeric comparison</li>
+</ul></li>
+</ul>
+<h3 id="tests-4">Tests</h3>
+<ul>
+<li><code>tests/unit/test_sorting_weights.py</code> — 7 tests</li>
+<li><code>tests/integration/test_manual_issues.py::TestIssue5Sorting</code>
+— 5 tests</li>
+<li><code>tests/integration/test_dashboard_automation.py::TestDashboardIssue5Sorting</code>
+— 6 tests</li>
+<li><code>tests/e2e/test_dashboard_issues.py::TestE2EIssue5Sorting</code>
+— 2 tests</li>
+</ul>
+<hr />
+<h2 id="files-modified">Files Modified</h2>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Changes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>download-proxy/src/merge_service/search.py</code></td>
+<td>Fixed subprocess script template (tracker_name interpolation)</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/merge_service/deduplicator.py</code></td>
+<td>Added ebook/music detection, fixed year regex, added
+<code>_update_best_quality()</code></td>
+</tr>
+<tr>
+<td><code>download-proxy/src/merge_service/enricher.py</code></td>
+<td>Added <code>bdrip</code>/<code>bd-remux</code> to BluRay
+detection</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/api/routes.py</code></td>
+<td>Added <code>BDRip</code>/etc. quality mappings, fixed magnet hash
+regex, added <code>sort_by</code>/<code>sort_order</code> to
+SearchRequest, added backend sorting logic, enhanced
+<code>/magnet</code> endpoint with source tracker extraction</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/ui/templates/dashboard.html</code></td>
+<td>Renamed <code>+</code> to <code>Download</code>, fixed
+<code>generateMagnet</code> to call backend, fixed sorting logic for
+unknown type and quality weights, fixed all button reset handlers</td>
+</tr>
+</tbody>
+</table>
+<h2 id="files-added-tests">Files Added (Tests)</h2>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit/test_public_tracker_subprocess.py</code></td>
+<td>Subprocess script generation and compilation</td>
+</tr>
+<tr>
+<td><code>tests/unit/test_content_type_refinement.py</code></td>
+<td>Refined content type detection patterns</td>
+</tr>
+<tr>
+<td><code>tests/unit/test_quality_detection.py</code></td>
+<td>Quality detection and best_quality population</td>
+</tr>
+<tr>
+<td><code>tests/unit/test_download_merged.py</code></td>
+<td>Download button and merged magnet generation</td>
+</tr>
+<tr>
+<td><code>tests/unit/test_sorting_weights.py</code></td>
+<td>Sorting weights and backend sort params</td>
+</tr>
+<tr>
+<td><code>tests/integration/test_dashboard_automation.py</code></td>
+<td>Full automation tests for all 5 issues</td>
+</tr>
+<tr>
+<td><code>tests/e2e/test_dashboard_issues.py</code></td>
+<td>End-to-end pipeline tests</td>
+</tr>
+</tbody>
+</table>
+<h2 id="verification">Verification</h2>
+<p>Run the full test suite:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ tests/e2e/test_dashboard_issues.py tests/integration/test_manual_issues.py tests/integration/test_dashboard_automation.py <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
+<p>Expected result: <strong>460 passed</strong></p>

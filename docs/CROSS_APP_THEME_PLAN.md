@@ -1,5 +1,8 @@
 # Cross-app Theme Plan
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 **Problem.** The Angular dashboard at `:7187` is themed end-to-end
 (Darcula + 7 other palettes, per-element drop shadows). The qBittorrent
 WebUI proxied at `:7186` is **qBittorrent's own code** — it ignores our

@@ -1,5 +1,8 @@
 # Jackett Management UI & System Database — Implementation Plan
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship a Go-canonical `boba-jackett` service on port 7189 with a SQLite system database (encrypted credentials), a full Angular Jackett management UI in the Боба dashboard, and reach the 13-item Definition-of-Done from the design spec with zero loose ends.

@@ -1,0 +1,472 @@
+<h1 id="jackett-integration">Jackett Integration</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>Jackett is a proxy server that translates queries from apps like
+qBittorrent into tracker-site-specific HTTP queries, parses the HTML or
+JSON responses, and returns results in a unified format. It supports
+500+ public and private trackers and handles Cloudflare challenges, site
+redesigns, and CAPTCHAs automatically.</p>
+<h2 id="what-this-integration-does">What This Integration Does</h2>
+<p>When enabled, Jackett acts as a <strong>meta-tracker</strong> in the
+merge service fan-out:</p>
+<ul>
+<li>A single <code>jackett</code> tracker entry queries <strong>all
+configured Jackett indexers</strong> simultaneously</li>
+<li>Results are deduplicated and merged with other tracker sources</li>
+<li>Dead public trackers (Cloudflare-blocked or permanently broken) are
+automatically backfilled by Jackett’s working indexers</li>
+</ul>
+<h2 id="architecture">Architecture</h2>
+<pre><code>┌─────────────────┐     ┌─────────────┐     ┌─────────────────────────┐
+│  Merge Service  │────▶│   jackett   │────▶│  500+ tracker indexers  │
+│   (port 7187)   │     │ (port 9117) │     │  (public + private)     │
+└─────────────────┘     └─────────────┘     └─────────────────────────┘
+         │
+         ▼
+┌─────────────────┐
+│ jackett plugin  │  ← reads JACKETT_API_KEY from env var (auto-discovered)
+│ (nova3 engine)  │
+└─────────────────┘</code></pre>
+<h2 id="auto-discovery-fully-automatic">Auto-Discovery (Fully
+Automatic)</h2>
+<p>No manual configuration is required. The stack handles
+everything:</p>
+<ol type="1">
+<li><strong><code>start.sh</code> starts Jackett first</strong> via
+<code>docker-compose up</code> (Jackett has <code>depends_on</code>
+priority)</li>
+<li><strong>Jackett generates its API key</strong> on first start and
+stores it in <code>config/jackett/Jackett/ServerConfig.json</code></li>
+<li><strong><code>start-proxy.sh</code> reads the key</strong> from the
+mounted config file
+(<code>/jackett-config/Jackett/ServerConfig.json</code>) and exports
+<code>JACKETT_API_KEY</code></li>
+<li><strong>The merge service sees the env var</strong> and
+automatically adds <code>jackett</code> to the enabled tracker list</li>
+<li><strong><code>start.sh</code> also updates
+<code>.env</code></strong> with the discovered key for host-side
+convenience</li>
+</ol>
+<h3 id="startup-flow">Startup Flow</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> ./start.sh</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">[INFO]</span> Starting qBitTorrent container...</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">[INFO]</span> Waiting for Jackett to be ready...</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">[SUCCESS]</span> Jackett is ready</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">[SUCCESS]</span> Jackett API key auto-configured in .env</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ex">[INFO]</span> Waiting for container to be ready...</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ex">[SUCCESS]</span> qBitTorrent Web UI: http://localhost:7185</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="ex">[SUCCESS]</span> Боба Dashboard: http://localhost:7187/</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="ex">[SUCCESS]</span> Jackett Admin: http://localhost:9117/UI/Dashboard</span></code></pre></div>
+<h3 id="manual-override">Manual Override</h3>
+<p>If you prefer to set the key manually (e.g., using an existing
+Jackett instance):</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># .env</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">JACKETT_API_KEY</span><span class="op">=</span>your-real-api-key-here</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="va">JACKETT_URL</span><span class="op">=</span>http://localhost:9117   <span class="co"># optional, defaults to localhost:9117</span></span></code></pre></div>
+<p>The manual value takes precedence over auto-discovery because
+<code>start-proxy.sh</code> only auto-discovers when the env var is
+empty.</p>
+<h2 id="container-configuration">Container Configuration</h2>
+<h3 id="docker-compose.yml">docker-compose.yml</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">jackett</span><span class="kw">:</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">image</span><span class="kw">:</span><span class="at"> lscr.io/linuxserver/jackett:latest</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> jackett</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> PUID=1000</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> PGID=1000</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> TZ=Europe/Moscow</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> AUTO_UPDATE=true</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ./config/jackett:/config</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">network_mode</span><span class="kw">:</span><span class="at"> host</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">healthcheck</span><span class="kw">:</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">test</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">&quot;CMD-SHELL&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;curl -sf http://localhost:9117/health || exit 1&quot;</span><span class="kw">]</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">interval</span><span class="kw">:</span><span class="at"> 30s</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">timeout</span><span class="kw">:</span><span class="at"> 10s</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">retries</span><span class="kw">:</span><span class="at"> </span><span class="dv">5</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">start_period</span><span class="kw">:</span><span class="at"> 60s</span></span></code></pre></div>
+<h3 id="proxy-container-mount">Proxy Container Mount</h3>
+<p>Both proxy containers mount the Jackett config as read-only:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> ./config/jackett:/jackett-config:ro</span></span></code></pre></div>
+<p>This allows <code>start-proxy.sh</code> to read the API key without
+restarting containers.</p>
+<h2 id="plugin-configuration">Plugin Configuration</h2>
+<h3 id="pluginsjackett.json">plugins/jackett.json</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;api_key&quot;</span><span class="fu">:</span> <span class="st">&quot;YOUR_API_KEY_HERE&quot;</span><span class="fu">,</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;thread_count&quot;</span><span class="fu">:</span> <span class="dv">20</span><span class="fu">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;tracker_first&quot;</span><span class="fu">:</span> <span class="kw">false</span><span class="fu">,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;url&quot;</span><span class="fu">:</span> <span class="st">&quot;http://localhost:9117&quot;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>This file is installed to
+<code>config/qBittorrent/nova3/engines/jackett.json</code> by
+<code>install-plugin.sh</code> and <code>setup.sh</code>. The
+<code>api_key</code> field is automatically overridden by the
+<code>JACKETT_API_KEY</code> environment variable when present.</p>
+<h3 id="environment-variable-precedence">Environment Variable
+Precedence</h3>
+<p>The patched <code>jackett.py</code> plugin checks env vars
+<strong>after</strong> loading the JSON file:</p>
+<ol type="1">
+<li>Load <code>jackett.json</code></li>
+<li>Override <code>api_key</code> with <code>JACKETT_API_KEY</code> env
+var (if set)</li>
+<li>Override <code>url</code> with <code>JACKETT_URL</code> env var (if
+set)</li>
+</ol>
+<p>This means: - You can leave <code>jackett.json</code> untouched -
+Container orchestration injects the real key via env vars - Local
+development can override via <code>.env</code></p>
+<h2 id="merge-service-integration">Merge Service Integration</h2>
+<h3 id="tracker-registration">Tracker Registration</h3>
+<p><code>download-proxy/src/merge_service/search.py</code> adds Jackett
+to <code>_get_enabled_trackers()</code>:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> os.getenv(<span class="st">&quot;JACKETT_API_KEY&quot;</span>) <span class="kw">and</span> os.getenv(<span class="st">&quot;JACKETT_API_KEY&quot;</span>) <span class="op">!=</span> <span class="st">&quot;YOUR_API_KEY_HERE&quot;</span>:</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    trackers.append(TrackerSource(name<span class="op">=</span><span class="st">&quot;jackett&quot;</span>, url<span class="op">=</span><span class="st">&quot;http://localhost:9117&quot;</span>, enabled<span class="op">=</span><span class="va">True</span>))</span></code></pre></div>
+<h3 id="search-dispatch">Search Dispatch</h3>
+<p>Jackett is routed through the same NDJSON subprocess pipeline as
+public trackers:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">elif</span> tracker.name <span class="kw">in</span> PUBLIC_TRACKERS <span class="kw">or</span> tracker.name <span class="op">==</span> <span class="st">&quot;jackett&quot;</span>:</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    results <span class="op">=</span> <span class="cf">await</span> <span class="va">self</span>._search_public_tracker(tracker.name, query, category)</span></code></pre></div>
+<p>This ensures: - Deadline-based timeout (configurable via
+<code>PUBLIC_TRACKER_DEADLINE_SECONDS</code>) - Streaming NDJSON result
+capture - Per-plugin diagnostic collection</p>
+<h2 id="adding-indexers-to-jackett">Adding Indexers to Jackett</h2>
+<ol type="1">
+<li>Open <code>http://localhost:9117/UI/Dashboard</code></li>
+<li>Click <strong>“Add indexer”</strong></li>
+<li>Search for your desired tracker (e.g., “1337x”, “RARBG”,
+“EZTV”)</li>
+<li>Click the <strong>+</strong> button to add</li>
+<li>Configure credentials if required (private trackers)</li>
+</ol>
+<p>All configured indexers are automatically included in merge service
+searches — no restart required.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="jackett-not-appearing-in-search-results">Jackett not appearing
+in search results</h3>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if the API key was auto-discovered</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7187/health <span class="kw">|</span> <span class="ex">jq</span> .</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check proxy container logs</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> logs qbittorrent-proxy <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-i</span> jackett</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify the config file exists</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-la</span> config/jackett/Jackett/ServerConfig.json</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> config/jackett/Jackett/ServerConfig.json <span class="kw">|</span> <span class="ex">jq</span> <span class="st">&#39;.APIKey&#39;</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Check env var inside the container</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec qbittorrent-proxy sh <span class="at">-c</span> <span class="st">&#39;echo $JACKETT_API_KEY&#39;</span></span></code></pre></div>
+<h3 id="plugin-shows-api-key-error">Plugin shows “api key error”</h3>
+<p>This means <code>JACKETT_API_KEY</code> is not set or is still the
+placeholder. Check:</p>
+<ol type="1">
+<li>Jackett container is healthy:
+<code>curl -sf http://localhost:9117/health</code></li>
+<li>Config file was generated:
+<code>cat config/jackett/Jackett/ServerConfig.json</code></li>
+<li>Proxy container has the mount:
+<code>podman exec qbittorrent-proxy ls /jackett-config/</code></li>
+</ol>
+<h3 id="slow-jackett-searches">Slow Jackett searches</h3>
+<p>Jackett queries <strong>all enabled indexers</strong> in parallel. If
+you have many indexers configured:</p>
+<ul>
+<li>Increase <code>PUBLIC_TRACKER_DEADLINE_SECONDS</code> in
+<code>.env</code> (default: 15, max: 120)</li>
+<li>Remove unused indexers from the Jackett dashboard</li>
+<li>Reduce <code>thread_count</code> in
+<code>plugins/jackett.json</code> if Jackett is CPU-bound</li>
+</ul>
+<h3 id="test-jackett-independently">Test Jackett independently</h3>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get your API key</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">API_KEY</span><span class="op">=</span><span class="va">$(</span><span class="fu">cat</span> config/jackett/Jackett/ServerConfig.json <span class="kw">|</span> <span class="ex">jq</span> <span class="at">-r</span> <span class="st">&#39;.APIKey&#39;</span><span class="va">)</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Test a search</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="st">&quot;http://localhost:9117/api/v2.0/indexers/all/results/torznab/api?apikey=</span><span class="va">${API_KEY}</span><span class="st">&amp;q=ubuntu&quot;</span></span></code></pre></div>
+<h2 id="security-notes">Security Notes</h2>
+<ul>
+<li>The Jackett config mount is <strong>read-only</strong>
+(<code>:ro</code>) in proxy containers</li>
+<li>The API key is never logged; <code>CredentialScrubber</code> in
+<code>log_filter.py</code> masks it</li>
+<li>Jackett’s WebUI is accessible on localhost only (host
+networking)</li>
+<li>If you expose Jackett externally, set a strong admin password in the
+Jackett dashboard</li>
+</ul>
+<h2 id="files-modified-for-this-integration">Files Modified for This
+Integration</h2>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker-compose.yml</code></td>
+<td>Added <code>jackett</code> service, mounts, <code>depends_on</code>,
+env vars</td>
+</tr>
+<tr>
+<td><code>.env</code></td>
+<td>Added <code>JACKETT_API_KEY</code> placeholder</td>
+</tr>
+<tr>
+<td><code>start.sh</code></td>
+<td>Jackett-first startup, auto-key extraction, <code>.env</code>
+update</td>
+</tr>
+<tr>
+<td><code>start-proxy.sh</code></td>
+<td>Auto-discovers and exports <code>JACKETT_API_KEY</code></td>
+</tr>
+<tr>
+<td><code>plugins/community/jackett.py</code></td>
+<td>Env-var override for <code>api_key</code> and <code>url</code></td>
+</tr>
+<tr>
+<td><code>plugins/jackett.json</code></td>
+<td>URL updated to <code>localhost:9117</code></td>
+</tr>
+<tr>
+<td><code>install-plugin.sh</code></td>
+<td>Copies <code>.json</code> config files alongside plugins</td>
+</tr>
+<tr>
+<td><code>setup.sh</code></td>
+<td>Copies <code>.json</code> config files during setup</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/merge_service/search.py</code></td>
+<td>Jackett tracker registration + dispatch</td>
+</tr>
+<tr>
+<td><code>scripts/extract-jackett-key.py</code></td>
+<td>Standalone key extraction utility</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="auto-configuration-canonical-boba-jackett7189-db">Auto-Configuration
+(canonical: boba-jackett:7189 + DB)</h2>
+<p>Jackett indexer auto-configuration is now owned by the dedicated
+<strong>boba-jackett</strong> Go service (port <code>7189</code>) backed
+by a SQLite system database (<code>config/boba.db</code>) encrypted with
+<code>BOBA_MASTER_KEY</code>.</p>
+<p>The Python <code>download-proxy</code> previously exposed a transient
+<code>/api/v1/jackett/autoconfig/last</code> endpoint and an in-memory
+<code>lifespan()</code> hook. Both were removed at commit
+<code>&lt;see plan 2026-04-27 §38&gt;</code>. The canonical surface is
+now:</p>
+<ul>
+<li><code>GET  /api/v1/jackett/autoconfig/runs</code> — paginated
+history of every auto-config run (persisted, not just
+last-run-in-memory).</li>
+<li><code>GET  /api/v1/jackett/autoconfig/runs/{id}</code> — single run
+detail.</li>
+<li><code>POST /api/v1/jackett/autoconfig/trigger</code> — manual re-run
+from the UI.</li>
+</ul>
+<p>See <code>qBitTorrent-go/internal/jackett/</code> and
+<code>cmd/boba-jackett/</code>.</p>
+<h3 id="source-of-truth-data-layer-db">Source-of-truth data layer
+(DB)</h3>
+<p>Credentials, overrides, and run history live in
+<code>config/boba.db</code> (<code>modernc.org/sqlite</code> — pure Go,
+no CGO). The schema (full reference at
+<code>docs/BOBA_DATABASE.md</code>):</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Table</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tracker_credentials</code></td>
+<td>per-tracker username / password / cookie blob, encrypted with
+<code>BOBA_MASTER_KEY</code> (AES-256-GCM)</td>
+</tr>
+<tr>
+<td><code>indexer_map_overrides</code></td>
+<td>explicit <code>tracker_name → indexer_id</code> user overrides
+(highest match priority)</td>
+</tr>
+<tr>
+<td><code>autoconfig_runs</code></td>
+<td>every auto-config run summary (<code>ran_at</code>, discovered,
+configured_now, already_present, errors)</td>
+</tr>
+<tr>
+<td><code>jackett_indexer_catalog</code></td>
+<td>last refreshed catalog snapshot from Jackett (browse + filter source
+for the UI)</td>
+</tr>
+</tbody>
+</table>
+<p>File mode is enforced to <code>0600</code> on first open by
+<code>internal/db.Open</code>.</p>
+<h3 id="env-import-is-bootstrap-only">.env import is bootstrap-only</h3>
+<p>On first start (DB empty) or via the <code>boba-jackett</code>
+<code>bootstrap</code> flow, <code>&lt;NAME&gt;_USERNAME</code> /
+<code>&lt;NAME&gt;_PASSWORD</code> / <code>&lt;NAME&gt;_COOKIES</code>
+triples in <code>./.env</code> are imported into
+<code>tracker_credentials</code> exactly once, then encrypted with the
+master key. Subsequent edits to <code>.env</code> do
+<strong>not</strong> override DB state — the UI is the canonical edit
+surface.</p>
+<p>The denylist (default
+<code>QBITTORRENT,JACKETT,WEBUI,PROXY,MERGE,BRIDGE</code>, override
+<code>JACKETT_AUTOCONFIG_EXCLUDE</code>) is still honored at scan time
+so project-internal env vars never enter the DB.</p>
+<h3 id="matching-and-configuration">Matching and configuration</h3>
+<p>For each tracker credential bundle in
+<code>tracker_credentials</code>:</p>
+<ol type="1">
+<li>Checks <code>indexer_map_overrides</code> for an explicit
+<code>tracker_name → indexer_id</code>.</li>
+<li>Falls back to fuzzy matching (Levenshtein
+<code>ratio() &gt;= 0.85</code>, case-insensitive) against the cached
+<code>jackett_indexer_catalog</code>.</li>
+<li>Skips ambiguous matches with <code>skipped_ambiguous</code>.</li>
+</ol>
+<p>For each match, the service fetches the per-indexer config template
+from Jackett, maps DB-decrypted credentials onto compatible fields
+(<code>username</code>/<code>password</code>/<code>cookie</code>/<code>cookies</code>/<code>cookieheader</code>),
+and POSTs. Idempotent — already-configured indexers land in
+<code>already_present</code>.</p>
+<h3 id="ui">UI</h3>
+<p>The Angular dashboard at <code>http://localhost:7187/jackett</code>
+is the canonical edit surface. Pages (some shipping in successor
+patches):</p>
+<ul>
+<li><strong>Credentials</strong> (shipped): list / add / edit / delete
+tracker credentials. Edits are encrypted at rest via
+<code>BOBA_MASTER_KEY</code>.</li>
+<li><strong>Indexers</strong> (shipped backend, frontend deferred):
+browse the catalog, force-refresh, configure, test, toggle, remove.</li>
+<li><strong>Runs</strong> (shipped backend): paginated auto-config run
+history.</li>
+</ul>
+<h3 id="failure-modes-best-effort">Failure modes (best-effort)</h3>
+<p>Auto-config is best-effort and <strong>never blocks boot</strong>.
+Errors land in the run’s <code>errors</code> list and a WARNING log.
+Codes:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>jackett_unreachable</code></td>
+<td>Jackett container not accepting connections</td>
+</tr>
+<tr>
+<td><code>jackett_auth_failed</code></td>
+<td>Bad / missing API key (HTTP 401)</td>
+</tr>
+<tr>
+<td><code>jackett_auth_missing_key</code></td>
+<td><code>JACKETT_API_KEY</code> env var was empty</td>
+</tr>
+<tr>
+<td><code>catalog_parse_failed</code></td>
+<td>Catalog endpoint returned non-JSON</td>
+</tr>
+<tr>
+<td><code>jackett_total_timeout_60s</code></td>
+<td>Hit the outer 60-second cap</td>
+</tr>
+<tr>
+<td><code>indexer_config_failed:&lt;id&gt;:&lt;reason&gt;</code></td>
+<td>Per-indexer failure</td>
+</tr>
+</tbody>
+</table>
+<h3 id="configuration">Configuration</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Purpose</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BOBA_MASTER_KEY</code></td>
+<td>32-byte hex encryption key for <code>tracker_credentials</code></td>
+<td>auto-generated by <code>start.sh</code> and
+<code>bootstrap.EnsureMasterKey</code></td>
+</tr>
+<tr>
+<td><code>BOBA_DB_PATH</code></td>
+<td>SQLite path</td>
+<td><code>/config/boba.db</code></td>
+</tr>
+<tr>
+<td><code>BOBA_ENV_PATH</code></td>
+<td>host <code>.env</code> path used for one-shot bootstrap import</td>
+<td><code>/host-env/.env</code></td>
+</tr>
+<tr>
+<td><code>JACKETT_INDEXER_MAP</code></td>
+<td>CSV <code>NAME:indexer_id</code> overrides (legacy; prefer DB
+<code>indexer_map_overrides</code>)</td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>JACKETT_AUTOCONFIG_EXCLUDE</code></td>
+<td>CSV prefix denylist</td>
+<td><code>QBITTORRENT,JACKETT,WEBUI,PROXY,MERGE,BRIDGE</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="files">Files</h3>
+<ul>
+<li><code>qBitTorrent-go/cmd/boba-jackett/main.go</code> — service entry
+point</li>
+<li><code>qBitTorrent-go/internal/jackett/</code> — autoconfig
+orchestrator</li>
+<li><code>qBitTorrent-go/internal/db/</code> — SQLite layer +
+migrations</li>
+<li><code>qBitTorrent-go/internal/envfile/</code> — atomic .env
+writer</li>
+<li><code>qBitTorrent-go/internal/bootstrap/</code> —
+<code>EnsureMasterKey</code> + .env import</li>
+<li><code>frontend/src/app/jackett/</code> — Angular pages</li>
+<li><code>docs/BOBA_DATABASE.md</code> — schema reference, key
+lifecycle, backup, recovery</li>
+</ul>

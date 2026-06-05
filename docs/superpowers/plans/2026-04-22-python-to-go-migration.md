@@ -1,5 +1,8 @@
 # Python-to-Go Backend Migration Implementation Plan
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Migrate the Python/FastAPI merge search backend to Go/Gin, producing a production-ready, fully working system with feature parity.

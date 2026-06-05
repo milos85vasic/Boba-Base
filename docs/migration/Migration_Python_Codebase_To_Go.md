@@ -1,5 +1,8 @@
 # qBitTorrent Backend Migration: Python/FastAPI → Go/Gin
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 **Version:** 1.0.0  
 **Date:** 2026-04-22  
 **Author:** Migration Task Force  

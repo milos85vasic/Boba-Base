@@ -1,0 +1,149 @@
+<h1 id="boba-jackett-static-smoke-phase-7-task-45">boba-jackett Static
+Smoke (Phase 7 Task 45)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p><strong>Date:</strong> 2026-04-27 <strong>Plan:</strong>
+<code>docs/superpowers/plans/2026-04-27-jackett-management-ui-and-system-db.md</code>
+§ Task 45 <strong>Scope:</strong> Static (build + unit + challenge)
+verification — the live-stack smoke (orchestrate-up the boba-jackett
+container, hit it with a real browser via Playwright, exercise the UI
+flows) is <strong>DEFERRED</strong> to a manual user invocation per the
+plan’s constraints (CONST-MD-No-Manual-Containers + this dispatch’s
+no-touching-running-services boundary).</p>
+<h2 id="demo">Demo</h2>
+<h3 id="go-test-suite-all-boba-jackett-packages-green">1. Go test suite
+— all boba-jackett packages green</h3>
+<pre><code>$ cd qBitTorrent-go &amp;&amp; GOMAXPROCS=2 nice -n 19 ionice -c 3 \
+    go test -race -count=1 -short ./...</code></pre>
+<p>Output (tail):</p>
+<pre><code>ok      github.com/milos85vasic/qBitTorrent-go/internal/bootstrap   1.009s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/client  1.015s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/config  1.009s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/db  1.260s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/db/repos    2.790s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/envfile 1.020s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/jackett 1.142s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/jackettapi  3.108s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/logging 1.008s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/middleware  1.012s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/models  1.008s
+ok      github.com/milos85vasic/qBitTorrent-go/internal/service 1.009s
+--- FAIL: TestSearchHandler_QueueFull (0.00s)   # internal/api — pre-existing flake
+FAIL    github.com/milos85vasic/qBitTorrent-go/internal/api 0.016s
+FAIL</code></pre>
+<p><strong>Result:</strong> All 13 boba-jackett packages PASS under
+<code>-race -count=1</code>. The single FAIL
+(<code>TestSearchHandler_QueueFull</code> in <code>internal/api</code>)
+is the pre-existing flake documented in
+<code>docs/issues/fixed/BUGFIXES.md</code> § entry 5 — unrelated to
+boba-jackett work, flagged for follow-up.</p>
+<h3 id="frontend-production-build">2. Frontend production build</h3>
+<pre><code>$ cd frontend &amp;&amp; nice -n 19 ng build --configuration production</code></pre>
+<p>Output (tail):</p>
+<pre><code>Lazy chunk files      | Names                 |  Raw size | Estimated transfer size
+chunk-JEUSEJF6.js     | credentials-component |  15.15 kB |                 3.78 kB
+chunk-PHC3IB5K.js     | indexers-component    | 635 bytes |               635 bytes
+chunk-QGLF7LU5.js     | jackett-routes        | 313 bytes |               313 bytes
+
+Application bundle generation complete. [4.962 seconds] - 2026-04-27T20:16:04.290Z
+
+Output location: /run/media/milosvasic/DATA4TB/Projects/Boba/download-proxy/src/ui/dist/frontend</code></pre>
+<p><strong>Result:</strong> Production bundle builds cleanly. Lazy
+chunks for <code>/jackett</code> route family
+(<code>credentials-component</code>, <code>indexers-component</code>,
+<code>jackett-routes</code>) all emit. Output is in place at the
+configured location for the Python merge service to serve as a SPA.</p>
+<h3 id="frontend-unit-tests-vitest">3. Frontend unit tests — Vitest</h3>
+<pre><code>$ cd frontend &amp;&amp; nice -n 19 ng test --watch=false</code></pre>
+<p>Output (tail):</p>
+<pre><code> Test Files   21 passed (21)
+      Tests   278 passed (278)
+   Start at   23:16:23
+   Duration   6.84s</code></pre>
+<p><strong>Result:</strong> 278/278 unit tests pass.</p>
+<h3 id="all-layer-7-challenges-green">4. All Layer 7 challenges —
+green</h3>
+<pre><code>$ bash challenges/scripts/run_all_challenges.sh</code></pre>
+<p>Output (tail):</p>
+<pre><code>=== no_suspend_calls_challenge ===
+OK: no forbidden host-power-management calls in /run/media/milosvasic/DATA4TB/Projects/Boba
+
+=== summary: PASS ===
+================================================================
+Challenges total: 9 | failed: 0
+================================================================</code></pre>
+<p>Per-challenge summary lines from the run:</p>
+<pre><code>PASS: boba_db_file_perms_challenge
+--- PASS: TestNoCredentialLeak (0.08s)
+PASS: credential_leak_grep_challenge
+PASS: cred_roundtrip_challenge
+PASS: env_db_drift_challenge
+PASS: all 4 sleep targets masked
+PASS: AllowSuspend=no present
+PASS: IdleAction=ignore (safe)
+PASS: no suspend events since fix at 2026-04-26T19:58:55+03:00
+PASS: master_key_autogen_challenge
+=== summary: PASS ===</code></pre>
+<p><strong>Result:</strong> 9/9 challenges PASS.</p>
+<h2 id="static-smoke-verdict">Static smoke verdict</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go race-detector unit/integration suite (boba-jackett packages)</td>
+<td>PASS (13/13)</td>
+</tr>
+<tr>
+<td>Frontend production build</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>Frontend Vitest unit tests</td>
+<td>PASS (278/278)</td>
+</tr>
+<tr>
+<td>Layer 7 challenges (<code>run_all_challenges.sh</code>)</td>
+<td>PASS (9/9)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="deferred-live-stack-smoke">Deferred — live-stack smoke</h2>
+<p>The live-stack smoke (Task 45 §steps 4-7 of the plan) requires:</p>
+<ul>
+<li><code>./start.sh -p</code> to bring up qbittorrent + jackett +
+qbittorrent-proxy + boba-jackett</li>
+<li>A real browser (Playwright) hitting
+<code>http://localhost:7187/jackett</code></li>
+<li>Manual user-interaction pages (Credentials list / Add / Edit /
+Delete)</li>
+</ul>
+<p>This is <strong>deferred to a manual user invocation</strong> in the
+next session because:</p>
+<ol type="1">
+<li>The dispatch was explicitly scoped not to touch the user’s
+currently-running services or initiate container lifecycle.</li>
+<li>The orchestrator (not raw <code>podman</code> / <code>docker</code>)
+owns container start/stop per CONST-MD-No-Manual-Containers; running
+<code>start.sh</code> from this autonomous context would bypass that
+guard.</li>
+<li>The static checks above prove every piece is wireable: code
+compiles, tests are green under -race, build artifacts exist, all
+challenges PASS. The remaining risk surface is ports + bind mounts
+<ul>
+<li>the exact UI layout — better verified by the human operator with
+eyes on the screen.</li>
+</ul></li>
+</ol>
+<p>When the user runs the live smoke, the canonical recipe is in the
+plan at
+<code>docs/superpowers/plans/2026-04-27-jackett-management-ui-and-system-db.md</code>
+§ Task 45 §§ 4-7.</p>

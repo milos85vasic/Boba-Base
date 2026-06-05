@@ -1,0 +1,74 @@
+<h1 id="scripts">scripts/</h1>
+<p>Operational and CI scripts. All scripts auto-detect container runtime
+(podman preferred).</p>
+<h2 id="scripts-1">Scripts</h2>
+<table>
+<colgroup>
+<col style="width: 47%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr>
+<th>Script</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run-tests.sh</code></td>
+<td>Full test suite with coverage. Args: <code>hermetic</code> (fast, no
+services), <code>live</code> (needs containers), <code>all</code></td>
+</tr>
+<tr>
+<td><code>scan.sh</code></td>
+<td>Security scanner orchestrator. Runs <code>pip-audit</code>,
+<code>bandit</code>, <code>ruff</code>, <code>snyk</code>,
+<code>semgrep</code>, <code>trivy</code>, <code>gitleaks</code>. Reports
+to <code>artifacts/scans/</code> as SARIF</td>
+</tr>
+<tr>
+<td><code>freeze-openapi.sh</code></td>
+<td>Exports FastAPI <code>/openapi.json</code> to
+<code>docs/api/openapi.json</code> for drift detection</td>
+</tr>
+<tr>
+<td><code>build-releases.sh</code></td>
+<td>Build release artifacts</td>
+</tr>
+<tr>
+<td><code>audit-plugins.sh</code></td>
+<td>Audit plugin matrix (canonical vs community)</td>
+</tr>
+<tr>
+<td><code>add-submodules.sh</code></td>
+<td>Add git submodules</td>
+</tr>
+<tr>
+<td><code>helixqa.sh</code></td>
+<td>Helix QA runner</td>
+</tr>
+<tr>
+<td><code>opencode-helixqa.sh</code></td>
+<td>OpenCode Helix QA runner</td>
+</tr>
+</tbody>
+</table>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run full test suite</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/run-tests.sh</span> all</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick hermetic tests only</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/run-tests.sh</span> hermetic</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Run all security scanners</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/scan.sh</span> <span class="at">--all</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Freeze OpenAPI spec</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/freeze-openapi.sh</span></span></code></pre></div>
+<h2 id="conventions">Conventions</h2>
+<ul>
+<li>All scripts use <code>set -euo pipefail</code>.</li>
+<li>Non-interactive — no <code>sudo</code> or human input required.</li>
+<li>Container runtime auto-detected (podman &gt; docker).</li>
+</ul>

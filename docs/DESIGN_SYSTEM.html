@@ -1,0 +1,982 @@
+<h1 id="design-system-runtime-palette">Design System — Runtime
+Palette</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>The dashboard, admin surfaces, and every embedded app share a single
+runtime-switchable colour system. Palettes are applied to
+<code>document.documentElement</code> as CSS custom properties by
+<code>ThemeService</code>, so every bit of UI that reads
+<code>var(--color-*)</code> picks up the change instantly.</p>
+<!-- screenshot: dashboard-darcula-dark.png — Darcula dark variant (default) -->
+<!-- screenshot: dashboard-darcula-light.png — Darcula light variant -->
+<!-- screenshot: picker-open.png — Theme picker dropdown open -->
+<h2 id="why-darcula-9d001e">Why Darcula + <code>#9d001e</code>?</h2>
+<p>The default palette is <strong>Darcula</strong> (the JetBrains IDE
+greys) paired with a blood-red accent extracted directly from
+<code>assets/Logo.jpeg</code> — the qBittorrent logo. The accent is
+<code>#9d001e</code>. A warm gold contrast (<code>#d9a441</code>) is the
+secondary accent for badges and freeleech pills. This pairing keeps the
+UI distinctly on-brand while staying neutral enough to remain readable
+under long sessions.</p>
+<h2 id="catalogue">Catalogue</h2>
+<p>Eight palettes ship out of the box. Every palette supplies a
+<strong>dark</strong> and a <strong>light</strong> variant. Sources are
+linked next to each palette name.</p>
+<h3 id="darcula">Darcula</h3>
+<p>JetBrains Darcula greys — paired with the qBittorrent logo’s
+blood-red. Source: <a
+href="https://colorshexa.com/palette/darcula-palette"
+class="uri">https://colorshexa.com/palette/darcula-palette</a></p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bgPrimary</td>
+<td><code>#2b2b2b</code></td>
+<td><code>#ffffff</code></td>
+</tr>
+<tr>
+<td>bgSecondary</td>
+<td><code>#3c3f41</code></td>
+<td><code>#f2f2f2</code></td>
+</tr>
+<tr>
+<td>bgTertiary</td>
+<td><code>#4e5254</code></td>
+<td><code>#e4e4e4</code></td>
+</tr>
+<tr>
+<td>border</td>
+<td><code>#555555</code></td>
+<td><code>#c9c9c9</code></td>
+</tr>
+<tr>
+<td>textPrimary</td>
+<td><code>#a9b7c6</code></td>
+<td><code>#1c1c1c</code></td>
+</tr>
+<tr>
+<td>textSecondary</td>
+<td><code>#808080</code></td>
+<td><code>#555555</code></td>
+</tr>
+<tr>
+<td>accent</td>
+<td><code>#9d001e</code></td>
+<td><code>#9d001e</code></td>
+</tr>
+<tr>
+<td>accentHover</td>
+<td><code>#c4002a</code></td>
+<td><code>#7d0017</code></td>
+</tr>
+<tr>
+<td>contrast</td>
+<td><code>#d9a441</code></td>
+<td><code>#b07d1f</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td><code>#6a8759</code></td>
+<td><code>#0a7b28</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>#cc7832</code></td>
+<td><code>#c9302c</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>#d9a441</code></td>
+<td><code>#b07d1f</code></td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>#6897bb</code></td>
+<td><code>#1e6fa8</code></td>
+</tr>
+<tr>
+<td>purple</td>
+<td><code>#9876aa</code></td>
+<td><code>#6f42c1</code></td>
+</tr>
+<tr>
+<td>shadow</td>
+<td><code>rgba(0,0,0,0.55)</code></td>
+<td><code>rgba(0,0,0,0.12)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="dracula">Dracula</h3>
+<p>Source: <a href="https://draculatheme.com/contribute"
+class="uri">https://draculatheme.com/contribute</a></p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bgPrimary</td>
+<td><code>#282a36</code></td>
+<td><code>#f8f8f2</code></td>
+</tr>
+<tr>
+<td>bgSecondary</td>
+<td><code>#343746</code></td>
+<td><code>#eeeeec</code></td>
+</tr>
+<tr>
+<td>bgTertiary</td>
+<td><code>#44475a</code></td>
+<td><code>#e0e0da</code></td>
+</tr>
+<tr>
+<td>border</td>
+<td><code>#6272a4</code></td>
+<td><code>#c9c9c0</code></td>
+</tr>
+<tr>
+<td>textPrimary</td>
+<td><code>#f8f8f2</code></td>
+<td><code>#282a36</code></td>
+</tr>
+<tr>
+<td>textSecondary</td>
+<td><code>#bfbfbf</code></td>
+<td><code>#6272a4</code></td>
+</tr>
+<tr>
+<td>accent</td>
+<td><code>#ff79c6</code></td>
+<td><code>#d6336c</code></td>
+</tr>
+<tr>
+<td>accentHover</td>
+<td><code>#ff92d0</code></td>
+<td><code>#bd255a</code></td>
+</tr>
+<tr>
+<td>contrast</td>
+<td><code>#bd93f9</code></td>
+<td><code>#7048e8</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td><code>#50fa7b</code></td>
+<td><code>#2b8a3e</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>#ff5555</code></td>
+<td><code>#c92a2a</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>#f1fa8c</code></td>
+<td><code>#b08900</code></td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>#8be9fd</code></td>
+<td><code>#1c7ed6</code></td>
+</tr>
+<tr>
+<td>purple</td>
+<td><code>#bd93f9</code></td>
+<td><code>#6741d9</code></td>
+</tr>
+<tr>
+<td>shadow</td>
+<td><code>rgba(0,0,0,0.55)</code></td>
+<td><code>rgba(0,0,0,0.12)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="solarized">Solarized</h3>
+<p>Ethan Schoonover’s Solarized — precision colours for machines and
+people. Source: <a
+href="https://colorshexa.com/palette/solarized-palette"
+class="uri">https://colorshexa.com/palette/solarized-palette</a></p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bgPrimary</td>
+<td><code>#002b36</code></td>
+<td><code>#fdf6e3</code></td>
+</tr>
+<tr>
+<td>bgSecondary</td>
+<td><code>#073642</code></td>
+<td><code>#eee8d5</code></td>
+</tr>
+<tr>
+<td>bgTertiary</td>
+<td><code>#0a4453</code></td>
+<td><code>#d9d2bf</code></td>
+</tr>
+<tr>
+<td>border</td>
+<td><code>#586e75</code></td>
+<td><code>#93a1a1</code></td>
+</tr>
+<tr>
+<td>textPrimary</td>
+<td><code>#93a1a1</code></td>
+<td><code>#073642</code></td>
+</tr>
+<tr>
+<td>textSecondary</td>
+<td><code>#657b83</code></td>
+<td><code>#657b83</code></td>
+</tr>
+<tr>
+<td>accent</td>
+<td><code>#268bd2</code></td>
+<td><code>#268bd2</code></td>
+</tr>
+<tr>
+<td>accentHover</td>
+<td><code>#2aa198</code></td>
+<td><code>#1d70ad</code></td>
+</tr>
+<tr>
+<td>contrast</td>
+<td><code>#b58900</code></td>
+<td><code>#b58900</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td><code>#859900</code></td>
+<td><code>#859900</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>#dc322f</code></td>
+<td><code>#dc322f</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>#b58900</code></td>
+<td><code>#b58900</code></td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>#268bd2</code></td>
+<td><code>#268bd2</code></td>
+</tr>
+<tr>
+<td>purple</td>
+<td><code>#6c71c4</code></td>
+<td><code>#6c71c4</code></td>
+</tr>
+<tr>
+<td>shadow</td>
+<td><code>rgba(0,0,0,0.55)</code></td>
+<td><code>rgba(0,0,0,0.12)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="nord">Nord</h3>
+<p>Arctic, north-bluish clean and elegant. Source: <a
+href="https://colorshexa.com/palette/nord-palette"
+class="uri">https://colorshexa.com/palette/nord-palette</a></p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bgPrimary</td>
+<td><code>#2e3440</code></td>
+<td><code>#eceff4</code></td>
+</tr>
+<tr>
+<td>bgSecondary</td>
+<td><code>#3b4252</code></td>
+<td><code>#e5e9f0</code></td>
+</tr>
+<tr>
+<td>bgTertiary</td>
+<td><code>#434c5e</code></td>
+<td><code>#d8dee9</code></td>
+</tr>
+<tr>
+<td>border</td>
+<td><code>#4c566a</code></td>
+<td><code>#b8c0ce</code></td>
+</tr>
+<tr>
+<td>textPrimary</td>
+<td><code>#eceff4</code></td>
+<td><code>#2e3440</code></td>
+</tr>
+<tr>
+<td>textSecondary</td>
+<td><code>#d8dee9</code></td>
+<td><code>#4c566a</code></td>
+</tr>
+<tr>
+<td>accent</td>
+<td><code>#88c0d0</code></td>
+<td><code>#5e81ac</code></td>
+</tr>
+<tr>
+<td>accentHover</td>
+<td><code>#8fbcbb</code></td>
+<td><code>#4c6e95</code></td>
+</tr>
+<tr>
+<td>contrast</td>
+<td><code>#ebcb8b</code></td>
+<td><code>#d08770</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td><code>#a3be8c</code></td>
+<td><code>#5b8c3a</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>#bf616a</code></td>
+<td><code>#bf616a</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>#ebcb8b</code></td>
+<td><code>#b08900</code></td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>#81a1c1</code></td>
+<td><code>#81a1c1</code></td>
+</tr>
+<tr>
+<td>purple</td>
+<td><code>#b48ead</code></td>
+<td><code>#b48ead</code></td>
+</tr>
+<tr>
+<td>shadow</td>
+<td><code>rgba(0,0,0,0.55)</code></td>
+<td><code>rgba(0,0,0,0.12)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="monokai">Monokai</h3>
+<p>Wimer Hazenberg’s Monokai — the iconic Sublime Text palette. Source:
+<a href="https://colorshexa.com/palette/monokai-palette"
+class="uri">https://colorshexa.com/palette/monokai-palette</a></p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bgPrimary</td>
+<td><code>#272822</code></td>
+<td><code>#fafaf5</code></td>
+</tr>
+<tr>
+<td>bgSecondary</td>
+<td><code>#383830</code></td>
+<td><code>#ededeb</code></td>
+</tr>
+<tr>
+<td>bgTertiary</td>
+<td><code>#49483e</code></td>
+<td><code>#dddbcf</code></td>
+</tr>
+<tr>
+<td>border</td>
+<td><code>#75715e</code></td>
+<td><code>#b0ad9e</code></td>
+</tr>
+<tr>
+<td>textPrimary</td>
+<td><code>#f8f8f2</code></td>
+<td><code>#272822</code></td>
+</tr>
+<tr>
+<td>textSecondary</td>
+<td><code>#cfcfc2</code></td>
+<td><code>#75715e</code></td>
+</tr>
+<tr>
+<td>accent</td>
+<td><code>#f92672</code></td>
+<td><code>#d63384</code></td>
+</tr>
+<tr>
+<td>accentHover</td>
+<td><code>#ff4890</code></td>
+<td><code>#b5256e</code></td>
+</tr>
+<tr>
+<td>contrast</td>
+<td><code>#a6e22e</code></td>
+<td><code>#689822</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td><code>#a6e22e</code></td>
+<td><code>#689822</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>#f92672</code></td>
+<td><code>#c02450</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>#fd971f</code></td>
+<td><code>#c6660a</code></td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>#66d9ef</code></td>
+<td><code>#2a9ab4</code></td>
+</tr>
+<tr>
+<td>purple</td>
+<td><code>#ae81ff</code></td>
+<td><code>#7a4ddb</code></td>
+</tr>
+<tr>
+<td>shadow</td>
+<td><code>rgba(0,0,0,0.55)</code></td>
+<td><code>rgba(0,0,0,0.12)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="gruvbox">Gruvbox</h3>
+<p>Retro groove colour scheme — warm, earthy, high-contrast. Source: <a
+href="https://colorshexa.com/palette/gruvbox-palette"
+class="uri">https://colorshexa.com/palette/gruvbox-palette</a></p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bgPrimary</td>
+<td><code>#282828</code></td>
+<td><code>#fbf1c7</code></td>
+</tr>
+<tr>
+<td>bgSecondary</td>
+<td><code>#3c3836</code></td>
+<td><code>#ebdbb2</code></td>
+</tr>
+<tr>
+<td>bgTertiary</td>
+<td><code>#504945</code></td>
+<td><code>#d5c4a1</code></td>
+</tr>
+<tr>
+<td>border</td>
+<td><code>#665c54</code></td>
+<td><code>#bdae93</code></td>
+</tr>
+<tr>
+<td>textPrimary</td>
+<td><code>#ebdbb2</code></td>
+<td><code>#3c3836</code></td>
+</tr>
+<tr>
+<td>textSecondary</td>
+<td><code>#a89984</code></td>
+<td><code>#665c54</code></td>
+</tr>
+<tr>
+<td>accent</td>
+<td><code>#fb4934</code></td>
+<td><code>#9d0006</code></td>
+</tr>
+<tr>
+<td>accentHover</td>
+<td><code>#cc241d</code></td>
+<td><code>#79111e</code></td>
+</tr>
+<tr>
+<td>contrast</td>
+<td><code>#fabd2f</code></td>
+<td><code>#b57614</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td><code>#b8bb26</code></td>
+<td><code>#79740e</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>#fb4934</code></td>
+<td><code>#9d0006</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>#fabd2f</code></td>
+<td><code>#b57614</code></td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>#83a598</code></td>
+<td><code>#076678</code></td>
+</tr>
+<tr>
+<td>purple</td>
+<td><code>#d3869b</code></td>
+<td><code>#8f3f71</code></td>
+</tr>
+<tr>
+<td>shadow</td>
+<td><code>rgba(0,0,0,0.55)</code></td>
+<td><code>rgba(0,0,0,0.12)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="one-dark">One Dark</h3>
+<p>Atom One Dark — balanced, signature editor palette. Source: <a
+href="https://colorshexa.com/palette/one-dark-palette"
+class="uri">https://colorshexa.com/palette/one-dark-palette</a></p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bgPrimary</td>
+<td><code>#282c34</code></td>
+<td><code>#fafafa</code></td>
+</tr>
+<tr>
+<td>bgSecondary</td>
+<td><code>#353b45</code></td>
+<td><code>#eaeaeb</code></td>
+</tr>
+<tr>
+<td>bgTertiary</td>
+<td><code>#3e4451</code></td>
+<td><code>#d3d3d5</code></td>
+</tr>
+<tr>
+<td>border</td>
+<td><code>#4b5263</code></td>
+<td><code>#a0a1a7</code></td>
+</tr>
+<tr>
+<td>textPrimary</td>
+<td><code>#abb2bf</code></td>
+<td><code>#383a42</code></td>
+</tr>
+<tr>
+<td>textSecondary</td>
+<td><code>#7f848e</code></td>
+<td><code>#696c77</code></td>
+</tr>
+<tr>
+<td>accent</td>
+<td><code>#61afef</code></td>
+<td><code>#4078f2</code></td>
+</tr>
+<tr>
+<td>accentHover</td>
+<td><code>#4e96d6</code></td>
+<td><code>#2e62cc</code></td>
+</tr>
+<tr>
+<td>contrast</td>
+<td><code>#e5c07b</code></td>
+<td><code>#986801</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td><code>#98c379</code></td>
+<td><code>#50a14f</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>#e06c75</code></td>
+<td><code>#e45649</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>#e5c07b</code></td>
+<td><code>#c18401</code></td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>#56b6c2</code></td>
+<td><code>#0184bc</code></td>
+</tr>
+<tr>
+<td>purple</td>
+<td><code>#c678dd</code></td>
+<td><code>#a626a4</code></td>
+</tr>
+<tr>
+<td>shadow</td>
+<td><code>rgba(0,0,0,0.55)</code></td>
+<td><code>rgba(0,0,0,0.12)</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="tokyo-night">Tokyo Night</h3>
+<p>Clean, dark urban palette inspired by Tokyo’s lights. Source: <a
+href="https://colorshexa.com/palette/tokyo-night-palette"
+class="uri">https://colorshexa.com/palette/tokyo-night-palette</a></p>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bgPrimary</td>
+<td><code>#1a1b26</code></td>
+<td><code>#e6e7ed</code></td>
+</tr>
+<tr>
+<td>bgSecondary</td>
+<td><code>#24283b</code></td>
+<td><code>#d5d6db</code></td>
+</tr>
+<tr>
+<td>bgTertiary</td>
+<td><code>#2f344d</code></td>
+<td><code>#c4c7d0</code></td>
+</tr>
+<tr>
+<td>border</td>
+<td><code>#414868</code></td>
+<td><code>#989caf</code></td>
+</tr>
+<tr>
+<td>textPrimary</td>
+<td><code>#c0caf5</code></td>
+<td><code>#343b58</code></td>
+</tr>
+<tr>
+<td>textSecondary</td>
+<td><code>#a9b1d6</code></td>
+<td><code>#565a6e</code></td>
+</tr>
+<tr>
+<td>accent</td>
+<td><code>#7aa2f7</code></td>
+<td><code>#34548a</code></td>
+</tr>
+<tr>
+<td>accentHover</td>
+<td><code>#6a91e6</code></td>
+<td><code>#2a4471</code></td>
+</tr>
+<tr>
+<td>contrast</td>
+<td><code>#e0af68</code></td>
+<td><code>#8f5e15</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td><code>#9ece6a</code></td>
+<td><code>#485e30</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>#f7768e</code></td>
+<td><code>#8c4351</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>#e0af68</code></td>
+<td><code>#8f5e15</code></td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>#7dcfff</code></td>
+<td><code>#2a6194</code></td>
+</tr>
+<tr>
+<td>purple</td>
+<td><code>#bb9af7</code></td>
+<td><code>#5a3e8e</code></td>
+</tr>
+<tr>
+<td>shadow</td>
+<td><code>rgba(0,0,0,0.55)</code></td>
+<td><code>rgba(0,0,0,0.12)</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="css-variables">CSS variables</h2>
+<p>The 15 tokens surface as CSS custom properties on
+<code>&lt;html&gt;</code>. SCSS and component templates use these via
+<code>var(--color-*)</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Token key</th>
+<th>CSS variable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bgPrimary</td>
+<td><code>--color-bg-primary</code></td>
+</tr>
+<tr>
+<td>bgSecondary</td>
+<td><code>--color-bg-secondary</code></td>
+</tr>
+<tr>
+<td>bgTertiary</td>
+<td><code>--color-bg-tertiary</code></td>
+</tr>
+<tr>
+<td>border</td>
+<td><code>--color-border</code></td>
+</tr>
+<tr>
+<td>textPrimary</td>
+<td><code>--color-text-primary</code></td>
+</tr>
+<tr>
+<td>textSecondary</td>
+<td><code>--color-text-secondary</code></td>
+</tr>
+<tr>
+<td>accent</td>
+<td><code>--color-accent</code></td>
+</tr>
+<tr>
+<td>accentHover</td>
+<td><code>--color-accent-hover</code></td>
+</tr>
+<tr>
+<td>contrast</td>
+<td><code>--color-contrast</code></td>
+</tr>
+<tr>
+<td>success</td>
+<td><code>--color-success</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>--color-danger</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>--color-warning</code></td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>--color-info</code></td>
+</tr>
+<tr>
+<td>purple</td>
+<td><code>--color-purple</code></td>
+</tr>
+<tr>
+<td>shadow</td>
+<td><code>--color-shadow</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>frontend/src/styles.scss</code> declares Darcula-dark fallbacks
+on <code>:root</code> so the page is styled even before
+<code>ThemeService</code> runs — no flash of unstyled content (FOUC) on
+first paint.</p>
+<h2 id="themeservice-api">ThemeService API</h2>
+<p>Imported from
+<code>frontend/src/app/services/theme.service.ts</code>.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Member</th>
+<th>Kind</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>palette</code></td>
+<td><code>Signal&lt;Palette&gt;</code></td>
+<td>Current palette object (read-only).</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td><code>Signal&lt;PaletteMode&gt;</code></td>
+<td><code>'light'</code> or <code>'dark'</code> (read-only).</td>
+</tr>
+<tr>
+<td><code>currentTokens</code></td>
+<td><code>Signal&lt;PaletteTokens&gt;</code></td>
+<td>Active token set; switches with mode.</td>
+</tr>
+<tr>
+<td><code>availablePalettes</code></td>
+<td><code>readonly Palette[]</code></td>
+<td>Full catalogue.</td>
+</tr>
+<tr>
+<td><code>paletteIds</code></td>
+<td><code>readonly string[]</code></td>
+<td>Id list (convenience).</td>
+</tr>
+<tr>
+<td><code>setPalette(id)</code></td>
+<td>method</td>
+<td>Switch to a palette. No-op for unknown ids.</td>
+</tr>
+<tr>
+<td><code>setMode(mode)</code></td>
+<td>method</td>
+<td>Force light/dark. Marks the choice as sticky.</td>
+</tr>
+<tr>
+<td><code>toggleMode()</code></td>
+<td>method</td>
+<td>Flip light ↔︎ dark.</td>
+</tr>
+<tr>
+<td><code>isModeUserChosen()</code></td>
+<td>method</td>
+<td><code>true</code> if user has explicitly chosen mode.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="storage-key">Storage key</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="er">//</span> <span class="er">key:</span> <span class="st">&quot;qbit.theme&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;paletteId&quot;</span><span class="fu">:</span> <span class="st">&quot;darcula&quot;</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;mode&quot;</span><span class="fu">:</span> <span class="st">&quot;dark&quot;</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;modeIsUserChosen&quot;</span><span class="fu">:</span> <span class="kw">true</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<ul>
+<li>When the store is empty, the service defaults to
+<code>DEFAULT_PALETTE_ID</code> (<code>"darcula"</code>) and derives
+<code>mode</code> from
+<code>window.matchMedia('(prefers-color-scheme: dark)')</code>.</li>
+<li>When the stored id no longer exists in the catalogue, the service
+falls back to the default AND writes the correction back to
+storage.</li>
+<li>While <code>modeIsUserChosen === false</code>, the service listens
+to <code>prefers-color-scheme</code> changes and updates
+<code>mode</code> to match. Once the user picks a mode explicitly
+(<code>setMode</code> / <code>toggleMode</code> / picker), the choice
+becomes sticky.</li>
+</ul>
+<h3 id="side-effects-per-change">Side effects per change</h3>
+<p>On every <code>setPalette</code> / <code>setMode</code> /
+<code>toggleMode</code>, the service:</p>
+<ol type="1">
+<li>Writes every one of the 15 tokens to
+<code>document.documentElement.style.setProperty(--color-*, ...)</code>.</li>
+<li>Sets <code>color-scheme</code> on the documentElement (for native UI
+controls).</li>
+<li>Sets <code>data-palette</code> and <code>data-mode</code> attributes
+on <code>&lt;html&gt;</code>.</li>
+<li>Persists the full state to
+<code>localStorage['qbit.theme']</code>.</li>
+</ol>
+<p>These are observable, which is how the tests verify behaviour without
+false positives — see
+<code>frontend/src/app/services/theme.service.spec.ts</code> and
+<code>tests/e2e/test_theme_runtime.py</code>.</p>
+<h2 id="theme-picker-ui">Theme picker UI</h2>
+<p><code>frontend/src/app/components/theme-picker/</code> ships the
+corner widget used in the dashboard header. It is a standalone Angular
+component; any other app can drop <code>&lt;app-theme-picker&gt;</code>
+into its template. The picker renders:</p>
+<ul>
+<li>a light/dark mode toggle button,</li>
+<li>a dropdown listing every palette,</li>
+<li>four colour swatches per palette (accent, contrast, bg, text),</li>
+<li>an active-state marker (<code>.active</code> +
+<code>aria-checked="true"</code>) on the current palette.</li>
+</ul>
+<h2 id="adding-a-new-palette">Adding a new palette</h2>
+<ol type="1">
+<li><p>Edit <code>frontend/src/app/models/palette.model.ts</code> and
+add an entry to <code>PALETTES</code>. Provide both <code>light</code>
+and <code>dark</code> variants with every one of the 15 tokens.</p></li>
+<li><p>Make sure each token is a valid CSS colour (<code>#RRGGBB</code>
+or <code>rgba(r, g, b, a)</code>).</p></li>
+<li><p>Run the catalogue parametric validator:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/test_palette_catalog.py <span class="at">-v</span> <span class="at">--no-cov</span></span></code></pre></div></li>
+<li><p>Run the wiring guard + frontend specs:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/test_theme_wiring.py <span class="at">-v</span> <span class="at">--no-cov</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> <span class="at">--prefix</span> frontend ng test <span class="at">--watch</span><span class="op">=</span>false</span></code></pre></div></li>
+<li><p>Rebuild and restart the merge service (see CLAUDE.md’s
+<strong>REBUILD AND REBOOT</strong> constraint). If Playwright is
+installed, run:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/e2e/test_theme_runtime.py <span class="at">-v</span> <span class="at">--no-cov</span></span></code></pre></div></li>
+</ol>
+<p>The e2e test will loudly fail (not skip) when the served bundle does
+not include the new palette, which is the project’s “no false positives”
+guarantee.</p>
+<h2 id="files">Files</h2>
+<ul>
+<li><code>frontend/src/app/models/palette.model.ts</code> — catalogue +
+types</li>
+<li><code>frontend/src/app/services/theme.service.ts</code> — runtime
+controller</li>
+<li><code>frontend/src/app/components/theme-picker/</code> — picker
+component</li>
+<li><code>frontend/src/styles.scss</code> — global CSS variable
+fallbacks</li>
+<li><code>frontend/src/app/components/dashboard/dashboard.component.scss</code>
+— dashboard stylesheet using <code>var(--color-*)</code></li>
+<li><code>frontend/src/app/components/tracker-stat-dialog/tracker-stat-dialog.component.scss</code>
+— dialog stylesheet using <code>var(--color-*)</code></li>
+<li><code>tests/unit/test_palette_catalog.py</code> — parametric
+catalogue validator</li>
+<li><code>tests/unit/test_theme_wiring.py</code> — wiring integration
+guard</li>
+<li><code>tests/e2e/test_theme_runtime.py</code> — Playwright runtime
+verification</li>
+</ul>

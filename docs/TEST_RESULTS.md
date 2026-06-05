@@ -1,5 +1,8 @@
 # qBittorrent Search Plugins - Test Results
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 **Test Date:** April 18, 2026
 **Total Plugins:** 42
 **Test Framework:** pytest with unit, integration, and e2e suites

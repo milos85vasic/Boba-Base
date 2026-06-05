@@ -1,0 +1,1306 @@
+<h1
+id="completion-initiative-full-report-phased-implementation-plan">Completion
+Initiative — Full Report &amp; Phased Implementation Plan</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps
+use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Drive the qBitTorrent platform to zero-debt
+status: every module wired, every test unskipped, 100% coverage,
+hardened for security + concurrency + memory safety, fully documented
+(text + diagrams + OpenAPI + website + video), and continuously scanned
+by Snyk + SonarQube — without breaking any existing functionality and in
+full compliance with the <code>.specify/memory/constitution.md</code>
+(v1.1.0).</p>
+<p><strong>Architecture:</strong> Preserve the Container-First
+two-container topology (Principle I). Additive scanning/observability
+services are introduced as an <strong>opt-in, separate compose
+file</strong> (<code>docker-compose.quality.yml</code>) to avoid
+amending the constitution. All hardening is layered behind feature flags
+so existing working paths never change behavior silently. TDD-gated
+throughout (RED → watch fail → GREEN → rebuild-reboot → commit, per
+CLAUDE.md).</p>
+<p><strong>Tech Stack:</strong> - Backend: Python 3.12, FastAPI,
+aiohttp, uvicorn - Plugins: qBittorrent nova3 engine contract, 48
+<code>.py</code> files in <code>plugins/</code> - Frontend: Angular
+19/21 standalone app, Vitest - Scanners (new): Snyk CLI, SonarQube
+Community (compose), Semgrep, Bandit, pip-audit, Trivy, Gitleaks -
+Observability (new): Prometheus + Grafana + OpenTelemetry (compose;
+optional) - Docs site (new): MkDocs Material (static, commit-synced) -
+Tests: pytest + pytest-asyncio + pytest-cov + hypothesis +
+pytest-timeout + pytest-randomly + Locust (load) + Playwright (browser
+e2e)</p>
+<hr />
+<h2 id="part-a-report-of-unfinished-broken-undocumented-work">Part A —
+Report of Unfinished / Broken / Undocumented Work</h2>
+<p>All findings are verified against the current <code>main</code> at
+<code>6ea3383</code>. Line numbers are from the snapshot taken on
+2026-04-19.</p>
+<h3 id="a.1-tests-that-are-disabled-skipped-or-excluded">A.1 Tests that
+are disabled, skipped, or excluded</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>File / location</th>
+<th>What</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>tests/integration/test_manual_issues.py</code></td>
+<td>runtime <code>pytest.skip()</code> (merge service down)</td>
+<td>9</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>tests/integration/test_dashboard_automation.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>9</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>tests/integration/test_login_actions.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>8</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>tests/integration/test_buttons_api.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>8</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>tests/integration/test_ui_quick.py</code></td>
+<td>runtime <code>pytest.skip()</code> + <code>--ignore=</code> in
+<code>run-all-tests.sh:122</code></td>
+<td>5</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>tests/integration/test_live_containers.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>5</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>tests/integration/test_iptorrents.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>5</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>tests/integration/test_auth_and_links.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>tests/integration/test_dashboard_rendering.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>tests/integration/test_magnet_dialog.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>tests/integration/test_ui_comprehensive.py</code></td>
+<td>runtime <code>pytest.skip()</code> + <code>--ignore=</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>tests/security/test_auth_bypass.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>tests/security/test_input_validation.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>tests/security/test_xss_protection.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>tests/security/test_csrf_protection.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>tests/performance/test_concurrent_search.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>tests/stress/test_search_stress.py</code></td>
+<td>runtime <code>pytest.skip()</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>.github/workflows/test.yml:65</code></td>
+<td><code>docker-check</code> job gated on
+<code>test_level == 'full'</code></td>
+<td>gate</td>
+</tr>
+<tr>
+<td>19</td>
+<td>pyproject.toml / pytest.ini</td>
+<td><strong>no <code>--cov-fail-under</code> threshold
+anywhere</strong></td>
+<td>gap</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total runtime skips: 71</strong> across 17 test files. Root
+cause: environment-dependent gates
+(<code>requests.get("http://localhost:7187/").ok</code>) rather than
+fixtures that <strong>guarantee</strong> the services are up before
+running. Additionally, 2 integration files are unconditionally excluded
+from <code>run-all-tests.sh</code>.</p>
+<h3 id="a.2-frontend-tests">A.2 Frontend tests</h3>
+<ul>
+<li><code>frontend/src/app/app.spec.ts</code> — <strong>only 23
+lines</strong>, <strong>one smoke test</strong>.</li>
+<li>Zero tests for: <code>dashboard.component</code>,
+<code>magnet-dialog.component</code>,
+<code>qbit-login-dialog.component</code>,
+<code>toast-container.component</code>,
+<code>confirm-dialog.component</code>, <code>api.service</code>,
+<code>sse.service</code>, <code>toast.service</code>,
+<code>dialog.service</code>, <code>search.model</code>, routing, error
+paths.</li>
+<li>No Playwright/Cypress browser e2e tests.</li>
+<li>No coverage gate in <code>angular.json</code>.</li>
+</ul>
+<h3 id="a.3-dead-unfinished-code">A.3 Dead / unfinished code</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>File</th>
+<th>Issue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>plugins/*.py</code></td>
+<td><strong>48 <code>.py</code> files</strong> on disk; only 12 are
+canonical per constitution (Principle II) and
+<code>install-plugin.sh</code>. <strong>36 plugins have no tests, no
+install path, no documentation, no health check.</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>download-proxy/src/ui/__init__.py</code></td>
+<td>Empty module (single comment). <code>ui/</code> serves compiled
+Angular assets only — the Python module itself is a no-op.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>plugins/socks.py:433</code></td>
+<td><code>raise NotImplementedError("Received UDP packet fragment")</code>
+— UDP fragmentation unimplemented. TCP path works; document or
+implement.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>plugins/nova2.py:89</code></td>
+<td><code>raise NotImplementedError</code> —
+<strong>intentional</strong> abstract base. Leave alone, but
+document.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>plugins/webui_compatible/{kinozal,nnmclub,rutracker}.py</code></td>
+<td>Alternate implementations per constitution Principle V — document
+their activation path.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>TODO/FIXME markers</td>
+<td><strong>Zero</strong> in core code (positive finding).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a.4-concurrency-memory-race-hazards">A.4 Concurrency / memory /
+race hazards</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>File:line</th>
+<th>Hazard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>download-proxy/src/main.py:69-83</code></td>
+<td>Two daemon threads spawned, <code>time.sleep(60)</code> keepalive,
+no graceful shutdown, no join timeout.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>download-proxy/src/merge_service/search.py:308</code></td>
+<td><code>asyncio.gather(*[_search_one(t) for t in trackers])</code> —
+<strong>no semaphore cap</strong>, unbounded across ~40 trackers.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>search.py:233-236, 960-991</code></td>
+<td><code>_active_searches</code> + <code>_last_merged_results</code>
+dicts grow without TTL/eviction — memory leak.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>search.py:234, 494, 622, 701, 781</code></td>
+<td><code>_tracker_sessions</code> stores aiohttp sessions without
+close/rotation.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>search.py:378-395</code></td>
+<td>Subprocess template string injection risk (tracker name interpolated
+into exec’d Python).</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>search.py:407</code></td>
+<td>10s subprocess timeout inadequate under load.</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>download-proxy/src/api/hooks.py:56,183-184</code></td>
+<td><code>_execution_logs</code> global list appended by concurrent
+async handlers without lock.</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>download-proxy/src/api/routes.py:395-398,418-429</code></td>
+<td>Credential JSON file writes without <code>flock</code> → corruption
+risk; plaintext at rest.</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>download-proxy/src/api/streaming.py:75,123,77,181</code></td>
+<td><code>seen_hashes: set()</code> mutated by concurrent SSE
+generators; <code>while True: await asyncio.sleep(0.5)</code> polls even
+after client disconnect.</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>download-proxy/src/api/__init__.py:68</code></td>
+<td><code>CORSMiddleware(allow_origins=["*"])</code> —
+over-permissive.</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>download-proxy/src/api/auth.py:24</code></td>
+<td><code>_pending_captchas: dict = {}</code> unbounded, no TTL.</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>docker-compose.yml:12,36</code></td>
+<td>Hardcoded <code>admin</code>/<code>admin</code> default (documented
+as intentional by constitution III, but still needs runtime override
+warning).</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Zero use of
+<code>tenacity</code>/<code>backoff</code>/<code>async-timeout</code></td>
+<td>No retry, no circuit-breaker, no exponential backoff anywhere.</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Zero <code>loadChildren</code> / <code>@defer</code></td>
+<td>Angular app is fully eager-loaded.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="a.5-security-scanning-tooling">A.5 Security / scanning
+tooling</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Snyk</td>
+<td><strong>Not configured</strong> (no <code>.snyk</code>, no
+workflow)</td>
+</tr>
+<tr>
+<td>SonarQube</td>
+<td><strong>Not configured</strong> (no
+<code>sonar-project.properties</code>, no compose service)</td>
+</tr>
+<tr>
+<td>Semgrep</td>
+<td><strong>Not configured</strong></td>
+</tr>
+<tr>
+<td>Bandit</td>
+<td><strong>Not configured</strong></td>
+</tr>
+<tr>
+<td>pip-audit / safety</td>
+<td><strong>Not configured</strong></td>
+</tr>
+<tr>
+<td>Trivy / Grype (image scan)</td>
+<td><strong>Not configured</strong></td>
+</tr>
+<tr>
+<td>Gitleaks / truffleHog</td>
+<td><strong>Not configured</strong></td>
+</tr>
+<tr>
+<td>Ruff</td>
+<td>Config exists (<code>ruff.toml</code>) but <strong>not in any
+workflow</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="a.6-documentation-gaps">A.6 Documentation gaps</h3>
+<ul>
+<li><strong>Missing READMEs</strong> in 9 top-level directories:
+<code>config/</code>, <code>docs/</code>, <code>download-proxy/</code>,
+<code>plugins/</code>, <code>specs/</code>, <code>tools/</code>,
+<code>Upstreams/</code>, <code>tmp/</code>, <code>.specify/</code>.</li>
+<li><strong>No OpenAPI spec file</strong> committed (FastAPI
+auto-generates, but no frozen artifact for docs/website).</li>
+<li><strong>No architecture diagrams</strong> beyond ASCII in
+<code>README.md</code>.</li>
+<li><strong>No SQL schema</strong> (project uses no relational DB —
+document this explicitly).</li>
+<li><strong>No docs site generator</strong> configured.</li>
+<li><strong><code>CHANGELOG.md</code> lags</strong> behind recent
+commits (Angular 19 port, 5 dashboard fixes).</li>
+<li><strong><code>PLUGINS.md</code></strong> documents 12 plugins; the
+other 36 on disk are undocumented.</li>
+</ul>
+<h3 id="a.7-website">A.7 Website</h3>
+<p><strong>Does not exist.</strong> No <code>website/</code>,
+<code>site/</code>, <code>web/</code>, or docs-site generator config.
+<code>frontend/</code> is the dashboard app, not a marketing/docs
+website. <strong>Needs user decision.</strong></p>
+<h3 id="a.8-video-courses">A.8 Video courses</h3>
+<p><strong>Do not exist.</strong> No <code>video/</code>,
+<code>courses/</code> directories, no mp4/webm/YouTube references
+anywhere. <strong>Needs user decision — see Part B.</strong></p>
+<h3 id="a.9-observability">A.9 Observability</h3>
+<ul>
+<li>No Prometheus, Grafana, OpenTelemetry, Sentry, structured logging
+framework.</li>
+<li>Only <code>logging.basicConfig()</code> in
+<code>main.py</code>.</li>
+<li>Healthchecks exist (docker-compose.yml:21, :61) — good
+baseline.</li>
+</ul>
+<h3 id="a.10-ci">A.10 CI</h3>
+<ul>
+<li><code>.github/workflows/test.yml</code> is
+<code>workflow_dispatch</code>-only (manual).</li>
+<li>No PR-triggered checks, no scheduled scans, no coverage report
+upload, no SARIF upload.</li>
+</ul>
+<hr />
+<h2 id="part-b-ambiguities-requiring-user-decision">Part B — Ambiguities
+Requiring User Decision</h2>
+<p>The request mentions <strong>extending</strong> existing video
+courses and the website. Neither exists in this repo. Before Phase 9+
+can begin, the user must choose one of the options below for each:</p>
+<h3 id="b.1-website">B.1 Website</h3>
+<ul>
+<li><strong>Option 1 (recommended, cheapest)</strong>: Generate a static
+docs+marketing site with <strong>MkDocs Material</strong> under
+<code>website/</code>, published via GitHub Pages. Content = rendered
+<code>docs/</code> + landing page + screenshots of the Angular
+dashboard. No runtime dependency.</li>
+<li><strong>Option 2</strong>: Full marketing site with
+<strong>Astro</strong> + component library. More polish, more
+maintenance.</li>
+<li><strong>Option 3</strong>: Defer — say “not applicable, no website
+in scope.”</li>
+</ul>
+<h3 id="b.2-video-courses">B.2 Video courses</h3>
+<ul>
+<li><strong>Option 1</strong>: Author <strong>scripts + storyboards +
+screen-capture shotlists</strong> for a video course series (Operator
+101, Plugin Author, Contributor Deep-Dive, Security &amp; Ops). Record
+them out-of-band.</li>
+<li><strong>Option 2</strong>: Author <strong>Asciinema cast
+files</strong> (terminal sessions, captured with
+<code>asciinema rec</code>) plus narrated markdown — reproducible from
+git, zero binary bloat.</li>
+<li><strong>Option 3</strong>: Defer — say “not applicable, no videos in
+scope.”</li>
+</ul>
+<p>The plan below assumes <strong>Website = Option 1 (MkDocs
+Material)</strong> and <strong>Video courses = Option 2 (Asciinema +
+narrated markdown)</strong>. If the user chooses differently, Phase 9
+and 10 swap implementations but the phase structure is unchanged.</p>
+<hr />
+<h2 id="part-c-test-type-catalog-what-all-test-types-means-here">Part C
+— Test Type Catalog (what “ALL test types” means here)</h2>
+<p>This is the authoritative list of test types the plan will cover and
+the framework used for each. Every module must have tests in every
+applicable row.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Type</th>
+<th>Framework</th>
+<th>Directory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Unit (Python)</td>
+<td>pytest + pytest-asyncio</td>
+<td><code>tests/unit/</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Unit (Frontend)</td>
+<td>Vitest + Angular Testing Library</td>
+<td><code>frontend/src/**/*.spec.ts</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Integration (API)</td>
+<td>pytest + httpx.AsyncClient</td>
+<td><code>tests/integration/</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Integration (Plugin ↔︎ nova3)</td>
+<td>pytest + vcrpy (record/replay)</td>
+<td><code>tests/integration/plugins/</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>End-to-end (browser)</td>
+<td>Playwright (Python)</td>
+<td><code>tests/e2e/</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>End-to-end (API flow)</td>
+<td>pytest + live compose</td>
+<td><code>tests/e2e/api/</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Contract (OpenAPI)</td>
+<td>schemathesis</td>
+<td><code>tests/contract/</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Property-based</td>
+<td>hypothesis</td>
+<td><code>tests/property/</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Fuzz</td>
+<td>hypothesis + atheris (optional)</td>
+<td><code>tests/fuzz/</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Mutation</td>
+<td>mutmut</td>
+<td>runs against <code>download-proxy/src/</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>Security</td>
+<td>pytest + bandit + semgrep rules</td>
+<td><code>tests/security/</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>Performance (latency)</td>
+<td>pytest-benchmark</td>
+<td><code>tests/performance/</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>Load (throughput)</td>
+<td>Locust</td>
+<td><code>tests/load/</code></td>
+</tr>
+<tr>
+<td>14</td>
+<td>Stress (overload)</td>
+<td>Locust + chaos probes</td>
+<td><code>tests/stress/</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td>Chaos (fault injection)</td>
+<td>toxiproxy + pytest</td>
+<td><code>tests/chaos/</code></td>
+</tr>
+<tr>
+<td>16</td>
+<td>Concurrency (race)</td>
+<td>pytest-randomly + pytest-repeat + asyncio ops</td>
+<td><code>tests/concurrency/</code></td>
+</tr>
+<tr>
+<td>17</td>
+<td>Memory leak</td>
+<td>tracemalloc + pytest + objgraph</td>
+<td><code>tests/memory/</code></td>
+</tr>
+<tr>
+<td>18</td>
+<td>Deadlock / timeout</td>
+<td>pytest-timeout (hard cap all tests)</td>
+<td>global config</td>
+</tr>
+<tr>
+<td>19</td>
+<td>Smoke</td>
+<td>pytest</td>
+<td><code>tests/smoke/</code></td>
+</tr>
+<tr>
+<td>20</td>
+<td>Monitoring / metrics</td>
+<td>pytest + Prometheus scrape asserts</td>
+<td><code>tests/observability/</code></td>
+</tr>
+<tr>
+<td>21</td>
+<td>Infra / compose</td>
+<td>pytest-docker + compose-config validator</td>
+<td><code>tests/infra/</code></td>
+</tr>
+<tr>
+<td>22</td>
+<td>Accessibility</td>
+<td>Playwright + axe-core</td>
+<td><code>tests/a11y/</code></td>
+</tr>
+<tr>
+<td>23</td>
+<td>Visual regression</td>
+<td>Playwright snapshots</td>
+<td><code>tests/visual/</code></td>
+</tr>
+<tr>
+<td>24</td>
+<td>Documentation link check</td>
+<td>pytest + linkchecker</td>
+<td><code>tests/docs/</code></td>
+</tr>
+<tr>
+<td>25</td>
+<td>Type-check (static)</td>
+<td>mypy –strict + tsc –noEmit</td>
+<td>CI job</td>
+</tr>
+<tr>
+<td>26</td>
+<td>Lint (static)</td>
+<td>ruff + eslint + shellcheck + hadolint + yamllint</td>
+<td>CI job</td>
+</tr>
+<tr>
+<td>27</td>
+<td>Dependency audit</td>
+<td>pip-audit + npm audit + Snyk + Trivy</td>
+<td>CI job</td>
+</tr>
+<tr>
+<td>28</td>
+<td>SAST</td>
+<td>Semgrep + Bandit + SonarQube</td>
+<td>CI job</td>
+</tr>
+<tr>
+<td>29</td>
+<td>Secret scan</td>
+<td>Gitleaks + TruffleHog</td>
+<td>CI job</td>
+</tr>
+<tr>
+<td>30</td>
+<td>License compliance</td>
+<td>pip-licenses + license-checker</td>
+<td>CI job</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="part-d-phased-implementation-plan">Part D — Phased
+Implementation Plan</h2>
+<p>Each phase ends with a <strong>green test suite + rebuild-reboot +
+commit</strong> per CLAUDE.md protocol. No phase begins until the
+previous phase is fully green. Each phase is an <strong>independently
+mergeable milestone</strong>.</p>
+<h3 id="phase-0-safety-net-baseline-prerequisite-for-everything">Phase 0
+— Safety Net &amp; Baseline (prerequisite for everything)</h3>
+<p><strong>Why first:</strong> Before any hardening, we need the current
+behavior locked in by tests, CI running automatically, and a rollback
+point. This phase <strong>changes zero product code</strong> — it only
+adds observability of current behavior.</p>
+<p><strong>Deliverables:</strong> - <code>pyproject.toml</code> replaces
+ad-hoc pytest/coverage config, centralizes tool settings. -
+<code>pytest-cov</code>, <code>pytest-timeout</code>,
+<code>pytest-randomly</code>, <code>pytest-xdist</code>,
+<code>pytest-docker</code>, <code>hypothesis</code>,
+<code>responses</code>, <code>freezegun</code> added to
+<code>tests/requirements.txt</code>. - <code>tests/conftest.py</code>
+gains <strong>service-availability fixtures</strong>
+(<code>merge_service_live</code>, <code>qbittorrent_live</code>,
+<code>webui_bridge_live</code>, <code>compose_up</code>) that
+<strong>start the stack before the test</strong> instead of skipping. -
+<code>.github/workflows/</code> split into: <code>syntax.yml</code>
+(push+PR), <code>unit.yml</code> (push+PR), <code>integration.yml</code>
+(push+PR, with compose), <code>nightly.yml</code> (full suite),
+<code>security.yml</code> (weekly scan). All auto-triggered. -
+<code>docker-compose.quality.yml</code> (additive, opt-in) added with
+SonarQube + Prometheus + Grafana services, documented in
+<code>docs/QUALITY_STACK.md</code> and justified against Principle I. -
+Coverage baseline captured at commit SHA in
+<code>docs/COVERAGE_BASELINE.md</code>. - <code>.gitignore</code>
+updated for <code>.ruff_cache/</code>, <code>.mutmut-cache</code>,
+<code>htmlcov/</code>, <code>.coverage*</code>,
+<code>.pytest_cache/</code>, <code>prof/</code>.</p>
+<p><strong>Tasks:</strong></p>
+<h4 id="task-0.1-create-pyproject.toml-with-unified-tool-config">Task
+0.1 — Create <code>pyproject.toml</code> with unified tool config</h4>
+<p><strong>Files:</strong> - Create: <code>pyproject.toml</code> -
+Modify: <code>tests/requirements.txt</code> - Modify:
+<code>.gitignore</code></p>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 1: Write test that
+asserts <code>pyproject.toml</code> exists and declares pytest/coverage
+config</strong></label></li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># tests/unit/test_toolchain_config.py</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tomllib</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_pyproject_declares_pytest_and_coverage_config():</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    root <span class="op">=</span> Path(<span class="va">__file__</span>).resolve().parents[<span class="dv">2</span>]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> tomllib.loads((root <span class="op">/</span> <span class="st">&quot;pyproject.toml&quot;</span>).read_text())</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> data[<span class="st">&quot;tool&quot;</span>][<span class="st">&quot;pytest&quot;</span>][<span class="st">&quot;ini_options&quot;</span>][<span class="st">&quot;addopts&quot;</span>]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> data[<span class="st">&quot;tool&quot;</span>][<span class="st">&quot;coverage&quot;</span>][<span class="st">&quot;run&quot;</span>][<span class="st">&quot;source&quot;</span>] <span class="op">==</span> [<span class="st">&quot;download-proxy/src&quot;</span>, <span class="st">&quot;plugins&quot;</span>]</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> data[<span class="st">&quot;tool&quot;</span>][<span class="st">&quot;coverage&quot;</span>][<span class="st">&quot;report&quot;</span>][<span class="st">&quot;fail_under&quot;</span>] <span class="op">==</span> <span class="dv">100</span></span></code></pre></div>
+<ul class="task-list">
+<li><p><label><input type="checkbox" /><strong>Step 2: Run test to
+verify it fails</strong> —
+<code>python3 -m pytest tests/unit/test_toolchain_config.py -v</code> —
+expect FAIL (pyproject.toml missing).</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 3: Create
+<code>pyproject.toml</code></strong> with sections
+<code>[tool.pytest.ini_options]</code>,
+<code>[tool.coverage.run]</code>, <code>[tool.coverage.report]</code>,
+<code>[tool.ruff]</code> (migrate from <code>ruff.toml</code>),
+<code>[tool.mypy]</code>. Set
+<code>addopts = "-ra --strict-markers --strict-config --cov --cov-report=term-missing --cov-report=xml --cov-report=html --timeout=30"</code>.
+Set <code>fail_under = 100</code> (start low, raise per
+phase).</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 4: Re-run
+test</strong> — expect PASS.</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 5: Commit</strong>
+—</label></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> add pyproject.toml tests/unit/test_toolchain_config.py .gitignore</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">&quot;chore: consolidate tool config into pyproject.toml with coverage gate&quot;</span></span></code></pre></div></li>
+</ul>
+<h4 id="task-0.2-add-service-availability-fixtures">Task 0.2 — Add
+service-availability fixtures</h4>
+<p><strong>Files:</strong> - Modify: <code>tests/conftest.py</code> -
+Create: <code>tests/fixtures/compose.py</code> - Create:
+<code>tests/fixtures/services.py</code></p>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 1: Write test</strong>
+proving <code>merge_service_live</code> fixture starts compose when
+service is down and returns the healthy base URL.</label></li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># tests/integration/test_fixtures_bring_up_services.py</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> httpx</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_merge_service_fixture_returns_healthy_url(merge_service_live):</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> httpx.get(<span class="ss">f&quot;</span><span class="sc">{</span>merge_service_live<span class="sc">}</span><span class="ss">/health&quot;</span>, timeout<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> r.status_code <span class="op">==</span> <span class="dv">200</span></span></code></pre></div>
+<ul class="task-list">
+<li><p><label><input type="checkbox" /><strong>Step 2: Run it — expect
+FAIL</strong> (fixture doesn’t exist).</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 3: Implement
+fixture</strong> in <code>tests/fixtures/services.py</code>. Use
+<code>pytest-docker</code> to bring up <code>docker-compose.yml</code> +
+<code>docker-compose.quality.yml</code>. Poll <code>/health</code> until
+200 or timeout 60s. Tear down on session end. Register fixture in
+<code>tests/conftest.py</code>.</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 4: Run test — expect
+PASS.</strong></label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 5: Commit</strong> —
+<code>test: add service-availability fixtures that start compose stack</code>.</label></p></li>
+</ul>
+<h4
+id="task-0.3-replace-every-pytest.skipservice-down-with-fixture-dependency">Task
+0.3 — Replace every <code>pytest.skip("service down")</code> with
+fixture dependency</h4>
+<p>For each of the 17 files in §A.1 with runtime skips, remove the
+<code>if not service.ok: pytest.skip(...)</code> block and require the
+fixture. This converts all 71 skips into guaranteed executions.</p>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 1: Write
+meta-test</strong> that greps the test tree and asserts zero
+<code>pytest.skip(</code> calls remain with message
+<code>"service"</code> or <code>"available"</code>.</label></li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># tests/unit/test_no_runtime_service_skips.py</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re, pathlib</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_no_runtime_service_skips():</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    root <span class="op">=</span> pathlib.Path(<span class="va">__file__</span>).resolve().parents[<span class="dv">1</span>]</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    offenders <span class="op">=</span> []</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    pat <span class="op">=</span> re.<span class="bu">compile</span>(<span class="vs">r&#39;pytest</span><span class="ch">\.</span><span class="vs">skip</span><span class="ch">\(</span><span class="pp">[^)]</span><span class="op">*</span><span class="kw">(</span><span class="vs">service</span><span class="cf">|</span><span class="vs">available</span><span class="cf">|</span><span class="vs">unreachable</span><span class="kw">)</span><span class="vs">&#39;</span>, re.I)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> p <span class="kw">in</span> root.rglob(<span class="st">&quot;test_*.py&quot;</span>):</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> pat.search(p.read_text()):</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>            offenders.append(<span class="bu">str</span>(p))</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> offenders <span class="op">==</span> [], offenders</span></code></pre></div>
+<ul class="task-list">
+<li><p><label><input type="checkbox" /><strong>Step 2: Run — expect
+FAIL</strong> listing all 17 files.</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 3: Edit each
+file</strong> — replace
+<code>if not requests.get(...).ok: pytest.skip(...)</code> with
+<code>def test_foo(merge_service_live): ...</code>. If the test
+genuinely needs a CAPTCHA-shielded resource, gate with
+<code>@pytest.mark.requires_credentials</code> and register the mark in
+<code>pyproject.toml</code>; provide a <code>MOCK_MODE</code> fixture
+that records/replays with vcrpy.</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 4: Run — expect
+PASS.</strong></label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 5: Remove
+<code>--ignore=</code> lines</strong> from
+<code>run-all-tests.sh:122</code>
+(<code>test_ui_comprehensive.py</code>,
+<code>test_ui_quick.py</code>).</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 6:
+Rebuild-reboot</strong> (CLAUDE.md mandate):
+<code>./stop.sh &amp;&amp; podman exec qbittorrent-proxy find / -name __pycache__ -type d -exec rm -rf {} + || true; ./start.sh -p</code>.</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 7: Run entire
+suite</strong> — <code>./ci.sh</code>. Expect PASS with 0
+skips.</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 8: Commit</strong> —
+<code>test: convert 71 runtime skips into fixture-gated executions</code>.</label></p></li>
+</ul>
+<h4 id="task-0.4-split-ci-into-auto-triggered-workflows">Task 0.4 —
+Split CI into auto-triggered workflows</h4>
+<p><strong>Files:</strong> - Modify:
+<code>.github/workflows/test.yml</code> → split into 5 files - Create:
+<code>.github/workflows/syntax.yml</code> - Create:
+<code>.github/workflows/unit.yml</code> - Create:
+<code>.github/workflows/integration.yml</code> - Create:
+<code>.github/workflows/nightly.yml</code> - Create:
+<code>.github/workflows/security.yml</code></p>
+<ul class="task-list">
+<li><p><label><input type="checkbox" /><strong>Step 1: Write
+test</strong> <code>tests/unit/test_ci_workflows.py</code> asserting
+each expected workflow file exists and has
+<code>on: [push, pull_request]</code> (except
+nightly/security).</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 2: Fail</strong> —
+not present.</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 3: Author
+workflows.</strong> Use <code>actions/cache</code> for pip + npm. Upload
+coverage as artifact. Use matrix for Python 3.12 + 3.13. Upload SARIF
+from scanners to Security tab.</label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 4:
+Pass.</strong></label></p></li>
+<li><p><label><input type="checkbox" /><strong>Step 5: Commit</strong> —
+<code>ci: split manual workflow into auto-triggered suite</code>.</label></p></li>
+</ul>
+<h4 id="task-0.5-coverage-baseline">Task 0.5 — Coverage baseline</h4>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 1: Run</strong>
+<code>coverage run -m pytest &amp;&amp; coverage xml &amp;&amp; coverage html</code>.</label></li>
+<li><label><input type="checkbox" /><strong>Step 2: Record
+numbers</strong> per module in
+<code>docs/COVERAGE_BASELINE.md</code>.</label></li>
+<li><label><input type="checkbox" /><strong>Step 3: Commit</strong> —
+<code>docs: capture coverage baseline at 6ea3383</code>.</label></li>
+</ul>
+<hr />
+<h3 id="phase-1-security-scanning-infrastructure">Phase 1 — Security
+Scanning Infrastructure</h3>
+<p><strong>Why:</strong> Plan mandates Snyk + SonarQube scanning before
+resolving findings. Scanning must run in containers (Compose) so it’s
+reproducible without root/sudo — matching the user’s hard
+constraint.</p>
+<p><strong>Deliverables:</strong> -
+<code>docker-compose.quality.yml</code> services: <code>sonarqube</code>
+(community), <code>sonar-db</code> (postgres), <code>snyk-cli</code>
+(run-to-completion container), <code>semgrep</code>, <code>trivy</code>,
+<code>gitleaks</code>. - <code>sonar-project.properties</code> with
+<code>sonar.sources=download-proxy/src,plugins,frontend/src</code>,
+<code>sonar.tests=tests,frontend/src</code>,
+<code>sonar.python.coverage.reportPaths=coverage.xml</code>. -
+<code>.snyk</code> ignore-and-policy file. -
+<code>scripts/scan.sh</code> orchestrator: runs all scanners
+non-interactively, aggregates reports to
+<code>artifacts/scans/&lt;timestamp&gt;/</code>. -
+<code>.github/workflows/security.yml</code> invokes
+<code>scripts/scan.sh</code> weekly + on-demand; uploads SARIF. - All
+scanners called with <code>--no-interactive</code> /
+<code>--auth-token="${TOKEN}"</code> from env — <strong>zero sudo, zero
+interactive prompts</strong> (enforced by test that greps for
+<code>sudo</code> or <code>read -p</code> in scripts).</p>
+<p><strong>Task 1.1 — Add
+<code>docker-compose.quality.yml</code></strong> with SonarQube +
+Postgres + volumes. Healthcheck-gated. Justification added to
+constitution addendum <code>docs/CONSTITUTION_ADDENDUM_QUALITY.md</code>
+referencing Principle I exception.</p>
+<p><strong>Task 1.2 — Add <code>.snyk</code>,
+<code>sonar-project.properties</code>, <code>.semgrep.yml</code>,
+<code>.gitleaks.toml</code>, <code>.trivyignore</code>.</strong></p>
+<p><strong>Task 1.3 — Write <code>scripts/scan.sh</code></strong> with
+mandatory flags <code>set -euo pipefail</code>, auto-detect runtime,
+never prompt. Test: <code>bash -n scripts/scan.sh</code> +
+<code>tests/unit/test_scan_script_non_interactive.py</code> greps for
+forbidden patterns (<code>sudo</code>, <code>read -p</code>,
+<code>su -</code>, <code>passwd</code>).</p>
+<p><strong>Task 1.4 — Wire scanners into
+<code>scripts/scan.sh</code></strong> — each scanner runs in its own
+container, output JSON + SARIF, exit non-zero on high/critical
+findings.</p>
+<p><strong>Task 1.5 — CI workflow</strong>
+<code>.github/workflows/security.yml</code> runs
+<code>scripts/scan.sh</code> and uploads SARIF to GitHub Security.</p>
+<p><strong>Task 1.6 — Rebuild-reboot + full suite + commit.</strong></p>
+<hr />
+<h3 id="phase-2-resolve-all-scanner-findings">Phase 2 — Resolve All
+Scanner Findings</h3>
+<p><strong>Process (per finding):</strong> triage → write failing test
+reproducing the class of issue → fix → verify scan clean → commit. No
+finding is suppressed except with a documented
+<code>.snyk</code>/<code>sonar</code> waiver + expiry.</p>
+<p><strong>Task 2.1</strong> — Fix <strong>CORS wildcard</strong>
+(<code>download-proxy/src/api/__init__.py:68</code>). Replace with
+env-driven <code>ALLOWED_ORIGINS</code> defaulting to
+<code>["http://localhost:7186","http://localhost:7187"]</code>. Test:
+<code>tests/security/test_cors.py</code> asserts <code>*</code> never in
+response. Regression test: existing UI still loads.</p>
+<p><strong>Task 2.2</strong> — Fix <strong>subprocess command-injection
+surface</strong> (<code>search.py:378-395</code>). Replace
+subprocess-built Python with <strong>direct in-process import</strong>
+guarded by <code>importlib</code> + per-tracker
+<strong>ProcessPoolExecutor</strong> for isolation. Test:
+<code>tests/security/test_no_shell_injection.py</code> feeds
+<code>"; rm -rf /"</code> as tracker name and asserts
+<code>FileNotFoundError</code> not
+<code>CommandInjectionExecuted</code>.</p>
+<p><strong>Task 2.3</strong> — Fix <strong>credential file race</strong>
+(<code>routes.py:395-398,418-429</code>). Add <code>filelock</code>
+dependency; wrap writes in
+<code>FileLock("/config/download-proxy/qbittorrent_creds.json.lock")</code>.
+Encrypt at rest with Fernet + key derived from <code>CREDS_KEY</code>
+env var (required on startup). Test: 50 concurrent writers, no
+corruption.</p>
+<p><strong>Task 2.4</strong> — Fix <strong>CAPTCHA dict
+unbounded</strong> (<code>auth.py:24</code>). Replace <code>dict</code>
+with <code>cachetools.TTLCache(maxsize=1024, ttl=900)</code>. Test:
+property-based — insert 2000 entries, assert ≤1024 present.</p>
+<p><strong>Task 2.5</strong> — Fix <strong>credential leakage in
+logs</strong>. Add <code>logging.Filter</code> that scrubs regex matches
+for <code>(PASSWORD|COOKIE|TOKEN)=\S+</code>. Test: run module with
+dummy creds, capture logs, assert regex-scrubbed.</p>
+<p><strong>Task 2.6</strong> — Resolve all remaining Snyk / Sonar /
+Semgrep / Bandit findings <strong>one by one</strong>, each with a test.
+Blast the backlog in sub-batches of 5; commit per batch.</p>
+<p><strong>Task 2.7</strong> — Rebuild-reboot + full suite + commit.</p>
+<hr />
+<h3 id="phase-3-concurrency-memory-and-performance-safety">Phase 3 —
+Concurrency, Memory, and Performance Safety</h3>
+<p><strong>Deliverables:</strong> every hazard from §A.4 has a fix + a
+test that would have caught it.</p>
+<p><strong>Task 3.1 — Bounded concurrency on tracker fan-out.</strong>
+Add <code>asyncio.Semaphore(MAX_CONCURRENT_TRACKERS=5)</code>
+(env-tunable) in <code>search.py</code>. Test: spawn 40 trackers, assert
+never &gt;5 inflight via an <code>inflight</code> gauge.</p>
+<p><strong>Task 3.2 — TTL eviction on all in-memory dicts</strong>
+(<code>_active_searches</code>, <code>_last_merged_results</code>,
+<code>_tracker_sessions</code>, <code>_pending_captchas</code>,
+<code>_execution_logs</code>). Use <code>cachetools.TTLCache</code> or
+deque with fixed maxlen. Tests in <code>tests/memory/</code> — insert N
+items, await TTL, assert bounded growth via
+<code>tracemalloc</code>.</p>
+<p><strong>Task 3.3 — asyncio.Lock around <code>_execution_logs</code>
+and <code>seen_hashes</code>.</strong> Prove via
+<code>tests/concurrency/test_hooks_race.py</code> running 200 parallel
+writers under <code>pytest-randomly --count=50</code>.</p>
+<p><strong>Task 3.4 — Graceful shutdown for daemon threads in
+<code>main.py</code>.</strong> Install
+<code>signal.signal(SIGTERM/SIGINT, ...)</code> handler that sets an
+<code>asyncio.Event</code>, awaits tasks, joins with timeout. Test:
+<code>tests/unit/test_graceful_shutdown.py</code> spawns subprocess,
+sends SIGTERM, asserts exit ≤5s + clean stdout.</p>
+<p><strong>Task 3.5 — Retry/backoff/circuit-breaker.</strong> Add
+<code>tenacity</code> dependency. Wrap every outbound HTTP call in
+<code>@retry(stop=stop_after_attempt(3), wait=wait_exponential(1,10), retry=retry_if_exception_type(aiohttp.ClientError))</code>.
+Add <code>pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)</code>
+per tracker. Tests: simulate flaky endpoint, assert 3 retries then
+trip.</p>
+<p><strong>Task 3.6 — Client disconnect stops SSE polling</strong>
+(<code>streaming.py:77,181</code>). Replace <code>while True</code> with
+<code>async for _ in request.is_disconnected_stream()</code> pattern.
+Test: spawn SSE client, disconnect, assert generator exits in
+&lt;1s.</p>
+<p><strong>Task 3.7 — Replace all blocking <code>time.sleep</code>
+inside async funcs with <code>asyncio.sleep</code>.</strong> Add
+<code>flake8-async</code> plugin + <code>ruff</code> rule
+<code>ASYNC101</code>. Test: ruff run passes.</p>
+<p><strong>Task 3.8 — Lazy loading.</strong> - Python: convert heavy
+imports in <code>routes.py</code> (<code>merge_service/*</code>) to
+inside-function imports where used in seldom-hit routes. Profile with
+<code>py-spy record</code> before/after. - Angular: convert dashboard to
+<code>loadChildren</code> + <code>@defer</code> blocks for non-critical
+panels. Measure initial bundle size before/after in
+<code>tests/frontend/test_bundle_budget.py</code> via angular.json
+<code>budgets</code>.</p>
+<p><strong>Task 3.9 — Semaphore around subprocess spawns</strong> in
+<code>search.py:407</code>.</p>
+<p><strong>Task 3.10 — Rebuild-reboot + full suite +
+commit.</strong></p>
+<hr />
+<h3 id="phase-4-dead-code-decision-resolution">Phase 4 — Dead Code
+Decision &amp; Resolution</h3>
+<p><strong>Context:</strong> 36 plugins on disk are not canonical per
+constitution Principle II. Options per plugin:</p>
+<ol type="1">
+<li><strong>Adopt</strong> → add to <code>install-plugin.sh</code>
+managed list, write test, document in <code>docs/PLUGINS.md</code>.
+Requires constitution amendment (v1.1.0 → v1.2.0) to extend the
+canonical list.</li>
+<li><strong>Keep as community</strong> → move to
+<code>plugins/community/</code>, add
+<code>plugins/community/README.md</code> explaining how to install
+individually, add smoke test that <code>python3 -m py_compile</code>
+passes on each.</li>
+<li><strong>Remove</strong> →
+<code>git rm plugins/&lt;name&gt;.py</code> with rationale in
+commit.</li>
+</ol>
+<p><strong>Task 4.1 — Audit matrix.</strong> Generate
+<code>docs/PLUGIN_AUDIT.md</code> with a row per plugin: last modified,
+has test? works? action (adopt/keep/remove). Driven by a script
+<code>scripts/audit-plugins.sh</code> that runs
+<code>python3 -m py_compile</code> on each and exercises
+<code>search("ubuntu")</code> in isolated container.</p>
+<p><strong>Task 4.2 — Execute decisions</strong> per audit. Commit per
+group of 5.</p>
+<p><strong>Task 4.3 — <code>plugins/socks.py:433</code> UDP
+fragmentation.</strong> Decision: document as unsupported (TCP works) OR
+implement per RFC 1928 §7. Default: document + test that calling it
+raises a clear <code>NotImplementedError</code> with a link to the issue
+tracker.</p>
+<p><strong>Task 4.4 —
+<code>download-proxy/src/ui/__init__.py</code>.</strong> Either delete
+the empty file and restructure <code>ui/</code> as a static-files-only
+directory, or give the module a real purpose (e.g., template rendering
+helpers). Document either way.</p>
+<p><strong>Task 4.5 — Rebuild-reboot + commit.</strong></p>
+<hr />
+<h3 id="phase-5-coverage-to-100">Phase 5 — Coverage to 100%</h3>
+<p><strong>Gating rule:</strong> <code>fail_under = 100</code> for each
+module. Raise the gate module-by-module so progress is measurable.</p>
+<p><strong>Task 5.1 — <code>download-proxy/src/api/</code></strong> —
+lift to 100%. <strong>Task 5.2 —
+<code>download-proxy/src/merge_service/</code></strong> — lift to 100%.
+<strong>Task 5.3 — <code>plugins/</code> (canonical 12)</strong> — lift
+to 100%; property-based tests for parser paths. <strong>Task 5.4 —
+<code>plugins/community/</code> / <code>plugins/</code> (rest)</strong>
+— at minimum smoke + contract tests per plugin. <strong>Task 5.5 —
+Frontend components &amp; services</strong> — full Vitest suite per file
+listed in §A.2. <strong>Task 5.6 — Mutation testing pass</strong> —
+<code>mutmut run</code>, fix surviving mutants with targeted tests.
+Threshold: ≥90% mutation score.</p>
+<p>Each task: TDD per function, commit every ≤10 tests. Pattern:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Example: toast.service coverage bump</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># tests/frontend/src/app/services/toast.service.spec.ts</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>describe(<span class="st">&#39;ToastService&#39;</span>, () <span class="op">=&gt;</span> {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  it(<span class="st">&#39;emits success() on the stream&#39;</span>, () <span class="op">=&gt;</span> { <span class="op">/*</span> ... <span class="op">*/</span> })<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  it(<span class="st">&#39;auto-dismisses after timeoutMs&#39;</span>, fakeAsync(() <span class="op">=&gt;</span> { <span class="op">/*</span> ... <span class="op">*/</span> }))<span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  it(<span class="st">&#39;queue never exceeds maxVisible&#39;</span>, () <span class="op">=&gt;</span> { <span class="op">/*</span> ... <span class="op">*/</span> })<span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<hr />
+<h3 id="phase-6-stress-load-chaos-monitoring">Phase 6 — Stress, Load,
+Chaos, Monitoring</h3>
+<p><strong>Task 6.1 — Locust load profile</strong>
+<code>tests/load/locustfile.py</code>: 100 virtual users searching
+concurrently, read metrics scrape during run, assert p95 &lt; 2s, error
+rate &lt; 1%.</p>
+<p><strong>Task 6.2 — Stress</strong> <code>tests/stress/</code> — ramp
+to 1000 VU or until saturation, assert system degrades gracefully (no
+5xx storm, no OOM, bounded memory).</p>
+<p><strong>Task 6.3 — Chaos</strong> <code>tests/chaos/</code> —
+toxiproxy injects latency/packet-loss between merge service and
+trackers; assert circuit-breaker trips and service recovers within
+60s.</p>
+<p><strong>Task 6.4 — Observability wiring.</strong> OpenTelemetry SDK +
+OTLP exporter to <code>otel-collector</code> container. Prometheus
+scrapes <code>/metrics</code>. Grafana dashboard JSON committed to
+<code>observability/dashboards/</code>.</p>
+<p><strong>Task 6.5 — Metric-driven tests</strong>
+<code>tests/observability/</code> — run load, scrape
+<code>/metrics</code>, assert key counters/histograms exist and
+advance.</p>
+<p><strong>Task 6.6 — Rebuild-reboot + commit.</strong></p>
+<hr />
+<h3 id="phase-7-documentation-rewrite-extension">Phase 7 — Documentation
+Rewrite &amp; Extension</h3>
+<p><strong>Task 7.1 — Missing READMEs</strong> (9 directories from
+§A.6). Template: purpose, entry points, conventions, tests, gotchas.</p>
+<p><strong>Task 7.2 — OpenAPI spec frozen.</strong> Export
+<code>/openapi.json</code> via <code>scripts/freeze-openapi.sh</code>
+into <code>docs/api/openapi.json</code> +
+<code>docs/api/openapi.md</code> (rendered by redoc-cli). Test: diff
+between live and committed spec; fail CI on drift.</p>
+<p><strong>Task 7.3 — Architecture diagrams.</strong> Author
+<code>docs/architecture/*.mmd</code> (Mermaid) for: (a) container
+topology, (b) request lifecycle (search → merge → stream), (c) plugin
+execution path, (d) private-tracker bridge flow, (e) shutdown sequence.
+Rendered into docs site.</p>
+<p><strong>Task 7.4 — “SQL definitions” clarification.</strong> The
+project has no relational DB. Write <code>docs/DATA_MODEL.md</code>
+documenting the in-memory data model (SearchMetadata, SearchResult,
+HookExecution) with Pydantic schemas + a Mermaid ERD-style diagram. If
+user later introduces SQLite/Postgres, this doc becomes the source of
+truth for schema migrations.</p>
+<p><strong>Task 7.5 — Expand <code>USER_MANUAL.md</code></strong> with:
+install paths (Podman/Docker/bare-metal), every CLI flag on every script
+with examples, plugin install per tracker, troubleshooting matrix, FAQ,
+safety warnings (freeleech policy per constitution VIII).</p>
+<p><strong>Task 7.6 — Expand <code>AGENTS.md</code></strong> to reflect
+new tooling (Snyk/Sonar/Semgrep/etc.), new test types (Part C), new
+compose file, new env vars.</p>
+<p><strong>Task 7.7 — Update <code>CHANGELOG.md</code></strong> per
+semver; catch up on missed releases.</p>
+<p><strong>Task 7.8 — Nano-detail docs for new subsystems:</strong>
+<code>docs/OBSERVABILITY.md</code>, <code>docs/SECURITY.md</code>,
+<code>docs/SCANNING.md</code>, <code>docs/CONCURRENCY.md</code>,
+<code>docs/PERFORMANCE.md</code>, <code>docs/TESTING.md</code> (catalog
+from Part C).</p>
+<p><strong>Task 7.9 — Doc link-check test</strong>
+<code>tests/docs/test_no_broken_links.py</code> via
+<code>linkchecker</code>.</p>
+<hr />
+<h3 id="phase-8-website-mkdocs-material">Phase 8 — Website (MkDocs
+Material)</h3>
+<p><strong>Task 8.1 — <code>mkdocs.yml</code></strong> at repo root,
+<code>website/</code> nav structure, theme Material, plugin
+<code>mkdocs-mermaid2</code>, plugin <code>mkdocs-video</code> (for
+Asciinema casts).</p>
+<p><strong>Task 8.2 — Landing page</strong>
+<code>website/docs/index.md</code>: hero, feature matrix, install
+quickstart, screenshots (captured from running Angular dashboard via
+Playwright).</p>
+<p><strong>Task 8.3 — Embed</strong> <code>docs/**</code> into
+<code>website/docs/</code> via relative imports /
+<code>mkdocs-include-markdown-plugin</code> so there’s <strong>one
+source of truth</strong>.</p>
+<p><strong>Task 8.4 — GitHub Pages workflow</strong>
+<code>.github/workflows/docs.yml</code> builds on push to main, deploys
+to <code>gh-pages</code> branch.</p>
+<p><strong>Task 8.5 — Website build test</strong> — CI asserts
+<code>mkdocs build --strict</code> passes (zero broken links, zero
+missing refs).</p>
+<hr />
+<h3 id="phase-9-video-course-content-asciinema-narrated-markdown">Phase
+9 — Video / Course Content (Asciinema + Narrated Markdown)</h3>
+<p><strong>Task 9.1 — Directory scaffold</strong> <code>courses/</code>
+with subdirs: <code>01-operator/</code>, <code>02-plugin-author/</code>,
+<code>03-contributor/</code>, <code>04-security-ops/</code>. Each holds
+<code>script.md</code> + <code>.cast</code> files + thumbnail.</p>
+<p><strong>Task 9.2 — Record Asciinema casts</strong> for every script
+using <code>asciinema rec --command "bash -x path/to/demo.sh"</code>.
+Non-interactive — no prompts.</p>
+<p><strong>Task 9.3 — Embed into website</strong> via
+<code>mkdocs-video</code> / asciinema-player.</p>
+<p><strong>Task 9.4 — Test</strong>: cast files parse
+(<code>asciinema play --quiet --speed 999 &lt;file&gt;</code> exits
+0).</p>
+<hr />
+<h3 id="phase-10-continuous-verification-hand-off">Phase 10 — Continuous
+Verification &amp; Hand-Off</h3>
+<p><strong>Task 10.1 — Merge coverage gate to 100%.</strong> Every
+module. CI blocks regressions.</p>
+<p><strong>Task 10.2 — Rebuild-reboot</strong> — full stack, verify
+served content matches committed code.</p>
+<p><strong>Task 10.3 — Cross-check against Part A report.</strong> Each
+row in §A.1–A.10 has a PR link and commit SHA.</p>
+<p><strong>Task 10.4 — Constitution compliance review.</strong> -
+Principle I (Container-First): quality stack is additive compose file
+with justified exception → ✅ - Principle II (Plugin Contract):
+canonical list rationalized via §4.1 → ✅ - Principle III (Credential
+Security): Phase 2 fixes + Fernet-at-rest → ✅ - Principle IV (Runtime
+Portability): scripts still auto-detect podman/docker → ✅ - Principle V
+(Bridge Pattern): unchanged → ✅ - Principle VI (Validation-Driven):
+upgraded to automated CI → amendment needed (v1.2.0, document in
+<code>.specify/memory/constitution.md</code> with Sync Impact Report) -
+Principle VII (Operational Simplicity): no new mandatory commands; scan
+stack is opt-in → ✅ - Principle VIII (Freeleech): automated tests stay
+freeleech-only; add CI test that greps IPTorrents test for
+<code>&amp;free=on</code> → ✅</p>
+<p><strong>Task 10.5 — Publish release notes</strong>
+<code>CHANGELOG.md</code> + git tag.</p>
+<hr />
+<h2 id="part-e-rolling-constraints-apply-to-every-phase">Part E —
+Rolling Constraints (Apply To Every Phase)</h2>
+<ul>
+<li><strong>No interactive processes.</strong> Scripts must
+<code>set -euo pipefail</code>; forbidden patterns (<code>sudo</code>,
+<code>read -p</code>, <code>passwd</code>, <code>su -</code>) fail
+<code>tests/unit/test_scripts_non_interactive.py</code>.</li>
+<li><strong>No regression.</strong> Every change guarded by pre-change
+test + post-change test.</li>
+<li><strong>Every commit follows</strong> RED → GREEN → rebuild-reboot →
+commit (CLAUDE.md mandate).</li>
+<li><strong>Conventional commits</strong> (<code>feat:</code>,
+<code>fix:</code>, <code>docs:</code>, <code>test:</code>,
+<code>chore:</code>, <code>refactor:</code>, <code>perf:</code>,
+<code>build:</code>, <code>ci:</code>).</li>
+<li><strong>Freeleech-only</strong> for IPTorrents automated downloads
+(constitution VIII).</li>
+<li><strong>No <code>__pycache__</code></strong> committed; rebuild
+clears per CLAUDE.md.</li>
+<li><strong>Priority of instructions:</strong> user prompt &gt;
+CLAUDE.md &gt; AGENTS.md &gt; constitution &gt; this plan &gt; skill
+defaults.</li>
+</ul>
+<hr />
+<h2 id="part-f-definition-of-done-whole-initiative">Part F — Definition
+Of Done (whole initiative)</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />Zero <code>pytest.skip(</code>
+related to service availability; zero <code>--ignore=</code> lines in
+test runner.</label></li>
+<li><label><input
+type="checkbox" /><code>pytest --cov=download-proxy/src --cov=plugins --cov-fail-under=100</code>
+green.</label></li>
+<li><label><input type="checkbox" />Vitest coverage ≥100% lines/branches
+per <code>frontend/vitest.config.*</code> threshold.</label></li>
+<li><label><input type="checkbox" /><code>mutmut results</code> ≥ 90%
+killed mutants.</label></li>
+<li><label><input type="checkbox" />Snyk + Sonar + Semgrep + Bandit +
+Trivy + Gitleaks: <strong>zero high/critical</strong> open.</label></li>
+<li><label><input type="checkbox" />Load test p95 &lt; 2s at 100 VU;
+stress test degrades gracefully at 1000 VU; chaos recovers &lt;
+60s.</label></li>
+<li><label><input type="checkbox" />Every top-level directory has a
+<code>README.md</code>.</label></li>
+<li><label><input type="checkbox" />OpenAPI frozen &amp; diffed in
+CI.</label></li>
+<li><label><input type="checkbox" />MkDocs site builds strict-mode and
+is deployed.</label></li>
+<li><label><input type="checkbox" />All courses recorded and
+playable.</label></li>
+<li><label><input type="checkbox" />Constitution amended to v1.2.0 with
+Sync Impact Report.</label></li>
+<li><label><input type="checkbox" />Rebuild-reboot verified (served ≡
+committed).</label></li>
+<li><label><input type="checkbox" /><code>CHANGELOG.md</code> updated;
+release tagged.</label></li>
+</ul>
+<hr />
+<h2 id="part-g-execution-strategy">Part G — Execution Strategy</h2>
+<p><strong>Recommendation:</strong> Execute as
+<strong>subagent-driven</strong> (see
+<code>superpowers:subagent-driven-development</code>): - One fresh
+subagent per Task (e.g., <code>Task 0.1</code>), in a dedicated
+worktree. - Two-stage review:
+<code>superpowers:receiving-code-review</code> → integration. - Each
+phase is an independently mergeable PR. Phases 0–2 are serial (safety →
+scanners → findings). Phases 3–7 can parallelize across isolated
+worktrees. Phase 8–9 serial on top of 7. Phase 10 final. - Expected
+duration: Phase 0 (1 day), Phase 1 (1 day), Phase 2 (3–5 days,
+backlog-driven), Phase 3 (3 days), Phase 4 (2 days), Phase 5 (5–10
+days), Phase 6 (3 days), Phase 7 (3 days), Phase 8 (1 day), Phase 9 (2
+days), Phase 10 (1 day). <strong>Total: ~3–5 weeks of focused
+work.</strong></p>
+<p><strong>Alternative:</strong> Inline execution via
+<code>superpowers:executing-plans</code> — slower iteration, single
+session.</p>
+<hr />
+<h2 id="open-questions-for-user-blocks-phase-8-9">Open Questions For
+User (blocks Phase 8 &amp; 9)</h2>
+<ol type="1">
+<li><strong>Website</strong>: MkDocs Material (recommended), Astro, or
+defer?</li>
+<li><strong>Video courses</strong>: Asciinema + narrated markdown
+(recommended), scripts+storyboards for external recording, or
+defer?</li>
+<li><strong>Plugin dead code</strong>: for the 36 non-canonical plugins,
+default is “move to <code>plugins/community/</code> with smoke tests”.
+Confirm, or specify per-plugin actions?</li>
+<li><strong>Constitution amendment</strong>: Phase 10 proposes v1.2.0 to
+formalize CI as a hard gate. Approve?</li>
+<li><strong>Observability (Phase 6)</strong>: Prometheus+Grafana+OTel as
+opt-in compose. Confirm opt-in vs mandatory?</li>
+</ol>

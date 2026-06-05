@@ -1,0 +1,195 @@
+<h1 id="docs-project-documentation-index">docs/ — Project Documentation
+Index</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>This directory is the written source of truth for the
+qBittorrent-Fixed project. Each file below is either end-user facing,
+operator-facing, or contributor-facing. When a topic appears both here
+and in the top-level <code>README.md</code>, this directory is
+authoritative.</p>
+<h2 id="purpose">Purpose</h2>
+<ul>
+<li>Collect every cross-cutting design note, runbook, and subsystem
+manual.</li>
+<li>Keep the top-level <code>README.md</code> short (one-page overview +
+quickstart).</li>
+<li>Feed the MkDocs Material site planned under Phase 8 of the
+completion-initiative plan (<code>docs/superpowers/plans/</code>).</li>
+</ul>
+<h2 id="how-to-add-a-new-doc">How to add a new doc</h2>
+<ol type="1">
+<li>Drop a <code>*.md</code> file here (no subdirectories except the
+existing ones).</li>
+<li>Add a one-line entry to the table below.</li>
+<li>Reference the file from the appropriate top-level doc
+(<code>README.md</code>, <code>AGENTS.md</code>, or
+<code>CLAUDE.md</code>) so it is actually discoverable.</li>
+<li><code>tests/unit/test_docs_presence.py</code> guards that a fixed
+set of subsystem docs exists — extend the guard when a new canonical
+subsystem doc appears.</li>
+</ol>
+<h2 id="files-in-this-directory">Files in this directory</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Audience</th>
+<th>Topic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>USER_MANUAL.md</code></td>
+<td>End users</td>
+<td>Day-to-day usage, WebUI, download flow</td>
+</tr>
+<tr>
+<td><code>MAGNET_LINKS.md</code></td>
+<td>End users</td>
+<td>How magnet links are generated and handled</td>
+</tr>
+<tr>
+<td><code>PLUGINS.md</code></td>
+<td>Operators</td>
+<td>Canonical 12-plugin roster, how to install/remove</td>
+</tr>
+<tr>
+<td><code>PLUGIN_TROUBLESHOOTING.md</code></td>
+<td>Operators</td>
+<td>Common plugin failure modes and fixes</td>
+</tr>
+<tr>
+<td><code>DOWNLOAD_FIX.md</code></td>
+<td>Operators</td>
+<td>Known-good recovery procedure for broken downloads</td>
+</tr>
+<tr>
+<td><code>RELEASE_TORRENT_UPLOAD_FIX.md</code></td>
+<td>Operators</td>
+<td>Fix for the upload-release edge case</td>
+</tr>
+<tr>
+<td><code>TEST_RESULTS.md</code></td>
+<td>Operators</td>
+<td>Snapshot of last full test run</td>
+</tr>
+<tr>
+<td><code>TESTING.md</code></td>
+<td>Contributors</td>
+<td>Authoritative test-type catalogue + how to add a new test</td>
+</tr>
+<tr>
+<td><code>SECURITY.md</code></td>
+<td>Contributors</td>
+<td>Threat model, credential storage, scanner stack</td>
+</tr>
+<tr>
+<td><code>CONCURRENCY.md</code></td>
+<td>Contributors</td>
+<td>Asyncio model, semaphores, retries, graceful shutdown</td>
+</tr>
+<tr>
+<td><code>OBSERVABILITY.md</code></td>
+<td>Contributors</td>
+<td>Prometheus + Grafana stack, metric names</td>
+</tr>
+<tr>
+<td><code>PERFORMANCE.md</code></td>
+<td>Contributors</td>
+<td>pytest-benchmark suite, Locust load profile, SLOs</td>
+</tr>
+<tr>
+<td><code>DATA_MODEL.md</code></td>
+<td>Contributors</td>
+<td>Pydantic + dataclass schemas (no relational DB)</td>
+</tr>
+<tr>
+<td><code>COVERAGE_BASELINE.md</code></td>
+<td>Contributors</td>
+<td>Module-by-module coverage zero point</td>
+</tr>
+<tr>
+<td><code>QUALITY_STACK.md</code></td>
+<td>Contributors</td>
+<td><code>docker-compose.quality.yml</code> architecture</td>
+</tr>
+<tr>
+<td><code>SCANNING.md</code></td>
+<td>Contributors</td>
+<td>Seven-scanner stack and triage policy</td>
+</tr>
+<tr>
+<td><code>architecture/*.mmd</code></td>
+<td>Contributors</td>
+<td>Mermaid diagrams for container, search, shutdown, plugin,
+bridge</td>
+</tr>
+<tr>
+<td><code>issues/*.md</code></td>
+<td>Contributors</td>
+<td>Frozen post-mortems for specific incidents</td>
+</tr>
+<tr>
+<td><code>superpowers/plans/*.md</code></td>
+<td>Contributors</td>
+<td>Long-horizon implementation plans</td>
+</tr>
+<tr>
+<td><code>../courses/README.md</code></td>
+<td>All audiences</td>
+<td>Asciinema video-course tracks (operator, plugin author, contributor,
+security/ops)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conventions">Conventions</h2>
+<ul>
+<li>Markdown only. Diagrams are Mermaid (<code>.mmd</code>), not
+PlantUML / drawio.</li>
+<li>Wrap at 80 columns where practical; long URLs and code blocks are
+exempt.</li>
+<li>Link siblings with relative paths (<code>./SECURITY.md</code>),
+never absolute.</li>
+<li>Code blocks must specify a language tag so the MkDocs build renders
+syntax highlighting.</li>
+<li>Filenames use <code>UPPERCASE_SNAKE_CASE.md</code> for canonical
+subsystem docs, <code>lowercase-kebab-case.md</code> for transient notes
+under <code>issues/</code>.</li>
+</ul>
+<h2 id="what-does-not-live-here">What does NOT live here</h2>
+<ul>
+<li>API reference — FastAPI auto-generates OpenAPI at <code>/docs</code>
+on the live service (port 7187).</li>
+<li>Frontend docs — see <code>frontend/README.md</code> (Angular 19,
+Vitest).</li>
+<li>Constitution / GitSpec memory — see
+<code>.specify/README.md</code>.</li>
+<li>Test runner README — see <code>tests/README.md</code>.</li>
+<li>Commit style and PR rules — see <code>CONTRIBUTING.md</code>.</li>
+</ul>
+<h2 id="tests">Tests</h2>
+<ul>
+<li><code>tests/unit/test_docs_presence.py</code> verifies the canonical
+subsystem docs (<code>TESTING</code>, <code>SECURITY</code>,
+<code>CONCURRENCY</code>, <code>OBSERVABILITY</code>,
+<code>PERFORMANCE</code>, <code>DATA_MODEL</code>,
+<code>SCANNING</code>, <code>QUALITY_STACK</code>,
+<code>COVERAGE_BASELINE</code>) are present.</li>
+<li><code>tests/unit/test_architecture_diagrams.py</code> verifies the
+Mermaid files under <code>architecture/</code> exist.</li>
+</ul>
+<h2 id="gotchas">Gotchas</h2>
+<ul>
+<li>The current structure has <strong>no docs-site generator</strong>;
+Phase 8 of the completion plan introduces MkDocs Material under
+<code>website/</code>. Until then these files are read as plain markdown
+on GitHub.</li>
+<li><code>docs/superpowers/plans/</code> is written by the
+<code>superpowers:writing-plans</code> skill and is not meant to be
+edited by hand mid-phase.</li>
+</ul>

@@ -1,5 +1,8 @@
 # Constitution Addendum: Quality Stack (Principle I Exception)
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 ## Principle I — Container-First
 
 > Every service runs in a container. No exceptions.

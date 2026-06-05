@@ -1,5 +1,8 @@
 # Performance
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 This document is the reference for performance testing, load testing,
 stress testing, and the target service-level objectives (SLOs) for the
 merge service.

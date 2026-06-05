@@ -1,0 +1,578 @@
+<h1 id="tokens-api-keys-environment-variables">Tokens, API Keys &amp;
+Environment Variables</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>Single source of truth for every credential, token, and API key the
+platform consumes. <strong>Mandatory</strong> rows fail the service at
+boot if unset; <strong>Optional</strong> rows gate specific features and
+degrade silently.</p>
+<p>Every value is read from either:</p>
+<ol type="1">
+<li><code>./.env</code> (gitignored — project-local)</li>
+<li><code>~/.qbit.env</code> (user-level fallback)</li>
+<li>Shell environment (highest priority)</li>
+<li><code>docker-compose.yml</code> defaults (lowest)</li>
+</ol>
+<p>Loading order is defined in
+<code>.specify/memory/constitution.md</code> §III.</p>
+<hr />
+<h2 id="qbittorrent-webui-built-in">1. qBittorrent WebUI (built in)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Required</th>
+<th>Where to get it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WEBUI_USERNAME</code></td>
+<td><code>admin</code></td>
+<td>No</td>
+<td>Hardcoded default per <a
+href="../.specify/memory/constitution.md">constitution III</a>.</td>
+</tr>
+<tr>
+<td><code>WEBUI_PASSWORD</code></td>
+<td><code>admin</code></td>
+<td>No</td>
+<td>Same. Change in qBittorrent WebUI → Options → Web UI.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Portal:</strong> <a
+href="http://localhost:7186/">http://localhost:7186/</a> <strong>Change
+password:</strong> qBittorrent WebUI → Options → Web UI → Authentication
+→ Password.</p>
+<hr />
+<h2 id="private-tracker-credentials">2. Private tracker credentials</h2>
+<p>Each of these unlocks exactly one tracker in the merge search. None
+of them are mandatory — the service simply skips the tracker if the
+variable is unset.</p>
+<h3 id="rutracker-rutracker">2.1 RuTracker (<code>rutracker</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RUTRACKER_USERNAME</code></td>
+<td><strong>Mandatory for RuTracker</strong></td>
+<td>Forum username.</td>
+</tr>
+<tr>
+<td><code>RUTRACKER_PASSWORD</code></td>
+<td><strong>Mandatory for RuTracker</strong></td>
+<td>Account password.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Register:</strong> <a
+href="https://rutracker.org/forum/register.php">https://rutracker.org/forum/register.php</a>
+<strong>CAPTCHA refresh:</strong>
+<code>GET /api/v1/auth/rutracker/captcha</code> (the dashboard surfaces
+this from the tracker chip — see <a
+href="SECURITY.md"><code>SECURITY.md</code></a>).</p>
+<h3 id="kinozal-kinozal">2.2 Kinozal (<code>kinozal</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Fallback</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KINOZAL_USERNAME</code></td>
+<td><strong>Mandatory for Kinozal</strong></td>
+<td>Falls back to <code>IPTORRENTS_USERNAME</code> if unset
+(shared-account rigs).</td>
+</tr>
+<tr>
+<td><code>KINOZAL_PASSWORD</code></td>
+<td><strong>Mandatory for Kinozal</strong></td>
+<td>Falls back to <code>IPTORRENTS_PASSWORD</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Register:</strong> <a
+href="https://kinozal.tv/signup.php">https://kinozal.tv/signup.php</a>
+(may require invite).</p>
+<h3 id="nnm-club-nnmclub">2.3 NNM-Club (<code>nnmclub</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NNMCLUB_COOKIES</code></td>
+<td><strong>Mandatory for NNM-Club</strong></td>
+<td>Full <code>phpbb2mysql_*</code> cookie string; copy from browser
+devtools after login.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Register:</strong> <a
+href="https://nnmclub.to/forum/ucp.php?mode=register">https://nnmclub.to/forum/ucp.php?mode=register</a>
+<strong>How to extract cookies:</strong> sign in → DevTools →
+Application → Cookies → copy all <code>phpbb2mysql_*</code> entries into
+one <code>name=value; name2=value2</code> string.</p>
+<h3 id="iptorrents-iptorrents">2.4 IPTorrents
+(<code>iptorrents</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IPTORRENTS_USERNAME</code></td>
+<td><strong>Mandatory for IPTorrents</strong></td>
+<td>Ratio-sensitive — see <a
+href="../.specify/memory/constitution.md">constitution VIII</a>.</td>
+</tr>
+<tr>
+<td><code>IPTORRENTS_PASSWORD</code></td>
+<td><strong>Mandatory for IPTorrents</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Register:</strong> <a
+href="https://iptorrents.com/">https://iptorrents.com/</a> (invite-only;
+apply via <a href="https://iptorrents.ooooo.io/">iptorrents.ooooo.io</a>
+or similar). <strong>Freeleech safety net:</strong> automated downloads
+are restricted to <code>&amp;free=on</code> results by the platform
+(constitution VIII).</p>
+<hr />
+<h2 id="public-tracker-api-keys-optional">3. Public tracker API keys
+(optional)</h2>
+<p>The 40+ public-tracker engines ship without authentication. A handful
+can use an API key for rate-limit uplift:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Used by</th>
+<th>Required</th>
+<th>Register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>JACKETT_API_KEY</code></td>
+<td><code>plugins/jackett.py</code></td>
+<td><strong>Auto-discovered</strong> — <code>start.sh</code> extracts it
+from Jackett’s config automatically. Manual override optional.</td>
+<td><a
+href="https://github.com/Jackett/Jackett#installation">https://github.com/Jackett/Jackett#installation</a>
+→ Admin → Jackett API Key</td>
+</tr>
+<tr>
+<td><code>JACKETT_URL</code></td>
+<td><code>plugins/jackett.py</code></td>
+<td>Optional (default <code>http://localhost:9117</code>)</td>
+<td>Your Jackett host</td>
+</tr>
+<tr>
+<td><code>TORRENTSCSV_API_KEY</code></td>
+<td><code>plugins/torrentscsv.py</code></td>
+<td>Optional</td>
+<td><a href="https://torrents-csv.com/">https://torrents-csv.com/</a>
+(no auth typically)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="metadata-enrichment-apis-optional">4. Metadata enrichment APIs
+(optional)</h2>
+<p>The merge service decorates results with poster/year/genre when these
+keys are present. Unset = no enrichment, service runs normally.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Register</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TMDB_API_KEY</code></td>
+<td>Optional</td>
+<td><a
+href="https://www.themoviedb.org/signup">https://www.themoviedb.org/signup</a>
+→ Settings → API → Request API Key (v3 auth)</td>
+<td>Movie / TV posters + metadata</td>
+</tr>
+<tr>
+<td><code>TVDB_API_KEY</code></td>
+<td>Optional</td>
+<td><a
+href="https://thetvdb.com/api-information">https://thetvdb.com/api-information</a>
+→ Subscribe</td>
+<td>TV series metadata</td>
+</tr>
+<tr>
+<td><code>MUSICBRAINZ_USER_AGENT</code></td>
+<td>Optional (default
+<code>qbittorrent-fixed/0.1 (milos85vasic@)</code>)</td>
+<td><a
+href="https://musicbrainz.org/doc/MusicBrainz_API">https://musicbrainz.org/doc/MusicBrainz_API</a>
+— free, requires UA only</td>
+<td>Music album lookup</td>
+</tr>
+<tr>
+<td><code>ANIDB_CLIENT</code></td>
+<td>Optional</td>
+<td><a
+href="https://anidb.net/software/add">https://anidb.net/software/add</a>
+(register a client)</td>
+<td>Anime metadata</td>
+</tr>
+<tr>
+<td><code>OPENLIBRARY_USER_AGENT</code></td>
+<td>Optional</td>
+<td><a
+href="https://openlibrary.org/dev/docs/api/">https://openlibrary.org/dev/docs/api/</a>
+— free, UA only</td>
+<td>eBook / audiobook metadata</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="security-scanner-tokens-opt-in-ci-local-scans">5. Security
+scanner tokens (opt-in CI / local scans)</h2>
+<p><code>./scripts/scan.sh</code> skips scanners whose tokens are
+missing. None of these are mandatory for the platform to function.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Register</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SNYK_TOKEN</code></td>
+<td>Optional</td>
+<td><a href="https://app.snyk.io/">https://app.snyk.io/</a> → Account
+Settings → Auth Token</td>
+</tr>
+<tr>
+<td><code>SONAR_TOKEN</code></td>
+<td>Optional</td>
+<td><a
+href="https://sonarcloud.io/account/security/">https://sonarcloud.io/account/security/</a>
+or your SonarQube instance</td>
+</tr>
+<tr>
+<td><code>SONAR_HOST_URL</code></td>
+<td>Optional</td>
+<td>Default <code>http://localhost:9000</code> (the compose profile runs
+SonarQube there)</td>
+</tr>
+<tr>
+<td><code>GITLEAKS_LICENSE</code></td>
+<td>Optional</td>
+<td><a href="https://gitleaks.io/">https://gitleaks.io/</a> for
+commercial use; the OSS scan runs without it</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="observability-endpoints-opt-in-compose-profile">6. Observability
+endpoints (opt-in compose profile)</h2>
+<p>Start with
+<code>$COMPOSE_CMD -f docker-compose.yml -f docker-compose.quality.yml --profile observability up -d</code>.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GRAFANA_USER</code></td>
+<td><code>admin</code></td>
+<td>Optional</td>
+</tr>
+<tr>
+<td><code>GRAFANA_PASSWORD</code></td>
+<td><code>admin</code></td>
+<td>Optional (change for anything beyond localhost)</td>
+</tr>
+<tr>
+<td><code>PROMETHEUS_PORT</code></td>
+<td><code>9090</code></td>
+<td>Optional</td>
+</tr>
+<tr>
+<td><code>GRAFANA_PORT</code></td>
+<td><code>3000</code></td>
+<td>Optional</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Portals (after compose up):</strong> - Prometheus: <a
+href="http://localhost:9090/">http://localhost:9090/</a> - Grafana: <a
+href="http://localhost:3000/">http://localhost:3000/</a></p>
+<hr />
+<h2 id="orchestrator-tuning-optional-phase-3">7. Orchestrator tuning
+(optional — Phase 3)</h2>
+<p>All have safe defaults; tune for your workload.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ALLOWED_ORIGINS</code></td>
+<td><code>*</code> (with startup warning)</td>
+<td>CORS whitelist. Comma-separated. <strong>Set this in
+production</strong> to avoid the wildcard warning.</td>
+</tr>
+<tr>
+<td><code>MAX_CONCURRENT_TRACKERS</code></td>
+<td><code>5</code></td>
+<td>Semaphore cap on tracker fan-out.</td>
+</tr>
+<tr>
+<td><code>MAX_ACTIVE_SEARCHES</code></td>
+<td><code>256</code></td>
+<td>TTLCache maxsize for in-flight searches.</td>
+</tr>
+<tr>
+<td><code>ACTIVE_SEARCH_TTL_SECONDS</code></td>
+<td><code>3600</code></td>
+<td>Per-search metadata retention.</td>
+</tr>
+<tr>
+<td><code>PENDING_CAPTCHAS_MAX</code></td>
+<td><code>1024</code></td>
+<td>CAPTCHA session TTLCache maxsize.</td>
+</tr>
+<tr>
+<td><code>PENDING_CAPTCHAS_TTL_SECONDS</code></td>
+<td><code>900</code></td>
+<td>CAPTCHA session lifetime.</td>
+</tr>
+<tr>
+<td><code>HOOK_LOG_MAXLEN</code></td>
+<td><code>500</code></td>
+<td>Deque cap for hook-execution logs.</td>
+</tr>
+<tr>
+<td><code>MERGE_SERVICE_HOST</code></td>
+<td><code>0.0.0.0</code></td>
+<td>Bind interface for the merge service.</td>
+</tr>
+<tr>
+<td><code>MERGE_SERVICE_PORT</code></td>
+<td><code>7187</code></td>
+<td>HTTP port.</td>
+</tr>
+<tr>
+<td><code>MERGE_SERVICE_URL</code></td>
+<td><code>http://localhost:7187</code></td>
+<td>Where the download-proxy (and the injected theme bridge) find the
+merge service. Embedded verbatim into
+<code>/__qbit_theme__/bootstrap.js</code>.</td>
+</tr>
+<tr>
+<td><code>PROXY_PORT</code></td>
+<td><code>7186</code></td>
+<td>Download proxy port.</td>
+</tr>
+<tr>
+<td><code>BRIDGE_PORT</code></td>
+<td><code>7188</code></td>
+<td>WebUI bridge port.</td>
+</tr>
+<tr>
+<td><code>THEME_STATE_PATH</code></td>
+<td><code>/config/merge-service/theme.json</code></td>
+<td>JSON file the merge service uses to persist the active palette +
+mode (see <code>docs/CROSS_APP_THEME_PLAN.md</code>).</td>
+</tr>
+<tr>
+<td><code>DISABLE_THEME_INJECTION</code></td>
+<td><em>(unset)</em></td>
+<td>Escape hatch for the cross-app theme bridge. Set to <code>1</code>
+to make the download proxy stop injecting <code>/__qbit_theme__/*</code>
+into qBittorrent’s HTML responses and stop rewriting CSP. Useful if a
+qBittorrent upgrade ever breaks the bridge and you need to fall back to
+the untouched WebUI.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="data-directory">8. Data directory</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QBITTORRENT_DATA_DIR</code></td>
+<td><code>/mnt/DATA</code></td>
+<td>No</td>
+<td>Where qBittorrent stores torrents + incomplete + finished subdirs.
+Must be writable by <code>PUID</code>/<code>PGID</code>.</td>
+</tr>
+<tr>
+<td><code>PUID</code></td>
+<td><code>1000</code></td>
+<td>No</td>
+<td>Container user ID.</td>
+</tr>
+<tr>
+<td><code>PGID</code></td>
+<td><code>1000</code></td>
+<td>No</td>
+<td>Container group ID.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="quick-start-matrix">Quick-start matrix</h2>
+<p>Minimum-viable <code>.env</code> for <em>public-tracker-only</em>
+deployment:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># No credentials required — service runs out of the box.</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="va">QBITTORRENT_DATA_DIR</span><span class="op">=</span>/mnt/DATA</span></code></pre></div>
+<p>Minimum-viable <code>.env</code> for <em>private-tracker</em>
+deployment:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pick the trackers you have accounts on.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">RUTRACKER_USERNAME</span><span class="op">=</span>your-user</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="va">RUTRACKER_PASSWORD</span><span class="op">=</span>your-password</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="va">KINOZAL_USERNAME</span><span class="op">=</span>your-user</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="va">KINOZAL_PASSWORD</span><span class="op">=</span>your-password</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="va">NNMCLUB_COOKIES</span><span class="op">=</span><span class="st">&quot;phpbb2mysql_data=...; phpbb2mysql_sid=...&quot;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="va">IPTORRENTS_USERNAME</span><span class="op">=</span>your-user</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="va">IPTORRENTS_PASSWORD</span><span class="op">=</span>your-password</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="va">QBITTORRENT_DATA_DIR</span><span class="op">=</span>/mnt/DATA</span></code></pre></div>
+<p>Minimum-viable <code>.env</code> for <em>CI / scanner
+uplift</em>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">SNYK_TOKEN</span><span class="op">=</span>your-token</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">SONAR_TOKEN</span><span class="op">=</span>your-token</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="va">SONAR_HOST_URL</span><span class="op">=</span>https://sonarcloud.io</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="va">ALLOWED_ORIGINS</span><span class="op">=</span>https://qbit.example.com</span></code></pre></div>
+<hr />
+<h2 id="verification">Verification</h2>
+<p>After editing <code>.env</code>, restart the stack and probe
+auth:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span> <span class="kw">&amp;&amp;</span> <span class="ex">./start.sh</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7187/api/v1/auth/status <span class="kw">|</span> <span class="ex">python3</span> <span class="at">-m</span> json.tool</span></code></pre></div>
+<p>Every tracker with <code>has_session: true</code> is live; anything
+with <code>has_session: false</code> either has wrong credentials or the
+tracker’s login flow changed. For rutracker + iptorrents you can then
+trigger CAPTCHA refresh from the dashboard chip.</p>
+<hr />
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="SECURITY.md"><code>SECURITY.md</code></a> — threat model
+and credential storage.</li>
+<li><a href="SCANNING.md"><code>SCANNING.md</code></a> — scanner config
+that uses §5 tokens.</li>
+<li><a href="OBSERVABILITY.md"><code>OBSERVABILITY.md</code></a> — §6
+endpoints.</li>
+<li><a href="USER_MANUAL.md"><code>USER_MANUAL.md</code></a> —
+walk-through per tracker.</li>
+<li><a
+href="../.specify/memory/constitution.md"><code>.specify/memory/constitution.md</code></a>
+— legal binding of the above.</li>
+</ul>

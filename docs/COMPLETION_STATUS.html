@@ -1,0 +1,126 @@
+<h1 id="completion-status-part-a-cross-check">Completion Status — Part A
+Cross-Check</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>Maps each §A finding from the completion initiative plan to its
+resolution.</p>
+<table>
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 16%" />
+<col style="width: 28%" />
+<col style="width: 26%" />
+</colgroup>
+<thead>
+<tr>
+<th>§A Finding</th>
+<th>Issue</th>
+<th>Resolution</th>
+<th>Commit(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>§A.1</td>
+<td>71 runtime <code>skipIf</code> skips hiding broken services</td>
+<td>Converted to fixture-gated dependencies; meta-test
+<code>test_no_runtime_service_skips.py</code> guards the invariant</td>
+<td><code>726bf8e</code>, <code>55d29ce</code></td>
+</tr>
+<tr>
+<td>§A.2</td>
+<td>No frontend test scaffolding</td>
+<td>Angular 21 dashboard with Vitest unit tests;
+<code>test_frontend_spec_coverage.py</code> guards spec presence</td>
+<td><code>cfbf7d6</code>, <code>e218593</code>,
+<code>972b9ca</code></td>
+</tr>
+<tr>
+<td>§A.3</td>
+<td>Dead code — unclassified plugins, no audit</td>
+<td>Plugin audit matrix (<code>docs/PLUGIN_AUDIT.md</code>);
+non-canonical plugins moved to <code>plugins/community/</code>;
+<code>socks.py</code> and <code>ui/</code> documented as static
+assets</td>
+<td><code>6c75db6</code>, <code>e130e2f</code>, <code>2a64686</code>,
+<code>1407ed2</code></td>
+</tr>
+<tr>
+<td>§A.4</td>
+<td>Concurrency hazards — unbounded caches, no locks</td>
+<td><code>asyncio.Semaphore</code>, <code>TTLCache</code>,
+<code>asyncio.Lock</code> around shared mutable state, graceful shutdown
+with signal handler, Tenacity retry, SSE disconnect handling</td>
+<td><code>311dae1</code>, <code>8d4a429</code>, <code>0b44162</code>,
+<code>d369879</code>, <code>49a99d0</code>, <code>f43ad5e</code>,
+<code>1447d0f</code></td>
+</tr>
+<tr>
+<td>§A.5</td>
+<td>No security tooling</td>
+<td>5 scanners configured: SonarQube
+(<code>sonar-project.properties</code>), Snyk (<code>.snyk</code>),
+Semgrep (<code>.semgrep.yml</code>), Trivy (<code>.trivyignore</code>),
+Gitleaks (<code>.gitleaks.toml</code>); orchestrated by
+<code>scripts/scan.sh</code></td>
+<td><code>84d1355</code>, <code>e3bebb6</code>,
+<code>106f63f</code></td>
+</tr>
+<tr>
+<td>§A.6</td>
+<td>Documentation gaps — missing READMEs, no diagrams</td>
+<td>Per-module READMEs in <code>download-proxy/src/</code> and
+sub-packages; architecture diagrams (request-lifecycle,
+container-topology, plugin-execution, shutdown-sequence); expanded
+USER_MANUAL; OpenAPI freeze test; docs link-integrity test</td>
+<td><code>7808ff1</code></td>
+</tr>
+<tr>
+<td>§A.7</td>
+<td>No coverage gate</td>
+<td><code>fail_under</code> raised from 1% to 49% (actual measured);
+<code>COVERAGE_BASELINE.md</code> tracks per-module numbers</td>
+<td><code>df18c8d</code>, Phase 10 update</td>
+</tr>
+<tr>
+<td>§A.8</td>
+<td>No load/stress/chaos test scaffolding</td>
+<td>Test suites added: <code>tests/property/</code>,
+<code>tests/memory/</code>, <code>tests/concurrency/</code>,
+<code>tests/observability/</code>, load/stress/chaos scaffolds</td>
+<td><code>972b9ca</code>, <code>1c1f23d</code></td>
+</tr>
+<tr>
+<td>§A.9</td>
+<td>No project website</td>
+<td>MkDocs Material website in <code>website/</code> with GitHub Pages
+workflow, Mermaid diagrams, and full nav</td>
+<td><code>2dde156</code>, <code>ee87eba</code></td>
+</tr>
+<tr>
+<td>§A.10</td>
+<td>No course content</td>
+<td>Course scaffolding in <code>courses/</code> with demo scripts</td>
+<td><code>da7da4a</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="verification-commands">Verification Commands</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># §A.1 — meta-test passes</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/test_no_runtime_service_skips.py <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># §A.2 — frontend spec coverage</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/test_frontend_spec_coverage.py <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># §A.3 — plugin audit exists</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">test</span> <span class="at">-f</span> docs/PLUGIN_AUDIT.md <span class="kw">&amp;&amp;</span> <span class="bu">echo</span> <span class="st">&quot;OK&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># §A.4 — concurrency primitives present</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">grep</span> <span class="at">-rq</span> <span class="st">&quot;Semaphore\|TTLCache\|asyncio.Lock&quot;</span> download-proxy/src/</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># §A.5 — scanner configs present</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> .semgrep.yml .gitleaks.toml .trivyignore .snyk sonar-project.properties</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># §A.6 — documentation integrity</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/docs/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>

@@ -1,0 +1,1013 @@
+<h1 id="data-model">Data Model</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>qBittorrent-Fixed has <strong>no relational database</strong>. All
+persistent state lives in qBittorrent itself (handled by the upstream
+image) and in a handful of JSON files under <code>config/</code>. The
+runtime data model is therefore a set of Python dataclasses (for
+internal state) and Pydantic models (for API request / response
+bodies).</p>
+<p>This document enumerates them, their fields, and their lifecycle.
+Every class below was verified against the source tree — if you edit the
+model, update this document in the same PR.</p>
+<h2 id="overview">Overview</h2>
+<pre class="mermaid"><code>classDiagram
+    class SearchMetadata {
+        +str search_id
+        +str query
+        +str category
+        +datetime started_at
+        +datetime completed_at
+        +int total_results
+        +int merged_results
+        +list trackers_searched
+        +list errors
+        +str status
+    }
+    class SearchResult {
+        +str name
+        +str link
+        +str size
+        +int seeds
+        +int leechers
+        +str engine_url
+        +str desc_link
+        +str pub_date
+        +str tracker
+        +str category
+        +bool freeleech
+    }
+    class MergedResult {
+        +CanonicalIdentity canonical_identity
+        +list original_results
+        +int total_seeds
+        +int total_leechers
+        +QualityTier best_quality
+        +list download_urls
+        +datetime created_at
+    }
+    class CanonicalIdentity {
+        +str infohash
+        +str title
+        +int year
+        +ContentType content_type
+        +int season
+        +int episode
+        +str resolution
+        +str codec
+        +str group
+        +str metadata_source
+    }
+    class TrackerSource {
+        +str name
+        +str url
+        +bool enabled
+        +datetime last_checked
+        +str health_status
+        +str scrape_url
+    }
+    class HookEvent {
+        +HookEventType event_type
+        +datetime timestamp
+        +str search_id
+        +str download_id
+        +dict data
+    }
+    class HookConfig {
+        +str name
+        +HookEventType event
+        +str script_path
+        +bool enabled
+        +int timeout
+        +dict environment
+    }
+    class ScheduledSearch {
+        +str id
+        +str name
+        +str query
+        +str category
+        +int interval_minutes
+        +bool enabled
+        +datetime last_run
+        +datetime next_run
+        +ScheduleStatus status
+        +int results_count
+        +str error_message
+    }
+    MergedResult --&gt; CanonicalIdentity
+    MergedResult --&gt; SearchResult : original_results
+    SearchMetadata --&gt; TrackerSource : trackers_searched (names)</code></pre>
+<h2 id="dataclasses-internal-state">Dataclasses (internal state)</h2>
+<p>All dataclasses live in
+<code>download-proxy/src/merge_service/</code>.</p>
+<h3 id="searchmetadata"><code>SearchMetadata</code></h3>
+<p>File: <code>search.py:150</code></p>
+<p>Lifecycle: created in <code>SearchOrchestrator.search()</code>,
+stored in <code>_active_searches[search_id]</code>, returned from the
+API once the status is <code>completed</code> or
+<code>failed</code>.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>search_id</code></td>
+<td><code>str</code></td>
+<td>UUID generated at search start</td>
+</tr>
+<tr>
+<td><code>query</code></td>
+<td><code>str</code></td>
+<td>Original search query</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td><code>str</code></td>
+<td>Category filter; default <code>"all"</code></td>
+</tr>
+<tr>
+<td><code>started_at</code></td>
+<td><code>datetime</code></td>
+<td>UTC, auto-populated</td>
+</tr>
+<tr>
+<td><code>completed_at</code></td>
+<td><code>Optional[datetime]</code></td>
+<td>UTC, set when status leaves <code>"running"</code></td>
+</tr>
+<tr>
+<td><code>total_results</code></td>
+<td><code>int</code></td>
+<td>Sum of raw per-tracker counts</td>
+</tr>
+<tr>
+<td><code>merged_results</code></td>
+<td><code>int</code></td>
+<td>Count after deduplication</td>
+</tr>
+<tr>
+<td><code>trackers_searched</code></td>
+<td><code>List[str]</code></td>
+<td>Tracker names that were attempted</td>
+</tr>
+<tr>
+<td><code>errors</code></td>
+<td><code>List[str]</code></td>
+<td><code>"&lt;tracker&gt;: &lt;message&gt;"</code> strings</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>str</code></td>
+<td><code>"running"</code>, <code>"completed"</code>,
+<code>"failed"</code></td>
+</tr>
+<tr>
+<td><code>tracker_stats</code></td>
+<td><code>Dict[str, TrackerSearchStat]</code></td>
+<td>Per-tracker run-time diagnostics; serialised as a sorted list in
+<code>to_dict()</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="trackersearchstat"><code>TrackerSearchStat</code></h3>
+<p>File: <code>search.py:~150</code></p>
+<p>Lifecycle: one instance per enabled tracker, created synchronously in
+<code>SearchOrchestrator.start_search()</code> (so the first HTTP
+response already lists every tracker that will be hit) and mutated in
+place by <code>_run_search()</code> as the tracker transitions
+<code>pending → running → success | empty | error | timeout | cancelled</code>.
+Exposed through <code>SearchResponse.tracker_stats</code> on all three
+search endpoints and streamed via SSE as <code>tracker_started</code>
+(pending→running) and <code>tracker_completed</code> (any terminal flip)
+events.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td>Tracker identifier (e.g. <code>"rutracker"</code>)</td>
+</tr>
+<tr>
+<td><code>tracker_url</code></td>
+<td><code>str</code></td>
+<td>Base URL of the tracker</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>str</code></td>
+<td><code>"pending"</code>, <code>"running"</code>,
+<code>"success"</code>, <code>"empty"</code>, <code>"error"</code>,
+<code>"timeout"</code>, <code>"cancelled"</code></td>
+</tr>
+<tr>
+<td><code>results_count</code></td>
+<td><code>int</code></td>
+<td>Raw row count for this tracker’s run</td>
+</tr>
+<tr>
+<td><code>started_at</code></td>
+<td><code>Optional[datetime]</code></td>
+<td>UTC; set on pending→running</td>
+</tr>
+<tr>
+<td><code>completed_at</code></td>
+<td><code>Optional[datetime]</code></td>
+<td>UTC; set on terminal flip</td>
+</tr>
+<tr>
+<td><code>duration_ms</code></td>
+<td><code>Optional[int]</code></td>
+<td>Wall-clock milliseconds</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>Optional[str]</code></td>
+<td>Exception message, when
+<code>status == "error" \| "timeout"</code></td>
+</tr>
+<tr>
+<td><code>error_type</code></td>
+<td><code>Optional[str]</code></td>
+<td>Exception class name (<code>"RuntimeError"</code>,
+<code>"TimeoutError"</code>, …)</td>
+</tr>
+<tr>
+<td><code>authenticated</code></td>
+<td><code>bool</code></td>
+<td><code>True</code> when a cached session exists or credentials
+env-vars are set</td>
+</tr>
+<tr>
+<td><code>attempt</code></td>
+<td><code>int</code></td>
+<td>Retry counter (currently always 1; reserved for future retries)</td>
+</tr>
+<tr>
+<td><code>http_status</code></td>
+<td><code>Optional[int]</code></td>
+<td>HTTP status from the plugin when surfaced</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td><code>str</code></td>
+<td>The <code>category</code> filter value used for this run</td>
+</tr>
+<tr>
+<td><code>query</code></td>
+<td><code>str</code></td>
+<td>The user query</td>
+</tr>
+<tr>
+<td><code>notes</code></td>
+<td><code>Dict[str, Any]</code></td>
+<td>Free-form diagnostics a plugin can stash for the dashboard
+dialog</td>
+</tr>
+</tbody>
+</table>
+<h3 id="searchresult"><code>SearchResult</code></h3>
+<p>File: <code>search.py:82</code></p>
+<p>Lifecycle: produced by each tracker’s search method, stored in
+<code>_tracker_results[search_id][tracker_name]</code>, aggregated into
+<code>MergedResult</code> by the deduplicator.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td>Torrent title</td>
+</tr>
+<tr>
+<td><code>link</code></td>
+<td><code>str</code></td>
+<td>Download URL (<code>.torrent</code> or magnet)</td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td><code>str</code></td>
+<td>Human-readable size (<code>"1.2 GB"</code>)</td>
+</tr>
+<tr>
+<td><code>seeds</code></td>
+<td><code>int</code></td>
+<td>Current seeders; negative values clamped to 0</td>
+</tr>
+<tr>
+<td><code>leechers</code></td>
+<td><code>int</code></td>
+<td>Current leechers</td>
+</tr>
+<tr>
+<td><code>engine_url</code></td>
+<td><code>str</code></td>
+<td>Base URL of the source tracker</td>
+</tr>
+<tr>
+<td><code>desc_link</code></td>
+<td><code>Optional[str]</code></td>
+<td>Permalink to the description page</td>
+</tr>
+<tr>
+<td><code>pub_date</code></td>
+<td><code>Optional[str]</code></td>
+<td>Publication date as returned by the tracker</td>
+</tr>
+<tr>
+<td><code>tracker</code></td>
+<td><code>Optional[str]</code></td>
+<td>Tracker identifier (e.g. <code>"rutracker"</code>,
+<code>"iptorrents"</code>)</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td><code>Optional[str]</code></td>
+<td>Category string</td>
+</tr>
+<tr>
+<td><code>freeleech</code></td>
+<td><code>bool</code></td>
+<td>IPTorrents-specific; drives <code>[free]</code> display suffix</td>
+</tr>
+</tbody>
+</table>
+<p><code>to_dict()</code> adds <code>tracker_display</code>
+(<code>"&lt;tracker&gt; [free]"</code> when <code>freeleech</code>, else
+<code>"&lt;tracker&gt;"</code>).</p>
+<h3 id="mergedresult"><code>MergedResult</code></h3>
+<p>File: <code>search.py:119</code></p>
+<p>Lifecycle: produced by <code>Deduplicator.merge_results()</code>,
+stored in <code>_last_merged_results[search_id]</code>, serialised into
+<code>SearchResultResponse</code>.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>canonical_identity</code></td>
+<td><code>CanonicalIdentity</code></td>
+<td>Normalised fingerprint used for dedup</td>
+</tr>
+<tr>
+<td><code>original_results</code></td>
+<td><code>List[SearchResult]</code></td>
+<td>All source rows that collapsed into this merge</td>
+</tr>
+<tr>
+<td><code>total_seeds</code></td>
+<td><code>int</code></td>
+<td>Sum of seeds across sources</td>
+</tr>
+<tr>
+<td><code>total_leechers</code></td>
+<td><code>int</code></td>
+<td>Sum of leechers across sources</td>
+</tr>
+<tr>
+<td><code>best_quality</code></td>
+<td><code>Optional[QualityTier]</code></td>
+<td>Computed from sources; filled post-dedup</td>
+</tr>
+<tr>
+<td><code>download_urls</code></td>
+<td><code>List[str]</code></td>
+<td>Unique URLs from the sources</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td><code>datetime</code></td>
+<td>UTC, auto-populated</td>
+</tr>
+</tbody>
+</table>
+<h3 id="canonicalidentity"><code>CanonicalIdentity</code></h3>
+<p>File: <code>search.py:54</code></p>
+<p>Lifecycle: computed by the deduplicator when normalising a result;
+the stable key used for matching across trackers.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>infohash</code></td>
+<td><code>Optional[str]</code></td>
+<td>BitTorrent infohash (when the source exposes it)</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td><code>Optional[str]</code></td>
+<td>Normalised title</td>
+</tr>
+<tr>
+<td><code>year</code></td>
+<td><code>Optional[int]</code></td>
+<td>Release year (strict <code>\b(19\|20)\d{2}\b</code> match)</td>
+</tr>
+<tr>
+<td><code>content_type</code></td>
+<td><code>Optional[ContentType]</code></td>
+<td>Enum: movie, tv, anime, music, audiobook, game, software, ebook,
+other, unknown</td>
+</tr>
+<tr>
+<td><code>season</code></td>
+<td><code>Optional[int]</code></td>
+<td>TV season number</td>
+</tr>
+<tr>
+<td><code>episode</code></td>
+<td><code>Optional[int]</code></td>
+<td>TV episode number</td>
+</tr>
+<tr>
+<td><code>resolution</code></td>
+<td><code>Optional[str]</code></td>
+<td><code>"1080p"</code>, <code>"4K"</code>, …</td>
+</tr>
+<tr>
+<td><code>codec</code></td>
+<td><code>Optional[str]</code></td>
+<td><code>"x264"</code>, <code>"HEVC"</code>, …</td>
+</tr>
+<tr>
+<td><code>group</code></td>
+<td><code>Optional[str]</code></td>
+<td>Release group</td>
+</tr>
+<tr>
+<td><code>metadata_source</code></td>
+<td><code>Optional[str]</code></td>
+<td><code>"omdb"</code>, <code>"tmdb"</code>, <code>"imdb"</code>,
+…</td>
+</tr>
+</tbody>
+</table>
+<h3 id="trackersource"><code>TrackerSource</code></h3>
+<p>File: <code>search.py:34</code></p>
+<p>Lifecycle: built on demand by
+<code>SearchOrchestrator._get_enabled_trackers()</code>; not
+persisted.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td>Tracker identifier</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td><code>str</code></td>
+<td>Base URL</td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td><code>bool</code></td>
+<td>Whether to search</td>
+</tr>
+<tr>
+<td><code>last_checked</code></td>
+<td><code>Optional[datetime]</code></td>
+<td>Last health probe</td>
+</tr>
+<tr>
+<td><code>health_status</code></td>
+<td><code>str</code></td>
+<td><code>"healthy"</code>, <code>"degraded"</code>,
+<code>"offline"</code>, <code>"unknown"</code></td>
+</tr>
+<tr>
+<td><code>scrape_url</code></td>
+<td><code>Optional[str]</code></td>
+<td>BEP 48 scrape endpoint</td>
+</tr>
+</tbody>
+</table>
+<h3 id="contenttype-qualitytier"><code>ContentType</code>,
+<code>QualityTier</code></h3>
+<p>File: <code>search.py:11, 24</code></p>
+<p>Enums used as the canonical vocabulary for content classification and
+quality tiers. Values exactly as they appear in the source:</p>
+<ul>
+<li><code>ContentType</code>: <code>movie</code>, <code>tv</code>,
+<code>anime</code>, <code>music</code>, <code>audiobook</code>,
+<code>game</code>, <code>software</code>, <code>ebook</code>,
+<code>other</code>, <code>unknown</code>.</li>
+<li><code>QualityTier</code>: <code>sd</code>, <code>hd</code>,
+<code>full_hd</code>, <code>uhd_4k</code>, <code>uhd_8k</code>,
+<code>unknown</code>.</li>
+</ul>
+<h3 id="matchresult-deduplicator"><code>MatchResult</code>
+(deduplicator)</h3>
+<p>File: <code>deduplicator.py:31</code></p>
+<p>Intermediate result from a match attempt between two
+<code>SearchResult</code>s.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>is_match</code></td>
+<td><code>bool</code></td>
+<td>Are they the same torrent?</td>
+</tr>
+<tr>
+<td><code>confidence</code></td>
+<td><code>float</code></td>
+<td>0.0–1.0 similarity score</td>
+</tr>
+<tr>
+<td><code>tier</code></td>
+<td><code>int</code></td>
+<td>1 (strongest, e.g. infohash) — 4 (weakest, e.g. fuzzy title)</td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td><code>str</code></td>
+<td>Human-readable reason used in logs</td>
+</tr>
+</tbody>
+</table>
+<h3 id="metadataresult-enricher"><code>MetadataResult</code>
+(enricher)</h3>
+<p>File: <code>enricher.py:21</code></p>
+<p>Result of an external metadata lookup (OMDb / TMDB / TVMaze / AniList
+/ MusicBrainz / OpenLibrary).</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>source</code></td>
+<td><code>str</code></td>
+<td>Provider name (<code>"OMDb"</code>, <code>"TMDB"</code>, …)</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td><code>str</code></td>
+<td>Canonical title</td>
+</tr>
+<tr>
+<td><code>year</code></td>
+<td><code>Optional[int]</code></td>
+<td>Release year</td>
+</tr>
+<tr>
+<td><code>content_type</code></td>
+<td><code>Optional[str]</code></td>
+<td><code>"movie"</code>, <code>"tv"</code>, <code>"music"</code>,
+<code>"book"</code></td>
+</tr>
+<tr>
+<td><code>imdb_id</code></td>
+<td><code>Optional[str]</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>tmdb_id</code></td>
+<td><code>Optional[str]</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>anilist_id</code></td>
+<td><code>Optional[str]</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>musicbrainz_id</code></td>
+<td><code>Optional[str]</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>openlibrary_id</code></td>
+<td><code>Optional[str]</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>poster_url</code></td>
+<td><code>Optional[str]</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>overview</code></td>
+<td><code>Optional[str]</code></td>
+<td>Plot or blurb</td>
+</tr>
+<tr>
+<td><code>genres</code></td>
+<td><code>List[str]</code></td>
+<td>Defaults to <code>[]</code> via <code>__post_init__</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="scraperesult-trackerstatus-validator"><code>ScrapeResult</code>,
+<code>TrackerStatus</code> (validator)</h3>
+<p>File: <code>validator.py:30, 40</code></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tracker</code></td>
+<td><code>str</code></td>
+<td>Tracker identifier</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>TrackerStatus</code></td>
+<td>Enum: <code>healthy</code>, <code>degraded</code>,
+<code>offline</code>, <code>unknown</code></td>
+</tr>
+<tr>
+<td><code>seeds</code></td>
+<td><code>int</code></td>
+<td>From scrape response</td>
+</tr>
+<tr>
+<td><code>leechers</code></td>
+<td><code>int</code></td>
+<td>From scrape response</td>
+</tr>
+<tr>
+<td><code>complete</code></td>
+<td><code>int</code></td>
+<td>From scrape response</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>Optional[str]</code></td>
+<td>Message if scrape failed</td>
+</tr>
+<tr>
+<td><code>scrape_time_ms</code></td>
+<td><code>int</code></td>
+<td>Wall-clock scrape duration</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hook-types-merge_servicehooks.py">Hook types
+(<code>merge_service/hooks.py</code>)</h3>
+<p><code>HookEventType</code> — enum of eight event types:
+<code>search_start</code>, <code>search_progress</code>,
+<code>search_complete</code>, <code>download_start</code>,
+<code>download_progress</code>, <code>download_complete</code>,
+<code>merge_complete</code>, <code>validation_complete</code>.</p>
+<p><code>HookEvent</code> (file: <code>hooks.py:38</code>)</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>event_type</code></td>
+<td><code>HookEventType</code></td>
+<td>Which event fired</td>
+</tr>
+<tr>
+<td><code>timestamp</code></td>
+<td><code>datetime</code></td>
+<td>Auto-populated UTC</td>
+</tr>
+<tr>
+<td><code>search_id</code></td>
+<td><code>Optional[str]</code></td>
+<td>Correlation ID</td>
+</tr>
+<tr>
+<td><code>download_id</code></td>
+<td><code>Optional[str]</code></td>
+<td>Correlation ID</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td><code>Dict[str, Any]</code></td>
+<td>Event-specific payload</td>
+</tr>
+</tbody>
+</table>
+<p><code>HookConfig</code> (file: <code>hooks.py:58</code>)</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td>Display name</td>
+</tr>
+<tr>
+<td><code>event</code></td>
+<td><code>HookEventType</code></td>
+<td>Which event to listen on</td>
+</tr>
+<tr>
+<td><code>script_path</code></td>
+<td><code>str</code></td>
+<td>Executable path; validated via <code>os.path.exists</code></td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td><code>bool</code></td>
+<td>Default <code>True</code></td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td><code>int</code></td>
+<td>Seconds, default 30</td>
+</tr>
+<tr>
+<td><code>environment</code></td>
+<td><code>Dict[str, str]</code></td>
+<td>Extra env vars injected into the script</td>
+</tr>
+</tbody>
+</table>
+<p>Hooks persist at <code>/config/download-proxy/hooks.json</code> (see
+<code>api/hooks.py</code>).</p>
+<h3 id="scheduledsearch-schedulestatus"><code>ScheduledSearch</code>,
+<code>ScheduleStatus</code></h3>
+<p>File: <code>scheduler.py:22, 32</code></p>
+<p>Lifecycle: loaded from
+<code>/config/merge-service/scheduling.json</code>, kept in
+<code>Scheduler._scheduled_searches</code> during runtime.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td><code>str</code></td>
+<td>UUID</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td>Display name</td>
+</tr>
+<tr>
+<td><code>query</code></td>
+<td><code>str</code></td>
+<td>Query to re-run</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td><code>str</code></td>
+<td>Default <code>"all"</code></td>
+</tr>
+<tr>
+<td><code>interval_minutes</code></td>
+<td><code>int</code></td>
+<td>Default 60</td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td><code>bool</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>last_run</code></td>
+<td><code>Optional[datetime]</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>next_run</code></td>
+<td><code>Optional[datetime]</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>ScheduleStatus</code></td>
+<td><code>active</code>, <code>paused</code>, <code>completed</code>,
+<code>failed</code></td>
+</tr>
+<tr>
+<td><code>results_count</code></td>
+<td><code>int</code></td>
+<td>Last run’s merged count</td>
+</tr>
+<tr>
+<td><code>error_message</code></td>
+<td><code>Optional[str]</code></td>
+<td>Last error</td>
+</tr>
+</tbody>
+</table>
+<h2 id="pydantic-models-api-surface">Pydantic models (API surface)</h2>
+<p>Request / response bodies under
+<code>download-proxy/src/api/</code>.</p>
+<h3 id="apiroutes.py"><code>api/routes.py</code></h3>
+<ul>
+<li><code>SearchRequest</code> —
+<code>{query, category, limit (1..100), enable_metadata, validate_trackers, sort_by, sort_order}</code>.</li>
+<li><code>SearchResultResponse</code> —
+<code>{name, size, seeds, leechers, download_urls, quality?, content_type?, desc_link?, tracker?, sources, metadata?, freeleech}</code>.</li>
+<li><code>SearchResponse</code> —
+<code>{search_id, query, status, results, total_results, merged_results, trackers_searched, started_at, completed_at?}</code>.</li>
+<li><code>DownloadRequest</code> —
+<code>{result_id, download_urls}</code>.</li>
+<li><code>QBitLoginRequest</code> (inner, line 369) —
+<code>{username, password, remember?}</code>.</li>
+<li><code>MagnetRequest</code> (inner, line 675) — magnet-generation
+request.</li>
+</ul>
+<h3 id="apihooks.py"><code>api/hooks.py</code></h3>
+<ul>
+<li><code>HookCreateRequest</code> —
+<code>{name, event, script_path, enabled, timeout (1..300), environment}</code>.</li>
+<li><code>HookResponse</code> —
+<code>{hook_id, name, event, script_path, enabled, timeout, created_at}</code>.</li>
+</ul>
+<h3 id="apiauth.py"><code>api/auth.py</code></h3>
+<ul>
+<li><code>CaptchaLoginRequest</code> —
+<code>{cap_sid, cap_code_field, captcha_text, captcha_token}</code>.</li>
+<li><code>CookieLoginRequest</code> — <code>{cookie_string}</code>.</li>
+</ul>
+<p><strong>Note:</strong> The in-memory CAPTCHA challenge is
+<strong>not</strong> a distinct dataclass. It is stored as an anonymous
+<code>dict</code> in <code>_pending_captchas: dict = {}</code> at
+<code>api/auth.py:24</code>. Verified: no <code>CaptchaChallenge</code>
+class exists in the repo.</p>
+<h3 id="apischeduler.py"><code>api/scheduler.py</code></h3>
+<ul>
+<li><code>ScheduleCreateRequest</code> — fields for creating a
+<code>ScheduledSearch</code>.</li>
+<li><code>ScheduleUpdateRequest</code> — partial update payload.</li>
+</ul>
+<h2 id="json-persistence">JSON persistence</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Path</th>
+<th>Owner</th>
+<th>Structure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/config/download-proxy/hooks.json</code></td>
+<td><code>api/hooks.py</code></td>
+<td>Array of <code>HookConfig</code> dicts</td>
+</tr>
+<tr>
+<td><code>/config/download-proxy/qbittorrent_creds.json</code></td>
+<td><code>api/routes.py</code></td>
+<td><code>{username, password}</code></td>
+</tr>
+<tr>
+<td><code>/config/merge-service/scheduling.json</code></td>
+<td><code>merge_service/scheduler.py</code></td>
+<td>Array of <code>ScheduledSearch</code> dicts</td>
+</tr>
+</tbody>
+</table>
+<h2 id="why-no-relational-db">Why no relational DB?</h2>
+<ul>
+<li>The merge service is a stateless orchestrator over tracker APIs;
+durable state would duplicate what qBittorrent already tracks.</li>
+<li>Adding Postgres / SQLite would violate constitution Principle I
+(Container-First — the product is exactly two containers).</li>
+<li>Query surface is tiny (CRUD over 2–3 JSON files); the cognitive cost
+of a schema layer is higher than the benefit.</li>
+</ul>
+<h2 id="gotchas">Gotchas</h2>
+<ul>
+<li>All datetimes are UTC; the <code>to_dict()</code> serialisers call
+<code>.isoformat()</code>.</li>
+<li><code>SearchMetadata.errors</code> is a plain string list. The
+tracker name is embedded as <code>"&lt;name&gt;: &lt;msg&gt;"</code>,
+not in a separate field.</li>
+<li><code>SearchResult.freeleech</code> matters only for IPTorrents;
+other trackers leave it <code>False</code>. The deduplicator uses this
+to forbid merging a non-freeleech IPTorrents row with any other
+source.</li>
+<li><code>MergedResult.best_quality</code> is filled
+<strong>post-dedup</strong> by the enricher, not during initial
+construction.</li>
+<li><code>_pending_captchas</code> lacks a TTL — this is a known leak,
+tracked in <a
+href="CONCURRENCY.md"><code>CONCURRENCY.md</code></a>.</li>
+</ul>

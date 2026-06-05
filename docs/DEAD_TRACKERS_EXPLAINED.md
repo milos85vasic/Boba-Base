@@ -1,5 +1,8 @@
 # Dead Public Tracker Status
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 As of 2026-04-24, the dead tracker list contains 14 entries.
 We successfully revived 10 trackers from the original 22 dead entries.
 

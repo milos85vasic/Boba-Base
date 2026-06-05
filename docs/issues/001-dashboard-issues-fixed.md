@@ -1,5 +1,8 @@
 # Dashboard Issues Fixed - April 2026
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 ## Summary
 
 Five critical issues discovered during manual testing have been identified, reproduced with failing tests (TDD), fixed, and verified across unit, integration, and e2e test suites.

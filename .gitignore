@@ -22,6 +22,7 @@ config/qBittorrent/*
 
 # NEVER commit credentials - multiple patterns for safety
 *credentials*
+*creds*
 # Source code that has "credentials" in its name (not secret material) — allow explicitly.
 !qBitTorrent-go/internal/db/repos/credentials.go
 !qBitTorrent-go/internal/db/repos/credentials_test.go
@@ -146,7 +147,7 @@ FIXES_SUMMARY.md
 FORK_SUMMARY.md
 ISSUES_AND_TODOS.md
 PLUGIN_STATUS.md
-download-proxy/qbittorrent_creds.json
+config/download-proxy/qbittorrent_creds.json
 
 # MkDocs build output
 website/site/

@@ -1,0 +1,118 @@
+<h1 id="host-power-management-hard-ban-const-033">Host Power Management
+— Hard Ban (CONST-033)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<h2 id="why-this-exists">Why this exists</h2>
+<p>On 2026-04-26 18:23:43 the host running mission-critical parallel CLI
+agents and container workloads was auto-suspended mid-session. This
+killed the running HelixAgent binary, all 41 dependent services, every
+SSH session, and every active CLI agent on the box. journalctl
+showed:</p>
+<pre><code>systemd-logind[1183]: The system will suspend now!</code></pre>
+<p>The user-level GNOME power settings were already correct
+(<code>sleep-inactive-ac-type=nothing</code>). The trigger was the
+<strong>GDM greeter session at the local console</strong>, which has its
+own power policy and does not count SSH activity. Earlier, on multiple
+occasions, the user@1000.service had been SIGKILLed by systemd because
+heavy memory pressure prevented gnome-shell from responding to
+GDM/Wayland watchdog within <code>TimeoutStopSec</code> — perceived by
+the user as “the system fully logged me out.” Together these two failure
+modes have caused repeated loss of in-flight agent work.</p>
+<h2 id="the-rule">The rule</h2>
+<p><strong>No project shipped from this workspace may invoke a
+host-level power-state transition.</strong> Forbidden invocations
+include — but are not limited to:</p>
+<table>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 77%" />
+</colgroup>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Forbidden invocations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>systemd CLI</td>
+<td><code>systemctl suspend</code>, <code>systemctl hibernate</code>,
+<code>systemctl hybrid-sleep</code>,
+<code>systemctl suspend-then-hibernate</code>,
+<code>systemctl poweroff</code>, <code>systemctl halt</code>,
+<code>systemctl reboot</code>, <code>systemctl kexec</code></td>
+</tr>
+<tr>
+<td>logind CLI</td>
+<td><code>loginctl suspend</code>, <code>loginctl hibernate</code>,
+<code>loginctl hybrid-sleep</code>,
+<code>loginctl suspend-then-hibernate</code>,
+<code>loginctl poweroff</code>, <code>loginctl halt</code>,
+<code>loginctl reboot</code></td>
+</tr>
+<tr>
+<td>Legacy CLI</td>
+<td><code>pm-suspend</code>, <code>pm-hibernate</code>,
+<code>pm-suspend-hybrid</code>, <code>shutdown -h/-r/-P/-H/now</code>,
+bare <code>reboot</code>/<code>poweroff</code>/<code>halt</code></td>
+</tr>
+<tr>
+<td>DBus</td>
+<td><code>org.freedesktop.login1.Manager.{Suspend,Hibernate,HybridSleep,SuspendThenHibernate,PowerOff,Reboot}</code>,
+<code>org.freedesktop.UPower.{Suspend,Hibernate,HybridSleep}</code> (via
+<code>dbus-send</code>, <code>busctl</code>, or any language
+binding)</td>
+</tr>
+<tr>
+<td>gsettings</td>
+<td><code>gsettings set ... sleep-inactive-{ac,battery}-type</code> to
+anything other than <code>'nothing'</code> or <code>'blank'</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="defence-in-depth">Defence in depth</h2>
+<p>Three layers, in order of strength:</p>
+<ol type="1">
+<li><p><strong>Host-level masking (manual prereq, sudo required, run
+once):</strong>
+<code>scripts/host-power-management/install-host-suspend-guard.sh</code>
+masks <code>sleep.target</code>, <code>suspend.target</code>,
+<code>hibernate.target</code>, <code>hybrid-sleep.target</code>, writes
+<code>/etc/systemd/sleep.conf.d/00-no-suspend.conf</code> with
+<code>AllowSuspend=no</code>, and writes
+<code>/etc/systemd/logind.conf.d/00-no-idle-suspend.conf</code> with
+<code>IdleAction=ignore</code> and <code>HandleLidSwitch=ignore</code>.
+After this, no user / session / DE / greeter / cron job can suspend the
+host.</p></li>
+<li><p><strong>User-session bootstrap (no sudo):</strong>
+<code>scripts/host-power-management/user_session_no_suspend_bootstrap.sh</code>
+runs <code>gsettings</code>, <code>xset -dpms</code>, and (opt-in via
+<code>HOST_POWER_MANAGEMENT_SESSION_INHIBIT=1</code>)
+<code>systemd-inhibit</code> to protect the current GUI/CLI session of
+the invoking user. Idempotent. Safe to source from <code>start.sh</code>
+/ <code>setup.sh</code> / <code>bootstrap.sh</code>.</p></li>
+<li><p><strong>Source-tree static gate:</strong>
+<code>scripts/host-power-management/check-no-suspend-calls.sh</code>
+walks the tree and exits non-zero on any forbidden invocation.
+<code>challenges/scripts/no_suspend_calls_challenge.sh</code> wraps it
+as a challenge that runs in CI / <code>run_all_challenges.sh</code>.
+<code>challenges/scripts/host_no_auto_suspend_challenge.sh</code>
+asserts the running host’s state matches the layer-1 masking.</p></li>
+</ol>
+<h2 id="verification">Verification</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Layer 1: host state</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/host_no_auto_suspend_challenge.sh</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected: 4 PASS</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Layer 3: source tree</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/no_suspend_calls_challenge.sh</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected: PASS, no forbidden calls</span></span></code></pre></div>
+<h2 id="if-you-genuinely-need-a-power-state-transition">If you genuinely
+need a power-state transition</h2>
+<p>You don’t, in this workspace. If a future legitimate use case arises
+(e.g. a container’s <em>internal</em> init script that suspends a
+<em>guest VM</em>, not the host), add the specific file path to
+<code>EXCLUDE_PATHS</code> at the top of
+<code>check-no-suspend-calls.sh</code> with a comment explaining the
+non-host context.</p>

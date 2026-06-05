@@ -1,0 +1,658 @@
+<h1 id="jackett-auto-configuration-clean-slate-rebuild-design">Jackett
+Auto-Configuration + Clean-Slate Rebuild — Design</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p><strong>Date:</strong> 2026-04-26 <strong>Author:</strong>
+brainstorming session (Claude + project owner) <strong>Status:</strong>
+approved, ready for implementation plan <strong>Implementation skill
+next:</strong> <code>superpowers:writing-plans</code></p>
+<h2 id="problem-intent">1. Problem &amp; Intent</h2>
+<p>The project owner wants three things in one pass:</p>
+<ol type="1">
+<li><strong>Clean-slate rebuild</strong> of the Python-profile container
+stack so the system boots from a known-zero state.</li>
+<li><strong>Full Jackett indexer integration</strong> — every
+credentialed tracker we have an <code>.env</code> triple for should be
+auto-configured in Jackett at proxy startup, with no manual Jackett UI
+clicks. New trackers added to <code>.env</code> later should pick
+themselves up automatically.</li>
+<li><strong>Comprehensive tests + challenges</strong> at every
+CONSTITUTION-mandated layer, plus a parity audit so the eventual Go-only
+flip doesn’t silently drop features.</li>
+</ol>
+<p>Closing instruction: commit and push to all upstreams as work
+progresses; hand off when the stack is verified and ready for manual
+testing.</p>
+<h2 id="decisions-locked-during-brainstorming">2. Decisions Locked
+During Brainstorming</h2>
+<table>
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 29%" />
+<col style="width: 23%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Question</th>
+<th>Choice</th>
+<th>Implication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q1</td>
+<td>What does “all Jackett trackers” mean?</td>
+<td>(c) Auto-enable + credential injection from <code>.env</code></td>
+<td>We write code that configures Jackett on the user’s behalf for
+indexers we have creds for. We do <strong>not</strong> auto-enable
+Jackett’s 600+ public indexers blindly.</td>
+</tr>
+<tr>
+<td>Q2</td>
+<td>Which credentialed indexers?</td>
+<td>(b) Generic env discovery + fuzzy match + override</td>
+<td>RuTracker, Kinozal, NNMClub, IPTorrents today; any future
+<code>&lt;NAME&gt;_USERNAME/_PASSWORD/_COOKIES</code> triple gets picked
+up automatically; <code>JACKETT_INDEXER_MAP</code> resolves ambiguous
+matches.</td>
+</tr>
+<tr>
+<td>Q3</td>
+<td>What gets wiped on “clean slate”?</td>
+<td>(b) Containers + images + <code>./config/jackett</code></td>
+<td>Keep <code>./config/qBittorrent</code>, <code>./tmp</code>,
+<code>/mnt/DATA</code>. Forces auto-config to bootstrap from zero, which
+is the test we want.</td>
+</tr>
+<tr>
+<td>Q4/Q5</td>
+<td>Python or Go for the rebuild?</td>
+<td>(d) Python now, parity audit doc, Go port deferred</td>
+<td>Implementation runs against Python proxy. A
+<code>docs/migration/PARITY_GAPS.md</code> deliverable catalogs what’s
+still unported in Go so the eventual flip loses nothing.</td>
+</tr>
+<tr>
+<td>Q6</td>
+<td>Test coverage floor?</td>
+<td>(a) Full CONSTITUTION compliance</td>
+<td>All 7 layers: unit, integration, E2E, security/penetration,
+benchmark, automation (mapped to <code>tests/contract/</code> — see §5),
+challenge.</td>
+</tr>
+<tr>
+<td>Q7</td>
+<td>When does push happen?</td>
+<td>(c) Per-layer commit + push</td>
+<td>After each test layer goes green, commit + push to all 3
+remotes.</td>
+</tr>
+<tr>
+<td>Approach</td>
+<td>Module shape?</td>
+<td>(1) Module-in-<code>merge_service</code>, idempotent,
+startup-time</td>
+<td>Lowest topology change, highest testability, easy to lift-and-shift
+to Go later.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="architecture">3. Architecture</h2>
+<h3 id="module">3.1 Module</h3>
+<p><strong>New file:</strong>
+<code>download-proxy/src/merge_service/jackett_autoconfig.py</code></p>
+<p><strong>Public API (single function):</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> autoconfigure_jackett(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    jackett_url: <span class="bu">str</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    api_key: <span class="bu">str</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    env: Mapping[<span class="bu">str</span>, <span class="bu">str</span>],</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    indexer_map_override: <span class="bu">dict</span>[<span class="bu">str</span>, <span class="bu">str</span>] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    timeout: <span class="bu">float</span> <span class="op">=</span> <span class="fl">10.0</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>) <span class="op">-&gt;</span> AutoconfigResult: ...</span></code></pre></div>
+<p><strong><code>AutoconfigResult</code></strong> is a Pydantic model
+with: - <code>ran_at: datetime</code> -
+<code>discovered_credentials: list[str]</code> — tracker names found in
+env (NEVER includes the values) -
+<code>matched_indexers: dict[str, str]</code> — env name → Jackett
+indexer ID - <code>configured_now: list[str]</code> — indexer IDs
+configured this run - <code>already_present: list[str]</code> — indexer
+IDs Jackett already had configured (idempotency hits) -
+<code>skipped_no_match: list[str]</code> — env names where fuzzy match
+failed - <code>skipped_ambiguous: list[dict]</code> — env name +
+candidate IDs where ≥2 indexers matched - <code>errors: list[str]</code>
+— structured error codes (e.g., <code>jackett_unreachable</code>,
+<code>jackett_auth_failed</code>, <code>catalog_parse_failed</code>,
+<code>indexer_config_failed:&lt;id&gt;</code>)</p>
+<p>The function never raises out of its boundary; all failures land in
+<code>errors</code>.</p>
+<h3 id="call-site">3.2 Call site</h3>
+<p><code>download-proxy/src/main.py</code> — after
+<code>JACKETT_API_KEY</code> is verified non-empty (the existing startup
+already waits for Jackett’s key extraction), and before the FastAPI app
+starts serving traffic. Failure is logged WARNING; <strong>boot
+continues</strong>. Auto-config is best-effort.</p>
+<h3 id="read-endpoint">3.3 Read endpoint</h3>
+<p><code>GET /merge/jackett/autoconfig/last</code> — returns the cached
+<code>AutoconfigResult</code> from the most recent run. Read-only. Lives
+in <code>download-proxy/src/api/routes.py</code>. Response shape:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ran_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-04-26T14:23:11Z&quot;</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;discovered&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;RUTRACKER&quot;</span><span class="ot">,</span> <span class="st">&quot;KINOZAL&quot;</span><span class="ot">,</span> <span class="st">&quot;NNMCLUB&quot;</span><span class="ot">,</span> <span class="st">&quot;IPTORRENTS&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;configured_now&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;rutracker&quot;</span><span class="ot">,</span> <span class="st">&quot;kinozalbiz&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;already_present&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;nnmclub&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;skipped_no_match&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;IPTORRENTS&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;skipped_ambiguous&quot;</span><span class="fu">:</span> <span class="ot">[]</span><span class="fu">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;errors&quot;</span><span class="fu">:</span> <span class="ot">[]</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Credentials NEVER appear in the response, the cached object’s
+<code>__repr__</code>, or any log line at any level.</p>
+<h3 id="discovery-algorithm-3-passes">3.4 Discovery algorithm (3
+passes)</h3>
+<ol type="1">
+<li><strong>Env scan</strong> — regex
+<code>^([A-Z][A-Z0-9_]+?)_(USERNAME|PASSWORD|COOKIES)$</code> over
+<code>os.environ</code>. Group by tracker name. A “credential bundle” is
+valid when the bundle contains either
+<code>(USERNAME &amp;&amp; PASSWORD)</code> or <code>COOKIES</code>.
+Names matching the <strong>denylist</strong> (default
+<code>QBITTORRENT,JACKETT,WEBUI,PROXY,MERGE,BRIDGE</code>, overridable
+via <code>JACKETT_AUTOCONFIG_EXCLUDE</code> comma-separated env var) are
+dropped before pass 2 — these are project-internal credentials (qBit
+auth, Jackett’s own key, etc.) that are guaranteed not to be tracker
+creds.</li>
+<li><strong>Indexer match</strong> — for each surviving bundle:
+<ul>
+<li>Lookup tracker name in <code>indexer_map_override</code> first
+(highest precedence).</li>
+<li>If unmatched, fuzzy-match using <code>Levenshtein.ratio()</code>
+(threshold ≥ 0.85, case-insensitive) against Jackett’s
+<code>/api/v2.0/indexers/all/results</code> catalog.</li>
+<li>Ambiguous matches (≥2 indexers ≥ threshold) are skipped with a clear
+log + entry in <code>skipped_ambiguous</code>.</li>
+</ul></li>
+<li><strong>Configure</strong> — for each matched indexer:
+<ul>
+<li>GET <code>/api/v2.0/indexers</code> (already-configured list). If
+indexer ID is present, add to <code>already_present</code>, skip.</li>
+<li>GET <code>/api/v2.0/indexers/{id}/config</code> to fetch the field
+template Jackett expects.</li>
+<li>Map our credential fields onto the template (e.g.,
+<code>username</code> → <code>username</code>, <code>password</code> →
+<code>password</code>, <code>cookieheader</code> → <code>COOKIES</code>
+value).</li>
+<li>POST <code>/api/v2.0/indexers/{id}/config</code> with the populated
+template. On 4xx, log + add to <code>errors</code>. On 5xx, one retry
+with 2s backoff via existing <code>tenacity</code>.</li>
+</ul></li>
+</ol>
+<h3 id="no-new-dependencies">3.5 No new dependencies</h3>
+<p><code>Levenshtein</code>, <code>aiohttp</code>,
+<code>pydantic</code>, <code>tenacity</code> are already in
+<code>download-proxy/requirements.txt</code>.</p>
+<h2 id="data-flow">4. Data Flow</h2>
+<pre><code>container boot
+    └─&gt; start-proxy.sh waits for JACKETT_API_KEY in env
+        └─&gt; python -m main
+            ├─&gt; startup hook: autoconfigure_jackett(...)
+            │     ├─ scan os.environ                       [pass 1]
+            │     ├─ GET /api/v2.0/indexers/all/results    (catalog)
+            │     ├─ fuzzy-match bundles → indexer IDs     [pass 2]
+            │     ├─ GET /api/v2.0/indexers                (already-configured)
+            │     ├─ GET /api/v2.0/indexers/{id}/config    (template, per indexer)
+            │     ├─ POST /api/v2.0/indexers/{id}/config   (apply, per indexer)
+            │     └─ build AutoconfigResult, log summary,
+            │        store in module-level cache
+            ├─&gt; FastAPI app starts, exposes:
+            │     GET /merge/jackett/autoconfig/last       (cached, redacted)
+            └─&gt; proxy + merge service serve traffic normally</code></pre>
+<p><strong>Persistence:</strong> Jackett owns the durable state on disk
+(<code>./config/jackett/Jackett/Indexers/*.json</code>). Auto-config
+issues API calls; restart-survival is Jackett’s job; the idempotency
+check on next boot prevents double-config.</p>
+<p><strong>Result caching:</strong> in-process, module-level. Lost on
+restart; re-run on next boot. No new files, no DB.</p>
+<p><strong>Logging:</strong> structured (existing project logger). One
+INFO summary per run
+(<code>autoconfigured 3/4 discovered indexers</code>). Per-indexer
+DEBUG. WARNING on errors. <strong>No credential value at any level,
+ever.</strong></p>
+<h2 id="test-matrix-constitution-7-layer-floor">5. Test Matrix
+(CONSTITUTION 7-layer floor)</h2>
+<table>
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 24%" />
+<col style="width: 20%" />
+<col style="width: 44%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Layer</th>
+<th>File</th>
+<th>Real infra?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Unit</strong></td>
+<td><code>tests/unit/merge_service/test_jackett_autoconfig.py</code></td>
+<td>Mocks via
+<code>unittest.mock.AsyncMock</code>/<code>MagicMock</code> (matches
+existing convention in
+<code>tests/unit/test_private_tracker_search.py</code>; allowed in unit
+only)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Integration</strong></td>
+<td><code>tests/integration/test_jackett_autoconfig_real.py</code></td>
+<td>Real Jackett container via <code>pytest-docker</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>E2E</strong></td>
+<td><code>tests/e2e/test_jackett_autoconfig_e2e.py</code></td>
+<td>Full stack (<code>podman compose up</code>)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Security/penetration</strong></td>
+<td><code>tests/security/test_jackett_autoconfig_secrets.py</code> +
+<code>bandit</code> static scan</td>
+<td>Real stack + log files</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Benchmark</strong></td>
+<td><code>tests/benchmark/test_jackett_autoconfig_perf.py</code></td>
+<td>Real Jackett or recorded responses (allowed for benchmark
+stability)</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Automation</strong></td>
+<td><code>tests/contract/test_jackett_autoconfig_contract.py</code>
+(Schemathesis)</td>
+<td>Live FastAPI</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Challenge</strong></td>
+<td><code>challenges/scripts/jackett_autoconfig_clean_slate.sh</code></td>
+<td>Full live system</td>
+</tr>
+</tbody>
+</table>
+<h3 id="layer-by-layer-assertions">5.1 Layer-by-layer assertions</h3>
+<p><strong>Unit (1):</strong> - Env-scan regex correctness across edge
+cases (lowercase ignored, mixed case, multi-underscore tracker names). -
+Fuzzy threshold behavior — at, above, and below 0.85. -
+<code>JACKETT_INDEXER_MAP</code> override precedence over fuzzy match. -
+Idempotency check skips already-configured indexers. -
+<code>AutoconfigResult.__repr__()</code> and
+<code>.model_dump_json()</code> redact passwords/cookies. - Errors are
+caught at function boundary — <code>autoconfigure_jackett()</code> never
+raises.</p>
+<p><strong>Integration (2):</strong> - Spin up a real Jackett container
+(<code>pytest-docker</code> fixture). - Inject test env vars
+(<code>TESTRACKER_USERNAME=u</code>, <code>_PASSWORD=p</code>). - Call
+<code>autoconfigure_jackett()</code>, assert it discovered the env,
+fuzzy-matched a public indexer Jackett ships with, configured it. -
+Second call: indexer in <code>already_present</code>. -
+<code>/merge/jackett/autoconfig/last</code> returns the live result.</p>
+<p><strong>E2E (3):</strong> - Tear down stack, wipe
+<code>./config/jackett</code>, set fake creds in env,
+<code>podman compose up</code>, wait for healthchecks. - Poll
+<code>/merge/jackett/autoconfig/last</code> until populated. - Assert
+expected indexer set configured. - Run a search through the merge
+service. - Assert at least one Jackett-sourced result appears in the
+dedup output.</p>
+<p><strong>Security (4):</strong> - Boot stack with creds in env.
+Capture stdout/stderr from boot. - Force errors (invalid Jackett key,
+malformed env) and capture exception tracebacks. - Assert: no credential
+value appears in boot logs, FastAPI access logs,
+<code>/merge/jackett/autoconfig/last</code> response, exception
+tracebacks, or <code>./config/jackett/Jackett/log.txt</code>. - Run
+<code>bandit</code> against
+<code>merge_service/jackett_autoconfig.py</code>. Zero high-severity
+findings.</p>
+<p><strong>Benchmark (5):</strong> - <code>pytest-benchmark</code>
+baselines: - Env-scan over 1k env vars. - Fuzzy match against a
+50-indexer catalog. - Full happy-path autoconfigure round-trip. -
+Baselines committed to
+<code>tests/benchmark/baselines/jackett_autoconfig.json</code>. - Fail
+if any benchmark regresses &gt; 2× baseline.</p>
+<p><strong>Automation/Contract (6):</strong> - Schemathesis loads the
+OpenAPI schema for <code>/merge/jackett/autoconfig/last</code>. - Fuzzes
+parameters; asserts no 5xx, no schema violations. - Documented mapping:
+CONSTITUTION says “automation” but <code>tests/</code> has no
+<code>automation/</code> directory. We map to
+<code>tests/contract/</code> (the closest existing equivalent —
+Schemathesis-driven contract testing of the public API surface). This
+mapping is recorded here so future readers don’t search for a missing
+dir.</p>
+<p><strong>Challenge (7):</strong> -
+<code>challenges/scripts/jackett_autoconfig_clean_slate.sh</code>: 1.
+<code>podman compose down --remove-orphans</code> 2.
+<code>rm -rf ./config/jackett</code> 3.
+<code>podman compose up -d</code> 4. Wait for healthchecks (timeout 3
+min). 5. Poll <code>/merge/jackett/autoconfig/last</code> until
+<code>ran_at</code> populated. 6. Assert configured indexer count ≥ 1.
+7. Run a search via the merge service API. 8. Assert results contain at
+least one Jackett-sourced entry. 9. Exit 0 on success, non-zero with
+diagnostics on failure.</p>
+<h3 id="resource-caps">5.2 Resource caps</h3>
+<p>CLAUDE.md mandatory #9 caps tests at 30-40% host. All test
+invocations wrapped:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 <span class="at">-p</span> 1 python3 <span class="at">-m</span> pytest ...</span></code></pre></div>
+<p>Container <code>mem_limit</code> already enforces in-container caps.
+<code>pytest -p no:randomly --maxfail=1 -x</code> for deterministic
+per-layer runs.</p>
+<h2 id="error-handling">6. Error Handling</h2>
+<table>
+<colgroup>
+<col style="width: 29%" />
+<col style="width: 32%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr>
+<th>Failure</th>
+<th>Behavior</th>
+<th>Visibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Jackett unreachable at startup</td>
+<td>Log WARNING, <code>errors=["jackett_unreachable"]</code>,
+<strong>boot continues</strong></td>
+<td><code>/merge/jackett/autoconfig/last</code> shows the error</td>
+</tr>
+<tr>
+<td>Jackett 401 (bad/missing key)</td>
+<td>Log WARNING <code>jackett_auth_failed</code>, no retries</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Catalog response malformed</td>
+<td>Log WARNING <code>catalog_parse_failed</code>, boot continues</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Credential triple incomplete (<code>USERNAME</code> only)</td>
+<td>Skip silently at DEBUG — env may have unrelated vars</td>
+<td>DEBUG only</td>
+</tr>
+<tr>
+<td>Fuzzy match ambiguous</td>
+<td>Skip with WARNING listing candidates, suggest
+<code>JACKETT_INDEXER_MAP</code></td>
+<td><code>skipped_ambiguous</code> entry</td>
+</tr>
+<tr>
+<td>Fuzzy match below threshold</td>
+<td>Skip with INFO</td>
+<td><code>skipped_no_match</code> entry</td>
+</tr>
+<tr>
+<td><code>JACKETT_INDEXER_MAP</code> references unknown indexer ID</td>
+<td>Log WARNING, skip mapping</td>
+<td><code>errors</code> entry</td>
+</tr>
+<tr>
+<td>Indexer config POST 4xx</td>
+<td>Log status + indexer ID (no body)</td>
+<td><code>errors</code> entry</td>
+</tr>
+<tr>
+<td>Indexer config POST 5xx</td>
+<td>One retry (2s backoff via <code>tenacity</code>), then give up</td>
+<td><code>errors</code> entry</td>
+</tr>
+<tr>
+<td>Indexer already configured</td>
+<td>Skip silently</td>
+<td><code>already_present</code></td>
+</tr>
+<tr>
+<td>Network timeout mid-call</td>
+<td>Treated as 5xx for that one indexer; others continue</td>
+<td>Per-indexer error</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Universal invariants:</strong> -
+<code>autoconfigure_jackett()</code> never raises out of its boundary. -
+Total runtime hard-capped at 60s via outer
+<code>asyncio.wait_for</code>. - Credentials never appear in logs, error
+messages, the read endpoint, or exception text.</p>
+<h2 id="parity-audit-deliverable">7. Parity Audit Deliverable</h2>
+<p><strong>File:</strong> <code>docs/migration/PARITY_GAPS.md</code></p>
+<p><strong>Method:</strong> side-by-side read of
+<code>download-proxy/src/{api,merge_service,ui,config}</code> vs
+<code>qBitTorrent-go/internal/{api,service,client,models,middleware,config}</code>.
+One row per Python public function / endpoint / behavior. No code
+changes. Estimated 1-2 hours.</p>
+<p><strong>Document shape (excerpt):</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu"># Python → Go Parity Gaps</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>Last audited: 2026-04-26 (commit <span class="dt">&lt;</span><span class="kw">sha</span><span class="dt">&gt;</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>Audit method: side-by-side read of public API surface; no behavior testing.</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">## Summary</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>N Python features audited</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>X fully ported</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Y partial</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Z missing</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="fu">## Matrix</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Python module <span class="pp">|</span> Feature <span class="pp">|</span> Go location <span class="pp">|</span> Status <span class="pp">|</span> Risk if Go-only today <span class="pp">|</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="pp">|--------------|---------|-------------|--------|----------------------|</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`merge_service/search.py`</span> <span class="pp">|</span> <span class="in">`start_search()`</span> orchestrator <span class="pp">|</span> <span class="in">`internal/service/merge_search.go`</span> <span class="pp">|</span> Ported <span class="pp">|</span> low <span class="pp">|</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`merge_service/enricher.py`</span> <span class="pp">|</span> TMDB title resolution <span class="pp">|</span> (none) <span class="pp">|</span> Missing <span class="pp">|</span> results lack posters/years <span class="pp">|</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> <span class="in">`merge_service/validator.py`</span> <span class="pp">|</span> BEP 48 HTTP scrape <span class="pp">|</span> (none) <span class="pp">|</span> Missing <span class="pp">|</span> no peer-count validation <span class="pp">|</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> ... <span class="pp">|</span> ... <span class="pp">|</span> ... <span class="pp">|</span> ... <span class="pp">|</span> ... <span class="pp">|</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="fu">## Per-gap follow-up specs (proposed, in priority order)</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="ss">1. </span>Port <span class="in">`enricher.py`</span> to <span class="in">`internal/service/enricher.go`</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="ss">2. </span>Port <span class="in">`validator.py`</span> (BEP 48 + BEP 15)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="ss">3. </span>...</span></code></pre></div>
+<p><strong>Status definitions</strong> (locked): -
+<strong>Ported</strong> — feature exists in Go with equivalent behavior.
+- <strong>Partial</strong> — feature exists in Go but lacks a
+sub-behavior. - <strong>Missing</strong> — no Go counterpart.</p>
+<h2 id="verification-push-protocol">8. Verification &amp; Push
+Protocol</h2>
+<p><strong>Order of operations</strong> (each step is a gate; failure
+halts):</p>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 24%" />
+<col style="width: 64%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Step</th>
+<th>Commit + push?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Pre-flight: clean tree, env vars present</td>
+<td>—</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tear down: containers + images + <code>./config/jackett</code>. Keep
+<code>./config/qBittorrent</code>, <code>./tmp</code>,
+<code>/mnt/DATA</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Implement auto-config module + wire into <code>main.py</code> + add
+endpoint</td>
+<td>—</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Layer 1 (Unit) green</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Boot real stack (<code>podman compose up -d</code>), wait for
+healthchecks</td>
+<td>—</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Layer 2 (Integration) green</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Layer 3 (E2E) green</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Layer 4 (Security) green</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Layer 5 (Benchmark) green, baselines committed</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Layer 6 (Automation/Contract) green</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Layer 7 (Challenge) script exits 0</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Parity audit: read both codebases, write
+<code>PARITY_GAPS.md</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Final clean-slate verification: full tear-down + boot from zero, run
+challenge again, capture output into commit message</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Handoff message to project owner</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Push target:</strong>
+<code>git push origin &lt;branch&gt; &amp;&amp; git push github &lt;branch&gt; &amp;&amp; git push upstream &lt;branch&gt;</code>
+after each gate. (All three URLs identical — push is idempotent on the
+remote, but we do all three so refs match locally.)</p>
+<p><strong>Hard stops</strong> (require owner input): - Any layer fails
+after one fix attempt. - Any push rejected. - Healthcheck unhealthy
+after 3 minutes. - Bench regression &gt; 2× baseline.</p>
+<h2 id="file-inventory">9. File Inventory</h2>
+<h3 id="new-files">9.1 New files</h3>
+<ul>
+<li><code>download-proxy/src/merge_service/jackett_autoconfig.py</code>
+— the module</li>
+<li><code>tests/unit/merge_service/test_jackett_autoconfig.py</code></li>
+<li><code>tests/integration/test_jackett_autoconfig_real.py</code></li>
+<li><code>tests/e2e/test_jackett_autoconfig_e2e.py</code></li>
+<li><code>tests/security/test_jackett_autoconfig_secrets.py</code></li>
+<li><code>tests/benchmark/test_jackett_autoconfig_perf.py</code></li>
+<li><code>tests/benchmark/baselines/jackett_autoconfig.json</code></li>
+<li><code>tests/contract/test_jackett_autoconfig_contract.py</code></li>
+<li><code>challenges/scripts/jackett_autoconfig_clean_slate.sh</code>
+(executable)</li>
+<li><code>challenges/scripts/run_all_challenges.sh</code> (currently no
+<code>challenges/</code> dir)</li>
+<li><code>docs/migration/PARITY_GAPS.md</code></li>
+<li><code>docs/superpowers/specs/2026-04-26-jackett-autoconfig-clean-rebuild-design.md</code>
+(this file)</li>
+</ul>
+<h3 id="modified-files">9.2 Modified files</h3>
+<ul>
+<li><code>download-proxy/src/main.py</code> — call
+<code>autoconfigure_jackett()</code> after Jackett key extraction,
+before uvicorn</li>
+<li><code>download-proxy/src/api/routes.py</code> — add
+<code>GET /merge/jackett/autoconfig/last</code></li>
+<li><code>download-proxy/src/api/__init__.py</code> — register the new
+route if needed</li>
+<li><code>docs/JACKETT_INTEGRATION.md</code> — append
+“Auto-Configuration” section</li>
+<li><code>CLAUDE.md</code> — add <code>JACKETT_INDEXER_MAP</code> and
+<code>JACKETT_AUTOCONFIG_EXCLUDE</code> to the env vars line; note the
+auto-config endpoint</li>
+<li><code>AGENTS.md</code> — same env additions</li>
+<li><code>.env.example</code> (if exists) — add
+<code>JACKETT_INDEXER_MAP=</code> and
+<code>JACKETT_AUTOCONFIG_EXCLUDE=</code> placeholders</li>
+</ul>
+<h3 id="untouched">9.3 Untouched</h3>
+<ul>
+<li><code>qBitTorrent-go/**</code> (parity audit reads but does not
+modify)</li>
+<li><code>frontend/**</code></li>
+<li><code>plugins/**</code></li>
+<li><code>webui-bridge.py</code></li>
+<li><code>start-proxy.sh</code> (unless implementation discovers a
+timing tweak is needed)</li>
+</ul>
+<h3 id="bugfix-log">9.4 Bugfix log</h3>
+<p>Per CLAUDE.md mandatory #10 + CONST-032: any bug discovered during
+this work goes into <code>docs/issues/fixed/BUGFIXES.md</code> with a
+corresponding
+<code>challenges/scripts/jackett_autoconfig_&lt;bug-slug&gt;.sh</code>
+regression guard.</p>
+<h2 id="out-of-scope-explicit">10. Out of Scope (explicit)</h2>
+<ul>
+<li>Porting any Python feature to Go. The parity doc <em>catalogs</em>
+the gap; closing it is future work in dedicated specs.</li>
+<li>Go-profile rebuild or Go-side Jackett auto-config.</li>
+<li>Wiping <code>./config/qBittorrent/</code> or
+<code>/mnt/DATA</code>.</li>
+<li>Manual testing scripts — handoff is verbal.</li>
+<li>Auto-enabling Jackett’s public indexer set without credentials. The
+Q1 decision was credentialed-only.</li>
+</ul>
+<h2 id="open-questions-for-implementation-plan">11. Open Questions for
+Implementation Plan</h2>
+<p>(These do not block design approval; they get resolved when
+<code>writing-plans</code> produces the step-by-step plan.)</p>
+<ul>
+<li>Exact branch name for this work (suggest
+<code>jackett-autoconfig-clean-rebuild</code>).</li>
+<li>Whether the existing test stack already auto-starts Jackett via
+<code>pytest-docker</code>, or whether the integration layer needs a new
+fixture.</li>
+<li>Whether <code>docs/issues/fixed/BUGFIXES.md</code> exists — if not,
+it gets created on first bugfix.</li>
+<li>Whether <code>start-proxy.sh</code> injects
+<code>JACKETT_API_KEY</code> to the proxy container before
+<code>python -m main</code> runs (it should, but verify at
+implementation time).</li>
+</ul>

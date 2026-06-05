@@ -1,0 +1,368 @@
+<h1 id="qbittorrent-search-plugin-troubleshooting-guide">qBittorrent
+Search Plugin Troubleshooting Guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>This guide covers common issues with search plugins and their
+solutions.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#known-issues">Known Issues</a></li>
+<li><a href="#quick-fixes">Quick Fixes</a></li>
+<li><a href="#webui-vs-desktop-app">WebUI vs Desktop App</a></li>
+<li><a href="#plugin-installation">Plugin Installation</a></li>
+<li><a href="#download-issues">Download Issues</a></li>
+<li><a href="#debugging-steps">Debugging Steps</a></li>
+</ol>
+<h2 id="known-issues">Known Issues</h2>
+<h3 id="issue-1-downloads-dont-start-from-search-webui-only">Issue 1:
+Downloads Don’t Start from Search (WebUI Only)</h3>
+<p><strong>Symptom:</strong> You search for torrents using RuTracker or
+other private trackers, find results, click download, but the torrent
+never appears in the download list.</p>
+<p><strong>Root Cause:</strong> qBittorrent WebUI has a fundamental
+limitation where it does NOT use <code>nova2dl.py</code> for downloading
+torrents from search results. Instead, it tries to download the torrent
+URL directly, which fails for private trackers that require
+authentication.</p>
+<p><strong>Affected Plugins:</strong> - RuTracker (requires login) -
+Kinozal (requires login) - NNMClub (requires login) - Rutor (works with
+magnet links)</p>
+<p><strong>Solutions:</strong></p>
+<h4 id="option-a-use-qbittorrent-desktop-application-recommended">Option
+A: Use qBittorrent Desktop Application (Recommended)</h4>
+<p>The desktop app properly uses <code>nova2dl.py</code> which handles
+authentication:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install plugins for desktop app</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--local</span> rutracker</span></code></pre></div>
+<h4 id="option-b-use-magnet-links-instead">Option B: Use Magnet Links
+Instead</h4>
+<p>Configure Rutor plugin to return magnet links instead of .torrent
+files:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Edit .env file</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">RUTOR_USE_MAGNET</span><span class="op">=</span>true</span></code></pre></div>
+<h4 id="option-c-manual-download">Option C: Manual Download</h4>
+<ol type="1">
+<li>Search for torrents in WebUI</li>
+<li>Note the torrent name/size</li>
+<li>Go to the tracker website directly</li>
+<li>Download the .torrent file manually</li>
+<li>Add it to qBittorrent via “Upload local torrent” button</li>
+</ol>
+<h4 id="option-d-use-alternative-trackers">Option D: Use Alternative
+Trackers</h4>
+<p>Rutor works best with WebUI because it provides magnet links that
+don’t require authentication.</p>
+<h3 id="issue-2-only-rutracker-plugin-visible">Issue 2: Only RuTracker
+Plugin Visible</h3>
+<p><strong>Symptom:</strong> In the Search &gt; Search Plugins section,
+only RuTracker appears even though all 4 plugins should be
+installed.</p>
+<p><strong>Root Causes:</strong> 1. Plugins not properly copied to the
+container 2. File permissions incorrect 3. Container not restarted after
+plugin installation 4. Plugin syntax errors</p>
+<p><strong>Solutions:</strong></p>
+<h4 id="step-1-verify-plugin-installation">Step 1: Verify Plugin
+Installation</h4>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--verify</span></span></code></pre></div>
+<p>This will check: - All plugin files exist - Files have correct
+permissions - Python syntax is valid</p>
+<h4 id="step-2-reinstall-all-plugins">Step 2: Reinstall All Plugins</h4>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reinstall all plugins</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--all</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify installation</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--verify</span></span></code></pre></div>
+<h4 id="step-3-check-container-plugins">Step 3: Check Container
+Plugins</h4>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For Podman</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec qbittorrent ls <span class="at">-la</span> /config/qBittorrent/nova3/engines/</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># For Docker</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> exec qbittorrent ls <span class="at">-la</span> /config/qBittorrent/nova3/engines/</span></code></pre></div>
+<p>You should see all 4 plugin files: - <code>rutracker.py</code> -
+<code>rutor.py</code> - <code>kinozal.py</code> -
+<code>nnmclub.py</code></p>
+<h4 id="step-4-restart-container">Step 4: Restart Container</h4>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For Podman</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> restart qbittorrent</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># For Docker</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> restart qbittorrent</span></code></pre></div>
+<h4 id="step-5-refresh-webui">Step 5: Refresh WebUI</h4>
+<p>After restarting, hard-refresh the WebUI page (Ctrl+Shift+R or
+Cmd+Shift+R).</p>
+<h2 id="quick-fixes">Quick Fixes</h2>
+<h3 id="fix-all-issues-at-once">Fix All Issues at Once</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Stop container</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Reinstall all plugins</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--all</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Verify installation</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--verify</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Start container</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Wait for container to be ready, then refresh WebUI</span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="fu">sleep</span> 5</span></code></pre></div>
+<h3 id="run-all-tests">Run All Tests</h3>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Test plugin installation and structure</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Test download functionality</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> tests/test_download_comprehensive.py</span></code></pre></div>
+<h2 id="webui-vs-desktop-app">WebUI vs Desktop App</h2>
+<h3 id="webui-limitations">WebUI Limitations</h3>
+<p>The qBittorrent WebUI has a fundamental limitation with search plugin
+downloads:</p>
+<pre><code>WebUI Search Flow:
+1. User searches → WebUI calls plugin&#39;s search() method ✓ Works
+2. User clicks download → WebUI sends URL to /api/v2/torrents/add ✗ Problem!
+3. Backend tries to download URL directly ✗ No authentication!
+4. Download fails for private trackers ✗
+
+Desktop App Flow:
+1. User searches → App calls plugin&#39;s search() method ✓ Works
+2. User clicks download → App calls nova2dl.py ✓ Correct!
+3. nova2dl.py uses plugin&#39;s download_torrent() method ✓ Authenticated!
+4. Download succeeds ✓</code></pre>
+<h3 id="recommendations">Recommendations</h3>
+<table>
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 67%" />
+</colgroup>
+<thead>
+<tr>
+<th>Use Case</th>
+<th>Recommended Approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Private trackers (RuTracker, Kinozal, NNMClub)</td>
+<td>Use Desktop App or manual download</td>
+</tr>
+<tr>
+<td>Public trackers with magnets (Rutor)</td>
+<td>Works with both WebUI and Desktop</td>
+</tr>
+<tr>
+<td>Automation/Remote access</td>
+<td>Use magnet links where possible</td>
+</tr>
+</tbody>
+</table>
+<h2 id="plugin-installation">Plugin Installation</h2>
+<h3 id="install-all-plugins">Install All Plugins</h3>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--all</span></span></code></pre></div>
+<h3 id="install-specific-plugin">Install Specific Plugin</h3>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> rutracker</span></code></pre></div>
+<h3 id="install-locally-desktop-app">Install Locally (Desktop App)</h3>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--local</span> rutracker</span></code></pre></div>
+<h3 id="verify-installation">Verify Installation</h3>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--verify</span></span></code></pre></div>
+<h3 id="test-plugins">Test Plugins</h3>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--test</span></span></code></pre></div>
+<h2 id="download-issues">Download Issues</h2>
+<h3 id="testing-download-functionality">Testing Download
+Functionality</h3>
+<h4 id="test-via-nova2dl.py-command-line">Test via nova2dl.py (Command
+Line)</h4>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Test RuTracker download (works with authentication)</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec <span class="at">-u</span> abc qbittorrent <span class="dt">\</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  python3 /config/qBittorrent/nova3/nova2dl.py <span class="dt">\</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  rutracker <span class="st">&#39;https://rutracker.org/forum/dl.php?t=6782121&#39;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected output:</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co"># /tmp/rutracker_xxx.torrent https://rutracker.org/forum/dl.php?t=6782121</span></span></code></pre></div>
+<h4 id="test-plugin-directly">Test Plugin Directly</h4>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Test RuTracker plugin</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> plugins/rutracker.py</span></code></pre></div>
+<h3 id="common-download-errors">Common Download Errors</h3>
+<h4 id="unable-to-connect-using-given-credentials">“Unable to connect
+using given credentials”</h4>
+<ul>
+<li>Check your RuTracker username/password in <code>.env</code>
+file</li>
+<li>Verify credentials work on rutracker.org website</li>
+<li>Check if RuTracker is accessible (try different mirrors)</li>
+</ul>
+<h4 id="no-data-received-from-url">“No data received from URL”</h4>
+<ul>
+<li>The torrent might have been removed</li>
+<li>Try a different torrent</li>
+<li>Check if you have permission to access the torrent</li>
+</ul>
+<h4 id="received-html-page-instead-of-torrent-file">“Received HTML page
+instead of torrent file”</h4>
+<ul>
+<li>Authentication failed</li>
+<li>Your session might have expired</li>
+<li>Try restarting the container</li>
+</ul>
+<h2 id="debugging-steps">Debugging Steps</h2>
+<h3 id="enable-debug-logging">Enable Debug Logging</h3>
+<h4 id="for-rutracker-plugin">For RuTracker Plugin</h4>
+<p>Edit <code>plugins/rutracker.py</code> and change:</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>logging.basicConfig(level<span class="op">=</span>logging.WARNING)</span></code></pre></div>
+<p>to:</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>logging.basicConfig(level<span class="op">=</span>logging.DEBUG)</span></code></pre></div>
+<h4 id="for-container">For Container</h4>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># View container logs</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> logs <span class="at">-f</span> qbittorrent</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Or</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> logs <span class="at">-f</span> qbittorrent</span></code></pre></div>
+<h3 id="check-plugin-status-via-api">Check Plugin Status via API</h3>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get list of installed plugins</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST <span class="dt">\</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  http://localhost:7186/api/v2/auth/login <span class="dt">\</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&quot;username=admin&amp;password=admin&quot;</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> GET <span class="dt">\</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  http://localhost:7186/api/v2/search/plugins <span class="dt">\</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-b</span> <span class="st">&quot;SID=your_session_id&quot;</span></span></code></pre></div>
+<h3 id="manual-plugin-testing">Manual Plugin Testing</h3>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Test plugin directly</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>sys.path.insert(<span class="dv">0</span>, <span class="st">&#39;plugins&#39;</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> rutracker <span class="im">import</span> RuTracker</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Create instance</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>engine <span class="op">=</span> RuTracker()</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Test search</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>engine.search(<span class="st">&quot;ubuntu&quot;</span>)</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Found </span><span class="sc">{</span><span class="bu">len</span>(engine.results)<span class="sc">}</span><span class="ss"> results&quot;</span>)</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Test download (if results found)</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> engine.results:</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    first <span class="op">=</span> <span class="bu">list</span>(engine.results.values())[<span class="dv">0</span>]</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    engine.download_torrent(first[<span class="st">&#39;link&#39;</span>])</span></code></pre></div>
+<h3 id="check-file-permissions">Check File Permissions</h3>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check plugin files in container</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec qbittorrent ls <span class="at">-la</span> /config/qBittorrent/nova3/engines/</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Should show:</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co"># -rw-r--r-- 1 abc abc rutracker.py</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co"># -rw-r--r-- 1 abc abc rutor.py</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># -rw-r--r-- 1 abc abc kinozal.py</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co"># -rw-r--r-- 1 abc abc nnmclub.py</span></span></code></pre></div>
+<h3 id="reset-everything">Reset Everything</h3>
+<p>If nothing else works, reset the entire setup:</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Stop and remove container</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span> <span class="at">-r</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Remove config (</span><span class="al">WARNING</span><span class="co">: This removes all settings!)</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> config/qBittorrent</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Reinstall plugins</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./install-plugin.sh</span> <span class="at">--all</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Start fresh</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span></span></code></pre></div>
+<h2 id="faq">FAQ</h2>
+<h3 id="q-why-do-magnet-links-work-but-.torrent-files-dont">Q: Why do
+magnet links work but .torrent files don’t?</h3>
+<p><strong>A:</strong> Magnet links don’t require authentication to the
+tracker. They’re just a URL that qBittorrent can handle directly.
+.torrent files from private trackers require you to be logged in to
+download them.</p>
+<h3 id="q-can-i-fix-the-webui-to-use-nova2dl.py">Q: Can I fix the WebUI
+to use nova2dl.py?</h3>
+<p><strong>A:</strong> This would require modifying qBittorrent’s core
+code. The WebUI is designed to work with magnet links and public
+trackers. For private trackers, use the desktop app.</p>
+<h3 id="q-do-i-need-credentials-for-all-plugins">Q: Do I need
+credentials for all plugins?</h3>
+<p><strong>A:</strong> - <strong>RuTracker</strong>: Yes, requires
+username/password - <strong>Rutor</strong>: No, works without
+authentication - <strong>Kinozal</strong>: Yes, requires
+username/password - <strong>NNMClub</strong>: Yes, requires cookies</p>
+<h3 id="q-how-do-i-get-nnmclub-cookies">Q: How do I get NNMClub
+cookies?</h3>
+<p><strong>A:</strong> 1. Login to nnmclub.to in your browser 2. Open
+browser developer tools (F12) 3. Go to Application/Storage &gt; Cookies
+4. Copy the cookie string 5. Add to <code>.env</code>:
+<code>NNMCLUB_COOKIES="name1=value1; name2=value2"</code></p>
+<h3 id="q-can-i-use-a-proxy">Q: Can I use a proxy?</h3>
+<p><strong>A:</strong> Yes, some plugins support proxies:</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># For Rutor</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="va">RUTOR_PROXY_ENABLED</span><span class="op">=</span>true</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="va">RUTOR_PROXY_HTTP</span><span class="op">=</span>http://proxy:8080</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="va">RUTOR_PROXY_HTTPS</span><span class="op">=</span>https://proxy:8080</span></code></pre></div>
+<h2 id="getting-help">Getting Help</h2>
+<p>If you’re still having issues:</p>
+<ol type="1">
+<li>Run the test suite:
+<code>python3 -m pytest tests/unit/ --import-mode=importlib</code></li>
+<li>Check container logs: <code>podman logs qbittorrent</code></li>
+<li>Enable debug logging in plugins</li>
+<li>Check qBittorrent’s official documentation:
+https://wiki.qbittorrent.org/</li>
+</ol>
+<h2 id="summary">Summary</h2>
+<table>
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 61%" />
+</colgroup>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Quick Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Downloads don’t start</td>
+<td>Use desktop app or magnet links</td>
+</tr>
+<tr>
+<td>Only RuTracker visible</td>
+<td>Run <code>./install-plugin.sh --all</code> and restart
+container</td>
+</tr>
+<tr>
+<td>Plugin errors</td>
+<td>Run <code>./install-plugin.sh --verify</code></td>
+</tr>
+<tr>
+<td>Authentication failed</td>
+<td>Check credentials in <code>.env</code> file</td>
+</tr>
+<tr>
+<td>Slow downloads</td>
+<td>Try different mirrors or use proxy</td>
+</tr>
+</tbody>
+</table>
+<p>Remember: The fundamental limitation is that WebUI cannot download
+from private trackers directly. Use the desktop app or magnet links as
+workarounds.</p>

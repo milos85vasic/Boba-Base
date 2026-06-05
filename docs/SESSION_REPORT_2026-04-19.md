@@ -1,5 +1,8 @@
 # Session Report — 2026-04-19 (rolling)
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 > Continuously updated as the session progresses.
 > Latest totals reflect post-rebuild + post-test-fix state.
 

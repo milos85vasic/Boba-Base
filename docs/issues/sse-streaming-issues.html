@@ -1,0 +1,70 @@
+<h1 id="sse-streaming-issues-resolved">SSE Streaming Issues —
+RESOLVED</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<h2 id="issue-summary">Issue Summary</h2>
+<p>Real-time streaming of search results via Server-Sent Events (SSE)
+was not working in the browser. The root cause was identified and
+fixed.</p>
+<h2 id="root-cause">Root Cause</h2>
+<p><strong>Missing double newline in SSE event termination.</strong></p>
+<p>The <code>SSEHandler.format_event()</code> method in
+<code>download-proxy/src/api/streaming.py</code> produced events ending
+with a single <code>\n</code>:</p>
+<pre><code>event: result_found\ndata: {&quot;name&quot;: &quot;...&quot;}\n</code></pre>
+<p>The Server-Sent Events specification requires events to be terminated
+by <strong>two newline characters</strong> (<code>\n\n</code>). Browsers
+(including Chrome/Yandex) will not dispatch events that are not properly
+terminated.</p>
+<h2 id="fix-applied">Fix Applied</h2>
+<p><strong>File</strong>:
+<code>download-proxy/src/api/streaming.py</code>
+<strong>Change</strong>: Added a second empty line to the SSE event
+format:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>lines.append(<span class="st">&quot;&quot;</span>)  <span class="co"># Empty line terminates event</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>lines.append(<span class="st">&quot;&quot;</span>)  <span class="co"># Second newline required by SSE spec</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>.join(lines)</span></code></pre></div>
+<h2 id="verification">Verification</h2>
+<h3 id="backend-curl">Backend (curl)</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-N</span> <span class="st">&quot;http://localhost:7187/api/v1/search/stream/&lt;search_id&gt;&quot;</span></span></code></pre></div>
+<p>Events now properly end with <code>\n\n</code> and are correctly
+parsed by browsers.</p>
+<h3 id="tests">Tests</h3>
+<ul>
+<li><code>tests/unit/test_streaming.py</code> — Added
+<code>TestSSEFormatCompliance</code> with 3 tests verifying double
+newline termination</li>
+<li><code>tests/integration/test_streaming_browser.py</code> — 6
+Playwright browser tests (all passing)</li>
+<li><code>tests/integration/test_realtime_streaming.py</code> — 5 SSE
+API tests (all passing)</li>
+</ul>
+<h2 id="dashboard-cleanup">Dashboard Cleanup</h2>
+<p>Removed temporary debug <code>console.log</code> statements and
+colored status messages that were added during troubleshooting. Kept
+error logging for network failures.</p>
+<h2 id="network-issues-when-remote">Network Issues When Remote</h2>
+<p><strong>Status</strong>: ✅ FIXED — All <code>fetch()</code> calls in
+the dashboard now use relative URLs (<code>/api/v1/...</code>). The only
+<code>localhost</code> reference is in a fallback catch block for config
+loading.</p>
+<h2 id="auth-state-ui">Auth State UI</h2>
+<p><strong>Status</strong>: ✅ COMPLETE - Header shows login/logout
+buttons - Buttons disabled until authenticated - Login modal
+functionality works - <code>doSchedule()</code> checks
+<code>_qbitAuthenticated</code> - <code>doDownload()</code> handles
+<code>auth_failed</code> response from backend</p>
+<h2 id="commit-summary">Commit Summary</h2>
+<ol type="1">
+<li><strong>Fix SSE format</strong>: Added double newline termination
+per spec</li>
+<li><strong>Add SSE format tests</strong>: 3 compliance tests for event
+formatting</li>
+<li><strong>Clean dashboard</strong>: Removed debug console.log
+statements and temporary status messages</li>
+</ol>
+<hr />
+<p><strong>Last Updated</strong>: April 17, 2026
+<strong>Status</strong>: ✅ RESOLVED</p>

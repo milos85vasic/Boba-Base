@@ -1,5 +1,8 @@
 # Jackett Integration
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 Jackett is a proxy server that translates queries from apps like qBittorrent into tracker-site-specific HTTP queries, parses the HTML or JSON responses, and returns results in a unified format. It supports 500+ public and private trackers and handles Cloudflare challenges, site redesigns, and CAPTCHAs automatically.
 
 ## What This Integration Does

@@ -1,5 +1,8 @@
 # Test Suite Guide
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 Reference for running, writing, and interpreting tests in this repo.
 
 ## Directory layout

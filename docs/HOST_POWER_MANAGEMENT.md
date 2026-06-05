@@ -1,5 +1,8 @@
 # Host Power Management — Hard Ban (CONST-033)
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 ## Why this exists
 
 On 2026-04-26 18:23:43 the host running mission-critical parallel CLI

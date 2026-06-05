@@ -1,5 +1,8 @@
 # Items That Need To Run Outside This Sandbox
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 Several pieces of the user directive cannot be completed by an agentic
 coding session in this environment. They are staged here so the work
 is **one command away** as soon as the missing credentials / tooling

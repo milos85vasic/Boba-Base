@@ -1,0 +1,142 @@
+<h1
+id="constitution-addendum-quality-stack-principle-i-exception">Constitution
+Addendum: Quality Stack (Principle I Exception)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<h2 id="principle-i-container-first">Principle I — Container-First</h2>
+<blockquote>
+<p>Every service runs in a container. No exceptions.</p>
+</blockquote>
+<p>The quality stack (<code>docker-compose.quality.yml</code>) is an
+<strong>opt-in additive compose file</strong>, not part of the mandatory
+two-container product topology. It is governed by Principle I but does
+not alter the product’s runtime contract.</p>
+<h2 id="justification">Justification</h2>
+<h3 id="why-this-is-an-exception">Why This Is an Exception</h3>
+<p>The main <code>docker-compose.yml</code> defines exactly two
+containers (qbittorrent, qbittorrent-proxy) with
+<code>network_mode: host</code>. Adding SonarQube, PostgreSQL, and
+scanner containers to that file would:</p>
+<ol type="1">
+<li>Violate the product’s minimal runtime topology</li>
+<li>Require resources (2 GB+ RAM for SonarQube) that development
+machines may not have</li>
+<li>Conflate CI/quality tooling with production services</li>
+</ol>
+<h3 id="why-it-complies-with-principle-i">Why It Complies with Principle
+I</h3>
+<p>All quality services <strong>are</strong> containerized. The additive
+compose pattern
+(<code>-f docker-compose.yml -f docker-compose.quality.yml</code>)
+preserves the base topology while allowing on-demand quality
+infrastructure. No quality service is installed on bare metal.</p>
+<h3 id="trade-offs-accepted">Trade-offs Accepted</h3>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SonarQube PostgreSQL credentials default to
+<code>sonar</code>/<code>sonar</code></td>
+<td>Quality stack never exposed externally; bound to
+<code>127.0.0.1</code></td>
+</tr>
+<tr>
+<td>Scanner containers use host network</td>
+<td>Matches project convention; scanners are run-to-completion, not
+long-lived</td>
+</tr>
+<tr>
+<td>Additional compose file increases surface area</td>
+<td>Profiles (<code>run-once</code>, <code>quality</code>) keep services
+off by default</td>
+</tr>
+</tbody>
+</table>
+<h2 id="services-covered">Services Covered</h2>
+<ul>
+<li><strong>sonarqube</strong>: Code quality platform (community
+edition)</li>
+<li><strong>sonar-db</strong>: PostgreSQL 16 for SonarQube
+persistence</li>
+<li><strong>snyk</strong>: Dependency vulnerability scanner (requires
+<code>SNYK_TOKEN</code>)</li>
+<li><strong>semgrep</strong>: Static analysis with SARIF output</li>
+<li><strong>trivy</strong>: Filesystem vulnerability and
+misconfiguration scanner</li>
+<li><strong>gitleaks</strong>: Secret detection in git history</li>
+</ul>
+<h2 id="activation">Activation</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE_CMD</span> <span class="at">-f</span> docker-compose.yml <span class="at">-f</span> docker-compose.quality.yml up <span class="at">-d</span> sonarqube</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/scan.sh</span> <span class="at">--all</span></span></code></pre></div>
+<h2 id="decision-record">Decision Record</h2>
+<ul>
+<li><strong>Date</strong>: 2026-04-22</li>
+<li><strong>Decision</strong>: Additive compose file for quality
+tooling, activated via profiles</li>
+<li><strong>Alternatives considered</strong>: (1) Separate repo —
+rejected, splits codebase; (2) CI-only — rejected, developers need local
+access; (3) Bare-metal tools — rejected, violates Principle I</li>
+</ul>
+<h2 id="principles-compliance-check-phase-10-verification">Principles
+Compliance Check (Phase 10 Verification)</h2>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 27%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Principle</th>
+<th>Status</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I — Container-First</td>
+<td><strong>Compliant</strong></td>
+<td>All quality services containerized in additive compose; product
+topology unchanged (2 containers)</td>
+</tr>
+<tr>
+<td>II — Manual CI</td>
+<td><strong>Compliant</strong></td>
+<td><code>./ci.sh</code> remains the canonical CI entry point; GitHub
+Actions workflows are supplementary</td>
+</tr>
+<tr>
+<td>III — No secrets in repo</td>
+<td><strong>Compliant</strong></td>
+<td><code>.env</code> gitignored; <code>CredentialScrubber</code> filter
+active; Gitleaks scanner configured</td>
+</tr>
+<tr>
+<td>IV — WebUI credentials</td>
+<td><strong>Compliant</strong></td>
+<td><code>admin</code>/<code>admin</code> hardcoded and unchanged</td>
+</tr>
+<tr>
+<td>V — Freeleech-only testing</td>
+<td><strong>Compliant</strong></td>
+<td>IPTorrents tests use <code>[free]</code> tagged results only</td>
+</tr>
+<tr>
+<td>VI — TDD</td>
+<td><strong>Compliant</strong></td>
+<td>1,118 unit tests passing; coverage gate at 49%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Last verified</strong>: 2026-04-22 (Phase 10 final
+verification)</p>

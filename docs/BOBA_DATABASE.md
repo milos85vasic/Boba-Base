@@ -1,5 +1,8 @@
 # Boba System Database
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 The `boba-jackett` Go service (port `7189`) owns a SQLite system
 database at `config/boba.db` (default; override with `BOBA_DB_PATH`).
 Sensitive columns are encrypted with `BOBA_MASTER_KEY` (AES-256-GCM).

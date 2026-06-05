@@ -1,0 +1,228 @@
+<h1
+id="real-time-search-results-streaming-implementation-plan">Real-Time
+Search Results Streaming Implementation Plan</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps
+use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Stream search results to users in real-time as
+they arrive from each tracker, using SSE endpoint for live updates</p>
+<p><strong>Architecture:</strong> Modify SearchOrchestrator to yield
+intermediate results as they arrive. Update SSE endpoint to read from
+individual results and emit incrementally. Update frontend to use SSE
+endpoint and EventSource for real-time UI updates.</p>
+<p><strong>Tech Stack:</strong> Python asyncio, FastAPI
+StreamingResponse, Server-Sent Events (SSE), JavaScript EventSource</p>
+<hr />
+<h3
+id="task-1-write-failing-tests-for-streaming-individual-results">Task 1:
+Write failing tests for streaming individual results</h3>
+<p><strong>Files:</strong> - Modify:
+<code>tests/unit/test_streaming.py</code> - Modify:
+<code>tests/integration/test_ui_quick.py</code></p>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 1: Write failing
+tests</strong> - Add tests that verify individual results stream in
+real-time</label></li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_streaming_yields_individual_results(<span class="va">self</span>):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Test that search_results_stream yields individual results as they arrive.&quot;&quot;&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Test that streaming emits results_update events with actual result data</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># NOT just count changes - should include result details</span></span></code></pre></div>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 2: Run tests to verify
+they fail</strong></label></li>
+</ul>
+<p>Run:
+<code>pytest tests/unit/test_streaming.py -v -k "individual"</code>
+Expected: FAIL (tests expect feature that doesn’t exist yet)</p>
+<hr />
+<h3 id="task-2-modify-backend-to-emit-incremental-results">Task 2:
+Modify backend to emit incremental results</h3>
+<p><strong>Files:</strong> - Modify:
+<code>download-proxy/src/merge_service/search.py</code> (lines 285-310)
+- Modify: <code>download-proxy/src/api/streaming.py</code> (lines
+53-110)</p>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 1: Add incremental
+results tracking to SearchOrchestrator</strong></label></li>
+</ul>
+<p>Add method to track results as they arrive from each tracker:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_live_results(<span class="va">self</span>, search_id: <span class="bu">str</span>) <span class="op">-&gt;</span> List[SearchResult]:</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Get all results found so far for a search, not yet merged.&quot;&quot;&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> search_id <span class="kw">not</span> <span class="kw">in</span> <span class="va">self</span>._tracker_results:</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> []</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    results <span class="op">=</span> []</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> tracker_results <span class="kw">in</span> <span class="va">self</span>._tracker_results[search_id].values():</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        results.extend(tracker_results)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> results</span></code></pre></div>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 2: Modify streaming to
+yield individual results</strong></label></li>
+</ul>
+<p>Update <code>search_results_stream</code> to emit each result as it
+arrives:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Track results seen per search</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>seen_hashes <span class="op">=</span> <span class="bu">set</span>()</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># In the polling loop, check for new individual results</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>live_results <span class="op">=</span> orchestrator.get_live_results(search_id)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> result <span class="kw">in</span> live_results:</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> result.<span class="bu">hash</span> <span class="kw">not</span> <span class="kw">in</span> seen_hashes:</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        seen_hashes.add(result.<span class="bu">hash</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">yield</span> SSEHandler.format_event(</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>            event<span class="op">=</span><span class="st">&quot;result_found&quot;</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>            data<span class="op">=</span>{<span class="st">&quot;result&quot;</span>: {<span class="st">&quot;name&quot;</span>: result.name, <span class="st">&quot;seeds&quot;</span>: result.seeds, <span class="st">&quot;tracker&quot;</span>: result.tracker}},</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>            event_id<span class="op">=</span>search_id,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        )</span></code></pre></div>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 3: Run
+tests</strong></label></li>
+</ul>
+<p>Run:
+<code>pytest tests/unit/test_streaming.py -v -k "results_stream"</code>
+Expected: PASS</p>
+<hr />
+<h3 id="task-3-fix-sse-endpoint-to-return-actual-results">Task 3: Fix
+SSE endpoint to return actual results</h3>
+<p><strong>Files:</strong> - Modify:
+<code>download-proxy/src/api/routes.py</code> (lines 235-241)</p>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 1: Check current
+/search/stream/{search_id} endpoint</strong></label></li>
+</ul>
+<p>The endpoint exists but may not be properly connected to the
+frontend. Verify it works:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-N</span> http://localhost:7187/api/v1/search/stream/<span class="op">&lt;</span>search-id<span class="op">&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Should stream results as SSE events</span></span></code></pre></div>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 2: Run
+tests</strong></label></li>
+</ul>
+<p>Run: <code>pytest tests/unit/test_streaming.py -v</code> Expected:
+PASS</p>
+<hr />
+<h3 id="task-4-make-frontend-use-sse-endpoint-for-live-updates">Task 4:
+Make frontend use SSE endpoint for live updates</h3>
+<p><strong>Files:</strong> - Modify:
+<code>download-proxy/src/ui/templates/dashboard.html</code> (lines
+463-520)</p>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 1: Add EventSource for
+streaming results</strong></label></li>
+</ul>
+<p>Replace polling with SSE in the search handler:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">streamResults</span>(searchId) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>searchId) <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">var</span> eventSource <span class="op">=</span> <span class="kw">new</span> <span class="bu">EventSource</span>(<span class="st">&#39;/api/v1/search/stream/&#39;</span> <span class="op">+</span> searchId)<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    eventSource<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;search_start&#39;</span><span class="op">,</span> <span class="kw">function</span>(e) {</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Search started:&#39;</span><span class="op">,</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(e<span class="op">.</span><span class="at">data</span>))<span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    eventSource<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;result_found&#39;</span><span class="op">,</span> <span class="kw">function</span>(e) {</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="kw">var</span> result <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(e<span class="op">.</span><span class="at">data</span>)<span class="op">.</span><span class="at">result</span><span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        <span class="fu">addResultToTable</span>(result)<span class="op">;</span>  <span class="co">// Add single result immediately</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">updateStatus</span>(<span class="st">&#39;Found &#39;</span> <span class="op">+</span> totalResults <span class="op">+</span> <span class="st">&#39; results...&#39;</span>)<span class="op">;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    eventSource<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;results_update&#39;</span><span class="op">,</span> <span class="kw">function</span>(e) {</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="kw">var</span> data <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(e<span class="op">.</span><span class="at">data</span>)<span class="op">;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        <span class="fu">updateStatus</span>(<span class="st">&#39;Found &#39;</span> <span class="op">+</span> data<span class="op">.</span><span class="at">total_results</span> <span class="op">+</span> <span class="st">&#39; results...&#39;</span>)<span class="op">;</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    eventSource<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;search_complete&#39;</span><span class="op">,</span> <span class="kw">function</span>(e) {</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>        <span class="kw">var</span> data <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(e<span class="op">.</span><span class="at">data</span>)<span class="op">;</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>        eventSource<span class="op">.</span><span class="fu">close</span>()<span class="op">;</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>        <span class="fu">loadStats</span>()<span class="op">;</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    eventSource<span class="op">.</span><span class="at">onerror</span> <span class="op">=</span> <span class="kw">function</span>() {</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>        eventSource<span class="op">.</span><span class="fu">close</span>()<span class="op">;</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 2: Replace pollResults
+with streamResults</strong></label></li>
+</ul>
+<p>In the search handler after getting search_id:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// OLD CODE - polling</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (_isSearching) {</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pollResults</span>()<span class="op">;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">// NEW CODE - streaming</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (_isSearching) {</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">streamResults</span>(_searchId)<span class="op">;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 3: Verify tests
+pass</strong></label></li>
+</ul>
+<p>Run: <code>pytest tests/integration/test_ui_quick.py -v</code>
+Expected: PASS</p>
+<hr />
+<h3 id="task-5-integration-tests-for-end-to-end-streaming">Task 5:
+Integration tests for end-to-end streaming</h3>
+<p><strong>Files:</strong> - Create:
+<code>tests/integration/test_realtime_streaming.py</code></p>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 1: Write comprehensive
+streaming tests</strong></label></li>
+</ul>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_search_streams_results_in_realtime(<span class="va">self</span>):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Search should stream results as they are found, not at the end.&quot;&quot;&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 1. Start a search query</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 2. Connect to /search/stream/{search_id}</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 3. Verify results come in via SSE BEFORE search completes</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># 4. Results should appear incrementally, not all at once</span></span></code></pre></div>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 2: Run
+tests</strong></label></li>
+</ul>
+<p>Run:
+<code>pytest tests/integration/test_realtime_streaming.py -v</code>
+Expected: PASS</p>
+<ul class="task-list">
+<li><label><input type="checkbox" /><strong>Step 3:
+Commit</strong></label></li>
+</ul>
+<hr />
+<h2 id="expected-improvements">Expected Improvements</h2>
+<ol type="1">
+<li><strong>Immediate feedback</strong> - Users see results within
+seconds, not at the end of search (which can take 30+ seconds)</li>
+<li><strong>Better UX</strong> - Results table populates as results
+arrive</li>
+<li><strong>Status updates</strong> - “Found X results from RuTracker”
+etc. as trackers complete</li>
+<li><strong>Reliability</strong> - If one tracker fails, others continue
+working</li>
+</ol>
+<h2 id="testing-commands">Testing Commands</h2>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run unit tests</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> tests/unit/test_streaming.py <span class="at">-v</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Run integration tests</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> tests/integration/test_realtime_streaming.py <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick UI test</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> tests/integration/test_ui_quick.py <span class="at">-v</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Manual verification</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Open dashboard at http://localhost:7187</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Search for something</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Watch results appear in real-time as they arrive</span></span></code></pre></div>

@@ -1,0 +1,920 @@
+<h1 id="jackett-management-ui-system-database-design-spec">Jackett
+Management UI &amp; System Database — Design Spec</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Date</td>
+<td>2026-04-27</td>
+</tr>
+<tr>
+<td>Author</td>
+<td>Brainstorm session (milos85vasic.2nd@gmail.com + Claude)</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>Awaiting user review</td>
+</tr>
+<tr>
+<td>Phase</td>
+<td>D (Go-canonical Jackett surface + SQLite); Phase 2 = port merge
+search to Go</td>
+</tr>
+<tr>
+<td>Supersedes</td>
+<td>n/a (extends
+<code>2026-04-26-jackett-autoconfig-clean-rebuild-design.md</code>)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="problem-statement">1. Problem Statement</h2>
+<p>The Jackett auto-configuration shipped in commits
+<code>45591c2</code> → <code>fc1f009</code> (Layers 1-7) configures
+private-tracker indexers from <code>.env</code> credentials at startup.
+Verified live behavior on 2026-04-27:</p>
+<ul>
+<li>4 credential triples discovered (<code>IPTORRENTS</code>,
+<code>KINOZAL</code>, <code>NNMCLUB</code>,
+<code>RUTRACKER</code>).</li>
+<li>2 indexers configured (<code>kinozal</code>,
+<code>rutracker</code>).</li>
+<li>1 skipped — <code>NNMCLUB</code> (no Jackett indexer in 620-entry
+catalog; native plugin handles it).</li>
+<li>1 errored — <code>IPTORRENTS</code> (Jackett’s
+<code>iptorrents</code> indexer requires a <code>cookie</code>, env only
+had username/password).</li>
+</ul>
+<p>Three end-user gaps remain:</p>
+<ol type="1">
+<li><strong>No in-dashboard visibility</strong> of which Jackett
+indexers are configured, their status, or the autoconfig run history.
+Users must visit Jackett’s UI on <code>:9117</code> for any
+introspection or change.</li>
+<li><strong>No in-dashboard management</strong> — adding, editing,
+removing indexers, browsing the 620-indexer catalog, or fixing
+credential issues (like the <code>IPTORRENTS_COOKIES</code> gap) all
+require leaving Боба.</li>
+<li><strong>No persistent canonical store</strong> for credentials,
+autoconfig history, or catalog metadata. State today is split across
+<code>.env</code> (plaintext, single-process), per-indexer JSON files in
+<code>config/jackett/</code>, and in-memory results.</li>
+</ol>
+<h2 id="goals">2. Goals</h2>
+<ul>
+<li>A Боба-native UI for full Jackett management (browse 620-indexer
+catalog, add/edit/remove, test, browse autoconfig history).</li>
+<li>A SQLite system database (<code>config/boba.db</code>) as the
+persistent canonical store for credentials (encrypted), indexer state,
+catalog cache, autoconfig run history, and indexer-name overrides.</li>
+<li>Credentials encrypted at rest with AES-256-GCM using
+<code>BOBA_MASTER_KEY</code> (auto-generated into <code>.env</code> on
+first boot if missing).</li>
+<li>Bidirectional sync: <code>.env</code> → DB on first run; UI changes
+write to BOTH DB (encrypted) AND <code>.env</code> (plaintext mirror)
+AND Jackett (live config).</li>
+<li>Strong leak-prevention tests asserting no credential value ever
+appears in logs or HTTP responses.</li>
+<li>Begin Go-canonical migration with a self-contained subsystem
+(Jackett UI), without disrupting the Python merge service that serves
+search.</li>
+<li>Zero loose ends at done-time: explicit Definition-of-Done checklist
+(§10) drives the implementation plan.</li>
+</ul>
+<h2 id="non-goals-explicit-phase-2">3. Non-Goals (explicit Phase
+2+)</h2>
+<ul>
+<li>Porting the merge search path
+(<code>download-proxy/src/merge_service/search.py</code> and friends) to
+Go. Stays Python until Phase 2.</li>
+<li>Porting hooks / schedules / theme / downloads endpoints to Go. Stays
+Python.</li>
+<li>Replacing nova3 search plugins (<code>plugins/*.py</code>) with Go
+equivalents. They run inside qBittorrent and must remain Python.</li>
+<li>A new login system for the dashboard. Re-uses existing
+<code>admin/admin</code> session auth.</li>
+<li>Postgres/MySQL support. SQLite only.</li>
+<li>Multi-user authorization. Single-tenant home-server use.</li>
+</ul>
+<h2 id="architecture">4. Architecture</h2>
+<h3 id="process-layout">4.1 Process layout</h3>
+<p>Two backend processes during Phase D, both behind the existing
+Angular frontend:</p>
+<pre><code>┌────────────────────────────────────────────┐
+│  Angular dashboard (built into             │
+│  download-proxy/src/ui/dist/frontend)      │
+└──────┬─────────────────────────────┬───────┘
+       │                             │
+       │ /api/v1/jackett/*           │ everything else
+       │                             │
+       ▼                             ▼
+┌─────────────────────┐    ┌─────────────────────────┐
+│  boba-jackett (Go)  │    │  qbittorrent-proxy      │
+│  port 7189          │    │  (Python, FastAPI)      │
+│                     │    │  port 7187              │
+│  - SQLite (boba.db) │    │  - merge search         │
+│  - Jackett autocfg  │    │  - hooks / schedules    │
+│  - Cred mgmt        │    │  - downloads / theme    │
+│  - Catalog browse   │    │                         │
+└──────────┬──────────┘    └──────────┬──────────────┘
+           │                          │
+           │ /api/v2.0/...            │ search
+           ▼                          ▼
+       ┌─────────┐                ┌─────────────────┐
+       │ Jackett │                │ public trackers │
+       │  9117   │                │ + Jackett 9117  │
+       └─────────┘                └─────────────────┘</code></pre>
+<p>The Angular app calls each backend on its own port; no reverse proxy
+is added. The existing Python
+<code>/api/v1/jackett/autoconfig/last</code> endpoint is removed; the Go
+service owns the entire <code>/api/v1/jackett/*</code> namespace.</p>
+<h3 id="container-layout">4.2 Container layout</h3>
+<p><code>docker-compose.yml</code> gains one service:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">boba-jackett</span><span class="kw">:</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">build</span><span class="kw">:</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">context</span><span class="kw">:</span><span class="at"> ./qBitTorrent-go</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">dockerfile</span><span class="kw">:</span><span class="at"> Dockerfile.jackett</span><span class="co">        # new, separate from existing Dockerfile</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">container_name</span><span class="kw">:</span><span class="at"> boba-jackett</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">environment</span><span class="kw">:</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> JACKETT_URL=http://localhost:9117</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> JACKETT_API_KEY=${JACKETT_API_KEY:-}</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> BOBA_MASTER_KEY=${BOBA_MASTER_KEY:-}</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> BOBA_DB_PATH=/config/boba.db</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> BOBA_ENV_PATH=/host-env/.env</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> PORT=7189</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> LOG_LEVEL=INFO</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ./config:/config</span><span class="co">                    # boba.db lives here</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ./config/jackett:/jackett-config:ro</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> ./.env:/host-env/.env</span><span class="co">               # bind-mount for atomic updates</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">network_mode</span><span class="kw">:</span><span class="at"> host</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">restart</span><span class="kw">:</span><span class="at"> unless-stopped</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">mem_limit</span><span class="kw">:</span><span class="at"> 256m</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pids_limit</span><span class="kw">:</span><span class="at"> </span><span class="dv">256</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">oom_score_adj</span><span class="kw">:</span><span class="at"> </span><span class="dv">500</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">depends_on</span><span class="kw">:</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">jackett</span><span class="kw">:</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">condition</span><span class="kw">:</span><span class="at"> service_healthy</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">healthcheck</span><span class="kw">:</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">test</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="st">&quot;CMD-SHELL&quot;</span><span class="kw">,</span><span class="at"> </span><span class="st">&quot;wget -qO- http://localhost:7189/healthz || exit 1&quot;</span><span class="kw">]</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">interval</span><span class="kw">:</span><span class="at"> 30s</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">timeout</span><span class="kw">:</span><span class="at"> 5s</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">retries</span><span class="kw">:</span><span class="at"> </span><span class="dv">5</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">start_period</span><span class="kw">:</span><span class="at"> 30s</span></span></code></pre></div>
+<p><code>start.sh</code> extends <code>extract_jackett_key</code> with a
+similar <code>ensure_boba_master_key</code> step that runs
+<em>before</em> <code>start_container</code>, generating + writing
+<code>BOBA_MASTER_KEY</code> to <code>.env</code> if missing. The Go
+binary itself ALSO performs this generation at startup (defense in depth
+and also for cases where the host script is bypassed).</p>
+<h3 id="go-module-layout">4.3 Go module layout</h3>
+<pre><code>qBitTorrent-go/
+├── cmd/
+│   ├── qbittorrent-proxy/main.go      # existing
+│   ├── webui-bridge/main.go           # existing
+│   └── boba-jackett/main.go           # NEW
+├── internal/
+│   ├── api/                           # existing handlers stay
+│   ├── client/                        # existing
+│   ├── jackett/                       # NEW — autoconfig port + catalog client
+│   │   ├── autoconfig.go
+│   │   ├── catalog.go
+│   │   ├── client.go
+│   │   ├── matcher.go
+│   │   └── *_test.go
+│   ├── db/                            # NEW — SQLite + migrations + crypto
+│   │   ├── conn.go
+│   │   ├── crypto.go                  # AES-256-GCM helpers
+│   │   ├── migrate.go                 # embedded migrations stepper
+│   │   ├── migrations/
+│   │   │   └── 001_init.sql
+│   │   └── repos/                     # one repo per table
+│   │       ├── credentials.go
+│   │       ├── indexers.go
+│   │       ├── catalog.go
+│   │       ├── runs.go
+│   │       └── overrides.go
+│   ├── envfile/                       # NEW — atomic .env reader + writer
+│   │   ├── parse.go
+│   │   ├── write.go                   # tmp + fsync + rename
+│   │   └── *_test.go
+│   ├── jackettapi/                    # NEW — HTTP handlers for /api/v1/jackett/*
+│   │   ├── credentials.go
+│   │   ├── indexers.go
+│   │   ├── catalog.go
+│   │   ├── runs.go
+│   │   ├── overrides.go
+│   │   ├── auth_middleware.go         # shared admin/admin session check
+│   │   └── *_test.go
+│   ├── logging/                       # NEW — credential-redacting log writer
+│   │   ├── redactor.go
+│   │   └── *_test.go
+│   └── service/                       # existing
+└── Dockerfile.jackett                 # NEW</code></pre>
+<p>All shared mutable state across goroutines uses
+<code>digital.vasic.concurrency/pkg/safe</code> (CONST-13). No bare
+<code>sync.Mutex + map</code> patterns.</p>
+<h2 id="sqlite-schema-configboba.db">5. SQLite Schema
+(<code>config/boba.db</code>)</h2>
+<p>Migration <code>001_init.sql</code>:</p>
+<blockquote>
+<p><strong>Note:</strong> PRAGMA settings
+(<code>journal_mode=WAL</code>, <code>foreign_keys=ON</code>,
+<code>synchronous=NORMAL</code>) live in the connection DSN in
+<code>internal/db/conn.go</code>, not in this migration file. SQLite
+rejects <code>PRAGMA synchronous</code> inside a transaction, and the
+migrations stepper wraps each migration in a transaction for atomic
+apply. Setting them per-connection is the only place they actually take
+effect for <code>journal_mode</code> and <code>foreign_keys</code>
+anyway.</p>
+</blockquote>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> credentials (</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  name              TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  kind              TEXT <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">CHECK</span> (kind <span class="kw">IN</span> (<span class="st">&#39;userpass&#39;</span>, <span class="st">&#39;cookie&#39;</span>)),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  username_enc      <span class="dt">BLOB</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  password_enc      <span class="dt">BLOB</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  cookies_enc       <span class="dt">BLOB</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  created_at        DATETIME <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  updated_at        DATETIME <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  last_used_at      DATETIME</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> indexers (</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span>                       TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  display_name             TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span>                     TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  configured_at_jackett    <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  linked_credential_name   TEXT <span class="kw">REFERENCES</span> credentials(name) <span class="kw">ON</span> <span class="kw">DELETE</span> <span class="kw">SET</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  enabled_for_search       <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="dv">1</span>,</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  last_jackett_sync_at     DATETIME,</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  last_test_status         TEXT,</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  last_test_at             DATETIME</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">INDEX</span> idx_indexers_linked_cred <span class="kw">ON</span> indexers(linked_credential_name);</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> catalog_cache (</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span>                    TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  display_name          TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span>                  TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>  language              TEXT,</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>  description           TEXT,</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>  template_fields_json  TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>  cached_at             DATETIME <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">INDEX</span> idx_catalog_cached_at <span class="kw">ON</span> catalog_cache(cached_at);</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> autoconfig_runs (</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>  <span class="kw">id</span>                       <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT,</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>  ran_at                   DATETIME <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>  discovered_count         <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>  configured_now_count     <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>  errors_json              TEXT <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="st">&#39;[]&#39;</span>,</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>  result_summary_json      TEXT <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">INDEX</span> idx_runs_ran_at <span class="kw">ON</span> autoconfig_runs(ran_at <span class="kw">DESC</span>);</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> indexer_map_overrides (</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>  env_name      TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>  indexer_id    TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>  created_at    DATETIME <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a><span class="co">-- IF NOT EXISTS + INSERT OR IGNORE because Migrate() bootstraps this</span></span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a><span class="co">-- same table first so it can query for applied versions before running</span></span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a><span class="co">-- the migration body. Idempotency keeps fresh and resumed boots safe.</span></span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> schema_migrations (</span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>  version       <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>  applied_at    DATETIME <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span></span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">OR</span> IGNORE <span class="kw">INTO</span> schema_migrations (version) <span class="kw">VALUES</span> (<span class="dv">1</span>);</span></code></pre></div>
+<h3 id="encryption-envelope">5.1 Encryption envelope</h3>
+<p><code>*_enc</code> columns store
+<code>nonce(12B) || ciphertext_with_GCM_tag</code>. Helper
+<code>internal/db/crypto.go</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> Encrypt<span class="op">(</span>key <span class="op">[]</span><span class="dt">byte</span><span class="op">,</span> plaintext <span class="dt">string</span><span class="op">)</span> <span class="op">([]</span><span class="dt">byte</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span>  <span class="co">// returns nonce||ct</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> Decrypt<span class="op">(</span>key <span class="op">[]</span><span class="dt">byte</span><span class="op">,</span> blob <span class="op">[]</span><span class="dt">byte</span><span class="op">)</span> <span class="op">(</span><span class="dt">string</span><span class="op">,</span> <span class="dt">error</span><span class="op">)</span></span></code></pre></div>
+<p>Empty values are stored as <code>NULL</code>, never as
+encrypted-empty (avoids leaking presence vs. absence).</p>
+<h3 id="file-permissions">5.2 File permissions</h3>
+<p>Strictly enforced at startup; failure aborts boot:</p>
+<ul>
+<li><code>config/boba.db</code> and <code>config/boba.db-wal</code>,
+<code>config/boba.db-shm</code> → <code>0600</code></li>
+<li><code>.env</code> → <code>0600</code></li>
+<li>A challenge script verifies these in the running container.</li>
+</ul>
+<h2 id="bootstrap-migration-flow">6. Bootstrap &amp; Migration Flow</h2>
+<p>On every <code>boba-jackett</code> start:</p>
+<ol type="1">
+<li><strong>Load <code>.env</code></strong> from
+<code>BOBA_ENV_PATH</code>. If file missing, abort with clear
+error.</li>
+<li><strong>Ensure <code>BOBA_MASTER_KEY</code></strong>:
+<ul>
+<li><p>If absent or empty in <code>.env</code>, generate 32 bytes via
+<code>crypto/rand</code>, hex-encode (64 chars).</p></li>
+<li><p>Append to <code>.env</code> atomically with this header
+block:</p>
+<pre><code># === BOBA SYSTEM ===
+# Master key for credential encryption-at-rest in config/boba.db.
+# DO NOT LOSE THIS — credentials become unrecoverable without it.
+# To rotate: see docs/BOBA_DATABASE.md § &quot;Key Rotation&quot;.
+BOBA_MASTER_KEY=&lt;hex&gt;</code></pre></li>
+<li><p>Re-read <code>.env</code>. Log
+<code>"BOBA_MASTER_KEY auto-generated and persisted to .env"</code>.</p></li>
+</ul></li>
+<li><strong>Open DB</strong> at <code>BOBA_DB_PATH</code>. If file
+missing, create + apply all migrations in
+<code>internal/db/migrations/</code>.</li>
+<li><strong>Run any pending migrations</strong> (compare
+<code>schema_migrations.version</code> to embedded migrations). Each
+migration runs in its own transaction.</li>
+<li><strong>First-run import</strong> (only when
+<code>credentials</code> table is empty):
+<ul>
+<li>Scan loaded env for
+<code>&lt;NAME&gt;_USERNAME/_PASSWORD/_COOKIES</code> triples (same
+regex as autoconfig:
+<code>^([A-Z][A-Z0-9_]+?)_(USERNAME|PASSWORD|COOKIES)$</code>).</li>
+<li>Apply the same denylist as the existing autoconfig
+(<code>QBITTORRENT,JACKETT,WEBUI,PROXY,MERGE,BRIDGE</code>).</li>
+<li>For each complete bundle, insert encrypted row.</li>
+<li>Log <code>"imported N credentials from .env"</code>.</li>
+</ul></li>
+<li><strong>Idempotent re-import</strong> (<code>credentials</code>
+table non-empty):
+<ul>
+<li>Insert ONLY env triples whose <code>name</code> is not already a
+row. <strong>Existing rows are not overwritten</strong> — DB wins.</li>
+<li>Log
+<code>"imported N new credentials from .env, M already in DB"</code>.</li>
+</ul></li>
+<li><strong>Apply credential map overrides</strong>: load
+<code>indexer_map_overrides</code> rows; merge with
+<code>JACKETT_INDEXER_MAP</code> env var (DB wins).</li>
+<li><strong>Run autoconfig once</strong>: same
+<code>autoconfigure_jackett</code> semantics as the Python impl, but
+reading creds from DB and overrides from DB. Result row inserted into
+<code>autoconfig_runs</code>.</li>
+<li>Start HTTP server on <code>PORT</code>.</li>
+</ol>
+<h2 id="sync-semantics">7. Sync Semantics</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>DB write</th>
+<th><code>.env</code> write</th>
+<th>Jackett write</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User adds/edits cred via dashboard</td>
+<td>✅ encrypted upsert</td>
+<td>✅ atomic mirror (tmp+fsync+rename)</td>
+<td>✅ replay autoconfig for that single tracker</td>
+</tr>
+<tr>
+<td>User removes cred via dashboard</td>
+<td>✅ row delete</td>
+<td>✅ remove <code>&lt;NAME&gt;_*</code> triple</td>
+<td>✅ <code>DELETE /api/v2.0/indexers/{id}</code></td>
+</tr>
+<tr>
+<td>User edits <code>.env</code> manually + restart</td>
+<td>✅ insert if not exists (step 6)</td>
+<td>(already done)</td>
+<td>✅ autoconfig on boot</td>
+</tr>
+<tr>
+<td>User adds indexer via Jackett UI directly (<code>:9117</code>)</td>
+<td>✅ upsert <code>indexers</code> row on next sync poll</td>
+<td>❌ no env write</td>
+<td>(already done by user)</td>
+</tr>
+<tr>
+<td>User toggles <code>enabled_for_search</code></td>
+<td>✅ update row</td>
+<td>❌</td>
+<td>❌ (search filter applied at query time)</td>
+</tr>
+<tr>
+<td>Catalog refresh (TTL <code>24h</code> or manual button)</td>
+<td>✅ <code>catalog_cache</code> upsert</td>
+<td>❌</td>
+<td>❌ (read-only fetch)</td>
+</tr>
+<tr>
+<td><code>BOBA_MASTER_KEY</code> regenerated (manual rotation)</td>
+<td>✅ re-encrypt all rows in transaction</td>
+<td>✅ overwrite key</td>
+<td>❌</td>
+</tr>
+</tbody>
+</table>
+<h3 id="atomic-.env-writes">7.1 Atomic <code>.env</code> writes</h3>
+<p>Implemented in <code>internal/envfile/write.go</code>:</p>
+<ol type="1">
+<li>Read entire current <code>.env</code> into memory.</li>
+<li>Apply requested mutation (insert/update/delete one or more
+triples).</li>
+<li>Write to <code>&lt;envpath&gt;.tmp</code> with mode
+<code>0600</code>.</li>
+<li><code>fsync(.tmp)</code>.</li>
+<li><code>rename(.tmp, &lt;envpath&gt;)</code> (atomic on POSIX
+same-FS).</li>
+<li><code>fsync(parent_dir)</code>.</li>
+</ol>
+<p>A single <code>sync.Mutex</code> in the writer guards against
+concurrent dashboard requests.</p>
+<h3 id="conflict-policy">7.2 Conflict policy</h3>
+<p>Dashboard writes always win. If a user manually edits
+<code>.env</code> while the service is running and then triggers a
+restart, the manual change is imported only if the row isn’t already in
+the DB — DB is the running source of truth.</p>
+<p>For users who NEED a manual <code>.env</code> edit to take effect on
+a tracker that already has a DB row: documented procedure is “delete the
+row via dashboard, then restart” (or
+<code>POST /api/v1/jackett/credentials/{name}</code> overwrite via
+API).</p>
+<h2 id="api-surface-go-service-on-7189">8. API Surface (Go service on
+<code>:7189</code>)</h2>
+<p>All endpoints under <code>/api/v1/jackett/</code>. All
+<code>POST/PATCH/DELETE</code> require the existing admin/admin session
+cookie (validated via shared middleware
+<code>internal/jackettapi/auth_middleware.go</code>).</p>
+<h3 id="credentials">8.1 Credentials</h3>
+<pre><code>GET    /credentials
+       → 200 [{name, kind, has_username, has_password, has_cookies,
+               created_at, updated_at, last_used_at}]
+       Never returns plaintext values.
+
+POST   /credentials
+       Body: {name, username?, password?, cookies?}
+       PATCH semantics — only fields present are updated.
+       → 200 {name, kind, has_username, ...}
+
+DELETE /credentials/{name}
+       Cascade: linked_credential_name → NULL on indexers; ON DELETE SET NULL.
+       → 204</code></pre>
+<h3 id="indexers">8.2 Indexers</h3>
+<pre><code>GET    /indexers
+       → 200 [{id, display_name, type, configured_at_jackett,
+               linked_credential_name, enabled_for_search,
+               last_jackett_sync_at, last_test_status, last_test_at}]
+
+POST   /indexers/{id}
+       Body: {credential_name, extra_fields?}
+       Configures (or reconfigures) the indexer in Jackett. Upserts row.
+       → 200 indexer object
+
+DELETE /indexers/{id}
+       Removes from Jackett + deletes row.
+       → 204
+
+POST   /indexers/{id}/test
+       Triggers a test query against the indexer.
+       → 200 {status: &quot;ok&quot;|&quot;auth_failed&quot;|&quot;unreachable&quot;|&quot;empty_results&quot;, details?}
+       Side-effect: updates last_test_status + last_test_at.
+
+PATCH  /indexers/{id}
+       Body: {enabled_for_search: bool}
+       → 200 indexer object</code></pre>
+<h3 id="catalog">8.3 Catalog</h3>
+<pre><code>GET    /catalog?search=&amp;type=&amp;language=&amp;page=&amp;page_size=
+       Paginated query over catalog_cache. page_size defaults 50, max 200.
+       → 200 {total, page, page_size, items: [{id, display_name, type,
+                                               language, description,
+                                               required_fields: [...]}]}
+
+POST   /catalog/refresh
+       Force re-fetch from Jackett. Returns when complete (typically &lt;2s).
+       → 200 {refreshed_count, errors: []}</code></pre>
+<h3 id="autoconfig-runs">8.4 Autoconfig runs</h3>
+<pre><code>GET    /autoconfig/runs?limit=50
+       → 200 [{id, ran_at, discovered_count, configured_now_count,
+               error_count}]
+       Paginated by limit only (no offset; UI shows last N).
+
+GET    /autoconfig/runs/{id}
+       → 200 full redacted result_summary_json
+
+POST   /autoconfig/run
+       Triggers a synchronous autoconfig run.
+       → 200 full redacted run summary</code></pre>
+<h3 id="indexer-name-overrides">8.5 Indexer-name overrides</h3>
+<pre><code>GET    /overrides
+       → 200 [{env_name, indexer_id, created_at}]
+
+POST   /overrides
+       Body: {env_name, indexer_id}
+       Upsert.
+       → 200 row
+
+DELETE /overrides/{env_name}
+       → 204</code></pre>
+<h3 id="health">8.6 Health</h3>
+<pre><code>GET    /healthz
+       → 200 {status, db_ok, jackett_ok, version, uptime_s}</code></pre>
+<h3 id="openapi">8.7 OpenAPI</h3>
+<p><code>GET /openapi.json</code> exposes a generated OpenAPI 3.1 spec;
+contract tests (Layer 6) validate live responses against it.</p>
+<h2 id="dashboard-ui-angular">9. Dashboard UI (Angular)</h2>
+<p>Two new top-level routes under <code>/jackett</code>. Implementation
+uses Angular Material to match the existing dashboard.</p>
+<h3 id="jackettcredentials">9.1 <code>/jackett/credentials</code></h3>
+<p>Table view — columns: name, kind badge, presence badges (has-user /
+has-pass / has-cookies), last-used-at, actions (edit / delete).</p>
+<p>“Add credential” button → modal with fields: - Tracker name
+(uppercase, validated against <code>^[A-Z][A-Z0-9_]+$</code>) - Kind
+selector (userpass / cookie) - Conditional fields based on kind</p>
+<p>Edit modal — masked input fields. <strong>Empty field =
+unchanged</strong> (PATCH semantics, mirrored from API). User may
+explicitly clear a field via a “Clear” button next to it.</p>
+<p>Confirmation modal on delete shows linked indexers that will lose
+their credential link.</p>
+<h3 id="jackettindexers">9.2 <code>/jackett/indexers</code></h3>
+<p>Three tabs:</p>
+<h4 id="tab-1-configured">Tab 1: Configured</h4>
+<p>Table of currently configured indexers
+(<code>indexers.configured_at_jackett = 1</code>). Columns: status badge
+(green=ok, yellow=stale, red=auth_failed/unreachable), id, display name,
+linked credential, enabled-for-search toggle, last test, actions (test /
+remove / edit).</p>
+<h4 id="tab-2-browse-catalog">Tab 2: Browse Catalog</h4>
+<p>Searchable table over catalog cache. Filters: text search (name + id
++ description), type (public/private/semi-private), language. Paginated
+50/page.</p>
+<p>Each row has an “Add” button. Clicking opens a configuration modal
+pre-populated with: - The indexer’s required fields (from
+<code>template_fields_json</code>) - A credential picker — auto-suggests
+a credential whose name fuzzy-matches the indexer (the same matcher as
+autoconfig), or “Create new credential” inline - A “Save” button that
+configures via Jackett + writes the row</p>
+<h4 id="tab-3-autoconfig-history">Tab 3: Autoconfig History</h4>
+<p>Last 50 run entries (most recent first). Click row → expands to show
+the full redacted <code>result_summary_json</code> with
+syntax-highlighted JSON viewer. “Run autoconfig now” button at the
+top.</p>
+<h3 id="iptorrents-cookie-capture-flow">9.3 IPTorrents cookie capture
+flow</h3>
+<p>When the user clicks “Add” on <code>iptorrents</code> (or any indexer
+whose required-fields include <code>cookie</code> / <code>cookies</code>
+/ <code>cookieheader</code>), the modal opens with a step-by-step
+instruction panel:</p>
+<blockquote>
+<ol type="1">
+<li>Open <code>https://iptorrents.com</code> in a new browser tab and
+log in.</li>
+<li>Open DevTools (F12) → Application → Storage → Cookies →
+<code>iptorrents.com</code>.</li>
+<li>Copy the values of the <code>uid</code> and <code>pass</code>
+cookies.</li>
+<li>Format as <code>uid=&lt;value&gt;; pass=&lt;value&gt;</code> and
+paste below.</li>
+</ol>
+</blockquote>
+<p>Single textarea for the cookie blob, “Save” writes encrypted cookie
+row + triggers configure for that indexer.</p>
+<h3 id="nnmclub-clarification">9.4 NNMClub clarification</h3>
+<p>A small info banner on <code>/jackett/credentials</code> for any
+tracker name that exists in the credentials table but has no Jackett
+indexer match (after catalog has been loaded once):</p>
+<blockquote>
+<p>NNMCLUB credentials present but no Jackett indexer matches. NNMClub
+is served by the native nova3 plugin (<code>plugins/nnmclub.py</code>) —
+these credentials are still used. No further action required.</p>
+</blockquote>
+<p>The autoconfig result <code>skipped_no_match</code> field gets a
+parallel <code>served_by_native_plugin</code> field for any name that
+matches a known native-plugin filename in <code>plugins/</code>.</p>
+<h3 id="routing-nav">9.5 Routing + nav</h3>
+<p>Top nav gains a single “Jackett” entry. Click → <code>/jackett</code>
+(default child route <code>/jackett/credentials</code>).</p>
+<h2 id="test-strategy">10. Test Strategy</h2>
+<p>Resource-limited per CONST-09:
+<code>GOMAXPROCS=2 nice -n 19 ionice -c 3</code> for all
+<code>go test</code> invocations. Container memory limits already in
+compose.</p>
+<h3 id="layer-1-unit-go-_test.go--short-mocks-ok">10.1 Layer 1 — Unit
+(Go <code>_test.go</code>, <code>-short</code>, mocks OK)</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module</th>
+<th>Tests</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>internal/db/crypto</code></td>
+<td>round-trip; nonce uniqueness over 100k samples; tamper detection
+(flip 1 bit → fail); empty plaintext rejected</td>
+</tr>
+<tr>
+<td><code>internal/db/migrate</code></td>
+<td>apply 0→latest; idempotency; transaction rollback on bad SQL;
+embedded files match disk</td>
+</tr>
+<tr>
+<td><code>internal/envfile</code></td>
+<td>parse all forms (quoted/unquoted/comments/blanks); atomic-write
+under crash sim (kill -9 between tmp + rename); whitespace +
+duplicate-key handling</td>
+</tr>
+<tr>
+<td><code>internal/jackett/matcher</code></td>
+<td>port of Python tests verbatim — fuzzy threshold, override
+precedence, ambiguous detection</td>
+</tr>
+<tr>
+<td><code>internal/jackett/autoconfig</code></td>
+<td>port of Python tests — denylist, complete/incomplete bundles,
+total-timeout, error envelope</td>
+</tr>
+<tr>
+<td><code>internal/logging/redactor</code></td>
+<td>every credential value present in the database is replaced by
+<code>***</code> in any log line</td>
+</tr>
+</tbody>
+</table>
+<h3 id="layer-2-integration-real-sqlite-real-.env-no-jackett">10.2 Layer
+2 — Integration (real SQLite + real <code>.env</code>, no Jackett)</h3>
+<p><code>tests/integration/jackett_db_test.go</code>:</p>
+<ul>
+<li>Bootstrap from empty <code>.env</code> → master key generated,
+written, file mode 0600.</li>
+<li>Bootstrap from <code>.env</code> with N triples → all imported,
+encrypted, table count = N.</li>
+<li>Restart with same <code>.env</code> → no re-imports, log shows “0
+new, N already in DB”.</li>
+<li>UI add cred → DB row + <code>.env</code> line both present and
+consistent.</li>
+<li>UI delete cred → DB row gone + <code>.env</code> line gone.</li>
+<li>Concurrent dashboard writes via 50 goroutines → no <code>.env</code>
+corruption (line count + parse check after each).</li>
+</ul>
+<h3
+id="layer-3-e2e-real-go-service-real-jackett-container-real-.env">10.3
+Layer 3 — E2E (real Go service + real Jackett container + real
+<code>.env</code>)</h3>
+<p><code>tests/e2e/jackett_management_test.go</code>:</p>
+<ul>
+<li>Boot full stack; add <code>RUTRACKER</code> cred via API →
+autoconfig runs → indexer appears in Jackett’s
+<code>/api/v2.0/indexers</code>.</li>
+<li>Browse catalog → 620 entries returned.</li>
+<li>Add <code>iptorrents</code> with cookie via API → indexer configured
+in Jackett with cookie value.</li>
+<li>Test indexer → status=“ok” returned.</li>
+<li>Toggle <code>enabled_for_search</code> → search request to merge
+service excludes that indexer.</li>
+<li>Delete cred → indexer gone from Jackett.</li>
+<li>Pull <code>JACKETT_INDEXER_MAP</code> from env → DB override row
+created → autoconfig uses it.</li>
+</ul>
+<h3
+id="layer-4-security-penetration-the-leak-prevention-requirement">10.4
+Layer 4 — Security / Penetration (THE leak-prevention requirement)</h3>
+<p><code>tests/security/credential_leak_test.go</code> +
+<code>challenges/scripts/credential_leak_grep_challenge.sh</code>:</p>
+<ul>
+<li>Insert 6 unique high-entropy credentials (so any leak is greppable
+with low false-positive rate).</li>
+<li>Drive a full E2E flow exercising every endpoint in §8.</li>
+<li>Capture: all log output (stdout + stderr + file), every HTTP
+response body across the flow, full <code>boba.db</code> hex dump, full
+process <code>/proc/&lt;pid&gt;/environ</code>.</li>
+<li>Grep all captures for the literal credential values.</li>
+<li><strong>Assertion</strong>: 0 hits in logs, 0 hits in HTTP
+responses, 0 hits in <code>/proc/&lt;pid&gt;/environ</code> (env vars
+containing the values must not be set on the process — only
+<code>BOBA_MASTER_KEY</code> should be).</li>
+<li>Hits in <code>boba.db</code> ARE allowed but must be encrypted
+(verify by attempting to decrypt with the wrong key → fail; with the
+right key → match).</li>
+</ul>
+<p>Static scans: - <code>gosec ./...</code> clean -
+<code>bandit -r download-proxy/src/</code> clean</p>
+<p>File permissions: - <code>config/boba.db</code>,
+<code>config/boba.db-wal</code>, <code>config/boba.db-shm</code> mode
+<code>0600</code> - <code>.env</code> mode <code>0600</code> - A
+challenge script asserts these in the running container.</p>
+<h3 id="layer-5-benchmark">10.5 Layer 5 — Benchmark</h3>
+<p><code>internal/db/repos/*_bench_test.go</code>:</p>
+<ul>
+<li><code>BenchmarkCatalogQuery</code> — over the 620-row cache with
+these scenarios: (a) no filter (full page), (b) text search 3-char
+prefix, (c) <code>type=private</code> filter alone, (d) text search +
+language filter combined; each scenario p99 &lt; 50ms on host
+hardware.</li>
+<li><code>BenchmarkEncryptDecrypt</code> — p99 &lt; 1ms per op.</li>
+<li><code>BenchmarkAutoconfigFullRun</code> — full autoconfig with 5
+mock indexers; p99 &lt; 5s.</li>
+</ul>
+<h3 id="layer-6-contract">10.6 Layer 6 — Contract</h3>
+<p>OpenAPI 3.1 generated at build time.
+<code>tests/contract/openapi_test.go</code> hits every endpoint and
+validates the response shape against the spec.</p>
+<h3
+id="layer-7-challenge-const-02-const-32-reproduction-before-fix">10.7
+Layer 7 — Challenge (CONST-02 + CONST-32 reproduction-before-fix)</h3>
+<p>In <code>challenges/scripts/</code>:</p>
+<ol type="1">
+<li><code>cred_roundtrip_challenge.sh</code> — POST cred → GET should
+return metadata only → DB row encrypted → <code>.env</code> line
+plaintext.</li>
+<li><code>env_db_drift_challenge.sh</code> — make 100 changes via API,
+assert <code>.env</code> and DB are byte-equivalent in semantics after
+each.</li>
+<li><code>iptorrents_cookie_flow_challenge.sh</code> — follow the
+documented flow → indexer configured with cookie field populated.</li>
+<li><code>master_key_autogen_challenge.sh</code> — fresh
+<code>.env</code> without <code>BOBA_MASTER_KEY</code> → service starts
+→ key appears in <code>.env</code> with the documented header → restart
+→ key is unchanged (idempotent).</li>
+<li><code>credential_leak_grep_challenge.sh</code> — wrapper around the
+Layer 4 test for inclusion in <code>run_all_challenges.sh</code>.</li>
+<li><code>nnmclub_native_plugin_clarification_challenge.sh</code> —
+autoconfig output for NNMCLUB shows <code>served_by_native_plugin</code>
+flag.</li>
+<li><code>boba_db_file_perms_challenge.sh</code> — assert
+<code>0600</code> on all DB and env files.</li>
+</ol>
+<p>All registered in
+<code>challenges/scripts/run_all_challenges.sh</code>.</p>
+<h2 id="definition-of-done-the-no-loose-ends-requirement">11. Definition
+of Done (the “no loose ends” requirement)</h2>
+<p>A single checklist that MUST be ✅ before declaring this work
+complete:</p>
+<ol type="1">
+<li><strong>All endpoints in §8 implemented</strong> + Layer 2
+integration tested + Layer 3 E2E tested against live stack.</li>
+<li><strong>Both UI pages implemented</strong> + manually verified in
+browser via Playwright walkthroughs (golden path + 5 edge cases per page
+documented in implementation plan).</li>
+<li><strong>All 7 test layers green</strong>:
+<ul>
+<li>Layer 1 (unit) <code>go test -short -race ./...</code> — pass</li>
+<li>Layer 2 (integration) — pass</li>
+<li>Layer 3 (E2E) — pass</li>
+<li>Layer 4 (security) — leak grep 0 hits; gosec/bandit clean; file
+perms enforced</li>
+<li>Layer 5 (bench) — all p99 thresholds met</li>
+<li>Layer 6 (contract) — OpenAPI matches every response</li>
+<li>Layer 7 (challenges) — all 7 challenge scripts pass via
+<code>run_all_challenges.sh</code></li>
+</ul></li>
+<li><strong>Plan doc reconciled</strong>:
+<code>docs/superpowers/plans/2026-04-26-jackett-autoconfig-clean-rebuild.md</code>
+checkboxes updated to reflect what shipped (currently 84 unchecked, 0
+checked even though Layers 1-7 are in commits).</li>
+<li><strong>Documentation updated</strong>:
+<ul>
+<li><code>CLAUDE.md</code> § “Architecture” — adds
+<code>boba-jackett</code> service + ports map</li>
+<li><code>AGENTS.md</code> — same updates</li>
+<li><code>docs/JACKETT_INTEGRATION.md</code> — auto-config section
+rewritten as DB-backed</li>
+<li><code>docs/BOBA_DATABASE.md</code> — NEW: schema reference, master
+key lifecycle, key rotation procedure, backup procedure, recovery from
+lost key</li>
+</ul></li>
+<li><strong>Bugfix doc</strong>: every bug surfaced + fixed during
+implementation logged in <code>docs/issues/fixed/BUGFIXES.md</code> per
+CONST-10.</li>
+<li><strong><code>IPTORRENTS_COOKIES</code></strong> documented in
+<code>docs/JACKETT_INTEGRATION.md</code> § “Cookie-only indexers” and
+surfaced in the IPTorrents add modal.</li>
+<li><strong>NNMClub clarification</strong> in autoconfig output AND in
+dashboard banner.</li>
+<li><strong>Pre-test commit + push to all upstreams</strong> — every
+change committed via Conventional Commits and pushed to <strong>every
+configured remote of the main repo</strong> (currently
+<code>origin</code>, <code>github</code>, <code>upstream</code> — all
+aliased to <code>git@github.com:milos85vasic/qBitTorrent.git</code>, but
+each must receive its own
+<code>git push &lt;remote&gt; &lt;branch&gt;</code> invocation)
+<strong>before</strong> containers are booted for the final
+test/challenge run. If submodules are added in the future (none today —
+verified <code>.gitmodules</code> absent on 2026-04-27), each must also
+be committed + pushed to all its remotes before parent-repo push.</li>
+<li><strong>Final demo block</strong> in PR body with pasted output from
+the real end-to-end run (CONST Definition of Done).</li>
+<li><strong>Open-issues sweep</strong>:
+<code>grep -rE 'TODO|FIXME|XXX|HACK' qBitTorrent-go/ download-proxy/src/ frontend/src/ docs/</code>
+produces zero new entries from this work. Pre-existing entries are left
+alone unless touched.</li>
+<li><strong>CONST-013 audit</strong>: no bare
+<code>sync.Mutex + map/slice</code> in any new Go code; all mutable
+shared collections use <code>safe.Store</code> /
+<code>safe.Slice</code>.</li>
+<li><strong>CONST-033 verification</strong>:
+<code>bash challenges/scripts/no_suspend_calls_challenge.sh</code> AND
+<code>bash challenges/scripts/host_no_auto_suspend_challenge.sh</code>
+both pass after all changes are committed.</li>
+</ol>
+<h2 id="risks-mitigations">12. Risks &amp; Mitigations</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Master key lost → all credentials unrecoverable</td>
+<td>(a) Auto-generated key written to <code>.env</code> with prominent
+header; (b) <code>docs/BOBA_DATABASE.md</code> documents backup
+procedure; (c) on key-mismatch detection at startup, abort with explicit
+“key mismatch — restore your <code>.env</code> from backup, or wipe
+<code>boba.db</code> to re-import from <code>.env</code>” error</td>
+</tr>
+<tr>
+<td><code>.env</code> corruption during atomic write</td>
+<td>tmp + fsync + rename + parent-dir fsync; concurrent-writer mutex;
+integration test simulates kill -9 mid-write</td>
+</tr>
+<tr>
+<td>Two backends drift on shared concepts (autoconfig output shape)</td>
+<td>OpenAPI spec is authoritative; Python
+<code>/api/v1/jackett/autoconfig/last</code> endpoint is REMOVED in this
+work — single owner</td>
+</tr>
+<tr>
+<td>Browse-catalog page slow with 620 rows</td>
+<td>Server-side pagination + index on <code>cached_at</code>; benchmark
+gate at p99 &lt; 50ms</td>
+</tr>
+<tr>
+<td>Manual <code>.env</code> edits silently ignored after first
+import</td>
+<td>Documented in <code>docs/JACKETT_INTEGRATION.md</code>; future
+dashboard banner on detected drift</td>
+</tr>
+<tr>
+<td>Re-encryption migration breaks if interrupted</td>
+<td>Run inside a single SQLite transaction; on failure roll back, keep
+old key</td>
+</tr>
+</tbody>
+</table>
+<h2 id="out-of-scope-phase-2">13. Out of Scope (Phase 2+)</h2>
+<ul>
+<li>Port merge search to Go.</li>
+<li>Multi-user auth / per-user credential isolation.</li>
+<li>Postgres backend.</li>
+<li>Master key rotation UI (manual procedure documented; scripted in
+Phase 2).</li>
+<li>OAuth-based credential acquisition for trackers that support
+it.</li>
+<li>Backup/restore UI (manual <code>cp</code> documented).</li>
+</ul>
+<h2 id="references">14. References</h2>
+<ul>
+<li><code>docs/JACKETT_INTEGRATION.md</code> — current Jackett
+integration documentation</li>
+<li><code>docs/superpowers/specs/2026-04-26-jackett-autoconfig-clean-rebuild-design.md</code>
+— predecessor spec for the autoconfig itself</li>
+<li><code>docs/superpowers/plans/2026-04-26-jackett-autoconfig-clean-rebuild.md</code>
+— implementation plan for the autoconfig (checkboxes need reconciliation
+per §11.4)</li>
+<li><code>download-proxy/src/merge_service/jackett_autoconfig.py</code>
+— reference Python implementation to port</li>
+<li><code>CLAUDE.md</code> § “Universal Mandatory Constraints” —
+CONST-01, CONST-02, CONST-09, CONST-10, CONST-11, CONST-13, CONST-32,
+CONST-33</li>
+<li><code>CONSTITUTION.md</code> § CONST-033 — host power management
+ban</li>
+</ul>

@@ -1,5 +1,8 @@
 # qBitTorrent-Fixed User Manual
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 ## Complete Guide to Using All 12 Search Plugins
 
 ---

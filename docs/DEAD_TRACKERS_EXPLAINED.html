@@ -1,0 +1,123 @@
+<h1 id="dead-public-tracker-status">Dead Public Tracker Status</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>As of 2026-04-24, the dead tracker list contains 14 entries. We
+successfully revived 10 trackers from the original 22 dead entries.</p>
+<h2 id="revived-trackers-10">Revived Trackers (10)</h2>
+<table>
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 31%" />
+<col style="width: 44%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tracker</th>
+<th>Fix Applied</th>
+<th>Results Verified</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>torrentgalaxy</td>
+<td>Replaced plugin → torrentgalaxy.one</td>
+<td>✅ 150+ results</td>
+</tr>
+<tr>
+<td>kickass</td>
+<td>URL → kickasstorrents.to</td>
+<td>✅ 8+ results</td>
+</tr>
+<tr>
+<td>torlock</td>
+<td>URL → torlock2.com</td>
+<td>✅ 400+ results</td>
+</tr>
+<tr>
+<td>gamestorrents</td>
+<td>URL → .app</td>
+<td>✅ (games tracker)</td>
+</tr>
+<tr>
+<td>yts</td>
+<td>URL → yts.lt</td>
+<td>✅ (movie tracker)</td>
+</tr>
+<tr>
+<td>nyaa</td>
+<td>Removed from dead list</td>
+<td>✅ 37+ results</td>
+</tr>
+<tr>
+<td>bitsearch</td>
+<td>Added as new tracker</td>
+<td>✅ 60+ results</td>
+</tr>
+<tr>
+<td>torrentkitty</td>
+<td>Fixed regex parser</td>
+<td>✅ 20+ results</td>
+</tr>
+<tr>
+<td>megapeer</td>
+<td>Rewrote URL + parser</td>
+<td>✅ (Russian tracker)</td>
+</tr>
+<tr>
+<td>anilibra</td>
+<td>Rewrote for new API</td>
+<td>✅ (anime tracker)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="remaining-dead-14-why-each-is-unfixable">Remaining Dead (14) —
+Why Each Is Unfixable</h2>
+<h3 id="cloudflare-search-block-5">Cloudflare Search Block (5)</h3>
+<p>These return HTTP 200 for homepage but HTTP 403/Cloudflare challenge
+on search: - <strong>bitru</strong> — <code>bitru.org</code> works but
+<code>/search?q=</code> hits Cloudflare challenge page -
+<strong>bt4g</strong> — <code>bt4gprx.com</code> homepage works, search
+API returns 403 - <strong>extratorrent</strong> — All mirrors redirect
+to parked domains or 403 - <strong>eztv</strong> — <code>eztvx.to</code>
+homepage works, <code>/search/</code> returns 403 -
+<strong>one337x</strong> — <code>1337x.to</code> and all mirrors blocked
+by Cloudflare</p>
+<p><em>Fix would require:</em> VPN/proxy rotation infrastructure or
+CAPTCHA solving.</p>
+<h3 id="domain-completely-dead-5">Domain Completely Dead (5)</h3>
+<p>No working alternative domains found after testing 20+ TLDs each: -
+<strong>audiobookbay</strong> — <code>.fi</code>, <code>.is</code>,
+<code>.se</code>, <code>.nl</code> all timeout -
+<strong>pctorrent</strong> — <code>pctorrent.ru</code> does not resolve
+- <strong>yihua</strong> — <code>yihua.biz</code> does not resolve -
+<strong>xfsub</strong> — <code>xfsub.com</code> TLS handshake failure -
+<strong>torrentfunk</strong> — <code>torrentfunk.com</code> returns HTTP
+500</p>
+<p><em>Fix would require:</em> Site operators to restore service or new
+working mirror.</p>
+<h3 id="site-no-longer-provides-torrents-3">Site No Longer Provides
+Torrents (3)</h3>
+<ul>
+<li><strong>ali213</strong> — Chinese gaming site reorganized; torrent
+download chain (<code>soft50.com</code> →
+<code>btfile.soft5566.com</code>) completely dead</li>
+<li><strong>therarbg</strong> — SPA with client-side routing; all search
+endpoints redirect to <code>/</code>; no accessible backend search API
+found after reverse-engineering</li>
+<li><strong>btsow</strong> — All domains use JWT-based anti-bot redirect
+loops</li>
+</ul>
+<p><em>Fix would require:</em> Full site reverse-engineering or
+JavaScript execution.</p>
+<h3 id="replaced-1">Replaced (1)</h3>
+<ul>
+<li><strong>solidtorrents</strong> — <code>solidtorrents.to</code>
+redirects to <code>bitsearch.to</code>; replaced by dedicated
+<code>bitsearch</code> tracker</li>
+</ul>
+<h2 id="dashboard-behavior">Dashboard Behavior</h2>
+<p>With <code>ENABLE_DEAD_TRACKERS=0</code> (default): 24 public
+trackers active, 14 excluded. With <code>ENABLE_DEAD_TRACKERS=1</code>:
+All 38 public trackers searched. The 14 dead trackers will show error
+chips in the dashboard when enabled, with specific error types
+(upstream_http_403, dns_failure, etc.).</p>

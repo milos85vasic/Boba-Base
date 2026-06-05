@@ -1,0 +1,690 @@
+<h1 id="changelog">Changelog</h1>
+<p>All notable changes to this project will be documented in this
+file.</p>
+<p>The format is based on <a
+href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>, and
+this project adheres to <a
+href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<h2 id="unreleased-completion-initiative-phases-010"><a
+href="https://github.com/milos85vasic/qBitTorrent/compare/v1.2.0...HEAD">Unreleased</a>
+— Completion Initiative (Phases 0–10)</h2>
+<h3 id="phase-0-safety-net-baseline">Phase 0 — Safety net &amp;
+baseline</h3>
+<h4 id="added">Added</h4>
+<ul>
+<li><strong><code>pyproject.toml</code></strong> consolidates all Python
+tool config (pytest, coverage, ruff, mypy, bandit). Migrates ruff
+settings out of <code>ruff.toml</code> (removed) into
+<code>[tool.ruff]</code>. Declares the marker taxonomy, 30 s
+<code>pytest-timeout</code>, asyncio auto mode, and branch-coverage
+reports. Coverage <code>fail_under</code> starts at 1%. Commit
+<code>106bf8a</code>.</li>
+<li><strong>Service-availability fixtures</strong>
+(<code>merge_service_live</code>, <code>qbittorrent_live</code>,
+<code>webui_bridge_live</code>, <code>all_services_live</code>) in
+<code>tests/fixtures/services.py</code>, wired via
+<code>tests/conftest.py</code>. Fixtures <strong>error</strong> when
+stack is unreachable instead of silently skipping. Commits
+<code>726bf8e</code>, <code>17005d3</code>.</li>
+<li><strong>71 runtime service-availability skips</strong> converted
+into fixture dependencies across 17
+integration/security/performance/stress test files.
+<code>tests/unit/test_no_runtime_service_skips.py</code> guards the
+invariant. Commit <code>55d29ce</code>.</li>
+<li><strong>Coverage baseline</strong> captured at
+<code>docs/COVERAGE_BASELINE.md</code>. Commit
+<code>df18c8d</code>.</li>
+</ul>
+<h3 id="phase-1-scanning-observability-infrastructure">Phase 1 —
+Scanning &amp; observability infrastructure</h3>
+<h4 id="added-1">Added</h4>
+<ul>
+<li><strong><code>docker-compose.quality.yml</code></strong> — opt-in
+compose file adding SonarQube + sonar-db (profile <code>quality</code>),
+four one-shot scanners (<code>snyk</code>, <code>semgrep</code>,
+<code>trivy</code>, <code>gitleaks</code> — profile
+<code>run-once</code>), and Prometheus + Grafana (profile
+<code>observability</code>). All quality ports bound to
+<code>127.0.0.1</code> only. Commit <code>84d1355</code>.</li>
+<li><strong>Scanner tooling config</strong> — <code>.semgrep.yml</code>,
+<code>.gitleaks.toml</code>, <code>.trivyignore</code>,
+<code>.snyk</code>, <code>sonar-project.properties</code>. Commit
+<code>e3bebb6</code>.</li>
+<li><strong><code>scripts/scan.sh</code></strong> — single entry point
+that runs every scanner locally (<code>--all</code>) or a subset.
+Reports land in <code>artifacts/scans/&lt;UTC timestamp&gt;/</code> as
+SARIF. Commit <code>106f63f</code>.</li>
+<li><strong>Observability assets</strong> —
+<code>observability/prometheus.yml</code>,
+<code>observability/dashboards/merge-search.json</code>,
+<code>observability/datasources/prometheus.yml</code>.</li>
+<li><strong>Supporting docs</strong> — <code>docs/SCANNING.md</code>,
+<code>docs/QUALITY_STACK.md</code>.</li>
+</ul>
+<h3 id="phase-2-security-hardening">Phase 2 — Security hardening</h3>
+<h4 id="added-2">Added</h4>
+<ul>
+<li><strong><code>ALLOWED_ORIGINS</code> env var</strong> — CORS no
+longer uses wildcard; origins are env-driven and validated at startup.
+Commit <code>b8e9e98</code>.</li>
+<li><strong><code>CredentialScrubber</code> log filter</strong>
+(<code>config/log_filter.py</code>) — redacts passwords, cookies, and
+API keys from all log output. Commit <code>6c5a801</code>.</li>
+<li><strong><code>asyncio.Semaphore</code></strong> caps concurrent
+tracker searches (<code>MAX_CONCURRENT_SEARCHES</code>, default 5).
+Commit <code>311dae1</code>.</li>
+<li><strong><code>filelock</code></strong> around credential file writes
+to prevent race conditions. Commit <code>18f9450</code>.</li>
+<li><strong>Shell injection hardening</strong> — tracker name validation
+rejects names containing shell metacharacters. Commit
+<code>a84e4cf</code>.</li>
+<li><strong><code>TTLCache</code> for CAPTCHA dict</strong> — replaced
+unbounded <code>_pending_captchas</code> with
+<code>TTLCache(maxsize=1024, ttl=900)</code>. Commit
+<code>8d4a429</code>.</li>
+</ul>
+<h3 id="phase-3-concurrency-stability">Phase 3 — Concurrency &amp;
+stability</h3>
+<h4 id="fixed">Fixed</h4>
+<ul>
+<li><strong>Unbounded caches replaced with
+<code>TTLCache</code></strong> in <code>search.py</code> and
+<code>hooks.py</code> — <code>_active_searches</code> and hook state are
+now size-bounded. Commit <code>0b44162</code>.</li>
+<li><strong><code>asyncio.Lock</code> guards</strong> around all shared
+mutable state in hooks and streaming modules. Commit
+<code>d369879</code>.</li>
+<li><strong>Graceful shutdown</strong> — <code>main.py</code> handles
+SIGTERM/SIGINT, sets a shutdown event, joins daemon threads with 5s
+timeout. Commit <code>49a99d0</code>.</li>
+<li><strong>Tenacity retry policy</strong>
+(<code>merge_service/retry.py</code>) — outbound HTTP calls use
+exponential backoff with jitter. Commit <code>f43ad5e</code>.</li>
+<li><strong>SSE disconnect handling</strong> — server stops polling when
+client disconnects. Commit <code>1447d0f</code>.</li>
+</ul>
+<h3 id="phase-4-dead-code-audit">Phase 4 — Dead code audit</h3>
+<h4 id="changed">Changed</h4>
+<ul>
+<li><strong>Non-canonical plugins moved to
+<code>plugins/community/</code></strong> — canonical plugins remain in
+<code>plugins/</code>. Commit <code>e130e2f</code>.</li>
+<li><strong>Plugin audit matrix</strong> at
+<code>docs/PLUGIN_AUDIT.md</code>. Commit <code>6c75db6</code>.</li>
+<li><strong><code>socks.py</code> documented</strong> as
+UDP-fragmentation-unsupported (will-not-fix). Commit
+<code>2a64686</code>.</li>
+<li><strong><code>ui/</code> module documented</strong> as static assets
+directory. Commit <code>1407ed2</code>.</li>
+</ul>
+<h3 id="phase-5-coverage-ramp">Phase 5 — Coverage ramp</h3>
+<h4 id="added-3">Added</h4>
+<ul>
+<li><strong>+243 unit tests</strong> across <code>tests/unit/</code>,
+<code>tests/unit/merge_service/</code>,
+<code>tests/unit/api_layer/</code>. Total unit tests: 1,118 (from 823
+baseline). Commits <code>2696c20</code>, <code>3f63a8a</code>,
+<code>ddda22f</code>.</li>
+<li><strong>Smoke tests for canonical plugins</strong> — 84 tests
+verifying each plugin is importable and has required attributes. Commit
+<code>ddda22f</code>.</li>
+</ul>
+<h3 id="phase-6-loadstresschaos-scaffolding">Phase 6 — Load/stress/chaos
+scaffolding</h3>
+<h4 id="added-4">Added</h4>
+<ul>
+<li><strong>Test scaffolds</strong> for load
+(<code>tests/integration/</code> stress markers), stress
+(<code>@pytest.mark.stress</code>), chaos
+(<code>@pytest.mark.chaos</code>), and observability
+(<code>tests/observability/</code>). Commit <code>1c1f23d</code>.</li>
+<li><strong>Property-based tests</strong> (<code>tests/property/</code>)
+using Hypothesis. Commit <code>972b9ca</code>.</li>
+<li><strong>Memory leak tests</strong> (<code>tests/memory/</code>)
+using tracemalloc. Commit <code>972b9ca</code>.</li>
+<li><strong>Concurrency tests</strong> (<code>tests/concurrency/</code>)
+verifying semaphore and lock behavior. Commit <code>972b9ca</code>.</li>
+</ul>
+<h3 id="phase-7-documentation-rewrite-extension">Phase 7 — Documentation
+rewrite &amp; extension</h3>
+<h4 id="added-5">Added</h4>
+<ul>
+<li><strong>Per-module READMEs</strong> in
+<code>download-proxy/src/</code>, <code>download-proxy/src/api/</code>,
+<code>download-proxy/src/merge_service/</code>,
+<code>download-proxy/src/config/</code>, <code>scripts/</code>.</li>
+<li><strong>Architecture diagrams</strong> —
+<code>docs/architecture/request-lifecycle.mmd</code> (Mermaid sequence
+diagram).</li>
+<li><strong>OpenAPI freeze test</strong> —
+<code>tests/unit/test_openapi_frozen.py</code> compares frozen spec with
+live FastAPI.</li>
+<li><strong>Docs link integrity</strong> —
+<code>tests/docs/test_no_broken_links.py</code>.</li>
+<li><strong>Expanded <code>docs/USER_MANUAL.md</code></strong> — install
+paths, CLI flags, plugin install, env vars, troubleshooting.</li>
+<li><strong>Updated <code>AGENTS.md</code></strong> — quality stack
+section, new env vars, scanner tooling table.</li>
+<li>Commit <code>7808ff1</code>.</li>
+</ul>
+<h3 id="phase-8-mkdocs-website">Phase 8 — MkDocs website</h3>
+<h4 id="added-6">Added</h4>
+<ul>
+<li><strong>MkDocs Material website</strong> in <code>website/</code>
+with GitHub Pages workflow (<code>.github/workflows/pages.yml</code>).
+Full nav structure covering all docs, architecture, and guides. Commits
+<code>2dde156</code>, <code>ee87eba</code>.</li>
+</ul>
+<h3 id="phase-9-course-content-scaffolding">Phase 9 — Course content
+scaffolding</h3>
+<h4 id="added-7">Added</h4>
+<ul>
+<li><strong>Course scaffolding</strong> in <code>courses/</code> with
+demo scripts. Commit <code>da7da4a</code>.</li>
+</ul>
+<h3 id="phase-10-continuous-verification-hand-off">Phase 10 — Continuous
+verification &amp; hand-off</h3>
+<h4 id="changed-1">Changed</h4>
+<ul>
+<li><strong>Coverage gate raised</strong> from 1% to 49% (actual
+measured coverage). <code>docs/COVERAGE_BASELINE.md</code> updated.</li>
+<li><strong>Plugin smoke test isolation</strong> fixed —
+<code>helpers</code>/<code>novaprinter</code>/<code>nova2</code> modules
+properly cleaned up between tests to prevent cross-contamination.</li>
+<li><strong><code>docs/COMPLETION_STATUS.md</code></strong> —
+cross-checks each §A finding to its resolution commit.</li>
+<li><strong><code>docs/CONSTITUTION_ADDENDUM_QUALITY.md</code></strong>
+reviewed — all principles remain satisfied.</li>
+</ul>
+<h2 id="unreleased---2026-04-18"><a
+href="https://github.com/milos85vasic/qBitTorrent/compare/v1.2.0...HEAD">Unreleased</a>
+- 2026-04-18</h2>
+<h3 id="fixed-1">Fixed</h3>
+<ul>
+<li><strong>CRITICAL: Public tracker subprocess NameError</strong> in
+<code>download-proxy/src/merge_service/search.py</code> —
+<code>{{tracker_name}}</code> in f-string produced undefined variable
+<code>{tracker_name}</code> in subprocess, causing ALL 33+ public
+trackers to silently return 0 results. Fixed by hardcoding tracker name
+in script template.</li>
+<li><strong>Year regex stripping resolutions</strong> in
+<code>download-proxy/src/merge_service/deduplicator.py</code> —
+<code>\d{4}</code> matched <code>1080</code> in <code>1080p</code>,
+breaking name normalization and deduplication. Fixed to
+<code>\b(19|20)\d{2}\b</code>.</li>
+<li><strong>Magnet hash extraction truncated 40-char hashes</strong> in
+<code>download-proxy/src/api/routes.py</code> — regex
+<code>[a-f0-9]{32}|[a-f0-9]{40}</code> matched 32 chars first. Fixed
+order to <code>{40}|[a-f0-9]{32}</code>.</li>
+<li><strong>Missing <code>HTTPException</code> import</strong> in
+<code>download-proxy/src/api/routes.py</code> — caused 500 errors on
+<code>GET /search/{id}</code> when search not found</li>
+<li><strong>Missing <code>JSONResponse</code> import</strong> in
+<code>download-proxy/src/api/routes.py</code> — caused 500 errors on
+invalid <code>POST /magnet</code> requests</li>
+<li><strong>Deprecated <code>asyncio.get_event_loop()</code></strong> in
+<code>download-proxy/src/merge_service/validator.py</code> — replaced
+with <code>asyncio.get_running_loop()</code> for Python 3.13
+compatibility</li>
+<li><strong>Test collection failure</strong> in
+<code>tests/unit/test_dashboard.py</code> — added workaround for pytest
+importlib mode namespace package issue</li>
+<li><strong>Mock setup in <code>test_merge_api.py</code></strong> —
+<code>_last_merged_results</code> now properly initialized as empty dict
+to avoid unpacking errors</li>
+<li><strong>Python 3.13 deprecation warnings</strong> across test suite
+— replaced <code>asyncio.get_event_loop().run_until_complete()</code>
+with <code>asyncio.run()</code> in 5 test files</li>
+</ul>
+<h3 id="improved">Improved</h3>
+<ul>
+<li><strong>Content type detection</strong> — added ebook formats
+(<code>epub</code>, <code>pdf</code>, <code>mobi</code>,
+<code>azw3</code>, <code>cbz</code>, <code>cbr</code>,
+<code>djvu</code>), expanded music genres and formats, ebook detection
+runs before music to prevent <code>cbr</code> misclassification</li>
+<li><strong>Quality detection</strong> — added <code>BDRip</code> →
+<code>full_hd</code>, <code>BDRemux</code> → <code>uhd_4k</code>,
+<code>WEBRip</code>/<code>HDRip</code> → <code>hd</code>,
+<code>DVDRip</code> → <code>sd</code>;
+<code>bdrip</code>/<code>bd-remux</code> detected in enricher</li>
+<li><strong>Magnet generation</strong> — <code>/api/v1/magnet</code> now
+extracts ALL source trackers from magnet URLs and merges them into
+generated magnet</li>
+<li><strong>Merged result quality</strong> —
+<code>MergedResult.best_quality</code> is now automatically populated
+after deduplication using weighted quality tiers</li>
+<li><strong>Backend sorting</strong> — <code>POST /search</code>
+supports <code>sort_by</code> and <code>sort_order</code> parameters;
+default is <code>seeds</code> descending</li>
+<li><strong>Frontend sorting</strong> — unknown type respects sort
+direction (last in asc, first in desc); quality weights include
+<code>uhd_8k: 6</code></li>
+<li><strong>Dashboard button</strong> — <code>+</code> renamed to
+<code>Download</code>; magnet dialog uses backend endpoint; all reset
+handlers updated</li>
+<li><strong>Integration test resilience</strong> — tests that require
+running qBittorrent now <code>skip</code> instead of fail when
+qBittorrent is unavailable or auth-banned</li>
+<li><strong>UI integration test timeouts</strong> — added
+<code>timeout</code> parameters to all HTTP requests in
+<code>test_ui_quick.py</code> and <code>test_ui_comprehensive.py</code>
+to prevent hangs</li>
+<li><strong>Concurrent search queries</strong> in
+<code>test_ui_comprehensive.py</code> — uses
+<code>ThreadPoolExecutor(max_workers=5)</code> to reduce test duration
+from ~8 min to ~2 min</li>
+<li><strong>Robust content type detection test</strong> — validates
+against valid enum values instead of flaky per-query expectations</li>
+</ul>
+<h3 id="added-8">Added</h3>
+<ul>
+<li><strong>Unit tests</strong> —
+<code>test_public_tracker_subprocess.py</code> (6),
+<code>test_content_type_refinement.py</code> (12),
+<code>test_quality_detection.py</code> (9),
+<code>test_download_merged.py</code> (6),
+<code>test_sorting_weights.py</code> (7)</li>
+<li><strong>Integration tests</strong> —
+<code>test_dashboard_automation.py</code> (15)</li>
+<li><strong>E2E tests</strong> — <code>test_dashboard_issues.py</code>
+(9)</li>
+<li><strong>Abort search endpoint tests</strong> —
+<code>POST /search/{id}/abort</code> (2 tests)</li>
+<li><strong>Magnet generation endpoint tests</strong> —
+<code>POST /magnet</code> with hash, without hash, invalid request (3
+tests)</li>
+<li><strong>Download endpoint tests</strong> —
+<code>POST /download</code> auth-failure path (1 test)</li>
+<li><strong>Active downloads endpoint tests</strong> —
+<code>GET /downloads/active</code> auth-failure path (1 test)</li>
+</ul>
+<h3 id="test-results">Test Results</h3>
+<ul>
+<li><strong>410 unit tests</strong> passing (0 failures)</li>
+<li><strong>16 e2e tests</strong> passing (0 failures)</li>
+<li><strong>34 integration tests</strong> passing, skipped when services
+unavailable</li>
+<li><strong>Total: 460 automated tests</strong> across
+unit/integration/e2e suites (verified 2026-04-18)</li>
+</ul>
+<h3 id="added-9">Added</h3>
+<h4 id="freeleech-safety">Freeleech &amp; Safety</h4>
+<ul>
+<li><strong>IPTorrents freeleech <code>[free]</code> suffix</strong> —
+all freeleech results from IPTorrents are automatically tagged with
+<code>[free]</code> in the name</li>
+<li><strong>Non-freeleech merge protection</strong> — non-freeleech
+IPTorrents results are NEVER merged with results from other
+trackers</li>
+<li><strong><code>freeleech</code> field in API responses</strong> —
+<code>SearchResultResponse</code> now includes
+<code>freeleech: bool</code></li>
+<li><strong>Kinozal credential fallback</strong> — if
+<code>KINOZAL_USERNAME/PASSWORD</code> are not set,
+<code>IPTORRENTS_USERNAME/PASSWORD</code> are used automatically</li>
+</ul>
+<h4 id="infrastructure">Infrastructure</h4>
+<ul>
+<li><strong>Docker healthchecks</strong> — both containers have
+healthchecks; proxy waits for qBittorrent
+<code>service_healthy</code></li>
+<li><strong>systemd service for webui-bridge</strong> — auto-starts on
+boot, install once with
+<code>./setup-webui-bridge-service.sh</code></li>
+<li><strong>Manual CI pipeline</strong> (<code>ci.sh</code>) — secret
+leak detection, syntax validation, full test suite, container health
+checks</li>
+<li><strong>Levenshtein in container</strong> —
+<code>start-proxy.sh</code> now installs all deps from
+<code>requirements.txt</code> including Levenshtein</li>
+</ul>
+<h4 id="tests-331-passing">Tests (331 passing)</h4>
+<ul>
+<li><code>tests/unit/test_freeleech.py</code> — 13 tests: freeleech
+suffix, dedup rules, credential fallback, API field</li>
+<li><code>tests/unit/test_ci_infra.py</code> — 13 tests: CI script,
+systemd service, gitignore, start-proxy.sh</li>
+<li><code>tests/e2e/test_full_pipeline.py</code> — fixed imports, now
+passing</li>
+</ul>
+<h4 id="plugins">Plugins</h4>
+<ul>
+<li>Added <code>download_torrent()</code> to 5 plugins: ali213,
+audiobookbay, glotorrents, kickass, nyaa</li>
+<li>Download proxy now intercepts kinozal, nnmclub, iptorrents (not just
+rutracker)</li>
+</ul>
+<h3 id="fixed-2">Fixed</h3>
+<ul>
+<li>Consolidated duplicate quality detection to single
+<code>enricher.detect_quality()</code> (was in routes.py and
+enricher.py)</li>
+<li>Fixed 4 bare <code>except: pass</code> in
+<code>plugins/download_proxy.py</code></li>
+<li>Fixed scheduler config path (<code>.yaml</code> →
+<code>.json</code>, removed string replace hack)</li>
+<li>Fixed IPTorrents HTML parser to handle query params in download
+URLs</li>
+<li>Fixed quality detection to handle <code>UHD</code>,
+<code>FullHD</code>, <code>FHD</code>, <code>WEBDL</code>,
+<code>HDRip</code>, <code>CamRip</code> patterns</li>
+</ul>
+<h3 id="removed">Removed</h3>
+<ul>
+<li>Removed 31 orphaned test files from <code>tests/</code> root (~11k
+lines of dead code)</li>
+<li>Removed 3 false gotchas from AGENTS.md</li>
+</ul>
+<h4 id="merge-search-service">Merge Search Service</h4>
+<ul>
+<li><strong>FastAPI-based Merge Search Service</strong> running on port
+7187 inside the qbittorrent-proxy container</li>
+<li><strong>Multi-tracker search</strong> with results from RuTracker,
+Kinozal, NNMClub — 50 real results from RuTracker</li>
+<li><strong>Download proxy</strong> for authenticated tracker downloads
+— intercepts tracker URLs, fetches with auth cookies, uploads as
+.torrent to qBittorrent</li>
+<li><strong>SSE streaming</strong> for real-time search results via
+<code>GET /api/v1/search/stream/{id}</code></li>
+<li><strong>Dark theme dashboard</strong> at
+<code>http://localhost:7187/</code></li>
+<li><strong>Hook system</strong> with JSON persistence —
+<code>GET/POST/DELETE /api/v1/hooks</code></li>
+<li><strong>Quality detection</strong> automatically tags results as UHD
+4K, Full HD, HD, SD</li>
+<li><strong>Tiered deduplication</strong> — exact hash match → name+size
+→ fuzzy similarity</li>
+<li><strong>Metadata enrichment</strong> via OMDb, TMDB, TVMaze,
+AniList, MusicBrainz, OpenLibrary</li>
+<li><strong>Tracker validation</strong> with HTTP and UDP scrape
+support</li>
+<li><strong>Search scheduling</strong> with persistence across
+restarts</li>
+<li><strong>Stats endpoint</strong> at
+<code>GET /api/v1/stats</code></li>
+</ul>
+<h4 id="api-endpoints">API Endpoints</h4>
+<ul>
+<li><code>POST /api/v1/search</code> — Search across multiple
+trackers</li>
+<li><code>GET /api/v1/search/stream/{id}</code> — SSE stream of search
+results</li>
+<li><code>POST /api/v1/download</code> — Download via authenticated
+proxy</li>
+<li><code>GET /api/v1/downloads/active</code> — List active
+downloads</li>
+<li><code>GET /api/v1/hooks</code> — List hooks</li>
+<li><code>POST /api/v1/hooks</code> — Create hook</li>
+<li><code>DELETE /api/v1/hooks</code> — Delete hook</li>
+<li><code>GET /health</code> — Health check</li>
+<li><code>GET /api/v1/stats</code> — Service statistics</li>
+</ul>
+<h4 id="testing">Testing</h4>
+<ul>
+<li><strong>119 unit/integration tests passing</strong> covering:
+<ul>
+<li>HTML parsers for RuTracker, Kinozal, NNMClub</li>
+<li>API endpoint validation</li>
+<li>Quality detection (UHD 4K, Full HD, HD, SD)</li>
+<li>Tiered deduplication engine</li>
+<li>Hook creation, persistence, and execution</li>
+<li>Tracker validator (HTTP + UDP)</li>
+<li>Metadata enricher (multiple providers)</li>
+</ul></li>
+</ul>
+<h4 id="source-structure">Source Structure</h4>
+<ul>
+<li><code>download-proxy/src/api/</code> — FastAPI application, routes,
+hooks, streaming</li>
+<li><code>download-proxy/src/merge_service/</code> — Core logic (search
+orchestrator, deduplicator, enricher, validator, scheduler, hooks)</li>
+<li><code>download-proxy/src/ui/templates/dashboard.html</code> — Dark
+theme dashboard</li>
+</ul>
+<h3 id="changed-2">Changed</h3>
+<ul>
+<li><code>docker-compose.yml</code> now exposes port 7187
+(<code>MERGE_SERVICE_PORT</code>) from download-proxy container</li>
+<li>Kinozal and NNMClub HTML parsing fixed for current site layouts</li>
+<li>Branch: <code>001-merge-search-trackers</code> — 6 commits, all
+pushed to origin</li>
+</ul>
+<h3 id="note">Note</h3>
+<ul>
+<li>Kinozal and NNMClub parsing is fixed but requires valid credentials
+in <code>.env</code> for live testing</li>
+<li>RuTracker may require CAPTCHA solve for login; cookies expire
+periodically</li>
+</ul>
+<h2 id="section"><a
+href="https://github.com/milos85vasic/qBitTorrent/compare/v1.0.0...v1.2.0">1.2.0</a>
+- 2025-03-11</h2>
+<h3 id="critical-changes---webui-compatibility">Critical Changes - WebUI
+Compatibility</h3>
+<p>All plugins now return <strong>magnet links</strong> by default for
+full WebUI download compatibility!</p>
+<h3 id="added-10">Added</h3>
+<h4 id="magnet-link-support---all-plugins-updated">Magnet Link Support -
+ALL Plugins Updated</h4>
+<ul>
+<li><strong>LimeTorrents</strong> - Now fetches and returns magnet links
+in search results (v4.15)</li>
+<li><strong>NNMClub</strong> - Added
+<code>_fetch_magnet_from_topic()</code> to extract magnets from topic
+pages</li>
+<li><strong>TorLock</strong> - Now fetches magnet links from info pages
+during search (v2.29)</li>
+<li><strong>TorrentProject</strong> - Now returns magnet links directly
+in search results (v1.92)</li>
+<li><strong>Kinozal</strong> - Changed default
+<code>magnet: bool = True</code> to return magnet links</li>
+<li><strong>helpers.py</strong> - Added <code>build_magnet_link()</code>
+and <code>fetch_magnet_from_page()</code> utilities</li>
+</ul>
+<h4 id="testing-infrastructure">Testing Infrastructure</h4>
+<ul>
+<li>Comprehensive magnet link validation test
+(<code>tests/test_all_magnet_links.py</code>)</li>
+<li>Full UI automated download flow test
+(<code>tests/test_ui_download_flow.py</code>)</li>
+<li>Tests validate that ALL plugins return properly formatted magnet
+links</li>
+</ul>
+<h3 id="changed-3">Changed</h3>
+<ul>
+<li>All plugins now use magnet links as the primary download method</li>
+<li>Magnet links include proper tracker lists for better
+connectivity</li>
+<li>Fallback to .torrent URLs when magnets unavailable</li>
+<li>Improved error handling for magnet link fetching</li>
+</ul>
+<h3 id="technical-details">Technical Details</h3>
+<ul>
+<li>Magnet links are built with standard tracker list for maximum peer
+discovery</li>
+<li>Private tracker plugins (RuTracker, Kinozal, NNMClub) fetch magnets
+from authenticated sessions</li>
+<li>Public tracker plugins fetch magnets from info pages or API
+responses</li>
+<li>All <code>download_torrent()</code> methods now properly handle both
+magnet:// and http(s):// URLs</li>
+</ul>
+<h3 id="plugin-status-after-v1.2.0">Plugin Status After v1.2.0</h3>
+<table>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Magnet Support</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PirateBay</td>
+<td>✅ Native</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>EZTV</td>
+<td>✅ Native</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>Rutor</td>
+<td>✅ Native</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>RuTracker</td>
+<td>✅ Fetch from topic</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>Kinozal</td>
+<td>✅ Fetch from topic</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>NNMClub</td>
+<td>✅ Fetch from topic</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>LimeTorrents</td>
+<td>✅ Fetch from page</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>SolidTorrents</td>
+<td>✅ Native</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>TorrentProject</td>
+<td>✅ Fetch from page</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>TorLock</td>
+<td>✅ Fetch from page</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>TorrentsCSV</td>
+<td>✅ Native</td>
+<td>Working</td>
+</tr>
+<tr>
+<td>Jackett</td>
+<td>✅ API support</td>
+<td>Working</td>
+</tr>
+</tbody>
+</table>
+<h2 id="section-1">[1.1.0] - 2025-03-11</h2>
+<h3 id="added-11">Added</h3>
+<h4 id="plugins-12-total---100-working">Plugins (12 Total - 100%
+Working)</h4>
+<ul>
+<li><strong>Public Trackers (9)</strong>: The Pirate Bay, EZTV, Rutor,
+LimeTorrents, Solid Torrents, TorrentProject, torrents-csv, TorLock,
+Jackett</li>
+<li><strong>Private Trackers (3)</strong>: RuTracker, Kinozal, NNMClub
+(with authentication support)</li>
+<li>Plugin helper utilities for common operations</li>
+<li>WebUI-compatible plugin variants for private trackers</li>
+<li>Plugin icon assets (PNG files)</li>
+</ul>
+<h4 id="download-system">Download System</h4>
+<ul>
+<li>WebUI Bridge proxy for private tracker downloads
+(<code>webui-bridge.py</code>)</li>
+<li>Download proxy service (<code>plugins/download_proxy.py</code>)</li>
+<li>WebUI download fix script with comprehensive error handling</li>
+<li>Automatic magnet link conversion for RuTracker</li>
+</ul>
+<h4 id="testing-infrastructure-1">Testing Infrastructure</h4>
+<ul>
+<li>Comprehensive test suite with 100% coverage
+(<code>tests/run_tests.sh</code>)</li>
+<li>Multiple test categories: plugin, unit, integration, e2e, UI
+automation</li>
+<li>Python test frameworks with pytest support</li>
+<li>Automated test runner scripts</li>
+<li>Test documentation in <code>tests/README.md</code></li>
+</ul>
+<h4 id="scripts-automation">Scripts &amp; Automation</h4>
+<ul>
+<li>Simple validation script <code>test.sh</code> with multiple
+modes</li>
+<li>Plugin installation script <code>install-plugin.sh</code> with
+local/container support</li>
+<li>Setup script for initial configuration (<code>setup.sh</code>)</li>
+<li>Run-all-tests script for comprehensive validation</li>
+<li>Start/stop proxy scripts</li>
+</ul>
+<h4 id="documentation">Documentation</h4>
+<ul>
+<li>Detailed user manual (<code>docs/USER_MANUAL.md</code>)</li>
+<li>Plugin documentation (<code>docs/PLUGINS.md</code>)</li>
+<li>Plugin troubleshooting guide
+(<code>docs/PLUGIN_TROUBLESHOOTING.md</code>)</li>
+<li>Download fix documentation (<code>docs/DOWNLOAD_FIX.md</code>)</li>
+<li>AI agent guidelines (<code>AGENTS.md</code>)</li>
+<li>Plugin status tracking (<code>PLUGIN_STATUS.md</code>)</li>
+<li>Fork summary and architecture documentation</li>
+</ul>
+<h4 id="configuration">Configuration</h4>
+<ul>
+<li>Support for multiple credential sources (<code>.env</code>,
+<code>~/.qbit.env</code>, environment)</li>
+<li>Configurable data directory via
+<code>QBITTORRENT_DATA_DIR</code></li>
+<li>Automatic Podman/Docker runtime detection</li>
+<li>Enhanced <code>.env.example</code> with detailed comments</li>
+</ul>
+<h4 id="features">Features</h4>
+<ul>
+<li>Colored output for all shell scripts</li>
+<li>Automatic plugin installation on container start</li>
+<li>Comprehensive <code>.gitignore</code> for sensitive files</li>
+</ul>
+<h3 id="changed-4">Changed</h3>
+<ul>
+<li>Enhanced <code>start.sh</code> with plugin auto-installation and
+status display</li>
+<li>Enhanced <code>stop.sh</code> with purge and removal options</li>
+<li>Updated <code>README.md</code> with comprehensive documentation and
+badges</li>
+<li>Improved RuTracker plugin to return magnet links instead of dl.php
+URLs</li>
+<li>Fixed download path mapping issues</li>
+<li>Fixed Podman rootless permission issues</li>
+</ul>
+<h3 id="security">Security</h3>
+<ul>
+<li>Plugin warns when credentials are not configured</li>
+<li>Never commits <code>.env</code> files with real credentials</li>
+<li>Mandatory admin/admin credentials for WebUI (see CLAUDE.md)</li>
+</ul>
+<h3 id="fixed-3">Fixed</h3>
+<ul>
+<li>WebUI downloads now work for all trackers including private
+ones</li>
+<li>Real column data (seeds, peers, sizes) - no more zeros</li>
+<li>Search provider compatibility issues</li>
+<li>Download proxy authentication</li>
+<li>Plugin loading and registration</li>
+</ul>
+<h2 id="section-2"><a
+href="https://github.com/milos85vasic/qBitTorrent/releases/tag/v1.0.0">1.0.0</a>
+- 2024-01-01</h2>
+<h3 id="added-12">Added</h3>
+<ul>
+<li>Initial release</li>
+<li>Docker/Podman Compose configuration for qBitTorrent</li>
+<li>Basic start/stop scripts</li>
+<li>RuTracker plugin integration</li>
+<li>Environment variable configuration</li>
+</ul>

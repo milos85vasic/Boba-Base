@@ -1,0 +1,125 @@
+<h1 id="bugfix-log">Bugfix Log</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
+implementation gets a permanent entry below: title, root cause, affected
+files, fix description, regression guard.</p>
+<p>Entries are append-only; do not edit historical entries except to add
+clarification footnotes.</p>
+<hr />
+<h2
+id="boba-jackett-implementation-plan-2026-04-27-jackett-management-ui-and-system-db.md">2026-04-27
+— boba-jackett implementation (plan
+2026-04-27-jackett-management-ui-and-system-db.md)</h2>
+<h3 id="master-key-two-step-write-silent-data-loss-window">1. Master-key
+two-step write silent data-loss window</h3>
+<p><strong>Severity:</strong> HIGH (silent credential loss possible on
+crash mid-bootstrap).</p>
+<p><strong>Root cause:</strong> Initial implementation of
+<code>bootstrap.EnsureMasterKey</code> generated
+<code>BOBA_MASTER_KEY</code> in memory, returned it to the caller, and
+<em>then</em> wrote <code>.env</code> in a separate step. If the process
+crashed, was killed, or the host lost power between those two
+operations, the caller would proceed to encrypt credentials with a key
+that disk had no record of — making them permanently undecipherable.</p>
+<p><strong>Affected files:</strong> -
+<code>qBitTorrent-go/internal/bootstrap/bootstrap.go</code> -
+<code>qBitTorrent-go/internal/envfile/write.go</code></p>
+<p><strong>Fix:</strong> Collapse the generate + write into a single
+<code>envfile.Atomic</code> write
+(<code>tmpfile + fsync + rename</code>) before the function returns.
+Caller never sees a key that hasn’t been durably persisted. Commit
+<code>c0f20bc</code>.</p>
+<p><strong>Regression guard:</strong> -
+<code>qBitTorrent-go/internal/bootstrap/bootstrap_test.go::TestEnsureMasterKeyDoesNotDuplicateHeader</code>
+- <code>qBitTorrent-go/internal/envfile/write_test.go</code>
+atomic-write test layer</p>
+<hr />
+<h3 id="sqlite-database-file-mode-0644-world-readable-credentials">2.
+SQLite database file mode <code>0644</code> (world-readable
+credentials)</h3>
+<p><strong>Severity:</strong> CRITICAL (any local user could read
+encrypted credentials + ciphertext-only attack surface).</p>
+<p><strong>Root cause:</strong> <code>modernc.org/sqlite</code> creates
+database files with the process’s default umask, which on the container
+yielded <code>0644</code> (world-readable). The Go service’s
+<code>.env</code> was already <code>0600</code> via
+<code>envfile.Atomic</code>, but <code>boba.db</code> was leaking — a
+defense-in-depth breach since the rows are encrypted, but still a
+violation of the principle “the DB file should be readable only by the
+service owner”.</p>
+<p><strong>Affected files:</strong> -
+<code>qBitTorrent-go/internal/db/conn.go</code></p>
+<p><strong>Fix:</strong> After the first <code>Open()</code> succeeds,
+<code>db.Open</code> calls <code>os.Chmod(path, 0o600)</code> (and the
+<code>-wal</code> / <code>-shm</code> siblings if present), collapsing
+the file mode to owner-only. Commit <code>8405167</code>.</p>
+<p><strong>Regression guard:</strong> - Layer 4 security challenge
+<code>challenges/scripts/boba_db_file_perms_challenge.sh</code> -
+<code>qBitTorrent-go/internal/db/credential_leak_test.go</code></p>
+<hr />
+<h3 id="autoconfigresult-nil-slices-marshalled-as-json-null">3.
+<code>AutoconfigResult</code> nil slices marshalled as JSON
+<code>null</code></h3>
+<p><strong>Severity:</strong> MEDIUM (silent client-breaking schema
+drift; UI rendered “undefined” badges instead of “0 items”).</p>
+<p><strong>Root cause:</strong> Go’s <code>json.Marshal</code>
+serializes a nil slice as <code>null</code>, not <code>[]</code>. When
+<code>Autoconfigure()</code> ran on a fresh DB with no discovered
+credentials, the <code>discovered_credentials</code>,
+<code>configured_now</code>, and <code>already_present</code> fields all
+marshalled as <code>null</code>. The OpenAPI 3.1 schema declared them as
+<code>array</code>, so clients (including the Angular dashboard) treated
+<code>null</code> as a contract violation.</p>
+<p><strong>Affected files:</strong> -
+<code>qBitTorrent-go/internal/jackett/autoconfig.go</code></p>
+<p><strong>Fix:</strong> Pre-allocate empty slices
+(<code>[]string{}</code>) at the top of <code>Autoconfigure()</code> so
+a “nothing to do” run still serializes as
+<code>{...,"discovered":[],"configured_now":[],...}</code>. Commit
+<code>6f3dbaf</code>.</p>
+<p><strong>Regression guard:</strong> - Layer 6 contract test
+<code>qBitTorrent-go/tests/contract/openapi_test.go</code> (validates
+each named field is <code>array</code> per OpenAPI schema even on empty
+runs).</p>
+<hr />
+<h3 id="catalog-replaceall-empty-input-wipe-risk">4. Catalog
+<code>ReplaceAll</code> empty-input wipe risk</h3>
+<p><strong>Severity:</strong> HIGH (would permanently wipe the indexer
+catalog if Jackett returned an empty response; UI would show no indexers
+and fuzzy matcher would have nothing to match against).</p>
+<p><strong>Root cause:</strong>
+<code>repos.IndexerCatalog.ReplaceAll(rows []Row)</code> unconditionally
+<code>DELETE</code>d existing rows then <code>INSERT</code>ed the new
+ones. If <code>rows</code> was empty (Jackett momentarily unhealthy,
+transient 502, or catalog parse failure), the delete still happened,
+leaving an empty catalog table. Next refresh would have nothing to
+compare against.</p>
+<p><strong>Affected files:</strong> -
+<code>qBitTorrent-go/internal/db/catalog.go</code> (or equivalent repo
+file)</p>
+<p><strong>Fix:</strong> Refuse the operation early with
+<code>errors.New("repos: ReplaceAll refusing empty replacement")</code>.
+The caller (autoconfig orchestrator) treats this as a soft error, logs
+it, and leaves the previous catalog intact. Commit
+<code>8d71df1</code>.</p>
+<p><strong>Regression guard:</strong> -
+<code>qBitTorrent-go/internal/jackettapi/catalog_test.go::TestRefreshCatalogAllTemplatesFailReturns200WithErrors</code></p>
+<hr />
+<h3
+id="testsearchhandler_queuefull-pre-existing-flake-not-a-boba-jackett-bug">5.
+<code>TestSearchHandler_QueueFull</code> pre-existing flake (NOT a
+boba-jackett bug)</h3>
+<p><strong>Severity:</strong> LOW (test-only; flagged for
+follow-up).</p>
+<p><strong>Status:</strong> <strong>NOT FIXED</strong> in this plan.
+Confirmed unrelated to boba-jackett work.</p>
+<p><strong>Location:</strong>
+<code>qBitTorrent-go/internal/api/api_test.go</code></p>
+<p><strong>Symptom:</strong> Occasional intermittent failure under load
+when the search queue fills before the test’s <code>wait</code>
+returns.</p>
+<p><strong>Action:</strong> Logged here for traceability so future
+audits don’t mis-attribute it. Open issue suggestion: stabilise by
+injecting a deterministic queue-full hook instead of racing against real
+goroutine scheduling.</p>

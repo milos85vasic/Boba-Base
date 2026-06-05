@@ -1,5 +1,8 @@
 # Testing Guide
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 This is the **authoritative test-type catalogue** for qBittorrent-Fixed.
 Every testable module in the repo must have coverage in every applicable
 row below. The catalogue is derived from Part C of the

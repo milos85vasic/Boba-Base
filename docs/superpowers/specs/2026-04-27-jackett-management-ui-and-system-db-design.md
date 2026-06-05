@@ -1,5 +1,8 @@
 # Jackett Management UI & System Database — Design Spec
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 | Field | Value |
 |---|---|
 | Date | 2026-04-27 |

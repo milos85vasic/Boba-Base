@@ -1,5 +1,8 @@
 # docs/ — Project Documentation Index
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 This directory is the written source of truth for the qBittorrent-Fixed
 project. Each file below is either end-user facing, operator-facing, or
 contributor-facing. When a topic appears both here and in the top-level

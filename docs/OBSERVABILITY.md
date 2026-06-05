@@ -1,5 +1,8 @@
 # Observability
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 The Prometheus + Grafana stack lives in `docker-compose.quality.yml`
 under the `observability` profile. It is **opt-in** and does not run
 as part of the product's two-container topology (constitution

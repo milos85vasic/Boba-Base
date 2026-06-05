@@ -1,0 +1,215 @@
+<h1 id="test-suite-guide">Test Suite Guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p>Reference for running, writing, and interpreting tests in this
+repo.</p>
+<h2 id="directory-layout">Directory layout</h2>
+<table>
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 65%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th>Directory</th>
+<th>Purpose</th>
+<th>Hermetic?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit/</code></td>
+<td>Python unit tests; mock external services</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>tests/unit/merge_service/</code></td>
+<td>Merge-service unit tests (deduplicator, search, classifier)</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>tests/contract/</code></td>
+<td>API schema / response contract checks</td>
+<td>mostly</td>
+</tr>
+<tr>
+<td><code>tests/integration/</code></td>
+<td>Cross-component tests against the running stack</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>tests/e2e/</code></td>
+<td>Full-browser (Playwright) and multi-service scenarios</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>tests/concurrency/</code></td>
+<td>Semaphore / fan-out concurrency guarantees</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>tests/property/</code></td>
+<td>Hypothesis property tests</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>tests/memory/</code></td>
+<td>Tracemalloc / leak checks</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>tests/observability/</code></td>
+<td>Prometheus + metrics scrapes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>tests/security/</code></td>
+<td>Auth-bypass / CSRF protection</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>tests/stress/</code></td>
+<td>High-concurrency stress for the merge service</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>tests/benchmark/</code></td>
+<td>Wall-clock performance budgets</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>tests/performance/</code></td>
+<td>Similar to benchmark, latency-focused</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<h2 id="running-tests">Running tests</h2>
+<h3 id="hermetic-suites-fast-15-s-total">Hermetic suites (fast, ~15 s
+total)</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit tests/contract tests/concurrency tests/property <span class="dt">\</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>                  tests/memory tests/observability <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
+<p>These tests don’t need any services running. Suitable for pre-commit
+and CI gate.</p>
+<h3 id="live-service-suites-slow-3090-min">Live-service suites (slow,
+30–90 min)</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span> <span class="at">-p</span>            <span class="co"># start containers (idempotent)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> webui-bridge.py  <span class="co"># separate shell or systemd user service</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="va">SERVICE_PROBE_TIMEOUT</span><span class="op">=</span>15 <span class="va">SERVICE_PROBE_RETRIES</span><span class="op">=</span>10 <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="ex">python3</span> <span class="at">-m</span> pytest tests/integration tests/e2e <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>                    <span class="at">--timeout</span><span class="op">=</span>300 <span class="at">-p</span> no:randomly</span></code></pre></div>
+<p>The live-service fixtures in <code>tests/fixtures/services.py</code>
+error (not skip) when services are down — so a failing run here means
+the stack needs attention.</p>
+<h3 id="stress-benchmark-security-opt-in">Stress / benchmark / security
+(opt-in)</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/stress tests/benchmark tests/security</span></code></pre></div>
+<p>These drive the service hard — don’t run them on a production
+host.</p>
+<h2 id="test-writing-rules">Test-writing rules</h2>
+<ol type="1">
+<li><strong>No skips.</strong> Every test must either pass or fail. If a
+test needs a specific service, use the matching <code>*_live</code>
+fixture (see <code>tests/fixtures/services.py</code>) — the fixture
+errors loudly when the service is down.</li>
+<li><strong>No data-dependent conditionals.</strong> Don’t write
+<code>if not results: pytest.skip(...)</code>. Use a query guaranteed to
+return data (<code>"linux"</code>), assert on the result, or mock the
+upstream. The <code>no-results</code> branch hides breakage.</li>
+<li><strong>Use <code>timeout=300</code></strong> on any blocking
+<code>/api/v1/search/sync</code> call — the fan-out can take 90–150 s
+under realistic load.</li>
+<li><strong>Use <code>timeout=30</code></strong> on trivial GET
+endpoints (<code>/</code>, <code>/dashboard</code>,
+<code>/health</code>, <code>/api/v1/config</code>). They’re fast on idle
+probes but can wait a few seconds when the orchestrator is busy.</li>
+<li><strong>Use <code>POST /api/v1/search</code></strong> (non-blocking)
+if the test is about the async kick-off contract. Use
+<code>POST /api/v1/search/sync</code> if the test needs actual
+results.</li>
+<li><strong>Generate unique magnet hashes per file</strong> via
+<code>secrets.token_hex(20)</code>. qBittorrent rejects duplicate
+torrent adds with <code>Fails.</code> — a shared hash across tests
+breaks flaky.</li>
+</ol>
+<h2 id="error-classifications">Error classifications</h2>
+<p>When a tracker returns zero results, the merge service now tags the
+<code>TrackerSearchStat</code> with a structured error. See
+<code>docs/MERGE_SEARCH_DIAGNOSTICS.md</code> for the full classifier
+table — short version:</p>
+<ul>
+<li><code>upstream_http_403</code> / <code>_404</code> /
+<code>_timeout</code> — CDN / DNS issues</li>
+<li><code>dns_failure</code> / <code>tls_failure</code> — domain is
+down</li>
+<li><code>plugin_env_missing</code> / <code>plugin_parse_failure</code>
+/ <code>plugin_crashed</code> — plugin-side bug (open an issue + patch
+the plugin)</li>
+<li><code>deadline_timeout</code> — plugin ran the full 25 s with no
+results</li>
+<li><code>auth_failure</code> / <code>upstream_captcha</code> —
+private-tracker login wall</li>
+</ul>
+<p>Tests that search “linux” and check
+<code>tracker_stats[].error_type</code> should cover at least these
+common cases.</p>
+<h2 id="live-service-toggles-env-vars">Live service toggles (env
+vars)</h2>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 15%" />
+<col style="width: 46%" />
+</colgroup>
+<thead>
+<tr>
+<th>Var</th>
+<th>Default</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PUBLIC_TRACKER_DEADLINE_SECONDS</code></td>
+<td><code>25</code></td>
+<td>per-plugin deadline, clamped [5, 120]</td>
+</tr>
+<tr>
+<td><code>MAX_CONCURRENT_TRACKERS</code></td>
+<td><code>5</code></td>
+<td>per-fan-out parallel plugin limit</td>
+</tr>
+<tr>
+<td><code>MAX_CONCURRENT_SEARCHES</code></td>
+<td><code>8</code></td>
+<td>orchestrator-level search concurrency</td>
+</tr>
+<tr>
+<td><code>ENABLE_DEAD_TRACKERS</code></td>
+<td><code>0</code></td>
+<td>force dead trackers back in</td>
+</tr>
+<tr>
+<td><code>SERVICE_PROBE_TIMEOUT</code></td>
+<td><code>3</code></td>
+<td>fixture probe timeout</td>
+</tr>
+<tr>
+<td><code>SERVICE_PROBE_RETRIES</code></td>
+<td><code>5</code></td>
+<td>fixture probe retries</td>
+</tr>
+</tbody>
+</table>
+<h2 id="continuous-integration">Continuous integration</h2>
+<p>CI is currently manual (<code>./ci.sh</code>). Recommended gate:</p>
+<ol type="1">
+<li>Hermetic suites — run every push (fast, no infra dependency).</li>
+<li>Integration + e2e — run nightly or pre-release (needs live
+stack).</li>
+<li>Stress — ad-hoc (before deploys that touch the orchestrator).</li>
+</ol>

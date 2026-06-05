@@ -1,5 +1,8 @@
 # Design System — Runtime Palette
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 The dashboard, admin surfaces, and every embedded app share a single
 runtime-switchable colour system. Palettes are applied to
 `document.documentElement` as CSS custom properties by

@@ -1,5 +1,8 @@
 # qBittorrent Search Plugin Troubleshooting Guide
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 This guide covers common issues with search plugins and their solutions.
 
 ## Table of Contents

@@ -1,5 +1,8 @@
 # Magnet Link Implementation Guide
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 ## Status: ✅ ALL PLUGINS RETURN MAGNET LINKS
 
 All plugins have been updated to return magnet links in search results, enabling direct WebUI downloads.

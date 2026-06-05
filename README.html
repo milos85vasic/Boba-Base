@@ -1,0 +1,443 @@
+<h1 align="center">
+<img src="docs/assets/logo.png" alt="qBittorrent" width="160" /> <br>
+Боба / Boba
+</h1>
+<p align="center">
+<strong>Multi-tracker meta-search for qBittorrent — self-hosted,
+containerised, private-tracker-aware.</strong>
+</p>
+<p align="center">
+<a href="#quick-start">Quick start</a> ·
+<a href="#tokens--api-keys">Tokens &amp; keys</a> ·
+<a href="#documentation">Documentation</a> ·
+<a href="#architecture">Architecture</a> ·
+<a href="#testing">Testing</a> ·
+<a href="#contributing">Contributing</a>
+</p>
+<p align="center">
+<img alt="tests"   src="https://img.shields.io/badge/python%20tests-585%20passing-success">
+<img alt="vitest"  src="https://img.shields.io/badge/frontend%20tests-182%20passing-success">
+<img alt="plugins" src="https://img.shields.io/badge/plugins-48-blue">
+<img alt="merge"   src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
+<img alt="ci"      src="https://img.shields.io/badge/ci-auto%20%28syntax%20%2F%20unit%20%2F%20integration%20%2F%20nightly%20%2F%20security%29-blueviolet">
+<img alt="scan"    src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
+<img alt="license" src="https://img.shields.io/badge/license-Apache%202.0-green">
+</p>
+<hr />
+<h2 id="features">Features</h2>
+<ul>
+<li><strong>Merge Search Service</strong> — FastAPI service
+(<code>:7187</code>) that fans out across 40+ trackers, deduplicates
+results, streams via SSE.</li>
+<li><strong>Real-time results</strong> — <code>result_found</code>
+events arrive as each tracker completes, no blocking.</li>
+<li><strong>Private-tracker bridge</strong> — Authenticated downloads
+via <code>webui-bridge.py</code> for RuTracker, Kinozal, NNM-Club,
+IPTorrents.</li>
+<li><strong>Freeleech-only IPTorrents</strong> — Automation never costs
+ratio (see <a href=".specify/memory/constitution.md">constitution
+VIII</a>).</li>
+<li><strong>Opt-in quality stack</strong> — SonarQube + Snyk + Semgrep +
+Trivy + Gitleaks + bandit + pip-audit behind
+<code>docker-compose.quality.yml</code>.</li>
+<li><strong>Opt-in observability</strong> — Prometheus + Grafana
+dashboards behind the same profile system.</li>
+<li><strong>Hook system</strong> — Register scripts via
+<code>POST /api/v1/hooks</code> for search / download events.</li>
+<li><strong>Angular 21 SPA dashboard</strong> — dark-themed,
+signals-based, per-tracker status chips with CAPTCHA re-login,
+virtual-scroll-ready sort.</li>
+<li><strong>PWA-ready</strong> — favicon + launcher icons + web manifest
+ship from <code>frontend/public/</code>.</li>
+<li><strong>Container-first</strong> — rootless Podman or Docker, single
+<code>./start.sh</code> boot.</li>
+</ul>
+<hr />
+<h2 id="quick-start">Quick start</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/milos85vasic/qBitTorrent.git</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> qBitTorrent</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional: configure tracker credentials + tokens</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env.example .env</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="va">$EDITOR</span> .env            <span class="co"># see &quot;Tokens &amp; API keys&quot; below</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./setup.sh</span>              <span class="co"># one-time</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span>              <span class="co"># Angular build + containers + plugin sync</span></span></code></pre></div>
+<p>Then visit:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>URL</th>
+<th>Purpose</th>
+<th>Auth</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="http://localhost:7187/">http://localhost:7187/</a></td>
+<td>Merge-search dashboard (SPA)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a
+href="http://localhost:7187/docs">http://localhost:7187/docs</a></td>
+<td>FastAPI Swagger UI</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a
+href="http://localhost:7187/openapi.json">http://localhost:7187/openapi.json</a></td>
+<td>OpenAPI schema</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="http://localhost:7186/">http://localhost:7186/</a></td>
+<td>qBittorrent WebUI proxy</td>
+<td><code>admin</code> / <code>admin</code></td>
+</tr>
+<tr>
+<td><a href="http://localhost:7185/">http://localhost:7185/</a></td>
+<td>qBittorrent internal (container)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><a href="http://localhost:7188/">http://localhost:7188/</a></td>
+<td>WebUI bridge (private-tracker downloads)</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="tokens-api-keys">Tokens &amp; API keys</h2>
+<p><strong>⚠ Configure any credentials you need in <code>.env</code>
+before running <code>./start.sh</code>.</strong> The single source of
+truth is <strong><a
+href="docs/TOKENS_AND_KEYS.md"><code>docs/TOKENS_AND_KEYS.md</code></a></strong>
+— which variable is mandatory, which is optional, and <strong>where to
+register</strong> for each one.</p>
+<h3 id="at-a-glance">At a glance</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Category</th>
+<th>Mandatory</th>
+<th>Optional</th>
+<th>Documentation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qBittorrent WebUI</td>
+<td>—</td>
+<td><code>WEBUI_USERNAME</code>, <code>WEBUI_PASSWORD</code></td>
+<td><a
+href="docs/TOKENS_AND_KEYS.md#1-qbittorrent-webui-built-in">§1</a></td>
+</tr>
+<tr>
+<td>Private trackers</td>
+<td>per-tracker</td>
+<td>—</td>
+<td><a
+href="docs/TOKENS_AND_KEYS.md#2-private-tracker-credentials">§2</a></td>
+</tr>
+<tr>
+<td>Public tracker uplift</td>
+<td>—</td>
+<td><code>JACKETT_API_KEY</code>, …</td>
+<td><a
+href="docs/TOKENS_AND_KEYS.md#3-public-tracker-api-keys-optional">§3</a></td>
+</tr>
+<tr>
+<td>Metadata enrichment</td>
+<td>—</td>
+<td><code>TMDB_API_KEY</code>, <code>TVDB_API_KEY</code>, …</td>
+<td><a
+href="docs/TOKENS_AND_KEYS.md#4-metadata-enrichment-apis-optional">§4</a></td>
+</tr>
+<tr>
+<td>Security scanning</td>
+<td>—</td>
+<td><code>SNYK_TOKEN</code>, <code>SONAR_TOKEN</code>, …</td>
+<td><a
+href="docs/TOKENS_AND_KEYS.md#5-security-scanner-tokens-opt-in-ci--local-scans">§5</a></td>
+</tr>
+<tr>
+<td>Observability</td>
+<td>—</td>
+<td><code>GRAFANA_USER</code>, <code>GRAFANA_PASSWORD</code></td>
+<td><a
+href="docs/TOKENS_AND_KEYS.md#6-observability-endpoints-opt-in-compose-profile">§6</a></td>
+</tr>
+<tr>
+<td>Orchestrator tuning</td>
+<td>—</td>
+<td><code>ALLOWED_ORIGINS</code>, <code>MAX_CONCURRENT_TRACKERS</code>,
+…</td>
+<td><a
+href="docs/TOKENS_AND_KEYS.md#7-orchestrator-tuning-optional--phase-3">§7</a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="where-to-register-fast-links">Where to register (fast
+links)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Signup</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RuTracker</td>
+<td><a href="https://rutracker.org/forum/register.php"
+class="uri">https://rutracker.org/forum/register.php</a></td>
+<td>Username + password</td>
+</tr>
+<tr>
+<td>Kinozal</td>
+<td><a href="https://kinozal.tv/signup.php"
+class="uri">https://kinozal.tv/signup.php</a></td>
+<td>May require invite</td>
+</tr>
+<tr>
+<td>NNM-Club</td>
+<td><a href="https://nnmclub.to/forum/ucp.php?mode=register"
+class="uri">https://nnmclub.to/forum/ucp.php?mode=register</a></td>
+<td>Cookie-based auth</td>
+</tr>
+<tr>
+<td>IPTorrents</td>
+<td><a href="https://iptorrents.com/"
+class="uri">https://iptorrents.com/</a></td>
+<td>Invite-only; freeleech enforced</td>
+</tr>
+<tr>
+<td>Jackett</td>
+<td><a href="https://github.com/Jackett/Jackett"
+class="uri">https://github.com/Jackett/Jackett</a></td>
+<td>Self-hosted indexer</td>
+</tr>
+<tr>
+<td>TMDb</td>
+<td><a href="https://www.themoviedb.org/signup"
+class="uri">https://www.themoviedb.org/signup</a></td>
+<td>v3 auth API key</td>
+</tr>
+<tr>
+<td>TVDb</td>
+<td><a href="https://thetvdb.com/api-information"
+class="uri">https://thetvdb.com/api-information</a></td>
+<td>Subscription API</td>
+</tr>
+<tr>
+<td>MusicBrainz</td>
+<td><a href="https://musicbrainz.org/doc/MusicBrainz_API"
+class="uri">https://musicbrainz.org/doc/MusicBrainz_API</a></td>
+<td>Free — needs UA only</td>
+</tr>
+<tr>
+<td>Snyk</td>
+<td><a href="https://app.snyk.io/"
+class="uri">https://app.snyk.io/</a></td>
+<td>Account → Auth Token</td>
+</tr>
+<tr>
+<td>SonarCloud</td>
+<td><a href="https://sonarcloud.io/account/security/"
+class="uri">https://sonarcloud.io/account/security/</a></td>
+<td>Or run the compose SonarQube</td>
+</tr>
+<tr>
+<td>Gitleaks</td>
+<td><a href="https://gitleaks.io/"
+class="uri">https://gitleaks.io/</a></td>
+<td>Optional commercial license</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="documentation">Documentation</h2>
+<p>Everything the platform offers, indexed:</p>
+<h3 id="getting-started-operation">Getting started &amp; operation</h3>
+<ul>
+<li><a href="docs/USER_MANUAL.md"><code>docs/USER_MANUAL.md</code></a> —
+end-user walkthrough</li>
+<li><a
+href="docs/TOKENS_AND_KEYS.md"><code>docs/TOKENS_AND_KEYS.md</code></a>
+— <strong>⭐ credentials / tokens / env vars (mandatory vs optional +
+registration links)</strong></li>
+<li><a
+href="docs/DESIGN_SYSTEM.md"><code>docs/DESIGN_SYSTEM.md</code></a> —
+runtime-switchable palette catalogue (8 palettes, dark + light, Darcula
+default)</li>
+<li><a href="docs/PLUGINS.md"><code>docs/PLUGINS.md</code></a> — the 48
+plugin engines</li>
+<li><a
+href="docs/PLUGIN_TROUBLESHOOTING.md"><code>docs/PLUGIN_TROUBLESHOOTING.md</code></a>
+— what to check when a plugin breaks</li>
+</ul>
+<h3 id="architecture-subsystems">Architecture &amp; subsystems</h3>
+<ul>
+<li><a href="docs/architecture/"><code>docs/architecture/</code></a> — 5
+Mermaid diagrams (topology, search lifecycle, plugin execution, bridge,
+shutdown)</li>
+<li><a href="docs/DATA_MODEL.md"><code>docs/DATA_MODEL.md</code></a> —
+Pydantic schemas &amp; lifecycle (no relational DB)</li>
+<li><a href="docs/CONCURRENCY.md"><code>docs/CONCURRENCY.md</code></a> —
+asyncio semaphore + TTL caches + retry/backoff</li>
+<li><a
+href="docs/OBSERVABILITY.md"><code>docs/OBSERVABILITY.md</code></a> —
+Prometheus + Grafana + OpenTelemetry</li>
+<li><a href="docs/PERFORMANCE.md"><code>docs/PERFORMANCE.md</code></a> —
+benchmark + load + stress test layout</li>
+<li><a
+href="docs/api/openapi.json"><code>docs/api/openapi.json</code></a> —
+frozen OpenAPI spec (diffed in CI)</li>
+</ul>
+<h3 id="quality-security">Quality &amp; security</h3>
+<ul>
+<li><a href="docs/SECURITY.md"><code>docs/SECURITY.md</code></a> —
+threat model + credential storage</li>
+<li><a href="docs/SCANNING.md"><code>docs/SCANNING.md</code></a> — Snyk
++ Sonar + Semgrep + Trivy + Gitleaks + bandit + pip-audit</li>
+<li><a
+href="docs/QUALITY_STACK.md"><code>docs/QUALITY_STACK.md</code></a> —
+the opt-in <code>docker-compose.quality.yml</code> stack</li>
+</ul>
+<h3 id="testing">Testing</h3>
+<ul>
+<li><a href="docs/TESTING.md"><code>docs/TESTING.md</code></a> —
+catalogue of every test type (30 rows)</li>
+<li><a
+href="docs/COVERAGE_BASELINE.md"><code>docs/COVERAGE_BASELINE.md</code></a>
+— per-module coverage gates</li>
+<li><a href="tests/README.md"><code>tests/README.md</code></a> — layout
+of the <code>tests/</code> tree</li>
+</ul>
+<h3 id="development">Development</h3>
+<ul>
+<li><a href="CONTRIBUTING.md"><code>CONTRIBUTING.md</code></a> —
+contribution workflow</li>
+<li><a href="CLAUDE.md"><code>CLAUDE.md</code></a> — Claude Code agent
+protocol (TDD + rebuild-reboot)</li>
+<li><a href="AGENTS.md"><code>AGENTS.md</code></a> — runtime development
+guidance</li>
+<li><a
+href=".specify/memory/constitution.md"><code>.specify/memory/constitution.md</code></a>
+— <strong>binding architectural contract (v1.1.0)</strong></li>
+</ul>
+<h3 id="courses-self-paced-asciinema">Courses (self-paced,
+Asciinema)</h3>
+<ul>
+<li><a href="courses/01-operator/"><code>courses/01-operator/</code></a>
+— Your first search</li>
+<li><a
+href="courses/02-plugin-author/"><code>courses/02-plugin-author/</code></a>
+— Authoring a nova3 plugin</li>
+<li><a
+href="courses/03-contributor/"><code>courses/03-contributor/</code></a>
+— TDD + rebuild-reboot deep dive</li>
+<li><a
+href="courses/04-security-ops/"><code>courses/04-security-ops/</code></a>
+— Threat model + scanner bundle</li>
+</ul>
+<h3 id="release-ci">Release / CI</h3>
+<ul>
+<li><a href="CHANGELOG.md"><code>CHANGELOG.md</code></a></li>
+<li><a href="releases/README.md"><code>releases/README.md</code></a> —
+release artefacts layout</li>
+<li><a
+href="docs/OUT_OF_SANDBOX.md"><code>docs/OUT_OF_SANDBOX.md</code></a> —
+items requiring external credentials (HelixQA / OpenCode / submodule
+orgs)</li>
+</ul>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<pre><code>                       ┌───────────────────────────────┐
+                       │       qbittorrent-proxy        │
+                       │      (python:3.12-alpine)      │
+  http://:7186 ────────┤                                 │
+   Download proxy      │  Download proxy (:7186) ────────┼──► qBittorrent (:7185)
+                       │                                 │
+  http://:7187 ────────┤  Merge search service (:7187)   │
+   Angular SPA +       │  ├── /api/v1/search + SSE       │
+   FastAPI             │  ├── /api/v1/bridge/health      │
+                       │  └── /api/v1/auth/...           │
+                       └───────────────────────────────┘
+                                     ▲
+  http://:7188 ── webui-bridge.py (host process) — private-tracker bridge
+
+Opt-in (docker-compose.quality.yml):
+   http://:9000   SonarQube              profile: quality
+   http://:9090   Prometheus             profile: observability
+   http://:3000   Grafana                profile: observability
+   (run-once)     Snyk / Semgrep /
+                  Trivy / Gitleaks       profile: run-once</code></pre>
+<p>Full Mermaid renders in <a
+href="docs/architecture/"><code>docs/architecture/</code></a>.</p>
+<hr />
+<h2 id="testing-1">Testing</h2>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Non-live-HTTP suites — run anywhere, ~10s</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ tests/e2e/ tests/contract/ <span class="at">--no-cov</span> <span class="at">-q</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Benchmarks — dedupe perf + live-HTTP fan-out benchmarks, ~4min</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/benchmark/ <span class="at">--no-cov</span> <span class="at">-q</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Security — hits the live merge service, needs stack up</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/security/ <span class="at">--no-cov</span> <span class="at">-q</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Integration — same</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/integration/ <span class="at">--no-cov</span> <span class="at">-q</span> <span class="at">-m</span> <span class="st">&quot;not requires_credentials&quot;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Frontend</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> <span class="at">--prefix</span> frontend ng test <span class="at">--watch</span><span class="op">=</span>false</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Full scanner sweep (non-interactive; skips scanners with missing tokens)</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/scan.sh</span> <span class="at">--all</span></span></code></pre></div>
+<p>See <a href="docs/TESTING.md"><code>docs/TESTING.md</code></a> for
+the 30-row test-type catalogue.</p>
+<hr />
+<h2 id="releases">Releases</h2>
+<p>Non-interactive builder at <a
+href="scripts/build-releases.sh"><code>scripts/build-releases.sh</code></a>
+produces artefacts under <a
+href="releases/README.md"><code>releases/&lt;version&gt;/</code></a>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/build-releases.sh</span>              <span class="co"># all targets, all channels</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/build-releases.sh</span> frontend     <span class="co"># one target</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/build-releases.sh</span> <span class="at">--channel</span> release</span></code></pre></div>
+<p>Each artefact ships with <code>SHA256SUMS</code> +
+<code>BUILD_INFO.json</code>.</p>
+<hr />
+<h2 id="contributing">Contributing</h2>
+<p>See <a href="CONTRIBUTING.md"><code>CONTRIBUTING.md</code></a> and
+the TDD protocol in <a href="CLAUDE.md"><code>CLAUDE.md</code></a>. PRs
+must keep the following green:</p>
+<ul>
+<li>Python unit + e2e + contract (<code>pytest</code> — 585+ tests)</li>
+<li>Frontend Vitest (<code>ng test</code> — 182+ tests)</li>
+<li>Ruff + bandit + shellcheck (via <code>scripts/scan.sh</code>)</li>
+</ul>
+<hr />
+<h2 id="license">License</h2>
+<p>Apache 2.0 — see <a href="LICENSE"><code>LICENSE</code></a>.</p>

@@ -1,0 +1,248 @@
+<h1 id="release-report-torrent-file-upload-fix">Release Report: Torrent
+File Upload Fix</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p><strong>Date:</strong> 2026-04-03<br />
+<strong>Severity:</strong> Critical (complete loss of .torrent file
+upload functionality)<br />
+<strong>Status:</strong> Fixed, tested, deployed</p>
+<hr />
+<h2 id="problem-description">Problem Description</h2>
+<p>Users were unable to download any torrent opened from a
+<code>.torrent</code> file through the qBittorrent WebUI. When uploading
+a <code>.torrent</code> file, setting a destination path, and
+submitting, the download never appeared in the downloads list and never
+started. Magnet links and search plugin downloads continued to work.</p>
+<hr />
+<h2 id="root-cause">Root Cause</h2>
+<p>The <code>download_proxy.py</code> proxy server (sitting in front of
+qBittorrent on port 7186) attempted to decode <strong>all</strong> POST
+request bodies to <code>/api/v2/torrents/add</code> as UTF-8 text at
+line 101:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>body_str <span class="op">=</span> body.decode(<span class="st">&quot;utf-8&quot;</span>)</span></code></pre></div>
+<p>When a <code>.torrent</code> file is uploaded via the WebUI, the
+browser sends it as <code>multipart/form-data</code> containing
+<strong>raw binary data</strong> (the bencoded torrent file). This
+binary content is not valid UTF-8, causing a
+<code>UnicodeDecodeError</code>:</p>
+<pre><code>&#39;utf-8&#39; codec can&#39;t decode byte 0x81 in position 530: invalid start byte</code></pre>
+<p>The exception was caught by the generic <code>except Exception</code>
+handler at line 131, which returned an HTTP 500 error silently. Users
+saw no error message in the WebUI - the upload simply disappeared.</p>
+<h3 id="why-magnet-links-worked">Why magnet links worked</h3>
+<p>Magnet URLs are sent as
+<code>application/x-www-form-urlencoded</code> POST data (plain text),
+which IS valid UTF-8. The proxy only intercepted these for RuTracker
+URLs; all other magnets passed through correctly.</p>
+<h3 id="why-search-plugin-downloads-worked">Why search plugin downloads
+worked</h3>
+<p>Search plugin downloads go through a different code path
+(<code>nova2dl.py</code>) that the proxy specifically handles for
+RuTracker URLs.</p>
+<hr />
+<h2 id="architecture-context">Architecture Context</h2>
+<pre><code>User Browser
+    |
+    v
+:7186  download_proxy.py (Python HTTP proxy)
+    |       - Intercepts RuTracker URLs -&gt; downloads via nova2dl.py
+    |       - Passes through all other requests
+    v
+:7185 qBittorrent WebUI (native)</code></pre>
+<p>The proxy exists to handle RuTracker authentication for torrent
+downloads. It intercepts all API requests but should pass through
+non-RuTracker traffic unchanged.</p>
+<hr />
+<h2 id="fix-applied">Fix Applied</h2>
+<p><strong>File:</strong> <code>plugins/download_proxy.py</code></p>
+<h3 id="changes">Changes</h3>
+<ol type="1">
+<li><p><strong>Added multipart detection method</strong>
+<code>_is_multipart_file_upload()</code> that checks the
+<code>Content-Type</code> header for
+<code>multipart/form-data</code>.</p></li>
+<li><p><strong>Added early bypass for file uploads:</strong> When a
+multipart file upload is detected, the proxy immediately passes the
+request through to qBittorrent without attempting to decode the
+body.</p></li>
+<li><p><strong>Added binary body fallback:</strong> Even if Content-Type
+check is bypassed, a <code>try/except UnicodeDecodeError</code> around
+the decode call ensures binary data doesn’t crash the proxy.</p></li>
+</ol>
+<h3 id="code-diff-handle_request-method">Code diff (handle_request
+method)</h3>
+<p><strong>Before:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> handle_request(<span class="va">self</span>, body):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        path <span class="op">=</span> urllib.parse.urlparse(<span class="va">self</span>.path).path</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> path <span class="op">==</span> <span class="st">&quot;/api/v2/torrents/add&quot;</span> <span class="kw">and</span> <span class="va">self</span>.command <span class="op">==</span> <span class="st">&quot;POST&quot;</span> <span class="kw">and</span> body:</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>            body_str <span class="op">=</span> body.decode(<span class="st">&quot;utf-8&quot;</span>)  <span class="co"># CRASHES on binary torrent data</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>            params <span class="op">=</span> urllib.parse.parse_qs(body_str)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>            urls <span class="op">=</span> params.get(<span class="st">&quot;urls&quot;</span>, [<span class="st">&quot;&quot;</span>])[<span class="dv">0</span>]</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            ...</span></code></pre></div>
+<p><strong>After:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _is_multipart_file_upload(<span class="va">self</span>):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    content_type <span class="op">=</span> <span class="va">self</span>.headers.get(<span class="st">&quot;Content-Type&quot;</span>, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&quot;multipart/form-data&quot;</span> <span class="kw">in</span> content_type</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> handle_request(<span class="va">self</span>, body):</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        path <span class="op">=</span> urllib.parse.urlparse(<span class="va">self</span>.path).path</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> path <span class="op">==</span> <span class="st">&quot;/api/v2/torrents/add&quot;</span> <span class="kw">and</span> <span class="va">self</span>.command <span class="op">==</span> <span class="st">&quot;POST&quot;</span> <span class="kw">and</span> body:</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="va">self</span>._is_multipart_file_upload():</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                logger.info(<span class="st">&quot;Multipart file upload detected, passing through directly&quot;</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.proxy_to_qbittorrent(body)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">try</span>:</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>                body_str <span class="op">=</span> body.decode(<span class="st">&quot;utf-8&quot;</span>)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>            <span class="cf">except</span> (<span class="pp">UnicodeDecodeError</span>, <span class="pp">ValueError</span>):</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>                logger.info(<span class="st">&quot;Binary body detected, passing through directly&quot;</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.proxy_to_qbittorrent(body)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>                <span class="cf">return</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>            params <span class="op">=</span> urllib.parse.parse_qs(body_str)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>            urls <span class="op">=</span> params.get(<span class="st">&quot;urls&quot;</span>, [<span class="st">&quot;&quot;</span>])[<span class="dv">0</span>]</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>            ...</span></code></pre></div>
+<hr />
+<h2 id="test-suite">Test Suite</h2>
+<p><strong>File:</strong>
+<code>tests/test_torrent_file_upload.py</code><br />
+<strong>Tests:</strong> 19 tests across 3 test classes</p>
+<h3 id="test-torrent-files">Test Torrent Files</h3>
+<p>Downloaded 4 Linux distribution torrent files with high seeder counts
+for testing:</p>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 30%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Size</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ubuntu-24.04-desktop-amd64.iso.torrent</code></td>
+<td>474 KB</td>
+<td>releases.ubuntu.com</td>
+</tr>
+<tr>
+<td><code>ubuntu-20.04-desktop-amd64.iso.torrent</code></td>
+<td>325 KB</td>
+<td>releases.ubuntu.com</td>
+</tr>
+<tr>
+<td><code>ubuntuserver.torrent</code></td>
+<td>247 KB</td>
+<td>releases.ubuntu.com</td>
+</tr>
+<tr>
+<td><code>debian.iso.torrent</code></td>
+<td>50 KB</td>
+<td>cdimage.debian.org</td>
+</tr>
+</tbody>
+</table>
+<p>Located in: <code>tests/test_torrents/</code></p>
+<h3 id="test-classes">Test Classes</h3>
+<h4 id="testproxyinfrastructure-5-tests">TestProxyInfrastructure (5
+tests)</h4>
+<ul>
+<li>qBittorrent direct accessibility (port 7185)</li>
+<li>Proxy accessibility (port 7186)</li>
+<li>Version match through proxy</li>
+<li>Transfer info passthrough</li>
+<li>Local torrent file availability</li>
+</ul>
+<h4 id="testtorrentfileupload-10-tests">TestTorrentFileUpload (10
+tests)</h4>
+<ul>
+<li>Direct upload to qBittorrent (bypass proxy) - baseline</li>
+<li>Proxy upload returns “Ok.” (not 500)</li>
+<li>Uploaded torrent appears in qBittorrent list</li>
+<li>Uploaded torrent has valid download state</li>
+<li>Magnet URL passthrough through proxy</li>
+<li><strong>All 4 distro torrent files upload successfully through
+proxy</strong></li>
+<li>Upload with custom save path</li>
+<li>Duplicate torrent detection through proxy</li>
+<li><strong>Regression: proxy never returns 500 for multipart uploads (5
+iterations)</strong></li>
+<li>Preferences API passthrough through proxy</li>
+</ul>
+<h4 id="testproxyregression-4-tests">TestProxyRegression (4 tests)</h4>
+<ul>
+<li>No UnicodeDecodeError on any torrent file (tests all 4)</li>
+<li>Binary torrent with all byte values (0-255) doesn’t crash proxy</li>
+<li>Proxy logs contain no errors after uploads</li>
+<li>Largest torrent file (474 KB) uploads without issues</li>
+</ul>
+<h3 id="test-results">Test Results</h3>
+<pre><code>Ran 19 tests in 47.951s - OK
+
+ALL TORRENT FILE UPLOAD TESTS PASSED
+The download proxy correctly handles .torrent file uploads.
+Tested with 4 distro torrent file(s).</code></pre>
+<p>Tests verified on freshly restarted containers (full stop/start
+cycle).</p>
+<hr />
+<h2 id="files-changed">Files Changed</h2>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>plugins/download_proxy.py</code></td>
+<td>Fixed multipart file upload handling</td>
+</tr>
+<tr>
+<td><code>tests/test_torrent_file_upload.py</code></td>
+<td>New comprehensive test suite (19 tests)</td>
+</tr>
+<tr>
+<td><code>tests/test_torrents/</code></td>
+<td>New directory with 4 Linux distro torrent files</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="deployment">Deployment</h2>
+<p>Containers restarted and verified: - <code>qbittorrent</code> -
+qBittorrent v5.1.4-r2-ls444 on port 7185 -
+<code>qbittorrent-proxy</code> - Python proxy on port 7186</p>
+<h3 id="manual-testing">Manual Testing</h3>
+<p>The WebUI is now available at:
+<strong>http://localhost:7186</strong><br />
+Credentials: <code>admin</code> / <code>admin</code></p>
+<p>To manually verify: 1. Open http://localhost:7186 in browser 2. Login
+with admin/admin 3. Click the “+” icon or drag a <code>.torrent</code>
+file onto the window 4. Set a destination path (e.g.,
+<code>/downloads/</code>) 5. Click “Add” - the torrent should now appear
+and start downloading</p>
+<hr />
+<h2 id="running-tests">Running Tests</h2>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the torrent file upload test suite</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> tests/test_torrent_file_upload.py</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Run all existing test suites</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="ex">./run-all-tests.sh</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick validation</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./test.sh</span></span></code></pre></div>

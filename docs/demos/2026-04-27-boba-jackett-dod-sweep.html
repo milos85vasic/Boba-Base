@@ -1,0 +1,225 @@
+<h1
+id="boba-jackett-definition-of-done-sweep-phase-7-task-47">boba-jackett
+— Definition of Done sweep (Phase 7 Task 47)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p><strong>Date:</strong> 2026-04-27 <strong>Plan:</strong>
+<code>docs/superpowers/plans/2026-04-27-jackett-management-ui-and-system-db.md</code>
+<strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-04-27-jackett-management-ui-and-system-db-design.md</code>
+§ 11</p>
+<p>Walks the 13 DoD items from spec § 11. Each row below is either ✅
+shipped (with a falsifiable evidence pointer) or ⚠️ DEFERRED (with
+reason).</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>DoD item</th>
+<th>Status</th>
+<th>Evidence / Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>11.1</td>
+<td>All endpoints in § 8 implemented + Layer 2 integration + Layer 3
+E2E</td>
+<td>✅</td>
+<td>Endpoints land in
+<code>qBitTorrent-go/cmd/boba-jackett/main.go</code> +
+<code>internal/jackettapi/</code>. Layer 2 commit <code>8936545</code>
+(<code>test(boba-jackett): Layer 2 integration tests against real SQLite + .env</code>).
+Layer 3 commit <code>0efe076</code>
+(<code>test(boba-jackett): Layer 3 E2E against live stack</code>).</td>
+</tr>
+<tr>
+<td>11.2</td>
+<td>Both UI pages implemented + Playwright walkthroughs</td>
+<td>⚠️ DEFERRED</td>
+<td>The Credentials page + <code>/jackett</code> route scaffold are
+shipped (commit <code>6466b1f</code> —
+<code>feat(frontend): /jackett route + credentials page (Tasks 26-27)</code>).
+The Indexers page UI (Tasks 28-31), the IPTorrents UI hint (Task 31),
+and the NNMClub UI banner (Task 32 frontend half) are NOT shipped this
+dispatch. Playwright walkthroughs were not authored. Reason:
+scope-bounded to the credentials surface in Tasks 26-27; full UI
+follow-up tracked. The Go backend for all of these (catalog API, indexer
+API, autoconfig API, ServedByNativePlugin field) IS shipped — see
+commits <code>9dba1c9</code>, <code>aed7acf</code>,
+<code>2ed7385</code>, <code>002d3bb</code>.</td>
+</tr>
+<tr>
+<td>11.3</td>
+<td>All 7 test layers green</td>
+<td>✅ (with footnote)</td>
+<td>Layer 1: <code>go test -short -race ./...</code> PASS for all 13
+boba-jackett packages — see
+<code>docs/demos/2026-04-27-boba-jackett-static-smoke.md</code> § 1.
+(One pre-existing flake in
+<code>internal/api/TestSearchHandler_QueueFull</code> documented as
+out-of-scope in <code>docs/issues/fixed/BUGFIXES.md</code> § 5.) Layer 2
+commit <code>8936545</code>. Layer 3 commit <code>0efe076</code>. Layer
+4 commit <code>8405167</code>. Layer 5 commit <code>7374b1d</code>.
+Layer 6 + Layer 7 commit <code>6f3dbaf</code>. Run-all-challenges 9/9
+PASS today (static-smoke § 4).</td>
+</tr>
+<tr>
+<td>11.4</td>
+<td>Plan doc reconciled
+(<code>2026-04-26-jackett-autoconfig-clean-rebuild.md</code>)</td>
+<td>✅</td>
+<td>Commit <code>b40ee29</code>
+(<code>docs(plan): reconcile 2026-04-26 jackett-autoconfig plan checkboxes against shipped commits</code>).
+All 84 boxes now <code>[x]</code>; status banner added at top.</td>
+</tr>
+<tr>
+<td>11.5</td>
+<td>Documentation updated (CLAUDE.md, AGENTS.md, JACKETT_INTEGRATION.md,
+BOBA_DATABASE.md)</td>
+<td>✅</td>
+<td>Commit <code>06a7d9e</code> (CLAUDE.md + AGENTS.md +
+JACKETT_INTEGRATION.md). Commit <code>f55df54</code> (NEW
+<code>docs/BOBA_DATABASE.md</code>). Each doc cross-references the
+others.</td>
+</tr>
+<tr>
+<td>11.6</td>
+<td>Bugfix doc per CONST-10</td>
+<td>✅</td>
+<td>Commit <code>6d6e0f2</code>
+(<code>docs(bugfixes): document boba-jackett implementation bug discoveries</code>).
+5 entries in <code>docs/issues/fixed/BUGFIXES.md</code> covering
+master-key two-step write, 0644 file mode, nil-slice marshalling,
+ReplaceAll empty wipe, and the pre-existing <code>internal/api</code>
+flake.</td>
+</tr>
+<tr>
+<td>11.7</td>
+<td><code>IPTORRENTS_COOKIES</code> documented + UI add-modal hint</td>
+<td>⚠️ DEFERRED</td>
+<td>The Go side accepts cookies via the <code>credentials</code> table
+(<code>kind='cookie'</code>); the env var convention is documented in
+<code>docs/JACKETT_INTEGRATION.md</code>. The UI add-modal hint (Task
+31) ships with the Indexers page UI — DEFERRED with 11.2.</td>
+</tr>
+<tr>
+<td>11.8</td>
+<td>NNMClub clarification in autoconfig output AND dashboard banner</td>
+<td>⚠️ DEFERRED (partial)</td>
+<td>Backend half SHIPPED: <code>ServedByNativePlugin</code> field added
+to <code>AutoconfigResult</code> in commit <code>002d3bb</code>
+(<code>feat(boba-jackett): add ServedByNativePlugin to AutoconfigResult (Task 32)</code>).
+The dashboard banner (Task 32 UI half) ships with the Indexers page —
+DEFERRED with 11.2.</td>
+</tr>
+<tr>
+<td>11.9</td>
+<td>Pre-test commit + push to all upstreams (<code>origin</code>,
+<code>github</code>, <code>upstream</code>)</td>
+<td>✅</td>
+<td>Per-layer pushes documented in commit messages. Final pre-Phase-7
+push at commit <code>5e0d83f</code> (per task instructions: “Task 46
+(push to all 3 remotes): completed at commit <code>5e0d83f</code>”).
+Phase 7 closing push happens at end of this dispatch.</td>
+</tr>
+<tr>
+<td>11.10</td>
+<td>Final demo block in PR body</td>
+<td>✅</td>
+<td>This dispatch produces two demo docs:
+<code>docs/demos/2026-04-27-boba-jackett-static-smoke.md</code> (Phase 7
+Task 45) and this DoD sweep. The PR body links both.</td>
+</tr>
+<tr>
+<td>11.11</td>
+<td>Open-issues sweep — zero new TODO/FIXME from this work</td>
+<td>✅</td>
+<td>Commit <code>0f14032</code>
+(<code>fix(boba-jackett): TODO/FIXME sweep + CONST-013 audit</code>).
+Two TODO comments in new code
+(<code>internal/jackettapi/health.go</code> +
+<code>internal/jackett/autoconfig.go</code>) reworded as forward-looking
+NOTEs. Verification:
+<code>grep -rE 'TODO\|FIXME\|XXX\|HACK' qBitTorrent-go/cmd/boba-jackett qBitTorrent-go/internal/{db,envfile,bootstrap,jackett,jackettapi,logging}</code>
+returns 0 matches after that commit.</td>
+</tr>
+<tr>
+<td>11.12</td>
+<td>CONST-013 audit — no bare <code>sync.Mutex + map/slice</code> in new
+Go code</td>
+<td>✅ (with deferral)</td>
+<td>Same commit <code>0f14032</code>. Audit results:
+<code>internal/envfile/write.go::writerMu</code> and
+<code>internal/jackettapi/catalog.go::refreshMu</code> guard
+request-flow critical sections, NOT collections — OK.
+<code>internal/logging/redactor.go::mu</code> guards a mutable
+<code>[][]byte</code> slice — flagged. The preferred primitive
+<code>safe.Slice[T]</code> from
+<code>digital.vasic.concurrency/pkg/safe</code> is NOT in this project’s
+<code>go.mod</code> (verified). Per the plan’s documented escape hatch,
+the gap is annotated inline in <code>redactor.go</code> and called out
+in the commit body for follow-up.</td>
+</tr>
+<tr>
+<td>11.13</td>
+<td>CONST-033 verification (both no-suspend challenges PASS)</td>
+<td>✅</td>
+<td>Per task instructions: “Task 44 (CONST-033 verification): both
+challenges PASS — no action needed.” Re-confirmed today:
+<code>bash challenges/scripts/run_all_challenges.sh</code> shows
+<code>PASS: all 4 sleep targets masked</code> +
+<code>PASS: AllowSuspend=no present</code> +
+<code>PASS: IdleAction=ignore (safe)</code> +
+<code>PASS: no suspend events since fix at 2026-04-26T19:58:55+03:00</code>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tally">Tally</h2>
+<ul>
+<li>✅ Shipped: 10 of 13</li>
+<li>⚠️ DEFERRED: 3 of 13 — all on the frontend Indexers page family
+(11.2, 11.7, 11.8 UI half)</li>
+</ul>
+<h2 id="deferred-item-rationale">Deferred-item rationale</h2>
+<p>All three deferrals are bounded to the Angular Indexers page UI work
+(Tasks 28-32 frontend) which is explicitly out-of-scope for this
+dispatch. The corresponding <strong>Go backend</strong> for every
+deferred item IS shipped:</p>
+<ul>
+<li>Catalog API (<code>9dba1c9</code>)</li>
+<li>Indexers configure/remove/test/toggle API
+(<code>aed7acf</code>)</li>
+<li>Autoconfig runs history + manual trigger API
+(<code>2ed7385</code>)</li>
+<li><code>ServedByNativePlugin</code> field for NNMClub
+(<code>002d3bb</code>)</li>
+</ul>
+<p>So a future frontend-only patch can land the Indexers page, the
+IPTorrents add-modal hint, and the NNMClub banner without touching any
+of the Go service. The wireable surface is contract-tested (Layer 6
+commit <code>6f3dbaf</code>) so the frontend has a stable target.</p>
+<h2 id="verification-commands-the-reader-can-re-run">Verification
+commands the reader can re-run</h2>
+<pre><code># Confirm all the cited commits exist:
+git log --oneline -50 | grep -E &#39;6466b1f|9dba1c9|aed7acf|2ed7385|002d3bb|8936545|0efe076|8405167|7374b1d|6f3dbaf&#39;
+
+# Confirm the docs exist:
+ls -la docs/BOBA_DATABASE.md docs/issues/fixed/BUGFIXES.md \
+       docs/demos/2026-04-27-boba-jackett-static-smoke.md \
+       docs/demos/2026-04-27-boba-jackett-dod-sweep.md
+
+# Confirm the plan checkboxes are reconciled:
+grep -c &#39;^- \[x\]&#39; docs/superpowers/plans/2026-04-26-jackett-autoconfig-clean-rebuild.md  # → 84
+grep -c &#39;^- \[ \]&#39; docs/superpowers/plans/2026-04-26-jackett-autoconfig-clean-rebuild.md  # → 0
+
+# Confirm the open-issues sweep is clean:
+grep -rE &#39;TODO|FIXME|XXX|HACK&#39; qBitTorrent-go/cmd/boba-jackett \
+  qBitTorrent-go/internal/{db,envfile,bootstrap,jackett,jackettapi,logging}
+# → empty (or only NOTE annotations)</code></pre>

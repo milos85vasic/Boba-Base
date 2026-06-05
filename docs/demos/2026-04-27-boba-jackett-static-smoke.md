@@ -1,5 +1,8 @@
 # boba-jackett Static Smoke (Phase 7 Task 45)
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 **Date:** 2026-04-27
 **Plan:** `docs/superpowers/plans/2026-04-27-jackett-management-ui-and-system-db.md` § Task 45
 **Scope:** Static (build + unit + challenge) verification — the live-stack

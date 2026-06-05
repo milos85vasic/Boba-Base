@@ -1,5 +1,8 @@
 # Jackett Auto-Config + Clean-Slate Rebuild — Implementation Plan
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 > **Status (reconciled 2026-04-27):** All 84 checkboxes marked `[x]`. The auto-config module shipped via commits `45591c2` (Layer 1), `9e70cc1` (Layer 2), `5f12be0` (Layers 3-7), `186d26a` (catalog/template fix), `fc1f009` (parity audit + docs). The successor plan (`2026-04-27-jackett-management-ui-and-system-db.md`) supersedes the Python `/api/v1/jackett/autoconfig/last` endpoint with the Go `boba-jackett:7189` service (autoconfig runs history at `/api/v1/jackett/autoconfig/runs`); the corresponding Python file `download-proxy/src/api/jackett.py` was removed in commit `<see Task 38 of successor plan>`. The functional intent of every step in this plan has shipped.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

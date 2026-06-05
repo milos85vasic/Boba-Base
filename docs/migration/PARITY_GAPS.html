@@ -1,0 +1,317 @@
+<h1 id="python-go-parity-gaps">Python → Go Parity Gaps</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<p><strong>Last audited:</strong> 2026-04-27 (commit
+<code>5f12be0</code>) <strong>Audit method:</strong> side-by-side read
+of public surface (<code>grep -E "^func"</code> on Go, module-level
+inspection on Python). No behavior testing performed. <strong>Spec
+reference:</strong>
+<code>docs/superpowers/specs/2026-04-26-jackett-autoconfig-clean-rebuild-design.md</code>
+§7</p>
+<h2 id="status-definitions">Status definitions</h2>
+<ul>
+<li><strong>Ported</strong> — feature exists in Go with equivalent
+behavior. Note inline divergences.</li>
+<li><strong>Partial</strong> — feature exists in Go but lacks a
+sub-behavior. Note the gap.</li>
+<li><strong>Missing</strong> — feature has no Go counterpart. Note
+user-visible risk.</li>
+</ul>
+<h2 id="summary">Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ported</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Partial</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Missing</td>
+<td>8</td>
+</tr>
+<tr>
+<td><strong>Total Python features audited</strong></td>
+<td><strong>18</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="matrix">Matrix</h2>
+<h3
+id="download-proxysrcmerge_service"><code>download-proxy/src/merge_service/</code></h3>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Python module</th>
+<th>Feature</th>
+<th>Go location</th>
+<th>Status</th>
+<th>Risk if Go-only today</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>search.py</code></td>
+<td><code>start_search()</code> orchestrator</td>
+<td><code>internal/service/merge_search.go: StartSearch</code></td>
+<td>Partial</td>
+<td>Go path lacks plugin subprocess fan-out — no public tracker results
+from Python plugins</td>
+</tr>
+<tr>
+<td><code>search.py</code></td>
+<td><code>_classify_plugin_stderr()</code> error categorization</td>
+<td>(none)</td>
+<td>Missing</td>
+<td>No structured per-tracker error reporting on Go path</td>
+</tr>
+<tr>
+<td><code>search.py</code></td>
+<td>Public tracker subprocess + NDJSON parser</td>
+<td>(none)</td>
+<td>Missing</td>
+<td>Public tracker plugins (eztv, piratebay, etc.) unreachable on Go
+path</td>
+</tr>
+<tr>
+<td><code>search.py</code></td>
+<td>Private tracker direct aiohttp (RuTracker, Kinozal, NNMClub,
+IPTorrents)</td>
+<td>Partial in <code>internal/service/merge_search.go</code></td>
+<td>Partial</td>
+<td>Verify per-tracker auth flow parity before flipping</td>
+</tr>
+<tr>
+<td><code>deduplicator.py</code></td>
+<td>Tiered dedup (infohash → name+size → fuzzy)</td>
+<td><code>merge_search.go</code> (inlined)</td>
+<td>Partial</td>
+<td>Verify Levenshtein parity; Python’s
+<code>Deduplicator.merge_results()</code> has explicit tiered fallback
+that’s not visible as a Go function</td>
+</tr>
+<tr>
+<td><code>enricher.py</code></td>
+<td>TMDB title resolution</td>
+<td>(none)</td>
+<td>Missing</td>
+<td>Search results lack posters / years / content type on Go path</td>
+</tr>
+<tr>
+<td><code>enricher.py</code></td>
+<td>OMDb fallback</td>
+<td>(none)</td>
+<td>Missing</td>
+<td>No fallback when TMDB rate-limits</td>
+</tr>
+<tr>
+<td><code>enricher.py</code></td>
+<td>TVMaze / AniList / MusicBrainz / OpenLibrary</td>
+<td>(none)</td>
+<td>Missing</td>
+<td>No music / book / anime metadata enrichment on Go path</td>
+</tr>
+<tr>
+<td><code>validator.py</code></td>
+<td>BEP 48 HTTP scrape</td>
+<td>(none)</td>
+<td>Missing</td>
+<td>No peer-count health check; results may show stale availability</td>
+</tr>
+<tr>
+<td><code>validator.py</code></td>
+<td>BEP 15 UDP scrape + bencode parser</td>
+<td>(none)</td>
+<td>Missing</td>
+<td>Same</td>
+</tr>
+<tr>
+<td><code>scheduler.py</code></td>
+<td>Recurring search driver (cron-like)</td>
+<td><code>internal/api/scheduler_api.go: ScheduleStore</code></td>
+<td>Partial</td>
+<td>Go has <em>storage</em> for schedules but <strong>no driver loop
+that actually fires them</strong> — UI lets you create schedules that
+never run</td>
+</tr>
+<tr>
+<td><code>hooks.py</code></td>
+<td>Pre/post-search + download hooks (callback dispatch)</td>
+<td><code>internal/api/hooks.go: HookStore</code></td>
+<td>Partial</td>
+<td>Same shape: storage exists, runtime dispatch unclear (need runtime
+audit)</td>
+</tr>
+<tr>
+<td><code>retry.py</code></td>
+<td>Shared retry policy via tenacity</td>
+<td>(none)</td>
+<td>Missing</td>
+<td>Each Go call site reimplements retry inline if at all — inconsistent
+backoff</td>
+</tr>
+<tr>
+<td><code>jackett_autoconfig.py</code></td>
+<td>Env-discovery + Jackett indexer auto-config (NEW in this spec)</td>
+<td>(none)</td>
+<td>Missing</td>
+<td>Go boot does NOT auto-configure Jackett — operator must use Jackett
+UI</td>
+</tr>
+</tbody>
+</table>
+<h3 id="download-proxysrcapi"><code>download-proxy/src/api/</code></h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Python module</th>
+<th>Feature</th>
+<th>Go location</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>routes.py</code></td>
+<td>merge/search REST endpoints</td>
+<td><code>internal/api/search.go</code></td>
+<td>Ported</td>
+</tr>
+<tr>
+<td><code>auth.py</code></td>
+<td>Private-tracker auth (login, session refresh, CAPTCHA)</td>
+<td>(none)</td>
+<td>Missing</td>
+</tr>
+<tr>
+<td><code>hooks.py</code></td>
+<td>hooks REST endpoints</td>
+<td><code>internal/api/hooks.go</code></td>
+<td>Ported</td>
+</tr>
+<tr>
+<td><code>scheduler.py</code></td>
+<td>scheduler REST endpoints</td>
+<td><code>internal/api/scheduler_api.go</code></td>
+<td>Ported (storage only — see scheduler driver gap above)</td>
+</tr>
+<tr>
+<td><code>streaming.py</code></td>
+<td>SSE streaming endpoint</td>
+<td><code>internal/service/sse_broker.go</code> +
+<code>internal/api/search.go</code></td>
+<td>Ported</td>
+</tr>
+<tr>
+<td><code>theme_state.py</code></td>
+<td>Dashboard theme state</td>
+<td><code>internal/api/theme.go</code></td>
+<td>Ported</td>
+</tr>
+<tr>
+<td><code>jackett.py</code></td>
+<td><code>/api/v1/jackett/autoconfig/last</code> (NEW)</td>
+<td>(none)</td>
+<td>Missing</td>
+</tr>
+</tbody>
+</table>
+<h3 id="download-proxysrcui"><code>download-proxy/src/ui/</code></h3>
+<table>
+<thead>
+<tr>
+<th>Python module</th>
+<th>Feature</th>
+<th>Go location</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Jinja2 dashboard templates</td>
+<td>Operator UI fallback</td>
+<td>(none)</td>
+<td>Missing</td>
+</tr>
+</tbody>
+</table>
+<p>The Angular SPA dashboard is shared (lives in <code>frontend/</code>,
+served by both). The Jinja2 fallback dashboard is Python-only.</p>
+<h2 id="user-visible-regressions-if-you-flip-go-only-today">User-visible
+regressions if you flip Go-only today</h2>
+<p>In priority order:</p>
+<ol type="1">
+<li><strong>No metadata enrichment.</strong> Search results lose
+posters, year, content type. Highest user-visible degradation.</li>
+<li><strong>No Jackett auto-config.</strong> Every fresh boot requires
+manual Jackett UI clicks.</li>
+<li><strong>No public tracker plugin fan-out.</strong> 600+ Python
+plugins (eztv, piratebay, etc.) unreachable. Search would only return
+whatever Jackett aggregates + the 4 private trackers (and only those
+wired in Go).</li>
+<li><strong>No tracker validation.</strong> Stale peer counts, no health
+detection.</li>
+<li><strong>Schedules silently no-op.</strong> UI creates them, driver
+never fires.</li>
+<li><strong>No private-tracker auth REST surface.</strong> No CAPTCHA
+refresh flow.</li>
+</ol>
+<h2 id="per-gap-follow-up-specs-proposed-in-priority-order">Per-gap
+follow-up specs (proposed, in priority order)</h2>
+<ol type="1">
+<li><strong><code>enricher.go</code></strong> port — biggest
+user-visible gap. Wraps 6 external APIs. Estimate 2-3 days with
+tests.</li>
+<li><strong><code>validator.go</code></strong> port — BEP 48/15 with
+bencode parser. Estimate 1-2 days.</li>
+<li><strong><code>scheduler.go</code> driver loop</strong> — make
+existing storage actually fire schedules. Estimate 1 day.</li>
+<li><strong>Public tracker plugin subprocess fan-out</strong> —
+replicate <code>_search_tracker()</code> subprocess pattern. Estimate
+2-3 days.</li>
+<li><strong><code>jackett_autoconfig.go</code></strong> port of
+<code>jackett_autoconfig.py</code>. Estimate 1 day.</li>
+<li><strong><code>auth.go</code></strong> REST surface for
+private-tracker auth flows. Estimate 1-2 days.</li>
+<li><strong><code>hooks.go</code> runtime dispatch</strong> — verify and
+complete callback firing.</li>
+<li><strong><code>retry.go</code></strong> shared policy.</li>
+<li><strong><code>deduplicator.go</code></strong> explicit tiered
+structure (clarification, not new behavior).</li>
+</ol>
+<p>Each gap should ship as its own spec → plan → implementation cycle in
+the superpowers flow, so nothing gets lost during the eventual Go-only
+flip.</p>
+<h2 id="audit-data-points-captured">Audit data points captured</h2>
+<ul>
+<li>Go service exports (count): 18 functions across
+<code>merge_search.go</code> + <code>sse_broker.go</code>.</li>
+<li>Go API exports (count): ~30 handler/store functions across 6
+files.</li>
+<li>Python <code>merge_service/</code> modules: 7 (deduplicator,
+enricher, hooks, jackett_autoconfig, retry, scheduler, search,
+validator).</li>
+<li>Python <code>api/</code> modules: 7 (auth, hooks, jackett, routes,
+scheduler, streaming, theme_state).</li>
+</ul>

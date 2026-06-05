@@ -1,0 +1,743 @@
+<h1 id="qbittorrent-platform-consolidated-constitution">qBitTorrent
+Platform — Consolidated Constitution</h1>
+<blockquote>
+<p>This constitution <strong>extends</strong> the Helix Universal
+Constitution at <code>constitution/Constitution.md</code>. All clauses
+there apply unless explicitly overridden below with an explicit
+<code>Override §X.Y</code> section. The Helix Constitution is
+authoritative for universal rules; project-specific addenda follow.</p>
+</blockquote>
+<blockquote>
+<p>This document consolidates ALL constitutional constraints from
+<code>.specify/memory/constitution.md</code>, <code>AGENTS.md</code>,
+<code>CLAUDE.md</code>, and
+<code>docs/CONSTITUTION_ADDENDUM_QUALITY.md</code>. It is the canonical
+reference for AI agents and contributors.</p>
+<p>For the formal ratified document with amendment history, see
+<code>.specify/memory/constitution.md</code>.</p>
+</blockquote>
+<hr />
+<h2 id="table-of-principles">Table of Principles</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Principle</th>
+<th>Violation Severity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I</td>
+<td>Container-First Architecture</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>II</td>
+<td>Plugin Contract Integrity</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>III</td>
+<td>Credential &amp; Secret Security</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>IV</td>
+<td>Container Runtime Portability</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>V</td>
+<td>Private Tracker Bridge Pattern</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>VI</td>
+<td>Validation-Driven Development</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>VII</td>
+<td>Operational Simplicity</td>
+<td>Warning</td>
+</tr>
+<tr>
+<td>VIII</td>
+<td>IPTorrents Freeleech Policy</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>IX</td>
+<td>Test-Driven Development</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>X</td>
+<td>Hermetic Test Discipline</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>XI</td>
+<td>Minimal Source Commentary</td>
+<td>Blocking</td>
+</tr>
+<tr>
+<td>XII</td>
+<td>Anti-Bluff Verification</td>
+<td>Blocking</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="i.-container-first-architecture">I. Container-First
+Architecture</h2>
+<ul>
+<li>Two containers only: <code>qbittorrent</code> +
+<code>qbittorrent-proxy</code>.</li>
+<li>Optional host process: <code>webui-bridge.py</code> on port
+7188.</li>
+<li><code>network_mode: host</code> for both containers.</li>
+<li><code>config/</code> is the runtime config source of truth; MUST NOT
+contain secrets.</li>
+<li>Quality stack (<code>docker-compose.quality.yml</code>) is additive
+and opt-in only.</li>
+</ul>
+<h2 id="ii.-plugin-contract-integrity">II. Plugin Contract
+Integrity</h2>
+<ul>
+<li>Plugin class MUST define: <code>url</code>, <code>name</code>,
+<code>supported_categories</code>, <code>search()</code>,
+<code>download_torrent()</code>.</li>
+<li>Output exclusively via <code>novaprinter.print()</code>.</li>
+<li>Private trackers use env vars; <code>try: import novaprinter</code>
+pattern for standalone testability.</li>
+<li>Syntax validation with <code>python3 -m py_compile</code> before
+install.</li>
+<li>Source of truth for plugins is <code>plugins/X.py</code>, NOT
+<code>config/qBittorrent/nova3/engines/X.py</code>.</li>
+<li>Managed list:
+<code>eztv jackett limetorrents piratebay solidtorrents torlock torrentproject torrentscsv rutracker rutor kinozal nnmclub</code>.</li>
+</ul>
+<h2 id="iii.-credential-secret-security">III. Credential &amp; Secret
+Security</h2>
+<ul>
+<li><code>.env</code> is gitignored and MUST NEVER be committed.</li>
+<li>Env priority: shell → <code>./.env</code> → <code>~/.qbit.env</code>
+→ container env.</li>
+<li>WebUI credentials <code>admin</code>/<code>admin</code> are
+hardcoded — do NOT change.</li>
+<li>No secrets in logs, test reports, or commit messages.</li>
+<li><code>.env</code> permissions MUST be <code>600</code>.</li>
+</ul>
+<h2 id="iv.-container-runtime-portability">IV. Container Runtime
+Portability</h2>
+<ul>
+<li>Auto-detect: <code>podman</code> preferred, <code>docker</code>
+fallback.</li>
+<li>Compose command: <code>podman-compose</code> →
+<code>docker compose</code> → <code>docker-compose</code>.</li>
+<li>Use <code>detect_container_runtime()</code> pattern in all
+scripts.</li>
+<li><code>podman unshare cp</code> for rootless volume copies.</li>
+</ul>
+<h2 id="v.-private-tracker-bridge-pattern">V. Private Tracker Bridge
+Pattern</h2>
+<ul>
+<li><code>webui-bridge.py</code> on port 7188 bridges private tracker
+auth.</li>
+<li>Direct WebUI downloads WILL fail for private trackers.</li>
+<li><code>PRIVATE_TRACKERS</code> dict in <code>webui-bridge.py</code>
+MUST stay in sync with plugins.</li>
+<li><code>plugins/webui_compatible/</code> are fallback variants.</li>
+</ul>
+<h2 id="vi.-validation-driven-development">VI. Validation-Driven
+Development</h2>
+<ul>
+<li>Bash scripts: <code>bash -n</code> syntax check.</li>
+<li>Python files: <code>python3 -m py_compile</code> syntax check.</li>
+<li><code>./test.sh --quick</code> before every commit.</li>
+<li><code>./run-all-tests.sh</code> before every release.</li>
+<li><code>./install-plugin.sh --verify</code> before every release.</li>
+</ul>
+<h2 id="vii.-operational-simplicity">VII. Operational Simplicity</h2>
+<ul>
+<li><code>setup.sh</code> — one-time onboarding.</li>
+<li><code>start.sh</code> / <code>stop.sh</code> — lifecycle with
+flags.</li>
+<li>All scripts use shared color-print helpers and
+<code>-h/--help</code>.</li>
+<li>Data dirs (<code>Incomplete/</code>, <code>Torrents/All/</code>,
+<code>Torrents/Completed/</code>) auto-created.</li>
+</ul>
+<h2 id="viii.-iptorrents-freeleech-policy">VIII. IPTorrents Freeleech
+Policy</h2>
+<ul>
+<li>Automated tests MUST ONLY download freeleech torrents from
+IPTorrents.</li>
+<li>Freeleech results tagged <code>IPTorrents [free]</code> in
+<code>tracker_display</code>.</li>
+<li>Non-freeleech downloads cost ratio and MUST NEVER be automated.</li>
+<li><code>freeleech</code> boolean field MUST be present and
+accurate.</li>
+</ul>
+<h2 id="ix.-test-driven-development">IX. Test-Driven Development</h2>
+<p><strong>TDD is MANDATORY for all bug fixes and features.</strong></p>
+<ol type="1">
+<li>Write failing test first (RED).</li>
+<li>Watch it fail.</li>
+<li>Write minimal code to pass (GREEN).</li>
+<li>Verify full suite passes.</li>
+<li>Then commit.</li>
+</ol>
+<p>This is the primary defence against “green tests, broken
+product”.</p>
+<h2 id="x.-hermetic-test-discipline">X. Hermetic Test Discipline</h2>
+<ul>
+<li>Tests live in <code>./tests/</code>, NEVER in
+<code>download-proxy/tests/</code>.</li>
+<li>Unit tests are heavily mocked and require NO running
+containers.</li>
+<li>Integration/E2E tests fail loudly (not skip) when services are
+down.</li>
+<li>Coverage gate: <strong>49%</strong> — maintained or raised with
+<code>docs/COVERAGE_BASELINE.md</code> update.</li>
+<li><code>sys.modules</code> isolation MUST NOT leak from unit tests
+into integration/E2E.</li>
+<li>Event loop state MUST NOT leak between tests.</li>
+<li>pytest config: <code>asyncio_mode = "auto"</code>,
+<code>asyncio_default_test_loop_scope = "function"</code>.</li>
+</ul>
+<h2 id="xi.-minimal-source-commentary">XI. Minimal Source
+Commentary</h2>
+<ul>
+<li><strong>NO comments or docstrings</strong> in
+<code>download-proxy/src/</code> merge service source.</li>
+<li>Code must be self-explanatory.</li>
+<li>“Why” belongs in commit messages or <code>docs/</code>, not
+source.</li>
+<li>Type hints on public methods are encouraged.</li>
+<li>Test files, plugins, scripts, and docs are exempt.</li>
+</ul>
+<h2 id="xii.-anti-bluff-verification">XII. Anti-Bluff Verification</h2>
+<p><strong>Tests and Challenges MUST prove the feature works for the end
+user — passing them MUST mean the end user can actually use
+it.</strong></p>
+<p>This project has been burned: tests went green, challenges printed
+<code>OK</code>, but the feature was broken when an end user tried it.
+That outcome is forbidden. A green run is a contract with the user that
+the product works.</p>
+<p><strong>Anti-bluff requirements (cumulative — every test/challenge
+MUST satisfy ALL):</strong></p>
+<ol type="1">
+<li><p><strong>Assert on user-observable outcomes, not on intermediate
+signals.</strong> A test that asserts only on HTTP status codes, return
+values, or “no error” is insufficient if the feature has a state change,
+a side effect, or a value the user reads. The assertion MUST inspect the
+actual outcome (DB row content, file content, response body fields,
+on-screen text, container state, posted-to-server payload).</p></li>
+<li><p><strong>Tests MUST fail against a stub implementation.</strong>
+Before merging, the implementer (or a reviewer subagent) MUST mentally
+substitute a no-op stub for the feature under test and confirm the test
+would fail. If a stub passes the test, the test asserts nothing
+meaningful — strengthen or delete it.</p></li>
+<li><p><strong>Challenges MUST exercise the real path the user
+takes.</strong> A challenge that boots the service then immediately
+exits without invoking the feature is a bluff. The challenge MUST drive
+the feature end-to-end — actual HTTP request, actual file mutation,
+actual container interaction — and assert on the user-visible
+result.</p></li>
+<li><p><strong>Mocks/stubs forbidden outside unit tests</strong>
+(already enforced by Mandatory Development Standards items 1, 7, 11 —
+restated here for emphasis). Integration / E2E / security / challenge /
+benchmark tests run against the real running system. Skip loudly if real
+services aren’t available; never silently mock around them and call it
+green.</p></li>
+<li><p><strong>“Smoke before ship.”</strong> For any feature that ships
+a new HTTP endpoint, CLI command, or user-facing behavior: produce
+pasted terminal output of an actual end-user invocation (curl, click,
+container run) in the same session as the change. This output is the
+<code>## Demo</code> block already required by the universal Definition
+of Done — restated here as a hard pass criterion for
+anti-bluff.</p></li>
+<li><p><strong>Periodic anti-bluff audit.</strong> When a code-review
+subagent reviews tests, it MUST sample at least 3 tests and verify each
+one would fail against a stub. If 3-of-3 are toothless, the PR is
+rejected and the test suite is hardened first.</p></li>
+<li><p><strong>Frontend changes MUST assert on DOM / rendered output /
+browser console.</strong> A test that only checks that an Angular
+service method was called, or that a component compiled, is a bluff. The
+assertion MUST inspect the actual DOM text, the rendered HTML attribute,
+the route change, or the network-tab payload that the end user
+sees.</p></li>
+<li><p><strong>Error-path tests MUST assert on the user-visible
+error.</strong> A test that only checks that an exception was caught
+internally is a bluff. The assertion MUST inspect the HTTP error
+response body, the CLI stderr, the UI toast text, or the browser console
+error — whatever the end user actually experiences.</p></li>
+<li><p><strong>Flaky tests are bluffs; they must be hardened or
+deleted.</strong> A test that passes 80 % of the time is a de facto
+bluff — it trains reviewers to ignore red runs and erodes trust in the
+entire suite. If a test cannot be made deterministic within 3 attempts,
+delete it and replace it with a reliable challenge script.</p></li>
+<li><p><strong>Regression tests MUST fail against the pre-fix
+code.</strong> A test added for a bug fix is a bluff if it would have
+passed before the fix was applied. Before merging, the implementer MUST
+revert the fix (or check out the parent commit), run the new test, and
+confirm it fails. If it passes, the test does not reproduce the bug —
+strengthen or delete it.</p></li>
+<li><p><strong>No hardcoded <code>localhost</code> /
+<code>127.0.0.1</code> for client-facing URLs.</strong> Any URL, API
+base, CORS origin, or service address that is returned to a browser or
+rendered in a UI MUST derive from the request’s <code>Host</code>
+header, <code>window.location</code>, or an explicit
+<code>PUBLIC_HOST</code> / <code>EXTERNAL_URL</code> environment
+variable. Hardcoding <code>localhost</code> or <code>127.0.0.1</code>
+breaks access from mobile phones, other LAN devices, and reverse-proxy
+deployments. This rule applies to frontend services, backend config
+endpoints, CORS allow-lists, and injected JavaScript.
+Environment-variable overrides alone are insufficient — the default MUST
+work for the most common access pattern (same-host browser access via
+hostname or IP).</p></li>
+</ol>
+<p><strong>Violations:</strong> A test that paints green while the
+feature is broken is the worst kind of code-review failure. Treat it
+more seriously than a missing test — the missing test only fails to
+catch a bug, while a toothless green test ACTIVELY MISLEADS reviewers
+and end users into believing the feature works.</p>
+<p><strong>This principle is universal.</strong> Every project,
+submodule, and sibling repository inherits it through
+<code>CONSTITUTION.md</code>, <code>CLAUDE.md</code>, and
+<code>AGENTS.md</code>. No project may opt out.</p>
+<hr />
+<h2 id="critical-operational-constraints">Critical Operational
+Constraints</h2>
+<h3 id="restart-levels-verified-2026-04-19">Restart Levels (verified
+2026-04-19)</h3>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 38%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>What changed</th>
+<th>Restart action</th>
+<th>Verification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>download-proxy/src/</code> or
+<code>merge_service/*.py</code></td>
+<td><code>podman exec qbittorrent-proxy find /config/download-proxy -name __pycache__ -type d -exec rm -rf {} + &amp;&amp; podman restart qbittorrent-proxy</code></td>
+<td><code>curl</code> endpoint or
+<code>podman exec ... cat /config/...</code></td>
+</tr>
+<tr>
+<td><code>plugins/*.py</code></td>
+<td><code>./install-plugin.sh &lt;name&gt; &amp;&amp; podman restart qbittorrent-proxy</code></td>
+<td>Same as above</td>
+</tr>
+<tr>
+<td><code>docker-compose.yml</code>, env vars, base image</td>
+<td><code>podman compose down &amp;&amp; podman compose up -d</code></td>
+<td>Full recreate</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ci-is-manual-permanent">CI Is Manual — Permanent</h3>
+<ul>
+<li><code>./ci.sh</code> is the ONLY canonical CI path.</li>
+<li><code>.github/workflows/*.yml</code> MUST use
+<code>workflow_dispatch</code> ONLY.</li>
+<li>NEVER add push/PR/schedule triggers.</li>
+<li>This rule overrides anything an automated contributor might
+propose.</li>
+</ul>
+<h3 id="port-map">Port Map</h3>
+<table>
+<thead>
+<tr>
+<th>Port</th>
+<th>Service</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7185</td>
+<td>qBittorrent WebUI (container-internal)</td>
+</tr>
+<tr>
+<td>7186</td>
+<td>Download proxy → qBittorrent</td>
+</tr>
+<tr>
+<td>7187</td>
+<td>Merge Search Service (FastAPI / Go/Gin) + Angular SPA</td>
+</tr>
+<tr>
+<td>7188</td>
+<td>webui-bridge (host process)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="technology-stack">Technology Stack</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>CPython</td>
+<td>&gt;=3.12 (target 3.12, CI tests 3.13)</td>
+</tr>
+<tr>
+<td>Python web</td>
+<td>FastAPI + uvicorn</td>
+<td>Async handlers, SSE</td>
+</tr>
+<tr>
+<td>Go</td>
+<td>Go</td>
+<td>1.26.2</td>
+</tr>
+<tr>
+<td>Go web</td>
+<td>Gin</td>
+<td>v1.12.0</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td>Angular</td>
+<td>21.x (signals, standalone)</td>
+</tr>
+<tr>
+<td>Frontend tests</td>
+<td>Vitest</td>
+<td>Via <code>@angular/build</code></td>
+</tr>
+<tr>
+<td>Container</td>
+<td>Podman (preferred) / Docker</td>
+<td>Auto-detected</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="enforcement-checklist-for-agents">Enforcement Checklist for
+Agents</h2>
+<p>Before modifying code, verify:</p>
+<ul class="task-list">
+<li><label><input type="checkbox" />Does this change follow TDD (failing
+test first)?</label></li>
+<li><label><input type="checkbox" />Are tests added or updated in
+<code>./tests/</code> (not
+<code>download-proxy/tests/</code>)?</label></li>
+<li><label><input type="checkbox" />Do modified Python files pass
+<code>python3 -m py_compile</code>?</label></li>
+<li><label><input type="checkbox" />Do modified Bash files pass
+<code>bash -n</code>?</label></li>
+<li><label><input type="checkbox" />Is <code>.env</code> untouched and
+still gitignored?</label></li>
+<li><label><input type="checkbox" />Are WebUI credentials still
+<code>admin</code>/<code>admin</code>?</label></li>
+<li><label><input type="checkbox" />If modifying IPTorrents code, is
+freeleech-only policy preserved?</label></li>
+<li><label><input type="checkbox" />Are there NO new comments in
+<code>download-proxy/src/</code>?</label></li>
+<li><label><input type="checkbox" />If raising coverage, is
+<code>docs/COVERAGE_BASELINE.md</code> updated?</label></li>
+<li><label><input type="checkbox" />If modifying
+<code>docker-compose.yml</code>, are
+<code>start.sh</code>/<code>stop.sh</code> updated?</label></li>
+<li><label><input type="checkbox" />If modifying plugins, is
+<code>install-plugin.sh --verify</code> run?</label></li>
+<li><label><input type="checkbox" />Does <code>./ci.sh --quick</code>
+pass?</label></li>
+</ul>
+<hr />
+<p><strong>Version</strong>: 1.3.0 | <strong>Ratified</strong>:
+2026-04-13 | <strong>Last Amended</strong>: 2026-04-27</p>
+<hr />
+<h2 id="universal-mandatory-constraints">Universal Mandatory
+Constraints</h2>
+<p>These rules are non-negotiable across every project, submodule, and
+sibling repository. They are derived from the HelixAgent root
+<code>CLAUDE.md</code>. Each project MUST surface them in its own
+<code>CLAUDE.md</code>, <code>AGENTS.md</code>, and
+<code>CONSTITUTION.md</code>. Project-specific addenda are welcome but
+cannot weaken or override these.</p>
+<h3 id="hard-stops-permanent-non-negotiable">Hard Stops (permanent,
+non-negotiable)</h3>
+<ol type="1">
+<li><strong>NO CI/CD pipelines.</strong> No
+<code>.github/workflows/</code>, <code>.gitlab-ci.yml</code>,
+<code>Jenkinsfile</code>, <code>.travis.yml</code>,
+<code>.circleci/</code>, or any automated pipeline. No Git hooks either.
+All builds and tests run manually or via Makefile/ script targets.</li>
+<li><strong>NO HTTPS for Git.</strong> SSH URLs only
+(<code>git@github.com:…</code>, <code>git@gitlab.com:…</code>, etc.) for
+clones, fetches, pushes, and submodule updates. Including for public
+repos. SSH keys are configured on every service.</li>
+<li><strong>NO manual container commands.</strong> Container
+orchestration is owned by the project’s binary/orchestrator
+(e.g. <code>make build</code> → <code>./bin/&lt;app&gt;</code>). Direct
+<code>docker</code>/<code>podman start|stop|rm</code> and
+<code>docker-compose up|down</code> are prohibited as workflows. The
+orchestrator reads its configured <code>.env</code> and brings up
+everything.</li>
+</ol>
+<h3 id="mandatory-development-standards">Mandatory Development
+Standards</h3>
+<ol type="1">
+<li><strong>100% Test Coverage.</strong> Every component MUST have unit,
+integration, E2E, automation, security/penetration, and benchmark tests.
+No false positives. Mocks/stubs ONLY in unit tests; all other test types
+use real data and live services.</li>
+<li><strong>Challenge Coverage.</strong> Every component MUST have
+Challenge scripts (<code>./challenges/scripts/</code>) validating
+real-life use cases. No false success — validate actual behavior, not
+return codes.</li>
+<li><strong>Real Data.</strong> Beyond unit tests, all components MUST
+use actual API calls, real databases, live services. No simulated
+success. Fallback chains tested with actual failures.</li>
+<li><strong>Health &amp; Observability.</strong> Every service MUST
+expose health endpoints. Circuit breakers for all external dependencies.
+Prometheus / OpenTelemetry integration where applicable.</li>
+<li><strong>Documentation &amp; Quality.</strong> Update
+<code>CLAUDE.md</code>, <code>AGENTS.md</code>, and relevant docs
+alongside code changes. Pass language-appropriate format/lint/security
+gates. Conventional Commits:
+<code>&lt;type&gt;(&lt;scope&gt;): &lt;description&gt;</code>.</li>
+<li><strong>Validation Before Release.</strong> Pass the project’s full
+validation suite (<code>make ci-validate-all</code>-equivalent) plus all
+challenges
+(<code>./challenges/scripts/run_all_challenges.sh</code>).</li>
+<li><strong>No Mocks or Stubs in Production.</strong> Mocks, stubs,
+fakes, placeholder classes, TODO implementations are STRICTLY FORBIDDEN
+in production code. All production code is fully functional with real
+integrations. Only unit tests may use mocks/stubs.</li>
+<li><strong>Comprehensive Verification.</strong> Every fix MUST be
+verified from all angles: runtime testing (actual HTTP requests / real
+CLI invocations), compile verification, code structure checks,
+dependency existence checks, backward compatibility, and no false
+positives in tests or challenges. Grep-only validation is NEVER
+sufficient.</li>
+<li><strong>Resource Limits for Tests &amp; Challenges
+(CRITICAL).</strong> ALL test and challenge execution MUST be strictly
+limited to 30-40% of host system resources. Use
+<code>GOMAXPROCS=2</code>, <code>nice -n 19</code>,
+<code>ionice -c 3</code>, <code>-p 1</code> for <code>go test</code>.
+Container limits required. The host runs mission-critical processes —
+exceeding limits causes system crashes.</li>
+<li><strong>Bugfix Documentation.</strong> All bug fixes MUST be
+documented in <code>docs/issues/fixed/BUGFIXES.md</code> (or the
+project’s equivalent) with root cause analysis, affected files, fix
+description, and a link to the verification test/challenge.</li>
+<li><strong>Real Infrastructure for All Non-Unit Tests.</strong>
+Mocks/fakes/stubs/ placeholders MAY be used ONLY in unit tests (files
+ending <code>_test.go</code> run under <code>go test -short</code>,
+equivalent for other languages). ALL other test types — integration,
+E2E, functional, security, stress, chaos, challenge, benchmark, runtime
+verification — MUST execute against the REAL running system with REAL
+containers, REAL databases, REAL services, and REAL HTTP calls. Non-unit
+tests that cannot connect to real services MUST skip (not fail).</li>
+<li><strong>Reproduction-Before-Fix (CONST-032 — MANDATORY).</strong>
+Every reported error, defect, or unexpected behavior MUST be reproduced
+by a Challenge script BEFORE any fix is attempted. Sequence:
+<ol type="1">
+<li>Write the Challenge first. (2) Run it; confirm fail (it reproduces
+the bug). (3) Then write the fix. (4) Re-run; confirm pass. (5) Commit
+Challenge + fix together. The Challenge becomes the regression guard for
+that bug forever.</li>
+</ol></li>
+<li><strong>Concurrent-Safe Containers (Go-specific, where
+applicable).</strong> Any struct field that is a mutable collection
+(map, slice) accessed concurrently MUST use <code>safe.Store[K,V]</code>
+/ <code>safe.Slice[T]</code> from
+<code>digital.vasic.concurrency/pkg/safe</code> (or the project’s
+equivalent primitives). Bare <code>sync.Mutex + map/slice</code>
+combinations are prohibited for new code.</li>
+</ol>
+<h3 id="definition-of-done-universal">Definition of Done
+(universal)</h3>
+<p>A change is NOT done because code compiles and tests pass. “Done”
+requires pasted terminal output from a real run, produced in the same
+session as the change.</p>
+<ul>
+<li><strong>No self-certification.</strong> Words like <em>verified,
+tested, working, complete, fixed, passing</em> are forbidden in
+commits/PRs/replies unless accompanied by pasted output from a command
+that ran in that session.</li>
+<li><strong>Demo before code.</strong> Every task begins by writing the
+runnable acceptance demo (exact commands + expected output).</li>
+<li><strong>Real system, every time.</strong> Demos run against real
+artifacts.</li>
+<li><strong>Skips are loud.</strong> <code>t.Skip</code> /
+<code>@Ignore</code> / <code>xit</code> / <code>describe.skip</code>
+without a trailing <code>SKIP-OK: #&lt;ticket&gt;</code> comment break
+validation.</li>
+<li><strong>Evidence in the PR.</strong> PR bodies must contain a fenced
+<code>## Demo</code> block with the exact command(s) run and their
+output.</li>
+</ul>
+<!-- BEGIN host-power-management addendum (CONST-033) -->
+<h3 id="const-033-host-power-management-is-forbidden">CONST-033 — Host
+Power Management is Forbidden</h3>
+<p><strong>Status:</strong> Mandatory. Non-negotiable. Applies to every
+project, submodule, container entry point, build script, test,
+challenge, and systemd unit shipped from this repository.</p>
+<p><strong>Rule:</strong> No code in this repository may invoke a
+host-level power- state transition (suspend, hibernate, hybrid-sleep,
+suspend-then- hibernate, poweroff, halt, reboot, kexec) on the host
+machine. This includes — but is not limited to:</p>
+<ul>
+<li><code>systemctl {suspend,hibernate,hybrid-sleep,suspend-then-hibernate,poweroff,halt,reboot,kexec}</code></li>
+<li><code>loginctl {suspend,hibernate,hybrid-sleep,suspend-then-hibernate,poweroff,halt,reboot}</code></li>
+<li><code>pm-{suspend,hibernate,suspend-hybrid}</code></li>
+<li><code>shutdown {-h,-r,-P,-H,now,--halt,--poweroff,--reboot}</code></li>
+<li>DBus calls to
+<code>org.freedesktop.login1.Manager.{Suspend,Hibernate,HybridSleep,SuspendThenHibernate,PowerOff,Reboot}</code></li>
+<li>DBus calls to
+<code>org.freedesktop.UPower.{Suspend,Hibernate,HybridSleep}</code></li>
+<li><code>gsettings set ... sleep-inactive-{ac,battery}-type</code> to
+any value other than <code>'nothing'</code> or <code>'blank'</code></li>
+</ul>
+<p><strong>Why:</strong> The host runs mission-critical parallel
+CLI-agent and container workloads. On 2026-04-26 18:23:43 the host was
+auto- suspended by the GDM greeter’s idle policy mid-session, killing
+HelixAgent and 41 dependent services. On 2026-04-28 18:37:55 the host
+was powered off by systemd-logind while long-running build, test, and
+container orchestration work was in progress, again destroying all
+state. Recurring memory-pressure SIGKILLs of
+<code>user@1000.service</code> (perceived as “logged out”) have the same
+outcome. Auto-suspend, hibernate, poweroff, and any host-level
+power-state transition are unsafe for this host.</p>
+<p><strong>Defence in depth (mandatory artifacts in every
+project):</strong> 1.
+<code>scripts/host-power-management/install-host-power-guard.sh</code> —
+privileged installer, manual prereq, run once per host with sudo. Masks
+<code>sleep.target</code>, <code>suspend.target</code>,
+<code>hibernate.target</code>, <code>hybrid-sleep.target</code>; writes
+<code>AllowSuspend=no</code> drop-in; sets logind
+<code>IdleAction=ignore</code>, <code>HandleLidSwitch=ignore</code>, AND
+<code>HandlePowerKey=ignore</code> (prevents accidental button press
+from killing long-running work). 2.
+<code>scripts/host-power-management/user_session_no_suspend_bootstrap.sh</code>
+— per-user, no-sudo defensive layer. Idempotent. Safe to source from
+<code>start.sh</code> / <code>setup.sh</code> /
+<code>bootstrap.sh</code>. 3.
+<code>scripts/host-power-management/check-no-suspend-calls.sh</code> —
+static scanner. Exits non-zero on any forbidden invocation. 4.
+<code>challenges/scripts/host_no_auto_poweroff_challenge.sh</code> —
+asserts the running host cannot suspend, hibernate, OR power off. 5.
+<code>challenges/scripts/no_suspend_calls_challenge.sh</code> — wraps
+the scanner as a challenge that runs in CI /
+<code>run_all_challenges.sh</code>.</p>
+<p><strong>Enforcement:</strong> Every project’s CI /
+<code>run_all_challenges.sh</code> equivalent MUST run both challenges
+(host state + source tree). A violation in either channel blocks merge.
+Adding files to the scanner’s <code>EXCLUDE_PATHS</code> requires an
+explicit justification comment identifying the non-host context.</p>
+<p><strong>See also:</strong> <code>docs/HOST_POWER_MANAGEMENT.md</code>
+for full background and runbook.</p>
+<h3
+id="const-033-operational-note-distinguishing-host-suspension-from-adjacent-phenomena">CONST-033
+Operational Note — Distinguishing Host Suspension from Adjacent
+Phenomena</h3>
+<p>When the user reports “the computer suspended / hibernated / logged
+me out / froze”, <strong>triple-check before assuming our code caused
+it</strong>. CONST-033 covers systemd power-management calls — it does
+NOT cover everything that LOOKS like a power event. Document each of
+these distinctions before proposing any “fix”:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Real cause</th>
+<th>CONST-033 territory?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Display blanked / screen lock kicked in</td>
+<td>gnome-session / screensaver — independent of systemd power
+targets</td>
+<td>NO</td>
+</tr>
+<tr>
+<td>Brief GUI freeze during heavy I/O or memory pressure</td>
+<td>compositor stall (gnome-shell logs
+<code>Frame has assigned … but no frame drawn time</code>)</td>
+<td>NO — investigate memory pressure / cgroup OOM</td>
+</tr>
+<tr>
+<td>Container OOM-killed</td>
+<td>cgroup <code>oom_memcg</code> reached its <code>memory.max</code> —
+kernel kills tasks INSIDE the container slice</td>
+<td>NO — this is containment working as designed</td>
+</tr>
+<tr>
+<td>User session terminated (<code>user@1000.service</code> killed)</td>
+<td>systemd-oomd (if enabled) or kernel OOM-killer hit the user
+slice</td>
+<td>NO direct CONST-033 issue, but tighten container resource limits to
+keep host pressure low</td>
+</tr>
+<tr>
+<td>Actual host suspend / hibernate / poweroff</td>
+<td>systemd power target fired — would show as a
+<code>will suspend</code> broadcast in the journal AND a discontinuous
+<code>uptime</code></td>
+<td>YES — this is what CONST-033 forbids</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Triage procedure when a “perceived suspend” is
+reported:</strong></p>
+<ol type="1">
+<li><code>uptime</code> — actual suspend leaves a discontinuous uptime;
+if uptime is &gt; the alleged downtime, there was no suspend.</li>
+<li><code>journalctl -k --since "24 hours ago" | grep -iE "will suspend|systemd-suspend"</code>
+— zero matches = systemd never invoked suspend.</li>
+<li><code>journalctl -k --since "24 hours ago" | grep -iE "oom-kill|killed process"</code>
+— non-zero matches = OOM event happened; check <code>oom_memcg</code> to
+identify which cgroup hit the limit (container vs user slice vs
+system).</li>
+<li><code>bash challenges/scripts/host_no_auto_suspend_challenge.sh</code>
+— confirms the host’s CONST-033 hardening is still intact.</li>
+<li><code>bash challenges/scripts/no_suspend_calls_challenge.sh</code> —
+confirms no forbidden source-tree calls were added.</li>
+<li>Document findings in <code>docs/incidents/&lt;date&gt;-*.md</code>
+regardless of outcome. Even a “no, it wasn’t us” report has value as a
+precedent for future triage.</li>
+</ol>
+<p><strong>Container hygiene corollary:</strong> every long-running
+container in <code>docker-compose.yml</code> MUST carry
+<code>mem_limit</code>, <code>pids_limit</code>, and
+<code>oom_score_adj: 500</code> (kill container before user session
+under pressure). Verified for all current services. Non-negotiable for
+any new service added in the future.</p>
+<p><strong>Podman/Docker themselves CANNOT directly suspend the
+host.</strong> Rootless podman runs in user mode with no
+power-management permissions; the docker daemon (when present) has no
+upstream code path that invokes power transitions. If a future incident
+appears to involve container runtime state, the actual mechanism is
+almost always cgroup OOM containment doing its job — investigate the OOM
+event, not the runtime.</p>
+<p><strong>See also:</strong>
+<code>docs/incidents/2026-04-27-perceived-host-suspension-investigation.md</code>
+for the precedent triage that established this operational note.</p>
+<!-- END host-power-management addendum (CONST-033) -->

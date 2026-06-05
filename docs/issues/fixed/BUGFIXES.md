@@ -1,5 +1,8 @@
 # Bugfix Log
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
 affected files, fix description, regression guard.

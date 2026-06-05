@@ -1,5 +1,8 @@
 # Completion Initiative — Full Report & Phased Implementation Plan
 
+**Revision:** 1
+**Last modified:** 2026-06-06T00:00:00Z
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Drive the qBitTorrent platform to zero-debt status: every module wired, every test unskipped, 100% coverage, hardened for security + concurrency + memory safety, fully documented (text + diagrams + OpenAPI + website + video), and continuously scanned by Snyk + SonarQube — without breaking any existing functionality and in full compliance with the `.specify/memory/constitution.md` (v1.1.0).

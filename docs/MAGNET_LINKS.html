@@ -1,0 +1,139 @@
+<h1 id="magnet-link-implementation-guide">Magnet Link Implementation
+Guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T00:00:00Z</p>
+<h2 id="status-all-plugins-return-magnet-links">Status: ✅ ALL PLUGINS
+RETURN MAGNET LINKS</h2>
+<p>All plugins have been updated to return magnet links in search
+results, enabling direct WebUI downloads.</p>
+<h2 id="what-was-fixed">What Was Fixed</h2>
+<h3 id="version-1.2.1-current">Version 1.2.1 (Current)</h3>
+<ul>
+<li><strong>LimeTorrents</strong>: Improved magnet link fetching with:
+<ul>
+<li>Retry logic for failed requests</li>
+<li>Better error handling</li>
+<li>Skip results without magnet links (no HTTP fallback)</li>
+<li>Multiple extraction patterns</li>
+</ul></li>
+</ul>
+<h3 id="version-1.2.0">Version 1.2.0</h3>
+<p>All plugins updated to return magnet links: - ✅ PirateBay - Native
+magnet support - ✅ EZTV - Native magnet support<br />
+- ✅ Rutor - Native magnet support - ✅ RuTracker - Fetches magnet from
+topic pages - ✅ Kinozal - Fetches magnet from topic pages (default:
+magnet=True) - ✅ NNMClub - Fetches magnet from topic pages - ✅
+LimeTorrents - Fetches magnet from info pages (v4.16 with retry) - ✅
+SolidTorrents - Native magnet support - ✅ TorrentProject - Fetches
+magnet from info pages - ✅ TorLock - Fetches magnet from info pages -
+✅ TorrentsCSV - Native magnet support - ✅ Jackett - Prefers MagnetUri
+over Link</p>
+<h2 id="how-it-works">How It Works</h2>
+<h3 id="search-flow">Search Flow</h3>
+<ol type="1">
+<li>User searches in qBittorrent WebUI</li>
+<li>Plugin returns results with <code>link</code> field containing
+magnet URI</li>
+<li>User clicks “Download”</li>
+<li>qBittorrent receives magnet link directly</li>
+<li>Download starts automatically</li>
+</ol>
+<h3 id="magnet-link-format">Magnet Link Format</h3>
+<pre><code>magnet:?xt=urn:btih:[40-char-hash]&amp;dn=[encoded-name]&amp;tr=[tracker1]&amp;tr=[tracker2]...</code></pre>
+<h2 id="testing-magnet-links">Testing Magnet Links</h2>
+<h3 id="manual-test">Manual Test</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /run/media/milosvasic/DATA4TB/Projects/qBitTorrent/plugins</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="op">&lt;&lt; &#39;EOF&#39;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="st">import sys</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="st">sys.path.insert(0, &#39;.&#39;)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st"># Mock prettyPrinter</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="st">results = []</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="st">def mock_printer(data):</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="st">    results.append(data.copy())</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="st">import novaprinter</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="st">novaprinter.prettyPrinter = mock_printer</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="st"># Test any plugin</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="st">from piratebay import piratebay</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="st">engine = piratebay()</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="st">engine.search(&#39;ubuntu&#39;, &#39;all&#39;)</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="st"># Check results</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="st">if results:</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="st">    link = results[0].get(&#39;link&#39;, &#39;&#39;)</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="st">    print(f&quot;First result link: {link[:80]}...&quot;)</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="st">    print(f&quot;Is magnet: {link.startswith(&#39;magnet:&#39;)}&quot;)</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="st">else:</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="st">    print(&quot;No results&quot;)</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="op">EOF</span></span></code></pre></div>
+<h3 id="test-all-plugins">Test All Plugins</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./tests/test_all_magnet_links.py</span></span></code></pre></div>
+<h2 id="common-issues">Common Issues</h2>
+<h3 id="issue-http-link-instead-of-magnet">Issue: HTTP link instead of
+magnet</h3>
+<p><strong>Cause</strong>: Magnet fetching failed, plugin fell back to
+HTTP URL <strong>Fix</strong>: Check site accessibility, verify HTML
+structure hasn’t changed</p>
+<h3 id="issue-no-results-returned">Issue: No results returned</h3>
+<p><strong>Causes</strong>: - Site is down or blocking requests - HTML
+structure changed - Network connectivity issues</p>
+<p><strong>Debug</strong>: Enable logging in plugin:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> logging</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>logging.basicConfig(level<span class="op">=</span>logging.DEBUG)</span></code></pre></div>
+<h2 id="plugin-specific-notes">Plugin-Specific Notes</h2>
+<h3 id="limetorrents-v4.16">LimeTorrents (v4.16)</h3>
+<ul>
+<li>Fetches magnets from individual info pages</li>
+<li>Retries failed requests up to 3 times</li>
+<li>Skips results if magnet fetch fails (no HTTP fallback)</li>
+<li>May be slow due to extra HTTP requests</li>
+</ul>
+<h3 id="private-trackers-rutracker-kinozal-nnmclub">Private Trackers
+(RuTracker, Kinozal, NNMClub)</h3>
+<ul>
+<li>Require authentication</li>
+<li>Fetch magnets from authenticated session</li>
+<li>Magnet links extracted from topic pages</li>
+</ul>
+<h3 id="public-trackers-piratebay-eztv-rutor-etc.">Public Trackers
+(PirateBay, EZTV, Rutor, etc.)</h3>
+<ul>
+<li>Magnet links available directly in search results</li>
+<li>No extra HTTP requests needed</li>
+<li>Fast performance</li>
+</ul>
+<h2 id="verification-checklist">Verification Checklist</h2>
+<p>Before considering a plugin complete, verify: - [ ] Search returns
+results - [ ] Results have <code>link</code> field - [ ]
+<code>link</code> field starts with <code>magnet:</code> - [ ] Magnet
+link has valid hash (40 hex characters) - [ ] Download starts when
+clicking result in WebUI</p>
+<h2 id="performance-tips">Performance Tips</h2>
+<ol type="1">
+<li><strong>Public trackers</strong> are faster (magnets in search
+results)</li>
+<li><strong>Private trackers</strong> require extra requests (slower but
+necessary)</li>
+<li><strong>LimeTorrents</strong> makes extra requests (slower but
+ensures magnets)</li>
+</ol>
+<h2 id="future-improvements">Future Improvements</h2>
+<ul class="task-list">
+<li><label><input type="checkbox" />Cache magnet links to avoid
+re-fetching</label></li>
+<li><label><input type="checkbox" />Parallel magnet fetching for
+multiple results</label></li>
+<li><label><input type="checkbox" />Better error messages when sites are
+down</label></li>
+<li><label><input type="checkbox" />Automatic fallback to alternative
+sites</label></li>
+</ul>
+<h2 id="support">Support</h2>
+<p>If a plugin returns HTTP links: 1. Check site is accessible 2. Enable
+debug logging 3. Report issue with full error message 4. Include sample
+search query that failed</p>
