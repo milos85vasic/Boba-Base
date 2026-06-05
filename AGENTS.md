@@ -1,5 +1,9 @@
 # AGENTS.md
 
+> Base agent rules: `constitution/AGENTS.md` — READ IT FIRST.
+> The base file is authoritative for any topic not covered here.
+> Project-specific rules below extend them; they never weaken them.
+
 Compact instruction file for AI agents working in this repo.
 For deeper narrative docs see `CLAUDE.md`, `docs/USER_MANUAL.md`, `docs/PLUGINS.md`, `docs/SECURITY.md`.
 

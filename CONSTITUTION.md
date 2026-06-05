@@ -1,5 +1,9 @@
 # qBitTorrent Platform — Consolidated Constitution
 
+> This constitution **extends** the Helix Universal Constitution at `constitution/Constitution.md`.
+> All clauses there apply unless explicitly overridden below with an explicit `Override §X.Y` section.
+> The Helix Constitution is authoritative for universal rules; project-specific addenda follow.
+
 > This document consolidates ALL constitutional constraints from
 > `.specify/memory/constitution.md`, `AGENTS.md`, `CLAUDE.md`, and
 > `docs/CONSTITUTION_ADDENDUM_QUALITY.md`. It is the canonical

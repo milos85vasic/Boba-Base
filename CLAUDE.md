@@ -1,5 +1,11 @@
 # CLAUDE.md
 
+## INHERITED FROM constitution/CLAUDE.md
+
+All rules in `constitution/CLAUDE.md` (and the `constitution/Constitution.md` it references) apply unconditionally. Project-specific rules below extend them — they do NOT weaken any universal clause. When this file disagrees with the constitution submodule, the constitution wins.
+
+@constitution/CLAUDE.md
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 For deeper reference (technology stack, per-test-file mapping, full gotchas), see `AGENTS.md`.
