@@ -1,30 +1,27 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-06 (full-stack completion sweep — committed)
-**Last commit:** `86f563b` (working tree CLEAN except this file)
-**Branch:** `main` (ahead of `origin/main` by 2 unpushed commits — see below)
-**Uncommitted work:** none (all session work committed)
+**Session:** 2026-06-06 (full-stack completion sweep — committed & pushed)
+**Last commit:** `25ffe5d` (working tree CLEAN)
+**Branch:** `main` — in sync with origin/github/upstream (all at `25ffe5d`)
+**Uncommitted work:** none · **Unpushed:** none
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff.
 
 ---
 
-## Unpushed Commits (NOT yet pushed to origin)
+## Last Push (2026-06-06)
 
 ```
-86f563b test: complete full-stack test/type/lint sweep + fix PreToolUse hook schema
 839304b chore(go): remove unused trackerStatsFromMeta helper (staticcheck U1000)
+86f563b test: complete full-stack test/type/lint sweep + fix PreToolUse hook schema
+25ffe5d docs(continuation): refresh handoff snapshot to committed state
 ```
 
-`origin/main` is at `c4a2def`. Push is pending operator confirmation
-(outward-facing; §11.4.71 fetch-before-push applies). To publish:
-
-```bash
-git fetch --all --prune            # §11.4.71 step 1
-git log --oneline HEAD..@{u}        # confirm no divergence
-git push origin main                # fast-forward (no force, ever — §11.4.113)
-```
+Pushed to all remotes as a clean fast-forward `c4a2def..25ffe5d` (no
+force — §11.4.113). `origin`, `github`, `upstream` all resolve to the
+canonical repo (`qBitTorrent.git` redirects to `Boba-Base.git`) and are
+all at `25ffe5d`. §11.4.71 fetch-before-push: no divergence found.
 
 ---
 
