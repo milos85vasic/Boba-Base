@@ -289,8 +289,11 @@ describe('DashboardComponent', () => {
         merged_results: 0,
         trackers_searched: [],
         started_at: 'now',
+        stream_token: 'tok-s2',
       });
-      expect(connectSpy).toHaveBeenCalledWith('s2');
+      // The per-search SSE bearer token (CONTINUATION #6) is threaded from
+      // the search response through to the stream connection.
+      expect(connectSpy).toHaveBeenCalledWith('s2', 'tok-s2');
     });
 
     it('shows error toast on failure', () => {

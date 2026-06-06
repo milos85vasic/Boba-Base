@@ -66,6 +66,16 @@ describe('SseService', () => {
     expect(MockEventSource.instances[0].url).toBe('/api/v1/search/stream/abc');
   });
 
+  it('connect() appends the SSE bearer token as a query param', () => {
+    svc.connect('abc', 'tok-123');
+    expect(MockEventSource.instances[0].url).toBe('/api/v1/search/stream/abc?token=tok-123');
+  });
+
+  it('connect() url-encodes the token', () => {
+    svc.connect('abc', 'a b/c+d');
+    expect(MockEventSource.instances[0].url).toBe('/api/v1/search/stream/abc?token=a%20b%2Fc%2Bd');
+  });
+
   it('onopen emits a connected event', () => {
     const events: SseEvent[] = [];
     svc.events.subscribe(e => events.push(e));

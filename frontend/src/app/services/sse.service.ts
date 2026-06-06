@@ -14,9 +14,13 @@ export class SseService {
 
   events: Observable<SseEvent> = this.events$.asObservable();
 
-  connect(searchId: string): void {
+  connect(searchId: string, token?: string): void {
     this.disconnect();
-    const url = `/api/v1/search/stream/${searchId}`;
+    // EventSource can't set headers, so the per-search bearer token
+    // (CONTINUATION #6) rides as a query param. Harmless when the server
+    // doesn't require it; required when SSE_REQUIRE_TOKEN is enabled.
+    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+    const url = `/api/v1/search/stream/${searchId}${query}`;
     this.eventSource = new EventSource(url);
 
     this.eventSource.onopen = () => {

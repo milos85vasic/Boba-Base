@@ -19,6 +19,8 @@ export interface SearchResponse {
   tracker_stats?: TrackerSearchStat[];
   started_at: string;
   completed_at?: string;
+  /** Per-search SSE bearer token (CONTINUATION #6); pass to the stream URL. */
+  stream_token?: string;
 }
 
 export interface TrackerSearchStat {

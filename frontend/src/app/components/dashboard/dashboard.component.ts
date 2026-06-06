@@ -312,7 +312,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.searchStatus.set(`Found ${resp.total_results} results (${resp.merged_results} merged)`);
           this.isSearching.set(false);
         } else {
-          this.connectSse(resp.search_id);
+          this.connectSse(resp.search_id, resp.stream_token);
         }
       },
       error: (err) => {
@@ -323,8 +323,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  connectSse(searchId: string): void {
-    this.sse.connect(searchId);
+  connectSse(searchId: string, token?: string): void {
+    this.sse.connect(searchId, token);
     this.sseSub = this.sse.events.subscribe(event => {
       switch (event.event) {
         case 'result_found':

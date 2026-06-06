@@ -156,6 +156,15 @@ class SearchResponse(BaseModel):
     )
     started_at: str
     completed_at: str | None = None
+    stream_token: str | None = Field(
+        default=None,
+        description=(
+            "Per-search SSE bearer token (CONTINUATION #6). Pass it to "
+            "GET /search/stream/{search_id} as ?token=<t> or an "
+            "Authorization: Bearer header. Required only when the server "
+            "runs with SSE_REQUIRE_TOKEN enabled."
+        ),
+    )
 
 
 class DownloadRequest(BaseModel):
@@ -295,6 +304,10 @@ async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyp
     task = asyncio.create_task(_background())
     orch._search_tasks[metadata.search_id] = task
 
+    # Mint the per-search SSE bearer token so the client can authorise its
+    # stream connection (CONTINUATION #6).
+    stream_token = orch.issue_stream_token(metadata.search_id)
+
     # Return immediately — the caller should attach to SSE for real-time
     # results.  Any callers that want the old blocking behaviour can hit
     # GET /api/v1/search/{search_id} once status goes to 'completed'.
@@ -309,6 +322,7 @@ async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyp
         tracker_stats=metadata.to_dict()["tracker_stats"],
         started_at=metadata.started_at.isoformat(),
         completed_at=None,
+        stream_token=stream_token,
     )
 
 
@@ -459,8 +473,30 @@ _sse_stream_count = 0
 _SSE_STREAM_MAX = int(os.environ.get("MAX_CONCURRENT_SSE_STREAMS", "32"))
 
 
+def _sse_require_token() -> bool:
+    """Whether SSE streams must carry a valid per-search token.
+
+    Read per-request (not cached at import) so operators can toggle it
+    without restarting tests. Default off so the shipped dashboard keeps
+    working over the UUID barrier alone; flip ``SSE_REQUIRE_TOKEN`` to a
+    truthy value (1/true/yes/on) to harden (CONTINUATION #6).
+    """
+    return os.environ.get("SSE_REQUIRE_TOKEN", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _supplied_stream_token(req: Request, token: str | None) -> str | None:
+    """Pull the stream token from the ``?token=`` query param (EventSource
+    can't set headers) or an ``Authorization: Bearer`` header."""
+    if token:
+        return token
+    auth = req.headers.get("authorization", "")
+    if auth.lower().startswith("bearer "):
+        return auth[7:].strip() or None
+    return None
+
+
 @router.get("/search/stream/{search_id}")
-async def search_stream(search_id: str, req: Request):  # type: ignore[no-untyped-def]
+async def search_stream(search_id: str, req: Request, token: str | None = None):  # type: ignore[no-untyped-def]
     from fastapi.responses import StreamingResponse  # noqa: F401
 
     from .streaming import SSEHandler
@@ -472,6 +508,11 @@ async def search_stream(search_id: str, req: Request):  # type: ignore[no-untype
     # open SSE socket waiting for events that will never come.
     if search_id not in orch._active_searches:
         raise HTTPException(status_code=404, detail="Search not found")
+    # Per-search bearer-token gate (opt-in via SSE_REQUIRE_TOKEN). The 404
+    # above intentionally precedes this so token probes can't enumerate
+    # which search IDs exist.
+    if _sse_require_token() and not orch.validate_stream_token(search_id, _supplied_stream_token(req, token)):
+        raise HTTPException(status_code=403, detail="Invalid or missing stream token")
     # Cap concurrent open SSE streams. Each stream reserves an event
     # loop task and holds a tracker_results dict pointer; without a
     # cap a trivial client loop can exhaust sockets/fds.

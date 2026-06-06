@@ -493,6 +493,76 @@ PRIVATE_TRACKERS = {
 }
 
 
+class EncryptedSessionStore:
+    """At-rest encryption wrapper over a session cache (CONTINUATION #7 /
+    Phase 2.3).
+
+    Private-tracker auth cookies must never sit as plaintext in the
+    in-memory cache (a stray ``repr`` of the store, a memory dump, or an
+    accidental log line would otherwise leak live session cookies). Values
+    are JSON-serialised and Fernet-encrypted on write, decrypted on read,
+    so every existing call site (set / get / ``in`` / ``len`` / ``del`` /
+    iteration) keeps working unchanged while the backing store holds only
+    opaque Fernet tokens.
+
+    The key is per-process ephemeral by default — sessions live only in the
+    in-memory TTLCache and never outlive the process, so a fresh key per
+    boot is sufficient. Set ``SESSION_ENCRYPTION_KEY`` (a urlsafe-base64
+    32-byte Fernet key) to pin it across restarts.
+    """
+
+    def __init__(self, cache: "TTLCache[str, Any]", key: bytes | None = None) -> None:
+        from cryptography.fernet import Fernet
+
+        self._cache = cache
+        if key is None:
+            env_key = os.getenv("SESSION_ENCRYPTION_KEY")
+            key = env_key.encode() if env_key else Fernet.generate_key()
+        self._fernet = Fernet(key)
+
+    def _encrypt(self, value: Any) -> bytes:
+        import json
+
+        return self._fernet.encrypt(json.dumps(value).encode("utf-8"))
+
+    def _decrypt(self, token: bytes) -> Any:
+        import json
+
+        return json.loads(self._fernet.decrypt(token).decode("utf-8"))
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._cache[key] = self._encrypt(value)
+
+    def __getitem__(self, key: str) -> Any:
+        return self._decrypt(self._cache[key])
+
+    def get(self, key: str, default: Any = None) -> Any:
+        token = self._cache.get(key)
+        if token is None:
+            return default
+        try:
+            return self._decrypt(token)
+        except Exception:
+            # Corrupt / undecryptable token (e.g. key rotation) — treat as absent.
+            return default
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._cache
+
+    def __delitem__(self, key: str) -> None:
+        del self._cache[key]
+
+    def __len__(self) -> int:
+        return len(self._cache)
+
+    def __iter__(self) -> Any:
+        return iter(self._cache)
+
+    def _raw_values(self) -> list[bytes]:
+        """The encrypted Fernet tokens as stored (for tests / introspection)."""
+        return list(self._cache.values())
+
+
 class SearchOrchestrator:
     def __init__(self) -> None:
         from .deduplicator import Deduplicator
@@ -511,7 +581,14 @@ class SearchOrchestrator:
         _max_searches = max(1, int(_os_ttl.getenv("MAX_ACTIVE_SEARCHES", "256")))
         _ttl = max(1, int(_os_ttl.getenv("ACTIVE_SEARCH_TTL_SECONDS", "3600")))
         self._active_searches: TTLCache[str, SearchMetadata] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
-        self._tracker_sessions: TTLCache[str, Any] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
+        # At-rest encrypted: cookies are Fernet-encrypted in the backing
+        # TTLCache so they never sit as plaintext (CONTINUATION #7).
+        self._tracker_sessions: EncryptedSessionStore = EncryptedSessionStore(
+            _TTLCache(maxsize=_max_searches, ttl=_ttl)
+        )
+        # Per-search SSE bearer tokens (CONTINUATION #6). Same bound/TTL as
+        # the searches they gate so a token never outlives its search.
+        self._stream_tokens: TTLCache[str, str] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
         self._last_merged_results: TTLCache[str, tuple[Any, ...]] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
         self._tracker_results: TTLCache[str, dict[str, list[Any]]] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
         # Side-channel: `_search_public_tracker` writes a diagnostic
@@ -1614,6 +1691,27 @@ class SearchOrchestrator:
     def get_search_status(self, search_id: str) -> SearchMetadata | None:
         result = self._active_searches.get(search_id)
         return result if result is not None else None
+
+    def issue_stream_token(self, search_id: str) -> str:
+        """Mint and store a single-use SSE bearer token for ``search_id``
+        (CONTINUATION #6). Returned to the client in the search response so
+        it can authorise its stream connection."""
+        import secrets
+
+        token = secrets.token_urlsafe(32)
+        self._stream_tokens[search_id] = token
+        return token
+
+    def validate_stream_token(self, search_id: str, token: str | None) -> bool:
+        """Constant-time check that ``token`` matches the one issued for
+        ``search_id``. False when no token was issued, the search expired,
+        or the token is missing/wrong."""
+        import secrets
+
+        expected = self._stream_tokens.get(search_id)
+        if not expected or not token:
+            return False
+        return secrets.compare_digest(expected, token)
 
     def get_live_results(self, search_id: str) -> list[Any]:
         """Get all results found so far for a search, not yet merged.
