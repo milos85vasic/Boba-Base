@@ -19,11 +19,15 @@ PORTS=(7186 7187 7189 9117)
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IDENTITY="$HOME/.local/share/containers/podman/machine/machine"
 
-# Find the podman machine SSH port.
-PODMAN_PORT=$(podman system connection list 2>/dev/null \
-  | awk '/^podman-machine-default[^*]/ {print $1} /^podman-machine-default\*/ {print $1}' \
-  | head -1 \
-  | sed 's/.*://; s/\/run.*//')
+# Find the podman machine SSH port. Prefer `machine inspect` (gives the port
+# directly); fall back to parsing the connection URI (ssh://core@host:PORT/...).
+# The old `awk '{print $1}'` grabbed the connection NAME, not the port, which
+# produced "Bad port 'podman-machine-default'".
+PODMAN_PORT=$(podman machine inspect --format '{{.SSHConfig.Port}}' 2>/dev/null | head -1)
+if ! printf '%s' "$PODMAN_PORT" | grep -qE '^[0-9]+$'; then
+  PODMAN_PORT=$(podman system connection list --format '{{.URI}}' 2>/dev/null \
+    | grep -oE '@[^/]+:[0-9]+' | grep -oE '[0-9]+$' | head -1)
+fi
 
 if [ -z "$PODMAN_PORT" ]; then
   # Fallback: try the default port range

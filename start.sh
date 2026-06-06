@@ -19,6 +19,27 @@ print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
+# Portable in-place sed (§11.4.67/§11.4.81). GNU sed accepts `sed_inplace SCRIPT`,
+# but BSD/macOS sed treats the script as the backup-extension and fails with
+# "invalid command code" — which aborted the boot before `compose up`. Using
+# `-i.bak` (extension attached, no space) works on BOTH, then we drop the
+# backup. Last argument is the target file; everything before it is sed args.
+sed_inplace() {
+    local file="${*: -1}"
+    local args=("${@:1:$#-1}")
+    sed -i.bobabak "${args[@]}" "$file"
+    rm -f "${file}.bobabak"
+}
+
+# `podman unshare` only works for LOCAL rootless podman. The macOS podman
+# machine is a REMOTE client and rejects it ("cannot use command podman
+# unshare with the remote podman client"), which aborted plugin install.
+# Detect support once and let callers fall back to plain cp/chmod (§11.4.81).
+_podman_unshare_works() {
+    [[ "$CONTAINER_RUNTIME" == "podman" ]] || return 1
+    podman unshare true >/dev/null 2>&1
+}
+
 load_env_file() {
     local env_file="$1"
     if [[ -f "$env_file" ]]; then
@@ -136,16 +157,16 @@ _ensure_webui_credentials() {
     print_info "Ensuring WebUI credentials and port in: $config_file"
 
     if grep -q "^WebUI\\\\Port=" "$config_file" 2>/dev/null; then
-        sed -i "s/^WebUI\\\\Port=.*/WebUI\\\\Port=${webui_port}/" "$config_file"
+        sed_inplace "s/^WebUI\\\\Port=.*/WebUI\\\\Port=${webui_port}/" "$config_file"
     fi
 
     if grep -q "^WebUI\\\\Username=" "$config_file" 2>/dev/null; then
-        sed -i 's/^WebUI\\Username=.*/WebUI\\Username=admin/' "$config_file"
+        sed_inplace 's/^WebUI\\Username=.*/WebUI\\Username=admin/' "$config_file"
     fi
 
     local pbkdf2_hash='@ByteArray(XGCniD5hOQPEcE510BED2Q==:jLIBnLj5eCBZjRCvtE7dTSutDtS8mBQNKQ6rq/W3MszKNsKBjM2/8Ur9fxsADvQeh1wntKorznkorETYAFZawQ==)'
     if grep -q "^WebUI\\\\Password_PBKDF2=" "$config_file" 2>/dev/null; then
-        sed -i "s|^WebUI\\\\Password_PBKDF2=.*|WebUI\\\\Password_PBKDF2=${pbkdf2_hash}|" "$config_file"
+        sed_inplace "s|^WebUI\\\\Password_PBKDF2=.*|WebUI\\\\Password_PBKDF2=${pbkdf2_hash}|" "$config_file"
     fi
 
     # Migrate existing configs to the auth-ban-disabled settings.
@@ -162,7 +183,7 @@ _ensure_webui_credentials() {
     local dup_lines
     dup_lines=$(grep -n "^\\[Application\\]$" "$config_file" 2>/dev/null | tail -n +2 | cut -d: -f1 | sort -rn || true)
     for line_num in $dup_lines; do
-        sed -i "${line_num}d" "$config_file"
+        sed_inplace "${line_num}d" "$config_file"
     done
 }
 
@@ -175,7 +196,7 @@ _enforce_config_line() {
     local section="$4"
 
     if grep -qE "^${key}=" "$config_file" 2>/dev/null; then
-        sed -i -E "s|^${key}=.*|${key}=${value}|" "$config_file"
+        sed_inplace -E "s|^${key}=.*|${key}=${value}|" "$config_file"
     else
         # Insert under the section header if it exists; otherwise
         # append at EOF.
@@ -329,7 +350,7 @@ create_directories() {
     mkdir -p config/qBittorrent
     mkdir -p config/qBittorrent/nova3/engines
 
-    if [[ "$CONTAINER_RUNTIME" == "podman" ]]; then
+    if _podman_unshare_works; then
         podman unshare chmod -R a+rw config/ 2>/dev/null || true
     fi
 
@@ -353,7 +374,7 @@ copy_plugins() {
     fi
     
     local copy_cmd="cp"
-    if [[ "$CONTAINER_RUNTIME" == "podman" ]]; then
+    if _podman_unshare_works; then
         copy_cmd="podman unshare cp"
     fi
     
@@ -516,7 +537,7 @@ update_env_jackett_key() {
     # only update if missing or still placeholder
     if grep -q "^JACKETT_API_KEY=YOUR_API_KEY_HERE" "$env_file" 2>/dev/null || ! grep -q "^JACKETT_API_KEY=" "$env_file" 2>/dev/null; then
         if grep -q "^JACKETT_API_KEY=" "$env_file" 2>/dev/null; then
-            sed -i "s|^JACKETT_API_KEY=.*|JACKETT_API_KEY=$key|" "$env_file"
+            sed_inplace "s|^JACKETT_API_KEY=.*|JACKETT_API_KEY=$key|" "$env_file"
         else
             echo "JACKETT_API_KEY=$key" >> "$env_file"
         fi
