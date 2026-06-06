@@ -1,16 +1,46 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Session:</strong> 2026-06-06 (security/platform hardening +
-parallel coverage fleet) <strong>Last commit:</strong>
-<code>aa6c32f</code> (working tree CLEAN apart from this file)
-<strong>Branch:</strong> <code>main</code> — 4 commits ahead of pushed
-<code>f1a4865</code> (push pending) <strong>Uncommitted work:</strong>
-none · <strong>Unpushed:</strong> the 4 coverage/bugfix commits + this
-doc</p>
+<p><strong>Session:</strong> 2026-06-06 (private-tracker credentials +
+live boot + BOB tracker) <strong>Last commit:</strong>
+<code>7c4e67f</code> (working tree CLEAN apart from this file)
+<strong>Branch:</strong> <code>main</code> — push pending (fetch-first,
+no force) <strong>Workable-item tracking:</strong> now LIVE at <a
+href="Issues.md"><code>Issues.md</code></a> / <a
+href="Fixed.md"><code>Fixed.md</code></a> with prefix
+<strong>BOB</strong>.</p>
 <blockquote>
 <p>Send <code>continue</code> to pick up exactly where we left off. This
 file is the single source of truth for session handoff.</p>
 </blockquote>
+<hr />
+<h2 id="credentials-live-boot-session-2026-06-06">Credentials +
+Live-Boot Session (2026-06-06)</h2>
+<p><strong>Credentials (DONE, never committed/logged):</strong>
+RuTracker / IPTorrents / RuTor / NNMClub creds stored in gitignored
+<code>.env</code> (mode 0600). §11.4.10.A leak audit clean; 22
+credential-safety tests pass. <strong>Proven working
+end-to-end</strong>: live <code>POST /api/v1/search/sync</code> returned
+<strong>49 real IPTorrents results</strong> (auth=True). RuTracker login
+attempted but CAPTCHA-blocked (BOB-008).</p>
+<p><strong>Full stack now boots on macOS</strong> — fixed 3 macOS-podman
+blockers (BOB-001/002/003, commit <code>c5cbd40</code>): portable
+<code>sed_inplace</code>, <code>podman unshare</code> self-detect,
+tunnel SSH-port detection. All 4 containers healthy; tunnel forwards
+7186/7187/7189/9117. Re-boot: <code>./start.sh</code> (Darwin auto-runs
+the tunnel).</p>
+<p><strong>Discovered (open, tracked in Issues.md):</strong> BOB-005 ALL
+public-tracker plugins raise unhandled exception in the proxy container
+(High — public search broken; private/IPTorrents works); BOB-006 NNMClub
+user/pass login unwired; BOB-007 RuTor public (creds unusable); BOB-008
+RuTracker CAPTCHA; BOB-009 containers submodule; BOB-010 SQLite DB +
+docs_chain not built (this MD tracker is interim); BOB-011 DOCX export;
+BOB-012 export-sync gate.</p>
+<p><strong>Honest scope note:</strong> the operator’s full program
+(SQLite single-source-of-truth + docs_chain submodule + DOCX + NNMClub
+auth + public-plugin fix + containers submodule + endless multi-agent
+loop) is mapped and BOB-tracked but NOT all built this session — it is a
+multi-session initiative. Credentials (the critical, time-sensitive ask)
+are complete and proven.</p>
 <hr />
 <h2 id="parallel-coverage-fleet-6-subagents-2-bug-fixes">Parallel
 Coverage Fleet (6 subagents) + 2 bug fixes</h2>

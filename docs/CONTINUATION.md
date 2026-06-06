@@ -1,12 +1,40 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-06 (security/platform hardening + parallel coverage fleet)
-**Last commit:** `aa6c32f` (working tree CLEAN apart from this file)
-**Branch:** `main` — 4 commits ahead of pushed `f1a4865` (push pending)
-**Uncommitted work:** none · **Unpushed:** the 4 coverage/bugfix commits + this doc
+**Session:** 2026-06-06 (private-tracker credentials + live boot + BOB tracker)
+**Last commit:** `7c4e67f` (working tree CLEAN apart from this file)
+**Branch:** `main` — push pending (fetch-first, no force)
+**Workable-item tracking:** now LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**.
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff.
+
+---
+
+## Credentials + Live-Boot Session (2026-06-06)
+
+**Credentials (DONE, never committed/logged):** RuTracker / IPTorrents / RuTor /
+NNMClub creds stored in gitignored `.env` (mode 0600). §11.4.10.A leak audit
+clean; 22 credential-safety tests pass. **Proven working end-to-end**: live
+`POST /api/v1/search/sync` returned **49 real IPTorrents results** (auth=True).
+RuTracker login attempted but CAPTCHA-blocked (BOB-008).
+
+**Full stack now boots on macOS** — fixed 3 macOS-podman blockers (BOB-001/002/003,
+commit `c5cbd40`): portable `sed_inplace`, `podman unshare` self-detect, tunnel
+SSH-port detection. All 4 containers healthy; tunnel forwards 7186/7187/7189/9117.
+Re-boot: `./start.sh` (Darwin auto-runs the tunnel).
+
+**Discovered (open, tracked in Issues.md):** BOB-005 ALL public-tracker plugins
+raise unhandled exception in the proxy container (High — public search broken;
+private/IPTorrents works); BOB-006 NNMClub user/pass login unwired; BOB-007 RuTor
+public (creds unusable); BOB-008 RuTracker CAPTCHA; BOB-009 containers submodule;
+BOB-010 SQLite DB + docs_chain not built (this MD tracker is interim); BOB-011
+DOCX export; BOB-012 export-sync gate.
+
+**Honest scope note:** the operator's full program (SQLite single-source-of-truth
++ docs_chain submodule + DOCX + NNMClub auth + public-plugin fix + containers
+submodule + endless multi-agent loop) is mapped and BOB-tracked but NOT all built
+this session — it is a multi-session initiative. Credentials (the critical,
+time-sensitive ask) are complete and proven.
 
 ---
 
