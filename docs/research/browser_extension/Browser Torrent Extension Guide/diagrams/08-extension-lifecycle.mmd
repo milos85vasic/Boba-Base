@@ -1,0 +1,60 @@
+graph LR
+    subgraph Lifecycle["🔄 BobaLink Extension Lifecycle"]
+        direction LR
+
+        Install["📥 Install<br/>from store or .crx"]
+        Grant["🔐 Grant<br/>Permissions"]
+        Configure["⚙️ Configure<br/>Server Settings"]
+        Discover["🔍 Auto-Discover<br/>Server"]
+        Browse["🌐 Browse<br/>Torrent Sites"]
+        Detect["📡 Detect<br/>Torrent Links"]
+        Send["📤 Send to<br/>qBitTorrent"]
+        Monitor["📊 Monitor<br/>Downloads"]
+    end
+
+    subgraph Events["⚡ Chrome Events"]
+        OnInstall["chrome.runtime<br/>.onInstalled"]
+        OnStartup["chrome.runtime<br/>.onStartup"]
+        OnUpdate["chrome.runtime<br/>.onUpdateAvailable"]
+    end
+
+    subgraph Actions["🎯 User Actions at Each Stage"]
+        A1["Grant host, storage,<br/>scripting permissions"]
+        A2["Enter server URL,<br/>API key, qBit URL"]
+        A3["Test connection<br/>auto-detect Docker"]
+        A4["Navigate to torrent<br/>sites as normal"]
+        A5["Review detected<br/>torrents in popup"]
+        A6["Click send, batch<br/>send, or auto-send"]
+        A7["Check progress in<br/>popup &amp; qBit WebUI"]
+    end
+
+    Install -->|"chrome.runtime.onInstalled"| Grant
+    Grant -->|"Permissions granted<br/>storage, scripting, tabs"| Configure
+    Configure -->|"Save settings<br/>chrome.storage.local"| Discover
+    Discover -->|"Health check passed<br/>Server reachable"| Browse
+    Browse -->|"DOM contains torrent<br/>links on page"| Detect
+    Detect -->|"Torrents discovered<br/>shown in popup"| Send
+    Send -->|"Send successful<br/>200 OK received"| Monitor
+    Monitor -->|"Continue browsing"| Browse
+
+    OnInstall --> Install
+    OnStartup -->|"Restore config<br/>from storage"| Browse
+    OnUpdate -->|"Show changelog<br/>migrate data"| Configure
+
+    Install --> A1
+    Grant --> A1
+    Configure --> A2
+    Discover --> A3
+    Browse --> A4
+    Detect --> A5
+    Send --> A6
+    Monitor --> A7
+
+    style Install fill:#E8F0FE,stroke:#2D5F8A,stroke-width:2px,color:#333
+    style Grant fill:#FFF8E1,stroke:#D4A76A,stroke-width:2px,color:#333
+    style Configure fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#333
+    style Discover fill:#E8F5E9,stroke:#4A8C6F,stroke-width:2px,color:#333
+    style Browse fill:#FFF3E0,stroke:#E65100,stroke-width:2px,color:#333
+    style Detect fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#333
+    style Send fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#333
+    style Monitor fill:#E8F5E9,stroke:#4A8C6F,stroke-width:2px,color:#333

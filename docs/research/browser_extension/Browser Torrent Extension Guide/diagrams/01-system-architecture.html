@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BobaLink — System Architecture</title>
+    <style>
+        :root {
+            --primary: #2D5F8A;
+            --sage: #4A8C6F;
+            --gold: #D4A76A;
+            --bg: #FAFAFA;
+            --light-gray: #F0F0F0;
+            --dark: #333333;
+            --medium: #666666;
+            --error: #C75450;
+            --success: #6B9E23;
+            --docker: #1976D2;
+            --torrent: #3F51B5;
+            --external: #E65100;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--dark);
+            padding: 24px;
+            min-height: 100vh;
+        }
+        .diagram-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 32px;
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+
+        /* Architecture Grid */
+        .arch-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .env-box {
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .env-box:hover { box-shadow: var(--shadow-hover); }
+
+        /* Browser Environment */
+        .browser-env {
+            background: linear-gradient(180deg, #E8F0FE 0%, #D4E4F7 100%);
+            border: 2px solid var(--primary);
+        }
+        .docker-env {
+            background: linear-gradient(180deg, #F0F8FF 0%, #E3F2FD 100%);
+            border: 2px solid var(--docker);
+        }
+        .ext-env {
+            background: linear-gradient(180deg, #FFF3E0 0%, #FFE0B2 100%);
+            border: 2px solid var(--external);
+        }
+
+        .env-title {
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 16px;
+            padding: 8px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.7);
+        }
+
+        /* Layers */
+        .layer {
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1.5px dashed;
+        }
+        .layer-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .layer-ui {
+            background: #F9FBFD;
+            border-color: #5B9BD5;
+        }
+        .layer-core {
+            background: #F6FBF7;
+            border-color: var(--sage);
+        }
+        .layer-lib {
+            background: #FDFBF6;
+            border-color: var(--gold);
+        }
+        .layer-storage {
+            background: #F8F8F8;
+            border-color: #888;
+        }
+        .layer-boba {
+            background: #F5FAFF;
+            border-color: #5B9BD5;
+        }
+        .layer-torrent {
+            background: #F5F7FF;
+            border-color: var(--torrent);
+        }
+
+        /* Component Nodes */
+        .nodes-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .node {
+            border-radius: 6px;
+            padding: 10px 14px;
+            text-align: center;
+            font-size: 11px;
+            min-width: 80px;
+            box-shadow: var(--shadow);
+            transition: all 0.25s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .node:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        .node-name {
+            font-weight: 700;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        .node-desc {
+            font-size: 9px;
+            color: var(--medium);
+        }
+        .node-ui {
+            background: #E8F0FE;
+            border: 1.5px solid var(--primary);
+        }
+        .node-core {
+            background: #E8F5E9;
+            border: 1.5px solid var(--sage);
+        }
+        .node-lib {
+            background: #FFF8E1;
+            border: 1.5px solid var(--gold);
+        }
+        .node-storage {
+            background: #F5F5F5;
+            border: 1.5px solid var(--medium);
+        }
+        .node-boba {
+            background: #E3F2FD;
+            border: 1.5px solid var(--docker);
+        }
+        .node-torrent {
+            background: #E8EAF6;
+            border: 1.5px solid var(--torrent);
+        }
+        .node-ext {
+            background: #FFF8E1;
+            border: 1.5px solid var(--external);
+        }
+
+        /* APIs Panel */
+        .apis-panel {
+            background: #F0F7FF;
+            border: 1.5px dashed var(--primary);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+        .apis-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        /* Docker Networks */
+        .docker-nets {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .net-node {
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+            font-size: 10px;
+            box-shadow: var(--shadow);
+        }
+        .net-internal { background: #E8F5E9; border: 1px solid var(--sage); }
+        .net-bridge { background: #FFF3E0; border: 1px solid var(--external); }
+        .net-volume { background: #FCE4EC; border: 1px solid #C2185B; }
+
+        /* Arrows / Flow Lines */
+        .flow-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #F9F9F9;
+            border-radius: 10px;
+            border: 1px solid #E0E0E0;
+        }
+        .flow-section h3 {
+            font-size: 14px;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+        .flow-step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .flow-arrow {
+            color: var(--medium);
+            font-size: 14px;
+        }
+        .flow-label {
+            background: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #E0E0E0;
+            transition: all 0.2s;
+        }
+        .flow-label:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #E0E0E0;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+        }
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1.5px solid;
+        }
+
+        /* Connections SVG overlay */
+        .connections-container {
+            position: relative;
+            margin-top: 20px;
+        }
+        .flow-legend {
+            margin-top: 20px;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #E0E0E0;
+        }
+        .flow-legend h4 {
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .flow-legend p {
+            font-size: 11px;
+            color: var(--medium);
+            line-height: 1.6;
+        }
+
+        @media (max-width: 900px) {
+            .arch-grid { grid-template-columns: 1fr; }
+            .docker-nets { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="diagram-container">
+        <h1>BobaLink Browser Extension — System Architecture</h1>
+
+        <div class="arch-grid">
+            <!-- Browser Environment -->
+            <div class="env-box browser-env">
+                <div class="env-title" style="color: var(--primary);">🌐 Browser Environment</div>
+
+                <div class="layer layer-ui">
+                    <div class="layer-title" style="color: var(--primary);">Extension UI Layer</div>
+                    <div class="nodes-row">
+                        <div class="node node-ui">
+                            <div class="node-name">Popup UI</div>
+                            <div class="node-desc">popup.html/js<br>Torrent list &amp; controls</div>
+                        </div>
+                        <div class="node node-ui">
+                            <div class="node-name">Options Page</div>
+                            <div class="node-desc">options.html/js<br>Server configuration</div>
+                        </div>
+                        <div class="node node-ui">
+                            <div class="node-name">Context Menu</div>
+                            <div class="node-desc">background.js<br>Right-click actions</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layer layer-core">
+                    <div class="layer-title" style="color: var(--sage);">Extension Core Layer</div>
+                    <div class="nodes-row">
+                        <div class="node node-core">
+                            <div class="node-name">Content Script</div>
+                            <div class="node-desc">content.js<br>DOM scanner &amp; injector</div>
+                        </div>
+                        <div class="node node-core">
+                            <div class="node-name">Background SW</div>
+                            <div class="node-desc">background.js<br>Event handling &amp; API proxy</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layer layer-lib">
+                    <div class="layer-title" style="color: var(--gold);">Extension Library Layer</div>
+                    <div class="nodes-row">
+                        <div class="node node-lib"><div class="node-name">parser/</div><div class="node-desc">magnet &amp; .torrent</div></div>
+                        <div class="node node-lib"><div class="node-name">scanner/</div><div class="node-desc">DOM detector</div></div>
+                        <div class="node node-lib"><div class="node-name">api/</div><div class="node-desc">BobaAPIClient</div></div>
+                        <div class="node node-lib"><div class="node-name">shared/</div><div class="node-desc">Constants &amp; utils</div></div>
+                    </div>
+                </div>
+
+                <div class="layer layer-storage">
+                    <div class="layer-title" style="color: var(--medium);">Extension Storage</div>
+                    <div class="nodes-row">
+                        <div class="node node-storage">
+                            <div class="node-name">Local Storage</div>
+                            <div class="node-desc">extension_config</div>
+                        </div>
+                        <div class="node node-storage">
+                            <div class="node-name">Session Storage</div>
+                            <div class="node-desc">discovered_torrents</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="apis-panel">
+                    <div class="apis-title">Chrome APIs Used</div>
+                    <div class="nodes-row">
+                        <div class="node node-ui" style="min-width: auto; padding: 6px 10px; font-size: 10px;">chrome.runtime</div>
+                        <div class="node node-ui" style="min-width: auto; padding: 6px 10px; font-size: 10px;">chrome.tabs</div>
+                        <div class="node node-ui" style="min-width: auto; padding: 6px 10px; font-size: 10px;">chrome.tabGroups</div>
+                        <div class="node node-ui" style="min-width: auto; padding: 6px 10px; font-size: 10px;">chrome.contextMenus</div>
+                        <div class="node node-ui" style="min-width: auto; padding: 6px 10px; font-size: 10px;">chrome.storage</div>
+                        <div class="node node-ui" style="min-width: auto; padding: 6px 10px; font-size: 10px;">fetch()</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Docker Host -->
+            <div class="env-box docker-env">
+                <div class="env-title" style="color: var(--docker);">🐳 Docker Host</div>
+
+                <div class="layer layer-boba">
+                    <div class="layer-title" style="color: var(--docker);">Boba Services Network</div>
+                    <div class="nodes-row">
+                        <div class="node node-boba">
+                            <div class="node-name">Boba FastAPI</div>
+                            <div class="node-desc">Port 7187<br>Metadata &amp; search API</div>
+                        </div>
+                        <div class="node node-boba">
+                            <div class="node-name">Boba Go Service</div>
+                            <div class="node-desc">Port 7189<br>Core torrent operations</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layer layer-torrent">
+                    <div class="layer-title" style="color: var(--torrent);">Torrent Network</div>
+                    <div class="nodes-row">
+                        <div class="node node-torrent">
+                            <div class="node-name">qBitTorrent WebUI</div>
+                            <div class="node-desc">Port 8080<br>Torrent client API</div>
+                        </div>
+                        <div class="node node-torrent">
+                            <div class="node-name">qBitTorrent DB</div>
+                            <div class="node-desc">Internal BT state storage</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="docker-nets">
+                    <div class="net-node net-internal">
+                        <strong>boba-network</strong><br>
+                        Internal service mesh<br>
+                        FastAPI ↔ Go ↔ qBit
+                    </div>
+                    <div class="net-node net-bridge">
+                        <strong>bridge / host</strong><br>
+                        External port mapping<br>
+                        7187, 7189, 8080
+                    </div>
+                    <div class="net-node net-volume">
+                        <strong>Volume Mounts</strong><br>
+                        /downloads, /config<br>
+                        Persistent storage
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- External Services -->
+        <div class="env-box ext-env" style="margin-bottom: 20px;">
+            <div class="env-title" style="color: var(--external);">🌍 External Services</div>
+            <div class="nodes-row">
+                <div class="node node-ext">
+                    <div class="node-name">BitTorrent Trackers</div>
+                    <div class="node-desc">DHT, PEX, UDP announce<br>Peer discovery &amp; metadata</div>
+                </div>
+                <div class="node node-ext">
+                    <div class="node-name">Web Pages / Indexers</div>
+                    <div class="node-desc">Torrent sites &amp; search engines<br>Magnet &amp; .torrent hosting</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Flows -->
+        <div class="flow-section">
+            <h3>📊 Primary Data Flow — Single Torrent Send</h3>
+            <div class="flow-step">
+                <span class="flow-label">① Content Script scans DOM</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label">② Magnet links detected</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label">③ Background SW receives</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label">④ BobaAPIClient HTTP request</span>
+            </div>
+            <div class="flow-step">
+                <span class="flow-label">⑤ Boba Service validates</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label">⑥ qBitTorrent WebUI add</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label">⑦ Torrent added to client</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label">⑧ Status returned to Popup</span>
+            </div>
+
+            <h3 style="margin-top: 16px; color: var(--sage);">📊 Batch Processing Flow — Tab Groups</h3>
+            <div class="flow-step">
+                <span class="flow-label" style="border-color: var(--sage);">① Context menu on Tab Group</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label" style="border-color: var(--sage);">② chrome.tabGroups.query</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label" style="border-color: var(--sage);">③ chrome.tabs.query</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label" style="border-color: var(--sage);">④ Content Script per tab</span>
+            </div>
+            <div class="flow-step">
+                <span class="flow-label" style="border-color: var(--sage);">⑤ Collect all torrents</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label" style="border-color: var(--sage);">⑥ Batch API call</span>
+                <span class="flow-arrow">→</span>
+                <span class="flow-label" style="border-color: var(--sage);">⑦ All added to qBitTorrent</span>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #E8F0FE; border-color: var(--primary);"></div>
+                <span>UI Layer</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #E8F5E9; border-color: var(--sage);"></div>
+                <span>Core Layer</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFF8E1; border-color: var(--gold);"></div>
+                <span>Library Layer</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #E3F2FD; border-color: var(--docker);"></div>
+                <span>Docker Service</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #E8EAF6; border-color: var(--torrent);"></div>
+                <span>Torrent Client</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFF3E0; border-color: var(--external);"></div>
+                <span>External Service</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #F5F5F5; border-color: var(--medium);"></div>
+                <span>Storage</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

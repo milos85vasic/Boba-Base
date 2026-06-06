@@ -1,0 +1,192 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" aria-label="Build and Deployment Pipeline">
+  <defs>
+    <marker id="a11" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#666"/></marker>
+    <filter id="s11"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="1200" height="750" fill="#FAFAFA"/>
+  <text x="600" y="28" text-anchor="middle" font-family="system-ui" font-size="18" font-weight="600" fill="#2D5F8A">Build &amp; Deployment Pipeline</text>
+
+  <!-- Pipeline stages -->
+  <rect x="20" y="55" width="1160" height="130" rx="10" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="600" y="75" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">🏗️ CI/CD Pipeline Stages</text>
+
+  <!-- Stage boxes -->
+  <rect x="35" y="90" width="130" height="75" rx="8" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2" filter="url(#s11)"/>
+  <text x="100" y="112" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="#333">💻 Code</text>
+  <text x="100" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Git Repository</text>
+  <text x="100" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">src/ directory</text>
+  <text x="100" y="156" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">main, dev branches</text>
+
+  <rect x="195" y="90" width="130" height="75" rx="8" fill="#FFF8E1" stroke="#D4A76A" stroke-width="2" filter="url(#s11)"/>
+  <text x="260" y="112" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="#333">🔍 Lint</text>
+  <text x="260" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">ESLint + Prettier</text>
+  <text x="260" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Code style checks</text>
+  <text x="260" y="156" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">.eslintrc.json config</text>
+
+  <rect x="355" y="90" width="130" height="75" rx="8" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="2" filter="url(#s11)"/>
+  <text x="420" y="112" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="#333">🧪 Test</text>
+  <text x="420" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Jest Unit Tests</text>
+  <text x="420" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Coverage &gt; 80%</text>
+  <text x="420" y="156" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">*.test.js, *.spec.js</text>
+
+  <rect x="515" y="90" width="130" height="75" rx="8" fill="#E3F2FD" stroke="#1976D2" stroke-width="2" filter="url(#s11)"/>
+  <text x="580" y="112" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="#333">🔨 Build</text>
+  <text x="580" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Webpack / Vite</text>
+  <text x="580" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Bundle + Minify</text>
+  <text x="580" y="156" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">webpack.config.js</text>
+
+  <rect x="675" y="90" width="130" height="75" rx="8" fill="#E8EAF6" stroke="#3F51B5" stroke-width="2" filter="url(#s11)"/>
+  <text x="740" y="112" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="700" fill="#333">📦 Package</text>
+  <text x="740" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Extension ZIP</text>
+  <text x="740" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Manifest validation</text>
+  <text x="740" y="156" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">manifest v3 compliance</text>
+
+  <!-- Arrows -->
+  <line x1="165" y1="127" x2="195" y2="127" stroke="#D4A76A" stroke-width="2" marker-end="url(#a11)"/>
+  <line x1="325" y1="127" x2="355" y2="127" stroke="#4A8C6F" stroke-width="2" marker-end="url(#a11)"/>
+  <line x1="485" y1="127" x2="515" y2="127" stroke="#1976D2" stroke-width="2" marker-end="url(#a11)"/>
+  <line x1="645" y1="127" x2="675" y2="127" stroke="#3F51B5" stroke-width="2" marker-end="url(#a11)"/>
+
+  <!-- Fail arrows -->
+  <line x1="260" y1="165" x2="260" y2="185" stroke="#C75450" stroke-width="1" stroke-dasharray="4,2"/>
+  <line x1="260" y1="185" x2="100" y2="185" stroke="#C75450" stroke-width="1" stroke-dasharray="4,2"/>
+  <line x1="100" y1="185" x2="100" y2="165" stroke="#C75450" stroke-width="1" marker-end="url(#a11)"/>
+  <text x="180" y="181" font-family="system-ui" font-size="7" fill="#C75450">fail</text>
+
+  <line x1="420" y1="165" x2="420" y2="195" stroke="#C75450" stroke-width="1" stroke-dasharray="4,2"/>
+  <line x1="420" y1="195" x2="100" y2="195" stroke="#C75450" stroke-width="1" stroke-dasharray="4,2"/>
+  <line x1="100" y1="195" x2="100" y2="165" stroke="#C75450" stroke-width="1"/>
+  <text x="250" y="191" font-family="system-ui" font-size="7" fill="#C75450">coverage &lt; 80%</text>
+
+  <!-- Deployment targets -->
+  <rect x="20" y="205" width="1160" height="130" rx="10" fill="#F6FBF7" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="600" y="225" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#4A8C6F">🚀 Deployment Targets</text>
+
+  <rect x="35" y="240" width="205" height="80" rx="8" fill="#C8E6C9" stroke="#4A8C6F" stroke-width="2" filter="url(#s11)"/>
+  <text x="137" y="260" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">Chrome Web Store</text>
+  <text x="137" y="278" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">$5 one-time developer fee</text>
+  <text x="137" y="292" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Review: 1-3 business days</text>
+  <text x="137" y="306" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Auto-deploy on release</text>
+
+  <rect x="255" y="240" width="205" height="80" rx="8" fill="#C8E6C9" stroke="#4A8C6F" stroke-width="2" filter="url(#s11)"/>
+  <text x="357" y="260" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">Firefox AMO</text>
+  <text x="357" y="278" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Free upload</text>
+  <text x="357" y="292" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Review: 1-7 business days</text>
+  <text x="357" y="306" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Auto-deploy on release</text>
+
+  <rect x="475" y="240" width="205" height="80" rx="8" fill="#FFE0B2" stroke="#D4A76A" stroke-width="2" filter="url(#s11)"/>
+  <text x="577" y="260" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">Opera Addons</text>
+  <text x="577" y="278" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Free upload</text>
+  <text x="577" y="292" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Review: 2-5 business days</text>
+  <text x="577" y="306" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Manual deployment</text>
+
+  <rect x="695" y="240" width="205" height="80" rx="8" fill="#C8E6C9" stroke="#4A8C6F" stroke-width="2" filter="url(#s11)"/>
+  <text x="797" y="260" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">Edge Addons</text>
+  <text x="797" y="278" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Free upload</text>
+  <text x="797" y="292" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Review: 1-5 business days</text>
+  <text x="797" y="306" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Auto-deploy on release</text>
+
+  <rect x="915" y="240" width="250" height="80" rx="8" fill="#FFE0B2" stroke="#D4A76A" stroke-width="2" filter="url(#s11)"/>
+  <text x="1040" y="260" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">Yandex Browser</text>
+  <text x="1040" y="278" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Free upload via Opera port</text>
+  <text x="1040" y="292" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Review: 3-7 business days</text>
+  <text x="1040" y="306" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Manual deployment</text>
+
+  <!-- Arrows from package -->
+  <line x1="740" y1="165" x2="740" y2="210" stroke="#3F51B5" stroke-width="1.5" marker-end="url(#a11)"/>
+  <line x1="740" y1="210" x2="137" y2="240" stroke="#4A8C6F" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="740" y1="210" x2="357" y2="240" stroke="#4A8C6F" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="740" y1="210" x2="577" y2="240" stroke="#D4A76A" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="740" y1="210" x2="797" y2="240" stroke="#4A8C6F" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="740" y1="210" x2="1040" y2="240" stroke="#D4A76A" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- CI/CD Configuration -->
+  <rect x="20" y="355" width="580" height="200" rx="10" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="310" y="377" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#2D5F8A">⚙️ GitHub Actions CI/CD Configuration</text>
+
+  <rect x="35" y="392" width="170" height="70" rx="6" fill="#BBDEFB" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="120" y="412" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">Push / PR</text>
+  <text x="120" y="430" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Triggers: Lint + Test</text>
+  <text x="120" y="444" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Fast feedback loop</text>
+
+  <rect x="220" y="392" width="170" height="70" rx="6" fill="#BBDEFB" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="305" y="412" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">Release Published</text>
+  <text x="305" y="430" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Triggers: Full pipeline</text>
+  <text x="305" y="444" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Build + Package + Deploy</text>
+
+  <rect x="405" y="392" width="180" height="70" rx="6" fill="#BBDEFB" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="495" y="412" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">Weekly Schedule</text>
+  <text x="495" y="430" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Dependency check</text>
+  <text x="495" y="444" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Security audit (npm audit)</text>
+
+  <rect x="35" y="475" width="550" height="65" rx="6" fill="#F9F9F9" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="50" y="493" font-family="system-ui" font-size="9" fill="#666" font-weight="700">Workflow YAML:</text>
+  <text x="50" y="511" font-family="system-ui" font-size="8" fill="#666">• ci.yml: lint → test (on push/PR)</text>
+  <text x="50" y="527" font-family="system-ui" font-size="8" fill="#666">• release.yml: lint → test → build → package → deploy (on release)</text>
+  <text x="300" y="511" font-family="system-ui" font-size="8" fill="#666">• audit.yml: npm audit (weekly cron)</text>
+  <text x="300" y="527" font-family="system-ui" font-size="8" fill="#666">• version-bump.yml: automated manifest version (on tag)</text>
+
+  <!-- Quality Gates -->
+  <rect x="620" y="355" width="560" height="200" rx="10" fill="#FFF3E0" stroke="#E65100" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="900" y="377" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#E65100">✅ Quality Gates</text>
+
+  <rect x="635" y="392" width="255" height="45" rx="6" fill="#FFE0B2" stroke="#E65100" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="762" y="410" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">Test Coverage ≥ 80%</text>
+  <text x="762" y="428" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Jest --coverage --coverageThreshold=80</text>
+
+  <rect x="635" y="447" width="255" height="45" rx="6" fill="#FFE0B2" stroke="#E65100" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="762" y="465" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">0 ESLint Errors</text>
+  <text x="762" y="483" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">eslint src/ --max-warnings=0</text>
+
+  <rect x="905" y="392" width="260" height="45" rx="6" fill="#FFE0B2" stroke="#E65100" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="1035" y="410" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">Valid manifest.json</text>
+  <text x="1035" y="428" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Schema validation against manifest v3 spec</text>
+
+  <rect x="905" y="447" width="260" height="45" rx="6" fill="#FFE0B2" stroke="#E65100" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="1035" y="465" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">Package Size &lt; 5MB</text>
+  <text x="1035" y="483" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Store limit compliance check</text>
+
+  <rect x="635" y="502" width="530" height="40" rx="6" fill="#F9F9F9" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="650" y="517" font-family="system-ui" font-size="9" fill="#666" font-weight="700">Additional Checks:</text>
+  <text x="650" y="533" font-family="system-ui" font-size="8" fill="#666">No secrets in code (gitleaks) | No console.log in production | TypeScript strict mode</text>
+
+  <!-- Build Process Detail -->
+  <rect x="20" y="575" width="1160" height="155" rx="10" fill="#F9F9F9" stroke="#E0E0E0" stroke-width="1.5" filter="url(#s11)"/>
+  <text x="600" y="597" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">🔨 Build Process Details</text>
+
+  <rect x="35" y="610" width="200" height="105" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="135" y="628" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#1976D2">1. Source Processing</text>
+  <text x="45" y="646" font-family="system-ui" font-size="8" fill="#666">• Babel transpile ES2022 → ES2020</text>
+  <text x="45" y="662" font-family="system-ui" font-size="8" fill="#666">• TypeScript compilation</text>
+  <text x="45" y="678" font-family="system-ui" font-size="8" fill="#666">• Import resolution</text>
+  <text x="45" y="694" font-family="system-ui" font-size="8" fill="#666">• Tree shaking dead code</text>
+
+  <rect x="250" y="610" width="200" height="105" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="350" y="628" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#1976D2">2. Bundling</text>
+  <text x="260" y="646" font-family="system-ui" font-size="8" fill="#666">• Webpack chunk splitting</text>
+  <text x="260" y="662" font-family="system-ui" font-size="8" fill="#666">• Background, content, popup</text>
+  <text x="260" y="678" font-family="system-ui" font-size="8" fill="#666">  separate entry points</text>
+  <text x="260" y="694" font-family="system-ui" font-size="8" fill="#666">• Shared vendor chunk</text>
+
+  <rect x="465" y="610" width="200" height="105" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="565" y="628" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#1976D2">3. Optimization</text>
+  <text x="475" y="646" font-family="system-ui" font-size="8" fill="#666">• Terser minification</text>
+  <text x="475" y="662" font-family="system-ui" font-size="8" fill="#666">• CSS purging (PurgeCSS)</text>
+  <text x="475" y="678" font-family="system-ui" font-size="8" fill="#666">• Asset optimization</text>
+  <text x="475" y="694" font-family="system-ui" font-size="8" fill="#666">• Source maps (dev only)</text>
+
+  <rect x="680" y="610" width="200" height="105" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="780" y="628" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#1976D2">4. Extension Package</text>
+  <text x="690" y="646" font-family="system-ui" font-size="8" fill="#666">• manifest.json validation</text>
+  <text x="690" y="662" font-family="system-ui" font-size="8" fill="#666">• Icon set verification</text>
+  <text x="690" y="678" font-family="system-ui" font-size="8" fill="#666">• ZIP archive creation</text>
+  <text x="690" y="694" font-family="system-ui" font-size="8" fill="#666">• Size verification</text>
+
+  <rect x="895" y="610" width="270" height="105" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="1030" y="628" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#1976D2">5. Browser-Specific Builds</text>
+  <text x="905" y="646" font-family="system-ui" font-size="8" fill="#666">• Chrome: manifest v3 (default)</text>
+  <text x="905" y="662" font-family="system-ui" font-size="8" fill="#666">• Firefox: manifest v2 compat</text>
+  <text x="905" y="678" font-family="system-ui" font-size="8" fill="#666">• Opera: Chromium compatible</text>
+  <text x="905" y="694" font-family="system-ui" font-size="8" fill="#666">• Edge: Chromium compatible</text>
+  <text x="905" y="710" font-family="system-ui" font-size="8" fill="#666">• Yandex: Chromium compatible</text>
+</svg>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BobaLink — Data Flow: Torrent Detection to Download</title>
+    <style>
+        :root { --primary:#2D5F8A; --sage:#4A8C6F; --gold:#D4A76A; --dark:#333; --med:#666; --docker:#1976D2; --torrent:#3F51B5; --ext:#E65100; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:system-ui,sans-serif; background:#FAFAFA; padding:24px; }
+        .container { max-width:1400px; margin:0 auto; background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:32px; }
+        h1 { text-align:center; color:var(--primary); font-size:22px; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid #F0F0F0; }
+        .flow-grid { display:grid; grid-template-columns:180px 260px 260px 260px; gap:16px; align-items:start; }
+        .col-title { font-size:13px; font-weight:700; text-align:center; padding:10px; border-radius:6px; margin-bottom:12px; }
+        .col-web { background:#FFF3E0; color:var(--ext); border:2px solid var(--ext); }
+        .col-ext { background:#E8F0FE; color:var(--primary); border:2px solid var(--primary); }
+        .col-svc { background:#E3F2FD; color:var(--docker); border:2px solid var(--docker); }
+        .col-qbit { background:#E8EAF6; color:var(--torrent); border:2px solid var(--torrent); }
+        .node { border-radius:6px; padding:12px; text-align:center; font-size:11px; box-shadow:0 2px 6px rgba(0,0,0,0.08); margin-bottom:10px; transition:all 0.25s; cursor:pointer; }
+        .node:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+        .n-name { font-weight:700; font-size:12px; margin-bottom:4px; }
+        .n-desc { font-size:9px; color:var(--med); }
+        .n-web { background:#FFF8E1; border:1.5px solid var(--ext); }
+        .n-cs { background:#E8F5E9; border:1.5px solid var(--sage); }
+        .n-lib { background:#FFF8E1; border:1.5px solid var(--gold); }
+        .n-bg { background:#E8F0FE; border:1.5px solid var(--primary); }
+        .n-api { background:#FFF8E1; border:1.5px solid var(--gold); }
+        .n-popup { background:#E8F0FE; border:1.5px solid var(--primary); }
+        .n-boba { background:#E3F2FD; border:1.5px solid var(--docker); }
+        .n-qbit { background:#E8EAF6; border:1.5px solid var(--torrent); }
+        .n-down { background:#E8F5E9; border:1.5px solid var(--sage); }
+        .arrow-col { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:60px; padding-top:80px; }
+        .arrow { font-size:28px; color:var(--med); }
+        .arrow-label { font-size:8px; color:var(--med); text-align:center; max-width:60px; }
+        .flow-legend { margin-top:20px; padding:16px; background:#F9F9F9; border-radius:8px; border:1px solid #E0E0E0; }
+        .flow-legend h3 { font-size:13px; color:var(--primary); margin-bottom:8px; }
+        .flow-legend p { font-size:11px; color:var(--med); line-height:1.6; }
+        .msg-box { margin-top:10px; padding:8px; background:#F0F7FF; border-radius:4px; font-size:8px; border:1px dashed var(--primary); }
+        .phase-label { font-size:10px; font-weight:700; color:white; padding:4px 10px; border-radius:12px; text-align:center; margin:8px 0; }
+        .phase-detect { background:var(--ext); }
+        .phase-parse { background:var(--gold); }
+        .phase-send { background:var(--primary); }
+        .phase-download { background:var(--torrent); }
+        .phase-done { background:var(--sage); }
+        @media(max-width:1200px){ .flow-grid{grid-template-columns:1fr 1fr;} }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Data Flow — Torrent Detection to Download</h1>
+        <div class="flow-grid">
+            <!-- Web Page Column -->
+            <div>
+                <div class="col-title col-web">🌐 Web Page</div>
+                <div class="node n-web">
+                    <div class="n-name">HTML DOM</div>
+                    <div class="n-desc">Contains magnet links,<br>.torrent URLs, infohashes</div>
+                </div>
+                <div class="phase-label phase-detect">① DETECT</div>
+                <div class="node n-web" style="font-size:9px;">magnet:?xt=urn:btih:...</div>
+                <div class="node n-web" style="font-size:9px;">https://.../file.torrent</div>
+                <div class="node n-web" style="font-size:9px;">infohash: abc123...</div>
+            </div>
+            <!-- Extension Column -->
+            <div>
+                <div class="col-title col-ext">🔧 Browser Extension</div>
+                <div class="node n-cs">
+                    <div class="n-name">Content Script</div>
+                    <div class="n-desc">scanner.js — DOM observer<br>link detection engine</div>
+                </div>
+                <div class="phase-label phase-parse">② PARSE</div>
+                <div class="node n-lib">
+                    <div class="n-name">parser/</div>
+                    <div class="n-desc">magnet URL parser<br>torrent URL parser<br>hash normalizer</div>
+                </div>
+                <div class="phase-label phase-send">③ ROUTE</div>
+                <div class="node n-bg">
+                    <div class="n-name">Background SW</div>
+                    <div class="n-desc">Message router &amp; state mgr<br>Queue &amp; retry logic</div>
+                </div>
+                <div class="node n-api">
+                    <div class="n-name">BobaAPIClient</div>
+                    <div class="n-desc">HTTP client + retry<br>Request builder &amp; auth</div>
+                </div>
+                <div class="node n-popup">
+                    <div class="n-name">Popup UI</div>
+                    <div class="n-desc">Torrent list &amp; controls<br>Status &amp; notifications</div>
+                </div>
+                <div class="msg-box">
+                    <strong>Messages:</strong><br>
+                    DISCOVERED_TORRENTS<br>
+                    UPDATE_POPUP<br>
+                    SEND_TORRENT<br>
+                    SEND_COMPLETE
+                </div>
+            </div>
+            <!-- Boba Services Column -->
+            <div>
+                <div class="col-title col-svc">🐳 Boba Services</div>
+                <div class="phase-label phase-send">④ VALIDATE</div>
+                <div class="node n-boba">
+                    <div class="n-name">FastAPI :7187</div>
+                    <div class="n-desc">Validate &amp; enrich<br>Metadata lookup<br>POST /api/torrents/add</div>
+                </div>
+                <div class="node n-boba">
+                    <div class="n-name">Go Service :7189</div>
+                    <div class="n-desc">Core operations<br>Batch processor<br>POST /api/torrents/batch</div>
+                </div>
+            </div>
+            <!-- qBitTorrent Column -->
+            <div>
+                <div class="col-title col-qbit">⬇️ qBitTorrent</div>
+                <div class="phase-label phase-download">⑤ DOWNLOAD</div>
+                <div class="node n-qbit">
+                    <div class="n-name">WebUI :8080</div>
+                    <div class="n-desc">/api/v2/torrents/add<br>Cookie auth with SID</div>
+                </div>
+                <div class="node n-qbit">
+                    <div class="n-name">BitTorrent Engine</div>
+                    <div class="n-desc">libtorrent-rasterbar<br>DHT, PEX, LSD</div>
+                </div>
+                <div class="phase-label phase-done">⑥ COMPLETE</div>
+                <div class="node n-down">
+                    <div class="n-name">Downloads</div>
+                    <div class="n-desc">/downloads/complete/<br>Organized by category</div>
+                </div>
+                <div class="msg-box" style="background:#E8F5E9; border-color:var(--sage); color:var(--sage);">
+                    <strong>Response Chain:</strong><br>
+                    200 OK + torrent hash<br>
+                    → Boba → APIClient<br>
+                    → BG → Popup update<br>
+                    → Notification shown
+                </div>
+            </div>
+        </div>
+        <div class="flow-legend">
+            <h3>Flow Description</h3>
+            <p><strong>Phase ① Detect:</strong> Content Script observes DOM changes via MutationObserver, scans for magnet: links, .torrent file URLs, and bare infohashes.</p>
+            <p><strong>Phase ② Parse:</strong> Extracted links are normalized by the parser module — magnet URIs decoded, .torrent URLs validated, infohashes formatted.</p>
+            <p><strong>Phase ③ Route:</strong> Parsed torrents are sent to Background SW which manages the send queue, handles auth, and routes to BobaAPIClient.</p>
+            <p><strong>Phase ④ Validate:</strong> Boba Services (FastAPI or Go) validate torrent data, perform metadata lookup, and prepare the add request.</p>
+            <p><strong>Phase ⑤ Download:</strong> qBitTorrent WebUI receives the add request, BitTorrent engine connects to peers, downloads pieces, verifies hashes.</p>
+            <p><strong>Phase ⑥ Complete:</strong> Downloaded files saved to /downloads/complete/, response propagated back through the chain, UI updated.</p>
+        </div>
+    </div>
+</body>
+</html>

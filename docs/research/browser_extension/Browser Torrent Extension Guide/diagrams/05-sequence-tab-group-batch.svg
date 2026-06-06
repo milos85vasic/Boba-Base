@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" aria-label="Sequence Diagram - Tab Group Batch Send">
+  <defs>
+    <marker id="a5" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#555"/></marker>
+    <marker id="r5" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#4A8C6F"/></marker>
+    <filter id="s5"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="1200" height="850" fill="#FAFAFA"/>
+  <text x="600" y="25" text-anchor="middle" font-family="system-ui" font-size="18" font-weight="600" fill="#2D5F8A">Sequence Diagram — Tab Group Batch Send</text>
+
+  <!-- Actors -->
+  <rect x="15" y="40" width="90" height="35" rx="5" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="2" filter="url(#s5)"/>
+  <text x="60" y="62" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">👤 User</text>
+  <line x1="60" y1="75" x2="60" y2="810" stroke="#7B1FA2" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <rect x="130" y="40" width="100" height="35" rx="5" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2" filter="url(#s5)"/>
+  <text x="180" y="58" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">📋 Context Menu</text>
+  <text x="180" y="70" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">background.js</text>
+  <line x1="180" y1="75" x2="180" y2="810" stroke="#2D5F8A" stroke-width="1.5"/>
+
+  <rect x="260" y="40" width="100" height="35" rx="5" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2" filter="url(#s5)"/>
+  <text x="310" y="58" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">⚙️ Background SW</text>
+  <text x="310" y="70" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">background.js</text>
+  <line x1="310" y1="75" x2="310" y2="810" stroke="#2D5F8A" stroke-width="1.5"/>
+
+  <rect x="390" y="40" width="110" height="35" rx="5" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="2" filter="url(#s5)"/>
+  <text x="445" y="58" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">📑 Tab Groups API</text>
+  <text x="445" y="70" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">chrome.tabGroups</text>
+  <line x1="445" y1="75" x2="445" y2="810" stroke="#4A8C6F" stroke-width="1.5"/>
+
+  <rect x="530" y="40" width="100" height="35" rx="5" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="2" filter="url(#s5)"/>
+  <text x="580" y="58" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">🔖 Tabs API</text>
+  <text x="580" y="70" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">chrome.tabs</text>
+  <line x1="580" y1="75" x2="580" y2="810" stroke="#4A8C6F" stroke-width="1.5"/>
+
+  <rect x="660" y="40" width="110" height="35" rx="5" fill="#FFF8E1" stroke="#D4A76A" stroke-width="2" filter="url(#s5)"/>
+  <text x="715" y="58" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">📄 Content Scripts</text>
+  <text x="715" y="70" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">content.js</text>
+  <line x1="715" y1="75" x2="715" y2="810" stroke="#D4A76A" stroke-width="1.5"/>
+
+  <rect x="800" y="40" width="110" height="35" rx="5" fill="#FFF8E1" stroke="#D4A76A" stroke-width="2" filter="url(#s5)"/>
+  <text x="855" y="58" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">🔌 BobaAPIClient</text>
+  <text x="855" y="70" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">api/client.js</text>
+  <line x1="855" y1="75" x2="855" y2="810" stroke="#D4A76A" stroke-width="1.5"/>
+
+  <rect x="940" y="40" width="120" height="35" rx="5" fill="#E8EAF6" stroke="#3F51B5" stroke-width="2" filter="url(#s5)"/>
+  <text x="1000" y="58" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">⬇️ qBitTorrent</text>
+  <text x="1000" y="70" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">WebUI :8080</text>
+  <line x1="1000" y1="75" x2="1000" y2="810" stroke="#3F51B5" stroke-width="1.5"/>
+
+  <!-- Phase: User Initiates -->
+  <rect x="10" y="82" width="1180" height="4" rx="2" fill="#E8F0FE" opacity="0.5"/>
+  <text x="20" y="100" font-family="system-ui" font-size="11" font-weight="700" fill="#2D5F8A">🔄 Phase 1: User Initiates Batch</text>
+
+  <line x1="60" y1="110" x2="180" y2="110" stroke="#7B1FA2" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="120" y="106" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">Right-click on Tab Group</text>
+
+  <line x1="180" y1="125" x2="60" y2="125" stroke="#2D5F8A" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#r5)"/>
+  <text x="120" y="140" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">Show context menu</text>
+
+  <line x1="60" y1="155" x2="180" y2="155" stroke="#7B1FA2" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="120" y="170" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">Select "Send all torrents to qBit"</text>
+
+  <line x1="180" y1="185" x2="310" y2="185" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="245" y="181" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">contextMenus.onClicked</text>
+
+  <!-- Phase: Query Tab Structure -->
+  <rect x="10" y="198" width="1180" height="4" rx="2" fill="#E8F5E9" opacity="0.5"/>
+  <text x="20" y="216" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">🔄 Phase 2: Query Tab Structure</text>
+
+  <rect x="310" y="220" width="8" height="70" rx="3" fill="#2D5F8A" opacity="0.2"/>
+  <line x1="310" y1="228" x2="445" y2="228" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="375" y="224" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">tabGroups.query()</text>
+  <line x1="445" y1="240" x2="310" y2="240" stroke="#4A8C6F" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#r5)"/>
+  <text x="375" y="255" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">Return group[] with groupId</text>
+
+  <line x1="310" y1="270" x2="580" y2="270" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="445" y="266" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">tabs.query({groupId})</text>
+  <line x1="580" y1="282" x2="310" y2="282" stroke="#4A8C6F" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#r5)"/>
+  <text x="445" y="297" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">Return tabs[] with tabId, url</text>
+
+  <!-- Phase: Inject & Collect -->
+  <rect x="10" y="305" width="1180" height="4" rx="2" fill="#FFF8E1" opacity="0.5"/>
+  <text x="20" y="323" font-family="system-ui" font-size="11" font-weight="700" fill="#D4A76A">🔄 Phase 3: Inject Content Scripts &amp; Collect</text>
+
+  <rect x="310" y="330" width="8" height="120" rx="3" fill="#2D5F8A" opacity="0.2"/>
+  <rect x="715" y="340" width="8" height="100" rx="3" fill="#D4A76A" opacity="0.2"/>
+
+  <!-- Loop iteration 1 -->
+  <line x1="310" y1="340" x2="715" y2="340" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="510" y="336" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">executeScript(tab[0])</text>
+  <rect x="715" y="345" width="8" height="20" rx="3" fill="#D4A76A" opacity="0.3"/>
+  <text x="730" y="352" font-family="system-ui" font-size="8" fill="#D4A76A">Scan DOM + parse</text>
+  <line x1="715" y1="375" x2="310" y2="375" stroke="#D4A76A" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#r5)"/>
+  <text x="510" y="390" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">Return torrents[5]</text>
+
+  <!-- Loop iteration 2 -->
+  <line x1="310" y1="405" x2="715" y2="405" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="510" y="401" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">executeScript(tab[1])</text>
+  <line x1="715" y1="420" x2="310" y2="420" stroke="#D4A76A" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#r5)"/>
+  <text x="510" y="435" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">Return torrents[3]</text>
+
+  <!-- Loop iteration 3 -->
+  <line x1="310" y1="450" x2="715" y2="450" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="510" y="465" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">... for each tab in group</text>
+  <line x1="715" y1="480" x2="310" y2="480" stroke="#D4A76A" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#r5)"/>
+
+  <!-- Phase: Send Batch -->
+  <rect x="10" y="490" width="1180" height="4" rx="2" fill="#E3F2FD" opacity="0.5"/>
+  <text x="20" y="508" font-family="system-ui" font-size="11" font-weight="700" fill="#1976D2">🔄 Phase 4: Send Batch</text>
+
+  <rect x="310" y="515" width="8" height="60" rx="3" fill="#2D5F8A" opacity="0.2"/>
+  <rect x="310" y="518" width="8" height="20" rx="3" fill="#2D5F8A" opacity="0.3"/>
+  <text x="170" y="528" text-anchor="middle" font-family="system-ui" font-size="8" fill="#2D5F8A">Flatten &amp; deduplicate</text>
+
+  <line x1="310" y1="545" x2="855" y2="545" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="580" y="541" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">sendBatch(torrents[12])</text>
+  <rect x="855" y="548" width="8" height="25" rx="3" fill="#D4A76A" opacity="0.2"/>
+  <text x="700" y="556" font-family="system-ui" font-size="8" fill="#D4A76A">Build batch + auth</text>
+
+  <line x1="855" y1="580" x2="1000" y2="580" stroke="#D4A76A" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="930" y="576" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">POST /torrents/add (batch)</text>
+  <rect x="1000" y="585" width="8" height="20" rx="3" fill="#3F51B5" opacity="0.3"/>
+  <text x="920" y="596" font-family="system-ui" font-size="8" fill="#3F51B5">Process all in parallel</text>
+
+  <!-- Return -->
+  <line x1="1000" y1="615" x2="855" y2="615" stroke="#3F51B5" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#r5)"/>
+  <text x="930" y="630" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">200 OK + results[]</text>
+
+  <line x1="855" y1="642" x2="310" y2="642" stroke="#D4A76A" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#r5)"/>
+  <text x="580" y="657" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">{added: 10, failed: 2}</text>
+
+  <!-- Phase: Complete -->
+  <rect x="10" y="665" width="1180" height="4" rx="2" fill="#C8E6C9" opacity="0.5"/>
+  <text x="20" y="683" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">🔄 Phase 5: Complete</text>
+
+  <rect x="310" y="690" width="8" height="20" rx="3" fill="#2D5F8A" opacity="0.3"/>
+  <text x="180" y="700" font-family="system-ui" font-size="8" fill="#2D5F8A">Store in send_history</text>
+
+  <line x1="310" y1="720" x2="60" y2="720" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a5)"/>
+  <text x="180" y="735" text-anchor="middle" font-family="system-ui" font-size="9" fill="#4A8C6F">✓ Notification: "10 torrents added successfully"</text>
+
+  <!-- Footer -->
+  <rect x="20" y="755" width="1160" height="80" rx="8" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="600" y="775" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="600" fill="#333">Notes</text>
+  <text x="40" y="795" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="40" fill="#D4A76A" font-weight="700">Loop: </tspan>Content scripts are injected sequentially, not in parallel, to avoid overwhelming the browser. Each injection has a 10s timeout.
+  </text>
+  <text x="40" y="815" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="40" fill="#4A8C6F" font-weight="700">Deduplication: </tspan>Torrents are deduplicated by infohash. If the same torrent exists in multiple tabs, only one instance is sent.
+  </text>
+  <text x="600" y="795" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="600" fill="#C75450" font-weight="700">Error: </tspan>Failed torrents are tracked individually. Partial success shows "N of M added" with details on failures.
+  </text>
+  <text x="600" y="815" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="600" fill="#1976D2" font-weight="700">Batch: </tspan>Max batch size: 100 torrents. Larger groups are split into multiple API calls automatically.
+  </text>
+</svg>

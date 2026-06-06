@@ -1,0 +1,100 @@
+@startuml BobaLink_ER_Diagram
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam classAttributeIconSize 0
+
+title BobaLink — Entity Relationship Diagram
+
+entity "extension_config" as EC #E8F0FE {
+    * config_id : VARCHAR PK
+    --
+    server_url : VARCHAR
+    api_key : VARCHAR
+    qbittorrent_url : VARCHAR
+    username : VARCHAR
+    password_encrypted : VARCHAR
+    auto_detect : BOOLEAN
+    default_category : VARCHAR
+    scan_interval_ms : INTEGER
+    max_retries : INTEGER
+    retry_delay_ms : INTEGER
+    created_at : DATETIME
+    updated_at : DATETIME
+}
+
+entity "discovered_torrents" as DT #E8F5E9 {
+    * torrent_id : VARCHAR PK
+    --
+    infohash : VARCHAR UK
+    magnet_uri : TEXT
+    name : VARCHAR
+    size_bytes : BIGINT
+    source_url : VARCHAR
+    source_tab_id : VARCHAR
+    status : VARCHAR
+    discovered_at : DATETIME
+    sent_at : DATETIME
+    error_message : TEXT
+}
+
+entity "download_queue" as DQ #FFF8E1 {
+    * queue_id : VARCHAR PK
+    --
+    * torrent_id : VARCHAR FK
+    magnet_uri : TEXT
+    priority : INTEGER
+    retry_count : INTEGER
+    status : VARCHAR
+    queued_at : DATETIME
+    last_retry_at : DATETIME
+    error_log : TEXT
+}
+
+entity "server_config" as SC #E3F2FD {
+    * server_id : VARCHAR PK
+    --
+    name : VARCHAR
+    fastapi_url : VARCHAR
+    go_service_url : VARCHAR
+    qbittorrent_url : VARCHAR
+    api_key : VARCHAR
+    is_active : BOOLEAN
+    health_check_interval : INTEGER
+    last_health_check : DATETIME
+    last_check_result : BOOLEAN
+    created_at : DATETIME
+}
+
+entity "send_history" as SH #E8EAF6 {
+    * history_id : VARCHAR PK
+    --
+    * server_id : VARCHAR FK
+    infohash : VARCHAR
+    magnet_uri : TEXT
+    name : VARCHAR
+    success : BOOLEAN
+    qbittorrent_hash : VARCHAR
+    category : VARCHAR
+    tags : VARCHAR
+    sent_at : DATETIME
+    response_time_ms : INTEGER
+    error_message : TEXT
+}
+
+entity "search_cache" as CACHE #FFF3E0 {
+    * cache_id : VARCHAR PK
+    --
+    query_hash : VARCHAR
+    query_text : VARCHAR
+    results : JSON
+    result_count : INTEGER
+    cached_at : DATETIME
+    ttl_seconds : INTEGER
+    is_valid : BOOLEAN
+}
+
+EC ||--o{ DT
+DT ||--o{ DQ
+SC ||--o{ SH
+
+@enduml

@@ -1,0 +1,86 @@
+erDiagram
+    extension_config {
+        string config_id PK "PRIMARY KEY"
+        string server_url "Boba server URL"
+        string api_key "API authentication key"
+        string qbittorrent_url "qBitTorrent WebUI URL"
+        string username "qBitTorrent username"
+        string password_encrypted "Encrypted password"
+        boolean auto_detect "Auto-detect torrents"
+        string default_category "Default qBit category"
+        number scan_interval_ms "DOM scan interval"
+        number max_retries "Max retry attempts"
+        number retry_delay_ms "Base retry delay"
+        datetime created_at "Record creation time"
+        datetime updated_at "Last update time"
+    }
+
+    discovered_torrents {
+        string torrent_id PK "UUID"
+        string infohash UK "Unique infohash"
+        string magnet_uri "Full magnet URI"
+        string name "Torrent display name"
+        number size_bytes "Torrent size"
+        string source_url "Page where found"
+        string source_tab_id "Browser tab ID"
+        string status "pending|sent|failed"
+        datetime discovered_at "Discovery timestamp"
+        datetime sent_at "Send timestamp"
+        string error_message "Error if failed"
+    }
+
+    download_queue {
+        string queue_id PK "UUID"
+        string torrent_id FK "References discovered"
+        string magnet_uri "Magnet link"
+        number priority "Queue priority 0-10"
+        number retry_count "Current retry count"
+        string status "queued|retrying|failed|completed"
+        datetime queued_at "Queue entry time"
+        datetime last_retry_at "Last retry timestamp"
+        string error_log "JSON error history"
+    }
+
+    server_config {
+        string server_id PK "UUID"
+        string name "Server display name"
+        string fastapi_url "FastAPI endpoint URL"
+        string go_service_url "Go service endpoint URL"
+        string qbittorrent_url "qBitTorrent WebUI URL"
+        string api_key "Authentication key"
+        boolean is_active "Is this server active"
+        number health_check_interval "Health check ms"
+        datetime last_health_check "Last check timestamp"
+        boolean last_check_result "Last check passed"
+        datetime created_at "Creation time"
+    }
+
+    send_history {
+        string history_id PK "UUID"
+        string infohash "Torrent infohash"
+        string magnet_uri "Magnet link"
+        string name "Torrent name"
+        string server_id FK "References server_config"
+        boolean success "Send succeeded"
+        string qbittorrent_hash "Hash from qBit"
+        string category "qBit category used"
+        string tags "qBit tags"
+        datetime sent_at "Send timestamp"
+        number response_time_ms "API response time"
+        string error_message "Error if failed"
+    }
+
+    search_cache {
+        string cache_id PK "UUID"
+        string query_hash "Hash of search query"
+        string query_text "Original search text"
+        json results "Cached results JSON"
+        number result_count "Number of results"
+        datetime cached_at "Cache timestamp"
+        number ttl_seconds "Cache TTL"
+        boolean is_valid "Cache still valid"
+    }
+
+    extension_config ||--o{ discovered_torrents : "references config"
+    discovered_torrents ||--o{ download_queue : "queued for retry"
+    server_config ||--o{ send_history : "sends tracked"

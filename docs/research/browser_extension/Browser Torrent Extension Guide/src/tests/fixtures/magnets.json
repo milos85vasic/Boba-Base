@@ -1,0 +1,55 @@
+{
+  "validMagnets": [
+    {
+      "uri": "magnet:?xt=urn:btih:1234567890abcdef1234567890abcdef12345678&dn=Ubuntu+22.04+LTS",
+      "infohash": "1234567890abcdef1234567890abcdef12345678",
+      "displayName": "Ubuntu 22.04 LTS",
+      "trackers": []
+    },
+    {
+      "uri": "magnet:?xt=urn:btih:ABCDEF1234567890ABCDEF1234567890ABCDEF12&dn=Big+Buck+Bunny&tr=udp://tracker.example.com:80/announce",
+      "infohash": "abcdef1234567890abcdef1234567890abcdef12",
+      "displayName": "Big Buck Bunny",
+      "trackers": ["udp://tracker.example.com:80/announce"]
+    },
+    {
+      "uri": "magnet:?xt=urn:btih:a1b2c3d4e5f6789012345678901234567890abcd&dn=Debian+12+ISO&tr=udp://tracker1.example.com:80&tr=udp://tracker2.example.com:80",
+      "infohash": "a1b2c3d4e5f6789012345678901234567890abcd",
+      "displayName": "Debian 12 ISO",
+      "trackers": [
+        "udp://tracker1.example.com:80",
+        "udp://tracker2.example.com:80"
+      ]
+    },
+    {
+      "uri": "magnet:?xt=urn:btih:deadbeef1234567890deadbeef1234567890dead&dn=Test+File&tr=udp://tracker.openbittorrent.com:80&ws=http://seed.example.com/file",
+      "infohash": "deadbeef1234567890deadbeef1234567890dead",
+      "displayName": "Test File",
+      "trackers": ["udp://tracker.openbittorrent.com:80"],
+      "webSeeds": ["http://seed.example.com/file"]
+    },
+    {
+      "uri": "magnet:?xt=urn:btih:0000000000000000000000000000000000000000",
+      "infohash": "0000000000000000000000000000000000000000",
+      "displayName": null,
+      "trackers": []
+    }
+  ],
+  "invalidMagnets": [
+    "not-a-magnet",
+    "magnet:",
+    "magnet:?xt=urn:btih:short",
+    "magnet:?xt=urn:btih:GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "magnet:?xt=urn:btih:1234567890abcdef1234567890abcdef12345678&dn=",
+    "http://example.com/file.torrent",
+    "ftp://invalid-protocol.example.com"
+  ],
+  "magnetsInText": {
+    "text": "Check out this magnet:?xt=urn:btih:1234567890abcdef1234567890abcdef12345678&dn=Linux+ISO download. Also try magnet:?xt=urn:btih:abcdef1234567890abcdef1234567890abcdef12&dn=Movie for movies.",
+    "expectedCount": 2
+  },
+  "base32Infohash": {
+    "base32": "MFRGGZDFMZTWQ2LKMNZXC4ZTFMRXCXBO",
+    "hex": "68ac55c71d6de1c48abdd2efebf1e7a8d09f1b1e"
+  }
+}

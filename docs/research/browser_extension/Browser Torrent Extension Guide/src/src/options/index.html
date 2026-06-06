@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BobaLink Options</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="options-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="../assets/icon-48.png" alt="BobaLink" class="sidebar-icon">
+        <h1>BobaLink</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-section="servers">
+          <span class="nav-icon">&#127919;</span> Servers
+        </button>
+        <button class="nav-item" data-section="general">
+          <span class="nav-icon">&#9881;</span> General
+        </button>
+        <button class="nav-item" data-section="advanced">
+          <span class="nav-icon">&#128295;</span> Advanced
+        </button>
+        <button class="nav-item" data-section="about">
+          <span class="nav-icon">&#8505;</span> About
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Servers Section -->
+      <section class="section active" id="section-servers">
+        <h2 class="section-title">Server Configuration</h2>
+        <p class="section-desc">Configure your qBitTorrent/Boba Project servers.</p>
+
+        <div class="server-list" id="server-list">
+          <!-- Server cards inserted dynamically -->
+        </div>
+
+        <button class="btn btn-primary" id="btn-add-server">
+          <span>+</span> Add Server
+        </button>
+
+        <!-- Auto Discovery -->
+        <div class="card discovery-card">
+          <h3 class="card-title">Auto Discovery</h3>
+          <p class="card-desc">Scan common ports to find running Boba/qBitTorrent instances.</p>
+          <div class="discovery-ports">
+            <label class="checkbox-label">
+              <input type="checkbox" id="discover-qbt" checked>
+              <span>qBitTorrent WebUI (8080)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="discover-fastapi" checked>
+              <span>Boba FastAPI (7187)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="discover-go" checked>
+              <span>Boba Go (7189)</span>
+            </label>
+          </div>
+          <button class="btn btn-secondary" id="btn-auto-discover">Discover Servers</button>
+          <div class="discovery-results" id="discovery-results"></div>
+        </div>
+      </section>
+
+      <!-- General Section -->
+      <section class="section" id="section-general">
+        <h2 class="section-title">General Settings</h2>
+        <p class="section-desc">Configure the extension behavior.</p>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-auto-scan">
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">Auto-scan pages on load</span>
+          </label>
+          <p class="field-help">Automatically scan web pages for torrent content after they finish loading.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-highlight">
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">Highlight detected torrents</span>
+          </label>
+          <p class="field-help">Visually mark torrent links on web pages with badges or borders.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="setting-highlight-style">Highlight Style</label>
+          <select id="setting-highlight-style" class="form-select">
+            <option value="badge">Badge Overlay</option>
+            <option value="border">Colored Border</option>
+            <option value="glow">Glow Effect</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-notifications">
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">Show notifications</span>
+          </label>
+          <p class="field-help">Display desktop notifications when torrents are sent or errors occur.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-auto-send">
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">Auto-send detected torrents</span>
+          </label>
+          <p class="field-help">Automatically send detected torrents to qBitTorrent without confirmation.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-offline-queue">
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">Enable offline queue</span>
+          </label>
+          <p class="field-help">Queue failed sends for automatic retry when connection is restored.</p>
+        </div>
+      </section>
+
+      <!-- Advanced Section -->
+      <section class="section" id="section-advanced">
+        <h2 class="section-title">Advanced Settings</h2>
+        <p class="section-desc">Fine-tune extension behavior for advanced users.</p>
+
+        <div class="form-group">
+          <label for="setting-health-interval">Health Check Interval (minutes)</label>
+          <input type="number" id="setting-health-interval" class="form-input" min="1" max="60" value="5">
+        </div>
+
+        <div class="form-group">
+          <label for="setting-max-history">Max History Items</label>
+          <input type="number" id="setting-max-history" class="form-input" min="10" max="500" value="100">
+        </div>
+
+        <div class="form-group">
+          <label for="setting-max-queue">Max Offline Queue Size</label>
+          <input type="number" id="setting-max-queue" class="form-input" min="10" max="200" value="50">
+        </div>
+
+        <div class="form-group">
+          <label for="setting-request-timeout">Request Timeout (seconds)</label>
+          <input type="number" id="setting-request-timeout" class="form-input" min="5" max="120" value="15">
+        </div>
+
+        <div class="form-group">
+          <label class="toggle-label">
+            <input type="checkbox" id="setting-debug">
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">Debug mode</span>
+          </label>
+          <p class="field-help">Enable verbose logging in the browser console.</p>
+        </div>
+
+        <div class="form-group danger-zone">
+          <h3>Danger Zone</h3>
+          <button class="btn btn-danger" id="btn-reset">Reset All Settings</button>
+          <p class="field-help">This will erase all configuration and queued items.</p>
+        </div>
+      </section>
+
+      <!-- About Section -->
+      <section class="section" id="section-about">
+        <h2 class="section-title">About BobaLink</h2>
+
+        <div class="about-card">
+          <img src="../assets/icon-128.png" alt="BobaLink" class="about-icon">
+          <h3>BobaLink v1.0.0</h3>
+          <p>Browser extension that detects torrent files and magnet links, sending them to Boba Project's qBitTorrent dashboard.</p>
+
+          <div class="about-links">
+            <a href="https://github.com/boba-project/bobalink" target="_blank" rel="noopener">GitHub</a>
+            <a href="https://github.com/boba-project/bobalink/issues" target="_blank" rel="noopener">Report Issue</a>
+          </div>
+
+          <div class="about-tech">
+            <h4>Technologies</h4>
+            <ul>
+              <li>Manifest V3 with Service Worker</li>
+              <li>TypeScript 5.7</li>
+              <li>WXT Build System</li>
+              <li>AES-256-GCM Credential Encryption</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Save Bar -->
+      <div class="save-bar" id="save-bar">
+        <span class="save-status" id="save-status"></span>
+        <div class="save-actions">
+          <button class="btn btn-secondary" id="btn-discard">Discard</button>
+          <button class="btn btn-primary" id="btn-save">Save Changes</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Server Edit Modal -->
+  <div class="modal-overlay" id="server-modal" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Add Server</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="server-form">
+          <input type="hidden" id="server-id">
+
+          <div class="form-group">
+            <label for="server-name">Display Name</label>
+            <input type="text" id="server-name" class="form-input" placeholder="My qBitTorrent" required>
+          </div>
+
+          <div class="form-group">
+            <label for="server-url">Server URL</label>
+            <input type="url" id="server-url" class="form-input" placeholder="http://localhost:8080" required>
+          </div>
+
+          <div class="form-group">
+            <label for="server-auth">Authentication Method</label>
+            <select id="server-auth" class="form-select">
+              <option value="none">None (No Authentication)</option>
+              <option value="cookie">Cookie (qBitTorrent Default)</option>
+              <option value="api_key">API Key</option>
+              <option value="basic">Basic HTTP Auth</option>
+            </select>
+          </div>
+
+          <div id="auth-fields-cookie" class="auth-fields" style="display: none;">
+            <div class="form-group">
+              <label for="server-username">Username</label>
+              <input type="text" id="server-username" class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="server-password">Password</label>
+              <input type="password" id="server-password" class="form-input">
+            </div>
+          </div>
+
+          <div id="auth-fields-apikey" class="auth-fields" style="display: none;">
+            <div class="form-group">
+              <label for="server-apikey">API Key</label>
+              <input type="password" id="server-apikey" class="form-input">
+            </div>
+          </div>
+
+          <div id="auth-fields-basic" class="auth-fields" style="display: none;">
+            <div class="form-group">
+              <label for="server-basic-username">Username</label>
+              <input type="text" id="server-basic-username" class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="server-basic-password">Password</label>
+              <input type="password" id="server-basic-password" class="form-input">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="server-category">Default Category</label>
+            <input type="text" id="server-category" class="form-input" placeholder="BobaLink">
+          </div>
+
+          <div class="form-group">
+            <label for="server-savepath">Default Save Path (optional)</label>
+            <input type="text" id="server-savepath" class="form-input" placeholder="/downloads">
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" id="btn-test-connection">Test Connection</button>
+            <button type="submit" class="btn btn-primary">Save Server</button>
+          </div>
+
+          <div class="test-result" id="test-result"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./options.ts"></script>
+</body>
+</html>

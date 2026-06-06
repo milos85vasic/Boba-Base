@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" aria-label="Cross-Browser Compatibility Matrix">
+  <defs>
+    <filter id="s12"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/></filter>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2D5F8A"/>
+      <stop offset="100%" stop-color="#4A8C6F"/>
+    </linearGradient>
+  </defs>
+  <rect width="1100" height="700" fill="#FAFAFA"/>
+  <text x="550" y="30" text-anchor="middle" font-family="system-ui" font-size="18" font-weight="600" fill="#2D5F8A">Cross-Browser Compatibility Matrix</text>
+
+  <!-- Header row -->
+  <rect x="30" y="55" width="250" height="50" rx="6" fill="url(#hdr)" filter="url(#s12)"/>
+  <text x="155" y="84" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="white">Feature</text>
+
+  <rect x="285" y="55" width="150" height="50" rx="6" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2" filter="url(#s12)"/>
+  <text x="360" y="74" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#2D5F8A">Chrome</text>
+  <text x="360" y="90" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Manifest V3</text>
+
+  <rect x="440" y="55" width="150" height="50" rx="6" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="2" filter="url(#s12)"/>
+  <text x="515" y="74" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">Firefox</text>
+  <text x="515" y="90" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Manifest V2+V3</text>
+
+  <rect x="595" y="55" width="150" height="50" rx="6" fill="#FFF8E1" stroke="#D4A76A" stroke-width="2" filter="url(#s12)"/>
+  <text x="670" y="74" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#D4A76A">Opera</text>
+  <text x="670" y="90" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Chromium-based</text>
+
+  <rect x="750" y="55" width="150" height="50" rx="6" fill="#E3F2FD" stroke="#1976D2" stroke-width="2" filter="url(#s12)"/>
+  <text x="825" y="74" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#1976D2">Edge</text>
+  <text x="825" y="90" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Chromium-based</text>
+
+  <rect x="905" y="55" width="150" height="50" rx="6" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="2" filter="url(#s12)"/>
+  <text x="980" y="74" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#7B1FA2">Yandex</text>
+  <text x="980" y="90" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Chromium-based</text>
+
+  <!-- Row 1: Core Detection -->
+  <rect x="30" y="110" width="250" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="40" y="134" font-family="system-ui" font-size="10" font-weight="600" fill="#333">Core Torrent Detection</text>
+  <rect x="285" y="110" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="360" y="134" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="440" y="110" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="515" y="134" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="595" y="110" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="670" y="134" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="750" y="110" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="825" y="134" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="905" y="110" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="980" y="134" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+
+  <!-- Row 2: Tab Groups -->
+  <rect x="30" y="155" width="250" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="40" y="179" font-family="system-ui" font-size="10" font-weight="600" fill="#333">Tab Group Batch Send</text>
+  <rect x="285" y="155" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="360" y="179" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="440" y="155" width="150" height="40" rx="4" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="515" y="179" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#D4A76A">⚠ Partial</text>
+  <rect x="595" y="155" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="670" y="179" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="750" y="155" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="825" y="179" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="905" y="155" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="980" y="179" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+
+  <!-- Row 3: Context Menu -->
+  <rect x="30" y="200" width="250" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="40" y="224" font-family="system-ui" font-size="10" font-weight="600" fill="#333">Context Menu Actions</text>
+  <rect x="285" y="200" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="360" y="224" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="440" y="200" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="515" y="224" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="595" y="200" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="670" y="224" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="750" y="200" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="825" y="224" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="905" y="200" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="980" y="224" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+
+  <!-- Row 4: Service Worker -->
+  <rect x="30" y="245" width="250" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="40" y="269" font-family="system-ui" font-size="10" font-weight="600" fill="#333">Service Worker (BG)</text>
+  <rect x="285" y="245" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="360" y="269" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ MV3</text>
+  <rect x="440" y="245" width="150" height="40" rx="4" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="515" y="269" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#D4A76A">⚠ MV2</text>
+  <rect x="595" y="245" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="670" y="269" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ MV3</text>
+  <rect x="750" y="245" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="825" y="269" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ MV3</text>
+  <rect x="905" y="245" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="980" y="269" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ MV3</text>
+
+  <!-- Row 5: Offscreen Doc -->
+  <rect x="30" y="290" width="250" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="40" y="314" font-family="system-ui" font-size="10" font-weight="600" fill="#333">Offscreen Document (Crypto)</text>
+  <rect x="285" y="290" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="360" y="314" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="440" y="290" width="150" height="40" rx="4" fill="#FFEBEE" stroke="#C75450" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="515" y="314" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#C75450">✗ N/A</text>
+  <rect x="595" y="290" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="670" y="314" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="750" y="290" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="825" y="314" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="905" y="290" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="980" y="314" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+
+  <!-- Row 6: chrome.storage.session -->
+  <rect x="30" y="335" width="250" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="40" y="359" font-family="system-ui" font-size="10" font-weight="600" fill="#333">chrome.storage.session</text>
+  <rect x="285" y="335" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="360" y="359" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="440" y="335" width="150" height="40" rx="4" fill="#FFEBEE" stroke="#C75450" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="515" y="359" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#C75450">✗ No</text>
+  <rect x="595" y="335" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="670" y="359" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="750" y="335" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="825" y="359" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="905" y="335" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="980" y="359" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+
+  <!-- Row 7: scripting API -->
+  <rect x="30" y="380" width="250" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="40" y="404" font-family="system-ui" font-size="10" font-weight="600" fill="#333">chrome.scripting API</text>
+  <rect x="285" y="380" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="360" y="404" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="440" y="380" width="150" height="40" rx="4" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="515" y="404" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#D4A76A">⚠ Polyfill</text>
+  <rect x="595" y="380" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="670" y="404" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="750" y="380" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="825" y="404" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="905" y="380" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="980" y="404" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+
+  <!-- Row 8: Notifications -->
+  <rect x="30" y="425" width="250" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="40" y="449" font-family="system-ui" font-size="10" font-weight="600" fill="#333">chrome.notifications</text>
+  <rect x="285" y="425" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="360" y="449" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="440" y="425" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="515" y="449" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="595" y="425" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="670" y="449" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="750" y="425" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="825" y="449" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+  <rect x="905" y="425" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="980" y="449" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Full</text>
+
+  <!-- Row 9: Auto-Update -->
+  <rect x="30" y="470" width="250" height="40" rx="4" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="40" y="494" font-family="system-ui" font-size="10" font-weight="600" fill="#333">Auto-Update</text>
+  <rect x="285" y="470" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="360" y="494" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Store</text>
+  <rect x="440" y="470" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="515" y="494" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Store</text>
+  <rect x="595" y="470" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="670" y="494" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Store</text>
+  <rect x="750" y="470" width="150" height="40" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="825" y="494" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">✓ Store</text>
+  <rect x="905" y="470" width="150" height="40" rx="4" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="980" y="494" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#D4A76A">⚠ Manual</text>
+
+  <!-- Legend -->
+  <rect x="30" y="530" width="1060" height="150" rx="8" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1.5" filter="url(#s12)"/>
+  <text x="560" y="552" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="600" fill="#333">Legend &amp; Notes</text>
+
+  <rect x="45" y="565" width="160" height="30" rx="5" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1" filter="url(#s12)"/>
+  <text x="125" y="584" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#4A8C6F">✓ Full Support</text>
+
+  <rect x="215" y="565" width="160" height="30" rx="5" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1" filter="url(#s12)"/>
+  <text x="295" y="584" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#D4A76A">⚠ Partial / Polyfill</text>
+
+  <rect x="385" y="565" width="160" height="30" rx="5" fill="#FFEBEE" stroke="#C75450" stroke-width="1" filter="url(#s12)"/>
+  <text x="465" y="584" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#C75450">✗ Not Supported</text>
+
+  <rect x="45" y="605" width="1030" height="60" rx="5" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="60" y="623" font-family="system-ui" font-size="9" fill="#666">
+    <tspan font-weight="700" fill="#D4A76A">Firefox Notes: </tspan>Tab Groups API not available (uses tab query fallback). Offscreen Doc not supported (uses background page crypto). storage.session replaced with localStorage fallback.
+  </text>
+  <text x="60" y="641" font-family="system-ui" font-size="9" fill="#666">
+    <tspan font-weight="700" fill="#D4A76A">Firefox Notes: </tspan>MV2 uses background page instead of service worker. scripting API uses browser.tabs.executeScript via webextension-polyfill. All core features work with polyfills.
+  </text>
+  <text x="60" y="659" font-family="system-ui" font-size="9" fill="#666">
+    <tspan font-weight="700" fill="#D4A76A">Yandex Notes: </tspan>Requires Opera extension package format. Auto-update must be checked manually. All Chromium APIs supported.
+  </text>
+</svg>

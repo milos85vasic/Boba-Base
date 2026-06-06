@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" aria-label="ER Diagram - BobaLink Database Schema">
+  <defs>
+    <marker id="a7" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#888"/></marker>
+    <filter id="s7"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="1200" height="850" fill="#FAFAFA"/>
+  <text x="600" y="28" text-anchor="middle" font-family="system-ui" font-size="18" font-weight="600" fill="#2D5F8A">ER Diagram — BobaLink Database Schema</text>
+
+  <!-- extension_config -->
+  <rect x="20" y="50" width="250" height="330" rx="6" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2" filter="url(#s7)"/>
+  <rect x="20" y="50" width="250" height="28" rx="6" fill="#2D5F8A"/>
+  <rect x="20" y="64" width="250" height="14" fill="#2D5F8A"/>
+  <text x="145" y="69" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">extension_config</text>
+  <text x="30" y="94" font-family="system-ui" font-size="9" fill="#2D5F8A" font-weight="700">PK</text><text x="50" y="94" font-family="system-ui" font-size="9" fill="#333">config_id : VARCHAR</text>
+  <text x="30" y="110" font-family="system-ui" font-size="9" fill="#666">server_url : VARCHAR</text>
+  <text x="30" y="126" font-family="system-ui" font-size="9" fill="#666">api_key : VARCHAR</text>
+  <text x="30" y="142" font-family="system-ui" font-size="9" fill="#666">qbittorrent_url : VARCHAR</text>
+  <text x="30" y="158" font-family="system-ui" font-size="9" fill="#666">username : VARCHAR</text>
+  <text x="30" y="174" font-family="system-ui" font-size="9" fill="#666">password_encrypted : VARCHAR</text>
+  <text x="30" y="190" font-family="system-ui" font-size="9" fill="#666">auto_detect : BOOLEAN</text>
+  <text x="30" y="206" font-family="system-ui" font-size="9" fill="#666">default_category : VARCHAR</text>
+  <text x="30" y="222" font-family="system-ui" font-size="9" fill="#666">scan_interval_ms : INTEGER</text>
+  <text x="30" y="238" font-family="system-ui" font-size="9" fill="#666">max_retries : INTEGER</text>
+  <text x="30" y="254" font-family="system-ui" font-size="9" fill="#666">retry_delay_ms : INTEGER</text>
+  <text x="30" y="270" font-family="system-ui" font-size="9" fill="#666">created_at : DATETIME</text>
+  <text x="30" y="286" font-family="system-ui" font-size="9" fill="#666">updated_at : DATETIME</text>
+  <text x="30" y="308" font-family="system-ui" font-size="8" fill="#888" font-style="italic">Stores extension configuration</text>
+  <text x="30" y="322" font-family="system-ui" font-size="8" fill="#888" font-style="italic">chrome.storage.local</text>
+
+  <!-- discovered_torrents -->
+  <rect x="300" y="50" width="250" height="300" rx="6" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="2" filter="url(#s7)"/>
+  <rect x="300" y="50" width="250" height="28" rx="6" fill="#4A8C6F"/>
+  <rect x="300" y="64" width="250" height="14" fill="#4A8C6F"/>
+  <text x="425" y="69" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">discovered_torrents</text>
+  <text x="310" y="94" font-family="system-ui" font-size="9" fill="#2D5F8A" font-weight="700">PK</text><text x="330" y="94" font-family="system-ui" font-size="9" fill="#333">torrent_id : VARCHAR</text>
+  <text x="310" y="110" font-family="system-ui" font-size="9" fill="#D4A76A" font-weight="700">UK</text><text x="330" y="110" font-family="system-ui" font-size="9" fill="#333">infohash : VARCHAR</text>
+  <text x="310" y="126" font-family="system-ui" font-size="9" fill="#666">magnet_uri : TEXT</text>
+  <text x="310" y="142" font-family="system-ui" font-size="9" fill="#666">name : VARCHAR</text>
+  <text x="310" y="158" font-family="system-ui" font-size="9" fill="#666">size_bytes : BIGINT</text>
+  <text x="310" y="174" font-family="system-ui" font-size="9" fill="#666">source_url : VARCHAR</text>
+  <text x="310" y="190" font-family="system-ui" font-size="9" fill="#666">source_tab_id : VARCHAR</text>
+  <text x="310" y="206" font-family="system-ui" font-size="9" fill="#666">status : VARCHAR</text>
+  <text x="310" y="222" font-family="system-ui" font-size="9" fill="#666">discovered_at : DATETIME</text>
+  <text x="310" y="238" font-family="system-ui" font-size="9" fill="#666">sent_at : DATETIME</text>
+  <text x="310" y="254" font-family="system-ui" font-size="9" fill="#666">error_message : TEXT</text>
+  <text x="310" y="278" font-family="system-ui" font-size="8" fill="#888" font-style="italic">Tracks all discovered torrents</text>
+  <text x="310" y="292" font-family="system-ui" font-size="8" fill="#888" font-style="italic">Session storage / IndexedDB</text>
+
+  <!-- download_queue -->
+  <rect x="300" y="370" width="250" height="200" rx="6" fill="#FFF8E1" stroke="#D4A76A" stroke-width="2" filter="url(#s7)"/>
+  <rect x="300" y="370" width="250" height="28" rx="6" fill="#D4A76A"/>
+  <rect x="300" y="384" width="250" height="14" fill="#D4A76A"/>
+  <text x="425" y="389" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">download_queue</text>
+  <text x="310" y="414" font-family="system-ui" font-size="9" fill="#2D5F8A" font-weight="700">PK</text><text x="330" y="414" font-family="system-ui" font-size="9" fill="#333">queue_id : VARCHAR</text>
+  <text x="310" y="430" font-family="system-ui" font-size="9" fill="#C75450" font-weight="700">FK</text><text x="330" y="430" font-family="system-ui" font-size="9" fill="#333">torrent_id → discovered</text>
+  <text x="310" y="446" font-family="system-ui" font-size="9" fill="#666">magnet_uri : TEXT</text>
+  <text x="310" y="462" font-family="system-ui" font-size="9" fill="#666">priority : INTEGER</text>
+  <text x="310" y="478" font-family="system-ui" font-size="9" fill="#666">retry_count : INTEGER</text>
+  <text x="310" y="494" font-family="system-ui" font-size="9" fill="#666">status : VARCHAR</text>
+  <text x="310" y="510" font-family="system-ui" font-size="9" fill="#666">queued_at : DATETIME</text>
+  <text x="310" y="526" font-family="system-ui" font-size="9" fill="#666">last_retry_at : DATETIME</text>
+  <text x="310" y="542" font-family="system-ui" font-size="9" fill="#666">error_log : TEXT</text>
+  <text x="310" y="560" font-family="system-ui" font-size="8" fill="#888" font-style="italic">Offline retry queue</text>
+
+  <!-- server_config -->
+  <rect x="580" y="50" width="250" height="260" rx="6" fill="#E3F2FD" stroke="#1976D2" stroke-width="2" filter="url(#s7)"/>
+  <rect x="580" y="50" width="250" height="28" rx="6" fill="#1976D2"/>
+  <rect x="580" y="64" width="250" height="14" fill="#1976D2"/>
+  <text x="705" y="69" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">server_config</text>
+  <text x="590" y="94" font-family="system-ui" font-size="9" fill="#2D5F8A" font-weight="700">PK</text><text x="610" y="94" font-family="system-ui" font-size="9" fill="#333">server_id : VARCHAR</text>
+  <text x="590" y="110" font-family="system-ui" font-size="9" fill="#666">name : VARCHAR</text>
+  <text x="590" y="126" font-family="system-ui" font-size="9" fill="#666">fastapi_url : VARCHAR</text>
+  <text x="590" y="142" font-family="system-ui" font-size="9" fill="#666">go_service_url : VARCHAR</text>
+  <text x="590" y="158" font-family="system-ui" font-size="9" fill="#666">qbittorrent_url : VARCHAR</text>
+  <text x="590" y="174" font-family="system-ui" font-size="9" fill="#666">api_key : VARCHAR</text>
+  <text x="590" y="190" font-family="system-ui" font-size="9" fill="#666">is_active : BOOLEAN</text>
+  <text x="590" y="206" font-family="system-ui" font-size="9" fill="#666">health_check_interval : INTEGER</text>
+  <text x="590" y="222" font-family="system-ui" font-size="9" fill="#666">last_health_check : DATETIME</text>
+  <text x="590" y="238" font-family="system-ui" font-size="9" fill="#666">last_check_result : BOOLEAN</text>
+  <text x="590" y="254" font-family="system-ui" font-size="9" fill="#666">created_at : DATETIME</text>
+  <text x="590" y="278" font-family="system-ui" font-size="8" fill="#888" font-style="italic">Multi-server configuration support</text>
+  <text x="590" y="292" font-family="system-ui" font-size="8" fill="#888" font-style="italic">chrome.storage.local</text>
+
+  <!-- send_history -->
+  <rect x="580" y="330" width="250" height="260" rx="6" fill="#E8EAF6" stroke="#3F51B5" stroke-width="2" filter="url(#s7)"/>
+  <rect x="580" y="330" width="250" height="28" rx="6" fill="#3F51B5"/>
+  <rect x="580" y="344" width="250" height="14" fill="#3F51B5"/>
+  <text x="705" y="349" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">send_history</text>
+  <text x="590" y="374" font-family="system-ui" font-size="9" fill="#2D5F8A" font-weight="700">PK</text><text x="610" y="374" font-family="system-ui" font-size="9" fill="#333">history_id : VARCHAR</text>
+  <text x="590" y="390" font-family="system-ui" font-size="9" fill="#C75450" font-weight="700">FK</text><text x="610" y="390" font-family="system-ui" font-size="9" fill="#333">server_id → server_config</text>
+  <text x="590" y="406" font-family="system-ui" font-size="9" fill="#666">infohash : VARCHAR</text>
+  <text x="590" y="422" font-family="system-ui" font-size="9" fill="#666">magnet_uri : TEXT</text>
+  <text x="590" y="438" font-family="system-ui" font-size="9" fill="#666">name : VARCHAR</text>
+  <text x="590" y="454" font-family="system-ui" font-size="9" fill="#666">success : BOOLEAN</text>
+  <text x="590" y="470" font-family="system-ui" font-size="9" fill="#666">qbittorrent_hash : VARCHAR</text>
+  <text x="590" y="486" font-family="system-ui" font-size="9" fill="#666">category : VARCHAR</text>
+  <text x="590" y="502" font-family="system-ui" font-size="9" fill="#666">sent_at : DATETIME</text>
+  <text x="590" y="518" font-family="system-ui" font-size="9" fill="#666">response_time_ms : INTEGER</text>
+  <text x="590" y="534" font-family="system-ui" font-size="9" fill="#666">error_message : TEXT</text>
+  <text x="590" y="558" font-family="system-ui" font-size="8" fill="#888" font-style="italic">Audit log of all send operations</text>
+  <text x="590" y="572" font-family="system-ui" font-size="8" fill="#888" font-style="italic">chrome.storage.local</text>
+
+  <!-- search_cache -->
+  <rect x="860" y="50" width="250" height="190" rx="6" fill="#FFF3E0" stroke="#E65100" stroke-width="2" filter="url(#s7)"/>
+  <rect x="860" y="50" width="250" height="28" rx="6" fill="#E65100"/>
+  <rect x="860" y="64" width="250" height="14" fill="#E65100"/>
+  <text x="985" y="69" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="white">search_cache</text>
+  <text x="870" y="94" font-family="system-ui" font-size="9" fill="#2D5F8A" font-weight="700">PK</text><text x="890" y="94" font-family="system-ui" font-size="9" fill="#333">cache_id : VARCHAR</text>
+  <text x="870" y="110" font-family="system-ui" font-size="9" fill="#666">query_hash : VARCHAR</text>
+  <text x="870" y="126" font-family="system-ui" font-size="9" fill="#666">query_text : VARCHAR</text>
+  <text x="870" y="142" font-family="system-ui" font-size="9" fill="#666">results : JSON</text>
+  <text x="870" y="158" font-family="system-ui" font-size="9" fill="#666">result_count : INTEGER</text>
+  <text x="870" y="174" font-family="system-ui" font-size="9" fill="#666">cached_at : DATETIME</text>
+  <text x="870" y="190" font-family="system-ui" font-size="9" fill="#666">ttl_seconds : INTEGER</text>
+  <text x="870" y="206" font-family="system-ui" font-size="9" fill="#666">is_valid : BOOLEAN</text>
+  <text x="870" y="228" font-family="system-ui" font-size="8" fill="#888" font-style="italic">Search result caching for</text>
+  <text x="870" y="242" font-family="system-ui" font-size="8" fill="#888" font-style="italic">performance optimization</text>
+
+  <!-- Relationships -->
+  <line x1="270" y1="200" x2="300" y2="200" stroke="#4A8C6F" stroke-width="2" marker-end="url(#a7)"/>
+  <circle cx="295" cy="200" r="4" fill="white" stroke="#4A8C6F" stroke-width="2"/>
+  <text x="285" y="215" text-anchor="middle" font-family="system-ui" font-size="7" fill="#4A8C6F">1:N</text>
+
+  <line x1="425" y1="350" x2="425" y2="370" stroke="#D4A76A" stroke-width="2" marker-end="url(#a7)"/>
+  <circle cx="425" cy="365" r="4" fill="white" stroke="#D4A76A" stroke-width="2"/>
+  <text x="440" y="362" font-family="system-ui" font-size="7" fill="#D4A76A">1:N</text>
+
+  <line x1="830" y1="200" x2="860" y2="200" stroke="#3F51B5" stroke-width="2" marker-end="url(#a7)"/>
+  <circle cx="855" cy="200" r="4" fill="white" stroke="#3F51B5" stroke-width="2"/>
+  <text x="845" y="215" text-anchor="middle" font-family="system-ui" font-size="7" fill="#3F51B5">1:N</text>
+
+  <!-- Legend -->
+  <rect x="20" y="600" width="1160" height="110" rx="8" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="600" y="622" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="600" fill="#333">Schema Notes</text>
+  <text x="40" y="645" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="40" fill="#2D5F8A" font-weight="700">PK</tspan> = Primary Key  |  <tspan fill="#D4A76A" font-weight="700">UK</tspan> = Unique Key  |  <tspan fill="#C75450" font-weight="700">FK</tspan> = Foreign Key
+  </text>
+  <text x="40" y="665" font-family="system-ui" font-size="9" fill="#666">All tables use VARCHAR(36) UUIDs for primary keys. Timestamps stored as ISO 8601 strings.</text>
+  <text x="40" y="683" font-family="system-ui" font-size="9" fill="#666">Storage backend: chrome.storage.local (key-value) with IndexedDB wrapper for query support.</text>
+  <text x="600" y="665" font-family="system-ui" font-size="9" fill="#666">Extension supports multiple server configurations for switching between dev/staging/prod.</text>
+  <text x="600" y="683" font-family="system-ui" font-size="9" fill="#666">Download queue implements exponential backoff retry with max 5 attempts over 15 minutes.</text>
+</svg>

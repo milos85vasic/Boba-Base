@@ -1,0 +1,82 @@
+graph TB
+    subgraph Browser["🌐 Browser Environment"]
+        direction TB
+        ExtPermissions["Extension Permissions
+&lt;manifest.json&gt;
+host, storage, scripting
+tabs, contextMenus"]
+
+        subgraph CSP["Content Security Policy"]
+            ScriptSrc["script-src: 'self'
+No inline scripts"]
+            ConnectSrc["connect-src: *
+API endpoints only"]
+            ObjectSrc["object-src: 'none'
+No plugins"]
+        end
+
+        subgraph StorageSec["Credential Storage"]
+            LocalEnc["chrome.storage.local
+AES-256-GCM encrypted"]
+            SessionPlain["chrome.storage.session
+Non-sensitive cache"]
+        end
+
+        subgraph Crypto["🔐 Crypto Operations"]
+            OffscreenDoc["Offscreen Document
+Web Crypto API
+SubtleCrypto.encrypt"]
+            KeyDeriv["PBKDF2 Key Derivation
+User password → key"]
+        end
+    end
+
+    subgraph Network["🌐 Network Layer"]
+        HTTPS["HTTPS Only
+TLS 1.2+ required"]
+        CertPinning["Certificate Validation
+No self-signed certs"]
+    end
+
+    subgraph BobaServices["🐳 Boba Services"]
+        Auth["API Key Auth
+X-Api-Key header"]
+        BasicAuth["Basic Auth
+username:password"]
+        RateLimit["Rate Limiting
+100 req/min per key"]
+    end
+
+    subgraph qBitTorrent["⬇️ qBitTorrent"]
+        WebUISec["WebUI Security
+Cookie-based SID
+CSRF protection"]
+        IPFilter["IP Filtering
+Allowlist mode"]
+    end
+
+    ExtPermissions --> CSP
+    CSP --> StorageSec
+    StorageSec --> Crypto
+    Crypto -->|"Encrypted payload"| HTTPS
+    HTTPS -->|"Mutual TLS"| BobaServices
+    HTTPS -->|"HTTPS + Cookie"| qBitTorrent
+    BobaServices --> Auth
+    Auth --> RateLimit
+    RateLimit -->|"Proxied request"| qBitTorrent
+
+    classDef browserLayer fill:#E8F0FE,stroke:#2D5F8A,stroke-width:2px,color:#333
+    classDef cspLayer fill:#FFF8E1,stroke:#D4A76A,stroke-width:2px,color:#333
+    classDef storageLayer fill:#E8F5E9,stroke:#4A8C6F,stroke-width:2px,color:#333
+    classDef cryptoLayer fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#333
+    classDef networkLayer fill:#FFF3E0,stroke:#E65100,stroke-width:2px,color:#333
+    classDef serviceLayer fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#333
+    classDef torrentLayer fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#333
+
+    class ExtPermissions browserLayer
+    class ScriptSrc,ConnectSrc,ObjectSrc cspLayer
+    class LocalEnc,SessionPlain storageLayer
+    class OffscreenDoc,KeyDeriv cryptoLayer
+    class HTTPS,CertPinning networkLayer
+    class Auth,BasicAuth,RateLimit serviceLayer
+    class WebUISec,IPFilter torrentLayer

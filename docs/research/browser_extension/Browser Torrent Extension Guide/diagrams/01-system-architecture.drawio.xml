@@ -1,0 +1,254 @@
+<mxfile host="app.diagrams.net" modified="2024-01-15T00:00:00.000Z" agent="BobaLink Architecture Generator" etag="bobalink_arch" version="22.0.0" type="device">
+  <diagram name="System Architecture" id="bobalink-arch-001">
+    <mxGraphModel dx="1434" dy="834" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="1">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Background -->
+        <mxCell id="bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=none;" parent="1" vertex="1">
+          <mxGeometry x="0" y="0" width="1200" height="900" as="geometry" />
+        </mxCell>
+
+        <!-- Title -->
+        <mxCell id="title" value="&lt;b&gt;BobaLink Browser Extension — System Architecture&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=20;fontColor=#2D5F8A;fontFamily=system-ui;" parent="1" vertex="1">
+          <mxGeometry x="200" y="10" width="800" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Browser Environment Container -->
+        <mxCell id="browser-env" value="🌐 Browser Environment" style="swimlane;startSize=30;rounded=1;arcSize=4;fontSize=14;fontStyle=1;fontColor=#2D5F8A;fillColor=#E8F0FE;strokeColor=#2D5F8A;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="20" y="50" width="620" height="580" as="geometry" />
+        </mxCell>
+
+        <!-- Extension UI Layer -->
+        <mxCell id="ui-layer" value="Extension UI Layer" style="swimlane;startSize=25;rounded=1;arcSize=4;fontSize=12;fontStyle=1;fontColor=#2D5F8A;fillColor=#F9FBFD;strokeColor=#5B9BD5;strokeWidth=1.5;dashed=1;" parent="browser-env" vertex="1">
+          <mxGeometry x="15" y="35" width="290" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="popup" value="&lt;b&gt;Popup UI&lt;/b&gt;&lt;br&gt;popup.html / popup.js&lt;br&gt;Torrent list &amp;amp; controls" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="ui-layer" vertex="1">
+          <mxGeometry x="10" y="30" width="85" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="options" value="&lt;b&gt;Options Page&lt;/b&gt;&lt;br&gt;options.html / options.js&lt;br&gt;Server configuration" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="ui-layer" vertex="1">
+          <mxGeometry x="105" y="30" width="85" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="context" value="&lt;b&gt;Context Menu&lt;/b&gt;&lt;br&gt;background.js&lt;br&gt;Right-click actions" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="ui-layer" vertex="1">
+          <mxGeometry x="200" y="30" width="85" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- Extension Core Layer -->
+        <mxCell id="core-layer" value="Extension Core Layer" style="swimlane;startSize=25;rounded=1;arcSize=4;fontSize=12;fontStyle=1;fontColor=#4A8C6F;fillColor=#F6FBF7;strokeColor=#4A8C6F;strokeWidth=1.5;dashed=1;" parent="browser-env" vertex="1">
+          <mxGeometry x="15" y="180" width="290" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="content-script" value="&lt;b&gt;Content Script&lt;/b&gt;&lt;br&gt;content.js&lt;br&gt;DOM scanner &amp;amp; injector&lt;br&gt;Torrent detection UI" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E8F5E9;strokeColor=#4A8C6F;fontFamily=system-ui;" parent="core-layer" vertex="1">
+          <mxGeometry x="30" y="32" width="110" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="background-sw" value="&lt;b&gt;Background Service Worker&lt;/b&gt;&lt;br&gt;background.js&lt;br&gt;Event handling&lt;br&gt;API proxy &amp;amp; queue" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E8F5E9;strokeColor=#4A8C6F;fontFamily=system-ui;" parent="core-layer" vertex="1">
+          <mxGeometry x="155" y="32" width="110" height="75" as="geometry" />
+        </mxCell>
+
+        <!-- Extension Library Layer -->
+        <mxCell id="lib-layer" value="Extension Library Layer" style="swimlane;startSize=25;rounded=1;arcSize=4;fontSize=12;fontStyle=1;fontColor=#D4A76A;fillColor=#FDFBF6;strokeColor=#D4A76A;strokeWidth=1.5;dashed=1;" parent="browser-env" vertex="1">
+          <mxGeometry x="15" y="315" width="290" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="parser" value="&lt;b&gt;parser/&lt;/b&gt;&lt;br&gt;magnet:// &amp;amp;&lt;br&gt;.torrent parser" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#FFF8E1;strokeColor=#D4A76A;fontFamily=system-ui;" parent="lib-layer" vertex="1">
+          <mxGeometry x="10" y="30" width="60" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="scanner" value="&lt;b&gt;scanner/&lt;/b&gt;&lt;br&gt;DOM&lt;br&gt;detector" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#FFF8E1;strokeColor=#D4A76A;fontFamily=system-ui;" parent="lib-layer" vertex="1">
+          <mxGeometry x="80" y="30" width="60" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-client" value="&lt;b&gt;api/&lt;/b&gt;&lt;br&gt;BobaAPI&lt;br&gt;Client" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#FFF8E1;strokeColor=#D4A76A;fontFamily=system-ui;" parent="lib-layer" vertex="1">
+          <mxGeometry x="150" y="30" width="60" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="shared" value="&lt;b&gt;shared/&lt;/b&gt;&lt;br&gt;Constants&lt;br&gt;&amp;amp; utils" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#FFF8E1;strokeColor=#D4A76A;fontFamily=system-ui;" parent="lib-layer" vertex="1">
+          <mxGeometry x="220" y="30" width="60" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- Extension Storage -->
+        <mxCell id="storage-layer" value="Extension Storage" style="swimlane;startSize=25;rounded=1;arcSize=4;fontSize=12;fontStyle=1;fontColor=#666666;fillColor=#F8F8F8;strokeColor=#888888;strokeWidth=1.5;dashed=1;" parent="browser-env" vertex="1">
+          <mxGeometry x="15" y="440" width="290" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="local-storage" value="&lt;b&gt;Local Storage&lt;/b&gt;&lt;br&gt;extension_config" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=#F5F5F5;strokeColor=#666666;fontFamily=system-ui;" parent="storage-layer" vertex="1">
+          <mxGeometry x="20" y="30" width="110" height="35" as="geometry" />
+        </mxCell>
+
+        <mxCell id="session-storage" value="&lt;b&gt;Session Storage&lt;/b&gt;&lt;br&gt;discovered_torrents" style="ellipse;whiteSpace=wrap;html=1;fontSize=9;fillColor=#F5F5F5;strokeColor=#666666;fontFamily=system-ui;" parent="storage-layer" vertex="1">
+          <mxGeometry x="160" y="30" width="110" height="35" as="geometry" />
+        </mxCell>
+
+        <!-- Chrome APIs Panel -->
+        <mxCell id="chrome-apis" value="Chrome APIs Used" style="swimlane;startSize=25;rounded=1;arcSize=4;fontSize=12;fontStyle=1;fontColor=#2D5F8A;fillColor=#F0F7FF;strokeColor=#2D5F8A;strokeWidth=1.5;dashed=1;" parent="browser-env" vertex="1">
+          <mxGeometry x="340" y="35" width="160" height="475" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-runtime" value="&lt;b&gt;chrome.runtime&lt;/b&gt;&lt;br&gt;Messaging API" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="chrome-apis" vertex="1">
+          <mxGeometry x="10" y="30" width="140" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-tabs" value="&lt;b&gt;chrome.tabs&lt;/b&gt;&lt;br&gt;Tab management" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="chrome-apis" vertex="1">
+          <mxGeometry x="10" y="75" width="140" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-tabGroups" value="&lt;b&gt;chrome.tabGroups&lt;/b&gt;&lt;br&gt;Group queries" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="chrome-apis" vertex="1">
+          <mxGeometry x="10" y="120" width="140" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-contextMenus" value="&lt;b&gt;chrome.contextMenus&lt;/b&gt;&lt;br&gt;Right-click menu" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="chrome-apis" vertex="1">
+          <mxGeometry x="10" y="165" width="140" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-storage" value="&lt;b&gt;chrome.storage&lt;/b&gt;&lt;br&gt;local &amp;amp; session" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="chrome-apis" vertex="1">
+          <mxGeometry x="10" y="210" width="140" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-notifications" value="&lt;b&gt;chrome.notifications&lt;/b&gt;&lt;br&gt;Desktop alerts" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="chrome-apis" vertex="1">
+          <mxGeometry x="10" y="255" width="140" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-fetch" value="&lt;b&gt;fetch() API&lt;/b&gt;&lt;br&gt;HTTP requests" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="chrome-apis" vertex="1">
+          <mxGeometry x="10" y="300" width="140" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="api-downloads" value="&lt;b&gt;chrome.downloads&lt;/b&gt;&lt;br&gt;File downloads" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#E8F0FE;strokeColor=#2D5F8A;fontFamily=system-ui;" parent="chrome-apis" vertex="1">
+          <mxGeometry x="10" y="345" width="140" height="38" as="geometry" />
+        </mxCell>
+
+        <!-- Docker Host Container -->
+        <mxCell id="docker-host" value="🐳 Docker Host" style="swimlane;startSize=30;rounded=1;arcSize=4;fontSize=14;fontStyle=1;fontColor=#1976D2;fillColor=#F0F8FF;strokeColor=#1976D2;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="660" y="50" width="520" height="320" as="geometry" />
+        </mxCell>
+
+        <!-- Boba Services Network -->
+        <mxCell id="boba-net" value="Boba Services Network" style="swimlane;startSize=25;rounded=1;arcSize=4;fontSize=11;fontStyle=1;fontColor=#1976D2;fillColor=#F5FAFF;strokeColor=#5B9BD5;strokeWidth=1.5;dashed=1;" parent="docker-host" vertex="1">
+          <mxGeometry x="15" y="35" width="240" height="160" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fastapi" value="&lt;b&gt;Boba FastAPI Service&lt;/b&gt;&lt;br&gt;Port 7187 — Metadata &amp;amp; search API&lt;br&gt;Torrent info, search, health checks" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E3F2FD;strokeColor=#1976D2;fontFamily=system-ui;" parent="boba-net" vertex="1">
+          <mxGeometry x="10" y="28" width="220" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="go-service" value="&lt;b&gt;Boba Go Service&lt;/b&gt;&lt;br&gt;Port 7189 — Core torrent operations&lt;br&gt;Add, remove, control torrents" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E3F2FD;strokeColor=#1976D2;fontFamily=system-ui;" parent="boba-net" vertex="1">
+          <mxGeometry x="10" y="90" width="220" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- Torrent Network -->
+        <mxCell id="torrent-net" value="Torrent Network" style="swimlane;startSize=25;rounded=1;arcSize=4;fontSize=11;fontStyle=1;fontColor=#3F51B5;fillColor=#F5F7FF;strokeColor=#3F51B5;strokeWidth=1.5;dashed=1;" parent="docker-host" vertex="1">
+          <mxGeometry x="270" y="35" width="230" height="160" as="geometry" />
+        </mxCell>
+
+        <mxCell id="qbittorrent" value="&lt;b&gt;qBitTorrent WebUI&lt;/b&gt;&lt;br&gt;Port 8080 — Torrent client API&lt;br&gt;Web API for torrent management" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E8EAF6;strokeColor=#3F51B5;fontFamily=system-ui;" parent="torrent-net" vertex="1">
+          <mxGeometry x="10" y="28" width="210" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="qbit-db" value="&lt;b&gt;qBitTorrent Database&lt;/b&gt;&lt;br&gt;Internal BT state storage&lt;br&gt;Resume data, settings, logs" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#E8EAF6;strokeColor=#3F51B5;fontFamily=system-ui;" parent="torrent-net" vertex="1">
+          <mxGeometry x="10" y="90" width="210" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- Docker Networks -->
+        <mxCell id="docker-nets" value="Docker Networks" style="swimlane;startSize=25;rounded=1;arcSize=4;fontSize=11;fontStyle=1;fontColor=#4A8C6F;fillColor=#F8FCF8;strokeColor=#4A8C6F;strokeWidth=1.5;dashed=1;" parent="docker-host" vertex="1">
+          <mxGeometry x="15" y="205" width="485" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="boba-network" value="&lt;b&gt;boba-network&lt;/b&gt;&lt;br&gt;Internal service mesh&lt;br&gt;FastAPI ↔ Go ↔ qBit" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#E8F5E9;strokeColor=#4A8C6F;fontFamily=system-ui;" parent="docker-nets" vertex="1">
+          <mxGeometry x="10" y="28" width="145" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="bridge-net" value="&lt;b&gt;bridge / host&lt;/b&gt;&lt;br&gt;External port mapping&lt;br&gt;7187, 7189, 8080" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#FFF3E0;strokeColor=#E65100;fontFamily=system-ui;" parent="docker-nets" vertex="1">
+          <mxGeometry x="170" y="28" width="145" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="volumes" value="&lt;b&gt;Volume Mounts&lt;/b&gt;&lt;br&gt;/downloads, /config&lt;br&gt;Persistent data storage" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=8;fillColor=#FCE4EC;strokeColor=#C2185B;fontFamily=system-ui;" parent="docker-nets" vertex="1">
+          <mxGeometry x="330" y="28" width="145" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- External Services -->
+        <mxCell id="ext-services" value="🌍 External Services" style="swimlane;startSize=30;rounded=1;arcSize=4;fontSize=14;fontStyle=1;fontColor=#E65100;fillColor=#FFF3E0;strokeColor=#E65100;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="660" y="390" width="520" height="140" as="geometry" />
+        </mxCell>
+
+        <mxCell id="trackers" value="&lt;b&gt;BitTorrent Trackers&lt;/b&gt;&lt;br&gt;DHT, PEX, UDP announce&lt;br&gt;Peer discovery &amp;amp; metadata&lt;br&gt;Magnet link resolution" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#FFF8E1;strokeColor=#E65100;fontFamily=system-ui;" parent="ext-services" vertex="1">
+          <mxGeometry x="30" y="38" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="webpages" value="&lt;b&gt;Web Pages / Indexers&lt;/b&gt;&lt;br&gt;Torrent sites &amp;amp; search engines&lt;br&gt;Magnet link hosting pages&lt;br&gt;.torrent file download pages" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fontSize=9;fillColor=#FFF8E1;strokeColor=#E65100;fontFamily=system-ui;" parent="ext-services" vertex="1">
+          <mxGeometry x="270" y="38" width="220" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend" value="" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E0E0E0;strokeWidth=1;" parent="1" vertex="1">
+          <mxGeometry x="20" y="650" width="1160" height="230" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend-title" value="&lt;b&gt;Architecture Legend &amp;amp; Communication Flows&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=14;fontColor=#333333;fontFamily=system-ui;" parent="legend" vertex="1">
+          <mxGeometry x="380" y="10" width="400" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="flow1-label" value="&lt;b&gt;Primary Data Flow — Single Torrent:&lt;/b&gt;\n① Content Script scans DOM → ② Magnet/torrent links detected → ③ Background SW receives message → ④ BobaAPIClient sends HTTP request\n⑤ Boba Service (FastAPI/Go) validates → ⑥ qBitTorrent WebUI API receives add request → ⑦ Torrent added to client → ⑧ Status returned to Popup" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=9;fontColor=#555555;fontFamily=system-ui;whiteSpace=wrap;" parent="legend" vertex="1">
+          <mxGeometry x="20" y="40" width="1120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="flow2-label" value="&lt;b&gt;Batch Processing Flow — Tab Groups:&lt;/b&gt;\n① User opens context menu on Tab Group → ② Background SW queries chrome.tabGroups → ③ chrome.tabs.query for each group\n④ Content Script injected per tab → ⑤ All torrents collected → ⑥ Batch API call to Boba Service → ⑦ All torrents added to qBitTorrent" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=9;fontColor=#555555;fontFamily=system-ui;whiteSpace=wrap;" parent="legend" vertex="1">
+          <mxGeometry x="20" y="95" width="1120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="security-label" value="&lt;b&gt;Security &amp;amp; Error Handling:&lt;/b&gt;\nHTTPS for all external communication | Credentials stored with chrome.storage.local | Offscreen document for crypto operations\nRetry queue for offline scenarios | Rate limiting | CSP headers | Permission validation for all API calls" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=9;fontColor=#555555;fontFamily=system-ui;whiteSpace=wrap;" parent="legend" vertex="1">
+          <mxGeometry x="20" y="150" width="1120" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Connections -->
+        <mxCell id="conn1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2D5F8A;strokeWidth=1.5;endArrow=classic;endSize=8;" parent="1" source="popup" target="background-sw" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4A8C6F;strokeWidth=1.5;endArrow=classic;endSize=8;" parent="1" source="content-script" target="background-sw" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4A8C6F;strokeWidth=1.5;endArrow=classic;endSize=8;" parent="1" source="scanner" target="parser" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#D4A76A;strokeWidth=1.5;endArrow=classic;endSize=8;" parent="1" source="api-client" target="local-storage" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn5" value="REST API :7187" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1976D2;strokeWidth=2;endArrow=classic;endSize=8;fontSize=8;fontColor=#1976D2;" parent="1" source="api-client" target="fastapi" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn6" value="REST API :7189" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#1976D2;strokeWidth=2;endArrow=classic;endSize=8;fontSize=8;fontColor=#1976D2;" parent="1" source="api-client" target="go-service" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#3F51B5;strokeWidth=1.5;endArrow=classic;endSize=8;" parent="1" source="fastapi" target="qbittorrent" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#3F51B5;strokeWidth=1.5;endArrow=classic;endSize=8;" parent="1" source="go-service" target="qbittorrent" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#3F51B5;strokeWidth=1.5;endArrow=classic;endSize=8;" parent="1" source="qbittorrent" target="qbit-db" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#E65100;strokeWidth=1.5;endArrow=classic;endSize=8;" parent="1" source="qbittorrent" target="trackers" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="conn11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#E65100;strokeWidth=1.5;strokeDasharray=6,3;endArrow=classic;endSize=8;" parent="1" source="webpages" target="content-script" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

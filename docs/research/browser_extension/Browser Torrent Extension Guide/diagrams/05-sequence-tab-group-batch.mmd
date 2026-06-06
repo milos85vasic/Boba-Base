@@ -1,0 +1,52 @@
+sequenceDiagram
+    autonumber
+    actor User as 👤 User
+    participant Menu as 📋 Context Menu
+    participant BG as ⚙️ Background SW
+    participant TGAPI as 📑 Tab Groups API
+    participant TabsAPI as 🔖 Tabs API
+    participant CS as 📄 Content Scripts
+    participant API as 🔌 BobaAPIClient
+    participant qBit as ⬇️ qBitTorrent :8080
+
+    Note over User,qBit: Tab Group Batch Send Flow
+
+    User->>Menu: Right-click on Tab Group
+    activate Menu
+    Menu-->>User: Show context menu<br/>"Send all torrents to qBit"
+    User->>Menu: Select batch send option
+    Menu->>BG: contextMenus.onClicked<br/>{menuItemId, parentMenuItemId}
+    deactivate Menu
+    activate BG
+    BG->>TGAPI: chrome.tabGroups.query<br/>{title: groupName}
+    activate TGAPI
+    TGAPI-->>BG: Return group objects[]<br/>with groupId
+    deactivate TGAPI
+    BG->>TabsAPI: chrome.tabs.query<br/>{groupId: gid}
+    activate TabsAPI
+    TabsAPI-->>BG: Return tabs[]<br/>with tabId, url
+    deactivate TabsAPI
+
+    loop For each tab in group
+        BG->>CS: chrome.scripting.executeScript<br/>{target: {tabId}, files: ["content.js"]}
+        activate CS
+        CS->>CS: Scan DOM for torrents
+        CS->>CS: parser.normalizeURLs()
+        CS-->>BG: Return [{torrents: [...]}]
+        deactivate CS
+    end
+
+    BG->>BG: Collect all torrents[]<br/>Flatten & deduplicate
+    BG->>API: sendBatch(allTorrents)
+    activate API
+    API->>API: Build batch request<br/>with auth headers
+    API->>qBit: POST /api/v2/torrents/add<br/>urls=magnet1\nmagnet2\n...
+    activate qBit
+    qBit->>qBit: Process each torrent<br/>in parallel
+    qBit-->>API: 200 OK + results[]
+    deactivate qBit
+    API-->>BG: {added: N, failed: [...]}
+    deactivate API
+    BG->>BG: Store results in<br/>send_history
+    BG-->>User: chrome.notifications<br/>"N torrents added successfully"
+    deactivate BG

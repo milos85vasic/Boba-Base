@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" aria-label="Sequence Diagram - Single Torrent Send">
+  <defs>
+    <marker id="arr4" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#555"/></marker>
+    <marker id="darr4" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#4A8C6F"/></marker>
+    <filter id="s4"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="1200" height="900" fill="#FAFAFA"/>
+  <text x="600" y="28" text-anchor="middle" font-family="system-ui" font-size="18" font-weight="600" fill="#2D5F8A">Sequence Diagram — Single Torrent Send</text>
+
+  <!-- Actor boxes -->
+  <!-- User -->
+  <rect x="20" y="50" width="100" height="40" rx="6" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="2" filter="url(#s4)"/>
+  <text x="70" y="75" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#333">👤 User</text>
+  <line x1="70" y1="90" x2="70" y2="860" stroke="#7B1FA2" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Popup -->
+  <rect x="155" y="50" width="110" height="40" rx="6" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2" filter="url(#s4)"/>
+  <text x="210" y="70" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">📋 Popup UI</text>
+  <text x="210" y="82" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">popup.js</text>
+  <line x1="210" y1="90" x2="210" y2="860" stroke="#2D5F8A" stroke-width="1.5"/>
+
+  <!-- Content Script -->
+  <rect x="300" y="50" width="110" height="40" rx="6" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="2" filter="url(#s4)"/>
+  <text x="355" y="70" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">📄 Content Script</text>
+  <text x="355" y="82" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">content.js</text>
+  <line x1="355" y1="90" x2="355" y2="860" stroke="#4A8C6F" stroke-width="1.5"/>
+
+  <!-- Background SW -->
+  <rect x="445" y="50" width="110" height="40" rx="6" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2" filter="url(#s4)"/>
+  <text x="500" y="70" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">⚙️ Background SW</text>
+  <text x="500" y="82" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">background.js</text>
+  <line x1="500" y1="90" x2="500" y2="860" stroke="#2D5F8A" stroke-width="1.5"/>
+
+  <!-- API Client -->
+  <rect x="590" y="50" width="110" height="40" rx="6" fill="#FFF8E1" stroke="#D4A76A" stroke-width="2" filter="url(#s4)"/>
+  <text x="645" y="70" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">🔌 BobaAPIClient</text>
+  <text x="645" y="82" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">api/client.js</text>
+  <line x1="645" y1="90" x2="645" y2="860" stroke="#D4A76A" stroke-width="1.5"/>
+
+  <!-- FastAPI -->
+  <rect x="735" y="50" width="110" height="40" rx="6" fill="#E3F2FD" stroke="#1976D2" stroke-width="2" filter="url(#s4)"/>
+  <text x="790" y="70" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">🐳 FastAPI</text>
+  <text x="790" y="82" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">Port 7187</text>
+  <line x1="790" y1="90" x2="790" y2="860" stroke="#1976D2" stroke-width="1.5"/>
+
+  <!-- Go Service -->
+  <rect x="880" y="50" width="110" height="40" rx="6" fill="#E3F2FD" stroke="#1976D2" stroke-width="2" filter="url(#s4)"/>
+  <text x="935" y="70" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">🐳 Go Service</text>
+  <text x="935" y="82" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">Port 7189</text>
+  <line x1="935" y1="90" x2="935" y2="860" stroke="#1976D2" stroke-width="1.5"/>
+
+  <!-- qBitTorrent -->
+  <rect x="1025" y="50" width="130" height="40" rx="6" fill="#E8EAF6" stroke="#3F51B5" stroke-width="2" filter="url(#s4)"/>
+  <text x="1090" y="70" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">⬇️ qBitTorrent</text>
+  <text x="1090" y="82" text-anchor="middle" font-family="system-ui" font-size="7" fill="#666">WebUI :8080</text>
+  <line x1="1090" y1="90" x2="1090" y2="860" stroke="#3F51B5" stroke-width="1.5"/>
+
+  <!-- Section: Detection -->
+  <rect x="10" y="95" width="1180" height="5" rx="2" fill="#E8F0FE" opacity="0.5"/>
+  <text x="20" y="115" font-family="system-ui" font-size="11" font-weight="700" fill="#2D5F8A">🔄 Phase 1: Detection</text>
+
+  <!-- Messages -->
+  <!-- User browses -->
+  <rect x="70" y="125" width="8" height="25" rx="3" fill="#7B1FA2" opacity="0.3"/>
+  <line x1="70" y1="130" x2="355" y2="130" stroke="#7B1FA2" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <text x="210" y="126" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">Browse torrent site</text>
+
+  <!-- CS self -->
+  <rect x="355" y="140" width="8" height="35" rx="3" fill="#4A8C6F" opacity="0.3"/>
+  <text x="370" y="150" font-family="system-ui" font-size="8" fill="#4A8C6F">MutationObserver scans DOM</text>
+  <text x="370" y="162" font-family="system-ui" font-size="8" fill="#4A8C6F">parser.normalizeURL()</text>
+
+  <!-- CS to BG -->
+  <line x1="355" y1="185" x2="500" y2="185" stroke="#4A8C6F" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="355" y="185" width="8" height="15" rx="3" fill="#4A8C6F" opacity="0.3"/>
+  <text x="430" y="181" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">DISCOVERED_TORRENTS</text>
+
+  <!-- BG to Popup -->
+  <rect x="500" y="200" width="8" height="25" rx="3" fill="#2D5F8A" opacity="0.3"/>
+  <line x1="500" y1="205" x2="210" y2="205" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <text x="350" y="201" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">UPDATE_POPUP</text>
+
+  <!-- Popup render -->
+  <rect x="210" y="215" width="8" height="20" rx="3" fill="#2D5F8A" opacity="0.3"/>
+  <text x="100" y="228" text-anchor="middle" font-family="system-ui" font-size="8" fill="#2D5F8A">Show discovered torrents</text>
+
+  <!-- Section: Send -->
+  <rect x="10" y="248" width="1180" height="5" rx="2" fill="#E8F5E9" opacity="0.5"/>
+  <text x="20" y="268" font-family="system-ui" font-size="11" font-weight="700" fill="#4A8C6F">🔄 Phase 2: Send</text>
+
+  <!-- User clicks send -->
+  <rect x="70" y="278" width="8" height="20" rx="3" fill="#7B1FA2" opacity="0.3"/>
+  <line x1="70" y1="283" x2="210" y2="283" stroke="#7B1FA2" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <text x="140" y="279" font-family="system-ui" font-size="8" fill="#555">Click "Send"</text>
+
+  <!-- Popup to BG -->
+  <line x1="210" y1="298" x2="500" y2="298" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <text x="350" y="294" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">SEND_TORRENT</text>
+
+  <!-- BG to API -->
+  <line x1="500" y1="313" x2="645" y2="313" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="500" y="313" width="8" height="80" rx="3" fill="#2D5F8A" opacity="0.2"/>
+  <text x="570" y="309" font-family="system-ui" font-size="8" fill="#555">sendTorrent()</text>
+
+  <!-- API self -->
+  <rect x="645" y="323" width="8" height="25" rx="3" fill="#D4A76A" opacity="0.3"/>
+  <text x="660" y="333" font-family="system-ui" font-size="8" fill="#D4A76A">Build request + auth headers</text>
+
+  <!-- API to FastAPI -->
+  <line x1="645" y1="358" x2="790" y2="358" stroke="#D4A76A" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="790" y="358" width="8" height="35" rx="3" fill="#1976D2" opacity="0.2"/>
+  <text x="720" y="354" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">POST /api/torrents/add</text>
+
+  <!-- FastAPI self -->
+  <rect x="790" y="370" width="8" height="15" rx="3" fill="#1976D2" opacity="0.3"/>
+  <text x="805" y="378" font-family="system-ui" font-size="8" fill="#1976D2">Validate torrent</text>
+
+  <!-- FastAPI to qBit -->
+  <line x1="790" y1="405" x2="1090" y2="405" stroke="#1976D2" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="1090" y="405" width="8" height="30" rx="3" fill="#3F51B5" opacity="0.2"/>
+  <text x="940" y="401" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">POST /api/v2/torrents/add</text>
+
+  <!-- qBit self -->
+  <rect x="1090" y="415" width="8" height="15" rx="3" fill="#3F51B5" opacity="0.3"/>
+  <text x="1000" y="425" font-family="system-ui" font-size="8" fill="#3F51B5">Add to BT engine</text>
+
+  <!-- Return from qBit -->
+  <line x1="1090" y1="445" x2="790" y2="445" stroke="#3F51B5" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#darr4)"/>
+  <text x="940" y="458" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">200 OK + {hash}</text>
+
+  <!-- FastAPI return -->
+  <line x1="790" y1="460" x2="645" y2="460" stroke="#1976D2" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#darr4)"/>
+  <text x="720" y="473" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">200 OK + result</text>
+
+  <!-- API return to BG -->
+  <line x1="645" y1="485" x2="500" y2="485" stroke="#D4A76A" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#darr4)"/>
+  <text x="570" y="498" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">Promise resolved</text>
+
+  <!-- BG self -->
+  <rect x="500" y="495" width="8" height="25" rx="3" fill="#2D5F8A" opacity="0.3"/>
+  <text x="420" y="505" font-family="system-ui" font-size="8" fill="#2D5F8A">Store in send_history</text>
+  <text x="420" y="517" font-family="system-ui" font-size="8" fill="#2D5F8A">Update badge count</text>
+
+  <!-- BG to Popup -->
+  <line x1="500" y1="530" x2="210" y2="530" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <text x="350" y="526" text-anchor="middle" font-family="system-ui" font-size="8" fill="#555">SEND_COMPLETE</text>
+
+  <!-- Popup to User -->
+  <rect x="210" y="540" width="8" height="20" rx="3" fill="#2D5F8A" opacity="0.3"/>
+  <line x1="210" y1="545" x2="70" y2="545" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <text x="140" y="562" text-anchor="middle" font-family="system-ui" font-size="8" fill="#4A8C6F">✓ Notification: "Torrent added"</text>
+
+  <!-- Legend -->
+  <rect x="20" y="580" width="1160" height="280" rx="8" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="600" y="605" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="600" fill="#333">Legend &amp; Notes</text>
+
+  <rect x="40" y="620" width="350" height="80" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="55" y="638" font-family="system-ui" font-size="10" font-weight="600" fill="#2D5F8A">Message Types</text>
+  <text x="55" y="656" font-family="system-ui" font-size="9" fill="#666">• DISCOVERED_TORRENTS — CS → BG (new torrents found)</text>
+  <text x="55" y="672" font-family="system-ui" font-size="9" fill="#666">• UPDATE_POPUP — BG → Popup (refresh torrent list)</text>
+  <text x="55" y="688" font-family="system-ui" font-size="9" fill="#666">• SEND_TORRENT — Popup → BG (user initiated send)</text>
+
+  <rect x="410" y="620" width="350" height="80" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="425" y="638" font-family="system-ui" font-size="10" font-weight="600" fill="#D4A76A">API Details</text>
+  <text x="425" y="656" font-family="system-ui" font-size="9" fill="#666">• Auth: X-Api-Key header + Basic Auth</text>
+  <text x="425" y="672" font-family="system-ui" font-size="9" fill="#666">• Body: {urls, category, paused, skip_checking}</text>
+  <text x="425" y="688" font-family="system-ui" font-size="9" fill="#666">• Timeout: 30s with 3 retries</text>
+
+  <rect x="780" y="620" width="380" height="80" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="795" y="638" font-family="system-ui" font-size="10" font-weight="600" fill="#3F51B5">qBitTorrent API</text>
+  <text x="795" y="656" font-family="system-ui" font-size="9" fill="#666">• Endpoint: POST /api/v2/torrents/add</text>
+  <text x="795" y="672" font-family="system-ui" font-size="9" fill="#666">• Auth: Cookie with SID session</text>
+  <text x="795" y="688" font-family="system-ui" font-size="9" fill="#666">• Body: form-data (urls, savepath, category)</text>
+
+  <rect x="40" y="715" width="540" height="60" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="55" y="733" font-family="system-ui" font-size="10" font-weight="600" fill="#4A8C6F">Success Flow (Green dashed arrows)</text>
+  <text x="55" y="751" font-family="system-ui" font-size="9" fill="#666">Returns: {success: true, hash: "abc123...", status: "added", name: "filename", size: 1234567890}</text>
+  <text x="55" y="767" font-family="system-ui" font-size="9" fill="#666">Popup updates badge, shows chrome.notification, stores in send_history</text>
+
+  <rect x="600" y="715" width="560" height="60" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="615" y="733" font-family="system-ui" font-size="10" font-weight="600" fill="#C75450">Error Handling</text>
+  <text x="615" y="751" font-family="system-ui" font-size="9" fill="#666">401 → Refresh auth token &amp; retry once | 429 → Wait Retry-After | 5xx → Exponential backoff</text>
+  <text x="615" y="767" font-family="system-ui" font-size="9" fill="#666">Offline → Save to queue, auto-retry on reconnect | Timeout → 3 retries at 1s, 2s, 4s intervals</text>
+
+  <rect x="40" y="790" width="1120" height="55" rx="6" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1"/>
+  <text x="55" y="808" font-family="system-ui" font-size="10" font-weight="600" fill="#D4A76A">Note: Two service paths exist (FastAPI :7187 and Go :7189). The API client selects based on configuration.</text>
+  <text x="55" y="826" font-family="system-ui" font-size="9" fill="#666">FastAPI path provides metadata enrichment. Go path provides direct control. Both proxy to qBitTorrent WebUI on :8080.</text>
+  <text x="55" y="842" font-family="system-ui" font-size="9" fill="#666">Magnet links are resolved via DHT/PEX if no metadata is available. .torrent files are downloaded and added directly.</text>
+</svg>

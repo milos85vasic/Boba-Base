@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BobaLink Extension Lifecycle</title>
+    <style>
+        :root { --primary:#2D5F8A; --sage:#4A8C6F; --gold:#D4A76A; --dark:#333; --med:#666; --docker:#1976D2; --torrent:#3F51B5; --ext:#E65100; --purple:#7B1FA2; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:system-ui,sans-serif; background:#FAFAFA; padding:24px; }
+        .container { max-width:1400px; margin:0 auto; background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:32px; }
+        h1 { text-align:center; color:var(--primary); font-size:22px; margin-bottom:24px; }
+        .lifecycle { display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:24px; }
+        .step { border-radius:10px; padding:16px 20px; text-align:center; min-width:110px; box-shadow:0 2px 8px rgba(0,0,0,0.08); transition:all 0.3s; cursor:pointer; position:relative; }
+        .step:hover { transform:translateY(-4px); box-shadow:0 6px 16px rgba(0,0,0,0.12); }
+        .step-icon { font-size:20px; margin-bottom:4px; }
+        .step-title { font-weight:700; font-size:12px; margin-bottom:4px; }
+        .step-desc { font-size:9px; color:var(--med); }
+        .step-event { font-size:7px; color:#888; margin-top:4px; font-style:italic; }
+        .s1 { background:#E8F0FE; border:2px solid var(--primary); color:var(--primary); }
+        .s2 { background:#FFF8E1; border:2px solid var(--gold); color:var(--gold); }
+        .s3 { background:#E3F2FD; border:2px solid var(--docker); color:var(--docker); }
+        .s4 { background:#E8F5E9; border:2px solid var(--sage); color:var(--sage); }
+        .s5 { background:#FFF3E0; border:2px solid var(--ext); color:var(--ext); }
+        .s6 { background:#F3E5F5; border:2px solid var(--purple); color:var(--purple); }
+        .s7 { background:#E8EAF6; border:2px solid var(--torrent); color:var(--torrent); }
+        .s8 { background:#C8E6C9; border:2px solid var(--sage); color:var(--sage); }
+        .arrow { font-size:20px; color:var(--med); }
+        .loop-back { margin-top:12px; text-align:center; font-size:11px; color:var(--ext); padding:8px; background:#FFF3E0; border-radius:20px; display:inline-block; }
+        .events { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin:20px 0; }
+        .event-card { background:#E8F0FE; border:1.5px solid var(--primary); border-radius:8px; padding:12px; }
+        .event-title { font-size:11px; font-weight:700; color:var(--primary); margin-bottom:6px; }
+        .event-desc { font-size:9px; color:var(--med); }
+        .actions-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:16px; }
+        .action-card { background:#F9F9F9; border:1px solid #E0E0E0; border-radius:6px; padding:10px; }
+        .action-title { font-size:10px; font-weight:700; margin-bottom:4px; }
+        .action-item { font-size:8px; color:var(--med); margin-bottom:2px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 BobaLink Extension Lifecycle</h1>
+        <div style="text-align:center;">
+            <div class="lifecycle">
+                <div class="step s1"><div class="step-title">📥 Install</div><div class="step-desc">from store or .crx</div><div class="step-event">onInstalled</div></div>
+                <span class="arrow">→</span>
+                <div class="step s2"><div class="step-title">🔐 Grant</div><div class="step-desc">Permissions</div><div class="step-event">permission prompt</div></div>
+                <span class="arrow">→</span>
+                <div class="step s3"><div class="step-title">⚙️ Configure</div><div class="step-desc">Server settings</div><div class="step-event">options page</div></div>
+                <span class="arrow">→</span>
+                <div class="step s4"><div class="step-title">🔍 Discover</div><div class="step-desc">Auto-detect server</div><div class="step-event">health check</div></div>
+                <span class="arrow">→</span>
+                <div class="step s5"><div class="step-title">🌐 Browse</div><div class="step-desc">Torrent sites</div><div class="step-event">any site</div></div>
+                <span class="arrow">→</span>
+                <div class="step s6"><div class="step-title">📡 Detect</div><div class="step-desc">Find links in DOM</div><div class="step-event">content script</div></div>
+                <span class="arrow">→</span>
+                <div class="step s7"><div class="step-title">📤 Send</div><div class="step-desc">To qBitTorrent</div><div class="step-event">API call</div></div>
+                <span class="arrow">→</span>
+                <div class="step s8"><div class="step-title">📊 Monitor</div><div class="step-desc">Track progress</div><div class="step-event">popup/badge</div></div>
+            </div>
+            <div class="loop-back">↩ Continue browsing → more torrents → send → monitor (repeat)</div>
+        </div>
+        <div class="events">
+            <div class="event-card"><div class="event-title">⚡ onInstalled</div><div class="event-desc">First install: initialize default config, show welcome page, request permissions. Update: show changelog, migrate data.</div></div>
+            <div class="event-card"><div class="event-title">⚡ onStartup</div><div class="event-desc">Browser restart: restore config from storage, re-initialize context menus, check server health, resume pending queue.</div></div>
+            <div class="event-card"><div class="event-title">⚡ onUpdateAvailable</div><div class="event-desc">New version: show update notification, backup current config, schedule update on next browser restart.</div></div>
+        </div>
+        <div class="actions-grid">
+            <div class="action-card" style="border-color:var(--primary);"><div class="action-title" style="color:var(--primary);">Install Stage</div><div class="action-item">• Chrome Web Store download</div><div class="action-item">• Or load unpacked developer</div><div class="action-item">• Or .crx drag-drop install</div><div class="action-item">• Welcome page displayed</div></div>
+            <div class="action-card" style="border-color:var(--gold);"><div class="action-title" style="color:var(--gold);">Permission Stage</div><div class="action-item">• Host permissions (sites)</div><div class="action-item">• storage (chrome.storage)</div><div class="action-item">• scripting (inject code)</div><div class="action-item">• tabs, contextMenus</div></div>
+            <div class="action-card" style="border-color:var(--docker);"><div class="action-title" style="color:var(--docker);">Configuration Stage</div><div class="action-item">• Enter Boba server URL</div><div class="action-item">• Set API key / auth token</div><div class="action-item">• Configure qBitTorrent URL</div><div class="action-item">• Set default category</div></div>
+            <div class="action-card" style="border-color:var(--sage);"><div class="action-title" style="color:var(--sage);">Discovery Stage</div><div class="action-item">• Auto-detect Docker services</div><div class="action-item">• Ping health endpoints</div><div class="action-item">• Verify qBitTorrent reachable</div><div class="action-item">• Show connection status</div></div>
+            <div class="action-card" style="border-color:var(--ext);"><div class="action-title" style="color:var(--ext);">Browse Stage</div><div class="action-item">• Navigate to torrent sites</div><div class="action-item">• Content script activates</div><div class="action-item">• DOM scanning starts</div><div class="action-item">• Badge count appears</div></div>
+            <div class="action-card" style="border-color:var(--purple);"><div class="action-title" style="color:var(--purple);">Detection Stage</div><div class="action-item">• Magnet links detected</div><div class="action-item">• .torrent URLs found</div><div class="action-item">• Infohashes extracted</div><div class="action-item">• Popup list populated</div></div>
+            <div class="action-card" style="border-color:var(--torrent);"><div class="action-title" style="color:var(--torrent);">Send Stage</div><div class="action-item">• Click send individual</div><div class="action-item">• Batch send tab group</div><div class="action-item">• Context menu actions</div><div class="action-item">• API communication</div></div>
+            <div class="action-card" style="border-color:var(--sage);"><div class="action-title" style="color:var(--sage);">Monitor Stage</div><div class="action-item">• Progress notifications</div><div class="action-item">• Badge count updates</div><div class="action-item">• History tracking</div><div class="action-item">• Error/retry handling</div></div>
+        </div>
+    </div>
+</body>
+</html>

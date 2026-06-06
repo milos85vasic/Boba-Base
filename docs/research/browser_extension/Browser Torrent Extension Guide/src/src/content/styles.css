@@ -1,0 +1,87 @@
+/**
+ * BobaLink Content Script Styles
+ *
+ * Styles for visual highlighting of detected torrents on web pages.
+ * Uses high-specificity selectors and !important to override page styles.
+ * All selectors are prefixed with "bobalink-" to avoid conflicts.
+ */
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Badge Style
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.bobalink-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  position: absolute !important;
+  top: -8px !important;
+  right: -8px !important;
+  z-index: 999999 !important;
+  padding: 1px 5px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+  pointer-events: none !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.3px !important;
+  text-transform: uppercase !important;
+  animation: bobalink-badge-in 0.2s ease-out !important;
+}
+
+.bobalink-badge-icon {
+  font-size: 10px !important;
+  line-height: 1 !important;
+}
+
+.bobalink-badge-text {
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+
+@keyframes bobalink-badge-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Border Style
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.bobalink-border {
+  outline: 2px solid #667eea !important;
+  outline-offset: 2px !important;
+  border-radius: 2px !important;
+  transition: outline-color 0.2s ease !important;
+}
+
+.bobalink-border:hover {
+  outline-color: #764ba2 !important;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Glow Style
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.bobalink-glow {
+  box-shadow: 0 0 8px 2px rgba(102, 126, 234, 0.6),
+    0 0 16px 4px rgba(118, 75, 162, 0.3) !important;
+  border-radius: 2px !important;
+  transition: box-shadow 0.3s ease !important;
+}
+
+.bobalink-glow:hover {
+  box-shadow: 0 0 12px 3px rgba(102, 126, 234, 0.8),
+    0 0 24px 6px rgba(118, 75, 162, 0.5) !important;
+}

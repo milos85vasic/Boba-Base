@@ -1,0 +1,83 @@
+graph LR
+    subgraph Pipeline["🏗️ Build &amp; Deployment Pipeline"]
+        direction LR
+
+        Code["💻 Code
+Git Repository
+src/ directory"]
+        Lint["🔍 Lint
+ESLint + Prettier
+Style checks"]
+        Test["🧪 Test
+Jest Unit Tests
+Coverage &gt; 80%"]
+        Build["🔨 Build
+Webpack/Vite
+Bundle + Minify"]
+        Package["📦 Package
+Extension ZIP
+Manifest validation"]
+
+        subgraph Deployments["🚀 Deployments"]
+            ChromeStore["Chrome Web Store
+$5 one-time fee
+Review: 1-3 days"]
+            AMO["Firefox AMO
+Free upload
+Review: 1-7 days"]
+            Opera["Opera Addons
+Free upload
+Review: 2-5 days"]
+            Edge["Edge Addons
+Free upload
+Review: 1-5 days"]
+            Yandex["Yandex Browser
+Free upload
+Review: 3-7 days"]
+        end
+    end
+
+    subgraph CI["⚙️ CI/CD - GitHub Actions"]
+        OnPush["on: push
+on: pull_request"]
+        OnRelease["on: release
+published"]
+        OnSchedule["on: schedule
+Weekly dependency check"]
+    end
+
+    subgraph QA["✅ Quality Gates"]
+        Coverage["Coverage ≥ 80%"]
+        NoLintErrors["0 ESLint errors"]
+        ManifestValid["Valid manifest.json"]
+        SizeCheck["Package &lt; 5MB"]
+    end
+
+    Code -->|"git push"| Lint
+    Lint -->|"Pass"| Test
+    Lint -->|"Fail"| Code
+    Test -->|"Pass"| Coverage
+    Coverage -->|"≥ 80%"| Build
+    Coverage -->|"&lt; 80%"| Code
+    Build -->|"Bundle OK"| ManifestValid
+    ManifestValid -->|"Valid"| Package
+    Package -->|"Auto-deploy"| ChromeStore
+    Package -->|"Auto-deploy"| AMO
+    Package -->|"Manual"| Opera
+    Package -->|"Auto-deploy"| Edge
+    Package -->|"Manual"| Yandex
+
+    OnPush --> Lint
+    OnRelease --> Build
+    OnSchedule --> Test
+
+    style Code fill:#E8F0FE,stroke:#2D5F8A,stroke-width:2px,color:#333
+    style Lint fill:#FFF8E1,stroke:#D4A76A,stroke-width:2px,color:#333
+    style Test fill:#E8F5E9,stroke:#4A8C6F,stroke-width:2px,color:#333
+    style Build fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#333
+    style Package fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#333
+    style ChromeStore fill:#C8E6C9,stroke:#4A8C6F,stroke-width:2px,color:#333
+    style AMO fill:#C8E6C9,stroke:#4A8C6F,stroke-width:2px,color:#333
+    style Opera fill:#FFF8E1,stroke:#D4A76A,stroke-width:2px,color:#333
+    style Edge fill:#C8E6C9,stroke:#4A8C6F,stroke-width:2px,color:#333
+    style Yandex fill:#FFF8E1,stroke:#D4A76A,stroke-width:2px,color:#333

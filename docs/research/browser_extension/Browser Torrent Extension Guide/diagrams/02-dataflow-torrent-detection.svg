@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" aria-label="BobaLink Data Flow - Torrent Detection to Download">
+  <defs>
+    <linearGradient id="webG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFF3E0"/><stop offset="100%" stop-color="#FFE0B2"/></linearGradient>
+    <linearGradient id="extG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E8F0FE"/><stop offset="100%" stop-color="#D4E4F7"/></linearGradient>
+    <linearGradient id="svcG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E3F2FD"/><stop offset="100%" stop-color="#BBDEFB"/></linearGradient>
+    <linearGradient id="qbitG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E8EAF6"/><stop offset="100%" stop-color="#C5CAE9"/></linearGradient>
+    <marker id="a2" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#666"/></marker>
+    <filter id="s2"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="1200" height="600" fill="#FAFAFA"/>
+  <text x="600" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#2D5F8A">Data Flow — Torrent Detection to Download</text>
+
+  <!-- Web Page -->
+  <rect x="20" y="60" width="200" height="220" rx="8" fill="url(#webG)" stroke="#E65100" stroke-width="2" filter="url(#s2)"/>
+  <text x="120" y="82" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#E65100">🌐 Web Page</text>
+  <rect x="35" y="95" width="170" height="40" rx="5" fill="#FFF8E1" stroke="#E65100" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="120" y="112" text-anchor="middle" font-family="system-ui" font-size="9" fill="#333">HTML DOM with links</text>
+  <text x="120" y="126" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">magnet:, .torrent, infohash</text>
+
+  <rect x="35" y="145" width="170" height="30" rx="4" fill="#FFF8E1" stroke="#E65100" stroke-width="1" filter="url(#s2)"/>
+  <text x="120" y="164" text-anchor="middle" font-family="system-ui" font-size="8" fill="#333">magnet:?xt=urn:btih:...</text>
+  <rect x="35" y="185" width="170" height="30" rx="4" fill="#FFF8E1" stroke="#E65100" stroke-width="1" filter="url(#s2)"/>
+  <text x="120" y="204" text-anchor="middle" font-family="system-ui" font-size="8" fill="#333">https://.../file.torrent</text>
+  <rect x="35" y="225" width="170" height="30" rx="4" fill="#FFF8E1" stroke="#E65100" stroke-width="1" filter="url(#s2)"/>
+  <text x="120" y="244" text-anchor="middle" font-family="system-ui" font-size="8" fill="#333">infohash: abc123...</text>
+
+  <!-- Browser Extension -->
+  <rect x="260" y="60" width="280" height="520" rx="8" fill="url(#extG)" stroke="#2D5F8A" stroke-width="2" filter="url(#s2)"/>
+  <text x="400" y="82" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#2D5F8A">🔧 Browser Extension</text>
+
+  <rect x="275" y="95" width="120" height="70" rx="5" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="335" y="115" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">Content Script</text>
+  <text x="335" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">scanner.js</text>
+  <text x="335" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">DOM observer</text>
+  <text x="335" y="154" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">link detection</text>
+
+  <rect x="405" y="95" width="120" height="70" rx="5" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="465" y="115" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">parser/</text>
+  <text x="465" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">magnet URL parser</text>
+  <text x="465" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">torrent URL parser</text>
+  <text x="465" y="154" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">hash normalizer</text>
+
+  <rect x="275" y="180" width="250" height="70" rx="5" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="400" y="202" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#333">Background Service Worker</text>
+  <text x="400" y="218" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Message router &amp; state manager</text>
+  <text x="400" y="232" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Queue management &amp; retry logic</text>
+
+  <rect x="275" y="265" width="250" height="70" rx="5" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="400" y="287" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#333">BobaAPIClient</text>
+  <text x="400" y="303" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">HTTP client with retry &amp; timeout</text>
+  <text x="400" y="317" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Request builder &amp; auth headers</text>
+
+  <rect x="275" y="350" width="250" height="70" rx="5" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="400" y="372" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#333">Popup UI</text>
+  <text x="400" y="388" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Torrent list with send controls</text>
+  <text x="400" y="402" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Status feedback &amp; notifications</text>
+
+  <!-- Flow Labels -->
+  <rect x="275" y="440" width="250" height="120" rx="5" fill="#F9F9F9" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="400" y="458" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#2D5F8A">Internal Messages</text>
+  <text x="285" y="478" font-family="system-ui" font-size="8" fill="#666">• DISCOVERED_TORRENTS (CS→BG)</text>
+  <text x="285" y="494" font-family="system-ui" font-size="8" fill="#666">• UPDATE_POPUP (BG→Popup)</text>
+  <text x="285" y="510" font-family="system-ui" font-size="8" fill="#666">• SEND_TORRENT (Popup→BG)</text>
+  <text x="285" y="526" font-family="system-ui" font-size="8" fill="#666">• SEND_COMPLETE (BG→Popup)</text>
+  <text x="285" y="542" font-family="system-ui" font-size="8" fill="#666">• chrome.runtime.sendMessage()</text>
+
+  <!-- Boba Services -->
+  <rect x="580" y="60" width="280" height="230" rx="8" fill="url(#svcG)" stroke="#1976D2" stroke-width="2" filter="url(#s2)"/>
+  <text x="720" y="82" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#1976D2">🐳 Boba Services</text>
+  <rect x="595" y="95" width="250" height="80" rx="5" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="720" y="118" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#333">FastAPI :7187</text>
+  <text x="720" y="136" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Validate &amp; enrich torrent data</text>
+  <text x="720" y="150" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Metadata lookup &amp; health checks</text>
+  <text x="720" y="164" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">POST /api/torrents/add</text>
+
+  <rect x="595" y="185" width="250" height="80" rx="5" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="720" y="208" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#333">Go Service :7189</text>
+  <text x="720" y="226" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Core torrent operations</text>
+  <text x="720" y="240" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Batch processor &amp; controller</text>
+  <text x="720" y="254" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">POST /api/torrents/batch</text>
+
+  <!-- qBitTorrent -->
+  <rect x="900" y="60" width="280" height="520" rx="8" fill="url(#qbitG)" stroke="#3F51B5" stroke-width="2" filter="url(#s2)"/>
+  <text x="1040" y="82" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#3F51B5">⬇️ qBitTorrent</text>
+  <rect x="915" y="95" width="250" height="80" rx="5" fill="#E8EAF6" stroke="#3F51B5" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="1040" y="118" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#333">WebUI :8080</text>
+  <text x="1040" y="136" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">/api/v2/torrents/add</text>
+  <text x="1040" y="150" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Cookie auth with SID</text>
+  <text x="1040" y="164" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Form-data or JSON</text>
+
+  <rect x="915" y="185" width="250" height="80" rx="5" fill="#E8EAF6" stroke="#3F51B5" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="1040" y="208" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#333">BitTorrent Engine</text>
+  <text x="1040" y="226" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">libtorrent-rasterbar</text>
+  <text x="1040" y="240" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">DHT, PEX, LSD, μTP</text>
+  <text x="1040" y="254" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Piece picker &amp; verifier</text>
+
+  <rect x="915" y="280" width="250" height="70" rx="5" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s2)"/>
+  <text x="1040" y="308" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="600" fill="#333">Downloads</text>
+  <text x="1040" y="326" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">/downloads/complete/</text>
+  <text x="1040" y="340" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Organized by category</text>
+
+  <!-- Status Return -->
+  <rect x="915" y="360" width="250" height="200" rx="5" fill="#F9F9F9" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="1040" y="380" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#3F51B5">Response Chain</text>
+  <text x="925" y="400" font-family="system-ui" font-size="8" fill="#666">① 200 OK + torrent hash</text>
+  <text x="925" y="416" font-family="system-ui" font-size="8" fill="#666">② Boba Service → APIClient</text>
+  <text x="925" y="432" font-family="system-ui" font-size="8" fill="#666">③ Promise resolved</text>
+  <text x="925" y="448" font-family="system-ui" font-size="8" fill="#666">④ BG → Popup: SEND_COMPLETE</text>
+  <text x="925" y="464" font-family="system-ui" font-size="8" fill="#666">⑤ UI updates with status</text>
+  <text x="925" y="480" font-family="system-ui" font-size="8" fill="#666">⑥ chrome.notifications shown</text>
+  <text x="925" y="496" font-family="system-ui" font-size="8" fill="#666">⑦ Hash stored in send_history</text>
+  <text x="925" y="512" font-family="system-ui" font-size="8" fill="#666">⑧ Badge count updated</text>
+  <text x="925" y="528" font-family="system-ui" font-size="8" fill="#666">⑨ Optional: auto-cleanup</text>
+  <text x="925" y="544" font-family="system-ui" font-size="8" fill="#666">⑩ Retry if queue pending</text>
+
+  <!-- Arrows -->
+  <line x1="220" y1="160" x2="275" y2="130" stroke="#E65100" stroke-width="2" marker-end="url(#a2)"/>
+  <line x1="220" y1="200" x2="275" y2="140" stroke="#E65100" stroke-width="2" marker-end="url(#a2)"/>
+  <line x1="220" y1="240" x2="275" y2="150" stroke="#E65100" stroke-width="2" marker-end="url(#a2)"/>
+
+  <line x1="395" y1="165" x2="405" y2="165" stroke="#D4A76A" stroke-width="1.5" marker-end="url(#a2)"/>
+  <line x1="335" y1="215" x2="335" y2="180" stroke="#4A8C6F" stroke-width="1.5" marker-end="url(#a2)"/>
+
+  <line x1="525" y1="215" x2="580" y2="155" stroke="#2D5F8A" stroke-width="2" marker-end="url(#a2)"/>
+  <line x1="525" y1="295" x2="595" y2="220" stroke="#2D5F8A" stroke-width="2" marker-end="url(#a2)"/>
+  <line x1="525" y1="385" x2="400" y2="420" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a2)"/>
+
+  <line x1="845" y1="150" x2="915" y2="140" stroke="#1976D2" stroke-width="2" marker-end="url(#a2)"/>
+  <line x1="845" y1="240" x2="915" y2="160" stroke="#1976D2" stroke-width="2" marker-end="url(#a2)"/>
+  <line x1="1040" y1="265" x2="1040" y2="280" stroke="#3F51B5" stroke-width="1.5" marker-end="url(#a2)"/>
+
+  <!-- Return arrows (dashed) -->
+  <line x1="1040" y1="360" x2="1040" y2="350" stroke="#4A8C6F" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a2)"/>
+  <line x1="900" y1="320" x2="580" y2="320" stroke="#4A8C6F" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a2)"/>
+  <line x1="580" y1="340" x2="260" y2="380" stroke="#4A8C6F" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a2)"/>
+
+  <!-- Legend -->
+  <rect x="20" y="560" width="1160" height="30" rx="5" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="600" y="579" text-anchor="middle" font-family="system-ui" font-size="9" fill="#666">
+    Legend: <tspan fill="#E65100" font-weight="700">── Web Page</tspan>  |  <tspan fill="#2D5F8A" font-weight="700">── Extension</tspan>  |  <tspan fill="#1976D2" font-weight="700">── Boba Services</tspan>  |  <tspan fill="#3F51B5" font-weight="700">── qBitTorrent</tspan>  |  <tspan fill="#4A8C6F" font-weight="700">- - Response</tspan>
+  </text>
+</svg>

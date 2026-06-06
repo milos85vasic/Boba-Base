@@ -1,0 +1,62 @@
+@startuml BobaLink_TabGroup_Batch_Send
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam sequenceArrowThickness 2
+
+title BobaLink — Sequence Diagram: Tab Group Batch Send
+
+actor "User" as User #F3E5F5
+participant "Context Menu\nbackground.js" as Menu #E8F0FE
+participant "Background SW\nbackground.js" as BG #E8F0FE
+participant "Tab Groups API\nchrome.tabGroups" as TGAPI #E8F5E9
+participant "Tabs API\nchrome.tabs" as TabsAPI #E8F5E9
+participant "Content Scripts\ncontent.js" as CS #FFF8E1
+participant "BobaAPIClient\napi/client.js" as API #FFF8E1
+participant "qBitTorrent\nWebUI :8080" as qBit #E8EAF6
+
+== User Initiates Batch ==
+User -> Menu: Right-click on Tab Group
+activate Menu #BBDEFB
+Menu --> User: Show context menu
+User -> Menu: Select "Send all torrents"
+Menu -> BG: contextMenus.onClicked
+deactivate Menu
+activate BG #BBDEFB
+
+== Query Tab Structure ==
+BG -> TGAPI: tabGroups.query({title})
+activate TGAPI #C8E6C9
+TGAPI --> BG: group[] with groupId
+deactivate TGAPI
+BG -> TabsAPI: tabs.query({groupId})
+activate TabsAPI #C8E6C9
+TabsAPI --> BG: tabs[] with tabId, url
+deactivate TabsAPI
+
+== Inject & Collect Per Tab ==
+loop For each tab
+    BG -> CS: scripting.executeScript({tabId})
+    activate CS #FFE0B2
+    CS -> CS: Scan DOM + parse
+    CS --> BG: [{torrents: [...]}]
+    deactivate CS
+end
+
+== Send Batch ==
+BG -> BG: Flatten & deduplicate
+BG -> API: sendBatch(torrents)
+activate API #FFE0B2
+API -> qBit: POST /torrents/add (batch)
+activate qBit #C5CAE9
+qBit -> qBit: Process all in parallel
+qBit --> API: 200 OK + results[]
+deactivate qBit
+API --> BG: {added, failed}
+deactivate API
+
+== Complete ==
+BG -> BG: Store in send_history
+BG --> User: Notification: "N added"
+deactivate BG
+
+@enduml

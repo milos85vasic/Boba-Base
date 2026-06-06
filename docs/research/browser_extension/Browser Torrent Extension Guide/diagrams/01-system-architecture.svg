@@ -1,0 +1,320 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 900" aria-label="BobaLink Browser Extension System Architecture Diagram">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="browserGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8F0FE"/>
+      <stop offset="100%" stop-color="#D4E4F7"/>
+    </linearGradient>
+    <linearGradient id="coreGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8F5E9"/>
+      <stop offset="100%" stop-color="#C8E6C9"/>
+    </linearGradient>
+    <linearGradient id="libGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFF8E1"/>
+      <stop offset="100%" stop-color="#FFE0B2"/>
+    </linearGradient>
+    <linearGradient id="storageGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5F5F5"/>
+      <stop offset="100%" stop-color="#E0E0E0"/>
+    </linearGradient>
+    <linearGradient id="dockerGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E3F2FD"/>
+      <stop offset="100%" stop-color="#BBDEFB"/>
+    </linearGradient>
+    <linearGradient id="torrentGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8EAF6"/>
+      <stop offset="100%" stop-color="#C5CAE9"/>
+    </linearGradient>
+    <linearGradient id="extGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFF3E0"/>
+      <stop offset="100%" stop-color="#FFE0B2"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#666666"/>
+    </marker>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="900" fill="#FAFAFA"/>
+
+  <!-- Title -->
+  <text x="550" y="32" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="#2D5F8A">BobaLink Browser Extension — System Architecture</text>
+
+  <!-- Browser Environment Group -->
+  <rect x="20" y="50" width="660" height="580" rx="8" fill="url(#browserGrad)" stroke="#2D5F8A" stroke-width="2" filter="url(#shadow)"/>
+  <text x="350" y="74" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#2D5F8A">🌐 Browser Environment</text>
+
+  <!-- Extension UI Layer -->
+  <rect x="35" y="85" width="310" height="140" rx="6" fill="#F9FBFD" stroke="#5B9BD5" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="190" y="102" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#2D5F8A">Extension UI Layer</text>
+
+  <rect x="45" y="112" width="90" height="50" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="130" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">Popup UI</text>
+  <text x="90" y="142" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">popup.html/js</text>
+  <text x="90" y="152" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Torrent list &amp; controls</text>
+
+  <rect x="145" y="112" width="90" height="50" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="190" y="130" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">Options Page</text>
+  <text x="190" y="142" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">options.html/js</text>
+  <text x="190" y="152" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Server configuration</text>
+
+  <rect x="245" y="112" width="90" height="50" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="290" y="130" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">Context Menu</text>
+  <text x="290" y="142" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">background.js</text>
+  <text x="290" y="152" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Right-click actions</text>
+
+  <!-- Extension Core Layer -->
+  <rect x="35" y="235" width="310" height="110" rx="6" fill="#F6FBF7" stroke="#4A8C6F" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="190" y="252" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#4A8C6F">Extension Core Layer</text>
+
+  <rect x="65" y="262" width="110" height="68" rx="4" fill="url(#coreGrad)" stroke="#4A8C6F" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="120" y="282" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#333333">Content Script</text>
+  <text x="120" y="296" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#666666">content.js</text>
+  <text x="120" y="308" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">DOM scanner &amp; injector</text>
+  <text x="120" y="320" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Torrent detection UI</text>
+
+  <rect x="205" y="262" width="110" height="68" rx="4" fill="url(#coreGrad)" stroke="#4A8C6F" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="260" y="282" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#333333">Background SW</text>
+  <text x="260" y="296" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#666666">background.js</text>
+  <text x="260" y="308" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Event handling</text>
+  <text x="260" y="320" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">API proxy &amp; queue</text>
+
+  <!-- Extension Library Layer -->
+  <rect x="35" y="355" width="310" height="120" rx="6" fill="#FDFBF6" stroke="#D4A76A" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="190" y="372" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#D4A76A">Extension Library Layer</text>
+
+  <rect x="45" y="382" width="68" height="55" rx="4" fill="url(#libGrad)" stroke="#D4A76A" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="79" y="400" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">parser/</text>
+  <text x="79" y="414" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">magnet &amp;</text>
+  <text x="79" y="426" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">.torrent</text>
+
+  <rect x="123" y="382" width="68" height="55" rx="4" fill="url(#libGrad)" stroke="#D4A76A" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="157" y="400" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">scanner/</text>
+  <text x="157" y="414" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">DOM</text>
+  <text x="157" y="426" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">detector</text>
+
+  <rect x="201" y="382" width="68" height="55" rx="4" fill="url(#libGrad)" stroke="#D4A76A" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="235" y="400" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">api/</text>
+  <text x="235" y="414" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">BobaAPI</text>
+  <text x="235" y="426" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Client</text>
+
+  <rect x="279" y="382" width="58" height="55" rx="4" fill="url(#libGrad)" stroke="#D4A76A" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="308" y="400" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">shared/</text>
+  <text x="308" y="414" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Constants</text>
+  <text x="308" y="426" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">&amp; utils</text>
+
+  <!-- Extension Storage -->
+  <rect x="35" y="485" width="310" height="80" rx="6" fill="#F8F8F8" stroke="#888888" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="190" y="502" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#666666">Extension Storage</text>
+
+  <ellipse cx="120" cy="542" rx="58" ry="18" fill="url(#storageGrad)" stroke="#666666" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="120" y="537" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-weight="600" fill="#333333">Local Storage</text>
+  <text x="120" y="549" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">extension_config</text>
+
+  <ellipse cx="260" cy="542" rx="58" ry="18" fill="url(#storageGrad)" stroke="#666666" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="260" y="537" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-weight="600" fill="#333333">Session Storage</text>
+  <text x="260" y="549" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">discovered_torrents</text>
+
+  <!-- Right Panel: Browser Feature Access -->
+  <rect x="360" y="85" width="160" height="480" rx="6" fill="#F0F7FF" stroke="#2D5F8A" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="440" y="102" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#2D5F8A">Chrome APIs Used</text>
+
+  <rect x="370" y="112" width="140" height="40" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1" filter="url(#shadow)"/>
+  <text x="440" y="130" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">chrome.runtime</text>
+  <text x="440" y="142" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Messaging API</text>
+
+  <rect x="370" y="162" width="140" height="40" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1" filter="url(#shadow)"/>
+  <text x="440" y="180" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">chrome.tabs</text>
+  <text x="440" y="192" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Tab management</text>
+
+  <rect x="370" y="212" width="140" height="40" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1" filter="url(#shadow)"/>
+  <text x="440" y="230" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">chrome.tabGroups</text>
+  <text x="440" y="242" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Group queries</text>
+
+  <rect x="370" y="262" width="140" height="40" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1" filter="url(#shadow)"/>
+  <text x="440" y="280" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">chrome.contextMenus</text>
+  <text x="440" y="292" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Right-click menu</text>
+
+  <rect x="370" y="312" width="140" height="40" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1" filter="url(#shadow)"/>
+  <text x="440" y="330" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">chrome.storage</text>
+  <text x="440" y="342" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">local &amp; session</text>
+
+  <rect x="370" y="362" width="140" height="40" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1" filter="url(#shadow)"/>
+  <text x="440" y="380" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">chrome.notifications</text>
+  <text x="440" y="392" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Desktop alerts</text>
+
+  <rect x="370" y="412" width="140" height="40" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1" filter="url(#shadow)"/>
+  <text x="440" y="430" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">fetch() API</text>
+  <text x="440" y="442" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">HTTP requests</text>
+
+  <rect x="370" y="462" width="140" height="40" rx="4" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1" filter="url(#shadow)"/>
+  <text x="440" y="480" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">chrome.downloads</text>
+  <text x="440" y="492" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">File downloads</text>
+
+  <!-- Docker Host -->
+  <rect x="540" y="50" width="540" height="330" rx="8" fill="#F0F8FF" stroke="#1976D2" stroke-width="2" filter="url(#shadow)"/>
+  <text x="810" y="74" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#1976D2">🐳 Docker Host</text>
+
+  <!-- Boba Services Network -->
+  <rect x="555" y="85" width="250" height="155" rx="6" fill="#F5FAFF" stroke="#5B9BD5" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="680" y="102" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#1976D2">Boba Services Network</text>
+
+  <rect x="565" y="112" width="230" height="55" rx="4" fill="url(#dockerGrad)" stroke="#1976D2" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="680" y="130" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#333333">Boba FastAPI Service</text>
+  <text x="680" y="144" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#666666">Port 7187 — Metadata &amp; search API</text>
+  <text x="680" y="156" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Torrent info, search, health checks</text>
+
+  <rect x="565" y="175" width="230" height="55" rx="4" fill="url(#dockerGrad)" stroke="#1976D2" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="680" y="193" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#333333">Boba Go Service</text>
+  <text x="680" y="207" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#666666">Port 7189 — Core torrent operations</text>
+  <text x="680" y="219" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Add, remove, control torrents</text>
+
+  <!-- Torrent Network -->
+  <rect x="815" y="85" width="250" height="155" rx="6" fill="#F5F7FF" stroke="#3F51B5" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="940" y="102" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#3F51B5">Torrent Network</text>
+
+  <rect x="825" y="112" width="230" height="55" rx="4" fill="url(#torrentGrad)" stroke="#3F51B5" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="940" y="130" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#333333">qBitTorrent WebUI</text>
+  <text x="940" y="144" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#666666">Port 8080 — Torrent client API</text>
+  <text x="940" y="156" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Web API for torrent management</text>
+
+  <rect x="825" y="175" width="230" height="55" rx="4" fill="#E8EAF6" stroke="#3F51B5" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="940" y="193" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#333333">qBitTorrent Database</text>
+  <text x="940" y="207" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#666666">Internal BT state storage</text>
+  <text x="940" y="219" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Resume data, settings, logs</text>
+
+  <!-- Docker Networks -->
+  <rect x="555" y="250" width="510" height="115" rx="6" fill="#F8FCF8" stroke="#4A8C6F" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="810" y="267" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" fill="#4A8C6F">Docker Networks</text>
+
+  <rect x="565" y="275" width="155" height="50" rx="4" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="642" y="293" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">boba-network</text>
+  <text x="642" y="307" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Internal service mesh</text>
+  <text x="642" y="319" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">FastAPI ↔ Go ↔ qBit</text>
+
+  <rect x="730" y="275" width="155" height="50" rx="4" fill="#FFF3E0" stroke="#E65100" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="807" y="293" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">bridge / host</text>
+  <text x="807" y="307" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">External port mapping</text>
+  <text x="807" y="319" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">7187, 7189, 8080</text>
+
+  <rect x="895" y="275" width="160" height="50" rx="4" fill="#FCE4EC" stroke="#C2185B" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="975" y="293" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#333333">Volume Mounts</text>
+  <text x="975" y="307" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">/downloads, /config</text>
+  <text x="975" y="319" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Persistent data storage</text>
+
+  <rect x="565" y="330" width="490" height="25" rx="4" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1" filter="url(#shadow)"/>
+  <text x="810" y="346" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#666666">Docker Compose: services + networks + volumes + health checks + restart policies</text>
+
+  <!-- External Services -->
+  <rect x="540" y="400" width="540" height="130" rx="8" fill="url(#extGrad)" stroke="#E65100" stroke-width="2" filter="url(#shadow)"/>
+  <text x="810" y="424" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#E65100">🌍 External Services</text>
+
+  <rect x="570" y="440" width="230" height="68" rx="4" fill="#FFF8E1" stroke="#E65100" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="685" y="462" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#333333">BitTorrent Trackers</text>
+  <text x="685" y="478" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#666666">DHT, PEX, UDP announce</text>
+  <text x="685" y="490" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Peer discovery &amp; metadata</text>
+  <text x="685" y="500" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Magnet link resolution</text>
+
+  <rect x="820" y="440" width="230" height="68" rx="4" fill="#FFF8E1" stroke="#E65100" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="935" y="462" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#333333">Web Pages / Indexers</text>
+  <text x="935" y="478" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#666666">Torrent sites &amp; search engines</text>
+  <text x="935" y="490" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">Magnet link hosting pages</text>
+  <text x="935" y="500" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="7" fill="#666666">.torrent file download pages</text>
+
+  <!-- Connection Arrows -->
+  <!-- Internal Browser Flow -->
+  <line x1="140" y1="162" x2="140" y2="235" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="240" y1="162" x2="240" y2="235" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="290" y1="162" x2="290" y2="235" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Core to Libraries -->
+  <line x1="120" y1="345" x2="120" y2="355" stroke="#4A8C6F" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="260" y1="345" x2="260" y2="355" stroke="#4A8C6F" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Libraries to Storage -->
+  <line x1="120" y1="475" x2="120" y2="485" stroke="#D4A76A" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="260" y1="475" x2="260" y2="485" stroke="#D4A76A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Core to Core -->
+  <line x1="175" y1="296" x2="205" y2="296" stroke="#4A8C6F" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Content Script to Background -->
+  <line x1="315" y1="296" x2="360" y2="296" stroke="#4A8C6F" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="360" y1="282" x2="315" y2="282" stroke="#4A8C6F" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Background to API Client -->
+  <line x1="315" y1="320" x2="350" y2="410" stroke="#D4A76A" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Extension to Docker Host -->
+  <line x1="345" y1="410" x2="565" y2="139" stroke="#1976D2" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="345" y1="430" x2="565" y2="202" stroke="#1976D2" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Docker Internal -->
+  <line x1="795" y1="139" x2="825" y2="139" stroke="#3F51B5" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="795" y1="202" x2="825" y2="202" stroke="#3F51B5" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="940" y1="167" x2="940" y2="175" stroke="#3F51B5" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- qBitTorrent to External -->
+  <line x1="940" y1="230" x2="940" y2="400" stroke="#E65100" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="825" y1="474" x2="735" y2="474" stroke="#E65100" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Web Pages to Content Script -->
+  <line x1="820" y1="474" x2="680" y2="580" stroke="#E65100" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow)"/>
+  <line x1="175" y1="580" x2="175" y2="630" stroke="#2D5F8A" stroke-width="1.5"/>
+
+  <!-- Port Labels -->
+  <rect x="530" y="185" width="35" height="18" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1"/>
+  <text x="547" y="197" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-weight="600" fill="#1976D2">:7187</text>
+
+  <rect x="530" y="248" width="35" height="18" rx="4" fill="#E3F2FD" stroke="#1976D2" stroke-width="1"/>
+  <text x="547" y="260" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-weight="600" fill="#1976D2">:7189</text>
+
+  <rect x="1055" y="131" width="35" height="18" rx="4" fill="#E8EAF6" stroke="#3F51B5" stroke-width="1"/>
+  <text x="1072" y="143" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-weight="600" fill="#3F51B5">:8080</text>
+
+  <!-- Footer / Legend -->
+  <rect x="20" y="650" width="1060" height="230" rx="8" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="1" filter="url(#shadow)"/>
+  <text x="550" y="674" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#333333">Architecture Legend &amp; Communication Flows</text>
+
+  <!-- Legend Items -->
+  <rect x="40" y="688" width="16" height="12" rx="3" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1.5"/>
+  <text x="62" y="698" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#333333">UI Layer</text>
+
+  <rect x="130" y="688" width="16" height="12" rx="3" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5"/>
+  <text x="152" y="698" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#333333">Core Layer</text>
+
+  <rect x="230" y="688" width="16" height="12" rx="3" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1.5"/>
+  <text x="252" y="698" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#333333">Library Layer</text>
+
+  <rect x="340" y="688" width="16" height="12" rx="3" fill="#E3F2FD" stroke="#1976D2" stroke-width="1.5"/>
+  <text x="362" y="698" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#333333">Docker Service</text>
+
+  <rect x="460" y="688" width="16" height="12" rx="3" fill="#E8EAF6" stroke="#3F51B5" stroke-width="1.5"/>
+  <text x="482" y="698" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#333333">Torrent Client</text>
+
+  <rect x="580" y="688" width="16" height="12" rx="3" fill="#FFF3E0" stroke="#E65100" stroke-width="1.5"/>
+  <text x="602" y="698" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#333333">External Service</text>
+
+  <rect x="710" y="688" width="16" height="12" rx="3" fill="#F5F5F5" stroke="#666666" stroke-width="1.5"/>
+  <text x="732" y="698" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#333333">Storage</text>
+
+  <!-- Flow Description -->
+  <rect x="40" y="710" width="1020" height="155" rx="6" fill="#F9F9F9" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="60" y="730" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#2D5F8A">Primary Data Flow — Single Torrent:</text>
+  <text x="60" y="748" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#555555">① Content Script scans DOM → ② Magnet/torrent links detected → ③ Background SW receives message → ④ BobaAPIClient sends HTTP request</text>
+  <text x="60" y="764" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#555555">⑤ Boba Service (FastAPI/Go) validates → ⑥ qBitTorrent WebUI API receives add request → ⑦ Torrent added to client → ⑧ Status returned to Popup</text>
+
+  <text x="60" y="790" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#4A8C6F">Batch Processing Flow — Tab Groups:</text>
+  <text x="60" y="808" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#555555">① User opens context menu on Tab Group → ② Background SW queries chrome.tabGroups → ③ chrome.tabs.query for each group</text>
+  <text x="60" y="824" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#555555">④ Content Script injected per tab → ⑤ All torrents collected → ⑥ Batch API call to Boba Service → ⑦ All torrents added to qBitTorrent</text>
+
+  <text x="60" y="850" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#D4A76A">Security &amp; Error Handling:</text>
+  <text x="60" y="868" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#555555">HTTPS for all external communication | Credentials stored with chrome.storage.local | Offscreen document for crypto operations</text>
+  <text x="60" y="884" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#555555">Retry queue for offline scenarios | Rate limiting | CSP headers | Permission validation for all API calls</text>
+
+  <!-- Version -->
+  <text x="1060" y="870" text-anchor="end" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#999999">BobaLink Architecture v1.0</text>
+</svg>

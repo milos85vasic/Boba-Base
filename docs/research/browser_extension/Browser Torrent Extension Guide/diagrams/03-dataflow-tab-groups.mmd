@@ -1,0 +1,82 @@
+%% BobaLink — Data Flow: Tab Groups Batch Processing
+%% Shows how tab groups are queried, processed, and sent as a batch
+
+graph TB
+    subgraph UserAction["👤 User Action"]
+        RightClick["Right-click on<br/>Tab Group"]
+        SelectMenu["Select 'Send all<br/>torrents to qBit'"]
+    end
+
+    subgraph Background["🔧 Background Service Worker"]
+        direction TB
+        ContextMenuHandler["contextMenus.onClicked<br/>listener"]
+        QueryGroups["chrome.tabGroups.query<br/>{title: groupName}"]
+        QueryTabs["chrome.tabs.query<br/>{groupId: gid}"]
+        CollectResults["Collect torrents[]<br/>from all tabs"]
+        BatchAPI["BobaAPIClient<br/>sendBatch()"]
+    end
+
+    subgraph TabGroup["📑 Tab Group"]
+        direction LR
+        Tab1["Tab 1<br/>torrentsite.a"]
+        Tab2["Tab 2<br/>torrentsite.b"]
+        Tab3["Tab 3<br/>torrentsite.c"]
+        TabN["Tab N<br/>..."]
+    end
+
+    subgraph ContentScripts["📄 Content Scripts"]
+        CS1["content.js<br/>scan &amp; extract"]
+        CS2["content.js<br/>scan &amp; extract"]
+        CS3["content.js<br/>scan &amp; extract"]
+        CSN["content.js<br/>scan &amp; extract"]
+    end
+
+    subgraph BobaSvc["🐳 Boba Services"]
+        BatchEndpoint["POST /api/torrents/batch<br/>JSON array of magnets"]
+    end
+
+    subgraph qBitTorrent["⬇️ qBitTorrent"]
+        BatchAdd["/api/v2/torrents/add<br/>multiple urls"]
+        Result["All torrents<br/>added ✓"]
+    end
+
+    RightClick --> SelectMenu
+    SelectMenu -->|"contextMenu click<br/>info.menuItemId"| ContextMenuHandler
+    ContextMenuHandler -->|"Get groupId from<br/>info.parentMenuItemId"| QueryGroups
+    QueryGroups -->|"Returns group<br/>object with id"| QueryTabs
+    QueryTabs -->|"Array of tab<br/>objects"| Tab1
+    QueryTabs --> Tab2
+    QueryTabs --> Tab3
+    QueryTabs --> TabN
+
+    Tab1 -.->|"chrome.scripting<br/>.executeScript"| CS1
+    Tab2 -.->|"chrome.scripting<br/>.executeScript"| CS2
+    Tab3 -.->|"chrome.scripting<br/>.executeScript"| CS3
+    TabN -.->|"chrome.scripting<br/>.executeScript"| CSN
+
+    CS1 -->|"RETURN_TORRENTS<br/>{torrents: [...]}"| CollectResults
+    CS2 -->|"RETURN_TORRENTS"| CollectResults
+    CS3 -->|"RETURN_TORRENTS"| CollectResults
+    CSN -->|"RETURN_TORRENTS"| CollectResults
+
+    CollectResults -->|"Flatten &amp; dedupe<br/>torrents[]"| BatchAPI
+    BatchAPI -->|"HTTP POST<br/>JSON body"| BatchEndpoint
+    BatchEndpoint -->|"Proxy request"| BatchAdd
+    BatchAdd --> Result
+
+    Result -.->|"200 OK + results[]"| BatchAPI
+    BatchAPI -.->|"Show notification<br/>X torrents added"| Background
+
+    classDef userLayer fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#333
+    classDef bgLayer fill:#E8F0FE,stroke:#2D5F8A,stroke-width:2px,color:#333
+    classDef tabLayer fill:#E8F5E9,stroke:#4A8C6F,stroke-width:2px,color:#333
+    classDef csLayer fill:#FFF8E1,stroke:#D4A76A,stroke-width:2px,color:#333
+    classDef bobaLayer fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#333
+    classDef qbitLayer fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#333
+
+    class RightClick,SelectMenu userLayer
+    class ContextMenuHandler,QueryGroups,QueryTabs,CollectResults,BatchAPI bgLayer
+    class Tab1,Tab2,Tab3,TabN tabLayer
+    class CS1,CS2,CS3,CSN csLayer
+    class BatchEndpoint bobaLayer
+    class BatchAdd,Result qbitLayer

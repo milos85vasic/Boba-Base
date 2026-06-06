@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BobaLink</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="header-brand">
+        <img src="../assets/icon-32.png" alt="BobaLink" class="header-icon" id="header-icon">
+        <h1 class="header-title">BobaLink</h1>
+      </div>
+      <div class="header-status" id="connection-status" title="Connection status">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-text" id="status-text">Checking...</span>
+      </div>
+    </header>
+
+    <!-- Connection Warning -->
+    <div class="connection-warning" id="connection-warning" style="display: none;">
+      <span class="warning-icon">&#9888;</span>
+      <span>No server configured. <a href="#" id="open-options">Open Options</a></span>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar" id="toolbar">
+      <button class="btn btn-secondary btn-sm" id="btn-select-all" title="Select All">
+        Select All
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btn-deselect-all" title="Deselect All">
+        Deselect
+      </button>
+      <button class="btn btn-primary btn-sm" id="btn-refresh" title="Refresh">
+        &#128260;
+      </button>
+    </div>
+
+    <!-- Torrent List -->
+    <div class="torrent-list" id="torrent-list">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">&#128269;</div>
+        <div class="empty-title">No torrents detected</div>
+        <div class="empty-subtitle">Browse a torrent site to detect magnet links and .torrent files</div>
+        <button class="btn btn-primary" id="btn-scan-page">Scan Page</button>
+      </div>
+    </div>
+
+    <!-- Footer / Actions -->
+    <footer class="popup-footer" id="popup-footer" style="display: none;">
+      <div class="selection-info" id="selection-info">0 selected</div>
+      <button class="btn btn-primary btn-send" id="btn-send" disabled>
+        Send to Boba
+      </button>
+    </footer>
+
+    <!-- Progress Overlay -->
+    <div class="progress-overlay" id="progress-overlay" style="display: none;">
+      <div class="progress-spinner"></div>
+      <div class="progress-text" id="progress-text">Sending...</div>
+    </div>
+  </div>
+
+  <script type="module" src="./popup.ts"></script>
+</body>
+</html>

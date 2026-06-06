@@ -1,0 +1,52 @@
+stateDiagram-v2
+    [*] --> Idle: Extension starts
+    Idle --> Pending: Torrent detected
+
+    Pending --> Sending: Online detected
+    Pending --> Queued: Offline detected
+    Pending --> Retry: Send failed
+
+    Sending --> Completed: 200 OK
+    Sending --> Failed: 4xx/5xx error
+    Sending --> Retry: Timeout
+
+    Queued --> Pending: Back online
+    Queued --> Failed: Max age exceeded
+
+    Retry --> Sending: Retry attempt
+    Retry --> Failed: Max retries exceeded
+    Retry --> Queued: Still offline
+
+    Completed --> [*]: Cleanup after TTL
+    Failed --> Pending: User retries
+    Failed --> [*]: Abandoned
+
+    note right of Pending
+        Torrent detected in DOM
+        Awaiting send trigger
+    end note
+
+    note right of Sending
+        HTTP request in flight
+        BobaAPIClient active
+    end note
+
+    note right of Queued
+        Device offline
+        Stored for later retry
+    end note
+
+    note right of Retry
+        Exponential backoff
+        1s → 2s → 4s → 8s
+    end note
+
+    note right of Completed
+        200 OK received
+        Added to send_history
+    end note
+
+    note right of Failed
+        Irrecoverable error
+        Logged for review
+    end note

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BobaLink Cross-Browser Compatibility</title>
+    <style>
+        :root { --primary:#2D5F8A; --sage:#4A8C6F; --gold:#D4A76A; --dark:#333; --med:#666; --docker:#1976D2; --torrent:#3F51B5; --ext:#E65100; --purple:#7B1FA2; --error:#C75450; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:system-ui,sans-serif; background:#FAFAFA; padding:24px; }
+        .container { max-width:1200px; margin:0 auto; background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:32px; }
+        h1 { text-align:center; color:var(--primary); font-size:22px; margin-bottom:20px; }
+        table { width:100%; border-collapse:collapse; margin:16px 0; }
+        th { padding:12px 8px; text-align:center; font-size:12px; font-weight:700; border-radius:6px 6px 0 0; }
+        th.feature { background:linear-gradient(90deg,var(--primary),var(--sage)); color:white; text-align:left; width:30%; }
+        th.chrome { background:#E8F0FE; color:var(--primary); border:2px solid var(--primary); }
+        th.firefox { background:#E8F5E9; color:var(--sage); border:2px solid var(--sage); }
+        th.opera { background:#FFF8E1; color:var(--gold); border:2px solid var(--gold); }
+        th.edge { background:#E3F2FD; color:var(--docker); border:2px solid var(--docker); }
+        th.yandex { background:#F3E5F5; color:var(--purple); border:2px solid var(--purple); }
+        td { padding:10px 8px; text-align:center; font-size:11px; border-bottom:1px solid #F0F0F0; }
+        td.fname { text-align:left; font-weight:600; color:var(--dark); background:#F9F9F9; }
+        td.full { background:#E8F5E9; color:var(--sage); font-weight:700; }
+        td.partial { background:#FFF8E1; color:#E65100; font-weight:700; }
+        td.none { background:#FFEBEE; color:var(--error); font-weight:700; }
+        tr:hover td { background:#F0F7FF; }
+        .legend { display:flex; gap:20px; justify-content:center; margin:16px 0; flex-wrap:wrap; }
+        .leg-item { display:flex; align-items:center; gap:6px; font-size:11px; }
+        .leg-box { width:20px; height:20px; border-radius:4px; }
+        .notes { margin-top:16px; padding:12px; background:#F9F9F9; border-radius:8px; border:1px solid #E0E0E0; }
+        .notes h3 { font-size:13px; margin-bottom:8px; color:var(--gold); }
+        .notes p { font-size:10px; color:var(--med); line-height:1.6; margin-bottom:4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cross-Browser Compatibility Matrix</h1>
+        <div class="legend">
+            <div class="leg-item"><div class="leg-box" style="background:#E8F5E9;border:1px solid var(--sage);"></div><span><strong>✓ Full</strong> — Native support</span></div>
+            <div class="leg-item"><div class="leg-box" style="background:#FFF8E1;border:1px solid #E65100;"></div><span><strong>⚠ Partial</strong> — Polyfill or workaround</span></div>
+            <div class="leg-item"><div class="leg-box" style="background:#FFEBEE;border:1px solid var(--error);"></div><span><strong>✗ No</strong> — Not supported</span></div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th class="feature">Feature</th>
+                    <th class="chrome">Chrome</th>
+                    <th class="firefox">Firefox</th>
+                    <th class="opera">Opera</th>
+                    <th class="edge">Edge</th>
+                    <th class="yandex">Yandex</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td class="fname">Core Torrent Detection</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">Tab Group Batch Send</td><td class="full">✓ Full</td><td class="partial">⚠ Partial</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">Context Menu Actions</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">Service Worker</td><td class="full">✓ MV3</td><td class="partial">⚠ MV2</td><td class="full">✓ MV3</td><td class="full">✓ MV3</td><td class="full">✓ MV3</td></tr>
+                <tr><td class="fname">Offscreen Document</td><td class="full">✓ Full</td><td class="none">✗ N/A</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">chrome.storage.session</td><td class="full">✓ Full</td><td class="none">✗ No</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">chrome.scripting API</td><td class="full">✓ Full</td><td class="partial">⚠ Polyfill</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">chrome.notifications</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">Auto-Update</td><td class="full">✓ Store</td><td class="full">✓ Store</td><td class="full">✓ Store</td><td class="full">✓ Store</td><td class="partial">⚠ Manual</td></tr>
+                <tr><td class="fname">Credential Encryption</td><td class="full">✓ Full</td><td class="partial">⚠ Fallback</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">Background Message</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">Badge Counter</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">Popup UI</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">Options Page</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+                <tr><td class="fname">Content Script Injection</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td><td class="full">✓ Full</td></tr>
+            </tbody>
+        </table>
+        <div class="notes">
+            <h3>⚠️ Browser-Specific Notes</h3>
+            <p><strong>Firefox:</strong> Tab Groups API not available (uses tab query fallback). Offscreen Document not supported (uses background page crypto via Web Crypto API). storage.session replaced with localStorage fallback. MV2 uses background page instead of service worker. scripting API uses browser.tabs.executeScript via webextension-polyfill. All core features work with polyfills.</p>
+            <p><strong>Yandex:</strong> Requires Opera extension package format. Auto-update must be checked manually via Yandex extension store. All Chromium APIs fully supported.</p>
+            <p><strong>Opera/Edge:</strong> Fully Chromium compatible. Edge uses same package as Chrome. Opera requires manifest key in package.</p>
+            <p><strong>Chrome:</strong> Reference implementation platform. All MV3 APIs used natively. No polyfills required.</p>
+        </div>
+    </div>
+</body>
+</html>

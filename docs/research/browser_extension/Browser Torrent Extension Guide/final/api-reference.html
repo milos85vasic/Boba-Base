@@ -1,0 +1,2984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BobaLink Browser Extension</title>
+<style>
+/* ===== Page Setup ===== */
+@page {
+  size: A4;
+  margin: 2.5cm 2cm;
+}
+@page :first {
+  margin: 0;
+}
+@page toc {
+  margin: 2.5cm 2cm;
+}
+
+/* ===== Reset & Base ===== */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  color: #333;
+  background: #fff;
+}
+
+* {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+pre, code, table, img, svg, .mermaid, blockquote {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* ===== Cover Page ===== */
+.cover {
+  width: 210mm;
+  height: 297mm;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.cover::before {
+  content: '';
+  position: absolute;
+  top: 20mm;
+  left: 20mm;
+  right: 20mm;
+  bottom: 20mm;
+  border: 2px solid #2D5F8A;
+}
+
+.cover::after {
+  content: '';
+  position: absolute;
+  top: 25mm;
+  left: 25mm;
+  right: 25mm;
+  bottom: 25mm;
+  border: 1px solid #4A8C6F;
+}
+
+.cover-accent {
+  position: absolute;
+  top: 30mm;
+  left: 30mm;
+  width: 60mm;
+  height: 4px;
+  background: #2D5F8A;
+}
+
+.cover-accent-bottom {
+  position: absolute;
+  bottom: 30mm;
+  right: 30mm;
+  width: 40mm;
+  height: 4px;
+  background: #4A8C6F;
+}
+
+.cover-corner-tl {
+  position: absolute;
+  top: 20mm;
+  left: 20mm;
+  width: 10mm;
+  height: 10mm;
+  border-top: 4px solid #2D5F8A;
+  border-left: 4px solid #2D5F8A;
+}
+
+.cover-corner-br {
+  position: absolute;
+  bottom: 20mm;
+  right: 20mm;
+  width: 10mm;
+  height: 10mm;
+  border-bottom: 4px solid #2D5F8A;
+  border-right: 4px solid #2D5F8A;
+}
+
+.cover-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 70%;
+}
+
+.cover-title {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 32pt;
+  font-weight: 700;
+  color: #2D5F8A;
+  margin-bottom: 1cm;
+  line-height: 1.2;
+}
+
+.cover-subtitle {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16pt;
+  color: #4A8C6F;
+  margin-bottom: 2cm;
+  font-weight: 400;
+}
+
+.cover-meta {
+  font-size: 12pt;
+  color: #666;
+  line-height: 2;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.cover-classification {
+  position: absolute;
+  bottom: 45mm;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 10pt;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ===== TOC Page ===== */
+.toc-page {
+  page-break-after: always;
+  page: toc;
+}
+
+.toc-page h2 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 22pt;
+  color: #2D5F8A;
+  border-bottom: 2px solid #2D5F8A;
+  padding-bottom: 8pt;
+  margin-bottom: 20pt;
+  margin-top: 0;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-list li {
+  padding: 6pt 0;
+  border-bottom: 1px solid #e0e0e0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11pt;
+}
+
+.toc-list li:last-child {
+  border-bottom: none;
+}
+
+.toc-num {
+  display: inline-block;
+  width: 24pt;
+  color: #2D5F8A;
+  font-weight: 600;
+}
+
+.toc-list a {
+  color: #333;
+  text-decoration: none;
+}
+
+.toc-list a:hover {
+  color: #2D5F8A;
+}
+
+/* ===== Content Headings ===== */
+.content {
+  page-break-before: always;
+}
+
+.content h1 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 26pt;
+  color: #2D5F8A;
+  border-bottom: 3px solid #2D5F8A;
+  padding-bottom: 10pt;
+  margin-top: 0;
+  margin-bottom: 18pt;
+  page-break-after: avoid;
+}
+
+.content h2 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 18pt;
+  color: #2D5F8A;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 6pt;
+  margin-top: 28pt;
+  margin-bottom: 14pt;
+  page-break-after: avoid;
+}
+
+.content h3 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14pt;
+  color: #3a6d9a;
+  margin-top: 22pt;
+  margin-bottom: 10pt;
+  page-break-after: avoid;
+}
+
+.content h4 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12pt;
+  color: #444;
+  font-weight: 600;
+  margin-top: 16pt;
+  margin-bottom: 8pt;
+  page-break-after: avoid;
+}
+
+/* ===== Paragraphs ===== */
+.content p {
+  margin: 8pt 0;
+  text-align: left;
+  orphans: 3;
+  widows: 3;
+}
+
+/* ===== Tables (Three-line style) ===== */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12pt 0;
+  font-size: 10pt;
+  page-break-inside: auto;
+}
+
+.content table thead {
+  display: table-header-group;
+}
+
+.content table thead tr {
+  border-top: 2.5px solid #333;
+  border-bottom: 1.5px solid #333;
+}
+
+.content table thead th {
+  padding: 8pt 6pt;
+  text-align: left;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  color: #2D5F8A;
+  background: #fafafa;
+}
+
+.content table tbody tr {
+  border-bottom: 0.5px solid #ddd;
+}
+
+.content table tbody tr:last-child {
+  border-bottom: 2.5px solid #333;
+}
+
+.content table tbody td {
+  padding: 6pt;
+  vertical-align: top;
+}
+
+.content table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+/* ===== Code Blocks ===== */
+.content pre {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 0;
+  padding: 10pt 12pt;
+  margin: 12pt 0;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 9pt;
+  line-height: 1.45;
+  page-break-inside: avoid;
+}
+
+.content code {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 9.5pt;
+  background: #f5f5f5;
+  padding: 1pt 3pt;
+  border-radius: 0;
+}
+
+.content pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 9pt;
+}
+
+/* ===== Blockquotes ===== */
+.content blockquote {
+  border-left: 4px solid #2D5F8A;
+  margin: 12pt 0;
+  padding: 8pt 16pt;
+  background: #f8f9fa;
+  color: #555;
+  font-style: italic;
+}
+
+/* ===== Lists ===== */
+.content ul, .content ol {
+  margin: 8pt 0;
+  padding-left: 24pt;
+}
+
+.content li {
+  margin: 3pt 0;
+}
+
+/* ===== Links ===== */
+.content a {
+  color: #2D5F8A;
+  text-decoration: none;
+}
+
+/* ===== Mermaid Diagrams ===== */
+.mermaid {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 16pt;
+  margin: 14pt 0;
+  text-align: center;
+  font-family: 'Consolas', monospace;
+  font-size: 9pt;
+  color: #666;
+  page-break-inside: avoid;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.mermaid::before {
+  content: '[Diagram]';
+  display: block;
+  font-family: system-ui, sans-serif;
+  font-size: 8pt;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8pt;
+}
+
+/* ===== Horizontal Rules ===== */
+.content hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 20pt 0;
+}
+
+/* ===== Print Optimizations ===== */
+@media print {
+  .content h1, .content h2, .content h3, .content h4 {
+    page-break-after: avoid;
+  }
+  .content pre, .content table, .content blockquote, .mermaid {
+    page-break-inside: avoid;
+  }
+  .content tr {
+    page-break-inside: avoid;
+  }
+}
+
+/* ===== Strong/Emphasis ===== */
+.content strong {
+  color: #2a2a2a;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== COVER PAGE ===== -->
+<div class="cover">
+  <div class="cover-corner-tl"></div>
+  <div class="cover-corner-br"></div>
+  <div class="cover-accent"></div>
+  <div class="cover-accent-bottom"></div>
+  <div class="cover-content">
+    <div class="cover-title">BobaLink Browser Extension</div>
+    <div class="cover-subtitle">API Reference</div>
+    <div class="cover-meta">
+      <strong>Version:</strong> 1.0.0<br>
+      <strong>Date:</strong> 2026-06-06<br>
+      <strong>Classification:</strong> Public — Developer Reference
+    </div>
+  </div>
+  <div class="cover-classification">Public — Developer Reference</div>
+</div>
+
+<!-- ===== TABLE OF CONTENTS ===== -->
+<div class="toc-page">
+  <h2>Table of Contents</h2>
+  <ul class="toc-list">
+    <li><span class="toc-num">1.</span> <a href="#1-overview">Overview</a></li>
+    <li><span class="toc-num">2.</span> <a href="#2-internal-extension-apis">Internal Extension APIs</a></li>
+    <li><span class="toc-num">3.</span> <a href="#3-boba-api-integration">Boba API Integration</a></li>
+    <li><span class="toc-num">4.</span> <a href="#4-qbittorrent-webui-api-reference">qBitTorrent WebUI API Reference</a></li>
+    <li><span class="toc-num">5.</span> <a href="#5-typescript-type-definitions">TypeScript Type Definitions</a></li>
+    <li><span class="toc-num">6.</span> <a href="#6-error-codes-and-handling">Error Codes and Handling</a></li>
+    <li><span class="toc-num">7.</span> <a href="#7-rate-limiting">Rate Limiting</a></li>
+    <li><span class="toc-num">8.</span> <a href="#8-version-compatibility-matrix">Version Compatibility Matrix</a></li>
+  </ul>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="content">
+<h2 id="1-overview">1. Overview</h2>
+<p>This document provides exhaustive API reference material for three categories of interfaces:</p>
+<ol>
+<li><strong>Internal Extension APIs</strong>: The message-passing protocol between content scripts, service worker, popup, and options page.</li>
+<li><strong>Boba API Integration</strong>: RESTful endpoints exposed by the Boba orchestration server, including authentication, search, download, and SSE streaming.</li>
+<li><strong>qBitTorrent WebUI API</strong>: Complete endpoint documentation for direct qBitTorrent integration, including all parameters and curl/JS fetch examples.</li>
+</ol>
+<p>All code examples are provided in <strong>curl</strong>, <strong>JavaScript (fetch)</strong>, and <strong>TypeScript</strong> where applicable. Request and response schemas are specified in TypeScript interface notation.</p>
+<h3 id="base-urls">Base URLs</h3>
+<table>
+<thead>
+<tr>
+<th>Environment</th>
+<th>Boba Base URL</th>
+<th>qBitTorrent Base URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local (default)</td>
+<td><code>https://boba.local:8443</code></td>
+<td><code>https://localhost:8080</code></td>
+</tr>
+<tr>
+<td>Docker</td>
+<td><code>https://boba:8443</code></td>
+<td><code>https://qbittorrent:8080</code></td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>User-configured</td>
+<td>User-configured</td>
+</tr>
+</tbody>
+</table>
+<h3 id="authentication-summary">Authentication Summary</h3>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Auth Method</th>
+<th>Header / Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Boba REST</td>
+<td>API Key</td>
+<td><code>X-API-Key: {key}</code> or <code>Authorization: Bearer {jwt}</code></td>
+</tr>
+<tr>
+<td>Boba SSE</td>
+<td>API Key</td>
+<td><code>X-API-Key: {key}</code></td>
+</tr>
+<tr>
+<td>qBitTorrent</td>
+<td>Cookie</td>
+<td>Automatic <code>SID</code> cookie after <code>/auth/login</code></td>
+</tr>
+<tr>
+<td>qBitTorrent (alt)</td>
+<td>Basic Auth</td>
+<td><code>Authorization: Basic {base64}</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-internal-extension-apis">2. Internal Extension APIs</h2>
+<p>The extension uses <code>chrome.runtime.sendMessage()</code> for communication between scripts. All messages follow a uniform envelope format.</p>
+<h3 id="21-message-envelope">2.1 Message Envelope</h3>
+<pre><code class="language-typescript">interface ExtensionMessage&lt;T = unknown&gt; {
+  /** Message type discriminator */
+  type: MessageType;
+
+  /** Request correlation ID for async response matching */
+  requestId?: string;
+
+  /** Message payload — type depends on `type` */
+  payload: T;
+
+  /** Sender context (auto-populated by runtime) */
+  sender?: {
+    tabId?: number;
+    frameId?: number;
+    url?: string;
+  };
+}
+
+type MessageType =
+  | 'SCAN_REQUEST'
+  | 'SCAN_RESPONSE'
+  | 'TORRENT_DETECTED'
+  | 'SEND_TORRENT'
+  | 'SEND_BATCH'
+  | 'GET_STATUS'
+  | 'STATUS_RESPONSE'
+  | 'GET_QUEUE'
+  | 'QUEUE_RESPONSE'
+  | 'RETRY_ITEM'
+  | 'REMOVE_ITEM'
+  | 'CLEAR_QUEUE'
+  | 'GET_CONFIG'
+  | 'CONFIG_RESPONSE'
+  | 'UPDATE_CONFIG'
+  | 'CONFIG_UPDATED'
+  | 'GET_HEALTH'
+  | 'HEALTH_RESPONSE'
+  | 'DISCOVER_SERVERS'
+  | 'DISCOVERY_RESPONSE'
+  | 'TEST_CONNECTION'
+  | 'CONNECTION_TEST_RESULT';
+</code></pre>
+<h3 id="22-scan_request">2.2 SCAN_REQUEST</h3>
+<p>Sent from the service worker (or popup) to a content script to trigger a page scan.</p>
+<p><strong>Direction</strong>: Service Worker → Content Script<br />
+<strong>Delivery</strong>: <code>chrome.tabs.sendMessage(tabId, message)</code></p>
+<pre><code class="language-typescript">interface ScanRequestPayload {
+  /** Unique request identifier for correlation */
+  requestId: string;
+
+  /** When true, scan invisible/hidden links as well */
+  deepScan: boolean;
+
+  /** Optional CSS selector to scope the scan */
+  scope?: string;
+}
+</code></pre>
+<p><strong>Example — Sending from Service Worker:</strong></p>
+<pre><code class="language-typescript">// TypeScript
+const requestId = crypto.randomUUID();
+const response = await chrome.tabs.sendMessage(tabId, {
+  type: 'SCAN_REQUEST',
+  requestId,
+  payload: { requestId, deepScan: false }
+});
+</code></pre>
+<pre><code class="language-javascript">// JavaScript
+const requestId = crypto.randomUUID();
+chrome.tabs.sendMessage(tabId, {
+  type: 'SCAN_REQUEST',
+  requestId,
+  payload: { requestId, deepScan: false }
+}, (response) =&gt; {
+  if (chrome.runtime.lastError) {
+    console.error('Scan failed:', chrome.runtime.lastError.message);
+    return;
+  }
+  console.log('Found torrents:', response.payload.torrents);
+});
+</code></pre>
+<h3 id="23-scan_response">2.3 SCAN_RESPONSE</h3>
+<p>Sent from the content script back to the service worker with scan results.</p>
+<p><strong>Direction</strong>: Content Script → Service Worker<br />
+<strong>Response to</strong>: <code>SCAN_REQUEST</code></p>
+<pre><code class="language-typescript">interface ScanResponsePayload {
+  /** Correlation ID matching the SCAN_REQUEST */
+  requestId: string;
+
+  /** Detected torrents (deduplicated by content script) */
+  torrents: TorrentInfo[];
+
+  /** Error message if scan failed */
+  error?: string;
+
+  /** Metadata about the scan */
+  meta: {
+    linksScanned: number;
+    magnetsFound: number;
+    torrentFilesFound: number;
+    scanDurationMs: number;
+  };
+}
+</code></pre>
+<h3 id="24-torrent_detected">2.4 TORRENT_DETECTED</h3>
+<p>Sent proactively by the content script when magnet links or torrent file links are detected during normal browsing (via <code>MutationObserver</code>).</p>
+<p><strong>Direction</strong>: Content Script → Service Worker<br />
+<strong>Delivery</strong>: <code>chrome.runtime.sendMessage(message)</code></p>
+<pre><code class="language-typescript">interface TorrentDetectedPayload {
+  /** Array of newly detected torrents */
+  torrents: TorrentInfo[];
+
+  /** URL of the page where detection occurred */
+  pageUrl: string;
+
+  /** Unix timestamp (ms) of detection */
+  timestamp: number;
+}
+</code></pre>
+<p><strong>Example — Content Script Detection:</strong></p>
+<pre><code class="language-typescript">const magnetLinks = document.querySelectorAll('a[href^=&quot;magnet:?&quot;]');
+const torrents = Array.from(magnetLinks).map(parseMagnetElement);
+
+if (torrents.length &gt; 0) {
+  chrome.runtime.sendMessage({
+    type: 'TORRENT_DETECTED',
+    payload: {
+      torrents,
+      pageUrl: location.href,
+      timestamp: Date.now()
+    }
+  });
+}
+</code></pre>
+<h3 id="25-send_torrent">2.5 SEND_TORRENT</h3>
+<p>Queue or immediately send a single torrent to the configured download server.</p>
+<p><strong>Direction</strong>: Popup/Context Menu → Service Worker</p>
+<pre><code class="language-typescript">interface SendTorrentPayload {
+  /** The torrent to send */
+  torrent: TorrentInfo;
+
+  /** Send immediately even if queue has items */
+  priority?: 'normal' | 'high';
+
+  /** Override default category for this send */
+  category?: string;
+
+  /** Override default tags for this send */
+  tags?: string[];
+}
+</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code class="language-typescript">chrome.runtime.sendMessage({
+  type: 'SEND_TORRENT',
+  payload: {
+    torrent: detectedTorrent,
+    priority: 'high',
+    category: 'movies'
+  }
+});
+</code></pre>
+<h3 id="26-send_batch">2.6 SEND_BATCH</h3>
+<p>Send multiple torrents as a single batch operation.</p>
+<p><strong>Direction</strong>: Tab Manager → Service Worker</p>
+<pre><code class="language-typescript">interface SendBatchPayload {
+  /** Array of torrents to send */
+  torrents: TorrentInfo[];
+
+  /** Optional category override for the entire batch */
+  category?: string;
+
+  /** Source tab group ID, for logging */
+  tabGroupId?: number;
+}
+</code></pre>
+<p><strong>Response:</strong></p>
+<pre><code class="language-typescript">interface SendBatchResponse {
+  /** Number of torrents successfully queued/sent */
+  accepted: number;
+
+  /** Number of torrents rejected (e.g., duplicates) */
+  rejected: number;
+
+  /** Number of torrents that failed immediately */
+  failed: number;
+
+  /** Detailed results per torrent */
+  results: Array&lt;{
+    infohash: string;
+    status: 'queued' | 'sent' | 'duplicate' | 'failed';
+    error?: string;
+  }&gt;;
+}
+</code></pre>
+<h3 id="27-get_status">2.7 GET_STATUS</h3>
+<p>Request the current connection and queue status.</p>
+<p><strong>Direction</strong>: Popup → Service Worker<br />
+<strong>Response</strong>: <code>STATUS_RESPONSE</code></p>
+<pre><code class="language-typescript">// Request has empty payload
+interface GetStatusPayload {}
+
+interface StatusResponsePayload {
+  /** Server connection state */
+  connection: 'connected' | 'connecting' | 'disconnected' | 'error';
+
+  /** Server URL being used */
+  serverUrl: string;
+
+  /** Server version, if connected */
+  serverVersion?: string;
+
+  /** Number of items in the offline queue */
+  queueSize: number;
+
+  /** Number of items currently retrying */
+  pendingCount: number;
+
+  /** Number of items in dead-letter state */
+  deadLetterCount: number;
+
+  /** Last successful health check timestamp */
+  lastHealthCheck?: number;
+
+  /** Extension version */
+  extensionVersion: string;
+}
+</code></pre>
+<h3 id="28-queue-management-messages">2.8 Queue Management Messages</h3>
+<h4 id="get_queue">GET_QUEUE</h4>
+<pre><code class="language-typescript">interface GetQueuePayload {
+  /** Filter by status; omit for all */
+  filter?: 'pending' | 'retrying' | 'failed' | 'dead-letter';
+
+  /** Maximum items to return (default 100) */
+  limit?: number;
+
+  /** Offset for pagination */
+  offset?: number;
+}
+
+interface QueueResponsePayload {
+  items: QueueItem[];
+  total: number;
+  filtered: number;
+}
+</code></pre>
+<h4 id="retry_item">RETRY_ITEM</h4>
+<pre><code class="language-typescript">interface RetryItemPayload {
+  /** Queue item ID to retry */
+  itemId: string;
+}
+</code></pre>
+<h4 id="remove_item">REMOVE_ITEM</h4>
+<pre><code class="language-typescript">interface RemoveItemPayload {
+  /** Queue item ID to remove */
+  itemId: string;
+}
+</code></pre>
+<h4 id="clear_queue">CLEAR_QUEUE</h4>
+<pre><code class="language-typescript">interface ClearQueuePayload {
+  /** Clear only items matching this status; omit for all */
+  status?: 'pending' | 'retrying' | 'failed' | 'dead-letter';
+}
+</code></pre>
+<h3 id="29-configuration-messages">2.9 Configuration Messages</h3>
+<h4 id="get_config">GET_CONFIG</h4>
+<pre><code class="language-typescript">// Request: empty payload
+// Response: full ExtensionConfig object (see Type Definitions section)
+</code></pre>
+<h4 id="update_config">UPDATE_CONFIG</h4>
+<pre><code class="language-typescript">interface UpdateConfigPayload {
+  /** Partial config update — only provided fields are merged */
+  config: DeepPartial&lt;ExtensionConfig&gt;;
+}
+</code></pre>
+<p>The service worker validates all fields, applies the merge, and persists to encrypted storage. A <code>CONFIG_UPDATED</code> event is broadcast to all listening contexts.</p>
+<h3 id="210-discovery-messages">2.10 Discovery Messages</h3>
+<h4 id="discover_servers">DISCOVER_SERVERS</h4>
+<pre><code class="language-typescript">interface DiscoverServersPayload {
+  /** Probe timeout in ms (default 5000) */
+  timeout?: number;
+
+  /** Specific IP addresses to probe; uses defaults if omitted */
+  targets?: string[];
+}
+</code></pre>
+<h4 id="discovery_response">DISCOVERY_RESPONSE</h4>
+<pre><code class="language-typescript">interface DiscoveryResponsePayload {
+  /** Discovered server endpoints */
+  servers: Array&lt;{
+    url: string;
+    name: string;
+    version: string;
+    responseTimeMs: number;
+    healthy: boolean;
+  }&gt;;
+
+  /** Number of targets probed */
+  targetsProbed: number;
+
+  /** Scan duration in ms */
+  durationMs: number;
+}
+</code></pre>
+<hr />
+<h2 id="3-boba-api-integration">3. Boba API Integration</h2>
+<p>The Boba server acts as a proxy and orchestration layer between the extension and qBitTorrent. It provides additional capabilities including search aggregation, metadata enrichment, and SSE-based progress streaming.</p>
+<h3 id="31-authentication">3.1 Authentication</h3>
+<h4 id="post-apiv1authtoken">POST /api/v1/auth/token</h4>
+<p>Exchange an API key for a short-lived JWT token.</p>
+<p><strong>Request:</strong></p>
+<pre><code class="language-typescript">interface AuthTokenRequest {
+  /** Boba API key (from server admin) */
+  apiKey: string;
+}
+</code></pre>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST https://boba.local:8443/api/v1/auth/token \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{&quot;apiKey&quot;: &quot;bob_live_abc123xyz&quot;}'
+</code></pre>
+<p><strong>JavaScript (fetch):</strong></p>
+<pre><code class="language-javascript">const response = await fetch('https://boba.local:8443/api/v1/auth/token', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ apiKey: 'bob_live_abc123xyz' })
+});
+const data = await response.json();
+// data.token — JWT for subsequent requests
+// data.expiresAt — Unix timestamp of expiry
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIs...&quot;,
+  &quot;expiresAt&quot;: 1735689600,
+  &quot;type&quot;: &quot;Bearer&quot;
+}
+</code></pre>
+<p><strong>Response (401 Unauthorized):</strong></p>
+<pre><code class="language-json">{
+  &quot;error&quot;: &quot;E_AUTH_INVALID_KEY&quot;,
+  &quot;message&quot;: &quot;The provided API key is invalid or revoked.&quot;
+}
+</code></pre>
+<h4 id="post-apiv1authrefresh">POST /api/v1/auth/refresh</h4>
+<p>Refresh an expiring JWT token.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST https://boba.local:8443/api/v1/auth/refresh \
+  -H &quot;Authorization: Bearer eyJhbGciOiJIUzI1NiIs...&quot;
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIs...new...&quot;,
+  &quot;expiresAt&quot;: 1735776000
+}
+</code></pre>
+<h3 id="32-health-check">3.2 Health Check</h3>
+<h4 id="get-apiv1health">GET /api/v1/health</h4>
+<p>Check Boba server availability and version. No authentication required.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl https://boba.local:8443/api/v1/health
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">const response = await fetch('https://boba.local:8443/api/v1/health');
+const data = await response.json();
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  &quot;status&quot;: &quot;healthy&quot;,
+  &quot;version&quot;: &quot;1.4.2&quot;,
+  &quot;uptime&quot;: 86400,
+  &quot;extensions&quot;: {
+    &quot;qbittorrent&quot;: &quot;connected&quot;,
+    &quot;search&quot;: &quot;available&quot;,
+    &quot;metadata&quot;: &quot;available&quot;
+  }
+}
+</code></pre>
+<h3 id="33-search-api">3.3 Search API</h3>
+<h4 id="get-apiv1torrentssearch">GET /api/v1/torrents/search</h4>
+<p>Search for torrents across configured indexers.</p>
+<p><strong>Query Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>Search query string</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td>string</td>
+<td>No</td>
+<td>Filter by category (e.g., <code>movies</code>, <code>tv</code>, <code>music</code>)</td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td>integer</td>
+<td>No</td>
+<td>Max results (default 50, max 100)</td>
+</tr>
+<tr>
+<td><code>offset</code></td>
+<td>integer</td>
+<td>No</td>
+<td>Pagination offset</td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl &quot;https://boba.local:8443/api/v1/torrents/search?q=inception+2010&amp;category=movies&amp;limit=10&quot; \
+  -H &quot;X-API-Key: bob_live_abc123xyz&quot;
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">const params = new URLSearchParams({
+  q: 'inception 2010',
+  category: 'movies',
+  limit: '10'
+});
+const response = await fetch(
+  `https://boba.local:8443/api/v1/torrents/search?${params}`,
+  { headers: { 'X-API-Key': 'bob_live_abc123xyz' } }
+);
+const data = await response.json();
+</code></pre>
+<p><strong>Response (200 OK):</strong></p>
+<pre><code class="language-json">{
+  &quot;results&quot;: [
+    {
+      &quot;infohash&quot;: &quot;a1b2c3d4e5f6789012345678901234567890abcd&quot;,
+      &quot;displayName&quot;: &quot;Inception (2010) 1080p BluRay&quot;,
+      &quot;magnetUri&quot;: &quot;magnet:?xt=urn:btih:a1b2c3d4e5f6789012345678901234567890abcd&amp;dn=Inception+(2010)+1080p+BluRay&amp;tr=...&quot;,
+      &quot;size&quot;: 2147483648,
+      &quot;seeders&quot;: 150,
+      &quot;leechers&quot;: 25,
+      &quot;source&quot;: &quot;1337x&quot;,
+      &quot;category&quot;: &quot;movies&quot;,
+      &quot;uploadedAt&quot;: &quot;2026-01-15T08:30:00Z&quot;
+    }
+  ],
+  &quot;total&quot;: 47,
+  &quot;query&quot;: &quot;inception 2010&quot;,
+  &quot;categories&quot;: [&quot;movies&quot;, &quot;tv&quot;]
+}
+</code></pre>
+<h3 id="34-download-api">3.4 Download API</h3>
+<h4 id="post-apiv1torrentsdownload">POST /api/v1/torrents/download</h4>
+<p>Submit a torrent for download via Boba.</p>
+<p><strong>Request Body:</strong></p>
+<pre><code class="language-typescript">interface DownloadRequest {
+  /** Magnet URI or infohash */
+  magnetUri?: string;
+  infohash?: string;
+
+  /** Category for qBitTorrent */
+  category?: string;
+
+  /** Tags for qBitTorrent */
+  tags?: string[];
+
+  /** Override download path */
+  savePath?: string;
+
+  /** Rename the torrent */
+  rename?: string;
+
+  /** Pause after adding */
+  paused?: boolean;
+
+  /** Skip hash check */
+  skipChecking?: boolean;
+
+  /** Sequential download */
+  sequentialDownload?: boolean;
+
+  /** First/last piece priority */
+  firstLastPiecePrio?: boolean;
+}
+</code></pre>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST https://boba.local:8443/api/v1/torrents/download \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;X-API-Key: bob_live_abc123xyz&quot; \
+  -d '{
+    &quot;infohash&quot;: &quot;a1b2c3d4e5f6789012345678901234567890abcd&quot;,
+    &quot;category&quot;: &quot;movies&quot;,
+    &quot;tags&quot;: [&quot;1080p&quot;, &quot;blu-ray&quot;],
+    &quot;sequentialDownload&quot;: false
+  }'
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">const response = await fetch('https://boba.local:8443/api/v1/torrents/download', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'bob_live_abc123xyz'
+  },
+  body: JSON.stringify({
+    infohash: 'a1b2c3d4e5f6789012345678901234567890abcd',
+    category: 'movies',
+    tags: ['1080p', 'blu-ray']
+  })
+});
+const data = await response.json();
+</code></pre>
+<p><strong>Response (202 Accepted):</strong></p>
+<pre><code class="language-json">{
+  &quot;jobId&quot;: &quot;job_abc123&quot;,
+  &quot;status&quot;: &quot;queued&quot;,
+  &quot;infohash&quot;: &quot;a1b2c3d4e5f6789012345678901234567890abcd&quot;,
+  &quot;estimatedStart&quot;: &quot;2026-06-06T12:05:00Z&quot;
+}
+</code></pre>
+<p><strong>Response (409 Conflict — duplicate):</strong></p>
+<pre><code class="language-json">{
+  &quot;error&quot;: &quot;E_DUPLICATE&quot;,
+  &quot;message&quot;: &quot;Torrent already exists in download queue&quot;,
+  &quot;existingInfohash&quot;: &quot;a1b2c3d4e5f6789012345678901234567890abcd&quot;
+}
+</code></pre>
+<h3 id="35-sse-streaming">3.5 SSE Streaming</h3>
+<h4 id="get-apiv1eventsdownload-progress">GET /api/v1/events/download-progress</h4>
+<p>Real-time download progress via Server-Sent Events.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl &quot;https://boba.local:8443/api/v1/events/download-progress&quot; \
+  -H &quot;X-API-Key: bob_live_abc123xyz&quot; \
+  -H &quot;Accept: text/event-stream&quot; \
+  --no-buffer
+</code></pre>
+<p><strong>JavaScript (EventSource):</strong></p>
+<pre><code class="language-javascript">const evtSource = new EventSource(
+  'https://boba.local:8443/api/v1/events/download-progress?apiKey=bob_live_abc123xyz'
+);
+
+evtSource.addEventListener('progress', (event) =&gt; {
+  const data = JSON.parse(event.data);
+  console.log(`Torrent ${data.infohash}: ${(data.progress * 100).toFixed(1)}%`);
+  console.log(`Speed: ${formatBytes(data.speed)}/s, ETA: ${data.eta}s`);
+});
+
+evtSource.addEventListener('completed', (event) =&gt; {
+  const data = JSON.parse(event.data);
+  console.log(`Torrent completed: ${data.infohash}`);
+});
+
+evtSource.addEventListener('error', (event) =&gt; {
+  console.error('SSE connection error');
+  // Auto-reconnect handled by EventSource
+});
+</code></pre>
+<p><strong>Event Types:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Data Fields</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>progress</code></td>
+<td><code>infohash, progress, speed, eta, downloaded, total</code></td>
+<td>Periodic progress update</td>
+</tr>
+<tr>
+<td><code>completed</code></td>
+<td><code>infohash, completionTime, ratio</code></td>
+<td>Download finished</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>infohash, error, code</code></td>
+<td>Download error</td>
+</tr>
+<tr>
+<td><code>stopped</code></td>
+<td><code>infohash, reason</code></td>
+<td>Download paused/stopped</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Progress Event Schema:</strong></p>
+<pre><code class="language-typescript">interface ProgressEvent {
+  infohash: string;
+  progress: number;      // 0.0 to 1.0
+  speed: number;         // Bytes per second
+  eta: number;           // Estimated seconds remaining
+  downloaded: number;    // Bytes downloaded
+  total: number;         // Total bytes
+  numSeeds: number;
+  numLeechs: number;
+  state: 'downloading' | 'stalledDL' | 'checkingDL' | 'metaDL';
+}
+</code></pre>
+<hr />
+<h2 id="4-qbittorrent-webui-api-reference">4. qBitTorrent WebUI API Reference</h2>
+<p>This section documents the qBitTorrent WebUI API endpoints used by BobaLink. All endpoints are relative to the configured qBitTorrent base URL (e.g., <code>https://localhost:8080</code>).</p>
+<h3 id="41-authentication">4.1 Authentication</h3>
+<h4 id="post-apiv2authlogin">POST /api/v2/auth/login</h4>
+<p>Authenticate and establish a session.</p>
+<p><strong>Request:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>username</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>WebUI username</td>
+</tr>
+<tr>
+<td><code>password</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>WebUI password</td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/auth/login&quot; \
+  -H &quot;Content-Type: application/x-www-form-urlencoded&quot; \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -d &quot;username=admin&quot; \
+  -d &quot;password=adminadmin&quot; \
+  -c cookies.txt
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">const params = new URLSearchParams();
+params.append('username', 'admin');
+params.append('password', 'adminadmin');
+
+const response = await fetch('https://localhost:8080/api/v2/auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Referer': 'https://localhost:8080'
+  },
+  body: params,
+  credentials: 'include'  // Important: accept and send cookies
+});
+
+if (response.status === 200) {
+  const body = await response.text();
+  // body === &quot;Ok.SID&quot; on success
+  console.log('Login successful, SID cookie set');
+} else {
+  console.error('Login failed');
+}
+</code></pre>
+<p><strong>Response:</strong><br />
+- <strong>200 OK</strong> with body <code>Ok.SID</code> — Success, <code>SID</code> cookie set.<br />
+- <strong>403 Forbidden</strong> — Invalid credentials.<br />
+- <strong>429 Too Many Requests</strong> — Too many failed login attempts.</p>
+<p><strong>Important Notes:</strong><br />
+- The <code>Referer</code> header MUST match the qBitTorrent origin or the request will be rejected.<br />
+- The <code>SID</code> cookie is automatically managed by the browser's cookie store.<br />
+- Call <code>/api/v2/auth/logout</code> to terminate the session.</p>
+<h4 id="post-apiv2authlogout">POST /api/v2/auth/logout</h4>
+<p>Terminate the current session.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/auth/logout&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>Response:</strong> 200 OK (always succeeds, even if session was already expired).</p>
+<h3 id="42-torrent-management">4.2 Torrent Management</h3>
+<h4 id="post-apiv2torrentsadd">POST /api/v2/torrents/add</h4>
+<p>Add one or more torrents (magnet URIs or <code>.torrent</code> files).</p>
+<p><strong>Request Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>urls</code></td>
+<td>string</td>
+<td>No*</td>
+<td>Magnet URIs or HTTP links, newline-separated</td>
+</tr>
+<tr>
+<td><code>torrents</code></td>
+<td>file</td>
+<td>No*</td>
+<td><code>.torrent</code> file(s) as multipart upload</td>
+</tr>
+<tr>
+<td><code>savepath</code></td>
+<td>string</td>
+<td>No</td>
+<td>Download directory path</td>
+</tr>
+<tr>
+<td><code>cookie</code></td>
+<td>string</td>
+<td>No</td>
+<td>Cookie to send with download request</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td>string</td>
+<td>No</td>
+<td>Category to assign</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>string</td>
+<td>No</td>
+<td>Comma-separated tags</td>
+</tr>
+<tr>
+<td><code>skip_checking</code></td>
+<td>string (<code>true</code>/<code>false</code>)</td>
+<td>No</td>
+<td>Skip hash check</td>
+</tr>
+<tr>
+<td><code>paused</code></td>
+<td>string (<code>true</code>/<code>false</code>)</td>
+<td>No</td>
+<td>Add paused</td>
+</tr>
+<tr>
+<td><code>root_folder</code></td>
+<td>string (<code>true</code>/<code>false</code>)</td>
+<td>No</td>
+<td>Create root folder</td>
+</tr>
+<tr>
+<td><code>rename</code></td>
+<td>string</td>
+<td>No</td>
+<td>Rename torrent</td>
+</tr>
+<tr>
+<td><code>upLimit</code></td>
+<td>integer</td>
+<td>No</td>
+<td>Upload limit (bytes/s)</td>
+</tr>
+<tr>
+<td><code>dlLimit</code></td>
+<td>integer</td>
+<td>No</td>
+<td>Download limit (bytes/s)</td>
+</tr>
+<tr>
+<td><code>ratioLimit</code></td>
+<td>float</td>
+<td>No</td>
+<td>Share ratio limit</td>
+</tr>
+<tr>
+<td><code>seedingTimeLimit</code></td>
+<td>integer</td>
+<td>No</td>
+<td>Seeding time limit (minutes)</td>
+</tr>
+<tr>
+<td><code>autoTMM</code></td>
+<td>string (<code>true</code>/<code>false</code>)</td>
+<td>No</td>
+<td>Automatic Torrent Management</td>
+</tr>
+<tr>
+<td><code>sequentialDownload</code></td>
+<td>string (<code>true</code>/<code>false</code>)</td>
+<td>No</td>
+<td>Sequential download</td>
+</tr>
+<tr>
+<td><code>firstLastPiecePrio</code></td>
+<td>string (<code>true</code>/<code>false</code>)</td>
+<td>No</td>
+<td>First/last piece priority</td>
+</tr>
+</tbody>
+</table>
+<p>* At least one of <code>urls</code> or <code>torrents</code> must be provided.</p>
+<p><strong>curl — Magnet URI:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/torrents/add&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -F &quot;urls=magnet:?xt=urn:btih:a1b2c3d4e5f6789012345678901234567890abcd&amp;dn=Example&quot; \
+  -F &quot;category=movies&quot; \
+  -F &quot;tags=hd,2026&quot; \
+  -F &quot;paused=false&quot;
+</code></pre>
+<p><strong>curl — .torrent File:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/torrents/add&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -F &quot;torrents=@/path/to/file.torrent&quot; \
+  -F &quot;category=software&quot; \
+  -F &quot;sequentialDownload=true&quot;
+</code></pre>
+<p><strong>JavaScript — Magnet URI:</strong></p>
+<pre><code class="language-javascript">const formData = new FormData();
+formData.append('urls',
+  'magnet:?xt=urn:btih:a1b2c3d4e5f6789012345678901234567890abcd&amp;dn=Example'
+);
+formData.append('category', 'movies');
+formData.append('tags', 'hd,2026');
+
+const response = await fetch('https://localhost:8080/api/v2/torrents/add', {
+  method: 'POST',
+  headers: { 'Referer': 'https://localhost:8080' },
+  body: formData,
+  credentials: 'include'
+});
+
+if (response.status === 200) {
+  console.log('Torrent added successfully');
+} else if (response.status === 415) {
+  console.error('Torrent file type not supported');
+} else {
+  console.error('Add failed:', response.status);
+}
+</code></pre>
+<p><strong>JavaScript — .torrent File:</strong></p>
+<pre><code class="language-javascript">const fileInput = document.getElementById('torrent-file');
+const file = fileInput.files[0];
+
+const formData = new FormData();
+formData.append('torrents', file, file.name);
+formData.append('category', 'software');
+
+const response = await fetch('https://localhost:8080/api/v2/torrents/add', {
+  method: 'POST',
+  headers: { 'Referer': 'https://localhost:8080' },
+  body: formData,
+  credentials: 'include'
+});
+</code></pre>
+<p><strong>Response Codes:</strong><br />
+| Status | Meaning |<br />
+|---|---|<br />
+| 200 | Success — torrent(s) added |<br />
+| 400 | Bad Request — missing urls/torrents |<br />
+| 403 | Not authenticated |<br />
+| 415 | Unsupported Media Type |<br />
+| 500 | Internal Server Error |</p>
+<h4 id="get-apiv2torrentsinfo">GET /api/v2/torrents/info</h4>
+<p>List all torrents with optional filtering.</p>
+<p><strong>Query Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>filter</code></td>
+<td>string</td>
+<td><code>all</code>, <code>downloading</code>, <code>seeding</code>, <code>completed</code>, <code>paused</code>, <code>active</code>, <code>inactive</code>, <code>resumed</code>, <code>stalled</code>, <code>stalled_uploading</code>, <code>stalled_downloading</code>, <code>errored</code></td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td>string</td>
+<td>Filter by category</td>
+</tr>
+<tr>
+<td><code>tag</code></td>
+<td>string</td>
+<td>Filter by tag</td>
+</tr>
+<tr>
+<td><code>sort</code></td>
+<td>string</td>
+<td>Sort column (e.g., <code>name</code>, <code>progress</code>, <code>added_on</code>)</td>
+</tr>
+<tr>
+<td><code>reverse</code></td>
+<td>boolean</td>
+<td>Reverse sort order</td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td>integer</td>
+<td>Max results</td>
+</tr>
+<tr>
+<td><code>offset</code></td>
+<td>integer</td>
+<td>Pagination offset</td>
+</tr>
+<tr>
+<td><code>hashes</code></td>
+<td>string</td>
+<td>Pipe-separated infohashes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash"># All downloading torrents
+curl &quot;https://localhost:8080/api/v2/torrents/info?filter=downloading&amp;limit=50&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+
+# Specific torrent by hash
+curl &quot;https://localhost:8080/api/v2/torrents/info?hashes=a1b2c3d4e5f6789012345678901234567890abcd&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">const params = new URLSearchParams({
+  filter: 'downloading',
+  sort: 'progress',
+  reverse: 'true',
+  limit: '50'
+});
+
+const response = await fetch(
+  `https://localhost:8080/api/v2/torrents/info?${params}`,
+  {
+    headers: { 'Referer': 'https://localhost:8080' },
+    credentials: 'include'
+  }
+);
+const torrents = await response.json();
+
+for (const t of torrents) {
+  console.log(`${t.name}: ${(t.progress * 100).toFixed(1)}%`);
+  console.log(`  Speed: DL ${t.dlspeed} / UL ${t.upspeed}`);
+  console.log(`  State: ${t.state}, ETA: ${t.eta}`);
+}
+</code></pre>
+<p><strong>Response (Array of Torrent objects):</strong></p>
+<pre><code class="language-json">[
+  {
+    &quot;hash&quot;: &quot;a1b2c3d4e5f6789012345678901234567890abcd&quot;,
+    &quot;name&quot;: &quot;Ubuntu 24.04 LTS Desktop&quot;,
+    &quot;magnet_uri&quot;: &quot;magnet:?xt=urn:btih:a1b2c3d4...&quot;,
+    &quot;size&quot;: 6270988288,
+    &quot;progress&quot;: 0.7534,
+    &quot;dlspeed&quot;: 5242880,
+    &quot;upspeed&quot;: 1048576,
+    &quot;priority&quot;: 1,
+    &quot;num_seeds&quot;: 150,
+    &quot;num_complete&quot;: 2500,
+    &quot;num_leechs&quot;: 25,
+    &quot;num_incomplete&quot;: 50,
+    &quot;ratio&quot;: 0.125,
+    &quot;eta&quot;: 1800,
+    &quot;state&quot;: &quot;downloading&quot;,
+    &quot;seq_dl&quot;: false,
+    &quot;f_l_piece_prio&quot;: false,
+    &quot;category&quot;: &quot;linux&quot;,
+    &quot;tags&quot;: &quot;iso,official&quot;,
+    &quot;super_seeding&quot;: false,
+    &quot;force_start&quot;: false,
+    &quot;save_path&quot;: &quot;/downloads/linux&quot;,
+    &quot;added_on&quot;: 1717776000,
+    &quot;completion_on&quot;: 0,
+    &quot;tracker&quot;: &quot;https://torrent.ubuntu.com/announce&quot;,
+    &quot;dl_limit&quot;: 0,
+    &quot;up_limit&quot;: 0,
+    &quot;downloaded&quot;: 4724464025,
+    &quot;uploaded&quot;: 590558003,
+    &quot;downloaded_session&quot;: 1048576000,
+    &quot;uploaded_session&quot;: 209715200,
+    &quot;amount_left&quot;: 1546524263,
+    &quot;completed&quot;: 0,
+    &quot;max_ratio&quot;: -1,
+    &quot;max_seeding_time&quot;: -1,
+    &quot;seen_complete&quot;: 1717779600,
+    &quot;last_activity&quot;: 1717783200,
+    &quot;total_size&quot;: 6270988288,
+    &quot;time_active&quot;: 7200,
+    &quot;seeding_time&quot;: 0,
+    &quot;seeding_time_limit&quot;: -1,
+    &quot;availability&quot;: 1.85,
+    &quot;reannounce&quot;: 0,
+    &quot;stalled&quot;: false
+  }
+]
+</code></pre>
+<h4 id="post-apiv2torrentsdelete">POST /api/v2/torrents/delete</h4>
+<p>Delete one or more torrents.</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hashes</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>Pipe-separated infohashes, or <code>all</code></td>
+</tr>
+<tr>
+<td><code>deleteFiles</code></td>
+<td>string (<code>true</code>/<code>false</code>)</td>
+<td>No</td>
+<td>Also delete downloaded files</td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/torrents/delete&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -d &quot;hashes=a1b2c3d4e5f6789012345678901234567890abcd&quot; \
+  -d &quot;deleteFiles=false&quot;
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">const params = new URLSearchParams();
+params.append('hashes', 'a1b2c3d4e5f6789012345678901234567890abcd');
+params.append('deleteFiles', 'false');
+
+await fetch('https://localhost:8080/api/v2/torrents/delete', {
+  method: 'POST',
+  headers: { 'Referer': 'https://localhost:8080' },
+  body: params,
+  credentials: 'include'
+});
+</code></pre>
+<p><strong>Response:</strong> 200 OK (no body).</p>
+<h4 id="post-apiv2torrentspause">POST /api/v2/torrents/pause</h4>
+<p>Pause torrent(s).</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hashes</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>Pipe-separated infohashes, or <code>all</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/torrents/pause&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -d &quot;hashes=a1b2c3d4e5f6789012345678901234567890abcd&quot;
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">await fetch('https://localhost:8080/api/v2/torrents/pause', {
+  method: 'POST',
+  headers: { 'Referer': 'https://localhost:8080' },
+  body: new URLSearchParams({
+    hashes: 'a1b2c3d4e5f6789012345678901234567890abcd'
+  }),
+  credentials: 'include'
+});
+</code></pre>
+<h4 id="post-apiv2torrentsstart">POST /api/v2/torrents/start</h4>
+<p>Resume paused torrent(s).</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hashes</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>Pipe-separated infohashes, or <code>all</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/torrents/start&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -d &quot;hashes=a1b2c3d4e5f6789012345678901234567890abcd|b2c3d4e5f6789012345678901234567890abcde1&quot;
+</code></pre>
+<h4 id="post-apiv2torrentsrecheck">POST /api/v2/torrents/recheck</h4>
+<p>Force recheck of torrent(s).</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hashes</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>Pipe-separated infohashes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/torrents/recheck&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -d &quot;hashes=a1b2c3d4e5f6789012345678901234567890abcd&quot;
+</code></pre>
+<h4 id="post-apiv2torrentsreannounce">POST /api/v2/torrents/reannounce</h4>
+<p>Force reannounce to tracker(s).</p>
+<p><strong>Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hashes</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>Pipe-separated infohashes</td>
+</tr>
+</tbody>
+</table>
+<h3 id="43-categories-and-tags">4.3 Categories and Tags</h3>
+<h4 id="get-apiv2torrentscategories">GET /api/v2/torrents/categories</h4>
+<p>List all categories.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl &quot;https://localhost:8080/api/v2/torrents/categories&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">const response = await fetch(
+  'https://localhost:8080/api/v2/torrents/categories',
+  {
+    headers: { 'Referer': 'https://localhost:8080' },
+    credentials: 'include'
+  }
+);
+const categories = await response.json();
+// Returns: { &quot;movies&quot;: { &quot;name&quot;: &quot;movies&quot;, &quot;savePath&quot;: &quot;/downloads/movies&quot; }, ... }
+</code></pre>
+<h4 id="post-apiv2torrentscreatecategory">POST /api/v2/torrents/createCategory</h4>
+<p>Create a new category.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>category</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>Category name</td>
+</tr>
+<tr>
+<td><code>savePath</code></td>
+<td>string</td>
+<td>No</td>
+<td>Default save path</td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/torrents/createCategory&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -d &quot;category=4k-movies&quot; \
+  -d &quot;savePath=/downloads/movies/4k&quot;
+</code></pre>
+<h4 id="get-apiv2torrentstags">GET /api/v2/torrents/tags</h4>
+<p>List all tags.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl &quot;https://localhost:8080/api/v2/torrents/tags&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>Response:</strong> <code>["hd", "1080p", "bluray", "2026"]</code></p>
+<h4 id="post-apiv2torrentsaddtags">POST /api/v2/torrents/addTags</h4>
+<p>Add tags to torrent(s).</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>hashes</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>Pipe-separated infohashes, or <code>all</code></td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>string</td>
+<td>Yes</td>
+<td>Comma-separated tags</td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/torrents/addTags&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -d &quot;hashes=a1b2c3d4e5f6789012345678901234567890abcd&quot; \
+  -d &quot;tags=important,seeding&quot;
+</code></pre>
+<h3 id="44-synchronization">4.4 Synchronization</h3>
+<h4 id="get-apiv2syncmaindata">GET /api/v2/sync/maindata</h4>
+<p>Get incremental sync data (all torrents, categories, tags, server state).</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rid</code></td>
+<td>integer</td>
+<td>Yes</td>
+<td>Response ID; use <code>0</code> for initial sync, then last received <code>rid</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash"># Initial sync
+curl &quot;https://localhost:8080/api/v2/sync/maindata?rid=0&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+
+# Incremental sync (using last rid=42)
+curl &quot;https://localhost:8080/api/v2/sync/maindata?rid=42&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">class QBitTorrentSync {
+  private rid = 0;
+  private intervalId: number | null = null;
+
+  startPolling(intervalMs = 2000) {
+    this.intervalId = window.setInterval(async () =&gt; {
+      const response = await fetch(
+        `https://localhost:8080/api/v2/sync/maindata?rid=${this.rid}`,
+        {
+          headers: { 'Referer': 'https://localhost:8080' },
+          credentials: 'include'
+        }
+      );
+      const data = await response.json();
+      this.rid = data.rid;
+      this.handleUpdate(data);
+    }, intervalMs);
+  }
+
+  private handleUpdate(data: MainDataResponse) {
+    if (data.torrents) {
+      // Full torrent data (initial sync)
+      console.log('Full sync:', Object.keys(data.torrents).length, 'torrents');
+    }
+    if (data.torrents_removed) {
+      console.log('Removed:', data.torrents_removed);
+    }
+    if (data.categories) {
+      console.log('Categories updated:', data.categories);
+    }
+    if (data.server_state) {
+      console.log('Global speeds:',
+        `DL ${data.server_state.dl_info_speed}`,
+        `UL ${data.server_state.up_info_speed}`
+      );
+    }
+  }
+
+  stop() {
+    if (this.intervalId) clearInterval(this.intervalId);
+  }
+}
+</code></pre>
+<p><strong>Response:</strong></p>
+<pre><code class="language-json">{
+  &quot;rid&quot;: 43,
+  &quot;full_update&quot;: false,
+  &quot;torrents&quot;: {
+    &quot;a1b2c3d4...&quot;: {
+      &quot;progress&quot;: 0.7534,
+      &quot;dlspeed&quot;: 5242880,
+      &quot;upspeed&quot;: 1048576,
+      &quot;eta&quot;: 1800,
+      &quot;state&quot;: &quot;downloading&quot;
+    }
+  },
+  &quot;torrents_removed&quot;: [],
+  &quot;categories&quot;: {},
+  &quot;tags&quot;: [],
+  &quot;trackers&quot;: {},
+  &quot;server_state&quot;: {
+    &quot;connection_status&quot;: &quot;connected&quot;,
+    &quot;dht_nodes&quot;: 350,
+    &quot;dl_info_speed&quot;: 5242880,
+    &quot;dl_info_data&quot;: 10737418240,
+    &quot;up_info_speed&quot;: 1048576,
+    &quot;up_info_data&quot;: 2147483648,
+    &quot;queueing&quot;: true,
+    &quot;use_alt_speed_limits&quot;: false,
+    &quot;refresh_interval&quot;: 2000
+  }
+}
+</code></pre>
+<h3 id="45-application">4.5 Application</h3>
+<h4 id="get-apiv2appversion">GET /api/v2/app/version</h4>
+<p>Get qBitTorrent version.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl &quot;https://localhost:8080/api/v2/app/version&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>Response:</strong> <code>"v4.6.4"</code> (plain text)</p>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">const response = await fetch('https://localhost:8080/api/v2/app/version', {
+  headers: { 'Referer': 'https://localhost:8080' },
+  credentials: 'include'
+});
+const version = await response.text();
+console.log('qBitTorrent version:', version);
+</code></pre>
+<h4 id="get-apiv2appwebapiversion">GET /api/v2/app/webapiVersion</h4>
+<p>Get WebUI API version.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl &quot;https://localhost:8080/api/v2/app/webapiVersion&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>Response:</strong> <code>"2.9.3"</code> (plain text)</p>
+<h4 id="get-apiv2apppreferences">GET /api/v2/app/preferences</h4>
+<p>Get application preferences.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl &quot;https://localhost:8080/api/v2/app/preferences&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>Response:</strong> Full preferences object (100+ fields).</p>
+<h4 id="post-apiv2appsetpreferences">POST /api/v2/app/setPreferences</h4>
+<p>Set application preferences.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>json</code></td>
+<td>string</td>
+<td>JSON-encoded preferences object</td>
+</tr>
+</tbody>
+</table>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl -X POST &quot;https://localhost:8080/api/v2/app/setPreferences&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot; \
+  -d 'json={&quot;max_active_downloads&quot;: 5, &quot;max_active_torrents&quot;: 10}'
+</code></pre>
+<h4 id="get-apiv2appbuildinfo">GET /api/v2/app/buildInfo</h4>
+<p>Get build information.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl &quot;https://localhost:8080/api/v2/app/buildInfo&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>Response:</strong></p>
+<pre><code class="language-json">{
+  &quot;qt&quot;: &quot;6.6.2&quot;,
+  &quot;libtorrent&quot;: &quot;2.0.10.0&quot;,
+  &quot;boost&quot;: &quot;1.84.0&quot;,
+  &quot;openssl&quot;: &quot;3.2.1&quot;,
+  &quot;zlib&quot;: &quot;1.3.1&quot;
+}
+</code></pre>
+<h3 id="46-transfer-info">4.6 Transfer Info</h3>
+<h4 id="get-apiv2transferinfo">GET /api/v2/transfer/info</h4>
+<p>Get global transfer information.</p>
+<p><strong>curl:</strong></p>
+<pre><code class="language-bash">curl &quot;https://localhost:8080/api/v2/transfer/info&quot; \
+  -b cookies.txt \
+  -H &quot;Referer: https://localhost:8080&quot;
+</code></pre>
+<p><strong>JavaScript:</strong></p>
+<pre><code class="language-javascript">const response = await fetch('https://localhost:8080/api/v2/transfer/info', {
+  headers: { 'Referer': 'https://localhost:8080' },
+  credentials: 'include'
+});
+const info = await response.json();
+console.log(`Global DL: ${formatBytes(info.dl_info_speed)}/s`);
+console.log(`Global UL: ${formatBytes(info.up_info_speed)}/s`);
+console.log(`DHT Nodes: ${info.dht_nodes}`);
+</code></pre>
+<p><strong>Response:</strong></p>
+<pre><code class="language-json">{
+  &quot;connection_status&quot;: &quot;connected&quot;,
+  &quot;dht_nodes&quot;: 350,
+  &quot;dl_info_speed&quot;: 5242880,
+  &quot;dl_info_data&quot;: 10737418240,
+  &quot;up_info_speed&quot;: 1048576,
+  &quot;up_info_data&quot;: 2147483648,
+  &quot;dl_rate_limit&quot;: 0,
+  &quot;up_rate_limit&quot;: 0,
+  &quot;queueing&quot;: true,
+  &quot;use_alt_speed_limits&quot;: false,
+  &quot;refresh_interval&quot;: 2000
+}
+</code></pre>
+<h3 id="47-qbittorrent-api-endpoint-summary">4.7 qBitTorrent API Endpoint Summary</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Endpoint</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/auth/login</code></td>
+<td>Authenticate</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/auth/logout</code></td>
+<td>End session</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/torrents/add</code></td>
+<td>Add torrent(s)</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v2/torrents/info</code></td>
+<td>List torrents</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/torrents/delete</code></td>
+<td>Delete torrent(s)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/torrents/pause</code></td>
+<td>Pause torrent(s)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/torrents/start</code></td>
+<td>Resume torrent(s)</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/torrents/recheck</code></td>
+<td>Force recheck</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/torrents/reannounce</code></td>
+<td>Force reannounce</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v2/torrents/categories</code></td>
+<td>List categories</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/torrents/createCategory</code></td>
+<td>Create category</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v2/torrents/tags</code></td>
+<td>List tags</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/torrents/addTags</code></td>
+<td>Add tags</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/torrents/removeTags</code></td>
+<td>Remove tags</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v2/sync/maindata</code></td>
+<td>Incremental sync</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v2/app/version</code></td>
+<td>Get version</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v2/app/webapiVersion</code></td>
+<td>Get API version</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v2/app/preferences</code></td>
+<td>Get preferences</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v2/app/setPreferences</code></td>
+<td>Set preferences</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v2/app/buildInfo</code></td>
+<td>Get build info</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v2/transfer/info</code></td>
+<td>Get transfer info</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-typescript-type-definitions">5. TypeScript Type Definitions</h2>
+<h3 id="51-core-types">5.1 Core Types</h3>
+<pre><code class="language-typescript">/**
+ * Uniquely identifies a torrent by its 40-character SHA-1 infohash.
+ */
+type Infohash = string; // /^[a-f0-9]{40}$/
+
+/**
+ * Magnet URI as defined by BEP-0009.
+ */
+type MagnetUri = string; // /^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}/
+
+/**
+ * Extension-defined priority levels for queue management.
+ */
+type Priority = 'low' | 'normal' | 'high' | 'critical';
+
+/**
+ * Server connection states.
+ */
+type ConnectionState = 'connected' | 'connecting' | 'disconnected' | 'error';
+
+/**
+ * Supported authentication methods.
+ */
+type AuthMethod = 'cookie' | 'api-key' | 'basic' | 'custom-header';
+
+/**
+ * Supported connection modes.
+ */
+type ConnectionMode = 'boba' | 'qbittorrent-direct';
+
+/**
+ * UI theme preference.
+ */
+type ThemePreference = 'system' | 'light' | 'dark';
+
+/**
+ * Queue item lifecycle status.
+ */
+type QueueStatus = 'pending' | 'retrying' | 'failed' | 'dead-letter';
+
+/**
+ * Torrent source type.
+ */
+type TorrentSource = 'magnet-link' | 'torrent-file';
+</code></pre>
+<h3 id="52-data-interfaces">5.2 Data Interfaces</h3>
+<pre><code class="language-typescript">/**
+ * Represents a detected torrent with all parsed metadata.
+ */
+interface TorrentInfo {
+  infohash: Infohash;
+  displayName: string;
+  magnetUri: MagnetUri;
+  source: TorrentSource;
+  trackers: string[];
+  totalSize?: number;
+  webSeeds?: string[];
+  pageUrl: string;
+  detectedAt: number;
+  fileBlob?: Blob;
+}
+
+/**
+ * Encrypted credential storage entry.
+ */
+interface EncryptedCredentials {
+  /** Base64-encoded salt (16 bytes) */
+  salt: string;
+
+  /** Base64-encoded IV (12 bytes) + ciphertext + authTag (16 bytes) */
+  ciphertext: string;
+
+  /** Timestamp of encryption */
+  encryptedAt: number;
+}
+
+/**
+ * Server connection configuration.
+ */
+interface ServerConfig {
+  mode: ConnectionMode;
+  baseUrl: string;
+  authMethod: AuthMethod;
+  credentials: EncryptedCredentials;
+  defaultCategory?: string;
+  defaultTags?: string[];
+  defaultSavePath?: string;
+  timeout: number;
+  healthCheckInterval: number;
+}
+
+/**
+ * Complete extension configuration.
+ */
+interface ExtensionConfig {
+  version: string;
+  server: ServerConfig;
+  ui: UIConfig;
+  queue: QueueConfig;
+  detection: DetectionConfig;
+  rateLimit: RateLimitConfig;
+}
+
+interface UIConfig {
+  theme: ThemePreference;
+  badgeEnabled: boolean;
+  notifications: NotificationPreferences;
+}
+
+interface NotificationPreferences {
+  sendSuccess: boolean;
+  sendFailed: boolean;
+  batchComplete: boolean;
+  queueRetry: boolean;
+}
+
+interface QueueConfig {
+  maxSize: number;
+  maxRetries: number;
+  retryBaseDelayMs: number;
+  retryMaxDelayMs: number;
+}
+
+interface DetectionConfig {
+  scanDynamically: boolean;
+  maxTorrentFileSize: number;
+  enableTabGroupScan: boolean;
+}
+
+interface RateLimitConfig {
+  requestsPerSecond: number;
+  requestsPerMinute: number;
+  interCallDelayMs: number;
+}
+</code></pre>
+<h3 id="53-queue-types">5.3 Queue Types</h3>
+<pre><code class="language-typescript">interface QueueItem {
+  id: string;
+  torrent: TorrentInfo;
+  status: QueueStatus;
+  attemptCount: number;
+  nextRetryAt: number;
+  lastError?: string;
+  lastHttpStatus?: number;
+  queuedAt: number;
+}
+
+interface QueueSnapshot {
+  items: QueueItem[];
+  total: number;
+  byStatus: Record&lt;QueueStatus, number&gt;;
+}
+</code></pre>
+<h3 id="54-api-response-types">5.4 API Response Types</h3>
+<pre><code class="language-typescript">interface ApiResponse&lt;T&gt; {
+  success: boolean;
+  data?: T;
+  error?: ApiError;
+  meta?: {
+    requestId: string;
+    timestamp: number;
+    durationMs: number;
+  };
+}
+
+interface ApiError {
+  code: string;
+  message: string;
+  details?: Record&lt;string, unknown&gt;;
+  httpStatus?: number;
+}
+
+interface ConnectionTestResult {
+  success: boolean;
+  serverUrl: string;
+  mode: ConnectionMode;
+  version?: string;
+  latencyMs: number;
+  error?: string;
+}
+</code></pre>
+<h3 id="55-qbittorrent-specific-types">5.5 qBitTorrent-Specific Types</h3>
+<pre><code class="language-typescript">interface QBitTorrentInfo {
+  hash: string;
+  name: string;
+  magnet_uri: string;
+  size: number;
+  progress: number;
+  dlspeed: number;
+  upspeed: number;
+  priority: number;
+  num_seeds: number;
+  num_complete: number;
+  num_leechs: number;
+  num_incomplete: number;
+  ratio: number;
+  eta: number;
+  state: TorrentState;
+  seq_dl: boolean;
+  f_l_piece_prio: boolean;
+  category: string;
+  tags: string;
+  super_seeding: boolean;
+  force_start: boolean;
+  save_path: string;
+  added_on: number;
+  completion_on: number;
+  tracker: string;
+  dl_limit: number;
+  up_limit: number;
+  downloaded: number;
+  uploaded: number;
+  downloaded_session: number;
+  uploaded_session: number;
+  amount_left: number;
+  completed: number;
+  max_ratio: number;
+  max_seeding_time: number;
+  seen_complete: number;
+  last_activity: number;
+  total_size: number;
+  time_active: number;
+  seeding_time: number;
+  seeding_time_limit: number;
+  availability: number;
+  reannounce: number;
+  stalled: boolean;
+}
+
+type TorrentState =
+  | 'error'
+  | 'missingFiles'
+  | 'uploading'
+  | 'pausedUP'
+  | 'queuedUP'
+  | 'stalledUP'
+  | 'checkingUP'
+  | 'forcedUP'
+  | 'allocating'
+  | 'downloading'
+  | 'metaDL'
+  | 'pausedDL'
+  | 'queuedDL'
+  | 'stalledDL'
+  | 'checkingDL'
+  | 'forcedDL'
+  | 'checkingResumeData'
+  | 'moving';
+
+interface ServerState {
+  connection_status: 'connected' | 'firewalled' | 'disconnected';
+  dht_nodes: number;
+  dl_info_speed: number;
+  dl_info_data: number;
+  up_info_speed: number;
+  up_info_data: number;
+  dl_rate_limit: number;
+  up_rate_limit: number;
+  queueing: boolean;
+  use_alt_speed_limits: boolean;
+  refresh_interval: number;
+}
+
+interface MainDataResponse {
+  rid: number;
+  full_update: boolean;
+  torrents?: Record&lt;string, Partial&lt;QBitTorrentInfo&gt;&gt;;
+  torrents_removed?: string[];
+  categories?: Record&lt;string, { name: string; savePath: string }&gt;;
+  categories_removed?: string[];
+  tags?: string[];
+  tags_removed?: string[];
+  trackers?: Record&lt;string, string[]&gt;;
+  trackers_removed?: string[];
+  server_state?: ServerState;
+}
+</code></pre>
+<h3 id="56-utility-types">5.6 Utility Types</h3>
+<pre><code class="language-typescript">/**
+ * Deep partial type for partial config updates.
+ */
+type DeepPartial&lt;T&gt; = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial&lt;T[P]&gt; : T[P];
+};
+
+/**
+ * Message handler function type.
+ */
+type MessageHandler&lt;TPayload = unknown, TResponse = unknown&gt; = (
+  message: ExtensionMessage&lt;TPayload&gt;,
+  sender: chrome.runtime.MessageSender
+) =&gt; Promise&lt;TResponse&gt; | TResponse;
+
+/**
+ * Rate limit bucket state.
+ */
+interface RateLimitBucket {
+  tokens: number;
+  lastRefill: number;
+  capacity: number;
+}
+</code></pre>
+<hr />
+<h2 id="6-error-codes-and-handling">6. Error Codes and Handling</h2>
+<h3 id="61-extension-error-codes">6.1 Extension Error Codes</h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>HTTP Status</th>
+<th>Description</th>
+<th>User Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>E_UNKNOWN</code></td>
+<td>—</td>
+<td>Unexpected error</td>
+<td>Check logs, report issue</td>
+</tr>
+<tr>
+<td><code>E_NETWORK</code></td>
+<td>—</td>
+<td>Network unreachable</td>
+<td>Check connection, retry</td>
+</tr>
+<tr>
+<td><code>E_TIMEOUT</code></td>
+<td>408</td>
+<td>Request timed out</td>
+<td>Retry, check server status</td>
+</tr>
+<tr>
+<td><code>E_DNS</code></td>
+<td>—</td>
+<td>DNS resolution failed</td>
+<td>Verify server URL</td>
+</tr>
+<tr>
+<td><code>E_CONN_REFUSED</code></td>
+<td>—</td>
+<td>Connection refused</td>
+<td>Verify server is running</td>
+</tr>
+<tr>
+<td><code>E_AUTH</code></td>
+<td>401</td>
+<td>Authentication failed</td>
+<td>Check credentials</td>
+</tr>
+<tr>
+<td><code>E_AUTH_EXPIRED</code></td>
+<td>401</td>
+<td>Session expired</td>
+<td>Re-authenticate</td>
+</tr>
+<tr>
+<td><code>E_RATE_LIMIT</code></td>
+<td>429</td>
+<td>Rate limited by server</td>
+<td>Wait and retry</td>
+</tr>
+<tr>
+<td><code>E_CLIENT_RATE_LIMIT</code></td>
+<td>—</td>
+<td>Client rate limit hit</td>
+<td>Reduce request frequency</td>
+</tr>
+<tr>
+<td><code>E_VALIDATION</code></td>
+<td>400</td>
+<td>Invalid request data</td>
+<td>Check parameters</td>
+</tr>
+<tr>
+<td><code>E_SERVER</code></td>
+<td>500</td>
+<td>Server error</td>
+<td>Check server logs</td>
+</tr>
+<tr>
+<td><code>E_SERVICE_UNAVAILABLE</code></td>
+<td>503</td>
+<td>Server temporarily unavailable</td>
+<td>Retry later</td>
+</tr>
+<tr>
+<td><code>E_TORRENT_INVALID</code></td>
+<td>400</td>
+<td>Invalid torrent data</td>
+<td>Verify torrent file/URI</td>
+</tr>
+<tr>
+<td><code>E_TORRENT_DUPLICATE</code></td>
+<td>409</td>
+<td>Torrent already exists</td>
+<td>Skip or force re-add</td>
+</tr>
+<tr>
+<td><code>E_STORAGE_FULL</code></td>
+<td>—</td>
+<td>Local storage quota exceeded</td>
+<td>Clear queue or storage</td>
+</tr>
+<tr>
+<td><code>E_STORAGE_CORRUPT</code></td>
+<td>—</td>
+<td>Stored data is corrupted</td>
+<td>Reset configuration</td>
+</tr>
+<tr>
+<td><code>E_CRYPTO</code></td>
+<td>—</td>
+<td>Encryption/decryption failed</td>
+<td>Re-enter credentials</td>
+</tr>
+<tr>
+<td><code>E_PERMISSION_DENIED</code></td>
+<td>403</td>
+<td>Browser permission denied</td>
+<td>Grant required permissions</td>
+</tr>
+<tr>
+<td><code>E_TAB_ACCESS</code></td>
+<td>—</td>
+<td>Cannot access tab</td>
+<td>Check tab permissions</td>
+</tr>
+<tr>
+<td><code>E_CORS</code></td>
+<td>—</td>
+<td>Cross-origin request blocked</td>
+<td>Use Boba proxy mode</td>
+</tr>
+<tr>
+<td><code>E_FILE_TOO_LARGE</code></td>
+<td>413</td>
+<td>Torrent file exceeds limit</td>
+<td>Use magnet link instead</td>
+</tr>
+<tr>
+<td><code>E_UNSUPPORTED_BROWSER</code></td>
+<td>—</td>
+<td>Browser feature unavailable</td>
+<td>Update browser</td>
+</tr>
+</tbody>
+</table>
+<h3 id="62-error-response-format">6.2 Error Response Format</h3>
+<p>All API errors from Boba follow this format:</p>
+<pre><code class="language-json">{
+  &quot;error&quot;: &quot;E_RATE_LIMIT&quot;,
+  &quot;message&quot;: &quot;Too many requests. Please slow down.&quot;,
+  &quot;retryAfter&quot;: 30,
+  &quot;details&quot;: {
+    &quot;limit&quot;: 60,
+    &quot;window&quot;: 60,
+    &quot;remaining&quot;: 0
+  }
+}
+</code></pre>
+<h3 id="63-error-handling-in-extension-code">6.3 Error Handling in Extension Code</h3>
+<pre><code class="language-typescript">async function handleApiCall&lt;T&gt;(
+  operation: () =&gt; Promise&lt;T&gt;,
+  context: string
+): Promise&lt;T&gt; {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof ExtensionError) {
+      switch (error.code) {
+        case 'E_AUTH':
+        case 'E_AUTH_EXPIRED':
+          await promptReauthentication();
+          throw error;
+
+        case 'E_RATE_LIMIT':
+          const delay = error.retryAfter || 60;
+          await scheduleRetry(delay * 1000);
+          throw error;
+
+        case 'E_NETWORK':
+        case 'E_TIMEOUT':
+          await queueForRetry(context);
+          throw error;
+
+        case 'E_TORRENT_DUPLICATE':
+          // Silently skip duplicates
+          return null as T;
+
+        default:
+          await logError(error, context);
+          throw error;
+      }
+    }
+    throw error;
+  }
+}
+</code></pre>
+<h3 id="64-retry-strategies">6.4 Retry Strategies</h3>
+<table>
+<thead>
+<tr>
+<th>Error Category</th>
+<th>Strategy</th>
+<th>Max Retries</th>
+<th>Backoff</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Network errors</td>
+<td>Exponential backoff</td>
+<td>5</td>
+<td>5s → 10s → 20s → 40s → 80s</td>
+</tr>
+<tr>
+<td>Timeout</td>
+<td>Exponential backoff</td>
+<td>3</td>
+<td>2s → 4s → 8s</td>
+</tr>
+<tr>
+<td>Rate limit (429)</td>
+<td>Honor <code>Retry-After</code></td>
+<td>10</td>
+<td>As specified by server</td>
+</tr>
+<tr>
+<td>Auth errors</td>
+<td>No automatic retry</td>
+<td>0</td>
+<td>N/A — requires user action</td>
+</tr>
+<tr>
+<td>Server errors (5xx)</td>
+<td>Exponential backoff with jitter</td>
+<td>5</td>
+<td>5s → 10s → 20s → 40s → 80s</td>
+</tr>
+<tr>
+<td>Validation errors</td>
+<td>No retry</td>
+<td>0</td>
+<td>N/A — fix input</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-rate-limiting">7. Rate Limiting</h2>
+<h3 id="71-client-side-rate-limiter">7.1 Client-Side Rate Limiter</h3>
+<p>The extension implements a token bucket rate limiter to prevent overwhelming the server.</p>
+<pre><code class="language-typescript">class TokenBucketRateLimiter {
+  private tokens: number;
+  private lastRefill: number;
+
+  constructor(
+    private capacity: number,
+    private refillRate: number, // tokens per second
+    private initialTokens: number = capacity
+  ) {
+    this.tokens = initialTokens;
+    this.lastRefill = Date.now();
+  }
+
+  /**
+   * Attempt to consume tokens. Returns wait time in ms if not enough tokens.
+   */
+  tryConsume(count: number = 1): { allowed: boolean; waitMs?: number } {
+    this.refill();
+
+    if (this.tokens &gt;= count) {
+      this.tokens -= count;
+      return { allowed: true };
+    }
+
+    const deficit = count - this.tokens;
+    const waitMs = Math.ceil((deficit / this.refillRate) * 1000);
+    return { allowed: false, waitMs };
+  }
+
+  private refill(): void {
+    const now = Date.now();
+    const elapsedMs = now - this.lastRefill;
+    const tokensToAdd = (elapsedMs / 1000) * this.refillRate;
+    this.tokens = Math.min(this.capacity, this.tokens + tokensToAdd);
+    this.lastRefill = now;
+  }
+}
+</code></pre>
+<h3 id="72-default-rate-limit-configuration">7.2 Default Rate Limit Configuration</h3>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th>Capacity</th>
+<th>Refill Rate</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Per-second</td>
+<td>10</td>
+<td>10/s</td>
+<td>Burst handling</td>
+</tr>
+<tr>
+<td>Per-minute</td>
+<td>60</td>
+<td>1/s</td>
+<td>Sustained rate</td>
+</tr>
+<tr>
+<td>Queue processing</td>
+<td>1</td>
+<td>2/s</td>
+<td>Inter-call spacing</td>
+</tr>
+</tbody>
+</table>
+<h3 id="73-rate-limit-headers">7.3 Rate Limit Headers</h3>
+<p>The extension respects server-sent rate limit headers:</p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Description</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>X-RateLimit-Limit</code></td>
+<td>Request quota</td>
+<td>Log for debugging</td>
+</tr>
+<tr>
+<td><code>X-RateLimit-Remaining</code></td>
+<td>Remaining requests</td>
+<td>Preemptive throttling</td>
+</tr>
+<tr>
+<td><code>X-RateLimit-Reset</code></td>
+<td>Reset timestamp</td>
+<td>Calculate wait time</td>
+</tr>
+<tr>
+<td><code>Retry-After</code></td>
+<td>Seconds to wait</td>
+<td>Honor exactly</td>
+</tr>
+</tbody>
+</table>
+<h3 id="74-queue-processing-rate-limit">7.4 Queue Processing Rate Limit</h3>
+<p>When processing the offline queue:</p>
+<pre><code class="language-typescript">const QUEUE_CONFIG = {
+  maxConcurrent: 1,
+  interCallDelayMs: 500,
+  batchSize: 10,
+  batchIntervalMs: 5000
+};
+
+async function processQueue(items: QueueItem[]): Promise&lt;void&gt; {
+  for (const item of items) {
+    await sendTorrent(item.torrent);
+    await delay(QUEUE_CONFIG.interCallDelayMs);
+  }
+}
+</code></pre>
+<hr />
+<h2 id="8-version-compatibility-matrix">8. Version Compatibility Matrix</h2>
+<h3 id="81-qbittorrent-version-compatibility">8.1 qBitTorrent Version Compatibility</h3>
+<table>
+<thead>
+<tr>
+<th>qBitTorrent</th>
+<th>WebAPI</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4.4.x</td>
+<td>2.8.x</td>
+<td>Compatible</td>
+<td>Legacy support</td>
+</tr>
+<tr>
+<td>4.5.x</td>
+<td>2.8.x</td>
+<td>Compatible</td>
+<td>Recommended minimum</td>
+</tr>
+<tr>
+<td>4.6.x</td>
+<td>2.9.x</td>
+<td>Compatible</td>
+<td>Primary target</td>
+</tr>
+<tr>
+<td>5.0.x</td>
+<td>2.10.x</td>
+<td>Compatible</td>
+<td>Future-proof</td>
+</tr>
+<tr>
+<td>5.1.x</td>
+<td>2.11.x</td>
+<td>Testing</td>
+<td>Under validation</td>
+</tr>
+<tr>
+<td>&lt; 4.4.0</td>
+<td>&lt; 2.8.0</td>
+<td>Unsupported</td>
+<td>Upgrade required</td>
+</tr>
+</tbody>
+</table>
+<h3 id="82-browser-version-compatibility">8.2 Browser Version Compatibility</h3>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Minimum</th>
+<th>Recommended</th>
+<th>MV3 Support</th>
+<th>Tested</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td>88</td>
+<td>120+</td>
+<td>Full</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>109</td>
+<td>121+</td>
+<td>Full (with polyfill)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Opera</td>
+<td>74</td>
+<td>106+</td>
+<td>Full</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Yandex</td>
+<td>21</td>
+<td>24+</td>
+<td>Full</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Edge</td>
+<td>88</td>
+<td>120+</td>
+<td>Full</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Safari</td>
+<td>16</td>
+<td>17+</td>
+<td>Partial</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h3 id="83-boba-server-compatibility">8.3 Boba Server Compatibility</h3>
+<table>
+<thead>
+<tr>
+<th>Boba Server</th>
+<th>Extension</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0.x</td>
+<td>1.0.x</td>
+<td>Compatible</td>
+</tr>
+<tr>
+<td>1.1.x</td>
+<td>1.0.x</td>
+<td>Compatible (backward)</td>
+</tr>
+<tr>
+<td>1.2.x</td>
+<td>1.0.x</td>
+<td>Testing</td>
+</tr>
+<tr>
+<td>2.0.x</td>
+<td>1.1.x+</td>
+<td>Planned</td>
+</tr>
+</tbody>
+</table>
+<h3 id="84-api-feature-availability">8.4 API Feature Availability</h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>qBitTorrent Direct</th>
+<th>Boba Proxy</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Magnet send</td>
+<td>4.4+</td>
+<td>All</td>
+<td>Core feature</td>
+</tr>
+<tr>
+<td>.torrent upload</td>
+<td>4.4+</td>
+<td>All</td>
+<td>Core feature</td>
+</tr>
+<tr>
+<td>Categories</td>
+<td>4.4+</td>
+<td>All</td>
+<td>Full CRUD</td>
+</tr>
+<tr>
+<td>Tags</td>
+<td>4.3.2+</td>
+<td>All</td>
+<td>Full CRUD</td>
+</tr>
+<tr>
+<td>Sequential download</td>
+<td>4.4+</td>
+<td>All</td>
+<td>Add parameter</td>
+</tr>
+<tr>
+<td>First/last piece prio</td>
+<td>4.4+</td>
+<td>All</td>
+<td>Add parameter</td>
+</tr>
+<tr>
+<td>SSE progress</td>
+<td>N/A</td>
+<td>1.1+</td>
+<td>Boba-only feature</td>
+</tr>
+<tr>
+<td>Search aggregation</td>
+<td>N/A</td>
+<td>1.2+</td>
+<td>Boba-only feature</td>
+</tr>
+<tr>
+<td>Auto-discovery</td>
+<td>N/A</td>
+<td>1.0+</td>
+<td>Boba-only feature</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>End of API Reference</em></p>
+</div>
+
+</body>
+</html>

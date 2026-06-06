@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 800" aria-label="BobaLink Security Architecture Diagram">
+  <defs>
+    <marker id="a10" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#666"/></marker>
+    <filter id="s10"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="1100" height="800" fill="#FAFAFA"/>
+  <text x="550" y="28" text-anchor="middle" font-family="system-ui" font-size="18" font-weight="600" fill="#2D5F8A">Security Architecture Diagram</text>
+
+  <!-- Browser Environment -->
+  <rect x="20" y="50" width="520" height="530" rx="10" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2" filter="url(#s10)"/>
+  <text x="280" y="72" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#2D5F8A">🌐 Browser Security Layers</text>
+
+  <!-- Permissions -->
+  <rect x="35" y="85" width="240" height="85" rx="6" fill="#D4E4F7" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="155" y="102" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">Extension Permissions</text>
+  <text x="155" y="118" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">manifest.json permissions model</text>
+  <text x="155" y="132" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">storage, scripting, tabs,</text>
+  <text x="155" y="146" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">host, contextMenus, notifications</text>
+  <text x="155" y="160" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Least privilege: only request needed permissions</text>
+
+  <!-- CSP -->
+  <rect x="285" y="85" width="240" height="115" rx="6" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="405" y="102" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#D4A76A">Content Security Policy</text>
+  <text x="300" y="120" font-family="system-ui" font-size="8" fill="#333" font-weight="600">• script-src: 'self'</text>
+  <text x="300" y="134" font-family="system-ui" font-size="8" fill="#666">No eval(), no inline scripts</text>
+  <text x="300" y="150" font-family="system-ui" font-size="8" fill="#333" font-weight="600">• connect-src: *</text>
+  <text x="300" y="164" font-family="system-ui" font-size="8" fill="#666">Restricted to configured API URLs</text>
+  <text x="300" y="180" font-family="system-ui" font-size="8" fill="#333" font-weight="600">• object-src: 'none'</text>
+  <text x="300" y="194" font-family="system-ui" font-size="8" fill="#666">No plugins, no embedded objects</text>
+
+  <!-- Credential Storage -->
+  <rect x="35" y="185" width="240" height="115" rx="6" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="155" y="202" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#4A8C6F">Credential Storage</text>
+  <text x="50" y="220" font-family="system-ui" font-size="8" fill="#333" font-weight="600">chrome.storage.local</text>
+  <text x="50" y="234" font-family="system-ui" font-size="8" fill="#666">AES-256-GCM encrypted values</text>
+  <text x="50" y="250" font-family="system-ui" font-size="8" fill="#333" font-weight="600">chrome.storage.session</text>
+  <text x="50" y="264" font-family="system-ui" font-size="8" fill="#666">Non-sensitive cache (plaintext)</text>
+  <text x="50" y="280" font-family="system-ui" font-size="8" fill="#333" font-weight="600">Key: PBKDF2(user_password, salt)</text>
+  <text x="50" y="294" font-family="system-ui" font-size="7" fill="#888">Encryption key never stored, derived on demand</text>
+
+  <!-- Crypto Operations -->
+  <rect x="285" y="215" width="240" height="100" rx="6" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="405" y="232" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#7B1FA2">🔐 Crypto Operations</text>
+  <text x="300" y="250" font-family="system-ui" font-size="8" fill="#333" font-weight="600">Offscreen Document</text>
+  <text x="300" y="264" font-family="system-ui" font-size="8" fill="#666">Web Crypto API in isolated context</text>
+  <text x="300" y="280" font-family="system-ui" font-size="8" fill="#333" font-weight="600">SubtleCrypto.encrypt/decrypt</text>
+  <text x="300" y="294" font-family="system-ui" font-size="8" fill="#666">PBKDF2 → AES-GCM for passwords</text>
+  <text x="300" y="308" font-family="system-ui" font-size="7" fill="#888">Isolated from main extension context</text>
+
+  <!-- Permission Model Detail -->
+  <rect x="35" y="320" width="490" height="120" rx="6" fill="#F9F9F9" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="280" y="340" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#2D5F8A">Permission Model Details</text>
+  <text x="50" y="360" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="50" font-weight="700" fill="#333">activeTab: </tspan>Only access current tab (user gesture required)
+  </text>
+  <text x="50" y="378" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="50" font-weight="700" fill="#333">storage: </tspan>Local data only, no remote sync, encrypted sensitive values
+  </text>
+  <text x="50" y="396" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="50" font-weight="700" fill="#333">host permissions: </tspan>Optional, user grants per-site, not all-sites
+  </text>
+  <text x="50" y="414" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="50" font-weight="700" fill="#333">scripting: </tOnly inject on user action or torrent sites
+  </text>
+  <text x="50" y="432" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="50" font-weight="700" fill="#333">contextMenus: </tspan>Right-click actions only, no automatic execution
+  </text>
+
+  <!-- Network Security -->
+  <rect x="560" y="50" width="520" height="200" rx="10" fill="#FFF3E0" stroke="#E65100" stroke-width="2" filter="url(#s10)"/>
+  <text x="820" y="72" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#E65100">🌐 Network Security</text>
+
+  <rect x="575" y="85" width="235" height="70" rx="6" fill="#FFE0B2" stroke="#E65100" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="692" y="102" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">HTTPS Only</text>
+  <text x="692" y="118" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">TLS 1.2+ required for all connections</text>
+  <text x="692" y="132" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">HTTP URLs rejected with error</text>
+  <text x="692" y="146" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Prevents man-in-the-middle attacks</text>
+
+  <rect x="825" y="85" width="240" height="70" rx="6" fill="#FFE0B2" stroke="#E65100" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="945" y="102" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">Certificate Validation</text>
+  <text x="945" y="118" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Standard CA chain validation</text>
+  <text x="945" y="132" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">No self-signed certificates allowed</text>
+  <text x="945" y="146" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Browser handles TLS verification</text>
+
+  <rect x="575" y="165" width="490" height="70" rx="6" fill="#FFF8E1" stroke="#D4A76A" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="820" y="182" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#D4A76A">Request Security</text>
+  <text x="590" y="200" font-family="system-ui" font-size="8" fill="#666">• fetch() API with credentials: "omit" for cross-origin</text>
+  <text x="590" y="216" font-family="system-ui" font-size="8" fill="#666">• Auth tokens in X-Api-Key header (never in URL)</text>
+  <text x="590" y="232" font-family="system-ui" font-size="8" fill="#666">• Basic Auth in Authorization header (base64 encoded)</text>
+
+  <!-- Boba Services -->
+  <rect x="560" y="270" width="250" height="180" rx="10" fill="#E3F2FD" stroke="#1976D2" stroke-width="2" filter="url(#s10)"/>
+  <text x="685" y="292" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#1976D2">🐳 Boba Service Auth</text>
+
+  <rect x="575" y="305" width="220" height="45" rx="5" fill="#BBDEFB" stroke="#1976D2" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="685" y="320" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">API Key Authentication</text>
+  <text x="685" y="334" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">X-Api-Key: header on every request</text>
+  <text x="685" y="346" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">UUIDv4 format, 36 characters</text>
+
+  <rect x="575" y="355" width="220" height="45" rx="5" fill="#BBDEFB" stroke="#1976D2" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="685" y="370" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">Basic Authentication</text>
+  <text x="685" y="384" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Authorization: Basic base64(user:pass)</text>
+  <text x="685" y="396" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">For qBitTorrent WebUI proxy</text>
+
+  <rect x="575" y="405" width="220" height="35" rx="5" fill="#FFE0B2" stroke="#E65100" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="685" y="420" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">Rate Limiting</text>
+  <text x="685" y="434" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">100 req/min per API key | 429 on exceed</text>
+
+  <!-- qBitTorrent Security -->
+  <rect x="830" y="270" width="250" height="180" rx="10" fill="#E8EAF6" stroke="#3F51B5" stroke-width="2" filter="url(#s10)"/>
+  <text x="955" y="292" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#3F51B5">⬇️ qBitTorrent Security</text>
+
+  <rect x="845" y="305" width="220" height="50" rx="5" fill="#C5CAE9" stroke="#3F51B5" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="955" y="322" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">WebUI Authentication</text>
+  <text x="955" y="336" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Cookie-based SID session</text>
+  <text x="955" y="348" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">SID obtained via /api/v2/auth/login</text>
+
+  <rect x="845" y="360" width="220" height="45" rx="5" fill="#C5CAE9" stroke="#3F51B5" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="955" y="376" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">CSRF Protection</text>
+  <text x="955" y="390" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Referer header validation</text>
+  <text x="955" y="402" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Same-origin policy enforced</text>
+
+  <rect x="845" y="410" width="220" height="30" rx="5" fill="#C5CAE9" stroke="#3F51B5" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="955" y="425" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">IP Filtering</text>
+  <text x="955" y="437" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Allowlist mode for API access</text>
+
+  <!-- Arrows -->
+  <line x1="280" y1="200" x2="560" y2="140" stroke="#E65100" stroke-width="2" marker-end="url(#a10)"/>
+  <line x1="560" y1="200" x2="560" y2="300" stroke="#E65100" stroke-width="1.5" marker-end="url(#a10)"/>
+  <line x1="810" y1="350" x2="830" y2="350" stroke="#1976D2" stroke-width="1.5" marker-end="url(#a10)"/>
+
+  <!-- Threat Model -->
+  <rect x="20" y="600" width="1060" height="180" rx="10" fill="#FFEBEE" stroke="#C75450" stroke-width="1.5" filter="url(#s10)"/>
+  <text x="550" y="622" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="#C75450">🛡️ Threat Model &amp; Mitigations</text>
+
+  <rect x="40" y="635" width="330" height="65" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="50" y="652" font-family="system-ui" font-size="9" font-weight="700" fill="#C75450">Threat: Credential Theft</text>
+  <text x="50" y="668" font-family="system-ui" font-size="8" fill="#666">Mitigation: AES-256-GCM encryption with PBKDF2-derived key</text>
+  <text x="50" y="684" font-family="system-ui" font-size="8" fill="#666">Key derived from user password, never stored on disk</text>
+
+  <rect x="385" y="635" width="330" height="65" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="395" y="652" font-family="system-ui" font-size="9" font-weight="700" fill="#C75450">Threat: MITM Attack</text>
+  <text x="395" y="668" font-family="system-ui" font-size="8" fill="#666">Mitigation: HTTPS only (TLS 1.2+), certificate validation</text>
+  <text x="395" y="684" font-family="system-ui" font-size="8" fill="#666">No self-signed certs, HTTP requests rejected</text>
+
+  <rect x="730" y="635" width="330" height="65" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="740" y="652" font-family="system-ui" font-size="9" font-weight="700" fill="#C75450">Threat: XSS in Content Script</text>
+  <text x="740" y="668" font-family="system-ui" font-size="8" fill="#666">Mitigation: CSP (no inline scripts), textContent not innerHTML</text>
+  <text x="740" y="684" font-family="system-ui" font-size="8" fill="#666">DOM sanitization, no user input rendered as HTML</text>
+
+  <rect x="40" y="710" width="330" height="60" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="50" y="727" font-family="system-ui" font-size="9" font-weight="700" fill="#C75450">Threat: API Key Leak</text>
+  <text x="50" y="743" font-family="system-ui" font-size="8" fill="#666">Mitigation: Keys in headers (not URLs), encrypted storage</text>
+  <text x="50" y="759" font-family="system-ui" font-size="8" fill="#666">No logging of keys, secure key rotation support</text>
+
+  <rect x="385" y="710" width="330" height="60" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="395" y="727" font-family="system-ui" font-size="9" font-weight="700" fill="#C75450">Threat: Replay Attack</text>
+  <text x="395" y="743" font-family="system-ui" font-size="8" fill="#666">Mitigation: Nonce in requests, timestamp validation</text>
+  <text x="395" y="759" font-family="system-ui" font-size="8" fill="#666">Session expiry, SID rotation on qBitTorrent</text>
+
+  <rect x="730" y="710" width="330" height="60" rx="6" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="740" y="727" font-family="system-ui" font-size="9" font-weight="700" fill="#C75450">Threat: Permission Abuse</text>
+  <text x="740" y="743" font-family="system-ui" font-size="8" fill="#666">Mitigation: Least privilege, activeTab over tabs, user gestures</text>
+  <text x="740" y="759" font-family="system-ui" font-size="8" fill="#666">No background scanning without user action</text>
+</svg>

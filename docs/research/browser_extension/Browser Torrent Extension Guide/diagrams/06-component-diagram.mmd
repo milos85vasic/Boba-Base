@@ -1,0 +1,82 @@
+graph TB
+    subgraph ExtensionRoot["📦 BobaLink Extension Root"]
+        direction TB
+
+        subgraph parser["🔧 parser/"]
+            MagnetParser["magnetParser.js<br/>parseMagnetURI()<br/>extractInfoHash()"]
+            TorrentParser["torrentParser.js<br/>parseTorrentFile()<br/>extractMetadata()"]
+            HashNormalizer["hashNormalizer.js<br/>normalizeInfoHash()<br/>validateHash()"]
+        end
+
+        subgraph scanner["🔍 scanner/"]
+            DOMScanner["domScanner.js<br/>scanForLinks()<br/>MutationObserver"]
+            LinkExtractor["linkExtractor.js<br/>extractMagnetLinks()<br/>extractTorrentLinks()"]
+            TorrentBadge["torrentBadge.js<br/>injectBadge()<br/>highlightTorrents()"]
+        end
+
+        subgraph api["🔌 api/"]
+            BobaAPIClient["BobaAPIClient.js<br/>sendTorrent()<br/>sendBatch()<br/>healthCheck()"]
+            AuthManager["authManager.js<br/>getAuthHeaders()<br/>refreshToken()"]
+            RetryHandler["retryHandler.js<br/>exponentialBackoff()<br/>circuitBreaker()"]
+        end
+
+        subgraph background["⚙️ background/"]
+            MainBG["background.js<br/>event listeners<br/>message router"]
+            ContextMenuHandler["contextMenuHandler.js<br/>createMenus()<br/>handleClicks()"]
+            QueueManager["queueManager.js<br/>enqueue()<br/>processQueue()<br/>retryFailed()"]
+            TabGroupProcessor["tabGroupProcessor.js<br/>queryGroups()<br/>processTabs()"]
+        end
+
+        subgraph content["📄 content/"]
+            ContentMain["content.js<br/>initialize()<br/>DOM scan trigger"]
+            ContentUI["contentUI.js<br/>injectPanel()<br/>showTorrentList()"]
+        end
+
+        subgraph popup["📋 popup/"]
+            PopupMain["popup.js<br/>renderTorrentList()<br/>handleSend()<br/>handleConfig()"]
+            PopupHTML["popup.html<br/>UI markup"]
+            PopupCSS["popup.css<br/>styles"]
+        end
+
+        subgraph options["⚙️ options/"]
+            OptionsMain["options.js<br/>saveConfig()<br/>loadConfig()<br/>validateServer()"]
+            OptionsHTML["options.html<br/>settings form"]
+        end
+
+        subgraph shared["📁 shared/"]
+            Constants["constants.js<br/>MSG_TYPES<br/>API_ENDPOINTS<br/>DEFAULTS"]
+            Utils["utils.js<br/>debounce()<br/>throttle()<br/>formatBytes()"]
+            StorageAPI["storageAPI.js<br/>getConfig()<br/>setConfig()<br/>getHistory()"]
+        end
+    end
+
+    %% Dependencies
+    scanner -->|"uses"| parser
+    content -->|"uses"| scanner
+    content -->|"uses"| content
+    background -->|"uses"| api
+    background -->|"uses"| shared
+    popup -->|"uses"| shared
+    content -->|"messaging"| background
+    popup -->|"messaging"| background
+    options -->|"uses"| shared
+    api -->|"uses"| shared
+    parser -->|"uses"| shared
+
+    classDef parserMod fill:#FFF8E1,stroke:#D4A76A,stroke-width:2px,color:#333
+    classDef scannerMod fill:#E8F5E9,stroke:#4A8C6F,stroke-width:2px,color:#333
+    classDef apiMod fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#333
+    classDef bgMod fill:#E8F0FE,stroke:#2D5F8A,stroke-width:2px,color:#333
+    classDef contentMod fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#333
+    classDef popupMod fill:#E8F0FE,stroke:#5B9BD5,stroke-width:2px,color:#333
+    classDef optionsMod fill:#F5F5F5,stroke:#666,stroke-width:2px,color:#333
+    classDef sharedMod fill:#FFF3E0,stroke:#E65100,stroke-width:2px,color:#333
+
+    class MagnetParser,TorrentParser,HashNormalizer parserMod
+    class DOMScanner,LinkExtractor,TorrentBadge scannerMod
+    class BobaAPIClient,AuthManager,RetryHandler apiMod
+    class MainBG,ContextMenuHandler,QueueManager,TabGroupProcessor bgMod
+    class ContentMain,ContentUI contentMod
+    class PopupMain,PopupHTML,PopupCSS popupMod
+    class OptionsMain,OptionsHTML optionsMod
+    class Constants,Utils,StorageAPI sharedMod

@@ -1,0 +1,86 @@
+%% BobaLink Browser Extension - System Architecture Diagram
+%% Enterprise-grade technical architecture visualization
+
+graph TB
+    subgraph Browser["🌐 Browser Environment"]
+        direction TB
+        
+        subgraph ExtUI["Extension UI Layer"]
+            Popup["<b>Popup UI</b><br/>popup.html / popup.js<br/>Torrent list & controls"]
+            Options["<b>Options Page</b><br/>options.html / options.js<br/>Server configuration"]
+            ContextMenu["<b>Context Menu</b><br/>background.js<br/>Right-click actions"]
+        end
+
+        subgraph ExtCore["Extension Core Layer"]
+            ContentScript["<b>Content Script</b><br/>content.js<br/>DOM scanner & injector"]
+            BackgroundSW["<b>Background Service Worker</b><br/>background.js<br/>Event handling & API proxy"]
+        end
+
+        subgraph ExtLib["Extension Library Layer"]
+            Parser["<b>parser/</b><br/>magnet:// &amp; .torrent parser"]
+            Scanner["<b>scanner/</b><br/>DOM torrent detector"]
+            BobaAPIClient["<b>api/BobaAPIClient</b><br/>HTTP client for services"]
+            Shared["<b>shared/</b><br/>Constants & utilities"]
+        end
+
+        subgraph ExtStorage["Extension Storage"]
+            LocalStorage[("Local Storage<br/>extension_config")]
+            SessionStorage[("Session Storage<br/>discovered_torrents")]
+        end
+    end
+
+    subgraph DockerHost["🐳 Docker Host"]
+        direction TB
+        
+        subgraph BobaNetwork["Boba Services Network"]
+            FastAPI["<b>Boba FastAPI</b><br/>Port 7187<br/>Metadata & search API"]
+            GoService["<b>Boba Go Service</b><br/>Port 7189<br/>Core torrent operations"]
+        end
+
+        subgraph TorrentNetwork["Torrent Network"]
+            qBitTorrent["<b>qBitTorrent WebUI</b><br/>Port 8080<br/>Torrent client API"]
+            qBitDB[("qBitTorrent<br/>Database")]
+        end
+    end
+
+    subgraph External["🌍 External Services"]
+        Trackers["<b>BitTorrent Trackers</b><br/>DHT, PEX, UDP"]
+        WebPages["<b>Web Pages</b><br/>Torrent sites & indexes"]
+    end
+
+    %% Browser Internal Flows
+    Popup <-->|"chrome.runtime.sendMessage"| BackgroundSW
+    Options <-->|"Save/Load config"| LocalStorage
+    ContextMenu -->|"Trigger action"| BackgroundSW
+    ContentScript <-->|"chrome.tabs.sendMessage"| BackgroundSW
+    ContentScript -->|"Scan DOM"| Scanner
+    Scanner -->|"Parse links"| Parser
+    BackgroundSW -->|"HTTP requests"| BobaAPIClient
+    BobaAPIClient -->|"API calls"| Shared
+    ContentScript -->|"Store discovered"| SessionStorage
+
+    %% Cross-boundary Flows
+    ContentScript -->|"Inject detection UI"| WebPages
+    BobaAPIClient -->|"REST API :7187"| FastAPI
+    BobaAPIClient -->|"REST API :7189"| GoService
+    FastAPI -->|"Proxy operations"| qBitTorrent
+    GoService -->|"Direct API"| qBitTorrent
+    qBitTorrent -->|"Persist state"| qBitDB
+    qBitTorrent -->|"Announce/Scrape"| Trackers
+
+    %% Styling with enterprise color scheme
+    classDef browserLayer fill:#E8F0FE,stroke:#2D5F8A,stroke-width:2px,color:#333333
+    classDef coreLayer fill:#E8F5E9,stroke:#4A8C6F,stroke-width:2px,color:#333333
+    classDef libLayer fill:#FFF8E1,stroke:#D4A76A,stroke-width:2px,color:#333333
+    classDef storageLayer fill:#F5F5F5,stroke:#666666,stroke-width:2px,color:#333333
+    classDef dockerLayer fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#333333
+    classDef torrentLayer fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#333333
+    classDef externalLayer fill:#FFF3E0,stroke:#E65100,stroke-width:2px,color:#333333
+
+    class Popup,Options,ContextMenu browserLayer
+    class ContentScript,BackgroundSW coreLayer
+    class Parser,Scanner,BobaAPIClient,Shared libLayer
+    class LocalStorage,SessionStorage,qBitDB storageLayer
+    class FastAPI,GoService dockerLayer
+    class qBitTorrent torrentLayer
+    class Trackers,WebPages externalLayer

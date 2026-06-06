@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 650" aria-label="BobaLink Extension Lifecycle Diagram">
+  <defs>
+    <marker id="a8" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#666"/></marker>
+    <filter id="s8"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="1200" height="650" fill="#FAFAFA"/>
+  <text x="600" y="28" text-anchor="middle" font-family="system-ui" font-size="18" font-weight="600" fill="#2D5F8A">Extension Lifecycle Diagram</text>
+
+  <!-- Main flow -->
+  <rect x="30" y="55" width="1140" height="160" rx="10" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1.5" filter="url(#s8)"/>
+  <text x="600" y="75" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">🔄 Primary Lifecycle Flow</text>
+
+  <!-- Nodes -->
+  <rect x="45" y="90" width="115" height="80" rx="8" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2" filter="url(#s8)"/>
+  <text x="102" y="112" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">📥 Install</text>
+  <text x="102" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">from Chrome Web</text>
+  <text x="102" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Store or .crx</text>
+  <text x="102" y="158" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">chrome.runtime.onInstalled</text>
+
+  <rect x="185" y="90" width="115" height="80" rx="8" fill="#FFF8E1" stroke="#D4A76A" stroke-width="2" filter="url(#s8)"/>
+  <text x="242" y="112" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">🔐 Grant</text>
+  <text x="242" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Permissions:</text>
+  <text x="242" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">storage, scripting,</text>
+  <text x="242" y="154" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">tabs, contextMenus</text>
+
+  <rect x="325" y="90" width="115" height="80" rx="8" fill="#E3F2FD" stroke="#1976D2" stroke-width="2" filter="url(#s8)"/>
+  <text x="382" y="112" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">⚙️ Configure</text>
+  <text x="382" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Server URL, API</text>
+  <text x="382" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">key, qBit URL,</text>
+  <text x="382" y="154" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">credentials</text>
+
+  <rect x="465" y="90" width="115" height="80" rx="8" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="2" filter="url(#s8)"/>
+  <text x="522" y="112" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">🔍 Discover</text>
+  <text x="522" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Auto-detect</text>
+  <text x="522" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Docker services</text>
+  <text x="522" y="158" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Health check + ping</text>
+
+  <rect x="605" y="90" width="115" height="80" rx="8" fill="#FFF3E0" stroke="#E65100" stroke-width="2" filter="url(#s8)"/>
+  <text x="662" y="112" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">🌐 Browse</text>
+  <text x="662" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Navigate to torrent</text>
+  <text x="662" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">sites as normal</text>
+  <text x="662" y="158" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Any site with links</text>
+
+  <rect x="745" y="90" width="115" height="80" rx="8" fill="#F3E5F5" stroke="#7B1FA2" stroke-width="2" filter="url(#s8)"/>
+  <text x="802" y="112" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">📡 Detect</text>
+  <text x="802" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Content Script</text>
+  <text x="802" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">scans DOM for</text>
+  <text x="802" y="154" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">magnet/torrent links</text>
+
+  <rect x="885" y="90" width="115" height="80" rx="8" fill="#E8EAF6" stroke="#3F51B5" stroke-width="2" filter="url(#s8)"/>
+  <text x="942" y="112" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">📤 Send</text>
+  <text x="942" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Click send, batch</text>
+  <text x="942" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">send, or auto-send</text>
+  <text x="942" y="158" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">API call to Boba</text>
+
+  <rect x="1025" y="90" width="115" height="80" rx="8" fill="#C8E6C9" stroke="#4A8C6F" stroke-width="2" filter="url(#s8)"/>
+  <text x="1082" y="112" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#333">📊 Monitor</text>
+  <text x="1082" y="130" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Track download</text>
+  <text x="1082" y="142" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">progress in popup</text>
+  <text x="1082" y="158" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Badge + notifications</text>
+
+  <!-- Arrows between lifecycle nodes -->
+  <line x1="160" y1="130" x2="185" y2="130" stroke="#D4A76A" stroke-width="2" marker-end="url(#a8)"/>
+  <line x1="300" y1="130" x2="325" y2="130" stroke="#1976D2" stroke-width="2" marker-end="url(#a8)"/>
+  <line x1="440" y1="130" x2="465" y2="130" stroke="#4A8C6F" stroke-width="2" marker-end="url(#a8)"/>
+  <line x1="580" y1="130" x2="605" y2="130" stroke="#E65100" stroke-width="2" marker-end="url(#a8)"/>
+  <line x1="720" y1="130" x2="745" y2="130" stroke="#7B1FA2" stroke-width="2" marker-end="url(#a8)"/>
+  <line x1="860" y1="130" x2="885" y2="130" stroke="#3F51B5" stroke-width="2" marker-end="url(#a8)"/>
+  <line x1="1000" y1="130" x2="1025" y2="130" stroke="#4A8C6F" stroke-width="2" marker-end="url(#a8)"/>
+
+  <!-- Loop back -->
+  <path d="M 1082 170 Q 1082 200 662 200 Q 662 170 662 170" fill="none" stroke="#E65100" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a8)"/>
+  <text x="870" y="195" text-anchor="end" font-family="system-ui" font-size="8" fill="#E65100">Continue browsing →</text>
+
+  <!-- Chrome Events Section -->
+  <rect x="30" y="240" width="550" height="120" rx="10" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s8)"/>
+  <text x="305" y="262" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#2D5F8A">⚡ Chrome Lifecycle Events</text>
+
+  <rect x="50" y="275" width="160" height="65" rx="6" fill="#BBDEFB" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s8)"/>
+  <text x="130" y="295" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">onInstalled</text>
+  <text x="130" y="310" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">First install or update</text>
+  <text x="130" y="322" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Initialize defaults</text>
+
+  <rect x="225" y="275" width="160" height="65" rx="6" fill="#BBDEFB" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s8)"/>
+  <text x="305" y="295" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">onStartup</text>
+  <text x="305" y="310" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Browser startup</text>
+  <text x="305" y="322" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Restore config</text>
+
+  <rect x="400" y="275" width="160" height="65" rx="6" fill="#BBDEFB" stroke="#2D5F8A" stroke-width="1.5" filter="url(#s8)"/>
+  <text x="480" y="295" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="600" fill="#333">onUpdateAvailable</text>
+  <text x="480" y="310" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">New version available</text>
+  <text x="480" y="322" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Show changelog</text>
+
+  <!-- Detailed Actions -->
+  <rect x="30" y="380" width="1140" height="240" rx="10" fill="#F9F9F9" stroke="#E0E0E0" stroke-width="1.5" filter="url(#s8)"/>
+  <text x="600" y="402" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">🎯 User Actions &amp; System Behavior at Each Stage</text>
+
+  <rect x="45" y="415" width="170" height="90" rx="6" fill="white" stroke="#2D5F8A" stroke-width="1" filter="url(#s8)"/>
+  <text x="130" y="432" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="700" fill="#2D5F8A">Install</text>
+  <text x="55" y="448" font-family="system-ui" font-size="8" fill="#666">• Download from store</text>
+  <text x="55" y="462" font-family="system-ui" font-size="8" fill="#666">• Or load unpacked</text>
+  <text x="55" y="476" font-family="system-ui" font-size="8" fill="#666">• Or install .crx file</text>
+  <text x="55" y="490" font-family="system-ui" font-size="8" fill="#666">• Welcome page shown</text>
+
+  <rect x="225" y="415" width="170" height="90" rx="6" fill="white" stroke="#D4A76A" stroke-width="1" filter="url(#s8)"/>
+  <text x="310" y="432" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="700" fill="#D4A76A">Grant</text>
+  <text x="235" y="448" font-family="system-ui" font-size="8" fill="#666">• Host permission prompt</text>
+  <text x="235" y="462" font-family="system-ui" font-size="8" fill="#666">• storage access</text>
+  <text x="235" y="476" font-family="system-ui" font-size="8" fill="#666">• scripting injection</text>
+  <text x="235" y="490" font-family="system-ui" font-size="8" fill="#666">• tabs and contextMenus</text>
+
+  <rect x="405" y="415" width="170" height="90" rx="6" fill="white" stroke="#1976D2" stroke-width="1" filter="url(#s8)"/>
+  <text x="490" y="432" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="700" fill="#1976D2">Configure</text>
+  <text x="415" y="448" font-family="system-ui" font-size="8" fill="#666">• Enter Boba server URL</text>
+  <text x="415" y="462" font-family="system-ui" font-size="8" fill="#666">• Set API key / auth</text>
+  <text x="415" y="476" font-family="system-ui" font-size="8" fill="#666">• Configure qBit URL</text>
+  <text x="415" y="490" font-family="system-ui" font-size="8" fill="#666">• Set default category</text>
+
+  <rect x="585" y="415" width="170" height="90" rx="6" fill="white" stroke="#4A8C6F" stroke-width="1" filter="url(#s8)"/>
+  <text x="670" y="432" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="700" fill="#4A8C6F">Discover</text>
+  <text x="595" y="448" font-family="system-ui" font-size="8" fill="#666">• Ping server endpoint</text>
+  <text x="595" y="462" font-family="system-ui" font-size="8" fill="#666">• Auto-detect Docker</text>
+  <text x="595" y="476" font-family="system-ui" font-size="8" fill="#666">• Verify qBit reachable</text>
+  <text x="595" y="490" font-family="system-ui" font-size="8" fill="#666">• Show status indicator</text>
+
+  <rect x="765" y="415" width="170" height="90" rx="6" fill="white" stroke="#E65100" stroke-width="1" filter="url(#s8)"/>
+  <text x="850" y="432" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="700" fill="#E65100">Browse + Detect</text>
+  <text x="775" y="448" font-family="system-ui" font-size="8" fill="#666">• Navigate normally</text>
+  <text x="775" y="462" font-family="system-ui" font-size="8" fill="#666">• CS auto-detects links</text>
+  <text x="775" y="476" font-family="system-ui" font-size="8" fill="#666">• Popup shows count</text>
+  <text x="775" y="490" font-family="system-ui" font-size="8" fill="#666">• Badge number updates</text>
+
+  <rect x="945" y="415" width="210" height="90" rx="6" fill="white" stroke="#3F51B5" stroke-width="1" filter="url(#s8)"/>
+  <text x="1050" y="432" text-anchor="middle" font-family="system-ui" font-size="9" font-weight="700" fill="#3F51B5">Send + Monitor</text>
+  <text x="955" y="448" font-family="system-ui" font-size="8" fill="#666">• Single send via popup</text>
+  <text x="955" y="462" font-family="system-ui" font-size="8" fill="#666">• Batch via tab groups</text>
+  <text x="955" y="476" font-family="system-ui" font-size="8" fill="#666">• Context menu actions</text>
+  <text x="955" y="490" font-family="system-ui" font-size="8" fill="#666">• Notifications on complete</text>
+
+  <!-- Error/Edge Cases -->
+  <rect x="45" y="520" width="1110" height="80" rx="6" fill="#FFEBEE" stroke="#C75450" stroke-width="1" filter="url(#s8)"/>
+  <text x="600" y="540" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="700" fill="#C75450">⚠️ Edge Cases &amp; Error Handling</text>
+  <text x="60" y="558" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="60" font-weight="700">Permission Denied →</tspan> Show settings guide  |  
+    <tspan x="260" font-weight="700">Invalid Server →</tspan> Show error, allow retry  |  
+    <tspan x="460" font-weight="700">Server Offline →</tspan> Queue for later  |  
+    <tspan x="640" font-weight="700">Auth Failed →</tspan> Prompt re-enter credentials  |  
+    <tspan x="850" font-weight="700">No Torrents Found →</tspan> "No links detected" message
+  </text>
+  <text x="60" y="578" font-family="system-ui" font-size="9" fill="#666">
+    <tspan x="60" font-weight="700">Extension Updated →</tspan> Migrate storage, show changelog  |  
+    <tspan x="340" font-weight="700">Corrupt Config →</tspan> Reset to defaults with backup  |  
+    <tspan x="600" font-weight="700">Rate Limited →</tspan> Auto-retry with backoff  |  
+    <tspan x="830" font-weight="700">Disk Full →</tspan> Show warning, pause downloads
+  </text>
+</svg>

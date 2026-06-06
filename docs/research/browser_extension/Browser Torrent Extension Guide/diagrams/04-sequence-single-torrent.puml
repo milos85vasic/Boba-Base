@@ -1,0 +1,73 @@
+@startuml BobaLink_Single_Torrent_Send
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam sequenceArrowThickness 2
+skinparam participantPadding 20
+
+title BobaLink — Sequence Diagram: Single Torrent Send
+
+actor "User" as User #F3E5F5
+participant "Popup UI\npopup.js" as Popup #E8F0FE
+participant "Content Script\ncontent.js" as CS #E8F5E9
+participant "Background SW\nbackground.js" as BG #E8F0FE
+participant "BobaAPIClient\napi/client.js" as API #FFF8E1
+participant "FastAPI\n:7187" as FastAPI #E3F2FD
+participant "Go Service\n:7189" as GoSvc #E3F2FD
+participant "qBitTorrent\nWebUI :8080" as qBit #E8EAF6
+
+== Detection Phase ==
+User -> CS: Browse torrent site
+activate CS #C8E6C9
+CS -> CS: MutationObserver detects\nmagnet: link in DOM
+CS -> CS: parser.normalizeURL()
+CS -> BG: sendMessage\nDISCOVERED_TORRENTS
+deactivate CS
+activate BG #BBDEFB
+BG -> Popup: sendMessage\nUPDATE_POPUP
+activate Popup #BBDEFB
+Popup -> Popup: Render torrent list
+Popup --> User: Show discovered torrents
+
+== Send Phase ==
+User -> Popup: Click "Send" button
+Popup -> BG: sendMessage\nSEND_TORRENT
+deactivate Popup
+BG -> API: sendTorrent(torrent)
+activate API #FFE0B2
+API -> API: Build request + auth headers
+
+alt FastAPI Path
+    API -> FastAPI: POST /api/torrents/add
+    activate FastAPI #BBDEFB
+    FastAPI -> FastAPI: Validate torrent data
+    FastAPI -> qBit: POST /api/v2/torrents/add
+    activate qBit #C5CAE9
+    qBit -> qBit: Add to BitTorrent engine
+    qBit --> FastAPI: 200 OK + hash
+    deactivate qBit
+    FastAPI --> API: 200 OK + result
+    deactivate FastAPI
+else Go Service Path
+    API -> GoSvc: POST /api/torrents/add
+    activate GoSvc #BBDEFB
+    GoSvc -> GoSvc: Validate + metadata
+    GoSvc -> qBit: POST /api/v2/torrents/add
+    activate qBit #C5CAE9
+    qBit -> qBit: Add to BT engine
+    qBit --> GoSvc: 200 OK + hash
+    deactivate qBit
+    GoSvc --> API: 200 OK + metadata
+    deactivate GoSvc
+end
+
+API --> BG: Promise resolved
+
+deactivate API
+BG -> BG: Store in send_history
+BG -> Popup: sendMessage\nSEND_COMPLETE
+activate Popup #BBDEFB
+Popup --> User: Notification: "Torrent added"
+deactivate Popup
+deactivate BG
+
+@enduml

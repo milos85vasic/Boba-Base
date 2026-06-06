@@ -1,0 +1,67 @@
+@startuml BobaLink_Component_Diagram
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+
+title BobaLink — Component Diagram
+
+package "parser/" as PARSER #FFF8E1 {
+    [magnetParser.js] as MagnetParser #FFE0B2
+    [torrentParser.js] as TorrentParser #FFE0B2
+    [hashNormalizer.js] as HashNormalizer #FFE0B2
+}
+
+package "scanner/" as SCANNER #E8F5E9 {
+    [domScanner.js] as DOMScanner #C8E6C9
+    [linkExtractor.js] as LinkExtractor #C8E6C9
+    [torrentBadge.js] as TorrentBadge #C8E6C9
+}
+
+package "api/" as API #E3F2FD {
+    [BobaAPIClient.js] as BobaAPIClient #BBDEFB
+    [authManager.js] as AuthManager #BBDEFB
+    [retryHandler.js] as RetryHandler #BBDEFB
+}
+
+package "background/" as BG #E8F0FE {
+    [background.js] as MainBG #BBDEFB
+    [contextMenuHandler.js] as ContextMenuHandler #BBDEFB
+    [queueManager.js] as QueueManager #BBDEFB
+    [tabGroupProcessor.js] as TabGroupProcessor #BBDEFB
+}
+
+package "content/" as CONTENT #F3E5F5 {
+    [content.js] as ContentMain #E1BEE7
+    [contentUI.js] as ContentUI #E1BEE7
+}
+
+package "popup/" as POPUP #E8F0FE {
+    [popup.js] as PopupMain #BBDEFB
+    [popup.html] as PopupHTML #BBDEFB
+    [popup.css] as PopupCSS #BBDEFB
+}
+
+package "options/" as OPTIONS #F5F5F5 {
+    [options.js] as OptionsMain #E0E0E0
+    [options.html] as OptionsHTML #E0E0E0
+}
+
+package "shared/" as SHARED #FFF3E0 {
+    [constants.js] as Constants #FFE0B2
+    [utils.js] as Utils #FFE0B2
+    [storageAPI.js] as StorageAPI #FFE0B2
+}
+
+' Dependencies
+SCANNER --> PARSER
+CONTENT --> SCANNER
+CONTENT ..> BG : messaging
+POPUP ..> BG : messaging
+BG --> API
+BG --> SHARED
+POPUP --> SHARED
+OPTIONS --> SHARED
+API --> SHARED
+PARSER --> SHARED
+
+@enduml

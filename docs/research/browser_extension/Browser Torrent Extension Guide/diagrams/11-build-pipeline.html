@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BobaLink Build & Deployment Pipeline</title>
+    <style>
+        :root { --primary:#2D5F8A; --sage:#4A8C6F; --gold:#D4A76A; --dark:#333; --med:#666; --docker:#1976D2; --torrent:#3F51B5; --ext:#E65100; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:system-ui,sans-serif; background:#FAFAFA; padding:24px; }
+        .container { max-width:1400px; margin:0 auto; background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:32px; }
+        h1 { text-align:center; color:var(--primary); font-size:22px; margin-bottom:24px; }
+        .pipeline { display:flex; justify-content:center; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+        .stage { border-radius:10px; padding:16px 20px; text-align:center; min-width:120px; box-shadow:0 2px 8px rgba(0,0,0,0.08); transition:all 0.3s; }
+        .stage:hover { transform:translateY(-4px); box-shadow:0 6px 16px rgba(0,0,0,0.12); }
+        .st1 { background:#E8F0FE; border:2px solid var(--primary); }
+        .st2 { background:#FFF8E1; border:2px solid var(--gold); }
+        .st3 { background:#E8F5E9; border:2px solid var(--sage); }
+        .st4 { background:#E3F2FD; border:2px solid var(--docker); }
+        .st5 { background:#E8EAF6; border:2px solid var(--torrent); }
+        .stage-title { font-weight:700; font-size:13px; margin-bottom:6px; }
+        .stage-desc { font-size:9px; color:var(--med); }
+        .arrow { font-size:24px; color:var(--med); }
+        .deployments { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:20px 0; }
+        .deploy { border-radius:8px; padding:12px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+        .deploy-auto { background:#C8E6C9; border:2px solid var(--sage); }
+        .deploy-manual { background:#FFE0B2; border:2px solid var(--gold); }
+        .deploy-title { font-weight:700; font-size:11px; margin-bottom:4px; }
+        .deploy-info { font-size:8px; color:var(--med); }
+        .ci-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin:20px 0; }
+        .ci-card { background:#E8F0FE; border:1.5px solid var(--primary); border-radius:8px; padding:12px; }
+        .ci-title { font-size:11px; font-weight:700; color:var(--primary); margin-bottom:6px; }
+        .ci-desc { font-size:9px; color:var(--med); }
+        .gates { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .gate { background:#FFF8E1; border:1.5px solid var(--gold); border-radius:6px; padding:10px; }
+        .gate-title { font-size:10px; font-weight:700; color:var(--gold); }
+        .gate-desc { font-size:8px; color:var(--med); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ Build &amp; Deployment Pipeline</h1>
+        <div class="pipeline">
+            <div class="stage st1"><div class="stage-title">💻 Code</div><div class="stage-desc">Git Repository<br>src/ directory</div></div>
+            <span class="arrow">→</span>
+            <div class="stage st2"><div class="stage-title">🔍 Lint</div><div class="stage-desc">ESLint + Prettier<br>Code style checks</div></div>
+            <span class="arrow">→</span>
+            <div class="stage st3"><div class="stage-title">🧪 Test</div><div class="stage-desc">Jest Unit Tests<br>Coverage &gt; 80%</div></div>
+            <span class="arrow">→</span>
+            <div class="stage st4"><div class="stage-title">🔨 Build</div><div class="stage-desc">Webpack / Vite<br>Bundle + Minify</div></div>
+            <span class="arrow">→</span>
+            <div class="stage st5"><div class="stage-title">📦 Package</div><div class="stage-desc">Extension ZIP<br>Manifest validation</div></div>
+        </div>
+        <h3 style="color:var(--sage);margin-bottom:12px;">🚀 Deployment Targets</h3>
+        <div class="deployments">
+            <div class="deploy deploy-auto"><div class="deploy-title">Chrome Web Store</div><div class="deploy-info">$5 one-time fee<br>Review: 1-3 days<br>✓ Auto-deploy</div></div>
+            <div class="deploy deploy-auto"><div class="deploy-title">Firefox AMO</div><div class="deploy-info">Free upload<br>Review: 1-7 days<br>✓ Auto-deploy</div></div>
+            <div class="deploy deploy-manual"><div class="deploy-title">Opera Addons</div><div class="deploy-info">Free upload<br>Review: 2-5 days<br>✗ Manual deploy</div></div>
+            <div class="deploy deploy-auto"><div class="deploy-title">Edge Addons</div><div class="deploy-info">Free upload<br>Review: 1-5 days<br>✓ Auto-deploy</div></div>
+            <div class="deploy deploy-manual"><div class="deploy-title">Yandex Browser</div><div class="deploy-info">Via Opera port<br>Review: 3-7 days<br>✗ Manual deploy</div></div>
+        </div>
+        <h3 style="color:var(--primary);margin-bottom:12px;">⚙️ GitHub Actions CI/CD</h3>
+        <div class="ci-grid">
+            <div class="ci-card"><div class="ci-title">Push / Pull Request</div><div class="ci-desc">Triggers: Lint + Test<br>Fast feedback loop for developers<br>Blocks PR merge on failure</div></div>
+            <div class="ci-card"><div class="ci-title">Release Published</div><div class="ci-desc">Triggers: Full pipeline<br>Build + Package + Deploy<br>All quality gates enforced</div></div>
+            <div class="ci-card"><div class="ci-title">Weekly Schedule</div><div class="ci-desc">Dependency check<br>npm audit for vulnerabilities<br>Automated security alerts</div></div>
+        </div>
+        <h3 style="color:var(--gold);margin-bottom:12px;">✅ Quality Gates</h3>
+        <div class="gates">
+            <div class="gate"><div class="gate-title">Test Coverage ≥ 80%</div><div class="gate-desc">Jest --coverage with threshold enforcement</div></div>
+            <div class="gate"><div class="gate-title">0 ESLint Errors</div><div class="gate-desc">--max-warnings=0 strict mode</div></div>
+            <div class="gate"><div class="gate-title">Valid manifest.json</div><div class="gate-desc">Schema validation against manifest v3 spec</div></div>
+            <div class="gate"><div class="gate-title">Package Size &lt; 5MB</div><div class="gate-desc">Store compliance limit check</div></div>
+        </div>
+    </div>
+</body>
+</html>

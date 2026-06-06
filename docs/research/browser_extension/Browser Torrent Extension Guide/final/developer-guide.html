@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BobaLink Browser Extension</title>
+<style>
+/* ===== Page Setup ===== */
+@page {
+  size: A4;
+  margin: 2.5cm 2cm;
+}
+@page :first {
+  margin: 0;
+}
+@page toc {
+  margin: 2.5cm 2cm;
+}
+
+/* ===== Reset & Base ===== */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  color: #333;
+  background: #fff;
+}
+
+* {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+pre, code, table, img, svg, .mermaid, blockquote {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* ===== Cover Page ===== */
+.cover {
+  width: 210mm;
+  height: 297mm;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.cover::before {
+  content: '';
+  position: absolute;
+  top: 20mm;
+  left: 20mm;
+  right: 20mm;
+  bottom: 20mm;
+  border: 2px solid #2D5F8A;
+}
+
+.cover::after {
+  content: '';
+  position: absolute;
+  top: 25mm;
+  left: 25mm;
+  right: 25mm;
+  bottom: 25mm;
+  border: 1px solid #4A8C6F;
+}
+
+.cover-accent {
+  position: absolute;
+  top: 30mm;
+  left: 30mm;
+  width: 60mm;
+  height: 4px;
+  background: #2D5F8A;
+}
+
+.cover-accent-bottom {
+  position: absolute;
+  bottom: 30mm;
+  right: 30mm;
+  width: 40mm;
+  height: 4px;
+  background: #4A8C6F;
+}
+
+.cover-corner-tl {
+  position: absolute;
+  top: 20mm;
+  left: 20mm;
+  width: 10mm;
+  height: 10mm;
+  border-top: 4px solid #2D5F8A;
+  border-left: 4px solid #2D5F8A;
+}
+
+.cover-corner-br {
+  position: absolute;
+  bottom: 20mm;
+  right: 20mm;
+  width: 10mm;
+  height: 10mm;
+  border-bottom: 4px solid #2D5F8A;
+  border-right: 4px solid #2D5F8A;
+}
+
+.cover-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 70%;
+}
+
+.cover-title {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 32pt;
+  font-weight: 700;
+  color: #2D5F8A;
+  margin-bottom: 1cm;
+  line-height: 1.2;
+}
+
+.cover-subtitle {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 16pt;
+  color: #4A8C6F;
+  margin-bottom: 2cm;
+  font-weight: 400;
+}
+
+.cover-meta {
+  font-size: 12pt;
+  color: #666;
+  line-height: 2;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.cover-classification {
+  position: absolute;
+  bottom: 45mm;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 10pt;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ===== TOC Page ===== */
+.toc-page {
+  page-break-after: always;
+  page: toc;
+}
+
+.toc-page h2 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 22pt;
+  color: #2D5F8A;
+  border-bottom: 2px solid #2D5F8A;
+  padding-bottom: 8pt;
+  margin-bottom: 20pt;
+  margin-top: 0;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-list li {
+  padding: 6pt 0;
+  border-bottom: 1px solid #e0e0e0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11pt;
+}
+
+.toc-list li:last-child {
+  border-bottom: none;
+}
+
+.toc-num {
+  display: inline-block;
+  width: 24pt;
+  color: #2D5F8A;
+  font-weight: 600;
+}
+
+.toc-list a {
+  color: #333;
+  text-decoration: none;
+}
+
+.toc-list a:hover {
+  color: #2D5F8A;
+}
+
+/* ===== Content Headings ===== */
+.content {
+  page-break-before: always;
+}
+
+.content h1 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 26pt;
+  color: #2D5F8A;
+  border-bottom: 3px solid #2D5F8A;
+  padding-bottom: 10pt;
+  margin-top: 0;
+  margin-bottom: 18pt;
+  page-break-after: avoid;
+}
+
+.content h2 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 18pt;
+  color: #2D5F8A;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 6pt;
+  margin-top: 28pt;
+  margin-bottom: 14pt;
+  page-break-after: avoid;
+}
+
+.content h3 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14pt;
+  color: #3a6d9a;
+  margin-top: 22pt;
+  margin-bottom: 10pt;
+  page-break-after: avoid;
+}
+
+.content h4 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12pt;
+  color: #444;
+  font-weight: 600;
+  margin-top: 16pt;
+  margin-bottom: 8pt;
+  page-break-after: avoid;
+}
+
+/* ===== Paragraphs ===== */
+.content p {
+  margin: 8pt 0;
+  text-align: left;
+  orphans: 3;
+  widows: 3;
+}
+
+/* ===== Tables (Three-line style) ===== */
+.content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12pt 0;
+  font-size: 10pt;
+  page-break-inside: auto;
+}
+
+.content table thead {
+  display: table-header-group;
+}
+
+.content table thead tr {
+  border-top: 2.5px solid #333;
+  border-bottom: 1.5px solid #333;
+}
+
+.content table thead th {
+  padding: 8pt 6pt;
+  text-align: left;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  color: #2D5F8A;
+  background: #fafafa;
+}
+
+.content table tbody tr {
+  border-bottom: 0.5px solid #ddd;
+}
+
+.content table tbody tr:last-child {
+  border-bottom: 2.5px solid #333;
+}
+
+.content table tbody td {
+  padding: 6pt;
+  vertical-align: top;
+}
+
+.content table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+/* ===== Code Blocks ===== */
+.content pre {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 0;
+  padding: 10pt 12pt;
+  margin: 12pt 0;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 9pt;
+  line-height: 1.45;
+  page-break-inside: avoid;
+}
+
+.content code {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 9.5pt;
+  background: #f5f5f5;
+  padding: 1pt 3pt;
+  border-radius: 0;
+}
+
+.content pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 9pt;
+}
+
+/* ===== Blockquotes ===== */
+.content blockquote {
+  border-left: 4px solid #2D5F8A;
+  margin: 12pt 0;
+  padding: 8pt 16pt;
+  background: #f8f9fa;
+  color: #555;
+  font-style: italic;
+}
+
+/* ===== Lists ===== */
+.content ul, .content ol {
+  margin: 8pt 0;
+  padding-left: 24pt;
+}
+
+.content li {
+  margin: 3pt 0;
+}
+
+/* ===== Links ===== */
+.content a {
+  color: #2D5F8A;
+  text-decoration: none;
+}
+
+/* ===== Mermaid Diagrams ===== */
+.mermaid {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  padding: 16pt;
+  margin: 14pt 0;
+  text-align: center;
+  font-family: 'Consolas', monospace;
+  font-size: 9pt;
+  color: #666;
+  page-break-inside: avoid;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.mermaid::before {
+  content: '[Diagram]';
+  display: block;
+  font-family: system-ui, sans-serif;
+  font-size: 8pt;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8pt;
+}
+
+/* ===== Horizontal Rules ===== */
+.content hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 20pt 0;
+}
+
+/* ===== Print Optimizations ===== */
+@media print {
+  .content h1, .content h2, .content h3, .content h4 {
+    page-break-after: avoid;
+  }
+  .content pre, .content table, .content blockquote, .mermaid {
+    page-break-inside: avoid;
+  }
+  .content tr {
+    page-break-inside: avoid;
+  }
+}
+
+/* ===== Strong/Emphasis ===== */
+.content strong {
+  color: #2a2a2a;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== COVER PAGE ===== -->
+<div class="cover">
+  <div class="cover-corner-tl"></div>
+  <div class="cover-corner-br"></div>
+  <div class="cover-accent"></div>
+  <div class="cover-accent-bottom"></div>
+  <div class="cover-content">
+    <div class="cover-title">BobaLink Browser Extension</div>
+    <div class="cover-subtitle">Developer Guide</div>
+    <div class="cover-meta">
+      <strong>Version:</strong> 1.0.0<br>
+      <strong>Date:</strong> 2026-06-06<br>
+      <strong>Classification:</strong> Internal
+    </div>
+  </div>
+  <div class="cover-classification">Internal</div>
+</div>
+
+<!-- ===== TABLE OF CONTENTS ===== -->
+<div class="toc-page">
+  <h2>Table of Contents</h2>
+  <ul class="toc-list">
+    <li><span class="toc-num">1.</span> <a href="#1-development-environment-setup">Development Environment Setup</a></li>
+    <li><span class="toc-num">2.</span> <a href="#2-project-structure">Project Structure</a></li>
+    <li><span class="toc-num">3.</span> <a href="#3-building-from-source">Building from Source</a></li>
+    <li><span class="toc-num">4.</span> <a href="#4-testing">Testing</a></li>
+    <li><span class="toc-num">5.</span> <a href="#5-code-style-and-conventions">Code Style and Conventions</a></li>
+    <li><span class="toc-num">6.</span> <a href="#6-architecture-decisions">Architecture Decisions</a></li>
+    <li><span class="toc-num">7.</span> <a href="#7-contributing">Contributing</a></li>
+    <li><span class="toc-num">8.</span> <a href="#8-extending-the-extension">Extending the Extension</a></li>
+    <li><span class="toc-num">9.</span> <a href="#9-debugging">Debugging</a></li>
+  </ul>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="content">
+<h2 id="1-development-environment-setup">1. Development Environment Setup</h2>
+<h3 id="11-prerequisites">1.1 Prerequisites</h3>
+<p>Before you begin, ensure your development machine meets the following requirements:</p>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Minimum Version</th>
+<th>Recommended</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Node.js</td>
+<td>18 LTS</td>
+<td>20 LTS</td>
+<td>Runtime and package management</td>
+</tr>
+<tr>
+<td>npm</td>
+<td>9.x</td>
+<td>10.x</td>
+<td>Package manager (bundled with Node.js)</td>
+</tr>
+<tr>
+<td>Git</td>
+<td>2.40</td>
+<td>2.43+</td>
+<td>Version control</td>
+</tr>
+<tr>
+<td>A supported browser</td>
+<td>Chrome 88+</td>
+<td>Chrome 120+</td>
+<td>Testing and debugging</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verify your environment:</strong></p>
+<pre><code class="language-bash">node --version    # Should print v18.x.x or higher
+npm --version     # Should print 9.x.x or higher
+git --version     # Should print 2.40+ or higher
+</code></pre>
+<h3 id="12-cloning-the-repository">1.2 Cloning the Repository</h3>
+<pre><code class="language-bash"># Clone the repository
+git clone https://github.com/bobaproject/bobalink.git
+
+# Navigate to the project directory
+cd bobalink
+
+# Install dependencies
+npm install
+</code></pre>
+<p>The <code>npm install</code> command installs all development and runtime dependencies. This may take 2–5 minutes depending on your connection speed.</p>
+<h3 id="13-installing-dependencies">1.3 Installing Dependencies</h3>
+<p>Key dependencies that will be installed:</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wxt</code></td>
+<td>^0.17</td>
+<td>Extension build framework</td>
+</tr>
+<tr>
+<td><code>typescript</code></td>
+<td>^5.0</td>
+<td>Type safety</td>
+</tr>
+<tr>
+<td><code>vite</code></td>
+<td>^5.0</td>
+<td>Module bundler (via WXT)</td>
+</tr>
+<tr>
+<td><code>jest</code></td>
+<td>^29.0</td>
+<td>Unit testing framework</td>
+</tr>
+<tr>
+<td><code>@playwright/test</code></td>
+<td>^1.40</td>
+<td>E2E testing framework</td>
+</tr>
+<tr>
+<td><code>eslint</code></td>
+<td>^8.0</td>
+<td>Code linting</td>
+</tr>
+<tr>
+<td><code>prettier</code></td>
+<td>^3.0</td>
+<td>Code formatting</td>
+</tr>
+<tr>
+<td><code>bencode-js</code></td>
+<td>^3.0</td>
+<td>Bencode parsing for <code>.torrent</code> files</td>
+</tr>
+<tr>
+<td><code>lz-string</code></td>
+<td>^1.5</td>
+<td>Compression for queue storage</td>
+</tr>
+<tr>
+<td><code>webextension-polyfill</code></td>
+<td>^0.10</td>
+<td>Firefox compatibility</td>
+</tr>
+</tbody>
+</table>
+<h3 id="14-ide-recommendations">1.4 IDE Recommendations</h3>
+<h4 id="visual-studio-code-recommended">Visual Studio Code (Recommended)</h4>
+<p>VS Code provides the best development experience for BobaLink. Recommended configuration:</p>
+<p><strong><code>.vscode/settings.json</code>:</strong></p>
+<pre><code class="language-json">{
+  &quot;editor.formatOnSave&quot;: true,
+  &quot;editor.defaultFormatter&quot;: &quot;esbenp.prettier-vscode&quot;,
+  &quot;editor.codeActionsOnSave&quot;: {
+    &quot;source.fixAll.eslint&quot;: &quot;explicit&quot;
+  },
+  &quot;typescript.tsdk&quot;: &quot;node_modules/typescript/lib&quot;,
+  &quot;typescript.preferences.importModuleSpecifier&quot;: &quot;relative&quot;,
+  &quot;files.exclude&quot;: {
+    &quot;**/node_modules&quot;: true,
+    &quot;**/.output&quot;: true,
+    &quot;**/dist&quot;: true
+  },
+  &quot;search.exclude&quot;: {
+    &quot;**/node_modules&quot;: true,
+    &quot;**/dist&quot;: true,
+    &quot;**/.output&quot;: true,
+    &quot;**/*.lock&quot;: true
+  }
+}
+</code></pre>
+<p><strong><code>.vscode/extensions.json</code>:</strong></p>
+<pre><code class="language-json">{
+  &quot;recommendations&quot;: [
+    &quot;esbenp.prettier-vscode&quot;,
+    &quot;dbaeumer.vscode-eslint&quot;,
+    &quot;ms-vscode.vscode-typescript-next&quot;,
+    &quot;bradlc.vscode-tailwindcss&quot;,
+    &quot;ryanluker.vscode-coverage-gutters&quot;,
+    &quot;orta.vscode-jest&quot;
+  ]
+}
+</code></pre>
+<p><strong>Recommended Extensions:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Extension</th>
+<th>Publisher</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prettier</td>
+<td>esbenp.prettier-vscode</td>
+<td>Code formatting</td>
+</tr>
+<tr>
+<td>ESLint</td>
+<td>dbaeumer.vscode-eslint</td>
+<td>Real-time linting</td>
+</tr>
+<tr>
+<td>Tailwind CSS IntelliSense</td>
+<td>bradlc.vscode-tailwindcss</td>
+<td>CSS autocomplete</td>
+</tr>
+<tr>
+<td>Coverage Gutters</td>
+<td>ryanluker.vscode-coverage-gutters</td>
+<td>Visual test coverage</td>
+</tr>
+<tr>
+<td>Jest</td>
+<td>orta.vscode-jest</td>
+<td>Test runner integration</td>
+</tr>
+</tbody>
+</table>
+<h4 id="webstorm-intellij-idea">WebStorm / IntelliJ IDEA</h4>
+<p>If using JetBrains IDEs:<br />
+1. Enable the Prettier plugin: <strong>Settings → Languages &amp; Frameworks → JavaScript → Prettier</strong>.<br />
+2. Enable ESLint: <strong>Settings → Languages &amp; Frameworks → JavaScript → Code Quality Tools → ESLint</strong>.<br />
+3. Set TypeScript version: <strong>Settings → Languages &amp; Frameworks → TypeScript</strong> → point to <code>node_modules/typescript/lib</code>.</p>
+<hr />
+<h2 id="2-project-structure">2. Project Structure</h2>
+<h3 id="21-directory-layout">2.1 Directory Layout</h3>
+<pre><code>bobalink/
+├── src/
+│   ├── assets/              # Static assets (icons, images)
+│   │   ├── icon-16.png
+│   │   ├── icon-32.png
+│   │   ├── icon-48.png
+│   │   └── icon-128.png
+│   ├── background/          # Service worker (MV3 background script)
+│   │   ├── index.ts         # Entry point
+│   │   ├── message-router.ts
+│   │   └── init.ts
+│   ├── content-scripts/     # Scripts injected into web pages
+│   │   ├── index.ts         # Entry point
+│   │   ├── magnet-scanner.ts
+│   │   ├── dom-observer.ts
+│   │   └── torrent-parser.ts
+│   ├── popup/               # Toolbar popup UI
+│   │   ├── index.html
+│   │   ├── index.ts
+│   │   ├── popup.css
+│   │   └── components/
+│   │       ├── torrent-list.ts
+│   │       ├── queue-view.ts
+│   │       ├── status-bar.ts
+│   │       └── tab-groups.ts
+│   ├── options/             # Options/settings page
+│   │   ├── index.html
+│   │   ├── index.ts
+│   │   ├── options.css
+│   │   └── components/
+│   │       ├── server-config.ts
+│   │       ├── download-prefs.ts
+│   │       ├── queue-settings.ts
+│   │       └── ui-settings.ts
+│   ├── modules/             # Shared business logic modules
+│   │   ├── api-client.ts
+│   │   ├── auth-manager.ts
+│   │   ├── badge-manager.ts
+│   │   ├── config-manager.ts
+│   │   ├── crypto-utils.ts
+│   │   ├── discovery-service.ts
+│   │   ├── health-monitor.ts
+│   │   ├── i18n.ts
+│   │   ├── notification-manager.ts
+│   │   ├── queue-manager.ts
+│   │   ├── rate-limiter.ts
+│   │   ├── state-manager.ts
+│   │   └── tab-manager.ts
+│   ├── types/               # TypeScript type definitions
+│   │   ├── index.ts
+│   │   ├── messages.ts
+│   │   ├── torrent.ts
+│   │   ├── config.ts
+│   │   └── api.ts
+│   └── utils/               # Utility functions
+│       ├── bencode.ts
+│       ├── hash.ts
+│       ├── magnet-uri.ts
+│       ├── storage.ts
+│       ├── time.ts
+│       └── validation.ts
+├── tests/
+│   ├── unit/                # Jest unit tests
+│   │   ├── modules/
+│   │   ├── utils/
+│   │   └── setup.ts
+│   ├── e2e/                 # Playwright E2E tests
+│   │   ├── fixtures/
+│   │   ├── specs/
+│   │   └── playwright.config.ts
+│   └── mocks/               # Test mocks
+│       ├── chrome-api.ts
+│       └── fetch.ts
+├── public/                  # Public static files
+├── _locales/                # Internationalization
+│   ├── en/
+│   ├── zh_CN/
+│   ├── es/
+│   └── ...
+├── wxt.config.ts            # WXT build configuration
+├── tsconfig.json            # TypeScript configuration
+├── jest.config.ts           # Jest test configuration
+├── eslint.config.js         # ESLint configuration
+├── prettier.config.js       # Prettier configuration
+├── package.json             # Project manifest
+└── README.md
+</code></pre>
+<h3 id="22-module-descriptions">2.2 Module Descriptions</h3>
+<h4 id="background-service-worker">Background (Service Worker)</h4>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>index.ts</code></td>
+<td>Service worker entry point; registers event listeners</td>
+</tr>
+<tr>
+<td><code>message-router.ts</code></td>
+<td>Routes incoming extension messages to appropriate handlers</td>
+</tr>
+<tr>
+<td><code>init.ts</code></td>
+<td>Extension initialization: config loading, health monitoring startup</td>
+</tr>
+</tbody>
+</table>
+<h4 id="content-scripts">Content Scripts</h4>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>index.ts</code></td>
+<td>Content script entry; initializes scanner and observer</td>
+</tr>
+<tr>
+<td><code>magnet-scanner.ts</code></td>
+<td>Scans DOM for magnet links and <code>.torrent</code> references</td>
+</tr>
+<tr>
+<td><code>dom-observer.ts</code></td>
+<td><code>MutationObserver</code> wrapper for dynamic content detection</td>
+</tr>
+<tr>
+<td><code>torrent-parser.ts</code></td>
+<td>Parses magnet URIs and <code>.torrent</code> file metadata</td>
+</tr>
+</tbody>
+</table>
+<h4 id="modules-shared-logic">Modules (Shared Logic)</h4>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>api-client.ts</code></td>
+<td>HTTP client for Boba and qBitTorrent API calls</td>
+</tr>
+<tr>
+<td><code>auth-manager.ts</code></td>
+<td>Authentication: login, token refresh, session management</td>
+</tr>
+<tr>
+<td><code>badge-manager.ts</code></td>
+<td>Toolbar badge state: color, text, animations</td>
+</tr>
+<tr>
+<td><code>config-manager.ts</code></td>
+<td>Configuration CRUD with validation and persistence</td>
+</tr>
+<tr>
+<td><code>crypto-utils.ts</code></td>
+<td>AES-256-GCM encryption, PBKDF2 key derivation</td>
+</tr>
+<tr>
+<td><code>discovery-service.ts</code></td>
+<td>mDNS-like local network server discovery</td>
+</tr>
+<tr>
+<td><code>health-monitor.ts</code></td>
+<td>Periodic health checks; connection state management</td>
+</tr>
+<tr>
+<td><code>i18n.ts</code></td>
+<td>Internationalization: message lookup, locale detection</td>
+</tr>
+<tr>
+<td><code>notification-manager.ts</code></td>
+<td>Browser notification creation and management</td>
+</tr>
+<tr>
+<td><code>queue-manager.ts</code></td>
+<td>Offline queue: enqueue, dequeue, retry scheduling</td>
+</tr>
+<tr>
+<td><code>rate-limiter.ts</code></td>
+<td>Token bucket rate limiter for API calls</td>
+</tr>
+<tr>
+<td><code>state-manager.ts</code></td>
+<td>Central state store; reactive updates to UI</td>
+</tr>
+<tr>
+<td><code>tab-manager.ts</code></td>
+<td>Tab group enumeration; batch scan orchestration</td>
+</tr>
+</tbody>
+</table>
+<h4 id="types">Types</h4>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>index.ts</code></td>
+<td>Barrel export for all types</td>
+</tr>
+<tr>
+<td><code>messages.ts</code></td>
+<td>Extension message passing types</td>
+</tr>
+<tr>
+<td><code>torrent.ts</code></td>
+<td>TorrentInfo and related types</td>
+</tr>
+<tr>
+<td><code>config.ts</code></td>
+<td>ExtensionConfig and sub-configuration types</td>
+</tr>
+<tr>
+<td><code>api.ts</code></td>
+<td>API request/response types for Boba and qBitTorrent</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-building-from-source">3. Building from Source</h2>
+<h3 id="31-development-build">3.1 Development Build</h3>
+<p>Start the development server with hot module replacement:</p>
+<pre><code class="language-bash">npm run dev
+</code></pre>
+<p>This command:<br />
+1. Starts WXT in development mode.<br />
+2. Watches source files for changes and rebuilds automatically.<br />
+3. Outputs to <code>.output/</code> directory.<br />
+4. Provides a Chrome-compatible build by default.</p>
+<p><strong>Output structure:</strong></p>
+<pre><code>.output/
+├── chrome-mv3-dev/       # Chrome development build
+│   ├── manifest.json
+│   ├── background.js
+│   ├── content-scripts/
+│   ├── popup/
+│   └── options/
+</code></pre>
+<p><strong>Loading the development build:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td><code>chrome://extensions</code> → Enable "Developer mode" → "Load unpacked" → Select <code>.output/chrome-mv3-dev/</code></td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td><code>about:debugging</code> → "This Firefox" → "Load Temporary Add-on" → Select <code>manifest.json</code> from <code>.output/firefox-mv3-dev/</code></td>
+</tr>
+<tr>
+<td>Opera</td>
+<td><code>opera://extensions</code> → Enable "Developer mode" → "Load unpacked"</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32-production-build">3.2 Production Build</h3>
+<p>Create optimized production builds for all targets:</p>
+<pre><code class="language-bash">npm run build
+</code></pre>
+<p>This generates:</p>
+<pre><code>.output/
+├── chrome-mv3-prod/      # Chrome production build
+├── firefox-mv3-prod/     # Firefox production build
+├── opera-mv3-prod/       # Opera production build
+└── edge-mv3-prod/        # Edge production build (same as Chrome)
+</code></pre>
+<p>Each build is:<br />
+- Minified and tree-shaken.<br />
+- Source-mapped (<code>.map</code> files).<br />
+- Ready for packaging as ZIP for store submission.</p>
+<h3 id="33-cross-browser-builds">3.3 Cross-Browser Builds</h3>
+<p>Build for specific browsers:</p>
+<pre><code class="language-bash"># Chrome only
+npx wxt build -b chrome
+
+# Firefox only
+npx wxt build -b firefox
+
+# Opera only
+npx wxt build --browser opera
+</code></pre>
+<p>Browser-specific differences are handled by:<br />
+- WXT's browser-specific entry points (<code>popup/index.firefox.ts</code>).<br />
+- Conditional compilation via <code>import.meta.browser</code>.<br />
+- The <code>webextension-polyfill</code> package for API normalization.</p>
+<h3 id="34-build-configuration">3.4 Build Configuration</h3>
+<p><strong><code>wxt.config.ts</code>:</strong></p>
+<pre><code class="language-typescript">import { defineConfig } from 'wxt';
+
+export default defineConfig({
+  srcDir: 'src',
+  outDir: '.output',
+  modules: ['@wxt-dev/module-typescript'],
+  manifest: {
+    name: '__MSG_extName__',
+    description: '__MSG_extDescription__',
+    version: '1.0.0',
+    permissions: ['activeTab', 'storage', 'contextMenus', 'notifications'],
+    host_permissions: ['https://*/'],
+    action: {
+      default_popup: 'popup/index.html'
+    },
+    options_ui: {
+      page: 'options/index.html',
+      open_in_tab: true
+    },
+    commands: {
+      'send-current-page': {
+        suggested_key: { default: 'Ctrl+Shift+B', mac: 'Command+Shift+B' },
+        description: 'Send all torrents on current page'
+      }
+    }
+  }
+});
+</code></pre>
+<hr />
+<h2 id="4-testing">4. Testing</h2>
+<h3 id="41-running-unit-tests">4.1 Running Unit Tests</h3>
+<p>Execute the full unit test suite:</p>
+<pre><code class="language-bash">npm test
+</code></pre>
+<p>Or with Jest directly for more control:</p>
+<pre><code class="language-bash"># Run all tests
+npx jest
+
+# Run with coverage
+npx jest --coverage
+
+# Run in watch mode (during development)
+npx jest --watch
+
+# Run a specific test file
+npx jest tests/unit/utils/magnet-uri.test.ts
+
+# Run tests matching a pattern
+npx jest --testNamePattern=&quot;parseMagnetUri&quot;
+</code></pre>
+<p><strong>Coverage reporting:</strong></p>
+<p>Coverage reports are generated in <code>coverage/</code>:</p>
+<pre><code>coverage/
+├── lcov-report/       # HTML report (open index.html in browser)
+├── lcov.info          # LCOV format for CI integration
+└── coverage-summary.json
+</code></pre>
+<p><strong>Coverage thresholds (enforced in CI):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Minimum</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Statements</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>Branches</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>Functions</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>Lines</td>
+<td>80%</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-running-e2e-tests">4.2 Running E2E Tests</h3>
+<p>End-to-end tests use Playwright to automate real browser interactions:</p>
+<pre><code class="language-bash"># Install Playwright browsers (one-time setup)
+npx playwright install chromium firefox
+
+# Run all E2E tests
+npm run test:e2e
+
+# Run in headed mode (visible browser)
+npx playwright test --headed
+
+# Run a specific spec
+npx playwright test tests/e2e/specs/detection.spec.ts
+
+# Run with UI mode (interactive debugging)
+npx playwright test --ui
+
+# Run on specific browser
+npx playwright test --project=chromium
+n```
+
+**E2E Test Structure:**
+
+</code></pre>
+<p>tests/e2e/<br />
+├── fixtures/               # Test data<br />
+│   ├── sample.torrent<br />
+│   ├── magnet-links.html<br />
+│   └── mock-server.ts<br />
+├── specs/                  # Test specifications<br />
+│   ├── detection.spec.ts   # Torrent detection tests<br />
+│   ├── sending.spec.ts     # Send-to-server tests<br />
+│   ├── queue.spec.ts       # Queue management tests<br />
+│   ├── auth.spec.ts        # Authentication tests<br />
+│   └── settings.spec.ts    # Options page tests<br />
+├── page-objects/           # Page Object Models<br />
+│   ├── popup.page.ts<br />
+│   ├── options.page.ts<br />
+│   └── mock-server.page.ts<br />
+└── playwright.config.ts    # Playwright configuration</p>
+<pre><code>
+### 4.3 Writing New Tests
+
+#### Unit Test Template
+
+```typescript
+import { parseMagnetUri } from '@src/utils/magnet-uri';
+
+describe('parseMagnetUri', () =&gt; {
+  it('should parse a complete magnet URI', () =&gt; {
+    const uri = 'magnet:?xt=urn:btih:abc123def456&amp;dn=Test+File&amp;tr=https://tracker.example.com/announce';
+    const result = parseMagnetUri(uri);
+
+    expect(result.infohash).toBe('abc123def456');
+    expect(result.displayName).toBe('Test File');
+    expect(result.trackers).toContain('https://tracker.example.com/announce');
+  });
+
+  it('should throw on invalid magnet URI', () =&gt; {
+    expect(() =&gt; parseMagnetUri('not-a-magnet')).toThrow('Invalid magnet URI');
+  });
+
+  it('should handle missing display name', () =&gt; {
+    const uri = 'magnet:?xt=urn:btih:abc123def456';
+    const result = parseMagnetUri(uri);
+    expect(result.displayName).toBe('Unknown Torrent');
+  });
+});
+</code></pre>
+<h4 id="e2e-test-template">E2E Test Template</h4>
+<pre><code class="language-typescript">import { test, expect } from '@playwright/test';
+import { PopupPage } from '../page-objects/popup.page';
+
+test.describe('Torrent Detection', () =&gt; {
+  test('should detect magnet links on a page', async ({ page, extensionId }) =&gt; {
+    // Arrange: Load a test page with magnet links
+    await page.goto(`file://${__dirname}/../fixtures/magnet-links.html`);
+
+    // Act: Open the extension popup
+    const popup = new PopupPage(page, extensionId);
+    await popup.open();
+
+    // Assert: Verify torrents are listed
+    const torrentCount = await popup.getTorrentCount();
+    expect(torrentCount).toBe(3);
+
+    const firstTorrentName = await popup.getTorrentName(0);
+    expect(firstTorrentName).toContain('Ubuntu');
+  });
+});
+</code></pre>
+<h3 id="44-test-coverage-reports">4.4 Test Coverage Reports</h3>
+<p>Generate and view coverage:</p>
+<pre><code class="language-bash">npm run test:coverage
+</code></pre>
+<p>The HTML report opens automatically. Key files to monitor:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Target</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/modules/api-client.ts</code></td>
+<td>90%</td>
+<td>Critical for reliability</td>
+</tr>
+<tr>
+<td><code>src/modules/crypto-utils.ts</code></td>
+<td>95%</td>
+<td>Security-critical</td>
+</tr>
+<tr>
+<td><code>src/modules/queue-manager.ts</code></td>
+<td>85%</td>
+<td>Core functionality</td>
+</tr>
+<tr>
+<td><code>src/content-scripts/magnet-scanner.ts</code></td>
+<td>80%</td>
+<td>User-facing</td>
+</tr>
+<tr>
+<td><code>src/utils/magnet-uri.ts</code></td>
+<td>95%</td>
+<td>Pure functions, easy to test</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-code-style-and-conventions">5. Code Style and Conventions</h2>
+<h3 id="51-typescript-strict-mode">5.1 TypeScript Strict Mode</h3>
+<p>The project uses TypeScript strict mode. Key rules:</p>
+<pre><code class="language-json">{
+  &quot;compilerOptions&quot;: {
+    &quot;strict&quot;: true,
+    &quot;noImplicitAny&quot;: true,
+    &quot;strictNullChecks&quot;: true,
+    &quot;strictFunctionTypes&quot;: true,
+    &quot;strictBindCallApply&quot;: true,
+    &quot;strictPropertyInitialization&quot;: true,
+    &quot;noImplicitReturns&quot;: true,
+    &quot;noFallthroughCasesInSwitch&quot;: true,
+    &quot;noUncheckedIndexedAccess&quot;: true
+  }
+}
+</code></pre>
+<p><strong>No <code>any</code> types in production code.</strong> Use <code>unknown</code> with type guards:</p>
+<pre><code class="language-typescript">// Bad
+function process(data: any): any {
+  return data.value;
+}
+
+// Good
+function process(data: unknown): string {
+  if (typeof data === 'object' &amp;&amp; data !== null &amp;&amp; 'value' in data) {
+    return String((data as Record&lt;string, unknown&gt;).value);
+  }
+  throw new TypeError('Invalid data shape');
+}
+</code></pre>
+<h3 id="52-eslint-configuration">5.2 ESLint Configuration</h3>
+<pre><code class="language-javascript">// eslint.config.js
+export default [
+  {
+    files: ['src/**/*.ts'],
+    languageOptions: {
+      parser: '@typescript-eslint/parser',
+      parserOptions: {
+        project: './tsconfig.json'
+      }
+    },
+    plugins: {
+      '@typescript-eslint': typescriptEslint
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/prefer-nullish-coalescing': 'error',
+      '@typescript-eslint/prefer-optional-chain': 'error',
+      'no-console': ['warn', { allow: ['error', 'warn'] }]
+    }
+  }
+];
+</code></pre>
+<h3 id="53-prettier-configuration">5.3 Prettier Configuration</h3>
+<pre><code class="language-javascript">// prettier.config.js
+export default {
+  semi: true,
+  trailingComma: 'es5',
+  singleQuote: true,
+  printWidth: 100,
+  tabWidth: 2,
+  useTabs: false,
+  bracketSpacing: true,
+  arrowParens: 'avoid'
+};
+</code></pre>
+<h3 id="54-naming-conventions">5.4 Naming Conventions</h3>
+<table>
+<thead>
+<tr>
+<th>Construct</th>
+<th>Convention</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Variables / Functions</td>
+<td>camelCase</td>
+<td><code>sendTorrent</code>, <code>getStatus</code></td>
+</tr>
+<tr>
+<td>Constants</td>
+<td>UPPER_SNAKE_CASE</td>
+<td><code>MAX_QUEUE_SIZE</code>, <code>DEFAULT_TIMEOUT</code></td>
+</tr>
+<tr>
+<td>Types / Interfaces</td>
+<td>PascalCase</td>
+<td><code>TorrentInfo</code>, <code>ServerConfig</code></td>
+</tr>
+<tr>
+<td>Classes</td>
+<td>PascalCase</td>
+<td><code>QueueManager</code>, <code>ApiClient</code></td>
+</tr>
+<tr>
+<td>Enums</td>
+<td>PascalCase + PascalCase members</td>
+<td><code>enum ConnectionState { Connected, Disconnected }</code></td>
+</tr>
+<tr>
+<td>Files</td>
+<td>kebab-case</td>
+<td><code>magnet-scanner.ts</code>, <code>crypto-utils.ts</code></td>
+</tr>
+<tr>
+<td>Test files</td>
+<td><code>*.test.ts</code> or <code>*.spec.ts</code></td>
+<td><code>magnet-uri.test.ts</code></td>
+</tr>
+<tr>
+<td>Private members</td>
+<td>Leading underscore</td>
+<td><code>_internalQueue</code>, <code>_timerId</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="55-comment-style-jsdoc">5.5 Comment Style (JSDoc)</h3>
+<p>All public APIs must include JSDoc comments:</p>
+<pre><code class="language-typescript">/**
+ * Parses a magnet URI string into a structured TorrentInfo object.
+ *
+ * @param uri - The raw magnet URI (e.g., &quot;magnet:?xt=urn:btih:abc123...&quot;)
+ * @returns Parsed torrent metadata
+ * @throws {ValidationError} If the URI format is invalid
+ *
+ * @example
+ * ```typescript
+ * const info = parseMagnetUri('magnet:?xt=urn:btih:abc123&amp;dn=Example');
+ * console.log(info.infohash); // 'abc123...'
+ * ```
+ */
+export function parseMagnetUri(uri: string): TorrentInfo {
+  // Implementation
+}
+</code></pre>
+<p>Comment guidelines:<br />
+- Explain <strong>why</strong>, not <strong>what</strong> (the code shows what).<br />
+- Document all parameters, return values, and thrown errors.<br />
+- Include usage examples for complex functions.<br />
+- Use <code>TODO(username): description</code> for known technical debt.<br />
+- Use <code>FIXME(username): description</code> for bugs that need fixing.</p>
+<hr />
+<h2 id="6-architecture-decisions">6. Architecture Decisions</h2>
+<h3 id="61-why-mv3-over-mv2">6.1 Why MV3 Over MV2</h3>
+<p><strong>Decision</strong>: Use Manifest V3 (MV3) instead of Manifest V2 (MV2).</p>
+<p><strong>Rationale:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>MV2</th>
+<th>MV3</th>
+<th>Winner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome Web Store acceptance</td>
+<td>Being deprecated</td>
+<td>Required for new extensions</td>
+<td>MV3</td>
+</tr>
+<tr>
+<td>Service worker vs background page</td>
+<td>Persistent background page</td>
+<td>Ephemeral service worker</td>
+<td>MV3</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Background page always running</td>
+<td>Service worker wakes on events</td>
+<td>MV3</td>
+</tr>
+<tr>
+<td>Memory usage</td>
+<td>Higher (persistent)</td>
+<td>Lower (ephemeral)</td>
+<td>MV3</td>
+</tr>
+<tr>
+<td>Network request modification</td>
+<td><code>webRequest</code> blocking</td>
+<td><code>declarativeNetRequest</code></td>
+<td>MV2*</td>
+</tr>
+<tr>
+<td>Cross-browser support</td>
+<td>Legacy only</td>
+<td>Modern standard</td>
+<td>MV3</td>
+</tr>
+</tbody>
+</table>
+<p>* BobaLink does not need to block/modify network requests, so the <code>webRequest</code> limitation of MV3 is not a factor.</p>
+<p><strong>Mitigations for MV3 limitations:</strong><br />
+- Service worker persistence: Use <code>chrome.alarms</code> API to keep the worker alive during active operations.<br />
+- Storage: Use <code>chrome.storage</code> (local and session) instead of in-memory state.<br />
+- All Chrome, Firefox, Opera, and Yandex versions targeted by BobaLink support MV3.</p>
+<h3 id="62-why-wxt-over-raw-webpackvite">6.2 Why WXT Over Raw Webpack/Vite</h3>
+<p><strong>Decision</strong>: Use WXT as the build framework instead of configuring Webpack or Vite manually.</p>
+<p><strong>Rationale:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Raw Vite</th>
+<th>WXT</th>
+<th>Winner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Extension-specific scaffolding</td>
+<td>None</td>
+<td>Built-in</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>HMR for content scripts</td>
+<td>Manual config</td>
+<td>Automatic</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>Multi-browser builds</td>
+<td>Manual config</td>
+<td>Automatic</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>Manifest generation</td>
+<td>Manual</td>
+<td>Auto-generated from config</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>File-based routing</td>
+<td>None</td>
+<td>Entry points auto-discovered</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>Dev server with auto-reload</td>
+<td>Manual config</td>
+<td>Built-in</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>Bundle size</td>
+<td>Comparable</td>
+<td>Comparable (thin wrapper)</td>
+<td>Tie</td>
+</tr>
+<tr>
+<td>Community size</td>
+<td>Large</td>
+<td>Growing</td>
+<td>Vite</td>
+</tr>
+</tbody>
+</table>
+<p><strong>WXT specifically solves:</strong><br />
+- Automatic discovery of <code>src/popup/</code>, <code>src/options/</code>, <code>src/background/</code>, <code>src/content-scripts/</code> entries.<br />
+- Browser-specific build variants (Chrome MV3, Firefox MV3 with polyfills).<br />
+- Dev mode that auto-reloads the extension on file change.<br />
+- Automatic i18n message placeholder substitution in the manifest.</p>
+<h3 id="63-why-activetab-over-host_permissions">6.3 Why activeTab Over host_permissions</h3>
+<p><strong>Decision</strong>: Use <code>activeTab</code> as the primary permission model instead of broad <code>host_permissions</code>.</p>
+<p><strong>Rationale:</strong></p>
+<p><code>activeTab</code> grants temporary access to the current tab only when the user interacts with the extension. This is more privacy-respecting and requires fewer permission prompts at install time.</p>
+<table>
+<thead>
+<tr>
+<th>Permission Model</th>
+<th>Install Prompt</th>
+<th>Privacy</th>
+<th>Functionality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>host_permissions: &lt;all_urls&gt;</code></td>
+<td>Scary "read all website data"</td>
+<td>Poor</td>
+<td>Works on all pages</td>
+</tr>
+<tr>
+<td><code>activeTab</code></td>
+<td>No prompt (on-demand)</td>
+<td>Excellent</td>
+<td>Works on current tab only</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Implementation:</strong><br />
+- Primary detection uses <code>activeTab</code> + user gesture (clicking the extension icon).<br />
+- Optional <code>host_permissions</code> for advanced users who want proactive detection without interaction.<br />
+- The <code>optional_permissions</code> field in the manifest allows users to grant additional access.</p>
+<h3 id="64-why-aes-256-gcm-for-encryption">6.4 Why AES-256-GCM for Encryption</h3>
+<p><strong>Decision</strong>: Use AES-256-GCM via the Web Crypto API for credential encryption.</p>
+<p><strong>Rationale:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Mode</th>
+<th>Authentication</th>
+<th>Performance</th>
+<th>Standard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AES-128-CBC</td>
+<td>No</td>
+<td>No (requires HMAC)</td>
+<td>Fast</td>
+<td>Legacy</td>
+</tr>
+<tr>
+<td>AES-256-CBC</td>
+<td>No</td>
+<td>No (requires HMAC)</td>
+<td>Fast</td>
+<td>Legacy</td>
+</tr>
+<tr>
+<td>AES-256-GCM</td>
+<td>Yes</td>
+<td>Built-in</td>
+<td>Fast</td>
+<td>Modern standard</td>
+</tr>
+<tr>
+<td>ChaCha20-Poly1305</td>
+<td>Yes</td>
+<td>Built-in</td>
+<td>Fast</td>
+<td>Alternative</td>
+</tr>
+</tbody>
+</table>
+<p>AES-256-GCM was chosen because:<br />
+1. It provides authenticated encryption (confidentiality + integrity) in a single operation.<br />
+2. It is widely supported by the Web Crypto API in all targeted browsers.<br />
+3. It is a NIST standard with extensive cryptanalysis and hardware acceleration support.<br />
+4. ChaCha20-Poly1305 is excellent but less universally accelerated on x86 hardware.</p>
+<p><strong>Key derivation:</strong><br />
+- Master key derived from user password via PBKDF2 with 100,000 iterations.<br />
+- Per-entry random IV (96-bit) generated via <code>crypto.getRandomValues()</code>.<br />
+- 128-bit authentication tag validated on every decryption.</p>
+<hr />
+<h2 id="7-contributing">7. Contributing</h2>
+<h3 id="71-git-workflow-github-flow">7.1 Git Workflow (GitHub Flow)</h3>
+<p>BobaLink follows the GitHub Flow branching model:</p>
+<div style="border:1px solid #2D5F8A; padding:15px; margin:15px 0; background:#f0f4f8; text-align:center; color:#2D5F8A; font-weight:bold; page-break-inside:avoid;">[Diagram: System Architecture Overview]</div>
+
+<p><strong>Branch naming conventions:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Purpose</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feature/</code></td>
+<td>New features</td>
+<td><code>feature/tab-group-batch</code></td>
+</tr>
+<tr>
+<td><code>bugfix/</code></td>
+<td>Bug fixes</td>
+<td><code>bugfix/badge-color-update</code></td>
+</tr>
+<tr>
+<td><code>hotfix/</code></td>
+<td>Critical production fixes</td>
+<td><code>hotfix/auth-race-condition</code></td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>Documentation updates</td>
+<td><code>docs/api-examples</code></td>
+</tr>
+<tr>
+<td><code>refactor/</code></td>
+<td>Code refactoring</td>
+<td><code>refactor/queue-manager</code></td>
+</tr>
+<tr>
+<td><code>test/</code></td>
+<td>Test additions/improvements</td>
+<td><code>test/queue-coverage</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-commit-message-conventions-conventional-commits">7.2 Commit Message Conventions (Conventional Commits)</h3>
+<p>All commits must follow the Conventional Commits specification:</p>
+<pre><code>&lt;type&gt;(&lt;scope&gt;): &lt;description&gt;
+
+[optional body]
+
+[optional footer(s)]
+</code></pre>
+<p><strong>Types:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Use When</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feat</code></td>
+<td>Adding a new feature</td>
+<td><code>feat(popup): add tab group selection UI</code></td>
+</tr>
+<tr>
+<td><code>fix</code></td>
+<td>Fixing a bug</td>
+<td><code>fix(queue): resolve race condition on retry</code></td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td>Documentation changes</td>
+<td><code>docs(api): add qBitTorrent sync endpoint</code></td>
+</tr>
+<tr>
+<td><code>style</code></td>
+<td>Code formatting (no logic change)</td>
+<td><code>style(lint): fix trailing commas</code></td>
+</tr>
+<tr>
+<td><code>refactor</code></td>
+<td>Code restructuring</td>
+<td><code>refactor(auth): extract token refresh logic</code></td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td>Adding or updating tests</td>
+<td><code>test(queue): add retry scheduling tests</code></td>
+</tr>
+<tr>
+<td><code>chore</code></td>
+<td>Build/tooling changes</td>
+<td><code>chore(deps): update wxt to 0.17.0</code></td>
+</tr>
+<tr>
+<td><code>perf</code></td>
+<td>Performance improvements</td>
+<td><code>perf(scanner): debounce mutation observer</code></td>
+</tr>
+<tr>
+<td><code>security</code></td>
+<td>Security-related changes</td>
+<td><code>security(crypto): increase PBKDF2 iterations</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Scopes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>popup</code></td>
+<td>Popup UI</td>
+</tr>
+<tr>
+<td><code>options</code></td>
+<td>Options page</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>Content scripts</td>
+</tr>
+<tr>
+<td><code>background</code></td>
+<td>Service worker</td>
+</tr>
+<tr>
+<td><code>api</code></td>
+<td>API client</td>
+</tr>
+<tr>
+<td><code>queue</code></td>
+<td>Queue manager</td>
+</tr>
+<tr>
+<td><code>auth</code></td>
+<td>Authentication</td>
+</tr>
+<tr>
+<td><code>crypto</code></td>
+<td>Encryption utilities</td>
+</tr>
+<tr>
+<td><code>i18n</code></td>
+<td>Internationalization</td>
+</tr>
+<tr>
+<td><code>build</code></td>
+<td>Build system</td>
+</tr>
+<tr>
+<td><code>deps</code></td>
+<td>Dependencies</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Breaking changes:</strong></p>
+<p>Append <code>!</code> after the type/scope and include <code>BREAKING CHANGE:</code> in the footer:</p>
+<pre><code>feat(api)!: remove v1 auth endpoint
+
+BREAKING CHANGE: The /api/v1/auth/login endpoint has been removed.
+Use /api/v2/auth/token instead.
+</code></pre>
+<h3 id="73-pull-request-template">7.3 Pull Request Template</h3>
+<p>When opening a pull request, use this template:</p>
+<pre><code class="language-markdown">## Description
+Brief description of the change and its purpose.
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+- [ ] Refactoring
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] E2E tests added/updated
+- [ ] Manual testing performed
+
+## Checklist
+- [ ] Code follows project style guidelines
+- [ ] Self-review completed
+- [ ] JSDoc comments added for public APIs
+- [ ] No `any` types introduced
+- [ ] TypeScript compiles without errors
+- [ ] ESLint passes without warnings
+- [ ] Test coverage meets thresholds
+
+## Related Issues
+Fixes #123
+Relates to #456
+</code></pre>
+<h3 id="74-code-review-checklist">7.4 Code Review Checklist</h3>
+<p>Reviewers should verify:</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Functionality</td>
+<td>Does the change do what it claims?</td>
+</tr>
+<tr>
+<td>Tests</td>
+<td>Are there adequate tests? Do they pass?</td>
+</tr>
+<tr>
+<td>Edge cases</td>
+<td>Are error paths and boundary conditions handled?</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>Does the change introduce any security risks?</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Could this cause performance issues at scale?</td>
+</tr>
+<tr>
+<td>i18n</td>
+<td>Are all user-facing strings externalized?</td>
+</tr>
+<tr>
+<td>Accessibility</td>
+<td>Are ARIA labels and keyboard navigation present?</td>
+</tr>
+<tr>
+<td>Type safety</td>
+<td>Are there no <code>any</code> types or unchecked nulls?</td>
+</tr>
+<tr>
+<td>Documentation</td>
+<td>Is JSDoc updated? Is the user guide updated if needed?</td>
+</tr>
+</tbody>
+</table>
+<h3 id="75-release-process">7.5 Release Process</h3>
+<div style="border:1px solid #2D5F8A; padding:15px; margin:15px 0; background:#f0f4f8; text-align:center; color:#2D5F8A; font-weight:bold; page-break-inside:avoid;">[Diagram: System Architecture Overview]</div>
+
+<p><strong>Version numbering</strong> follows Semantic Versioning (SemVer):</p>
+<table>
+<thead>
+<tr>
+<th>Bump</th>
+<th>When</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Major (X.0.0)</td>
+<td>Breaking API changes</td>
+<td>2.0.0</td>
+</tr>
+<tr>
+<td>Minor (x.Y.0)</td>
+<td>New features, backward compatible</td>
+<td>1.1.0</td>
+</tr>
+<tr>
+<td>Patch (x.y.Z)</td>
+<td>Bug fixes, no API changes</td>
+<td>1.0.1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-extending-the-extension">8. Extending the Extension</h2>
+<h3 id="81-adding-new-torrent-site-selectors">8.1 Adding New Torrent Site Selectors</h3>
+<p>Some torrent sites use non-standard HTML structures. You can add custom selectors:</p>
+<ol>
+<li>Create a new file in <code>src/content-scripts/selectors/</code>:</li>
+</ol>
+<pre><code class="language-typescript">// src/content-scripts/selectors/nyaa-si.ts
+import { SiteSelector } from '@src/types/selector';
+
+export const nyaaSiSelector: SiteSelector = {
+  // Match against hostname
+  hostname: /nyaa\.si$/,
+
+  // CSS selector for magnet links
+  magnetSelector: 'a[href^=&quot;magnet:?&quot;]',
+
+  // CSS selector for .torrent file links
+  torrentSelector: 'a[href$=&quot;.torrent&quot;]',
+
+  // Optional: Extract display name from a different element
+  nameExtractor: (linkElement: HTMLAnchorElement): string | null =&gt; {
+    const row = linkElement.closest('tr');
+    if (row) {
+      const titleCell = row.querySelector('td:nth-child(2) a');
+      return titleCell?.textContent?.trim() || null;
+    }
+    return null;
+  },
+
+  // Optional: Extract size from page
+  sizeExtractor: (linkElement: HTMLAnchorElement): number | null =&gt; {
+    const row = linkElement.closest('tr');
+    if (row) {
+      const sizeCell = row.querySelector('td:nth-child(4)');
+      return parseSizeString(sizeCell?.textContent || '');
+    }
+    return null;
+  },
+
+  // Optional: Custom scan logic
+  customScanner?: (root: HTMLElement): Partial&lt;TorrentInfo&gt;[] =&gt; {
+    // Advanced: scan page-specific structures
+  }
+};
+</code></pre>
+<ol start="2">
+<li>Register the selector in <code>src/content-scripts/selectors/index.ts</code>:</li>
+</ol>
+<pre><code class="language-typescript">import { nyaaSiSelector } from './nyaa-si';
+
+export const siteSelectors: SiteSelector[] = [
+  // ... existing selectors
+  nyaaSiSelector,
+];
+</code></pre>
+<ol start="3">
+<li>Write a test:</li>
+</ol>
+<pre><code class="language-typescript">// tests/unit/content-scripts/selectors/nyaa-si.test.ts
+import { nyaaSiSelector } from '@src/content-scripts/selectors/nyaa-si';
+
+describe('nyaaSiSelector', () =&gt; {
+  it('should match nyaa.si hostname', () =&gt; {
+    expect(nyaaSiSelector.hostname.test('nyaa.si')).toBe(true);
+    expect(nyaaSiSelector.hostname.test('sukebei.nyaa.si')).toBe(true);
+  });
+
+  it('should extract name from table row', () =&gt; {
+    document.body.innerHTML = `
+      &lt;table&gt;
+        &lt;tr&gt;
+          &lt;td&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;a&gt;My Torrent Title&lt;/a&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;/td&gt;
+          &lt;td&gt;1.2 GiB&lt;/td&gt;
+          &lt;td&gt;&lt;a href=&quot;magnet:?xt=urn:btih:abc123&quot;&gt;Magnet&lt;/a&gt;&lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+    `;
+    const link = document.querySelector('a[href^=&quot;magnet&quot;]') as HTMLAnchorElement;
+    expect(nyaaSiSelector.nameExtractor?.(link)).toBe('My Torrent Title');
+  });
+});
+</code></pre>
+<h3 id="82-adding-new-authentication-methods">8.2 Adding New Authentication Methods</h3>
+<p>To add a new authentication method (e.g., OAuth2):</p>
+<ol>
+<li>Add the method to the <code>AuthMethod</code> union type:</li>
+</ol>
+<pre><code class="language-typescript">// src/types/config.ts
+type AuthMethod = 'cookie' | 'api-key' | 'basic' | 'custom-header' | 'oauth2';
+</code></pre>
+<ol start="2">
+<li>Implement the auth handler:</li>
+</ol>
+<pre><code class="language-typescript">// src/modules/auth/oauth2-handler.ts
+import { AuthHandler, AuthCredentials } from '@src/types/auth';
+
+export class OAuth2Handler implements AuthHandler {
+  private token: string | null = null;
+  private refreshToken: string | null = null;
+  private expiresAt = 0;
+
+  async authenticate(credentials: AuthCredentials): Promise&lt;void&gt; {
+    const response = await fetch(`${credentials.serverUrl}/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        grant_type: 'password',
+        client_id: credentials.clientId,
+        username: credentials.username,
+        password: credentials.password,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new AuthError('OAuth2 authentication failed', { cause: response.status });
+    }
+
+    const data = await response.json();
+    this.token = data.access_token;
+    this.refreshToken = data.refresh_token;
+    this.expiresAt = Date.now() + data.expires_in * 1000;
+  }
+
+  async getAuthHeaders(): Promise&lt;Record&lt;string, string&gt;&gt; {
+    if (!this.token || Date.now() &gt;= this.expiresAt) {
+      await this.refresh();
+    }
+    return { Authorization: `Bearer ${this.token}` };
+  }
+
+  private async refresh(): Promise&lt;void&gt; {
+    // Implementation
+  }
+}
+</code></pre>
+<ol start="3">
+<li>Register the handler:</li>
+</ol>
+<pre><code class="language-typescript">// src/modules/auth-manager.ts
+import { OAuth2Handler } from './auth/oauth2-handler';
+
+const authHandlers: Record&lt;AuthMethod, () =&gt; AuthHandler&gt; = {
+  'cookie': () =&gt; new CookieHandler(),
+  'api-key': () =&gt; new ApiKeyHandler(),
+  'basic': () =&gt; new BasicAuthHandler(),
+  'custom-header': () =&gt; new CustomHeaderHandler(),
+  'oauth2': () =&gt; new OAuth2Handler(), // Add this line
+};
+</code></pre>
+<ol start="4">
+<li>Update the Options UI to include OAuth2 configuration fields.</li>
+</ol>
+<h3 id="83-adding-new-keyboard-shortcuts">8.3 Adding New Keyboard Shortcuts</h3>
+<p>To add a new keyboard shortcut:</p>
+<ol>
+<li>Define the command in the manifest:</li>
+</ol>
+<pre><code class="language-json">{
+  &quot;commands&quot;: {
+    &quot;send-current-page&quot;: {
+      &quot;suggested_key&quot;: { &quot;default&quot;: &quot;Ctrl+Shift+B&quot; },
+      &quot;description&quot;: &quot;Send all torrents on current page&quot;
+    },
+    &quot;your-new-command&quot;: {
+      &quot;suggested_key&quot;: { &quot;default&quot;: &quot;Ctrl+Shift+N&quot; },
+      &quot;description&quot;: &quot;Description of what it does&quot;
+    }
+  }
+}
+</code></pre>
+<ol start="2">
+<li>Handle the command in the service worker:</li>
+</ol>
+<pre><code class="language-typescript">// src/background/index.ts
+chrome.commands.onCommand.addListener(async (command, tab) =&gt; {
+  switch (command) {
+    case 'send-current-page':
+      await handleSendCurrentPage(tab);
+      break;
+    case 'your-new-command':
+      await handleYourNewCommand(tab);
+      break;
+  }
+});
+</code></pre>
+<ol start="3">
+<li>Implement the handler:</li>
+</ol>
+<pre><code class="language-typescript">// src/background/command-handlers.ts
+export async function handleYourNewCommand(tab?: chrome.tabs.Tab): Promise&lt;void&gt; {
+  if (!tab?.id) return;
+
+  // Your implementation here
+  const result = await chrome.tabs.sendMessage(tab.id, {
+    type: 'YOUR_NEW_ACTION'
+  });
+
+  // Update badge or show notification
+  await badgeManager.setStatus('processing');
+}
+</code></pre>
+<ol start="4">
+<li>Add i18n strings:</li>
+</ol>
+<pre><code class="language-json">{
+  &quot;command_your_new_command&quot;: {
+    &quot;message&quot;: &quot;Your new command description&quot;
+  }
+}
+</code></pre>
+<hr />
+<h2 id="9-debugging">9. Debugging</h2>
+<h3 id="91-chrome-devtools-for-extensions">9.1 Chrome DevTools for Extensions</h3>
+<p><strong>Service Worker:</strong><br />
+1. Navigate to <code>chrome://extensions</code>.<br />
+2. Find BobaLink and click <strong>"Service Worker"</strong> (under "Inspect views").<br />
+3. This opens DevTools dedicated to the service worker context.<br />
+4. Use the Console for logs, Network for API calls, and Sources for breakpoints.</p>
+<p><strong>Content Script:</strong><br />
+1. Open the page where the content script is running.<br />
+2. Open DevTools (F12).<br />
+3. Go to the <strong>Sources</strong> panel.<br />
+4. In the file tree, find <code>chrome-extension://{extension-id}/</code>.<br />
+5. Set breakpoints in content script files.</p>
+<p><strong>Popup:</strong><br />
+1. Click the BobaLink icon to open the popup.<br />
+2. Right-click inside the popup → <strong>"Inspect"</strong>.<br />
+3. This opens a dedicated DevTools window for the popup.</p>
+<p><strong>Extension ID:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Extension ID Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Development</td>
+<td><code>chrome://extensions</code> → BobaLink → ID field</td>
+</tr>
+<tr>
+<td>Production</td>
+<td>Fixed ID from Chrome Web Store</td>
+</tr>
+</tbody>
+</table>
+<h3 id="92-firefox-aboutdebugging">9.2 Firefox about:debugging</h3>
+<ol>
+<li>Navigate to <code>about:debugging</code>.</li>
+<li>Click <strong>"This Firefox"</strong>.</li>
+<li>Find BobaLink under Extensions.</li>
+<li>Click <strong>"Inspect"</strong> to open DevTools.</li>
+<li>Use Browser Console (<code>Ctrl+Shift+J</code>) for all extension logs.</li>
+</ol>
+<h3 id="93-viewing-service-worker-logs">9.3 Viewing Service Worker Logs</h3>
+<p>The service worker logs extensively for debugging. Log levels:</p>
+<pre><code class="language-typescript">// src/utils/logger.ts
+enum LogLevel {
+  DEBUG = 0,   // Verbose internal state
+  INFO = 1,    // Normal operations
+  WARN = 2,    // Recoverable issues
+  ERROR = 3,   // Failures requiring attention
+}
+</code></pre>
+<p><strong>Enable debug logging:</strong></p>
+<ol>
+<li>Open the service worker DevTools (see 9.1).</li>
+<li>In the Console, run:<br />
+<code>javascript
+   chrome.storage.local.set({ 'debugMode': true });</code></li>
+<li>Reload the service worker from <code>chrome://extensions</code>.</li>
+<li>Debug logs will appear in the Console.</li>
+</ol>
+<p><strong>Log output examples:</strong></p>
+<pre><code>[BobaLink] [INFO]  Service worker initialized, version 1.0.0
+[BobaLink] [DEBUG] Health check: GET https://boba.local:8443/health
+[BobaLink] [INFO]  Health check passed: Boba v1.4.2, latency 45ms
+[BobaLink] [DEBUG] Magnet detected: abc123... on https://example.com
+[BobaLink] [INFO]  Torrent sent: abc123... (Ubuntu 24.04)
+[BobaLink] [WARN]  Send failed for def456... (Network timeout), queued for retry
+[BobaLink] [ERROR] Auth failed: invalid API key
+</code></pre>
+<h3 id="94-inspecting-storage">9.4 Inspecting Storage</h3>
+<p><strong>Extension storage can be inspected via DevTools:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Storage Type</th>
+<th>Chrome</th>
+<th>Firefox</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>chrome.storage.local</code></td>
+<td>DevTools → Application → Storage → Extension Storage</td>
+<td>DevTools → Storage → Extension Storage</td>
+</tr>
+<tr>
+<td><code>chrome.storage.session</code></td>
+<td>DevTools → Application → Storage → Extension Storage (Session)</td>
+<td>DevTools → Storage → Extension Storage</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Viewing storage via console:</strong></p>
+<pre><code class="language-javascript">// View all stored data
+chrome.storage.local.get(null, (data) =&gt; console.log(data));
+
+// View configuration
+chrome.storage.local.get('config', ({ config }) =&gt; console.log(config));
+
+// View queue
+chrome.storage.local.get('queue', ({ queue }) =&gt; console.log(queue));
+
+// Clear all data (use with caution!)
+chrome.storage.local.clear(() =&gt; console.log('Storage cleared'));
+</code></pre>
+<p><strong>Note:</strong> Credential data is encrypted. You will see ciphertext, not plaintext passwords.</p>
+<h3 id="95-common-debugging-scenarios">9.5 Common Debugging Scenarios</h3>
+<h4 id="scenario-content-script-not-injecting">Scenario: Content Script Not Injecting</h4>
+<p><strong>Symptoms</strong>: No torrents detected on any page.</p>
+<p><strong>Diagnostic steps:</strong><br />
+1. Check DevTools → Console for injection errors.<br />
+2. Verify the content script is registered in <code>manifest.json</code>.<br />
+3. Check if the page has a restrictive CSP:<br />
+<code>javascript
+   // In page console
+   document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content</code><br />
+4. Check the service worker logs for injection errors.</p>
+<h4 id="scenario-api-calls-failing">Scenario: API Calls Failing</h4>
+<p><strong>Symptoms</strong>: "Send failed" notifications, queue filling up.</p>
+<p><strong>Diagnostic steps:</strong><br />
+1. Open service worker DevTools → Network tab.<br />
+2. Trigger a send and watch the request.<br />
+3. Check request headers (especially <code>Referer</code> for qBitTorrent).<br />
+4. Check response status and body.<br />
+5. Verify CORS headers if cross-origin.</p>
+<h4 id="scenario-queue-not-processing">Scenario: Queue Not Processing</h4>
+<p><strong>Symptoms</strong>: Items stuck in queue, no retry attempts.</p>
+<p><strong>Diagnostic steps:</strong><br />
+1. Check service worker is alive: <code>chrome://extensions</code> → Service Worker status.<br />
+2. Check for <code>chrome.alarms</code> registration:<br />
+<code>javascript
+   chrome.alarms.getAll((alarms) =&gt; console.log(alarms));</code><br />
+3. Check queue processing logs in service worker console.<br />
+4. Manually trigger processing:<br />
+<code>javascript
+   chrome.runtime.sendMessage({ type: 'PROCESS_QUEUE' });</code></p>
+<h4 id="scenario-encryption-issues">Scenario: Encryption Issues</h4>
+<p><strong>Symptoms</strong>: "Cannot decrypt credentials" errors.</p>
+<p><strong>Diagnostic steps:</strong><br />
+1. Check if the encryption key exists in session storage:<br />
+<code>javascript
+   chrome.storage.session.get('encryptionKey', (data) =&gt; {
+     console.log('Key exists:', !!data.encryptionKey);
+   });</code><br />
+2. If the key is missing, the browser was likely restarted without password protection.<br />
+3. Re-enter credentials in Options to re-establish the encryption key.</p>
+<hr />
+<p><em>End of Developer Guide</em></p>
+</div>
+
+</body>
+</html>

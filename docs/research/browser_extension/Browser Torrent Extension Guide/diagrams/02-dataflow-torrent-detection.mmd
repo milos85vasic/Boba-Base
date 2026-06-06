@@ -1,0 +1,71 @@
+%% BobaLink — Data Flow: Torrent Detection to Download
+%% Shows the complete flow from web page detection through qBitTorrent download
+
+graph LR
+    subgraph WebPage["🌐 Web Page"]
+        DOM["HTML DOM"]
+        MagnetLinks["magnet:?xt=..."]
+        TorrentLinks["*.torrent files"]
+        HashLinks["infohash links"]
+    end
+
+    subgraph BrowserExt["🔧 Browser Extension"]
+        direction TB
+        ContentScript["<b>Content Script</b><br/>scanner.js<br/>DOM observer"]
+        Parser["<b>parser/</b><br/>magnet &amp; torrent<br/>URL parser"]
+        BackgroundSW["<b>Background SW</b><br/>message router<br/>&amp; state manager"]
+        BobaAPIClient["<b>BobaAPIClient</b><br/>HTTP client<br/>request builder"]
+        PopupUI["<b>Popup UI</b><br/>torrent list<br/>user feedback"]
+    end
+
+    subgraph BobaServices["🐳 Boba Services"]
+        FastAPI["<b>FastAPI :7187</b><br/>validate &amp; enrich<br/>metadata lookup"]
+        GoService["<b>Go Service :7189</b><br/>torrent operations<br/>batch processor"]
+    end
+
+    subgraph qBitTorrent["⬇️ qBitTorrent"]
+        WebUI["<b>WebUI :8080</b><br/>/api/v2/torrents/add"]
+        BTClient["BitTorrent Engine"]
+        Downloads[("Downloads<br/>/downloads/complete")]
+    end
+
+    DOM -->|"contains"| MagnetLinks
+    DOM -->|"contains"| TorrentLinks
+    DOM -->|"contains"| HashLinks
+
+    MagnetLinks -->|"detected by"| ContentScript
+    TorrentLinks -->|"detected by"| ContentScript
+    HashLinks -->|"detected by"| ContentScript
+
+    ContentScript -->|"extract links"| Parser
+    Parser -->|"normalized URLs"| ContentScript
+    ContentScript -->|"chrome.tabs.sendMessage<br/>DISCOVERED_TORRENTS"| BackgroundSW
+
+    BackgroundSW -->|"chrome.runtime.sendMessage<br/>UPDATE_POPUP"| PopupUI
+    PopupUI -->|"chrome.runtime.sendMessage<br/>SEND_TORRENT"| BackgroundSW
+
+    BackgroundSW -->|"sendTorrent()"| BobaAPIClient
+    BobaAPIClient -->|"POST /api/torrents/add<br/>JSON body"| FastAPI
+    BobaAPIClient -->|"POST /api/torrents/batch<br/>JSON array"| GoService
+
+    FastAPI -->|"proxy validated request"| WebUI
+    GoService -->|"direct API call"| WebUI
+
+    WebUI -->|"add torrent"| BTClient
+    BTClient -->|"download files"| Downloads
+
+    WebUI -->|"200 OK + torrent hash"| GoService
+    GoService -->|"200 OK + results[]"| BobaAPIClient
+    BobaAPIClient -->|"resolve promise"| BackgroundSW
+    BackgroundSW -->|"chrome.runtime.sendMessage<br/>SEND_COMPLETE"| PopupUI
+
+    classDef webLayer fill:#FFF3E0,stroke:#E65100,stroke-width:2px,color:#333333
+    classDef extLayer fill:#E8F0FE,stroke:#2D5F8A,stroke-width:2px,color:#333333
+    classDef serviceLayer fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#333333
+    classDef torrentLayer fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#333333
+    classDef successLayer fill:#E8F5E9,stroke:#4A8C6F,stroke-width:2px,color:#333333
+
+    class DOM,MagnetLinks,TorrentLinks,HashLinks webLayer
+    class ContentScript,Parser,BackgroundSW,BobaAPIClient,PopupUI extLayer
+    class FastAPI,GoService serviceLayer
+    class WebUI,BTClient,Downloads torrentLayer

@@ -1,0 +1,63 @@
+sequenceDiagram
+    autonumber
+    actor User as 👤 User
+    participant Popup as 📋 Popup UI
+    participant CS as 📄 Content Script
+    participant BG as ⚙️ Background SW
+    participant API as 🔌 BobaAPIClient
+    participant FastAPI as 🐳 FastAPI :7187
+    participant GoSvc as 🐳 Go Service :7189
+    participant qBit as ⬇️ qBitTorrent :8080
+
+    Note over User,qBit: Single Torrent Send Flow
+
+    User->>CS: Browse torrent site
+    activate CS
+    CS->>CS: MutationObserver detects<br/>magnet: link in DOM
+    CS->>CS: parser.normalizeURL()
+    CS->>BG: chrome.runtime.sendMessage<br/>{type: "DISCOVERED_TORRENTS", torrents}
+    deactivate CS
+    activate BG
+    BG->>Popup: chrome.runtime.sendMessage<br/>{type: "UPDATE_POPUP", torrents}
+    activate Popup
+    Popup->>Popup: Render torrent list
+    Popup-->>User: Show discovered torrents
+    User->>Popup: Click "Send" button
+    Popup->>BG: chrome.runtime.sendMessage<br/>{type: "SEND_TORRENT", torrent}
+    deactivate Popup
+    BG->>API: sendTorrent(torrent)
+    activate API
+    API->>API: Build request with auth headers<br/>X-Api-Key + Basic Auth
+    par FastAPI Path
+        API->>FastAPI: POST /api/torrents/add<br/>JSON body
+        activate FastAPI
+        FastAPI->>FastAPI: Validate torrent data
+        FastAPI->>qBit: POST /api/v2/torrents/add<br/>form-data: urls, category
+        activate qBit
+        qBit->>qBit: Add to BitTorrent engine
+        qBit-->>FastAPI: 200 OK + {hash}
+        deactivate qBit
+        FastAPI-->>API: 200 OK + {hash, status}
+        deactivate FastAPI
+    and Go Service Path
+        API->>GoSvc: POST /api/torrents/add<br/>JSON body
+        activate GoSvc
+        GoSvc->>GoSvc: Validate + metadata lookup
+        GoSvc->>qBit: POST /api/v2/torrents/add<br/>form-data
+        activate qBit
+        qBit->>qBit: Add to BitTorrent engine
+        qBit-->>GoSvc: 200 OK + {hash}
+        deactivate qBit
+        GoSvc-->>API: 200 OK + {hash, status, metadata}
+        deactivate GoSvc
+    end
+    API-->>BG: Promise resolved<br/>{success, hash, status}
+    deactivate API
+    BG->>BG: Store in send_history<br/>Update badge count
+    BG->>Popup: chrome.runtime.sendMessage<br/>{type: "SEND_COMPLETE", result}
+    activate Popup
+    Popup-->>User: ✓ Notification: "Torrent added"
+    deactivate Popup
+    deactivate BG
+
+    Note right of qBit: Alternative: magnet links are<br/>resolved via DHT for metadata

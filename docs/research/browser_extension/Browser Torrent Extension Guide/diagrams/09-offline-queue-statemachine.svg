@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 750" aria-label="Offline Queue State Machine">
+  <defs>
+    <marker id="a9" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#666"/></marker>
+    <filter id="s9"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="1000" height="750" fill="#FAFAFA"/>
+  <text x="500" y="28" text-anchor="middle" font-family="system-ui" font-size="18" font-weight="600" fill="#2D5F8A">Offline Queue State Machine</text>
+
+  <!-- Start -->
+  <circle cx="100" cy="100" r="15" fill="#333" stroke="#333" stroke-width="2"/>
+  <text x="100" y="75" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">Start</text>
+
+  <!-- Idle state -->
+  <rect x="160" y="75" width="110" height="50" rx="25" fill="#F5F5F5" stroke="#666" stroke-width="2" filter="url(#s9)"/>
+  <text x="215" y="104" text-anchor="middle" font-family="system-ui" font-size="12" font-weight="600" fill="#333">Idle</text>
+
+  <!-- Pending state -->
+  <rect x="310" y="75" width="130" height="65" rx="12" fill="#FFF8E1" stroke="#D4A76A" stroke-width="2.5" filter="url(#s9)"/>
+  <text x="375" y="100" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">Pending</text>
+  <text x="375" y="116" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Torrent awaiting send</text>
+  <text x="375" y="128" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Entry state after detection</text>
+
+  <!-- Queued state -->
+  <rect x="310" y="180" width="130" height="65" rx="12" fill="#E3F2FD" stroke="#1976D2" stroke-width="2.5" filter="url(#s9)"/>
+  <text x="375" y="205" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">Queued</text>
+  <text x="375" y="221" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Device offline</text>
+  <text x="375" y="233" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Stored for later retry</text>
+
+  <!-- Sending state -->
+  <rect x="500" y="75" width="130" height="65" rx="12" fill="#E8F0FE" stroke="#2D5F8A" stroke-width="2.5" filter="url(#s9)"/>
+  <text x="565" y="100" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">Sending</text>
+  <text x="565" y="116" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">HTTP request in flight</text>
+  <text x="565" y="128" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">BobaAPIClient active</text>
+
+  <!-- Retry state -->
+  <rect x="500" y="180" width="130" height="65" rx="12" fill="#FFF3E0" stroke="#E65100" stroke-width="2.5" filter="url(#s9)"/>
+  <text x="565" y="205" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">Retry</text>
+  <text x="565" y="221" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Exponential backoff</text>
+  <text x="565" y="233" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">1s → 2s → 4s → 8s</text>
+
+  <!-- Completed state -->
+  <rect x="690" y="75" width="130" height="65" rx="12" fill="#E8F5E9" stroke="#4A8C6F" stroke-width="2.5" filter="url(#s9)"/>
+  <text x="755" y="100" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">Completed</text>
+  <text x="755" y="116" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">200 OK received</text>
+  <text x="755" y="128" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Stored in send_history</text>
+
+  <!-- Failed state -->
+  <rect x="690" y="180" width="130" height="65" rx="12" fill="#FFEBEE" stroke="#C75450" stroke-width="2.5" filter="url(#s9)"/>
+  <text x="755" y="205" text-anchor="middle" font-family="system-ui" font-size="13" font-weight="700" fill="#333">Failed</text>
+  <text x="755" y="221" text-anchor="middle" font-family="system-ui" font-size="8" fill="#666">Irrecoverable error</text>
+  <text x="755" y="233" text-anchor="middle" font-family="system-ui" font-size="7" fill="#888">Logged for user review</text>
+
+  <!-- End -->
+  <circle cx="870" cy="107" r="15" fill="none" stroke="#333" stroke-width="2.5"/>
+  <circle cx="870" cy="107" r="10" fill="#333"/>
+  <text x="870" y="75" text-anchor="middle" font-family="system-ui" font-size="10" font-weight="700" fill="#333">End</text>
+
+  <!-- Transitions -->
+  <!-- Start → Idle -->
+  <line x1="115" y1="100" x2="160" y2="100" stroke="#666" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="140" y="92" font-family="system-ui" font-size="7" fill="#666">init</text>
+
+  <!-- Idle → Pending -->
+  <line x1="270" y1="100" x2="310" y2="100" stroke="#666" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="290" y="92" font-family="system-ui" font-size="7" fill="#D4A76A">detect</text>
+
+  <!-- Pending → Sending -->
+  <line x1="440" y1="95" x2="500" y2="95" stroke="#D4A76A" stroke-width="2" marker-end="url(#a9)"/>
+  <text x="470" y="87" font-family="system-ui" font-size="8" fill="#2D5F8A" font-weight="600">online</text>
+
+  <!-- Pending → Queued -->
+  <line x1="375" y1="140" x2="375" y2="180" stroke="#D4A76A" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="385" y="165" font-family="system-ui" font-size="8" fill="#1976D2" font-weight="600">offline</text>
+
+  <!-- Pending → Retry -->
+  <line x1="435" y1="125" x2="500" y2="195" stroke="#D4A76A" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="455" y="175" font-family="system-ui" font-size="7" fill="#E65100">fail</text>
+
+  <!-- Sending → Completed -->
+  <line x1="630" y1="95" x2="690" y2="95" stroke="#2D5F8A" stroke-width="2" marker-end="url(#a9)"/>
+  <text x="660" y="87" font-family="system-ui" font-size="8" fill="#4A8C6F" font-weight="600">200 OK</text>
+
+  <!-- Sending → Failed -->
+  <line x1="630" y1="125" x2="690" y2="195" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="645" y="175" font-family="system-ui" font-size="7" fill="#C75450">4xx/5xx</text>
+
+  <!-- Sending → Retry -->
+  <line x1="565" y1="140" x2="565" y2="180" stroke="#2D5F8A" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="575" y="165" font-family="system-ui" font-size="7" fill="#E65100">timeout</text>
+
+  <!-- Queued → Pending -->
+  <path d="M 340 210 Q 260 210 260 140 Q 260 110 310 110" fill="none" stroke="#1976D2" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="250" y="180" text-anchor="end" font-family="system-ui" font-size="8" fill="#1976D2" font-weight="600">back online</text>
+
+  <!-- Queued → Failed -->
+  <line x1="440" y1="215" x2="690" y2="215" stroke="#1976D2" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="555" y="208" font-family="system-ui" font-size="7" fill="#C75450">max age</text>
+
+  <!-- Retry → Sending -->
+  <line x1="630" y1="210" x2="660" y2="140" stroke="#E65100" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="640" y="190" font-family="system-ui" font-size="7" fill="#2D5F8A">retry</text>
+
+  <!-- Retry → Failed -->
+  <line x1="630" y1="225" x2="690" y2="225" stroke="#E65100" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="655" y="238" font-family="system-ui" font-size="7" fill="#C75450">max retries</text>
+
+  <!-- Retry → Queued -->
+  <line x1="500" y1="215" x2="440" y2="215" stroke="#E65100" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="470" y="238" font-family="system-ui" font-size="7" fill="#1976D2">offline</text>
+
+  <!-- Completed → End -->
+  <line x1="820" y1="107" x2="855" y2="107" stroke="#4A8C6F" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="835" y="98" font-family="system-ui" font-size="7" fill="#666">cleanup</text>
+
+  <!-- Failed → Pending (user retry) -->
+  <path d="M 700 215 Q 600 280 500 280 Q 400 280 400 140" fill="none" stroke="#C75450" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a9)"/>
+  <text x="550" y="292" text-anchor="middle" font-family="system-ui" font-size="8" fill="#C75450" font-weight="600">user retry</text>
+
+  <!-- Failed → End -->
+  <path d="M 755 245 Q 755 280 800 280 Q 870 280 870 122" fill="none" stroke="#C75450" stroke-width="1.5" marker-end="url(#a9)"/>
+  <text x="820" y="295" font-family="system-ui" font-size="7" fill="#666">abandon</text>
+
+  <!-- Notes Panel -->
+  <rect x="20" y="300" width="960" height="420" rx="10" fill="#F5F5F5" stroke="#E0E0E0" stroke-width="1" filter="url(#s9)"/>
+  <text x="500" y="325" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="600" fill="#333">State Machine Documentation</text>
+
+  <rect x="40" y="340" width="460" height="170" rx="8" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="50" y="358" font-family="system-ui" font-size="11" font-weight="700" fill="#D4A76A">State: Pending</text>
+  <text x="50" y="376" font-family="system-ui" font-size="9" fill="#666">Entry: Torrent detected in DOM, user clicked send</text>
+  <text x="50" y="392" font-family="system-ui" font-size="9" fill="#666">Actions: Validate torrent data, check connectivity</text>
+  <text x="50" y="408" font-family="system-ui" font-size="9" fill="#666">Transitions:</text>
+  <text x="60" y="424" font-family="system-ui" font-size="9" fill="#666">• online detected → Sending (start HTTP request)</text>
+  <text x="60" y="440" font-family="system-ui" font-size="9" fill="#666">• offline detected → Queued (persist to storage)</text>
+  <text x="60" y="456" font-family="system-ui" font-size="9" fill="#666">• validation failed → Failed (invalid magnet URI)</text>
+  <text x="60" y="472" font-family="system-ui" font-size="9" fill="#666">• rate limited → Retry (wait Retry-After)</text>
+
+  <rect x="520" y="340" width="440" height="170" rx="8" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="530" y="358" font-family="system-ui" font-size="11" font-weight="700" fill="#2D5F8A">State: Sending</text>
+  <text x="530" y="376" font-family="system-ui" font-size="9" fill="#666">Entry: BobaAPIClient.sendTorrent() called</text>
+  <text x="530" y="392" font-family="system-ui" font-size="9" fill="#666">Actions: HTTP POST to Boba service, set timeout</text>
+  <text x="530" y="408" font-family="system-ui" font-size="9" fill="#666">Transitions:</text>
+  <text x="540" y="424" font-family="system-ui" font-size="9" fill="#666">• 200 OK + hash → Completed (success)</text>
+  <text x="540" y="440" font-family="system-ui" font-size="9" fill="#666">• 401 Unauthorized → Retry (refresh token)</text>
+  <text x="540" y="456" font-family="system-ui" font-size="9" fill="#666">• 429 Rate Limited → Retry (wait + backoff)</text>
+  <text x="540" y="472" font-family="system-ui" font-size="9" fill="#666">• 5xx Server Error → Retry (exponential backoff)</text>
+  <text x="540" y="488" font-family="system-ui" font-size="9" fill="#666">• Network timeout → Retry (increment counter)</text>
+
+  <rect x="40" y="525" width="460" height="170" rx="8" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="50" y="543" font-family="system-ui" font-size="11" font-weight="700" fill="#1976D2">State: Queued</text>
+  <text x="50" y="561" font-family="system-ui" font-size="9" fill="#666">Entry: navigator.onLine === false OR request failed</text>
+  <text x="50" y="577" font-family="system-ui" font-size="9" fill="#666">Actions: Persist torrent to chrome.storage.local queue</text>
+  <text x="50" y="593" font-family="system-ui" font-size="9" fill="#666">Transitions:</text>
+  <text x="60" y="609" font-family="system-ui" font-size="9" fill="#666">• back online → Pending (resume processing)</text>
+  <text x="60" y="625" font-family="system-ui" font-size="9" fill="#666">• max age exceeded (24h) → Failed (stale)</text>
+  <text x="60" y="641" font-family="system-ui" font-size="9" fill="#666">• queue full → Failed (capacity limit)</text>
+  <text x="60" y="657" font-family="system-ui" font-size="9" fill="#666">• browser shutdown → persist queue, resume on startup</text>
+
+  <rect x="520" y="525" width="440" height="170" rx="8" fill="white" stroke="#E0E0E0" stroke-width="1"/>
+  <text x="530" y="543" font-family="system-ui" font-size="11" font-weight="700" fill="#E65100">State: Retry</text>
+  <text x="530" y="561" font-family="system-ui" font-size="9" fill="#666">Entry: Previous send attempt failed, retry count &lt; max</text>
+  <text x="530" y="577" font-family="system-ui" font-size="9" fill="#666">Actions: Calculate backoff delay, schedule timer</text>
+  <text x="530" y="593" font-family="system-ui" font-size="9" fill="#666">Transitions:</text>
+  <text x="540" y="609" font-family="system-ui" font-size="9" fill="#666">• timer expires + online → Sending (attempt again)</text>
+  <text x="540" y="625" font-family="system-ui" font-size="9" fill="#666">• timer expires + offline → Queued (wait for online)</text>
+  <text x="540" y="641" font-family="system-ui" font-size="9" fill="#666">• max retries (5) exceeded → Failed (give up)</text>
+  <text x="540" y="657" font-family="system-ui" font-size="9" fill="#666">• user cancels → Failed (user intervention)</text>
+  <text x="530" y="678" font-family="system-ui" font-size="8" fill="#888">Backoff: 1s → 2s → 4s → 8s → 16s (max 5 retries within ~31s total)</text>
+</svg>

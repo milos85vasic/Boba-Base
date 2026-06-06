@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net"><diagram name="Tab Groups Batch">
+<mxGraphModel grid="1"><root>
+<mxCell id="0"/><mxCell id="1" parent="0"/>
+<mxCell id="user" value="User Action" style="swimlane" vertex="1" parent="1"><mxGeometry x="20" y="20" width="150" height="100" as="geometry"/></mxCell>
+<mxCell id="bg" value="Background SW" style="swimlane" vertex="1" parent="1"><mxGeometry x="200" y="20" width="200" height="400" as="geometry"/></mxCell>
+<mxCell id="tabs" value="Tab Group" style="swimlane" vertex="1" parent="1"><mxGeometry x="430" y="20" width="150" height="150" as="geometry"/></mxCell>
+<mxCell id="cs" value="Content Scripts" style="swimlane" vertex="1" parent="1"><mxGeometry x="610" y="20" width="150" height="150" as="geometry"/></mxCell>
+<mxCell id="boba" value="Boba Services" style="swimlane" vertex="1" parent="1"><mxGeometry x="800" y="20" width="200" height="120" as="geometry"/></mxCell>
+<mxCell id="qbit" value="qBitTorrent" style="swimlane" vertex="1" parent="1"><mxGeometry x="800" y="160" width="200" height="100" as="geometry"/></mxCell>
+</root></mxGraphModel>
+</diagram></mxfile>

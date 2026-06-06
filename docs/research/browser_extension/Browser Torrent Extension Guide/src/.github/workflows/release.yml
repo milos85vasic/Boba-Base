@@ -1,0 +1,416 @@
+# =============================================================================
+# BobaLink Release Pipeline
+# =============================================================================
+# Automated release workflow for BobaLink browser extension.
+# Jobs: version-bump, build-all, sign-firefox, create-release, upload-artifacts
+#
+# Triggers:
+#   - Push of version tags (v*)
+#   - Manual dispatch with version input
+#
+# Outputs:
+#   - Chrome extension ZIP (.zip)
+#   - Firefox extension XPI (.xpi, signed)
+#   - Source code archive
+#   - GitHub Release with changelog
+#
+# Secrets Required:
+#   - MOZILLA_API_KEY / MOZILLA_API_SECRET (for Firefox signing)
+#   - CHROME_WEBSTORE_ID (for Chrome Web Store)
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.2.3)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+
+jobs:
+  # ===========================================================================
+  # Job 1: Version Bump & Validate
+  # ===========================================================================
+  version-bump:
+    name: Version & Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      is-prerelease: ${{ steps.version.outputs.is-prerelease }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+            TAG=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${{ inputs.version }}
+            TAG="v${{ inputs.version }}"
+          fi
+
+          # Validate semver
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$'; then
+            echo "::error::Invalid version format: $VERSION"
+            exit 1
+          fi
+
+          IS_PRERELEASE="false"
+          if [ "${{ inputs.prerelease }}" = "true" ] || echo "$VERSION" | grep -q '-'; then
+            IS_PRERELEASE="true"
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+
+          echo "Version: $VERSION"
+          echo "Tag: $TAG"
+          echo "Is Prerelease: $IS_PRERELEASE"
+
+      - name: Verify CHANGELOG entry exists
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          if [ ! -f CHANGELOG.md ]; then
+            echo "::warning::CHANGELOG.md not found"
+            exit 0
+          fi
+          if ! grep -q "$VERSION" CHANGELOG.md; then
+            echo "::warning::Version $VERSION not found in CHANGELOG.md"
+          fi
+
+      - name: Update manifest versions
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          # Update Chrome manifest
+          if [ -f src/manifest.chrome.json ]; then
+            jq ".version = \"$VERSION\"" src/manifest.chrome.json > tmp.json
+            mv tmp.json src/manifest.chrome.json
+          fi
+          # Update Firefox manifest
+          if [ -f src/manifest.firefox.json ]; then
+            jq ".version = \"$VERSION\"" src/manifest.firefox.json > tmp.json
+            mv tmp.json src/manifest.firefox.json
+          fi
+          echo "Manifest versions updated to $VERSION"
+
+  # ===========================================================================
+  # Job 2: Build All Artifacts
+  # ===========================================================================
+  build-all:
+    name: Build All (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [version-bump]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [chrome, firefox]
+        include:
+          - target: chrome
+            build-script: build:chrome
+            artifact-name: boba-link-chrome
+          - target: firefox
+            build-script: build:firefox
+            artifact-name: boba-link-firefox
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Update version in source
+        run: |
+          VERSION=${{ needs.version-bump.outputs.version }}
+          # Update version in package.json
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          # Update app_metadata version
+          sed -i "s/1.0.0/$VERSION/g" src/sql/schemas.sql
+          sed -i "s/1.0.0/$VERSION/g" src/sql/migrations/001_initial.sql
+
+      - name: Build ${{ matrix.target }}
+        run: pnpm ${{ matrix.build-script }}
+
+      - name: Inject version into built files
+        run: |
+          VERSION=${{ needs.version-bump.outputs.version }}
+          echo "$VERSION" > dist/${{ matrix.target }}/VERSION
+          echo "${{ github.sha }}" > dist/${{ matrix.target }}/BUILD_SHA
+          echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > dist/${{ matrix.target }}/BUILD_DATE
+
+      - name: Package ${{ matrix.target }} artifact
+        run: |
+          cd dist/${{ matrix.target }}
+          if [ "${{ matrix.target }}" = "chrome" ]; then
+            zip -r ../../${{ matrix.artifact-name }}-${{ needs.version-bump.outputs.version }}.zip .
+          else
+            zip -r ../../${{ matrix.artifact-name }}-${{ needs.version-bump.outputs.version }}.zip .
+          fi
+          cd ../..
+
+      - name: Calculate checksums
+        run: |
+          sha256sum ${{ matrix.artifact-name }}-${{ needs.version-bump.outputs.version }}.zip > ${{ matrix.artifact-name }}-${{ needs.version-bump.outputs.version }}.sha256
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}-${{ needs.version-bump.outputs.version }}
+          path: |
+            ${{ matrix.artifact-name }}-${{ needs.version-bump.outputs.version }}.zip
+            ${{ matrix.artifact-name }}-${{ needs.version-bump.outputs.version }}.sha256
+          retention-days: 30
+
+  # ===========================================================================
+  # Job 3: Sign Firefox Extension
+  # ===========================================================================
+  sign-firefox:
+    name: Sign Firefox (AMO)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [version-bump, build-all]
+    if: github.event_name == 'push' || inputs.prerelease == false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install web-ext
+        run: pnpm add -g web-ext
+
+      - name: Download Firefox build
+        uses: actions/download-artifact@v4
+        with:
+          name: boba-link-firefox-${{ needs.version-bump.outputs.version }}
+          path: ./firefox-dist/
+
+      - name: Sign with Mozilla Add-ons
+        run: |
+          mkdir -p signed
+          web-ext sign \
+            --source-dir ./firefox-dist/ \
+            --artifacts-dir ./signed/ \
+            --api-key ${{ secrets.MOZILLA_API_KEY }} \
+            --api-secret ${{ secrets.MOZILLA_API_SECRET }} \
+            --id ${{ secrets.FIREFOX_EXTENSION_ID }} \
+            --channel=listed
+        env:
+          MOZILLA_API_KEY: ${{ secrets.MOZILLA_API_KEY }}
+          MOZILLA_API_SECRET: ${{ secrets.MOZILLA_API_SECRET }}
+
+      - name: Rename signed XPI
+        run: |
+          VERSION=${{ needs.version-bump.outputs.version }}
+          cd signed
+          mv *.xpi "boba-link-firefox-${VERSION}.xpi" 2>/dev/null || true
+          cd ..
+
+      - name: Upload signed XPI
+        uses: actions/upload-artifact@v4
+        with:
+          name: boba-link-firefox-signed-${{ needs.version-bump.outputs.version }}
+          path: signed/*.xpi
+          retention-days: 30
+
+  # ===========================================================================
+  # Job 4: Create GitHub Release
+  # ===========================================================================
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [version-bump, build-all, sign-firefox]
+    if: always() && (needs.build-all.result == 'success')
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION=${{ needs.version-bump.outputs.version }}
+          TAG=${{ needs.version-bump.outputs.tag }}
+
+          # Extract changelog section for this version
+          if [ -f CHANGELOG.md ]; then
+            awk "/^## \\[$VERSION\\]/{flag=1; next} /^## \\[/{flag=0} flag" CHANGELOG.md > RELEASE_NOTES.md || true
+          fi
+
+          if [ ! -s RELEASE_NOTES.md ]; then
+            echo "## BobaLink v${VERSION}" > RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+            echo "### Changes" >> RELEASE_NOTES.md
+            git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> RELEASE_NOTES.md 2>/dev/null || echo "- See commit history for details" >> RELEASE_NOTES.md
+          fi
+
+          echo "Release notes generated"
+          cat RELEASE_NOTES.md
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts/
+          pattern: boba-link-*-*
+
+      - name: Prepare release files
+        run: |
+          VERSION=${{ needs.version-bump.outputs.version }}
+          mkdir -p release-files
+
+          # Collect all ZIP and XPI files
+          find ./artifacts -name "*.zip" -o -name "*.xpi" | while read f; do
+            cp "$f" release-files/
+          done
+
+          # Collect SHA256 files
+          find ./artifacts -name "*.sha256" | while read f; do
+            cp "$f" release-files/
+          done
+
+          ls -la release-files/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version-bump.outputs.tag }}
+          name: BobaLink v${{ needs.version-bump.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          prerelease: ${{ needs.version-bump.outputs.is-prerelease == 'true' }}
+          generate_release_notes: true
+          files: |
+            release-files/*.zip
+            release-files/*.xpi
+            release-files/*.sha256
+
+  # ===========================================================================
+  # Job 5: Upload to Chrome Web Store
+  # ===========================================================================
+  upload-chrome:
+    name: Upload to Chrome Web Store
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [version-bump, build-all, create-release]
+    if: github.event_name == 'push' && needs.version-bump.outputs.is-prerelease != 'true'
+
+    steps:
+      - name: Download Chrome build
+        uses: actions/download-artifact@v4
+        with:
+          name: boba-link-chrome-${{ needs.version-bump.outputs.version }}
+          path: ./chrome-dist/
+
+      - name: Upload to Chrome Web Store
+        run: |
+          # Using Chrome Web Store Publish API
+          ACCESS_TOKEN=$(curl -s -X POST \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -d "client_id=${{ secrets.CHROME_CLIENT_ID }}" \
+            -d "client_secret=${{ secrets.CHROME_CLIENT_SECRET }}" \
+            -d "refresh_token=${{ secrets.CHROME_REFRESH_TOKEN }}" \
+            -d "grant_type=refresh_token" \
+            https://oauth2.googleapis.com/token | jq -r '.access_token')
+
+          # Upload package
+          curl -s -X PUT \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "x-goog-api-version: 2" \
+            -T chrome-dist/boba-link-chrome-${{ needs.version-bump.outputs.version }}.zip \
+            "https://www.googleapis.com/upload/chromewebstore/v1.1/items/${{ secrets.CHROME_WEBSTORE_ID }}"
+
+          # Publish
+          curl -s -X POST \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "x-goog-api-version: 2" \
+            -H "Content-Length: 0" \
+            "https://www.googleapis.com/chromewebstore/v1.1/items/${{ secrets.CHROME_WEBSTORE_ID }}/publish"
+
+  # ===========================================================================
+  # Job 6: Release Summary
+  # ===========================================================================
+  release-summary:
+    name: Release Summary
+    runs-on: ubuntu-latest
+    needs: [version-bump, build-all, sign-firefox, create-release]
+    if: always()
+
+    steps:
+      - name: Generate release summary
+        run: |
+          echo "## BobaLink Release v${{ needs.version-bump.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Step | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Version Bump | ${{ needs.version-bump.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build All | ${{ needs.build-all.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Sign Firefox | ${{ needs.sign-firefox.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Create Release | ${{ needs.create-release.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ needs.version-bump.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Prerelease:** ${{ needs.version-bump.outputs.is-prerelease }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for failures
+        if: |
+          needs.version-bump.result == 'failure' ||
+          needs.build-all.result == 'failure' ||
+          needs.create-release.result == 'failure'
+        run: |
+          echo "::error::Release pipeline has critical failures"
+          exit 1
