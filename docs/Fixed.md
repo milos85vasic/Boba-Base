@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 1
-**Last modified:** 2026-06-06T12:20:00Z
+**Revision:** 2
+**Last modified:** 2026-06-06T18:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -75,6 +75,33 @@ tree or git history). Credentials never committed and never logged.
 Fixed to match on the suffix, longest unit first.
 **Evidence:** `tests/unit/test_plugin_search_engines.py` — torrentkitty size
 tests assert correct byte values; 18 passed.
+
+## §7. [BOB-005] Public-tracker plugins all raised an unhandled exception (systemic)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug · **Severity:** High
+**Closed:** 2026-06-06
+
+Every public-tracker plugin failed (`status=error, "plugin raised an unhandled
+exception"`); only IPTorrents (in-process) worked. Two stacked root causes,
+both reproduced deterministically via `superpowers:systematic-debugging`:
+1. `copy_plugins` placed the nova3 framework modules (`novaprinter.py`,
+   `helpers.py`) under `engines/`, but the merge-service harness imports them
+   from the nova3 ROOT (`sys.path=<nova3 root>; import novaprinter`; plugins do
+   `from helpers import ...`) → ModuleNotFoundError for every plugin.
+2. `helpers.py` does a top-level `import socks` (PySocks), absent from the
+   python-alpine download-proxy container → import failed even after #1. (The
+   unit suite masked this via a conftest `socks` sys.modules stub.)
+
+**Fix:** `start.sh copy_plugins` now also copies `novaprinter.py`+`helpers.py`
+to the nova3 root; `download-proxy/requirements.txt` adds `PySocks>=1.7.1`.
+**Evidence:**
+- Regression test `tests/unit/merge_service/test_public_plugin_harness.py` —
+  6 passed (incl. negative control proving it catches the bug).
+- **Runtime proof (clean reboot, §11.4.108):** live search went from **49
+  results / 0 public trackers** → **909 results / 14 public trackers** (rutor
+  235, torrentdownload 243, linuxtracker 123, …). `/tmp/boba_search2.json`.
+Remaining per-plugin errors/timeouts tracked separately as BOB-015.
 
 ## §6. [BOB-014] Go `generateID()` collided under burst (UnixNano-only)
 

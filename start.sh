@@ -384,7 +384,22 @@ copy_plugins() {
             print_success "Installed: $(basename "$plugin")"
         fi
     done
-    
+
+    # The nova3 framework modules (novaprinter, helpers) must live at the
+    # nova3 ROOT, not under engines/. The merge service runs each public
+    # plugin via `python3 -c` with sys.path=<nova3 root> and does
+    # `import novaprinter`; every plugin does `from helpers import ...`.
+    # qBittorrent's own container ships these at the root, but the
+    # python-alpine download-proxy container does not — so without this every
+    # public-tracker plugin failed with ModuleNotFoundError (BOB-005).
+    local nova3_root="config/qBittorrent/nova3"
+    for fw in novaprinter.py helpers.py; do
+        if [[ -f "plugins/$fw" ]]; then
+            $copy_cmd "plugins/$fw" "$nova3_root/"
+            print_success "Installed framework module at nova3 root: $fw"
+        fi
+    done
+
     for icon in plugins/*.png; do
         if [[ -f "$icon" ]]; then
             $copy_cmd "$icon" "$engines_dir/"

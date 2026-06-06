@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 1
-**Last modified:** 2026-06-06T12:20:00Z
+**Revision:** 2
+**Last modified:** 2026-06-06T18:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -12,29 +12,24 @@
 
 ---
 
-## §1. [BOB-005] Public-tracker plugins all raise an unhandled exception in the running container
+## §1. [BOB-015] Individual public-tracker plugins error/time-out after the systemic fix
 
-**Status:** In progress
+**Status:** Queued
 **Type:** Bug
-**Severity:** High
+**Severity:** Medium
 **Created:** 2026-06-06
 
-A live search against the running stack (`POST /api/v1/search/sync`, query
-`ubuntu`) returned results ONLY from the private tracker IPTorrents (49) and
-attempted RuTracker; **every public-tracker plugin** (academictorrents,
-anilibra, bitsearch, gamestorrents, glotorrents, jackett, kickass,
-limetorrents, linuxtracker, megapeer, nyaa, piratebay, pirateiro, rockbox,
-rutor, snowfl, tokyotoshokan, torlock, torrentdownload, torrentgalaxy,
-torrentkitty, torrentproject, torrentscsv, yourbittorrent, yts) returned
-`status=error, error="plugin raised an unhandled exception"`.
+After BOB-005 (systemic import failure) was fixed, 14 public trackers now
+return results, but a few still error with DISTINCT, per-plugin causes (no
+longer the shared import failure):
+- per-plugin runtime exceptions: `piratebay`, `jackett`, `tokyotoshokan`
+- per-tracker 25s deadline timeouts: `kickass`, `nyaa`, `torlock`
+- `snowfl`: "plugin parse failed (upstream HTML likely changed)"
 
-**Evidence:** `/tmp/boba_search.json` (live search) — per-tracker stats show
-all public plugins erroring; only IPTorrents `status=success results=49`.
-**Root cause:** UNCONFIRMED — likely the plugin subprocess environment in the
-`python:3.12-alpine` proxy container (missing dependency / nova3 harness /
-network egress). Needs the captured per-plugin stderr from the orchestrator.
-**Next:** extract plugin stderr (search.py debug logs), reproduce, fix at
-source, cover with a runtime challenge.
+**Evidence:** live search `/tmp/boba_search2.json` — 14 success / 10 error,
+total 909 results (vs 49 before BOB-005 fix). Each needs its own
+investigation (parse update / timeout tuning / per-plugin import).
+RuTracker is tracked separately as BOB-008 (CAPTCHA).
 
 ## §2. [BOB-006] NNMClub username/password login not wired (cookie-only)
 

@@ -1,6 +1,6 @@
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T12:20:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-06-06T18:00:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -14,30 +14,25 @@ authoritative for open work.</p>
 </blockquote>
 <hr />
 <h2
-id="bob-005-public-tracker-plugins-all-raise-an-unhandled-exception-in-the-running-container">§1.
-[BOB-005] Public-tracker plugins all raise an unhandled exception in the
-running container</h2>
-<p><strong>Status:</strong> In progress <strong>Type:</strong> Bug
-<strong>Severity:</strong> High <strong>Created:</strong> 2026-06-06</p>
-<p>A live search against the running stack
-(<code>POST /api/v1/search/sync</code>, query <code>ubuntu</code>)
-returned results ONLY from the private tracker IPTorrents (49) and
-attempted RuTracker; <strong>every public-tracker plugin</strong>
-(academictorrents, anilibra, bitsearch, gamestorrents, glotorrents,
-jackett, kickass, limetorrents, linuxtracker, megapeer, nyaa, piratebay,
-pirateiro, rockbox, rutor, snowfl, tokyotoshokan, torlock,
-torrentdownload, torrentgalaxy, torrentkitty, torrentproject,
-torrentscsv, yourbittorrent, yts) returned
-<code>status=error, error="plugin raised an unhandled exception"</code>.</p>
-<p><strong>Evidence:</strong> <code>/tmp/boba_search.json</code> (live
-search) — per-tracker stats show all public plugins erroring; only
-IPTorrents <code>status=success results=49</code>. <strong>Root
-cause:</strong> UNCONFIRMED — likely the plugin subprocess environment
-in the <code>python:3.12-alpine</code> proxy container (missing
-dependency / nova3 harness / network egress). Needs the captured
-per-plugin stderr from the orchestrator. <strong>Next:</strong> extract
-plugin stderr (search.py debug logs), reproduce, fix at source, cover
-with a runtime challenge.</p>
+id="bob-015-individual-public-tracker-plugins-errortime-out-after-the-systemic-fix">§1.
+[BOB-015] Individual public-tracker plugins error/time-out after the
+systemic fix</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Medium <strong>Created:</strong>
+2026-06-06</p>
+<p>After BOB-005 (systemic import failure) was fixed, 14 public trackers
+now return results, but a few still error with DISTINCT, per-plugin
+causes (no longer the shared import failure): - per-plugin runtime
+exceptions: <code>piratebay</code>, <code>jackett</code>,
+<code>tokyotoshokan</code> - per-tracker 25s deadline timeouts:
+<code>kickass</code>, <code>nyaa</code>, <code>torlock</code> -
+<code>snowfl</code>: “plugin parse failed (upstream HTML likely
+changed)”</p>
+<p><strong>Evidence:</strong> live search
+<code>/tmp/boba_search2.json</code> — 14 success / 10 error, total 909
+results (vs 49 before BOB-005 fix). Each needs its own investigation
+(parse update / timeout tuning / per-plugin import). RuTracker is
+tracked separately as BOB-008 (CAPTCHA).</p>
 <h2
 id="bob-006-nnmclub-usernamepassword-login-not-wired-cookie-only">§2.
 [BOB-006] NNMClub username/password login not wired (cookie-only)</h2>

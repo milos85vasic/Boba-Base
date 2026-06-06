@@ -1,6 +1,6 @@
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T12:20:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-06-06T18:00:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -83,6 +83,39 @@ realistic sizes parsed to 0. Fixed to match on the suffix, longest unit
 first. <strong>Evidence:</strong>
 <code>tests/unit/test_plugin_search_engines.py</code> — torrentkitty
 size tests assert correct byte values; 18 passed.</p>
+<h2
+id="bob-005-public-tracker-plugins-all-raised-an-unhandled-exception-systemic">§7.
+[BOB-005] Public-tracker plugins all raised an unhandled exception
+(systemic)</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug · <strong>Severity:</strong> High <strong>Closed:</strong>
+2026-06-06</p>
+<p>Every public-tracker plugin failed
+(<code>status=error, "plugin raised an unhandled exception"</code>);
+only IPTorrents (in-process) worked. Two stacked root causes, both
+reproduced deterministically via
+<code>superpowers:systematic-debugging</code>: 1.
+<code>copy_plugins</code> placed the nova3 framework modules
+(<code>novaprinter.py</code>, <code>helpers.py</code>) under
+<code>engines/</code>, but the merge-service harness imports them from
+the nova3 ROOT
+(<code>sys.path=&lt;nova3 root&gt;; import novaprinter</code>; plugins
+do <code>from helpers import ...</code>) → ModuleNotFoundError for every
+plugin. 2. <code>helpers.py</code> does a top-level
+<code>import socks</code> (PySocks), absent from the python-alpine
+download-proxy container → import failed even after #1. (The unit suite
+masked this via a conftest <code>socks</code> sys.modules stub.)</p>
+<p><strong>Fix:</strong> <code>start.sh copy_plugins</code> now also
+copies <code>novaprinter.py</code>+<code>helpers.py</code> to the nova3
+root; <code>download-proxy/requirements.txt</code> adds
+<code>PySocks&gt;=1.7.1</code>. <strong>Evidence:</strong> - Regression
+test <code>tests/unit/merge_service/test_public_plugin_harness.py</code>
+— 6 passed (incl. negative control proving it catches the bug). -
+<strong>Runtime proof (clean reboot, §11.4.108):</strong> live search
+went from <strong>49 results / 0 public trackers</strong> → <strong>909
+results / 14 public trackers</strong> (rutor 235, torrentdownload 243,
+linuxtracker 123, …). <code>/tmp/boba_search2.json</code>. Remaining
+per-plugin errors/timeouts tracked separately as BOB-015.</p>
 <h2 id="bob-014-go-generateid-collided-under-burst-unixnano-only">§6.
 [BOB-014] Go <code>generateID()</code> collided under burst
 (UnixNano-only)</h2>
