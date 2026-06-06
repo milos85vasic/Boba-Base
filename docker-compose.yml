@@ -82,7 +82,7 @@ services:
       - MAX_CONCURRENT_TRACKERS=10
       - PUBLIC_TRACKER_DEADLINE_SECONDS=15
       - LOG_LEVEL=INFO
-      - ALLOWED_ORIGINS=*
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:7187,http://127.0.0.1:7187,http://localhost:4200,http://127.0.0.1:4200}
       - JACKETT_API_KEY=${JACKETT_API_KEY:-}
     volumes:
       - ./config:/config
@@ -134,7 +134,7 @@ services:
       - PUBLIC_TRACKER_DEADLINE_SECONDS=15
       - ENABLE_DEAD_TRACKERS=${ENABLE_DEAD_TRACKERS:-0}
       - JACKETT_API_KEY=${JACKETT_API_KEY:-}
-      - ALLOWED_ORIGINS=*
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:7187,http://127.0.0.1:7187,http://localhost:4200,http://127.0.0.1:4200}
     volumes:
       - ./config:/config
       - ./config/jackett:/jackett-config:ro
@@ -178,7 +178,7 @@ services:
       - BOBA_ENV_PATH=/host-env/.env
       - PORT=7189
       - LOG_LEVEL=INFO
-      - ALLOWED_ORIGINS=*
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:7187,http://127.0.0.1:7187,http://localhost:4200,http://127.0.0.1:4200}
     volumes:
       - ./config:/config                    # boba.db lives here
       - ./config/jackett:/jackett-config:ro

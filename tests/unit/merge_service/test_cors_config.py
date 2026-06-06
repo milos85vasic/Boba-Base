@@ -1,9 +1,11 @@
 """
 Unit tests for env-driven CORS configuration in the merge-service API.
 
-The production default is ``["*"]`` (permissive for local development).
-Operators can tighten origins via the ``ALLOWED_ORIGINS`` environment variable
-(comma-separated list).
+The production default is a localhost allowlist (NOT a wildcard) —
+CONTINUATION known-issue #5, reconciled per §11.4.120. Operators can
+override origins via the ``ALLOWED_ORIGINS`` environment variable
+(comma-separated list); ``*`` remains accepted as an explicit opt-in but
+emits a security warning.
 """
 
 from __future__ import annotations
@@ -37,8 +39,12 @@ def _cors_middleware_origins(app) -> list[str]:
     raise AssertionError("CORSMiddleware not registered on app")
 
 
-def test_default_uses_wildcard_origin(monkeypatch, caplog):
-    """Default CORS is permissive (*) so the dashboard works from any host (phone, LAN IP)."""
+def test_default_is_not_wildcard(monkeypatch, caplog):
+    """Default CORS is a localhost allowlist, never a wildcard (§11.4.120 reconcile).
+
+    The dashboard SPA is served same-origin so it needs no CORS; the only
+    legitimate cross-origin callers are localhost dev/tooling.
+    """
     monkeypatch.delenv("ALLOWED_ORIGINS", raising=False)
     _purge_api_module()
 
@@ -46,7 +52,27 @@ def test_default_uses_wildcard_origin(monkeypatch, caplog):
 
     import api
 
+    origins = _cors_middleware_origins(api.app)
+    assert "*" not in origins
+    assert origins  # non-empty
+    assert any("localhost" in o or "127.0.0.1" in o for o in origins)
+    # Secure default must not trip the wildcard warning.
+    wildcards = [r for r in caplog.records if "CORS wildcard" in r.getMessage()]
+    assert not wildcards
+
+
+def test_explicit_wildcard_optin_warns(monkeypatch, caplog):
+    """'*' is still accepted as an explicit opt-in but must emit a warning."""
+    monkeypatch.setenv("ALLOWED_ORIGINS", "*")
+    _purge_api_module()
+
+    caplog.set_level(logging.WARNING, logger="api")
+
+    import api
+
     assert _cors_middleware_origins(api.app) == ["*"]
+    wildcards = [r for r in caplog.records if "CORS wildcard" in r.getMessage()]
+    assert wildcards, "explicit '*' opt-in must emit a CORS wildcard warning"
 
 
 def test_explicit_origins_are_respected(monkeypatch, caplog):

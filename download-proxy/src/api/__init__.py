@@ -91,7 +91,19 @@ app = FastAPI(
 )
 
 
-_DEFAULT_ORIGINS = ["*"]
+# Secure-by-default CORS allowlist. The dashboard SPA is served same-origin
+# by this app, so it never needs CORS; the only legitimate cross-origin
+# callers are the Angular dev server (ng serve :4200) and tooling hitting
+# the merge service on :7187. Operators who genuinely need other origins set
+# ALLOWED_ORIGINS (comma-separated); "*" is still accepted as an explicit
+# opt-in but is no longer the default (CONTINUATION known-issue #5).
+_MERGE_PORT = os.getenv("MERGE_SERVICE_PORT", "7187")
+_DEFAULT_ORIGINS = [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200",
+    f"http://localhost:{_MERGE_PORT}",
+    f"http://127.0.0.1:{_MERGE_PORT}",
+]
 
 
 def _parse_allowed_origins(raw: str | None) -> list[str]:
@@ -104,9 +116,16 @@ def _parse_allowed_origins(raw: str | None) -> list[str]:
 
 _allowed_origins = _parse_allowed_origins(os.getenv("ALLOWED_ORIGINS"))
 
+if "*" in _allowed_origins:
+    logger.warning(
+        "CORS wildcard origin ('*') is enabled — any website may call this API. "
+        "Set ALLOWED_ORIGINS to an explicit comma-separated allowlist in production."
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
