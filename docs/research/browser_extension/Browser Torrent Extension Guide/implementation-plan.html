@@ -1,0 +1,1431 @@
+<h1 id="boba-browser-extension-complete-implementation-plan">Boba
+Browser Extension — Complete Implementation Plan</h1>
+<h2
+id="project-bobalink-browser-extension-for-torrent-discovery-download">Project:
+BobaLink — Browser Extension for Torrent Discovery &amp; Download</h2>
+<h2 id="version-1.0.0">Version: 1.0.0</h2>
+<h2 id="date-2026-06-06">Date: 2026-06-06</h2>
+<hr />
+<h2 id="executive-summary">Executive Summary</h2>
+<p>BobaLink is a cross-browser extension (Chrome, Firefox, Opera,
+Yandex, Chromium) that detects torrent files and magnet links on web
+pages and in tab groups, then sends them to the Boba Project’s
+qBitTorrent web dashboard for downloading. Built on Manifest V3 with
+TypeScript, WXT build system, and comprehensive testing.</p>
+<hr />
+<h2 id="phase-1-foundation-week-1">Phase 1: Foundation (Week 1)</h2>
+<h3 id="project-setup">1.1 Project Setup</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.1.1</td>
+<td>Initialize repository</td>
+<td>Git init, LICENSE (Apache 2.0), README</td>
+<td>repo structure</td>
+</tr>
+<tr>
+<td>1.1.2</td>
+<td>Setup WXT build system</td>
+<td>Install wxt, configure wxt.config.ts for 5 browsers</td>
+<td>build config</td>
+</tr>
+<tr>
+<td>1.1.3</td>
+<td>TypeScript configuration</td>
+<td>tsconfig.json with strict mode, <span class="citation"
+data-cites="types/chrome">@types/chrome</span></td>
+<td>TS config</td>
+</tr>
+<tr>
+<td>1.1.4</td>
+<td>Linting &amp; formatting</td>
+<td>ESLint 9 flat config, Prettier, Husky pre-commit</td>
+<td>quality config</td>
+</tr>
+<tr>
+<td>1.1.5</td>
+<td>Directory structure</td>
+<td>src/, src/background/, src/content/, src/popup/, src/options/,
+src/shared/, src/types/, public/, tests/</td>
+<td>folders</td>
+</tr>
+</tbody>
+</table>
+<h3 id="manifest-v3-configuration">1.2 Manifest V3 Configuration</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.2.1</td>
+<td>Base manifest.json</td>
+<td>name, version, description, permissions, host_permissions</td>
+<td>manifest</td>
+</tr>
+<tr>
+<td>1.2.2</td>
+<td>Chrome manifest</td>
+<td>MV3 with service worker, specific host patterns</td>
+<td>chrome manifest</td>
+</tr>
+<tr>
+<td>1.2.3</td>
+<td>Firefox manifest</td>
+<td>browser_specific_settings, gecko ID</td>
+<td>firefox manifest</td>
+</tr>
+<tr>
+<td>1.2.4</td>
+<td>Opera manifest</td>
+<td>sidebar action, minimum_opera_version</td>
+<td>opera manifest</td>
+</tr>
+<tr>
+<td>1.2.5</td>
+<td>Yandex manifest</td>
+<td>Chromium-compatible, tune:// URL handling</td>
+<td>yandex manifest</td>
+</tr>
+<tr>
+<td>1.2.6</td>
+<td>Permission model</td>
+<td>storage, alarms, notifications, activeTab, host_permissions</td>
+<td>permissions</td>
+</tr>
+</tbody>
+</table>
+<h3 id="shared-infrastructure">1.3 Shared Infrastructure</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.3.1</td>
+<td>Type definitions</td>
+<td>src/types/torrent.ts, config.ts, api.ts</td>
+<td>type system</td>
+</tr>
+<tr>
+<td>1.3.2</td>
+<td>Logger utility</td>
+<td>src/shared/logger.ts — structured logging with levels</td>
+<td>logger</td>
+</tr>
+<tr>
+<td>1.3.3</td>
+<td>Constants</td>
+<td>src/shared/constants.ts — URLs, ports, regex patterns</td>
+<td>constants</td>
+</tr>
+<tr>
+<td>1.3.4</td>
+<td>Error types</td>
+<td>src/shared/errors.ts — custom error classes</td>
+<td>error handling</td>
+</tr>
+<tr>
+<td>1.3.5</td>
+<td>Event bus</td>
+<td>src/shared/events.ts — typed event emitter for inter-module
+comm</td>
+<td>event system</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-2-core-engine-week-2">Phase 2: Core Engine (Week 2)</h2>
+<h3 id="magnet-link-detection-parsing">2.1 Magnet Link Detection &amp;
+Parsing</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2.1.1</td>
+<td>Magnet regex engine</td>
+<td>Fast detection regex + validation regex for BTIH</td>
+<td>parser core</td>
+</tr>
+<tr>
+<td>2.1.2</td>
+<td>URI decoder</td>
+<td>decodeURIComponent for dn, tr, xl parameters</td>
+<td>decoder</td>
+</tr>
+<tr>
+<td>2.1.3</td>
+<td>BTIH validator</td>
+<td>40-char hex validation, base32 support</td>
+<td>validator</td>
+</tr>
+<tr>
+<td>2.1.4</td>
+<td>Parameter extractor</td>
+<td>Extract xt, dn, tr, xl, ws, xs, as, kt, mt</td>
+<td>extractor</td>
+</tr>
+<tr>
+<td>2.1.5</td>
+<td>Normalizer</td>
+<td>Convert any magnet format to canonical
+<code>{infoHash, name, trackers}</code></td>
+<td>normalizer</td>
+</tr>
+<tr>
+<td>2.1.6</td>
+<td>Unit tests</td>
+<td>50+ test cases covering all magnet formats</td>
+<td>test suite</td>
+</tr>
+</tbody>
+</table>
+<h3 id="torrent-file-parsing">2.2 Torrent File Parsing</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2.2.1</td>
+<td>Bencode decoder</td>
+<td>Zero-dependency Uint8Array-based decoder</td>
+<td>decoder</td>
+</tr>
+<tr>
+<td>2.2.2</td>
+<td>Torrent parser class</td>
+<td>Parse .torrent files, extract info dict, files</td>
+<td>parser class</td>
+</tr>
+<tr>
+<td>2.2.3</td>
+<td>Infohash computer</td>
+<td>SHA-1 of bencoded info dict via Web Crypto API</td>
+<td>hasher</td>
+</tr>
+<tr>
+<td>2.2.4</td>
+<td>Magnet generator</td>
+<td>Create magnet URI from parsed torrent data</td>
+<td>generator</td>
+</tr>
+<tr>
+<td>2.2.5</td>
+<td>Validator</td>
+<td>Check required fields (announce, info, piece length)</td>
+<td>validator</td>
+</tr>
+<tr>
+<td>2.2.6</td>
+<td>Unit tests</td>
+<td>Test with real .torrent files, edge cases</td>
+<td>test suite</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dom-scanner-engine">2.3 DOM Scanner Engine</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2.3.1</td>
+<td>Base scanner class</td>
+<td>Abstract scanner with EventTarget interface</td>
+<td>base class</td>
+</tr>
+<tr>
+<td>2.3.2</td>
+<td>Anchor link scanner</td>
+<td>querySelectorAll(‘a[href^=“magnet:”], a[href$=“.torrent”]’)</td>
+<td>link scanner</td>
+</tr>
+<tr>
+<td>2.3.3</td>
+<td>Text node scanner</td>
+<td>TreeWalker-based text scanning for inline magnets</td>
+<td>text scanner</td>
+</tr>
+<tr>
+<td>2.3.4</td>
+<td>Site-specific selectors</td>
+<td>Top 20 torrent site CSS selector database</td>
+<td>site DB</td>
+</tr>
+<tr>
+<td>2.3.5</td>
+<td>MutationObserver setup</td>
+<td>Debounced observer (500ms) for dynamic content</td>
+<td>observer</td>
+</tr>
+<tr>
+<td>2.3.6</td>
+<td>Shadow DOM support</td>
+<td>Recursive shadow root traversal</td>
+<td>shadow scanner</td>
+</tr>
+<tr>
+<td>2.3.7</td>
+<td>Deduplication engine</td>
+<td>Map by infoHash to prevent duplicates</td>
+<td>deduper</td>
+</tr>
+<tr>
+<td>2.3.8</td>
+<td>Performance budget</td>
+<td>requestAnimationFrame yielding, 16ms/frame limit</td>
+<td>performance</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-3-browser-extension-shell-week-2-3">Phase 3: Browser
+Extension Shell (Week 2-3)</h2>
+<h3 id="content-script">3.1 Content Script</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3.1.1</td>
+<td>Entry point</td>
+<td>src/content/index.ts — initialization</td>
+<td>entry</td>
+</tr>
+<tr>
+<td>3.1.2</td>
+<td>Page scanner orchestrator</td>
+<td>Initialize all scanners, collect results</td>
+<td>orchestrator</td>
+</tr>
+<tr>
+<td>3.1.3</td>
+<td>Highlight/overlay UI</td>
+<td>Visual indicators on detected torrents/magnets</td>
+<td>overlay</td>
+</tr>
+<tr>
+<td>3.1.4</td>
+<td>Message handler</td>
+<td>Listen for SCAN_REQUEST, return results to background</td>
+<td>messaging</td>
+</tr>
+<tr>
+<td>3.1.5</td>
+<td>Auto-scan on load</td>
+<td>document_idle injection, initial scan + observer</td>
+<td>auto-scan</td>
+</tr>
+<tr>
+<td>3.1.6</td>
+<td>Manual scan trigger</td>
+<td>Respond to background script scan command</td>
+<td>manual scan</td>
+</tr>
+</tbody>
+</table>
+<h3 id="background-service-worker">3.2 Background Service Worker</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3.2.1</td>
+<td>Entry point</td>
+<td>src/background/index.ts — SW lifecycle management</td>
+<td>entry</td>
+</tr>
+<tr>
+<td>3.2.2</td>
+<td>Message router</td>
+<td>Route messages between content/popup/options</td>
+<td>router</td>
+</tr>
+<tr>
+<td>3.2.3</td>
+<td>Keep-alive strategy</td>
+<td>chrome.alarms for SW persistence</td>
+<td>keep-alive</td>
+</tr>
+<tr>
+<td>3.2.4</td>
+<td>Context menu handler</td>
+<td>“Send to Boba”, “Scan Page”, “Open Dashboard”</td>
+<td>context menu</td>
+</tr>
+<tr>
+<td>3.2.5</td>
+<td>Keyboard shortcuts</td>
+<td>Ctrl+Shift+B (send), Ctrl+Shift+S (scan), etc.</td>
+<td>shortcuts</td>
+</tr>
+<tr>
+<td>3.2.6</td>
+<td>Health check loop</td>
+<td>Periodic Boba server ping via chrome.alarms</td>
+<td>health</td>
+</tr>
+<tr>
+<td>3.2.7</td>
+<td>Badge updater</td>
+<td>Update badge text/color based on status</td>
+<td>badge</td>
+</tr>
+<tr>
+<td>3.2.8</td>
+<td>Notification handler</td>
+<td>Show download start/complete/error notifications</td>
+<td>notifications</td>
+</tr>
+</tbody>
+</table>
+<h3 id="popup-ui">3.3 Popup UI</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3.3.1</td>
+<td>HTML structure</td>
+<td>src/popup/index.html — clean layout</td>
+<td>HTML</td>
+</tr>
+<tr>
+<td>3.3.2</td>
+<td>CSS styling</td>
+<td>src/popup/style.css — theme-aware, responsive</td>
+<td>CSS</td>
+</tr>
+<tr>
+<td>3.3.3</td>
+<td>JavaScript logic</td>
+<td>src/popup/popup.ts — torrent list, actions, state</td>
+<td>JS</td>
+</tr>
+<tr>
+<td>3.3.4</td>
+<td>Connection status</td>
+<td>Show Boba server connection state</td>
+<td>status indicator</td>
+</tr>
+<tr>
+<td>3.3.5</td>
+<td>Detected torrents list</td>
+<td>Scrollable list with checkboxes</td>
+<td>torrent list</td>
+</tr>
+<tr>
+<td>3.3.6</td>
+<td>Send action</td>
+<td>“Send Selected to Boba” button with progress</td>
+<td>send flow</td>
+</tr>
+<tr>
+<td>3.3.7</td>
+<td>Batch operations</td>
+<td>Select All, Deselect All, Invert Selection</td>
+<td>batch actions</td>
+</tr>
+<tr>
+<td>3.3.8</td>
+<td>Quick settings</td>
+<td>Toggle auto-scan, notification preferences</td>
+<td>settings</td>
+</tr>
+</tbody>
+</table>
+<h3 id="options-page">3.4 Options Page</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3.4.1</td>
+<td>HTML structure</td>
+<td>src/options/index.html — full settings page</td>
+<td>HTML</td>
+</tr>
+<tr>
+<td>3.4.2</td>
+<td>CSS styling</td>
+<td>src/options/style.css — clean form layout</td>
+<td>CSS</td>
+</tr>
+<tr>
+<td>3.4.3</td>
+<td>JavaScript logic</td>
+<td>src/options/options.ts — save/load settings</td>
+<td>JS</td>
+</tr>
+<tr>
+<td>3.4.4</td>
+<td>Boba server config</td>
+<td>URL, port, auth method, credentials</td>
+<td>server config</td>
+</tr>
+<tr>
+<td>3.4.5</td>
+<td>Connection test</td>
+<td>“Test Connection” button with visual feedback</td>
+<td>test button</td>
+</tr>
+<tr>
+<td>3.4.6</td>
+<td>Auto-discovery</td>
+<td>“Auto-Discover Boba” button scanning ports</td>
+<td>discovery</td>
+</tr>
+<tr>
+<td>3.4.7</td>
+<td>Download preferences</td>
+<td>Default category, save path, start paused</td>
+<td>preferences</td>
+</tr>
+<tr>
+<td>3.4.8</td>
+<td>Security settings</td>
+<td>Credential encryption toggle, HTTPS enforcement</td>
+<td>security</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-4-api-integration-week-3">Phase 4: API Integration (Week
+3)</h2>
+<h3 id="boba-api-client">4.1 Boba API Client</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4.1.1</td>
+<td>Client class</td>
+<td>src/shared/api/client.ts — BobaAPIClient</td>
+<td>client class</td>
+</tr>
+<tr>
+<td>4.1.2</td>
+<td>Auth handlers</td>
+<td>Cookie-based, API Key, Basic Auth support</td>
+<td>auth</td>
+</tr>
+<tr>
+<td>4.1.3</td>
+<td>Health check</td>
+<td>/app/version, /api/v2/app/version endpoints</td>
+<td>health</td>
+</tr>
+<tr>
+<td>4.1.4</td>
+<td>Auto-discovery</td>
+<td>Scan localhost ports 7187, 7189, 8080</td>
+<td>discovery</td>
+</tr>
+<tr>
+<td>4.1.5</td>
+<td>Error handling</td>
+<td>Retry with exponential backoff, classify errors</td>
+<td>error handler</td>
+</tr>
+<tr>
+<td>4.1.6</td>
+<td>Rate limiting</td>
+<td>Token bucket limiter for API calls</td>
+<td>rate limiter</td>
+</tr>
+</tbody>
+</table>
+<h3 id="qbittorrent-direct-integration">4.2 qBitTorrent Direct
+Integration</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4.2.1</td>
+<td>Auth flow</td>
+<td>Login, SID cookie management, CSRF handling</td>
+<td>auth</td>
+</tr>
+<tr>
+<td>4.2.2</td>
+<td>Add torrents</td>
+<td>POST /api/v2/torrents/add with urls/files</td>
+<td>add torrent</td>
+</tr>
+<tr>
+<td>4.2.3</td>
+<td>Add magnets</td>
+<td>Pass magnet: URIs via urls parameter</td>
+<td>add magnet</td>
+</tr>
+<tr>
+<td>4.2.4</td>
+<td>Upload files</td>
+<td>multipart/form-data for .torrent file upload</td>
+<td>file upload</td>
+</tr>
+<tr>
+<td>4.2.5</td>
+<td>Monitor downloads</td>
+<td>/torrents/info with hash filtering</td>
+<td>monitor</td>
+</tr>
+<tr>
+<td>4.2.6</td>
+<td>Sync polling</td>
+<td>/sync/maindata with incremental RID</td>
+<td>sync</td>
+</tr>
+</tbody>
+</table>
+<h3 id="offline-queue-system">4.3 Offline Queue System</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4.3.1</td>
+<td>Queue class</td>
+<td>src/shared/queue.ts — OfflineQueue</td>
+<td>queue</td>
+</tr>
+<tr>
+<td>4.3.2</td>
+<td>Persistence</td>
+<td>chrome.storage.local for queued items</td>
+<td>storage</td>
+</tr>
+<tr>
+<td>4.3.3</td>
+<td>Retry logic</td>
+<td>Exponential backoff with jitter</td>
+<td>retry</td>
+</tr>
+<tr>
+<td>4.3.4</td>
+<td>Process loop</td>
+<td>chrome.alarms-based queue processor</td>
+<td>processor</td>
+</tr>
+<tr>
+<td>4.3.5</td>
+<td>Conflict resolution</td>
+<td>Skip if already added (check by infohash)</td>
+<td>dedup</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-5-tab-groups-integration-week-3">Phase 5: Tab Groups
+Integration (Week 3)</h2>
+<h3 id="tab-group-enumeration">5.1 Tab Group Enumeration</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5.1.1</td>
+<td>Group query</td>
+<td>chrome.tabGroups.query({}) for all groups</td>
+<td>query</td>
+</tr>
+<tr>
+<td>5.1.2</td>
+<td>Tab extraction</td>
+<td>chrome.tabs.query({groupId}) for URLs</td>
+<td>extract</td>
+</tr>
+<tr>
+<td>5.1.3</td>
+<td>URL collection</td>
+<td>Aggregate all tab URLs per group</td>
+<td>collect</td>
+</tr>
+<tr>
+<td>5.1.4</td>
+<td>Batch scanning</td>
+<td>Run content script scanner on each tab URL</td>
+<td>scan</td>
+</tr>
+</tbody>
+</table>
+<h3 id="context-menu-integration">5.2 Context Menu Integration</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5.2.1</td>
+<td>Tab context menu</td>
+<td>“Send Group to Boba” on right-click tab</td>
+<td>menu item</td>
+</tr>
+<tr>
+<td>5.2.2</td>
+<td>Group submenu</td>
+<td>List groups with torrent count per group</td>
+<td>submenu</td>
+</tr>
+<tr>
+<td>5.2.3</td>
+<td>Action handler</td>
+<td>Scan all tabs in group, collect, batch send</td>
+<td>handler</td>
+</tr>
+<tr>
+<td>5.2.4</td>
+<td>Progress notification</td>
+<td>Show “Scanning X tabs in group Y…”</td>
+<td>progress</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-6-uiux-polish-week-4">Phase 6: UI/UX Polish (Week 4)</h2>
+<h3 id="icons-theming">6.1 Icons &amp; Theming</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6.1.1</td>
+<td>Icon set</td>
+<td>16x16, 32x32, 48x48, 128x128 PNGs + SVG source</td>
+<td>icons</td>
+</tr>
+<tr>
+<td>6.1.2</td>
+<td>Dynamic badges</td>
+<td>Color-coded badges (green=active, blue=done, red=error)</td>
+<td>badge states</td>
+</tr>
+<tr>
+<td>6.1.3</td>
+<td>Theme detection</td>
+<td>prefers-color-scheme for dark/light mode</td>
+<td>theme</td>
+</tr>
+<tr>
+<td>6.1.4</td>
+<td>Animation</td>
+<td>Smooth transitions, loading spinners</td>
+<td>polish</td>
+</tr>
+</tbody>
+</table>
+<h3 id="internationalization">6.2 Internationalization</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6.2.1</td>
+<td>i18n setup</td>
+<td>_locales/en/messages.json structure</td>
+<td>i18n</td>
+</tr>
+<tr>
+<td>6.2.2</td>
+<td>English strings</td>
+<td>All UI strings in en/messages.json</td>
+<td>en strings</td>
+</tr>
+<tr>
+<td>6.2.3</td>
+<td>i18n helper</td>
+<td>chrome.i18n.getMessage() wrapper</td>
+<td>helper</td>
+</tr>
+</tbody>
+</table>
+<h3 id="accessibility">6.3 Accessibility</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6.3.1</td>
+<td>ARIA labels</td>
+<td>All interactive elements have aria-label</td>
+<td>labels</td>
+</tr>
+<tr>
+<td>6.3.2</td>
+<td>Keyboard nav</td>
+<td>Tab order, Enter/Space activation</td>
+<td>keyboard</td>
+</tr>
+<tr>
+<td>6.3.3</td>
+<td>Focus management</td>
+<td>Visible focus indicators, focus trapping</td>
+<td>focus</td>
+</tr>
+<tr>
+<td>6.3.4</td>
+<td>Screen reader</td>
+<td>Live regions for status updates</td>
+<td>a11y</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-7-testing-week-4-5">Phase 7: Testing (Week 4-5)</h2>
+<h3 id="unit-tests">7.1 Unit Tests</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7.1.1</td>
+<td>Jest configuration</td>
+<td>jest.config.ts, ts-jest, jsdom environment</td>
+<td>config</td>
+</tr>
+<tr>
+<td>7.1.2</td>
+<td>Mock APIs</td>
+<td>chrome.* API mocks (storage, tabs, runtime, alarms)</td>
+<td>mocks</td>
+</tr>
+<tr>
+<td>7.1.3</td>
+<td>Magnet parser tests</td>
+<td>50+ test cases, edge cases, invalid inputs</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>7.1.4</td>
+<td>Torrent parser tests</td>
+<td>Real torrent fixtures, bencode tests</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>7.1.5</td>
+<td>DOM scanner tests</td>
+<td>jsdom-based DOM manipulation tests</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>7.1.6</td>
+<td>API client tests</td>
+<td>Mock fetch, auth flow, error handling</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>7.1.7</td>
+<td>Queue tests</td>
+<td>Persistence, retry, deduplication</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>7.1.8</td>
+<td>Coverage target</td>
+<td>80%+ line coverage</td>
+<td>coverage</td>
+</tr>
+</tbody>
+</table>
+<h3 id="integration-tests">7.2 Integration Tests</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7.2.1</td>
+<td>API integration</td>
+<td>Test against real Boba docker instance</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>7.2.2</td>
+<td>Auth flow</td>
+<td>Cookie auth, API key auth, error cases</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>7.2.3</td>
+<td>End-to-end flow</td>
+<td>Detect → Parse → Send → Verify download</td>
+<td>tests</td>
+</tr>
+</tbody>
+</table>
+<h3 id="e2e-tests">7.3 E2E Tests</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7.3.1</td>
+<td>Playwright config</td>
+<td>playwright.config.ts with extension loading</td>
+<td>config</td>
+</tr>
+<tr>
+<td>7.3.2</td>
+<td>Extension fixture</td>
+<td>Load extension in Chromium/Chrome</td>
+<td>fixture</td>
+</tr>
+<tr>
+<td>7.3.3</td>
+<td>Popup tests</td>
+<td>Open popup, verify UI, click actions</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>7.3.4</td>
+<td>Content script tests</td>
+<td>Visit torrent page, verify detection</td>
+<td>tests</td>
+</tr>
+<tr>
+<td>7.3.5</td>
+<td>Options tests</td>
+<td>Configure server, test connection</td>
+<td>tests</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="phase-8-build-distribution-week-5">Phase 8: Build &amp;
+Distribution (Week 5)</h2>
+<h3 id="build-pipeline">8.1 Build Pipeline</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8.1.1</td>
+<td>WXT build</td>
+<td>wxt build for production</td>
+<td>build</td>
+</tr>
+<tr>
+<td>8.1.2</td>
+<td>Cross-browser builds</td>
+<td>Chrome, Firefox, Opera, Yandex packages</td>
+<td>packages</td>
+</tr>
+<tr>
+<td>8.1.3</td>
+<td>CI/CD workflow</td>
+<td>.github/workflows/ci.yml — lint, test, build</td>
+<td>CI</td>
+</tr>
+<tr>
+<td>8.1.4</td>
+<td>Release workflow</td>
+<td>.github/workflows/release.yml — publish to stores</td>
+<td>CD</td>
+</tr>
+</tbody>
+</table>
+<h3 id="store-submission">8.2 Store Submission</h3>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Task</th>
+<th>Sub-task</th>
+<th>Description</th>
+<th>Deliverable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8.2.1</td>
+<td>Chrome Web Store</td>
+<td>Screenshots, description, privacy policy, $5 fee</td>
+<td>submission</td>
+</tr>
+<tr>
+<td>8.2.2</td>
+<td>Firefox AMO</td>
+<td>web-ext sign, listing page, review responses</td>
+<td>submission</td>
+</tr>
+<tr>
+<td>8.2.3</td>
+<td>Opera Addons</td>
+<td>Opera-specific build, sidebar screenshot</td>
+<td>submission</td>
+</tr>
+<tr>
+<td>8.2.4</td>
+<td>Yandex</td>
+<td>Chromium-compatible package, description</td>
+<td>submission</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="deliverables-checklist">Deliverables Checklist</h2>
+<h3 id="source-code">Source Code</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />src/ directory with all TypeScript
+source</label></li>
+<li><label><input type="checkbox" />wxt.config.ts build
+configuration</label></li>
+<li><label><input type="checkbox" />manifest configuration per
+browser</label></li>
+<li><label><input type="checkbox" />package.json with all
+dependencies</label></li>
+<li><label><input type="checkbox" />tsconfig.json, jest.config.ts,
+playwright.config.ts</label></li>
+<li><label><input type="checkbox" />.github/workflows/ci.yml,
+release.yml</label></li>
+</ul>
+<h3 id="tests">Tests</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Unit tests (Jest) — 80%+
+coverage</label></li>
+<li><label><input type="checkbox" />E2E tests (Playwright)</label></li>
+<li><label><input type="checkbox" />Test fixtures (sample .torrent
+files, HTML pages)</label></li>
+<li><label><input type="checkbox" />Mock implementations for browser
+APIs</label></li>
+</ul>
+<h3 id="documentation">Documentation</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />Technical Specification
+(architecture, components, APIs)</label></li>
+<li><label><input type="checkbox" />API Reference (all internal and
+external APIs)</label></li>
+<li><label><input type="checkbox" />User Guide (installation,
+configuration, usage)</label></li>
+<li><label><input type="checkbox" />Developer Guide (setup, build, test,
+contribute)</label></li>
+<li><label><input type="checkbox" />Installation Guide (per-browser
+instructions)</label></li>
+</ul>
+<h3 id="diagrams">Diagrams</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />System architecture (Mermaid + SVG +
+PNG)</label></li>
+<li><label><input type="checkbox" />Data flow diagrams (Mermaid + SVG +
+draw.io)</label></li>
+<li><label><input type="checkbox" />Sequence diagrams (Mermaid +
+UML)</label></li>
+<li><label><input type="checkbox" />ER diagram (database
+schema)</label></li>
+<li><label><input type="checkbox" />Component diagram</label></li>
+<li><label><input type="checkbox" />Deployment diagram</label></li>
+</ul>
+<h3 id="multi-format-output">Multi-Format Output</h3>
+<ul class="task-list">
+<li><label><input type="checkbox" />All docs in Markdown</label></li>
+<li><label><input type="checkbox" />All docs in PDF (enterprise
+styled)</label></li>
+<li><label><input type="checkbox" />All docs in DOCX (enterprise
+styled)</label></li>
+<li><label><input type="checkbox" />All docs in HTML (clean
+styled)</label></li>
+<li><label><input type="checkbox" />All diagrams in Mermaid, SVG, PNG,
+draw.io, UML</label></li>
+</ul>
+<hr />
+<h2 id="sql-schema-definitions">SQL Schema Definitions</h2>
+<h3 id="extension-local-storage-chrome.storage.local">Extension Local
+Storage (chrome.storage.local)</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Configuration Table</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> extension_config (</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">key</span> TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">value</span> TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    updated_at <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- Discovered Torrents Table (session)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> discovered_torrents (</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,  <span class="co">-- infoHash</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    page_url TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    magnet_uri TEXT,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    torrent_url TEXT,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    name TEXT,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    trackers TEXT,  <span class="co">-- JSON array</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    size_bytes <span class="dt">INTEGER</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    source_type TEXT <span class="kw">CHECK</span>(source_type <span class="kw">IN</span> (<span class="st">&#39;magnet-link&#39;</span>, <span class="st">&#39;torrent-file&#39;</span>, <span class="st">&#39;torrent-url&#39;</span>)),</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    discovered_at <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    sent_to_boba <span class="dt">INTEGER</span> <span class="kw">DEFAULT</span> <span class="dv">0</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    boba_status TEXT <span class="kw">CHECK</span>(boba_status <span class="kw">IN</span> (<span class="st">&#39;pending&#39;</span>, <span class="st">&#39;queued&#39;</span>, <span class="st">&#39;added&#39;</span>, <span class="st">&#39;error&#39;</span>))</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co">-- Download Queue (offline support)</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> download_queue (</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    info_hash TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    magnet_uri TEXT,</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    torrent_data <span class="dt">BLOB</span>,  <span class="co">-- base64 encoded .torrent file</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    name TEXT,</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">category</span> TEXT,</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    save_path TEXT,</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    added_at <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    retry_count <span class="dt">INTEGER</span> <span class="kw">DEFAULT</span> <span class="dv">0</span>,</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    last_error TEXT,</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    status TEXT <span class="kw">CHECK</span>(status <span class="kw">IN</span> (<span class="st">&#39;pending&#39;</span>, <span class="st">&#39;retrying&#39;</span>, <span class="st">&#39;failed&#39;</span>, <span class="st">&#39;completed&#39;</span>))</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="co">-- Boba Server Configuration</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> server_config (</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> <span class="kw">CHECK</span>(<span class="kw">id</span> <span class="op">=</span> <span class="dv">1</span>),</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>    base_url TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    auth_method TEXT <span class="kw">CHECK</span>(auth_method <span class="kw">IN</span> (<span class="st">&#39;none&#39;</span>, <span class="st">&#39;cookie&#39;</span>, <span class="st">&#39;api_key&#39;</span>, <span class="st">&#39;basic&#39;</span>)),</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    api_key TEXT,</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    username TEXT,</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    password_encrypted TEXT,</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>    is_reachable <span class="dt">INTEGER</span> <span class="kw">DEFAULT</span> <span class="dv">0</span>,</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>    last_check <span class="dt">INTEGER</span>,</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    qbittorrent_version TEXT,</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    boba_version TEXT</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>);</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a><span class="co">-- Send History</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> send_history (</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT,</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>    info_hash TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>    name TEXT,</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>    sent_at <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>    success <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    error_message TEXT,</span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>    server_url TEXT <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<h3 id="boba-api-endpoints-external-reference">Boba API Endpoints
+(External — Reference)</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- qBitTorrent torrents table (reference only)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- Actual storage is managed by qBittorrent internally</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- Extension polls /api/v2/torrents/info to get this data</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Search results cache (optional, for offline viewing)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> <span class="cf">IF</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> search_cache (</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">id</span> <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span> AUTOINCREMENT,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">query</span> TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">category</span> TEXT,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    results_json TEXT <span class="kw">NOT</span> <span class="kw">NULL</span>,  <span class="co">-- JSON array of MergedResult</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    cached_at <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    expires_at <span class="dt">INTEGER</span> <span class="kw">NOT</span> <span class="kw">NULL</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<hr />
+<h2 id="gantt-chart-estimated-timeline">Gantt Chart (Estimated
+Timeline)</h2>
+<pre><code>Week 1  | Phase 1: Foundation + Phase 2: Core Engine
+Week 2  | Phase 2: Core Engine (cont) + Phase 3: Extension Shell
+Week 3  | Phase 3: Extension Shell (cont) + Phase 4: API Integration + Phase 5: Tab Groups
+Week 4  | Phase 6: UI/UX Polish + Phase 7: Testing (start)
+Week 5  | Phase 7: Testing (cont) + Phase 8: Build &amp; Distribution</code></pre>
+<hr />
+<h2 id="risk-assessment">Risk Assessment</h2>
+<table>
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 30%" />
+<col style="width: 46%" />
+</colgroup>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qBitTorrent API changes</td>
+<td>High</td>
+<td>Version detection, adapter pattern</td>
+</tr>
+<tr>
+<td>CORS on torrent sites</td>
+<td>Medium</td>
+<td>Service worker fetch bypasses CORS</td>
+</tr>
+<tr>
+<td>MV3 service worker termination</td>
+<td>Medium</td>
+<td>chrome.alarms keep-alive strategy</td>
+</tr>
+<tr>
+<td>Store review rejection</td>
+<td>Medium</td>
+<td>Follow guidelines, minimal permissions</td>
+</tr>
+<tr>
+<td>Yandex Browser API differences</td>
+<td>Low</td>
+<td>Test on Yandex, Chromium-compatible code</td>
+</tr>
+</tbody>
+</table>

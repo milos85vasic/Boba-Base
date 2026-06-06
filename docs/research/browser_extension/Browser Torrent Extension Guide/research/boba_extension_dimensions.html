@@ -1,0 +1,77 @@
+<h1 id="boba-browser-extension-research-dimension-decomposition">Boba
+Browser Extension — Research Dimension Decomposition</h1>
+<h2 id="dimension-01-boba-project-architecture-deep-dive">Dimension 01:
+Boba Project Architecture Deep Dive</h2>
+<p><strong>Scope</strong>: Complete understanding of Boba-Base repo
+architecture, services, APIs, data models, plugin system, and how
+torrents flow through the system. <strong>Key areas</strong>:
+qBitTorrent-go service, FastAPI merge search, webui-bridge,
+download-proxy, plugin system, frontend dashboard, auth model.</p>
+<h2 id="dimension-02-qbittorrent-webui-api-complete-reference">Dimension
+02: qBitTorrent WebUI API Complete Reference</h2>
+<p><strong>Scope</strong>: Every endpoint, parameter, auth mechanism,
+and response format needed to add/manage torrents programmatically.
+<strong>Key areas</strong>: /api/v2/auth/login, /api/v2/torrents/add,
+/torrents/info, /sync/maindata, cookie auth, multipart upload, CSRF
+handling.</p>
+<h2 id="dimension-03-browser-extension-architecture-mv3">Dimension 03:
+Browser Extension Architecture (MV3)</h2>
+<p><strong>Scope</strong>: Manifest V3 architecture patterns for torrent
+extraction extensions. <strong>Key areas</strong>: manifest.json,
+service workers, content scripts, popup pages, options pages, messaging
+(chrome.runtime.sendMessage), storage API.</p>
+<h2 id="dimension-04-cross-browser-compatibility-matrix">Dimension 04:
+Cross-Browser Compatibility Matrix</h2>
+<p><strong>Scope</strong>: Differences and compatibility shims for
+Chrome, Firefox, Opera, Yandex, Chromium. <strong>Key areas</strong>:
+Manifest V2 vs V3, browser.* vs chrome.* API, polyfills, store
+submission requirements, Yandex specifics.</p>
+<h2 id="dimension-05-tab-groups-api-deep-dive-chromeyandex">Dimension
+05: Tab Groups API Deep Dive (Chrome/Yandex)</h2>
+<p><strong>Scope</strong>: How to query, enumerate, and extract URLs
+from tab groups in Yandex Browser and Chrome. <strong>Key
+areas</strong>: chrome.tabGroups.query(), chrome.tabs.query({groupId}),
+group permissions, extracting all URLs from a group.</p>
+<h2 id="dimension-06-magnet-link-detection-parsing-algorithms">Dimension
+06: Magnet Link Detection &amp; Parsing Algorithms</h2>
+<p><strong>Scope</strong>: Comprehensive regex patterns, URI parsing,
+and infohash extraction from magnet links. <strong>Key areas</strong>:
+magnet:?xt=urn:btih: format, URI decoding, infohash validation (40-char
+hex), dn/tr/xl parameter extraction, edge cases.</p>
+<h2
+id="dimension-07-torrent-file-detection-download-bencode-parsing">Dimension
+07: Torrent File Detection, Download &amp; Bencode Parsing</h2>
+<p><strong>Scope</strong>: How to detect .torrent links, download files,
+parse bencode, extract infohash. <strong>Key areas</strong>: .torrent
+link detection, fetch with CORS, bencode parser in JS/TS, SHA-1 infohash
+computation, File/Blob handling.</p>
+<h2 id="dimension-08-web-page-dom-scraping-dynamic-content">Dimension
+08: Web Page DOM Scraping &amp; Dynamic Content</h2>
+<p><strong>Scope</strong>: Strategies for finding torrents and magnets
+on any web page including dynamically loaded content. <strong>Key
+areas</strong>: DOM traversal, MutationObserver for SPAs, common torrent
+site patterns, link detection, iframe handling.</p>
+<h2 id="dimension-09-extension-boba-api-integration">Dimension 09:
+Extension ↔︎ Boba API Integration</h2>
+<p><strong>Scope</strong>: How the browser extension communicates with
+Boba services and qBitTorrent WebUI. <strong>Key areas</strong>: REST
+API calls, CORS handling, authentication (API keys, cookies), WebSocket
+for progress, error handling, retry logic.</p>
+<h2 id="dimension-10-extension-uiux-design-patterns">Dimension 10:
+Extension UI/UX Design Patterns</h2>
+<p><strong>Scope</strong>: User interface components for torrent
+management extension. <strong>Key areas</strong>: Popup design, options
+page, context menus, notifications, badge counters, torrent list
+display, status indicators.</p>
+<h2 id="dimension-11-security-model-privacy-architecture">Dimension 11:
+Security Model &amp; Privacy Architecture</h2>
+<p><strong>Scope</strong>: Secure credential storage, permission model,
+CSP, and privacy considerations. <strong>Key areas</strong>: manifest
+permissions, host permissions, chrome.storage.local vs sync, secure key
+storage, content script isolation, CSP compliance.</p>
+<h2 id="dimension-12-testing-build-system-store-distribution">Dimension
+12: Testing, Build System &amp; Store Distribution</h2>
+<p><strong>Scope</strong>: Complete testing strategy and cross-browser
+build/packaging pipeline. <strong>Key areas</strong>: Jest for unit
+tests, Playwright for E2E, webpack/vite build, CI/CD, store submission
+packages (Chrome Web Store, AMO, Opera, Yandex).</p>

@@ -1,0 +1,1852 @@
+<h1 id="bobalink-browser-extension-developer-guide">BobaLink Browser
+Extension — Developer Guide</h1>
+<p><strong>Document Version</strong>: 1.0.0<br />
+<strong>Last Updated</strong>: 2026-06-06<br />
+<strong>Audience</strong>: Contributors, Fork Maintainers, Advanced
+Users<br />
+<strong>Companion Documents</strong>: <a
+href="technical-specification.md">Technical Specification</a> | <a
+href="api-reference.md">API Reference</a> | <a
+href="installation-guide.md">Installation Guide</a></p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#1-development-environment-setup">Development Environment
+Setup</a></li>
+<li><a href="#2-project-structure">Project Structure</a></li>
+<li><a href="#3-building-from-source">Building from Source</a></li>
+<li><a href="#4-testing">Testing</a></li>
+<li><a href="#5-code-style-and-conventions">Code Style and
+Conventions</a></li>
+<li><a href="#6-architecture-decisions">Architecture Decisions</a></li>
+<li><a href="#7-contributing">Contributing</a></li>
+<li><a href="#8-extending-the-extension">Extending the
+Extension</a></li>
+<li><a href="#9-debugging">Debugging</a></li>
+</ol>
+<hr />
+<h2 id="development-environment-setup">1. Development Environment
+Setup</h2>
+<h3 id="prerequisites">1.1 Prerequisites</h3>
+<p>Before you begin, ensure your development machine meets the following
+requirements:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Minimum Version</th>
+<th>Recommended</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Node.js</td>
+<td>18 LTS</td>
+<td>20 LTS</td>
+<td>Runtime and package management</td>
+</tr>
+<tr>
+<td>npm</td>
+<td>9.x</td>
+<td>10.x</td>
+<td>Package manager (bundled with Node.js)</td>
+</tr>
+<tr>
+<td>Git</td>
+<td>2.40</td>
+<td>2.43+</td>
+<td>Version control</td>
+</tr>
+<tr>
+<td>A supported browser</td>
+<td>Chrome 88+</td>
+<td>Chrome 120+</td>
+<td>Testing and debugging</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verify your environment:</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">node</span> <span class="at">--version</span>    <span class="co"># Should print v18.x.x or higher</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> <span class="at">--version</span>     <span class="co"># Should print 9.x.x or higher</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> <span class="at">--version</span>     <span class="co"># Should print 2.40+ or higher</span></span></code></pre></div>
+<h3 id="cloning-the-repository">1.2 Cloning the Repository</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Clone the repository</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/bobaproject/bobalink.git</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Navigate to the project directory</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> bobalink</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Install dependencies</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span></code></pre></div>
+<p>The <code>npm install</code> command installs all development and
+runtime dependencies. This may take 2–5 minutes depending on your
+connection speed.</p>
+<h3 id="installing-dependencies">1.3 Installing Dependencies</h3>
+<p>Key dependencies that will be installed:</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wxt</code></td>
+<td>^0.17</td>
+<td>Extension build framework</td>
+</tr>
+<tr>
+<td><code>typescript</code></td>
+<td>^5.0</td>
+<td>Type safety</td>
+</tr>
+<tr>
+<td><code>vite</code></td>
+<td>^5.0</td>
+<td>Module bundler (via WXT)</td>
+</tr>
+<tr>
+<td><code>jest</code></td>
+<td>^29.0</td>
+<td>Unit testing framework</td>
+</tr>
+<tr>
+<td><code>@playwright/test</code></td>
+<td>^1.40</td>
+<td>E2E testing framework</td>
+</tr>
+<tr>
+<td><code>eslint</code></td>
+<td>^8.0</td>
+<td>Code linting</td>
+</tr>
+<tr>
+<td><code>prettier</code></td>
+<td>^3.0</td>
+<td>Code formatting</td>
+</tr>
+<tr>
+<td><code>bencode-js</code></td>
+<td>^3.0</td>
+<td>Bencode parsing for <code>.torrent</code> files</td>
+</tr>
+<tr>
+<td><code>lz-string</code></td>
+<td>^1.5</td>
+<td>Compression for queue storage</td>
+</tr>
+<tr>
+<td><code>webextension-polyfill</code></td>
+<td>^0.10</td>
+<td>Firefox compatibility</td>
+</tr>
+</tbody>
+</table>
+<h3 id="ide-recommendations">1.4 IDE Recommendations</h3>
+<h4 id="visual-studio-code-recommended">Visual Studio Code
+(Recommended)</h4>
+<p>VS Code provides the best development experience for BobaLink.
+Recommended configuration:</p>
+<p><strong><code>.vscode/settings.json</code>:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;editor.formatOnSave&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;editor.defaultFormatter&quot;</span><span class="fu">:</span> <span class="st">&quot;esbenp.prettier-vscode&quot;</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;editor.codeActionsOnSave&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;source.fixAll.eslint&quot;</span><span class="fu">:</span> <span class="st">&quot;explicit&quot;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;typescript.tsdk&quot;</span><span class="fu">:</span> <span class="st">&quot;node_modules/typescript/lib&quot;</span><span class="fu">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;typescript.preferences.importModuleSpecifier&quot;</span><span class="fu">:</span> <span class="st">&quot;relative&quot;</span><span class="fu">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;files.exclude&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;**/node_modules&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;**/.output&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;**/dist&quot;</span><span class="fu">:</span> <span class="kw">true</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;search.exclude&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;**/node_modules&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;**/dist&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;**/.output&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;**/*.lock&quot;</span><span class="fu">:</span> <span class="kw">true</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong><code>.vscode/extensions.json</code>:</strong></p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;recommendations&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;esbenp.prettier-vscode&quot;</span><span class="ot">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;dbaeumer.vscode-eslint&quot;</span><span class="ot">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;ms-vscode.vscode-typescript-next&quot;</span><span class="ot">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;bradlc.vscode-tailwindcss&quot;</span><span class="ot">,</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;ryanluker.vscode-coverage-gutters&quot;</span><span class="ot">,</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;orta.vscode-jest&quot;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Recommended Extensions:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Extension</th>
+<th>Publisher</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prettier</td>
+<td>esbenp.prettier-vscode</td>
+<td>Code formatting</td>
+</tr>
+<tr>
+<td>ESLint</td>
+<td>dbaeumer.vscode-eslint</td>
+<td>Real-time linting</td>
+</tr>
+<tr>
+<td>Tailwind CSS IntelliSense</td>
+<td>bradlc.vscode-tailwindcss</td>
+<td>CSS autocomplete</td>
+</tr>
+<tr>
+<td>Coverage Gutters</td>
+<td>ryanluker.vscode-coverage-gutters</td>
+<td>Visual test coverage</td>
+</tr>
+<tr>
+<td>Jest</td>
+<td>orta.vscode-jest</td>
+<td>Test runner integration</td>
+</tr>
+</tbody>
+</table>
+<h4 id="webstorm-intellij-idea">WebStorm / IntelliJ IDEA</h4>
+<p>If using JetBrains IDEs: 1. Enable the Prettier plugin:
+<strong>Settings → Languages &amp; Frameworks → JavaScript →
+Prettier</strong>. 2. Enable ESLint: <strong>Settings → Languages &amp;
+Frameworks → JavaScript → Code Quality Tools → ESLint</strong>. 3. Set
+TypeScript version: <strong>Settings → Languages &amp; Frameworks →
+TypeScript</strong> → point to
+<code>node_modules/typescript/lib</code>.</p>
+<hr />
+<h2 id="project-structure">2. Project Structure</h2>
+<h3 id="directory-layout">2.1 Directory Layout</h3>
+<pre><code>bobalink/
+├── src/
+│   ├── assets/              # Static assets (icons, images)
+│   │   ├── icon-16.png
+│   │   ├── icon-32.png
+│   │   ├── icon-48.png
+│   │   └── icon-128.png
+│   ├── background/          # Service worker (MV3 background script)
+│   │   ├── index.ts         # Entry point
+│   │   ├── message-router.ts
+│   │   └── init.ts
+│   ├── content-scripts/     # Scripts injected into web pages
+│   │   ├── index.ts         # Entry point
+│   │   ├── magnet-scanner.ts
+│   │   ├── dom-observer.ts
+│   │   └── torrent-parser.ts
+│   ├── popup/               # Toolbar popup UI
+│   │   ├── index.html
+│   │   ├── index.ts
+│   │   ├── popup.css
+│   │   └── components/
+│   │       ├── torrent-list.ts
+│   │       ├── queue-view.ts
+│   │       ├── status-bar.ts
+│   │       └── tab-groups.ts
+│   ├── options/             # Options/settings page
+│   │   ├── index.html
+│   │   ├── index.ts
+│   │   ├── options.css
+│   │   └── components/
+│   │       ├── server-config.ts
+│   │       ├── download-prefs.ts
+│   │       ├── queue-settings.ts
+│   │       └── ui-settings.ts
+│   ├── modules/             # Shared business logic modules
+│   │   ├── api-client.ts
+│   │   ├── auth-manager.ts
+│   │   ├── badge-manager.ts
+│   │   ├── config-manager.ts
+│   │   ├── crypto-utils.ts
+│   │   ├── discovery-service.ts
+│   │   ├── health-monitor.ts
+│   │   ├── i18n.ts
+│   │   ├── notification-manager.ts
+│   │   ├── queue-manager.ts
+│   │   ├── rate-limiter.ts
+│   │   ├── state-manager.ts
+│   │   └── tab-manager.ts
+│   ├── types/               # TypeScript type definitions
+│   │   ├── index.ts
+│   │   ├── messages.ts
+│   │   ├── torrent.ts
+│   │   ├── config.ts
+│   │   └── api.ts
+│   └── utils/               # Utility functions
+│       ├── bencode.ts
+│       ├── hash.ts
+│       ├── magnet-uri.ts
+│       ├── storage.ts
+│       ├── time.ts
+│       └── validation.ts
+├── tests/
+│   ├── unit/                # Jest unit tests
+│   │   ├── modules/
+│   │   ├── utils/
+│   │   └── setup.ts
+│   ├── e2e/                 # Playwright E2E tests
+│   │   ├── fixtures/
+│   │   ├── specs/
+│   │   └── playwright.config.ts
+│   └── mocks/               # Test mocks
+│       ├── chrome-api.ts
+│       └── fetch.ts
+├── public/                  # Public static files
+├── _locales/                # Internationalization
+│   ├── en/
+│   ├── zh_CN/
+│   ├── es/
+│   └── ...
+├── wxt.config.ts            # WXT build configuration
+├── tsconfig.json            # TypeScript configuration
+├── jest.config.ts           # Jest test configuration
+├── eslint.config.js         # ESLint configuration
+├── prettier.config.js       # Prettier configuration
+├── package.json             # Project manifest
+└── README.md</code></pre>
+<h3 id="module-descriptions">2.2 Module Descriptions</h3>
+<h4 id="background-service-worker">Background (Service Worker)</h4>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>index.ts</code></td>
+<td>Service worker entry point; registers event listeners</td>
+</tr>
+<tr>
+<td><code>message-router.ts</code></td>
+<td>Routes incoming extension messages to appropriate handlers</td>
+</tr>
+<tr>
+<td><code>init.ts</code></td>
+<td>Extension initialization: config loading, health monitoring
+startup</td>
+</tr>
+</tbody>
+</table>
+<h4 id="content-scripts">Content Scripts</h4>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>index.ts</code></td>
+<td>Content script entry; initializes scanner and observer</td>
+</tr>
+<tr>
+<td><code>magnet-scanner.ts</code></td>
+<td>Scans DOM for magnet links and <code>.torrent</code> references</td>
+</tr>
+<tr>
+<td><code>dom-observer.ts</code></td>
+<td><code>MutationObserver</code> wrapper for dynamic content
+detection</td>
+</tr>
+<tr>
+<td><code>torrent-parser.ts</code></td>
+<td>Parses magnet URIs and <code>.torrent</code> file metadata</td>
+</tr>
+</tbody>
+</table>
+<h4 id="modules-shared-logic">Modules (Shared Logic)</h4>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>api-client.ts</code></td>
+<td>HTTP client for Boba and qBitTorrent API calls</td>
+</tr>
+<tr>
+<td><code>auth-manager.ts</code></td>
+<td>Authentication: login, token refresh, session management</td>
+</tr>
+<tr>
+<td><code>badge-manager.ts</code></td>
+<td>Toolbar badge state: color, text, animations</td>
+</tr>
+<tr>
+<td><code>config-manager.ts</code></td>
+<td>Configuration CRUD with validation and persistence</td>
+</tr>
+<tr>
+<td><code>crypto-utils.ts</code></td>
+<td>AES-256-GCM encryption, PBKDF2 key derivation</td>
+</tr>
+<tr>
+<td><code>discovery-service.ts</code></td>
+<td>mDNS-like local network server discovery</td>
+</tr>
+<tr>
+<td><code>health-monitor.ts</code></td>
+<td>Periodic health checks; connection state management</td>
+</tr>
+<tr>
+<td><code>i18n.ts</code></td>
+<td>Internationalization: message lookup, locale detection</td>
+</tr>
+<tr>
+<td><code>notification-manager.ts</code></td>
+<td>Browser notification creation and management</td>
+</tr>
+<tr>
+<td><code>queue-manager.ts</code></td>
+<td>Offline queue: enqueue, dequeue, retry scheduling</td>
+</tr>
+<tr>
+<td><code>rate-limiter.ts</code></td>
+<td>Token bucket rate limiter for API calls</td>
+</tr>
+<tr>
+<td><code>state-manager.ts</code></td>
+<td>Central state store; reactive updates to UI</td>
+</tr>
+<tr>
+<td><code>tab-manager.ts</code></td>
+<td>Tab group enumeration; batch scan orchestration</td>
+</tr>
+</tbody>
+</table>
+<h4 id="types">Types</h4>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>index.ts</code></td>
+<td>Barrel export for all types</td>
+</tr>
+<tr>
+<td><code>messages.ts</code></td>
+<td>Extension message passing types</td>
+</tr>
+<tr>
+<td><code>torrent.ts</code></td>
+<td>TorrentInfo and related types</td>
+</tr>
+<tr>
+<td><code>config.ts</code></td>
+<td>ExtensionConfig and sub-configuration types</td>
+</tr>
+<tr>
+<td><code>api.ts</code></td>
+<td>API request/response types for Boba and qBitTorrent</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="building-from-source">3. Building from Source</h2>
+<h3 id="development-build">3.1 Development Build</h3>
+<p>Start the development server with hot module replacement:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run dev</span></code></pre></div>
+<p>This command: 1. Starts WXT in development mode. 2. Watches source
+files for changes and rebuilds automatically. 3. Outputs to
+<code>.output/</code> directory. 4. Provides a Chrome-compatible build
+by default.</p>
+<p><strong>Output structure:</strong></p>
+<pre><code>.output/
+├── chrome-mv3-dev/       # Chrome development build
+│   ├── manifest.json
+│   ├── background.js
+│   ├── content-scripts/
+│   ├── popup/
+│   └── options/</code></pre>
+<p><strong>Loading the development build:</strong></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td><code>chrome://extensions</code> → Enable “Developer mode” → “Load
+unpacked” → Select <code>.output/chrome-mv3-dev/</code></td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td><code>about:debugging</code> → “This Firefox” → “Load Temporary
+Add-on” → Select <code>manifest.json</code> from
+<code>.output/firefox-mv3-dev/</code></td>
+</tr>
+<tr>
+<td>Opera</td>
+<td><code>opera://extensions</code> → Enable “Developer mode” → “Load
+unpacked”</td>
+</tr>
+</tbody>
+</table>
+<h3 id="production-build">3.2 Production Build</h3>
+<p>Create optimized production builds for all targets:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build</span></code></pre></div>
+<p>This generates:</p>
+<pre><code>.output/
+├── chrome-mv3-prod/      # Chrome production build
+├── firefox-mv3-prod/     # Firefox production build
+├── opera-mv3-prod/       # Opera production build
+└── edge-mv3-prod/        # Edge production build (same as Chrome)</code></pre>
+<p>Each build is: - Minified and tree-shaken. - Source-mapped
+(<code>.map</code> files). - Ready for packaging as ZIP for store
+submission.</p>
+<h3 id="cross-browser-builds">3.3 Cross-Browser Builds</h3>
+<p>Build for specific browsers:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Chrome only</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> wxt build <span class="at">-b</span> chrome</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Firefox only</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> wxt build <span class="at">-b</span> firefox</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Opera only</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> wxt build <span class="at">--browser</span> opera</span></code></pre></div>
+<p>Browser-specific differences are handled by: - WXT’s browser-specific
+entry points (<code>popup/index.firefox.ts</code>). - Conditional
+compilation via <code>import.meta.browser</code>. - The
+<code>webextension-polyfill</code> package for API normalization.</p>
+<h3 id="build-configuration">3.4 Build Configuration</h3>
+<p><strong><code>wxt.config.ts</code>:</strong></p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { defineConfig } <span class="im">from</span> <span class="st">&#39;wxt&#39;</span><span class="op">;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="im">default</span> <span class="fu">defineConfig</span>({</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  srcDir<span class="op">:</span> <span class="st">&#39;src&#39;</span><span class="op">,</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  outDir<span class="op">:</span> <span class="st">&#39;.output&#39;</span><span class="op">,</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  modules<span class="op">:</span> [<span class="st">&#39;@wxt-dev/module-typescript&#39;</span>]<span class="op">,</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  manifest<span class="op">:</span> {</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    name<span class="op">:</span> <span class="st">&#39;__MSG_extName__&#39;</span><span class="op">,</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    description<span class="op">:</span> <span class="st">&#39;__MSG_extDescription__&#39;</span><span class="op">,</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    version<span class="op">:</span> <span class="st">&#39;1.0.0&#39;</span><span class="op">,</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    permissions<span class="op">:</span> [<span class="st">&#39;activeTab&#39;</span><span class="op">,</span> <span class="st">&#39;storage&#39;</span><span class="op">,</span> <span class="st">&#39;contextMenus&#39;</span><span class="op">,</span> <span class="st">&#39;notifications&#39;</span>]<span class="op">,</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    host_permissions<span class="op">:</span> [<span class="st">&#39;https://*/&#39;</span>]<span class="op">,</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    action<span class="op">:</span> {</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>      default_popup<span class="op">:</span> <span class="st">&#39;popup/index.html&#39;</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    options_ui<span class="op">:</span> {</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>      page<span class="op">:</span> <span class="st">&#39;options/index.html&#39;</span><span class="op">,</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>      open_in_tab<span class="op">:</span> <span class="kw">true</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    commands<span class="op">:</span> {</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;send-current-page&#39;</span><span class="op">:</span> {</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>        suggested_key<span class="op">:</span> { <span class="cf">default</span><span class="op">:</span> <span class="st">&#39;Ctrl+Shift+B&#39;</span><span class="op">,</span> mac<span class="op">:</span> <span class="st">&#39;Command+Shift+B&#39;</span> }<span class="op">,</span></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>        description<span class="op">:</span> <span class="st">&#39;Send all torrents on current page&#39;</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<hr />
+<h2 id="testing">4. Testing</h2>
+<h3 id="running-unit-tests">4.1 Running Unit Tests</h3>
+<p>Execute the full unit test suite:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> test</span></code></pre></div>
+<p>Or with Jest directly for more control:</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run all tests</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> jest</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Run with coverage</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> jest <span class="at">--coverage</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Run in watch mode (during development)</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> jest <span class="at">--watch</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Run a specific test file</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> jest tests/unit/utils/magnet-uri.test.ts</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Run tests matching a pattern</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> jest <span class="at">--testNamePattern</span><span class="op">=</span><span class="st">&quot;parseMagnetUri&quot;</span></span></code></pre></div>
+<p><strong>Coverage reporting:</strong></p>
+<p>Coverage reports are generated in <code>coverage/</code>:</p>
+<pre><code>coverage/
+├── lcov-report/       # HTML report (open index.html in browser)
+├── lcov.info          # LCOV format for CI integration
+└── coverage-summary.json</code></pre>
+<p><strong>Coverage thresholds (enforced in CI):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Minimum</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Statements</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>Branches</td>
+<td>75%</td>
+</tr>
+<tr>
+<td>Functions</td>
+<td>80%</td>
+</tr>
+<tr>
+<td>Lines</td>
+<td>80%</td>
+</tr>
+</tbody>
+</table>
+<h3 id="running-e2e-tests">4.2 Running E2E Tests</h3>
+<p>End-to-end tests use Playwright to automate real browser
+interactions:</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install Playwright browsers (one-time setup)</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> playwright install chromium firefox</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Run all E2E tests</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run test:e2e</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Run in headed mode (visible browser)</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> playwright test <span class="at">--headed</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Run a specific spec</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> playwright test tests/e2e/specs/detection.spec.ts</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Run with UI mode (interactive debugging)</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> playwright test <span class="at">--ui</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Run on specific browser</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> playwright test <span class="at">--project</span><span class="op">=</span>chromium</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="ex">n</span><span class="kw">```</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="ex">**E2E</span> Test Structure:<span class="pp">**</span></span></code></pre></div>
+<p>tests/e2e/ ├── fixtures/ # Test data │ ├── sample.torrent │ ├──
+magnet-links.html │ └── mock-server.ts ├── specs/ # Test specifications
+│ ├── detection.spec.ts # Torrent detection tests │ ├── sending.spec.ts
+# Send-to-server tests │ ├── queue.spec.ts # Queue management tests │
+├── auth.spec.ts # Authentication tests │ └── settings.spec.ts # Options
+page tests ├── page-objects/ # Page Object Models │ ├── popup.page.ts │
+├── options.page.ts │ └── mock-server.page.ts └── playwright.config.ts #
+Playwright configuration</p>
+<pre><code>
+### 4.3 Writing New Tests
+
+#### Unit Test Template
+
+```typescript
+import { parseMagnetUri } from &#39;@src/utils/magnet-uri&#39;;
+
+describe(&#39;parseMagnetUri&#39;, () =&gt; {
+  it(&#39;should parse a complete magnet URI&#39;, () =&gt; {
+    const uri = &#39;magnet:?xt=urn:btih:abc123def456&amp;dn=Test+File&amp;tr=https://tracker.example.com/announce&#39;;
+    const result = parseMagnetUri(uri);
+
+    expect(result.infohash).toBe(&#39;abc123def456&#39;);
+    expect(result.displayName).toBe(&#39;Test File&#39;);
+    expect(result.trackers).toContain(&#39;https://tracker.example.com/announce&#39;);
+  });
+
+  it(&#39;should throw on invalid magnet URI&#39;, () =&gt; {
+    expect(() =&gt; parseMagnetUri(&#39;not-a-magnet&#39;)).toThrow(&#39;Invalid magnet URI&#39;);
+  });
+
+  it(&#39;should handle missing display name&#39;, () =&gt; {
+    const uri = &#39;magnet:?xt=urn:btih:abc123def456&#39;;
+    const result = parseMagnetUri(uri);
+    expect(result.displayName).toBe(&#39;Unknown Torrent&#39;);
+  });
+});</code></pre>
+<h4 id="e2e-test-template">E2E Test Template</h4>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { test<span class="op">,</span> expect } <span class="im">from</span> <span class="st">&#39;@playwright/test&#39;</span><span class="op">;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { PopupPage } <span class="im">from</span> <span class="st">&#39;../page-objects/popup.page&#39;</span><span class="op">;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>test<span class="op">.</span><span class="fu">describe</span>(<span class="st">&#39;Torrent Detection&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">test</span>(<span class="st">&#39;should detect magnet links on a page&#39;</span><span class="op">,</span> <span class="kw">async</span> ({ page<span class="op">,</span> extensionId }) <span class="kw">=&gt;</span> {</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Arrange: Load a test page with magnet links</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> page<span class="op">.</span><span class="fu">goto</span>(<span class="vs">`file://</span><span class="sc">${</span><span class="bu">__dirname</span><span class="sc">}</span><span class="vs">/../fixtures/magnet-links.html`</span>)<span class="op">;</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Act: Open the extension popup</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> popup <span class="op">=</span> <span class="kw">new</span> <span class="fu">PopupPage</span>(page<span class="op">,</span> extensionId)<span class="op">;</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">await</span> popup<span class="op">.</span><span class="fu">open</span>()<span class="op">;</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Assert: Verify torrents are listed</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> torrentCount <span class="op">=</span> <span class="cf">await</span> popup<span class="op">.</span><span class="fu">getTorrentCount</span>()<span class="op">;</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">expect</span>(torrentCount)<span class="op">.</span><span class="fu">toBe</span>(<span class="dv">3</span>)<span class="op">;</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> firstTorrentName <span class="op">=</span> <span class="cf">await</span> popup<span class="op">.</span><span class="fu">getTorrentName</span>(<span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">expect</span>(firstTorrentName)<span class="op">.</span><span class="fu">toContain</span>(<span class="st">&#39;Ubuntu&#39;</span>)<span class="op">;</span></span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="test-coverage-reports">4.4 Test Coverage Reports</h3>
+<p>Generate and view coverage:</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run test:coverage</span></code></pre></div>
+<p>The HTML report opens automatically. Key files to monitor:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Target</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/modules/api-client.ts</code></td>
+<td>90%</td>
+<td>Critical for reliability</td>
+</tr>
+<tr>
+<td><code>src/modules/crypto-utils.ts</code></td>
+<td>95%</td>
+<td>Security-critical</td>
+</tr>
+<tr>
+<td><code>src/modules/queue-manager.ts</code></td>
+<td>85%</td>
+<td>Core functionality</td>
+</tr>
+<tr>
+<td><code>src/content-scripts/magnet-scanner.ts</code></td>
+<td>80%</td>
+<td>User-facing</td>
+</tr>
+<tr>
+<td><code>src/utils/magnet-uri.ts</code></td>
+<td>95%</td>
+<td>Pure functions, easy to test</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="code-style-and-conventions">5. Code Style and Conventions</h2>
+<h3 id="typescript-strict-mode">5.1 TypeScript Strict Mode</h3>
+<p>The project uses TypeScript strict mode. Key rules:</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;compilerOptions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strict&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;noImplicitAny&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strictNullChecks&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strictFunctionTypes&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strictBindCallApply&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strictPropertyInitialization&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;noImplicitReturns&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;noFallthroughCasesInSwitch&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;noUncheckedIndexedAccess&quot;</span><span class="fu">:</span> <span class="kw">true</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>No <code>any</code> types in production code.</strong> Use
+<code>unknown</code> with type guards:</p>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Bad</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">process</span>(data<span class="op">:</span> <span class="dt">any</span>)<span class="op">:</span> <span class="dt">any</span> {</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> data<span class="op">.</span><span class="at">value</span><span class="op">;</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Good</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">process</span>(data<span class="op">:</span> <span class="dt">unknown</span>)<span class="op">:</span> <span class="dt">string</span> {</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="kw">typeof</span> data <span class="op">===</span> <span class="st">&#39;object&#39;</span> <span class="op">&amp;&amp;</span> data <span class="op">!==</span> <span class="kw">null</span> <span class="op">&amp;&amp;</span> <span class="st">&#39;value&#39;</span> <span class="kw">in</span> data) {</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">String</span>((data <span class="im">as</span> <span class="bu">Record</span><span class="op">&lt;</span><span class="dt">string</span><span class="op">,</span> <span class="dt">unknown</span><span class="op">&gt;</span>)<span class="op">.</span><span class="at">value</span>)<span class="op">;</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">TypeError</span>(<span class="st">&#39;Invalid data shape&#39;</span>)<span class="op">;</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="eslint-configuration">5.2 ESLint Configuration</h3>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">// eslint.config.js</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="im">default</span> [</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  {</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">files</span><span class="op">:</span> [<span class="st">&#39;src/**/*.ts&#39;</span>]<span class="op">,</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">languageOptions</span><span class="op">:</span> {</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">parser</span><span class="op">:</span> <span class="st">&#39;@typescript-eslint/parser&#39;</span><span class="op">,</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">parserOptions</span><span class="op">:</span> {</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">project</span><span class="op">:</span> <span class="st">&#39;./tsconfig.json&#39;</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">plugins</span><span class="op">:</span> {</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;@typescript-eslint&#39;</span><span class="op">:</span> typescriptEslint</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">rules</span><span class="op">:</span> {</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;@typescript-eslint/no-explicit-any&#39;</span><span class="op">:</span> <span class="st">&#39;error&#39;</span><span class="op">,</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;@typescript-eslint/no-unused-vars&#39;</span><span class="op">:</span> [<span class="st">&#39;error&#39;</span><span class="op">,</span> { <span class="dt">argsIgnorePattern</span><span class="op">:</span> <span class="st">&#39;^_&#39;</span> }]<span class="op">,</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;@typescript-eslint/explicit-function-return-type&#39;</span><span class="op">:</span> <span class="st">&#39;warn&#39;</span><span class="op">,</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;@typescript-eslint/no-non-null-assertion&#39;</span><span class="op">:</span> <span class="st">&#39;error&#39;</span><span class="op">,</span></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;@typescript-eslint/prefer-nullish-coalescing&#39;</span><span class="op">:</span> <span class="st">&#39;error&#39;</span><span class="op">,</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;@typescript-eslint/prefer-optional-chain&#39;</span><span class="op">:</span> <span class="st">&#39;error&#39;</span><span class="op">,</span></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;no-console&#39;</span><span class="op">:</span> [<span class="st">&#39;warn&#39;</span><span class="op">,</span> { <span class="dt">allow</span><span class="op">:</span> [<span class="st">&#39;error&#39;</span><span class="op">,</span> <span class="st">&#39;warn&#39;</span>] }]</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span></code></pre></div>
+<h3 id="prettier-configuration">5.3 Prettier Configuration</h3>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">// prettier.config.js</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="im">default</span> {</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">semi</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">trailingComma</span><span class="op">:</span> <span class="st">&#39;es5&#39;</span><span class="op">,</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">singleQuote</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">printWidth</span><span class="op">:</span> <span class="dv">100</span><span class="op">,</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">tabWidth</span><span class="op">:</span> <span class="dv">2</span><span class="op">,</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">useTabs</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">bracketSpacing</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">arrowParens</span><span class="op">:</span> <span class="st">&#39;avoid&#39;</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<h3 id="naming-conventions">5.4 Naming Conventions</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Construct</th>
+<th>Convention</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Variables / Functions</td>
+<td>camelCase</td>
+<td><code>sendTorrent</code>, <code>getStatus</code></td>
+</tr>
+<tr>
+<td>Constants</td>
+<td>UPPER_SNAKE_CASE</td>
+<td><code>MAX_QUEUE_SIZE</code>, <code>DEFAULT_TIMEOUT</code></td>
+</tr>
+<tr>
+<td>Types / Interfaces</td>
+<td>PascalCase</td>
+<td><code>TorrentInfo</code>, <code>ServerConfig</code></td>
+</tr>
+<tr>
+<td>Classes</td>
+<td>PascalCase</td>
+<td><code>QueueManager</code>, <code>ApiClient</code></td>
+</tr>
+<tr>
+<td>Enums</td>
+<td>PascalCase + PascalCase members</td>
+<td><code>enum ConnectionState { Connected, Disconnected }</code></td>
+</tr>
+<tr>
+<td>Files</td>
+<td>kebab-case</td>
+<td><code>magnet-scanner.ts</code>, <code>crypto-utils.ts</code></td>
+</tr>
+<tr>
+<td>Test files</td>
+<td><code>*.test.ts</code> or <code>*.spec.ts</code></td>
+<td><code>magnet-uri.test.ts</code></td>
+</tr>
+<tr>
+<td>Private members</td>
+<td>Leading underscore</td>
+<td><code>_internalQueue</code>, <code>_timerId</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="comment-style-jsdoc">5.5 Comment Style (JSDoc)</h3>
+<p>All public APIs must include JSDoc comments:</p>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">/**</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co"> * Parses a magnet URI string into a structured TorrentInfo object.</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="co"> *</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="co"> * </span><span class="an">@param</span><span class="co"> </span><span class="cv">uri</span><span class="co"> - The raw magnet URI (e.g., &quot;magnet:?xt=urn:btih:abc123...&quot;)</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="co"> * </span><span class="an">@returns</span><span class="co"> Parsed torrent metadata</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="co"> * </span><span class="an">@throws</span><span class="co"> </span><span class="cv">{ValidationError}</span><span class="co"> If the URI format is invalid</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="co"> *</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="co"> * </span><span class="an">@example</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="co"> * ```typescript</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="co"> * const info = parseMagnetUri(&#39;magnet:?xt=urn:btih:abc123&amp;dn=Example&#39;);</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="co"> * console.log(info.infohash); // &#39;abc123...&#39;</span></span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="co"> * ```</span></span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a><span class="co"> */</span></span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">function</span> <span class="fu">parseMagnetUri</span>(uri<span class="op">:</span> <span class="dt">string</span>)<span class="op">:</span> TorrentInfo {</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Implementation</span></span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Comment guidelines: - Explain <strong>why</strong>, not
+<strong>what</strong> (the code shows what). - Document all parameters,
+return values, and thrown errors. - Include usage examples for complex
+functions. - Use <code>TODO(username): description</code> for known
+technical debt. - Use <code>FIXME(username): description</code> for bugs
+that need fixing.</p>
+<hr />
+<h2 id="architecture-decisions">6. Architecture Decisions</h2>
+<h3 id="why-mv3-over-mv2">6.1 Why MV3 Over MV2</h3>
+<p><strong>Decision</strong>: Use Manifest V3 (MV3) instead of Manifest
+V2 (MV2).</p>
+<p><strong>Rationale:</strong></p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Factor</th>
+<th>MV2</th>
+<th>MV3</th>
+<th>Winner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome Web Store acceptance</td>
+<td>Being deprecated</td>
+<td>Required for new extensions</td>
+<td>MV3</td>
+</tr>
+<tr>
+<td>Service worker vs background page</td>
+<td>Persistent background page</td>
+<td>Ephemeral service worker</td>
+<td>MV3</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Background page always running</td>
+<td>Service worker wakes on events</td>
+<td>MV3</td>
+</tr>
+<tr>
+<td>Memory usage</td>
+<td>Higher (persistent)</td>
+<td>Lower (ephemeral)</td>
+<td>MV3</td>
+</tr>
+<tr>
+<td>Network request modification</td>
+<td><code>webRequest</code> blocking</td>
+<td><code>declarativeNetRequest</code></td>
+<td>MV2*</td>
+</tr>
+<tr>
+<td>Cross-browser support</td>
+<td>Legacy only</td>
+<td>Modern standard</td>
+<td>MV3</td>
+</tr>
+</tbody>
+</table>
+<p>* BobaLink does not need to block/modify network requests, so the
+<code>webRequest</code> limitation of MV3 is not a factor.</p>
+<p><strong>Mitigations for MV3 limitations:</strong> - Service worker
+persistence: Use <code>chrome.alarms</code> API to keep the worker alive
+during active operations. - Storage: Use <code>chrome.storage</code>
+(local and session) instead of in-memory state. - All Chrome, Firefox,
+Opera, and Yandex versions targeted by BobaLink support MV3.</p>
+<h3 id="why-wxt-over-raw-webpackvite">6.2 Why WXT Over Raw
+Webpack/Vite</h3>
+<p><strong>Decision</strong>: Use WXT as the build framework instead of
+configuring Webpack or Vite manually.</p>
+<p><strong>Rationale:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>Raw Vite</th>
+<th>WXT</th>
+<th>Winner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Extension-specific scaffolding</td>
+<td>None</td>
+<td>Built-in</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>HMR for content scripts</td>
+<td>Manual config</td>
+<td>Automatic</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>Multi-browser builds</td>
+<td>Manual config</td>
+<td>Automatic</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>Manifest generation</td>
+<td>Manual</td>
+<td>Auto-generated from config</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>File-based routing</td>
+<td>None</td>
+<td>Entry points auto-discovered</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>Dev server with auto-reload</td>
+<td>Manual config</td>
+<td>Built-in</td>
+<td>WXT</td>
+</tr>
+<tr>
+<td>Bundle size</td>
+<td>Comparable</td>
+<td>Comparable (thin wrapper)</td>
+<td>Tie</td>
+</tr>
+<tr>
+<td>Community size</td>
+<td>Large</td>
+<td>Growing</td>
+<td>Vite</td>
+</tr>
+</tbody>
+</table>
+<p><strong>WXT specifically solves:</strong> - Automatic discovery of
+<code>src/popup/</code>, <code>src/options/</code>,
+<code>src/background/</code>, <code>src/content-scripts/</code> entries.
+- Browser-specific build variants (Chrome MV3, Firefox MV3 with
+polyfills). - Dev mode that auto-reloads the extension on file change. -
+Automatic i18n message placeholder substitution in the manifest.</p>
+<h3 id="why-activetab-over-host_permissions">6.3 Why activeTab Over
+host_permissions</h3>
+<p><strong>Decision</strong>: Use <code>activeTab</code> as the primary
+permission model instead of broad <code>host_permissions</code>.</p>
+<p><strong>Rationale:</strong></p>
+<p><code>activeTab</code> grants temporary access to the current tab
+only when the user interacts with the extension. This is more
+privacy-respecting and requires fewer permission prompts at install
+time.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Permission Model</th>
+<th>Install Prompt</th>
+<th>Privacy</th>
+<th>Functionality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>host_permissions: &lt;all_urls&gt;</code></td>
+<td>Scary “read all website data”</td>
+<td>Poor</td>
+<td>Works on all pages</td>
+</tr>
+<tr>
+<td><code>activeTab</code></td>
+<td>No prompt (on-demand)</td>
+<td>Excellent</td>
+<td>Works on current tab only</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Implementation:</strong> - Primary detection uses
+<code>activeTab</code> + user gesture (clicking the extension icon). -
+Optional <code>host_permissions</code> for advanced users who want
+proactive detection without interaction. - The
+<code>optional_permissions</code> field in the manifest allows users to
+grant additional access.</p>
+<h3 id="why-aes-256-gcm-for-encryption">6.4 Why AES-256-GCM for
+Encryption</h3>
+<p><strong>Decision</strong>: Use AES-256-GCM via the Web Crypto API for
+credential encryption.</p>
+<p><strong>Rationale:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Algorithm</th>
+<th>Mode</th>
+<th>Authentication</th>
+<th>Performance</th>
+<th>Standard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AES-128-CBC</td>
+<td>No</td>
+<td>No (requires HMAC)</td>
+<td>Fast</td>
+<td>Legacy</td>
+</tr>
+<tr>
+<td>AES-256-CBC</td>
+<td>No</td>
+<td>No (requires HMAC)</td>
+<td>Fast</td>
+<td>Legacy</td>
+</tr>
+<tr>
+<td>AES-256-GCM</td>
+<td>Yes</td>
+<td>Built-in</td>
+<td>Fast</td>
+<td>Modern standard</td>
+</tr>
+<tr>
+<td>ChaCha20-Poly1305</td>
+<td>Yes</td>
+<td>Built-in</td>
+<td>Fast</td>
+<td>Alternative</td>
+</tr>
+</tbody>
+</table>
+<p>AES-256-GCM was chosen because: 1. It provides authenticated
+encryption (confidentiality + integrity) in a single operation. 2. It is
+widely supported by the Web Crypto API in all targeted browsers. 3. It
+is a NIST standard with extensive cryptanalysis and hardware
+acceleration support. 4. ChaCha20-Poly1305 is excellent but less
+universally accelerated on x86 hardware.</p>
+<p><strong>Key derivation:</strong> - Master key derived from user
+password via PBKDF2 with 100,000 iterations. - Per-entry random IV
+(96-bit) generated via <code>crypto.getRandomValues()</code>. - 128-bit
+authentication tag validated on every decryption.</p>
+<hr />
+<h2 id="contributing">7. Contributing</h2>
+<h3 id="git-workflow-github-flow">7.1 Git Workflow (GitHub Flow)</h3>
+<p>BobaLink follows the GitHub Flow branching model:</p>
+<pre class="mermaid"><code>graph LR
+    A[main branch] --&gt; B[Create feature branch]
+    B --&gt; C[Make commits]
+    C --&gt; D[Open Pull Request]
+    D --&gt; E[Code Review]
+    E --&gt; F[Merge to main]
+    F --&gt; G[Deploy]</code></pre>
+<p><strong>Branch naming conventions:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Purpose</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feature/</code></td>
+<td>New features</td>
+<td><code>feature/tab-group-batch</code></td>
+</tr>
+<tr>
+<td><code>bugfix/</code></td>
+<td>Bug fixes</td>
+<td><code>bugfix/badge-color-update</code></td>
+</tr>
+<tr>
+<td><code>hotfix/</code></td>
+<td>Critical production fixes</td>
+<td><code>hotfix/auth-race-condition</code></td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>Documentation updates</td>
+<td><code>docs/api-examples</code></td>
+</tr>
+<tr>
+<td><code>refactor/</code></td>
+<td>Code refactoring</td>
+<td><code>refactor/queue-manager</code></td>
+</tr>
+<tr>
+<td><code>test/</code></td>
+<td>Test additions/improvements</td>
+<td><code>test/queue-coverage</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="commit-message-conventions-conventional-commits">7.2 Commit
+Message Conventions (Conventional Commits)</h3>
+<p>All commits must follow the Conventional Commits specification:</p>
+<pre><code>&lt;type&gt;(&lt;scope&gt;): &lt;description&gt;
+
+[optional body]
+
+[optional footer(s)]</code></pre>
+<p><strong>Types:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Type</th>
+<th>Use When</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feat</code></td>
+<td>Adding a new feature</td>
+<td><code>feat(popup): add tab group selection UI</code></td>
+</tr>
+<tr>
+<td><code>fix</code></td>
+<td>Fixing a bug</td>
+<td><code>fix(queue): resolve race condition on retry</code></td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td>Documentation changes</td>
+<td><code>docs(api): add qBitTorrent sync endpoint</code></td>
+</tr>
+<tr>
+<td><code>style</code></td>
+<td>Code formatting (no logic change)</td>
+<td><code>style(lint): fix trailing commas</code></td>
+</tr>
+<tr>
+<td><code>refactor</code></td>
+<td>Code restructuring</td>
+<td><code>refactor(auth): extract token refresh logic</code></td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td>Adding or updating tests</td>
+<td><code>test(queue): add retry scheduling tests</code></td>
+</tr>
+<tr>
+<td><code>chore</code></td>
+<td>Build/tooling changes</td>
+<td><code>chore(deps): update wxt to 0.17.0</code></td>
+</tr>
+<tr>
+<td><code>perf</code></td>
+<td>Performance improvements</td>
+<td><code>perf(scanner): debounce mutation observer</code></td>
+</tr>
+<tr>
+<td><code>security</code></td>
+<td>Security-related changes</td>
+<td><code>security(crypto): increase PBKDF2 iterations</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Scopes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>popup</code></td>
+<td>Popup UI</td>
+</tr>
+<tr>
+<td><code>options</code></td>
+<td>Options page</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td>Content scripts</td>
+</tr>
+<tr>
+<td><code>background</code></td>
+<td>Service worker</td>
+</tr>
+<tr>
+<td><code>api</code></td>
+<td>API client</td>
+</tr>
+<tr>
+<td><code>queue</code></td>
+<td>Queue manager</td>
+</tr>
+<tr>
+<td><code>auth</code></td>
+<td>Authentication</td>
+</tr>
+<tr>
+<td><code>crypto</code></td>
+<td>Encryption utilities</td>
+</tr>
+<tr>
+<td><code>i18n</code></td>
+<td>Internationalization</td>
+</tr>
+<tr>
+<td><code>build</code></td>
+<td>Build system</td>
+</tr>
+<tr>
+<td><code>deps</code></td>
+<td>Dependencies</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Breaking changes:</strong></p>
+<p>Append <code>!</code> after the type/scope and include
+<code>BREAKING CHANGE:</code> in the footer:</p>
+<pre><code>feat(api)!: remove v1 auth endpoint
+
+BREAKING CHANGE: The /api/v1/auth/login endpoint has been removed.
+Use /api/v2/auth/token instead.</code></pre>
+<h3 id="pull-request-template">7.3 Pull Request Template</h3>
+<p>When opening a pull request, use this template:</p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">## Description</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>Brief description of the change and its purpose.</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="fu">## Type of Change</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Bug fix</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> New feature</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Breaking change</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Documentation update</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Refactoring</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="fu">## Testing</span></span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Unit tests added/updated</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> E2E tests added/updated</span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Manual testing performed</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a><span class="fu">## Checklist</span></span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Code follows project style guidelines</span>
+<span id="cb27-18"><a href="#cb27-18" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Self-review completed</span>
+<span id="cb27-19"><a href="#cb27-19" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> JSDoc comments added for public APIs</span>
+<span id="cb27-20"><a href="#cb27-20" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> No <span class="in">`any`</span> types introduced</span>
+<span id="cb27-21"><a href="#cb27-21" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> TypeScript compiles without errors</span>
+<span id="cb27-22"><a href="#cb27-22" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> ESLint passes without warnings</span>
+<span id="cb27-23"><a href="#cb27-23" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span><span class="va">[ ]</span> Test coverage meets thresholds</span>
+<span id="cb27-24"><a href="#cb27-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-25"><a href="#cb27-25" aria-hidden="true" tabindex="-1"></a><span class="fu">## Related Issues</span></span>
+<span id="cb27-26"><a href="#cb27-26" aria-hidden="true" tabindex="-1"></a>Fixes #123</span>
+<span id="cb27-27"><a href="#cb27-27" aria-hidden="true" tabindex="-1"></a>Relates to #456</span></code></pre></div>
+<h3 id="code-review-checklist">7.4 Code Review Checklist</h3>
+<p>Reviewers should verify:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Check</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Functionality</td>
+<td>Does the change do what it claims?</td>
+</tr>
+<tr>
+<td>Tests</td>
+<td>Are there adequate tests? Do they pass?</td>
+</tr>
+<tr>
+<td>Edge cases</td>
+<td>Are error paths and boundary conditions handled?</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>Does the change introduce any security risks?</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Could this cause performance issues at scale?</td>
+</tr>
+<tr>
+<td>i18n</td>
+<td>Are all user-facing strings externalized?</td>
+</tr>
+<tr>
+<td>Accessibility</td>
+<td>Are ARIA labels and keyboard navigation present?</td>
+</tr>
+<tr>
+<td>Type safety</td>
+<td>Are there no <code>any</code> types or unchecked nulls?</td>
+</tr>
+<tr>
+<td>Documentation</td>
+<td>Is JSDoc updated? Is the user guide updated if needed?</td>
+</tr>
+</tbody>
+</table>
+<h3 id="release-process">7.5 Release Process</h3>
+<pre class="mermaid"><code>graph TD
+    A[Accumulate features on main] --&gt; B[Create release branch]
+    B --&gt; C[Update version in manifest]
+    C --&gt; D[Update CHANGELOG.md]
+    D --&gt; E[Run full test suite]
+    E --&gt; F{Tests pass?}
+    F --&gt;|No| G[Fix issues] --&gt; E
+    F --&gt;|Yes| H[Create Git tag]
+    H --&gt; I[Build all targets]
+    I --&gt; J[Create GitHub Release]
+    J --&gt; K[Submit to Chrome Web Store]
+    J --&gt; L[Submit to AMO]
+    J --&gt; M[Submit to Opera Addons]</code></pre>
+<p><strong>Version numbering</strong> follows Semantic Versioning
+(SemVer):</p>
+<table>
+<thead>
+<tr>
+<th>Bump</th>
+<th>When</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Major (X.0.0)</td>
+<td>Breaking API changes</td>
+<td>2.0.0</td>
+</tr>
+<tr>
+<td>Minor (x.Y.0)</td>
+<td>New features, backward compatible</td>
+<td>1.1.0</td>
+</tr>
+<tr>
+<td>Patch (x.y.Z)</td>
+<td>Bug fixes, no API changes</td>
+<td>1.0.1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="extending-the-extension">8. Extending the Extension</h2>
+<h3 id="adding-new-torrent-site-selectors">8.1 Adding New Torrent Site
+Selectors</h3>
+<p>Some torrent sites use non-standard HTML structures. You can add
+custom selectors:</p>
+<ol type="1">
+<li>Create a new file in
+<code>src/content-scripts/selectors/</code>:</li>
+</ol>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co">// src/content-scripts/selectors/nyaa-si.ts</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { SiteSelector } <span class="im">from</span> <span class="st">&#39;@src/types/selector&#39;</span><span class="op">;</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">const</span> nyaaSiSelector<span class="op">:</span> SiteSelector <span class="op">=</span> {</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Match against hostname</span></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  hostname<span class="op">:</span> <span class="ss">/nyaa</span><span class="sc">\.</span><span class="ss">si</span><span class="sc">$</span><span class="ss">/</span><span class="op">,</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">// CSS selector for magnet links</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  magnetSelector<span class="op">:</span> <span class="st">&#39;a[href^=&quot;magnet:?&quot;]&#39;</span><span class="op">,</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">// CSS selector for .torrent file links</span></span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>  torrentSelector<span class="op">:</span> <span class="st">&#39;a[href$=&quot;.torrent&quot;]&#39;</span><span class="op">,</span></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Optional: Extract display name from a different element</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>  nameExtractor<span class="op">:</span> (linkElement<span class="op">:</span> <span class="bu">HTMLAnchorElement</span>)<span class="op">:</span> <span class="dt">string</span> <span class="op">|</span> <span class="dt">null</span> <span class="kw">=&gt;</span> {</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> row <span class="op">=</span> linkElement<span class="op">.</span><span class="fu">closest</span>(<span class="st">&#39;tr&#39;</span>)<span class="op">;</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (row) {</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>      <span class="kw">const</span> titleCell <span class="op">=</span> row<span class="op">.</span><span class="fu">querySelector</span>(<span class="st">&#39;td:nth-child(2) a&#39;</span>)<span class="op">;</span></span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> titleCell<span class="op">?.</span><span class="at">textContent</span><span class="op">?.</span><span class="fu">trim</span>() <span class="op">||</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Optional: Extract size from page</span></span>
+<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a>  sizeExtractor<span class="op">:</span> (linkElement<span class="op">:</span> <span class="bu">HTMLAnchorElement</span>)<span class="op">:</span> <span class="dt">number</span> <span class="op">|</span> <span class="dt">null</span> <span class="kw">=&gt;</span> {</span>
+<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> row <span class="op">=</span> linkElement<span class="op">.</span><span class="fu">closest</span>(<span class="st">&#39;tr&#39;</span>)<span class="op">;</span></span>
+<span id="cb29-27"><a href="#cb29-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (row) {</span>
+<span id="cb29-28"><a href="#cb29-28" aria-hidden="true" tabindex="-1"></a>      <span class="kw">const</span> sizeCell <span class="op">=</span> row<span class="op">.</span><span class="fu">querySelector</span>(<span class="st">&#39;td:nth-child(4)&#39;</span>)<span class="op">;</span></span>
+<span id="cb29-29"><a href="#cb29-29" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="fu">parseSizeString</span>(sizeCell<span class="op">?.</span><span class="at">textContent</span> <span class="op">||</span> <span class="st">&#39;&#39;</span>)<span class="op">;</span></span>
+<span id="cb29-30"><a href="#cb29-30" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb29-31"><a href="#cb29-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb29-32"><a href="#cb29-32" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb29-33"><a href="#cb29-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-34"><a href="#cb29-34" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Optional: Custom scan logic</span></span>
+<span id="cb29-35"><a href="#cb29-35" aria-hidden="true" tabindex="-1"></a>  customScanner<span class="op">?:</span> (root<span class="op">:</span> <span class="bu">HTMLElement</span>)<span class="op">:</span> <span class="bu">Partial</span><span class="op">&lt;</span>TorrentInfo<span class="op">&gt;</span>[] <span class="kw">=&gt;</span> {</span>
+<span id="cb29-36"><a href="#cb29-36" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Advanced: scan page-specific structures</span></span>
+<span id="cb29-37"><a href="#cb29-37" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb29-38"><a href="#cb29-38" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<ol start="2" type="1">
+<li>Register the selector in
+<code>src/content-scripts/selectors/index.ts</code>:</li>
+</ol>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { nyaaSiSelector } <span class="im">from</span> <span class="st">&#39;./nyaa-si&#39;</span><span class="op">;</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">const</span> siteSelectors<span class="op">:</span> SiteSelector[] <span class="op">=</span> [</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// ... existing selectors</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  nyaaSiSelector<span class="op">,</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>]<span class="op">;</span></span></code></pre></div>
+<ol start="3" type="1">
+<li>Write a test:</li>
+</ol>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co">// tests/unit/content-scripts/selectors/nyaa-si.test.ts</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { nyaaSiSelector } <span class="im">from</span> <span class="st">&#39;@src/content-scripts/selectors/nyaa-si&#39;</span><span class="op">;</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="fu">describe</span>(<span class="st">&#39;nyaaSiSelector&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">it</span>(<span class="st">&#39;should match nyaa.si hostname&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">expect</span>(nyaaSiSelector<span class="op">.</span><span class="at">hostname</span><span class="op">.</span><span class="fu">test</span>(<span class="st">&#39;nyaa.si&#39;</span>))<span class="op">.</span><span class="fu">toBe</span>(<span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">expect</span>(nyaaSiSelector<span class="op">.</span><span class="at">hostname</span><span class="op">.</span><span class="fu">test</span>(<span class="st">&#39;sukebei.nyaa.si&#39;</span>))<span class="op">.</span><span class="fu">toBe</span>(<span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">it</span>(<span class="st">&#39;should extract name from table row&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">document</span><span class="op">.</span><span class="at">body</span><span class="op">.</span><span class="at">innerHTML</span> <span class="op">=</span> <span class="vs">`</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;table&gt;</span></span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a><span class="vs">        &lt;tr&gt;</span></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a><span class="vs">          &lt;td&gt;&lt;/td&gt;</span></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a><span class="vs">          &lt;td&gt;&lt;a&gt;My Torrent Title&lt;/a&gt;&lt;/td&gt;</span></span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a><span class="vs">          &lt;td&gt;&lt;/td&gt;</span></span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a><span class="vs">          &lt;td&gt;1.2 GiB&lt;/td&gt;</span></span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a><span class="vs">          &lt;td&gt;&lt;a href=&quot;magnet:?xt=urn:btih:abc123&quot;&gt;Magnet&lt;/a&gt;&lt;/td&gt;</span></span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a><span class="vs">        &lt;/tr&gt;</span></span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;/table&gt;</span></span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a><span class="vs">    `</span><span class="op">;</span></span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> link <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">querySelector</span>(<span class="st">&#39;a[href^=&quot;magnet&quot;]&#39;</span>) <span class="im">as</span> <span class="bu">HTMLAnchorElement</span><span class="op">;</span></span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a>    <span class="fu">expect</span>(nyaaSiSelector<span class="op">.</span><span class="at">nameExtractor</span><span class="op">?.</span>(link))<span class="op">.</span><span class="fu">toBe</span>(<span class="st">&#39;My Torrent Title&#39;</span>)<span class="op">;</span></span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="adding-new-authentication-methods">8.2 Adding New Authentication
+Methods</h3>
+<p>To add a new authentication method (e.g., OAuth2):</p>
+<ol type="1">
+<li>Add the method to the <code>AuthMethod</code> union type:</li>
+</ol>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co">// src/types/config.ts</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> AuthMethod <span class="op">=</span> <span class="st">&#39;cookie&#39;</span> <span class="op">|</span> <span class="st">&#39;api-key&#39;</span> <span class="op">|</span> <span class="st">&#39;basic&#39;</span> <span class="op">|</span> <span class="st">&#39;custom-header&#39;</span> <span class="op">|</span> <span class="st">&#39;oauth2&#39;</span><span class="op">;</span></span></code></pre></div>
+<ol start="2" type="1">
+<li>Implement the auth handler:</li>
+</ol>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co">// src/modules/auth/oauth2-handler.ts</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { AuthHandler<span class="op">,</span> AuthCredentials } <span class="im">from</span> <span class="st">&#39;@src/types/auth&#39;</span><span class="op">;</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">class</span> OAuth2Handler <span class="kw">implements</span> AuthHandler {</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">private</span> token<span class="op">:</span> <span class="dt">string</span> <span class="op">|</span> <span class="dt">null</span> <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">private</span> refreshToken<span class="op">:</span> <span class="dt">string</span> <span class="op">|</span> <span class="dt">null</span> <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">private</span> expiresAt <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">async</span> <span class="fu">authenticate</span>(credentials<span class="op">:</span> AuthCredentials)<span class="op">:</span> <span class="bu">Promise</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;</span> {</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> response <span class="op">=</span> <span class="cf">await</span> <span class="fu">fetch</span>(<span class="vs">`</span><span class="sc">${</span>credentials<span class="op">.</span><span class="at">serverUrl</span><span class="sc">}</span><span class="vs">/oauth/token`</span><span class="op">,</span> {</span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a>      method<span class="op">:</span> <span class="st">&#39;POST&#39;</span><span class="op">,</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>      headers<span class="op">:</span> { <span class="st">&#39;Content-Type&#39;</span><span class="op">:</span> <span class="st">&#39;application/json&#39;</span> }<span class="op">,</span></span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>      body<span class="op">:</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>        grant_type<span class="op">:</span> <span class="st">&#39;password&#39;</span><span class="op">,</span></span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>        client_id<span class="op">:</span> credentials<span class="op">.</span><span class="at">clientId</span><span class="op">,</span></span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>        username<span class="op">:</span> credentials<span class="op">.</span><span class="at">username</span><span class="op">,</span></span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>        password<span class="op">:</span> credentials<span class="op">.</span><span class="at">password</span><span class="op">,</span></span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>      })<span class="op">,</span></span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>response<span class="op">.</span><span class="at">ok</span>) {</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>      <span class="cf">throw</span> <span class="kw">new</span> <span class="fu">AuthError</span>(<span class="st">&#39;OAuth2 authentication failed&#39;</span><span class="op">,</span> { cause<span class="op">:</span> response<span class="op">.</span><span class="at">status</span> })<span class="op">;</span></span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> data <span class="op">=</span> <span class="cf">await</span> response<span class="op">.</span><span class="fu">json</span>()<span class="op">;</span></span>
+<span id="cb33-26"><a href="#cb33-26" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">token</span> <span class="op">=</span> data<span class="op">.</span><span class="at">access_token</span><span class="op">;</span></span>
+<span id="cb33-27"><a href="#cb33-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">refreshToken</span> <span class="op">=</span> data<span class="op">.</span><span class="at">refresh_token</span><span class="op">;</span></span>
+<span id="cb33-28"><a href="#cb33-28" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">expiresAt</span> <span class="op">=</span> <span class="bu">Date</span><span class="op">.</span><span class="fu">now</span>() <span class="op">+</span> data<span class="op">.</span><span class="at">expires_in</span> <span class="op">*</span> <span class="dv">1000</span><span class="op">;</span></span>
+<span id="cb33-29"><a href="#cb33-29" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb33-30"><a href="#cb33-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-31"><a href="#cb33-31" aria-hidden="true" tabindex="-1"></a>  <span class="kw">async</span> <span class="fu">getAuthHeaders</span>()<span class="op">:</span> <span class="bu">Promise</span><span class="op">&lt;</span><span class="bu">Record</span><span class="op">&lt;</span><span class="dt">string</span><span class="op">,</span> <span class="dt">string</span><span class="op">&gt;&gt;</span> {</span>
+<span id="cb33-32"><a href="#cb33-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span><span class="kw">this</span><span class="op">.</span><span class="at">token</span> <span class="op">||</span> <span class="bu">Date</span><span class="op">.</span><span class="fu">now</span>() <span class="op">&gt;=</span> <span class="kw">this</span><span class="op">.</span><span class="at">expiresAt</span>) {</span>
+<span id="cb33-33"><a href="#cb33-33" aria-hidden="true" tabindex="-1"></a>      <span class="cf">await</span> <span class="kw">this</span><span class="op">.</span><span class="fu">refresh</span>()<span class="op">;</span></span>
+<span id="cb33-34"><a href="#cb33-34" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb33-35"><a href="#cb33-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> { Authorization<span class="op">:</span> <span class="vs">`Bearer </span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">token</span><span class="sc">}</span><span class="vs">`</span> }<span class="op">;</span></span>
+<span id="cb33-36"><a href="#cb33-36" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb33-37"><a href="#cb33-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-38"><a href="#cb33-38" aria-hidden="true" tabindex="-1"></a>  <span class="kw">private</span> <span class="kw">async</span> <span class="fu">refresh</span>()<span class="op">:</span> <span class="bu">Promise</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;</span> {</span>
+<span id="cb33-39"><a href="#cb33-39" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Implementation</span></span>
+<span id="cb33-40"><a href="#cb33-40" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb33-41"><a href="#cb33-41" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<ol start="3" type="1">
+<li>Register the handler:</li>
+</ol>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co">// src/modules/auth-manager.ts</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { OAuth2Handler } <span class="im">from</span> <span class="st">&#39;./auth/oauth2-handler&#39;</span><span class="op">;</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> authHandlers<span class="op">:</span> <span class="bu">Record</span><span class="op">&lt;</span>AuthMethod<span class="op">,</span> () <span class="kw">=&gt;</span> AuthHandler<span class="op">&gt;</span> <span class="op">=</span> {</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;cookie&#39;</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="fu">CookieHandler</span>()<span class="op">,</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;api-key&#39;</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="fu">ApiKeyHandler</span>()<span class="op">,</span></span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;basic&#39;</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="fu">BasicAuthHandler</span>()<span class="op">,</span></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;custom-header&#39;</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="fu">CustomHeaderHandler</span>()<span class="op">,</span></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">&#39;oauth2&#39;</span><span class="op">:</span> () <span class="kw">=&gt;</span> <span class="kw">new</span> <span class="fu">OAuth2Handler</span>()<span class="op">,</span> <span class="co">// Add this line</span></span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<ol start="4" type="1">
+<li>Update the Options UI to include OAuth2 configuration fields.</li>
+</ol>
+<h3 id="adding-new-keyboard-shortcuts">8.3 Adding New Keyboard
+Shortcuts</h3>
+<p>To add a new keyboard shortcut:</p>
+<ol type="1">
+<li>Define the command in the manifest:</li>
+</ol>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;commands&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;send-current-page&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;suggested_key&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;default&quot;</span><span class="fu">:</span> <span class="st">&quot;Ctrl+Shift+B&quot;</span> <span class="fu">},</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;description&quot;</span><span class="fu">:</span> <span class="st">&quot;Send all torrents on current page&quot;</span></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">},</span></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;your-new-command&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;suggested_key&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;default&quot;</span><span class="fu">:</span> <span class="st">&quot;Ctrl+Shift+N&quot;</span> <span class="fu">},</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;description&quot;</span><span class="fu">:</span> <span class="st">&quot;Description of what it does&quot;</span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<ol start="2" type="1">
+<li>Handle the command in the service worker:</li>
+</ol>
+<div class="sourceCode" id="cb36"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">// src/background/index.ts</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>chrome<span class="op">.</span><span class="at">commands</span><span class="op">.</span><span class="at">onCommand</span><span class="op">.</span><span class="fu">addListener</span>(<span class="kw">async</span> (command<span class="op">,</span> tab) <span class="kw">=&gt;</span> {</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">switch</span> (command) {</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="st">&#39;send-current-page&#39;</span><span class="op">:</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>      <span class="cf">await</span> <span class="fu">handleSendCurrentPage</span>(tab)<span class="op">;</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>      <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">case</span> <span class="st">&#39;your-new-command&#39;</span><span class="op">:</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>      <span class="cf">await</span> <span class="fu">handleYourNewCommand</span>(tab)<span class="op">;</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>      <span class="cf">break</span><span class="op">;</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<ol start="3" type="1">
+<li>Implement the handler:</li>
+</ol>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co">// src/background/command-handlers.ts</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">async</span> <span class="kw">function</span> <span class="fu">handleYourNewCommand</span>(tab<span class="op">?:</span> chrome<span class="op">.</span><span class="at">tabs</span><span class="op">.</span><span class="at">Tab</span>)<span class="op">:</span> <span class="bu">Promise</span><span class="op">&lt;</span><span class="dt">void</span><span class="op">&gt;</span> {</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>tab<span class="op">?.</span><span class="at">id</span>) <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Your implementation here</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> result <span class="op">=</span> <span class="cf">await</span> chrome<span class="op">.</span><span class="at">tabs</span><span class="op">.</span><span class="fu">sendMessage</span>(tab<span class="op">.</span><span class="at">id</span><span class="op">,</span> {</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>    type<span class="op">:</span> <span class="st">&#39;YOUR_NEW_ACTION&#39;</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Update badge or show notification</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> badgeManager<span class="op">.</span><span class="fu">setStatus</span>(<span class="st">&#39;processing&#39;</span>)<span class="op">;</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<ol start="4" type="1">
+<li>Add i18n strings:</li>
+</ol>
+<div class="sourceCode" id="cb38"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;command_your_new_command&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;message&quot;</span><span class="fu">:</span> <span class="st">&quot;Your new command description&quot;</span></span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<hr />
+<h2 id="debugging">9. Debugging</h2>
+<h3 id="chrome-devtools-for-extensions">9.1 Chrome DevTools for
+Extensions</h3>
+<p><strong>Service Worker:</strong> 1. Navigate to
+<code>chrome://extensions</code>. 2. Find BobaLink and click
+<strong>“Service Worker”</strong> (under “Inspect views”). 3. This opens
+DevTools dedicated to the service worker context. 4. Use the Console for
+logs, Network for API calls, and Sources for breakpoints.</p>
+<p><strong>Content Script:</strong> 1. Open the page where the content
+script is running. 2. Open DevTools (F12). 3. Go to the
+<strong>Sources</strong> panel. 4. In the file tree, find
+<code>chrome-extension://{extension-id}/</code>. 5. Set breakpoints in
+content script files.</p>
+<p><strong>Popup:</strong> 1. Click the BobaLink icon to open the popup.
+2. Right-click inside the popup → <strong>“Inspect”</strong>. 3. This
+opens a dedicated DevTools window for the popup.</p>
+<p><strong>Extension ID:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Extension ID Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Development</td>
+<td><code>chrome://extensions</code> → BobaLink → ID field</td>
+</tr>
+<tr>
+<td>Production</td>
+<td>Fixed ID from Chrome Web Store</td>
+</tr>
+</tbody>
+</table>
+<h3 id="firefox-aboutdebugging">9.2 Firefox about:debugging</h3>
+<ol type="1">
+<li>Navigate to <code>about:debugging</code>.</li>
+<li>Click <strong>“This Firefox”</strong>.</li>
+<li>Find BobaLink under Extensions.</li>
+<li>Click <strong>“Inspect”</strong> to open DevTools.</li>
+<li>Use Browser Console (<code>Ctrl+Shift+J</code>) for all extension
+logs.</li>
+</ol>
+<h3 id="viewing-service-worker-logs">9.3 Viewing Service Worker
+Logs</h3>
+<p>The service worker logs extensively for debugging. Log levels:</p>
+<div class="sourceCode" id="cb39"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co">// src/utils/logger.ts</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="kw">enum</span> LogLevel {</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  DEBUG <span class="op">=</span> <span class="dv">0</span><span class="op">,</span>   <span class="co">// Verbose internal state</span></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  INFO <span class="op">=</span> <span class="dv">1</span><span class="op">,</span>    <span class="co">// Normal operations</span></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>  WARN <span class="op">=</span> <span class="dv">2</span><span class="op">,</span>    <span class="co">// Recoverable issues</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  ERROR <span class="op">=</span> <span class="dv">3</span><span class="op">,</span>   <span class="co">// Failures requiring attention</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><strong>Enable debug logging:</strong></p>
+<ol type="1">
+<li><p>Open the service worker DevTools (see 9.1).</p></li>
+<li><p>In the Console, run:</p>
+<div class="sourceCode" id="cb40"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>chrome<span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="at">local</span><span class="op">.</span><span class="fu">set</span>({ <span class="st">&#39;debugMode&#39;</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span></code></pre></div></li>
+<li><p>Reload the service worker from
+<code>chrome://extensions</code>.</p></li>
+<li><p>Debug logs will appear in the Console.</p></li>
+</ol>
+<p><strong>Log output examples:</strong></p>
+<pre><code>[BobaLink] [INFO]  Service worker initialized, version 1.0.0
+[BobaLink] [DEBUG] Health check: GET https://boba.local:8443/health
+[BobaLink] [INFO]  Health check passed: Boba v1.4.2, latency 45ms
+[BobaLink] [DEBUG] Magnet detected: abc123... on https://example.com
+[BobaLink] [INFO]  Torrent sent: abc123... (Ubuntu 24.04)
+[BobaLink] [WARN]  Send failed for def456... (Network timeout), queued for retry
+[BobaLink] [ERROR] Auth failed: invalid API key</code></pre>
+<h3 id="inspecting-storage">9.4 Inspecting Storage</h3>
+<p><strong>Extension storage can be inspected via DevTools:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Storage Type</th>
+<th>Chrome</th>
+<th>Firefox</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>chrome.storage.local</code></td>
+<td>DevTools → Application → Storage → Extension Storage</td>
+<td>DevTools → Storage → Extension Storage</td>
+</tr>
+<tr>
+<td><code>chrome.storage.session</code></td>
+<td>DevTools → Application → Storage → Extension Storage (Session)</td>
+<td>DevTools → Storage → Extension Storage</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Viewing storage via console:</strong></p>
+<div class="sourceCode" id="cb42"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co">// View all stored data</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>chrome<span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="at">local</span><span class="op">.</span><span class="fu">get</span>(<span class="kw">null</span><span class="op">,</span> (data) <span class="kw">=&gt;</span> <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(data))<span class="op">;</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="co">// View configuration</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>chrome<span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="at">local</span><span class="op">.</span><span class="fu">get</span>(<span class="st">&#39;config&#39;</span><span class="op">,</span> ({ config }) <span class="kw">=&gt;</span> <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(config))<span class="op">;</span></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a><span class="co">// View queue</span></span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>chrome<span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="at">local</span><span class="op">.</span><span class="fu">get</span>(<span class="st">&#39;queue&#39;</span><span class="op">,</span> ({ queue }) <span class="kw">=&gt;</span> <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(queue))<span class="op">;</span></span>
+<span id="cb42-9"><a href="#cb42-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-10"><a href="#cb42-10" aria-hidden="true" tabindex="-1"></a><span class="co">// Clear all data (use with caution!)</span></span>
+<span id="cb42-11"><a href="#cb42-11" aria-hidden="true" tabindex="-1"></a>chrome<span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="at">local</span><span class="op">.</span><span class="fu">clear</span>(() <span class="kw">=&gt;</span> <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Storage cleared&#39;</span>))<span class="op">;</span></span></code></pre></div>
+<p><strong>Note:</strong> Credential data is encrypted. You will see
+ciphertext, not plaintext passwords.</p>
+<h3 id="common-debugging-scenarios">9.5 Common Debugging Scenarios</h3>
+<h4 id="scenario-content-script-not-injecting">Scenario: Content Script
+Not Injecting</h4>
+<p><strong>Symptoms</strong>: No torrents detected on any page.</p>
+<p><strong>Diagnostic steps:</strong> 1. Check DevTools → Console for
+injection errors. 2. Verify the content script is registered in
+<code>manifest.json</code>. 3. Check if the page has a restrictive CSP:
+<code>javascript    // In page console    document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content</code>
+4. Check the service worker logs for injection errors.</p>
+<h4 id="scenario-api-calls-failing">Scenario: API Calls Failing</h4>
+<p><strong>Symptoms</strong>: “Send failed” notifications, queue filling
+up.</p>
+<p><strong>Diagnostic steps:</strong> 1. Open service worker DevTools →
+Network tab. 2. Trigger a send and watch the request. 3. Check request
+headers (especially <code>Referer</code> for qBitTorrent). 4. Check
+response status and body. 5. Verify CORS headers if cross-origin.</p>
+<h4 id="scenario-queue-not-processing">Scenario: Queue Not
+Processing</h4>
+<p><strong>Symptoms</strong>: Items stuck in queue, no retry
+attempts.</p>
+<p><strong>Diagnostic steps:</strong> 1. Check service worker is alive:
+<code>chrome://extensions</code> → Service Worker status. 2. Check for
+<code>chrome.alarms</code> registration:
+<code>javascript    chrome.alarms.getAll((alarms) =&gt; console.log(alarms));</code>
+3. Check queue processing logs in service worker console. 4. Manually
+trigger processing:
+<code>javascript    chrome.runtime.sendMessage({ type: 'PROCESS_QUEUE' });</code></p>
+<h4 id="scenario-encryption-issues">Scenario: Encryption Issues</h4>
+<p><strong>Symptoms</strong>: “Cannot decrypt credentials” errors.</p>
+<p><strong>Diagnostic steps:</strong> 1. Check if the encryption key
+exists in session storage:
+<code>javascript    chrome.storage.session.get('encryptionKey', (data) =&gt; {      console.log('Key exists:', !!data.encryptionKey);    });</code>
+2. If the key is missing, the browser was likely restarted without
+password protection. 3. Re-enter credentials in Options to re-establish
+the encryption key.</p>
+<hr />
+<p><em>End of Developer Guide</em></p>

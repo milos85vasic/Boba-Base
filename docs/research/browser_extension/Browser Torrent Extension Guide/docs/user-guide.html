@@ -1,0 +1,1505 @@
+<h1 id="bobalink-browser-extension-user-guide">BobaLink Browser
+Extension — User Guide</h1>
+<p><strong>Document Version</strong>: 1.0.0<br />
+<strong>Last Updated</strong>: 2026-06-06<br />
+<strong>Audience</strong>: End Users<br />
+<strong>Companion Documents</strong>: <a
+href="installation-guide.md">Installation Guide</a> | <a
+href="api-reference.md">API Reference</a></p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#1-getting-started">Getting Started</a></li>
+<li><a href="#2-using-bobalink">Using BobaLink</a></li>
+<li><a href="#3-configuration">Configuration</a></li>
+<li><a href="#4-troubleshooting">Troubleshooting</a></li>
+<li><a href="#5-tips-and-tricks">Tips and Tricks</a></li>
+<li><a href="#6-frequently-asked-questions">Frequently Asked
+Questions</a></li>
+</ol>
+<hr />
+<h2 id="getting-started">1. Getting Started</h2>
+<h3 id="what-is-bobalink">1.1 What is BobaLink?</h3>
+<p>BobaLink is a browser extension that bridges the gap between finding
+torrents on the web and downloading them to your private server. It
+automatically detects magnet links and <code>.torrent</code> files on
+any web page you visit, and with a single click, sends them to your Boba
+server or directly to qBitTorrent for download.</p>
+<p><strong>Key Features:</strong></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Automatic Detection</td>
+<td>Magnet links and <code>.torrent</code> files are detected as you
+browse — no manual copying required.</td>
+</tr>
+<tr>
+<td>One-Click Send</td>
+<td>Right-click any detected torrent and send it immediately.</td>
+</tr>
+<tr>
+<td>Tab Group Batching</td>
+<td>Send all torrents from an entire tab group at once.</td>
+</tr>
+<tr>
+<td>Offline Queue</td>
+<td>Failed sends are automatically retried when your server comes back
+online.</td>
+</tr>
+<tr>
+<td>Real-time Progress</td>
+<td>Badge on the toolbar icon shows download status at a glance.</td>
+</tr>
+<tr>
+<td>Auto-Discovery</td>
+<td>BobaLink can find your Boba server automatically on your local
+network.</td>
+</tr>
+<tr>
+<td>Cross-Browser</td>
+<td>Works on Chrome, Firefox, Opera, and Yandex Browser.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="system-requirements">1.2 System Requirements</h3>
+<p>Before installing BobaLink, ensure you have the following:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Browser</strong></td>
+<td>Chrome 88+, Firefox 109+, Opera 74+, or Yandex Browser 21+</td>
+</tr>
+<tr>
+<td><strong>Boba Server</strong> (recommended)</td>
+<td>Docker container running on your local network or server; OR</td>
+</tr>
+<tr>
+<td><strong>qBitTorrent</strong> (direct mode)</td>
+<td>qBitTorrent 4.4+ with WebUI enabled and accessible via HTTPS</td>
+</tr>
+<tr>
+<td><strong>Network</strong></td>
+<td>Your browser must be able to reach the Boba server or qBitTorrent
+WebUI over HTTPS</td>
+</tr>
+<tr>
+<td><strong>Operating System</strong></td>
+<td>Windows 10+, macOS 11+, or any modern Linux distribution</td>
+</tr>
+</tbody>
+</table>
+<h3 id="installation">1.3 Installation</h3>
+<p>BobaLink can be installed from your browser’s official extension
+store or manually. For detailed installation instructions, see the <a
+href="installation-guide.md">Installation Guide</a>.</p>
+<p><strong>Quick Install:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Store Link</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td>Chrome Web Store</td>
+<td>Click “Add to Chrome”</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>addons.mozilla.org</td>
+<td>Click “Add to Firefox”</td>
+</tr>
+<tr>
+<td>Opera</td>
+<td>Opera Addons</td>
+<td>Click “Add to Opera”</td>
+</tr>
+<tr>
+<td>Yandex</td>
+<td>Manual only</td>
+<td>See Installation Guide</td>
+</tr>
+</tbody>
+</table>
+<p>After installation, the BobaLink icon (a stylized tea bubble) will
+appear in your browser’s toolbar.</p>
+<h3 id="first-time-setup">1.4 First-Time Setup</h3>
+<p>Upon first installation, BobaLink will guide you through a quick
+setup process:</p>
+<h4 id="step-1-choose-connection-mode">Step 1: Choose Connection
+Mode</h4>
+<p>BobaLink supports two connection modes:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Description</th>
+<th>Best For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Boba Server</strong> (recommended)</td>
+<td>Connects through a Boba orchestration server that proxies requests
+to qBitTorrent</td>
+<td>Users running the Boba project with Docker; users who want search
+aggregation and SSE progress</td>
+</tr>
+<tr>
+<td><strong>qBitTorrent Direct</strong></td>
+<td>Connects directly to qBitTorrent’s WebUI API</td>
+<td>Users who want a simple, direct connection without the Boba
+middleware</td>
+</tr>
+</tbody>
+</table>
+<h4 id="step-2-server-discovery-boba-mode">Step 2: Server Discovery
+(Boba Mode)</h4>
+<p>If you selected Boba Server mode, BobaLink will attempt to
+automatically discover your server:</p>
+<ol type="1">
+<li>Click <strong>“Discover Servers”</strong> on the welcome page.</li>
+<li>BobaLink will scan common local addresses
+(<code>boba.local:8443</code>, <code>boba:8443</code>).</li>
+<li>Discovered servers will appear in a list, ranked by response
+speed.</li>
+<li>Select your server from the list and click
+<strong>“Connect”</strong>.</li>
+</ol>
+<p>If auto-discovery does not find your server: 1. Click <strong>“Manual
+Configuration”</strong>. 2. Enter your Boba server URL (e.g.,
+<code>https://192.168.1.100:8443</code>). 3. Enter your API key (obtain
+from your Boba server admin). 4. Click <strong>“Test
+Connection”</strong> to verify.</p>
+<h4 id="step-3-qbittorrent-direct-setup">Step 3: qBitTorrent Direct
+Setup</h4>
+<p>If you selected qBitTorrent Direct mode:</p>
+<ol type="1">
+<li>Enter your qBitTorrent WebUI URL (e.g.,
+<code>https://192.168.1.100:8080</code>).</li>
+<li>Enter your WebUI username and password.</li>
+<li>Click <strong>“Test Connection”</strong> to verify credentials.</li>
+<li>Optionally set a default category and download path.</li>
+</ol>
+<h4 id="step-4-finish">Step 4: Finish</h4>
+<p>Click <strong>“Finish Setup”</strong>. BobaLink is now ready to use.
+You can always change these settings later via the Options page.</p>
+<h3 id="connecting-to-boba">1.5 Connecting to Boba</h3>
+<p>After initial setup, the BobaLink icon in your toolbar indicates the
+connection status:</p>
+<table>
+<thead>
+<tr>
+<th>Icon State</th>
+<th>Meaning</th>
+<th>Action Needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Green dot</td>
+<td>Connected to server</td>
+<td>None</td>
+</tr>
+<tr>
+<td>Blue spinner</td>
+<td>Connecting / sending</td>
+<td>Wait</td>
+</tr>
+<tr>
+<td>Orange dot</td>
+<td>Queued items pending</td>
+<td>None — will retry automatically</td>
+</tr>
+<tr>
+<td>Red dot</td>
+<td>Connection error</td>
+<td>Check server or credentials</td>
+</tr>
+<tr>
+<td>Gray dot</td>
+<td>Not configured</td>
+<td>Open Options and configure server</td>
+</tr>
+</tbody>
+</table>
+<p><strong>To check connection status:</strong> 1. Click the BobaLink
+icon in the toolbar. 2. The header shows the current connection state.
+3. Click the refresh icon to force a health check.</p>
+<hr />
+<h2 id="using-bobalink">2. Using BobaLink</h2>
+<h3 id="browsing-and-detection">2.1 Browsing and Detection</h3>
+<p>BobaLink automatically detects torrents as you browse the web. No
+manual action is required for detection.</p>
+<h4 id="what-gets-detected">What Gets Detected</h4>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Type</th>
+<th>Detection Method</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Magnet links</td>
+<td><code>href="magnet:?xt=..."</code></td>
+<td><code>&lt;a href="magnet:?xt=urn:btih:abc123..."&gt;Download&lt;/a&gt;</code></td>
+</tr>
+<tr>
+<td><code>.torrent</code> links</td>
+<td>URL ends with <code>.torrent</code></td>
+<td><code>&lt;a href="https://site.com/file.torrent"&gt;Torrent&lt;/a&gt;</code></td>
+</tr>
+<tr>
+<td>Magnet text</td>
+<td>Plain text magnet URIs</td>
+<td>Page text containing <code>magnet:?xt=...</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="how-detection-works">How Detection Works</h4>
+<p>When you visit a web page, BobaLink’s content script:</p>
+<ol type="1">
+<li>Scans all <code>&lt;a&gt;</code> elements on the page for magnet or
+<code>.torrent</code> links.</li>
+<li>Watches for dynamically loaded content (single-page apps, infinite
+scroll).</li>
+<li>Parses magnet URIs to extract metadata (name, trackers, size).</li>
+<li>Displays a subtle badge count on the BobaLink toolbar icon showing
+the number of detected torrents on the current page.</li>
+</ol>
+<p><strong>Privacy Note:</strong> Detection happens entirely within your
+browser. No data is sent to any server until you explicitly choose to
+send a torrent.</p>
+<h4 id="visual-indicators-on-web-pages">Visual Indicators on Web
+Pages</h4>
+<p>BobaLink does not modify web pages by default. If you enable the
+optional <strong>“Highlight torrents on page”</strong> setting:</p>
+<ul>
+<li>Magnet links get a subtle green underline.</li>
+<li><code>.torrent</code> links get a subtle blue underline.</li>
+<li>Hovering shows a tooltip with the torrent name and size.</li>
+</ul>
+<p>To enable: Open Options → Detection → Check “Highlight torrents on
+page”.</p>
+<h3 id="sending-magnet-links">2.2 Sending Magnet Links</h3>
+<p>Once BobaLink has detected magnet links on a page, you have several
+ways to send them:</p>
+<h4 id="method-1-context-menu-right-click">Method 1: Context Menu
+(Right-Click)</h4>
+<ol type="1">
+<li>Right-click on any magnet link on the page.</li>
+<li>Select <strong>“Send Magnet to Boba”</strong> from the context
+menu.</li>
+<li>The link is immediately sent to your configured server.</li>
+<li>A brief notification confirms the send (if notifications are
+enabled).</li>
+</ol>
+<h4 id="method-2-popup-interface">Method 2: Popup Interface</h4>
+<ol type="1">
+<li>Click the BobaLink icon in the toolbar.</li>
+<li>The popup shows a list of all detected torrents on the current
+page.</li>
+<li>Check the box next to the torrent(s) you want to send.</li>
+<li>Click the <strong>“Send Selected”</strong> button.</li>
+</ol>
+<h4 id="method-3-keyboard-shortcut">Method 3: Keyboard Shortcut</h4>
+<ol type="1">
+<li>Press <code>Ctrl+Shift+B</code> (Windows/Linux) or
+<code>Cmd+Shift+B</code> (macOS).</li>
+<li>All detected torrents on the current page are sent
+automatically.</li>
+</ol>
+<h4 id="method-4-send-all-on-page">Method 4: Send All on Page</h4>
+<ol type="1">
+<li>Click the BobaLink icon in the toolbar.</li>
+<li>Click <strong>“Send All”</strong> to send every detected torrent on
+the page.</li>
+</ol>
+<p><strong>Send Confirmation:</strong></p>
+<p>After sending, you’ll see: - A browser notification (if enabled):
+“Torrent Sent — {name} added to download queue” - The badge count
+updates to reflect sent items - If the send fails, the item is added to
+the offline queue for automatic retry</p>
+<h3 id="sending-.torrent-files">2.3 Sending .torrent Files</h3>
+<p>When BobaLink detects a link to a <code>.torrent</code> file (not a
+magnet link), it can download and send the actual file.</p>
+<h4 id="context-menu-method">Context Menu Method</h4>
+<ol type="1">
+<li>Right-click on a <code>.torrent</code> file link.</li>
+<li>Select <strong>“Download .torrent to Boba”</strong> from the context
+menu.</li>
+<li>BobaLink downloads the file (up to 10 MB), parses it, and sends it
+to your server.</li>
+</ol>
+<h4 id="popup-method">Popup Method</h4>
+<ol type="1">
+<li>Click the BobaLink icon.</li>
+<li><code>.torrent</code> file links appear in the detected list with a
+file icon.</li>
+<li>Select and send as with magnet links.</li>
+</ol>
+<p><strong>Note on CORS:</strong> Some websites block direct
+<code>.torrent</code> file downloads. In these cases: - If using Boba
+Server mode, the file is proxied through Boba automatically. - If using
+qBitTorrent Direct mode, you’ll see a “CORS blocked” message.
+Right-click the link and select “Copy link address,” then paste it into
+qBitTorrent manually.</p>
+<h3 id="using-tab-groups-for-batch-downloads">2.4 Using Tab Groups for
+Batch Downloads</h3>
+<p>Chrome’s Tab Groups feature allows you to organize tabs. BobaLink can
+send torrents from all tabs in a group simultaneously.</p>
+<h4 id="setting-up-tab-groups">Setting Up Tab Groups</h4>
+<ol type="1">
+<li>In Chrome, right-click any tab and select <strong>“Add tab to new
+group”</strong>.</li>
+<li>Give the group a name and choose a color.</li>
+<li>Add multiple torrent pages to the group.</li>
+</ol>
+<h4 id="sending-a-tab-group">Sending a Tab Group</h4>
+<p><strong>Method 1 — Popup:</strong> 1. Click the BobaLink icon. 2.
+Click the <strong>“Tab Groups”</strong> tab in the popup. 3. You’ll see
+all your tab groups listed. 4. Click <strong>“Send”</strong> next to the
+group you want to process.</p>
+<p><strong>Method 2 — Context Menu:</strong> 1. Right-click on any tab
+in the group. 2. Select <strong>“Send Tab Group to Boba”</strong>.</p>
+<p><strong>Method 3 — Keyboard Shortcut:</strong> 1. Ensure a tab within
+the target group is active. 2. Press <code>Ctrl+Shift+G</code>
+(Windows/Linux) or <code>Cmd+Shift+G</code> (macOS).</p>
+<p><strong>What Happens:</strong> 1. BobaLink scans every tab in the
+group. 2. All detected torrents are collected. 3. Duplicates across tabs
+are automatically removed. 4. The unique torrents are sent as a batch.
+5. A summary notification appears: “Batch Complete — 12 torrents sent, 0
+failed.”</p>
+<h3 id="managing-download-queue">2.5 Managing Download Queue</h3>
+<p>When sends fail (network issues, server offline), torrents are placed
+in the offline queue for automatic retry.</p>
+<h4 id="viewing-the-queue">Viewing the Queue</h4>
+<ol type="1">
+<li>Click the BobaLink icon.</li>
+<li>Click the <strong>“Queue”</strong> tab.</li>
+<li>You’ll see a table of queued items with the following columns:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name</td>
+<td>Torrent display name</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>Pending / Retrying / Failed / Dead Letter</td>
+</tr>
+<tr>
+<td>Attempts</td>
+<td>Number of send attempts</td>
+</tr>
+<tr>
+<td>Next Retry</td>
+<td>Countdown to next automatic retry</td>
+</tr>
+<tr>
+<td>Actions</td>
+<td>Retry now / Remove</td>
+</tr>
+</tbody>
+</table>
+<h4 id="queue-actions">Queue Actions</h4>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Action</th>
+<th>How To</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retry now</td>
+<td>Click the circular arrow icon</td>
+<td>Immediate retry attempt</td>
+</tr>
+<tr>
+<td>Remove</td>
+<td>Click the X icon</td>
+<td>Item removed from queue (no recovery)</td>
+</tr>
+<tr>
+<td>Retry all failed</td>
+<td>Click <strong>“Retry All Failed”</strong></td>
+<td>Retries all items with status “Failed”</td>
+</tr>
+<tr>
+<td>Clear queue</td>
+<td>Click <strong>“Clear Queue”</strong> → Confirm</td>
+<td>Removes all items (use with caution)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="queue-behavior">Queue Behavior</h4>
+<ul>
+<li><strong>Automatic retry</strong>: Items are retried with exponential
+backoff (5s, 10s, 20s, 40s, 80s).</li>
+<li><strong>Max retries</strong>: Default is 5 attempts. After that, the
+item moves to “Dead Letter” status.</li>
+<li><strong>Dead letter items</strong>: These require manual
+intervention. You can retry them individually or remove them.</li>
+<li><strong>Queue persistence</strong>: The queue survives browser
+restarts and computer reboots.</li>
+</ul>
+<h3 id="viewing-download-progress">2.6 Viewing Download Progress</h3>
+<p>BobaLink provides real-time download progress information.</p>
+<h4 id="toolbar-badge">Toolbar Badge</h4>
+<p>The BobaLink icon badge shows: - <strong>Number</strong>: Count of
+items currently queued or sending. - <strong>Color</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Color</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Green</td>
+<td>All clear — connected, no pending items</td>
+</tr>
+<tr>
+<td>Blue</td>
+<td>Currently sending torrent(s)</td>
+</tr>
+<tr>
+<td>Orange</td>
+<td>Items in queue, waiting for retry</td>
+</tr>
+<tr>
+<td>Red</td>
+<td>Connection error or send failures</td>
+</tr>
+<tr>
+<td>Gray</td>
+<td>Extension not configured</td>
+</tr>
+</tbody>
+</table>
+<h4 id="popup-progress-view">Popup Progress View</h4>
+<ol type="1">
+<li>Click the BobaLink icon.</li>
+<li>Click the <strong>“Downloads”</strong> tab.</li>
+<li>If connected to Boba Server with SSE enabled, you’ll see:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name</td>
+<td>Torrent name</td>
+</tr>
+<tr>
+<td>Progress</td>
+<td>Visual progress bar + percentage</td>
+</tr>
+<tr>
+<td>Speed</td>
+<td>Download speed (e.g., “5.2 MB/s”)</td>
+</tr>
+<tr>
+<td>ETA</td>
+<td>Estimated time remaining</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>Downloading / Seeding / Paused / Error</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note:</strong> Real-time progress via SSE requires Boba
+Server mode. qBitTorrent Direct mode does not support live progress in
+the popup (but you can check progress directly in qBitTorrent’s
+WebUI).</p>
+<h3 id="keyboard-shortcuts-reference">2.7 Keyboard Shortcuts
+Reference</h3>
+<p>All shortcuts are customizable via your browser’s extension shortcuts
+page.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Action</th>
+<th>Windows/Linux</th>
+<th>macOS</th>
+<th>Customizable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Send all torrents on current page</td>
+<td><code>Ctrl+Shift+B</code></td>
+<td><code>Cmd+Shift+B</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Open BobaLink popup</td>
+<td><code>Ctrl+Shift+L</code></td>
+<td><code>Cmd+Shift+L</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Send current tab’s group</td>
+<td><code>Ctrl+Shift+G</code></td>
+<td><code>Cmd+Shift+G</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Scan page (without sending)</td>
+<td><code>Ctrl+Shift+S</code></td>
+<td><code>Cmd+Shift+S</code></td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>To customize shortcuts:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td><code>chrome://extensions/shortcuts</code></td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td><code>about:addons</code> → Gear icon → Manage Extension
+Shortcuts</td>
+</tr>
+<tr>
+<td>Opera</td>
+<td><code>opera://extensions/shortcuts</code></td>
+</tr>
+<tr>
+<td>Yandex</td>
+<td><code>browser://extensions/shortcuts</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="configuration">3. Configuration</h2>
+<h3 id="options-page-walkthrough">3.1 Options Page Walkthrough</h3>
+<p>The Options page is the central configuration hub for BobaLink. To
+open it:</p>
+<ul>
+<li><strong>Method 1</strong>: Click the BobaLink icon → Click the gear
+icon.</li>
+<li><strong>Method 2</strong>: Right-click the BobaLink icon → Select
+“Options”.</li>
+<li><strong>Method 3</strong>: Navigate to your browser’s extensions
+page and click “Options” under BobaLink.</li>
+</ul>
+<p>The Options page is organized into tabs:</p>
+<h4 id="server-settings-tab">Server Settings Tab</h4>
+<p>Configure your connection to Boba or qBitTorrent.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Connection Mode</td>
+<td>Boba Server or qBitTorrent Direct</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Server URL</td>
+<td>Base URL of your server</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Authentication</td>
+<td>API Key, Username/Password, or Custom Header</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Test Connection</td>
+<td>Verifies connectivity and shows server version</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Connection Timeout</td>
+<td>Seconds to wait for API responses</td>
+<td>30</td>
+</tr>
+<tr>
+<td>Health Check Interval</td>
+<td>Seconds between automatic health checks</td>
+<td>30</td>
+</tr>
+</tbody>
+</table>
+<h4 id="download-preferences-tab">Download Preferences Tab</h4>
+<p>Configure default behavior when sending torrents.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Default Category</td>
+<td>qBitTorrent category for new torrents</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Default Tags</td>
+<td>Comma-separated tags (e.g., <code>browser,auto</code>)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Default Save Path</td>
+<td>Override download directory</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Pause After Add</td>
+<td>Add torrents in paused state</td>
+<td>Off</td>
+</tr>
+<tr>
+<td>Skip Hash Check</td>
+<td>Skip initial hash verification</td>
+<td>Off</td>
+</tr>
+<tr>
+<td>Sequential Download</td>
+<td>Download pieces in order</td>
+<td>Off</td>
+</tr>
+<tr>
+<td>First/Last Piece Priority</td>
+<td>Prioritize first and last pieces</td>
+<td>Off</td>
+</tr>
+</tbody>
+</table>
+<h4 id="queue-settings-tab">Queue Settings Tab</h4>
+<p>Configure offline queue behavior.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Max Queue Size</td>
+<td>Maximum items to retain</td>
+<td>1,000</td>
+</tr>
+<tr>
+<td>Max Retries</td>
+<td>Attempts before dead-letter</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Base Retry Delay</td>
+<td>Initial retry wait time (seconds)</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Max Retry Delay</td>
+<td>Longest retry wait time (seconds)</td>
+<td>300</td>
+</tr>
+</tbody>
+</table>
+<h4 id="notification-settings-tab">Notification Settings Tab</h4>
+<p>Configure when BobaLink shows browser notifications.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Event</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Send Success</td>
+<td>Enabled</td>
+<td>Toast when torrent is successfully sent</td>
+</tr>
+<tr>
+<td>Send Failed</td>
+<td>Enabled</td>
+<td>Toast when send fails (immediately, not on retry)</td>
+</tr>
+<tr>
+<td>Batch Complete</td>
+<td>Enabled</td>
+<td>Summary after tab group batch send</td>
+</tr>
+<tr>
+<td>Queue Retry</td>
+<td>Disabled</td>
+<td>Toast on each retry attempt</td>
+</tr>
+</tbody>
+</table>
+<h4 id="detection-settings-tab">Detection Settings Tab</h4>
+<p>Configure torrent detection behavior.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dynamic Scanning</td>
+<td>Watch for newly added content on SPA pages</td>
+<td>On</td>
+</tr>
+<tr>
+<td>Highlight on Page</td>
+<td>Visually mark torrent links on web pages</td>
+<td>Off</td>
+</tr>
+<tr>
+<td>Max File Size</td>
+<td>Maximum <code>.torrent</code> file size to download (MB)</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Tab Group Scanning</td>
+<td>Enable tab group batch features</td>
+<td>On</td>
+</tr>
+</tbody>
+</table>
+<h4 id="ui-settings-tab">UI Settings Tab</h4>
+<p>Configure the user interface.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Theme</td>
+<td>System / Light / Dark</td>
+<td>System</td>
+</tr>
+<tr>
+<td>Show Badge</td>
+<td>Show numeric badge on toolbar icon</td>
+<td>On</td>
+</tr>
+<tr>
+<td>Badge Color</td>
+<td>Custom colors for each state</td>
+<td>Default</td>
+</tr>
+</tbody>
+</table>
+<h4 id="security-settings-tab">Security Settings Tab</h4>
+<p>Configure security preferences.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Require Password</td>
+<td>Ask for password on browser startup</td>
+<td>Off</td>
+</tr>
+<tr>
+<td>Auto-Lock</td>
+<td>Lock credentials after minutes of inactivity</td>
+<td>30</td>
+</tr>
+<tr>
+<td>HTTPS Only</td>
+<td>Refuse non-HTTPS server URLs</td>
+<td>On</td>
+</tr>
+<tr>
+<td>Certificate Pinning</td>
+<td>Pin expected server certificate</td>
+<td>Off</td>
+</tr>
+</tbody>
+</table>
+<h3 id="server-settings-in-detail">3.2 Server Settings in Detail</h3>
+<h4 id="switching-between-boba-and-qbittorrent-direct">Switching Between
+Boba and qBitTorrent Direct</h4>
+<ol type="1">
+<li>Open Options → Server Settings.</li>
+<li>Change the <strong>Connection Mode</strong> dropdown.</li>
+<li>Enter the appropriate URL and credentials.</li>
+<li>Click <strong>“Test Connection”</strong>.</li>
+<li>Click <strong>“Save”</strong>.</li>
+</ol>
+<h4 id="changing-server-url">Changing Server URL</h4>
+<ol type="1">
+<li>Open Options → Server Settings.</li>
+<li>Update the <strong>Server URL</strong> field.</li>
+<li>Click <strong>“Test Connection”</strong> to verify.</li>
+<li>Click <strong>“Save”</strong>.</li>
+</ol>
+<p>Your queue and history are preserved when changing servers.</p>
+<h3 id="download-preferences">3.3 Download Preferences</h3>
+<h4 id="categories">Categories</h4>
+<p>Categories help organize torrents in qBitTorrent. To set up:</p>
+<ol type="1">
+<li>Open Options → Download Preferences.</li>
+<li>Enter a default category name (e.g., <code>movies</code>,
+<code>tv-shows</code>).</li>
+<li>The category must already exist in qBitTorrent, or qBitTorrent will
+create it automatically (depending on version).</li>
+</ol>
+<p>To manage categories in qBitTorrent: 1. Open qBitTorrent WebUI. 2. Go
+to <strong>View → Categories</strong>. 3. Add or edit categories with
+optional default save paths.</p>
+<h4 id="tags">Tags</h4>
+<p>Tags provide additional metadata. Multiple tags are
+comma-separated:</p>
+<pre><code>browser,auto,hd</code></pre>
+<p>These appear in qBitTorrent’s Tags column and can be used for
+filtering and automation rules.</p>
+<h4 id="download-path-override">Download Path Override</h4>
+<p>To save torrents to a specific directory (overriding qBitTorrent’s
+default):</p>
+<ol type="1">
+<li>Open Options → Download Preferences.</li>
+<li>Enter an absolute path in <strong>Default Save Path</strong>.</li>
+<li>Example: <code>/downloads/movies</code> (Linux) or
+<code>C:\Downloads\Movies</code> (Windows).</li>
+</ol>
+<h3 id="notification-settings">3.4 Notification Settings</h3>
+<p>Browser notifications appear as operating system-level toasts. To
+enable or disable:</p>
+<ol type="1">
+<li>Open Options → Notification Settings.</li>
+<li>Toggle individual notification types.</li>
+<li>Your browser may also ask for permission the first time a
+notification is shown.</li>
+</ol>
+<p><strong>Granting Notification Permission:</strong></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td>Click the lock icon in the address bar → Site settings →
+Notifications → Allow</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>Click the permissions icon in the address bar → Allow
+notifications</td>
+</tr>
+<tr>
+<td>Opera</td>
+<td>Settings → Privacy &amp; Security → Site settings →
+Notifications</td>
+</tr>
+</tbody>
+</table>
+<h3 id="security-settings">3.5 Security Settings</h3>
+<h4 id="password-protection">Password Protection</h4>
+<p>For shared computers, enable password protection:</p>
+<ol type="1">
+<li>Open Options → Security Settings.</li>
+<li>Enable <strong>“Require Password on Startup”</strong>.</li>
+<li>Enter and confirm a password.</li>
+<li>Click <strong>“Save”</strong>.</li>
+</ol>
+<p>On the next browser startup, BobaLink will prompt for the password
+before decrypting stored credentials. The password is never stored —
+only used to derive the encryption key.</p>
+<p><strong>Forgot Password?</strong> There is no recovery. You must
+reset the extension (which clears all stored credentials) and
+reconfigure.</p>
+<hr />
+<h2 id="troubleshooting">4. Troubleshooting</h2>
+<h3 id="cannot-connect-to-boba">4.1 “Cannot Connect to Boba”</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>The BobaLink icon shows a red dot, and the popup says “Disconnected”
+or “Connection Error.”</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+<p><strong>Step-by-step diagnosis:</strong></p>
+<ol type="1">
+<li><strong>Check the server URL</strong>
+<ul>
+<li>Open Options → Server Settings.</li>
+<li>Verify the URL is correct (e.g.,
+<code>https://192.168.1.100:8443</code>).</li>
+<li>Common mistake: Using <code>http://</code> instead of
+<code>https://</code>.</li>
+<li>Common mistake: Wrong port number.</li>
+</ul></li>
+<li><strong>Test from the browser directly</strong>
+<ul>
+<li>Open a new tab and navigate to
+<code>{your-server-url}/api/v1/health</code>.</li>
+<li>You should see a JSON response with version information.</li>
+<li>If you get a certificate error, your browser may not trust the
+server’s certificate.</li>
+</ul></li>
+<li><strong>Check credentials</strong>
+<ul>
+<li>Open Options → Server Settings.</li>
+<li>Click <strong>“Test Connection”</strong>.</li>
+<li>If it returns “Authentication failed,” verify your API key or
+username/password.</li>
+<li>For qBitTorrent Direct, ensure the WebUI is enabled in qBitTorrent
+settings.</li>
+</ul></li>
+<li><strong>Check network connectivity</strong>
+<ul>
+<li><p>Ensure your computer can reach the server:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ping</span> 192.168.1.100</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-k</span> https://192.168.1.100:8443/api/v1/health</span></code></pre></div></li>
+</ul></li>
+<li><strong>Check firewall rules</strong>
+<ul>
+<li><p>Ensure port 8443 (Boba) or 8080 (qBitTorrent) is open.</p></li>
+<li><p>If using Docker, ensure the container port is mapped:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> ps</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Look for 0.0.0.0:8443-&gt;8443/tcp</span></span></code></pre></div></li>
+</ul></li>
+<li><strong>Check certificate validity</strong>
+<ul>
+<li>Self-signed certificates may be rejected.</li>
+<li>In Options → Security, you may need to disable “HTTPS Only”
+temporarily for testing (not recommended for production).</li>
+</ul></li>
+</ol>
+<h3 id="torrent-not-detected">4.2 “Torrent Not Detected”</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>You see a magnet link on the page, but BobaLink shows “0 torrents
+detected.”</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+<p><strong>Possible causes and solutions:</strong></p>
+<ol type="1">
+<li><strong>The link was loaded dynamically</strong>
+<ul>
+<li>Some sites load content via JavaScript after the initial page
+load.</li>
+<li>Wait a few seconds and check the BobaLink popup again.</li>
+<li>Enable <strong>“Dynamic Scanning”</strong> in Options → Detection
+(it’s on by default).</li>
+</ul></li>
+<li><strong>The link is in an iframe</strong>
+<ul>
+<li>Content inside iframes may not be accessible.</li>
+<li>Open the iframe content directly in a new tab if possible.</li>
+</ul></li>
+<li><strong>The link is not a standard <code>&lt;a&gt;</code>
+tag</strong>
+<ul>
+<li>Some sites use JavaScript click handlers instead of actual
+links.</li>
+<li>Try right-clicking and selecting “Copy link address,” then check if
+it’s a valid magnet URI.</li>
+</ul></li>
+<li><strong>The page uses a non-standard magnet format</strong>
+<ul>
+<li>Some sites abbreviate or encode magnet links differently.</li>
+<li>Manually copy the link and paste it into qBitTorrent.</li>
+</ul></li>
+<li><strong>Extension permissions</strong>
+<ul>
+<li>Ensure BobaLink has permission to access the site:
+<ul>
+<li>Click the lock icon in the address bar.</li>
+<li>Check if extensions are allowed.</li>
+<li>Try clicking the BobaLink icon and granting permission when
+prompted.</li>
+</ul></li>
+</ul></li>
+</ol>
+<h3 id="send-failed-errors">4.3 “Send Failed” Errors</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>You click “Send” but get a “Send Failed” notification or the item
+appears in the queue.</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+<p><strong>Common causes:</strong></p>
+<ol type="1">
+<li><strong>Server is temporarily unreachable</strong>
+<ul>
+<li>Check if your Boba/qBitTorrent server is running.</li>
+<li>The item will be queued and retried automatically.</li>
+</ul></li>
+<li><strong>Authentication expired</strong>
+<ul>
+<li>For qBitTorrent Direct, the session cookie may have expired.</li>
+<li>Open Options → Server Settings → Test Connection.</li>
+<li>If it fails, re-enter credentials.</li>
+</ul></li>
+<li><strong>Torrent already exists</strong>
+<ul>
+<li>qBitTorrent rejects duplicate torrents.</li>
+<li>Check qBitTorrent — the torrent may already be downloading or
+completed.</li>
+</ul></li>
+<li><strong>Invalid torrent data</strong>
+<ul>
+<li>The magnet link may be malformed.</li>
+<li>The <code>.torrent</code> file may be corrupted or not a valid
+torrent.</li>
+</ul></li>
+<li><strong>Rate limiting</strong>
+<ul>
+<li>If sending many torrents rapidly, you may hit rate limits.</li>
+<li>Wait a moment and retry.</li>
+</ul></li>
+</ol>
+<h3 id="extension-not-working-on-site-x">4.4 “Extension Not Working on
+Site X”</h3>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>BobaLink doesn’t detect anything on a specific website.</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+<p><strong>Troubleshooting steps:</strong></p>
+<ol type="1">
+<li><strong>Check if the site requires login</strong>
+<ul>
+<li>Some torrent sites only show links to logged-in users.</li>
+<li>Ensure you’re logged in and the links are visible.</li>
+</ul></li>
+<li><strong>JavaScript-rendered content</strong>
+<ul>
+<li>Some sites render all content via JavaScript.</li>
+<li>Try waiting a few seconds after the page appears “loaded.”</li>
+<li>Scroll down to trigger lazy loading.</li>
+</ul></li>
+<li><strong>Content Security Policy (CSP) restrictions</strong>
+<ul>
+<li>Some sites have strict CSP headers that limit extension
+functionality.</li>
+<li>BobaLink respects these restrictions and will not inject scripts on
+such pages.</li>
+</ul></li>
+<li><strong>Extension conflict</strong>
+<ul>
+<li>Other extensions may interfere.</li>
+<li>Try disabling other extensions temporarily.</li>
+</ul></li>
+<li><strong>Report the site</strong>
+<ul>
+<li>If a popular torrent site consistently fails, please report it:
+<ul>
+<li>Click BobaLink icon → <strong>“Report Issue”</strong>.</li>
+<li>Include the site URL and a description of what you expected vs. what
+happened.</li>
+</ul></li>
+</ul></li>
+</ol>
+<h3 id="badge-shows-error">4.5 Badge Shows Error</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Badge Color</th>
+<th>Meaning</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Red</td>
+<td>Connection error</td>
+<td>Check server status and credentials</td>
+</tr>
+<tr>
+<td>Red with “E”</td>
+<td>Extension error</td>
+<td>Check the popup for details; try reloading the extension</td>
+</tr>
+<tr>
+<td>Orange</td>
+<td>Queue has retrying items</td>
+<td>Normal — wait for automatic retry</td>
+</tr>
+<tr>
+<td>Gray</td>
+<td>Not configured</td>
+<td>Open Options and set up your server</td>
+</tr>
+<tr>
+<td>No badge</td>
+<td>No torrents on current page</td>
+<td>Normal — browse to a page with torrent links</td>
+</tr>
+</tbody>
+</table>
+<p><strong>To reload the extension:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td><code>chrome://extensions</code> → Toggle BobaLink off and on</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td><code>about:addons</code> → BobaLink → Toggle off and on</td>
+</tr>
+<tr>
+<td>Opera</td>
+<td><code>opera://extensions</code> → Toggle BobaLink off and on</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="tips-and-tricks">5. Tips and Tricks</h2>
+<h3 id="organizing-torrents-in-tab-groups">5.1 Organizing Torrents in
+Tab Groups</h3>
+<p>Efficient batch downloading with tab groups:</p>
+<ol type="1">
+<li><p><strong>Create themed groups</strong>: Organize tabs by category
+before sending.</p>
+<ul>
+<li>“Movies — 2026 Releases” (group color: red)</li>
+<li>“TV Shows — Season Finales” (group color: blue)</li>
+<li>“Software — Linux Distros” (group color: green)</li>
+</ul></li>
+<li><p><strong>Use group colors as visual cues</strong>: BobaLink shows
+the group color in the popup, making it easy to identify.</p></li>
+<li><p><strong>Name groups descriptively</strong>: The group name
+appears in batch send notifications.</p></li>
+<li><p><strong>Pre-set categories</strong>: Before sending a group,
+configure the default category in Options. All torrents from the group
+will use that category.</p></li>
+</ol>
+<h3 id="keyboard-shortcut-cheat-sheet">5.2 Keyboard Shortcut Cheat
+Sheet</h3>
+<p><strong>Print this section for quick reference:</strong></p>
+<pre><code>┌─────────────────────────────────────┬────────────────────┐
+│ Action                              │ Shortcut           │
+├─────────────────────────────────────┼────────────────────┤
+│ Send all torrents on current page   │ Ctrl+Shift+B       │
+│                                     │ (Cmd+Shift+B Mac)  │
+├─────────────────────────────────────┼────────────────────┤
+│ Open BobaLink popup                 │ Ctrl+Shift+L       │
+│                                     │ (Cmd+Shift+L Mac)  │
+├─────────────────────────────────────┼────────────────────┤
+│ Send current tab&#39;s group            │ Ctrl+Shift+G       │
+│                                     │ (Cmd+Shift+G Mac)  │
+├─────────────────────────────────────┼────────────────────┤
+│ Scan page (no send)                 │ Ctrl+Shift+S       │
+│                                     │ (Cmd+Shift+S Mac)  │
+└─────────────────────────────────────┴────────────────────┘</code></pre>
+<h3 id="privacy-best-practices">5.3 Privacy Best Practices</h3>
+<ol type="1">
+<li><p><strong>Use HTTPS only</strong>: Always connect to your server
+over HTTPS. BobaLink enforces this by default.</p></li>
+<li><p><strong>Enable password protection</strong>: On shared computers,
+enable <strong>“Require Password on Startup”</strong> in Security
+Settings.</p></li>
+<li><p><strong>Review permissions</strong>: BobaLink uses the
+<code>activeTab</code> permission, which means it only accesses the page
+you’re currently viewing. It does not read browsing history or all
+tabs.</p></li>
+<li><p><strong>No data collection</strong>: BobaLink does not send any
+data to third parties. All communication is between your browser and
+your server.</p></li>
+<li><p><strong>Credential storage</strong>: Credentials are encrypted
+using AES-256-GCM. The encryption key is stored only in browser memory
+and cleared on restart (unless password protection is
+disabled).</p></li>
+<li><p><strong>Clear data on uninstall</strong>: When you remove
+BobaLink, all stored data (including encrypted credentials and queue) is
+automatically deleted.</p></li>
+</ol>
+<h3 id="power-user-workflows">5.4 Power User Workflows</h3>
+<p><strong>Workflow: Nightly Batch Download</strong> 1. Throughout the
+day, add torrent pages to a Chrome tab group named “To Download.” 2.
+Before bed, press <code>Ctrl+Shift+G</code> to send the entire group. 3.
+Check qBitTorrent in the morning — all downloads are ready.</p>
+<p><strong>Workflow: Category-Based Organization</strong> 1. In Options
+→ Download Preferences, set categories for different content types. 2.
+Use qBitTorrent’s “Automatic Torrent Management” to auto-move completed
+downloads based on category. 3. Your downloads are automatically
+organized into folders.</p>
+<p><strong>Workflow: Monitoring Large Batches</strong> 1. Enable all
+notifications in Options → Notification Settings. 2. Send a large tab
+group batch. 3. Watch browser notifications for real-time status of each
+torrent. 4. Check the Queue tab for any failures.</p>
+<hr />
+<h2 id="frequently-asked-questions">6. Frequently Asked Questions</h2>
+<h3 id="general-questions">General Questions</h3>
+<p><strong>Q1: What is BobaLink?</strong> &gt; BobaLink is a browser
+extension that automatically detects magnet links and
+<code>.torrent</code> files on web pages and sends them to your Boba
+server or qBitTorrent client with a single click. It eliminates the need
+to manually copy and paste magnet links.</p>
+<p><strong>Q2: Is BobaLink free?</strong> &gt; Yes, BobaLink is free and
+open-source software. You can use it, modify it, and distribute it under
+its license terms.</p>
+<p><strong>Q3: What browsers are supported?</strong> &gt; Chrome 88+,
+Firefox 109+, Opera 74+, and Yandex Browser 21+. Edge is also compatible
+as it’s Chromium-based.</p>
+<p><strong>Q4: Does BobaLink work on mobile browsers?</strong> &gt;
+No. Mobile browsers (Chrome for Android, Safari for iOS) do not support
+the full WebExtensions API that BobaLink requires, particularly the
+background service worker and tab group APIs.</p>
+<h3 id="setup-and-configuration">Setup and Configuration</h3>
+<p><strong>Q5: Do I need the Boba server, or can I use qBitTorrent
+directly?</strong> &gt; You can use either. Boba Server provides
+additional features like search aggregation, SSE progress streaming, and
+auto-discovery. qBitTorrent Direct is simpler and doesn’t require the
+Boba middleware.</p>
+<p><strong>Q6: How do I find my Boba server URL?</strong> &gt; If Boba
+is running on your local network, try clicking “Discover Servers” in the
+setup wizard. If that doesn’t work, check your Docker configuration or
+ask your server administrator for the IP address and port.</p>
+<p><strong>Q7: Where do I get an API key?</strong> &gt; API keys are
+generated by your Boba server administrator. Check the Boba server
+dashboard or configuration files.</p>
+<p><strong>Q8: What is the qBitTorrent WebUI, and how do I enable
+it?</strong> &gt; The WebUI is qBitTorrent’s built-in web interface for
+remote control. To enable it: &gt; 1. Open qBitTorrent → <strong>Tools →
+Options</strong>. &gt; 2. Select <strong>Web UI</strong> from the left
+sidebar. &gt; 3. Check <strong>“Web User Interface (Remote
+control)”</strong>. &gt; 4. Set a port (default 8080) and
+authentication. &gt; 5. Click <strong>Apply</strong>.</p>
+<p><strong>Q9: Can I use BobaLink with multiple servers?</strong> &gt;
+Not simultaneously. BobaLink supports one active server configuration at
+a time. You can switch between servers in Options → Server Settings, but
+only one is active.</p>
+<p><strong>Q10: How do I change the toolbar icon position?</strong> &gt;
+Click and drag the icon to reposition it in the browser toolbar. On some
+browsers, you may need to click the extensions icon (puzzle piece) and
+use the pin option.</p>
+<h3 id="usage-questions">Usage Questions</h3>
+<p><strong>Q11: Does BobaLink automatically download torrents without my
+permission?</strong> &gt; No. BobaLink only detects torrents on the
+page. Nothing is sent to your server until you explicitly click “Send”
+or use a keyboard shortcut.</p>
+<p><strong>Q12: Can I select which torrents to send?</strong> &gt; Yes.
+Open the BobaLink popup to see all detected torrents. Check or uncheck
+individual items before clicking “Send Selected.”</p>
+<p><strong>Q13: What happens if my server is offline when I send a
+torrent?</strong> &gt; The torrent is added to the offline queue.
+BobaLink will automatically retry sending it when the server comes back
+online, using exponential backoff.</p>
+<p><strong>Q14: How long does the queue retain failed items?</strong>
+&gt; By default, up to 30 days or until 1,000 items accumulate. These
+limits are configurable in Options → Queue Settings.</p>
+<p><strong>Q15: Can I send torrents from private trackers?</strong> &gt;
+Yes, as long as the magnet link or <code>.torrent</code> file is
+accessible. BobaLink works with any torrent source. Note that private
+tracker torrents may require specific passkeys in the tracker URL.</p>
+<p><strong>Q16: Does BobaLink work with magnet links that don’t have a
+display name?</strong> &gt; Yes. If the <code>dn</code> (display name)
+parameter is missing, BobaLink will show “Unknown Torrent” in the
+interface. The actual torrent name will be resolved by qBitTorrent from
+the metadata.</p>
+<p><strong>Q17: Can I send the same torrent twice?</strong> &gt;
+BobaLink deduplicates by infohash. If you try to send a torrent that’s
+already in your queue or downloading, it will be skipped with a
+“duplicate” status.</p>
+<p><strong>Q18: What file types can BobaLink detect?</strong> &gt;
+BobaLink detects: &gt; - Magnet URI links (<code>magnet:?xt=...</code>)
+&gt; - <code>.torrent</code> file links &gt; - Plain text magnet URIs on
+the page</p>
+<h3 id="privacy-and-security">Privacy and Security</h3>
+<p><strong>Q19: Does BobaLink collect my browsing data?</strong> &gt;
+No. BobaLink operates entirely locally. It does not send browsing
+history, page URLs, or detected torrents to any third party. All
+communication is directly between your browser and your configured
+server.</p>
+<p><strong>Q20: How are my credentials stored?</strong> &gt; Credentials
+are encrypted using AES-256-GCM (a military-grade encryption standard)
+via the Web Crypto API. The encryption key is stored only in browser
+memory and is never persisted to disk.</p>
+<p><strong>Q21: What permissions does BobaLink need?</strong> &gt;
+BobaLink uses the <code>activeTab</code> permission, which means it only
+accesses the web page you are currently viewing and only when you
+interact with the extension. It does not read your browsing history,
+bookmarks, or other tabs.</p>
+<p><strong>Q22: Can someone steal my credentials if they access my
+computer?</strong> &gt; If you enabled password protection, credentials
+cannot be decrypted without the password. If password protection is
+disabled, anyone with physical access to your unlocked computer could
+potentially access the extension’s in-memory key. Always lock your
+computer when unattended.</p>
+<h3 id="troubleshooting-1">Troubleshooting</h3>
+<p><strong>Q23: Why does the badge show a red dot?</strong> &gt; A red
+dot indicates a connection error. Check that your server is running, the
+URL is correct, and your credentials are valid. Open the popup for more
+details.</p>
+<p><strong>Q24: Why are some torrents not detected?</strong> &gt; See
+the <a href="#42-torrent-not-detected">“Torrent Not Detected”</a>
+troubleshooting section. Common causes include dynamic content loading,
+iframe isolation, and non-standard link formats.</p>
+<p><strong>Q25: How do I clear the queue?</strong> &gt; Open the
+BobaLink popup → Queue tab → Click “Clear Queue” → Confirm. This removes
+all queued items permanently.</p>
+<p><strong>Q26: How do I reset BobaLink to defaults?</strong> &gt; Open
+Options → scroll to the bottom → Click “Reset to Defaults” → Confirm.
+This clears all settings, credentials, and queue data.</p>
+<p><strong>Q27: BobaLink slows down my browser. What can I do?</strong>
+&gt; BobaLink is designed for minimal performance impact. If you
+experience slowness: &gt; 1. Disable “Highlight torrents on page” in
+Options → Detection. &gt; 2. Reduce the number of open tabs with
+detected torrents. &gt; 3. Ensure you’re using the latest version of
+BobaLink.</p>
+<p><strong>Q28: How do I report a bug?</strong> &gt; Click the BobaLink
+icon → “Report Issue” or visit the GitHub Issues page. Include: &gt; -
+Your browser and version &gt; - BobaLink version &gt; - Steps to
+reproduce &gt; - Expected vs. actual behavior &gt; - Screenshots if
+applicable</p>
+<p><strong>Q29: How do I update BobaLink?</strong> &gt; If installed
+from a store (Chrome Web Store, AMO), updates are automatic. For manual
+installs, download the latest release ZIP and reload the extension.</p>
+<p><strong>Q30: Where can I get help?</strong> &gt; - Read this user
+guide thoroughly. &gt; - Check the <a
+href="#4-troubleshooting">Troubleshooting</a> section. &gt; - Visit the
+GitHub Discussions page. &gt; - Join the community Discord/forum (links
+on the project website).</p>
+<hr />
+<p><em>End of User Guide</em></p>

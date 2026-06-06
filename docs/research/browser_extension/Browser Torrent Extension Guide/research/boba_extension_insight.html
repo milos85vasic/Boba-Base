@@ -1,0 +1,213 @@
+<h1 id="boba-browser-extension-cross-dimension-insights">Boba Browser
+Extension — Cross-Dimension Insights</h1>
+<h2 id="insight-1-the-zero-config-discovery-pattern">Insight 1: The
+“Zero-Config Discovery” Pattern</h2>
+<p><strong>Derived From</strong>: Dim01 (Boba Architecture) + Dim09 (API
+Integration) + Dim04 (Cross-Browser)</p>
+<p><strong>Insight</strong>: Boba’s multi-service architecture (Python
+FastAPI on 7187, Go on 7189, qBitTorrent on 8080) creates a discovery
+challenge for the extension. However, Boba’s
+<code>docker-compose.yml</code> and <code>.env.example</code> reveal
+that all services are co-located. The extension can implement
+<strong>auto-discovery</strong> by trying well-known ports on
+<code>localhost</code>/<code>127.0.0.1</code>, then fall back to manual
+configuration. This mirrors how Sonarr/Radarr auto-discover download
+clients.</p>
+<p><strong>Rationale</strong>: Most Boba users run all services on the
+same host. A UDP/TCP port scan of 7187, 7189, and 8080 on the local
+network can auto-detect the full stack within seconds. Combined with
+<code>/app/version</code> and <code>/api/v2/app/version</code> health
+endpoints, the extension can identify and configure itself
+automatically.</p>
+<p><strong>Implications</strong>: Reduces user onboarding from manual
+configuration (5+ fields) to a single “Auto-Discover” click. This is a
+significant UX advantage over existing qBitTorrent extensions.</p>
+<p><strong>Confidence</strong>: High</p>
+<hr />
+<h2 id="insight-2-the-unified-torrent-identity-architecture">Insight 2:
+The “Unified Torrent Identity” Architecture</h2>
+<p><strong>Derived From</strong>: Dim06 (Magnet Parsing) + Dim07
+(Torrent Parsing) + Dim09 (API Integration)</p>
+<p><strong>Insight</strong>: Magnet links and .torrent files converge on
+a single identity: the BTIH (BitTorrent Info Hash). The extension can
+build a <strong>unified torrent model</strong> where every discovered
+item is normalized to
+<code>{infoHash, name, source, type: 'magnet'|'torrent-file'|'torrent-url'}</code>.
+This enables deduplication across an entire tab group, even when the
+same torrent appears as both a magnet link and a .torrent file.</p>
+<p><strong>Rationale</strong>: Both magnet links (via
+<code>xt=urn:btih:...</code>) and .torrent files (via SHA-1 of bencoded
+info dict) produce the same 40-char infohash. This is the canonical
+identity across all BitTorrent ecosystem tools.</p>
+<p><strong>Implications</strong>: Users never accidentally add the same
+torrent twice. The extension can show “already in queue” indicators.
+Boba itself already deduplicates by infohash, so the extension aligns
+perfectly with backend behavior.</p>
+<p><strong>Confidence</strong>: High</p>
+<hr />
+<h2 id="insight-3-the-progressive-enhancement-content-strategy">Insight
+3: The “Progressive Enhancement” Content Strategy</h2>
+<p><strong>Derived From</strong>: Dim08 (DOM Scraping) + Dim06 (Magnet
+Detection) + Dim10 (UI/UX)</p>
+<p><strong>Insight</strong>: Rather than trying to parse every possible
+torrent site, the extension should use a <strong>3-tier detection
+strategy</strong>: (1) Universal magnet/.torrent link scanning (works
+everywhere), (2) Site-specific selectors for top 20 torrent sites
+(optimized accuracy), (3) Text-based magnet detection for forums/Reddit.
+This progressive approach maximizes coverage without brittle
+site-specific maintenance.</p>
+<p><strong>Rationale</strong>: Dim08 research shows that
+<code>querySelectorAll('a[href^="magnet:"]')</code> catches 90% of
+magnets globally. The remaining 10% are text-based magnets on forums or
+dynamic SPAs. A hybrid approach with MutationObserver handles all
+cases.</p>
+<p><strong>Implications</strong>: The extension works on ANY website
+immediately, not just known torrent sites. This is unique — most
+existing extensions require site-specific support.</p>
+<p><strong>Confidence</strong>: High</p>
+<hr />
+<h2 id="insight-4-the-yandex-tab-group-as-batch-job-pattern">Insight 4:
+The “Yandex Tab Group as Batch Job” Pattern</h2>
+<p><strong>Derived From</strong>: Dim05 (Tab Groups) + Dim01 (Boba
+Architecture) + Dim10 (UI/UX)</p>
+<p><strong>Insight</strong>: Yandex Browser’s tab groups feature,
+combined with Boba’s batch torrent API, enables a powerful workflow:
+user organizes torrent search results into a tab group → right-clicks
+group → “Send All to Boba” → extension extracts ALL tabs’ URLs, parses
+each page for torrents, and submits as a single batch. This turns tab
+groups into <strong>curated download queues</strong>.</p>
+<p><strong>Rationale</strong>: <code>chrome.tabGroups.query()</code> +
+<code>chrome.tabs.query({groupId})</code> gives all URLs in a group.
+Boba’s <code>/api/v2/torrents/add</code> accepts multiple URLs separated
+by newlines. The batch flow is technically straightforward but creates a
+uniquely powerful user experience.</p>
+<p><strong>Implications</strong>: This feature alone differentiates the
+extension from all competitors. No existing extension treats tab groups
+as batch operations. It rewards users who organize their browsing.</p>
+<p><strong>Confidence</strong>: High</p>
+<hr />
+<h2 id="insight-5-the-extension-as-boba-satellite-architecture">Insight
+5: The “Extension as Boba Satellite” Architecture</h2>
+<p><strong>Derived From</strong>: Dim01 (Boba Architecture) + Dim09 (API
+Integration) + Dim11 (Security)</p>
+<p><strong>Insight</strong>: The extension should be designed as a
+<strong>satellite client</strong> of Boba rather than a standalone tool.
+This means: (1) It uses Boba’s auth model (API keys, not its own), (2)
+It respects Boba’s configuration (categories, save paths), (3) It
+extends Boba’s UI rather than duplicating it. The popup shows “what’s on
+this page” while Boba’s dashboard shows “what’s downloading.”</p>
+<p><strong>Rationale</strong>: Boba already has a sophisticated Angular
+dashboard with real-time monitoring, search, and management. The
+extension’s role is to bridge the browser-to-Boba gap, not replace
+Boba’s UI. This avoids feature duplication and security complexity.</p>
+<p><strong>Implications</strong>: Simpler extension code (~30% less),
+single source of truth for configuration, and users get a consistent
+experience. The extension is a “send to” tool, not a management
+tool.</p>
+<p><strong>Confidence</strong>: High</p>
+<hr />
+<h2 id="insight-6-the-offline-aware-queue-resilience-pattern">Insight 6:
+The “Offline-Aware Queue” Resilience Pattern</h2>
+<p><strong>Derived From</strong>: Dim09 (API Integration) + Dim03
+(Extension Architecture) + Dim11 (Security)</p>
+<p><strong>Insight</strong>: Since Boba is self-hosted, it’s frequently
+offline (laptop closed, server rebooting, network changes). The
+extension must implement an <strong>offline queue</strong> with
+<code>chrome.storage.local</code> persistence: detect offline → queue
+torrents → retry with exponential backoff → sync when Boba is back. This
+is critical for self-hosted services but ignored by most extensions.</p>
+<p><strong>Rationale</strong>: <code>navigator.onLine</code> is
+unreliable for LAN services. A proactive health check
+(<code>/app/version</code> ping every 30s via
+<code>chrome.alarms</code>) combined with a persistent queue provides
+reliable delivery.</p>
+<p><strong>Implications</strong>: Users never lose a torrent because
+Boba was temporarily unreachable. The extension feels reliable even on
+unstable networks. The queue can be visualized in the popup for
+transparency.</p>
+<p><strong>Confidence</strong>: High</p>
+<hr />
+<h2 id="insight-7-the-privacy-first-permission-model">Insight 7: The
+“Privacy-First Permission Model”</h2>
+<p><strong>Derived From</strong>: Dim11 (Security) + Dim03
+(Architecture) + Dim04 (Cross-Browser)</p>
+<p><strong>Insight</strong>: Most torrent extensions request
+<code>&lt;all_urls&gt;</code> or broad host permissions, creating
+privacy risks. This extension can use
+<strong><code>activeTab</code></strong> as the primary permission with
+<strong>optional</strong> host permissions for popular torrent sites.
+Content scripts are injected via
+<code>chrome.scripting.executeScript()</code> on demand rather than at
+page load. This follows the principle of least privilege.</p>
+<p><strong>Rationale</strong>: <code>activeTab</code> grants temporary
+access only when the user clicks the extension icon. Combined with
+programmatic injection, the extension doesn’t see any page content until
+explicitly activated. This is approved by all extension stores more
+easily.</p>
+<p><strong>Implications</strong>: Better store approval rates, better
+user trust, no background page constantly scanning pages. The tradeoff
+is requiring a click before detecting torrents — acceptable for a “send
+to” tool.</p>
+<p><strong>Confidence</strong>: Medium (some store reviewers prefer
+declared host_permissions)</p>
+<hr />
+<h2 id="insight-8-the-multi-client-gateway-potential">Insight 8: The
+“Multi-Client Gateway” Potential</h2>
+<p><strong>Derived From</strong>: Dim02 (qBitTorrent API) + Dim09
+(Integration) + Dim01 (Boba Architecture)</p>
+<p><strong>Insight</strong>: While the immediate target is Boba (which
+wraps qBitTorrent), the API integration layer can be abstracted to
+support <strong>multiple torrent clients</strong>: qBitTorrent native,
+Transmission (RPC), Deluge (WebUI), and rTorrent. The extension’s
+architecture should have a <code>TorrentClient</code> interface with
+pluggable implementations.</p>
+<p><strong>Rationale</strong>: The qBitTorrent, Transmission, and Deluge
+APIs all share similar concepts: auth, add torrent (URL/file), list
+torrents, pause/resume. An adapter pattern abstracts these differences.
+The <code>magnet-linker-browser-extension</code> on GitHub already does
+this for Transmission.</p>
+<p><strong>Implications</strong>: Future-proof architecture. The
+Boba-specific implementation is just one adapter. Users without Boba can
+connect directly to their torrent client. This dramatically expands the
+addressable user base.</p>
+<p><strong>Confidence</strong>: Medium (adds complexity; should be v2
+feature)</p>
+<hr />
+<h2 id="insight-9-the-real-time-badge-sync-opportunity">Insight 9: The
+“Real-Time Badge Sync” Opportunity</h2>
+<p><strong>Derived From</strong>: Dim03 (Architecture) + Dim09 (API
+Integration) + Dim10 (UI/UX)</p>
+<p><strong>Insight</strong>: By polling <code>/sync/maindata</code> with
+incremental RID from qBitTorrent WebUI, the extension can show
+<strong>live download progress</strong> on its badge. The badge text
+shows download count, color shows status (green = downloading, blue =
+complete, red = error). This creates ambient awareness without opening
+any UI.</p>
+<p><strong>Rationale</strong>: <code>chrome.action.setBadgeText()</code>
+and <code>setBadgeBackgroundColor()</code> update instantly.
+<code>/sync/maindata</code> with RID gives delta updates (only changed
+torrents), making polling efficient even at 5-second intervals.</p>
+<p><strong>Implications</strong>: Users always see download status at a
+glance. No notification spam needed. The extension feels “alive” and
+connected to Boba.</p>
+<p><strong>Confidence</strong>: High</p>
+<hr />
+<h2 id="insight-10-the-enterprise-grade-testing-differentiator">Insight
+10: The “Enterprise-Grade Testing” Differentiator</h2>
+<p><strong>Derived From</strong>: Dim12 (Testing) + Dim01 (Boba Quality)
++ Dim11 (Security)</p>
+<p><strong>Insight</strong>: Boba itself has enterprise-grade testing
+(pytest, Playwright, SonarQube, Snyk, Semgrep, Trivy). The extension
+should match this quality bar: 80%+ code coverage, automated E2E tests
+with real Boba instance in Docker, security scanning in CI, and signed
+releases. Most browser extensions have zero automated tests — this
+quality level is a differentiator.</p>
+<p><strong>Rationale</strong>: Boba’s <code>.github/workflows/</code>,
+<code>docker-compose.quality.yml</code>, and scanner configs (Sonar,
+Snyk, Semgrep, Trivy, Gitleaks) set a clear quality standard. The
+extension can mirror this with <code>jest --coverage</code>,
+<code>playwright test</code>, and the same security scanners.</p>
+<p><strong>Implications</strong>: Professional-grade reliability, easier
+contributions, confident releases. The CI/CD pipeline auto-publishes to
+all 5 browser stores on release.</p>
+<p><strong>Confidence</strong>: High</p>

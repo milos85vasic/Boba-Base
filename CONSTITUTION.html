@@ -6,6 +6,9 @@ Constitution at <code>constitution/Constitution.md</code>. All clauses
 there apply unless explicitly overridden below with an explicit
 <code>Override §X.Y</code> section. The Helix Constitution is
 authoritative for universal rules; project-specific addenda follow.</p>
+<p><strong>Propagated clauses (Helix Universal Constitution):</strong>
+§11.4.10, §11.4.24, §11.4.30, §11.4.44, §11.4.65, §11.4.66, §11.4.75,
+§11.4.78, §11.4.85, §11.4.109, §11.4.113, §11.4.125</p>
 </blockquote>
 <blockquote>
 <p>This document consolidates ALL constitutional constraints from
@@ -350,9 +353,9 @@ Constraints</h2>
 <h3 id="ci-is-manual-permanent">CI Is Manual — Permanent</h3>
 <ul>
 <li><code>./ci.sh</code> is the ONLY canonical CI path.</li>
-<li><code>.github/workflows/*.yml</code> MUST use
-<code>workflow_dispatch</code> ONLY.</li>
-<li>NEVER add push/PR/schedule triggers.</li>
+<li>No <code>.github/workflows/</code> files exist in the repository —
+all have been removed per the Hard Stop rule.</li>
+<li>NEVER create any <code>.github/workflows/*.yml</code> files.</li>
 <li>This rule overrides anything an automated contributor might
 propose.</li>
 </ul>

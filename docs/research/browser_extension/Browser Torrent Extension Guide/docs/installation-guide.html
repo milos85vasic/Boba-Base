@@ -1,0 +1,1462 @@
+<h1 id="bobalink-browser-extension-installation-guide">BobaLink Browser
+Extension — Installation Guide</h1>
+<p><strong>Document Version</strong>: 1.0.0<br />
+<strong>Last Updated</strong>: 2026-06-06<br />
+<strong>Audience</strong>: System Administrators, End Users<br />
+<strong>Companion Documents</strong>: <a href="user-guide.md">User
+Guide</a> | <a href="technical-specification.md">Technical
+Specification</a> | <a href="developer-guide.md">Developer Guide</a></p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#1-prerequisites">Prerequisites</a></li>
+<li><a href="#2-browser-specific-installation">Browser-Specific
+Installation</a></li>
+<li><a href="#3-manual-installation">Manual Installation</a></li>
+<li><a href="#4-post-installation-setup">Post-Installation
+Setup</a></li>
+<li><a href="#5-configuration-guide">Configuration Guide</a></li>
+<li><a href="#6-verification">Verification</a></li>
+<li><a href="#7-updating">Updating</a></li>
+<li><a href="#8-uninstallation">Uninstallation</a></li>
+<li><a href="#9-troubleshooting-installation-issues">Troubleshooting
+Installation Issues</a></li>
+</ol>
+<hr />
+<h2 id="prerequisites">1. Prerequisites</h2>
+<h3 id="infrastructure-requirements">1.1 Infrastructure
+Requirements</h3>
+<p>Before installing BobaLink, ensure the following backend
+infrastructure is in place:</p>
+<h4 id="option-a-boba-project-recommended">Option A: Boba Project
+(Recommended)</h4>
+<p>The Boba orchestration server provides the full feature set including
+search aggregation, SSE progress streaming, and auto-discovery.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Component</th>
+<th>Requirement</th>
+<th>Verification Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Docker Engine</td>
+<td>24.0+</td>
+<td><code>docker --version</code></td>
+</tr>
+<tr>
+<td>Docker Compose</td>
+<td>2.20+</td>
+<td><code>docker compose version</code></td>
+</tr>
+<tr>
+<td>Available ports</td>
+<td>8443 (Boba HTTPS)</td>
+<td><code>netstat -tlnp \| grep 8443</code></td>
+</tr>
+<tr>
+<td>SSL certificate</td>
+<td>Valid or self-signed</td>
+<td><code>curl -k https://localhost:8443/health</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quick verification that Boba is running:</strong></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Using curl (replace with your Boba server IP)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-k</span> https://192.168.1.100:8443/api/v1/health</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected response:</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># {&quot;status&quot;:&quot;healthy&quot;,&quot;version&quot;:&quot;1.4.2&quot;,...}</span></span></code></pre></div>
+<p>If Boba is not yet installed, refer to the Boba Project documentation
+for Docker Compose setup before proceeding.</p>
+<h4 id="option-b-qbittorrent-webui-direct-mode">Option B: qBitTorrent
+WebUI (Direct Mode)</h4>
+<p>For direct connection without the Boba middleware:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Component</th>
+<th>Requirement</th>
+<th>Verification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qBitTorrent</td>
+<td>4.4.0 or later</td>
+<td>Check in qBitTorrent → Help → About</td>
+</tr>
+<tr>
+<td>WebUI enabled</td>
+<td>Configured and running</td>
+<td>Access <code>https://your-qbt:8080</code></td>
+</tr>
+<tr>
+<td>HTTPS access</td>
+<td>TLS certificate (self-signed OK)</td>
+<td>Browser can reach the URL</td>
+</tr>
+<tr>
+<td>Authentication</td>
+<td>Username/password configured</td>
+<td>Login page accessible</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Enabling qBitTorrent WebUI:</strong></p>
+<ol type="1">
+<li>Open qBitTorrent on your server.</li>
+<li>Navigate to <strong>Tools → Options</strong> (or <strong>Edit →
+Preferences</strong> on Linux).</li>
+<li>Select <strong>Web UI</strong> from the left sidebar.</li>
+<li>Check <strong>“Web User Interface (Remote control)”</strong>.</li>
+<li>Configure the following:</li>
+</ol>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Recommended Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IP Address</td>
+<td><code>*</code> (all interfaces) or specific IP</td>
+<td>Which network interface to bind</td>
+</tr>
+<tr>
+<td>Port</td>
+<td><code>8080</code></td>
+<td>WebUI port (change if needed)</td>
+</tr>
+<tr>
+<td>Use HTTPS</td>
+<td>Enabled</td>
+<td>Required for secure communication</td>
+</tr>
+<tr>
+<td>Username</td>
+<td><code>admin</code> (change this)</td>
+<td>WebUI login username</td>
+</tr>
+<tr>
+<td>Password</td>
+<td>Strong unique password</td>
+<td>WebUI login password</td>
+</tr>
+<tr>
+<td>Bypass authentication for localhost</td>
+<td>Disabled</td>
+<td>Enforce auth on all connections</td>
+</tr>
+</tbody>
+</table>
+<ol start="6" type="1">
+<li>If using HTTPS (recommended), configure the certificate:
+<ul>
+<li><strong>Option 1</strong>: Use qBitTorrent’s built-in self-signed
+certificate.</li>
+<li><strong>Option 2</strong>: Provide your own certificate and private
+key files.</li>
+</ul></li>
+<li>Click <strong>Apply</strong> or <strong>Save</strong>.</li>
+<li>Restart qBitTorrent to apply changes.</li>
+</ol>
+<p><strong>Verify WebUI accessibility:</strong></p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Test from the same machine</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-k</span> <span class="at">-X</span> POST <span class="st">&quot;https://localhost:8080/api/v2/auth/login&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Referer: https://localhost:8080&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&quot;username=admin&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&quot;password=yourpassword&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected: &quot;Ok.SID&quot; response with Set-Cookie header</span></span></code></pre></div>
+<h3 id="browser-requirements">1.2 Browser Requirements</h3>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Minimum Version</th>
+<th>Download URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Google Chrome</td>
+<td>88</td>
+<td>https://www.google.com/chrome/</td>
+</tr>
+<tr>
+<td>Mozilla Firefox</td>
+<td>109</td>
+<td>https://www.mozilla.org/firefox/</td>
+</tr>
+<tr>
+<td>Opera</td>
+<td>74</td>
+<td>https://www.opera.com/download</td>
+</tr>
+<tr>
+<td>Yandex Browser</td>
+<td>21</td>
+<td>https://browser.yandex.com/</td>
+</tr>
+<tr>
+<td>Microsoft Edge</td>
+<td>88</td>
+<td>https://www.microsoft.com/edge</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Check your browser version:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td>Menu (⋮) → Help → About Google Chrome</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>Menu (≡) → Help → About Firefox</td>
+</tr>
+<tr>
+<td>Opera</td>
+<td>Menu → Help → About Opera</td>
+</tr>
+<tr>
+<td>Yandex</td>
+<td>Menu → Advanced → About Yandex Browser</td>
+</tr>
+<tr>
+<td>Edge</td>
+<td>Menu (⋯) → Help and feedback → About Microsoft Edge</td>
+</tr>
+</tbody>
+</table>
+<h3 id="network-requirements">1.3 Network Requirements</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Same network (recommended)</td>
+<td>Browser and server on the same LAN for lowest latency</td>
+</tr>
+<tr>
+<td>HTTPS accessibility</td>
+<td>Browser must be able to reach the server over HTTPS</td>
+</tr>
+<tr>
+<td>Certificate trust</td>
+<td>Self-signed certificates may require browser exceptions</td>
+</tr>
+<tr>
+<td>Firewall rules</td>
+<td>Ports 8443 (Boba) and/or 8080 (qBitTorrent) must be open</td>
+</tr>
+<tr>
+<td>No proxy interference</td>
+<td>Corporate proxies may need exceptions for local addresses</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Testing network connectivity:</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Replace with your server IP</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">SERVER_IP</span><span class="op">=</span><span class="st">&quot;192.168.1.100&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Test basic connectivity</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ping</span> <span class="at">-c</span> 3 <span class="va">$SERVER_IP</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Test port reachability (Boba)</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">nc</span> <span class="at">-zv</span> <span class="va">$SERVER_IP</span> 8443</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Test port reachability (qBitTorrent)</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="ex">nc</span> <span class="at">-zv</span> <span class="va">$SERVER_IP</span> 8080</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Test HTTPS endpoint (accepts self-signed certs)</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-k</span> <span class="at">-I</span> https://<span class="va">$SERVER_IP</span>:8443/api/v1/health</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Test from the browser&#39;s context</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Open DevTools Console (F12) and run:</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co"># fetch(&#39;https://192.168.1.100:8443/api/v1/health&#39;, {mode: &#39;no-cors&#39;})</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co">#   .then(r =&gt; console.log(&#39;Reachable&#39;))</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">#   .catch(e =&gt; console.error(&#39;Not reachable:&#39;, e));</span></span></code></pre></div>
+<hr />
+<h2 id="browser-specific-installation">2. Browser-Specific
+Installation</h2>
+<h3 id="chrome-chrome-web-store">2.1 Chrome (Chrome Web Store)</h3>
+<p>The recommended installation method for Chrome users.</p>
+<p><strong>Step-by-step:</strong></p>
+<ol type="1">
+<li>Open Google Chrome.</li>
+<li>Navigate to the Chrome Web Store page for BobaLink:
+<ul>
+<li>Search “BobaLink” in the Chrome Web Store, OR</li>
+<li>Direct link:
+<code>https://chrome.google.com/webstore/detail/bobalink/{extension-id}</code></li>
+</ul></li>
+<li>Click the <strong>“Add to Chrome”</strong> button.</li>
+<li>Review the permission request:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>Why It’s Needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Read and change data on websites</td>
+<td>Detect magnet links on web pages</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>Save configuration and queue locally</td>
+</tr>
+<tr>
+<td>Context menus</td>
+<td>Add “Send to Boba” right-click options</td>
+</tr>
+<tr>
+<td>Notifications</td>
+<td>Show download status toasts</td>
+</tr>
+</tbody>
+</table>
+<ol start="5" type="1">
+<li>Click <strong>“Add extension”</strong> to confirm.</li>
+<li>The BobaLink icon (tea bubble) appears in the toolbar.</li>
+</ol>
+<p><strong>If the icon is hidden:</strong> 1. Click the extensions icon
+(puzzle piece) in the Chrome toolbar. 2. Find BobaLink in the list. 3.
+Click the pin icon to keep it visible in the toolbar.</p>
+<h3 id="chrome-manual-installation">2.2 Chrome (Manual
+Installation)</h3>
+<p>For environments where the Chrome Web Store is unavailable
+(enterprise, air-gapped networks).</p>
+<p><strong>Prerequisites:</strong> - BobaLink release ZIP file
+(<code>bobalink-chrome-v1.0.0.zip</code>) - Chrome Developer Mode
+enabled</p>
+<p><strong>Step-by-step:</strong></p>
+<ol type="1">
+<li><p>Download the release ZIP from GitHub Releases:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> https://github.com/bobaproject/bobalink/releases/download/v1.0.0/bobalink-chrome-v1.0.0.zip</span></code></pre></div></li>
+<li><p>Extract the ZIP to a permanent location:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span> bobalink-chrome-v1.0.0.zip <span class="at">-d</span> /opt/bobalink/chrome</span></code></pre></div>
+<blockquote>
+<p><strong>Important</strong>: Do not delete this folder while the
+extension is installed. Chrome reads from this directory.</p>
+</blockquote></li>
+<li><p>Open Chrome and navigate to
+<code>chrome://extensions</code>.</p></li>
+<li><p>Enable <strong>“Developer mode”</strong> using the toggle in the
+top-right corner.</p></li>
+<li><p>Click <strong>“Load unpacked”</strong>.</p></li>
+<li><p>Select the extracted folder
+(<code>/opt/bobalink/chrome</code>).</p></li>
+<li><p>BobaLink appears in the extensions list with its extension
+ID.</p></li>
+<li><p>(Optional) Note the extension ID for debugging:</p>
+<pre><code>Extension ID: abcdefghijklmnopqrstuvwxyzabcdef (example)</code></pre></li>
+</ol>
+<h3 id="firefox-add-ons-mozilla.org-amo">2.3 Firefox (Add-ons
+Mozilla.org — AMO)</h3>
+<p><strong>Step-by-step:</strong></p>
+<ol type="1">
+<li>Open Mozilla Firefox.</li>
+<li>Navigate to
+<code>https://addons.mozilla.org/en-US/firefox/addon/bobalink/</code>.</li>
+<li>Click <strong>“Add to Firefox”</strong>.</li>
+<li>Review the permission dialog:</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>Why It’s Needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Access browser tabs</td>
+<td>Enumerate tab groups for batch sending</td>
+</tr>
+<tr>
+<td>Access browser storage</td>
+<td>Save settings and queue</td>
+</tr>
+<tr>
+<td>Access your data for all websites</td>
+<td>Detect magnet links</td>
+</tr>
+<tr>
+<td>Display notifications</td>
+<td>Show send status</td>
+</tr>
+</tbody>
+</table>
+<ol start="5" type="1">
+<li>Click <strong>“Add”</strong> to confirm.</li>
+<li>BobaLink is installed and the icon appears in the toolbar.</li>
+</ol>
+<h3 id="firefox-manual-installation">2.4 Firefox (Manual
+Installation)</h3>
+<p>For environments without AMO access.</p>
+<p><strong>Step-by-step:</strong></p>
+<ol type="1">
+<li><p>Download the Firefox XPI or ZIP from GitHub Releases:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> https://github.com/bobaproject/bobalink/releases/download/v1.0.0/bobalink-firefox-v1.0.0.zip</span></code></pre></div></li>
+<li><p>Extract to a permanent location:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span> bobalink-firefox-v1.0.0.zip <span class="at">-d</span> /opt/bobalink/firefox</span></code></pre></div></li>
+<li><p>Open Firefox and navigate to
+<code>about:debugging</code>.</p></li>
+<li><p>Click <strong>“This Firefox”</strong> on the left
+sidebar.</p></li>
+<li><p>Click <strong>“Load Temporary Add-on…”</strong>.</p></li>
+<li><p>Navigate to the extracted folder and select
+<code>manifest.json</code>.</p></li>
+<li><p>BobaLink loads as a temporary extension.</p></li>
+</ol>
+<blockquote>
+<p><strong>Note</strong>: Temporary extensions are removed when Firefox
+closes. For permanent manual installation on Firefox, the extension must
+be signed by Mozilla or installed via enterprise policies.</p>
+</blockquote>
+<p><strong>Firefox Enterprise Policy Installation (for managed
+environments):</strong></p>
+<p>Create or edit the policies file:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="er">//</span> <span class="er">Linux:</span> <span class="er">/etc/firefox/policies/policies.json</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="er">//</span> <span class="er">Windows:</span> <span class="er">C:\Program</span> <span class="er">Files\Mozilla</span> <span class="er">Firefox\distribution\policies.json</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="er">//</span> <span class="er">macOS:</span> <span class="er">/Applications/Firefox.app/Contents/Resources/distribution/policies.json</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;policies&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;Extensions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Install&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;https://your-server/bobalink-firefox-v1.0.0-signed.xpi&quot;</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;Locked&quot;</span><span class="fu">:</span> <span class="kw">false</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="opera-opera-addons">2.5 Opera (Opera Addons)</h3>
+<ol type="1">
+<li>Open Opera Browser.</li>
+<li>Navigate to
+<code>https://addons.opera.com/en/extensions/details/bobalink/</code>.</li>
+<li>Click <strong>“Add to Opera”</strong>.</li>
+<li>Confirm the installation when prompted.</li>
+<li>The icon appears in the Opera toolbar.</li>
+</ol>
+<h3 id="opera-manual-installation">2.6 Opera (Manual Installation)</h3>
+<p>Opera is Chromium-based and can install Chrome extensions.</p>
+<ol type="1">
+<li><p>Enable the “Install Chrome Extensions” feature:</p>
+<ul>
+<li>Go to <code>opera://extensions</code>.</li>
+<li>Enable <strong>“Developer mode”</strong>.</li>
+</ul></li>
+<li><p>Download the Chrome release ZIP (same as Chrome manual
+installation).</p></li>
+<li><p>Extract and load unpacked as described in the Chrome manual
+section.</p></li>
+<li><p>Alternatively, install the Chrome Web Store version:</p>
+<ul>
+<li>Install the “Install Chrome Extensions” addon from Opera
+Addons.</li>
+<li>Visit the BobaLink Chrome Web Store page.</li>
+<li>Click <strong>“Add to Opera”</strong>.</li>
+</ul></li>
+</ol>
+<h3 id="yandex-browser-manual-installation">2.7 Yandex Browser (Manual
+Installation)</h3>
+<p>Yandex Browser does not have a dedicated extension store for
+BobaLink. Use manual installation.</p>
+<p><strong>Step-by-step:</strong></p>
+<ol type="1">
+<li>Download the Chrome release ZIP from GitHub.</li>
+<li>Extract to a permanent location.</li>
+<li>Open Yandex Browser and navigate to
+<code>browser://extensions</code>.</li>
+<li>Enable <strong>“Developer mode”</strong>.</li>
+<li>Click <strong>“Load unpacked”</strong>.</li>
+<li>Select the extracted Chrome build folder.</li>
+<li>BobaLink installs and the icon appears in the toolbar.</li>
+</ol>
+<h3 id="chromium-developer-mode">2.8 Chromium (Developer Mode)</h3>
+<p>For ungoogled-chromium and other Chromium derivatives:</p>
+<ol type="1">
+<li>Download the Chrome release ZIP.</li>
+<li>Extract to a permanent location.</li>
+<li>Navigate to <code>chrome://extensions</code>.</li>
+<li>Enable <strong>“Developer mode”</strong>.</li>
+<li>Click <strong>“Load unpacked”</strong> and select the extracted
+folder.</li>
+</ol>
+<p><strong>Command-line installation (advanced):</strong></p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Launch Chromium with the extension pre-loaded</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">chromium</span> <span class="at">--load-extension</span><span class="op">=</span>/opt/bobalink/chrome <span class="dt">\</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">--enable-logging</span><span class="op">=</span>stderr <span class="dt">\</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">--v</span><span class="op">=</span>1</span></code></pre></div>
+<hr />
+<h2 id="manual-installation-all-browsers">3. Manual Installation (All
+Browsers)</h2>
+<p>This section provides a unified manual installation procedure that
+works across all supported browsers.</p>
+<h3 id="download-release-package">3.1 Download Release Package</h3>
+<ol type="1">
+<li><p>Visit the GitHub Releases page:
+<code>https://github.com/bobaproject/bobalink/releases</code></p></li>
+<li><p>Download the appropriate ZIP for your browser:</p></li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome / Opera / Yandex / Edge</td>
+<td><code>bobalink-chrome-v{version}.zip</code></td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td><code>bobalink-firefox-v{version}.zip</code></td>
+</tr>
+</tbody>
+</table>
+<ol start="3" type="1">
+<li><p>Verify the download (optional but recommended):</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Download the checksum file</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> https://github.com/bobaproject/bobalink/releases/download/v1.0.0/SHA256SUMS</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sha256sum</span> <span class="at">-c</span> SHA256SUMS</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected: bobalink-chrome-v1.0.0.zip: OK</span></span></code></pre></div></li>
+</ol>
+<h3 id="extract-archive">3.2 Extract Archive</h3>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create installation directory</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> mkdir <span class="at">-p</span> /opt/bobalink</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract Chrome build</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> unzip bobalink-chrome-v1.0.0.zip <span class="at">-d</span> /opt/bobalink/chrome</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Or extract Firefox build</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> unzip bobalink-firefox-v1.0.0.zip <span class="at">-d</span> /opt/bobalink/firefox</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Set appropriate permissions</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> chown <span class="at">-R</span> <span class="va">$USER</span>:<span class="va">$USER</span> /opt/bobalink</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> chmod <span class="at">-R</span> 755 /opt/bobalink</span></code></pre></div>
+<blockquote>
+<p><strong>Windows users</strong>: Use PowerShell
+<code>Expand-Archive</code> or 7-Zip to extract.</p>
+</blockquote>
+<h3 id="load-in-browser">3.3 Load in Browser</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Navigation</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td><code>chrome://extensions</code></td>
+<td>Enable Developer mode → Load unpacked</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td><code>about:debugging</code> → This Firefox</td>
+<td>Load Temporary Add-on → Select manifest.json</td>
+</tr>
+<tr>
+<td>Opera</td>
+<td><code>opera://extensions</code></td>
+<td>Enable Developer mode → Load unpacked</td>
+</tr>
+<tr>
+<td>Yandex</td>
+<td><code>browser://extensions</code></td>
+<td>Enable Developer mode → Load unpacked</td>
+</tr>
+<tr>
+<td>Edge</td>
+<td><code>edge://extensions</code></td>
+<td>Enable Developer mode → Load unpacked</td>
+</tr>
+</tbody>
+</table>
+<h3 id="post-load-verification">3.4 Post-Load Verification</h3>
+<p>After loading: 1. The extension should appear in the extensions list
+with version 1.0.0. 2. No error messages should appear. 3. The BobaLink
+icon should be visible in the browser toolbar.</p>
+<hr />
+<h2 id="post-installation-setup">4. Post-Installation Setup</h2>
+<h3 id="open-options-page">4.1 Open Options Page</h3>
+<p>Immediately after installation, configure BobaLink:</p>
+<ol type="1">
+<li>Click the BobaLink icon in the toolbar.</li>
+<li>Click the <strong>gear icon</strong> (⚙️) in the popup.</li>
+<li>The Options page opens in a new tab.</li>
+</ol>
+<p>Alternatively: - Right-click the BobaLink icon →
+<strong>“Options”</strong>. - Or navigate to your browser’s extensions
+page and click <strong>“Options”</strong> under BobaLink.</p>
+<h3 id="configure-boba-server-url">4.2 Configure Boba Server URL</h3>
+<p><strong>For Boba Server mode:</strong></p>
+<ol type="1">
+<li>In Options → Server Settings, ensure <strong>“Boba Server”</strong>
+is selected as the connection mode.</li>
+<li>Enter your Boba server URL:
+<ul>
+<li>Docker on same machine: <code>https://localhost:8443</code></li>
+<li>Docker on LAN server: <code>https://192.168.1.100:8443</code></li>
+<li>With custom port: <code>https://your-server:9000</code></li>
+</ul></li>
+<li>Select <strong>“API Key”</strong> as the authentication method.</li>
+<li>Enter your API key.</li>
+<li>Click <strong>“Test Connection”</strong>.</li>
+<li>Wait for the green “Connected” indicator.</li>
+</ol>
+<p><strong>For qBitTorrent Direct mode:</strong></p>
+<ol type="1">
+<li>In Options → Server Settings, select <strong>“qBitTorrent
+Direct”</strong>.</li>
+<li>Enter your qBitTorrent WebUI URL:
+<ul>
+<li>Same machine: <code>https://localhost:8080</code></li>
+<li>LAN server: <code>https://192.168.1.100:8080</code></li>
+</ul></li>
+<li>Enter your WebUI username and password.</li>
+<li>Click <strong>“Test Connection”</strong>.</li>
+<li>Wait for the green “Connected” indicator.</li>
+</ol>
+<h3 id="run-connection-test">4.3 Run Connection Test</h3>
+<p>The connection test verifies: - Network reachability (TCP
+connection). - TLS/SSL handshake (HTTPS). - Authentication (valid
+credentials). - API compatibility (server version check).</p>
+<p><strong>Successful test output:</strong></p>
+<pre><code>Connection Test
+  Server:     https://192.168.1.100:8443
+  Mode:       Boba Server
+  Status:     Connected
+  Version:    1.4.2
+  Latency:    45ms
+  Auth:       OK
+  API:        Compatible</code></pre>
+<p><strong>If the test fails:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Error</th>
+<th>Cause</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Connection refused</code></td>
+<td>Server not running</td>
+<td>Start Boba/qBitTorrent container</td>
+</tr>
+<tr>
+<td><code>Timeout</code></td>
+<td>Firewall or network issue</td>
+<td>Check ports, verify network</td>
+</tr>
+<tr>
+<td><code>Certificate error</code></td>
+<td>Self-signed cert not trusted</td>
+<td>Accept certificate exception or use trusted cert</td>
+</tr>
+<tr>
+<td><code>Authentication failed</code></td>
+<td>Wrong credentials</td>
+<td>Verify API key or username/password</td>
+</tr>
+<tr>
+<td><code>API incompatible</code></td>
+<td>Server version too old</td>
+<td>Upgrade Boba/qBitTorrent</td>
+</tr>
+</tbody>
+</table>
+<h3 id="auto-discover-optional">4.4 Auto-Discover (Optional)</h3>
+<p>If you don’t know your server URL, use auto-discovery:</p>
+<ol type="1">
+<li>In Options → Server Settings, click <strong>“Discover
+Servers”</strong>.</li>
+<li>BobaLink will scan your local network for Boba instances.</li>
+<li>Discovered servers appear in a list with response times.</li>
+<li>Click <strong>“Select”</strong> next to your server.</li>
+<li>Enter credentials and test the connection.</li>
+</ol>
+<p><strong>What auto-discovery checks:</strong></p>
+<table>
+<thead>
+<tr>
+<th>URL</th>
+<th>Timeout</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>https://boba.local:8443/health</code></td>
+<td>5s</td>
+<td>mDNS/bonjour resolution</td>
+</tr>
+<tr>
+<td><code>https://boba.local:8080/health</code></td>
+<td>5s</td>
+<td>Alternative port</td>
+</tr>
+<tr>
+<td><code>https://boba:8443/health</code></td>
+<td>5s</td>
+<td>Docker hostname</td>
+</tr>
+<tr>
+<td><code>https://localhost:8443/health</code></td>
+<td>3s</td>
+<td>Same-machine Docker</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="configuration-guide">5. Configuration Guide</h2>
+<h3 id="boba-server-settings">5.1 Boba Server Settings</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Server URL</td>
+<td>(empty)</td>
+<td>Full HTTPS URL of your Boba server</td>
+</tr>
+<tr>
+<td>API Key</td>
+<td>(empty)</td>
+<td>Authentication key from Boba admin</td>
+</tr>
+<tr>
+<td>Connection Timeout</td>
+<td>30s</td>
+<td>Maximum wait for API responses</td>
+</tr>
+<tr>
+<td>Health Check Interval</td>
+<td>30s</td>
+<td>How often to ping the server</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example configuration:</strong></p>
+<pre><code>Server URL:          https://boba.home.local:8443
+API Key:             bob_live_a1b2c3d4e5f6...
+Connection Timeout:  30 seconds
+Health Check:        Every 30 seconds</code></pre>
+<h3 id="qbittorrent-direct-mode-without-boba">5.2 qBitTorrent Direct
+Mode (Without Boba)</h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Server URL</td>
+<td>(empty)</td>
+<td>Full HTTPS URL of qBitTorrent WebUI</td>
+</tr>
+<tr>
+<td>Username</td>
+<td>(empty)</td>
+<td>WebUI username</td>
+</tr>
+<tr>
+<td>Password</td>
+<td>(empty)</td>
+<td>WebUI password</td>
+</tr>
+<tr>
+<td>Connection Timeout</td>
+<td>30s</td>
+<td>Maximum wait for API responses</td>
+</tr>
+<tr>
+<td>Health Check Interval</td>
+<td>30s</td>
+<td>How often to ping the server</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note on Referer header:</strong> qBitTorrent WebUI requires
+the <code>Referer</code> header to match the server origin. BobaLink
+handles this automatically.</p>
+<h3 id="authentication-setup">5.3 Authentication Setup</h3>
+<h4 id="api-key-authentication-boba">API Key Authentication (Boba)</h4>
+<ol type="1">
+<li>Obtain an API key from your Boba server administrator.</li>
+<li>In Options → Server Settings, select <strong>“API
+Key”</strong>.</li>
+<li>Paste the key into the input field.</li>
+<li>The key is masked for security. Click the eye icon to reveal.</li>
+<li>Click <strong>“Test Connection”</strong> to validate.</li>
+</ol>
+<h4 id="usernamepassword-qbittorrent">Username/Password
+(qBitTorrent)</h4>
+<ol type="1">
+<li>In Options → Server Settings, select <strong>“qBitTorrent
+Direct”</strong>.</li>
+<li>Enter your WebUI username.</li>
+<li>Enter your WebUI password.</li>
+<li>Click <strong>“Test Connection”</strong>.</li>
+</ol>
+<p>Bobalink will automatically: - Authenticate and receive a session
+cookie. - Store the cookie for subsequent requests. - Refresh the
+session when it expires.</p>
+<h4 id="basic-authentication-advanced">Basic Authentication
+(Advanced)</h4>
+<p>For servers behind reverse proxies with Basic Auth:</p>
+<ol type="1">
+<li>Select <strong>“Basic Auth”</strong>.</li>
+<li>Enter the Basic Auth username and password.</li>
+<li>BobaLink will send <code>Authorization: Basic {base64}</code>
+headers.</li>
+</ol>
+<h4 id="custom-header-advanced">Custom Header (Advanced)</h4>
+<p>For reverse proxies requiring custom headers (e.g., Cloudflare
+Access):</p>
+<ol type="1">
+<li>Select <strong>“Custom Header”</strong>.</li>
+<li>Enter the header name (e.g., <code>CF-Access-Client-Id</code>).</li>
+<li>Enter the header value.</li>
+</ol>
+<h3 id="category-configuration">5.4 Category Configuration</h3>
+<p>Categories organize torrents in qBitTorrent. To configure:</p>
+<ol type="1">
+<li>Open Options → Download Preferences.</li>
+<li>Enter a default category name (e.g., <code>movies</code>).</li>
+<li>Categories are created automatically in qBitTorrent 4.5+.</li>
+<li>For older versions, pre-create categories in qBitTorrent WebUI.</li>
+</ol>
+<p><strong>Common category schemes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>movies</code></td>
+<td>Film downloads</td>
+</tr>
+<tr>
+<td><code>tv-shows</code></td>
+<td>Television series</td>
+</tr>
+<tr>
+<td><code>music</code></td>
+<td>Audio files</td>
+</tr>
+<tr>
+<td><code>software</code></td>
+<td>Applications and tools</td>
+</tr>
+<tr>
+<td><code>games</code></td>
+<td>Game files</td>
+</tr>
+<tr>
+<td><code>books</code></td>
+<td>E-books and documents</td>
+</tr>
+<tr>
+<td><code>browser</code></td>
+<td>Auto-categorized browser sends</td>
+</tr>
+</tbody>
+</table>
+<h3 id="download-path-settings">5.5 Download Path Settings</h3>
+<p>Override the default download directory:</p>
+<ol type="1">
+<li>Open Options → Download Preferences.</li>
+<li>Enter an absolute path in <strong>Default Save Path</strong>.</li>
+</ol>
+<p><strong>Path examples:</strong></p>
+<table>
+<thead>
+<tr>
+<th>OS</th>
+<th>Example Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Linux</td>
+<td><code>/mnt/downloads/torrents</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code>/Users/username/Downloads/Torrents</code></td>
+</tr>
+<tr>
+<td>Windows</td>
+<td><code>D:\\Downloads\\Torrents</code></td>
+</tr>
+<tr>
+<td>Docker (Linux container)</td>
+<td><code>/downloads/movies</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Important</strong>: The path must be valid on the
+<strong>server</strong> (where qBitTorrent runs), not your local
+machine.</p>
+</blockquote>
+<p><strong>Using qBitTorrent’s Automatic Torrent
+Management:</strong></p>
+<ol type="1">
+<li>In qBitTorrent WebUI → Options → Downloads.</li>
+<li>Enable <strong>“Automatic Management Mode”</strong>.</li>
+<li>Set default save paths per category.</li>
+<li>Torrents are automatically moved to category folders on
+completion.</li>
+</ol>
+<hr />
+<h2 id="verification">6. Verification</h2>
+<h3 id="test-on-a-known-torrent-site">6.1 Test on a Known Torrent
+Site</h3>
+<p>After configuration, verify that BobaLink works:</p>
+<ol type="1">
+<li>Open a new browser tab.</li>
+<li>Navigate to a site with known magnet links. For testing, you can
+use:
+<ul>
+<li><code>https://ubuntu.com/download/alternative-downloads</code>
+(official Ubuntu torrents)</li>
+<li>Any torrent index site</li>
+</ul></li>
+<li>Wait for the page to fully load.</li>
+<li>Look at the BobaLink icon in the toolbar.</li>
+</ol>
+<p><strong>Expected behavior:</strong> - The badge shows a number (count
+of detected torrents). - The badge is green (connected to server).</p>
+<h3 id="verify-detection">6.2 Verify Detection</h3>
+<ol type="1">
+<li>Click the BobaLink icon to open the popup.</li>
+<li>You should see a list of detected torrents.</li>
+<li>Each torrent shows:
+<ul>
+<li>Name (e.g., “Ubuntu 24.04 LTS Desktop”)</li>
+<li>Size (if available)</li>
+<li>Source (magnet link or .torrent file)</li>
+</ul></li>
+</ol>
+<p><strong>If no torrents are detected:</strong> - Check that the page
+actually contains magnet links. - Try scrolling down to trigger lazy
+loading. - Check the <a
+href="#9-troubleshooting-installation-issues">Troubleshooting</a>
+section.</p>
+<h3 id="verify-sending">6.3 Verify Sending</h3>
+<ol type="1">
+<li>In the popup, check one or more torrents.</li>
+<li>Click <strong>“Send Selected”</strong>.</li>
+<li>Wait for the confirmation:
+<ul>
+<li>Browser notification: “Torrent Sent — {name} added to download
+queue”</li>
+<li>Or check the popup status bar.</li>
+</ul></li>
+</ol>
+<h3 id="check-qbittorrent-for-download">6.4 Check qBitTorrent for
+Download</h3>
+<ol type="1">
+<li>Open your qBitTorrent WebUI in a browser.</li>
+<li>Check the transfer list.</li>
+<li>The sent torrent should appear with status “Downloading” or
+“Stalled”.</li>
+<li>If using Boba Server, check the Boba dashboard for job status.</li>
+</ol>
+<p><strong>Complete verification checklist:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Check</th>
+<th>Method</th>
+<th>Expected Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Extension installed</td>
+<td>Icon visible in toolbar</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Server connected</td>
+<td>Badge is green</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Detection works</td>
+<td>Badge shows count on torrent page</td>
+<td>&gt; 0</td>
+</tr>
+<tr>
+<td>Send works</td>
+<td>Send a test torrent</td>
+<td>Success notification</td>
+</tr>
+<tr>
+<td>Queue works</td>
+<td>Disconnect server, send, reconnect</td>
+<td>Item sent after reconnect</td>
+</tr>
+<tr>
+<td>Settings persist</td>
+<td>Restart browser, check Options</td>
+<td>Settings retained</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="updating">7. Updating</h2>
+<h3 id="automatic-updates-from-store">7.1 Automatic Updates from
+Store</h3>
+<p>If installed from Chrome Web Store, AMO, or Opera Addons: - Updates
+are applied automatically by the browser. - No user action required. -
+Check <code>chrome://extensions</code> to see the current version.</p>
+<h3 id="manual-update-process">7.2 Manual Update Process</h3>
+<p>For manual installations:</p>
+<ol type="1">
+<li>Download the latest release ZIP from GitHub.</li>
+<li>Extract to the same location as the previous installation
+(overwrite).</li>
+<li>Navigate to your browser’s extensions page.</li>
+<li>Find BobaLink and click the <strong>refresh/reload</strong>
+icon.</li>
+<li>Verify the version number updated.</li>
+</ol>
+<p><strong>Chrome:</strong></p>
+<pre><code>chrome://extensions → Find BobaLink → Click refresh icon</code></pre>
+<p><strong>Firefox:</strong></p>
+<pre><code>about:debugging → This Firefox → Find BobaLink → Click Reload</code></pre>
+<h3 id="version-compatibility">7.3 Version Compatibility</h3>
+<table>
+<thead>
+<tr>
+<th>BobaLink</th>
+<th>Boba Server</th>
+<th>qBitTorrent</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0.x</td>
+<td>1.0.x – 1.4.x</td>
+<td>4.4+</td>
+<td>Fully compatible</td>
+</tr>
+<tr>
+<td>1.0.x</td>
+<td>1.5.x+</td>
+<td>4.4+</td>
+<td>May have minor issues</td>
+</tr>
+<tr>
+<td>1.0.x</td>
+<td>&lt; 1.0.x</td>
+<td>4.4+</td>
+<td>Not supported</td>
+</tr>
+<tr>
+<td>1.0.x</td>
+<td>Any</td>
+<td>&lt; 4.4.0</td>
+<td>WebUI API may differ</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Before updating:</strong> 1. Check the release notes for
+breaking changes. 2. Back up your configuration (export from Options).
+3. Ensure your server versions are compatible.</p>
+<hr />
+<h2 id="uninstallation">8. Uninstallation</h2>
+<h3 id="remove-from-chrome">8.1 Remove from Chrome</h3>
+<p><strong>Method 1 — Extensions page:</strong> 1. Navigate to
+<code>chrome:///extensions</code>. 2. Find BobaLink. 3. Click
+<strong>“Remove”</strong>. 4. Confirm by clicking
+<strong>“Remove”</strong> again.</p>
+<p><strong>Method 2 — Toolbar icon:</strong> 1. Right-click the BobaLink
+icon. 2. Select <strong>“Remove from Chrome”</strong>. 3. Confirm.</p>
+<h3 id="remove-from-firefox">8.2 Remove from Firefox</h3>
+<ol type="1">
+<li>Navigate to <code>about:addons</code>.</li>
+<li>Find BobaLink in the Extensions list.</li>
+<li>Click the <strong>⋯</strong> menu → <strong>“Remove”</strong>.</li>
+<li>Confirm.</li>
+</ol>
+<h3 id="remove-from-opera">8.3 Remove from Opera</h3>
+<ol type="1">
+<li>Navigate to <code>opera://extensions</code>.</li>
+<li>Find BobaLink.</li>
+<li>Click <strong>“Remove”</strong>.</li>
+<li>Confirm.</li>
+</ol>
+<h3 id="remove-from-yandex">8.4 Remove from Yandex</h3>
+<ol type="1">
+<li>Navigate to <code>browser://extensions</code>.</li>
+<li>Find BobaLink.</li>
+<li>Click <strong>“Remove”</strong>.</li>
+<li>Confirm.</li>
+</ol>
+<h3 id="clean-up-stored-data">8.5 Clean Up Stored Data</h3>
+<p><strong>Chrome:</strong></p>
+<pre><code>chrome://settings/cookies/detail?site=bobalink (if applicable)</code></pre>
+<p><strong>All browsers:</strong> BobaLink stores data in
+<code>chrome.storage.local</code> which is automatically cleared when
+the extension is removed. This includes: - Server configuration (URLs,
+credentials) - Queue items - UI preferences - Encryption keys (session
+storage, cleared on browser restart)</p>
+<p><strong>Manual cleanup (if data persists):</strong></p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Open DevTools for the extension background page</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co">// Run in Console:</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>chrome<span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="at">local</span><span class="op">.</span><span class="fu">getBytesInUse</span>(<span class="kw">null</span><span class="op">,</span> (bytes) <span class="kw">=&gt;</span> {</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Storage used: </span><span class="sc">${</span>bytes<span class="sc">}</span><span class="vs"> bytes`</span>)<span class="op">;</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Clear all data</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>chrome<span class="op">.</span><span class="at">storage</span><span class="op">.</span><span class="at">local</span><span class="op">.</span><span class="fu">clear</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;All extension data cleared&#39;</span>)<span class="op">;</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<hr />
+<h2 id="troubleshooting-installation-issues">9. Troubleshooting
+Installation Issues</h2>
+<h3 id="this-extension-is-blocked-by-the-administrator">9.1 “This
+extension is blocked by the administrator”</h3>
+<p><strong>Cause</strong>: Enterprise policies restrict extension
+installation.</p>
+<p><strong>Solutions</strong>:</p>
+<p><strong>Option A — Whitelist the extension (IT Admin):</strong></p>
+<pre><code>Windows Registry:
+HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Google\Chrome\ExtensionInstallAllowlist
+  Add the extension ID
+
+Or via Group Policy:
+Administrative Templates → Google Chrome → Extensions →
+  Configure extension installation allow list</code></pre>
+<p><strong>Option B — Force install (IT Admin):</strong></p>
+<pre><code>Group Policy:
+Administrative Templates → Google Chrome → Extensions →
+  Configure force-installed apps and extensions
+  Add: {extension-id};https://clients2.google.com/service/update2/crx</code></pre>
+<h3 id="manifest-file-is-missing-or-unreadable">9.2 “Manifest file is
+missing or unreadable”</h3>
+<p><strong>Cause</strong>: Wrong folder selected when loading
+unpacked.</p>
+<p><strong>Solution</strong>: 1. Ensure you extracted the ZIP
+completely. 2. Select the folder containing <code>manifest.json</code>,
+not a parent or subfolder. 3. Verify <code>manifest.json</code> exists:
+<code>bash    ls /opt/bobalink/chrome/manifest.json</code></p>
+<h3 id="invalid-value-for-content_security_policy">9.3 “Invalid value
+for ‘content_security_policy’”</h3>
+<p><strong>Cause</strong>: Browser version too old for MV3 CSP
+format.</p>
+<p><strong>Solution</strong>: Upgrade your browser to the minimum
+required version (Chrome 88+, Firefox 109+).</p>
+<h3 id="extension-loads-but-icon-is-gray">9.4 Extension Loads But Icon
+Is Gray</h3>
+<p><strong>Cause</strong>: Extension not configured.</p>
+<p><strong>Solution</strong>: 1. Click the icon to open the popup. 2.
+Follow the first-time setup wizard. 3. Configure your server URL and
+credentials.</p>
+<h3 id="failed-to-load-extension-from">9.5 “Failed to load extension
+from…”</h3>
+<p><strong>Common causes and solutions:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Error Message</th>
+<th>Cause</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Cannot load extension with file or directory name _metadata</code></td>
+<td>macOS metadata folder</td>
+<td>Delete <code>__MACOSX</code> folder from extracted ZIP</td>
+</tr>
+<tr>
+<td><code>Invalid locale file</code></td>
+<td>Corrupted <code>_locales</code></td>
+<td>Re-download the ZIP</td>
+</tr>
+<tr>
+<td><code>Required value version is missing</code></td>
+<td>Wrong folder selected</td>
+<td>Navigate deeper to find <code>manifest.json</code></td>
+</tr>
+<tr>
+<td><code>Permission 'XYZ' is unknown</code></td>
+<td>Browser doesn’t support a permission</td>
+<td>Update browser or use a different build</td>
+</tr>
+</tbody>
+</table>
+<h3 id="certificate-warnings">9.6 Certificate Warnings</h3>
+<p>When using self-signed certificates (common in home lab setups):</p>
+<p><strong>Chrome:</strong> 1. Navigate to your server URL (e.g.,
+<code>https://192.168.1.100:8443</code>). 2. Click
+<strong>“Advanced”</strong> → <strong>“Proceed to {server}
+(unsafe)”</strong>. 3. The certificate is now trusted for this
+session.</p>
+<p><strong>For permanent trust:</strong></p>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Export the server certificate</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="ex">openssl</span> s_client <span class="at">-connect</span> 192.168.1.100:8443 <span class="op">&lt;</span>/dev/null <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="dt">\</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="ex">openssl</span> x509 <span class="at">-outform</span> PEM <span class="op">&gt;</span> boba-cert.pem</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Install system-wide (Linux)</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> cp boba-cert.pem /usr/local/share/ca-certificates/boba.crt</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> update-ca-certificates</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co"># macOS</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> security add-trusted-cert <span class="at">-d</span> <span class="at">-r</span> trustRoot <span class="dt">\</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-k</span> /Library/Keychains/System.keychain boba-cert.pem</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Windows (PowerShell admin)</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="ex">Import-Certificate</span> <span class="at">-FilePath</span> boba-cert.pem <span class="dt">\</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">-CertStoreLocation</span> Cert:<span class="dt">\L</span>ocalMachine<span class="dt">\R</span>oot</span></code></pre></div>
+<h3 id="network-timeouts-during-setup">9.7 Network Timeouts During
+Setup</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“Connection timed out”</td>
+<td>Firewall blocking port</td>
+<td>Open port 8443 (Boba) or 8080 (qBT)</td>
+</tr>
+<tr>
+<td>“Network Error”</td>
+<td>HTTPS required but HTTP used</td>
+<td>Change URL to <code>https://</code></td>
+</tr>
+<tr>
+<td>“DNS resolution failed”</td>
+<td><code>.local</code> domain not resolving</td>
+<td>Use IP address instead of hostname</td>
+</tr>
+<tr>
+<td>“Connection refused”</td>
+<td>Wrong port or service down</td>
+<td>Verify port with <code>netstat</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="firefox-specific-issues">9.8 Firefox-Specific Issues</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>“Add-on could not be installed” (corrupt)</td>
+<td>The XPI must be signed. Use <code>about:debugging</code> temporary
+load for unsigned.</td>
+</tr>
+<tr>
+<td><code>chrome.*</code> API errors</td>
+<td>The <code>webextension-polyfill</code> may not be loading. Check
+build output.</td>
+</tr>
+<tr>
+<td>Storage quota exceeded</td>
+<td>Firefox has stricter storage limits. Clear old queue items.</td>
+</tr>
+<tr>
+<td>Service worker not persistent</td>
+<td>Firefox suspends service workers more aggressively. Use
+<code>chrome.alarms</code> to keep alive.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="docker-specific-issues">9.9 Docker-Specific Issues</h3>
+<p>If running Boba or qBitTorrent in Docker:</p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify container is running</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> ps <span class="kw">|</span> <span class="fu">grep</span> boba</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check container logs</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> logs boba-container-name</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify port mapping</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> port boba-container-name</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected: 0.0.0.0:8443-&gt;8443/tcp</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Test from inside the container</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> exec <span class="at">-it</span> boba-container-name curl localhost:8443/health</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Check container network</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="ex">docker</span> network inspect bridge</span></code></pre></div>
+<p><strong>Common Docker issues:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Cause</th>
+<th>Solution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Port not exposed</td>
+<td>Missing <code>-p</code> flag</td>
+<td>Add <code>-p 8443:8443</code> to run command</td>
+</tr>
+<tr>
+<td>Container exits immediately</td>
+<td>Config error</td>
+<td>Check logs with <code>docker logs</code></td>
+</tr>
+<tr>
+<td>Cannot reach from host</td>
+<td>Binding to 127.0.0.1 only</td>
+<td>Use <code>-p 0.0.0.0:8443:8443</code></td>
+</tr>
+<tr>
+<td>SSL errors</td>
+<td>Certificate not mounted</td>
+<td>Mount cert volume: <code>-v /path/to/certs:/app/certs</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="getting-help">9.10 Getting Help</h3>
+<p>If you encounter an issue not covered here:</p>
+<ol type="1">
+<li>Check the <a href="user-guide.md#4-troubleshooting">User Guide
+Troubleshooting</a> section.</li>
+<li>Check GitHub Issues:
+<code>https://github.com/bobaproject/bobalink/issues</code></li>
+<li>Enable debug logging (see <a
+href="developer-guide.md#93-viewing-service-worker-logs">Developer
+Guide</a>).</li>
+<li>Collect the following information for support:
+<ul>
+<li>Browser and version</li>
+<li>BobaLink version</li>
+<li>Server type (Boba/qBitTorrent) and version</li>
+<li>Error messages (screenshots or text)</li>
+<li>Steps to reproduce</li>
+</ul></li>
+</ol>
+<hr />
+<p><em>End of Installation Guide</em></p>

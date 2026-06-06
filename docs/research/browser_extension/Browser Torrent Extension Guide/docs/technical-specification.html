@@ -1,0 +1,2189 @@
+<h1 id="bobalink-browser-extension-technical-specification">BobaLink
+Browser Extension — Technical Specification</h1>
+<p><strong>Document Version</strong>: 1.0.0<br />
+<strong>Last Updated</strong>: 2026-06-06<br />
+<strong>Classification</strong>: Internal — Engineering &amp;
+Architecture<br />
+<strong>Owner</strong>: Platform Engineering Team<br />
+<strong>Reviewers</strong>: Architecture Review Board, Security Team, QA
+Lead</p>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol type="1">
+<li><a href="#1-executive-summary">Executive Summary</a></li>
+<li><a href="#2-system-overview">System Overview</a></li>
+<li><a href="#3-functional-requirements">Functional
+Requirements</a></li>
+<li><a href="#4-non-functional-requirements">Non-Functional
+Requirements</a></li>
+<li><a href="#5-system-architecture">System Architecture</a></li>
+<li><a href="#6-data-models">Data Models</a></li>
+<li><a href="#7-api-specifications">API Specifications</a></li>
+<li><a href="#8-security-architecture">Security Architecture</a></li>
+<li><a href="#9-error-handling-strategy">Error Handling
+Strategy</a></li>
+<li><a href="#10-performance-considerations">Performance
+Considerations</a></li>
+<li><a href="#11-technology-stack">Technology Stack</a></li>
+<li><a href="#12-deployment-architecture">Deployment
+Architecture</a></li>
+<li><a href="#13-assumptions-and-dependencies">Assumptions and
+Dependencies</a></li>
+<li><a href="#14-risks-and-mitigations">Risks and Mitigations</a></li>
+<li><a href="#15-appendices">Appendices</a></li>
+</ol>
+<hr />
+<h2 id="executive-summary">1. Executive Summary</h2>
+<p>BobaLink is a cross-browser WebExtension (Manifest V3) designed to
+bridge the gap between torrent discovery on the public internet and
+private download management infrastructure. The extension detects magnet
+links and <code>.torrent</code> file references on any web page,
+deduplicates them by cryptographic infohash, and transmits them to a
+Boba orchestration server or directly to a qBitTorrent WebUI instance
+for download management.</p>
+<p>The extension addresses three core operational challenges:</p>
+<ol type="1">
+<li><strong>Discovery-to-Download Latency</strong>: Users currently copy
+magnet links manually, switch applications, and paste them into download
+clients. BobaLink reduces this workflow to a single click.</li>
+<li><strong>Batch Operation Efficiency</strong>: Tab groups containing
+multiple torrent pages can be processed as atomic units, enabling bulk
+ingestion without per-tab interaction.</li>
+<li><strong>Operational Resilience</strong>: An offline-aware queue with
+exponential backoff ensures that transient network failures or service
+maintenance do not result in lost torrents.</li>
+</ol>
+<p>BobaLink is built atop the WXT framework in TypeScript, targets
+Chrome (≥88), Firefox (≥109), Opera, and Yandex Browser, and adheres to
+WCAG 2.1 AA accessibility standards. All stored credentials are
+encrypted at rest using AES-256-GCM via the Web Crypto API.</p>
+<h3 id="key-metrics-at-a-glance">Key Metrics at a Glance</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Extension Bundle Size (compressed)</td>
+<td>≤ 350 KB</td>
+</tr>
+<tr>
+<td>Cold-start service worker</td>
+<td>≤ 50 ms</td>
+</tr>
+<tr>
+<td>Magnet link detection latency</td>
+<td>≤ 5 ms per link</td>
+</tr>
+<tr>
+<td>API call timeout</td>
+<td>30 s</td>
+</tr>
+<tr>
+<td>Offline queue retention</td>
+<td>30 days</td>
+</tr>
+<tr>
+<td>Supported browsers</td>
+<td>4 (Chrome, Firefox, Opera, Yandex)</td>
+</tr>
+<tr>
+<td>Functional requirements</td>
+<td>25</td>
+</tr>
+<tr>
+<td>Non-functional requirements</td>
+<td>15</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="system-overview">2. System Overview</h2>
+<p>BobaLink operates as a thin client within the browser’s extension
+host environment. It does not perform any BitTorrent protocol operations
+itself; rather, it acts as an intelligent scraper and forwarding agent
+between the web browsing context and downstream download services.</p>
+<h3 id="high-level-architecture">2.1 High-Level Architecture</h3>
+<pre class="mermaid"><code>flowchart LR
+    subgraph Browser[&quot;Browser Environment&quot;]
+        A[Content Script] --&gt;|&quot;detected torrents&quot;| B[Service Worker]
+        C[Options Page] --&gt;|&quot;configure&quot;| B
+        D[Popup UI] --&gt;|&quot;query status&quot;| B
+        E[Context Menu] --&gt;|&quot;send torrent&quot;| B
+    end
+
+    subgraph Network[&quot;Network Layer&quot;]
+        B --&gt;|&quot;HTTPS / SSE&quot;| F[Boba Server]
+        B --&gt;|&quot;HTTPS&quot;| G[qBitTorrent WebUI]
+    end
+
+    subgraph Storage[&quot;Local Storage&quot;]
+        B --&gt; H[(Extension Storage)]
+        B --&gt; I[(Encrypted Credentials)]
+        B --&gt; J[(Offline Queue)]
+    end
+
+    F --&gt;|&quot;RPC&quot;| G</code></pre>
+<h3 id="core-workflows">2.2 Core Workflows</h3>
+<p><strong>Workflow 1: Single Magnet Link Detection and Forward</strong>
+1. Content script observes the DOM mutation events on the active tab. 2.
+A magnet URI is matched against the regex pattern
+<code>^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}</code>. 3. The link is
+parsed into a structured <code>TorrentInfo</code> object. 4. The torrent
+is sent to the service worker via
+<code>chrome.runtime.sendMessage()</code>. 5. The service worker
+enqueues the item or sends it immediately based on connectivity. 6. The
+target API (Boba or qBitTorrent) receives the torrent and initiates
+download.</p>
+<p><strong>Workflow 2: Tab Group Batch Ingestion</strong> 1. User
+triggers “Send Tab Group to Boba” from the popup or context menu. 2.
+Service worker enumerates all tabs in the specified tab group. 3. Each
+tab receives a <code>SCAN_REQUEST</code> message; content scripts
+extract all torrents. 4. Results are aggregated, deduplicated by
+infohash, and transmitted as a batch.</p>
+<p><strong>Workflow 3: Auto-Discovery</strong> 1. On first install (or
+when configuration is empty), the extension sends mDNS/Bonjour-like
+probes to well-known local network addresses. 2. Responsive Boba
+instances reply with their HTTPS endpoint and version. 3. The user is
+presented with a ranked list; selection persists to encrypted
+storage.</p>
+<hr />
+<h2 id="functional-requirements">3. Functional Requirements</h2>
+<h3 id="torrent-detection-and-parsing">3.1 Torrent Detection and
+Parsing</h3>
+<h4 id="fr-001-detect-magnet-links-on-any-web-page">FR-001: Detect
+Magnet Links on Any Web Page</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P0 — Critical</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Content Script</td>
+</tr>
+<tr>
+<td>Trigger</td>
+<td>DOM mutation (<code>MutationObserver</code>) or page load</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL detect all magnet URI links (<code>href</code>
+attributes beginning with <code>magnet:?</code>) present in the DOM of
+any web page. Detection MUST occur dynamically as pages mutate via
+single-page application (SPA) navigation.</p>
+<p><strong>Acceptance Criteria:</strong> - Magnet links in dynamically
+injected content (e.g., React/Vue re-renders) are detected within 500
+ms. - Detection works across all <code>http:</code> and
+<code>https:</code> origins. - Magnet links inside iframes are detected
+when <code>all_frames</code> is enabled.</p>
+<h4 id="fr-002-detect-.torrent-file-links">FR-002: Detect .torrent File
+Links</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P0 — Critical</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Content Script</td>
+</tr>
+<tr>
+<td>Trigger</td>
+<td>Link pattern matching or header sniffing</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL detect hyperlinks to <code>.torrent</code> files
+by: - URL path suffix matching (<code>.torrent</code> case-insensitive)
+- <code>Content-Type: application/x-bittorrent</code> response header
+(when accessible via CORS or Fetch API)</p>
+<h4 id="fr-003-parse-magnet-uri-parameters">FR-003: Parse Magnet URI
+Parameters</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P0 — Critical</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Parser Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL parse the following magnet URI parameters per
+BEP-0009:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>xt</code></td>
+<td>Exact Topic</td>
+<td><code>urn:btih:</code> followed by 40-char hex infohash</td>
+</tr>
+<tr>
+<td><code>dn</code></td>
+<td>Display Name</td>
+<td>Human-readable torrent name</td>
+</tr>
+<tr>
+<td><code>tr</code></td>
+<td>Tracker URL</td>
+<td>Announce URL(s); may be repeated</td>
+</tr>
+<tr>
+<td><code>xl</code></td>
+<td>Exact Length</td>
+<td>Total size in bytes (optional)</td>
+</tr>
+<tr>
+<td><code>ws</code></td>
+<td>Web Seed</td>
+<td>Web seed URL(s) (optional)</td>
+</tr>
+<tr>
+<td><code>x.pe</code></td>
+<td>Peer Address</td>
+<td>Known peer <code>host:port</code> (optional)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Validation Rules:</strong> - <code>xt</code> MUST be present
+and contain a valid 40-character hexadecimal infohash. - <code>dn</code>
+SHOULD be present; if absent, fallback to
+<code>"Unknown Torrent"</code>. - <code>tr</code> entries MUST be valid
+HTTP(S) URLs; malformed trackers are logged and discarded.</p>
+<h4 id="fr-004-download-and-parse-.torrent-files">FR-004: Download and
+Parse .torrent Files</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Service Worker</td>
+</tr>
+<tr>
+<td>Trigger</td>
+<td><code>.torrent</code> link detection or user action</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL download <code>.torrent</code> files via
+<code>fetch()</code> with the following constraints: - Maximum file
+size: 10 MB (configurable via <code>maxTorrentFileSize</code> option). -
+Timeout: 30 seconds. - CORS policy: Falls back to proxying via Boba
+server when direct fetch is blocked.</p>
+<p>The downloaded file SHALL be parsed using a Bencode decoder to
+extract: - <code>info.name</code> — torrent name -
+<code>info.piece length</code> — piece size - <code>info.length</code>
+(or <code>info.files</code> for multi-file) — total size -
+<code>announce</code> and <code>announce-list</code> — tracker URLs</p>
+<h4 id="fr-005-compute-infohash-from-torrent-data">FR-005: Compute
+Infohash from Torrent Data</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Crypto Module</td>
+</tr>
+</tbody>
+</table>
+<p>For <code>.torrent</code> files, the extension SHALL compute the
+SHA-1 hash over the Bencode-encoded <code>info</code> dictionary to
+produce the 40-character hex infohash. This MUST match the
+<code>xt</code> parameter if both are available.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Pseudocode for infohash computation</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> infoBencoded <span class="op">=</span> bencode<span class="op">.</span><span class="fu">encode</span>(torrent<span class="op">.</span><span class="at">info</span>)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> infohashBuffer <span class="op">=</span> <span class="cf">await</span> crypto<span class="op">.</span><span class="at">subtle</span><span class="op">.</span><span class="fu">digest</span>(<span class="st">&#39;SHA-1&#39;</span><span class="op">,</span> infoBencoded)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> infohash <span class="op">=</span> <span class="fu">hexEncode</span>(infohashBuffer)<span class="op">;</span> <span class="co">// 40-char lowercase hex</span></span></code></pre></div>
+<h4 id="fr-006-deduplicate-torrents-by-infohash">FR-006: Deduplicate
+Torrents by Infohash</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>State Manager</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL maintain an in-memory
+<code>Map&lt;string, TorrentInfo&gt;</code> keyed by lowercase infohash.
+Duplicates (same infohash, different source page) are silently merged,
+preserving: - The most descriptive <code>displayName</code> (longest
+string). - The union of all tracker URLs from all sources. - The
+earliest <code>detectedAt</code> timestamp.</p>
+<h3 id="integration-and-transmission">3.2 Integration and
+Transmission</h3>
+<h4 id="fr-007-send-magnet-links-to-qbittorrent-via-webui-api">FR-007:
+Send Magnet Links to qBitTorrent via WebUI API</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P0 — Critical</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>API Client Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL transmit magnet URIs to qBitTorrent’s
+<code>/api/v2/torrents/add</code> endpoint with support for: -
+<code>urls</code> parameter containing one or more magnet URIs
+(newline-separated). - Optional <code>category</code>,
+<code>tags</code>, <code>savepath</code>, and <code>rename</code>
+parameters. - Automatic cookie-based session management.</p>
+<h4 id="fr-008-upload-.torrent-files-to-qbittorrent">FR-008: Upload
+.torrent Files to qBitTorrent</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>API Client Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL upload <code>.torrent</code> files via
+<code>multipart/form-data</code> POST to
+<code>/api/v2/torrents/add</code> using the <code>torrents</code> file
+field. File blobs MUST be preserved in memory only for the duration of
+the upload request.</p>
+<h4 id="fr-009-support-tab-group-batch-operations">FR-009: Support Tab
+Group Batch Operations</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Tab Manager Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL expose a batch-send feature that: - Enumerates
+all tabs within a selected Chrome tab group. - Sends a
+<code>SCAN_REQUEST</code> to each tab’s content script. - Aggregates
+<code>SCAN_RESPONSE</code> results. - Deduplicates across tabs. -
+Transmits the unified list as a batch to the configured API.</p>
+<h4 id="fr-010-enumerate-tab-groups-and-extract-urls">FR-010: Enumerate
+Tab Groups and Extract URLs</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Tab Manager Module</td>
+</tr>
+</tbody>
+</table>
+<p>Using <code>chrome.tabGroups.query()</code> and
+<code>chrome.tabs.query()</code>, the extension SHALL: 1. List all tab
+groups in the current window. 2. Display group titles and colors in the
+popup UI. 3. Allow the user to select one or more groups for batch
+operations.</p>
+<h3 id="service-discovery-and-authentication">3.3 Service Discovery and
+Authentication</h3>
+<h4 id="fr-011-auto-discover-boba-services-on-local-network">FR-011:
+Auto-Discover Boba Services on Local Network</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P2 — Medium</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Discovery Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL attempt auto-discovery when no server is
+configured: - Probe <code>https://boba.local:8443/health</code>,
+<code>https://boba.local:8080/health</code>, and
+<code>https://boba:8443/health</code>. - Issue <code>fetch()</code>
+requests with <code>mode: 'no-cors'</code> and 5-second timeout. - Parse
+version response; validate minimum supported version
+(<code>&gt;=1.0.0</code>). - Present discovered endpoints in a ranked
+list (fastest response first).</p>
+<h4 id="fr-012-support-multiple-authentication-methods">FR-012: Support
+Multiple Authentication Methods</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Auth Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL support the following authentication flows:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cookie-based</td>
+<td>Automatic <code>SID</code> cookie from qBitTorrent login</td>
+<td>Default for qBT direct</td>
+</tr>
+<tr>
+<td>API Key</td>
+<td><code>X-API-Key</code> header for Boba server</td>
+<td>Default for Boba mode</td>
+</tr>
+<tr>
+<td>Basic Auth</td>
+<td><code>Authorization: Basic &lt;base64&gt;</code></td>
+<td>Optional</td>
+</tr>
+<tr>
+<td>Custom Header</td>
+<td>User-defined header name and value</td>
+<td>Optional</td>
+</tr>
+</tbody>
+</table>
+<h4 id="fr-013-encrypt-stored-credentials">FR-013: Encrypt Stored
+Credentials</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P0 — Critical</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Crypto Module</td>
+</tr>
+</tbody>
+</table>
+<p>All sensitive data persisted to <code>chrome.storage.local</code>
+SHALL be encrypted using AES-256-GCM via the Web Crypto API: - A 256-bit
+master key is derived from a per-installation random salt via PBKDF2. -
+The encryption key is stored in <code>chrome.storage.session</code>
+(in-memory only, cleared on browser restart). - Each credential entry
+receives a unique 96-bit IV. - Authentication tag (128-bit) is prepended
+to ciphertext.</p>
+<h3 id="offline-and-resilience">3.4 Offline and Resilience</h3>
+<h4 id="fr-014-offline-queue-with-retry">FR-014: Offline Queue with
+Retry</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Queue Manager Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL maintain a persistent FIFO queue for torrents
+that fail to send: - Maximum queue size: 1,000 items (configurable). -
+Retry schedule: exponential backoff starting at 5s, capped at 5 minutes.
+- Maximum retry attempts: 5 (configurable). - Queue items are persisted
+to <code>chrome.storage.local</code> and survive browser restarts. -
+Failed items after max retries are moved to a “Dead Letter” sub-store
+for manual review.</p>
+<h4 id="fr-015-real-time-download-progress-via-badge">FR-015: Real-time
+Download Progress via Badge</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P2 — Medium</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Badge Manager Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension toolbar icon badge SHALL display: - A numeric count of
+torrents queued for sending. - Color coding: <code>green</code> (idle),
+<code>blue</code> (sending), <code>orange</code> (queued/retrying),
+<code>red</code> (error). - Updates MUST occur within 200 ms of state
+changes.</p>
+<h3 id="user-interface">3.5 User Interface</h3>
+<h4 id="fr-016-context-menu-integration">FR-016: Context Menu
+Integration</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>UI Controller</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL register the following context menu items via
+<code>chrome.contextMenus</code>:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Context</th>
+<th>Label</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Link (magnet)</td>
+<td>“Send Magnet to Boba”</td>
+<td>Send detected magnet</td>
+</tr>
+<tr>
+<td>Link (.torrent)</td>
+<td>“Download .torrent to Boba”</td>
+<td>Download and send file</td>
+</tr>
+<tr>
+<td>Page</td>
+<td>“Scan Page for Torrents”</td>
+<td>Trigger full-page scan</td>
+</tr>
+<tr>
+<td>Tab Group</td>
+<td>“Send Tab Group to Boba”</td>
+<td>Batch send tab group</td>
+</tr>
+</tbody>
+</table>
+<h4 id="fr-017-keyboard-shortcuts">FR-017: Keyboard Shortcuts</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P2 — Medium</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Command Handler</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL register the following shortcuts via
+<code>chrome.commands</code>:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Command</th>
+<th>Default Binding</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>send-current-page</code></td>
+<td><code>Ctrl+Shift+B</code> (<code>Cmd+Shift+B</code> on macOS)</td>
+<td>Scan and send all torrents on current page</td>
+</tr>
+<tr>
+<td><code>open-popup</code></td>
+<td><code>Ctrl+Shift+L</code> (<code>Cmd+Shift+L</code> on macOS)</td>
+<td>Open extension popup</td>
+</tr>
+<tr>
+<td><code>send-tab-group</code></td>
+<td><code>Ctrl+Shift+G</code> (<code>Cmd+Shift+G</code> on macOS)</td>
+<td>Send current tab’s group</td>
+</tr>
+</tbody>
+</table>
+<p>All shortcuts SHALL be user-customizable via
+<code>chrome://extensions/shortcuts</code>.</p>
+<h4 id="fr-018-cross-browser-compatibility">FR-018: Cross-Browser
+Compatibility</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P0 — Critical</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Build System</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL target the following browsers with a single
+codebase:</p>
+<table>
+<thead>
+<tr>
+<th>Browser</th>
+<th>Minimum Version</th>
+<th>Engine</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome</td>
+<td>88+</td>
+<td>Blink</td>
+<td>Primary development target</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>109+</td>
+<td>Gecko</td>
+<td>Polyfill for <code>chrome.*</code> namespace</td>
+</tr>
+<tr>
+<td>Opera</td>
+<td>74+</td>
+<td>Blink</td>
+<td>Chromium-compatible</td>
+</tr>
+<tr>
+<td>Yandex Browser</td>
+<td>21+</td>
+<td>Blink</td>
+<td>Chromium-compatible</td>
+</tr>
+</tbody>
+</table>
+<p>Browser-specific code SHALL be isolated behind an
+<code>BrowserAdapter</code> abstraction layer.</p>
+<h4 id="fr-019-internationalization-support">FR-019:
+Internationalization Support</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P2 — Medium</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>I18n Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL support the following locales via
+<code>_locales/{lang}/messages.json</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Locale</th>
+<th>Language</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>en</code></td>
+<td>English (default)</td>
+</tr>
+<tr>
+<td><code>zh_CN</code></td>
+<td>Simplified Chinese</td>
+</tr>
+<tr>
+<td><code>zh_TW</code></td>
+<td>Traditional Chinese</td>
+</tr>
+<tr>
+<td><code>es</code></td>
+<td>Spanish</td>
+</tr>
+<tr>
+<td><code>fr</code></td>
+<td>French</td>
+</tr>
+<tr>
+<td><code>de</code></td>
+<td>German</td>
+</tr>
+<tr>
+<td><code>ja</code></td>
+<td>Japanese</td>
+</tr>
+<tr>
+<td><code>ko</code></td>
+<td>Korean</td>
+</tr>
+</tbody>
+</table>
+<p>All user-facing strings MUST be externalized; no hardcoded UI
+text.</p>
+<h4 id="fr-020-accessibility-compliance-wcag-2.1-aa">FR-020:
+Accessibility Compliance (WCAG 2.1 AA)</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>UI Layer</td>
+</tr>
+</tbody>
+</table>
+<p>The extension UI SHALL meet WCAG 2.1 Level AA: - Minimum contrast
+ratio 4.5:1 for normal text, 3:1 for large text. - All interactive
+elements keyboard-navigable (Tab order, Enter/Space activation). - ARIA
+labels on all icon-only buttons. - Screen reader announcements for
+status changes (<code>aria-live</code> regions). - Focus indicators
+visible on all focusable elements.</p>
+<h4 id="fr-021-darklight-theme">FR-021: Dark/Light Theme</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P2 — Medium</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>UI Layer</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL respect the system’s preferred color scheme via
+<code>prefers-color-scheme</code> and provide a manual override toggle
+in Options. CSS custom properties SHALL define all theme-aware
+colors.</p>
+<h4 id="fr-022-notifications-for-download-events">FR-022: Notifications
+for Download Events</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P2 — Medium</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Notification Manager</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL display browser notifications via
+<code>chrome.notifications</code> for:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Event</th>
+<th>Title</th>
+<th>Body</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Send success</td>
+<td>“Torrent Sent”</td>
+<td><code>{name}</code> added to download queue</td>
+</tr>
+<tr>
+<td>Send failed</td>
+<td>“Send Failed”</td>
+<td><code>{name}</code> — click to retry</td>
+</tr>
+<tr>
+<td>Batch complete</td>
+<td>“Batch Complete”</td>
+<td><code>{count}</code> torrents sent, <code>{failed}</code>
+failed</td>
+</tr>
+<tr>
+<td>Queue retry</td>
+<td>“Retrying Send”</td>
+<td>Attempt <code>{n}</code> for <code>{name}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Notifications SHALL be suppressible per-category in Options.</p>
+<h4 id="fr-023-options-page-configuration">FR-023: Options Page
+Configuration</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Options Page</td>
+</tr>
+</tbody>
+</table>
+<p>The Options page SHALL provide configuration for: - Server URL and
+connection mode (Boba proxy / qBitTorrent direct). - Authentication
+credentials (with masked input and test-connection button). - Default
+category, tags, and download path. - Notification preferences. - Queue
+settings (max size, retry count, backoff strategy). - Keyboard shortcut
+display (non-editable; links to browser shortcuts page). - Theme
+selection (system / light / dark). - Reset to defaults with
+confirmation.</p>
+<h4 id="fr-024-health-check-and-connection-status">FR-024: Health Check
+and Connection Status</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>Health Monitor</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL display a persistent connection status indicator:
+- Polling interval: 30 seconds (configurable). - Endpoint:
+<code>/api/v2/app/version</code> for qBitTorrent; <code>/health</code>
+for Boba. - Status states: <code>connected</code>,
+<code>connecting</code>, <code>disconnected</code>, <code>error</code>.
+- Visual indicator in popup header; tooltip shows last successful ping
+time.</p>
+<h4 id="fr-025-rate-limiting-for-api-calls">FR-025: Rate Limiting for
+API Calls</h4>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority</td>
+<td>P1 — High</td>
+</tr>
+<tr>
+<td>Actor</td>
+<td>API Client Module</td>
+</tr>
+</tbody>
+</table>
+<p>The extension SHALL enforce client-side rate limiting: - Default: 10
+requests per second burst, 60 requests per minute sustained. - Queue
+processing: maximum 1 concurrent API call with 500 ms inter-call delay.
+- Respects HTTP 429 <code>Retry-After</code> header from server. - All
+rate-limit state is held in-memory (non-persistent).</p>
+<hr />
+<h2 id="non-functional-requirements">4. Non-Functional Requirements</h2>
+<h3 id="performance">4.1 Performance</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Target</th>
+<th>Measurement Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NFR-001</td>
+<td>Content script initialization</td>
+<td>≤ 10 ms</td>
+<td><code>performance.now()</code> delta</td>
+</tr>
+<tr>
+<td>NFR-002</td>
+<td>Magnet link detection (per link)</td>
+<td>≤ 5 ms</td>
+<td>Benchmark on 1,000-link page</td>
+</tr>
+<tr>
+<td>NFR-003</td>
+<td>Popup render time</td>
+<td>≤ 100 ms</td>
+<td>Lighthouse performance audit</td>
+</tr>
+<tr>
+<td>NFR-004</td>
+<td>Options page load time</td>
+<td>≤ 200 ms</td>
+<td>Lighthouse performance audit</td>
+</tr>
+<tr>
+<td>NFR-005</td>
+<td>API call round-trip (local network)</td>
+<td>≤ 500 ms</td>
+<td>95th percentile over 100 calls</td>
+</tr>
+<tr>
+<td>NFR-006</td>
+<td>Service worker cold start</td>
+<td>≤ 50 ms</td>
+<td>Chrome DevTools Performance tab</td>
+</tr>
+<tr>
+<td>NFR-007</td>
+<td>Bundle size (compressed CRX)</td>
+<td>≤ 350 KB</td>
+<td><code>du -h</code> on build artifact</td>
+</tr>
+</tbody>
+</table>
+<h3 id="security">4.2 Security</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NFR-008</td>
+<td>Credential encryption at rest</td>
+<td>AES-256-GCM via Web Crypto API</td>
+</tr>
+<tr>
+<td>NFR-009</td>
+<td>No cleartext credential logging</td>
+<td>ESLint rule + code review</td>
+</tr>
+<tr>
+<td>NFR-010</td>
+<td>HTTPS-only API communication</td>
+<td>URL scheme validation + CSP</td>
+</tr>
+<tr>
+<td>NFR-011</td>
+<td>Content Security Policy</td>
+<td><code>script-src 'self'; object-src 'none'</code></td>
+</tr>
+<tr>
+<td>NFR-012</td>
+<td>Minimum permission model</td>
+<td><code>activeTab</code> + declared host permissions only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="reliability">4.3 Reliability</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NFR-013</td>
+<td>Crash-free session rate</td>
+<td>≥ 99.9%</td>
+</tr>
+<tr>
+<td>NFR-014</td>
+<td>Offline queue durability</td>
+<td>100% — all items survive restart</td>
+</tr>
+<tr>
+<td>NFR-015</td>
+<td>API compatibility coverage</td>
+<td>qBitTorrent 4.4.x through 5.x</td>
+</tr>
+</tbody>
+</table>
+<h3 id="scalability">4.4 Scalability</h3>
+<ul>
+<li>Concurrent tab group batch size: unlimited (memory-bound).</li>
+<li>Offline queue: 1,000 items default, 10,000 maximum.</li>
+<li>Detection: pages with 10,000+ links must not cause UI jank (&gt; 16
+ms frame time).</li>
+</ul>
+<h3 id="maintainability">4.5 Maintainability</h3>
+<ul>
+<li>Code coverage: ≥ 80% unit test coverage, ≥ 60% E2E scenario
+coverage.</li>
+<li>Documentation: all public APIs documented with JSDoc.</li>
+<li>TypeScript: strict mode enabled, zero <code>any</code> types in
+production code.</li>
+<li>Dependency count: ≤ 20 runtime dependencies.</li>
+</ul>
+<hr />
+<h2 id="system-architecture">5. System Architecture</h2>
+<h3 id="component-diagram">5.1 Component Diagram</h3>
+<pre class="mermaid"><code>graph TB
+    subgraph &quot;Browser Extension Host&quot;
+        CS[Content Script]
+        SW[Service Worker]
+        OP[Options Page]
+        PU[Popup UI]
+    end
+
+    subgraph &quot;Core Modules (Service Worker)&quot;
+        PM[Parser Module]
+        AM[Auth Module]
+        ACM[API Client Module]
+        QM[Queue Manager]
+        HM[Health Monitor]
+        TM[Tab Manager]
+        BM[Badge Manager]
+        NM[Notification Manager]
+        CM[Crypto Module]
+    end
+
+    subgraph &quot;External Services&quot;
+        BS[Boba Server]
+        QT[qBitTorrent WebUI]
+    end
+
+    CS --&gt;|Message| SW
+    OP --&gt;|Storage API| SW
+    PU --&gt;|Query| SW
+
+    SW --&gt; PM
+    SW --&gt; AM
+    SW --&gt; ACM
+    SW --&gt; QM
+    SW --&gt; HM
+    SW --&gt; TM
+    SW --&gt; BM
+    SW --&gt; NM
+    SW --&gt; CM
+
+    ACM --&gt;|HTTPS| BS
+    ACM --&gt;|HTTPS| QT
+    HM --&gt;|HTTPS| BS
+    HM --&gt;|HTTPS| QT</code></pre>
+<h3 id="layer-architecture">5.2 Layer Architecture</h3>
+<pre><code>┌─────────────────────────────────────────────────┐
+│  Presentation Layer                              │
+│  (Popup UI, Options Page, Context Menu)         │
+├─────────────────────────────────────────────────┤
+│  Controller Layer                                │
+│  (Message Router, Command Handler, Tab Manager) │
+├─────────────────────────────────────────────────┤
+│  Service Layer                                   │
+│  (Parser, API Client, Queue Manager, Health)    │
+├─────────────────────────────────────────────────┤
+│  Security Layer                                  │
+│  (Auth Module, Crypto Module, Rate Limiter)     │
+├─────────────────────────────────────────────────┤
+│  Storage Layer                                   │
+│  (chrome.storage.local, chrome.storage.session) │
+└─────────────────────────────────────────────────┘</code></pre>
+<h3 id="interface-definitions">5.3 Interface Definitions</h3>
+<p><strong>Content Script → Service Worker
+(chrome.runtime.sendMessage)</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> DetectionMessage {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  type<span class="op">:</span> <span class="st">&#39;TORRENT_DETECTED&#39;</span><span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  payload<span class="op">:</span> {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    torrents<span class="op">:</span> TorrentInfo[]<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    pageUrl<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    timestamp<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><strong>Service Worker → Content Script
+(chrome.tabs.sendMessage)</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> ScanRequestMessage {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  type<span class="op">:</span> <span class="st">&#39;SCAN_REQUEST&#39;</span><span class="op">;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  payload<span class="op">:</span> {</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    requestId<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    deepScan<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> ScanResponseMessage {</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  type<span class="op">:</span> <span class="st">&#39;SCAN_RESPONSE&#39;</span><span class="op">;</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  payload<span class="op">:</span> {</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    requestId<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    torrents<span class="op">:</span> TorrentInfo[]<span class="op">;</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    error<span class="op">?:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<hr />
+<h2 id="data-models">6. Data Models</h2>
+<h3 id="torrentinfo">6.1 TorrentInfo</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> TorrentInfo {</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** 40-character lowercase hex infohash */</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  infohash<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Human-readable torrent name */</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  displayName<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Magnet URI (reconstructed from parsed data) */</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  magnetUri<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Source type */</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  source<span class="op">:</span> <span class="st">&#39;magnet-link&#39;</span> <span class="op">|</span> <span class="st">&#39;torrent-file&#39;</span><span class="op">;</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Announce URLs */</span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  trackers<span class="op">:</span> <span class="dt">string</span>[]<span class="op">;</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Total size in bytes, if known */</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  totalSize<span class="op">?:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Web seed URLs */</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  webSeeds<span class="op">?:</span> <span class="dt">string</span>[]<span class="op">;</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** URL of the page where detected */</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>  pageUrl<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Timestamp of detection (Unix ms) */</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>  detectedAt<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Raw torrent file blob (for .torrent uploads only) */</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>  fileBlob<span class="op">?:</span> <span class="bu">Blob</span><span class="op">;</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="serverconfig">6.2 ServerConfig</h3>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> ServerConfig {</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Connection mode */</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  mode<span class="op">:</span> <span class="st">&#39;boba&#39;</span> <span class="op">|</span> <span class="st">&#39;qbittorrent-direct&#39;</span><span class="op">;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Base URL (e.g., https://boba.local:8443) */</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  baseUrl<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Authentication method */</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  authMethod<span class="op">:</span> <span class="st">&#39;cookie&#39;</span> <span class="op">|</span> <span class="st">&#39;api-key&#39;</span> <span class="op">|</span> <span class="st">&#39;basic&#39;</span> <span class="op">|</span> <span class="st">&#39;custom-header&#39;</span><span class="op">;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Credentials (encrypted at rest) */</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  credentials<span class="op">:</span> EncryptedCredentials<span class="op">;</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Default category for new torrents */</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  defaultCategory<span class="op">?:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Default tags for new torrents */</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  defaultTags<span class="op">?:</span> <span class="dt">string</span>[]<span class="op">;</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Default save path */</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  defaultSavePath<span class="op">?:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Connection timeout in ms */</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  timeout<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Health check interval in ms */</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>  healthCheckInterval<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="extensionconfig">6.3 ExtensionConfig</h3>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> ExtensionConfig {</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Extension version that wrote this config */</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  version<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Server configuration */</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  server<span class="op">:</span> ServerConfig<span class="op">;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** UI preferences */</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  ui<span class="op">:</span> {</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    theme<span class="op">:</span> <span class="st">&#39;system&#39;</span> <span class="op">|</span> <span class="st">&#39;light&#39;</span> <span class="op">|</span> <span class="st">&#39;dark&#39;</span><span class="op">;</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    badgeEnabled<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    notifications<span class="op">:</span> {</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>      sendSuccess<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>      sendFailed<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>      batchComplete<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>      queueRetry<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Queue behavior */</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  queue<span class="op">:</span> {</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    maxSize<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    maxRetries<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    retryBaseDelayMs<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>    retryMaxDelayMs<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Detection preferences */</span></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>  detection<span class="op">:</span> {</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    scanDynamically<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    maxTorrentFileSize<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>    enableTabGroupScan<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Rate limiting */</span></span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a>  rateLimit<span class="op">:</span> {</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>    requestsPerSecond<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a>    requestsPerMinute<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a>    interCallDelayMs<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="queueitem">6.4 QueueItem</h3>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> QueueItem {</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Unique queue entry ID */</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  id<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** The torrent to send */</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  torrent<span class="op">:</span> TorrentInfo<span class="op">;</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Current status */</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  status<span class="op">:</span> <span class="st">&#39;pending&#39;</span> <span class="op">|</span> <span class="st">&#39;retrying&#39;</span> <span class="op">|</span> <span class="st">&#39;failed&#39;</span> <span class="op">|</span> <span class="st">&#39;dead-letter&#39;</span><span class="op">;</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Number of send attempts made */</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  attemptCount<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Next scheduled retry time (Unix ms) */</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  nextRetryAt<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** Last error message */</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  lastError<span class="op">?:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** HTTP status code of last failure, if applicable */</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  lastHttpStatus<span class="op">?:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>  <span class="co">/** When the item was first queued */</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  queuedAt<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<hr />
+<h2 id="api-specifications">7. API Specifications</h2>
+<h3 id="internal-message-passing-protocol">7.1 Internal Message Passing
+Protocol</h3>
+<p>All inter-script communication uses
+<code>chrome.runtime.sendMessage()</code> and
+<code>chrome.tabs.sendMessage()</code>.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Message Type</th>
+<th>Direction</th>
+<th>Payload</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SCAN_REQUEST</code></td>
+<td>SW → CS</td>
+<td><code>{ requestId, deepScan }</code></td>
+<td>Request full page scan</td>
+</tr>
+<tr>
+<td><code>SCAN_RESPONSE</code></td>
+<td>CS → SW</td>
+<td><code>{ requestId, torrents, error? }</code></td>
+<td>Scan results</td>
+</tr>
+<tr>
+<td><code>TORRENT_DETECTED</code></td>
+<td>CS → SW</td>
+<td><code>{ torrents, pageUrl, timestamp }</code></td>
+<td>Real-time detection event</td>
+</tr>
+<tr>
+<td><code>SEND_TORRENT</code></td>
+<td>PU/SW → ACM</td>
+<td><code>{ torrent, priority? }</code></td>
+<td>Queue or send immediately</td>
+</tr>
+<tr>
+<td><code>SEND_BATCH</code></td>
+<td>TM → ACM</td>
+<td><code>{ torrents[] }</code></td>
+<td>Batch send request</td>
+</tr>
+<tr>
+<td><code>GET_STATUS</code></td>
+<td>PU → SW</td>
+<td><code>{}</code></td>
+<td>Request connection + queue status</td>
+</tr>
+<tr>
+<td><code>STATUS_RESPONSE</code></td>
+<td>SW → PU</td>
+<td><code>{ connected, queueSize, pendingCount }</code></td>
+<td>Status data</td>
+</tr>
+<tr>
+<td><code>GET_QUEUE</code></td>
+<td>PU → QM</td>
+<td><code>{}</code></td>
+<td>Request full queue contents</td>
+</tr>
+<tr>
+<td><code>QUEUE_RESPONSE</code></td>
+<td>QM → PU</td>
+<td><code>{ items: QueueItem[] }</code></td>
+<td>Queue snapshot</td>
+</tr>
+<tr>
+<td><code>RETRY_ITEM</code></td>
+<td>PU → QM</td>
+<td><code>{ itemId }</code></td>
+<td>Manually retry a failed item</td>
+</tr>
+<tr>
+<td><code>REMOVE_ITEM</code></td>
+<td>PU → QM</td>
+<td><code>{ itemId }</code></td>
+<td>Remove item from queue</td>
+</tr>
+<tr>
+<td><code>CLEAR_QUEUE</code></td>
+<td>PU → QM</td>
+<td><code>{ status?: string }</code></td>
+<td>Clear all or filtered items</td>
+</tr>
+</tbody>
+</table>
+<h3 id="boba-api-integration">7.2 Boba API Integration</h3>
+<p><strong>Base URL Configuration</strong></p>
+<pre><code>https://{host}:{port}/api/v1</code></pre>
+<p><strong>Authentication</strong></p>
+<pre><code>POST /auth/token
+Content-Type: application/json
+
+{ &quot;apiKey&quot;: &quot;string&quot; }
+
+Response: { &quot;token&quot;: &quot;jwt-string&quot;, &quot;expiresAt&quot;: 1700000000 }</code></pre>
+<p><strong>Search API</strong></p>
+<pre><code>GET /torrents/search?q={query}&amp;category={category}&amp;limit={limit}
+Authorization: Bearer {token}
+
+Response: { &quot;results&quot;: TorrentInfo[], &quot;total&quot;: number }</code></pre>
+<p><strong>Download API</strong></p>
+<pre><code>POST /torrents/download
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{ &quot;infohash&quot;: &quot;string&quot;, &quot;category&quot;: &quot;string?&quot;, &quot;tags&quot;: [&quot;string&quot;] }
+
+Response: { &quot;jobId&quot;: &quot;string&quot;, &quot;status&quot;: &quot;queued&quot; }</code></pre>
+<p><strong>SSE Streaming</strong></p>
+<pre><code>GET /events/download-progress
+Authorization: Bearer {token}
+Accept: text/event-stream
+
+Event format:
+event: progress
+data: {&quot;infohash&quot;:&quot;...&quot;,&quot;progress&quot;:0.45,&quot;speed&quot;:1024000,&quot;eta&quot;:360}</code></pre>
+<h3 id="qbittorrent-webui-api">7.3 qBitTorrent WebUI API</h3>
+<p>Detailed endpoint specifications are provided in <a
+href="api-reference.md">api-reference.md</a>.</p>
+<hr />
+<h2 id="security-architecture">8. Security Architecture</h2>
+<h3 id="threat-model">8.1 Threat Model</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Threat</th>
+<th>Severity</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Credential theft from disk</td>
+<td>High</td>
+<td>AES-256-GCM encryption; key in session-only storage</td>
+</tr>
+<tr>
+<td>Man-in-the-middle attack</td>
+<td>High</td>
+<td>HTTPS-only; certificate pinning optional</td>
+</tr>
+<tr>
+<td>XSS via malicious torrent site</td>
+<td>Medium</td>
+<td>CSP; content script isolation; no <code>eval()</code></td>
+</tr>
+<tr>
+<td>Privilege escalation</td>
+<td>Medium</td>
+<td>Minimal permission manifest; <code>activeTab</code> default</td>
+</tr>
+<tr>
+<td>Extension fingerprinting</td>
+<td>Low</td>
+<td>No unique identifiers exposed to web pages</td>
+</tr>
+</tbody>
+</table>
+<h3 id="encryption-flow">8.2 Encryption Flow</h3>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as User
+    participant E as Extension
+    participant S as chrome.storage.session
+    participant L as chrome.storage.local
+
+    U-&gt;&gt;E: Enter password/API key
+    E-&gt;&gt;E: Generate random salt (16 bytes)
+    E-&gt;&gt;E: Derive key via PBKDF2(100k iterations)
+    E-&gt;&gt;S: Store encryption key
+    E-&gt;&gt;E: Encrypt credential with AES-256-GCM
+    E-&gt;&gt;L: Store { iv + authTag + ciphertext, salt }
+
+    Note over E,L: On extension startup
+    E-&gt;&gt;S: Check for existing key
+    alt Key exists
+        S--&gt;&gt;E: Return key
+    else Key missing
+        E-&gt;&gt;E: Prompt for password
+        E-&gt;&gt;E: Re-derive key from salt + password
+        E-&gt;&gt;S: Store key
+    end</code></pre>
+<h3 id="content-security-policy">8.3 Content Security Policy</h3>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;content_security_policy&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;extension_pages&quot;</span><span class="fu">:</span> <span class="st">&quot;script-src &#39;self&#39;; object-src &#39;none&#39;; connect-src &#39;self&#39; https:;&quot;</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<hr />
+<h2 id="error-handling-strategy">9. Error Handling Strategy</h2>
+<h3 id="error-categories">9.1 Error Categories</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Code</th>
+<th>Category</th>
+<th>Retry Strategy</th>
+<th>User Notification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>E_NETWORK</code></td>
+<td>Network failure (DNS, TCP)</td>
+<td>Exponential backoff</td>
+<td>Silent (badge only)</td>
+</tr>
+<tr>
+<td><code>E_TIMEOUT</code></td>
+<td>Request timeout</td>
+<td>Immediate retry × 2, then backoff</td>
+<td>Silent</td>
+</tr>
+<tr>
+<td><code>E_AUTH</code></td>
+<td>Authentication failure</td>
+<td>No retry; manual intervention required</td>
+<td>Immediate notification</td>
+</tr>
+<tr>
+<td><code>E_RATE_LIMIT</code></td>
+<td>HTTP 429</td>
+<td>Honor <code>Retry-After</code>, then backoff</td>
+<td>Silent</td>
+</tr>
+<tr>
+<td><code>E_VALIDATION</code></td>
+<td>Invalid torrent data</td>
+<td>No retry</td>
+<td>Immediate notification</td>
+</tr>
+<tr>
+<td><code>E_SERVER</code></td>
+<td>5xx server error</td>
+<td>Backoff with jitter</td>
+<td>Badge + optional notification</td>
+</tr>
+<tr>
+<td><code>E_STORAGE</code></td>
+<td>Local storage full</td>
+<td>No retry; alert user</td>
+<td>Immediate notification</td>
+</tr>
+</tbody>
+</table>
+<h3 id="error-object-schema">9.2 Error Object Schema</h3>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">interface</span> ExtensionError {</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  code<span class="op">:</span> <span class="st">&#39;E_NETWORK&#39;</span> <span class="op">|</span> <span class="st">&#39;E_TIMEOUT&#39;</span> <span class="op">|</span> <span class="st">&#39;E_AUTH&#39;</span> <span class="op">|</span> <span class="st">&#39;E_RATE_LIMIT&#39;</span> <span class="op">|</span> <span class="st">&#39;E_VALIDATION&#39;</span> <span class="op">|</span> <span class="st">&#39;E_SERVER&#39;</span> <span class="op">|</span> <span class="st">&#39;E_STORAGE&#39;</span><span class="op">;</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  message<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  timestamp<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  context<span class="op">?:</span> <span class="bu">Record</span><span class="op">&lt;</span><span class="dt">string</span><span class="op">,</span> <span class="dt">unknown</span><span class="op">&gt;;</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  recoverable<span class="op">:</span> <span class="dt">boolean</span><span class="op">;</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<hr />
+<h2 id="performance-considerations">10. Performance Considerations</h2>
+<h3 id="memory-management">10.1 Memory Management</h3>
+<ul>
+<li>Content scripts use <code>WeakMap</code> for DOM element → torrent
+metadata mapping to avoid leaks.</li>
+<li>BLOB references for <code>.torrent</code> files are revoked
+immediately after upload via <code>URL.revokeObjectURL()</code>.</li>
+<li>Service worker uses lazy initialization for all modules; unused
+modules are not loaded.</li>
+</ul>
+<h3 id="dom-observation-strategy">10.2 DOM Observation Strategy</h3>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Optimized MutationObserver</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> observer <span class="op">=</span> <span class="kw">new</span> <span class="bu">MutationObserver</span>((mutations) <span class="kw">=&gt;</span> {</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> hasLinkMutations <span class="op">=</span> mutations<span class="op">.</span><span class="fu">some</span>(m <span class="kw">=&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>(m<span class="op">.</span><span class="at">addedNodes</span>)<span class="op">.</span><span class="fu">some</span>(n <span class="kw">=&gt;</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>      n <span class="kw">instanceof</span> <span class="bu">HTMLElement</span> <span class="op">&amp;&amp;</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>      (n<span class="op">.</span><span class="at">tagName</span> <span class="op">===</span> <span class="st">&#39;A&#39;</span> <span class="op">||</span> n<span class="op">.</span><span class="fu">querySelector</span>(<span class="st">&#39;a&#39;</span>))</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (hasLinkMutations) {</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">debouncedScan</span>()<span class="op">;</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>observer<span class="op">.</span><span class="fu">observe</span>(<span class="bu">document</span><span class="op">.</span><span class="at">body</span><span class="op">,</span> { childList<span class="op">:</span> <span class="kw">true</span><span class="op">,</span> subtree<span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span></code></pre></div>
+<ul>
+<li>Scanning is debounced at 250 ms to batch rapid DOM mutations.</li>
+<li><code>requestIdleCallback</code> is used for non-urgent parsing on
+pages with &gt; 500 links.</li>
+</ul>
+<h3 id="bundle-optimization">10.3 Bundle Optimization</h3>
+<ul>
+<li>Tree-shaking enabled via WXT/Vite.</li>
+<li>Code-splitting: Options page and Popup are separate chunks.</li>
+<li>Shared vendor chunk for crypto and parsing utilities.</li>
+<li>LZ-string compression for queue persistence.</li>
+</ul>
+<hr />
+<h2 id="technology-stack">11. Technology Stack</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language</td>
+<td>TypeScript</td>
+<td>≥ 5.0</td>
+<td>Type-safe development</td>
+</tr>
+<tr>
+<td>Framework</td>
+<td>WXT</td>
+<td>≥ 0.17</td>
+<td>Extension build tooling</td>
+</tr>
+<tr>
+<td>Bundler</td>
+<td>Vite</td>
+<td>≥ 5.0</td>
+<td>Module bundling and HMR</td>
+</tr>
+<tr>
+<td>Testing (Unit)</td>
+<td>Jest</td>
+<td>≥ 29.0</td>
+<td>Unit and integration tests</td>
+</tr>
+<tr>
+<td>Testing (E2E)</td>
+<td>Playwright</td>
+<td>≥ 1.40</td>
+<td>Browser automation tests</td>
+</tr>
+<tr>
+<td>Linting</td>
+<td>ESLint</td>
+<td>≥ 8.0</td>
+<td>Code quality</td>
+</tr>
+<tr>
+<td>Formatting</td>
+<td>Prettier</td>
+<td>≥ 3.0</td>
+<td>Code formatting</td>
+</tr>
+<tr>
+<td>Crypto</td>
+<td>Web Crypto API</td>
+<td>Native</td>
+<td>AES-256-GCM, SHA-1, PBKDF2</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>Extension Storage API</td>
+<td>MV3</td>
+<td>chrome.storage.local/session</td>
+</tr>
+<tr>
+<td>UI</td>
+<td>Vanilla TS + CSS</td>
+<td>Native</td>
+<td>No framework dependency</td>
+</tr>
+</tbody>
+</table>
+<h3 id="runtime-dependencies">11.1 Runtime Dependencies</h3>
+<pre><code>bencode-js        ^3.0.0   Bencode encoder/decoder for .torrent files
+lz-string         ^1.5.0   Compression for queue persistence
+webextension-polyfill  ^0.10.0  Firefox chrome.* namespace compatibility</code></pre>
+<h3 id="dev-dependencies">11.2 Dev Dependencies</h3>
+<pre><code>@types/chrome          ^0.0.260  Chrome extension API types
+@types/jest            ^29.5.0   Jest type definitions
+ts-jest                ^29.1.0   TypeScript Jest transformer
+jest-environment-jsdom ^29.7.0   DOM environment for unit tests
+@playwright/test       ^1.40.0   E2E testing framework</code></pre>
+<hr />
+<h2 id="deployment-architecture">12. Deployment Architecture</h2>
+<h3 id="build-outputs">12.1 Build Outputs</h3>
+<pre><code>dist/
+├── chrome/          # Chrome/Opera/Yandex build (MV3)
+│   ├── manifest.json
+│   ├── background.js
+│   ├── content-scripts/
+│   ├── popup/
+│   ├── options/
+│   └── _locales/
+├── firefox/         # Firefox build (MV3 with polyfills)
+│   └── ...
+└── edge/            # Edge build (identical to Chrome)
+    └── ...</code></pre>
+<h3 id="cicd-pipeline">12.2 CI/CD Pipeline</h3>
+<pre class="mermaid"><code>graph LR
+    A[Developer Push] --&gt; B[Lint &amp; Type Check]
+    B --&gt; C[Unit Tests]
+    C --&gt; D[Build All Targets]
+    D --&gt; E[E2E Tests]
+    E --&gt; F[Code Coverage Gate]
+    F --&gt; G{Branch?}
+    G --&gt;|main| H[Deploy to Chrome Web Store]
+    G --&gt;|main| I[Deploy to AMO]
+    G --&gt;|main| J[Create GitHub Release]</code></pre>
+<h3 id="distribution-channels">12.3 Distribution Channels</h3>
+<table>
+<thead>
+<tr>
+<th>Channel</th>
+<th>Format</th>
+<th>Update Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome Web Store</td>
+<td>CRX</td>
+<td>Automatic</td>
+</tr>
+<tr>
+<td>Firefox AMO</td>
+<td>XPI</td>
+<td>Automatic</td>
+</tr>
+<tr>
+<td>Opera Addons</td>
+<td>CRX</td>
+<td>Automatic</td>
+</tr>
+<tr>
+<td>GitHub Releases</td>
+<td>ZIP</td>
+<td>Manual</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="assumptions-and-dependencies">13. Assumptions and
+Dependencies</h2>
+<h3 id="assumptions">13.1 Assumptions</h3>
+<ol type="1">
+<li>The target qBitTorrent instance has the WebUI enabled and accessible
+via HTTPS.</li>
+<li>Users have administrative access to configure Boba server or
+qBitTorrent settings.</li>
+<li>The local network allows HTTP(S) communication between the browser
+and Boba/qBitTorrent.</li>
+<li>Users will grant the <code>activeTab</code> permission when prompted
+for site-specific operations.</li>
+<li>The browser supports Manifest V3 (all targeted versions do).</li>
+</ol>
+<h3 id="external-dependencies">13.2 External Dependencies</h3>
+<table>
+<thead>
+<tr>
+<th>Dependency</th>
+<th>Minimum Version</th>
+<th>License</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Node.js</td>
+<td>18 LTS</td>
+<td>MIT</td>
+</tr>
+<tr>
+<td>qBitTorrent (WebUI)</td>
+<td>4.4.0</td>
+<td>GPL-2.0+</td>
+</tr>
+<tr>
+<td>Boba Server</td>
+<td>1.0.0</td>
+<td>Proprietary</td>
+</tr>
+<tr>
+<td>Chrome / Chromium</td>
+<td>88</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>Firefox</td>
+<td>109</td>
+<td>MPL-2.0</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="risks-and-mitigations">14. Risks and Mitigations</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Probability</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome policy changes restrict MV3 capabilities</td>
+<td>Medium</td>
+<td>High</td>
+<td>Maintain MV2 fallback branch; participate in Chromium feature
+requests</td>
+</tr>
+<tr>
+<td>qBitTorrent WebUI API breaking changes</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Version detection; adapter pattern for API differences</td>
+</tr>
+<tr>
+<td>CORS blocking torrent file downloads</td>
+<td>High</td>
+<td>Medium</td>
+<td>Proxy downloads through Boba server; fallback notification</td>
+</tr>
+<tr>
+<td>User forgets encryption password</td>
+<td>Medium</td>
+<td>Medium</td>
+<td>Optional password hint; ability to reset and reconfigure</td>
+</tr>
+<tr>
+<td>Extension store policy rejection</td>
+<td>Low</td>
+<td>High</td>
+<td>Pre-submission review; compliant data handling practices</td>
+</tr>
+<tr>
+<td>Third-party dependency vulnerability</td>
+<td>Medium</td>
+<td>High</td>
+<td>Automated Dependabot alerts; lockfile pinning; SCA scanning</td>
+</tr>
+<tr>
+<td>Large pages causing performance issues</td>
+<td>Medium</td>
+<td>Medium</td>
+<td><code>requestIdleCallback</code>; pagination for large link
+sets</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="appendices">15. Appendices</h2>
+<h3 id="appendix-a-glossary">Appendix A: Glossary</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Infohash</strong></td>
+<td>A 20-byte (40-character hex) SHA-1 hash uniquely identifying a
+torrent’s metadata.</td>
+</tr>
+<tr>
+<td><strong>Magnet URI</strong></td>
+<td>A URI scheme (<code>magnet:</code>) containing metadata for
+peer-to-peer file sharing, per BEP-0009.</td>
+</tr>
+<tr>
+<td><strong>Bencode</strong></td>
+<td>The encoding format used by BitTorrent for <code>.torrent</code>
+files; supports dictionaries, lists, integers, and byte strings.</td>
+</tr>
+<tr>
+<td><strong>Boba</strong></td>
+<td>The orchestration server that proxies and manages torrent download
+requests.</td>
+</tr>
+<tr>
+<td><strong>qBitTorrent</strong></td>
+<td>An open-source BitTorrent client with a built-in WebUI API.</td>
+</tr>
+<tr>
+<td><strong>Content Script</strong></td>
+<td>A script injected by the extension into web pages to read and modify
+the DOM.</td>
+</tr>
+<tr>
+<td><strong>Service Worker</strong></td>
+<td>The event-driven background script in MV3 that handles API calls,
+state management, and inter-script messaging.</td>
+</tr>
+<tr>
+<td><strong>MV3</strong></td>
+<td>Manifest V3, the third version of the WebExtension manifest
+format.</td>
+</tr>
+<tr>
+<td><strong>WXT</strong></td>
+<td>A modern build tool for browser extensions that wraps Vite.</td>
+</tr>
+<tr>
+<td><strong>mDNS</strong></td>
+<td>Multicast DNS, a protocol for name resolution on local networks
+without a dedicated DNS server.</td>
+</tr>
+<tr>
+<td><strong>CSP</strong></td>
+<td>Content Security Policy, a browser mechanism to control resource
+loading.</td>
+</tr>
+<tr>
+<td><strong>AES-256-GCM</strong></td>
+<td>Advanced Encryption Standard with 256-bit key in Galois/Counter
+Mode; provides authenticated encryption.</td>
+</tr>
+<tr>
+<td><strong>PBKDF2</strong></td>
+<td>Password-Based Key Derivation Function 2; used to derive
+cryptographic keys from passwords.</td>
+</tr>
+<tr>
+<td><strong>SSE</strong></td>
+<td>Server-Sent Events, a push technology for real-time updates over
+HTTP.</td>
+</tr>
+<tr>
+<td><strong>WCAG</strong></td>
+<td>Web Content Accessibility Guidelines, a standard for web
+accessibility.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="appendix-b-references">Appendix B: References</h3>
+<ol type="1">
+<li><a href="http://bittorrent.org/beps/bep_0003.html">BitTorrent
+BEP-0003: The BitTorrent Protocol Specification</a></li>
+<li><a href="http://bittorrent.org/beps/bep_0009.html">BitTorrent
+BEP-0009: Magnet Links</a></li>
+<li><a href="http://bittorrent.org/beps/bep_0012.html">BitTorrent
+BEP-0012: Multitracker Metadata Extension</a></li>
+<li><a
+href="https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-(qBittorrent-4.1)">qBitTorrent
+WebUI API Documentation</a></li>
+<li><a
+href="https://developer.chrome.com/docs/extensions/mv3/intro/">Chrome
+Extension Manifest V3</a></li>
+<li><a
+href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions">Mozilla
+WebExtensions API</a></li>
+<li><a href="https://wxt.dev/">WXT Framework Documentation</a></li>
+<li><a href="https://www.w3.org/WAI/WCAG21/quickref/">WCAG 2.1
+Specification</a></li>
+<li><a href="https://www.w3.org/TR/WebCryptoAPI/">Web Crypto API
+Specification</a></li>
+<li><a
+href="https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events">Server-Sent
+Events (MDN)</a></li>
+</ol>
+<h3 id="appendix-c-document-history">Appendix C: Document History</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Author</th>
+<th>Changes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.1.0</td>
+<td>2026-05-15</td>
+<td>Platform Team</td>
+<td>Initial draft</td>
+</tr>
+<tr>
+<td>0.2.0</td>
+<td>2026-05-28</td>
+<td>Platform Team</td>
+<td>Added security architecture, NFRs</td>
+</tr>
+<tr>
+<td>0.3.0</td>
+<td>2026-06-02</td>
+<td>Architecture Board</td>
+<td>Review feedback incorporated</td>
+</tr>
+<tr>
+<td>1.0.0</td>
+<td>2026-06-06</td>
+<td>Platform Team</td>
+<td>Final release</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>End of Technical Specification</em></p>

@@ -1,0 +1,1838 @@
+<h1 id="dimension-01-boba-project-architecture-deep-dive">Dimension 01:
+Boba Project Architecture Deep Dive</h1>
+<h2 id="executive-summary">Executive Summary</h2>
+<p><strong>Boba-Base</strong> (GitHub:
+<code>milos85vasic/Boba-Base</code>) is a multi-tracker meta-search
+platform for qBittorrent, self-hosted and containerized. It consists of
+a FastAPI merge-search service, a Go/Gin backend (in parallel
+development), an Angular 21 SPA dashboard, a Python download-proxy, a
+private-tracker bridge (webui-bridge.py), Jackett integration, and a
+plugin system supporting 48+ torrent trackers. All runtime state is
+in-memory or JSON files – no relational database is used.</p>
+<p><strong>Key Finding for Browser Extension Integration</strong>: The
+FastAPI merge service on port 7187 exposes a full REST API (with
+OpenAPI/Swagger docs at <code>/docs</code>) including search, download,
+auth, hooks, scheduling, and SSE streaming. It serves the Angular SPA
+and supports CORS. The primary integration point for a browser extension
+is the <code>POST /api/v1/search</code> endpoint and
+<code>GET /api/v1/search/stream/{search_id}</code> SSE endpoint for
+real-time results, plus <code>POST /api/v1/download</code> to add
+torrents to qBittorrent.</p>
+<hr />
+<h2 id="service-topology">1. Service Topology</h2>
+<pre><code>+----------------------------------------------------------+
+|                    HOST MACHINE                          |
+|  +----------------+    +-----------------------------+   |
+|  | Browser (User) |    | webui-bridge.py (:7188)     |   |
+|  |                |    | - Theme injection           |   |
+|  |                |    | - Private tracker download  |   |
+|  |                |    | - qBittorrent proxy         |   |
+|  +--------+-------+    +-----------------------------+   |
+|           |                                              |
+|           v                                              |
+|  +--------+-------+    +------------------------------+  |
+|  | Angular 21 SPA |&lt;--&gt;| FastAPI Merge Service (:7187)|  |
+|  | (served from   |    | - /api/v1/search             |  |
+|  |  /api or UI)   |    | - /api/v1/search/stream      |  |
+|  +----------------+    | - /api/v1/download           |  |
+|                        | - /api/v1/auth/...           |  |
+|  docker-compose.yml    | - /api/v1/hooks              |  |
+|                        | - /api/v1/schedules          |  |
+|  +------------------+  | - /api/v1/stats              |  |
+|  | qbittorrent      |  | - /api/v1/config             |  |
+|  | (lscr.io/...     |  | - /health                    |  |
+|  |  WebUI :7185)    |  +------------------------------+  |
+|  +------------------+            |                       |
+|           ^                      |                        |
+|           | shared ./tmp         v                        |
+|           |             +----------------+                |
+|           +-------------| download-proxy |                |
+|                         | (Python 3.12,  |                |
+|  +------------------+   |  also on 7186) |                |
+|  | jackett (:9117)  |   +----------------+                |
+|  +------------------+                                     |
++----------------------------------------------------------+
+
+Optional (docker-compose.quality.yml):
+  - SonarQube :9000   - Prometheus :9090   - Grafana :3000
+
+New (Go backend, port 7187, profile: go):
+  - qbittorrent-proxy-go (qBitTorrent-go/)
+  - boba-jackett (:7189) - Jackett management API</code></pre>
+<h3 id="service-details">Service Details</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 36%" />
+<col style="width: 20%" />
+<col style="width: 12%" />
+</colgroup>
+<thead>
+<tr>
+<th>Service</th>
+<th>Port</th>
+<th>Container/Process</th>
+<th>Language</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qBittorrent</td>
+<td>7185</td>
+<td><code>qbittorrent</code></td>
+<td>C++ (upstream)</td>
+<td>Core torrent client, WebUI</td>
+</tr>
+<tr>
+<td>Merge Search</td>
+<td>7187</td>
+<td><code>qbittorrent-proxy</code></td>
+<td>Python 3.12 (FastAPI)</td>
+<td>Main API, search orchestration, Angular hosting</td>
+</tr>
+<tr>
+<td>Download Proxy</td>
+<td>7186</td>
+<td>same container</td>
+<td>Python</td>
+<td>Legacy proxy, qBittorrent passthrough</td>
+</tr>
+<tr>
+<td>WebUI Bridge</td>
+<td>7188</td>
+<td>Host process</td>
+<td>Python 3</td>
+<td>Private-tracker auth, theme injection</td>
+</tr>
+<tr>
+<td>Jackett</td>
+<td>9117</td>
+<td><code>jackett</code></td>
+<td>C#</td>
+<td>External indexer aggregator</td>
+</tr>
+<tr>
+<td>boba-jackett</td>
+<td>7189</td>
+<td><code>boba-jackett</code></td>
+<td>Go (Gin)</td>
+<td>Jackett management API</td>
+</tr>
+<tr>
+<td>Go Proxy</td>
+<td>7187</td>
+<td><code>qbittorrent-proxy-go</code></td>
+<td>Go (Gin)</td>
+<td>Alternative merge search backend</td>
+</tr>
+<tr>
+<td>Angular Dashboard</td>
+<td>7187 (served)</td>
+<td>static files</td>
+<td>TypeScript/Angular 21</td>
+<td>SPA frontend</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="api-endpoints-complete-catalog">2. API Endpoints (Complete
+Catalog)</h2>
+<h3 id="fastapi-python-backend-primary-port-7187">2.1 FastAPI Python
+Backend (Primary, Port 7187)</h3>
+<p>All endpoints served from the same FastAPI app in
+<code>download-proxy/src/api/__init__.py</code>.</p>
+<h4 id="search-endpoints">Search Endpoints</h4>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 11%" />
+<col style="width: 25%" />
+<col style="width: 27%" />
+<col style="width: 19%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+<th>Request Body</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/search</code></td>
+<td>Start async search (fire-and-forget)</td>
+<td><code>SearchRequest</code></td>
+<td><code>SearchResponse</code> (status: running)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/search/sync</code></td>
+<td>Blocking search (legacy)</td>
+<td><code>SearchRequest</code></td>
+<td><code>SearchResponse</code> (full results)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/search/{search_id}</code></td>
+<td>Get search status + results</td>
+<td>-</td>
+<td><code>SearchResponse</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/search/stream/{search_id}</code></td>
+<td><strong>SSE stream</strong> of real-time results</td>
+<td>-</td>
+<td><code>text/event-stream</code></td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/search/{search_id}/abort</code></td>
+<td>Cancel running search</td>
+<td>-</td>
+<td><code>{search_id, status}</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="download-endpoints">Download Endpoints</h4>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 11%" />
+<col style="width: 25%" />
+<col style="width: 27%" />
+<col style="width: 19%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+<th>Request Body</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/download</code></td>
+<td>Add torrent(s) to qBittorrent</td>
+<td><code>DownloadRequest</code></td>
+<td><code>{download_id, status, added_count, results}</code></td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/download/file</code></td>
+<td>Download .torrent file directly</td>
+<td><code>DownloadRequest</code></td>
+<td><code>Blob</code> (application/x-bittorrent)</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/magnet</code></td>
+<td>Generate magnet link from URLs</td>
+<td><code>{result_id, download_urls}</code></td>
+<td><code>{magnet, hashes}</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/downloads/active</code></td>
+<td>List active qBittorrent downloads</td>
+<td>-</td>
+<td><code>{downloads[], count}</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="authentication-endpoints">Authentication Endpoints</h4>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 11%" />
+<col style="width: 25%" />
+<col style="width: 27%" />
+<col style="width: 19%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+<th>Request Body</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/auth/qbittorrent</code></td>
+<td>Login to qBittorrent WebUI</td>
+<td><code>{username, password, save?}</code></td>
+<td><code>{status, version?, message?}</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/auth/rutracker/status</code></td>
+<td>Check RuTracker session status</td>
+<td>-</td>
+<td><code>{authenticated, status, message}</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/auth/rutracker/captcha</code></td>
+<td>Fetch CAPTCHA challenge</td>
+<td>-</td>
+<td><code>{captcha_required, captcha_image, captcha_token}</code></td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/auth/rutracker/login</code></td>
+<td>Solve CAPTCHA + login</td>
+<td><code>CaptchaLoginRequest</code></td>
+<td><code>{authenticated, message}</code></td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/auth/rutracker/cookie-login</code></td>
+<td>Login with browser cookies</td>
+<td><code>CookieLoginRequest</code></td>
+<td><code>{authenticated, message}</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/auth/status</code></td>
+<td>All trackers auth status</td>
+<td>-</td>
+<td><code>{trackers: {rutracker, kinozal, nnmclub, iptorrents, qbittorrent}}</code></td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/auth/qbittorrent/logout</code></td>
+<td>Clear saved qBittorrent creds</td>
+<td>-</td>
+<td><code>{status}</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="hook-endpoints">Hook Endpoints</h4>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 11%" />
+<col style="width: 25%" />
+<col style="width: 27%" />
+<col style="width: 19%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+<th>Request Body</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/hooks</code></td>
+<td>List all hooks</td>
+<td>-</td>
+<td><code>{hooks[], count}</code></td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/hooks</code></td>
+<td>Create a new hook</td>
+<td><code>HookCreateRequest</code></td>
+<td><code>HookResponse</code></td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td><code>/api/v1/hooks/{hook_id}</code></td>
+<td>Delete a hook</td>
+<td>-</td>
+<td><code>{message, hook_id}</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/hooks/logs</code></td>
+<td>Get hook execution logs</td>
+<td><code>?limit=50&amp;hook_name=</code></td>
+<td><code>{logs[], count}</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="scheduler-endpoints">Scheduler Endpoints</h4>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 11%" />
+<col style="width: 25%" />
+<col style="width: 27%" />
+<col style="width: 19%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+<th>Request Body</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/schedules</code></td>
+<td>List scheduled searches</td>
+<td>-</td>
+<td><code>{schedules[], count}</code></td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/schedules</code></td>
+<td>Create scheduled search</td>
+<td><code>ScheduleCreateRequest</code></td>
+<td>Schedule object</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/schedules/{id}</code></td>
+<td>Get scheduled search</td>
+<td>-</td>
+<td>Schedule object</td>
+</tr>
+<tr>
+<td><code>PATCH</code></td>
+<td><code>/api/v1/schedules/{id}</code></td>
+<td>Update scheduled search</td>
+<td><code>ScheduleUpdateRequest</code></td>
+<td><code>{id, name, enabled}</code></td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td><code>/api/v1/schedules/{id}</code></td>
+<td>Delete scheduled search</td>
+<td>-</td>
+<td><code>{deleted, schedule_id}</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="theme-endpoints">Theme Endpoints</h4>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 11%" />
+<col style="width: 25%" />
+<col style="width: 27%" />
+<col style="width: 19%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+<th>Request Body</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/theme</code></td>
+<td>Get current theme</td>
+<td>-</td>
+<td>Theme state object</td>
+</tr>
+<tr>
+<td><code>PUT</code></td>
+<td><code>/api/v1/theme</code></td>
+<td>Update theme</td>
+<td><code>{paletteId, mode}</code></td>
+<td>Updated theme state</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/theme/stream</code></td>
+<td>SSE theme updates</td>
+<td>-</td>
+<td><code>text/event-stream</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="utility-endpoints">Utility Endpoints</h4>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 16%" />
+<col style="width: 35%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>/health</code></td>
+<td>Merge service health</td>
+<td><code>{status, service, version}</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/bridge/health</code></td>
+<td>WebUI bridge health probe</td>
+<td><code>{healthy, status_code, bridge_url, port}</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/config</code></td>
+<td>Service URLs for dashboard</td>
+<td><code>{qbittorrent_url, qbittorrent_internal_url, ...}</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/stats</code></td>
+<td>Search stats + tracker list</td>
+<td><code>{active_searches, completed_searches, trackers[]}</code></td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/docs</code></td>
+<td><strong>Swagger UI</strong></td>
+<td>Interactive API docs</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/openapi.json</code></td>
+<td><strong>OpenAPI 3.1 spec</strong></td>
+<td>Machine-readable schema</td>
+</tr>
+</tbody>
+</table>
+<h3 id="gogin-backend-alternative-port-7187-profile-go">2.2 Go/Gin
+Backend (Alternative, Port 7187, Profile: go)</h3>
+<p>The Go backend
+(<code>qBitTorrent-go/cmd/qbittorrent-proxy/main.go</code>) mirrors the
+Python API surface using the Gin framework. It is activated via
+<code>docker-compose.yml</code> profile <code>go</code>.</p>
+<p><strong>Key differences from Python backend</strong>: - Uses
+<code>qBittorrent</code> native search API
+(<code>/api/v2/search/start</code>) instead of direct plugin subprocess
+calls - SQLite database for system state (<code>boba.db</code> at
+<code>/config/boba.db</code>) - Admin/admin Basic Auth for mutating
+endpoints on boba-jackett (:7189)</p>
+<p><strong>Go boba-jackett API</strong> (port 7189):</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET</code></td>
+<td><code>/healthz</code></td>
+<td>Health check</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/openapi.json</code></td>
+<td>OpenAPI spec</td>
+</tr>
+<tr>
+<td><code>GET/POST</code></td>
+<td><code>/api/v1/jackett/credentials</code></td>
+<td>Credential management</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/jackett/indexers</code></td>
+<td>List Jackett indexers</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/jackett/catalog</code></td>
+<td>Catalog of available trackers</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/jackett/catalog/refresh</code></td>
+<td>Refresh catalog</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v1/jackett/autoconfig/runs</code></td>
+<td>List autoconfig runs</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v1/jackett/autoconfig/run</code></td>
+<td>Trigger autoconfig</td>
+</tr>
+<tr>
+<td><code>GET/POST</code></td>
+<td><code>/api/v1/jackett/overrides</code></td>
+<td>Env variable overrides</td>
+</tr>
+</tbody>
+</table>
+<h3 id="qbittorrent-webui-api-port-7185">2.3 qBittorrent WebUI API (Port
+7185)</h3>
+<p>The native qBittorrent API is proxied through port 7186
+(download-proxy) and 7188 (webui-bridge). Key endpoints used
+internally:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v2/auth/login</code></td>
+<td>Login (returns “Ok.”)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v2/app/version</code></td>
+<td>Get qBittorrent version</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v2/torrents/add</code></td>
+<td>Add torrent (URLs or file upload)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v2/torrents/info</code></td>
+<td>List all torrents</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v2/search/start</code></td>
+<td>Start qBittorrent search</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v2/search/results</code></td>
+<td>Get search results</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/v2/search/stop</code></td>
+<td>Stop search</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/v2/search/plugins</code></td>
+<td>List installed plugins</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="requestresponse-schemas">3. Request/Response Schemas</h2>
+<h3 id="searchrequest">3.1 SearchRequest</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;query&quot;</span><span class="fu">:</span> <span class="st">&quot;string (required, min_length=1)&quot;</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;category&quot;</span><span class="fu">:</span> <span class="st">&quot;string (default: &#39;all&#39;)&quot;</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;limit&quot;</span><span class="fu">:</span> <span class="st">&quot;integer (1-100, default: 50)&quot;</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;enable_metadata&quot;</span><span class="fu">:</span> <span class="st">&quot;boolean (default: true)&quot;</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;validate_trackers&quot;</span><span class="fu">:</span> <span class="st">&quot;boolean (default: true)&quot;</span><span class="fu">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;sort_by&quot;</span><span class="fu">:</span> <span class="st">&quot;string (default: &#39;seeds&#39;)&quot;</span><span class="fu">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;sort_order&quot;</span><span class="fu">:</span> <span class="st">&quot;string (&#39;asc&#39;|&#39;desc&#39;, default: &#39;desc&#39;)&quot;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="searchresponse">3.2 SearchResponse</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;search_id&quot;</span><span class="fu">:</span> <span class="st">&quot;uuid-string&quot;</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;query&quot;</span><span class="fu">:</span> <span class="st">&quot;original query&quot;</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="st">&quot;running|completed|failed|no_results|captcha_required&quot;</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;results&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;SearchResultResponse&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;total_results&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;merged_results&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;trackers_searched&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;rutracker&quot;</span><span class="ot">,</span> <span class="st">&quot;rutor&quot;</span><span class="ot">,</span> <span class="st">&quot;1337x&quot;</span><span class="ot">,</span> <span class="er">...</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;errors&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;tracker: error message&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;tracker_stats&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;TrackerSearchStat&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;started_at&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO-8601 timestamp&quot;</span><span class="fu">,</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;completed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO-8601 timestamp|null&quot;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="searchresultresponse">3.3 SearchResultResponse</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;torrent name&quot;</span><span class="fu">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;size&quot;</span><span class="fu">:</span> <span class="st">&quot;human readable or bytes&quot;</span><span class="fu">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;seeds&quot;</span><span class="fu">:</span> <span class="dv">42</span><span class="fu">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;leechers&quot;</span><span class="fu">:</span> <span class="dv">7</span><span class="fu">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;download_urls&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;https://...&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;quality&quot;</span><span class="fu">:</span> <span class="st">&quot;uhd_4k|full_hd|hd|sd|unknown&quot;</span><span class="fu">,</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;content_type&quot;</span><span class="fu">:</span> <span class="st">&quot;movie|tv|anime|music|game|software|ebook|other&quot;</span><span class="fu">,</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;desc_link&quot;</span><span class="fu">:</span> <span class="st">&quot;description URL&quot;</span><span class="fu">,</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;tracker&quot;</span><span class="fu">:</span> <span class="st">&quot;tracker name&quot;</span><span class="fu">,</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;sources&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fu">{</span><span class="dt">&quot;tracker&quot;</span><span class="fu">:</span> <span class="st">&quot;...&quot;</span><span class="fu">,</span> <span class="dt">&quot;seeds&quot;</span><span class="fu">:</span> <span class="dv">42</span><span class="fu">,</span> <span class="dt">&quot;leechers&quot;</span><span class="fu">:</span> <span class="dv">7</span><span class="fu">}</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;metadata&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;source&quot;</span><span class="fu">:</span> <span class="st">&quot;OMDb|TMDB&quot;</span><span class="fu">,</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;title&quot;</span><span class="fu">:</span> <span class="st">&quot;canonical title&quot;</span><span class="fu">,</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;year&quot;</span><span class="fu">:</span> <span class="dv">2024</span><span class="fu">,</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;poster_url&quot;</span><span class="fu">:</span> <span class="st">&quot;https://...&quot;</span><span class="fu">,</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;overview&quot;</span><span class="fu">:</span> <span class="st">&quot;plot description&quot;</span><span class="fu">,</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;genres&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;Action&quot;</span><span class="ot">,</span> <span class="st">&quot;Sci-Fi&quot;</span><span class="ot">]</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;freeleech&quot;</span><span class="fu">:</span> <span class="kw">false</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="downloadrequest">3.4 DownloadRequest</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;result_id&quot;</span><span class="fu">:</span> <span class="st">&quot;merged result id (uuid)&quot;</span><span class="fu">,</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;download_urls&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;https://tracker/download/...&quot;</span><span class="ot">,</span> <span class="st">&quot;magnet:?xt=urn:btih:...&quot;</span><span class="ot">]</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="trackersearchstat">3.5 TrackerSearchStat</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;tracker identifier&quot;</span><span class="fu">,</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;tracker_url&quot;</span><span class="fu">:</span> <span class="st">&quot;base URL&quot;</span><span class="fu">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="st">&quot;pending|running|success|empty|error|timeout|cancelled&quot;</span><span class="fu">,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;results_count&quot;</span><span class="fu">:</span> <span class="dv">42</span><span class="fu">,</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;started_at&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO-8601|null&quot;</span><span class="fu">,</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;completed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO-8601|null&quot;</span><span class="fu">,</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;duration_ms&quot;</span><span class="fu">:</span> <span class="dv">1234</span><span class="fu">,</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;error&quot;</span><span class="fu">:</span> <span class="st">&quot;error message|null&quot;</span><span class="fu">,</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;error_type&quot;</span><span class="fu">:</span> <span class="st">&quot;upstream_http_403|dns_failure|plugin_crashed|null&quot;</span><span class="fu">,</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;authenticated&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;attempt&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;http_status&quot;</span><span class="fu">:</span> <span class="dv">200</span><span class="fu">,</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;category&quot;</span><span class="fu">:</span> <span class="st">&quot;all&quot;</span><span class="fu">,</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;query&quot;</span><span class="fu">:</span> <span class="st">&quot;original query&quot;</span><span class="fu">,</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;notes&quot;</span><span class="fu">:</span> <span class="fu">{}</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<hr />
+<h2 id="authentication-mechanisms">4. Authentication Mechanisms</h2>
+<h3 id="qbittorrent-webui-auth">4.1 qBittorrent WebUI Auth</h3>
+<ul>
+<li><strong>Default credentials</strong>: <code>admin</code> /
+<code>admin</code> (configurable via <code>.env</code>)</li>
+<li><strong>Login flow</strong>: <code>POST /api/v2/auth/login</code>
+with form data <code>username</code> + <code>password</code></li>
+<li><strong>Session</strong>: Cookie-based (<code>SID</code> cookie
+returned)</li>
+<li><strong>Saved credentials</strong>: Stored at
+<code>/config/download-proxy/qbittorrent_creds.json</code>
+(optional)</li>
+<li><strong>Endpoint</strong>:
+<code>POST /api/v1/auth/qbittorrent</code> (proxy through merge
+service)</li>
+</ul>
+<h3 id="private-tracker-auth">4.2 Private Tracker Auth</h3>
+<p><strong>RuTracker</strong>: - Username/password from env
+(<code>RUTRACKER_USERNAME</code>, <code>RUTRACKER_PASSWORD</code>) -
+CAPTCHA challenge flow: <code>GET /api/v1/auth/rutracker/captcha</code>
+-&gt; solve -&gt; <code>POST /api/v1/auth/rutracker/login</code> -
+Cookie-based session stored in
+<code>SearchOrchestrator._tracker_sessions</code> - Alternative: Cookie
+login via <code>POST /api/v1/auth/rutracker/cookie-login</code></p>
+<p><strong>Kinozal</strong>: - Username/password from env
+(<code>KINOZAL_USERNAME</code>, <code>KINOZAL_PASSWORD</code>) - Falls
+back to IPTorrents credentials if not set - Session-based
+authentication</p>
+<p><strong>NNM-Club</strong>: - Cookie-based only
+(<code>NNMCLUB_COOKIES</code>) - Very sensitive to proxies - Session
+stored in orchestrator</p>
+<p><strong>IPTorrents</strong>: - Username/password from env
+(<code>IPTORRENTS_USERNAME</code>, <code>IPTORRENTS_PASSWORD</code>) -
+Freeleech-only mode enforced - Session-based authentication</p>
+<h3 id="jackett-api-auth">4.3 Jackett API Auth</h3>
+<ul>
+<li>API key from env (<code>JACKETT_API_KEY</code>)</li>
+<li>Passed as query parameter or header to Jackett on port 9117</li>
+</ul>
+<h3 id="boba-jackett-go-auth">4.4 boba-jackett (Go) Auth</h3>
+<ul>
+<li><strong>Admin Basic Auth</strong>: <code>admin</code> /
+<code>admin</code> hardcoded</li>
+<li>GET/HEAD/OPTIONS pass through unauthenticated</li>
+<li>Mutating endpoints (POST/PATCH/DELETE) require
+<code>Authorization: Basic YWRtaW46YWRtaW4=</code></li>
+</ul>
+<h3 id="cors">4.5 CORS</h3>
+<ul>
+<li>Configured via <code>ALLOWED_ORIGINS</code> env var (default:
+<code>*</code>)</li>
+<li>All origins allowed in development</li>
+</ul>
+<hr />
+<h2 id="data-models">5. Data Models</h2>
+<h3 id="internal-dataclasses-python-merge_servicesearch.py">5.1 Internal
+Dataclasses (Python, <code>merge_service/search.py</code>)</h3>
+<p><strong>SearchMetadata</strong> – The core search tracking
+object:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SearchMetadata:</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    search_id: <span class="bu">str</span>          <span class="co"># UUID</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    query: <span class="bu">str</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    category: <span class="bu">str</span> <span class="op">=</span> <span class="st">&quot;all&quot;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    started_at: datetime    <span class="co"># UTC</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    completed_at: datetime <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    total_results: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    merged_results: <span class="bu">int</span> <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    trackers_searched: <span class="bu">list</span>[<span class="bu">str</span>]</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    errors: <span class="bu">list</span>[<span class="bu">str</span>]</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    status: <span class="bu">str</span> <span class="op">=</span> <span class="st">&quot;running&quot;</span>  <span class="co"># running|completed|failed|aborted</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    tracker_stats: <span class="bu">dict</span>[<span class="bu">str</span>, TrackerSearchStat]</span></code></pre></div>
+<p><strong>SearchResult</strong> – Individual torrent result from a
+tracker:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SearchResult:</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    name: <span class="bu">str</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    link: <span class="bu">str</span>               <span class="co"># Download URL or magnet</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    size: <span class="bu">str</span>               <span class="co"># Human-readable</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    seeds: <span class="bu">int</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    leechers: <span class="bu">int</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    engine_url: <span class="bu">str</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    desc_link: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    pub_date: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    tracker: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    category: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    freeleech: <span class="bu">bool</span> <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    content_type: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    quality: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span></code></pre></div>
+<p><strong>MergedResult</strong> – Deduplicated result combining
+multiple sources:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MergedResult:</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    canonical_identity: CanonicalIdentity</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    original_results: <span class="bu">list</span>[SearchResult]</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    total_seeds: <span class="bu">int</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    total_leechers: <span class="bu">int</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    best_quality: QualityTier <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    download_urls: <span class="bu">list</span>[<span class="bu">str</span>]</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    created_at: datetime</span></code></pre></div>
+<p><strong>CanonicalIdentity</strong> – Deduplication fingerprint:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="at">@dataclass</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CanonicalIdentity:</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    infohash: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    title: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    year: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    content_type: ContentType <span class="op">|</span> <span class="va">None</span>   <span class="co"># Enum: movie,tv,anime,music,...</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    season: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    episode: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    resolution: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    codec: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    group: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    metadata_source: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span></code></pre></div>
+<p><strong>ContentType Enum</strong>: <code>movie</code>,
+<code>tv</code>, <code>anime</code>, <code>music</code>,
+<code>audiobook</code>, <code>game</code>, <code>software</code>,
+<code>ebook</code>, <code>other</code>, <code>unknown</code></p>
+<p><strong>QualityTier Enum</strong>: <code>sd</code>, <code>hd</code>,
+<code>full_hd</code>, <code>uhd_4k</code>, <code>uhd_8k</code>,
+<code>unknown</code></p>
+<h3 id="json-persistence-no-relational-db">5.2 JSON Persistence (No
+Relational DB)</h3>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 30%" />
+<col style="width: 43%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Owner</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/config/download-proxy/hooks.json</code></td>
+<td><code>api/hooks.py</code></td>
+<td>Array of <code>HookConfig</code> dicts</td>
+</tr>
+<tr>
+<td><code>/config/download-proxy/qbittorrent_creds.json</code></td>
+<td><code>api/routes.py</code></td>
+<td><code>{username, password}</code></td>
+</tr>
+<tr>
+<td><code>/config/merge-service/scheduling.json</code></td>
+<td><code>merge_service/scheduler.py</code></td>
+<td>Array of <code>ScheduledSearch</code> dicts</td>
+</tr>
+<tr>
+<td><code>/config/merge-service/theme.json</code></td>
+<td><code>api/theme_state.py</code></td>
+<td>Theme palette + mode</td>
+</tr>
+<tr>
+<td><code>/config/boba.db</code></td>
+<td>Go backend only</td>
+<td>SQLite (credentials, indexers, catalog, runs, overrides)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="go-models-qbittorrent-gointernalmodels">5.3 Go Models
+(<code>qBitTorrent-go/internal/models/</code>)</h3>
+<p>Key Go structs mirror the Python dataclasses: -
+<code>SearchRequest</code> / <code>SearchResponse</code> /
+<code>TrackerStat</code> - <code>DownloadRequest</code> /
+<code>DownloadResult</code> / <code>URLDownloadResult</code> -
+<code>QBittorrentAuthRequest</code> /
+<code>QBittorrentAuthResponse</code> - <code>Hook</code> /
+<code>Schedule</code> / <code>ThemeState</code></p>
+<hr />
+<h2 id="plugin-architecture">6. Plugin Architecture</h2>
+<h3 id="plugin-system-overview">6.1 Plugin System Overview</h3>
+<p>Boba uses the <strong>qBittorrent nova3 plugin format</strong> –
+Python classes implementing a standard interface. Plugins are installed
+to <code>/config/qBittorrent/nova3/engines/</code>.</p>
+<p><strong>Plugin execution flow</strong>: 1. SearchOrchestrator fans
+out to each enabled tracker 2. For public trackers:
+<code>subprocess python3 -c &lt;engine&gt;.search()</code> (isolated
+process) 3. For private trackers: Direct aiohttp calls with session
+cookies (Python) or via qBittorrent search API (Go) 4. Results parsed
+from stdout JSON (public) or HTML (private) 5. Deduplicator merges by
+infohash &gt; title+size &gt; fuzzy match</p>
+<h3 id="plugin-interface">6.2 Plugin Interface</h3>
+<p>Each plugin implements:</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MyTracker:</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    url <span class="op">=</span> <span class="st">&#39;https://tracker.example.com&#39;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> <span class="st">&#39;MyTracker&#39;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    supported_categories <span class="op">=</span> {<span class="st">&#39;all&#39;</span>: <span class="va">True</span>, <span class="st">&#39;movies&#39;</span>: <span class="st">&#39;14&#39;</span>, <span class="st">&#39;tv&#39;</span>: <span class="st">&#39;15&#39;</span>, ...}</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>):</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> search(<span class="va">self</span>, what, cat<span class="op">=</span><span class="st">&#39;all&#39;</span>):</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>        <span class="co">&quot;&quot;&quot;Return list of dicts: {link, name, size, seeds, leechers, engine_url, desc_link}&quot;&quot;&quot;</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> download_torrent(<span class="va">self</span>, url):</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>        <span class="co">&quot;&quot;&quot;Download torrent file, return bytes or file path&quot;&quot;&quot;</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span></code></pre></div>
+<h3 id="plugin-categories">6.3 Plugin Categories</h3>
+<p><strong>48 built-in plugins</strong> organized into: - <strong>Core
+plugins</strong> (<code>plugins/</code>): rutracker, rutor, kinozal,
+nnmclub, iptorrents, 1337x, piratebay, yts, eztv, limetorrents, torlock,
+torrentgalaxy, solidtorrents, nyaa, kickass, megapeer, tokyotoshokan,
+bitsearch, gamestorrents, audiobookbay, rockbox, glotorrents, snowfl,
+bt4g, extratorrent, therarbg, etc. - <strong>Community plugins</strong>
+(<code>plugins/community/</code>): academic, ali213, anilibra, btsow,
+linuxtracker, pctorrent, pirateiro, torrentscsv, xfsub, yihua,
+yourbittorrent, etc. - <strong>WebUI-compatible plugins</strong>
+(<code>plugins/webui_compatible/</code>): kinozal, nnmclub, rutracker
+(specialized for WebUI bridge)</p>
+<h3 id="public-tracker-registry-python">6.4 Public Tracker Registry
+(Python)</h3>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>PUBLIC_TRACKERS <span class="op">=</span> {</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;1337x&quot;</span>: <span class="st">&quot;https://1337x.to&quot;</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;piratebay&quot;</span>: <span class="st">&quot;https://thepiratebay.org&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;yts&quot;</span>: <span class="st">&quot;https://yts.lt&quot;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;rutor&quot;</span>: <span class="st">&quot;https://rutor.info/&quot;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;limetorrents&quot;</span>: <span class="st">&quot;https://www.limetorrents.lol&quot;</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;torrentgalaxy&quot;</span>: <span class="st">&quot;https://torrentgalaxy.one&quot;</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;nyaa&quot;</span>: <span class="st">&quot;https://nyaa.si&quot;</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ... 40+ more</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><strong>Dead trackers</strong> (excluded by default, enable with
+<code>ENABLE_DEAD_TRACKERS=1</code>): <code>ali213</code>,
+<code>audiobookbay</code>, <code>bitru</code>, <code>bt4g</code>,
+<code>btsow</code>, <code>extratorrent</code>, <code>eztv</code>,
+<code>one337x</code>, <code>pctorrent</code>,
+<code>solidtorrents</code>, <code>therarbg</code>,
+<code>torrentfunk</code>, <code>xfsub</code>, <code>yihua</code></p>
+<h3 id="private-tracker-registry">6.5 Private Tracker Registry</h3>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>PRIVATE_TRACKERS <span class="op">=</span> {</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;rutracker&quot;</span>: <span class="st">&quot;https://rutracker.org&quot;</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;kinozal&quot;</span>: <span class="st">&quot;https://kinozal.tv&quot;</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;nnmclub&quot;</span>: <span class="st">&quot;https://nnm-club.me&quot;</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;iptorrents&quot;</span>: <span class="st">&quot;https://iptorrents.com&quot;</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<hr />
+<h2 id="search-flow-detailed">7. Search Flow (Detailed)</h2>
+<h3 id="search-lifecycle">7.1 Search Lifecycle</h3>
+<pre><code>1. Client -&gt; POST /api/v1/search {query, category}
+2. FastAPI -&gt; SearchOrchestrator.start_search()
+3. SearchOrchestrator creates SearchMetadata with UUID
+4. SearchOrchestrator._run_search() fires in background asyncio.Task
+5. For each enabled tracker:
+   a. TrackerSearchStat created with status &quot;pending&quot;
+   b. Subprocess or aiohttp call initiated
+   c. Stat flips to &quot;running&quot;
+   d. Results collected into _tracker_results[search_id][tracker_name]
+   e. Stat flips to &quot;success&quot;, &quot;empty&quot;, &quot;error&quot;, or &quot;timeout&quot;
+6. Deduplicator.merge_results() combines by CanonicalIdentity
+7. MetadataEnricher fills poster, overview, genres from OMDB/TMDB/AniList
+8. Status flips to &quot;completed&quot;
+9. Client polls GET /search/{id} or receives SSE events</code></pre>
+<h3 id="sse-event-types">7.2 SSE Event Types</h3>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 40%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr>
+<th>Event</th>
+<th>Payload</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>search_start</code></td>
+<td><code>{search_id, status: "started"}</code></td>
+<td>Stream begins</td>
+</tr>
+<tr>
+<td><code>tracker_started</code></td>
+<td><code>TrackerSearchStat</code></td>
+<td>Tracker status pending -&gt; running</td>
+</tr>
+<tr>
+<td><code>tracker_completed</code></td>
+<td><code>TrackerSearchStat</code></td>
+<td>Tracker reaches terminal state</td>
+</tr>
+<tr>
+<td><code>result_found</code></td>
+<td><code>{search_id, name, seeds, leechers, tracker, size, link, content_type, quality}</code></td>
+<td>New result discovered</td>
+</tr>
+<tr>
+<td><code>results_update</code></td>
+<td><code>{search_id, total_results, merged_results, trackers_searched}</code></td>
+<td>Result count changes</td>
+</tr>
+<tr>
+<td><code>search_complete</code></td>
+<td><code>SearchMetadata.to_dict()</code></td>
+<td>All trackers finished</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>{error, search_id}</code></td>
+<td>Search not found or error</td>
+</tr>
+<tr>
+<td><code>close</code></td>
+<td><code>{search_id, reason}</code></td>
+<td>Client disconnects</td>
+</tr>
+</tbody>
+</table>
+<h3 id="deduplication-strategy">7.3 Deduplication Strategy</h3>
+<pre><code>Tier 1: Infohash match (exact, strongest)
+Tier 2: Normalized title + size match
+Tier 3: Levenshtein fuzzy title match
+Tier 4: Weak heuristic fallback</code></pre>
+<p>IPTorrents freeleech results are <strong>never merged</strong> with
+non-freeleech sources (to preserve ratio).</p>
+<hr />
+<h2 id="download-flow-detailed">8. Download Flow (Detailed)</h2>
+<h3 id="publicmagnet-downloads">8.1 Public/Magnet Downloads</h3>
+<pre><code>1. Client -&gt; POST /api/v1/download {result_id, download_urls}
+2. API authenticates with qBittorrent via saved or env credentials
+3. For each URL:
+   a. If tracker URL: fetch .torrent via orchestrator.fetch_torrent()
+   b. If magnet link: POST to /api/v2/torrents/add with urls param
+   c. If direct URL: POST to /api/v2/torrents/add with urls param
+4. Return {download_id, status, added_count, results}</code></pre>
+<h3 id="private-tracker-downloads-webui-bridge.py">8.2 Private Tracker
+Downloads (webui-bridge.py)</h3>
+<pre><code>1. Download request hits :7188 (webui-bridge)
+2. Bridge identifies tracker from URL patterns
+3. Bridge calls nova2dl.py &lt;engine&gt; &lt;url&gt;
+4. nova2dl imports plugin, calls download_torrent()
+5. Plugin authenticates with tracker (session/cookies)
+6. Plugin downloads .torrent to /shared-tmp/&lt;uuid&gt;.torrent
+7. Bridge uploads file to qBittorrent via multipart POST
+8. Bridge returns OK to client</code></pre>
+<hr />
+<h2 id="environment-variables-complete-reference">9. Environment
+Variables (Complete Reference)</h2>
+<h3 id="required-variables">9.1 Required Variables</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RUTRACKER_USERNAME</code></td>
+<td>RuTracker login</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><code>RUTRACKER_PASSWORD</code></td>
+<td>RuTracker password</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><code>KINOZAL_USERNAME</code></td>
+<td>Kinozal login</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><code>KINOZAL_PASSWORD</code></td>
+<td>Kinozal password</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><code>NNMCLUB_USERNAME</code></td>
+<td>NNM-Club username</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><code>NNMCLUB_COOKIES</code></td>
+<td>NNM-Club browser cookies</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><code>IPTORRENTS_USERNAME</code></td>
+<td>IPTorrents login</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><code>IPTORRENTS_PASSWORD</code></td>
+<td>IPTorrents password</td>
+<td>(none)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="service-configuration">9.2 Service Configuration</h3>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 40%" />
+<col style="width: 28%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>QBITTORRENT_HOST</code></td>
+<td>qBittorrent hostname</td>
+<td><code>localhost</code></td>
+</tr>
+<tr>
+<td><code>QBITTORRENT_PORT</code></td>
+<td>qBittorrent WebUI port</td>
+<td><code>7185</code></td>
+</tr>
+<tr>
+<td><code>QBITTORRENT_URL</code></td>
+<td>Full qBittorrent URL</td>
+<td><code>http://localhost:7185</code></td>
+</tr>
+<tr>
+<td><code>QBITTORRENT_USER</code> /
+<code>QBITTORRENT_USERNAME</code></td>
+<td>WebUI username</td>
+<td><code>admin</code></td>
+</tr>
+<tr>
+<td><code>QBITTORRENT_PASS</code> /
+<code>QBITTORRENT_PASSWORD</code></td>
+<td>WebUI password</td>
+<td><code>admin</code></td>
+</tr>
+<tr>
+<td><code>WEBUI_PORT</code></td>
+<td>Internal WebUI port</td>
+<td><code>7185</code></td>
+</tr>
+<tr>
+<td><code>WEBUI_USERNAME</code></td>
+<td>WebUI username (container)</td>
+<td><code>admin</code></td>
+</tr>
+<tr>
+<td><code>WEBUI_PASSWORD</code></td>
+<td>WebUI password (container)</td>
+<td><code>admin</code></td>
+</tr>
+<tr>
+<td><code>PROXY_PORT</code></td>
+<td>Download proxy port</td>
+<td><code>7186</code></td>
+</tr>
+<tr>
+<td><code>MERGE_SERVICE_PORT</code></td>
+<td>FastAPI port</td>
+<td><code>7187</code></td>
+</tr>
+<tr>
+<td><code>BRIDGE_PORT</code></td>
+<td>WebUI bridge port</td>
+<td><code>7188</code></td>
+</tr>
+<tr>
+<td><code>MERGE_SERVICE_HOST</code></td>
+<td>FastAPI bind host</td>
+<td><code>0.0.0.0</code></td>
+</tr>
+<tr>
+<td><code>SERVER_PORT</code></td>
+<td>Go server port</td>
+<td><code>7187</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="performance-tuning">9.3 Performance Tuning</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MAX_CONCURRENT_SEARCHES</code></td>
+<td>Max parallel searches</td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td><code>MAX_CONCURRENT_TRACKERS</code></td>
+<td>Max parallel tracker calls</td>
+<td><code>10</code></td>
+</tr>
+<tr>
+<td><code>MAX_CONCURRENT_SSE_STREAMS</code></td>
+<td>Max open SSE connections</td>
+<td><code>32</code></td>
+</tr>
+<tr>
+<td><code>PUBLIC_TRACKER_DEADLINE_SECONDS</code></td>
+<td>Per-tracker timeout</td>
+<td><code>15</code></td>
+</tr>
+<tr>
+<td><code>PLUGIN_TIMEOUT</code></td>
+<td>Plugin execution timeout</td>
+<td><code>10</code></td>
+</tr>
+<tr>
+<td><code>SSE_TIMEOUT</code></td>
+<td>SSE connection timeout</td>
+<td><code>30</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="feature-toggles">9.4 Feature Toggles</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ENABLE_DEAD_TRACKERS</code></td>
+<td>Include dead trackers</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>DISABLE_THEME_INJECTION</code></td>
+<td>Disable theme</td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>JACKETT_API_KEY</code></td>
+<td>Jackett API key</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><code>JACKETT_URL</code></td>
+<td>Jackett URL</td>
+<td><code>http://localhost:9117</code></td>
+</tr>
+<tr>
+<td><code>ALLOWED_ORIGINS</code></td>
+<td>CORS origins</td>
+<td><code>*</code></td>
+</tr>
+<tr>
+<td><code>LOG_LEVEL</code></td>
+<td>Logging level</td>
+<td><code>INFO</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="metadata-enrichment">9.5 Metadata Enrichment</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OMDB_API_KEY</code></td>
+<td>OMDb API key</td>
+</tr>
+<tr>
+<td><code>TMDB_API_KEY</code></td>
+<td>TMDB API key</td>
+</tr>
+<tr>
+<td><code>ANILIST_CLIENT_ID</code></td>
+<td>AniList client ID</td>
+</tr>
+<tr>
+<td><code>TVDB_API_KEY</code></td>
+<td>TVDB API key</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rutracker-specific">9.6 RuTracker Specific</h3>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 40%" />
+<col style="width: 28%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RUTRACKER_MIRRORS</code></td>
+<td>Comma-separated mirror URLs</td>
+<td><code>https://rutracker.org,...</code></td>
+</tr>
+<tr>
+<td><code>PENDING_CAPTCHAS_MAX</code></td>
+<td>Max cached CAPTCHA challenges</td>
+<td><code>1024</code></td>
+</tr>
+<tr>
+<td><code>PENDING_CAPTCHAS_TTL_SECONDS</code></td>
+<td>CAPTCHA challenge TTL</td>
+<td><code>900</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="frontend-architecture-angular-21">10. Frontend Architecture
+(Angular 21)</h2>
+<h3 id="app-structure">10.1 App Structure</h3>
+<pre><code>frontend/src/app/
+  app.ts                    # Root component (standalone)
+  app.config.ts             # App configuration
+  app.routes.ts             # Route definitions
+  components/
+    dashboard/              # Main search dashboard
+    qbit-login-dialog/      # qBittorrent login modal
+    confirm-dialog/         # Confirmation dialogs
+    magnet-dialog/          # Magnet link generator
+    theme-picker/           # Theme selection
+    toast-container/        # Toast notifications
+    tracker-stat-dialog/    # Tracker status detail
+    site-footer/            # Footer
+  services/
+    api.service.ts          # HTTP client for all API calls
+    sse.service.ts          # Server-Sent Events handler
+    theme.service.ts        # Theme state management
+    dialog.service.ts       # Dialog management
+    toast.service.ts        # Toast notifications
+  models/
+    search.model.ts         # TypeScript interfaces
+    palette.model.ts        # Theme palette definitions
+  jackett/                  # Jackett management UI
+    credentials/
+    indexers/
+    jackett.routes.ts</code></pre>
+<h3 id="api-service-pattern">10.2 API Service Pattern</h3>
+<p>The frontend uses Angular’s <code>HttpClient</code> with a base URL
+of <code>''</code> (same origin, since the SPA is served from the
+FastAPI app on :7187):</p>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co">// api.service.ts</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">private</span> baseUrl <span class="op">=</span> <span class="st">&#39;&#39;</span><span class="op">;</span>  <span class="co">// Same-origin requests</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">search</span>(req<span class="op">:</span> SearchRequest)<span class="op">:</span> Observable<span class="op">&lt;</span>SearchResponse<span class="op">&gt;</span> {</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">this</span><span class="op">.</span><span class="at">http</span><span class="op">.</span><span class="fu">post</span><span class="op">&lt;</span>SearchResponse<span class="op">&gt;</span>(<span class="vs">`</span><span class="sc">${</span><span class="kw">this</span><span class="op">.</span><span class="at">baseUrl</span><span class="sc">}</span><span class="vs">/api/v1/search`</span><span class="op">,</span> req)<span class="op">;</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co">// SSE connection</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="fu">connect</span>(searchId<span class="op">:</span> <span class="dt">string</span>)<span class="op">:</span> <span class="dt">void</span> {</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">this</span><span class="op">.</span><span class="at">eventSource</span> <span class="op">=</span> <span class="kw">new</span> <span class="bu">EventSource</span>(<span class="vs">`/api/v1/search/stream/</span><span class="sc">${</span>searchId<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Listens for: search_start, result_found, results_update, search_complete</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="dashboard-features">10.3 Dashboard Features</h3>
+<ul>
+<li><strong>Search form</strong>: Query input, category dropdown, sort
+controls</li>
+<li><strong>Live results table</strong>: Real-time updates via SSE</li>
+<li><strong>Tracker status chips</strong>: Per-tracker progress
+indicators</li>
+<li><strong>CAPTCHA modal</strong>: RuTracker CAPTCHA challenge
+solving</li>
+<li><strong>Download buttons</strong>: Direct download, magnet link,
+file download</li>
+<li><strong>Theme picker</strong>: 8 palettes, dark/light mode</li>
+<li><strong>qBittorrent login</strong>: Modal for WebUI
+authentication</li>
+</ul>
+<hr />
+<h2 id="hook-system">11. Hook System</h2>
+<h3 id="hook-events">11.1 Hook Events</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>When Fired</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>search_start</code></td>
+<td>Search initiated</td>
+</tr>
+<tr>
+<td><code>search_progress</code></td>
+<td>Intermediate results available</td>
+</tr>
+<tr>
+<td><code>search_complete</code></td>
+<td>All trackers finished</td>
+</tr>
+<tr>
+<td><code>download_start</code></td>
+<td>Download request received</td>
+</tr>
+<tr>
+<td><code>download_progress</code></td>
+<td>Download in progress</td>
+</tr>
+<tr>
+<td><code>download_complete</code></td>
+<td>All URLs processed</td>
+</tr>
+<tr>
+<td><code>merge_complete</code></td>
+<td>Deduplication finished</td>
+</tr>
+<tr>
+<td><code>validation_complete</code></td>
+<td>Tracker validation finished</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hook-registration">11.2 Hook Registration</h3>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST http://localhost:7187/api/v1/hooks <span class="dt">\</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Content-Type: application/json&quot;</span> <span class="dt">\</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&#39;{</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;name&quot;: &quot;notify_on_download&quot;,</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;event&quot;: &quot;download_complete&quot;,</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;script_path&quot;: &quot;/config/scripts/notify.sh&quot;,</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;enabled&quot;: true,</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;timeout&quot;: 30,</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="st">    &quot;environment&quot;: {&quot;WEBHOOK_URL&quot;: &quot;https://hooks.example.com/notify&quot;}</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="st">  }&#39;</span></span></code></pre></div>
+<hr />
+<h2 id="browser-extension-integration-points">12. Browser Extension
+Integration Points</h2>
+<h3 id="primary-integration-strategy">12.1 Primary Integration
+Strategy</h3>
+<p>A browser extension should communicate directly with the
+<strong>FastAPI merge service on port 7187</strong>. The extension
+can:</p>
+<ol type="1">
+<li><strong>Search</strong>: <code>POST /api/v1/search</code> +
+<code>GET /api/v1/search/stream/{id}</code> (SSE)</li>
+<li><strong>Download</strong>: <code>POST /api/v1/download</code> to add
+to qBittorrent</li>
+<li><strong>Get torrent file</strong>:
+<code>POST /api/v1/download/file</code></li>
+<li><strong>Generate magnet</strong>:
+<code>POST /api/v1/magnet</code></li>
+<li><strong>Check auth</strong>:
+<code>GET /api/v1/auth/status</code></li>
+<li><strong>Get config</strong>: <code>GET /api/v1/config</code> (for
+qBittorrent URL)</li>
+</ol>
+<h3 id="extension-api-usage-examples">12.2 Extension API Usage
+Examples</h3>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">// 1. Start a search</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> searchResponse <span class="op">=</span> <span class="cf">await</span> <span class="fu">fetch</span>(<span class="st">&#39;http://localhost:7187/api/v1/search&#39;</span><span class="op">,</span> {</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">method</span><span class="op">:</span> <span class="st">&#39;POST&#39;</span><span class="op">,</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">headers</span><span class="op">:</span> { <span class="st">&#39;Content-Type&#39;</span><span class="op">:</span> <span class="st">&#39;application/json&#39;</span> }<span class="op">,</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">body</span><span class="op">:</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({ <span class="dt">query</span><span class="op">:</span> <span class="st">&#39;Ubuntu 24.04&#39;</span><span class="op">,</span> <span class="dt">category</span><span class="op">:</span> <span class="st">&#39;all&#39;</span><span class="op">,</span> <span class="dt">limit</span><span class="op">:</span> <span class="dv">50</span> })</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> { search_id } <span class="op">=</span> <span class="cf">await</span> searchResponse<span class="op">.</span><span class="fu">json</span>()<span class="op">;</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co">// 2. Stream results via SSE</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> eventSource <span class="op">=</span> <span class="kw">new</span> <span class="bu">EventSource</span>(</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="vs">`http://localhost:7187/api/v1/search/stream/</span><span class="sc">${</span>search_id<span class="sc">}</span><span class="vs">`</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>eventSource<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;result_found&#39;</span><span class="op">,</span> (e) <span class="kw">=&gt;</span> {</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> result <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(e<span class="op">.</span><span class="at">data</span>)<span class="op">;</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Found: </span><span class="sc">${</span>result<span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span>result<span class="op">.</span><span class="at">seeds</span><span class="sc">}</span><span class="vs"> seeds)`</span>)<span class="op">;</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>eventSource<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;search_complete&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>  eventSource<span class="op">.</span><span class="fu">close</span>()<span class="op">;</span></span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a><span class="co">// 3. Download a torrent</span></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> <span class="fu">fetch</span>(<span class="st">&#39;http://localhost:7187/api/v1/download&#39;</span><span class="op">,</span> {</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  <span class="dt">method</span><span class="op">:</span> <span class="st">&#39;POST&#39;</span><span class="op">,</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>  <span class="dt">headers</span><span class="op">:</span> { <span class="st">&#39;Content-Type&#39;</span><span class="op">:</span> <span class="st">&#39;application/json&#39;</span> }<span class="op">,</span></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>  <span class="dt">body</span><span class="op">:</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>    <span class="dt">result_id</span><span class="op">:</span> <span class="st">&#39;uuid-of-result&#39;</span><span class="op">,</span></span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>    <span class="dt">download_urls</span><span class="op">:</span> [<span class="st">&#39;https://tracker.example.com/download/12345&#39;</span>]</span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a><span class="co">// 4. Get torrent file as blob</span></span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> blobResponse <span class="op">=</span> <span class="cf">await</span> <span class="fu">fetch</span>(<span class="st">&#39;http://localhost:7187/api/v1/download/file&#39;</span><span class="op">,</span> {</span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>  <span class="dt">method</span><span class="op">:</span> <span class="st">&#39;POST&#39;</span><span class="op">,</span></span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>  <span class="dt">headers</span><span class="op">:</span> { <span class="st">&#39;Content-Type&#39;</span><span class="op">:</span> <span class="st">&#39;application/json&#39;</span> }<span class="op">,</span></span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>  <span class="dt">body</span><span class="op">:</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({ <span class="dt">result_id</span><span class="op">:</span> <span class="st">&#39;uuid&#39;</span><span class="op">,</span> <span class="dt">download_urls</span><span class="op">:</span> [<span class="st">&#39;https://...&#39;</span>] })</span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> blob <span class="op">=</span> <span class="cf">await</span> blobResponse<span class="op">.</span><span class="fu">blob</span>()<span class="op">;</span></span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a><span class="co">// 5. Check if service is running</span></span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span> {</span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> health <span class="op">=</span> <span class="cf">await</span> <span class="fu">fetch</span>(<span class="st">&#39;http://localhost:7187/health&#39;</span>)<span class="op">;</span></span>
+<span id="cb21-42"><a href="#cb21-42" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> { status } <span class="op">=</span> <span class="cf">await</span> health<span class="op">.</span><span class="fu">json</span>()<span class="op">;</span></span>
+<span id="cb21-43"><a href="#cb21-43" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Boba is running:&#39;</span><span class="op">,</span> status <span class="op">===</span> <span class="st">&#39;healthy&#39;</span>)<span class="op">;</span></span>
+<span id="cb21-44"><a href="#cb21-44" aria-hidden="true" tabindex="-1"></a>} <span class="cf">catch</span> (e) {</span>
+<span id="cb21-45"><a href="#cb21-45" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Boba not available&#39;</span>)<span class="op">;</span></span>
+<span id="cb21-46"><a href="#cb21-46" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="content-script-integration">12.3 Content Script Integration</h3>
+<p>For injecting search/download buttons on torrent sites:</p>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">// manifest.json (v3)</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>{</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;host_permissions&quot;</span><span class="op">:</span> [<span class="st">&quot;*://1337x.to/*&quot;</span><span class="op">,</span> <span class="st">&quot;*://thepiratebay.org/*&quot;</span>]<span class="op">,</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;permissions&quot;</span><span class="op">:</span> [<span class="st">&quot;storage&quot;</span><span class="op">,</span> <span class="st">&quot;activeTab&quot;</span>]<span class="op">,</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;content_scripts&quot;</span><span class="op">:</span> [{</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;matches&quot;</span><span class="op">:</span> [<span class="st">&quot;*://1337x.to/*&quot;</span>]<span class="op">,</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;js&quot;</span><span class="op">:</span> [<span class="st">&quot;content.js&quot;</span>]</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  }]</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="co">// content.js -- Send page torrents to Boba</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> torrents <span class="op">=</span> <span class="fu">extractTorrentsFromPage</span>()<span class="op">;</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>chrome<span class="op">.</span><span class="at">runtime</span><span class="op">.</span><span class="fu">sendMessage</span>({</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">action</span><span class="op">:</span> <span class="st">&#39;search_result&#39;</span><span class="op">,</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>  torrents<span class="op">,</span></span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>  <span class="dt">source</span><span class="op">:</span> <span class="bu">window</span><span class="op">.</span><span class="at">location</span><span class="op">.</span><span class="at">hostname</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="authentication-handling">12.4 Authentication Handling</h3>
+<p>The extension should: 1. Detect if Boba is running
+(<code>GET /health</code>) 2. Prompt for qBittorrent credentials if
+needed (<code>POST /api/v1/auth/qbittorrent</code>) 3. Handle RuTracker
+CAPTCHA challenges via <code>GET /api/v1/auth/rutracker/captcha</code>
+4. Store credentials securely using browser extension storage API</p>
+<h3 id="cors-considerations">12.5 CORS Considerations</h3>
+<ul>
+<li>By default, <code>ALLOWED_ORIGINS=*</code> in development</li>
+<li>For production, set
+<code>ALLOWED_ORIGINS=http://localhost:7187,chrome-extension://YOUR_EXTENSION_ID</code></li>
+<li>The FastAPI CORS middleware handles preflight OPTIONS
+automatically</li>
+<li>Extension background scripts are not subject to CORS
+restrictions</li>
+</ul>
+<h3 id="recommended-extension-architecture">12.6 Recommended Extension
+Architecture</h3>
+<pre><code>Browser Extension (MV3)
+|
++-- background.js (service worker)
+|   +-- Manages SSE connections to Boba
+|   +-- Caches search results
+|   +-- Handles downloads
+|   +-- Stores credentials securely
+|
++-- popup/ (React/Vue popup)
+|   +-- Search form
+|   +-- Results list
+|   +-- Settings (Boba URL, credentials)
+|
++-- content/ (content scripts)
+|   +-- Injects Boba buttons on torrent sites
+|   +-- Extracts torrent info from pages
+|
++-- options/ (options page)
+    +-- Full settings
+    +-- Tracker configuration</code></pre>
+<hr />
+<h2 id="key-files-reference">13. Key Files Reference</h2>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>download-proxy/src/api/__init__.py</code></td>
+<td>FastAPI app, lifespan, CORS, SPA serving</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/api/routes.py</code></td>
+<td>Core search/download endpoints</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/api/auth.py</code></td>
+<td>Tracker auth, CAPTCHA handling</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/api/streaming.py</code></td>
+<td>SSE streaming implementation</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/api/hooks.py</code></td>
+<td>Hook CRUD + dispatch</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/api/scheduler.py</code></td>
+<td>Scheduled search management</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/merge_service/search.py</code></td>
+<td>SearchOrchestrator, data models</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/merge_service/deduplicator.py</code></td>
+<td>Result deduplication</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/merge_service/enricher.py</code></td>
+<td>OMDB/TMDB metadata enrichment</td>
+</tr>
+<tr>
+<td><code>webui-bridge.py</code></td>
+<td>Private-tracker download bridge</td>
+</tr>
+<tr>
+<td><code>qBitTorrent-go/cmd/qbittorrent-proxy/main.go</code></td>
+<td>Go backend entry point</td>
+</tr>
+<tr>
+<td><code>qBitTorrent-go/internal/api/search.go</code></td>
+<td>Go search handlers</td>
+</tr>
+<tr>
+<td><code>qBitTorrent-go/internal/service/merge_search.go</code></td>
+<td>Go search service</td>
+</tr>
+<tr>
+<td><code>frontend/src/app/services/api.service.ts</code></td>
+<td>Angular HTTP client</td>
+</tr>
+<tr>
+<td><code>frontend/src/app/services/sse.service.ts</code></td>
+<td>Angular SSE handler</td>
+</tr>
+<tr>
+<td><code>frontend/src/app/models/search.model.ts</code></td>
+<td>TypeScript type definitions</td>
+</tr>
+<tr>
+<td><code>docker-compose.yml</code></td>
+<td>Service topology</td>
+</tr>
+<tr>
+<td><code>.env.example</code></td>
+<td>Configuration template</td>
+</tr>
+<tr>
+<td><code>docs/api/openapi.json</code></td>
+<td>Machine-readable API spec</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="version-numbers-compatibility">14. Version Numbers &amp;
+Compatibility</h2>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Version</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.12-alpine</td>
+<td>Download proxy container</td>
+</tr>
+<tr>
+<td>FastAPI</td>
+<td>Latest (pip)</td>
+<td>Merge service framework</td>
+</tr>
+<tr>
+<td>Angular</td>
+<td>21</td>
+<td>Frontend SPA</td>
+</tr>
+<tr>
+<td>Go</td>
+<td>1.21+</td>
+<td>Backend (Gin framework)</td>
+</tr>
+<tr>
+<td>qBittorrent</td>
+<td>Latest (linuxserver image)</td>
+<td>Core torrent client</td>
+</tr>
+<tr>
+<td>Jackett</td>
+<td>Latest (linuxserver image)</td>
+<td>External indexer</td>
+</tr>
+<tr>
+<td>SQLite</td>
+<td>3.x</td>
+<td>Go backend only</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="security-considerations">15. Security Considerations</h2>
+<ol type="1">
+<li><strong>Hardcoded credentials</strong>: Default
+<code>admin/admin</code> for qBittorrent WebUI and boba-jackett</li>
+<li><strong>Credential storage</strong>: <code>.env</code> file is
+gitignored; container env vars used</li>
+<li><strong>CORS</strong>: <code>ALLOWED_ORIGINS=*</code> in
+development; restrict in production</li>
+<li><strong>CAPTCHA TTL</strong>: <code>_pending_captchas</code> uses
+TTLCache (15 min default)</li>
+<li><strong>Path traversal</strong>: Hook script paths validated (no
+<code>..</code> allowed)</li>
+<li><strong>Credential scrubbing</strong>: Logging uses
+<code>CredentialScrubber</code> filter</li>
+<li><strong>No auth on read endpoints</strong>: GET/HEAD pass through on
+boba-jackett</li>
+</ol>
+<hr />
+<h2 id="citations">Citations</h2>
+<pre><code>Claim: Boba-Base is a multi-tracker meta-search for qBittorrent with FastAPI merge search on port 7187
+Source: Boba-Base README.md
+URL: https://github.com/milos85vasic/Boba-Base/blob/main/README.md
+Date: 2025-04-10
+Excerpt: &quot;Multi-tracker meta-search for qBittorrent -- self-hosted, containerised, private-tracker-aware... Merge Search Service -- FastAPI service (:7187) that fans out across 40+ trackers&quot;
+Context: Official project documentation
+Confidence: high
+
+Claim: The data model uses Python dataclasses and Pydantic models with no relational database
+Source: Boba-Base docs/DATA_MODEL.md
+URL: https://github.com/milos85vasic/Boba-Base/blob/main/docs/DATA_MODEL.md
+Date: N/A (repo file)
+Excerpt: &quot;qBittorrent-Fixed has no relational database. All persistent state lives in qBittorrent itself and in a handful of JSON files under config/&quot;
+Context: Architecture documentation
+Confidence: high
+
+Claim: The SSE streaming endpoint emits result_found events as each tracker completes
+Source: Boba-Base download-proxy/src/api/streaming.py
+URL: https://github.com/milos85vasic/Boba-Base/blob/main/download-proxy/src/api/streaming.py
+Date: N/A (repo file)
+Excerpt: &quot;yield SSEHandler.format_event(event=&#39;result_found&#39;, data={...})&quot;
+Context: Source code for SSE streaming
+Confidence: high
+
+Claim: The webui-bridge.py intercepts download requests for private trackers
+Source: Boba-Base webui-bridge.py
+URL: https://github.com/milos85vasic/Boba-Base/blob/main/webui-bridge.py
+Date: N/A (repo file)
+Excerpt: &quot;This module solves the WebUI download issue by creating a bridge between WebUI and nova2dl.py. It intercepts download requests and handles them with proper authentication.&quot;
+Context: Private tracker bridge implementation
+Confidence: high
+
+Claim: The Go backend uses admin/admin Basic Auth for mutating endpoints
+Source: Boba-Base qBitTorrent-go/internal/jackettapi/auth_middleware.go
+URL: https://github.com/milos85vasic/Boba-Base/blob/main/qBitTorrent-go/internal/jackettapi/auth_middleware.go
+Date: N/A (repo file)
+Excerpt: &quot;adminUser/adminPass mirror the project&#39;s hardcoded WebUI credentials... Mutating requests must present these via HTTP Basic Auth&quot;
+Context: Authentication middleware source
+Confidence: high
+
+Claim: The download endpoint fetches torrents with tracker authentication and uploads to qBittorrent
+Source: Boba-Base download-proxy/src/api/routes.py
+URL: https://github.com/milos85vasic/Boba-Base/blob/main/download-proxy/src/api/routes.py
+Date: N/A (repo file)
+Excerpt: &quot;tracker = _is_tracker_url(url); if tracker: torrent_data = await orch.fetch_torrent(tracker, url); ... session.post(f&#39;{qbit_url}/api/v2/torrents/add&#39;, data=form)&quot;
+Context: Download handler implementation
+Confidence: high
+
+Claim: There are 48 built-in search plugins supporting both public and private trackers
+Source: Boba-Base docs/PLUGINS.md
+URL: https://github.com/milos85vasic/Boba-Base/blob/main/docs/PLUGINS.md
+Date: N/A (repo file)
+Excerpt: &quot;This project includes multiple search engine plugins for qBittorrent... 48 plugin engines&quot;
+Context: Plugin documentation
+Confidence: high
+
+Claim: The OpenAPI spec is available at /openapi.json and frozen for CI diffing
+Source: Boba-Base docs/api/openapi.json
+URL: https://github.com/milos85vasic/Boba-Base/blob/main/docs/api/openapi.json
+Date: N/A (repo file)
+Excerpt: Full OpenAPI 3.1 spec with schemas for SearchRequest, SearchResponse, DownloadRequest, etc.
+Context: Machine-readable API specification
+Confidence: high
+
+Claim: The Angular frontend uses same-origin requests with empty baseUrl
+Source: Boba-Base frontend/src/app/services/api.service.ts
+URL: https://github.com/milos85vasic/Boba-Base/blob/main/frontend/src/app/services/api.service.ts
+Date: N/A (repo file)
+Excerpt: &quot;private baseUrl = &#39;&#39;;&quot;
+Context: Frontend API service
+Confidence: high</code></pre>
+<hr />
+<p><em>Research completed. This document provides a comprehensive
+architectural analysis of Boba-Base suitable for browser extension
+development planning.</em></p>
