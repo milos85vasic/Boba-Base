@@ -1,16 +1,42 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-06 (full-stack completion sweep — committed & pushed)
-**Last commit:** `25ffe5d` (working tree CLEAN)
-**Branch:** `main` — in sync with origin/github/upstream (all at `25ffe5d`)
-**Uncommitted work:** none · **Unpushed:** none
+**Session:** 2026-06-06 (security & cross-platform hardening — backlog burn-down)
+**Last commit:** `e45cae7` (working tree CLEAN apart from this file)
+**Branch:** `main` — 5 commits ahead of pushed `25ffe5d` (push pending below)
+**Uncommitted work:** none · **Unpushed:** the 5 hardening commits + this doc
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff.
 
 ---
 
-## Last Push (2026-06-06)
+## This Session — Known-Issue Backlog Burn-down
+
+Tackled the CONTINUATION "Known Issues" backlog (all TDD RED-first):
+
+| # | Issue | Resolution |
+|---|-------|-----------|
+| 5 | CORS wide open (`*`) | Default localhost allowlist; `*` opt-in warns. `ALLOWED_ORIGINS` override. Compose de-hardcoded. |
+| 6 | SSE streams only UUID-gated | Per-search `stream_token` issued + validated; opt-in enforce via `SSE_REQUIRE_TOKEN` (query/​Bearer). Frontend threads token. |
+| 7 | Tracker sessions plaintext | `EncryptedSessionStore` Fernet-encrypts `_tracker_sessions` at rest. `SESSION_ENCRYPTION_KEY` pins key. |
+| 1 | macOS podman ports not forwarded | `start.sh ensure_macos_tunnel` runs the tunnel on Darwin (best-effort). |
+| 3 | `/mnt/DATA` breaks macOS | `default_data_dir()` platform-aware (`$HOME/qbit-data` on macOS). |
+| 8 | Coverage barely over floor | helpers.py network paths covered; total 49.32% → **50.73%**. |
+
+Commits (unpushed): `b74f4cf` CORS · `7783070` Fernet+SSE-token ·
+`256ec7e` platform · `7d4e64c` coverage · `e45cae7` docs.
+
+**Verification (clean tree this session):** Python unit **1393 passed**
+(cov **50.73%**) · mypy clean (19) · ruff clean · go vet/`-race` 13 pkgs ·
+pre-build gate 15/15 · guard-hook 27 · bash data-dir 4 · `ng build` OK ·
+frontend **328 passed**.
+
+**To push** (§11.4.71 fetch-first, §11.4.113 no force):
+`git fetch --all --prune && git push origin main && git push github main && git push upstream main`
+
+---
+
+## Prior Push (2026-06-06, earlier)
 
 ```
 839304b chore(go): remove unused trackerStatsFromMeta helper (staticcheck U1000)
@@ -18,10 +44,7 @@
 25ffe5d docs(continuation): refresh handoff snapshot to committed state
 ```
 
-Pushed to all remotes as a clean fast-forward `c4a2def..25ffe5d` (no
-force — §11.4.113). `origin`, `github`, `upstream` all resolve to the
-canonical repo (`qBitTorrent.git` redirects to `Boba-Base.git`) and are
-all at `25ffe5d`. §11.4.71 fetch-before-push: no divergence found.
+Pushed to all remotes as a clean fast-forward `c4a2def..25ffe5d`.
 
 ---
 
@@ -55,13 +78,11 @@ Pre-build gate:  15/15 passed
 
 ## Known Issues (honest, not swept)
 
-### 1. macOS + podman `network_mode: host` does NOT forward ports
-On macOS, podman runs containers inside a Linux VM. `network_mode: host` makes ports reachable *inside* the VM but NOT on the macOS host `localhost`. The SSH tunnel (`scripts/ensure-macos-tunnel.sh`) bridges this but is:
-- Not wired into `start.sh`
-- Untested (just created this session)
-- Temporary fix — manual restart if podman machine reboots
-
-**Workaround used:** `ssh -L 7186:127.0.0.1:7186 -L 7187:127.0.0.1:7187 -L 7189:127.0.0.1:7189 -L 9117:127.0.0.1:9117 ...` to the podman machine VM.
+### 1. macOS + podman `network_mode: host` does NOT forward ports — ✅ RESOLVED (this session)
+`scripts/ensure-macos-tunnel.sh` is now wired into `start.sh` via
+`ensure_macos_tunnel` (Darwin-only, best-effort, no-op on Linux). Still a
+tunnel (the underlying podman-on-macOS limitation is unchanged) and needs a
+re-run if the podman machine reboots, but it's automatic on `./start.sh`.
 
 ### 2. Containers may be down on session start
 4 containers need to be running for full integration/e2e/security/stress/chaos tests. They may be stopped between sessions. Run:
@@ -72,23 +93,32 @@ podman compose up -d
 scripts/ensure-macos-tunnel.sh
 ```
 
-### 3. `/mnt/DATA` doesn't exist on macOS
-`docker-compose.yml` hardcodes `/mnt/DATA` as `QBITTORRENT_DATA_DIR` default. macOS workaround: `export QBITTORRENT_DATA_DIR="$HOME/qbit-data"`. This isn't persisted anywhere — must be set each session.
+### 3. `/mnt/DATA` doesn't exist on macOS — ✅ RESOLVED (this session)
+`start.sh default_data_dir()` is platform-aware: `/mnt/DATA` on Linux,
+`$HOME/qbit-data` on macOS. Explicit `QBITTORRENT_DATA_DIR` still overrides.
+(`docker-compose.yml` still defaults `/mnt/DATA` for direct `compose` use —
+set `QBITTORRENT_DATA_DIR` or start via `./start.sh`.)
 
 ### 4. Go backend is a skeleton
 `AGENTS.md` documents this honestly. It replicates the API surface and proxies to qBittorrent's built-in search API but **lacks**: plugin subsystem, deduplication, enrichment, private-tracker auth, real download proxying, scheduled execution. Python is the real backend.
 
-### 5. CORS is wide open (`allow_origins=["*"]`)
-Phase 3 plans to tighten to `ALLOWED_ORIGINS` env var. Not done.
+### 5. CORS is wide open (`allow_origins=["*"]`) — ✅ RESOLVED (this session)
+Default is now a localhost allowlist; `ALLOWED_ORIGINS` overrides; explicit
+`*` opt-in logs a warning. See `api/__init__.py` + `test_cors_config.py`.
 
-### 6. SSE streams unprotected (only UUID barrier)
-Phase 3 plans per-client bearer tokens. Not done.
+### 6. SSE streams unprotected (only UUID barrier) — ✅ RESOLVED (this session)
+Per-search `stream_token` issued in the search response and validated by the
+stream endpoint when `SSE_REQUIRE_TOKEN` is enabled (via `?token=` or
+`Authorization: Bearer`). Frontend threads the token automatically.
+Enforcement defaults OFF (non-breaking) — flip the env var to harden.
 
-### 7. Tracker sessions in plaintext in-memory
-Phase 2.3 plans Fernet-at-rest encryption. Not done.
+### 7. Tracker sessions in plaintext in-memory — ✅ RESOLVED (this session)
+`EncryptedSessionStore` (`merge_service/search.py`) Fernet-encrypts
+`_tracker_sessions` at rest. `SESSION_ENCRYPTION_KEY` pins the key.
 
-### 8. Coverage 49.32% — barely over threshold
-Weak areas: `plugins/helpers.py` (36%), `plugins/` source files, many error paths in `search.py` (77%). Coverage gate is 49% in `pyproject.toml`.
+### 8. Coverage 49.32% — barely over threshold — ✅ IMPROVED (this session)
+Now **50.73%** (gate 49%). `plugins/helpers.py` network paths covered.
+Remaining low: other `plugins/` source files, some `search.py` error paths.
 
 ### 9. Private-tracker tests skip without credentials
 34 security tests skip without valid `.env` credentials (IPTorrents, NNMClub, etc.). Those code paths are untested in this environment.
