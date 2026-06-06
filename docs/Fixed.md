@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 2
-**Last modified:** 2026-06-06T18:00:00Z
+**Revision:** 3
+**Last modified:** 2026-06-06T18:30:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -102,6 +102,25 @@ to the nova3 root; `download-proxy/requirements.txt` adds `PySocks>=1.7.1`.
   results / 0 public trackers** → **909 results / 14 public trackers** (rutor
   235, torrentdownload 243, linuxtracker 123, …). `/tmp/boba_search2.json`.
 Remaining per-plugin errors/timeouts tracked separately as BOB-015.
+
+## §8. [BOB-016] Jackett plugin crashed (`Pool(0)`) when zero indexers are configured
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug · **Severity:** Medium
+**Closed:** 2026-06-06
+
+`plugins/community/jackett.py` search() did `with Pool(min(len(indexers),
+self.thread_count))`. With no configured Jackett indexers, `min(0, N)==0` and
+`multiprocessing.dummy.Pool(0)` raised `ValueError: Number of processes must be
+at least 1` — so EVERY Jackett search failed deterministically (the autoconfig
+had configured 0 indexers). Found via systematic-debugging determinism test
+(jackett errored in BOTH live runs while other trackers flapped).
+**Fix:** guard `if not indexers: return` before building the pool.
+**Evidence:**
+- `tests/unit/test_jackett_plugin_pool.py` — 2 passed (RED reproduced the exact
+  ValueError before the fix; second test proves the pool path still fans out).
+- Runtime: in-container harness `jackett().search('ubuntu','all')` → was
+  ValueError, now `JACKETT_SEARCH_OK_NO_CRASH` (returns gracefully).
 
 ## §6. [BOB-014] Go `generateID()` collided under burst (UnixNano-only)
 

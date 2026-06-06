@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 2
-**Last modified:** 2026-06-06T18:00:00Z
+**Revision:** 3
+**Last modified:** 2026-06-06T18:30:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -12,24 +12,28 @@
 
 ---
 
-## §1. [BOB-015] Individual public-tracker plugins error/time-out after the systemic fix
+## §1. [BOB-015] Remaining public-tracker failures are external / non-deterministic
 
 **Status:** Queued
 **Type:** Bug
-**Severity:** Medium
+**Severity:** Low
 **Created:** 2026-06-06
 
-After BOB-005 (systemic import failure) was fixed, 14 public trackers now
-return results, but a few still error with DISTINCT, per-plugin causes (no
-longer the shared import failure):
-- per-plugin runtime exceptions: `piratebay`, `jackett`, `tokyotoshokan`
-- per-tracker 25s deadline timeouts: `kickass`, `nyaa`, `torlock`
-- `snowfl`: "plugin parse failed (upstream HTML likely changed)"
+systematic-debugging FINDING (determinism test): the residual per-tracker
+failures are **external/non-deterministic** (site availability + network from
+this host), NOT code root causes. Two consecutive identical live searches:
+run A = 909 results / 14 success / 10 error; run B = **1422 results / 19
+success / 5 error**; `nyaa, piratebay, snowfl, torlock` flipped error→success
+with **zero** success→error flips. The orchestrator already isolates per-tracker
+failures (other trackers succeed), so impact is bounded.
 
-**Evidence:** live search `/tmp/boba_search2.json` — 14 success / 10 error,
-total 909 results (vs 49 before BOB-005 fix). Each needs its own
-investigation (parse update / timeout tuning / per-plugin import).
-RuTracker is tracked separately as BOB-008 (CAPTCHA).
+Residual (external-triggered): `kickass` (timeout), `tokyotoshokan` (SSL EOF;
+also crashes ungracefully on empty response — minor missing guard), `yts`
+(intermittent). The deterministic `jackett` crash within this set was split out
+and FIXED as **BOB-016**. RuTracker CAPTCHA is **BOB-008**.
+**Resolution direction:** low priority; optionally add empty-response guards to
+the crash-prone plugins (defense-in-depth) — upstream sites' availability is
+outside our control.
 
 ## §2. [BOB-006] NNMClub username/password login not wired (cookie-only)
 

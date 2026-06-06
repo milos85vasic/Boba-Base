@@ -1,6 +1,6 @@
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-06-06T18:00:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-06-06T18:30:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -14,25 +14,29 @@ authoritative for open work.</p>
 </blockquote>
 <hr />
 <h2
-id="bob-015-individual-public-tracker-plugins-errortime-out-after-the-systemic-fix">§1.
-[BOB-015] Individual public-tracker plugins error/time-out after the
-systemic fix</h2>
+id="bob-015-remaining-public-tracker-failures-are-external-non-deterministic">§1.
+[BOB-015] Remaining public-tracker failures are external /
+non-deterministic</h2>
 <p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> Medium <strong>Created:</strong>
-2026-06-06</p>
-<p>After BOB-005 (systemic import failure) was fixed, 14 public trackers
-now return results, but a few still error with DISTINCT, per-plugin
-causes (no longer the shared import failure): - per-plugin runtime
-exceptions: <code>piratebay</code>, <code>jackett</code>,
-<code>tokyotoshokan</code> - per-tracker 25s deadline timeouts:
-<code>kickass</code>, <code>nyaa</code>, <code>torlock</code> -
-<code>snowfl</code>: “plugin parse failed (upstream HTML likely
-changed)”</p>
-<p><strong>Evidence:</strong> live search
-<code>/tmp/boba_search2.json</code> — 14 success / 10 error, total 909
-results (vs 49 before BOB-005 fix). Each needs its own investigation
-(parse update / timeout tuning / per-plugin import). RuTracker is
-tracked separately as BOB-008 (CAPTCHA).</p>
+<strong>Severity:</strong> Low <strong>Created:</strong> 2026-06-06</p>
+<p>systematic-debugging FINDING (determinism test): the residual
+per-tracker failures are <strong>external/non-deterministic</strong>
+(site availability + network from this host), NOT code root causes. Two
+consecutive identical live searches: run A = 909 results / 14 success /
+10 error; run B = <strong>1422 results / 19 success / 5 error</strong>;
+<code>nyaa, piratebay, snowfl, torlock</code> flipped error→success with
+<strong>zero</strong> success→error flips. The orchestrator already
+isolates per-tracker failures (other trackers succeed), so impact is
+bounded.</p>
+<p>Residual (external-triggered): <code>kickass</code> (timeout),
+<code>tokyotoshokan</code> (SSL EOF; also crashes ungracefully on empty
+response — minor missing guard), <code>yts</code> (intermittent). The
+deterministic <code>jackett</code> crash within this set was split out
+and FIXED as <strong>BOB-016</strong>. RuTracker CAPTCHA is
+<strong>BOB-008</strong>. <strong>Resolution direction:</strong> low
+priority; optionally add empty-response guards to the crash-prone
+plugins (defense-in-depth) — upstream sites’ availability is outside our
+control.</p>
 <h2
 id="bob-006-nnmclub-usernamepassword-login-not-wired-cookie-only">§2.
 [BOB-006] NNMClub username/password login not wired (cookie-only)</h2>

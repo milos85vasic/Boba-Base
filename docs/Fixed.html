@@ -1,6 +1,6 @@
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-06-06T18:00:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-06-06T18:30:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -116,6 +116,28 @@ went from <strong>49 results / 0 public trackers</strong> → <strong>909
 results / 14 public trackers</strong> (rutor 235, torrentdownload 243,
 linuxtracker 123, …). <code>/tmp/boba_search2.json</code>. Remaining
 per-plugin errors/timeouts tracked separately as BOB-015.</p>
+<h2
+id="bob-016-jackett-plugin-crashed-pool0-when-zero-indexers-are-configured">§8.
+[BOB-016] Jackett plugin crashed (<code>Pool(0)</code>) when zero
+indexers are configured</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug · <strong>Severity:</strong> Medium <strong>Closed:</strong>
+2026-06-06</p>
+<p><code>plugins/community/jackett.py</code> search() did
+<code>with Pool(min(len(indexers), self.thread_count))</code>. With no
+configured Jackett indexers, <code>min(0, N)==0</code> and
+<code>multiprocessing.dummy.Pool(0)</code> raised
+<code>ValueError: Number of processes must be at least 1</code> — so
+EVERY Jackett search failed deterministically (the autoconfig had
+configured 0 indexers). Found via systematic-debugging determinism test
+(jackett errored in BOTH live runs while other trackers flapped).
+<strong>Fix:</strong> guard <code>if not indexers: return</code> before
+building the pool. <strong>Evidence:</strong> -
+<code>tests/unit/test_jackett_plugin_pool.py</code> — 2 passed (RED
+reproduced the exact ValueError before the fix; second test proves the
+pool path still fans out). - Runtime: in-container harness
+<code>jackett().search('ubuntu','all')</code> → was ValueError, now
+<code>JACKETT_SEARCH_OK_NO_CRASH</code> (returns gracefully).</p>
 <h2 id="bob-014-go-generateid-collided-under-burst-unixnano-only">§6.
 [BOB-014] Go <code>generateID()</code> collided under burst
 (UnixNano-only)</h2>
