@@ -409,6 +409,7 @@ Key variables:
 - `NNMCLUB_COOKIES` -- NNM-Club cookie-based auth
 - `NNMCLUB_USERNAME/PASSWORD` -- NNM-Club fallback credentials
 - `IPTORRENTS_USERNAME/PASSWORD` -- IPTorrents credentials
+- `RUTOR_USERNAME/PASSWORD` -- **not consumed.** RuTor is a PUBLIC tracker with no login endpoint; it needs no authentication. If `RUTOR_USERNAME`/`RUTOR_PASSWORD` happen to be set in `.env`, they are ignored — the RuTor plugin searches and downloads anonymously.
 - `QBITTORRENT_DATA_DIR` -- host download path (platform-aware default: `/mnt/DATA` on Linux, `$HOME/qbit-data` on macOS)
 - `MERGE_SERVICE_PORT` -- default `7187`
 - `MERGE_SERVICE_HOST` -- default `0.0.0.0`
@@ -460,6 +461,7 @@ Support files (`plugins/`):
 - Kinozal credentials fall back to IPTorrents if unset
 - NNMClub needs `NNMCLUB_COOKIES` in `.env` for live testing
 - IPTorrents non-freeleech results never merge with other trackers; only `[free]` tagged ones merge
+- RuTor is a PUBLIC tracker with **no login endpoint** -- it needs no auth. Any `RUTOR_USERNAME`/`RUTOR_PASSWORD` in `.env` are NOT consumed
 - `config/download-proxy/src/` is **gitignored** -- do not commit copied source trees
 - Plugin source of truth is `plugins/X.py`, not `config/qBittorrent/nova3/engines/X.py`
 - `webui-bridge.py` runs on port **7188** (not 7186)

@@ -282,6 +282,13 @@ prefix denylist; defaults to
 <code>MERGE_SERVICE_PORT</code> (<code>7187</code>),
 <code>PROXY_PORT</code> (<code>7186</code>), <code>BRIDGE_PORT</code>
 (<code>7188</code>).</p>
+<blockquote>
+<p><strong>RuTor is a PUBLIC tracker with no login endpoint</strong> —
+it needs no authentication. Any
+<code>RUTOR_USERNAME</code>/<code>RUTOR_PASSWORD</code> that may live in
+<code>.env</code> are NOT consumed; the RuTor plugin searches and
+downloads anonymously.</p>
+</blockquote>
 <p><strong>boba-jackett (port 7189) — system-DB env vars</strong>: -
 <code>BOBA_MASTER_KEY</code> — 32-byte hex AES-256-GCM key encrypting
 <code>tracker_credentials</code>. <strong>Auto-generated at first

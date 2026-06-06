@@ -760,13 +760,18 @@ credentials (falls back to <code>IPTORRENTS_*</code> if unset) -
 <code>NNMCLUB_COOKIES</code> – NNM-Club cookie-based auth -
 <code>NNMCLUB_USERNAME/PASSWORD</code> – NNM-Club fallback credentials -
 <code>IPTORRENTS_USERNAME/PASSWORD</code> – IPTorrents credentials -
-<code>QBITTORRENT_DATA_DIR</code> – host download path (platform-aware
-default: <code>/mnt/DATA</code> on Linux, <code>$HOME/qbit-data</code>
-on macOS) - <code>MERGE_SERVICE_PORT</code> – default <code>7187</code>
-- <code>MERGE_SERVICE_HOST</code> – default <code>0.0.0.0</code> -
-<code>PROXY_PORT</code> – default <code>7186</code> -
-<code>BRIDGE_PORT</code> – default <code>7188</code> -
-<code>ALLOWED_ORIGINS</code> – CORS origins, comma-separated (default:
+<code>RUTOR_USERNAME/PASSWORD</code> – <strong>not consumed.</strong>
+RuTor is a PUBLIC tracker with no login endpoint; it needs no
+authentication. If
+<code>RUTOR_USERNAME</code>/<code>RUTOR_PASSWORD</code> happen to be set
+in <code>.env</code>, they are ignored — the RuTor plugin searches and
+downloads anonymously. - <code>QBITTORRENT_DATA_DIR</code> – host
+download path (platform-aware default: <code>/mnt/DATA</code> on Linux,
+<code>$HOME/qbit-data</code> on macOS) - <code>MERGE_SERVICE_PORT</code>
+– default <code>7187</code> - <code>MERGE_SERVICE_HOST</code> – default
+<code>0.0.0.0</code> - <code>PROXY_PORT</code> – default
+<code>7186</code> - <code>BRIDGE_PORT</code> – default <code>7188</code>
+- <code>ALLOWED_ORIGINS</code> – CORS origins, comma-separated (default:
 localhost allowlist on :7187/:4200; <code>*</code> opt-in warns) -
 <code>SSE_REQUIRE_TOKEN</code> – set <code>1</code>/<code>true</code> to
 require the per-search SSE bearer token on the stream endpoint (default
@@ -833,6 +838,10 @@ RuTracker may require browser-solved CAPTCHA (cookies expire)</li>
 live testing</li>
 <li>IPTorrents non-freeleech results never merge with other trackers;
 only <code>[free]</code> tagged ones merge</li>
+<li>RuTor is a PUBLIC tracker with <strong>no login endpoint</strong> –
+it needs no auth. Any
+<code>RUTOR_USERNAME</code>/<code>RUTOR_PASSWORD</code> in
+<code>.env</code> are NOT consumed</li>
 <li><code>config/download-proxy/src/</code> is
 <strong>gitignored</strong> – do not commit copied source trees</li>
 <li>Plugin source of truth is <code>plugins/X.py</code>, not
