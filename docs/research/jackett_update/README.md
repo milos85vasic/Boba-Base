@@ -19,3 +19,11 @@ all already current:
 Adding Jackett/Jackett as a submodule (building the .NET server from source)
 would be a major architectural change vs. the maintained image — operator
 decision, not done unilaterally (§11.4.66/§11.4.122).
+
+## Update (operator decision 2026-06-06): Jackett added as REFERENCE submodule
+
+Per operator choice, `git@github.com:Jackett/Jackett.git` is now a **reference-only**
+git submodule at `submodules/jackett` (latest release **v0.24.2027**, shallow). It
+is for source awareness / inspection / cherry-picking indexer definitions — the
+RUNTIME still uses the maintained `lscr.io/linuxserver/jackett:latest` image; we do
+NOT build Jackett from source. (BOB-019)

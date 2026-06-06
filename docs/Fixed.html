@@ -1,6 +1,6 @@
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-06-06T19:00:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-06-06T19:20:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -197,6 +197,20 @@ is no Jackett git submodule; the jackett.py plugin is at parity with
 qbittorrent/search-plugins v4.9 + our local improvements — the image is
 the update vector. See
 <code>docs/research/jackett_update/README.md</code>.</p>
+<h2
+id="bob-019-jackett-added-as-a-reference-submodule-latest-release">§14.
+[BOB-019] Jackett added as a reference submodule (latest release)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06</p>
+<p>Per operator decision,
+<code>git@github.com:Jackett/Jackett.git</code> is added as a
+<strong>reference-only</strong> git submodule at
+<code>submodules/jackett</code> (latest release
+<strong>v0.24.2027</strong>, shallow). Runtime still uses the maintained
+linuxserver image; we do NOT build Jackett from source. Provides source
+awareness for inspecting / cherry-picking indexer definitions. SSH URL
+per Hard-Stop #2; placed under <code>submodules/</code> per
+§11.4.28(C).</p>
 <h2 id="bob-014-go-generateid-collided-under-burst-unixnano-only">§6.
 [BOB-014] Go <code>generateID()</code> collided under burst
 (UnixNano-only)</h2>

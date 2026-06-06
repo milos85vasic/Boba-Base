@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 4
-**Last modified:** 2026-06-06T19:00:00Z
+**Revision:** 5
+**Last modified:** 2026-06-06T19:20:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -182,6 +182,19 @@ Pulled `lscr.io/linuxserver/jackett:latest` (server build 2026-06-06, digest
 jackett.py plugin is at parity with qbittorrent/search-plugins v4.9 + our local
 improvements — the image is the update vector. See
 `docs/research/jackett_update/README.md`.
+
+## §14. [BOB-019] Jackett added as a reference submodule (latest release)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Closed:** 2026-06-06
+
+Per operator decision, `git@github.com:Jackett/Jackett.git` is added as a
+**reference-only** git submodule at `submodules/jackett` (latest release
+**v0.24.2027**, shallow). Runtime still uses the maintained linuxserver image;
+we do NOT build Jackett from source. Provides source awareness for inspecting /
+cherry-picking indexer definitions. SSH URL per Hard-Stop #2; placed under
+`submodules/` per §11.4.28(C).
 
 ## §6. [BOB-014] Go `generateID()` collided under burst (UnixNano-only)
 

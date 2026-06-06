@@ -1,7 +1,7 @@
 # Fixed Summary — Closed Items
 
-**Revision:** 4
-**Last modified:** 2026-06-06T19:00:00Z
+**Revision:** 5
+**Last modified:** 2026-06-06T19:20:00Z
 **Ticket prefix:** `BOB`
 
 Closed workable items only (full detail in [`Fixed.md`](Fixed.md)). Most-recent first.
@@ -15,6 +15,7 @@ Closed workable items only (full detail in [`Fixed.md`](Fixed.md)). Most-recent 
 | BOB-007 | Completed | Task | 2d80f03 | RuTor documented as a public no-auth tracker; its .env creds are not consumed |
 | BOB-011 | Implemented | Feature | 2d80f03 | DOCX export added to the markdown export pipeline (pandoc), with a test |
 | BOB-018 | Completed | Task | 2d80f03 | Jackett server image pulled to latest; plugin confirmed at upstream parity |
+| BOB-019 | Completed | Task | (pending) | Jackett added as reference-only submodule (submodules/jackett, v0.24.2027); runtime keeps the image |
 | BOB-001 | Fixed | Bug | c5cbd40 | Portable sed_inplace replaces GNU sed -i that aborted the macOS boot |
 | BOB-002 | Fixed | Bug | c5cbd40 | podman unshare guarded so plugin install no longer aborts on macOS |
 | BOB-003 | Fixed | Bug | c5cbd40 | macOS tunnel now detects the real podman SSH port and forwards container ports |
