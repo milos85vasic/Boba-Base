@@ -1,0 +1,97 @@
+<h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T12:20:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+(operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
+only. Open items live in <a
+href="Issues.md"><code>Issues.md</code></a>.</p>
+<blockquote>
+<p>Closure statuses per §11.4.33: Bug → <code>Fixed</code>, Feature →
+<code>Implemented</code>, Task → <code>Completed</code>. Each carries
+captured-evidence (anti-bluff §11.4).</p>
+</blockquote>
+<hr />
+<h2 id="bob-001-start.sh-bsd-sed-incompatibility-aborted-the-boot">§1.
+[BOB-001] start.sh BSD-sed incompatibility aborted the boot</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
+<code>c5cbd40</code></p>
+<p>GNU <code>sed -i SCRIPT</code> calls (6 sites) aborted
+<code>start.sh</code> on macOS/BSD sed with “invalid command code”,
+before <code>compose up</code> — the stack never started. Added a
+portable <code>sed_inplace()</code> (<code>-i.bak</code> then drop
+backup; works GNU+BSD) and converted all 6 sites (§11.4.67/§11.4.81).
+<strong>Evidence:</strong>
+<code>tests/unit/test_sed_inplace_portable.sh</code> — 4 passed (RED
+before fix); boot #2 then progressed past the config step.</p>
+<h2
+id="bob-002-start.sh-podman-unshare-incompatible-with-macos-remote-podman">§2.
+[BOB-002] start.sh <code>podman unshare</code> incompatible with macOS
+remote podman</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
+<code>c5cbd40</code></p>
+<p><code>podman unshare cp/chmod</code> (rootless-Linux-only) aborted
+plugin install on the macOS remote podman client. Added
+<code>_podman_unshare_works()</code> self-detection; falls back to plain
+<code>cp</code>/<code>chmod</code> on macOS (§11.4.81).
+<strong>Evidence:</strong> boot #3 reached <code>compose up</code> and
+brought all 4 containers up.</p>
+<h2
+id="bob-003-macos-tunnel-port-detection-broken-ports-never-forwarded">§3.
+[BOB-003] macOS tunnel port detection broken (ports never
+forwarded)</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
+<code>c5cbd40</code></p>
+<p><code>ensure-macos-tunnel.sh</code> parsed the connection NAME, not
+the SSH port (“Bad port ‘podman-machine-default’”), so container ports
+were never forwarded to macOS localhost. Now uses
+<code>podman machine inspect {{.SSHConfig.Port}}</code> with a URI-parse
+fallback. <strong>Evidence:</strong> tunnel established (port 51347);
+<code>curl</code> localhost 7186→200, 7187→200, 7189→404, 9117→301 after
+the fix.</p>
+<h2
+id="bob-004-private-tracker-credentials-stored-securely-verified-working">§4.
+[BOB-004] Private-tracker credentials stored securely + verified
+working</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06</p>
+<p>Stored RuTracker / IPTorrents / RuTor / NNMClub credentials in the
+gitignored <code>.env</code> (mode <code>0600</code>). §11.4.10.A
+pre-store leak audit ran clean (no value in tree or git history).
+Credentials never committed and never logged. <strong>Evidence:</strong>
+- Security suite: <code>test_credential_scrubbing</code> +
+<code>test_credential_file_safety</code> +
+<code>test_jackett_autoconfig_secrets</code> +
+<code>test_log_filter</code> — 22 passed, 1 skip. - Wiring: orchestrator
+reports rutracker + iptorrents <code>creds-available=True</code>. -
+<strong>End-to-end live proof:</strong>
+<code>POST /api/v1/search/sync</code> query <code>ubuntu</code> →
+IPTorrents <code>status=success, results=49, auth=True</code> with real
+result names (e.g. “Ubuntu Linux Toolbox 1000+ Commands”). RuTracker
+login attempted (<code>auth=True</code>, CAPTCHA-blocked → tracked as
+BOB-008).</p>
+<h2
+id="bob-013-torrentkitty-_parse_size-reported-0-for-every-kbmbgbtb-size">§5.
+[BOB-013] torrentkitty <code>_parse_size</code> reported 0 for every
+KB/MB/GB/TB size</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
+<code>14bc5c4</code></p>
+<p><code>"B"</code> substring-matched inside KB/MB/GB/TB so all
+realistic sizes parsed to 0. Fixed to match on the suffix, longest unit
+first. <strong>Evidence:</strong>
+<code>tests/unit/test_plugin_search_engines.py</code> — torrentkitty
+size tests assert correct byte values; 18 passed.</p>
+<h2 id="bob-014-go-generateid-collided-under-burst-unixnano-only">§6.
+[BOB-014] Go <code>generateID()</code> collided under burst
+(UnixNano-only)</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
+<code>d46ea57</code></p>
+<p><code>time.Now().UnixNano()</code> is not unique under rapid
+<code>StartSearch</code> calls → dropped searches + broke
+<code>MAX_CONCURRENT_SEARCHES</code>. Fixed with an atomic counter.
+<strong>Evidence:</strong> <code>TestGenerateID_UniqueUnderBurst</code>
+(10k IDs unique) + queue-full test via real <code>StartSearch</code>;
+<code>go test -race</code> green, deterministic.</p>

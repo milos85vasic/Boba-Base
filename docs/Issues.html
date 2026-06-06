@@ -1,0 +1,130 @@
+<h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T12:20:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+(operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
+items only. Closed items migrate to <a
+href="Fixed.md"><code>Fixed.md</code></a>.</p>
+<blockquote>
+<p>Tracking interim: this is the Markdown tracker. The full
+constitution-grade SQLite single-source-of-truth +
+<code>docs_chain</code> engine + procedure docs are themselves tracked
+below as <strong>BOB-010</strong> (not yet built). Until then this file
++ <a href="Issues_Summary.md"><code>Issues_Summary.md</code></a> are
+authoritative for open work.</p>
+</blockquote>
+<hr />
+<h2
+id="bob-005-public-tracker-plugins-all-raise-an-unhandled-exception-in-the-running-container">§1.
+[BOB-005] Public-tracker plugins all raise an unhandled exception in the
+running container</h2>
+<p><strong>Status:</strong> In progress <strong>Type:</strong> Bug
+<strong>Severity:</strong> High <strong>Created:</strong> 2026-06-06</p>
+<p>A live search against the running stack
+(<code>POST /api/v1/search/sync</code>, query <code>ubuntu</code>)
+returned results ONLY from the private tracker IPTorrents (49) and
+attempted RuTracker; <strong>every public-tracker plugin</strong>
+(academictorrents, anilibra, bitsearch, gamestorrents, glotorrents,
+jackett, kickass, limetorrents, linuxtracker, megapeer, nyaa, piratebay,
+pirateiro, rockbox, rutor, snowfl, tokyotoshokan, torlock,
+torrentdownload, torrentgalaxy, torrentkitty, torrentproject,
+torrentscsv, yourbittorrent, yts) returned
+<code>status=error, error="plugin raised an unhandled exception"</code>.</p>
+<p><strong>Evidence:</strong> <code>/tmp/boba_search.json</code> (live
+search) — per-tracker stats show all public plugins erroring; only
+IPTorrents <code>status=success results=49</code>. <strong>Root
+cause:</strong> UNCONFIRMED — likely the plugin subprocess environment
+in the <code>python:3.12-alpine</code> proxy container (missing
+dependency / nova3 harness / network egress). Needs the captured
+per-plugin stderr from the orchestrator. <strong>Next:</strong> extract
+plugin stderr (search.py debug logs), reproduce, fix at source, cover
+with a runtime challenge.</p>
+<h2
+id="bob-006-nnmclub-usernamepassword-login-not-wired-cookie-only">§2.
+[BOB-006] NNMClub username/password login not wired (cookie-only)</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Feature
+<strong>Created:</strong> 2026-06-06</p>
+<p>The code consumes only <code>NNMCLUB_COOKIES</code>; the
+operator-provided
+<code>NNMCLUB_USERNAME</code>/<code>NNMCLUB_PASSWORD</code> are stored
+in <code>.env</code> but never used, so NNMClub is not enabled.
+Implement a username/password → session-cookie login (POST
+<code>/forum/login.php</code>, capture <code>phpbb2mysql_4_sid</code>)
+as a fallback when <code>NNMCLUB_COOKIES</code> is unset, storing into
+<code>_tracker_sessions["nnmclub"]</code>. <strong>Plan:</strong>
+<code>plugins/nnmclub.py</code> login() fallback +
+<code>search.py</code> enable/auth checks + <code>auth.py</code>
+<code>/nnmclub/login</code> + <code>/nnmclub/status</code> + tests +
+challenge.</p>
+<h2 id="bob-008-rutracker-automated-login-blocked-by-captcha">§3.
+[BOB-008] RuTracker automated login blocked by CAPTCHA</h2>
+<p><strong>Status:</strong> Operator-blocked <strong>Type:</strong> Bug
+<strong>Created:</strong> 2026-06-06
+<strong>Operator-Block-Details:</strong> WHAT — RuTracker login with
+stored creds returns no session cookie (CAPTCHA wall). WHY — automated
+user/pass login is CAPTCHA-gated; self-resolution exhausted (creds
+correct + wired, login attempted, <code>auth=True</code>). UNBLOCK —
+operator completes the CAPTCHA flow at
+<code>/api/v1/auth/rutracker/captcha</code> + <code>/login</code>, or
+pastes a fresh <code>bb_session</code> cookie via
+<code>/auth/rutracker/cookie-login</code>. WHO — operator.</p>
+<p><strong>Evidence:</strong> live search per-tracker stat
+<code>rutracker status=error auth=True error="login returned no session cookie — likely CAPTCHA"</code>.</p>
+<h2
+id="bob-007-rutor-credentials-are-unusable-public-tracker-no-login">§4.
+[BOB-007] RuTor credentials are unusable (public tracker, no login)</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Created:</strong> 2026-06-06</p>
+<p>RuTor is a public tracker with no authentication endpoint; the code
+consumes only
+<code>RUTOR_PROXY_*</code>/<code>RUTOR_USE_MAGNET</code>/<code>RUTOR_USER_AGENT</code>.
+The operator-provided RuTor username/password (stored in
+<code>.env</code>) cannot be used. <strong>Resolution
+direction:</strong> document RuTor as public-only in
+CLAUDE.md/AGENTS.md; confirm with operator whether to keep the unused
+creds. Likely closes as <code>Obsolete</code> (reason
+<code>feature-removed</code>/not-applicable) per §11.4.90 — pending
+operator confirmation (§11.4.122).</p>
+<h2 id="bob-009-containers-submodule-11.4.76-not-integrated">§5.
+[BOB-009] Containers submodule (§11.4.76) not integrated</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Created:</strong> 2026-06-06</p>
+<p><code>.gitmodules</code> lists only <code>constitution</code>. The
+constitution mandates consuming <code>vasic-digital/containers</code>
+for container orchestration; the project uses
+<code>docker-compose.yml</code> + <code>start.sh</code> instead.
+<strong>Resolution direction:</strong> add the submodule + boot via its
+<code>pkg/boot</code>/<code>pkg/compose</code>/<code>pkg/health</code>,
+or record a justified deviation.</p>
+<h2
+id="bob-010-workable-items-sqlite-db-docs_chain-procedure-docs-not-set-up">§6.
+[BOB-010] Workable-items SQLite DB + docs_chain + procedure docs not set
+up</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Created:</strong> 2026-06-06</p>
+<p>The constitution-grade tracking system (SQLite single-source-of-truth
+per §11.4.93/§11.4.95, <code>docs_chain</code> engine per §11.4.106, 5
+procedure docs per §11.4.63, per-domain Status/Status_Summary docs per
+§11.4.45/§11.4.56) is not present. This Markdown tracker (Issues/Fixed +
+summaries, BOB prefix) is the interim. The Go
+<code>workable-items</code> tool is scaffolded in the constitution
+submodule (<code>constitution/scripts/workable-items/</code>) but not
+integrated.</p>
+<h2 id="bob-011-docx-export-not-supported">§7. [BOB-011] DOCX export not
+supported</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Feature
+<strong>Created:</strong> 2026-06-06</p>
+<p><code>scripts/generate_markdown_exports.sh</code> produces HTML
+(pandoc) + PDF (weasyprint) but no DOCX. The operator wants DOCX too.
+<strong>Resolution direction:</strong> add a <code>pandoc -t docx</code>
+branch (pandoc is installed).</p>
+<h2
+id="bob-012-many-docs-lack-htmlpdf-exports-no-export-sync-gate-11.4.65">§8.
+[BOB-012] Many docs lack HTML/PDF exports; no export-sync gate
+(§11.4.65)</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Created:</strong> 2026-06-06</p>
+<p><code>docs/</code> is ~65% export-covered;
+<code>docs/CONTINUATION.md</code> and ~24 <code>docs/research/**</code>
+files lack HTML/PDF siblings, and no pre-build gate/hook enforces export
+sync. <strong>Resolution direction:</strong> regenerate all exports +
+add a <code>CM-MARKDOWN-EXPORT-SYNC</code>-class gate.</p>
