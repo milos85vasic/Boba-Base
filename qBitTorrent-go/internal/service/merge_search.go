@@ -4,30 +4,37 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/milos85vasic/qBitTorrent-go/internal/client"
 	"github.com/milos85vasic/qBitTorrent-go/internal/models"
 )
 
+// idCounter guarantees unique search IDs even when StartSearch is called
+// multiple times within the same nanosecond (time.Now().UnixNano() is NOT
+// unique under burst — two searches could collide on the same activeSearches
+// key, silently dropping one and undercounting MAX_CONCURRENT_SEARCHES).
+var idCounter atomic.Uint64
+
 type SearchMetadata struct {
-	SearchID         string            `json:"search_id"`
-	Query            string            `json:"query"`
-	Category        string            `json:"category"`
-	Status          string            `json:"status"`
-	TotalResults    int               `json:"total_results"`
-	MergedResults   int              `json:"merged_results"`
-	TrackersSearched []string        `json:"trackers_searched"`
-	Errors          []string         `json:"errors"`
-	TrackerStats    map[string]*TrackerRunStat `json:"tracker_stats"`
-	StartedAt       string          `json:"started_at"`
-	CompletedAt     *string         `json:"completed_at,omitempty"`
-	EnableMetadata  bool            `json:"-"`
-	ValidateTrackers bool          `json:"-"`
+	SearchID         string                     `json:"search_id"`
+	Query            string                     `json:"query"`
+	Category         string                     `json:"category"`
+	Status           string                     `json:"status"`
+	TotalResults     int                        `json:"total_results"`
+	MergedResults    int                        `json:"merged_results"`
+	TrackersSearched []string                   `json:"trackers_searched"`
+	Errors           []string                   `json:"errors"`
+	TrackerStats     map[string]*TrackerRunStat `json:"tracker_stats"`
+	StartedAt        string                     `json:"started_at"`
+	CompletedAt      *string                    `json:"completed_at,omitempty"`
+	EnableMetadata   bool                       `json:"-"`
+	ValidateTrackers bool                       `json:"-"`
 }
 
 type TrackerRunStat struct {
-	Name           string `json:"name"`
+	Name          string `json:"name"`
 	Status        string `json:"status"`
 	Results       int    `json:"results"`
 	DurationMS    int64  `json:"duration_ms"`
@@ -37,11 +44,11 @@ type TrackerRunStat struct {
 
 func (s *TrackerRunStat) ToDict() map[string]interface{} {
 	return map[string]interface{}{
-		"name":           s.Name,
-		"status":         s.Status,
-		"results":        s.Results,
-		"duration_ms":    s.DurationMS,
-		"error":          s.Error,
+		"name":          s.Name,
+		"status":        s.Status,
+		"results":       s.Results,
+		"duration_ms":   s.DurationMS,
+		"error":         s.Error,
 		"authenticated": s.Authenticated,
 	}
 }
@@ -56,21 +63,21 @@ func (m *SearchMetadata) ToDict() map[string]interface{} {
 		"query":             m.Query,
 		"status":            m.Status,
 		"total_results":     m.TotalResults,
-		"merged_results":  m.MergedResults,
+		"merged_results":    m.MergedResults,
 		"trackers_searched": m.TrackersSearched,
-		"errors":           m.Errors,
-		"tracker_stats":    stats,
-		"started_at":       m.StartedAt,
-		"completed_at":     m.CompletedAt,
+		"errors":            m.Errors,
+		"tracker_stats":     stats,
+		"started_at":        m.StartedAt,
+		"completed_at":      m.CompletedAt,
 	}
 }
 
 type MergeSearchService struct {
-	qbitClient           *client.Client
-	mu                   sync.RWMutex
-	activeSearches       map[string]*SearchMetadata
-	trackerResults       map[string][]models.TorrentResult
-	lastMergedResults    map[string][][]models.TorrentResult
+	qbitClient            *client.Client
+	mu                    sync.RWMutex
+	activeSearches        map[string]*SearchMetadata
+	trackerResults        map[string][]models.TorrentResult
+	lastMergedResults     map[string][][]models.TorrentResult
 	maxConcurrentSearches int
 }
 
@@ -79,29 +86,29 @@ func NewMergeSearchService(qc *client.Client, maxConcurrent int) *MergeSearchSer
 		maxConcurrent = 5
 	}
 	return &MergeSearchService{
-		qbitClient:           qc,
-		activeSearches:      make(map[string]*SearchMetadata),
-		trackerResults:       make(map[string][]models.TorrentResult),
-		lastMergedResults:    make(map[string][][]models.TorrentResult),
+		qbitClient:            qc,
+		activeSearches:        make(map[string]*SearchMetadata),
+		trackerResults:        make(map[string][]models.TorrentResult),
+		lastMergedResults:     make(map[string][][]models.TorrentResult),
 		maxConcurrentSearches: maxConcurrent,
 	}
 }
 
 func generateID() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
+	return fmt.Sprintf("%d-%d", time.Now().UnixNano(), idCounter.Add(1))
 }
 
 func (s *MergeSearchService) StartSearch(query, category string, enableMetadata, validateTrackers bool) *SearchMetadata {
 	meta := &SearchMetadata{
 		SearchID:         generateID(),
 		Query:            query,
-		Category:        category,
-		Status:          "pending",
+		Category:         category,
+		Status:           "pending",
 		TrackersSearched: []string{},
 		Errors:           []string{},
-		TrackerStats:    make(map[string]*TrackerRunStat),
-		StartedAt:       time.Now().UTC().Format(time.RFC3339),
-		EnableMetadata:  enableMetadata,
+		TrackerStats:     make(map[string]*TrackerRunStat),
+		StartedAt:        time.Now().UTC().Format(time.RFC3339),
+		EnableMetadata:   enableMetadata,
 		ValidateTrackers: validateTrackers,
 	}
 

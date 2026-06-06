@@ -51,9 +51,27 @@ func TestMergeSearchService_IsSearchQueueFull(t *testing.T) {
 	svc := NewMergeSearchService(nil, 2)
 	assert.False(t, svc.IsSearchQueueFull())
 
+	// Two rapid StartSearch calls must yield two distinct active entries.
+	// generateID() now appends an atomic counter, so back-to-back calls in the
+	// same nanosecond no longer collide on the same map key (regression guard
+	// for the UnixNano-only collision bug).
 	svc.StartSearch("q1", "all", true, true)
 	svc.StartSearch("q2", "all", true, true)
 	assert.True(t, svc.IsSearchQueueFull())
+}
+
+func TestGenerateID_UniqueUnderBurst(t *testing.T) {
+	// 10k IDs minted in a tight loop (same-nanosecond bursts) must all be
+	// unique — proves the atomic-counter fix for the UnixNano collision.
+	const n = 10000
+	seen := make(map[string]struct{}, n)
+	for i := 0; i < n; i++ {
+		id := generateID()
+		_, dup := seen[id]
+		assert.Falsef(t, dup, "duplicate id %q at iteration %d", id, i)
+		seen[id] = struct{}{}
+	}
+	assert.Len(t, seen, n)
 }
 
 func TestSearchMetadata_ISO8601Timestamps(t *testing.T) {
