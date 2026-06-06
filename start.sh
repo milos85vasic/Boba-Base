@@ -54,10 +54,22 @@ load_environment() {
         load_env_file "$env_file"
     done
     
-    QBITTORRENT_DATA_DIR="${QBITTORRENT_DATA_DIR:-/mnt/DATA}"
+    QBITTORRENT_DATA_DIR="${QBITTORRENT_DATA_DIR:-$(default_data_dir)}"
     export QBITTORRENT_DATA_DIR
-    
+
     print_info "Data directory: $QBITTORRENT_DATA_DIR"
+}
+
+# Platform-aware default download directory (§11.4.81 cross-platform parity).
+# Linux keeps the historical /mnt/DATA mount point; macOS has no /mnt and
+# can't create one, so it gets a writable HOME-relative default. An explicit
+# QBITTORRENT_DATA_DIR always wins (applied by the caller).
+default_data_dir() {
+    local os="${1:-$(uname -s)}"
+    case "$os" in
+        Darwin) echo "$HOME/qbit-data" ;;
+        *)      echo "/mnt/DATA" ;;
+    esac
 }
 
 create_data_directories() {
@@ -725,7 +737,28 @@ main() {
     fi
     wait_for_container
     ensure_webui_password
+    ensure_macos_tunnel
     show_status
 }
 
-main "$@"
+# On macOS, podman runs containers in a Linux VM and `network_mode: host`
+# does NOT forward ports to the macOS host. Bridge them via the SSH tunnel
+# helper. Best-effort: never fail the whole start if the tunnel can't come
+# up (e.g. podman machine not running) — the operator can run the script
+# manually. No-op on Linux. (CONTINUATION known-issue #1.)
+ensure_macos_tunnel() {
+    [[ "$(uname -s)" == "Darwin" ]] || return 0
+    local tunnel_script="$SCRIPT_DIR/scripts/ensure-macos-tunnel.sh"
+    [[ -x "$tunnel_script" ]] || return 0
+    print_info "macOS detected — bridging container ports via SSH tunnel..."
+    if "$tunnel_script"; then
+        print_success "macOS port tunnel ready"
+    else
+        print_warning "macOS port tunnel could not be established — run '$tunnel_script' manually"
+    fi
+}
+
+# Only run main when executed directly — allows hermetic sourcing for tests.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
