@@ -909,7 +909,12 @@ class SearchOrchestrator:
         if name == "kinozal":
             return bool(os.getenv("KINOZAL_USERNAME") and os.getenv("KINOZAL_PASSWORD"))
         if name == "nnmclub":
-            return bool(os.getenv("NNMCLUB_COOKIES"))
+            # BOB-006: authenticated when raw cookies are supplied OR
+            # username+password are available for a session login.
+            return bool(
+                os.getenv("NNMCLUB_COOKIES")
+                or (os.getenv("NNMCLUB_USERNAME") and os.getenv("NNMCLUB_PASSWORD"))
+            )
         if name == "iptorrents":
             return bool(os.getenv("IPTORRENTS_USERNAME") and os.getenv("IPTORRENTS_PASSWORD"))
         return False
@@ -922,7 +927,7 @@ class SearchOrchestrator:
             trackers.append(TrackerSource(name="rutracker", url="https://rutracker.org", enabled=True))
         if os.getenv("KINOZAL_USERNAME") and os.getenv("KINOZAL_PASSWORD"):
             trackers.append(TrackerSource(name="kinozal", url="https://kinozal.tv", enabled=True))
-        if os.getenv("NNMCLUB_COOKIES"):
+        if os.getenv("NNMCLUB_COOKIES") or (os.getenv("NNMCLUB_USERNAME") and os.getenv("NNMCLUB_PASSWORD")):
             trackers.append(TrackerSource(name="nnmclub", url="https://nnm-club.me", enabled=True))
         if os.getenv("IPTORRENTS_USERNAME") and os.getenv("IPTORRENTS_PASSWORD"):
             trackers.append(TrackerSource(name="iptorrents", url="https://iptorrents.com", enabled=True))
@@ -1397,22 +1402,25 @@ class SearchOrchestrator:
         logger = logging.getLogger(__name__)
         results = []
         cookies_raw = os.getenv("NNMCLUB_COOKIES")
+        base_url = os.getenv("NNMCLUB_MIRRORS", "https://nnm-club.me").split(",")[0].strip()
 
-        if not cookies_raw:
-            return []
-
-        cookie_jar = {}
-        for pair in cookies_raw.split(";"):
-            pair = pair.strip()
-            if "=" in pair:
-                name, value = pair.split("=", 1)
-                cookie_jar[name.strip()] = value.strip()
+        cookie_jar: dict[str, str] = {}
+        if cookies_raw:
+            # Explicit browser-exported cookies take precedence — no login
+            # round-trip needed.
+            for pair in cookies_raw.split(";"):
+                pair = pair.strip()
+                if "=" in pair:
+                    name, value = pair.split("=", 1)
+                    cookie_jar[name.strip()] = value.strip()
+        else:
+            # BOB-006: derive a session cookie from username/password.
+            cookie_jar = await self._nnmclub_login(base_url)
 
         if "phpbb2mysql_4_sid" not in cookie_jar:
             return []
 
         try:
-            base_url = os.getenv("NNMCLUB_MIRRORS", "https://nnm-club.me").split(",")[0].strip()
             timeout = aiohttp.ClientTimeout(total=15)
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(
@@ -1430,6 +1438,59 @@ class SearchOrchestrator:
             logger.error(f"NNMClub search error: {e}")
 
         return results
+
+    async def _nnmclub_login(self, base_url: str) -> dict[str, str]:
+        """BOB-006: log in to NNMClub with username/password and return the
+        resulting cookie jar (containing ``phpbb2mysql_4_sid`` on success).
+
+        Mirrors the rutracker login path: POST the credentials to
+        ``login.php`` and harvest the Set-Cookie session id. Returns an empty
+        dict (graceful) when credentials are missing, the request fails, or
+        the response carries no session cookie — the caller treats a missing
+        ``phpbb2mysql_4_sid`` as "not authenticated" and returns no results.
+        Credentials are never logged.
+        """
+        import logging
+        import os
+
+        import aiohttp
+
+        logger = logging.getLogger(__name__)
+        username = os.getenv("NNMCLUB_USERNAME")
+        password = os.getenv("NNMCLUB_PASSWORD")
+        if not username or not password:
+            return {}
+
+        try:
+            timeout = aiohttp.ClientTimeout(total=15)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.post(
+                    f"{base_url}/forum/login.php",
+                    data={
+                        "username": username,
+                        "password": password,
+                        "login": "вход",
+                    },
+                ) as resp:
+                    cookies = resp.cookies
+
+                cookie_dict = {c.key: c.value for c in cookies.values()}
+                if "phpbb2mysql_4_sid" not in cookie_dict:
+                    self._last_public_tracker_diag["nnmclub"] = {
+                        "error_type": "auth_failure",
+                        "error": (
+                            "nnmclub login returned no session cookie — "
+                            "likely credential failure"
+                        ),
+                        "stderr_tail": "",
+                        "deadline_hit": False,
+                        "deadline_seconds": 0.0,
+                    }
+                    return {}
+                return cookie_dict
+        except Exception as e:
+            logger.error(f"NNMClub login error: {e}")
+            return {}
 
     def _parse_nnmclub_html(self, html_content: str, base_url: str) -> list[SearchResult]:
         import logging

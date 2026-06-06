@@ -97,6 +97,7 @@ class EngineError(Exception): ...
 @dataclass
 class Config:
     username: str = "USERNAME"
+    password: str = "PASSWORD"
     cookies: str = "COOKIES"
     # magnet: bool = False
     proxy: bool = False
@@ -110,8 +111,18 @@ class Config:
                 raise ValueError("Incorrect json scheme.")
         except Exception as e:
             logger.error(e)
-            FILE_J.write_text(self.to_str())
-            (BASEDIR / f"{FILENAME}.ico").write_bytes(base64.b64decode(ICON))
+            # Self-heal a stale/invalid config, but never let the cosmetic
+            # icon write (or a bad ICON blob) abort plugin import. Adding a new
+            # Config field makes _validate_json reject every legacy json, so
+            # this path now runs routinely — it must be crash-proof.
+            try:
+                FILE_J.write_text(self.to_str())
+            except Exception as werr:
+                logger.error(f"nnmclub config self-heal write failed: {werr}")
+            try:
+                (BASEDIR / f"{FILENAME}.ico").write_bytes(base64.b64decode(ICON))
+            except Exception as ierr:
+                logger.error(f"nnmclub icon write skipped: {ierr}")
 
     def to_str(self) -> str:
         return json.dumps(self.to_dict(), indent=4, sort_keys=False)
@@ -169,6 +180,10 @@ class NNMClub:
     def login(self) -> None:
         self.mcj.clear()
         if config.cookies == "COOKIES":
+            # BOB-006: no raw cookies configured — fall back to a
+            # username/password session login if credentials are present.
+            if config.username not in ("", "USERNAME") and config.password not in ("", "PASSWORD"):
+                return self._password_login()
             raise EngineError("Empty cookies in config file")
         for cookie in config.cookies.split("; "):
             name, value = cookie.split("=", 1)
@@ -198,6 +213,29 @@ class NNMClub:
             raise EngineError("We not authorized, please check your credentials!")
         self.mcj.save(str(FILE_C), ignore_discard=True, ignore_expires=True)
         logger.info("We successfully authorized")
+
+    def _password_login(self) -> None:
+        """BOB-006: username/password session login fallback.
+
+        POSTs credentials to login.php; the shared cookie jar
+        (``HTTPCookieProcessor``) captures the ``phpbb2mysql_4_sid``
+        session cookie. Credentials are never logged.
+        """
+        from urllib.parse import urlencode
+
+        payload = urlencode(
+            {
+                "username": config.username,
+                "password": config.password,
+                "login": "вход",
+            }
+        ).encode("cp1251")
+        self._request(self.url + "login.php", payload)
+
+        if "phpbb2mysql_4_sid" not in [cookie.name for cookie in self.mcj]:
+            raise EngineError("We not authorized, please check your credentials!")
+        self.mcj.save(str(FILE_C), ignore_discard=True, ignore_expires=True)
+        logger.info("We successfully authorized (password login)")
 
     def searching(self, query: str, first: bool = False) -> int:
         page, torrents_found = (

@@ -347,6 +347,118 @@ async def rutracker_cookie_login(request: CookieLoginRequest):  # type: ignore[n
     }
 
 
+@router.get("/nnmclub/status")
+async def nnmclub_auth_status():  # type: ignore[no-untyped-def]
+    """BOB-006: report NNMClub session state. Mirrors /rutracker/status.
+
+    The session cookie of interest is ``phpbb2mysql_4_sid``.
+    """
+    orch = _get_orchestrator()
+    session = orch._tracker_sessions.get("nnmclub")
+
+    if not session:
+        return {
+            "authenticated": False,
+            "status": "no_session",
+            "message": "No NNMClub session found. Login required.",
+        }
+
+    cookies = session.get("cookies", {})
+    if "phpbb2mysql_4_sid" not in cookies:
+        return {
+            "authenticated": False,
+            "status": "no_cookie",
+            "message": "Session exists but no valid cookie. Re-login required.",
+        }
+
+    import aiohttp
+
+    base_url = session.get("base_url", "https://nnm-club.me")
+    try:
+        async with (
+            aiohttp.ClientSession() as client,
+            client.get(
+                f"{base_url}/forum/index.php",
+                cookies=cookies,
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as resp,
+        ):
+            raw = await resp.read()
+            text = raw.decode("cp1251", "ignore")
+            if "logout.php" in text or "profile.php?mode=editprofile" in text:
+                return {
+                    "authenticated": True,
+                    "status": "active",
+                    "message": "NNMClub session is active.",
+                }
+            return {
+                "authenticated": False,
+                "status": "expired",
+                "message": "Session expired. Re-login required.",
+            }
+    except Exception as e:
+        return {
+            "authenticated": False,
+            "status": "error",
+            "message": f"Could not verify session: {e}",
+        }
+
+
+@router.post("/nnmclub/login")
+async def nnmclub_password_login():  # type: ignore[no-untyped-def]
+    """BOB-006: log in to NNMClub using NNMCLUB_USERNAME/NNMCLUB_PASSWORD and
+    persist the resulting session cookie in the orchestrator.
+
+    Credentials come from the environment (gitignored .env) — never the
+    request body — so they are never logged or echoed.
+    """
+    username = os.getenv("NNMCLUB_USERNAME")
+    password = os.getenv("NNMCLUB_PASSWORD")
+    if not username or not password:
+        raise HTTPException(
+            status_code=400,
+            detail="NNMCLUB_USERNAME and NNMCLUB_PASSWORD must be set.",
+        )
+
+    orch = _get_orchestrator()
+    base_url = os.getenv("NNMCLUB_MIRRORS", "https://nnm-club.me").split(",")[0].strip()
+
+    import aiohttp
+
+    try:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.post(
+                f"{base_url}/forum/login.php",
+                data={
+                    "username": username,
+                    "password": password,
+                    "login": "вход",
+                },
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as resp,
+        ):
+            cookie_dict = {c.key: c.value for c in resp.cookies.values()}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Login request failed: {e}") from e
+
+    if "phpbb2mysql_4_sid" not in cookie_dict:
+        raise HTTPException(
+            status_code=401,
+            detail="NNMClub login returned no session cookie. Check credentials.",
+        )
+
+    orch._tracker_sessions["nnmclub"] = {
+        "cookies": cookie_dict,
+        "base_url": base_url,
+    }
+
+    return {
+        "authenticated": True,
+        "message": "Successfully authenticated with NNMClub.",
+    }
+
+
 def _load_qbit_credentials() -> Any:
     import json
 

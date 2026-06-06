@@ -1,5 +1,6 @@
 {
     "username": "USERNAME",
+    "password": "PASSWORD",
     "cookies": "COOKIES",
     "proxy": false,
     "proxies": {
