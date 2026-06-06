@@ -14,7 +14,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { Subject, of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { IptorrentsCookieFlowComponent } from './iptorrents-cookie-flow.component';
 import { CredentialsService } from '../credentials/credentials.service';
 import { IndexersService } from './indexers.service';
@@ -165,5 +165,111 @@ describe('IptorrentsCookieFlowComponent', () => {
     fixture.detectChanges();
 
     expect(savedCount).toBe(1);
+  });
+
+  // --- Error-path coverage (lines 164-188): credential upsert failure,
+  // indexer configure failure, and the errorMessage() unwrapping branches.
+  // Anti-bluff: each asserts the rendered error-alert DOM text + that
+  // (saved) never fired. A no-op error handler would FAIL the DOM assertion.
+
+  async function typeAndSave(fixture: ReturnType<typeof setup>['fixture']) {
+    const ta = (fixture.nativeElement as HTMLElement)
+      .querySelector('[data-testid="cookie-input"]') as HTMLTextAreaElement;
+    ta.value = 'uid=1; pass=2';
+    ta.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const saveBtn = (fixture.nativeElement as HTMLElement)
+      .querySelector('[data-testid="cookie-save"]') as HTMLButtonElement;
+    saveBtn.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  function errorAlertText(fixture: ReturnType<typeof setup>['fixture']): string {
+    const el = (fixture.nativeElement as HTMLElement)
+      .querySelector('[data-testid="cookie-flow-error"]');
+    return (el?.textContent ?? '').trim();
+  }
+
+  it('TestUpsertFailureShowsNestedError: a failing credential upsert renders error.error.error and never emits (saved)', async () => {
+    const upsert = vi.fn(() =>
+      throwError(() => ({ error: { error: 'cookie rejected by server' } })),
+    );
+    const { fixture, idxService } = setup({ upsert });
+    let savedFired = false;
+    fixture.componentInstance.saved.subscribe(() => (savedFired = true));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    await typeAndSave(fixture);
+
+    // configure must NOT fire because upsert failed first.
+    expect(idxService.configure).not.toHaveBeenCalled();
+    expect(savedFired).toBe(false);
+    // Save button re-enabled (saving reset to false) so the user can retry.
+    const saveBtn = (fixture.nativeElement as HTMLElement)
+      .querySelector('[data-testid="cookie-save"]') as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(false);
+    expect(saveBtn.textContent?.trim()).toBe('Save');
+    // errorMessage() unwrapped error.error.error:
+    expect(errorAlertText(fixture)).toBe('cookie rejected by server');
+  });
+
+  it('TestConfigureFailureShowsNestedMessage: a failing indexer configure renders error.error.message', async () => {
+    const configure = vi.fn(() =>
+      throwError(() => ({ error: { message: 'indexer wiring failed' } })),
+    );
+    const { fixture, credService } = setup({ configure });
+    let savedFired = false;
+    fixture.componentInstance.saved.subscribe(() => (savedFired = true));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    await typeAndSave(fixture);
+
+    // upsert succeeded (default of({})), configure was reached then failed.
+    expect(credService.upsert).toHaveBeenCalledTimes(1);
+    expect(savedFired).toBe(false);
+    // errorMessage() fell through error.error.error (undefined) to error.error.message:
+    expect(errorAlertText(fixture)).toBe('indexer wiring failed');
+  });
+
+  it('TestStringErrorBody: an error whose .error is a non-empty string is shown verbatim', async () => {
+    const upsert = vi.fn(() => throwError(() => ({ error: 'raw string failure' })));
+    const { fixture } = setup({ upsert });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    await typeAndSave(fixture);
+
+    expect(errorAlertText(fixture)).toBe('raw string failure');
+  });
+
+  it('TestTopLevelMessageError: an error with only a top-level message is shown', async () => {
+    const upsert = vi.fn(() => throwError(() => ({ message: 'network down' })));
+    const { fixture } = setup({ upsert });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    await typeAndSave(fixture);
+
+    expect(errorAlertText(fixture)).toBe('network down');
+  });
+
+  it('TestPrimitiveErrorStringified: a non-object thrown value is stringified into the alert', async () => {
+    const upsert = vi.fn(() => throwError(() => 'boom'));
+    const { fixture } = setup({ upsert });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    await typeAndSave(fixture);
+
+    expect(errorAlertText(fixture)).toBe('boom');
   });
 });

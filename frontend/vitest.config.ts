@@ -9,9 +9,13 @@ import angular from '@analogjs/vite-plugin-angular';
  * style files) inside Vitest, which the stock Angular CLI test builder
  * does not resolve on its own outside of webpack/Karma.
  *
- * Coverage thresholds start at 40 % across the board so the Phase 5 spec
- * expansion locks in a baseline without blocking CI. Later phases raise
- * these per-module toward 100 % (see docs/COVERAGE_BASELINE.md).
+ * Coverage thresholds are set just BELOW the current measured coverage
+ * so the gate is green today but blocks any regression. Measured on
+ * 2026-06-06 with `@vitest/coverage-v8`: statements 87.17 %, branches
+ * 71.74 %, functions 87.15 %, lines 89.76 % (342 specs). Thresholds sit
+ * ~2 points under each measured value to absorb minor refactors while
+ * still failing the suite if real coverage drops. Raise these as
+ * coverage climbs toward 100 % (see docs/COVERAGE_BASELINE.md).
  */
 export default defineConfig({
   plugins: [angular()],
@@ -34,10 +38,10 @@ export default defineConfig({
         'src/app/**/index.ts',
       ],
       thresholds: {
-        lines: 40,
-        branches: 40,
-        functions: 40,
-        statements: 40,
+        lines: 87,
+        branches: 69,
+        functions: 85,
+        statements: 85,
       },
     },
   },

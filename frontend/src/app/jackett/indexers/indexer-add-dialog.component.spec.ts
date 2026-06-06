@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { IndexerAddDialogComponent } from './indexer-add-dialog.component';
 import {
   IndexersService,
@@ -50,9 +50,10 @@ function setup(opts: {
   item: CatalogItem | null;
   creds?: CredentialMetadata[];
   configure?: ReturnType<typeof vi.fn>;
+  listFn?: ReturnType<typeof vi.fn>;
 }) {
   const credService = {
-    list: vi.fn(() => of(opts.creds ?? [])),
+    list: opts.listFn ?? vi.fn(() => of(opts.creds ?? [])),
     upsert: vi.fn(() => of({})),
     delete: vi.fn(() => of(undefined)),
   };
@@ -171,5 +172,82 @@ describe('IndexerAddDialogComponent', () => {
 
     expect(cancelFired).toBe(true);
     expect(idxService.configure).not.toHaveBeenCalled();
+  });
+
+  // --- Error + cookie-flow coverage (lines 181, 197, 206-222). ---
+
+  it('TestListErrorRendersAlert: a failing CredentialsService.list surfaces the unwrapped error in the dialog', async () => {
+    const { fixture } = setup({
+      item: makeItem('rutracker'),
+      listFn: vi.fn(() => throwError(() => ({ error: { error: 'creds endpoint 500' } }))),
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alert = (fixture.nativeElement as HTMLElement)
+      .querySelector('[data-testid="dialog-error"]');
+    expect(alert?.textContent?.trim()).toBe('creds endpoint 500');
+  });
+
+  it('TestConfigureErrorRendersAlert: a failing configure renders the error and does NOT emit (saved)', async () => {
+    const { fixture, idxService } = setup({
+      item: makeItem('rutracker'),
+      creds: [makeCred('RUTRACKER')],
+      configure: vi.fn(() => throwError(() => 'configure exploded')),
+    });
+    let savedFired = false;
+    fixture.componentInstance.saved.subscribe(() => (savedFired = true));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const select = (fixture.nativeElement as HTMLElement)
+      .querySelector('[data-testid="credential-select"]') as HTMLSelectElement;
+    select.value = 'RUTRACKER';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('[data-testid="save-indexer"]')!
+      .click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(idxService.configure).toHaveBeenCalledTimes(1);
+    expect(savedFired).toBe(false);
+    const alert = (fixture.nativeElement as HTMLElement)
+      .querySelector('[data-testid="dialog-error"]');
+    // errorMessage() stringified the primitive thrown value.
+    expect(alert?.textContent?.trim()).toBe('configure exploded');
+  });
+
+  it('TestCookieOnlyFlowRenders: a cookie-only indexer renders the IPTorrents flow instead of the credential form', async () => {
+    const { fixture } = setup({
+      // cookie field present, no username/password → isCookieOnly() true.
+      item: makeItem('iptorrents', ['cookieheader']),
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(fixture.componentInstance.isCookieOnly()).toBe(true);
+    expect(el.querySelector('app-iptorrents-cookie-flow')).not.toBeNull();
+    // The plain credential form must NOT be present in cookie-only mode.
+    expect(el.querySelector('[data-testid="credential-select"]')).toBeNull();
+  });
+
+  it('TestCookieFlowSavedEmits: onCookieFlowSaved bubbles up as (saved)', async () => {
+    const { fixture } = setup({ item: makeItem('iptorrents', ['cookieheader']) });
+    let savedCount = 0;
+    fixture.componentInstance.saved.subscribe(() => savedCount++);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    fixture.componentInstance.onCookieFlowSaved();
+    expect(savedCount).toBe(1);
   });
 });
