@@ -72,12 +72,16 @@ class torrentkitty:
         size_str = size_str.upper().strip()
         multipliers = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3, "TB": 1024**4}
 
-        for unit, mult in multipliers.items():
-            if unit in size_str:
+        # Check longest units first and match on the SUFFIX: "B" is a substring
+        # of KB/MB/GB/TB, so the old `if unit in size_str` (dict order, "B"
+        # first) treated every "X GB" as plain bytes and fell through to 0 —
+        # i.e. every realistically-sized result reported size 0.
+        for unit, mult in sorted(multipliers.items(), key=lambda kv: -len(kv[0])):
+            if size_str.endswith(unit):
                 try:
-                    num = float(size_str.replace(unit, "").replace(",", "").strip())
+                    num = float(size_str[: -len(unit)].replace(",", "").strip())
                     return int(num * mult)
-                except:
+                except (ValueError, TypeError):
                     return 0
         return 0
 
