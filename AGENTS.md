@@ -4,7 +4,7 @@
 > The base file is authoritative for any topic not covered here.
 > Project-specific rules below extend them; they never weaken them.
 >
-> **Propagated clauses:** §11.4.10, §11.4.30, §11.4.44, §11.4.65, §11.4.75, §11.4.85, §11.4.109, §11.4.113, §11.4.125, §11.4.78
+> **Propagated clauses:** §11.4.10, §11.4.24, §11.4.30, §11.4.44, §11.4.65, §11.4.66, §11.4.75, §11.4.78, §11.4.85, §11.4.109, §11.4.113, §11.4.125
 
 Compact instruction file for AI agents working in this repo.
 For deeper narrative docs see `CLAUDE.md`, `docs/USER_MANUAL.md`, `docs/PLUGINS.md`, `docs/SECURITY.md`.
@@ -658,4 +658,15 @@ See `CONSTITUTION.md` § "CONST-033 Operational Note" and
 `docs/incidents/2026-04-27-perceived-host-suspension-investigation.md`.
 
 <!-- END host-power-management addendum (CONST-033) -->
+
+## §11.4.109 Anti-Forgetting Enforcement
+
+Anti-forgetting enforcement is wired as a three-layer mechanical guard:
+- **PreToolUse hook** at `.claude/settings.json` → `constitution/scripts/hooks/guard-forbidden-commands.sh` blocks host-direct emulator, force-push, sudo, and host-power at the tool-call boundary.
+- **Subagent Constitutional Preamble** at `docs/AGENT_GUARDRAILS.md` — paste verbatim into every subagent dispatch.
+- **Orchestrator Pre-Action Checklist** at same file — consult before any dispatch/device/push/host-affecting action.
+
+Hermetic test: `tests/hooks/test_guard_forbidden_commands.sh` (≥20 cases, all blocked classes + allowed + escape hatch + non-overridable host-power).
+
+The hook script is inherited from the constitution submodule by reference — never copied locally.
 

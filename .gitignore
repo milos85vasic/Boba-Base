@@ -179,3 +179,5 @@ config/boba.db-wal
 
 # Local Claude Code settings (per-user)
 .claude/
+# But track the project-level PreToolUse hook config
+!.claude/settings.json
