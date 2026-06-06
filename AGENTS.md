@@ -391,10 +391,10 @@ All scanner reports land in `artifacts/scans/<timestamp>/` as SARIF. Mandatory w
 
 - **Threat model**: WebUI is bound to host network; hardcoded `admin`/`admin` is intentional for trusted LAN. Operator must change before exposing. Reverse-proxy or VPN is the operator's responsibility.
 - **Credential storage**: Env vars only. Priority: shell env -> `./.env` -> `~/.qbit.env` -> container env. `.env` is `rw-------` and gitignored.
-- **Tracker sessions** (`_tracker_sessions`) are in-memory only; they evaporate on container restart. Phase 2.3 plans Fernet-at-rest encryption.
+- **Tracker sessions** (`_tracker_sessions`) are in-memory only and **Fernet-encrypted at rest** via `EncryptedSessionStore` (`merge_service/search.py`) — cookies never sit as plaintext in the cache. Key is per-process ephemeral by default; set `SESSION_ENCRYPTION_KEY` (urlsafe-base64 32-byte Fernet key) to pin it. Sessions still evaporate on container restart.
 - **Credential scrubbing**: `CredentialScrubber` in `config/log_filter.py` redacts passwords/api keys from logs.
-- **CORS**: Currently `allow_origins=["*"]` (over-permissive for local dev). Phase 3 will tighten to `ALLOWED_ORIGINS` env var.
-- **SSE streams**: Protected by unguessable `search_id` UUID. Phase 3 plans per-client bearer tokens.
+- **CORS**: Defaults to a **localhost allowlist** (not a wildcard); override via `ALLOWED_ORIGINS` (comma-separated). `*` remains accepted as an explicit opt-in but logs a security warning.
+- **SSE streams**: Protected by the unguessable `search_id` UUID, plus an **opt-in per-search bearer token** (`stream_token` in the search response). Enable enforcement with `SSE_REQUIRE_TOKEN=1`; the stream endpoint then requires the token via `?token=` or `Authorization: Bearer`. The dashboard always sends it, so enabling enforcement is seamless after a frontend rebuild.
 - **Plugin isolation**: Public trackers run in subprocesses with a deadline timeout so a crashing plugin cannot crash the orchestrator.
 - **IPTorrents freeleech policy** (Constitution Principle VIII): Automated tests and downloads MUST only use freeleech results. Freeleech results are tagged `IPTorrents [free]`. The deduplicator refuses to merge non-freeleech IPTorrents results with results from other trackers. `tests/unit/test_freeleech.py` guards the rule.
 - **Gitleaks**: Allowlists `admin:admin` literal to prevent doc false positives.
@@ -409,12 +409,14 @@ Key variables:
 - `NNMCLUB_COOKIES` -- NNM-Club cookie-based auth
 - `NNMCLUB_USERNAME/PASSWORD` -- NNM-Club fallback credentials
 - `IPTORRENTS_USERNAME/PASSWORD` -- IPTorrents credentials
-- `QBITTORRENT_DATA_DIR` -- host download path (default `/mnt/DATA`)
+- `QBITTORRENT_DATA_DIR` -- host download path (platform-aware default: `/mnt/DATA` on Linux, `$HOME/qbit-data` on macOS)
 - `MERGE_SERVICE_PORT` -- default `7187`
 - `MERGE_SERVICE_HOST` -- default `0.0.0.0`
 - `PROXY_PORT` -- default `7186`
 - `BRIDGE_PORT` -- default `7188`
-- `ALLOWED_ORIGINS` -- CORS origins, comma-separated
+- `ALLOWED_ORIGINS` -- CORS origins, comma-separated (default: localhost allowlist on :7187/:4200; `*` opt-in warns)
+- `SSE_REQUIRE_TOKEN` -- set `1`/`true` to require the per-search SSE bearer token on the stream endpoint (default off)
+- `SESSION_ENCRYPTION_KEY` -- urlsafe-base64 32-byte Fernet key to pin tracker-session at-rest encryption across restarts (default: per-process ephemeral)
 - `MAX_CONCURRENT_SEARCHES` -- default `5`
 - `MAX_CONCURRENT_TRACKERS` -- default `10`
 - `PUBLIC_TRACKER_DEADLINE_SECONDS` -- default `15`
