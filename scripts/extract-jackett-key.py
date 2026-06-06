@@ -14,7 +14,6 @@ import os
 import sys
 import time
 
-
 DEFAULT_CONFIG_PATH = "/config/jackett/Jackett/ServerConfig.json"
 FALLBACK_PATH = "./config/jackett/Jackett/ServerConfig.json"
 POLL_INTERVAL = float(os.environ.get("JACKETT_POLL_INTERVAL", "2.0"))

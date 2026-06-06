@@ -55,7 +55,11 @@ def _purge_qbittorrent_torrents(qbit_url: str = "http://localhost:7186") -> None
         pass
 
 
+from tests.fixtures.health import merge_service_required
+
+
 @pytest.mark.stress
+@merge_service_required
 class TestSearchStress:
     """Search endpoint stress testing.
 

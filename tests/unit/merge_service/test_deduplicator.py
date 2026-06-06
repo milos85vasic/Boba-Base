@@ -453,6 +453,46 @@ class TestBestNameSelection:
         canonical_name = merged[0].canonical_identity.title
         assert "1080p" in canonical_name, f"Should preserve resolution: {canonical_name}"
 
+    def test_identity_with_matching_titles_and_years(self, dedup):
+        id_a = dedup._extract_identity_from_result(
+            SearchResult(
+                name="Test Movie 2023", link="magnet:?xt=urn:btih:A", size="1 GB",
+                seeds=1, leechers=0, engine_url="https://t1.com", tracker="t1",
+            )
+        )
+        id_b = dedup._extract_identity_from_result(
+            SearchResult(
+                name="Test Movie 2023", link="magnet:?xt=urn:btih:B", size="1 GB",
+                seeds=1, leechers=0, engine_url="https://t2.com", tracker="t2",
+            )
+        )
+        assert dedup._compare_identities(id_a, id_b)
+
+    def test_identity_different_years_no_match(self, dedup):
+        id_a = dedup._extract_identity_from_result(
+            SearchResult(
+                name="Test Movie 2023", link="magnet:?xt=urn:btih:A", size="1 GB",
+                seeds=1, leechers=0, engine_url="https://t1.com", tracker="t1",
+            )
+        )
+        id_b = dedup._extract_identity_from_result(
+            SearchResult(
+                name="Test Movie 2024", link="magnet:?xt=urn:btih:B", size="1 GB",
+                seeds=1, leechers=0, engine_url="https://t2.com", tracker="t2",
+            )
+        )
+        assert not dedup._compare_identities(id_a, id_b)
+
+    def test_identity_no_titles_no_match(self, dedup):
+        id_a = CanonicalIdentity()
+        id_b = CanonicalIdentity()
+        assert not dedup._compare_identities(id_a, id_b)
+
+    def test_identity_empty_normalized_title(self, dedup):
+        id_a = CanonicalIdentity(title="")
+        id_b = CanonicalIdentity(title="")
+        assert not dedup._compare_identities(id_a, id_b)
+
     def test_merge_multiple_groups_preserves_best_per_group(self, dedup):
         """Each merged group selects best name for that content."""
         results = [

@@ -187,6 +187,40 @@ class TestSchedulerAPI:
         )
         assert resp.status_code == 422
 
+    def test_update_schedule_name(self, client):
+        create = client.post(
+            "/api/v1/schedules",
+            json={"name": "old-name", "query": "ubuntu"},
+        ).json()
+        sid = create["id"]
+        resp = client.patch(
+            f"/api/v1/schedules/{sid}",
+            json={"name": "new-name"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["name"] == "new-name"
+
+    def test_create_short_name_rejected(self, client):
+        resp = client.post(
+            "/api/v1/schedules",
+            json={"name": "", "query": "ubuntu"},
+        )
+        assert resp.status_code == 422
+
+
+def test_scheduler_not_initialized_503():
+    """_get_scheduler raises 503 when app.state has no scheduler."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from api.scheduler import router
+
+    app = FastAPI()
+    app.include_router(router, prefix="/api/v1/schedules")
+    client = TestClient(app)
+    resp = client.get("/api/v1/schedules")
+    assert resp.status_code == 503
+    assert "Scheduler not initialized" in resp.text
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

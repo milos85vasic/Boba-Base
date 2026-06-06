@@ -9,13 +9,14 @@ import os
 import re
 import urllib.parse
 import uuid
+from typing import Any
 
 import aiohttp
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from filelock import FileLock
 from pydantic import BaseModel, Field
-from typing import Any
+
 from merge_service.search import SearchResult
 
 try:

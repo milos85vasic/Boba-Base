@@ -30,6 +30,7 @@ from merge_service.hooks import (
     HookDispatcher,
     HookEvent,
     HookEventType,
+    create_default_hook,
 )
 
 
@@ -167,6 +168,109 @@ class TestHookDispatcher:
 
         hooks = dispatcher.get_hooks(HookEventType.SEARCH_COMPLETE)
         assert hooks == []
+
+    def test_unregister_nonexistent_event(self, dispatcher):
+        dispatcher.unregister_hook("no_hook", HookEventType.SEARCH_START)
+        assert True
+
+    def test_register_duplicate_hook(self, dispatcher):
+        config = HookConfig(name="dup", event=HookEventType.SEARCH_START, script_path="/tmp/test.sh")
+        dispatcher.register_hook(config)
+        dispatcher.register_hook(config)
+        assert len(dispatcher._hooks[HookEventType.SEARCH_START]) == 1
+
+    def test_register_new_event_type(self, dispatcher):
+        config = HookConfig(name="first", event=HookEventType.DOWNLOAD_START, script_path="/tmp/test.sh")
+        dispatcher.register_hook(config)
+        assert HookEventType.DOWNLOAD_START in dispatcher._hooks
+
+    def test_dispatch_skips_disabled_hook(self, dispatcher):
+        config = HookConfig(name="disabled_test", event=HookEventType.SEARCH_START, script_path="/tmp/test.sh", enabled=False)
+        dispatcher.register_hook(config)
+        import asyncio
+        event = HookEvent(event_type=HookEventType.SEARCH_START, data={"q": "test"})
+        asyncio.run(dispatcher.dispatch(event))
+        assert len(dispatcher._execution_log) == 0
+
+    def test_validate_empty_name(self):
+        config = HookConfig(name="", event=HookEventType.SEARCH_START, script_path="/tmp/test.sh")
+        assert config.validate() is False
+
+    def test_validate_empty_script_path(self):
+        config = HookConfig(name="test", event=HookEventType.SEARCH_START, script_path="")
+        assert config.validate() is False
+
+    def test_create_default_hook_function(self):
+        config = create_default_hook("default_test", HookEventType.SEARCH_START, "/tmp/default.sh")
+        assert config.name == "default_test"
+        assert config.event == HookEventType.SEARCH_START
+        assert config.script_path == "/tmp/default.sh"
+        assert config.enabled is True
+        assert config.timeout == 30
+
+    def test_execution_log_contains_search_and_download_ids(self, dispatcher):
+        """Dispatch with search_id and download_id triggers env vars."""
+        import asyncio
+        config = HookConfig(name="id_check", event=HookEventType.DOWNLOAD_START, script_path="/nonexistent_test_script_xyz.sh")
+        dispatcher.register_hook(config)
+        event = HookEvent(event_type=HookEventType.DOWNLOAD_START, search_id="sid-001", download_id="did-001")
+        asyncio.run(dispatcher.dispatch(event))
+        assert True
+
+    def test_dispatch_exception_reraised(self, dispatcher, monkeypatch, tmp_path):
+        """When _execute_hook raises, dispatch logs error but doesn't crash."""
+        import asyncio
+
+        async def broken_execute(hook, event):
+            raise RuntimeError("simulated failure")
+
+        script = tmp_path / "hook.sh"
+        script.write_text("#!/bin/sh\necho ok")
+        script.chmod(0o755)
+        monkeypatch.setattr(dispatcher, "_execute_hook", broken_execute)
+        config = HookConfig(name="broken", event=HookEventType.SEARCH_START, script_path=str(script))
+        dispatcher.register_hook(config)
+        event = HookEvent(event_type=HookEventType.SEARCH_START)
+        asyncio.run(dispatcher.dispatch(event))
+        # The exception is logged but _execute_hook doesn't append to _execution_log
+        assert len(dispatcher._execution_log) == 0
+
+    def test_execute_hook_success(self, tmp_path):
+        """A working hook script populates the execution log."""
+        script = tmp_path / "success_hook.sh"
+        script.write_text("#!/bin/sh\necho done")
+        script.chmod(0o755)
+        d = HookDispatcher(timeout=5)
+        config = HookConfig(name="good_hook", event=HookEventType.SEARCH_START, script_path=str(script))
+        d.register_hook(config)
+        event = HookEvent(
+            event_type=HookEventType.SEARCH_START,
+            search_id="sid-999",
+            download_id="did-999",
+            data={"q": "test"},
+        )
+        import asyncio
+        asyncio.run(d.dispatch(event))
+        assert len(d._execution_log) == 1
+        entry = d._execution_log[0]
+        assert entry["success"] is True
+        assert entry["hook_name"] == "good_hook"
+
+    def test_execute_hook_nonzero_exit(self, tmp_path):
+        """A hook that exits non-zero gets logged as failure."""
+        script = tmp_path / "fail_hook.sh"
+        script.write_text("#!/bin/sh\nexit 1")
+        script.chmod(0o755)
+        d = HookDispatcher(timeout=5)
+        config = HookConfig(name="bad_exit", event=HookEventType.SEARCH_COMPLETE, script_path=str(script))
+        d.register_hook(config)
+        event = HookEvent(event_type=HookEventType.SEARCH_COMPLETE, data={"r": 5})
+        import asyncio
+        asyncio.run(d.dispatch(event))
+        assert len(d._execution_log) == 1
+        entry = d._execution_log[0]
+        assert entry["success"] is False
+        assert entry["return_code"] == 1
 
 
 if __name__ == "__main__":

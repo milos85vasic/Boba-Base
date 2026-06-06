@@ -11,6 +11,10 @@ import pytest
 import requests
 
 
+from tests.fixtures.health import merge_service_required
+
+
+@merge_service_required
 class TestCSRFProtection:
     """CSRF attack vectors must be blocked."""
 

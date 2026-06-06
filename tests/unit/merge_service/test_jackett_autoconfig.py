@@ -15,7 +15,7 @@ sys.path.insert(
 
 import importlib.util
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -50,7 +50,7 @@ AutoconfigResult = _ac_mod.AutoconfigResult
 
 def test_autoconfig_result_serializes_with_no_credentials():
     r = AutoconfigResult(
-        ran_at=datetime(2026, 4, 26, 14, 23, 11, tzinfo=timezone.utc),
+        ran_at=datetime(2026, 4, 26, 14, 23, 11, tzinfo=UTC),
         discovered_credentials=["RUTRACKER", "KINOZAL"],
         matched_indexers={"RUTRACKER": "rutracker", "KINOZAL": "kinozalbiz"},
         configured_now=["rutracker"],
@@ -75,7 +75,7 @@ def test_autoconfig_result_serializes_with_no_credentials():
 
 def test_autoconfig_result_repr_excludes_credentials():
     r = AutoconfigResult(
-        ran_at=datetime.now(timezone.utc),
+        ran_at=datetime.now(UTC),
         discovered_credentials=["RUTRACKER"],
         matched_indexers={"RUTRACKER": "rutracker"},
         configured_now=["rutracker"],

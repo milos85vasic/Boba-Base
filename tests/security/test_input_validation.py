@@ -13,6 +13,10 @@ import pytest
 import requests
 
 
+from tests.fixtures.health import merge_service_required
+
+
+@merge_service_required
 class TestInputValidation:
     """Invalid/malicious inputs must be rejected safely."""
 

@@ -670,3 +670,16 @@ Hermetic test: `tests/hooks/test_guard_forbidden_commands.sh` (≥20 cases, all 
 
 The hook script is inherited from the constitution submodule by reference — never copied locally.
 
+## Session Continuation
+
+**At start of every session:** read `docs/CONTINUATION.md` first. It contains:
+
+1. Current project state and last verification results
+2. All known issues (honest, not swept)
+3. Uncommitted changes list
+4. Quick-start commands to bring up infrastructure
+5. Architecture reference
+
+When the user sends `continue`, pick up from `docs/CONTINUATION.md` as the
+authoritative handoff point.
+

@@ -15,6 +15,10 @@ import pytest
 import requests
 
 
+from tests.fixtures.health import merge_service_required
+
+
+@merge_service_required
 class TestXSSProtection:
     """XSS attack vectors must be sanitized or rejected."""
 

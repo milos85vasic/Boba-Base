@@ -3,9 +3,10 @@ Core data models for the merge service.
 """
 
 import asyncio
+import contextlib
+import logging
 import os
 import re as _re
-import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -964,7 +965,7 @@ class SearchOrchestrator:
                         link=r.get("link", ""),
                         desc_link=r.get("desc_link", ""),
                         tracker=tracker_name,
-                        engine_url=PUBLIC_TRACKERS.get(tracker_name, tracker_name == "jackett" and "http://localhost:9117" or ""),
+                        engine_url=PUBLIC_TRACKERS.get(tracker_name, (tracker_name == "jackett" and "http://localhost:9117") or ""),
                         content_type=ct,
                         quality=q,
                     )
@@ -1015,20 +1016,14 @@ class SearchOrchestrator:
             # the OS reap it — the orchestrator must NEVER hang here.
             # -----------------------------------------------------------------
             if proc.returncode is None:
-                try:
+                with contextlib.suppress(Exception):
                     proc.kill()
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     os.killpg(os.getpgid(proc.pid), _signal.SIGKILL)
-                except Exception:
-                    pass
             try:
                 await asyncio.wait_for(proc.wait(), timeout=5.0)
             except TimeoutError:
                 logger.warning(f"Plugin {tracker_name} proc.wait() timed out during cleanup — abandoning zombie")
-            except Exception:
-                pass
             try:
                 assert proc.stderr is not None
                 stderr_tail = (await asyncio.wait_for(proc.stderr.read(), timeout=5.0)).decode(errors="replace").strip()
@@ -1036,24 +1031,16 @@ class SearchOrchestrator:
                     logger.debug(f"Plugin {tracker_name} stderr: {stderr_tail[:300]}")
             except TimeoutError:
                 logger.warning(f"Plugin {tracker_name} stderr.read() timed out during cleanup")
-            except Exception:
-                pass
 
         except Exception as e:
             logger.debug(f"Plugin {tracker_name} execution error: {e}")
             if proc and proc.returncode is None:
-                try:
+                with contextlib.suppress(Exception):
                     proc.kill()
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     os.killpg(os.getpgid(proc.pid), _signal.SIGKILL)
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     await asyncio.wait_for(proc.wait(), timeout=5.0)
-                except Exception:
-                    pass
 
         diag = _classify_plugin_stderr(stderr_tail, killed_by_deadline=killed_by_deadline, had_results=bool(results))
         # Expose the truncation fact so the dashboard can show a clock

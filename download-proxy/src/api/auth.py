@@ -14,6 +14,7 @@ if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
 
 from typing import Any  # noqa: E402
+
 from fastapi import APIRouter, HTTPException  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
