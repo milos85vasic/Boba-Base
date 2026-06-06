@@ -1,0 +1,38 @@
+<h1 id="jackett-update-research-2026-06-06">Jackett update research
+(2026-06-06)</h1>
+<p><strong>Finding:</strong> there is NO Jackett git submodule. Jackett
+is consumed three ways, all already current:</p>
+<ol type="1">
+<li><strong>Jackett server</strong> — the
+<code>lscr.io/linuxserver/jackett:latest</code> container image (which
+packages github.com/Jackett/Jackett). Pulled to latest this session
+(server build 2026-06-06). New indexer definitions/fixes ship via the
+image; nothing is vendored or built from Jackett source.</li>
+<li><strong>qBittorrent jackett.py search plugin</strong>
+(<code>plugins/community/jackett.py</code>) — canonical upstream is
+<code>qbittorrent/search-plugins</code> (NOT Jackett/Jackett). Our copy
+is at <strong>parity (v4.9)</strong> plus two local improvements that
+MUST be preserved on any re-sync: (a) JACKETT_API_KEY/JACKETT_URL env
+overrides in <code>load_configuration()</code>, (b) the
+<code>if not indexers: return</code> zero-indexers guard (BOB-016).
+Verbatim upstream saved at <code>upstream_jackett.py.txt</code> for
+diffing.</li>
+<li><strong>boba-jackett</strong> Go service — our own
+credential/indexer manager.</li>
+</ol>
+<p><strong>Conclusion:</strong> no source replacement needed; the image
+is the update vector. Adding Jackett/Jackett as a submodule (building
+the .NET server from source) would be a major architectural change
+vs. the maintained image — operator decision, not done unilaterally
+(§11.4.66/§11.4.122).</p>
+<h2
+id="update-operator-decision-2026-06-06-jackett-added-as-reference-submodule">Update
+(operator decision 2026-06-06): Jackett added as REFERENCE
+submodule</h2>
+<p>Per operator choice, <code>git@github.com:Jackett/Jackett.git</code>
+is now a <strong>reference-only</strong> git submodule at
+<code>submodules/jackett</code> (latest release
+<strong>v0.24.2027</strong>, shallow). It is for source awareness /
+inspection / cherry-picking indexer definitions — the RUNTIME still uses
+the maintained <code>lscr.io/linuxserver/jackett:latest</code> image; we
+do NOT build Jackett from source. (BOB-019)</p>
