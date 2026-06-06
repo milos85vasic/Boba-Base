@@ -1,12 +1,50 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-06 (security & cross-platform hardening — backlog burn-down)
-**Last commit:** `e45cae7` (working tree CLEAN apart from this file)
-**Branch:** `main` — 5 commits ahead of pushed `25ffe5d` (push pending below)
-**Uncommitted work:** none · **Unpushed:** the 5 hardening commits + this doc
+**Session:** 2026-06-06 (security/platform hardening + parallel coverage fleet)
+**Last commit:** `aa6c32f` (working tree CLEAN apart from this file)
+**Branch:** `main` — 4 commits ahead of pushed `f1a4865` (push pending)
+**Uncommitted work:** none · **Unpushed:** the 4 coverage/bugfix commits + this doc
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff.
+
+---
+
+## Parallel Coverage Fleet (6 subagents) + 2 bug fixes
+
+Ran 6 disjoint-scope subagents to expand test coverage toward §11.4.27, plus
+the #10 frontend gate. Two real production bugs surfaced and were fixed:
+
+| Area | Result |
+|------|--------|
+| Go `internal/client` | 49% → **92%** (31 tests) |
+| Go `internal/api` | 50% → **94%** |
+| Go `internal/service` | 37% → **73%** |
+| Python `api/auth.py` | 56% → **94%**; `routes.py` 23% → **69%** |
+| Python plugins | yts 16→65, torlock 14→90, torrentkitty 26→93, torrentgalaxy 24→98 |
+| Python merge_service | dedup 89→92 + search/enricher edge paths |
+| **Frontend gate (#10)** | thresholds 40→**85/69/85/87** (≈2pts under actual ~89%); +14 specs; 328→342 |
+| Total Python coverage | 50.7% → **55.86%** |
+
+**Bug fixes (TDD RED→GREEN, found by the fleet):**
+- `plugins/torrentkitty.py` `_parse_size` — `"B"` substring-matched KB/MB/GB/TB
+  → every result size 0. Fixed (suffix match, longest-first). `14bc5c4`
+- Go `generateID()` — `UnixNano` collided under burst → dropped searches +
+  broke `MAX_CONCURRENT_SEARCHES`. Fixed (atomic counter) + 10k-burst test. `d46ea57`
+
+Commits (unpushed): `14bc5c4` torrentkitty · `d46ea57` go-id+coverage ·
+`df75c64` python coverage · `aa6c32f` frontend gate.
+
+**Verification (clean tree):** Python unit **1601 passed** (cov 55.86%) ·
+Go all pkgs `-race` pass · frontend **342 passed** + coverage gate green ·
+ruff clean · go vet clean.
+
+> Pre-existing note: `gofmt -l` flags many untouched Go source files
+> (go1.26 gofmt drift) — out of scope here; all session-touched Go files are
+> gofmt-clean. A future cleanup commit could `gofmt -w` the tree.
+
+**To push** (§11.4.71 fetch-first, §11.4.113 no force):
+`git fetch --all --prune && git push origin main && git push github main && git push upstream main`
 
 ---
 
@@ -123,8 +161,11 @@ Remaining low: other `plugins/` source files, some `search.py` error paths.
 ### 9. Private-tracker tests skip without credentials
 34 security tests skip without valid `.env` credentials (IPTorrents, NNMClub, etc.). Those code paths are untested in this environment.
 
-### 10. Frontend coverage unenforced
-`AGENTS.md` mentions 40% frontend coverage threshold but no enforcement pipeline exists.
+### 10. Frontend coverage unenforced — ✅ RESOLVED (this session)
+Vitest coverage thresholds raised from a no-op 40% to ~2pts below actual
+(statements 85 / branches 69 / functions 85 / lines 87) via
+`@vitest/coverage-v8`; the gate now fails on regression (proven). See
+`frontend/vitest.config.ts`.
 
 ### 11. No CI/CD (by design — Hard Stop rule)
 No `.github/workflows/`, no automated pipelines. All verification is manual via `./ci.sh`. Zero regression safety net between manual runs.
