@@ -204,3 +204,6 @@ submodules/jackett/
 # DOCX exports are generated on demand (regen: scripts/generate_markdown_exports.sh, §11.4.77);
 # not tracked to avoid dozens of binary blobs. HTML/PDF remain tracked.
 *.docx
+
+# Runtime test/QA output (stress/chaos evidence) — regenerated per run.
+qa-results/

@@ -117,7 +117,13 @@ class tokyotoshokan(object):
             page_count += 1
             last_page_url = res_link
             data = retrieve_url(res_link)
-            data = torrent_list.search(data).group(0)
+            match = torrent_list.search(data)
+            if not match:
+                # Empty / garbage paged response (network or SSL failure, or
+                # the listing table is gone). Stop paging gracefully instead
+                # of crashing with AttributeError on a None match.
+                break
+            data = match.group(0)
             parser.feed(data)
             parser.close()
 

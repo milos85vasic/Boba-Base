@@ -101,7 +101,12 @@ class tokyotoshokan(object):
         additional_links = re_compile(r"\?lastid=[0-9]+&page=[0-9]+&terms=" + query.replace("%20", r"\+"))
 
         data = retrieve_url(last_page_url)
-        data = torrent_list.search(data).group(0)
+        match = torrent_list.search(data)
+        if not match:
+            # Empty / garbage upstream response — no listing table. Return the
+            # current page url unchanged instead of crashing with AttributeError.
+            return last_page_url
+        data = match.group(0)
 
         for res_link in map(
             lambda link: "".join((self.url, "/search.php", link.group(0))), additional_links.finditer(data)
@@ -114,7 +119,11 @@ class tokyotoshokan(object):
             page_count += 1
             last_page_url = res_link
             data = retrieve_url(res_link)
-            data = torrent_list.search(data).group(0)
+            match = torrent_list.search(data)
+            if not match:
+                # Empty / garbage paged response — stop paging gracefully.
+                break
+            data = match.group(0)
             parser.feed(data)
             parser.close()
 
@@ -131,7 +140,12 @@ class tokyotoshokan(object):
         )
         data = retrieve_url(request_url)
 
-        data = torrent_list.search(data).group(0)
+        match = torrent_list.search(data)
+        if not match:
+            # Empty / garbage upstream response (network or SSL failure, or no
+            # listing table). Return no results instead of crashing.
+            return
+        data = match.group(0)
         parser.feed(data)
         parser.close()
 

@@ -1,0 +1,3 @@
+GET /api/v1/auth/nnmclub/status -> 404 on the LIVE service.
+Source HAS @router.get('/nnmclub/status') in download-proxy/src/api/auth.py (BOB-006) but the running container exposes only /auth/rutracker/* + /auth/status (see /openapi.json). This is a real SOURCE->ARTIFACT drift (§11.4.108): restart/redeploy qbittorrent-proxy to ship it.
+Response body: {"detail":"Not Found"}

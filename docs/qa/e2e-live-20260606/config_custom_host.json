@@ -1,0 +1,10 @@
+{
+  "request_host": "boba.example.com:9999",
+  "response": {
+    "qbittorrent_url": "http://boba.example.com:7186",
+    "qbittorrent_internal_url": "http://localhost:7185",
+    "qbittorrent_port": 7185,
+    "qbittorrent_host": "localhost",
+    "proxy_port": 7186
+  }
+}

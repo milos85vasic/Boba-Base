@@ -1,0 +1,24 @@
+{
+  "trackers": {
+    "rutracker": {
+      "has_session": true,
+      "base_url": "https://rutracker.org"
+    },
+    "kinozal": {
+      "has_session": false,
+      "base_url": ""
+    },
+    "nnmclub": {
+      "has_session": false,
+      "base_url": ""
+    },
+    "iptorrents": {
+      "has_session": true,
+      "base_url": "https://iptorrents.com"
+    },
+    "qbittorrent": {
+      "has_session": false,
+      "username": "admin"
+    }
+  }
+}

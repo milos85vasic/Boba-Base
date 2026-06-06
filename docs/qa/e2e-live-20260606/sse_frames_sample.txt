@@ -1,0 +1,6 @@
+event: search_start
+data: {"search_id": "d2332f35-e1c2-4440-bfa7-194d4792e234", "status": "started"}
+id: d2332f35-e1c2-4440-bfa7-194d4792e234
+
+event: tracker_started
+data: {"name": "rutracker", "tracker_url": "https://rutracker.org", "status": "running", "results_count": 0, "started_at": "2026-06-06T14:52:31.876487+00:00", "completed_at": null, "duration_ms": null, "error": null, "error_type": null, "authenticated": true, "attempt": 1, "http_status": null, "category": "all", "query": "debian", "notes": {}}
