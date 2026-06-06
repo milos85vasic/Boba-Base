@@ -26,6 +26,13 @@
 
 set -uo pipefail
 
+# Platform guard: these checks require systemd/Linux
+if [[ "$(uname -s)" != "Linux" ]]; then
+  echo "=== host_no_auto_poweroff_challenge ==="
+  echo "SKIP: systemd/Linux required (uname=$(uname -s))"
+  exit 0
+fi
+
 PASS_COUNT=0
 FAIL_COUNT=0
 FAIL_DETAILS=()

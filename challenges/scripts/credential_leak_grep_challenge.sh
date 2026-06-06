@@ -18,7 +18,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$PROJECT_ROOT/qBitTorrent-go"
 
-GOMAXPROCS=2 nice -n 19 ionice -c 3 \
+GOMAXPROCS=2 nice -n 19 $(command -v ionice &>/dev/null && echo "ionice -c 3" || true) \
   go test -tags=security -race -count=1 ./tests/security/ -run '^TestNoCredentialLeak$' -v \
   > /tmp/cred_leak_grep.out 2>&1
 status=$?
