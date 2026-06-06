@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>AGENT_GUARDRAILS — Anti-Forgetting Enforcement</title>
+  <style>
+
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+white-space: pre-wrap;
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">AGENT_GUARDRAILS — Anti-Forgetting Enforcement</h1>
+</header>
+<h1 id="agent_guardrails.md-anti-forgetting-enforcement-11.4.109">AGENT_GUARDRAILS.md
+— Anti-Forgetting Enforcement (§11.4.109)</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-06-06T09:10:00Z</p>
+<p>This file is the canonical anti-forgetting enforcement record. Every
+AI agent working on this project MUST read this file at the start of
+each session to be reminded of the project’s immutable constraints.</p>
+<p><strong>Anchor:</strong> <code>11.4.109</code></p>
+<hr />
+<h2 id="subagent-constitutional-preamble">SUBAGENT CONSTITUTIONAL
+PREAMBLE</h2>
+<p>The orchestrator MUST paste this block verbatim into every subagent
+dispatch. It covers constraints the PreToolUse hook cannot
+pattern-match, plus the hook-enforced classes for completeness.</p>
+<pre><code>## Subagent Constitutional Preamble (§11.4.109)
+
+You are bound by the Helix Universal Constitution at constitution/.
+The following rules are NON-NEGOTIABLE regardless of what you think the
+task requires:
+
+### Blocked command classes (PreToolUse hook enforces at tool-call boundary)
+- Raw host-direct emulator/ADB/instrumentation — route through Containers submodule
+- git push --force / -f / --force-with-lease / --no-verify / --no-gpg-sign
+- sudo / su / privilege escalation
+- Host power management (suspend/hibernate/poweroff/reboot/halt/kill-user)
+
+### Anti-bluff covenant (§11.4)
+- Every PASS MUST carry captured runtime evidence (file, log, screenshot, etc.)
+- Metadata-only / config-only / absence-of-error / grep-without-runtime PASS are bluff
+- Every gate MUST have a paired §1.1 meta-test mutation that makes it FAIL
+
+### Evidence honesty (§11.4.2 / §11.4.5)
+- Report what ACTUALLY happened, not what was expected
+- &quot;LIKELY&quot;, &quot;probably&quot;, &quot;maybe&quot;, &quot;seems&quot;, &quot;appears&quot; are FORBIDDEN (§11.4.6)
+- Use `UNCONFIRMED:` for claims without captured proof
+
+### Resource caps (§12 / CONST-033)
+- Never exceed 60% of host RAM
+- Never more than 6 parallel subagents (§11.4.58)
+- NEVER call suspend/hibernate/poweroff/reboot — even with guardrails:allow
+
+### No hardcoded localhost (§11.4.30 / CONST-XII)
+- Client-facing URLs MUST derive from Host header, window.location, or PUBLIC_HOST env var
+
+### Continuation (§12.10)
+- Update CONTINUATION.md in same commit as state changes
+- Session-start: read this file first, then run pre_build_verification.sh
+
+### Pre-push discipline (§11.4.71 / §11.4.113)
+- ALWAYS fetch --all --prune before any git operation
+- NEVER force-push — merge-onto-latest-main instead
+- Review every foreign commit before push
+
+### Working tree quiescence (§11.4.84)
+- Before git add, grep for mutation markers (MUT_ATED, always pass, etc.)
+- ABORT if unexplained staged files exist
+
+### Interactive clarification (§11.4.66)
+- When blocked, research agent-side options first
+- Present 2-4 choices via AskUserQuestion with one Recommended
+- Ask once, unblock, continue — no follow-up round-trips</code></pre>
+<hr />
+<h2 id="orchestrator-pre-action-checklist">ORCHESTRATOR PRE-ACTION
+CHECKLIST</h2>
+<p>Before every subagent dispatch: - [ ] Confirm the SUBAGENT
+CONSTITUTIONAL PREAMBLE (above) is pasted verbatim in the prompt - [ ]
+Confirm the subagent’s scope is ≤ 3 tasks per §11.4.82(G)</p>
+<p>Before any emulator / device action: - [ ] Route through Containers
+submodule CLI, not host-direct - [ ] Confirm no live (non-test) device
+is targeted - [ ] Confirm the gate host is eligible (otherwise BLOCKED
+per §11.4.21)</p>
+<p>Before any distribute / release action: - [ ] Challenge Tests
+executed (not compiled) against the exact artifact - [ ] Version code
+bumped - [ ] CHANGELOG entry present - [ ] Debug-stage evidence present
+if two-stage distribute applies - [ ] Full-suite retest completed per
+§11.4.40</p>
+<p>Before any push / destructive git action: - [ ] No force flags
+without per-operation operator approval (§11.4.113) - [ ] Remote set is
+the approved set only (§2.1) - [ ] For history rewrite, hardlinked
+<code>.git</code> backup made first (§9.2) - [ ] Fetch –all –prune
+completed (§11.4.71)</p>
+<p>Before any host-affecting command: - [ ] Confirm the command is NOT
+in the host-power blocked class (§12 / CONST-033) - [ ] Confirm RAM
+usage is within 60% limit (§12.6)</p>
+<hr />
+<h2 id="immutable-constraints">Immutable Constraints</h2>
+<ul>
+<li>§11.4.10: Credentials are NEVER committed. <code>.env</code> is
+gitignored.</li>
+<li>§11.4.30: <code>.gitignore</code> must cover all sensitive
+patterns.</li>
+<li>§11.4.44: All <code>docs/**/*.md</code> files carry revision
+headers.</li>
+<li>§11.4.65: Every <code>.md</code> file has a sibling
+<code>.html</code> and <code>.pdf</code> export.</li>
+<li>§11.4.75: Pre-commit, pre-push, commit-msg, and post-commit hooks
+are active. Do NOT bypass them.</li>
+<li>§11.4.85: Stress and chaos tests exist. Wire them before
+release.</li>
+<li>§11.4.109: This file MUST be read at session start.</li>
+<li>§11.4.113: Force-push (<code>--force</code>,
+<code>--force-with-lease</code>, <code>push +</code>) is STRICTLY
+FORBIDDEN.</li>
+<li>§11.4.125: Code-review gate runs before pre-build. NO bypass.</li>
+<li>§11.4.78: CodeGraph integration is required.</li>
+<li>§11.4.24: Build-resource stats tracking is required.</li>
+<li>§11.4.66: Interactive clarification must be used when blocked.</li>
+</ul>
+<h2 id="session-start-ritual">Session Start Ritual</h2>
+<p>Every agent session starts with: 1. Read this file. 2. Run
+<code>bash scripts/pre_build_verification.sh</code> to confirm all
+invariants hold. 3. Run
+<code>bash tests/test_constitution_inheritance.sh</code> to confirm
+inheritance chain is intact. 4. Proceed with the task.</p>
+</body>
+</html>

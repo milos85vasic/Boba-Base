@@ -1,5 +1,8 @@
 # AGENT_GUARDRAILS.md — Anti-Forgetting Enforcement (§11.4.109)
 
+**Revision:** 2
+**Last modified:** 2026-06-06T09:10:00Z
+
 This file is the canonical anti-forgetting enforcement record. Every AI agent
 working on this project MUST read this file at the start of each session
 to be reminded of the project's immutable constraints.
