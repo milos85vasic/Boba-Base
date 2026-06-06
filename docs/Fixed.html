@@ -1,6 +1,6 @@
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-06-06T19:20:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
+2026-06-06T19:45:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -211,6 +211,24 @@ linuxserver image; we do NOT build Jackett from source. Provides source
 awareness for inspecting / cherry-picking indexer definitions. SSH URL
 per Hard-Stop #2; placed under <code>submodules/</code> per
 §11.4.28(C).</p>
+<h2 id="bob-020-codegraph-initialized-wired-11.4.787980">§15. [BOB-020]
+CodeGraph initialized + wired (§11.4.78/79/80)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06 ·
+<strong>Commit:</strong> <code>f9a277b</code></p>
+<p>CodeGraph 0.9.9 installed (npm, no sudo), project indexed (509 files
+/ 8906 nodes / 17025 edges), wired as a project-scoped MCP server in
+<code>.mcp.json</code>. Exclusions via <code>.gitignore</code> (v0.9.9
+is zero-config): 0 secret/credential paths, 0 third-party
+<code>submodules/jackett</code> paths; <code>constitution</code>
+(own-org) included. <code>.codegraph/codegraph.db</code> gitignored
+(regen: <code>codegraph index</code>, §11.4.77).
+<strong>Evidence:</strong> <code>scripts/codegraph_validate.sh</code> 7
+PASS/0 FAIL incl. the unforgeable MCP challenge (MCP
+<code>codegraph_status</code> node count == CLI, both 8906);
+independently re-verified by the conductor. Docs:
+<code>docs/CODEGRAPH.md</code> +
+<code>docs/codegraph/Status.md</code>.</p>
 <h2 id="bob-014-go-generateid-collided-under-burst-unixnano-only">§6.
 [BOB-014] Go <code>generateID()</code> collided under burst
 (UnixNano-only)</h2>

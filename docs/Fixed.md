@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 5
-**Last modified:** 2026-06-06T19:20:00Z
+**Revision:** 6
+**Last modified:** 2026-06-06T19:45:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -195,6 +195,22 @@ Per operator decision, `git@github.com:Jackett/Jackett.git` is added as a
 we do NOT build Jackett from source. Provides source awareness for inspecting /
 cherry-picking indexer definitions. SSH URL per Hard-Stop #2; placed under
 `submodules/` per §11.4.28(C).
+
+## §15. [BOB-020] CodeGraph initialized + wired (§11.4.78/79/80)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Closed:** 2026-06-06 · **Commit:** `f9a277b`
+
+CodeGraph 0.9.9 installed (npm, no sudo), project indexed (509 files / 8906
+nodes / 17025 edges), wired as a project-scoped MCP server in `.mcp.json`.
+Exclusions via `.gitignore` (v0.9.9 is zero-config): 0 secret/credential paths,
+0 third-party `submodules/jackett` paths; `constitution` (own-org) included.
+`.codegraph/codegraph.db` gitignored (regen: `codegraph index`, §11.4.77).
+**Evidence:** `scripts/codegraph_validate.sh` 7 PASS/0 FAIL incl. the unforgeable
+MCP challenge (MCP `codegraph_status` node count == CLI, both 8906);
+independently re-verified by the conductor. Docs: `docs/CODEGRAPH.md` +
+`docs/codegraph/Status.md`.
 
 ## §6. [BOB-014] Go `generateID()` collided under burst (UnixNano-only)
 
