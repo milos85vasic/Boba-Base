@@ -181,3 +181,20 @@ config/boba.db-wal
 .claude/
 # But track the project-level PreToolUse hook config
 !.claude/settings.json
+
+# CodeGraph (§11.4.78/§11.4.80) — local semantic index DB is a build artifact.
+# Regeneration mechanism (§11.4.77): `codegraph index` rebuilds it from source.
+# .codegraph/config.json (if present) is TRACKED; the DB + WAL/SHM are not.
+.codegraph/codegraph.db
+.codegraph/*.db-wal
+.codegraph/*.db-shm
+.codegraph/cache/
+
+# CodeGraph third-party exclusion (§11.4.79): the Jackett submodule is
+# third-party (Jackett/Jackett, C#/.NET) and MUST NOT enter the index.
+# CodeGraph reads .gitignore directly to decide what to index; this entry is
+# INERT for git (submodules/jackett is a tracked gitlink via .gitmodules, so
+# git keeps tracking the submodule pointer) but tells CodeGraph to skip it.
+# The own-org `constitution/` submodule (HelixDevelopment) is deliberately NOT
+# listed here so it stays INCLUDED in the index per §11.4.79.
+submodules/jackett/

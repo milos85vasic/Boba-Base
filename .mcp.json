@@ -2,7 +2,7 @@
   "mcpServers": {
     "codegraph": {
       "command": "codegraph",
-      "args": ["serve", "--port", "9876", "--mcp"],
+      "args": ["serve", "--mcp"],
       "env": {}
     }
   }

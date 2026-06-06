@@ -14,3 +14,8 @@ cache/
 
 # Hook markers
 .dirty
+
+# Runtime markers (MCP daemon pid, sockets)
+*.pid
+daemon.pid
+*.sock

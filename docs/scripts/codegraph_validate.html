@@ -1,0 +1,65 @@
+<h1 id="scriptscodegraph_validate.sh">scripts/codegraph_validate.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T14:40:00Z</p>
+<h2 id="overview">Overview</h2>
+<p>Anti-bluff verifier for the CodeGraph integration (Constitution
+§11.4.78 step 4). Proves the local CodeGraph index is real and correctly
+scoped — not a §11.4 PASS-bluff — using facts obtained only from
+CodeGraph (CLI + MCP), never from the script reading source files
+itself.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>codegraph</code> on <code>PATH</code> (npm-installed per
+§11.4.78).</li>
+<li><code>node</code> on <code>PATH</code>.</li>
+<li>A built index: <code>.codegraph/</code> present with
+<code>codegraph index</code> already run.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/codegraph_validate.sh</span></code></pre></div>
+<p>Exit codes: <code>0</code> all checks PASS · <code>1</code> one or
+more checks FAIL · <code>2</code> environment problem (codegraph/node
+absent, or <code>.codegraph/</code> missing).</p>
+<h2 id="what-it-checks-7">What it checks (7)</h2>
+<ol type="1">
+<li><code>codegraph</code> present on <code>PATH</code> + version (no
+hardcoded host path).</li>
+<li>Index reality — <code>codegraph status</code> reports
+<code>nodeCount &gt; 0</code>.</li>
+<li><strong>Unforgeable MCP challenge</strong> — drives
+<code>codegraph serve --mcp</code> over stdio and asserts the
+<code>codegraph_status</code> node count returned over MCP equals the
+CLI node count.</li>
+<li>Own-code symbol <code>Deduplicator</code> resolves under
+<code>download-proxy/src/</code>.</li>
+<li>Own-org submodule INCLUDED (§11.4.79) — <code>versionTagsCmd</code>
+resolves under <code>constitution/</code>.</li>
+<li>Third-party EXCLUDED (§11.4.79) — 0 <code>submodules/jackett</code>
+paths in index.</li>
+<li>Secrets EXCLUDED (§11.4.10) — 0
+<code>.env</code>/config-credential/<code>boba.db</code> paths.</li>
+</ol>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li>If <code>codegraph</code> reports a stale version, a standalone shim
+is shadowing the npm binary on <code>PATH</code> (see
+<code>docs/CODEGRAPH.md</code> troubleshooting).</li>
+<li>The MCP check uses <code>notifications/initialized</code> + a short
+delay; the server is async and a torn read returns 0, which fails the
+check (correct — no bluff).</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<p>Read-only against the index; starts and tears down a transient MCP
+server. Never prints secrets.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>docs/CODEGRAPH.md</code> — full integration doc.</li>
+<li><code>constitution/scripts/codegraph_update.sh</code> /
+<code>codegraph_sync.sh</code> — update + sync automation (§11.4.80);
+<code>codegraph_sync.sh</code> step 4 invokes this script.</li>
+<li><code>docs/codegraph/Status.md</code> — append-only event
+ledger.</li>
+</ul>
+<p>Last verified: 2026-06-06 (7 PASS / 0 FAIL on codegraph 0.9.9, 509
+files).</p>

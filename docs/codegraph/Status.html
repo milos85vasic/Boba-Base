@@ -1,0 +1,94 @@
+<h1 id="codegraph-status-boba">CodeGraph Status — Boba</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T14:40:00Z <strong>Authority:</strong> Constitution §11.4.78 /
+§11.4.79 / §11.4.80 <strong>Scope:</strong> Append-only ledger of
+CodeGraph install / update / sync / validate events for the Boba
+project. Newest entries appended at the bottom by
+<code>constitution/scripts/codegraph_sync.sh</code>.</p>
+<hr />
+<h2
+id="t143000z-initial-setup-update-re-index-11.4.7811.4.7911.4.80">2026-06-06T14:30:00Z
+— initial setup + update + re-index (§11.4.78/§11.4.79/§11.4.80)</h2>
+<ul>
+<li><strong>Install / update:</strong> host already had CodeGraph via
+the standalone installer (<code>~/.codegraph/versions/v0.9.7</code>,
+shim at <code>~/.local/bin/codegraph</code>). The npm package
+(<code>@colbymchenry/codegraph</code>, §11.4.78) latest was
+<code>0.9.9</code>.
+<code>constitution/scripts/codegraph_update.sh</code> installed
+<code>0.9.9</code> via <code>npm install -g</code> (no sudo;
+user-writable prefix <code>/opt/homebrew</code>) and the §107 anti-bluff
+check caught that the stale <code>~/.local/bin</code> shim still won on
+PATH. Removed the stale standalone shim → <code>codegraph</code> on PATH
+is now the npm-managed <code>0.9.9</code> at
+<code>/opt/homebrew/bin/codegraph</code>.</li>
+<li><strong>Config model:</strong> CodeGraph 0.9.9 is
+<strong>zero-config</strong> — there is NO
+<code>.codegraph/config.json</code> exclude list. Exclusion is driven by
+<code>.gitignore</code>
+<ul>
+<li>built-in defaults
+(<code>node_modules</code>/<code>vendor</code>/<code>dist</code>/… +
+files &gt; 1 MB). Source: the installed package <code>README.md</code>
+“Configuration” section.</li>
+</ul></li>
+<li><strong>Exclusions (§11.4.10 + §11.4.79):</strong> secrets are
+already covered by root <code>.gitignore</code> (<code>.env*</code>,
+<code>*secrets*</code>, <code>config/qBittorrent/</code>,
+<code>config/jackett/</code>, <code>config/boba.db</code>). Added
+<code>submodules/jackett/</code> to root <code>.gitignore</code> to keep
+the third-party Jackett (C#/.NET) submodule OUT of the index — inert for
+git (jackett is a tracked gitlink) but honored by CodeGraph. Added
+<code>.codegraph/codegraph.db</code> (+ WAL/SHM/cache) to root
+<code>.gitignore</code>; regeneration mechanism (§11.4.77) is
+<code>codegraph index</code>.</li>
+<li><strong>Re-index:</strong> <code>codegraph index . --force</code> on
+<code>0.9.9</code>.</li>
+<li><strong>Index result:</strong> 509 files, 8906 nodes, 17025 edges.
+Languages: go, python, typescript, properties, xml, yaml.</li>
+<li><strong>Audit:</strong> <code>submodules/jackett</code> = 0 indexed
+(§11.4.79 ✓); real secret paths = 0 indexed (§11.4.10 ✓);
+<code>constitution/</code> own-org = 19 files indexed, cross-submodule
+symbol <code>versionTagsCmd</code> resolves (§11.4.79 ✓).</li>
+<li><strong>MCP wiring:</strong> <code>.mcp.json</code> registers
+<code>codegraph serve --mcp</code> (stdio, bare command on PATH).
+Verified the server boots and <code>codegraph_status</code> returns the
+live node count (8906) over MCP — the §11.4.78 step-4 unforgeable
+fact.</li>
+<li><strong>Validate:</strong>
+<code>scripts/codegraph_validate.sh</code> → 7 PASS / 0 FAIL.</li>
+</ul>
+<h2 id="t143830z-codegraph_sync.sh-.">2026-06-06T14:38:30Z —
+codegraph_sync.sh @ .</h2>
+<ul>
+<li>duration: <code>1s</code></li>
+<li>baseline status:</li>
+</ul>
+<pre><code>  method          2,599
+  function        1,722
+  file            498
+  constant        139
+  struct          85
+  interface       84</code></pre>
+<ul>
+<li>post-sync status:</li>
+</ul>
+<pre><code>  method          2,599
+  function        1,722
+  file            498
+  constant        139
+  struct          85
+  interface       84</code></pre>
+<ul>
+<li>validate: <strong>PASS</strong></li>
+</ul>
+<pre><code>PASS: codegraph on PATH at /opt/homebrew/bin/codegraph (version 0.9.9)
+PASS: index reality — codegraph status reports 8906 nodes across 509 files
+PASS: unforgeable MCP challenge — codegraph_status via MCP returned 8906 nodes == CLI 8906
+PASS: own-code resolution — &#39;Deduplicator&#39; resolves in download-proxy/src (8 hit(s))
+PASS: own-org INCLUDED (§11.4.79) — &#39;versionTagsCmd&#39; resolves inside constitution/ (2 hit(s))
+PASS: third-party EXCLUDED (§11.4.79) — 0 submodules/jackett paths in index
+PASS: secrets EXCLUDED (§11.4.10) — 0 secret/config-credential paths in index
+----------------------------------------
+CodeGraph validate: 7 PASS / 0 FAIL
+VERDICT: PASS</code></pre>

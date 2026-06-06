@@ -1,0 +1,184 @@
+<h1 id="codegraph-boba-code-intelligence-integration">CodeGraph — Boba
+Code-Intelligence Integration</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T14:40:00Z <strong>Authority:</strong> Constitution §11.4.78
+(CodeGraph mandate) · §11.4.79 (own-org submodules included, third-party
+excluded) · §11.4.80 (update/sync automation) · §11.4.10 (secrets never
+indexed) · §11.4.77 (regeneration mechanism)</p>
+<p>CodeGraph (<code>@colbymchenry/codegraph</code>, <a
+href="https://github.com/colbymchenry/codegraph"
+class="uri">https://github.com/colbymchenry/codegraph</a>) is a
+100%-local SQLite semantic knowledge graph of this codebase, exposed to
+AI coding agents over MCP. No cloud, no external API. It gives agents
+instant, consistent symbol / caller / callee / impact resolution instead
+of repeated shallow file scanning.</p>
+<hr />
+<h2 id="install-11.4.78">Install (§11.4.78)</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="at">-g</span> @colbymchenry/codegraph     <span class="co"># Node 18+, NO sudo (user-writable prefix)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codegraph</span> <span class="at">--version</span>                         <span class="co"># confirm the binary runs (exit 0 ≠ working binary)</span></span></code></pre></div>
+<p>On this host the binary resolves to
+<code>/opt/homebrew/bin/codegraph</code> (the npm-managed shim). A
+standalone-installer shim (<code>~/.local/bin/codegraph</code>) must NOT
+shadow it — if <code>codegraph --version</code> reports an older version
+than <code>npm view @colbymchenry/codegraph version</code>, a stale shim
+is winning on <code>PATH</code>; remove it so the npm-managed binary is
+active.</p>
+<h2 id="configuration-model-zero-config-important">Configuration model —
+zero-config (important)</h2>
+<p>CodeGraph 0.9.x is <strong>zero-config</strong>: there is <strong>no
+<code>.codegraph/config.json</code> exclude list</strong>. What gets
+indexed is decided by:</p>
+<ol type="1">
+<li><strong>Built-in defaults</strong> — dependency/build/cache dirs
+(<code>node_modules</code>, <code>vendor</code>, <code>dist</code>,
+<code>build</code>, <code>target</code>, <code>.venv</code>,
+<code>Pods</code>, …) are skipped even with no <code>.gitignore</code>,
+plus any file larger than <strong>1 MB</strong>.</li>
+<li><strong><code>.gitignore</code></strong> — honored directly (root +
+nested). <strong>To keep something out of the index, add it to
+<code>.gitignore</code>.</strong> To pull a default-excluded dir back
+in, add a negation (<code>!path/</code>).</li>
+</ol>
+<p>(Source: the installed package <code>README.md</code> →
+“Configuration”.)</p>
+<h3 id="what-is-tracked-vs-ignored">What is tracked vs ignored</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Path</th>
+<th>Git</th>
+<th>CodeGraph index</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.codegraph/codegraph.db</code> (+
+<code>*.db-wal</code>/<code>*.db-shm</code>/<code>cache/</code>)</td>
+<td>gitignored</td>
+<td>n/a</td>
+<td>Build artifact; regenerate with <code>codegraph index</code>
+(§11.4.77)</td>
+</tr>
+<tr>
+<td><code>.mcp.json</code></td>
+<td>tracked</td>
+<td>n/a</td>
+<td>MCP wiring, committed (§11.4.78)</td>
+</tr>
+<tr>
+<td><code>scripts/codegraph_validate.sh</code></td>
+<td>tracked</td>
+<td>indexed</td>
+<td>Anti-bluff validator (§11.4.78 step 4)</td>
+</tr>
+<tr>
+<td><code>docs/codegraph/Status.md</code></td>
+<td>tracked</td>
+<td>n/a</td>
+<td>Append-only event ledger (§11.4.80)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="exclusions-secrets-11.4.10-third-party-11.4.79">Exclusions —
+secrets (§11.4.10) + third-party (§11.4.79)</h2>
+<p><strong>Secrets are never indexed.</strong> Root
+<code>.gitignore</code> already excludes <code>.env</code>,
+<code>.env.*</code>, <code>*.env</code>, <code>.qbit.env</code>,
+<code>*secrets*</code>, <code>config/qBittorrent/</code>,
+<code>config/jackett/</code>, <code>config/boba.db*</code>. Because
+CodeGraph honors <code>.gitignore</code>, none of these reach the index.
+Audited: 0 real secret paths in the index.</p>
+<p><strong>Third-party submodule excluded.</strong>
+<code>submodules/jackett</code> (upstream <code>Jackett/Jackett</code>,
+C#/.NET) is third-party — §11.4.79 requires it OUT of the index.
+CodeGraph 0.9.9 does index C#, so an explicit <code>.gitignore</code>
+entry <code>submodules/jackett/</code> was added. This is <strong>inert
+for git</strong> (the submodule is a tracked gitlink via
+<code>.gitmodules</code>; an ignore entry on a tracked path does not
+un-track it) but tells CodeGraph to skip it. Audited: 0
+<code>submodules/jackett</code> paths in the index (down from 890 before
+the exclusion).</p>
+<p><strong>Own-org submodule INCLUDED.</strong>
+<code>constitution/</code> (HelixDevelopment, own-org per §11.4.79) is
+deliberately NOT ignored, so its Go <code>workable-items</code> sources
+are indexed and resolve cross-submodule
+(e.g. <code>versionTagsCmd</code>).</p>
+<h2 id="index-re-generate">Index / re-generate</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">codegraph</span> index .          <span class="co"># full (re)index — the §11.4.77 regeneration mechanism</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">codegraph</span> index . <span class="at">--force</span>  <span class="co"># force a clean re-index</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">codegraph</span> sync .           <span class="co"># incremental update since last index</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">codegraph</span> status .         <span class="co"># files / nodes / edges</span></span></code></pre></div>
+<p>Current index: <strong>509 files, 8906 nodes, 17025 edges</strong>
+(go, python, typescript, properties, xml, yaml).</p>
+<h2 id="mcp-wiring-claude-code-project-scoped-committed">MCP wiring
+(Claude Code, project-scoped + committed)</h2>
+<p><code>.mcp.json</code> at the repo root registers the CodeGraph MCP
+server over <strong>stdio</strong>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;mcpServers&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;codegraph&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;codegraph&quot;</span><span class="fu">,</span> <span class="dt">&quot;args&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;serve&quot;</span><span class="ot">,</span> <span class="st">&quot;--mcp&quot;</span><span class="ot">]</span><span class="fu">,</span> <span class="dt">&quot;env&quot;</span><span class="fu">:</span> <span class="fu">{}</span> <span class="fu">}</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><code>serve --mcp</code> is the stdio transport; the command is the
+bare <code>codegraph</code> on <code>PATH</code> (no hardcoded host
+path, per §11.4.78). It exposes 8 tools: <code>codegraph_search</code>,
+<code>codegraph_callers</code>, <code>codegraph_callees</code>,
+<code>codegraph_impact</code>, <code>codegraph_node</code>,
+<code>codegraph_explore</code>, <code>codegraph_status</code>,
+<code>codegraph_files</code>.</p>
+<p>Other agents: register the same <code>codegraph serve --mcp</code>
+stdio server via that agent’s MCP config (Cursor, opencode
+<code>opencode.json</code>, Qwen <code>.qwen/settings.json</code>,
+Codex, etc.) — <code>codegraph install</code> automates this for
+supported agents.</p>
+<h2 id="anti-bluff-verification-11.4.78-step-4">Anti-bluff verification
+(§11.4.78 step 4)</h2>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/codegraph_validate.sh         <span class="co"># 7 checks; exit 0 = all PASS</span></span></code></pre></div>
+<p>The validator proves the index is real and correctly scoped — six
+checks plus an <strong>unforgeable MCP challenge</strong>: it drives the
+real <code>codegraph serve --mcp</code> server and asserts the
+<code>codegraph_status</code> node count returned over MCP equals the
+CLI node count. An agent answering from its own file-reading tools
+cannot fabricate that number. The other checks assert: index reality
+(nodes &gt; 0), own-code symbol resolution, own-org
+<code>constitution/</code> symbol resolution (§11.4.79 included), and
+zero <code>submodules/jackett</code> / zero secret paths in the index
+(§11.4.79 + §11.4.10 excluded). The path-audit detection logic is
+falsifiability-rehearsed (a synthetic leaked path is detected) so the
+green PASS is not a tautology.</p>
+<h2 id="update-sync-automation-cadence-11.4.80">Update + sync automation
++ cadence (§11.4.80)</h2>
+<p>Scripts are <strong>inherited by reference</strong> from the
+constitution submodule — never copied:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> constitution/scripts/codegraph_update.sh      <span class="co"># npm-update to latest + §107 version check</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> constitution/scripts/codegraph_sync.sh .      <span class="co"># status → sync → status → validate, logged</span></span></code></pre></div>
+<p><code>codegraph_sync.sh</code> appends every run to BOTH this
+project’s <code>docs/codegraph/Status.md</code> and the constitution’s
+own ledger. <strong>Cadence:</strong> weekly floor (§11.4.45
+status-digest cadence); may run more often.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<ul>
+<li><strong><code>codegraph</code> reports an old version after npm
+update</strong> — a stale standalone shim on <code>PATH</code> (commonly
+<code>~/.local/bin/codegraph</code>) is shadowing the npm-managed
+binary. Remove the stale shim.</li>
+<li><strong>A path you expect is missing from the index</strong> — check
+it isn’t <code>.gitignore</code>d, default-excluded
+(<code>node_modules</code>/<code>dist</code>/…), &gt; 1 MB, or an
+unsupported language.</li>
+<li><strong>Third-party code appears in the index</strong> — add its
+path to <code>.gitignore</code> (per the zero-config exclude model) and
+<code>codegraph index . --force</code>.</li>
+</ul>
