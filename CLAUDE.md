@@ -57,12 +57,10 @@ For deeper reference (technology stack, per-test-file mapping, full gotchas), se
 - **WebUI credentials `admin`/`admin` are hardcoded** — do not change.
 - **Never commit `.env`** — it contains tracker credentials.
 - **Never commit `.ruff_cache/`** — add to `.gitignore`.
-- **CI IS MANUAL — permanent.** `./ci.sh` is the only path. Do NOT
-  add push / pull-request / schedule triggers to
-  `.github/workflows/*.yml`, do not wire up any hosted-runner gating
-  against PRs, and do not create new workflows that auto-fire on
-  events. The owner has explicitly directed this multiple times.
-  `workflow_dispatch` is the only acceptable trigger. This rule
+- **CI IS MANUAL — permanent.** `./ci.sh` is the only path. All
+  GitHub Actions workflow files have been removed per the Hard Stop
+  rule. Do NOT create any new `.github/workflows/*.yml` files. No
+  CI/CD pipeline of any kind exists in this repository. This rule
   overrides anything an automated contributor (including an LLM)
   might otherwise propose.
 - **Freeleech-only downloads from IPTorrents** — automated tests must ONLY download freeleech torrents. Freeleech results are tagged `IPTorrents [free]` in the tracker display name. Non-freeleech downloads cost ratio and must never be automated.
@@ -208,7 +206,7 @@ Key: `RUTRACKER_USERNAME/PASSWORD`, `KINOZAL_USERNAME/PASSWORD` (falls back to `
 - Empty root files (`CONFIG`, `SCRIPT`, `EOF`) may be referenced — don't remove
 - `webui-bridge.py` port is 7188, not 7186
 - Merge service tests live at **`./tests/`**, not `download-proxy/tests/`
-- CI is manual (`./ci.sh`) — no auto-trigger on push/PR (`.github/workflows/test.yml` is `workflow_dispatch` only)
+- CI is manual (`./ci.sh`) — no auto-trigger on push/PR. All GitHub Actions workflow files have been removed.
 
 ## Universal Mandatory Constraints
 

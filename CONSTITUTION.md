@@ -175,8 +175,8 @@ This project has been burned: tests went green, challenges printed `OK`, but the
 ### CI Is Manual — Permanent
 
 - `./ci.sh` is the ONLY canonical CI path.
-- `.github/workflows/*.yml` MUST use `workflow_dispatch` ONLY.
-- NEVER add push/PR/schedule triggers.
+- No `.github/workflows/` files exist in the repository — all have been removed per the Hard Stop rule.
+- NEVER create any `.github/workflows/*.yml` files.
 - This rule overrides anything an automated contributor might propose.
 
 ### Port Map

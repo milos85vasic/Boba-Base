@@ -233,7 +233,7 @@ frontend/                # Angular 21 dashboard
 - **WebUI credentials `admin`/`admin` are hardcoded** -- do not change
 - **IPTorrents freeleech only** -- automated tests must never download non-freeleech. Tagged `IPTorrents [free]`
 - **No comments in merge service source** (`download-proxy/src/`) -- project convention
-- **CI is manual via `./ci.sh`** -- the canonical local pipeline. GitHub Actions workflows exist for push/PR gates (syntax, unit, integration, nightly, security, docs), but the project's ground-truth validation script is `./ci.sh`.
+- **CI is manual via `./ci.sh`** -- the canonical (and only) validation pipeline. All GitHub Actions workflow files have been removed per the Hard Stop rule. No automated CI/CD exists anywhere in the repository.
 
 ## Key Commands
 
