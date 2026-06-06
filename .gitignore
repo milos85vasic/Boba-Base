@@ -198,3 +198,9 @@ config/boba.db-wal
 # The own-org `constitution/` submodule (HelixDevelopment) is deliberately NOT
 # listed here so it stays INCLUDED in the index per §11.4.79.
 submodules/jackett/
+
+# Research-doc DOCX exports are on-demand only (not tracked); governance/tracker docx ARE tracked.
+
+# DOCX exports are generated on demand (regen: scripts/generate_markdown_exports.sh, §11.4.77);
+# not tracked to avoid dozens of binary blobs. HTML/PDF remain tracked.
+*.docx
