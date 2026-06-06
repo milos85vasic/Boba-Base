@@ -44,7 +44,7 @@ class Deduplicator:
     SIZE_TOLERANCE_MB = 50  # Size tolerance in MB for "exact" match
     SIMILARITY_THRESHOLD = 0.85  # Minimum similarity for fuzzy match
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._merged_groups: list[MergedResult] = []
 
     def merge_results(self, results: list[SearchResult]) -> list[MergedResult]:
@@ -290,7 +290,7 @@ class Deduplicator:
         normalized = re.sub(r"\s+", " ", normalized).strip().lower()
         return normalized
 
-    def _parse_size(self, size_str) -> float | None:
+    def _parse_size(self, size_str: str) -> float | None:
         """Parse size → bytes.
 
         Accepts both pre-formatted strings (``"4.0 GB"``) and raw
@@ -339,7 +339,9 @@ class Deduplicator:
             return len(set1 & set2) / len(set1 | set2)
 
         # Use Levenshtein ratio
-        return Levenshtein.ratio(name1.lower(), name2.lower())
+        if LEV_AVAILABLE:
+            return float(Levenshtein.ratio(name1.lower(), name2.lower()))
+        return 1.0 if name1.lower() == name2.lower() else 0.0
 
     def _compare_identities(self, a: CanonicalIdentity, b: CanonicalIdentity) -> bool:
         """Compare two canonical identities for Tier 1 match."""
@@ -483,7 +485,7 @@ class Deduplicator:
         # Default: unknown
         identity.content_type = ContentType.UNKNOWN
 
-    def set_canonical_identity(self, merged: "MergedResult", identity: CanonicalIdentity):
+    def set_canonical_identity(self, merged: "MergedResult", identity: CanonicalIdentity) -> None:
         """Update the canonical identity for a merged result (after metadata enrichment)."""
         merged.canonical_identity = identity
 

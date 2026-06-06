@@ -26,21 +26,21 @@ def _signal_handler(signum: int, frame: object) -> None:
     _shutdown_event.set()
 
 
-def start_original_proxy():
+def start_original_proxy() -> None:
     """Start the original download_proxy.py."""
     logger.info("Starting original download proxy...")
     try:
         engines_dir = os.environ.get("ENGINES_DIR", "/config/qBittorrent/nova3/engines")
         if engines_dir not in sys.path:
             sys.path.insert(0, engines_dir)
-        from download_proxy import run_server
+        from download_proxy import run_server  # type: ignore[import-not-found]
 
         run_server()
     except Exception as e:
         logger.error(f"Original proxy failed: {e}")
 
 
-def start_fastapi_server():
+def start_fastapi_server() -> None:
     """Start the FastAPI merge service."""
     logger.info("Starting FastAPI merge service...")
     try:
@@ -76,7 +76,7 @@ def start_fastapi_server():
         logger.error(f"FastAPI server failed: {e}")
 
 
-def main():
+def main() -> None:
     """Main entry point."""
     signal.signal(signal.SIGTERM, _signal_handler)
     signal.signal(signal.SIGINT, _signal_handler)

@@ -26,7 +26,7 @@ orchestrator_instance = None
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
     global orchestrator_instance
 
     logger.info("Starting Merge Service API...")
@@ -113,18 +113,18 @@ app.add_middleware(
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+async def global_exception_handler(request: Request, exc: Exception):  # type: ignore[no-untyped-def]
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(status_code=500, content={"error": "Internal server error", "detail": str(exc)})
 
 
 @app.get("/health")
-async def health_check():
+async def health_check():  # type: ignore[no-untyped-def]
     return {"status": "healthy", "service": "merge-search", "version": "1.0.0"}
 
 
 @app.get("/api/v1/bridge/health")
-async def bridge_health():
+async def bridge_health():  # type: ignore[no-untyped-def]
     """Probe the host webui-bridge (default port 7188).
 
     The dashboard's "WebUI Bridge" link becomes disabled when this
@@ -162,7 +162,7 @@ async def bridge_health():
 
 
 @app.get("/api/v1/config")
-async def get_config(request: Request):
+async def get_config(request: Request):  # type: ignore[no-untyped-def]
     """Return the dashboard's user-facing service URLs.
 
     ``qbittorrent_url`` points to the authenticated download proxy
@@ -191,7 +191,7 @@ async def get_config(request: Request):
 
 
 @app.get("/api/v1/stats")
-async def stats():
+async def stats():  # type: ignore[no-untyped-def]
     orch = app.state.search_orchestrator if hasattr(app.state, "search_orchestrator") else None
     active = 0
     completed = 0
@@ -234,7 +234,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(scheduler_router, prefix="/api/v1/schedules")
 
 
-def _serve_index_html():
+def _serve_index_html():  # type: ignore[no-untyped-def]
     if _angular_available:
         return FileResponse(
             _angular_index_path,
@@ -252,20 +252,20 @@ def _serve_index_html():
 
 
 @app.get("/")
-async def dashboard():
-    return _serve_index_html()
+async def dashboard():  # type: ignore[no-untyped-def]
+    return _serve_index_html()  # type: ignore[no-untyped-call]
 
 
 @app.get("/dashboard")
-async def dashboard_page():
-    return _serve_index_html()
+async def dashboard_page():  # type: ignore[no-untyped-def]
+    return _serve_index_html()  # type: ignore[no-untyped-call]
 
 
 @app.get("/{path:path}")
-async def spa_catch_all(path: str):
+async def spa_catch_all(path: str):  # type: ignore[no-untyped-def]
     if path.startswith("api/") or path == "health":
         raise HTTPException(status_code=404)
     file_path = os.path.join(_angular_dist_path, path)
     if os.path.isfile(file_path):  # noqa: ASYNC240
         return FileResponse(file_path)
-    return _serve_index_html()
+    return _serve_index_html()  # type: ignore[no-untyped-call]

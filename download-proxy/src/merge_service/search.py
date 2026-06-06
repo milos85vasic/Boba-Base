@@ -5,6 +5,7 @@ Core data models for the merge service.
 import asyncio
 import os
 import re as _re
+import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -236,7 +237,7 @@ class MergedResult:
     download_urls: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
-    def add_source(self, result: SearchResult):
+    def add_source(self, result: SearchResult) -> None:
         self.original_results.append(result)
         self.total_seeds += result.seeds
         self.total_leechers += result.leechers
@@ -492,7 +493,7 @@ PRIVATE_TRACKERS = {
 
 
 class SearchOrchestrator:
-    def __init__(self):
+    def __init__(self) -> None:
         from .deduplicator import Deduplicator
         from .validator import TrackerValidator
 
@@ -510,7 +511,7 @@ class SearchOrchestrator:
         _ttl = max(1, int(_os_ttl.getenv("ACTIVE_SEARCH_TTL_SECONDS", "3600")))
         self._active_searches: TTLCache[str, SearchMetadata] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
         self._tracker_sessions: TTLCache[str, Any] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
-        self._last_merged_results: TTLCache[str, tuple] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
+        self._last_merged_results: TTLCache[str, tuple[Any, ...]] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
         self._tracker_results: TTLCache[str, dict[str, list[Any]]] = _TTLCache(maxsize=_max_searches, ttl=_ttl)
         # Side-channel: `_search_public_tracker` writes a diagnostic
         # dict here keyed by tracker name so the orchestrator can thread
@@ -540,9 +541,7 @@ class SearchOrchestrator:
         self._active_search_count: int = 0
         self._search_tasks: dict[str, Any] = {}
 
-    def _load_env(self):
-        import logging
-
+    def _load_env(self) -> None:
         logger = logging.getLogger(__name__)
         from config import load_env
 
@@ -684,7 +683,7 @@ class SearchOrchestrator:
                         authenticated=self._is_tracker_authenticated(t.name),
                     )
 
-            async def _search_one(tracker):
+            async def _search_one(tracker: TrackerSource) -> tuple[str, list[SearchResult], str | None]:
                 if metadata.status == "aborted":
                     return tracker.name, [], "aborted"
                 stat = metadata.tracker_stats.get(tracker.name)
@@ -746,7 +745,7 @@ class SearchOrchestrator:
 
             semaphore = asyncio.Semaphore(self._max_concurrent_trackers)
 
-            async def _bounded(tracker):
+            async def _bounded(tracker: TrackerSource) -> tuple[str, list[SearchResult], str | None]:
                 async with semaphore:
                     self._inflight_count += 1
                     try:
@@ -949,7 +948,7 @@ class SearchOrchestrator:
         proc = None
         deadline = asyncio.get_event_loop().time() + deadline_seconds
 
-        def _append(r: dict) -> None:
+        def _append(r: dict[str, Any]) -> None:
             if not isinstance(r, dict) or "__error__" in r:
                 if isinstance(r, dict) and "__error__" in r:
                     logger.debug(f"Plugin {tracker_name} error: {r['__error__']}")
@@ -990,6 +989,7 @@ class SearchOrchestrator:
                     killed_by_deadline = True
                     break
                 try:
+                    assert proc.stdout is not None
                     line = await asyncio.wait_for(proc.stdout.readline(), timeout=remaining)
                 except TimeoutError:
                     killed_by_deadline = True
@@ -1030,6 +1030,7 @@ class SearchOrchestrator:
             except Exception:
                 pass
             try:
+                assert proc.stderr is not None
                 stderr_tail = (await asyncio.wait_for(proc.stderr.read(), timeout=5.0)).decode(errors="replace").strip()
                 if stderr_tail:
                     logger.debug(f"Plugin {tracker_name} stderr: {stderr_tail[:300]}")
@@ -1072,7 +1073,7 @@ class SearchOrchestrator:
         import aiohttp
 
         logger = logging.getLogger(__name__)
-        results = []
+        results: list[SearchResult] = []
         username = os.getenv("RUTRACKER_USERNAME")
         password = os.getenv("RUTRACKER_PASSWORD")
 
@@ -1141,9 +1142,11 @@ class SearchOrchestrator:
 
     def _parse_rutracker_html(self, html_content: str, base_url: str) -> list[SearchResult]:
         import html
+        import logging
         import re
 
-        results = []
+        logger = logging.getLogger(__name__)
+        results: list[SearchResult] = []
 
         re_threads = re.compile(r'<tr id="trs-tr-\d+.*?</tr>', re.S)
         re_torrent_data = re.compile(
@@ -1188,12 +1191,12 @@ class SearchOrchestrator:
                         )
                     )
                 except Exception as e:
-                    logger.debug(f"Skipping malformed RuTracker result: {e}")  # noqa: F821
+                    logger.debug(f"Skipping malformed RuTracker result: {e}")
                     continue
 
         return results
 
-    def _parse_size_string(self, size_str) -> int:
+    def _parse_size_string(self, size_str: str | int | float | None) -> int:
         import re
 
         # Plugins also emit int (byte counts, sometimes the -1 sentinel
@@ -1216,11 +1219,12 @@ class SearchOrchestrator:
     def _format_size(self, bytes_size: int) -> str:
         if bytes_size == 0:
             return "0 B"
+        size: float = float(bytes_size)
         for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if bytes_size < 1024:
-                return f"{bytes_size:.1f} {unit}"
-            bytes_size /= 1024
-        return f"{bytes_size:.1f} PB"
+            if size < 1024:
+                return f"{size:.1f} {unit}"
+            size /= 1024
+        return f"{size:.1f} PB"
 
     async def _search_kinozal(self, query: str, category: str) -> list[SearchResult]:
         import gzip
@@ -1231,7 +1235,7 @@ class SearchOrchestrator:
         import aiohttp
 
         logger = logging.getLogger(__name__)
-        results = []
+        results: list[SearchResult] = []
         username = os.getenv("KINOZAL_USERNAME")
         password = os.getenv("KINOZAL_PASSWORD")
 
@@ -1278,10 +1282,12 @@ class SearchOrchestrator:
         return results
 
     def _parse_kinozal_html(self, html_content: str, base_url: str) -> list[SearchResult]:
+        import logging
         import re
         from html import unescape
 
-        results = []
+        logger = logging.getLogger(__name__)
+        results: list[SearchResult] = []
         torrent_re = re.compile(
             r'nam"><a\s+?href="/(?P<desc_link>.+?)"\s+?class="r\d">(?P<name>.+?)'
             r"</a>.+?s\'>.+?s\'>(?P<size>.+?)<.+?sl_s\'>(?P<seeds>\d+?)<.+?sl_p\'"
@@ -1312,7 +1318,7 @@ class SearchOrchestrator:
                     )
                 )
             except Exception as e:
-                logger.debug(f"Skipping malformed Kinozal result: {e}")  # noqa: F821
+                logger.debug(f"Skipping malformed Kinozal result: {e}")
                 continue
 
         return results
@@ -1362,10 +1368,12 @@ class SearchOrchestrator:
         return results
 
     def _parse_nnmclub_html(self, html_content: str, base_url: str) -> list[SearchResult]:
+        import logging
         import re
         from html import unescape
 
-        results = []
+        logger = logging.getLogger(__name__)
+        results: list[SearchResult] = []
         torrent_re = re.compile(
             r'topictitle"\shref="(?P<desc_link>.+?)"><b>(?P<name>.+?)</b>.+?'
             r'href="(?P<link>d.+?)".+?<u>(?P<size>\d+?)</u>.+?<b>(?P<seeds>\d+?)'
@@ -1391,7 +1399,7 @@ class SearchOrchestrator:
                     )
                 )
             except Exception as e:
-                logger.debug(f"Skipping malformed NNMClub result: {e}")  # noqa: F821
+                logger.debug(f"Skipping malformed NNMClub result: {e}")
                 continue
 
         return results
@@ -1458,9 +1466,11 @@ class SearchOrchestrator:
 
     def _parse_iptorrents_html(self, html_content: str, base_url: str) -> list[SearchResult]:
         import html
+        import logging
         import re
 
-        results = []
+        logger = logging.getLogger(__name__)
+        results: list[SearchResult] = []
         table_match = re.search(r'<table[^>]*id="torrents"[^>]*>(.+?)</table>', html_content, re.S)
         if not table_match:
             return results
@@ -1513,7 +1523,7 @@ class SearchOrchestrator:
                     )
                 )
             except Exception as e:
-                logger.debug(f"Skipping malformed IPTorrents result: {e}")  # noqa: F821
+                logger.debug(f"Skipping malformed IPTorrents result: {e}")
                 continue
 
         return results
@@ -1576,7 +1586,7 @@ class SearchOrchestrator:
             logger.error(f"fetch_torrent {tracker}: {e}")
             return None
 
-    async def _fetch_rutracker_redirect(self, session, url: str, cookies: dict, base_url: str) -> bytes | None:
+    async def _fetch_rutracker_redirect(self, session: Any, url: str, cookies: dict[str, str], base_url: str) -> bytes | None:
         import logging
         import re
 
@@ -1593,12 +1603,12 @@ class SearchOrchestrator:
                     return None
                 data = await resp.read()
                 if data[:11] == b"d8:announce" or data[:14] == b"d10:created by":
-                    return data
+                    return bytes(data)
         except Exception as e:
             logger.error(f"_fetch_rutracker_redirect: {e}")
         return None
 
-    async def _fetch_kinozal_torrent(self, session, url: str, cookies: dict, base_url: str) -> bytes | None:
+    async def _fetch_kinozal_torrent(self, session: Any, url: str, cookies: dict[str, str], base_url: str) -> bytes | None:
         import logging
 
         logger = logging.getLogger(__name__)
@@ -1609,13 +1619,14 @@ class SearchOrchestrator:
                     return None
                 data = await resp.read()
                 if data[:11] == b"d8:announce" or data[:14] == b"d10:created by":
-                    return data
+                    return bytes(data)
         except Exception as e:
             logger.error(f"_fetch_kinozal_torrent: {e}")
         return None
 
     def get_search_status(self, search_id: str) -> SearchMetadata | None:
-        return self._active_searches.get(search_id)
+        result = self._active_searches.get(search_id)
+        return result if result is not None else None
 
     def get_live_results(self, search_id: str) -> list[Any]:
         """Get all results found so far for a search, not yet merged.
@@ -1636,7 +1647,7 @@ class SearchOrchestrator:
         if search_id in self._last_merged_results:
             _merged, all_results = self._last_merged_results[search_id]
             if all_results:
-                return all_results
+                return list(all_results)
 
         return []
 

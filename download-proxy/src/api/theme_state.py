@@ -147,12 +147,12 @@ class ThemeStore:
         return state
 
     # --------------------------------------------------------- pub/sub
-    def subscribe(self) -> asyncio.Queue:
-        queue: asyncio.Queue = asyncio.Queue(maxsize=16)
+    def subscribe(self) -> asyncio.Queue[ThemeState]:
+        queue: asyncio.Queue[ThemeState] = asyncio.Queue(maxsize=16)
         self._subscribers.append(queue)
         return queue
 
-    def unsubscribe(self, queue: asyncio.Queue) -> None:
+    def unsubscribe(self, queue: asyncio.Queue[ThemeState]) -> None:
         try:  # noqa: SIM105
             self._subscribers.remove(queue)
         except ValueError:

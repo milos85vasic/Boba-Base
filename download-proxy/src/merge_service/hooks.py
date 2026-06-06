@@ -84,7 +84,7 @@ class HookDispatcher:
         self._timeout = timeout
         self._execution_log: list[dict[str, Any]] = []
 
-    def register_hook(self, hook: HookConfig):
+    def register_hook(self, hook: HookConfig) -> None:
         """Register a hook for an event type."""
         if hook.event not in self._hooks:
             self._hooks[hook.event] = []
@@ -95,7 +95,7 @@ class HookDispatcher:
             self._hooks[hook.event].append(hook)
             logger.info(f"Registered hook: {hook.name} for {hook.event.value}")
 
-    def unregister_hook(self, name: str, event: HookEventType):
+    def unregister_hook(self, name: str, event: HookEventType) -> None:
         """Unregister a hook by name and event type."""
         if event in self._hooks:
             self._hooks[event] = [h for h in self._hooks[event] if h.name != name]
@@ -104,7 +104,7 @@ class HookDispatcher:
         """Get all hooks registered for an event type."""
         return self._hooks.get(event, [])
 
-    async def dispatch(self, event: HookEvent):
+    async def dispatch(self, event: HookEvent) -> None:
         """Dispatch an event to all registered hooks."""
         hooks = self.get_hooks(event.event_type)
 
@@ -121,7 +121,7 @@ class HookDispatcher:
             except Exception as e:
                 logger.error(f"Hook execution failed: {hook.name} - {e}")
 
-    async def _execute_hook(self, hook: HookConfig, event: HookEvent):
+    async def _execute_hook(self, hook: HookConfig, event: HookEvent) -> None:
         """Execute a single hook script."""
         # Prepare environment
         env = os.environ.copy()

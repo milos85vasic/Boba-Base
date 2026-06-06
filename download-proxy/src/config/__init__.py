@@ -106,7 +106,7 @@ def get_config() -> EnvConfig:
     return _config
 
 
-def reload_config():
+def reload_config() -> None:
     """Reload configuration from environment."""
     global _config
     _config = load_env()

@@ -13,6 +13,7 @@ _src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
 
+from typing import Any  # noqa: E402
 from fastapi import APIRouter, HTTPException  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
@@ -27,10 +28,10 @@ from cachetools import TTLCache  # noqa: E402
 
 _PENDING_CAPTCHAS_MAX = int(os.getenv("PENDING_CAPTCHAS_MAX", "1024"))
 _PENDING_CAPTCHAS_TTL = int(os.getenv("PENDING_CAPTCHAS_TTL_SECONDS", "900"))
-_pending_captchas: TTLCache[str, dict] = TTLCache(maxsize=_PENDING_CAPTCHAS_MAX, ttl=_PENDING_CAPTCHAS_TTL)
+_pending_captchas: TTLCache[str, dict[str, Any]] = TTLCache(maxsize=_PENDING_CAPTCHAS_MAX, ttl=_PENDING_CAPTCHAS_TTL)
 
 
-def _get_orchestrator():
+def _get_orchestrator() -> Any:
     from api import orchestrator_instance
 
     if orchestrator_instance is not None:
@@ -52,7 +53,7 @@ class CookieLoginRequest(BaseModel):
 
 
 @router.get("/rutracker/status")
-async def rutracker_auth_status():
+async def rutracker_auth_status():  # type: ignore[no-untyped-def]
     orch = _get_orchestrator()
     session = orch._tracker_sessions.get("rutracker")
 
@@ -104,7 +105,7 @@ async def rutracker_auth_status():
 
 
 @router.get("/rutracker/captcha")
-async def rutracker_fetch_captcha():
+async def rutracker_fetch_captcha():  # type: ignore[no-untyped-def]
     import aiohttp
 
     orch = _get_orchestrator()
@@ -210,7 +211,7 @@ async def rutracker_fetch_captcha():
 
 
 @router.post("/rutracker/login")
-async def rutracker_login_with_captcha(request: CaptchaLoginRequest):
+async def rutracker_login_with_captcha(request: CaptchaLoginRequest):  # type: ignore[no-untyped-def]
     import aiohttp
 
     orch = _get_orchestrator()
@@ -294,7 +295,7 @@ async def rutracker_login_with_captcha(request: CaptchaLoginRequest):
 
 
 @router.post("/rutracker/cookie-login")
-async def rutracker_cookie_login(request: CookieLoginRequest):
+async def rutracker_cookie_login(request: CookieLoginRequest):  # type: ignore[no-untyped-def]
     orch = _get_orchestrator()
 
     cookie_jar = {}
@@ -345,7 +346,7 @@ async def rutracker_cookie_login(request: CookieLoginRequest):
     }
 
 
-def _load_qbit_credentials():
+def _load_qbit_credentials() -> Any:
     import json
 
     creds_path = "/config/download-proxy/qbittorrent_creds.json"
@@ -363,7 +364,7 @@ def _load_qbit_credentials():
 
 
 @router.get("/status")
-async def all_trackers_auth_status():
+async def all_trackers_auth_status():  # type: ignore[no-untyped-def]
     import aiohttp
 
     orch = _get_orchestrator()
@@ -403,7 +404,7 @@ async def all_trackers_auth_status():
 
 
 @router.post("/qbittorrent/logout")
-async def qbittorrent_logout():
+async def qbittorrent_logout():  # type: ignore[no-untyped-def]
     creds_path = "/config/download-proxy/qbittorrent_creds.json"
     try:
         if os.path.exists(creds_path):  # noqa: ASYNC240

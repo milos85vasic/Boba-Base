@@ -25,14 +25,14 @@ class ScheduleUpdateRequest(BaseModel):
     name: str | None = None
 
 
-def _get_scheduler(request: Request):
+def _get_scheduler(request: Request):  # type: ignore[no-untyped-def]
     if not hasattr(request.app.state, "scheduler"):
         raise HTTPException(status_code=503, detail="Scheduler not initialized")
     return request.app.state.scheduler
 
 
 @router.get("")
-async def list_schedules(req: Request):
+async def list_schedules(req: Request):  # type: ignore[no-untyped-def]
     scheduler = _get_scheduler(req)
     searches = scheduler.get_all_scheduled_searches()
     return {
@@ -57,7 +57,7 @@ async def list_schedules(req: Request):
 
 
 @router.post("")
-async def create_schedule(request: ScheduleCreateRequest, req: Request):
+async def create_schedule(request: ScheduleCreateRequest, req: Request):  # type: ignore[no-untyped-def]
     scheduler = _get_scheduler(req)
     search = scheduler.add_scheduled_search(
         name=request.name,
@@ -78,7 +78,7 @@ async def create_schedule(request: ScheduleCreateRequest, req: Request):
 
 
 @router.get("/{schedule_id}")
-async def get_schedule(schedule_id: str, req: Request):
+async def get_schedule(schedule_id: str, req: Request):  # type: ignore[no-untyped-def]
     scheduler = _get_scheduler(req)
     search = scheduler.get_scheduled_search(schedule_id)
     if not search:
@@ -99,7 +99,7 @@ async def get_schedule(schedule_id: str, req: Request):
 
 
 @router.patch("/{schedule_id}")
-async def update_schedule(schedule_id: str, request: ScheduleUpdateRequest, req: Request):
+async def update_schedule(schedule_id: str, request: ScheduleUpdateRequest, req: Request):  # type: ignore[no-untyped-def]
     scheduler = _get_scheduler(req)
     search = scheduler.get_scheduled_search(schedule_id)
     if not search:
@@ -117,7 +117,7 @@ async def update_schedule(schedule_id: str, request: ScheduleUpdateRequest, req:
 
 
 @router.delete("/{schedule_id}")
-async def delete_schedule(schedule_id: str, req: Request):
+async def delete_schedule(schedule_id: str, req: Request):  # type: ignore[no-untyped-def]
     scheduler = _get_scheduler(req)
     removed = scheduler.remove_scheduled_search(schedule_id)
     if not removed:

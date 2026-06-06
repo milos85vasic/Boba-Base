@@ -32,9 +32,9 @@ class MetadataResult:
     openlibrary_id: str | None = None
     poster_url: str | None = None
     overview: str | None = None
-    genres: list[str] = None
+    genres: list[str] | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.genres is None:
             self.genres = []
 
@@ -42,7 +42,7 @@ class MetadataResult:
 class MetadataEnricher:
     """Enriches search results with metadata from external APIs."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._omdb_key = os.environ.get("OMDB_API_KEY")
         self._tmdb_key = os.environ.get("TMDB_API_KEY")
         self._anilist_id = os.environ.get("ANILIST_CLIENT_ID")
@@ -293,7 +293,7 @@ class MetadataEnricher:
 
         return None
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
         """Clear the metadata cache."""
         self._cache.clear()
 

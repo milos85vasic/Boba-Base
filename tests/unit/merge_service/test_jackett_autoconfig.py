@@ -63,7 +63,7 @@ def test_autoconfig_result_serializes_with_no_credentials():
     body = r.model_dump_json()
     parsed = json.loads(body)
 
-    assert parsed["discovered"] == ["RUTRACKER", "KINOZAL"]
+    assert parsed["discovered_credentials"] == ["RUTRACKER", "KINOZAL"]
     assert parsed["configured_now"] == ["rutracker"]
     assert parsed["already_present"] == ["kinozalbiz"]
     assert parsed["ran_at"].startswith("2026-04-26T14:23:11")

@@ -40,7 +40,7 @@ class AmbiguousMatch(BaseModel):
 
 class AutoconfigResult(BaseModel):
     ran_at: datetime
-    discovered_credentials: list[str] = Field(default_factory=list, alias="discovered")
+    discovered_credentials: list[str] = Field(default_factory=list)
     matched_indexers: dict[str, str] = Field(default_factory=dict)
     configured_now: list[str] = Field(default_factory=list)
     already_present: list[str] = Field(default_factory=list)

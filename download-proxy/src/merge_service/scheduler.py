@@ -13,6 +13,7 @@ import logging
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 
@@ -52,14 +53,14 @@ class Scheduler:
         self._config_path = config_path
         self._scheduled_searches: dict[str, ScheduledSearch] = {}
         self._running = False
-        self._task: asyncio.Task | None = None
-        self._search_callback: Callable | None = None
+        self._task: asyncio.Task[None] | None = None
+        self._search_callback: Callable[..., Any] | None = None
 
-    def set_search_callback(self, callback: Callable):
+    def set_search_callback(self, callback: Callable[..., Any]) -> None:
         """Set the callback function for executing searches."""
         self._search_callback = callback
 
-    async def load(self):
+    async def load(self) -> None:
         """Load scheduled searches from persistent storage."""
         json_path = self._config_path
 
@@ -87,7 +88,7 @@ class Scheduler:
             except Exception as e:
                 logger.error(f"Failed to load scheduled searches: {e}")
 
-    async def save(self):
+    async def save(self) -> None:
         """Save scheduled searches to persistent storage."""
         json_path = self._config_path
 
@@ -165,7 +166,7 @@ class Scheduler:
         """Get all active scheduled searches."""
         return [s for s in self._scheduled_searches.values() if s.enabled and s.status == ScheduleStatus.ACTIVE]
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the scheduler."""
         if self._running:
             return
@@ -174,7 +175,7 @@ class Scheduler:
         self._task = asyncio.create_task(self._run_loop())
         logger.info("Scheduler started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the scheduler."""
         self._running = False
 
@@ -188,7 +189,7 @@ class Scheduler:
         await self.save()
         logger.info("Scheduler stopped")
 
-    async def _run_loop(self):
+    async def _run_loop(self) -> None:
         """Main scheduler loop."""
         while self._running:
             try:
@@ -212,7 +213,7 @@ class Scheduler:
             # Check every minute
             await asyncio.sleep(60)
 
-    async def _execute_search(self, search: ScheduledSearch):
+    async def _execute_search(self, search: ScheduledSearch) -> None:
         """Execute a scheduled search."""
         logger.info(f"Executing scheduled search: {search.name}")
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import Any
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -53,9 +54,9 @@ class TrackerValidator:
     HTTP_TIMEOUT = 10  # seconds
     UDP_TIMEOUT = 5  # seconds
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._session: aiohttp.ClientSession | None = None
-        self._cache: dict[str, tuple] = {}
+        self._cache: dict[str, tuple[float, ScrapeResult]] = {}
         self._cache_ttl = 300  # 5 minutes
 
     async def _get_session(self) -> aiohttp.ClientSession | None:
@@ -65,7 +66,7 @@ class TrackerValidator:
             self._session = aiohttp.ClientSession(timeout=timeout)
         return self._session
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the aiohttp session."""
         if self._session and not self._session.closed:
             await self._session.close()
@@ -117,6 +118,12 @@ class TrackerValidator:
 
         try:
             session = await self._get_session()
+            if session is None:
+                return ScrapeResult(
+                    tracker=tracker_url,
+                    status=TrackerStatus.UNKNOWN,
+                    error="session creation failed",
+                )
             async with session.get(scrape_url) as response:
                 if response.status == 200:
                     # Parse bencoded response
@@ -173,22 +180,22 @@ class TrackerValidator:
             loop = asyncio.get_running_loop()
 
             class UDPProtocol(asyncio.DatagramProtocol):
-                def __init__(self):
+                def __init__(self) -> None:
                     self.response_future = loop.create_future()
                     self.transport = None
 
-                def connection_made(self, transport):
-                    self.transport = transport
+                def connection_made(self, transport: object) -> None:
+                    self.transport = transport  # type: ignore[assignment]
 
-                def datagram_received(self, data, addr):
+                def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
                     if not self.response_future.done():
                         self.response_future.set_result(data)
 
-                def error_received(self, exc):
+                def error_received(self, exc: Exception) -> None:
                     if not self.response_future.done():
                         self.response_future.set_exception(exc)
 
-                def connection_lost(self, exc):
+                def connection_lost(self, exc: Exception | None) -> None:
                     if not self.response_future.done():
                         self.response_future.set_exception(exc or TimeoutError())
 
@@ -298,7 +305,7 @@ class TrackerValidator:
 
         return None
 
-    def _parse_bencoded(self, data: bytes) -> dict:
+    def _parse_bencoded(self, data: bytes) -> dict[bytes, Any]:
         """Parse bencoded data (BEP 03) for scrape responses."""
         try:
             result, _ = self._decode_benc(data, 0)
@@ -307,7 +314,7 @@ class TrackerValidator:
             logger.debug(f"Bencode parse failed: {e}")
             return {}
 
-    def _decode_benc(self, data: bytes, pos: int):
+    def _decode_benc(self, data: bytes, pos: int) -> tuple[Any, int]:
         """Recursively decode bencoded bytes starting at pos."""
         if pos >= len(data):
             raise ValueError("Unexpected end of data")
@@ -320,9 +327,9 @@ class TrackerValidator:
             return self._decode_int(data, pos)
         elif ch.isdigit():
             return self._decode_string(data, pos)
-        raise ValueError(f"Invalid bencode char at {pos}: {ch}")
+        raise ValueError(f"Invalid bencode char at {pos}: {ch!r}")
 
-    def _decode_dict(self, data: bytes, pos: int):
+    def _decode_dict(self, data: bytes, pos: int) -> tuple[dict[bytes, Any], int]:
         pos += 1
         result = {}
         while data[pos : pos + 1] != b"e":
@@ -331,7 +338,7 @@ class TrackerValidator:
             result[key] = val
         return result, pos + 1
 
-    def _decode_list(self, data: bytes, pos: int):
+    def _decode_list(self, data: bytes, pos: int) -> tuple[list[Any], int]:
         pos += 1
         result = []
         while data[pos : pos + 1] != b"e":
@@ -339,12 +346,12 @@ class TrackerValidator:
             result.append(val)
         return result, pos + 1
 
-    def _decode_int(self, data: bytes, pos: int):
+    def _decode_int(self, data: bytes, pos: int) -> tuple[int, int]:
         pos += 1
         end = data.index(b"e", pos)
         return int(data[pos:end]), end + 1
 
-    def _decode_string(self, data: bytes, pos: int):
+    def _decode_string(self, data: bytes, pos: int) -> tuple[bytes, int]:
         colon = data.index(b":", pos)
         length = int(data[pos:colon])
         start = colon + 1

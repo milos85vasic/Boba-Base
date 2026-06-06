@@ -12,6 +12,7 @@ import logging
 import os
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -41,7 +42,7 @@ class HookCreateRequest(BaseModel):
     script_path: str = Field(...)
     enabled: bool = True
     timeout: int = Field(default=30, ge=1, le=300)
-    environment: dict = Field(default_factory=dict)
+    environment: dict[str, Any] = Field(default_factory=dict)
 
 
 class HookResponse(BaseModel):
@@ -58,33 +59,36 @@ class HookResponse(BaseModel):
 # coroutines, so we guard it with an asyncio.Lock and use a deque with a
 # maxlen (env HOOK_LOG_MAXLEN, default 500) so it self-bounds.
 _HOOK_LOG_MAXLEN: int = max(1, int(os.getenv("HOOK_LOG_MAXLEN", "500")))
-_execution_logs: collections.deque = collections.deque(maxlen=_HOOK_LOG_MAXLEN)
+_execution_logs: collections.deque[dict[str, Any]] = collections.deque(maxlen=_HOOK_LOG_MAXLEN)
 _execution_logs_lock: asyncio.Lock = asyncio.Lock()
 
 
-async def append_hook_log(entry: dict) -> None:
+async def append_hook_log(entry: dict[str, Any]) -> None:
     """Append a single hook-execution record under the module lock."""
     async with _execution_logs_lock:
         _execution_logs.append(entry)
 
 
-async def extend_hook_logs(entries: list[dict]) -> None:
+async def extend_hook_logs(entries: list[dict[str, Any]]) -> None:
     """Bulk-append helper — serialises against concurrent single appends."""
     async with _execution_logs_lock:
         _execution_logs.extend(entries)
 
 
-def _load_hooks() -> list[dict]:
+def _load_hooks() -> list[dict[str, Any]]:
     try:
         if os.path.isfile(HOOKS_FILE):
             with open(HOOKS_FILE) as f:
-                return json.load(f)
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+                return []
     except Exception as e:
         logger.error(f"Failed to load hooks: {e}")
     return []
 
 
-def _save_hooks(hooks: list[dict]):
+def _save_hooks(hooks: list[dict[str, Any]]) -> None:
     try:
         os.makedirs(os.path.dirname(HOOKS_FILE), exist_ok=True)
         with open(HOOKS_FILE, "w") as f:
@@ -94,13 +98,13 @@ def _save_hooks(hooks: list[dict]):
 
 
 @router.get("")
-async def list_hooks():
+async def list_hooks():  # type: ignore[no-untyped-def]
     hooks = _load_hooks()
     return {"hooks": hooks, "count": len(hooks)}
 
 
 @router.post("", response_model=HookResponse)
-async def create_hook(request: HookCreateRequest):
+async def create_hook(request: HookCreateRequest):  # type: ignore[no-untyped-def]
     if request.event not in VALID_EVENTS:
         raise HTTPException(
             status_code=400,
@@ -114,6 +118,7 @@ async def create_hook(request: HookCreateRequest):
         )
 
     hook_id = str(uuid.uuid4())
+    created_at = datetime.now(UTC).isoformat()
     hook = {
         "hook_id": hook_id,
         "name": request.name,
@@ -122,7 +127,7 @@ async def create_hook(request: HookCreateRequest):
         "enabled": request.enabled,
         "timeout": request.timeout,
         "environment": request.environment,
-        "created_at": datetime.now(UTC).isoformat(),
+        "created_at": created_at,
     }
 
     hooks = _load_hooks()
@@ -133,17 +138,17 @@ async def create_hook(request: HookCreateRequest):
 
     return HookResponse(
         hook_id=hook_id,
-        name=hook["name"],
-        event=hook["event"],
-        script_path=hook["script_path"],
-        enabled=hook["enabled"],
-        timeout=hook["timeout"],
-        created_at=hook["created_at"],
+        name=request.name,
+        event=request.event,
+        script_path=request.script_path,
+        enabled=request.enabled,
+        timeout=request.timeout,
+        created_at=created_at,
     )
 
 
 @router.delete("/{hook_id}")
-async def delete_hook(hook_id: str):
+async def delete_hook(hook_id: str):  # type: ignore[no-untyped-def]
     hooks = _load_hooks()
     original_len = len(hooks)
     hooks = [h for h in hooks if h["hook_id"] != hook_id]
@@ -155,7 +160,7 @@ async def delete_hook(hook_id: str):
 
 
 @router.get("/logs")
-async def get_execution_logs(limit: int = 50, hook_name: str | None = None):
+async def get_execution_logs(limit: int = 50, hook_name: str | None = None):  # type: ignore[no-untyped-def]
     async with _execution_logs_lock:
         snapshot = list(_execution_logs)
     logs = snapshot[-limit:]
@@ -164,7 +169,7 @@ async def get_execution_logs(limit: int = 50, hook_name: str | None = None):
     return {"logs": logs, "count": len(logs)}
 
 
-async def dispatch_event(event_type: str, event_data: dict):
+async def dispatch_event(event_type: str, event_data: dict[str, Any]):  # type: ignore[no-untyped-def]
     """Dispatch an event to all registered hooks."""
     from merge_service.hooks import HookEvent, HookEventType, get_dispatcher
 

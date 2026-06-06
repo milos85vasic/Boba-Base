@@ -10,7 +10,7 @@ Provides:
 import asyncio
 import json
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 from fastapi import Request
@@ -219,7 +219,7 @@ class SSEHandler:
     @staticmethod
     async def download_progress_stream(
         download_id: str,
-        get_progress: callable,
+        get_progress: Callable[[str], Any],
         poll_interval: float = 0.5,
         request: Request | None = None,
     ) -> AsyncGenerator[str, None]:
