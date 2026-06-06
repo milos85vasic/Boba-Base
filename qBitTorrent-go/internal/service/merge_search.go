@@ -177,13 +177,6 @@ func (s *MergeSearchService) RunSearch(ctx context.Context, searchID, query, cat
 	s.mu.Unlock()
 
 	if s.qbitClient == nil {
-		s.mu.Lock()
-		if meta, ok := s.activeSearches[searchID]; ok {
-			meta.Status = "completed"
-			now := time.Now().UTC().Format(time.RFC3339)
-			meta.CompletedAt = &now
-		}
-		s.mu.Unlock()
 		return nil
 	}
 

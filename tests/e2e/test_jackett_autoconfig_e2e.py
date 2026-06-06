@@ -25,7 +25,7 @@ def stack_ready():
         except requests.RequestException:
             pass
         time.sleep(2)
-    pytest.skip("merge service not healthy within 30s")
+    pytest.skip("merge service not healthy within 30s")  # allow-skip: E2E data-dependent — stack may not be up
 
 
 def test_autoconfig_endpoint_returns_200_or_404(stack_ready):

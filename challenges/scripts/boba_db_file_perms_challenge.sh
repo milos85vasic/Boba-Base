@@ -70,7 +70,15 @@ if [ ! -f "$DBPATH" ]; then
   echo "FAIL: $DBPATH does not exist after /healthz"
   exit 1
 fi
-DBMODE=$(stat -c '%a' "$DBPATH")
+# Cross-platform stat: GNU stat uses -c, BSD stat (macOS) uses -f
+_stat_mode() {
+  if stat -c '%a' / 2>/dev/null | grep -qE '^[0-7]+$'; then
+    stat -c '%a' "$1"
+  else
+    stat -f '%A' "$1"
+  fi
+}
+DBMODE=$(_stat_mode "$DBPATH")
 echo "    boba.db mode: $DBMODE  (expect 600)"
 if [ "$DBMODE" != "600" ]; then
   # SQLite default file mode is 0644 on most systems; if Open does not
@@ -86,7 +94,7 @@ if [ ! -f "$ENVPATH" ]; then
   echo "FAIL: $ENVPATH does not exist after boot"
   exit 1
 fi
-ENVMODE=$(stat -c '%a' "$ENVPATH")
+ENVMODE=$(_stat_mode "$ENVPATH")
 echo "    .env mode: $ENVMODE  (expect 600)"
 if [ "$ENVMODE" != "600" ]; then
   echo "FAIL: .env mode = $ENVMODE, want 600"

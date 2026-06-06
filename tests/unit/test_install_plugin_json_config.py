@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import sys
 import tempfile
 
 import pytest
@@ -10,7 +11,12 @@ _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")
 
 
 class TestInstallPluginJsonConfig:
-    def _engines_dir(self, home: str) -> str:
+    @staticmethod
+    def _engines_dir(home: str) -> str:
+        """Return the engines directory for the current platform,
+        matching install-plugin.sh logic."""
+        if sys.platform == "darwin":
+            return os.path.join(home, "Library", "Application Support", "qBittorrent", "nova3", "engines")
         return os.path.join(home, ".local", "share", "qBittorrent", "nova3", "engines")
 
     def test_installs_jackett_json(self):

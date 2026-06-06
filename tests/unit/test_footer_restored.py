@@ -14,8 +14,8 @@ This suite protects the restoration:
    every page (AppComponent is the SPA shell).
 3. The Angular test suite ships a site-footer spec so the footer's
    rendered DOM is asserted by Vitest every run.
-4. The served bundle contains the footer's footprint (smoke probe,
-   cleanly skipped when the stack is not up).
+4. The built bundle (Angular build output) contains the footer's footprint
+   (read from disk, no running stack required).
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 FOOTER_TS = REPO_ROOT / "frontend" / "src" / "app" / "components" / "site-footer" / "site-footer.component.ts"
 FOOTER_SPEC = REPO_ROOT / "frontend" / "src" / "app" / "components" / "site-footer" / "site-footer.component.spec.ts"
 APP_TS = REPO_ROOT / "frontend" / "src" / "app" / "app.component.ts"
+BUILT_BROWSER = REPO_ROOT / "download-proxy" / "src" / "ui" / "dist" / "frontend" / "browser"
 
 
 @pytest.fixture(scope="module")
@@ -101,28 +102,30 @@ def test_footer_styles_use_design_system_tokens(footer_source: str) -> None:
     assert "#e94560" not in footer_source
 
 
-@pytest.mark.requires_compose
-def test_footer_appears_in_served_bundle(merge_service_live: str) -> None:
+def test_footer_appears_in_served_bundle() -> None:
     """The compiled dashboard bundle must carry the footer footprint.
 
-    The ``merge_service_live`` fixture guarantees the stack is up;
-    this test now fails loudly when the served bundle is stale instead
-    of skipping, because the rebuild contract is explicitly documented
-    (see docs/MERGE_SEARCH_DIAGNOSTICS.md §"Rebuild / restart contract").
+    Reads the built ``index.html`` and ``main-*.js`` bundle directly
+    from disk so this test runs without a live stack. Build the
+    frontend with ``npx ng build`` to keep it current.
     """
-    import urllib.request
+    assert BUILT_BROWSER.is_dir(), (
+        f"Built browser directory not found at {BUILT_BROWSER}. "
+        "Run `cd frontend && npx ng build` first."
+    )
+    index_html = BUILT_BROWSER / "index.html"
+    assert index_html.is_file(), f"Built {index_html} not found"
 
-    with urllib.request.urlopen(f"{merge_service_live}/", timeout=5) as resp:
-        body = resp.read().decode("utf-8", errors="ignore")
-
+    body = index_html.read_text(encoding="utf-8")
     m = re.search(r"main-[A-Z0-9]+\.js", body)
-    assert m, "main-*.js bundle link must be in served index.html"
+    assert m, "main-*.js bundle link must be in built index.html"
 
-    with urllib.request.urlopen(f"{merge_service_live}/{m.group(0)}", timeout=10) as r:
-        bundle = r.read().decode("utf-8", errors="ignore")
+    bundle_path = BUILT_BROWSER / m.group(0)
+    assert bundle_path.is_file(), f"Built JS bundle not found at {bundle_path}"
 
+    bundle = bundle_path.read_text(encoding="utf-8")
     assert "site-footer" in bundle or "www.vasic.digital" in bundle, (
-        "Served bundle predates the footer restoration — rebuild + restart qbittorrent-proxy and re-run"
+        "Built bundle predates the footer restoration — rebuild with `cd frontend && npx ng build`"
     )
     assert "www.vasic.digital" in bundle, "footer URL must be in the compiled bundle"
     assert "Vasic Digital" in bundle, "footer brand text must be in the compiled bundle"

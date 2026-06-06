@@ -50,7 +50,7 @@ def jackett_ready():
         if r.status_code >= 500:
             pytest.skip(f"Jackett unhealthy ({r.status_code})")
     except requests.RequestException:
-        pytest.skip("Jackett unreachable")
+        pytest.skip("Jackett unreachable")  # allow-skip: integration data-dependent — Jackett may not be up
     key = _read_jackett_api_key()
     if not key:
         pytest.skip("Jackett API key not yet generated")
@@ -62,9 +62,9 @@ def merge_ready():
     try:
         r = requests.get(f"{MERGE_BASE}/health", timeout=3)
         if not r.ok:
-            pytest.skip(f"merge service unhealthy ({r.status_code})")
+            pytest.skip(f"merge service unhealthy ({r.status_code})")  # allow-skip: integration data-dependent
     except requests.RequestException:
-        pytest.skip("merge service unreachable")
+        pytest.skip("merge service unreachable")  # allow-skip: integration data-dependent
 
 
 def test_autoconfig_endpoint_returns_live_result(merge_ready, jackett_ready):

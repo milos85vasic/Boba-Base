@@ -1,8 +1,9 @@
-"""Validate that the auto-triggered CI workflow suite exists and has the
-correct trigger configuration.
+"""Verify that CI/CD workflow files have been permanently removed from the
+repository per the Hard Stop rule (no CI/CD pipelines).
 
-Phase 0.4: Split manual CI into auto-triggered workflows per
-docs/superpowers/plans/2026-04-19-completion-initiative.md.
+All GitHub Actions workflows were removed from .github/workflows/ as
+mandated by the Hard Stop rule. These tests ensure the absence is
+maintained and no workflow files are reintroduced.
 """
 
 from __future__ import annotations
@@ -11,43 +12,36 @@ from pathlib import Path
 
 import pytest
 
-try:
-    import yaml
-except ImportError:
-    yaml = None  # type: ignore[assignment]
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_DIR = REPO_ROOT / ".github" / "workflows"
-
-REQUIRED_WORKFLOWS: dict[str, dict[str, set[str]]] = {
-    "syntax.yml": {"on": {"push", "pull_request"}},
-    "unit.yml": {"on": {"push", "pull_request"}},
-    "integration.yml": {"on": {"push", "pull_request"}},
-    "nightly.yml": {"on": {"schedule", "workflow_dispatch"}},
-    "security.yml": {"on": {"schedule", "workflow_dispatch"}},
-}
+DOTGITHUB_DIR = REPO_ROOT / ".github"
 
 
-@pytest.mark.parametrize("name", sorted(REQUIRED_WORKFLOWS))
-def test_workflow_file_exists(name: str) -> None:
-    assert (WORKFLOW_DIR / name).is_file(), f"missing .github/workflows/{name}"
+def test_no_workflows_directory() -> None:
+    assert not WORKFLOW_DIR.exists(), (
+        f".github/workflows/ still exists at {WORKFLOW_DIR} — "
+        "all CI/CD workflow files must be removed per Hard Stop rule"
+    )
 
 
-@pytest.mark.skipif(yaml is None, reason="PyYAML not installed")  # SKIP-OK: #legacy-untriaged
-@pytest.mark.parametrize(("name", "spec"), sorted(REQUIRED_WORKFLOWS.items()))
-def test_workflow_triggers(name: str, spec: dict[str, set[str]]) -> None:
-    raw = (WORKFLOW_DIR / name).read_text()
-    data = yaml.safe_load(raw)
-    triggers = data.get(True, data.get("on"))
-    assert triggers, f"{name} has no `on:` triggers"
+def test_no_workflow_files_in_dotgithub() -> None:
+    if not DOTGITHUB_DIR.exists():
+        return
+    workflow_files = [p for p in DOTGITHUB_DIR.rglob("*") if p.suffix in {".yml", ".yaml"}]
+    assert not workflow_files, (
+        f"Found unexpected CI/CD workflow file(s) in .github/: "
+        f"{[str(p.relative_to(REPO_ROOT)) for p in workflow_files]}"
+    )
 
-    if isinstance(triggers, dict):
-        actual_keys = set(triggers.keys())
-    elif isinstance(triggers, list):
-        actual_keys = set(triggers)
-    else:
-        actual_keys = {triggers}
 
-    required = spec["on"]
-    missing = required - actual_keys
-    assert not missing, f"{name} missing triggers {missing} (has {actual_keys})"
+def test_hard_stop_compliance() -> None:
+    no_pipelines_patterns = [
+        ".github/workflows/",
+        ".github/workflows/*.yml",
+        ".github/workflows/*.yaml",
+    ]
+    for pattern in no_pipelines_patterns:
+        matches = list(REPO_ROOT.glob(pattern))
+        assert not matches, (
+            f"Hard Stop violation: found {matches} matching {pattern!r}"
+        )
