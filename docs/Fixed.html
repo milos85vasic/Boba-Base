@@ -1,6 +1,6 @@
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-06-06T18:30:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
+2026-06-06T19:00:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -138,6 +138,65 @@ reproduced the exact ValueError before the fix; second test proves the
 pool path still fans out). - Runtime: in-container harness
 <code>jackett().search('ubuntu','all')</code> → was ValueError, now
 <code>JACKETT_SEARCH_OK_NO_CRASH</code> (returns gracefully).</p>
+<h2 id="bob-006-nnmclub-usernamepassword-login-wired">§9. [BOB-006]
+NNMClub username/password login wired</h2>
+<p><strong>Status:</strong> Implemented (→ Fixed.md)
+<strong>Type:</strong> Feature <strong>Closed:</strong> 2026-06-06 ·
+<strong>Commit:</strong> <code>a94f269</code></p>
+<p>NNMClub now uses the operator’s
+<code>NNMCLUB_USERNAME</code>/<code>NNMCLUB_PASSWORD</code> (in .env) —
+previously only <code>NNMCLUB_COOKIES</code> was consumed. search.py
+enables nnmclub on COOKIES OR (USER+PASS) and logs in (POST
+<code>/forum/login.php</code>, captures <code>phpbb2mysql_4_sid</code>)
+into the Fernet-encrypted <code>_tracker_sessions</code>; auth.py adds
+<code>/nnmclub/status</code> + <code>/nnmclub/login</code>. Credentials
+read from env, never logged. <strong>Evidence:</strong> 19 unit tests
+(RED-first; mocked login + cookie-shape asserts); ruff + mypy clean;
+frozen OpenAPI spec reconciled. Live nnm-club.me login is SKIP — host
+DNS-blocked (§11.4.3); mechanism unit-proven.</p>
+<h2 id="bob-017-nnmclub-plugin-self-heal-crashed-on-invalid-icon">§10.
+[BOB-017] NNMClub plugin self-heal crashed on invalid ICON</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
+<code>a94f269</code></p>
+<p>Adding <code>password</code> to the plugin Config made
+<code>_validate_json</code> reject every legacy nnmclub.json, forcing
+<code>__post_init__</code>’s self-heal, which crashed on
+<code>base64.b64decode(ICON)</code> (ICON invalid base64 — pre-existing
+latent). Caught by central full-suite verification (§11.4.125). Guarded
+the self-heal so a bad cosmetic icon can’t abort import.
+<strong>Evidence:</strong> <code>test_nnmclub_config_selfheal.py</code>
+2 passed (RED reproduced the exact binascii crash).</p>
+<h2 id="bob-007-rutor-documented-as-public-no-auth">§11. [BOB-007] RuTor
+documented as public (no-auth)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06 ·
+<strong>Commit:</strong> <code>2d80f03</code></p>
+<p>RuTor is a public tracker with no login endpoint;
+<code>RUTOR_USERNAME/PASSWORD</code> are not consumed. Documented in
+CLAUDE.md + AGENTS.md so the unused .env creds are not mistaken for a
+wiring gap.</p>
+<h2 id="bob-011-docx-export-support-added">§12. [BOB-011] DOCX export
+support added</h2>
+<p><strong>Status:</strong> Implemented (→ Fixed.md)
+<strong>Type:</strong> Feature <strong>Closed:</strong> 2026-06-06 ·
+<strong>Commit:</strong> <code>2d80f03</code></p>
+<p><code>generate_markdown_exports.sh</code> now emits
+<code>.docx</code> (pandoc) alongside HTML/PDF, same idempotency/scope.
+<strong>Evidence:</strong> <code>test_docx_export.sh</code> asserts a
+valid non-empty zip (PK magic); CLAUDE/AGENTS regenerated with .docx
+siblings. Note: mass-generation of all docs’ .docx is on-demand (not
+bulk-committed).</p>
+<h2 id="bob-018-jackett-server-image-updated-to-latest">§13. [BOB-018]
+Jackett server image updated to latest</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06</p>
+<p>Pulled <code>lscr.io/linuxserver/jackett:latest</code> (server build
+2026-06-06, digest <code>424d4692…</code>). Confirmed (research) there
+is no Jackett git submodule; the jackett.py plugin is at parity with
+qbittorrent/search-plugins v4.9 + our local improvements — the image is
+the update vector. See
+<code>docs/research/jackett_update/README.md</code>.</p>
 <h2 id="bob-014-go-generateid-collided-under-burst-unixnano-only">§6.
 [BOB-014] Go <code>generateID()</code> collided under burst
 (UnixNano-only)</h2>

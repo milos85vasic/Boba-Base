@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 3
-**Last modified:** 2026-06-06T18:30:00Z
+**Revision:** 4
+**Last modified:** 2026-06-06T19:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -121,6 +121,67 @@ had configured 0 indexers). Found via systematic-debugging determinism test
   ValueError before the fix; second test proves the pool path still fans out).
 - Runtime: in-container harness `jackett().search('ubuntu','all')` → was
   ValueError, now `JACKETT_SEARCH_OK_NO_CRASH` (returns gracefully).
+
+## §9. [BOB-006] NNMClub username/password login wired
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-06 · **Commit:** `a94f269`
+
+NNMClub now uses the operator's `NNMCLUB_USERNAME`/`NNMCLUB_PASSWORD` (in .env)
+— previously only `NNMCLUB_COOKIES` was consumed. search.py enables nnmclub on
+COOKIES OR (USER+PASS) and logs in (POST `/forum/login.php`, captures
+`phpbb2mysql_4_sid`) into the Fernet-encrypted `_tracker_sessions`; auth.py adds
+`/nnmclub/status` + `/nnmclub/login`. Credentials read from env, never logged.
+**Evidence:** 19 unit tests (RED-first; mocked login + cookie-shape asserts);
+ruff + mypy clean; frozen OpenAPI spec reconciled. Live nnm-club.me login is
+SKIP — host DNS-blocked (§11.4.3); mechanism unit-proven.
+
+## §10. [BOB-017] NNMClub plugin self-heal crashed on invalid ICON
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Closed:** 2026-06-06 · **Commit:** `a94f269`
+
+Adding `password` to the plugin Config made `_validate_json` reject every legacy
+nnmclub.json, forcing `__post_init__`'s self-heal, which crashed on
+`base64.b64decode(ICON)` (ICON invalid base64 — pre-existing latent). Caught by
+central full-suite verification (§11.4.125). Guarded the self-heal so a bad
+cosmetic icon can't abort import. **Evidence:** `test_nnmclub_config_selfheal.py`
+2 passed (RED reproduced the exact binascii crash).
+
+## §11. [BOB-007] RuTor documented as public (no-auth)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Closed:** 2026-06-06 · **Commit:** `2d80f03`
+
+RuTor is a public tracker with no login endpoint; `RUTOR_USERNAME/PASSWORD` are
+not consumed. Documented in CLAUDE.md + AGENTS.md so the unused .env creds are
+not mistaken for a wiring gap.
+
+## §12. [BOB-011] DOCX export support added
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-06 · **Commit:** `2d80f03`
+
+`generate_markdown_exports.sh` now emits `.docx` (pandoc) alongside HTML/PDF,
+same idempotency/scope. **Evidence:** `test_docx_export.sh` asserts a valid
+non-empty zip (PK magic); CLAUDE/AGENTS regenerated with .docx siblings.
+Note: mass-generation of all docs' .docx is on-demand (not bulk-committed).
+
+## §13. [BOB-018] Jackett server image updated to latest
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Closed:** 2026-06-06
+
+Pulled `lscr.io/linuxserver/jackett:latest` (server build 2026-06-06, digest
+`424d4692…`). Confirmed (research) there is no Jackett git submodule; the
+jackett.py plugin is at parity with qbittorrent/search-plugins v4.9 + our local
+improvements — the image is the update vector. See
+`docs/research/jackett_update/README.md`.
 
 ## §6. [BOB-014] Go `generateID()` collided under burst (UnixNano-only)
 

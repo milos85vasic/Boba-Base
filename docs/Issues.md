@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 3
-**Last modified:** 2026-06-06T18:30:00Z
+**Revision:** 4
+**Last modified:** 2026-06-06T19:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -35,20 +35,6 @@ and FIXED as **BOB-016**. RuTracker CAPTCHA is **BOB-008**.
 the crash-prone plugins (defense-in-depth) — upstream sites' availability is
 outside our control.
 
-## §2. [BOB-006] NNMClub username/password login not wired (cookie-only)
-
-**Status:** Queued
-**Type:** Feature
-**Created:** 2026-06-06
-
-The code consumes only `NNMCLUB_COOKIES`; the operator-provided
-`NNMCLUB_USERNAME`/`NNMCLUB_PASSWORD` are stored in `.env` but never used, so
-NNMClub is not enabled. Implement a username/password → session-cookie login
-(POST `/forum/login.php`, capture `phpbb2mysql_4_sid`) as a fallback when
-`NNMCLUB_COOKIES` is unset, storing into `_tracker_sessions["nnmclub"]`.
-**Plan:** `plugins/nnmclub.py` login() fallback + `search.py` enable/auth
-checks + `auth.py` `/nnmclub/login` + `/nnmclub/status` + tests + challenge.
-
 ## §3. [BOB-008] RuTracker automated login blocked by CAPTCHA
 
 **Status:** Operator-blocked
@@ -63,20 +49,6 @@ cookie via `/auth/rutracker/cookie-login`. WHO — operator.
 
 **Evidence:** live search per-tracker stat `rutracker status=error auth=True
 error="login returned no session cookie — likely CAPTCHA"`.
-
-## §4. [BOB-007] RuTor credentials are unusable (public tracker, no login)
-
-**Status:** Queued
-**Type:** Task
-**Created:** 2026-06-06
-
-RuTor is a public tracker with no authentication endpoint; the code consumes
-only `RUTOR_PROXY_*`/`RUTOR_USE_MAGNET`/`RUTOR_USER_AGENT`. The
-operator-provided RuTor username/password (stored in `.env`) cannot be used.
-**Resolution direction:** document RuTor as public-only in CLAUDE.md/AGENTS.md;
-confirm with operator whether to keep the unused creds. Likely closes as
-`Obsolete` (reason `feature-removed`/not-applicable) per §11.4.90 — pending
-operator confirmation (§11.4.122).
 
 ## §5. [BOB-009] Containers submodule (§11.4.76) not integrated
 
@@ -102,16 +74,6 @@ The constitution-grade tracking system (SQLite single-source-of-truth per
 present. This Markdown tracker (Issues/Fixed + summaries, BOB prefix) is the
 interim. The Go `workable-items` tool is scaffolded in the constitution
 submodule (`constitution/scripts/workable-items/`) but not integrated.
-
-## §7. [BOB-011] DOCX export not supported
-
-**Status:** Queued
-**Type:** Feature
-**Created:** 2026-06-06
-
-`scripts/generate_markdown_exports.sh` produces HTML (pandoc) + PDF
-(weasyprint) but no DOCX. The operator wants DOCX too. **Resolution
-direction:** add a `pandoc -t docx` branch (pandoc is installed).
 
 ## §8. [BOB-012] Many docs lack HTML/PDF exports; no export-sync gate (§11.4.65)
 
