@@ -175,17 +175,3 @@ func AbortSearchHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 	}
 }
 
-func trackerStatsFromMeta(meta *service.SearchMetadata) []models.TrackerStat {
-	stats := make([]models.TrackerStat, 0, len(meta.TrackerStats))
-	for _, s := range meta.TrackerStats {
-		stats = append(stats, models.TrackerStat{
-			Name:          s.Name,
-			Status:        s.Status,
-			Results:       s.Results,
-			DurationMS:    s.DurationMS,
-			Error:         s.Error,
-			Authenticated: s.Authenticated,
-		})
-	}
-	return stats
-}
