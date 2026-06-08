@@ -178,6 +178,11 @@ also_copy = [
     ".gitignore",
     "releases/",
     "ci.sh",
+    "webui-bridge.service",
+    "setup-webui-bridge-service.sh",
+    "start-proxy.sh",
 ]
-pytest_add_cli_args_test_selection = ["tests/unit"]
-pytest_add_cli_args = ["-x", "-q"]
+pytest_add_cli_args_test_selection = ["tests/unit/api_layer/", "tests/unit/merge_service/"]
+pytest_add_cli_args = [
+    "-x", "-q",
+]

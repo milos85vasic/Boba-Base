@@ -152,7 +152,7 @@ Two-container compose `network_mode: host` (Python proxy + qBittorrent + Jackett
 2. **BOB-009** (partial): boba-ctl built + wired into start.sh/stop.sh, but `--boba-ctl` is opt-in (not default). `start.sh` still uses `podman compose up -d` by default.
 3. **BOB-010** (partial): docs_chain engine created (Phase 4+ procedure docs stubs), but per-domain Status docs not yet fully populated. Domain summaries are auto-generated stubs.
 4. **BOB-015**: Remaining public-tracker failures are external/non-deterministic — low priority
-5. **mutmut**: Background run (PID 8296) in progress on Python 3.13 venv — check `/tmp/mutmut-output.log` for results
+5. **mutmut**: Stats collection passes (42 unit tests from `api_layer/` + `merge_service/`). Module path mismatch prevents mutation execution: tests import `api.auth` via `sys.path` injection, but mutmut expects `download_proxy.src.api.auth` based on file layout. Fix requires either restructuring `download-proxy/src/` as a proper Python package or aligning the import paths. See `# Mutmut` in quick-start for the known-fail command.
 6. **Go backend** is a skeleton (documented in AGENTS.md)
 7. **Containers may be down** on session start — run `podman compose up -d` or `bash start.sh --boba-ctl` first
 8. **macOS + podman `network_mode: host`** does NOT forward ports — `ensure-macos-tunnel.sh` handles this
