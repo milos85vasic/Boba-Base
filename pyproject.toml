@@ -177,6 +177,7 @@ also_copy = [
     ".trivyignore.yaml",
     ".gitignore",
     "releases/",
+    "ci.sh",
 ]
 pytest_add_cli_args_test_selection = ["tests/unit"]
 pytest_add_cli_args = ["-x", "-q"]
