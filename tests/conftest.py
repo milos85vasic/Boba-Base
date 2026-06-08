@@ -25,19 +25,20 @@ _POLLUTING_ROOTS = ("api", "merge_service", "config")
 
 if os.environ.get("MUTANT_UNDER_TEST"):
     _here = Path(__file__).resolve().parent
-    _root = _here.parent if _here.parent.name != "mutants" else _here.parent.parent
-    _mutant_src = _root / "mutants" / "src"
+    if _here.parent.name == "mutants":
+        _root = _here.parent.parent
+    else:
+        _root = _here.parent
+    _mutant_src = _root / "mutants" / "download-proxy" / "src"
     if _mutant_src.is_dir():
-        class _MutmutPath(list):
-            _mutant_dir = str(_mutant_src.resolve())
-
-            def insert(self, index, path):
-                resolved = Path(path).resolve()
-                if "download-proxy" in resolved.parts:
-                    return super().insert(index, self._mutant_dir)
-                return super().insert(index, path)
-
-        sys.path = _MutmutPath(sys.path)
+        sys.path.insert(0, str(_mutant_src.resolve()))
+    _mutant_working_dir = _root / "mutants"
+    if _mutant_working_dir.is_dir():
+        for i, p in enumerate(sys.path):
+            resolved = Path(p).resolve()
+            if resolved == _mutant_working_dir.resolve():
+                sys.path[i] = str(_mutant_src.resolve())
+                break
 
 
 @pytest.fixture(autouse=True)

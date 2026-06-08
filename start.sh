@@ -7,7 +7,7 @@ cd "$SCRIPT_DIR"
 
 CONTAINER_RUNTIME=""
 COMPOSE_CMD=""
-BOBA_CTL_MODE=false
+BOBA_CTL_MODE=true
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -697,13 +697,13 @@ OPTIONS:
     -s, --status    Show container status only
     --no-plugins    Skip plugin installation
     --no-build      Skip Angular frontend build
-    --boba-ctl      Use boba-ctl CLI instead of raw podman-compose/docker compose
+    --no-boba-ctl   Use raw podman-compose/docker compose instead of boba-ctl CLI
 
 EXAMPLES:
-    $(basename "$0")              Start container
-    $(basename "$0") -p           Pull latest image and start
-    $(basename "$0") --verbose    Start with verbose output
-    $(basename "$0") --boba-ctl   Start using boba-ctl orchestrator
+    $(basename "$0")                  Start container (default: boba-ctl)
+    $(basename "$0") -p               Pull latest image and start
+    $(basename "$0") --verbose        Start with verbose output
+    $(basename "$0") --no-boba-ctl    Start using raw compose
 
 EOF
     exit 0
@@ -741,8 +741,8 @@ main() {
                 build_frontend_flag=false
                 shift
                 ;;
-            --boba-ctl)
-                BOBA_CTL_MODE=true
+            --no-boba-ctl)
+                BOBA_CTL_MODE=false
                 shift
                 ;;
             *)

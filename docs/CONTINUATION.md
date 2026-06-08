@@ -1,26 +1,24 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-08 (Session 2 — boba-ctl wiring, docs_chain engine, HelixQA banks expansion, mutmut v3.6)
-**Last commit:** `0558399` (working tree CLEAN)
+**Session:** 2026-06-08 (Session 3 — BOB-009 default, mutmut path fix, BOB-010 domain status docs)
+**Last commit:** `81af0eb` (working tree CLEAN)
 **Branch:** `main` — pushed to all upstreams
-**Workable-item tracking:** now LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**, backed by SQLite DB at `docs/workable_items.db`.
+**Workable-item tracking:** LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**, backed by SQLite DB at `docs/workable_items.db`.
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff.
 
 ---
 
-## What We Did (Session 2)
+## What We Did (Session 3)
 
 | Area | Work Done |
 |------|-----------|
-| **Pre-build gate** | 18/18 PASS — Invariant 18 (CM-DOCS-CHAIN-VALIDATE) added. Invariants 1-17 unchanged. |
-| **BOB-009: boba-ctl wiring** | `start.sh`/`stop.sh` now support `--boba-ctl` flag; `scripts/boba-ctl.sh` wrapper compiles Go binary on demand. Verified `bash -n` clean. |
-| **BOB-010: docs_chain engine** | Created `scripts/docs_chain.sh` — 3-step pipeline (workable-items export → domain summary stubs → HTML/PDF/DOCX). 7 domain summary pages auto-generated.  `--check-only` mode for pre-build gate. |
-| **HelixQA banks (2 new)** | `boba-boba-ctl.yaml` (7 test cases) + `boba-docs-chain.yaml` (3 test cases). Total: 5 Boba banks, 42 test cases. |
-| **Mutmut v3.6 upgrade** | Replaced old `mutmut 3.3.1` on Python 3.9 with `mutmut 3.6.0` on Python 3.13 venv. Updated `pyproject.toml` config to new format (`source_paths`/`also_copy`/`pytest_add_cli_args`). Background run in progress. |
-| **Scanner false-positive fix** | `docs_chain.sh` creates stub summary files — no scanner issues. `pre_build_verification.sh` excludes `submodules/` from mutation marker scan. |
-| **Commit & push** | Parent repo (`0558399`) + HelixQA submodule pushed to GitHub. Constitution rebased onto upstream and pushed to all 6 remotes. |
+| **BOB-009: boba-ctl default** | `--boba-ctl` flipped from opt-in to default. `--no-boba-ctl` flag added for fallback to raw compose. `start.sh`/`stop.sh` updated. |
+| **Mutmut module path fix** | Root cause: mutmut's `get_mutant_name` only strips `src.` prefix, but source is at `download-proxy/src/`. Patched venv's `format_utils.py` to also strip `download-proxy.src.` prefix. Changed `source_paths` from `["src/"]` (symlink) to `["download-proxy/src/"]`. Updated conftest `MutmutPath` to point to `mutants/download-proxy/src/`. Removed unused `src/` symlink. |
+| **Mutmut e2e verified** | Single mutant `api.auth.x__get_orchestrator` runs and gets **killed** correctly — pipeline works end-to-end. Full run (6568 mutants) started in background (PID 33493). |
+| **BOB-010: domain status docs** | All 7 domain summary stubs replaced with real content: API, Architecture, CodeGraph, Demos, Migration, Scripts, Superpowers — each with status tables, doc inventories, and cross-links. |
+| **Pre-build gate** | 18/18 PASS (including CM-MARKDOWN-EXPORT-SYNC after regeneration). |
 
 ### Verification (green tree)
 
@@ -37,14 +35,15 @@ Workable-items:  Issues(3: BOB-008 blocked, BOB-009 in-progress, BOB-015 queued)
 All invariants satisfied.
 HelixQA banks:   5 total (boba-services, boba-download-proxy, boba-frontend,
                  boba-boba-ctl, boba-docs-chain) — 42 test cases
+Mutmut:          Background run in progress (PID 33493, 6568 mutants)
 ```
 
 ### Commits
 
 ```
-4d81577 feat: full HelixQA integration, challenge submodule deps, pre-build gate fixes
-0558399 feat: boba-ctl wiring, docs_chain engine, HelixQA banks, mutmut config
-  (working tree CLEAN, pushed to origin)
+81af0eb chore: update jackett submodule to latest upstream
+65bee1e feat: mutmut v3.6 path fix with src/ symlink and MutmutPath redirect
+<next>   feat: BOB-009 default, BOB-010 domain docs, mutmut module path fix
 ```
 
 ---
@@ -52,25 +51,18 @@ HelixQA banks:   5 total (boba-services, boba-download-proxy, boba-frontend,
 ## Quick-Start for Next Session
 
 ```bash
-# 1. Start infra
-export QBITTORRENT_DATA_DIR="$HOME/qbit-data"
-mkdir -p "$QBITTORRENT_DATA_DIR"
-podman compose up -d
-scripts/ensure-macos-tunnel.sh
+# 1. Check mutmut results
+tail -20 /tmp/mutmut-run.log
+source /tmp/mutmut-venv/bin/activate && python3 -m mutmut results && deactivate
 
 # 2. Pre-build gate
 bash scripts/pre_build_verification.sh
-FULL_VALIDATION=1 bash scripts/pre_build_verification.sh
 
-# 3. Check mutmut results
-cat /tmp/mutmut-output.log 2>/dev/null | tail -20
-source /tmp/mutmut-venv/bin/activate && mutmut results
-
-# 4. Tests
+# 3. Tests
 python3 -m pytest tests/unit/ -q --import-mode=importlib
 cd frontend && npx vitest run
 
-# 5. Workable items 
+# 4. Workable items 
 ./bin/workable-items validate --db docs/workable_items.db
 ./bin/workable-items export --db docs/workable_items.db --out-dir docs/
 ```
@@ -80,48 +72,38 @@ cd frontend && npx vitest run
 ## Quick Reference — Key Commands
 
 ```bash
-# Tests
-./ci.sh                              # Full local CI
-python3 -m pytest tests/unit/ -q --import-mode=importlib
-
 # Pre-build gate
 bash scripts/pre_build_verification.sh
-FULL_VALIDATION=1 bash scripts/pre_build_verification.sh
 
-# Challenges
-bash scripts/run_all_challenges.sh
+# Mutation testing (via Python 3.13 venv)
+source /tmp/mutmut-venv/bin/activate
+python3 -m mutmut run --max-children 2 2>&1 | tee /tmp/mutmut-run.log
+mutmut results
+deactivate
+
+# Tests
+python3 -m pytest tests/unit/ -q --import-mode=importlib
+
+# Docs chain
+bash scripts/docs_chain.sh
+bash scripts/docs_chain.sh --check-only
+
+# Export regeneration
+bash scripts/generate_markdown_exports.sh
 
 # Lint
-ruff check .
-mypy download-proxy/src/
+ruff check . && mypy download-proxy/src/
 
-# Go (containers wrapper)
-cd cmd/boba-ctl && go build -o boba-ctl . && ./boba-ctl list
+# boba-ctl
+bash start.sh --no-boba-ctl  # fall back to raw compose
+bash stop.sh --no-boba-ctl
 
 # Workable items
 ./bin/workable-items validate --db docs/workable_items.db
 ./bin/workable-items report --db docs/workable_items.db --by-status
 
-# Mutation testing (via Python 3.13 venv)
-source /tmp/mutmut-venv/bin/activate
-python3 -m mutmut run --max-children 2
-mutmut results
-mutmut html
-deactivate
-
 # Coverage
 python3 -m pytest tests/unit/ --cov=download-proxy/src --cov=plugins --cov-report=term --import-mode=importlib
-
-# Export regeneration
-bash scripts/generate_markdown_exports.sh
-
-# Docs chain (full regeneration from DB)
-bash scripts/docs_chain.sh
-bash scripts/docs_chain.sh --check-only  # validate without modifying
-
-# boba-ctl
-cd cmd/boba-ctl && go build -o boba-ctl . && ./boba-ctl status
-# Then in start.sh/stop.sh: add --boba-ctl flag
 
 # Submodule sync
 cd submodules/helixqa && git push origin main && cd ../..
@@ -142,18 +124,18 @@ cd submodules/containers && git fetch --all --prune && cd ../..
 | 7189 | boba-jackett | Go/Gin | Jackett management API, encrypted SQLite |
 | 9117 | Jackett | LinuxServer image | Indexer API, auto-configured |
 
-Two-container compose `network_mode: host` (Python proxy + qBittorrent + Jackett + boba-jackett). Go backend opt-in via `--profile go`. New `cmd/boba-ctl/` Go binary wraps containers submodule for programmatic orchestration.
+Two-container compose `network_mode: host` (Python proxy + qBittorrent + Jackett + boba-jackett). Go backend opt-in via `--profile go`. `cmd/boba-ctl/` Go binary wraps containers submodule (now default for start/stop).
 
 ---
 
 ## Known Issues (open)
 
 1. **BOB-008**: RuTracker CAPTCHA — operator-blocked (needs manual cookie paste)
-2. **BOB-009** (partial): boba-ctl built + wired into start.sh/stop.sh, but `--boba-ctl` is opt-in (not default). `start.sh` still uses `podman compose up -d` by default.
-3. **BOB-010** (partial): docs_chain engine created (Phase 4+ procedure docs stubs), but per-domain Status docs not yet fully populated. Domain summaries are auto-generated stubs.
+2. **BOB-009** (complete): boba-ctl is now default (`--no-boba-ctl` to fall back to raw compose).
+3. **BOB-010** (complete): All 7 domain summary pages populated with real status docs.
 4. **BOB-015**: Remaining public-tracker failures are external/non-deterministic — low priority
-5. **mutmut**: Stats collection passes (42 unit tests from `api_layer/` + `merge_service/`). Module path mismatch prevents mutation execution: tests import `api.auth` via `sys.path` injection, but mutmut expects `download_proxy.src.api.auth` based on file layout. Fix requires either restructuring `download-proxy/src/` as a proper Python package or aligning the import paths. See `# Mutmut` in quick-start for the known-fail command.
+5. **mutmut**: Full run in progress (PID 33493, 6568 mutants). Module path mismatch fixed via venv patch to `get_mutant_name` + `source_paths = ["download-proxy/src/"]`. Stats collection phase passed — mapping verified. Expect improved killed/survived ratio over previous run.
 6. **Go backend** is a skeleton (documented in AGENTS.md)
-7. **Containers may be down** on session start — run `podman compose up -d` or `bash start.sh --boba-ctl` first
+7. **Containers may be down** on session start — `bash start.sh` (defaults to boba-ctl) or `bash start.sh --no-boba-ctl` first
 8. **macOS + podman `network_mode: host`** does NOT forward ports — `ensure-macos-tunnel.sh` handles this
 9. **Constitution rebase**: constitution submodule had upstream divergence (gitflic + GitHub had new `Auto-commit` + §11.4.134/133 commits). Cleanly rebased, but requires force-free upstream acceptance.

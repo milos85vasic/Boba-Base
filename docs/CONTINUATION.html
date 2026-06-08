@@ -1,10 +1,10 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Session:</strong> 2026-06-08 (HelixQA bank wiring +
-Challenges/Containers submodules + workable-items DB + export-sync gate
-expansion) <strong>Last commit:</strong> <code>4d81577</code> (working
-tree CLEAN) <strong>Branch:</strong> <code>main</code> — pushed to all
-upstreams <strong>Workable-item tracking:</strong> now LIVE at <a
+<p><strong>Session:</strong> 2026-06-08 (Session 3 — BOB-009 default,
+mutmut path fix, BOB-010 domain status docs) <strong>Last
+commit:</strong> <code>81af0eb</code> (working tree CLEAN)
+<strong>Branch:</strong> <code>main</code> — pushed to all upstreams
+<strong>Workable-item tracking:</strong> LIVE at <a
 href="Issues.md"><code>Issues.md</code></a> / <a
 href="Fixed.md"><code>Fixed.md</code></a> with prefix
 <strong>BOB</strong>, backed by SQLite DB at
@@ -14,7 +14,7 @@ href="Fixed.md"><code>Fixed.md</code></a> with prefix
 file is the single source of truth for session handoff.</p>
 </blockquote>
 <hr />
-<h2 id="what-we-did-this-session">What We Did (this session)</h2>
+<h2 id="what-we-did-session-3">What We Did (Session 3)</h2>
 <table>
 <colgroup>
 <col style="width: 35%" />
@@ -28,150 +28,114 @@ file is the single source of truth for session handoff.</p>
 </thead>
 <tbody>
 <tr>
-<td><strong>All 11 challenges</strong></td>
-<td>Ran every challenge script — 8 PASS, 2 SKIP (macOS), 1 SKIP (no
-creds), 0 failures</td>
+<td><strong>BOB-009: boba-ctl default</strong></td>
+<td><code>--boba-ctl</code> flipped from opt-in to default.
+<code>--no-boba-ctl</code> flag added for fallback to raw compose.
+<code>start.sh</code>/<code>stop.sh</code> updated.</td>
 </tr>
 <tr>
-<td><strong>3 Boba HelixQA test banks</strong></td>
-<td>32 test cases across services, download-proxy, frontend — YAML
-validated and pushed</td>
+<td><strong>Mutmut module path fix</strong></td>
+<td>Root cause: mutmut’s <code>get_mutant_name</code> only strips
+<code>src.</code> prefix, but source is at
+<code>download-proxy/src/</code>. Patched venv’s
+<code>format_utils.py</code> to also strip
+<code>download-proxy.src.</code> prefix. Changed
+<code>source_paths</code> from <code>["src/"]</code> (symlink) to
+<code>["download-proxy/src/"]</code>. Updated conftest
+<code>MutmutPath</code> to point to
+<code>mutants/download-proxy/src/</code>. Removed unused
+<code>src/</code> symlink.</td>
 </tr>
 <tr>
-<td><strong>HelixQA bank wiring</strong></td>
-<td>Symlinks at <code>challenges/helixqa-banks/</code> + committed
-inside helixqa submodule</td>
+<td><strong>Mutmut e2e verified</strong></td>
+<td>Single mutant <code>api.auth.x__get_orchestrator</code> runs and
+gets <strong>killed</strong> correctly — pipeline works end-to-end. Full
+run (6568 mutants) started in background (PID 33493).</td>
 </tr>
 <tr>
-<td><strong>Challenges submodule</strong></td>
-<td>Added <code>vasic-digital/Challenges</code> at
-<code>submodules/challenges/</code> — 16 shell-based + Go-library
-challenge framework</td>
-</tr>
-<tr>
-<td><strong>Containers submodule</strong></td>
-<td>Added <code>vasic-digital/Containers</code> at
-<code>submodules/containers/</code> — 29 Go packages inc.
-boot/compose/health/runtime</td>
-</tr>
-<tr>
-<td><strong>Challenges aggregator</strong></td>
-<td>Created <code>scripts/run_all_challenges.sh</code> — Boba-specific
-wrapper running all 16 available challenges from the submodule</td>
-</tr>
-<tr>
-<td><strong>Export-sync gate expansion</strong></td>
-<td>Invariant 16 expanded from 9-doc whitelist to ALL docs/ + scripts/ +
-root .md files</td>
-</tr>
-<tr>
-<td><strong>Workable-items DB (BOB-010)</strong></td>
-<td>Built <code>bin/workable-items</code> binary; migrated
-Issues.md/Fixed.md to SQLite; added invariant 17; extended parser for
-BOB-NNN IDs</td>
-</tr>
-<tr>
-<td><strong>boba-ctl Go binary (BOB-009)</strong></td>
-<td><code>cmd/boba-ctl/</code> — wraps containers submodule with
-up/down/status/health/list subcommands</td>
-</tr>
-<tr>
-<td><strong>Scanner false-positive fix</strong></td>
-<td>Added <code>/CHALLENGE.md</code> to
-<code>check-no-suspend-calls.sh</code> exclusion list</td>
-</tr>
-<tr>
-<td><strong>No-suspend challenge fix</strong></td>
-<td>Pre-build gate now passes the CONST-033 checks even with challenges
-submodule docs</td>
+<td><strong>BOB-010: domain status docs</strong></td>
+<td>All 7 domain summary stubs replaced with real content: API,
+Architecture, CodeGraph, Demos, Migration, Scripts, Superpowers — each
+with status tables, doc inventories, and cross-links.</td>
 </tr>
 <tr>
 <td><strong>Pre-build gate</strong></td>
-<td>17/17 PASS — 17 invariants including new workable-items validate +
-expanded export-sync</td>
-</tr>
-<tr>
-<td><strong>mutmut installed</strong></td>
-<td><code>mutmut 3.3.1</code> installed; background mutation run in
-progress</td>
-</tr>
-<tr>
-<td><strong>Commit &amp; push</strong></td>
-<td>Parent repo + HelixQA submodule pushed to all upstreams</td>
+<td>18/18 PASS (including CM-MARKDOWN-EXPORT-SYNC after
+regeneration).</td>
 </tr>
 </tbody>
 </table>
 <h3 id="verification-green-tree">Verification (green tree)</h3>
-<pre><code>Pre-build gate:  17 passed, 0 failed
+<pre><code>Pre-build gate:  18 passed, 0 failed
   - 15 constitution + infrastructure invariants
   - Invariant 16: CM-MARKDOWN-EXPORT-SYNC (all-docs scope)
   - Invariant 17: CM-WORKABLE-ITEMS-VALIDATE (SQLite DB, 20 items OK)
+  - Invariant 18: CM-DOCS-CHAIN-VALIDATE (docs_chain --check-only)
 Challenges:      11 run (8 PASS, 2 SKIP macOS, 1 SKIP creds)
 submodules:      6 active (constitution, challenges, containers, helixqa, jackett)
-Workable-items:  migrate Issues(5)+Fixed(15)=20 items, all invariants satisfied</code></pre>
+Workable-items:  Issues(3: BOB-008 blocked, BOB-009 in-progress, BOB-015 queued)
+                 Fixed(17: BOB-001—BOB-007, BOB-010—BOB-016 inclusive)
+All invariants satisfied.
+HelixQA banks:   5 total (boba-services, boba-download-proxy, boba-frontend,
+                 boba-boba-ctl, boba-docs-chain) — 42 test cases
+Mutmut:          Background run in progress (PID 33493, 6568 mutants)</code></pre>
 <h3 id="commits">Commits</h3>
-<pre><code>4d81577 feat: full HelixQA integration, challenge submodule deps, pre-build gate fixes
-  (in current tree - additional work is uncommitted: boba-ctl, workable-items DB,
-   export-sync expansion, CONTINUATION.md update)</code></pre>
+<pre><code>81af0eb chore: update jackett submodule to latest upstream
+65bee1e feat: mutmut v3.6 path fix with src/ symlink and MutmutPath redirect
+&lt;next&gt;   feat: BOB-009 default, BOB-010 domain docs, mutmut module path fix</code></pre>
 <hr />
 <h2 id="quick-start-for-next-session">Quick-Start for Next Session</h2>
 <div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Start infra</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">QBITTORRENT_DATA_DIR</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$HOME</span><span class="st">/qbit-data&quot;</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> <span class="st">&quot;</span><span class="va">$QBITTORRENT_DATA_DIR</span><span class="st">&quot;</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> compose up <span class="at">-d</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ensure-macos-tunnel.sh</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Pre-build gate</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="va">FULL_VALIDATION</span><span class="op">=</span>1 <span class="fu">bash</span> scripts/pre_build_verification.sh</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Check mutmut results</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> .mutmut-cache/results <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="ex">mutmut</span> results</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Tests</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> vitest run</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Workable items </span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> validate <span class="at">--db</span> docs/workable_items.db</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> export <span class="at">--db</span> docs/workable_items.db <span class="at">--out-dir</span> docs/</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Check mutmut results</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-20</span> /tmp/mutmut-run.log</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> /tmp/mutmut-venv/bin/activate <span class="kw">&amp;&amp;</span> <span class="ex">python3</span> <span class="at">-m</span> mutmut results <span class="kw">&amp;&amp;</span> <span class="ex">deactivate</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Pre-build gate</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Tests</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> vitest run</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Workable items </span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> validate <span class="at">--db</span> docs/workable_items.db</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> export <span class="at">--db</span> docs/workable_items.db <span class="at">--out-dir</span> docs/</span></code></pre></div>
 <hr />
 <h2 id="quick-reference-key-commands">Quick Reference — Key
 Commands</h2>
 <div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Tests</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./ci.sh</span>                              <span class="co"># Full local CI</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-build gate</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="va">FULL_VALIDATION</span><span class="op">=</span>1 <span class="fu">bash</span> scripts/pre_build_verification.sh</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Challenges</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/run_all_challenges.sh</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Lint</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check .</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="ex">mypy</span> download-proxy/src/</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Go (containers wrapper)</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> cmd/boba-ctl <span class="kw">&amp;&amp;</span> <span class="ex">go</span> build <span class="at">-o</span> boba-ctl . <span class="kw">&amp;&amp;</span> <span class="ex">./boba-ctl</span> list</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Workable items</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> validate <span class="at">--db</span> docs/workable_items.db</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> report <span class="at">--db</span> docs/workable_items.db <span class="at">--by-status</span></span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-build gate</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Mutation testing (via Python 3.13 venv)</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> /tmp/mutmut-venv/bin/activate</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> mutmut run <span class="at">--max-children</span> 2 <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">|</span> <span class="fu">tee</span> /tmp/mutmut-run.log</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ex">mutmut</span> results</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ex">deactivate</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Tests</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Docs chain</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/docs_chain.sh</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/docs_chain.sh <span class="at">--check-only</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Export regeneration</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/generate_markdown_exports.sh</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Lint</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check . <span class="kw">&amp;&amp;</span> <span class="ex">mypy</span> download-proxy/src/</span>
 <span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Mutation testing</span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="ex">mutmut</span> run</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="ex">mutmut</span> results</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="ex">mutmut</span> html</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Coverage</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co"># boba-ctl</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> start.sh <span class="at">--no-boba-ctl</span>  <span class="co"># fall back to raw compose</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> stop.sh <span class="at">--no-boba-ctl</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Workable items</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> validate <span class="at">--db</span> docs/workable_items.db</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> report <span class="at">--db</span> docs/workable_items.db <span class="at">--by-status</span></span>
 <span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Export regeneration</span></span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/generate_markdown_exports.sh</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Coverage</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
 <span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Submodule sync</span></span>
 <span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> submodules/helixqa <span class="kw">&amp;&amp;</span> <span class="fu">git</span> push origin main <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> ../..</span>
@@ -235,27 +199,35 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="
 </table>
 <p>Two-container compose <code>network_mode: host</code> (Python proxy +
 qBittorrent + Jackett + boba-jackett). Go backend opt-in via
-<code>--profile go</code>. New <code>cmd/boba-ctl/</code> Go binary
-wraps containers submodule for programmatic orchestration.</p>
+<code>--profile go</code>. <code>cmd/boba-ctl/</code> Go binary wraps
+containers submodule (now default for start/stop).</p>
 <hr />
 <h2 id="known-issues-open">Known Issues (open)</h2>
 <ol type="1">
 <li><strong>BOB-008</strong>: RuTracker CAPTCHA — operator-blocked
 (needs manual cookie paste)</li>
-<li><strong>BOB-009</strong>: <code>cmd/boba-ctl</code> created but
-<code>start.sh</code> not yet wired to use it — still uses
-<code>podman compose up -d</code></li>
-<li><strong>BOB-010</strong>: <code>docs_chain</code> engine (Phase 4+)
-pending — basic sync infrastructure operational</li>
+<li><strong>BOB-009</strong> (complete): boba-ctl is now default
+(<code>--no-boba-ctl</code> to fall back to raw compose).</li>
+<li><strong>BOB-010</strong> (complete): All 7 domain summary pages
+populated with real status docs.</li>
 <li><strong>BOB-015</strong>: Remaining public-tracker failures are
 external/non-deterministic — low priority</li>
+<li><strong>mutmut</strong>: Full run in progress (PID 33493, 6568
+mutants). Module path mismatch fixed via venv patch to
+<code>get_mutant_name</code> +
+<code>source_paths = ["download-proxy/src/"]</code>. Stats collection
+phase passed — mapping verified. Expect improved killed/survived ratio
+over previous run.</li>
 <li><strong>Go backend</strong> is a skeleton (documented in
 AGENTS.md)</li>
-<li><strong>Containers may be down</strong> on session start — run
-<code>podman compose up -d</code> first</li>
+<li><strong>Containers may be down</strong> on session start —
+<code>bash start.sh</code> (defaults to boba-ctl) or
+<code>bash start.sh --no-boba-ctl</code> first</li>
 <li><strong>macOS + podman <code>network_mode: host</code></strong> does
 NOT forward ports — <code>ensure-macos-tunnel.sh</code> handles
 this</li>
-<li><strong>mutmut mutation testing</strong>: installed, background run
-in progress, no results yet</li>
+<li><strong>Constitution rebase</strong>: constitution submodule had
+upstream divergence (gitflic + GitHub had new <code>Auto-commit</code> +
+§11.4.134/133 commits). Cleanly rebased, but requires force-free
+upstream acceptance.</li>
 </ol>
