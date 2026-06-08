@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+from unittest.mock import AsyncMock, MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "download-proxy", "src"))
 
@@ -90,11 +91,331 @@ class TestSSEHandler:
         assert response.headers["Cache-Control"] == "no-cache"
         assert response.headers["Connection"] == "keep-alive"
 
+    def test_download_progress_stream_client_disconnect(self):
+        """Client disconnect during download progress should emit close event."""
+        request = MagicMock()
+        request.is_disconnected = AsyncMock(return_value=True)
+
+        gen = SSEHandler.download_progress_stream("dl-id", lambda x: {"progress": 50}, poll_interval=0, request=request)
+        events = asyncio.run(self._collect(gen))
+        assert any("close" in e for e in events)
+        assert any("client_disconnected" in e for e in events)
+
+    def test_download_progress_stream_client_disconnect_raises(self):
+        """When request.is_disconnected raises during download, stream continues."""
+        request = MagicMock()
+        request.is_disconnected = AsyncMock(side_effect=Exception("fail"))
+
+        call_count = [0]
+
+        def get_progress(dl_id):
+            call_count[0] += 1
+            if call_count[0] > 2:
+                return None
+            return {"progress": 50, "complete": False}
+
+        gen = SSEHandler.download_progress_stream("dl-id", get_progress, poll_interval=0, request=request)
+        events = asyncio.run(self._collect(gen))
+        assert not any("close" in e for e in events)
+        assert any("download_complete" in e for e in events)
+
+    def test_download_progress_stream_complete_flag_true(self):
+        """Progress with complete=True should stop the stream after yielding progress."""
+        def get_progress(dl_id):
+            return {"progress": 100, "complete": True}
+
+        gen = SSEHandler.download_progress_stream("dl-id", get_progress, poll_interval=0)
+        events = asyncio.run(self._collect(gen))
+        assert any("download_progress" in e for e in events)
+        assert any("download_start" in e for e in events)
+        # Should stop without needing a None progress return
+
+    def test_search_results_stream_no_request_no_disconnect(self):
+        """Without request, _client_gone returns False and stream completes normally."""
+        class FakeMeta:
+            status = "completed"
+            total_results = 0
+            merged_results = 0
+            trackers_searched = []
+
+            def to_dict(self):
+                return {"status": "completed"}
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                return []
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+        events = asyncio.run(self._collect(gen))
+        assert any("search_start" in e for e in events)
+        assert any("search_complete" in e for e in events)
+
     async def _collect(self, gen):
         results = []
         async for item in gen:
             results.append(item)
         return results
+
+
+class TestSearchResultsStreamEdgeCases:
+    """Edge cases for search_results_stream: disconnect, tracker stats, failed status, exceptions."""
+
+    async def _collect(self, gen):
+        results = []
+        async for item in gen:
+            results.append(item)
+        return results
+
+    def test_search_results_stream_client_disconnect(self):
+        """Client disconnect should emit close event and stop."""
+        request = MagicMock()
+        request.is_disconnected = AsyncMock(return_value=True)
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                return MagicMock(
+                    status="running",
+                    total_results=0,
+                    merged_results=0,
+                    trackers_searched=[],
+                    tracker_stats={},
+                    to_dict=lambda: {"status": "running"},
+                )
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0, request=request)
+        events = asyncio.run(self._collect(gen))
+        assert any("close" in e for e in events)
+        assert any("client_disconnected" in e for e in events)
+
+    def test_search_results_stream_client_disconnect_raises(self):
+        """When request.is_disconnected raises, _client_gone returns False and stream continues."""
+        request = MagicMock()
+        request.is_disconnected = AsyncMock(side_effect=Exception("disconnect check failed"))
+
+        class FakeMeta:
+            status = "running"
+            total_results = 0
+            merged_results = 0
+            trackers_searched = []
+
+            def to_dict(self):
+                return {"status": "running"}
+
+        call_count = [0]
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                call_count[0] += 1
+                if call_count[0] > 2:
+                    m = FakeMeta()
+                    m.status = "completed"
+                    return m
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                return []
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0, request=request)
+        events = asyncio.run(self._collect(gen))
+        assert not any("close" in e for e in events)
+        assert any("search_complete" in e for e in events)
+
+    def test_search_results_stream_tracker_transitions(self):
+        """Tracker status transitions should emit tracker_started and tracker_completed events."""
+        from types import SimpleNamespace
+
+        class FakeStat:
+            def __init__(self, status):
+                self.status = status
+
+            def to_dict(self):
+                return {"name": "test_tracker", "status": self.status}
+
+        class FakeMeta:
+            status = "running"
+            total_results = 0
+            merged_results = 0
+            trackers_searched = ["test_tracker"]
+
+            def to_dict(self):
+                return {"status": "running"}
+
+        call_count = [0]
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                call_count[0] += 1
+                m = FakeMeta()
+                if call_count[0] == 1:
+                    m.tracker_stats = {"test_tracker": FakeStat("pending")}
+                elif call_count[0] == 2:
+                    m.tracker_stats = {"test_tracker": FakeStat("running")}
+                elif call_count[0] == 3:
+                    m.tracker_stats = {"test_tracker": FakeStat("success")}
+                else:
+                    m.status = "completed"
+                    m.tracker_stats = {"test_tracker": FakeStat("success")}
+                return m
+
+            def get_live_results(self, sid):
+                return []
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+        events = asyncio.run(self._collect(gen))
+        started_events = [e for e in events if "tracker_started" in e]
+        completed_events = [e for e in events if "tracker_completed" in e]
+        assert len(started_events) == 1
+        assert len(completed_events) == 1
+
+    def test_search_results_stream_tracker_stats_emit_exception(self):
+        """Exception in tracker stats emit should not kill the stream."""
+        class BrokenStat:
+            status = "running"
+
+            def to_dict(self):
+                raise RuntimeError("broken to_dict")
+
+        class FakeMeta:
+            status = "running"
+            total_results = 0
+            merged_results = 0
+            trackers_searched = ["broken"]
+
+            def to_dict(self):
+                return {"status": "running"}
+
+        call_count = [0]
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                call_count[0] += 1
+                m = FakeMeta()
+                if call_count[0] == 1:
+                    m.tracker_stats = {"broken": BrokenStat()}
+                else:
+                    m.status = "completed"
+                    m.tracker_stats = {"broken": BrokenStat()}
+                return m
+
+            def get_live_results(self, sid):
+                return []
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+        events = asyncio.run(self._collect(gen))
+        # Stream should complete normally despite broken to_dict
+        assert any("search_complete" in e for e in events)
+
+    def test_search_results_stream_status_failed(self):
+        """Status='failed' should emit search_complete."""
+        class FakeMeta:
+            status = "failed"
+            total_results = 3
+            merged_results = 1
+            trackers_searched = ["tracker1"]
+
+            def to_dict(self):
+                return {"status": "failed", "total_results": 3}
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                return []
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+        events = asyncio.run(self._collect(gen))
+        complete_events = [e for e in events if "search_complete" in e]
+        assert len(complete_events) == 1
+        assert "failed" in events[-1] or "failed" in str(events)
+
+    def test_search_results_stream_live_results_exception_on_completed(self):
+        """Exception in get_live_results on completed should not kill stream, still emits search_complete."""
+        class FakeMeta:
+            status = "completed"
+            total_results = 5
+            merged_results = 3
+            trackers_searched = ["t1"]
+
+            def to_dict(self):
+                return {"status": "completed", "total_results": 5}
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                raise RuntimeError("live results unavailable")
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+        events = asyncio.run(self._collect(gen))
+        assert any("search_complete" in e for e in events)
+
+    def test_search_results_stream_live_results_exception_during_running(self):
+        """Exception in get_live_results during running should not kill stream."""
+        class FakeMeta:
+            status = "running"
+            total_results = 0
+            merged_results = 0
+            trackers_searched = []
+
+            def to_dict(self):
+                return {"status": "running"}
+
+        call_count = [0]
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                call_count[0] += 1
+                if call_count[0] > 2:
+                    m = FakeMeta()
+                    m.status = "completed"
+                    return m
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                raise RuntimeError("boom")
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+        events = asyncio.run(self._collect(gen))
+        assert any("search_complete" in e for e in events)
+
+    def test_search_results_stream_result_no_hash_attribute(self):
+        """Result without hash attribute uses id() fallback and does not raise."""
+        class FakeResult:
+            name = "No Hash"
+            seeds = 10
+
+        class FakeMeta:
+            status = "running"
+            total_results = 1
+            merged_results = 0
+            trackers_searched = ["t1"]
+
+            def to_dict(self):
+                return {"status": "running", "total_results": 1}
+
+        call_count = [0]
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                call_count[0] += 1
+                if call_count[0] > 2:
+                    m = FakeMeta()
+                    m.status = "completed"
+                    return m
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                return [FakeResult()]
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+        events = asyncio.run(self._collect(gen))
+        result_events = [e for e in events if "result_found" in e]
+        assert len(result_events) >= 1
 
 
 class TestRealTimeStreaming:
