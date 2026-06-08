@@ -1,25 +1,35 @@
-# Fixed Summary — Closed Items
+# Fixed_Summary
 
-**Revision:** 6
-**Last modified:** 2026-06-06T19:45:00Z
-**Ticket prefix:** `BOB`
+Closed workable items (current_location = Fixed), regenerated from the SQLite single-source-of-truth (§11.4.53).
 
-Closed workable items only (full detail in [`Fixed.md`](Fixed.md)). Most-recent first.
+## Counts by Type × Status
 
-| BOB ID | Status | Type | Commit | One-line description |
-|--------|--------|------|--------|----------------------|
-| BOB-005 | Fixed | Bug | a8916c0 | Public-tracker search restored: framework modules at nova3 root + PySocks (49→909 results, 0→14 trackers) |
-| BOB-016 | Fixed | Bug | fa6fb4f | Jackett plugin no longer crashes with Pool(0) when zero indexers are configured |
-| BOB-006 | Implemented | Feature | a94f269 | NNMClub username/password→cookie login wired so the provided creds are used |
-| BOB-017 | Fixed | Bug | a94f269 | NNMClub plugin self-heal no longer crashes on the invalid embedded ICON |
-| BOB-007 | Completed | Task | 2d80f03 | RuTor documented as a public no-auth tracker; its .env creds are not consumed |
-| BOB-011 | Implemented | Feature | 2d80f03 | DOCX export added to the markdown export pipeline (pandoc), with a test |
-| BOB-018 | Completed | Task | 2d80f03 | Jackett server image pulled to latest; plugin confirmed at upstream parity |
-| BOB-019 | Completed | Task | 9f14563 | Jackett added as reference-only submodule (submodules/jackett, v0.24.2027); runtime keeps the image |
-| BOB-020 | Completed | Task | f9a277b | CodeGraph initialized, indexed (8906 nodes) + MCP-wired; secrets/jackett excluded, validator 7/7 |
-| BOB-001 | Fixed | Bug | c5cbd40 | Portable sed_inplace replaces GNU sed -i that aborted the macOS boot |
-| BOB-002 | Fixed | Bug | c5cbd40 | podman unshare guarded so plugin install no longer aborts on macOS |
-| BOB-003 | Fixed | Bug | c5cbd40 | macOS tunnel now detects the real podman SSH port and forwards container ports |
-| BOB-004 | Completed | Task | (.env) | Tracker credentials stored 0600/gitignored and proven working (49 live IPTorrents results) |
-| BOB-013 | Fixed | Bug | 14bc5c4 | torrentkitty size parsing fixed so KB/MB/GB/TB no longer collapse to zero |
-| BOB-014 | Fixed | Bug | d46ea57 | Go generateID uses an atomic counter to avoid same-nanosecond collisions |
+| Type | Status | Count |
+|---|---|---|
+| Bug | Fixed (→ Fixed.md) | 6 |
+| Feature | Implemented (→ Fixed.md) | 2 |
+| Task | Completed (→ Fixed.md) | 7 |
+| Task | Fixed (→ Fixed.md) | 2 |
+| **TOTAL** | | **17** |
+
+## Items
+
+| ATM ID | Type | Status | Severity | Description |
+|---|---|---|---|---|
+| BOB-001 | Bug | Fixed (→ Fixed.md) | — | start.sh BSD-sed incompatibility aborted the boot |
+| BOB-002 | Bug | Fixed (→ Fixed.md) | — | start.sh `podman unshare` incompatible with macOS remote podman |
+| BOB-003 | Bug | Fixed (→ Fixed.md) | — | macOS tunnel port detection broken (ports never forwarded) |
+| BOB-004 | Task | Completed (→ Fixed.md) | — | Private-tracker credentials stored securely + verified working |
+| BOB-005 | Task | Fixed (→ Fixed.md) | — | Public-tracker plugins all raised an unhandled exception (systemic) |
+| BOB-006 | Feature | Implemented (→ Fixed.md) | — | NNMClub username/password login wired — NNMClub now uses the operator's `NNMCLUB_USERNAME`/`NNMCLUB_PASSWORD` (in . |
+| BOB-007 | Task | Completed (→ Fixed.md) | — | RuTor documented as public (no-auth) — RuTor is a public tracker with no login endpoint; `RUTOR_USERNAME/PASSWORD` are |
+| BOB-010 | Task | Completed (→ Fixed.md) | — | Workable-items SQLite DB integrated + pre-build gate wired (§11.4.93/§11.4.95) |
+| BOB-011 | Feature | Implemented (→ Fixed.md) | — | DOCX export support added — `generate_markdown_exports. |
+| BOB-012 | Task | Completed (→ Fixed.md) | — | Export-sync gate expanded to all docs (§11.4.65) |
+| BOB-013 | Bug | Fixed (→ Fixed.md) | — | torrentkitty `_parse_size` reported 0 for every KB/MB/GB/TB size |
+| BOB-014 | Bug | Fixed (→ Fixed.md) | — | Go `generateID()` collided under burst (UnixNano-only) |
+| BOB-016 | Task | Fixed (→ Fixed.md) | — | Jackett plugin crashed (`Pool(0)`) when zero indexers are configured |
+| BOB-017 | Bug | Fixed (→ Fixed.md) | — | NNMClub plugin self-heal crashed on invalid ICON |
+| BOB-018 | Task | Completed (→ Fixed.md) | — | Jackett server image updated to latest |
+| BOB-019 | Task | Completed (→ Fixed.md) | — | Jackett added as a reference submodule (latest release) |
+| BOB-020 | Task | Completed (→ Fixed.md) | — | CodeGraph initialized + wired (§11.4.78/79/80) |

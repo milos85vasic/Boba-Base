@@ -10,7 +10,7 @@
 
 ---
 
-## §1. [BOB-001] start.sh BSD-sed incompatibility aborted the boot
+## BOB-001 — start.sh BSD-sed incompatibility aborted the boot
 
 **Status:** Fixed (→ Fixed.md)
 **Type:** Bug
@@ -23,7 +23,7 @@ converted all 6 sites (§11.4.67/§11.4.81).
 **Evidence:** `tests/unit/test_sed_inplace_portable.sh` — 4 passed (RED before
 fix); boot #2 then progressed past the config step.
 
-## §2. [BOB-002] start.sh `podman unshare` incompatible with macOS remote podman
+## BOB-002 — start.sh `podman unshare` incompatible with macOS remote podman
 
 **Status:** Fixed (→ Fixed.md)
 **Type:** Bug
@@ -34,7 +34,7 @@ macOS remote podman client. Added `_podman_unshare_works()` self-detection;
 falls back to plain `cp`/`chmod` on macOS (§11.4.81).
 **Evidence:** boot #3 reached `compose up` and brought all 4 containers up.
 
-## §3. [BOB-003] macOS tunnel port detection broken (ports never forwarded)
+## BOB-003 — macOS tunnel port detection broken (ports never forwarded)
 
 **Status:** Fixed (→ Fixed.md)
 **Type:** Bug
@@ -47,7 +47,7 @@ URI-parse fallback.
 **Evidence:** tunnel established (port 51347); `curl` localhost 7186→200,
 7187→200, 7189→404, 9117→301 after the fix.
 
-## §4. [BOB-004] Private-tracker credentials stored securely + verified working
+## BOB-004 — Private-tracker credentials stored securely + verified working
 
 **Status:** Completed (→ Fixed.md)
 **Type:** Task
@@ -65,7 +65,7 @@ tree or git history). Credentials never committed and never logged.
   (e.g. "Ubuntu Linux Toolbox 1000+ Commands"). RuTracker login attempted
   (`auth=True`, CAPTCHA-blocked → tracked as BOB-008).
 
-## §5. [BOB-013] torrentkitty `_parse_size` reported 0 for every KB/MB/GB/TB size
+## BOB-013 — torrentkitty `_parse_size` reported 0 for every KB/MB/GB/TB size
 
 **Status:** Fixed (→ Fixed.md)
 **Type:** Bug
@@ -76,7 +76,7 @@ Fixed to match on the suffix, longest unit first.
 **Evidence:** `tests/unit/test_plugin_search_engines.py` — torrentkitty size
 tests assert correct byte values; 18 passed.
 
-## §7. [BOB-005] Public-tracker plugins all raised an unhandled exception (systemic)
+## BOB-005 — Public-tracker plugins all raised an unhandled exception (systemic)
 
 **Status:** Fixed (→ Fixed.md)
 **Type:** Bug · **Severity:** High
@@ -103,7 +103,7 @@ to the nova3 root; `download-proxy/requirements.txt` adds `PySocks>=1.7.1`.
   235, torrentdownload 243, linuxtracker 123, …). `/tmp/boba_search2.json`.
 Remaining per-plugin errors/timeouts tracked separately as BOB-015.
 
-## §8. [BOB-016] Jackett plugin crashed (`Pool(0)`) when zero indexers are configured
+## BOB-016 — Jackett plugin crashed (`Pool(0)`) when zero indexers are configured
 
 **Status:** Fixed (→ Fixed.md)
 **Type:** Bug · **Severity:** Medium
@@ -122,7 +122,7 @@ had configured 0 indexers). Found via systematic-debugging determinism test
 - Runtime: in-container harness `jackett().search('ubuntu','all')` → was
   ValueError, now `JACKETT_SEARCH_OK_NO_CRASH` (returns gracefully).
 
-## §9. [BOB-006] NNMClub username/password login wired
+## BOB-006 — NNMClub username/password login wired
 
 **Status:** Implemented (→ Fixed.md)
 **Type:** Feature
@@ -137,7 +137,7 @@ COOKIES OR (USER+PASS) and logs in (POST `/forum/login.php`, captures
 ruff + mypy clean; frozen OpenAPI spec reconciled. Live nnm-club.me login is
 SKIP — host DNS-blocked (§11.4.3); mechanism unit-proven.
 
-## §10. [BOB-017] NNMClub plugin self-heal crashed on invalid ICON
+## BOB-017 — NNMClub plugin self-heal crashed on invalid ICON
 
 **Status:** Fixed (→ Fixed.md)
 **Type:** Bug
@@ -150,7 +150,7 @@ central full-suite verification (§11.4.125). Guarded the self-heal so a bad
 cosmetic icon can't abort import. **Evidence:** `test_nnmclub_config_selfheal.py`
 2 passed (RED reproduced the exact binascii crash).
 
-## §11. [BOB-007] RuTor documented as public (no-auth)
+## BOB-007 — RuTor documented as public (no-auth)
 
 **Status:** Completed (→ Fixed.md)
 **Type:** Task
@@ -160,7 +160,7 @@ RuTor is a public tracker with no login endpoint; `RUTOR_USERNAME/PASSWORD` are
 not consumed. Documented in CLAUDE.md + AGENTS.md so the unused .env creds are
 not mistaken for a wiring gap.
 
-## §12. [BOB-011] DOCX export support added
+## BOB-011 — DOCX export support added
 
 **Status:** Implemented (→ Fixed.md)
 **Type:** Feature
@@ -171,7 +171,7 @@ same idempotency/scope. **Evidence:** `test_docx_export.sh` asserts a valid
 non-empty zip (PK magic); CLAUDE/AGENTS regenerated with .docx siblings.
 Note: mass-generation of all docs' .docx is on-demand (not bulk-committed).
 
-## §13. [BOB-018] Jackett server image updated to latest
+## BOB-018 — Jackett server image updated to latest
 
 **Status:** Completed (→ Fixed.md)
 **Type:** Task
@@ -183,7 +183,7 @@ jackett.py plugin is at parity with qbittorrent/search-plugins v4.9 + our local
 improvements — the image is the update vector. See
 `docs/research/jackett_update/README.md`.
 
-## §14. [BOB-019] Jackett added as a reference submodule (latest release)
+## BOB-019 — Jackett added as a reference submodule (latest release)
 
 **Status:** Completed (→ Fixed.md)
 **Type:** Task
@@ -196,7 +196,7 @@ we do NOT build Jackett from source. Provides source awareness for inspecting /
 cherry-picking indexer definitions. SSH URL per Hard-Stop #2; placed under
 `submodules/` per §11.4.28(C).
 
-## §15. [BOB-020] CodeGraph initialized + wired (§11.4.78/79/80)
+## BOB-020 — CodeGraph initialized + wired (§11.4.78/79/80)
 
 **Status:** Completed (→ Fixed.md)
 **Type:** Task
@@ -212,7 +212,45 @@ MCP challenge (MCP `codegraph_status` node count == CLI, both 8906);
 independently re-verified by the conductor. Docs: `docs/CODEGRAPH.md` +
 `docs/codegraph/Status.md`.
 
-## §6. [BOB-014] Go `generateID()` collided under burst (UnixNano-only)
+## BOB-010 — Workable-items SQLite DB integrated + pre-build gate wired (§11.4.93/§11.4.95)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Closed:** 2026-06-08
+
+The constitution-grade SQLite-backed single-source-of-truth is now operational:
+- `constitution/scripts/workable-items/` parser extended to accept `[BOB-NNN]` bracket IDs
+- `bin/workable-items` binary built (7.9 MB)
+- `docs/workable_items.db` created from Issues.md + Fixed.md — 20 items, all invariants satisfied
+- `scripts/pre_build_verification.sh` — new invariant 17 runs `workable-items validate` at every gate
+- Docs headings converted from `## §N. [BOB-NNN] Title` to `## BOB-NNN — Title` (parser-compatible)
+- Pre-build gate: 17/17 PASS with validate invariant
+- `docs_chain` engine (Phase 4+) still pending per §11.4.106; basic sync infrastructure operational
+
+**Evidence:**
+- `./bin/workable-items validate --db docs/workable_items.db` — `OK — 20 items, all invariants satisfied`
+- Pre-build gate invariant 17: `CM-WORKABLE-ITEMS-VALIDATE: workable-items validate: OK`
+
+## BOB-012 — Export-sync gate expanded to all docs (§11.4.65)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Closed:** 2026-06-08
+
+The CM-MARKDOWN-EXPORT-SYNC gate expanded from 9-doc whitelist to auto-discovery:
+- All `docs/**/*.md` (excluding `docs/research/` and `docs/qa/`)
+- All `scripts/**/*.md`
+- All project-root `*.md`
+- Checks `.html` and `.pdf` freshness (mtime ≥ .md)
+- Added DOCX warnings (non-blocking, gitignored per BOB-011)
+- 64 DOCX warnings verified as expected (intentionally gitignored)
+- Pre-build gate: Invariant 16 now covers all in-scope docs
+
+**Evidence:**
+- Pre-build gate: `PASS [16]: CM-MARKDOWN-EXPORT-SYNC: all in-scope docs have fresh .html/.pdf siblings`
+- `WARN: 64 missing .docx sibling(s) (gitignored per BOB-011)` — expected, non-blocking
+
+## BOB-014 — Go `generateID()` collided under burst (UnixNano-only)
 
 **Status:** Fixed (→ Fixed.md)
 **Type:** Bug

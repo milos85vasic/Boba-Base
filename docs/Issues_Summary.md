@@ -1,15 +1,20 @@
-# Issues Summary — Open Items
+# Issues_Summary
 
-**Revision:** 4
-**Last modified:** 2026-06-06T19:00:00Z
-**Ticket prefix:** `BOB`
+Open workable items (current_location = Issues), regenerated from the SQLite single-source-of-truth (§11.4.12).
 
-Open workable items only (full detail in [`Issues.md`](Issues.md)).
+## Counts by Type × Status
 
-| BOB ID | Severity | Status | Type | One-line description |
-|--------|----------|--------|------|----------------------|
-| BOB-015 | Low | Queued | Bug | Residual public-tracker failures proven external/non-deterministic (site availability), orchestrator-isolated |
-| BOB-008 | Medium | Operator-blocked | Bug | RuTracker automated login is CAPTCHA-gated and returns no session cookie |
-| BOB-009 | Low | Queued | Task | Containers submodule (§11.4.76) not integrated; project uses compose + start.sh |
-| BOB-010 | Medium | Queued | Task | Workable-items SQLite DB + docs_chain engine + procedure docs not yet set up |
-| BOB-012 | Low | Queued | Task | Several docs lack HTML/PDF exports and no export-sync gate enforces §11.4.65 |
+| Type | Status | Count |
+|---|---|---|
+| Bug | Operator-blocked | 1 |
+| Bug | Queued | 1 |
+| Task | In progress | 1 |
+| **TOTAL** | | **3** |
+
+## Items
+
+| ATM ID | Type | Status | Severity | Description |
+|---|---|---|---|---|
+| BOB-008 | Bug | Operator-blocked | — | RuTracker automated login blocked by CAPTCHA |
+| BOB-009 | Task | In progress | — | Containers submodule integrated with Go wrapper |
+| BOB-015 | Bug | Queued | Low | Remaining public-tracker failures are external / non-deterministic |

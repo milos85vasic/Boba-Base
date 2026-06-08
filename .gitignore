@@ -207,3 +207,7 @@ submodules/jackett/
 
 # Runtime test/QA output (stress/chaos evidence) — regenerated per run.
 qa-results/
+
+# Compiled Go binaries (regen: cd constitution/scripts/workable-items && CGO_ENABLED=1 go build -o ../../../../bin/workable-items ./cmd/workable-items/)
+bin/
+cmd/boba-ctl/boba-ctl

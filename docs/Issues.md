@@ -12,7 +12,7 @@
 
 ---
 
-## §1. [BOB-015] Remaining public-tracker failures are external / non-deterministic
+## BOB-015 — Remaining public-tracker failures are external / non-deterministic
 
 **Status:** Queued
 **Type:** Bug
@@ -35,7 +35,7 @@ and FIXED as **BOB-016**. RuTracker CAPTCHA is **BOB-008**.
 the crash-prone plugins (defense-in-depth) — upstream sites' availability is
 outside our control.
 
-## §3. [BOB-008] RuTracker automated login blocked by CAPTCHA
+## BOB-008 — RuTracker automated login blocked by CAPTCHA
 
 **Status:** Operator-blocked
 **Type:** Bug
@@ -50,38 +50,14 @@ cookie via `/auth/rutracker/cookie-login`. WHO — operator.
 **Evidence:** live search per-tracker stat `rutracker status=error auth=True
 error="login returned no session cookie — likely CAPTCHA"`.
 
-## §5. [BOB-009] Containers submodule (§11.4.76) not integrated
+## BOB-009 — Containers submodule integrated with Go wrapper
 
-**Status:** Queued
+**Status:** In progress
 **Type:** Task
 **Created:** 2026-06-06
 
-`.gitmodules` lists only `constitution`. The constitution mandates consuming
-`vasic-digital/containers` for container orchestration; the project uses
-`docker-compose.yml` + `start.sh` instead. **Resolution direction:** add the
-submodule + boot via its `pkg/boot`/`pkg/compose`/`pkg/health`, or record a
-justified deviation.
-
-## §6. [BOB-010] Workable-items SQLite DB + docs_chain + procedure docs not set up
-
-**Status:** Queued
-**Type:** Task
-**Created:** 2026-06-06
-
-The constitution-grade tracking system (SQLite single-source-of-truth per
-§11.4.93/§11.4.95, `docs_chain` engine per §11.4.106, 5 procedure docs per
-§11.4.63, per-domain Status/Status_Summary docs per §11.4.45/§11.4.56) is not
-present. This Markdown tracker (Issues/Fixed + summaries, BOB prefix) is the
-interim. The Go `workable-items` tool is scaffolded in the constitution
-submodule (`constitution/scripts/workable-items/`) but not integrated.
-
-## §8. [BOB-012] Many docs lack HTML/PDF exports; no export-sync gate (§11.4.65)
-
-**Status:** Queued
-**Type:** Task
-**Created:** 2026-06-06
-
-`docs/` is ~65% export-covered; `docs/CONTINUATION.md` and ~24
-`docs/research/**` files lack HTML/PDF siblings, and no pre-build gate/hook
-enforces export sync. **Resolution direction:** regenerate all exports + add a
-`CM-MARKDOWN-EXPORT-SYNC`-class gate.
+Submodule added; `cmd/boba-ctl/` Go binary wraps `pkg/compose` + `pkg/runtime`
+with `up`/`down`/`status`/`health`/`list` subcommands. Remaining work: wire
+`boba-ctl up` into `start.sh` as opt-in replacement for raw `podman compose up`,
+add HelixQA test bank for boba-ctl operations. See `docs/Issues.md` for pending
+sub-items.

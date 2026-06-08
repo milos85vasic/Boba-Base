@@ -1,146 +1,336 @@
-<h1 id="fixed-summary-closed-items">Fixed Summary — Closed Items</h1>
-<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
-2026-06-06T19:45:00Z <strong>Ticket prefix:</strong>
-<code>BOB</code></p>
-<p>Closed workable items only (full detail in <a
-href="Fixed.md"><code>Fixed.md</code></a>). Most-recent first.</p>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Fixed_Summary</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="fixed_summary">Fixed_Summary</h1>
+<p>Closed workable items (current_location = Fixed), regenerated from
+the SQLite single-source-of-truth (§11.4.53).</p>
+<h2 id="counts-by-type-status">Counts by Type × Status</h2>
 <table>
-<colgroup>
-<col style="width: 15%" />
-<col style="width: 15%" />
-<col style="width: 11%" />
-<col style="width: 15%" />
-<col style="width: 42%" />
-</colgroup>
 <thead>
 <tr>
-<th>BOB ID</th>
-<th>Status</th>
 <th>Type</th>
-<th>Commit</th>
-<th>One-line description</th>
+<th>Status</th>
+<th>Count</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>BOB-005</td>
-<td>Fixed</td>
 <td>Bug</td>
-<td>a8916c0</td>
-<td>Public-tracker search restored: framework modules at nova3 root +
-PySocks (49→909 results, 0→14 trackers)</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>6</td>
 </tr>
 <tr>
-<td>BOB-016</td>
-<td>Fixed</td>
-<td>Bug</td>
-<td>fa6fb4f</td>
-<td>Jackett plugin no longer crashes with Pool(0) when zero indexers are
-configured</td>
-</tr>
-<tr>
-<td>BOB-006</td>
-<td>Implemented</td>
 <td>Feature</td>
-<td>a94f269</td>
-<td>NNMClub username/password→cookie login wired so the provided creds
-are used</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>2</td>
 </tr>
 <tr>
-<td>BOB-017</td>
-<td>Fixed</td>
-<td>Bug</td>
-<td>a94f269</td>
-<td>NNMClub plugin self-heal no longer crashes on the invalid embedded
-ICON</td>
-</tr>
-<tr>
-<td>BOB-007</td>
-<td>Completed</td>
 <td>Task</td>
-<td>2d80f03</td>
-<td>RuTor documented as a public no-auth tracker; its .env creds are not
-consumed</td>
+<td>Completed (→ Fixed.md)</td>
+<td>7</td>
 </tr>
 <tr>
-<td>BOB-011</td>
-<td>Implemented</td>
-<td>Feature</td>
-<td>2d80f03</td>
-<td>DOCX export added to the markdown export pipeline (pandoc), with a
-test</td>
-</tr>
-<tr>
-<td>BOB-018</td>
-<td>Completed</td>
 <td>Task</td>
-<td>2d80f03</td>
-<td>Jackett server image pulled to latest; plugin confirmed at upstream
-parity</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>2</td>
 </tr>
 <tr>
-<td>BOB-019</td>
-<td>Completed</td>
-<td>Task</td>
-<td>9f14563</td>
-<td>Jackett added as reference-only submodule (submodules/jackett,
-v0.24.2027); runtime keeps the image</td>
-</tr>
-<tr>
-<td>BOB-020</td>
-<td>Completed</td>
-<td>Task</td>
-<td>f9a277b</td>
-<td>CodeGraph initialized, indexed (8906 nodes) + MCP-wired;
-secrets/jackett excluded, validator 7/7</td>
-</tr>
-<tr>
-<td>BOB-001</td>
-<td>Fixed</td>
-<td>Bug</td>
-<td>c5cbd40</td>
-<td>Portable sed_inplace replaces GNU sed -i that aborted the macOS
-boot</td>
-</tr>
-<tr>
-<td>BOB-002</td>
-<td>Fixed</td>
-<td>Bug</td>
-<td>c5cbd40</td>
-<td>podman unshare guarded so plugin install no longer aborts on
-macOS</td>
-</tr>
-<tr>
-<td>BOB-003</td>
-<td>Fixed</td>
-<td>Bug</td>
-<td>c5cbd40</td>
-<td>macOS tunnel now detects the real podman SSH port and forwards
-container ports</td>
-</tr>
-<tr>
-<td>BOB-004</td>
-<td>Completed</td>
-<td>Task</td>
-<td>(.env)</td>
-<td>Tracker credentials stored 0600/gitignored and proven working (49
-live IPTorrents results)</td>
-</tr>
-<tr>
-<td>BOB-013</td>
-<td>Fixed</td>
-<td>Bug</td>
-<td>14bc5c4</td>
-<td>torrentkitty size parsing fixed so KB/MB/GB/TB no longer collapse to
-zero</td>
-</tr>
-<tr>
-<td>BOB-014</td>
-<td>Fixed</td>
-<td>Bug</td>
-<td>d46ea57</td>
-<td>Go generateID uses an atomic counter to avoid same-nanosecond
-collisions</td>
+<td><strong>TOTAL</strong></td>
+<td></td>
+<td><strong>17</strong></td>
 </tr>
 </tbody>
 </table>
+<h2 id="items">Items</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>ATM ID</th>
+<th>Type</th>
+<th>Status</th>
+<th>Severity</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BOB-001</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>—</td>
+<td>start.sh BSD-sed incompatibility aborted the boot</td>
+</tr>
+<tr>
+<td>BOB-002</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>—</td>
+<td>start.sh <code>podman unshare</code> incompatible with macOS remote
+podman</td>
+</tr>
+<tr>
+<td>BOB-003</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>—</td>
+<td>macOS tunnel port detection broken (ports never forwarded)</td>
+</tr>
+<tr>
+<td>BOB-004</td>
+<td>Task</td>
+<td>Completed (→ Fixed.md)</td>
+<td>—</td>
+<td>Private-tracker credentials stored securely + verified working</td>
+</tr>
+<tr>
+<td>BOB-005</td>
+<td>Task</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>—</td>
+<td>Public-tracker plugins all raised an unhandled exception
+(systemic)</td>
+</tr>
+<tr>
+<td>BOB-006</td>
+<td>Feature</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>—</td>
+<td>NNMClub username/password login wired — NNMClub now uses the
+operator’s <code>NNMCLUB_USERNAME</code>/<code>NNMCLUB_PASSWORD</code>
+(in .</td>
+</tr>
+<tr>
+<td>BOB-007</td>
+<td>Task</td>
+<td>Completed (→ Fixed.md)</td>
+<td>—</td>
+<td>RuTor documented as public (no-auth) — RuTor is a public tracker
+with no login endpoint; <code>RUTOR_USERNAME/PASSWORD</code> are</td>
+</tr>
+<tr>
+<td>BOB-010</td>
+<td>Task</td>
+<td>Completed (→ Fixed.md)</td>
+<td>—</td>
+<td>Workable-items SQLite DB integrated + pre-build gate wired
+(§11.4.93/§11.4.95)</td>
+</tr>
+<tr>
+<td>BOB-011</td>
+<td>Feature</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>—</td>
+<td>DOCX export support added —
+<code>generate_markdown_exports. | | BOB-012 | Task | Completed (→ Fixed.md) | — | Export-sync gate expanded to all docs (§11.4.65) | | BOB-013 | Bug | Fixed (→ Fixed.md) | — | torrentkitty</code>_parse_size<code>reported 0 for every KB/MB/GB/TB size | | BOB-014 | Bug | Fixed (→ Fixed.md) | — | Go</code>generateID()<code>collided under burst (UnixNano-only) | | BOB-016 | Task | Fixed (→ Fixed.md) | — | Jackett plugin crashed (</code>Pool(0)`)
+when zero indexers are configured</td>
+</tr>
+<tr>
+<td>BOB-017</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>—</td>
+<td>NNMClub plugin self-heal crashed on invalid ICON</td>
+</tr>
+<tr>
+<td>BOB-018</td>
+<td>Task</td>
+<td>Completed (→ Fixed.md)</td>
+<td>—</td>
+<td>Jackett server image updated to latest</td>
+</tr>
+<tr>
+<td>BOB-019</td>
+<td>Task</td>
+<td>Completed (→ Fixed.md)</td>
+<td>—</td>
+<td>Jackett added as a reference submodule (latest release)</td>
+</tr>
+<tr>
+<td>BOB-020</td>
+<td>Task</td>
+<td>Completed (→ Fixed.md)</td>
+<td>—</td>
+<td>CodeGraph initialized + wired (§11.4.78/79/80)</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

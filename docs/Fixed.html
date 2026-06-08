@@ -1,3 +1,177 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Fixed</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
 <p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
 2026-06-06T19:45:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
@@ -10,8 +184,9 @@ href="Issues.md"><code>Issues.md</code></a>.</p>
 captured-evidence (anti-bluff §11.4).</p>
 </blockquote>
 <hr />
-<h2 id="bob-001-start.sh-bsd-sed-incompatibility-aborted-the-boot">§1.
-[BOB-001] start.sh BSD-sed incompatibility aborted the boot</h2>
+<h2
+id="bob-001-start.sh-bsd-sed-incompatibility-aborted-the-boot">BOB-001 —
+start.sh BSD-sed incompatibility aborted the boot</h2>
 <p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
 Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
 <code>c5cbd40</code></p>
@@ -24,9 +199,9 @@ backup; works GNU+BSD) and converted all 6 sites (§11.4.67/§11.4.81).
 <code>tests/unit/test_sed_inplace_portable.sh</code> — 4 passed (RED
 before fix); boot #2 then progressed past the config step.</p>
 <h2
-id="bob-002-start.sh-podman-unshare-incompatible-with-macos-remote-podman">§2.
-[BOB-002] start.sh <code>podman unshare</code> incompatible with macOS
-remote podman</h2>
+id="bob-002-start.sh-podman-unshare-incompatible-with-macos-remote-podman">BOB-002
+— start.sh <code>podman unshare</code> incompatible with macOS remote
+podman</h2>
 <p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
 Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
 <code>c5cbd40</code></p>
@@ -37,9 +212,8 @@ plugin install on the macOS remote podman client. Added
 <strong>Evidence:</strong> boot #3 reached <code>compose up</code> and
 brought all 4 containers up.</p>
 <h2
-id="bob-003-macos-tunnel-port-detection-broken-ports-never-forwarded">§3.
-[BOB-003] macOS tunnel port detection broken (ports never
-forwarded)</h2>
+id="bob-003-macos-tunnel-port-detection-broken-ports-never-forwarded">BOB-003
+— macOS tunnel port detection broken (ports never forwarded)</h2>
 <p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
 Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
 <code>c5cbd40</code></p>
@@ -51,9 +225,8 @@ fallback. <strong>Evidence:</strong> tunnel established (port 51347);
 <code>curl</code> localhost 7186→200, 7187→200, 7189→404, 9117→301 after
 the fix.</p>
 <h2
-id="bob-004-private-tracker-credentials-stored-securely-verified-working">§4.
-[BOB-004] Private-tracker credentials stored securely + verified
-working</h2>
+id="bob-004-private-tracker-credentials-stored-securely-verified-working">BOB-004
+— Private-tracker credentials stored securely + verified working</h2>
 <p><strong>Status:</strong> Completed (→ Fixed.md)
 <strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06</p>
 <p>Stored RuTracker / IPTorrents / RuTor / NNMClub credentials in the
@@ -72,9 +245,9 @@ result names (e.g. “Ubuntu Linux Toolbox 1000+ Commands”). RuTracker
 login attempted (<code>auth=True</code>, CAPTCHA-blocked → tracked as
 BOB-008).</p>
 <h2
-id="bob-013-torrentkitty-_parse_size-reported-0-for-every-kbmbgbtb-size">§5.
-[BOB-013] torrentkitty <code>_parse_size</code> reported 0 for every
-KB/MB/GB/TB size</h2>
+id="bob-013-torrentkitty-_parse_size-reported-0-for-every-kbmbgbtb-size">BOB-013
+— torrentkitty <code>_parse_size</code> reported 0 for every KB/MB/GB/TB
+size</h2>
 <p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
 Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
 <code>14bc5c4</code></p>
@@ -84,8 +257,8 @@ first. <strong>Evidence:</strong>
 <code>tests/unit/test_plugin_search_engines.py</code> — torrentkitty
 size tests assert correct byte values; 18 passed.</p>
 <h2
-id="bob-005-public-tracker-plugins-all-raised-an-unhandled-exception-systemic">§7.
-[BOB-005] Public-tracker plugins all raised an unhandled exception
+id="bob-005-public-tracker-plugins-all-raised-an-unhandled-exception-systemic">BOB-005
+— Public-tracker plugins all raised an unhandled exception
 (systemic)</h2>
 <p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
 Bug · <strong>Severity:</strong> High <strong>Closed:</strong>
@@ -117,9 +290,9 @@ results / 14 public trackers</strong> (rutor 235, torrentdownload 243,
 linuxtracker 123, …). <code>/tmp/boba_search2.json</code>. Remaining
 per-plugin errors/timeouts tracked separately as BOB-015.</p>
 <h2
-id="bob-016-jackett-plugin-crashed-pool0-when-zero-indexers-are-configured">§8.
-[BOB-016] Jackett plugin crashed (<code>Pool(0)</code>) when zero
-indexers are configured</h2>
+id="bob-016-jackett-plugin-crashed-pool0-when-zero-indexers-are-configured">BOB-016
+— Jackett plugin crashed (<code>Pool(0)</code>) when zero indexers are
+configured</h2>
 <p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
 Bug · <strong>Severity:</strong> Medium <strong>Closed:</strong>
 2026-06-06</p>
@@ -138,8 +311,8 @@ reproduced the exact ValueError before the fix; second test proves the
 pool path still fans out). - Runtime: in-container harness
 <code>jackett().search('ubuntu','all')</code> → was ValueError, now
 <code>JACKETT_SEARCH_OK_NO_CRASH</code> (returns gracefully).</p>
-<h2 id="bob-006-nnmclub-usernamepassword-login-wired">§9. [BOB-006]
-NNMClub username/password login wired</h2>
+<h2 id="bob-006-nnmclub-usernamepassword-login-wired">BOB-006 — NNMClub
+username/password login wired</h2>
 <p><strong>Status:</strong> Implemented (→ Fixed.md)
 <strong>Type:</strong> Feature <strong>Closed:</strong> 2026-06-06 ·
 <strong>Commit:</strong> <code>a94f269</code></p>
@@ -154,8 +327,9 @@ read from env, never logged. <strong>Evidence:</strong> 19 unit tests
 (RED-first; mocked login + cookie-shape asserts); ruff + mypy clean;
 frozen OpenAPI spec reconciled. Live nnm-club.me login is SKIP — host
 DNS-blocked (§11.4.3); mechanism unit-proven.</p>
-<h2 id="bob-017-nnmclub-plugin-self-heal-crashed-on-invalid-icon">§10.
-[BOB-017] NNMClub plugin self-heal crashed on invalid ICON</h2>
+<h2
+id="bob-017-nnmclub-plugin-self-heal-crashed-on-invalid-icon">BOB-017 —
+NNMClub plugin self-heal crashed on invalid ICON</h2>
 <p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
 Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
 <code>a94f269</code></p>
@@ -167,7 +341,7 @@ latent). Caught by central full-suite verification (§11.4.125). Guarded
 the self-heal so a bad cosmetic icon can’t abort import.
 <strong>Evidence:</strong> <code>test_nnmclub_config_selfheal.py</code>
 2 passed (RED reproduced the exact binascii crash).</p>
-<h2 id="bob-007-rutor-documented-as-public-no-auth">§11. [BOB-007] RuTor
+<h2 id="bob-007-rutor-documented-as-public-no-auth">BOB-007 — RuTor
 documented as public (no-auth)</h2>
 <p><strong>Status:</strong> Completed (→ Fixed.md)
 <strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06 ·
@@ -176,8 +350,8 @@ documented as public (no-auth)</h2>
 <code>RUTOR_USERNAME/PASSWORD</code> are not consumed. Documented in
 CLAUDE.md + AGENTS.md so the unused .env creds are not mistaken for a
 wiring gap.</p>
-<h2 id="bob-011-docx-export-support-added">§12. [BOB-011] DOCX export
-support added</h2>
+<h2 id="bob-011-docx-export-support-added">BOB-011 — DOCX export support
+added</h2>
 <p><strong>Status:</strong> Implemented (→ Fixed.md)
 <strong>Type:</strong> Feature <strong>Closed:</strong> 2026-06-06 ·
 <strong>Commit:</strong> <code>2d80f03</code></p>
@@ -187,7 +361,7 @@ support added</h2>
 valid non-empty zip (PK magic); CLAUDE/AGENTS regenerated with .docx
 siblings. Note: mass-generation of all docs’ .docx is on-demand (not
 bulk-committed).</p>
-<h2 id="bob-018-jackett-server-image-updated-to-latest">§13. [BOB-018]
+<h2 id="bob-018-jackett-server-image-updated-to-latest">BOB-018 —
 Jackett server image updated to latest</h2>
 <p><strong>Status:</strong> Completed (→ Fixed.md)
 <strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06</p>
@@ -198,8 +372,8 @@ qbittorrent/search-plugins v4.9 + our local improvements — the image is
 the update vector. See
 <code>docs/research/jackett_update/README.md</code>.</p>
 <h2
-id="bob-019-jackett-added-as-a-reference-submodule-latest-release">§14.
-[BOB-019] Jackett added as a reference submodule (latest release)</h2>
+id="bob-019-jackett-added-as-a-reference-submodule-latest-release">BOB-019
+— Jackett added as a reference submodule (latest release)</h2>
 <p><strong>Status:</strong> Completed (→ Fixed.md)
 <strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06</p>
 <p>Per operator decision,
@@ -211,7 +385,7 @@ linuxserver image; we do NOT build Jackett from source. Provides source
 awareness for inspecting / cherry-picking indexer definitions. SSH URL
 per Hard-Stop #2; placed under <code>submodules/</code> per
 §11.4.28(C).</p>
-<h2 id="bob-020-codegraph-initialized-wired-11.4.787980">§15. [BOB-020]
+<h2 id="bob-020-codegraph-initialized-wired-11.4.787980">BOB-020 —
 CodeGraph initialized + wired (§11.4.78/79/80)</h2>
 <p><strong>Status:</strong> Completed (→ Fixed.md)
 <strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-06 ·
@@ -229,9 +403,50 @@ PASS/0 FAIL incl. the unforgeable MCP challenge (MCP
 independently re-verified by the conductor. Docs:
 <code>docs/CODEGRAPH.md</code> +
 <code>docs/codegraph/Status.md</code>.</p>
-<h2 id="bob-014-go-generateid-collided-under-burst-unixnano-only">§6.
-[BOB-014] Go <code>generateID()</code> collided under burst
-(UnixNano-only)</h2>
+<h2
+id="bob-010-workable-items-sqlite-db-integrated-pre-build-gate-wired-11.4.9311.4.95">BOB-010
+— Workable-items SQLite DB integrated + pre-build gate wired
+(§11.4.93/§11.4.95)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-08</p>
+<p>The constitution-grade SQLite-backed single-source-of-truth is now
+operational: - <code>constitution/scripts/workable-items/</code> parser
+extended to accept <code>[BOB-NNN]</code> bracket IDs -
+<code>bin/workable-items</code> binary built (7.9 MB) -
+<code>docs/workable_items.db</code> created from Issues.md + Fixed.md —
+20 items, all invariants satisfied -
+<code>scripts/pre_build_verification.sh</code> — new invariant 17 runs
+<code>workable-items validate</code> at every gate - Docs headings
+converted from <code>## §N. [BOB-NNN] Title</code> to
+<code>## BOB-NNN — Title</code> (parser-compatible) - Pre-build gate:
+17/17 PASS with validate invariant - <code>docs_chain</code> engine
+(Phase 4+) still pending per §11.4.106; basic sync infrastructure
+operational</p>
+<p><strong>Evidence:</strong> -
+<code>./bin/workable-items validate --db docs/workable_items.db</code> —
+<code>OK — 20 items, all invariants satisfied</code> - Pre-build gate
+invariant 17:
+<code>CM-WORKABLE-ITEMS-VALIDATE: workable-items validate: OK</code></p>
+<h2 id="bob-012-export-sync-gate-expanded-to-all-docs-11.4.65">BOB-012 —
+Export-sync gate expanded to all docs (§11.4.65)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-08</p>
+<p>The CM-MARKDOWN-EXPORT-SYNC gate expanded from 9-doc whitelist to
+auto-discovery: - All <code>docs/**/*.md</code> (excluding
+<code>docs/research/</code> and <code>docs/qa/</code>) - All
+<code>scripts/**/*.md</code> - All project-root <code>*.md</code> -
+Checks <code>.html</code> and <code>.pdf</code> freshness (mtime ≥ .md)
+- Added DOCX warnings (non-blocking, gitignored per BOB-011) - 64 DOCX
+warnings verified as expected (intentionally gitignored) - Pre-build
+gate: Invariant 16 now covers all in-scope docs</p>
+<p><strong>Evidence:</strong> - Pre-build gate:
+<code>PASS [16]: CM-MARKDOWN-EXPORT-SYNC: all in-scope docs have fresh .html/.pdf siblings</code>
+-
+<code>WARN: 64 missing .docx sibling(s) (gitignored per BOB-011)</code>
+— expected, non-blocking</p>
+<h2
+id="bob-014-go-generateid-collided-under-burst-unixnano-only">BOB-014 —
+Go <code>generateID()</code> collided under burst (UnixNano-only)</h2>
 <p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
 Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
 <code>d46ea57</code></p>
@@ -241,3 +456,5 @@ Bug <strong>Closed:</strong> 2026-06-06 · <strong>Commit:</strong>
 <strong>Evidence:</strong> <code>TestGenerateID_UniqueUnderBurst</code>
 (10k IDs unique) + queue-full test via real <code>StartSearch</code>;
 <code>go test -race</code> green, deterministic.</p>
+</body>
+</html>

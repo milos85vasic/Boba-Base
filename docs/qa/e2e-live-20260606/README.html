@@ -1,0 +1,139 @@
+<h1 id="e2e-live-stack-qa-run-e2e-live-20260606">E2E Live-Stack QA Run —
+<code>e2e-live-20260606</code></h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-06T15:00:00Z</p>
+<p>Fully-automated end-to-end run (§11.4.83, §11.4.98) driving the LIVE
+Boba merge-search stack at <code>http://localhost:7187</code> over real
+HTTP — no human in the loop, re-runnable. Test source:
+<code>tests/e2e/test_live_stack_evidence.py</code>.</p>
+<p>Anti-bluff posture (§11.4): every assertion targets a
+<strong>user-observable outcome</strong> (response-body fields a real
+dashboard/client consumes), not a bare status code. Flaky public-tracker
+specifics are deliberately NOT asserted (false-result risk); only
+deterministic facts are pinned. When the service is unreachable, tests
+SKIP-with-reason (§11.4.3) — never fake-pass.</p>
+<h2 id="what-was-exercised-observed">What was exercised + observed</h2>
+<table>
+<colgroup>
+<col style="width: 4%" />
+<col style="width: 29%" />
+<col style="width: 36%" />
+<col style="width: 20%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Endpoint / behaviour</th>
+<th>User-observable assertion</th>
+<th>Evidence file</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>GET /health</code></td>
+<td>body <code>status=="healthy"</code> + <code>service</code> identity
+present</td>
+<td><code>health.json</code></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>POST /api/v1/search/sync</code> query <code>debian</code></td>
+<td><code>status=="completed"</code>, <code>total_results&gt;0</code>,
+real result objects carry
+<code>name</code>/<code>size</code>/<code>tracker</code>/<code>download_urls</code></td>
+<td><code>search_debian.json</code></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>2b</td>
+<td>same search — genuine fan-out</td>
+<td>≥1 tracker <code>status=="success"</code> WITH rows; every
+<code>tracker_stats.query=="debian"</code></td>
+<td><code>search_debian_successful_trackers.json</code></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Credentialed path (IPTorrents)</td>
+<td>iptorrents <code>authenticated==true</code> in
+<code>tracker_stats</code> (logged in with .env creds)</td>
+<td><code>iptorrents_stat.json</code></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>GET /api/v1/auth/status</code></td>
+<td>structure lists
+<code>rutracker</code>/<code>iptorrents</code>/<code>nnmclub</code>/<code>kinozal</code>
+each with bool <code>has_session</code></td>
+<td><code>auth_status.json</code></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>GET /api/v1/auth/nnmclub/status</code> (BOB-006)</td>
+<td>body has bool <code>authenticated</code> field</td>
+<td><code>nnmclub_status_DEPLOYMENT_DRIFT.txt</code></td>
+<td><strong>SKIP</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>GET /api/v1/config</code> w/ custom <code>Host</code></td>
+<td><code>qbittorrent_url</code> derives from Host header, NOT hardcoded
+localhost (CONST-XII)</td>
+<td><code>config_custom_host.json</code></td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>7</td>
+<td>SSE <code>POST /search</code> +
+<code>GET /search/stream/{id}?token=</code></td>
+<td>real lifecycle SSE frames
+(<code>search_start</code>/<code>tracker_started</code>/<code>search_complete</code>)
+reach an EventSource client</td>
+<td><code>sse_frames_sample.txt</code>,
+<code>sse_events_observed.json</code></td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="observed-facts-from-captured-evidence">Observed facts (from
+captured evidence)</h2>
+<ul>
+<li><code>total_results</code> for <code>debian</code> =
+<strong>1303</strong> (varies per run; deterministic floor asserted is
+<code>&gt;0</code>).</li>
+<li>Successful trackers this run included academictorrents, bitsearch,
+iptorrents, limetorrents, linuxtracker, nyaa, piratebay, pirateiro,
+rutor, snowfl (specific set is non-deterministic; ≥1 asserted).</li>
+<li>IPTorrents:
+<code>status=success, authenticated=true, results_count=49</code> — the
+credentialed login path genuinely works end-to-end.</li>
+<li><code>/api/v1/config</code> with
+<code>Host: boba.example.com:9999</code> returned
+<code>qbittorrent_url=http://boba.example.com:7186</code> — derived from
+the request Host, no localhost leak (CONST-XII satisfied).</li>
+<li>SSE stream delivered live <code>event: search_start</code> (+
+<code>tracker_started</code>) frames to a streaming client.</li>
+</ul>
+<h2 id="skip-legitimate-11.4.3-11.4.108-finding">SKIP (legitimate,
+§11.4.3 + §11.4.108 finding)</h2>
+<p><strong><code>GET /api/v1/auth/nnmclub/status</code> → 404 on the
+LIVE service.</strong> The route exists in source
+(<code>download-proxy/src/api/auth.py</code>,
+<code>@router.get("/nnmclub/status")</code>, BOB-006), but the running
+<code>qbittorrent-proxy</code> container exposes only
+<code>/auth/rutracker/*</code> + <code>/auth/status</code> (per live
+<code>/openapi.json</code>). This is a genuine SOURCE→ARTIFACT
+deployment drift (§11.4.108): the fix is committed but not yet deployed.
+The test captures the drift as evidence and SKIPs rather than
+fake-passing; once the container is rebuilt/restarted the assertion
+fires for real.</p>
+<h2 id="re-run">Re-run</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> /tmp/boba-venv/bin/activate</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/e2e/test_live_stack_evidence.py <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
