@@ -8,9 +8,9 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 |---|---|---|
 | Bug | Fixed (→ Fixed.md) | 6 |
 | Feature | Implemented (→ Fixed.md) | 2 |
-| Task | Completed (→ Fixed.md) | 7 |
+| Task | Completed (→ Fixed.md) | 6 |
 | Task | Fixed (→ Fixed.md) | 2 |
-| **TOTAL** | | **17** |
+| **TOTAL** | | **16** |
 
 ## Items
 
@@ -23,7 +23,6 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | BOB-005 | Task | Fixed (→ Fixed.md) | — | Public-tracker plugins all raised an unhandled exception (systemic) |
 | BOB-006 | Feature | Implemented (→ Fixed.md) | — | NNMClub username/password login wired — NNMClub now uses the operator's `NNMCLUB_USERNAME`/`NNMCLUB_PASSWORD` (in . |
 | BOB-007 | Task | Completed (→ Fixed.md) | — | RuTor documented as public (no-auth) — RuTor is a public tracker with no login endpoint; `RUTOR_USERNAME/PASSWORD` are |
-| BOB-010 | Task | Completed (→ Fixed.md) | — | Workable-items SQLite DB integrated + pre-build gate wired (§11.4.93/§11.4.95) |
 | BOB-011 | Feature | Implemented (→ Fixed.md) | — | DOCX export support added — `generate_markdown_exports. |
 | BOB-012 | Task | Completed (→ Fixed.md) | — | Export-sync gate expanded to all docs (§11.4.65) |
 | BOB-013 | Bug | Fixed (→ Fixed.md) | — | torrentkitty `_parse_size` reported 0 for every KB/MB/GB/TB size |

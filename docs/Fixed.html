@@ -403,30 +403,6 @@ PASS/0 FAIL incl. the unforgeable MCP challenge (MCP
 independently re-verified by the conductor. Docs:
 <code>docs/CODEGRAPH.md</code> +
 <code>docs/codegraph/Status.md</code>.</p>
-<h2
-id="bob-010-workable-items-sqlite-db-integrated-pre-build-gate-wired-11.4.9311.4.95">BOB-010
-— Workable-items SQLite DB integrated + pre-build gate wired
-(§11.4.93/§11.4.95)</h2>
-<p><strong>Status:</strong> Completed (→ Fixed.md)
-<strong>Type:</strong> Task <strong>Closed:</strong> 2026-06-08</p>
-<p>The constitution-grade SQLite-backed single-source-of-truth is now
-operational: - <code>constitution/scripts/workable-items/</code> parser
-extended to accept <code>[BOB-NNN]</code> bracket IDs -
-<code>bin/workable-items</code> binary built (7.9 MB) -
-<code>docs/workable_items.db</code> created from Issues.md + Fixed.md —
-20 items, all invariants satisfied -
-<code>scripts/pre_build_verification.sh</code> — new invariant 17 runs
-<code>workable-items validate</code> at every gate - Docs headings
-converted from <code>## §N. [BOB-NNN] Title</code> to
-<code>## BOB-NNN — Title</code> (parser-compatible) - Pre-build gate:
-17/17 PASS with validate invariant - <code>docs_chain</code> engine
-(Phase 4+) still pending per §11.4.106; basic sync infrastructure
-operational</p>
-<p><strong>Evidence:</strong> -
-<code>./bin/workable-items validate --db docs/workable_items.db</code> —
-<code>OK — 20 items, all invariants satisfied</code> - Pre-build gate
-invariant 17:
-<code>CM-WORKABLE-ITEMS-VALIDATE: workable-items validate: OK</code></p>
 <h2 id="bob-012-export-sync-gate-expanded-to-all-docs-11.4.65">BOB-012 —
 Export-sync gate expanded to all docs (§11.4.65)</h2>
 <p><strong>Status:</strong> Completed (→ Fixed.md)

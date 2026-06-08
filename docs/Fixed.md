@@ -212,25 +212,6 @@ MCP challenge (MCP `codegraph_status` node count == CLI, both 8906);
 independently re-verified by the conductor. Docs: `docs/CODEGRAPH.md` +
 `docs/codegraph/Status.md`.
 
-## BOB-010 — Workable-items SQLite DB integrated + pre-build gate wired (§11.4.93/§11.4.95)
-
-**Status:** Completed (→ Fixed.md)
-**Type:** Task
-**Closed:** 2026-06-08
-
-The constitution-grade SQLite-backed single-source-of-truth is now operational:
-- `constitution/scripts/workable-items/` parser extended to accept `[BOB-NNN]` bracket IDs
-- `bin/workable-items` binary built (7.9 MB)
-- `docs/workable_items.db` created from Issues.md + Fixed.md — 20 items, all invariants satisfied
-- `scripts/pre_build_verification.sh` — new invariant 17 runs `workable-items validate` at every gate
-- Docs headings converted from `## §N. [BOB-NNN] Title` to `## BOB-NNN — Title` (parser-compatible)
-- Pre-build gate: 17/17 PASS with validate invariant
-- `docs_chain` engine (Phase 4+) still pending per §11.4.106; basic sync infrastructure operational
-
-**Evidence:**
-- `./bin/workable-items validate --db docs/workable_items.db` — `OK — 20 items, all invariants satisfied`
-- Pre-build gate invariant 17: `CM-WORKABLE-ITEMS-VALIDATE: workable-items validate: OK`
-
 ## BOB-012 — Export-sync gate expanded to all docs (§11.4.65)
 
 **Status:** Completed (→ Fixed.md)

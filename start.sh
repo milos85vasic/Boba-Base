@@ -7,6 +7,7 @@ cd "$SCRIPT_DIR"
 
 CONTAINER_RUNTIME=""
 COMPOSE_CMD=""
+BOBA_CTL_MODE=false
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -327,8 +328,16 @@ detect_container_runtime() {
         fi
         print_info "Using Docker with Docker Compose"
     else
-        print_error "Neither Podman nor Docker found. Please install one of them."
-        exit 1
+        if [[ "$BOBA_CTL_MODE" == false ]]; then
+            print_error "Neither Podman nor Docker found. Please install one of them."
+            exit 1
+        fi
+        CONTAINER_RUNTIME=""
+    fi
+
+    if [[ "$BOBA_CTL_MODE" == true ]]; then
+        COMPOSE_CMD="$SCRIPT_DIR/scripts/boba-ctl.sh"
+        print_info "Using boba-ctl for container orchestration"
     fi
 }
 
@@ -358,6 +367,10 @@ create_directories() {
 }
 
 pull_image() {
+    if [[ "$BOBA_CTL_MODE" == true ]]; then
+        print_warning "Image pull not available in boba-ctl mode — pull manually or use compose directly"
+        return 0
+    fi
     print_info "Pulling latest image..."
     $COMPOSE_CMD pull
     print_success "Image pulled successfully"
@@ -684,11 +697,13 @@ OPTIONS:
     -s, --status    Show container status only
     --no-plugins    Skip plugin installation
     --no-build      Skip Angular frontend build
+    --boba-ctl      Use boba-ctl CLI instead of raw podman-compose/docker compose
 
 EXAMPLES:
     $(basename "$0")              Start container
     $(basename "$0") -p           Pull latest image and start
     $(basename "$0") --verbose    Start with verbose output
+    $(basename "$0") --boba-ctl   Start using boba-ctl orchestrator
 
 EOF
     exit 0
@@ -724,6 +739,10 @@ main() {
                 ;;
             --no-build)
                 build_frontend_flag=false
+                shift
+                ;;
+            --boba-ctl)
+                BOBA_CTL_MODE=true
                 shift
                 ;;
             *)

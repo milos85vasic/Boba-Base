@@ -7,6 +7,7 @@ cd "$SCRIPT_DIR"
 
 CONTAINER_RUNTIME=""
 COMPOSE_CMD=""
+BOBA_CTL_MODE=false
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -39,10 +40,19 @@ detect_container_runtime() {
             exit 1
         fi
     else
-        print_error "Neither Podman nor Docker found"
-        exit 1
+        if [[ "$BOBA_CTL_MODE" == false ]]; then
+            print_error "Neither Podman nor Docker found"
+            exit 1
+        fi
+        CONTAINER_RUNTIME=""
     fi
-    print_info "Using $CONTAINER_RUNTIME"
+
+    if [[ "$BOBA_CTL_MODE" == true ]]; then
+        COMPOSE_CMD="$SCRIPT_DIR/scripts/boba-ctl.sh"
+        print_info "Using boba-ctl for container orchestration"
+    else
+        print_info "Using $CONTAINER_RUNTIME"
+    fi
 }
 
 stop_container() {
@@ -57,7 +67,14 @@ stop_container() {
 
 remove_container() {
     print_info "Removing container..."
-    
+
+    if [[ "$BOBA_CTL_MODE" == true ]]; then
+        $COMPOSE_CMD down
+        print_info "Image removal not available in boba-ctl mode"
+        print_success "Container stopped"
+        return 0
+    fi
+
     if $COMPOSE_CMD down --rmi local 2>/dev/null; then
         print_success "Container removed"
     else
@@ -83,11 +100,13 @@ OPTIONS:
     -v, --verbose   Enable verbose output
     -r, --remove    Remove container after stopping
     -p, --purge     Remove container and local images
+    --boba-ctl      Use boba-ctl CLI instead of raw podman-compose/docker compose
 
 EXAMPLES:
     $(basename "$0")              Stop container
     $(basename "$0") -r           Stop and remove container
     $(basename "$0") --purge      Stop, remove container and images
+    $(basename "$0") --boba-ctl   Stop using boba-ctl orchestrator
 
 EOF
     exit 0
@@ -115,6 +134,10 @@ main() {
                 purge_flag=true
                 shift
                 ;;
+            --boba-ctl)
+                BOBA_CTL_MODE=true
+                shift
+                ;;
             *)
                 print_error "Unknown option: $1"
                 show_help
@@ -130,8 +153,10 @@ main() {
 
     if [[ "$purge_flag" == true ]]; then
         remove_container
-        print_info "Removing local images..."
-        $COMPOSE_CMD down --rmi local 2>/dev/null || true
+        if [[ "$BOBA_CTL_MODE" == false ]]; then
+            print_info "Removing local images..."
+            $COMPOSE_CMD down --rmi local 2>/dev/null || true
+        fi
         print_success "Cleanup complete"
     elif [[ "$remove_flag" == true ]]; then
         remove_container
