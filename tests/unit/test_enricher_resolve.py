@@ -9,6 +9,8 @@ import os
 import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
+
 import pytest
 
 # Add source to path
@@ -98,6 +100,26 @@ class TestEnricherLookupOMDb:
             result = await enricher._lookup_omdb("The Matrix")
             assert result is None
 
+    @pytest.mark.asyncio
+    async def test_lookup_omdb_http_error(self, enricher):
+        """OMDb lookup with non-200 status returns None."""
+        mock_session_cm = _make_mock_session({}, status=503)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_omdb("The Matrix")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_omdb_connection_error(self, enricher):
+        """OMDb lookup with connection error returns None."""
+        mock_session_cm = MagicMock()
+        mock_session_cm.__aenter__ = AsyncMock(side_effect=aiohttp.ClientError("Connection failed"))
+        mock_session_cm.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_omdb("The Matrix")
+            assert result is None
+
 
 class TestEnricherLookupTMDB:
     """Test TMDB lookup method."""
@@ -148,6 +170,47 @@ class TestEnricherLookupTMDB:
             result = await enricher._lookup_tmdb("NonExistentMovie12345")
             assert result is None
 
+    @pytest.mark.asyncio
+    async def test_lookup_tmdb_http_error(self, enricher):
+        """TMDB lookup with non-200 status returns None."""
+        mock_session_cm = _make_mock_session({}, status=500)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_tmdb("The Matrix")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_tmdb_connection_error(self, enricher):
+        """TMDB lookup with connection error returns None."""
+        mock_session_cm = MagicMock()
+        mock_session_cm.__aenter__ = AsyncMock(side_effect=aiohttp.ClientError("Connection failed"))
+        mock_session_cm.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_tmdb("The Matrix")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_tmdb_missing_fields(self, enricher):
+        """TMDB lookup with missing optional fields returns MetadataResult with fallbacks."""
+        mock_session_cm = _make_mock_session(
+            {
+                "results": [
+                    {
+                        "title": "No Date Movie",
+                    }
+                ]
+            }
+        )
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_tmdb("No Date Movie")
+            assert result is not None
+            assert result.title == "No Date Movie"
+            assert result.year is None
+            assert result.poster_url is None
+            assert result.overview is None
+
 
 class TestEnricherLookupTVMaze:
     """Test TVMaze lookup method."""
@@ -188,6 +251,36 @@ class TestEnricherLookupTVMaze:
         with patch("aiohttp.ClientSession", return_value=mock_session_cm):
             result = await enricher._lookup_tvmaze("NonExistentShow12345")
             assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_tvmaze_http_error(self, enricher):
+        """TVMaze lookup with non-200 status returns None."""
+        mock_session_cm = _make_mock_session([], status=404)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_tvmaze("Breaking Bad")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_tvmaze_connection_error(self, enricher):
+        """TVMaze lookup with connection error returns None."""
+        mock_session_cm = MagicMock()
+        mock_session_cm.__aenter__ = AsyncMock(side_effect=aiohttp.ClientError("Connection failed"))
+        mock_session_cm.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_tvmaze("Breaking Bad")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_tvmaze_no_show_key(self, enricher):
+        """TVMaze lookup with missing 'show' key returns None."""
+        mock_session_cm = _make_mock_session([{}])
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_tvmaze("Broken Show")
+            assert result is not None
+            assert result.title == ""
 
 
 class TestEnricherLookupAniList:
@@ -244,6 +337,47 @@ class TestEnricherLookupAniList:
             result = await enricher._lookup_anilist("Attack on Titan")
             assert result is None
 
+    @pytest.mark.asyncio
+    async def test_lookup_anilist_http_error(self, enricher_with_anilist):
+        """AniList lookup with non-200 status returns None."""
+        mock_session_cm = _make_mock_session({}, status=500, method="post")
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher_with_anilist._lookup_anilist("Attack on Titan")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_anilist_connection_error(self, enricher_with_anilist):
+        """AniList lookup with connection error returns None."""
+        mock_session_cm = MagicMock()
+        mock_session_cm.__aenter__ = AsyncMock(side_effect=aiohttp.ClientError("Connection failed"))
+        mock_session_cm.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher_with_anilist._lookup_anilist("Attack on Titan")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_anilist_missing_title(self, enricher_with_anilist):
+        """AniList lookup with missing title fields returns fallback."""
+        mock_session_cm = _make_mock_session(
+            {
+                "data": {
+                    "Media": {
+                        "id": 1,
+                        "title": {},
+                        "startDate": {"year": 2013},
+                    }
+                }
+            },
+            method="post",
+        )
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher_with_anilist._lookup_anilist("Test")
+            assert result is not None
+            assert result.title == ""
+
 
 class TestEnricherLookupMusicBrainz:
     """Test MusicBrainz lookup method."""
@@ -282,6 +416,45 @@ class TestEnricherLookupMusicBrainz:
             result = await enricher._lookup_musicbrainz("NonExistentAlbum12345")
             assert result is None
 
+    @pytest.mark.asyncio
+    async def test_lookup_musicbrainz_http_error(self, enricher):
+        """MusicBrainz lookup with non-200 status returns None."""
+        mock_session_cm = _make_mock_session({}, status=503)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_musicbrainz("Abbey Road")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_musicbrainz_connection_error(self, enricher):
+        """MusicBrainz lookup with connection error returns None."""
+        mock_session_cm = MagicMock()
+        mock_session_cm.__aenter__ = AsyncMock(side_effect=aiohttp.ClientError("Connection failed"))
+        mock_session_cm.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_musicbrainz("Abbey Road")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_musicbrainz_missing_date(self, enricher):
+        """MusicBrainz lookup with missing release date returns result with year None."""
+        mock_session_cm = _make_mock_session(
+            {
+                "release-groups": [
+                    {
+                        "title": "Untitled Album",
+                        "id": "xyz789",
+                    }
+                ]
+            }
+        )
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_musicbrainz("Untitled Album")
+            assert result is not None
+            assert result.year is None
+
 
 class TestEnricherLookupOpenLibrary:
     """Test OpenLibrary lookup method."""
@@ -319,6 +492,46 @@ class TestEnricherLookupOpenLibrary:
         with patch("aiohttp.ClientSession", return_value=mock_session_cm):
             result = await enricher._lookup_openlibrary("NonExistentBook12345")
             assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_openlibrary_http_error(self, enricher):
+        """OpenLibrary lookup with non-200 status returns None."""
+        mock_session_cm = _make_mock_session({}, status=429)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_openlibrary("The Great Gatsby")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_openlibrary_connection_error(self, enricher):
+        """OpenLibrary lookup with connection error returns None."""
+        mock_session_cm = MagicMock()
+        mock_session_cm.__aenter__ = AsyncMock(side_effect=aiohttp.ClientError("Connection failed"))
+        mock_session_cm.__aexit__ = AsyncMock(return_value=False)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_openlibrary("The Great Gatsby")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_lookup_openlibrary_no_title(self, enricher):
+        """OpenLibrary lookup with missing title still returns result."""
+        mock_session_cm = _make_mock_session(
+            {
+                "docs": [
+                    {
+                        "first_publish_year": 2000,
+                        "key": "/works/OL123W",
+                    }
+                ]
+            }
+        )
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            result = await enricher._lookup_openlibrary("No Title Book")
+            assert result is not None
+            assert result.title == ""
+            assert result.year == 2000
 
 
 class TestEnricherResolve:
@@ -383,12 +596,97 @@ class TestEnricherResolve:
                 assert result.title == "TMDB Movie"
                 assert result.source == "TMDB"
 
+    @pytest.mark.asyncio
+    async def test_resolve_fallback_to_omdb(self, enricher):
+        """resolve() should fall back to OMDb when TMDB fails."""
+        def build_session():
+            mock_session = MagicMock()
+            mock_session.get = MagicMock()
+            mock_session_cm = MagicMock()
+            mock_session_cm.__aenter__ = AsyncMock(return_value=mock_session)
+            mock_session_cm.__aexit__ = AsyncMock(return_value=False)
+            return mock_session_cm
+
+        tmdb_session_cm = build_session()
+        tmdb_session_cm.__aenter__.return_value.get.return_value.__aenter__ = AsyncMock(
+            side_effect=aiohttp.ClientError("TMDB down")
+        )
+
+        omdb_session_cm = build_session()
+        omdb_response = MagicMock()
+        omdb_response.status = 200
+        omdb_response.json = AsyncMock(return_value={"Title": "OMDb Movie", "Year": "2023", "Response": "True"})
+        omdb_response_cm = MagicMock()
+        omdb_response_cm.__aenter__ = AsyncMock(return_value=omdb_response)
+        omdb_response_cm.__aexit__ = AsyncMock(return_value=False)
+        omdb_session_cm.__aenter__.return_value.get.return_value = omdb_response_cm
+
+        calls = [tmdb_session_cm, omdb_session_cm]
+        call_idx = 0
+
+        def session_factory(*args, **kwargs):
+            nonlocal call_idx
+            result = calls[call_idx]
+            call_idx += 1
+            return result
+
+        with patch("aiohttp.ClientSession", side_effect=session_factory):
+            with patch.dict(os.environ, {"TMDB_API_KEY": "test_key", "OMDB_API_KEY": "test_key"}):
+                enricher = MetadataEnricher()
+                result = await enricher.resolve("OMDb Movie")
+                assert result is not None
+                assert result.source == "OMDb"
+
+    @pytest.mark.asyncio
+    async def test_resolve_cache_persists_across_calls(self, enricher):
+        """resolve() should cache result after first successful lookup."""
+        mock_session_cm = _make_mock_session(
+            {
+                "results": [
+                    {
+                        "title": "Cached Movie",
+                        "release_date": "2024-01-01",
+                    }
+                ]
+            }
+        )
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm) as mock_factory:
+            with patch.dict(os.environ, {"TMDB_API_KEY": "test_key"}):
+                enricher = MetadataEnricher()
+                result1 = await enricher.resolve("Cached Movie")
+                assert result1 is not None
+                assert result1.source == "TMDB"
+
+                result2 = await enricher.resolve("Cached Movie")
+                assert result2 is not None
+                assert result2 is result1
+                assert mock_factory.call_count == 1
+
     def test_detect_quality(self, enricher):
         """Quality detection should work for various names."""
         assert enricher.detect_quality("Movie.2024.1080p.BluRay") is not None
         assert enricher.detect_quality("Movie.2024.720p.WEB-DL") is not None
         assert enricher.detect_quality("Movie.2024.2160p.UHD") is not None
         assert enricher.detect_quality("Movie.2024.DVDSCR") is not None
+
+    def test_detect_quality_none_name(self, enricher):
+        """detect_quality should handle None input."""
+        assert enricher.detect_quality(None) is None
+
+    def test_detect_quality_empty_string(self, enricher):
+        """detect_quality should handle empty string."""
+        assert enricher.detect_quality("") is None
+
+    def test_detect_quality_uhd(self, enricher):
+        """detect_quality should detect UHD as 4K."""
+        assert enricher.detect_quality("Movie 2023 UHD BluRay") == "4K"
+        assert enricher.detect_quality("Movie 2160p") == "4K"
+
+    def test_detect_quality_bluray_variants(self, enricher):
+        """detect_quality should detect various BluRay naming conventions."""
+        assert enricher.detect_quality("Movie BluRay") == "BluRay"
+        assert enricher.detect_quality("Movie blu-ray") == "BluRay"
 
     def test_clear_cache(self, enricher):
         """Clear cache should empty the cache."""
