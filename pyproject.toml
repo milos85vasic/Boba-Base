@@ -176,7 +176,7 @@ also_copy = [
     ".gitleaks.toml",
     ".trivyignore.yaml",
     ".gitignore",
-    "releases/README.md",
+    "releases/",
 ]
 pytest_add_cli_args_test_selection = ["tests/unit"]
 pytest_add_cli_args = ["-x", "-q"]
