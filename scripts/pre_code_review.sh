@@ -83,7 +83,7 @@ while IFS= read -r -d '' file; do
             marker_errors=$((marker_errors + 1))
         fi
     done
-done < <(find "$PROJECT_ROOT" -type f \( -name "*.py" -o -name "*.ts" -o -name "*.js" -o -name "*.go" -o -name "*.sh" \) ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/tests/*" ! -path "*/challenges/*" -print0 2>/dev/null)
+done < <(find "$PROJECT_ROOT" -type f \( -name "*.py" -o -name "*.ts" -o -name "*.js" -o -name "*.go" -o -name "*.sh" \) ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/submodules/*" ! -path "*/tests/*" ! -path "*/challenges/*" -print0 2>/dev/null)
 
 if [[ "$marker_errors" -eq 0 ]]; then
     pass "no mutation markers found"

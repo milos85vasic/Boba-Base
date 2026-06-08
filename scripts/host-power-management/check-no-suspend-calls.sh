@@ -56,6 +56,7 @@ EXCLUDE_PATHS=(
   ".pdf"
   "/docs/issues/fixed/BUGFIXES.md"
   "/CHANGELOG.md"
+  "/CHALLENGE.md"
   "/docs/superpowers/plans/"
   "anthropic-quickstarts/"
   "tests/hooks/"
