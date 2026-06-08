@@ -155,8 +155,9 @@ module = ["novaprinter", "helpers", "requests.*"]
 ignore_missing_imports = true
 
 [tool.mutmut]
-source_paths = ["download-proxy/src/"]
+source_paths = ["src/"]
 also_copy = [
+    "download-proxy/src/",
     "plugins/",
     "docs/",
     "assets/",

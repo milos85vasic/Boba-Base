@@ -15,12 +15,29 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 from typing import Any
 
 _POLLUTING_ROOTS = ("api", "merge_service", "config")
+
+if os.environ.get("MUTANT_UNDER_TEST"):
+    _here = Path(__file__).resolve().parent
+    _root = _here.parent if _here.parent.name != "mutants" else _here.parent.parent
+    _mutant_src = _root / "mutants" / "src"
+    if _mutant_src.is_dir():
+        class _MutmutPath(list):
+            _mutant_dir = str(_mutant_src.resolve())
+
+            def insert(self, index, path):
+                resolved = Path(path).resolve()
+                if "download-proxy" in resolved.parts:
+                    return super().insert(index, self._mutant_dir)
+                return super().insert(index, path)
+
+        sys.path = _MutmutPath(sys.path)
 
 
 @pytest.fixture(autouse=True)
