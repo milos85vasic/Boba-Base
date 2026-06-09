@@ -1,7 +1,7 @@
 # Coverage Baseline
 
-**Revision:** 4
-**Last modified:** 2026-06-09T12:00:00Z
+**Revision:** 5
+**Last modified:** 2026-06-09T14:00:00Z
 
 Last updated at commit `HEAD` on 2026-06-09 (search.py 95%, community plugin coverage push, 88% total).
 
@@ -15,7 +15,7 @@ Last updated at commit `HEAD` on 2026-06-09 (search.py 95%, community plugin cov
 | **Branches (partial)** | 102 |
 | **Unit tests passing** | 4,053 (of 4,074 collected) |
 | **Unit tests failing** | 21 |
-| **Coverage gate (`fail_under`)** | 49 |
+| **Coverage gate (`fail_under`)** | 88 |
 
 ## By Module — Core (download-proxy/src)
 
@@ -74,6 +74,7 @@ Last updated at commit `HEAD` on 2026-06-09 (search.py 95%, community plugin cov
 | Phase 11 | 49% | routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig 99% |
 | Phase 12 | 49% | search.py 84%, theme_injector 99%, env_loader 100%, yts/piratebay JSON guards |
 | Phase 13 | 49% | search.py 95%, total 88%, community plugin coverage sweep |
+| Phase 14 | 88% | Gate raised to match actual measured coverage (88.14%) |
 
 ## Measurement Method
 

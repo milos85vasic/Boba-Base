@@ -60,7 +60,7 @@ parallel = true
 [tool.coverage.report]
 # `fail_under` is the COVERAGE GATE. It starts at 1 (baseline) and is
 # raised per phase as modules reach 100%. See docs/COVERAGE_BASELINE.md.
-fail_under = 49
+fail_under = 88
 show_missing = true
 skip_empty = true
 exclude_lines = [

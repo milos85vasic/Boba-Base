@@ -23,6 +23,42 @@ from typing import Any
 
 _POLLUTING_ROOTS = ("api", "merge_service", "config")
 
+_CORRECT_MS_PATH: str | None = None
+
+
+def _fixup_merge_service_path() -> None:
+    """Ensure merge_service in sys.modules has the correct __path__.
+
+    Some test arrangements (including pytest collection of packages under
+    tests/unit/merge_service/) can cause merge_service to enter sys.modules
+    with __path__ pointing to the test tree instead of download-proxy/src.
+    This corrects that.
+    """
+    global _CORRECT_MS_PATH
+    ms = sys.modules.get("merge_service")
+    if ms is None:
+        return
+    if _CORRECT_MS_PATH is None:
+        _here = Path(__file__).resolve().parent
+        _CORRECT_MS_PATH = str(_here / "download-proxy" / "src" / "merge_service")
+    if hasattr(ms, "__path__"):
+        if _CORRECT_MS_PATH not in ms.__path__:
+            ms.__path__ = [_CORRECT_MS_PATH]  # type: ignore[attr-defined]
+
+
+def _purge_stub_api_module() -> None:
+    """Remove stub api packages created by test modules at import time.
+
+    Several test files create a lightweight stub 'api' package via
+    sys.modules.setdefault('api', type(sys)('api')) so they can exec_module
+    leaf modules (routes.py, etc.) without booting the full FastAPI app.
+    If that stub leaks into a later test that expects the real api module
+    (e.g. via patch('api.app', ...)), the stub lacks 'app' and the test fails.
+    """
+    api_mod = sys.modules.get("api")
+    if api_mod is not None and not hasattr(api_mod, "app"):
+        del sys.modules["api"]
+
 if os.environ.get("MUTANT_UNDER_TEST"):
     _here = Path(__file__).resolve().parent
     if _here.parent.name == "mutants":
@@ -111,7 +147,7 @@ def _isolate_download_proxy_modules(request):
 
     The isolation is RESTRICTED to ``tests/unit/`` because those are the
     only callers that install stubs. Integration + e2e tests import the
-    real modules and keep live references — wiping ``merge_service.*``
+    real modules and keep live references -- wiping ``merge_service.*``
     out from under them while pytest-asyncio still has scheduled
     coroutines produced KeyError/Exception-ignored cascades that broke
     ``tests/e2e/test_full_pipeline.py``.
@@ -125,6 +161,8 @@ def _isolate_download_proxy_modules(request):
         for k, v in sys.modules.items()
         if k in _POLLUTING_ROOTS or any(k.startswith(root + ".") for root in _POLLUTING_ROOTS)
     }
+    _fixup_merge_service_path()
+    _purge_stub_api_module()
     try:
         yield
     finally:
@@ -132,6 +170,7 @@ def _isolate_download_proxy_modules(request):
             if k in _POLLUTING_ROOTS or any(k.startswith(root + ".") for root in _POLLUTING_ROOTS):
                 del sys.modules[k]
         sys.modules.update(saved)
+        _fixup_merge_service_path()
 
 
 # Re-export live-service fixtures so that tests can request them by name

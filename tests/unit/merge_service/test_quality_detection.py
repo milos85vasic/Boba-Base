@@ -7,8 +7,40 @@ import sys
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 _SRC_PATH = os.path.join(_REPO_ROOT, "download-proxy", "src")
+_MS_PATH = os.path.join(_SRC_PATH, "merge_service")
 
 import importlib.util
+
+if _SRC_PATH not in sys.path:
+    sys.path.insert(0, _SRC_PATH)
+
+_merge_service_mod = sys.modules.setdefault("merge_service", type(sys)("merge_service"))
+_merge_service_mod.__path__ = [_MS_PATH]
+
+_search_spec = importlib.util.spec_from_file_location("merge_service.search", os.path.join(_MS_PATH, "search.py"))
+_search_mod = importlib.util.module_from_spec(_search_spec)
+sys.modules["merge_service.search"] = _search_mod
+_search_spec.loader.exec_module(_search_mod)
+
+_enricher_spec = importlib.util.spec_from_file_location("merge_service.enricher", os.path.join(_MS_PATH, "enricher.py"))
+_enricher_mod = importlib.util.module_from_spec(_enricher_spec)
+sys.modules["merge_service.enricher"] = _enricher_mod
+_enricher_spec.loader.exec_module(_enricher_mod)
+
+_jackett_spec = importlib.util.spec_from_file_location("merge_service.jackett_autoconfig", os.path.join(_MS_PATH, "jackett_autoconfig.py"))
+_jackett_mod = importlib.util.module_from_spec(_jackett_spec)
+sys.modules["merge_service.jackett_autoconfig"] = _jackett_mod
+_jackett_spec.loader.exec_module(_jackett_mod)
+
+_scheduler_spec = importlib.util.spec_from_file_location("merge_service.scheduler", os.path.join(_MS_PATH, "scheduler.py"))
+_scheduler_mod = importlib.util.module_from_spec(_scheduler_spec)
+sys.modules["merge_service.scheduler"] = _scheduler_mod
+_scheduler_spec.loader.exec_module(_scheduler_mod)
+
+_validator_spec = importlib.util.spec_from_file_location("merge_service.validator", os.path.join(_MS_PATH, "validator.py"))
+_validator_mod = importlib.util.module_from_spec(_validator_spec)
+sys.modules["merge_service.validator"] = _validator_mod
+_validator_spec.loader.exec_module(_validator_mod)
 
 _routes_path = os.path.join(_SRC_PATH, "api", "routes.py")
 _spec = importlib.util.spec_from_file_location("api_routes", _routes_path)

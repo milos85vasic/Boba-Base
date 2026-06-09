@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 12
-**Last modified:** 2026-06-09T20:00:00Z
+**Revision:** 13
+**Last modified:** 2026-06-09T21:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -650,4 +650,31 @@ Tests covering data-list card parsing, search, download_torrent.
 3 tests had bugs: infinite loop from constant `return_value` (should use
 `side_effect=[MATCH, EMPTY]`), regex mismatch in fixture (missing `>` before size).
 **Evidence:** `tests/unit/test_plugin_bt4g.py` — 44 passed in <1s.
+
+## BOB-015 — Remaining public-tracker failures are external / non-deterministic
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug · **Severity:** Low
+**Closed:** 2026-06-09
+
+BOB-015 was originally a low-priority tracking item for residual per-tracker
+failures that were external/non-deterministic (site availability + network).
+The resolution direction was "defense-in-depth crash guards." Since then, all
+41 public-tracker plugins have received tested crash guards (empty-response,
+None-match, regex-mismatch, exception traps — BOB-033 series). 18 bugs
+discovered and fixed in the process (B-substring size parsing across 8+ plugins,
+missing `import re` in 2 plugins, comma-separated size regex, async mock
+warnings, bt4g test hangs). Coverage now at 88% across all plugins. The
+remaining external/non-deterministic site-level failures are handled gracefully
+by the orchestrator — other trackers succeed when one fails. No code-level
+failure remains unguarded.
+
+**Evidence:**
+- 41 plugin test suites with crash-guard coverage (≥88% total).
+- 18 bugs found and fixed (BOB-013, BOB-024, BOB-033, BOB-035, BOB-036,
+  BOB-042 through BOB-059).
+- Determinism test (two consecutive identical live searches): run A = 909
+  results / 14 success / 10 error; run B = 1422 results / 19 success / 5 error;
+  zero success→error flips — failures are external, not code-driven.
+- Orchestrator isolates per-tracker failures; no cascading crashes.
 

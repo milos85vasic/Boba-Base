@@ -18,6 +18,7 @@ isolated from each other (and from the production file at
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -26,11 +27,30 @@ from fastapi.testclient import TestClient
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _SRC_PATH = _REPO_ROOT / "download-proxy" / "src"
+_MS_PATH = _SRC_PATH / "merge_service"
 if str(_SRC_PATH) not in sys.path:
     sys.path.insert(0, str(_SRC_PATH))
 
 
+def _ensure_merge_service_package() -> None:
+    """Ensure merge_service is a proper package with correct __path__."""
+    from importlib.util import spec_from_file_location, module_from_spec
+
+    ms = sys.modules.get("merge_service")
+    if ms is None or not hasattr(ms, "__path__"):
+        sys.modules.setdefault("merge_service", type(sys)("merge_service"))
+        sys.modules["merge_service"].__path__ = [str(_MS_PATH)]
+    elif str(_MS_PATH) not in getattr(ms, "__path__", []):
+        ms.__path__ = [str(_MS_PATH)]
+
+    _search_spec = spec_from_file_location("merge_service.search", str(_MS_PATH / "search.py"))
+    _search_mod = module_from_spec(_search_spec)
+    sys.modules["merge_service.search"] = _search_mod
+    _search_spec.loader.exec_module(_search_mod)
+
+
 def _purge_api_module() -> None:
+    _ensure_merge_service_package()
     for key in [k for k in list(sys.modules) if k == "api" or k.startswith("api.")]:
         del sys.modules[key]
 

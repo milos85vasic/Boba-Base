@@ -16,15 +16,34 @@ import sys
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 _SRC_PATH = os.path.join(_REPO_ROOT, "download-proxy", "src")
+_MS_PATH = os.path.join(_SRC_PATH, "merge_service")
 if _SRC_PATH not in sys.path:
     sys.path.insert(0, _SRC_PATH)
 
 
 def _purge_api_module() -> None:
-    """Drop the api.__init__ module so the next import re-evaluates module-level code."""
+    """Drop the api module so the next import re-evaluates module-level code."""
+    _ensure_merge_service_package()
 
     for key in [k for k in list(sys.modules) if k == "api" or k.startswith("api.")]:
         del sys.modules[key]
+
+
+def _ensure_merge_service_package() -> None:
+    """Ensure merge_service is a proper package with correct __path__."""
+    from importlib.util import spec_from_file_location, module_from_spec
+
+    ms = sys.modules.get("merge_service")
+    if ms is None or not hasattr(ms, "__path__"):
+        sys.modules.setdefault("merge_service", type(sys)("merge_service"))
+        sys.modules["merge_service"].__path__ = [_MS_PATH]
+    elif _MS_PATH not in getattr(ms, "__path__", []):
+        ms.__path__ = [_MS_PATH]
+
+    _search_spec = spec_from_file_location("merge_service.search", os.path.join(_MS_PATH, "search.py"))
+    _search_mod = module_from_spec(_search_spec)
+    sys.modules["merge_service.search"] = _search_mod
+    _search_spec.loader.exec_module(_search_mod)
 
 
 def _cors_middleware_origins(app) -> list[str]:

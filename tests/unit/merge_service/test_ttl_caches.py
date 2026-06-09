@@ -34,11 +34,16 @@ def _reimport_search():
         if k == "merge_service":
             continue
         del sys.modules[k]
-    spec = importlib.util.spec_from_file_location("merge_service.search", os.path.join(_MS_PATH, "search.py"))
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["merge_service.search"] = mod
-    spec.loader.exec_module(mod)
-    return mod
+
+    for submodule in ("retry", "search", "deduplicator", "validator"):
+        sub_spec = importlib.util.spec_from_file_location(
+            f"merge_service.{submodule}", os.path.join(_MS_PATH, f"{submodule}.py")
+        )
+        sub_mod = importlib.util.module_from_spec(sub_spec)
+        sys.modules[f"merge_service.{submodule}"] = sub_mod
+        sub_spec.loader.exec_module(sub_mod)
+
+    return sys.modules["merge_service.search"]
 
 
 def _reimport_auth():

@@ -152,7 +152,10 @@ class Deduplicator:
 
     def _update_best_quality(self, merged: "MergedResult") -> None:
         """Set best_quality based on the highest quality among sources."""
-        from api.routes import _detect_quality
+        try:
+            from api.routes import _detect_quality
+        except ImportError:
+            _detect_quality = None  # type: ignore[assignment]
 
         best = None
         best_weight = -1
@@ -165,7 +168,10 @@ class Deduplicator:
             "uhd_8k": 6,
         }
         for r in merged.original_results:
-            q = _detect_quality(r.name, r.size)
+            if _detect_quality is not None:
+                q = _detect_quality(r.name, r.size)
+            else:
+                q = self._fallback_quality(r.name, r.size)
             w = weight_map.get(q, 1)
             if w > best_weight:
                 best_weight = w
@@ -494,3 +500,62 @@ class Deduplicator:
         if a.tracker == "iptorrents" and b.tracker != "iptorrents" and not a.freeleech:
             return True
         return b.tracker == "iptorrents" and a.tracker != "iptorrents" and not b.freeleech
+
+    def _fallback_quality(self, name: str, size: str) -> str:
+        """Simple quality detection without api.routes dependency."""
+        from .enricher import MetadataEnricher
+
+        enricher = MetadataEnricher()
+        quality = enricher.detect_quality(name)
+        if quality:
+            mapping = {
+                "4K": "uhd_4k",
+                "1080p": "full_hd",
+                "720p": "hd",
+                "SD": "sd",
+                "BluRay": "full_hd",
+                "BDRip": "full_hd",
+                "BDRemux": "uhd_4k",
+                "WEB-DL": "hd",
+                "WEBRip": "hd",
+                "HDRip": "hd",
+                "HDTV": "hd",
+                "DVD": "sd",
+                "DVDRip": "sd",
+            }
+            return mapping.get(quality, "unknown")
+        sb = self._parse_size_to_bytes(size)
+        if sb >= 40 * 1024**3:
+            return "uhd_4k"
+        if sb >= 8 * 1024**3:
+            return "full_hd"
+        if sb >= 2 * 1024**3:
+            return "hd"
+        if sb >= 300 * 1024**2:
+            return "sd"
+        return "unknown"
+
+    @staticmethod
+    def _parse_size_to_bytes(size_str: str) -> int:
+        """Parse size string (e.g. 2.5 GB, 500 MB) to bytes."""
+        import re
+
+        if not size_str:
+            return 0
+        match = re.match(r"([\d.]+)\s*(GB|GiB|MB|MiB|KB|KiB|TB|TiB|B)", size_str, re.I)
+        if match:
+            value = float(match.group(1))
+            unit = match.group(2).upper()
+            multipliers = {
+                "B": 1,
+                "KB": 1024,
+                "KIB": 1024,
+                "MB": 1024**2,
+                "MIB": 1024**2,
+                "GB": 1024**3,
+                "GIB": 1024**3,
+                "TB": 1024**4,
+                "TIB": 1024**4,
+            }
+            return int(value * multipliers.get(unit, 1))
+        return 0

@@ -219,19 +219,19 @@ class TestIptorrentsSearchParse:
         engine.session.open.return_value = mock_resp
         return engine
 
-    def test_search_parse_no_data(self, _load_iptorrents=_load_iptorrents):
+    def test_search_parse_no_data(self):
         mod, captured = _load_iptorrents()
         engine = self._make_engine(mod, "")
         engine.search_parse("http://example.com")
         assert captured == []
 
-    def test_search_parse_no_table(self, _load_iptorrents=_load_iptorrents):
+    def test_search_parse_no_table(self):
         mod, captured = _load_iptorrents()
         engine = self._make_engine(mod, IPT_NO_TABLE)
         engine.search_parse("http://example.com")
         assert captured == []
 
-    def test_search_parse_single_row(self, _load_iptorrents=_load_iptorrents):
+    def test_search_parse_single_row(self):
         mod, captured = _load_iptorrents()
         engine = self._make_engine(mod, IPT_SINGLE_ROW)
         engine.search_parse("http://example.com")
@@ -242,7 +242,7 @@ class TestIptorrentsSearchParse:
         assert captured[0]["size"] == "1.2 GB"
         assert "iptorrents.com" in captured[0]["link"]
 
-    def test_search_parse_multi_row(self, _load_iptorrents=_load_iptorrents):
+    def test_search_parse_multi_row(self):
         mod, captured = _load_iptorrents()
         engine = self._make_engine(mod, IPT_MULTI_ROW)
         engine.search_parse("http://example.com")
@@ -250,7 +250,7 @@ class TestIptorrentsSearchParse:
         assert captured[0]["name"] == "First Torrent"
         assert captured[1]["name"] == "Second Torrent"
 
-    def test_search_parse_freeleech_tagged(self, _load_iptorrents=_load_iptorrents):
+    def test_search_parse_freeleech_tagged(self):
         mod, captured = _load_iptorrents()
         engine = self._make_engine(mod, IPT_FREELEECH)
         engine.search_parse("http://example.com")
@@ -258,7 +258,7 @@ class TestIptorrentsSearchParse:
         assert "Freeleech Movie" in captured[0]["name"]
         assert captured[0]["seeds"] == "300"
 
-    def test_search_parse_pagination(self, _load_iptorrents=_load_iptorrents):
+    def test_search_parse_pagination(self):
         mod, captured = _load_iptorrents()
         engine = mod.iptorrents.__new__(mod.iptorrents)
         engine.session = MagicMock()
