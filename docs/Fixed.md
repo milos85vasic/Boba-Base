@@ -689,3 +689,25 @@ failure remains unguarded.
 
 tokyotoshokan/kickass/yts/piratebay raised unhandled exceptions on empty/None/non-dict-JSON upstream responses; added empty-response guards + RED→GREEN regression tests (§11.4.118 audit found piratebay).
 
+## BOB-061 — Unit suite hang + order-dependent test-pollution (non-deterministic failures)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-061-062/EVIDENCE.md
+**Severity:** High
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+Full pytest tests/unit/ stalled on an unbounded enricher network lookup; 13-34 order-dependent failures from sys.modules/socket/os.environ leakage across files. Fixed: enricher ClientTimeout + tests/conftest.py path/POLLUTING_ROOTS/socket/environ isolation. Now 4121 passed deterministic.
+
+## BOB-062 — Unbounded plugin pagination loops + unbounded network I/O (hang risk)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-061-062/EVIDENCE.md
+**Severity:** Medium
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+kickass/bitsearch/torrentgalaxy while-True search loops could run forever; search.py/routes.py/helpers.py/eztv.py network calls had no timeout. Fixed: MAX_PAGES=50 caps + aiohttp.ClientTimeout/urlopen timeout=30 across all sites.
+

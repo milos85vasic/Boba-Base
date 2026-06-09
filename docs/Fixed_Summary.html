@@ -188,7 +188,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>13</td>
+<td>15</td>
 </tr>
 <tr>
 <td>Feature</td>
@@ -213,7 +213,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>59</strong></td>
+<td><strong>61</strong></td>
 </tr>
 </tbody>
 </table>
@@ -499,6 +499,27 @@ from constant <code>return_value</code> (should use</td>
 <td>tokyotoshokan/kickass/yts/piratebay raised unhandled exceptions on
 empty/None/non-dict-JSON upstream responses; added empty-response guards
 + RED→GREEN regression tests (§11.4.118 audit found piratebay).</td>
+</tr>
+<tr>
+<td>BOB-061</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>High</td>
+<td>Full pytest tests/unit/ stalled on an unbounded enricher network
+lookup; 13-34 order-dependent failures from
+sys.modules/socket/os.environ leakage across files. Fixed: enricher
+ClientTimeout + tests/conftest.py path/POLLUTING_ROOTS/socket/environ
+isolation. Now 4121 passed deterministic.</td>
+</tr>
+<tr>
+<td>BOB-062</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Medium</td>
+<td>kickass/bitsearch/torrentgalaxy while-True search loops could run
+forever; search.py/routes.py/helpers.py/eztv.py network calls had no
+timeout. Fixed: MAX_PAGES=50 caps + aiohttp.ClientTimeout/urlopen
+timeout=30 across all sites.</td>
 </tr>
 </tbody>
 </table>

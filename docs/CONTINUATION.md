@@ -1,12 +1,43 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-09 (Session 8 complete — 47 test files, 4,074+ tests, 88%+ coverage, 21 bugs fixed)
-**Last commit:** `c8254ee`
+**Revision:** 13
+**Last modified:** 2026-06-10T00:00:00Z
+**Session:** 2026-06-10 (Session 9 — overnight autonomous stabilization)
+**Last commit:** `6230865`
 **Branch:** `main`
-**Working tree:** CLEAN
+**Working tree:** CLEAN (after the doc commit that carries this update)
 
 > Send `continue` to pick up exactly where we left off.
-> This file is the single source of truth for session handoff.
+> This file is the single source of truth for session handoff (§12.10 / §11.4.131).
+
+---
+
+## CURRENT STATE — Session 9 (2026-06-10, overnight autonomous loop)
+
+**The unit suite is now FULLY GREEN and DETERMINISTIC.**
+
+| Metric | Value |
+|--------|-------|
+| Unit tests | **4121 passed, 0 failed** — `pytest tests/unit/ --import-mode=importlib` (5m24s) |
+| Determinism (§11.4.50) | top-level scope **3150 passed** identical across `--randomly-seed` 7/42/100/31337/12345 |
+| Commits this session | `6e15a8d` (crash guards + async/loop hangs), `6230865` (test-pollution + network timeouts) — both pushed to all upstreams |
+| Code review | GO (zero findings/warnings) after §11.4.134 iterate-until-GO |
+
+### What landed (Session 9)
+- **8 product fixes** (`6e15a8d`): degenerate-input crash guards for `tokyotoshokan`/`kickass`/`yts`/`piratebay`; enricher full-suite-hang fix (`aiohttp.ClientTimeout` ×6); `kickass`/`bitsearch`/`torrentgalaxy` unbounded-loop caps (`MAX_PAGES=50`); mutation-scanner `.venv` scope fix; +7 download_proxy tests. Closed **BOB-060**.
+- **Test-suite stabilization** (`6230865`): eliminated all §11.4.50 order-dependent pollution — `tests/conftest.py` `_CORRECT_MS_PATH` repo-root fix (the dominant bug: corrupted `merge_service.__path__` → broke 11 tests incl. all `scheduler_api`), extended `_POLLUTING_ROOTS`, + per-test `socket.socket` & `os.environ` snapshot/restore. Network-I/O timeout hardening (`search.py`/`routes.py`/`helpers.py`/`eztv.py`). Closed **BOB-061**, **BOB-062**.
+
+### Open queue (Issues.md)
+- **BOB-008** — RuTracker CAPTCHA — **OPERATOR-BLOCKED**: needs you to complete the CAPTCHA at `/api/v1/auth/rutracker/captcha` + `/login`, OR paste a fresh `bb_session` cookie via `/auth/rutracker/cookie-login`. Cannot be solved autonomously.
+- Everything else closed (DB↔MD in sync, 62 items, `bin/workable-items validate` OK).
+
+### How to run the suite (both work now)
+- Monolithic: `.venv/bin/python -m pytest tests/unit/ -q --import-mode=importlib` → 4121 passed.
+- Per-scope (faster, parallelizable): `tests/unit/merge_service/` (801) · `tests/unit/api_layer/` (170) · `tests/unit/*.py` top-level (3150).
+- Always pass `--import-mode=importlib` (the `merge_service.deduplicator` lazy import needs it; a bare per-file run errors).
+
+### Known low-priority follow-up (NOT blocking — suite is green)
+- A residual `test_credential_env_wiring` / env_loader `sys.modules`-stub ordering quirk surfaces only in narrow isolated file-combos; it does NOT manifest in the full top-level scope (5 seeds green) because the new env/`sys.modules` isolation covers it there. Tighten the env_loader stub teardown if it ever resurfaces.
 
 ---
 

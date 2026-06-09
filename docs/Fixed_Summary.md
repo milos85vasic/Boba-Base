@@ -6,12 +6,12 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 13 |
+| Bug | Fixed (→ Fixed.md) | 15 |
 | Feature | Implemented (→ Fixed.md) | 17 |
 | Task | Completed (→ Fixed.md) | 8 |
 | Task | Fixed (→ Fixed.md) | 4 |
 | Task | Implemented (→ Fixed.md) | 17 |
-| **TOTAL** | | **59** |
+| **TOTAL** | | **61** |
 
 ## Items
 
@@ -76,3 +76,5 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | BOB-058 | Task | Implemented (→ Fixed.md) | — | yihua.py deep-coverage tests + B-substring fixed |
 | BOB-059 | Task | Fixed (→ Fixed.md) | — | bt4g.py tests fixed (was hanging) — 3 tests had bugs: infinite loop from constant `return_value` (should use |
 | BOB-060 | Bug | Fixed (→ Fixed.md) | Low | tokyotoshokan/kickass/yts/piratebay raised unhandled exceptions on empty/None/non-dict-JSON upstream responses; added empty-response guards + RED→GREEN regression tests (§11.4.118 audit found piratebay). |
+| BOB-061 | Bug | Fixed (→ Fixed.md) | High | Full pytest tests/unit/ stalled on an unbounded enricher network lookup; 13-34 order-dependent failures from sys.modules/socket/os.environ leakage across files. Fixed: enricher ClientTimeout + tests/conftest.py path/POLLUTING_ROOTS/socket/environ isolation. Now 4121 passed deterministic. |
+| BOB-062 | Bug | Fixed (→ Fixed.md) | Medium | kickass/bitsearch/torrentgalaxy while-True search loops could run forever; search.py/routes.py/helpers.py/eztv.py network calls had no timeout. Fixed: MAX_PAGES=50 caps + aiohttp.ClientTimeout/urlopen timeout=30 across all sites. |

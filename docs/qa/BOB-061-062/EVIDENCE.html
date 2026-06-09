@@ -1,0 +1,63 @@
+<h1 id="bob-061-bob-062-suite-stabilization-hang-elimination">BOB-061 /
+BOB-062 — Suite stabilization + hang elimination</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T00:00:00Z <strong>Status:</strong> Fixed ·
+<strong>Commits:</strong> <code>6e15a8d</code>, <code>6230865</code>
+<strong>Mandate:</strong> §11.4.50 (determinism), §11.4.98 (autonomous
+tests), §11.4.69/§11.4.102/§11.4.114.</p>
+<h2 id="bob-061-unit-suite-hang-order-dependent-test-pollution">BOB-061
+— Unit-suite hang + order-dependent test-pollution</h2>
+<p>Root causes (proven via §11.4.102 systematic debugging + §11.4.114
+clean-HEAD isolation): 1. <strong>enricher full-suite hang</strong> —
+<code>_lookup_tvmaze/_openlibrary/_musicbrainz</code> did real
+<code>aiohttp</code> GETs with no timeout; musicbrainz throttling
+stalled the event loop (the 87% monolithic stall). Fixed:
+<code>ClientTimeout(total=10)</code> on all 6 sessions +
+<code>test_resolve_no_apis</code> stubs the lookups
+(offline/autonomous). 2. <strong>test-pollution</strong> (13–34
+order-dependent failures; <code>pytest-randomly</code> active): -
+<code>tests/conftest.py</code> <code>_CORRECT_MS_PATH</code> used
+<code>.parent</code> (=<code>tests/</code>) not
+<code>.parent.parent</code> (=repo root) → a non-existent
+<code>tests/download-proxy/...</code> path corrupted
+<code>merge_service.__path__</code> → 11 victims (all 6
+<code>scheduler_api</code>, <code>TestLifespan</code>,
+<code>routes_coverage</code>). - raw <code>sys.modules</code> stubs
+(helpers/env_loader/novaprinter/socks/tokyotoshokan/
+kinozal/rutor/iptorrents) leaked across files → extended
+<code>_POLLUTING_ROOTS</code>. - <code>socket.socket</code> (kinozal
+SOCKS) + <code>os.environ</code> (credential tests) leaked →
+snapshot/restore per unit test in the autouse fixture.</p>
+<h2 id="bob-062-unbounded-loops-unbounded-network-io">BOB-062 —
+Unbounded loops + unbounded network I/O</h2>
+<ul>
+<li><code>kickass</code>/<code>bitsearch</code>/<code>torrentgalaxy</code>
+<code>while True:</code> search loops could run forever (index-ignoring
+upstream) → <code>MAX_PAGES=50</code> caps + RED loop-cap regression
+tests.</li>
+<li><code>search.py fetch_torrent</code>, <code>routes.py</code> ×3 qbit
+sessions, <code>helpers.py</code>
+<code>retrieve_url</code>/<code>download_file</code>,
+<code>eztv.py</code> fallback → all given explicit timeouts
+(<code>aiohttp.ClientTimeout</code> 10/30 /
+<code>urlopen timeout=30</code>). Each with a RED-on-removal regression
+guard (mutation-verified by code review).</li>
+<li><code>test_dashboard</code> qbit-auth test mocked (was a real
+<code>localhost:7185</code> connect).</li>
+</ul>
+<h2 id="rock-solid-proof-captured">Rock-solid proof (captured)</h2>
+<pre><code># monolithic — previously stalled, now completes:
+pytest tests/unit/ -q --import-mode=importlib --timeout=60
+→ 4121 passed, 0 failed in 324.56s
+
+# determinism (§11.4.50) — top-level scope, multiple random seeds:
+seed 7      → 3150 passed, 0 failed
+seed 42     → 3150 passed, 0 failed
+seed 100    → 3150 passed, 0 failed
+seed 31337  → 3150 passed, 0 failed
+seed 12345  → 3150 passed, 0 failed
+merge_service → 801 passed   api_layer → 170 passed</code></pre>
+<p>Clean-HEAD isolation (§11.4.114): HEAD <code>44f15b2</code> top-level
+= 34 failed/3070 passed; this work = 0 failed → fixes are net-positive,
+introduce nothing. Two code-review passes returned GO (zero findings,
+zero warnings) after remediation (§11.4.134).</p>

@@ -1,13 +1,112 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Session:</strong> 2026-06-09 (Session 8 complete — 47 test
-files, 4,074+ tests, 88%+ coverage, 21 bugs fixed) <strong>Last
-commit:</strong> <code>c8254ee</code> <strong>Branch:</strong>
-<code>main</code> <strong>Working tree:</strong> CLEAN</p>
+<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
+2026-06-10T00:00:00Z <strong>Session:</strong> 2026-06-10 (Session 9 —
+overnight autonomous stabilization) <strong>Last commit:</strong>
+<code>6230865</code> <strong>Branch:</strong> <code>main</code>
+<strong>Working tree:</strong> CLEAN (after the doc commit that carries
+this update)</p>
 <blockquote>
 <p>Send <code>continue</code> to pick up exactly where we left off. This
-file is the single source of truth for session handoff.</p>
+file is the single source of truth for session handoff (§12.10 /
+§11.4.131).</p>
 </blockquote>
+<hr />
+<h2
+id="current-state-session-9-2026-06-10-overnight-autonomous-loop">CURRENT
+STATE — Session 9 (2026-06-10, overnight autonomous loop)</h2>
+<p><strong>The unit suite is now FULLY GREEN and
+DETERMINISTIC.</strong></p>
+<table>
+<colgroup>
+<col style="width: 53%" />
+<col style="width: 46%" />
+</colgroup>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit tests</td>
+<td><strong>4121 passed, 0 failed</strong> —
+<code>pytest tests/unit/ --import-mode=importlib</code> (5m24s)</td>
+</tr>
+<tr>
+<td>Determinism (§11.4.50)</td>
+<td>top-level scope <strong>3150 passed</strong> identical across
+<code>--randomly-seed</code> 7/42/100/31337/12345</td>
+</tr>
+<tr>
+<td>Commits this session</td>
+<td><code>6e15a8d</code> (crash guards + async/loop hangs),
+<code>6230865</code> (test-pollution + network timeouts) — both pushed
+to all upstreams</td>
+</tr>
+<tr>
+<td>Code review</td>
+<td>GO (zero findings/warnings) after §11.4.134 iterate-until-GO</td>
+</tr>
+</tbody>
+</table>
+<h3 id="what-landed-session-9">What landed (Session 9)</h3>
+<ul>
+<li><strong>8 product fixes</strong> (<code>6e15a8d</code>):
+degenerate-input crash guards for
+<code>tokyotoshokan</code>/<code>kickass</code>/<code>yts</code>/<code>piratebay</code>;
+enricher full-suite-hang fix (<code>aiohttp.ClientTimeout</code> ×6);
+<code>kickass</code>/<code>bitsearch</code>/<code>torrentgalaxy</code>
+unbounded-loop caps (<code>MAX_PAGES=50</code>); mutation-scanner
+<code>.venv</code> scope fix; +7 download_proxy tests. Closed
+<strong>BOB-060</strong>.</li>
+<li><strong>Test-suite stabilization</strong> (<code>6230865</code>):
+eliminated all §11.4.50 order-dependent pollution —
+<code>tests/conftest.py</code> <code>_CORRECT_MS_PATH</code> repo-root
+fix (the dominant bug: corrupted <code>merge_service.__path__</code> →
+broke 11 tests incl. all <code>scheduler_api</code>), extended
+<code>_POLLUTING_ROOTS</code>, + per-test <code>socket.socket</code>
+&amp; <code>os.environ</code> snapshot/restore. Network-I/O timeout
+hardening
+(<code>search.py</code>/<code>routes.py</code>/<code>helpers.py</code>/<code>eztv.py</code>).
+Closed <strong>BOB-061</strong>, <strong>BOB-062</strong>.</li>
+</ul>
+<h3 id="open-queue-issues.md">Open queue (Issues.md)</h3>
+<ul>
+<li><strong>BOB-008</strong> — RuTracker CAPTCHA —
+<strong>OPERATOR-BLOCKED</strong>: needs you to complete the CAPTCHA at
+<code>/api/v1/auth/rutracker/captcha</code> + <code>/login</code>, OR
+paste a fresh <code>bb_session</code> cookie via
+<code>/auth/rutracker/cookie-login</code>. Cannot be solved
+autonomously.</li>
+<li>Everything else closed (DB↔︎MD in sync, 62 items,
+<code>bin/workable-items validate</code> OK).</li>
+</ul>
+<h3 id="how-to-run-the-suite-both-work-now">How to run the suite (both
+work now)</h3>
+<ul>
+<li>Monolithic:
+<code>.venv/bin/python -m pytest tests/unit/ -q --import-mode=importlib</code>
+→ 4121 passed.</li>
+<li>Per-scope (faster, parallelizable):
+<code>tests/unit/merge_service/</code> (801) ·
+<code>tests/unit/api_layer/</code> (170) · <code>tests/unit/*.py</code>
+top-level (3150).</li>
+<li>Always pass <code>--import-mode=importlib</code> (the
+<code>merge_service.deduplicator</code> lazy import needs it; a bare
+per-file run errors).</li>
+</ul>
+<h3 id="known-low-priority-follow-up-not-blocking-suite-is-green">Known
+low-priority follow-up (NOT blocking — suite is green)</h3>
+<ul>
+<li>A residual <code>test_credential_env_wiring</code> / env_loader
+<code>sys.modules</code>-stub ordering quirk surfaces only in narrow
+isolated file-combos; it does NOT manifest in the full top-level scope
+(5 seeds green) because the new env/<code>sys.modules</code> isolation
+covers it there. Tighten the env_loader stub teardown if it ever
+resurfaces.</li>
+</ul>
 <hr />
 <h2 id="session-8-summary">Session 8 Summary</h2>
 <table>

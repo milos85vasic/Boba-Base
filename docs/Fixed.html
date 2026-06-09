@@ -882,5 +882,30 @@ Bug <strong>Evidence:</strong> docs/qa/BOB-060/EVIDENCE.md
 <p>tokyotoshokan/kickass/yts/piratebay raised unhandled exceptions on
 empty/None/non-dict-JSON upstream responses; added empty-response guards
 + RED→GREEN regression tests (§11.4.118 audit found piratebay).</p>
+<h2
+id="bob-061-unit-suite-hang-order-dependent-test-pollution-non-deterministic-failures">BOB-061
+— Unit suite hang + order-dependent test-pollution (non-deterministic
+failures)</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong> docs/qa/BOB-061-062/EVIDENCE.md
+<strong>Severity:</strong> High <strong>Created-By:</strong> Claude
+<strong>Assigned-To:</strong> Claude</p>
+<p>Full pytest tests/unit/ stalled on an unbounded enricher network
+lookup; 13-34 order-dependent failures from
+sys.modules/socket/os.environ leakage across files. Fixed: enricher
+ClientTimeout + tests/conftest.py path/POLLUTING_ROOTS/socket/environ
+isolation. Now 4121 passed deterministic.</p>
+<h2
+id="bob-062-unbounded-plugin-pagination-loops-unbounded-network-io-hang-risk">BOB-062
+— Unbounded plugin pagination loops + unbounded network I/O (hang
+risk)</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong> docs/qa/BOB-061-062/EVIDENCE.md
+<strong>Severity:</strong> Medium <strong>Created-By:</strong> Claude
+<strong>Assigned-To:</strong> Claude</p>
+<p>kickass/bitsearch/torrentgalaxy while-True search loops could run
+forever; search.py/routes.py/helpers.py/eztv.py network calls had no
+timeout. Fixed: MAX_PAGES=50 caps + aiohttp.ClientTimeout/urlopen
+timeout=30 across all sites.</p>
 </body>
 </html>
