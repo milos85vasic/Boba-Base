@@ -38,7 +38,7 @@ class kickass(object):
             trs = re.findall(r"<tr class=\"(?:odd|even)\"\s*>.*?</tr>", html, re.DOTALL)
             for tr in trs:
                 url_titles = re.search(
-                    r'<div class="torrentname">.*?<a href="([^"]+)"\s+class="cellMainLink">\s*(.*?)\s*</a>.*?<td[^>]*>\s*([\d\.]+\s*(?:TB|GB|MB|KB))\s*</td>.*?<td class="green center">\s*(\d+)\s*</td>.*?<td class="red lasttd center">\s*(\d+)\s*</td>',
+                    r'<div class="torrentname">.*?<a href="([^"]+)"\s+class="cellMainLink">\s*(.*?)\s*</a>.*?<td[^>]*>\s*([\d,\.]+\s*(?:TB|GB|MB|KB))\s*</td>.*?<td class="green center">\s*(\d+)\s*</td>.*?<td class="red lasttd center">\s*(\d+)\s*</td>',
                     tr,
                     re.DOTALL,
                 )

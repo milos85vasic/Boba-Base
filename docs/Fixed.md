@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 9
-**Last modified:** 2026-06-09T16:00:00Z
+**Revision:** 10
+**Last modified:** 2026-06-09T18:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -430,4 +430,79 @@ URL construction, download_torrent, timestamp, metadata) + 45 new yts tests
 multiple movies, error handling, metadata, magnet links).
 **Evidence:** `tests/unit/test_plugin_torrentgalaxy_deep.py` — 35 passed;
 `tests/unit/test_plugin_yts_deep.py` — 45 passed; ruff clean.
+
+## BOB-035 — nyaa.py missing import re fixed
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Closed:** 2026-06-09 · **Commit:** pending
+
+`download_torrent()` called `re.search()` without `import re`, causing
+`NameError` on any nyaa.si URL. Added `import re` at module level.
+**Evidence:** `tests/unit/test_plugin_nyaa.py::TestDownloadTorrent` — 6 tests
+now pass with correct magnet/URL output (was 3 NameError failures).
+
+## BOB-036 — kickass.py comma-separated size regex fixed
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Closed:** 2026-06-09 · **Commit:** pending
+
+Size regex `[\d\.]+` didn't match comma-separated numbers like `1,234.5 MB`.
+Updated to `[\d,\.]+` so commas are captured and stripped by existing
+`.replace(",", "")` logic.
+**Evidence:** `tests/unit/test_plugin_kickass.py::TestHTMLParserFeed::test_comma_in_size_now_matched_by_regex`
+— passes with correct size `1234.5 MB`.
+
+## BOB-037 — rutor.py deep-coverage tests (83 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+83 tests covering date normalization, pagination math, config, proxy,
+draw (HTML parsing, magnet mode), download_torrent, request (redirect,
+timeout, HTTP 403), search (9 categories, pagination), EngineError.
+**Evidence:** `tests/unit/test_plugin_rutor.py` — 83 passed, ruff clean.
+
+## BOB-038 — tokyotoshokan.py deep-coverage tests (60 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+60 tests covering HtmlParser (magnet vs torrent-only, size regex, state
+reset), search (URL construction, pagination), download_torrent, category
+mapping, edge cases (handle_more_pages, parser callbacks).
+**Evidence:** `tests/unit/test_plugin_tokyotoshokan.py` — 60 passed, ruff clean.
+
+## BOB-039 — snowfl.py deep-coverage tests (30 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+30 tests covering token retrieval, parser feed, generate query, download
+torrent (magnet, JSON payload), search (end-to-end, empty, invalid JSON).
+**Evidence:** `tests/unit/test_plugin_snowfl.py` — 30 passed, ruff clean.
+
+## BOB-040 — torrentdownload.py deep-coverage tests (35 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+35 tests covering HTMLParser, search (URL construction, pagination, max
+pages), download_torrent, plugin metadata.
+**Evidence:** `tests/unit/test_plugin_torrentdownload.py` — 35 passed, ruff clean.
+
+## BOB-041 — linuxtracker.py deep-coverage tests (30 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+30 tests covering LinuxSearchParser, search (URL construction, pagination,
+category mapping), download_torrent, plugin metadata.
+**Evidence:** `tests/unit/test_plugin_linuxtracker.py` — 30 passed, ruff clean.
 

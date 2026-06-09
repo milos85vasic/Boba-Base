@@ -21,6 +21,8 @@ try:
 except ModuleNotFoundError:
     from HTMLParser import HTMLParser
 
+import re
+
 # import qBT modules
 try:
     from novaprinter import prettyPrinter

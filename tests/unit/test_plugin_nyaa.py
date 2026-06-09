@@ -674,23 +674,26 @@ class TestDownloadTorrent:
         assert "https://example.com/torrent/123" in out
         assert inst.url in out
 
-    def test_download_nyaa_view_url_raises_name_error(self, capsys):
+    def test_download_nyaa_view_url_finds_magnet(self, capsys):
         inst, captured, helpers_mod, mod = _load_nyaa()
         helpers_mod.retrieve_url = MagicMock(return_value='<a href="magnet:?xt=urn:btih:abc">magnet</a>')
-        with pytest.raises(NameError, match="re"):
-            inst.download_torrent("https://nyaa.si/view/12345")
+        inst.download_torrent("https://nyaa.si/view/12345")
+        out = capsys.readouterr().out
+        assert "magnet:?xt=urn:btih:abc" in out
 
-    def test_download_nyaa_url_no_magnet_raises_name_error(self, capsys):
+    def test_download_nyaa_url_no_magnet_prints_url(self, capsys):
         inst, captured, helpers_mod, mod = _load_nyaa()
         helpers_mod.retrieve_url = MagicMock(return_value="<html><body>no magnet here</body></html>")
-        with pytest.raises(NameError, match="re"):
-            inst.download_torrent("https://nyaa.si/view/12345")
+        inst.download_torrent("https://nyaa.si/view/12345")
+        out = capsys.readouterr().out
+        assert "https://nyaa.si/view/12345" in out
 
-    def test_download_nyaa_torrent_file_url_raises_name_error(self, capsys):
+    def test_download_nyaa_torrent_file_url_prints_url(self, capsys):
         inst, captured, helpers_mod, mod = _load_nyaa()
         helpers_mod.retrieve_url = MagicMock(return_value="<html></html>")
-        with pytest.raises(NameError, match="re"):
-            inst.download_torrent("https://nyaa.si/download/999.torrent")
+        inst.download_torrent("https://nyaa.si/download/999.torrent")
+        out = capsys.readouterr().out
+        assert "https://nyaa.si/download/999.torrent" in out
 
     def test_download_torrent_retrieve_exception(self, capsys):
         inst, captured, helpers_mod, mod = _load_nyaa()

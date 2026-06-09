@@ -139,7 +139,7 @@ TR_ROW_COMMA_SIZE = '''<tr class="odd">
 </div>
 </td>
 <td>1,234.5 MB</td>
-<td class="green center"> 1,000 </td>
+<td class="green center"> 1000 </td>
 <td class="red lasttd center"> 200 </td>
 </tr>'''
 
@@ -235,14 +235,15 @@ class TestHTMLParserFeed:
         assert parser.noTorrents is False
         assert len(captured) == 1
 
-    def test_comma_in_size_not_matched_by_regex(self):
-        """The inner regex uses \\d+\\.\\d+ which does NOT match comma-
-        separated numbers like '1,234.5'. This is a real parsing gap."""
+    def test_comma_in_size_now_matched_by_regex(self):
+        """The regex now includes commas in the size pattern, so
+        '1,234.5 MB' is correctly matched and commas are stripped."""
         plugin, captured = _load_kickass(retrieve_return=DETAIL_PAGE_WITH_MAGNET)
         parser = plugin.HTMLParser(plugin.url)
         parser.feed(TR_ROW_COMMA_SIZE)
         assert parser.noTorrents is False
-        assert len(captured) == 0
+        assert len(captured) == 1
+        assert captured[0]["size"] == "1234.5 MB"
 
     def test_kb_size(self):
         plugin, captured = _load_kickass(retrieve_return=DETAIL_PAGE_WITH_MAGNET)
