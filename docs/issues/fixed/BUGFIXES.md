@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 2
-**Last modified:** 2026-06-09T12:00:00Z
+**Revision:** 3
+**Last modified:** 2026-06-09T14:00:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -209,3 +209,67 @@ keys to check longest units first (same approach as BOB-013).
 **Regression guard:**
 - `tests/unit/test_plugin_gamestorrents.py::TestParseSize` — 8 tests documenting
   the bug across GB/MB/KB/TB/commas/uppercase.
+
+---
+
+## 2026-06-09 — Session 8 parallel plugin tests + gamestorrents fix
+
+### 9. gamestorrents `_parse_size` B-substring bug (fixed)
+
+**Severity:** MEDIUM (plugin returned 0 for all realistic file sizes).
+
+**Root cause:** Same class of bug as BOB-013 (torrentkitty). The `multipliers`
+dict in `_parse_size` iterated in insertion order: `{"B": 1, "KB": 1024, ...}`.
+Since `"B"` is a substring of `"KB"`, `"MB"`, `"GB"`, and `"TB"`, the check
+`if unit in size_str` matched `"B"` first for all realistic sizes. Then
+`size_str.replace("B", "")` left a trailing unit character (e.g. `"35.2 G"`)
+which `float()` could not parse, returning 0.
+
+**Affected files:**
+- `plugins/gamestorrents.py` (line 74-86)
+
+**Fix:** Reordered dict keys to check longest units first: `{"TB": ..., "GB": ...,
+"MB": ..., "KB": ..., "B": 1}`. Same approach as BOB-013.
+
+**Regression guard:**
+- `tests/unit/test_plugin_gamestorrents.py::TestParseSize` — 8 tests all pass with
+  correct byte values for GB/MB/KB/TB/B/comma/uppercase.
+
+---
+
+### 10. piratebay `import os` placed after use (documented, not fixed)
+
+**Severity:** LOW (only affects non-magnet torrent file downloads, which are rare).
+
+**Root cause:** `piratebay.py:175` has `import os` placed after `os.fdopen` on
+line 172. When downloading a non-magnet torrent file, `os.fdopen` is called
+before `os` is imported, causing `UnboundLocalError`.
+
+**Affected files:**
+- `plugins/piratebay.py` (line 172-175)
+
+**Fix:** NOT FIXED in this session. Documented via test
+`test_torrent_file_download_known_bug_os_import_order`. Fix requires moving
+`import os` to the top of the `download_torrent` method or module level.
+
+**Regression guard:**
+- `tests/unit/test_plugin_piratebay.py::TestDownloadTorrent::test_torrent_file_download_known_bug_os_import_order`
+
+---
+
+### 11. torlock `search()` does not catch exceptions from `retrieve_url()`
+
+**Severity:** LOW (network errors crash the entire search loop instead of failing gracefully).
+
+**Root cause:** `torlock.py` `search()` calls `retrieve_url()` without a
+try/except, so a network error propagates up and crashes the search loop.
+
+**Affected files:**
+- `plugins/torlock.py`
+
+**Fix:** NOT FIXED in this session. Documented via test
+`test_search_exception_propagates`. Fix requires wrapping `retrieve_url()` in
+try/except with graceful error handling.
+
+**Regression guard:**
+- `tests/unit/test_plugin_torlock.py::TestSearch::test_search_exception_propagates`

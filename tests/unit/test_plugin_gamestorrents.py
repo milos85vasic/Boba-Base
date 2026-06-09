@@ -156,11 +156,10 @@ class TestParseResults:
         mod._parse_results(GS_MALFORMED)
         assert len(cap) == 0
 
-    def test_size_parsed_documents_b_substring_bug(self):
-        # BUG: _parse_size("35.2 GB") → 0 due to "B" substring matching
+    def test_size_parsed_correctly(self):
         mod, cap = _load_gamestorrents()
         mod._parse_results(GS_SINGLE)
-        assert cap[0]["size"] == "0"
+        assert cap[0]["size"] == str(int(35.2 * 1024**3))
 
     def test_freeleech_result(self):
         mod, cap = _load_gamestorrents()
@@ -179,25 +178,23 @@ class TestParseSize:
     def test_garbage_returns_zero(self):
         assert self.mod._parse_size("unknown") == 0
 
-    def test_gb_returns_zero_b_substring_bug(self):
-        # BUG: "B" in dict matches before "GB"; replace("B","") leaves "35.2 G"
-        # which float() can't parse → returns 0. Same class as BOB-013.
-        assert self.mod._parse_size("35.2 GB") == 0
+    def test_gigabytes(self):
+        assert self.mod._parse_size("35.2 GB") == int(35.2 * 1024**3)
 
-    def test_mb_returns_zero_b_substring_bug(self):
-        assert self.mod._parse_size("750.5 MB") == 0
+    def test_megabytes(self):
+        assert self.mod._parse_size("750.5 MB") == int(750.5 * 1024**2)
 
-    def test_kb_returns_zero_b_substring_bug(self):
-        assert self.mod._parse_size("512 KB") == 0
+    def test_kilobytes(self):
+        assert self.mod._parse_size("512 KB") == 512 * 1024
 
-    def test_tb_returns_zero_b_substring_bug(self):
-        assert self.mod._parse_size("1.5 TB") == 0
+    def test_terabytes(self):
+        assert self.mod._parse_size("1.5 TB") == int(1.5 * 1024**4)
 
-    def test_comma_returns_zero_b_substring_bug(self):
-        assert self.mod._parse_size("1,024 MB") == 0
+    def test_comma_in_number(self):
+        assert self.mod._parse_size("1,024 MB") == 1024 * 1024**2
 
-    def test_uppercase_returns_zero_b_substring_bug(self):
-        assert self.mod._parse_size("  10.0 Gb  ") == 0
+    def test_uppercase_normalization(self):
+        assert self.mod._parse_size("  10.0 Gb  ") == int(10.0 * 1024**3)
 
 
 class TestSearch:

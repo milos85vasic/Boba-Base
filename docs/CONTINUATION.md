@@ -1,7 +1,7 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-09 (Session 8 — gamestorrents/iptorrents coverage, challenge scripts, constitution docs)
-**Last commit:** `eaa6890` (working tree CLEAN after commit)
+**Session:** 2026-06-09 (Session 8 — parallel plugin tests, gamestorrents fix)
+**Last commit:** `TBD` (working tree has uncommitted changes)
 **Branch:** `main` — pushed to all upstreams
 **Workable-item tracking:** LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**, backed by SQLite DB at `docs/workable_items.db`.
 
@@ -14,26 +14,25 @@
 
 | Area | Work Done |
 |------|-----------|
-| **gamestorrents plugin tests** | 23 tests covering article-card parsing, `_parse_size` (B-substring bug documented), search URL construction, download_torrent magnet/torrent. |
-| **iptorrents plugin tests** | 27 tests covering credential loading (env vars, alt env vars, env file), login (no creds, success, URLError), `_get_link`, search_parse (HTML parsing, pagination, freeleech), download_torrent (gzip, URLError). |
-| **Challenge scripts** | 3 scripts: `search_deep_coverage_challenge.sh`, `private_tracker_html_challenge.sh`, `download_proxy_deep_challenge.sh`. |
-| **env_loader fix** | Fixed flaky test: KEY2 leak across test ordering (BOB-021). |
-| **AsyncMock fix** | Fixed warning in search_deep_coverage tests (BOB-022). |
-| **Constitution docs** | Updated Fixed.md (Rev 7, BOB-021/022/023), Fixed_Summary.md (19 items), BUGFIXES.md (Rev 2, root cause analysis for all 3). |
+| **Parallel plugin tests** | 5 subagents launched in parallel: eztv (54), piratebay (38), solidtorrents (37), limetorrents (52), torlock (55). Total: 236 new tests, all passing. |
+| **gamestorrents B-substring fix** | Fixed `_parse_size` dict ordering (BOB-024). Tests updated to assert correct values. |
+| **Bugs discovered** | piratebay `import os` after use (UnboundLocalError), torlock `search()` no exception handling. Both documented with regression tests. |
+| **Full suite** | 2433 passed, 0 failed, 3 warnings (+237 from previous 2196). |
 
 ### Verification (green tree)
 
 ```
-Unit tests:      2196 passed, 1 failed (pre-existing ordering flake), 3 warnings
-New tests:       +50 (23 gamestorrents + 27 iptorrents)
-Total coverage:  ~69% (gate: 49%)
-Ruff:            All checks passed (54 pre-existing)
+Unit tests:      2433 passed, 0 failed (was 2196)
+New tests:       +237 (54 eztv + 38 piratebay + 37 solidtorrents + 52 limetorrents + 55 torlock)
+Total coverage:  ~72% (gate: 49%)
+Ruff:            All checks passed
 Mypy:            8 pre-existing errors (Levenshtein stub missing)
 ```
 
 ### Commits
 
 ```
+TBD test: parallel plugin tests (eztv/piratebay/solidtorrents/limetorrents/torlock), gamestorrents B-substring fix
 eaa6890 test: gamestorrents/iptorrents deep coverage, challenge scripts, constitution docs
 20da6dd test: search.py ~90%, download_proxy deep coverage, private tracker HTML fixtures, env_loader fix
 173bc94 docs: update CONTINUATION.md for Session 6 (constitution Rev 23)

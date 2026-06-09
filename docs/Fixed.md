@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 7
-**Last modified:** 2026-06-09T12:00:00Z
+**Revision:** 8
+**Last modified:** 2026-06-09T14:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -300,4 +300,72 @@ same B-substring bug as BOB-013 (torrentkitty): dict iteration means `"B"` match
 before `"GB"`/`"MB"`/`"KB"`/`"TB"`, so all realistic sizes parse to 0. Tests
 document actual behavior with `_b_substring_bug` suffix.
 **Evidence:** `tests/unit/test_plugin_gamestorrents.py` — 23 passed, ruff clean.
+
+## BOB-024 — gamestorrents `_parse_size` B-substring bug fixed
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Closed:** 2026-06-09 · **Commit:** pending
+
+`_parse_size` dict iteration order meant `"B"` matched before `"GB"`/`"MB"`/etc.,
+causing all realistic sizes to parse to 0. Fixed by reordering dict keys longest-first
+(TB, GB, MB, KB, B) — same approach as BOB-013 (torrentkitty).
+**Evidence:** `tests/unit/test_plugin_gamestorrents.py::TestParseSize` — 8 tests all
+pass with correct byte values for GB/MB/KB/TB/B/comma/uppercase.
+
+## BOB-025 — eztv.py deep-coverage tests (54 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+54 tests covering MyHtmlParser (size units, date patterns, defaults, special chars),
+do_query (URL construction, User-Agent, URLError, fallback), search (categories,
+empty/multiple results), edge cases (state reset, href concatenation).
+**Evidence:** `tests/unit/test_plugin_eztv.py` — 54 passed, ruff clean.
+
+## BOB-026 — piratebay.py deep-coverage tests + import-order bug documented
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+38 tests covering JSON API parsing, magnet link structure, tracker encoding,
+gzip responses, charset detection, category mapping. Discovered `import os`
+placed after `os.fdopen` causes `UnboundLocalError` on torrent file downloads.
+**Evidence:** `tests/unit/test_plugin_piratebay.py` — 38 passed, ruff clean.
+
+## BOB-027 — solidtorrents.py deep-coverage tests (37 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+37 tests covering HTML table parsing, date patterns (relative + absolute),
+URL construction, pagination, magnet fetch, retry logic, category mapping.
+**Evidence:** `tests/unit/test_plugin_solidtorrents.py` — 37 passed, ruff clean.
+
+## BOB-028 — limetorrents.py deep-coverage tests (52 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+52 tests covering HTML parser (table row filtering, link extraction, data
+stripping), date parsing (7 relative patterns), search (URL construction,
+pagination, magnet fetch per result), download_torrent (magnet passthrough,
+HTTP→magnet fetch), fetch_url_with_retry (retry on URLError, max-retry raise).
+**Evidence:** `tests/unit/test_plugin_limetorrents.py` — 52 passed, ruff clean.
+
+## BOB-029 — torlock.py deep-coverage tests (55 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+55 tests covering HtmlParser (single/multi results, empty/malformed HTML,
+nofollow filtering, date parsing), search (8 categories, pagination, query
+encoding), download_torrent (print output), fetch_magnet_from_page (double/single
+quote href, no-magnet page), fetch_url_with_retry (retry on URLError).
+**Evidence:** `tests/unit/test_plugin_torlock.py` — 55 passed, ruff clean.
 

@@ -6,11 +6,11 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 8 |
-| Feature | Implemented (→ Fixed.md) | 3 |
+| Bug | Fixed (→ Fixed.md) | 10 |
+| Feature | Implemented (→ Fixed.md) | 9 |
 | Task | Completed (→ Fixed.md) | 6 |
 | Task | Fixed (→ Fixed.md) | 2 |
-| **TOTAL** | | **19** |
+| **TOTAL** | | **27** |
 
 ## Items
 
@@ -34,4 +34,10 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | BOB-020 | Task | Completed (→ Fixed.md) | — | CodeGraph initialized + wired (§11.4.78/79/80) |
 | BOB-021 | Bug | Fixed (→ Fixed.md) | — | env_loader flaky test: KEY2 leak across test ordering |
 | BOB-022 | Bug | Fixed (→ Fixed.md) | — | AsyncMock warning in search deep-coverage tests |
-| BOB-023 | Feature | Implemented (→ Fixed.md) | — | gamestorrents plugin deep-coverage tests + B-substring bug documented |
+| BOB-023 | Feature | Implemented (→ Fixed.md) | — | gamestorrents plugin deep-coverage tests |
+| BOB-024 | Bug | Fixed (→ Fixed.md) | — | gamestorrents `_parse_size` B-substring bug fixed |
+| BOB-025 | Feature | Implemented (→ Fixed.md) | — | eztv.py deep-coverage tests (54 tests) |
+| BOB-026 | Feature | Implemented (→ Fixed.md) | — | piratebay.py deep-coverage tests + import-order bug documented |
+| BOB-027 | Feature | Implemented (→ Fixed.md) | — | solidtorrents.py deep-coverage tests (37 tests) |
+| BOB-028 | Feature | Implemented (→ Fixed.md) | — | limetorrents.py deep-coverage tests (52 tests) |
+| BOB-029 | Feature | Implemented (→ Fixed.md) | — | torlock.py deep-coverage tests (55 tests) |
