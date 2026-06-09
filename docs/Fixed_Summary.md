@@ -6,11 +6,11 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 10 |
-| Feature | Implemented (→ Fixed.md) | 9 |
+| Bug | Fixed (→ Fixed.md) | 11 |
+| Feature | Implemented (→ Fixed.md) | 14 |
 | Task | Completed (→ Fixed.md) | 6 |
 | Task | Fixed (→ Fixed.md) | 2 |
-| **TOTAL** | | **27** |
+| **TOTAL** | | **33** |
 
 ## Items
 
@@ -41,3 +41,8 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | BOB-027 | Feature | Implemented (→ Fixed.md) | — | solidtorrents.py deep-coverage tests (37 tests) |
 | BOB-028 | Feature | Implemented (→ Fixed.md) | — | limetorrents.py deep-coverage tests (52 tests) |
 | BOB-029 | Feature | Implemented (→ Fixed.md) | — | torlock.py deep-coverage tests (55 tests) |
+| BOB-030 | Feature | Implemented (→ Fixed.md) | — | nyaa.py deep-coverage tests + missing import re bug documented |
+| BOB-031 | Feature | Implemented (→ Fixed.md) | — | kickass.py deep-coverage tests + comma-size gap documented |
+| BOB-032 | Feature | Implemented (→ Fixed.md) | — | anilibra.py deep-coverage tests (49 tests) |
+| BOB-033 | Bug | Fixed (→ Fixed.md) | — | kickass.py crash guards added (BOB-015 defense-in-depth) |
+| BOB-034 | Feature | Implemented (→ Fixed.md) | — | torrentgalaxy.py + yts.py deeper coverage (80 new tests) |

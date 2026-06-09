@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 8
-**Last modified:** 2026-06-09T14:00:00Z
+**Revision:** 9
+**Last modified:** 2026-06-09T16:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -368,4 +368,66 @@ nofollow filtering, date parsing), search (8 categories, pagination, query
 encoding), download_torrent (print output), fetch_magnet_from_page (double/single
 quote href, no-magnet page), fetch_url_with_retry (retry on URLError).
 **Evidence:** `tests/unit/test_plugin_torlock.py` — 55 passed, ruff clean.
+
+## BOB-030 — nyaa.py deep-coverage tests + missing import re bug documented
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+55 tests covering HTML parsing (RSS/HTML modes, magnet vs torrent, pub_date),
+search (all 8 categories, pagination, URL construction), download_torrent (magnet
+direct, external URL, exception propagation). Discovered `download_torrent` uses
+`re.search()` without importing `re` — any nyaa.si URL raises `NameError`.
+**Evidence:** `tests/unit/test_plugin_nyaa.py` — 55 passed, ruff clean.
+
+## BOB-031 — kickass.py deep-coverage tests + comma-size gap documented
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+55 tests covering HTMLParser (single/multi/triple results, KB/GB/TB sizes,
+strong tags, even/odd rows), retrieve_download_link (magnet positions, exception),
+search (7 categories, pagination, detail page dispatch), download_torrent (magnet
+passthrough, page fetch), BOB-015 sleep fragility. Documented comma-separated
+size parsing gap (`1,234.5 MB` not matched by regex).
+**Evidence:** `tests/unit/test_plugin_kickass.py` — 55 passed, ruff clean.
+
+## BOB-032 — anilibra.py deep-coverage tests (49 tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+49 tests covering JSON API parsing (empty list, single/multi releases, malformed
+JSON), process_release (ID validation, name fallbacks, torrent fetching, magnet
+filtering), search (URL encoding, category mapping), download_torrent (magnet
+print, empty string), edge cases (missing keys, empty torrents, mixed results).
+**Evidence:** `tests/unit/test_plugin_anilibra.py` — 49 passed, ruff clean.
+
+## BOB-033 — kickass.py crash guards added (BOB-015 defense-in-depth)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Closed:** 2026-06-09 · **Commit:** pending
+
+Added try/except + empty-response guards to 3 crash-prone patterns in kickass.py:
+`__retrieve_download_link()` (re.search on None), `download_torrent()` (re.search
+on None), `search()` (re.sub on None). All now handle empty/None responses
+gracefully instead of crashing.
+**Evidence:** `tests/unit/test_plugin_kickass_guards.py` — 13 passed, ruff clean.
+
+## BOB-034 — torrentgalaxy.py + yts.py deeper coverage (80 new tests)
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+35 new torrentgalaxy tests (category mapping, pagination, regex edge cases,
+URL construction, download_torrent, timestamp, metadata) + 45 new yts tests
+(score.paramBuilder, magnetBuilder, urlBuilder, search pagination math,
+multiple movies, error handling, metadata, magnet links).
+**Evidence:** `tests/unit/test_plugin_torrentgalaxy_deep.py` — 35 passed;
+`tests/unit/test_plugin_yts_deep.py` — 45 passed; ruff clean.
 

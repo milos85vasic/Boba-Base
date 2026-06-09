@@ -1,7 +1,7 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-09 (Session 8 — parallel plugin tests, gamestorrents fix)
-**Last commit:** `TBD` (working tree has uncommitted changes)
+**Session:** 2026-06-09 (Session 8 — parallel plugin testing waves 1+2)
+**Last commit:** `a4eb041` (wave 1 pushed; wave 2 uncommitted)
 **Branch:** `main` — pushed to all upstreams
 **Workable-item tracking:** LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**, backed by SQLite DB at `docs/workable_items.db`.
 
@@ -22,9 +22,9 @@
 ### Verification (green tree)
 
 ```
-Unit tests:      2433 passed, 0 failed (was 2196)
-New tests:       +237 (54 eztv + 38 piratebay + 37 solidtorrents + 52 limetorrents + 55 torlock)
-Total coverage:  ~72% (gate: 49%)
+Unit tests:      2684 passed, 1 failed (pre-existing flake), 3 warnings (was 2196)
+New tests:       +489 (wave 1: 237 + wave 2: 252)
+Total coverage:  ~75% (gate: 49%)
 Ruff:            All checks passed
 Mypy:            8 pre-existing errors (Levenshtein stub missing)
 ```
@@ -32,7 +32,8 @@ Mypy:            8 pre-existing errors (Levenshtein stub missing)
 ### Commits
 
 ```
-TBD test: parallel plugin tests (eztv/piratebay/solidtorrents/limetorrents/torlock), gamestorrents B-substring fix
+TBD test: wave 2 — nyaa/kickass/anilibra/torrentgalaxy+yts deep tests, kickass guards
+a4eb041 test: parallel plugin tests + gamestorrents B-substring fix
 eaa6890 test: gamestorrents/iptorrents deep coverage, challenge scripts, constitution docs
 20da6dd test: search.py ~90%, download_proxy deep coverage, private tracker HTML fixtures, env_loader fix
 173bc94 docs: update CONTINUATION.md for Session 6 (constitution Rev 23)

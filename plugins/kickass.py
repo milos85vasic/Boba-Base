@@ -59,7 +59,12 @@ class kickass(object):
             return trs
 
         def __retrieve_download_link(self, detail_link):
-            torrent_page = retrieve_url(detail_link)
+            try:
+                torrent_page = retrieve_url(detail_link)
+            except Exception:
+                return "NotFound"
+            if not torrent_page:
+                return "NotFound"
             magnet_match = re.search(r"\"(magnet:.*?)\"", torrent_page)
             if magnet_match and magnet_match.groups():
                 return str(magnet_match.groups()[0])
@@ -72,7 +77,14 @@ class kickass(object):
             return
         from helpers import retrieve_url
 
-        data = retrieve_url(url)
+        try:
+            data = retrieve_url(url)
+        except Exception:
+            print(url + " " + self.url)
+            return
+        if not data:
+            print(url + " " + self.url)
+            return
         magnet_match = re.search(r'(magnet:\?[^"<\s]+)', data)
         if magnet_match:
             print(magnet_match.group(1) + " " + self.url)
@@ -85,8 +97,12 @@ class kickass(object):
         counter: int = 0
         while True:
             url = "{0}search/{1}/{2}{3}/".format(self.url, what, category, counter)
-            # Some replacements to format the html source
-            html = retrieve_url(url)
+            try:
+                html = retrieve_url(url)
+            except Exception:
+                break
+            if not html:
+                break
             html = re.sub("<strong[^>]*>|</strong>", "", html)
             parser.feed(html)
             if parser.noTorrents:

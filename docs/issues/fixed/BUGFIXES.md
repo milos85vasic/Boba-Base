@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 3
-**Last modified:** 2026-06-09T14:00:00Z
+**Revision:** 4
+**Last modified:** 2026-06-09T16:00:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -273,3 +273,68 @@ try/except with graceful error handling.
 
 **Regression guard:**
 - `tests/unit/test_plugin_torlock.py::TestSearch::test_search_exception_propagates`
+
+---
+
+## 2026-06-09 — Session 8 wave 2: nyaa/kickass/anilibra/torrentgalaxy/yts
+
+### 12. nyaa `download_torrent` missing `import re` (documented, not fixed)
+
+**Severity:** MEDIUM (any nyaa.si URL passed to `download_torrent` raises `NameError`).
+
+**Root cause:** `plugins/nyaa.py:170` calls `re.search()` but `import re` is absent
+from the module. The `search()` method works because `re` is imported transitively
+via other modules, but `download_torrent` fails with `NameError: name 're' is not
+defined`.
+
+**Affected files:**
+- `plugins/nyaa.py` (line 170)
+
+**Fix:** NOT FIXED in this session. Documented via tests that assert the
+`NameError`. Fix requires adding `import re` at the top of the file.
+
+**Regression guard:**
+- `tests/unit/test_plugin_nyaa.py::TestDownloadTorrent` — 6 tests including the
+  NameError documentation.
+
+---
+
+### 13. kickass comma-separated size not matched by regex (documented, not fixed)
+
+**Severity:** LOW (sizes like `1,234.5 MB` silently parse to 0).
+
+**Root cause:** The HTMLParser regex `\d+\.\d+` doesn't match comma-separated
+numbers like `1,234.5 MB`. The comma is not handled in the regex or the
+replacement logic.
+
+**Affected files:**
+- `plugins/kickass.py`
+
+**Fix:** NOT FIXED in this session. Documented via test
+`test_comma_in_size_not_matched_by_regex`. Fix requires updating the regex to
+handle commas.
+
+**Regression guard:**
+- `tests/unit/test_plugin_kickass.py::TestHTMLParserFeed::test_comma_in_size_not_matched_by_regex`
+
+---
+
+### 14. kickass crash-prone patterns (fixed)
+
+**Severity:** MEDIUM (empty responses from `retrieve_url` crash the plugin).
+
+**Root cause:** Three methods in `kickass.py` called `retrieve_url()` without
+try/except or empty-response guards: `__retrieve_download_link()`,
+`download_torrent()`, and `search()`. When `retrieve_url` returned `None` or
+empty string, subsequent `re.search`/`re.sub` calls crashed with `TypeError`.
+
+**Affected files:**
+- `plugins/kickass.py` (lines 61, 74, 94)
+
+**Fix:** Added try/except + empty-response guards to all three methods. Each now
+handles empty/None responses gracefully (returns "NotFound", prints fallback URL,
+or breaks the loop respectively).
+
+**Regression guard:**
+- `tests/unit/test_plugin_kickass_guards.py` — 13 tests proving empty response,
+  None response, ConnectionError, TimeoutError, and malformed HTML don't crash.
