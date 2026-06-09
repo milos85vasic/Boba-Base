@@ -6,9 +6,90 @@ import os
 import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "download-proxy", "src"))
+
+
+def _make_failing_auth_session() -> MagicMock:
+    """Build an aiohttp.ClientSession mock whose login POST reports auth failure.
+
+    Returns a session whose ``.post`` yields a ``403``/``Fail`` response so the
+    qBittorrent endpoints short-circuit on auth and never touch the network.
+    """
+    mock_resp = AsyncMock()
+    mock_resp.text = AsyncMock(return_value="Fail")
+    mock_resp.status = 403
+    mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+    mock_resp.__aexit__ = AsyncMock(return_value=False)
+
+    mock_session = AsyncMock()
+    mock_session.post = MagicMock(return_value=mock_resp)
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=False)
+    return mock_session
+
+
+def _assert_session_timeout(spy: MagicMock, expected_total: float) -> None:
+    """Assert ``aiohttp.ClientSession`` was constructed with the given timeout.
+
+    Fails if the session was created without a ``timeout`` kwarg or with a
+    different total — this is the regression guard for unbounded network I/O
+    against the qBittorrent WebUI (§11.4.98 / §11.4.69).
+    """
+    assert spy.call_count >= 1, "aiohttp.ClientSession was never constructed"
+    timeout = spy.call_args.kwargs.get("timeout")
+    assert timeout is not None, "ClientSession constructed WITHOUT a timeout"
+    assert isinstance(timeout, aiohttp.ClientTimeout), f"timeout is not a ClientTimeout: {timeout!r}"
+    assert timeout.total == expected_total, f"expected total={expected_total}, got {timeout.total}"
+
+
+class TestQbitSessionsHaveTimeout:
+    """Regression guard: every qBittorrent ClientSession carries a ClientTimeout."""
+
+    @pytest.mark.asyncio
+    async def test_active_downloads_session_has_timeout(self):
+        from api.routes import get_active_downloads
+
+        spy = MagicMock(return_value=_make_failing_auth_session())
+        with (
+            patch("api.routes._get_qbit_username", return_value="admin"),
+            patch("api.routes._get_qbit_password", return_value="admin"),
+            patch("aiohttp.ClientSession", spy),
+        ):
+            await get_active_downloads()
+        _assert_session_timeout(spy, 10)
+
+    @pytest.mark.asyncio
+    async def test_auth_qbittorrent_session_has_timeout(self):
+        from api.routes import auth_qbittorrent
+
+        spy = MagicMock(return_value=_make_failing_auth_session())
+        mock_req = MagicMock()
+        mock_req.json = AsyncMock(return_value={"username": "admin", "password": "admin"})
+        with patch("aiohttp.ClientSession", spy):
+            result = await auth_qbittorrent(mock_req)
+        assert result["status"] == "failed"
+        _assert_session_timeout(spy, 10)
+
+    @pytest.mark.asyncio
+    async def test_initiate_download_session_has_timeout(self):
+        from api.routes import DownloadRequest, initiate_download
+
+        spy = MagicMock(return_value=_make_failing_auth_session())
+        mock_req = MagicMock()
+        req = DownloadRequest(result_id="test", download_urls=["https://example.com/file.torrent"])
+        with (
+            patch("api.routes._get_orchestrator", return_value=MagicMock()),
+            patch("api.routes._get_qbit_username", return_value="admin"),
+            patch("api.routes._get_qbit_password", return_value="admin"),
+            patch("api.hooks.dispatch_event", new_callable=AsyncMock),
+            patch("aiohttp.ClientSession", spy),
+        ):
+            result = await initiate_download(req, mock_req)
+        assert result["status"] == "auth_failed"
+        _assert_session_timeout(spy, 30)
 
 
 class TestDetectQualityFallback:

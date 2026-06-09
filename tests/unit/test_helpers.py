@@ -4,6 +4,7 @@ Tests for plugins/helpers.py — pure functions, no network.
 
 import os
 import sys
+from typing import Any
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 _PLUGINS_PATH = os.path.join(_REPO_ROOT, "plugins")
@@ -153,6 +154,38 @@ class TestDownloadFile:
         monkeypatch.setattr(urllib.request, "urlopen", _capture)
         helpers.download_file("http://x.test/f", referer="http://ref.test")
         assert captured["referer"] == "http://ref.test"
+
+
+# --- regression guards: urlopen MUST be called with a bounded timeout --------
+# §11.4.98 / §11.4.69: unbounded urlopen blocks the plugin worker thread on a
+# slow host. These guards fail against pre-fix code (urlopen without timeout).
+
+
+class TestUrlopenTimeoutGuard:
+    def test_retrieve_url_passes_timeout(self, monkeypatch):
+        captured: dict[str, Any] = {}
+
+        def _spy(*args: Any, **kwargs: Any) -> _FakeResp:
+            captured["kwargs"] = kwargs
+            return _FakeResp(b"<html>ok</html>")
+
+        monkeypatch.setattr(urllib.request, "urlopen", _spy)
+        helpers.retrieve_url("http://x.test")
+        assert captured["kwargs"].get("timeout") == 30
+
+    def test_download_file_passes_timeout(self, monkeypatch):
+        captured: dict[str, Any] = {}
+
+        def _spy(*args: Any, **kwargs: Any) -> _FakeResp:
+            captured["kwargs"] = kwargs
+            return _FakeResp(b"TORRENTBYTES")
+
+        monkeypatch.setattr(urllib.request, "urlopen", _spy)
+        path = helpers.download_file("http://x.test/f.torrent").split(" ", 1)[0]
+        try:
+            assert captured["kwargs"].get("timeout") == 30
+        finally:
+            os.remove(path)
 
 
 class TestFetchMagnetFromPage:

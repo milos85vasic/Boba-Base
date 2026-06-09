@@ -21,7 +21,23 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 from typing import Any
 
-_POLLUTING_ROOTS = ("api", "merge_service", "config")
+# Module roots that unit-test files install/replace as throw-away stubs via raw
+# sys.modules assignment (no monkeypatch teardown). They MUST be snapshotted and
+# restored around every unit test or they leak across files under randomized
+# ordering (§11.4.50 pollution: env_loader/tokyotoshokan/kinozal/rutor/iptorrents).
+_POLLUTING_ROOTS = (
+    "api",
+    "merge_service",
+    "config",
+    "helpers",
+    "env_loader",
+    "novaprinter",
+    "socks",
+    "tokyotoshokan",
+    "kinozal",
+    "rutor",
+    "iptorrents",
+)
 
 _CORRECT_MS_PATH: str | None = None
 
@@ -39,8 +55,13 @@ def _fixup_merge_service_path() -> None:
     if ms is None:
         return
     if _CORRECT_MS_PATH is None:
-        _here = Path(__file__).resolve().parent
-        _CORRECT_MS_PATH = str(_here / "download-proxy" / "src" / "merge_service")
+        # conftest.py lives at tests/, but download-proxy/ is at the REPO ROOT
+        # (tests/../download-proxy). Using .parent (=tests/) produced a
+        # non-existent tests/download-proxy/... path that corrupted
+        # merge_service.__path__ and broke submodule imports under cross-file
+        # ordering (§11.4.50 pollution root cause). Use the repo root.
+        _repo_root = Path(__file__).resolve().parent.parent
+        _CORRECT_MS_PATH = str(_repo_root / "download-proxy" / "src" / "merge_service")
     if hasattr(ms, "__path__"):
         if _CORRECT_MS_PATH not in ms.__path__:
             ms.__path__ = [_CORRECT_MS_PATH]  # type: ignore[attr-defined]
@@ -156,11 +177,22 @@ def _isolate_download_proxy_modules(request):
     if "/tests/unit/" not in test_path.replace("\\", "/"):
         yield
         return
+    import socket
+
     saved = {
         k: v
         for k, v in sys.modules.items()
         if k in _POLLUTING_ROOTS or any(k.startswith(root + ".") for root in _POLLUTING_ROOTS)
     }
+    # Some unit tests call enable_socks_proxy(True) which sets socket.socket to a
+    # SOCKS wrapper (a MagicMock in stubbed plugin tests) and never restores it,
+    # poisoning later tests that assert on the real socket (§11.4.50 root cause).
+    _saved_socket = socket.socket
+    # os.environ leaks across tests too: a credential test that sets e.g.
+    # IPTORRENTS_USERNAME without restoring it breaks a later test that asserts
+    # the alt-env-var fallback path (which only triggers when the primary vars
+    # are absent). Snapshot + restore the whole environment per unit test.
+    _saved_environ = dict(os.environ)
     _fixup_merge_service_path()
     _purge_stub_api_module()
     try:
@@ -170,6 +202,9 @@ def _isolate_download_proxy_modules(request):
             if k in _POLLUTING_ROOTS or any(k.startswith(root + ".") for root in _POLLUTING_ROOTS):
                 del sys.modules[k]
         sys.modules.update(saved)
+        socket.socket = _saved_socket
+        os.environ.clear()
+        os.environ.update(_saved_environ)
         _fixup_merge_service_path()
 
 

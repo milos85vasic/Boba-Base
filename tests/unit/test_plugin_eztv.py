@@ -422,6 +422,10 @@ class TestDoQuery:
                 result = plugin.do_query("test query")
                 assert result == "<html>fallback</html>"
                 mock_urlopen.assert_called_once()
+                # §11.4.98/§11.4.69 regression guard: the fallback urlopen MUST
+                # carry a bounded timeout so a wedged tracker can't hang the
+                # plugin worker thread. Fails if `timeout=30` is dropped.
+                assert mock_urlopen.call_args.kwargs.get("timeout") == 30
 
     def test_do_query_typeerror_urlopen_fallback_user_agent(self):
         plugin, _ = self._make_plugin()

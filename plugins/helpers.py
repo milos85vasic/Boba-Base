@@ -103,7 +103,7 @@ def retrieve_url(
 
     request = urllib.request.Request(url, request_data, {**_headers, **custom_headers})
     try:
-        response = urllib.request.urlopen(request, context=ssl_context)
+        response = urllib.request.urlopen(request, context=ssl_context, timeout=30)
     except urllib.error.URLError as errno:
         print(f"Connection error: {errno.reason}", file=sys.stderr)
         return ""
@@ -143,7 +143,7 @@ def download_file(
     request = urllib.request.Request(url, headers=_headers)
     if referer is not None:
         request.add_header("referer", referer)
-    response = urllib.request.urlopen(request, context=ssl_context)
+    response = urllib.request.urlopen(request, context=ssl_context, timeout=30)
     data = response.read()
 
     # Check if it is gzipped

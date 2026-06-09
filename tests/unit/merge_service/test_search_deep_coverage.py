@@ -802,6 +802,43 @@ class TestFetchTorrentDeep:
             result = await orch.fetch_torrent("rutracker", "http://example.com/file.torrent")
             assert result is None
 
+    @pytest.mark.asyncio
+    async def test_fetch_torrent_session_has_bounded_timeout(self, search_mod):
+        """Regression guard (§11.4.135 / §11.4.69): fetch_torrent's ClientSession
+        MUST be constructed with a non-None ClientTimeout (total≈30) so the
+        download cannot hang the proxy event loop indefinitely. A regression
+        that drops the ``timeout=`` argument (the latent enricher-hang twin)
+        fails this test.
+        """
+        import aiohttp
+
+        orch = search_mod.SearchOrchestrator()
+        orch._tracker_sessions["rutracker"] = {
+            "cookies": {"sid": "abc"},
+            "base_url": "https://rutracker.org",
+        }
+        mock_resp = AsyncMock()
+        mock_resp.status = 200
+        mock_resp.headers = {"Content-Type": "application/x-bittorrent"}
+        mock_resp.read = AsyncMock(return_value=b"d8:announce4:test")
+        mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+        mock_resp.__aexit__ = AsyncMock(return_value=False)
+        mock_session = AsyncMock()
+        mock_session.get = MagicMock(return_value=mock_resp)
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=False)
+
+        spy = MagicMock(return_value=mock_session)
+        with patch("aiohttp.ClientSession", spy):
+            result = await orch.fetch_torrent("rutracker", "http://example.com/file.torrent")
+
+        assert result is not None
+        spy.assert_called_once()
+        passed_timeout = spy.call_args.kwargs.get("timeout")
+        assert passed_timeout is not None, "fetch_torrent ClientSession created with no timeout"
+        assert isinstance(passed_timeout, aiohttp.ClientTimeout)
+        assert passed_timeout.total == pytest.approx(30)
+
 
 # --------------------------------------------------------------------------
 # _fetch_rutracker_redirect — deep paths

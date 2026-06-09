@@ -590,7 +590,7 @@ async def get_active_downloads():  # type: ignore[no-untyped-def]
     qbit_pass = _get_qbit_password()  # type: ignore[no-untyped-call]
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
             async with session.post(
                 f"{qbit_url}/api/v2/auth/login",
                 data={"username": qbit_user, "password": qbit_pass},
@@ -643,7 +643,7 @@ async def auth_qbittorrent(request: Request):  # type: ignore[no-untyped-def]
 
     try:
         async with (
-            aiohttp.ClientSession() as session,
+            aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session,
             session.post(
                 f"{qbit_url}/api/v2/auth/login",
                 data={"username": req.username, "password": req.password},
@@ -774,7 +774,7 @@ async def initiate_download(request: DownloadRequest, req: Request):  # type: ig
     results = []
 
     try:
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
             async with session.post(
                 f"{qbit_url}/api/v2/auth/login",
                 data={"username": qbit_user, "password": qbit_pass},

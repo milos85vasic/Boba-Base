@@ -1,5 +1,6 @@
 import os
 import sys
+from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "download-proxy", "src"))
 
@@ -12,6 +13,22 @@ from fastapi.testclient import TestClient
 from api import app
 
 client = TestClient(app)
+
+
+def _aiohttp_response(text="", status=200):
+    """Fake aiohttp response usable as an async context manager.
+
+    Mirrors the established session-mock helper in
+    tests/unit/api_layer/test_routes_coverage.py so the qBittorrent auth
+    endpoint can be exercised without any real network connection.
+    """
+    resp = AsyncMock()
+    resp.text = AsyncMock(return_value=text)
+    resp.status = status
+    resp.cookies = {}
+    resp.__aenter__ = AsyncMock(return_value=resp)
+    resp.__aexit__ = AsyncMock(return_value=False)
+    return resp
 
 
 class TestDashboardEndpoint:
@@ -99,10 +116,24 @@ class TestStatsEndpoint:
 
 class TestQBitAuthEndpoint:
     def test_qbittorrent_auth_endpoint_exists(self):
-        response = client.post("/api/v1/auth/qbittorrent", json={"username": "admin", "password": "admin"})
+        # Mock aiohttp.ClientSession so the endpoint makes NO real network
+        # connection to qBittorrent (localhost:7185). The handler does a
+        # login POST followed by a version GET; the fake session returns a
+        # successful login + version so we assert on user-observable output.
+        login = _aiohttp_response(text="Ok.", status=200)
+        version = _aiohttp_response(text="4.6.0", status=200)
+        session = AsyncMock()
+        session.post = MagicMock(return_value=login)
+        session.get = MagicMock(return_value=version)
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=False)
+        with patch("aiohttp.ClientSession", return_value=session):
+            response = client.post("/api/v1/auth/qbittorrent", json={"username": "admin", "password": "admin"})
         assert response.status_code == 200
         data = response.json()
         assert "status" in data
+        assert data["status"] == "authenticated"
+        assert data["version"] == "4.6.0"
 
     def test_qbittorrent_login_modal_in_angular(self):
         response = client.get("/dashboard")

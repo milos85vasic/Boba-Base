@@ -1684,7 +1684,8 @@ class SearchOrchestrator:
         base_url = session_data["base_url"]
 
         try:
-            async with aiohttp.ClientSession() as session:
+            timeout = aiohttp.ClientTimeout(total=30)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
                 headers = {"Referer": base_url}
                 async with session.get(url, cookies=cookies, headers=headers, allow_redirects=True) as resp:
                     if resp.status != 200:
