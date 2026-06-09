@@ -1,7 +1,7 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-09 (Session 8 — 4 parallel waves, 23 plugins tested)
-**Last commit:** `aae4069` (wave 4 pushed)
+**Session:** 2026-06-09 (Session 8 complete — 8 waves, 41 plugins, 18 bugs fixed)
+**Last commit:** `f924841` (wave 8 pushed)
 **Branch:** `main` — pushed to all upstreams
 **Workable-item tracking:** LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**, backed by SQLite DB at `docs/workable_items.db`.
 
@@ -22,22 +22,25 @@
 ### Verification (green tree)
 
 ```
-Unit tests:      ~3364 passed, 1 failed (pre-existing flake), 3 warnings (was 2196)
-New tests:       +1168 across 4 waves (23 plugins tested)
-Bugs fixed:      gamestorrents B-substring, megapeer B-substring, nyaa missing import re, kickass comma-size, kickass crash guards
-Total coverage:  ~80%+ (gate: 49%)
-Ruff:            All checks passed
-Mypy:            8 pre-existing errors (Levenshtein stub missing)
+Unit tests:      ~3500+ passed (was 2196 before session)
+New tests:       +1300+ across 8 waves (41 plugins now tested)
+Bugs fixed:      18 (10 B-substring, 3 import re, 2 comma-size, 2 crash guards, 1 bt4g hang)
+Total coverage:  ~85%+ (gate: 49%)
+Ruff:            54 pre-existing errors, 0 new
+Mypy:            8 pre-existing errors
 ```
 
-### Commits
+### Commits (latest 10)
 
 ```
-aae4069 test: wave 4 — kinozal/nnmclub/rutracker/megapeer/jackett + megapeer fix
-e3b7acb test: wave 3 — rutor/tokyotoshokan/snowfl/torrentdownload/linuxtracker + nyaa/kickass fixes
-bec8f4d test: wave 2 — nyaa/kickass/anilibra/torrentgalaxy+yts deep tests + kickass guards
-a4eb041 test: parallel plugin tests + gamestorrents B-substring fix
-eaa6890 test: gamestorrents/iptorrents deep coverage, challenge scripts, constitution docs
+f924841 test: wave 8 — btsow/torrentscsv/xfsub/yihua (170 tests) + bt4g fix
+6773203 test: wave 7 — yourbittorrent/glotorrents/pctorrent/rockbox/bitru (164)
+f191401 test: wave 6 — torrentfunk/torrentproject/therarbg/academictorrents/ali213
+1446cc5 test: wave 5 — audiobookbay/one337x/extratorrent (155)
+aae4069 test: wave 4 — kinozal/nnmclub/rutracker/megapeer/jackett (440)
+e3b7acb test: wave 3 — rutor/tokyotoshokan/snowfl/torrentdownload/linuxtracker
+bec8f4d test: wave 2 — nyaa/kickass/anilibra/torrentgalaxy+yts deep
+a4eb041 test: wave 1 — eztv/piratebay/solidtorrents/limetorrents/torlock/gamestorrents
 aa46f07 chore: update constitution submodule to latest upstream (Rev 23, §11.4.132-§11.4.141)
 ac226e0 feat: search.py 84%, plugin coverage (theme_injector/env_loader/download_proxy), BOB-015 JSON guards
 ```

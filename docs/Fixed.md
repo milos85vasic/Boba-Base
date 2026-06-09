@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 10
-**Last modified:** 2026-06-09T18:00:00Z
+**Revision:** 12
+**Last modified:** 2026-06-09T20:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -505,4 +505,149 @@ pages), download_torrent, plugin metadata.
 30 tests covering LinuxSearchParser, search (URL construction, pagination,
 category mapping), download_torrent, plugin metadata.
 **Evidence:** `tests/unit/test_plugin_linuxtracker.py` — 30 passed, ruff clean.
+
+## BOB-042 — audiobookbay.py deep-coverage tests + missing import re fixed
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+55 tests. Fixed `download_torrent` NameError by adding `import re`.
+**Evidence:** `tests/unit/test_plugin_audiobookbay.py` — 55 passed.
+
+## BOB-043 — one337x.py deep-coverage tests + B-substring fixed
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+53 tests. Fixed `_parse_size` B-substring bug and added comma stripping.
+**Evidence:** `tests/unit/test_plugin_one337x.py` — 53 passed.
+
+## BOB-044 — extratorrent.py deep-coverage tests + B-substring fixed
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+47 tests. Fixed `_parse_size` B-substring bug (reordered dict keys).
+**Evidence:** `tests/unit/test_plugin_extratorrent.py` — 47 passed.
+
+## BOB-045 — torrentfunk.py deep-coverage tests + B-substring fixed
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+31 tests. Fixed `_parse_size` B-substring bug.
+**Evidence:** `tests/unit/test_plugin_torrentfunk.py` — 31 passed.
+
+## BOB-046 — torrentproject.py deep-coverage tests
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+36 tests covering MyHTMLParser (handle_starttag/endtag/data), feed, fetch_magnet.
+**Evidence:** `tests/unit/test_plugin_torrentproject.py` — 36 passed.
+
+## BOB-047 — therarbg.py deep-coverage tests + B-substring fixed
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+38 tests. Fixed `_parse_size` B-substring bug.
+**Evidence:** `tests/unit/test_plugin_therarbg.py` — 38 passed.
+
+## BOB-048 — academictorrents.py deep-coverage tests
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+48 tests covering XML parsing, concurrent.futures, torrent filtering, cache.
+**Evidence:** `tests/unit/test_plugin_academictorrents.py` — 48 passed.
+
+## BOB-049 — ali213.py deep-coverage tests
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+25 tests covering threaded gamepage handling, retry loop (20 ceiling), magnet extraction.
+**Evidence:** `tests/unit/test_plugin_ali213.py` — 25 passed.
+
+## BOB-050 — yourbittorrent.py deep-coverage tests
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+30 tests covering HTMLParser, download_file, 7 categories.
+**Evidence:** `tests/unit/test_plugin_yourbittorrent.py` — 30 passed.
+
+## BOB-051 — glotorrents.py deep-coverage tests
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+40 tests covering pagination, 9 categories, magnet extraction, sleep.
+**Evidence:** `tests/unit/test_plugin_glotorrents.py` — 40 passed.
+
+## BOB-052 — pctorrent.py deep-coverage tests + B-substring pre-fixed
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+30 tests. `_parse_size` B-substring fixed by subagent.
+**Evidence:** `tests/unit/test_plugin_pctorrent.py` — 30 passed.
+
+## BOB-053 — rockbox.py deep-coverage tests
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+32 tests covering datetime, sleep(3) pagination, kb/mb/gb sizes.
+**Evidence:** `tests/unit/test_plugin_rockbox.py` — 32 passed.
+
+## BOB-054 — bitru.py deep-coverage tests + B-substring fixed
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+32 tests. Fixed `_parse_size` B-substring bug.
+**Evidence:** `tests/unit/test_plugin_bitru.py` — 32 passed.
+
+## BOB-055 — btsow.py deep-coverage tests
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+Tests covering data-list card parsing, search, download_torrent.
+**Evidence:** `tests/unit/test_plugin_btsow.py` — all passed.
+
+## BOB-056 — torrentscsv.py deep-coverage tests
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+33 tests covering CSV parsing, search, download_torrent.
+**Evidence:** `tests/unit/test_plugin_torrentscsv.py` — 33 passed.
+
+## BOB-057 — xfsub.py deep-coverage tests + B-substring fixed
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+25 tests. Fixed `_parse_size` B-substring bug.
+**Evidence:** `tests/unit/test_plugin_xfsub.py` — 25 passed.
+
+## BOB-058 — yihua.py deep-coverage tests + B-substring fixed
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature · **Closed:** 2026-06-09
+
+37 tests. Fixed `_parse_size` B-substring bug.
+**Evidence:** `tests/unit/test_plugin_yihua.py` — 37 passed.
+
+## BOB-059 — bt4g.py tests fixed (was hanging)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug · **Closed:** 2026-06-09
+
+3 tests had bugs: infinite loop from constant `return_value` (should use
+`side_effect=[MATCH, EMPTY]`), regex mismatch in fixture (missing `>` before size).
+**Evidence:** `tests/unit/test_plugin_bt4g.py` — 44 passed in <1s.
 

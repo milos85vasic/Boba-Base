@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 4
-**Last modified:** 2026-06-09T16:00:00Z
+**Revision:** 5
+**Last modified:** 2026-06-09T20:00:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -338,3 +338,68 @@ or breaks the loop respectively).
 **Regression guard:**
 - `tests/unit/test_plugin_kickass_guards.py` — 13 tests proving empty response,
   None response, ConnectionError, TimeoutError, and malformed HTML don't crash.
+
+---
+
+## 2026-06-09 — Waves 5-8: B-substring epidemic across 9 community plugins
+
+### 15. Systemic `_parse_size` B-substring bug (9 instances found, all fixed)
+
+**Severity:** MEDIUM (all 9 plugins returned 0 for KB/MB/GB/TB — silently broken
+size reporting).
+
+**Root cause:** The `_parse_size` method in each plugin uses a `multipliers` dict
+iterated in insertion order. With keys ordered `{"B": 1, "KB": 1024, ...}`,
+the check `"B" in size_str` matches the `"B"` substring inside `"KB"`, `"MB"`,
+`"GB"`, and `"TB"`. Then `size_str.replace("B", "")` leaves a trailing character
+(e.g. `"1.5 G"`) which `float()` cannot parse, returning 0.
+
+**Affected plugins (9 total):**
+| Plugin | Status |
+|--------|--------|
+| `gamestorrents.py` | Fixed (BOB-024) |
+| `megapeer.py` | Fixed (BOB-042) |
+| `one337x.py` | Fixed (BOB-043) |
+| `extratorrent.py` | Fixed (BOB-044) |
+| `torrentfunk.py` | Fixed (BOB-045) |
+| `therarbg.py` | Fixed (BOB-047) |
+| `pctorrent.py` | Fixed (BOB-052, by subagent) |
+| `bitru.py` | Fixed (BOB-054) |
+| `xfsub.py` | Fixed (BOB-057) |
+| `yihua.py` | Fixed (BOB-058) |
+
+**Fix:** Reorder dict keys longest-unit-first: `{"TB": ..., "GB": ..., "MB": ..., "KB": ..., "B": 1}`.
+Same approach as BOB-013 (torrentkitty).
+
+**Global regression guard:** 10 dedicated test files, each with explicit
+`_parse_size` assertions for all 5 units (B/KB/MB/GB/TB).
+
+---
+
+### 16. Systematic `import re` omissions (3 instances found, all fixed)
+
+**Root cause:** Three plugins called `re.search()` or `re.compile()` without
+importing `re` at module level. The `search()` method worked via transitive
+imports from helper modules, but `download_torrent()` failed with `NameError`.
+
+**Affected plugins:**
+| Plugin | Status |
+|--------|--------|
+| `nyaa.py` | Fixed (BOB-035) |
+| `audiobookbay.py` | Fixed (BOB-042) |
+| (torlock `search()` also lacks exception handling — documented BOB-029) |
+
+**Fix:** Added `import re` at module level.
+
+---
+
+### 17. bt4g infinite loop (test-only, fixed)
+
+**Severity:** LOW (test hang, not production).
+
+**Root cause:** `search()` has a `while True` loop that breaks when
+`parser.noTorrents` is True. Tests that used `return_value=MATCHING_HTML`
+(not `side_effect`) caused every page to match, triggering infinite loop.
+
+**Fix:** Changed to `side_effect=[MATCHING_HTML, EMPTY_HTML]` so page 2
+triggers the `noTorrents` break condition.
