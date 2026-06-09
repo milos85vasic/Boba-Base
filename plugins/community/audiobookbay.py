@@ -23,6 +23,7 @@
 from helpers import retrieve_url
 from novaprinter import prettyPrinter
 from html.parser import HTMLParser
+import re
 import urllib.parse
 
 
