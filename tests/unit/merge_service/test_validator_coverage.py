@@ -3,6 +3,7 @@ Additional coverage for merge_service/validator.py — bencode parsing,
 HTTP/UDP scrape, caching, validate_multiple.
 """
 
+import asyncio
 import importlib.util
 import os
 import sys
@@ -303,6 +304,279 @@ class TestUdpScrape:
             result = await v._udp_scrape("udp://tracker.com:80/announce")
             assert result.status == TrackerStatus.OFFLINE
 
+    @pytest.mark.asyncio
+    async def test_udp_connect_response_too_short(self):
+        """Connect response shorter than 16 bytes (line 217-222)."""
+        import struct
+        v = TrackerValidator()
+        loop = asyncio.get_running_loop()
+
+        connect_future = loop.create_future()
+        connect_future.set_result(b"tooshort")
+
+        mock_transport = MagicMock()
+        mock_protocol = MagicMock()
+        mock_protocol.response_future = connect_future
+
+        future_queue = [connect_future]
+
+        with patch("random.randint") as mock_rand, \
+             patch("asyncio.get_running_loop") as mock_get_loop:
+            mock_rand.return_value = 42
+            mock_loop = MagicMock()
+            mock_loop.create_datagram_endpoint = AsyncMock(
+                return_value=(mock_transport, mock_protocol)
+            )
+            mock_loop.create_future = MagicMock(side_effect=lambda: future_queue.pop(0))
+            mock_get_loop.return_value = mock_loop
+
+            result = await v._udp_scrape("udp://tracker.com:80/announce")
+            assert result.status == TrackerStatus.OFFLINE
+            assert "too short" in result.error
+
+    @pytest.mark.asyncio
+    async def test_udp_handshake_failed(self):
+        """Connect response with wrong action/transaction_id (line 224-231)."""
+        import struct
+        v = TrackerValidator()
+        loop = asyncio.get_running_loop()
+
+        conn_id = 12345
+        bad_resp = struct.pack("!iiq", 999, 0, conn_id)
+
+        connect_future = loop.create_future()
+        connect_future.set_result(bad_resp)
+
+        mock_transport = MagicMock()
+        mock_protocol = MagicMock()
+        mock_protocol.response_future = connect_future
+
+        future_queue = [connect_future]
+
+        with patch("random.randint") as mock_rand, \
+             patch("asyncio.get_running_loop") as mock_get_loop:
+            mock_rand.return_value = 0
+            mock_loop = MagicMock()
+            mock_loop.create_datagram_endpoint = AsyncMock(
+                return_value=(mock_transport, mock_protocol)
+            )
+            mock_loop.create_future = MagicMock(side_effect=lambda: future_queue.pop(0))
+            mock_get_loop.return_value = mock_loop
+
+            result = await v._udp_scrape("udp://tracker.com:80/announce")
+            assert result.status == TrackerStatus.OFFLINE
+            assert "handshake failed" in result.error
+
+    @pytest.mark.asyncio
+    async def test_udp_no_infohash_healthy(self):
+        """Valid connect, no infohash → HEALTHY with seeds=0 (line 234-240)."""
+        import struct
+        v = TrackerValidator()
+        loop = asyncio.get_running_loop()
+
+        tid = 42
+        conn_id = 12345
+        connect_resp = struct.pack("!iiq", 0, tid, conn_id)
+
+        connect_future = loop.create_future()
+        connect_future.set_result(connect_resp)
+
+        mock_transport = MagicMock()
+        mock_protocol = MagicMock()
+        mock_protocol.response_future = connect_future
+
+        future_queue = [connect_future]
+
+        with patch("random.randint") as mock_rand, \
+             patch("asyncio.get_running_loop") as mock_get_loop:
+            mock_rand.return_value = tid
+            mock_loop = MagicMock()
+            mock_loop.create_datagram_endpoint = AsyncMock(
+                return_value=(mock_transport, mock_protocol)
+            )
+            mock_loop.create_future = MagicMock(side_effect=lambda: future_queue.pop(0))
+            mock_get_loop.return_value = mock_loop
+
+            result = await v._udp_scrape("udp://tracker.com:80/announce")
+            assert result.status == TrackerStatus.HEALTHY
+            assert result.seeds == 0
+
+    @pytest.mark.asyncio
+    async def test_udp_scrape_response_too_short(self):
+        """Scrape response shorter than 20 bytes (line 258-263)."""
+        import struct
+        v = TrackerValidator()
+        loop = asyncio.get_running_loop()
+
+        connect_tid = 10
+        conn_id = 34567
+        connect_resp = struct.pack("!iiq", 0, connect_tid, conn_id)
+
+        connect_future = loop.create_future()
+        connect_future.set_result(connect_resp)
+
+        # connect_future is pre-set on mock_protocol for connect phase
+        # create_future is only called once at line 253 → returns scrape_future
+        scrape_future = loop.create_future()
+        scrape_future.set_result(b"tooshort")
+
+        mock_transport = MagicMock()
+        mock_protocol = MagicMock()
+        mock_protocol.response_future = connect_future
+
+        future_queue = [scrape_future]
+
+        with patch("random.randint") as mock_rand, \
+             patch("asyncio.get_running_loop") as mock_get_loop:
+            mock_rand.side_effect = [connect_tid, 99]
+            mock_loop = MagicMock()
+            mock_loop.create_datagram_endpoint = AsyncMock(
+                return_value=(mock_transport, mock_protocol)
+            )
+            mock_loop.create_future = MagicMock(side_effect=lambda: future_queue.pop(0))
+            mock_get_loop.return_value = mock_loop
+
+            result = await v._udp_scrape(
+                "udp://tracker.com:80/announce?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            )
+            assert result.status == TrackerStatus.OFFLINE
+            assert "too short" in result.error
+
+    @pytest.mark.asyncio
+    async def test_udp_scrape_error(self):
+        """Scrape response with action=3 (error from tracker, line 266-271)."""
+        import struct
+        v = TrackerValidator()
+        loop = asyncio.get_running_loop()
+
+        connect_tid = 10
+        conn_id = 34567
+        connect_resp = struct.pack("!iiq", 0, connect_tid, conn_id)
+
+        connect_future = loop.create_future()
+        connect_future.set_result(connect_resp)
+
+        scrape_tid = 99
+        # Pad to 20 bytes to pass length check, then action=3 triggers error path
+        scrape_resp = struct.pack("!ii", 3, scrape_tid) + b"\x00" * 12
+
+        scrape_future = loop.create_future()
+        scrape_future.set_result(scrape_resp)
+
+        mock_transport = MagicMock()
+        mock_protocol = MagicMock()
+        mock_protocol.response_future = connect_future
+
+        future_queue = [scrape_future]
+
+        with patch("random.randint") as mock_rand, \
+             patch("asyncio.get_running_loop") as mock_get_loop:
+            mock_rand.side_effect = [connect_tid, scrape_tid]
+            mock_loop = MagicMock()
+            mock_loop.create_datagram_endpoint = AsyncMock(
+                return_value=(mock_transport, mock_protocol)
+            )
+            mock_loop.create_future = MagicMock(side_effect=lambda: future_queue.pop(0))
+            mock_get_loop.return_value = mock_loop
+
+            result = await v._udp_scrape(
+                "udp://tracker.com:80/announce?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            )
+            assert result.status == TrackerStatus.OFFLINE
+            assert "error from tracker" in result.error
+
+    @pytest.mark.asyncio
+    async def test_udp_invalid_hex_infohash(self):
+        """Invalid hex infohash triggers except ValueError (line 247-248)."""
+        import struct
+        v = TrackerValidator()
+        loop = asyncio.get_running_loop()
+
+        connect_tid = 10
+        conn_id = 34567
+        connect_resp = struct.pack("!iiq", 0, connect_tid, conn_id)
+
+        connect_future = loop.create_future()
+        connect_future.set_result(connect_resp)
+
+        scrape_tid = 99
+        scrape_resp = struct.pack("!iiiii", 2, scrape_tid, 50, 20, 10)
+
+        scrape_future = loop.create_future()
+        scrape_future.set_result(scrape_resp)
+
+        mock_transport = MagicMock()
+        mock_protocol = MagicMock()
+        mock_protocol.response_future = connect_future
+
+        future_queue = [scrape_future]
+
+        # zz is invalid hex; bytes.fromhex raises ValueError, falls to .encode()[:20]
+        invalid_hex_url = "udp://tracker.com:80/announce?zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+
+        with patch("random.randint") as mock_rand, \
+             patch("asyncio.get_running_loop") as mock_get_loop:
+            mock_rand.side_effect = [connect_tid, scrape_tid]
+            mock_loop = MagicMock()
+            mock_loop.create_datagram_endpoint = AsyncMock(
+                return_value=(mock_transport, mock_protocol)
+            )
+            mock_loop.create_future = MagicMock(side_effect=lambda: future_queue.pop(0))
+            mock_get_loop.return_value = mock_loop
+
+            result = await v._udp_scrape(invalid_hex_url)
+            assert result.status == TrackerStatus.HEALTHY
+            assert result.seeds == 50
+
+    @pytest.mark.asyncio
+    async def test_udp_successful_scrape(self):
+        """Full successful UDP scrape with seeds/leechers (line 273-281)."""
+        import struct
+        v = TrackerValidator()
+        loop = asyncio.get_running_loop()
+
+        connect_tid = 10
+        conn_id = 34567
+        connect_resp = struct.pack("!iiq", 0, connect_tid, conn_id)
+
+        connect_future = loop.create_future()
+        connect_future.set_result(connect_resp)
+
+        scrape_tid = 99
+        seeders = 150
+        completed = 75
+        leechers = 25
+        scrape_resp = struct.pack(
+            "!iiiii", 2, scrape_tid, seeders, completed, leechers
+        )
+
+        scrape_future = loop.create_future()
+        scrape_future.set_result(scrape_resp)
+
+        mock_transport = MagicMock()
+        mock_protocol = MagicMock()
+        mock_protocol.response_future = connect_future
+
+        future_queue = [scrape_future]
+
+        with patch("random.randint") as mock_rand, \
+             patch("asyncio.get_running_loop") as mock_get_loop:
+            mock_rand.side_effect = [connect_tid, scrape_tid]
+            mock_loop = MagicMock()
+            mock_loop.create_datagram_endpoint = AsyncMock(
+                return_value=(mock_transport, mock_protocol)
+            )
+            mock_loop.create_future = MagicMock(side_effect=lambda: future_queue.pop(0))
+            mock_get_loop.return_value = mock_loop
+
+            result = await v._udp_scrape(
+                "udp://tracker.com:80/announce?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            )
+            assert result.status == TrackerStatus.HEALTHY
+            assert result.seeds == 150
+            assert result.leechers == 25
+            assert result.complete == 75
+
 
 
 
@@ -362,6 +636,18 @@ class TestRealSession:
         assert not session.closed
         await v.close()
         assert session.closed
+
+
+class TestAioHttpNotAvailable:
+    """Tests for aiohttp not available path (lines 103-108)."""
+
+    @pytest.mark.asyncio
+    async def test_http_scrape_returns_unknown_when_aiohttp_missing(self):
+        with patch.object(_validator_mod, "AIOHTTP_AVAILABLE", False):
+            v = TrackerValidator()
+            result = await v._http_scrape("https://tracker.com/announce")
+            assert result.status == TrackerStatus.UNKNOWN
+            assert "aiohttp not available" in result.error
 
 
 class TestBencodeRealisticScrape:
@@ -428,6 +714,16 @@ class TestAnnounceToScrapeEdgeCases:
         url = "https://tracker.com/announce/123"
         result = v._announce_to_scrape(url)
         assert result == "https://tracker.com/scrape/123"
+
+    def test_announce_php_to_scrape(self):
+        v = TrackerValidator()
+        result = v._announce_to_scrape("https://tracker.com/announce.php")
+        assert result == "https://tracker.com/scrape.php"
+
+    def test_announce_already_scrape_url(self):
+        v = TrackerValidator()
+        result = v._announce_to_scrape("https://tracker.com/scrape")
+        assert result == "https://tracker.com/scrape"
 
 
 class TestCacheRealTime:

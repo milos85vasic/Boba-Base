@@ -573,3 +573,573 @@ class TestQbitCredentialHelpers:
         with patch.object(routes, "_load_saved_qbit_credentials", return_value=None):
             assert routes._get_qbit_username() == "envuser"
             assert routes._get_qbit_password() == "envpass"
+
+
+# ---------------------------------------------------------------------------
+# _get_orchestrator fallback path (when global instance is None).
+# ---------------------------------------------------------------------------
+
+
+class TestGetOrchestratorFallback:
+    def test_creates_search_orchestrator_when_none(self):
+        _purge_api_module()
+        import api
+        import api.routes as routes
+        from fastapi import Request
+
+        api.orchestrator_instance = None
+        req = MagicMock(spec=Request)
+        orch = routes._get_orchestrator(req)
+        from merge_service.search import SearchOrchestrator
+
+        assert isinstance(orch, SearchOrchestrator)
+
+
+# ---------------------------------------------------------------------------
+# _detect_quality — full branch coverage.
+# ---------------------------------------------------------------------------
+
+
+class TestDetectQualityFull:
+    def test_bluray_maps_to_full_hd(self):
+        _purge_api_module()
+        from api.routes import _detect_quality
+
+        assert _detect_quality("Movie 2023 BluRay x264", "15 GB") == "full_hd"
+
+    def test_bdrip_maps_to_full_hd(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("Movie 2023 BDRip x264", "15 GB") == "full_hd"
+
+    def test_bdremux_maps_to_uhd_4k(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("Movie 2023 BDRemux 2160p", "50 GB") == "uhd_4k"
+
+    def test_webdl_maps_to_hd(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("Movie 2023 WEB-DL", "8 GB") == "hd"
+
+    def test_webrip_maps_to_hd(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("Movie 2023 WEBRip", "4 GB") == "hd"
+
+    def test_hdrip_maps_to_hd(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("Movie 2023 HDRip", "4 GB") == "hd"
+
+    def test_hdtv_maps_to_hd(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("Show S01E01 HDTV x264", "2 GB") == "hd"
+
+    def test_dvd_maps_to_sd(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("Movie DVD 1999", "1 GB") == "sd"
+
+    def test_dvdrip_maps_to_sd(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("Movie DVDRip 1999", "700 MB") == "sd"
+
+    def test_size_based_full_hd_between_8gb_and_40gb(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("random name", str(10 * 1024**3)) == "full_hd"
+
+    def test_size_based_hd_between_2gb_and_8gb(self):
+        from api.routes import _detect_quality
+
+        assert _detect_quality("random name", str(4 * 1024**3)) == "hd"
+
+
+# ---------------------------------------------------------------------------
+# _to_response quality fallback.
+# ---------------------------------------------------------------------------
+
+
+class TestToResponseQualityFallback:
+    def test_detects_quality_when_missing(self):
+        _purge_api_module()
+        from api.routes import _to_response
+        from merge_service.search import SearchResult
+
+        r = SearchResult(name="random", link="http://x", size="4 GB", seeds=1, leechers=0, engine_url="", quality=None)
+        resp = _to_response(r)
+        assert resp.quality == "hd"
+
+    def test_detects_quality_when_empty(self):
+        from api.routes import _to_response
+        from merge_service.search import SearchResult
+
+        r = SearchResult(name="random", link="http://x", size="4 GB", seeds=1, leechers=0, engine_url="", quality="")
+        resp = _to_response(r)
+        assert resp.quality == "hd"
+
+
+# ---------------------------------------------------------------------------
+# /search/sync — blocking search with results, sorting, CAPTCHA.
+# ---------------------------------------------------------------------------
+
+
+class TestSearchSync:
+    @pytest.fixture
+    def orch_with_results(self):
+        from merge_service.search import SearchResult, MergedResult, CanonicalIdentity, ContentType
+
+        results = [
+            SearchResult(name="Alpha", link="http://a/1", size="4 GB", seeds=10, leechers=1, engine_url="",
+                         tracker="a", quality="hd"),
+            SearchResult(name="Beta", link="http://b/1", size="2 GB", seeds=5, leechers=0, engine_url="",
+                         tracker="b", quality="sd"),
+        ]
+        merged = []
+        for r in results:
+            ci = CanonicalIdentity(title=r.name, content_type=ContentType.MOVIE)
+            m = MergedResult(canonical_identity=ci)
+            m.add_source(r)
+            merged.append(m)
+        orch = _make_orch()
+        orch._last_merged_results = {"sid": (merged, results)}
+        meta = MagicMock()
+        meta.search_id = "sid"
+        meta.query = "test"
+        meta.total_results = 2
+        meta.merged_results = 2
+        meta.trackers_searched = ["a", "b"]
+        meta.errors = []
+        meta.status = "completed"
+        from datetime import datetime
+
+        meta.started_at = datetime(2026, 1, 1)
+        meta.completed_at = datetime(2026, 1, 1)
+        meta.to_dict.return_value = {"tracker_stats": []}
+        orch.search = AsyncMock(return_value=meta)
+        return orch
+
+    def test_sync_search_with_results(self, client_factory, orch_with_results):
+        c = client_factory(orch_with_results)
+        resp = c.post("/api/v1/search/sync", json={"query": "test"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "completed"
+        assert len(body["results"]) == 2
+
+    def test_sync_search_sort_by_name_asc(self, client_factory, orch_with_results):
+        c = client_factory(orch_with_results)
+        resp = c.post("/api/v1/search/sync", json={"query": "test", "sort_by": "name", "sort_order": "asc"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["results"][0]["name"] == "Alpha"
+
+    def test_sync_search_sort_by_size(self, client_factory, orch_with_results):
+        c = client_factory(orch_with_results)
+        resp = c.post("/api/v1/search/sync", json={"query": "test", "sort_by": "size"})
+        assert resp.status_code == 200
+        body = resp.json()
+        names = [r["name"] for r in body["results"]]
+        assert names == ["Alpha", "Beta"]
+
+    def test_sync_search_no_results(self, client_factory):
+        orch = _make_orch()
+        orch._last_merged_results = {}
+        meta = MagicMock()
+        meta.search_id = "sid"
+        meta.query = "test"
+        meta.total_results = 0
+        meta.merged_results = 0
+        meta.trackers_searched = []
+        meta.errors = []
+        from datetime import datetime
+
+        meta.started_at = datetime(2026, 1, 1)
+        meta.completed_at = datetime(2026, 1, 1)
+        meta.to_dict.return_value = {"tracker_stats": []}
+        orch.search = AsyncMock(return_value=meta)
+        c = client_factory(orch)
+        resp = c.post("/api/v1/search/sync", json={"query": "test"})
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "no_results"
+
+    def test_sync_search_captcha_required(self, client_factory):
+        orch = _make_orch()
+        orch._last_merged_results = {}
+        meta = MagicMock()
+        meta.search_id = "sid"
+        meta.query = "test"
+        meta.total_results = 0
+        meta.merged_results = 0
+        meta.trackers_searched = []
+        meta.errors = ["CAPTCHA required for rutracker"]
+        from datetime import datetime
+
+        meta.started_at = datetime(2026, 1, 1)
+        meta.completed_at = datetime(2026, 1, 1)
+        meta.to_dict.return_value = {"tracker_stats": []}
+        orch.search = AsyncMock(return_value=meta)
+        c = client_factory(orch)
+        resp = c.post("/api/v1/search/sync", json={"query": "test"})
+        assert resp.status_code == 403
+        assert resp.json()["status"] == "captcha_required"
+
+    def test_sync_search_sort_by_type(self, client_factory, orch_with_results):
+        c = client_factory(orch_with_results)
+        resp = c.post("/api/v1/search/sync", json={"query": "test", "sort_by": "type"})
+        assert resp.status_code == 200
+        assert len(resp.json()["results"]) == 2
+
+    def test_sync_search_sort_by_leechers(self, client_factory, orch_with_results):
+        c = client_factory(orch_with_results)
+        resp = c.post("/api/v1/search/sync", json={"query": "test", "sort_by": "leechers"})
+        assert resp.status_code == 200
+        assert len(resp.json()["results"]) == 2
+
+    def test_sync_search_sort_by_quality(self, client_factory, orch_with_results):
+        c = client_factory(orch_with_results)
+        resp = c.post("/api/v1/search/sync", json={"query": "test", "sort_by": "quality"})
+        assert resp.status_code == 200
+        assert len(resp.json()["results"]) == 2
+
+    def test_sync_search_sort_by_sources(self, client_factory, orch_with_results):
+        c = client_factory(orch_with_results)
+        resp = c.post("/api/v1/search/sync", json={"query": "test", "sort_by": "sources"})
+        assert resp.status_code == 200
+        assert len(resp.json()["results"]) == 2
+
+    def test_sync_search_with_metadata_enrichment(self, client_factory, orch_with_results):
+        orch = orch_with_results
+        orch._last_merged_results = {}
+        meta = MagicMock()
+        meta.search_id = "sid"
+        meta.query = "test"
+        meta.total_results = 2
+        meta.merged_results = 2
+        meta.trackers_searched = ["a", "b"]
+        meta.errors = []
+        from datetime import datetime
+
+        meta.started_at = datetime(2026, 1, 1)
+        meta.completed_at = datetime(2026, 1, 1)
+        meta.to_dict.return_value = {"tracker_stats": []}
+        orch.search = AsyncMock(return_value=meta)
+        c = client_factory(orch)
+        enricher = AsyncMock()
+        enricher.resolve.return_value = None
+        c.app.state.enricher = enricher
+        resp = c.post("/api/v1/search/sync", json={"query": "test", "enable_metadata": True})
+        assert resp.status_code == 200
+        # Metadata enrichment shouldn't crash even though there are no stored results
+        assert resp.json()["status"] == "completed"
+
+
+# ---------------------------------------------------------------------------
+# SSE stream cap 429.
+# ---------------------------------------------------------------------------
+
+
+class TestSseStreamCap:
+    def test_429_when_streams_full(self, client_factory):
+        orch = _make_orch()
+        orch._active_searches = {"sid": MagicMock()}
+        c = client_factory(orch)
+        import api.routes as routes
+
+        with patch.object(routes, "_sse_stream_count", 999):
+            resp = c.get("/api/v1/search/stream/sid")
+            assert resp.status_code == 429
+            assert "SSE streams" in resp.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# /search/{id} with merged results.
+# ---------------------------------------------------------------------------
+
+
+class TestGetSearchWithResults:
+    def test_get_search_with_merged(self, client_factory):
+        from merge_service.search import SearchResult, MergedResult, CanonicalIdentity, ContentType
+
+        sr = SearchResult(name="Movie A", link="http://x/a", size="4 GB", seeds=10, leechers=1, engine_url="",
+                          tracker="x", quality="hd")
+        ci = CanonicalIdentity(title="Movie A", content_type=ContentType.MOVIE)
+        merged = MergedResult(canonical_identity=ci)
+        merged.add_source(sr)
+        orch = _make_orch()
+        orch._last_merged_results = {"sid": ([merged], [sr])}
+        meta = MagicMock()
+        meta.search_id = "sid"
+        meta.query = "q"
+        meta.status = "completed"
+        meta.total_results = 1
+        meta.merged_results = 1
+        meta.trackers_searched = ["x"]
+        meta.errors = []
+        meta.to_dict.return_value = {"tracker_stats": []}
+        from datetime import datetime
+
+        meta.started_at = datetime(2026, 1, 1)
+        meta.completed_at = datetime(2026, 1, 1)
+        orch.get_search_status = MagicMock(return_value=meta)
+        c = client_factory(orch)
+        resp = c.get("/api/v1/search/sid")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["search_id"] == "sid"
+        assert len(body["results"]) == 1
+        assert body["results"][0]["name"] == "Movie A"
+        assert body["results"][0]["sources"][0]["tracker"] == "x"
+
+
+# ---------------------------------------------------------------------------
+# /auth/qbittorrent — bad JSON + save credentials.
+# ---------------------------------------------------------------------------
+
+
+class TestAuthQbittorrentEdgeCases:
+    def test_bad_json_falls_back_to_defaults(self, client_factory):
+        orch = _make_orch()
+        c = client_factory(orch)
+        login = _aiohttp_response(text="Fails.", status=200)
+        session = AsyncMock()
+        session.post = MagicMock(return_value=login)
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=False)
+        with patch("aiohttp.ClientSession", return_value=session):
+            resp = c.post(
+                "/api/v1/auth/qbittorrent",
+                content=b"not json at all",
+                headers={"Content-Type": "text/plain"},
+            )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "failed"
+
+    def test_login_saves_credentials(self, client_factory, tmp_path):
+        orch = _make_orch()
+        c = client_factory(orch)
+        login = _aiohttp_response(text="Ok.", status=200)
+        version = _aiohttp_response(text="4.6.0", status=200)
+        session = AsyncMock()
+        session.post = MagicMock(return_value=login)
+        session.get = MagicMock(return_value=version)
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=False)
+        creds_dir = str(tmp_path / "creds")
+        with (
+            patch("aiohttp.ClientSession", return_value=session),
+            patch("api.routes._save_qbit_credentials") as mock_save,
+        ):
+            resp = c.post("/api/v1/auth/qbittorrent", json={"username": "admin", "password": "admin", "save": True})
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "authenticated"
+        mock_save.assert_called_once()
+        args = mock_save.call_args[0]
+        assert args[1]["username"] == "admin"
+        assert args[1]["password"] == "admin"
+
+
+# ---------------------------------------------------------------------------
+# _save_qbit_credentials — exception handling.
+# ---------------------------------------------------------------------------
+
+
+class TestSaveQbitCredentials:
+    def test_exception_logged(self, caplog):
+        _purge_api_module()
+        import api.routes as routes
+        import logging
+
+        caplog.set_level(logging.ERROR)
+        with patch("builtins.open") as m:
+            m.side_effect = PermissionError("denied")
+            routes._save_qbit_credentials("/nonexistent/creds.json", {"u": "p"})
+        assert "Failed to save qBittorrent credentials" in caplog.text
+
+    def test_load_returns_none_when_no_file(self):
+        _purge_api_module()
+        import api.routes as routes
+
+        with patch("os.path.isfile", return_value=False):
+            assert routes._load_saved_qbit_credentials() is None
+
+
+# ---------------------------------------------------------------------------
+# /download — tracker path (temp file, upload), non-tracker failure, per-URL exception.
+# ---------------------------------------------------------------------------
+
+
+class TestInitiateDownloadTrackerPath:
+    def test_tracker_success(self, client_factory):
+        orch = _make_orch()
+        orch.fetch_torrent = AsyncMock(return_value=b"d8:announce42e")
+        c = client_factory(orch)
+        login = _aiohttp_response(text="Ok.", status=200)
+        add = _aiohttp_response(text="Ok.", status=200)
+        session = AsyncMock()
+        session.post = MagicMock(side_effect=[login, add])
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=False)
+        with patch("aiohttp.ClientSession", return_value=session):
+            resp = c.post(
+                "/api/v1/download",
+                json={"result_id": "r1", "download_urls": ["https://rutracker.org/forum/dl.php?t=1"]},
+            )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "initiated"
+        assert body["added_count"] == 1
+        assert body["results"][0]["status"] == "added"
+
+    def test_tracker_upload_fails(self, client_factory):
+        orch = _make_orch()
+        orch.fetch_torrent = AsyncMock(return_value=b"d8:announce42e")
+        c = client_factory(orch)
+        login = _aiohttp_response(text="Ok.", status=200)
+        add = _aiohttp_response(text="Fails.", status=200)
+        session = AsyncMock()
+        session.post = MagicMock(side_effect=[login, add])
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=False)
+        with patch("aiohttp.ClientSession", return_value=session):
+            resp = c.post(
+                "/api/v1/download",
+                json={"result_id": "r1", "download_urls": ["https://rutracker.org/forum/dl.php?t=1"]},
+            )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "failed"
+        assert body["results"][0]["status"] == "failed"
+
+    def test_non_tracker_fail(self, client_factory):
+        orch = _make_orch()
+        c = client_factory(orch)
+        login = _aiohttp_response(text="Ok.", status=200)
+        add = _aiohttp_response(text="Fails.", status=200)
+        session = AsyncMock()
+        session.post = MagicMock(side_effect=[login, add])
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=False)
+        with patch("aiohttp.ClientSession", return_value=session):
+            resp = c.post(
+                "/api/v1/download",
+                json={"result_id": "r1", "download_urls": ["https://example.com/file.torrent"]},
+            )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "failed"
+        assert body["results"][0]["status"] == "failed"
+
+    def test_per_url_exception(self, client_factory):
+        orch = _make_orch()
+        c = client_factory(orch)
+        login = _aiohttp_response(text="Ok.", status=200)
+        session = AsyncMock()
+        session.post = MagicMock(return_value=login)
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=False)
+        with (
+            patch("aiohttp.ClientSession", return_value=session),
+            patch("api.routes._is_tracker_url", side_effect=ValueError("boom")),
+        ):
+            resp = c.post(
+                "/api/v1/download",
+                json={"result_id": "r1", "download_urls": ["https://example.com/x"]},
+            )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "failed"
+        assert body["results"][0]["status"] == "error"
+
+
+# ---------------------------------------------------------------------------
+# /download/file — direct URL path.
+# ---------------------------------------------------------------------------
+
+
+class TestDownloadFileDirectUrl:
+    def test_non_tracker_non_magnet_direct_url(self, client_factory):
+        orch = _make_orch()
+        c = client_factory(orch)
+        data_resp = _aiohttp_response(status=200)
+        data_resp.read = AsyncMock(return_value=b"torrent data")
+        session = AsyncMock()
+        session.get = MagicMock(return_value=data_resp)
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=False)
+        with patch("aiohttp.ClientSession", return_value=session):
+            resp = c.post(
+                "/api/v1/download/file",
+                json={"result_id": "r1", "download_urls": ["https://example.com/file.torrent"]},
+            )
+        assert resp.status_code == 200
+        assert resp.content == b"torrent data"
+        assert resp.headers["content-type"] == "application/x-bittorrent"
+
+    def test_direct_url_not_200_falls_through(self, client_factory):
+        orch = _make_orch()
+        c = client_factory(orch)
+        data_resp = _aiohttp_response(status=404)
+        session = AsyncMock()
+        session.get = MagicMock(return_value=data_resp)
+        session.__aenter__ = AsyncMock(return_value=session)
+        session.__aexit__ = AsyncMock(return_value=False)
+        with patch("aiohttp.ClientSession", return_value=session):
+            resp = c.post(
+                "/api/v1/download/file",
+                json={"result_id": "r1", "download_urls": ["https://example.com/file.torrent"]},
+            )
+        assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# /magnet — multi-hash extraction.
+# ---------------------------------------------------------------------------
+
+
+class TestGenerateMagnetMultiHash:
+    def test_multiple_btih_hashes(self, client_factory):
+        orch = _make_orch()
+        c = client_factory(orch)
+        h1 = "a" * 40
+        h2 = "b" * 40
+        resp = c.post(
+            "/api/v1/magnet",
+            json={
+                "result_id": "multi",
+                "download_urls": [
+                    f"https://x/y?btih:{h1}",
+                    f"https://x/y?btih:{h2}",
+                ],
+            },
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body["hashes"]) == 2
+        assert h1 in body["hashes"]
+        assert h2 in body["hashes"]
+        assert body["magnet"].count("xt=urn:btih:") == 2
+        assert "tracker.opentrackr.org" in body["magnet"]
+
+    def test_magnet_with_existing_trackers(self, client_factory):
+        orch = _make_orch()
+        c = client_factory(orch)
+        h = "c" * 40
+        resp = c.post(
+            "/api/v1/magnet",
+            json={
+                "result_id": "with_tr",
+                "download_urls": [
+                    f"magnet:?xt=urn:btih:{h}&tr=udp%3A%2F%2Fcustom%3A80&tr=udp%3A%2F%2Fother%3A81"
+                ],
+            },
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body["hashes"]) == 1
+        assert "tr=" in body["magnet"]
+        assert "tracker.opentrackr.org" in body["magnet"]

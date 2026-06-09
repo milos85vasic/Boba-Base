@@ -17,7 +17,7 @@ import importlib.util
 import json
 from datetime import datetime, timezone, UTC
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -388,3 +388,525 @@ def test_parse_exclude_overrides_default():
     parse = _ac_mod._parse_exclude
     out = parse("FOO,BAR")
     assert out == frozenset({"FOO", "BAR"})
+
+
+# ------------------------------------------------------------------
+# _configure_one edge cases
+# ------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_configure_one_template_fetch_4xx():
+    _configure_one = _ac_mod._configure_one
+    session = MagicMock()
+    session.get = MagicMock(return_value=_mock_aiohttp_response(404, text="not found"))
+    status, err = await _configure_one(
+        session,
+        jackett_url="http://jackett:9117",
+        api_key="fake",
+        indexer_id="rutracker",
+        creds={"username": "u", "password": "p"},
+        already_configured=set(),
+    )
+    assert status == "error"
+    assert "404" in err
+
+
+@pytest.mark.asyncio
+async def test_configure_one_template_fetch_network_error():
+    _configure_one = _ac_mod._configure_one
+    session = MagicMock()
+    session.get = MagicMock(side_effect=TimeoutError("conn timed out"))
+    status, err = await _configure_one(
+        session,
+        jackett_url="http://jackett:9117",
+        api_key="fake",
+        indexer_id="rutracker",
+        creds={"username": "u", "password": "p"},
+        already_configured=set(),
+    )
+    assert status == "error"
+    assert "TimeoutError" in err
+
+
+@pytest.mark.asyncio
+async def test_configure_one_template_bare_list():
+    _configure_one = _ac_mod._configure_one
+    template = [
+        {"id": "username", "value": ""},
+        {"id": "password", "value": ""},
+    ]
+    session = MagicMock()
+    session.get = MagicMock(return_value=_mock_aiohttp_response(200, json_data=template))
+    session.post = MagicMock(return_value=_mock_aiohttp_response(200, json_data={"ok": True}))
+
+    status, err = await _configure_one(
+        session,
+        jackett_url="http://jackett:9117",
+        api_key="fake",
+        indexer_id="rutracker",
+        creds={"username": "u", "password": "p"},
+        already_configured=set(),
+    )
+    assert status == "configured"
+    assert err is None
+    # POST body should be a bare list (not wrapped in {"config": ...})
+    posted = session.post.call_args.kwargs.get("json")
+    assert isinstance(posted, list)
+
+
+@pytest.mark.asyncio
+async def test_configure_one_template_neither_list_nor_dict():
+    _configure_one = _ac_mod._configure_one
+    session = MagicMock()
+    session.get = MagicMock(return_value=_mock_aiohttp_response(200, json_data="string"))
+    status, err = await _configure_one(
+        session,
+        jackett_url="http://jackett:9117",
+        api_key="fake",
+        indexer_id="rutracker",
+        creds={"username": "u", "password": "p"},
+        already_configured=set(),
+    )
+    assert status == "error"
+    assert "no_compatible" in err
+
+
+@pytest.mark.asyncio
+async def test_configure_one_no_compatible_fields():
+    _configure_one = _ac_mod._configure_one
+    template = {"config": [{"id": "apikey", "value": ""}]}
+    session = MagicMock()
+    session.get = MagicMock(return_value=_mock_aiohttp_response(200, json_data=template))
+    status, err = await _configure_one(
+        session,
+        jackett_url="http://jackett:9117",
+        api_key="fake",
+        indexer_id="rutracker",
+        creds={"username": "u", "password": "p"},
+        already_configured=set(),
+    )
+    assert status == "error"
+    assert "no_compatible" in err
+
+
+@pytest.mark.asyncio
+async def test_configure_one_post_5xx_retry_then_success():
+    _configure_one = _ac_mod._configure_one
+    template = {"config": [{"id": "username", "value": ""}]}
+    session = MagicMock()
+    session.get = MagicMock(return_value=_mock_aiohttp_response(200, json_data=template))
+    session.post = MagicMock(
+        side_effect=[
+            _mock_aiohttp_response(503, text="overloaded"),
+            _mock_aiohttp_response(200, json_data={"ok": True}),
+        ]
+    )
+    status, err = await _configure_one(
+        session,
+        jackett_url="http://jackett:9117",
+        api_key="fake",
+        indexer_id="rutracker",
+        creds={"username": "u"},
+        already_configured=set(),
+    )
+    assert status == "configured"
+    assert err is None
+    assert session.post.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_configure_one_post_network_error_retry_then_success():
+    _configure_one = _ac_mod._configure_one
+    template = {"config": [{"id": "username", "value": ""}]}
+    session = MagicMock()
+    session.get = MagicMock(return_value=_mock_aiohttp_response(200, json_data=template))
+    session.post = MagicMock(
+        side_effect=[
+            TimeoutError("first attempt failed"),
+            _mock_aiohttp_response(200, json_data={"ok": True}),
+        ]
+    )
+    status, err = await _configure_one(
+        session,
+        jackett_url="http://jackett:9117",
+        api_key="fake",
+        indexer_id="rutracker",
+        creds={"username": "u"},
+        already_configured=set(),
+    )
+    assert status == "configured"
+    assert err is None
+    assert session.post.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_configure_one_post_retries_exhausted():
+    _configure_one = _ac_mod._configure_one
+    template = {"config": [{"id": "username", "value": ""}]}
+    session = MagicMock()
+    session.get = MagicMock(return_value=_mock_aiohttp_response(200, json_data=template))
+    session.post = MagicMock(
+        side_effect=[
+            TimeoutError("first"),
+            TimeoutError("second"),
+        ]
+    )
+    status, err = await _configure_one(
+        session,
+        jackett_url="http://jackett:9117",
+        api_key="fake",
+        indexer_id="rutracker",
+        creds={"username": "u"},
+        already_configured=set(),
+    )
+    assert status == "error"
+    # Both attempts raise TimeoutError. Attempt 1 retries (attempt==1),
+    # attempt 2 falls through to network error handler
+    assert "TimeoutError" in err
+    assert session.post.call_count == 2
+
+
+# ------------------------------------------------------------------
+# _parse_indexer_map edge case
+# ------------------------------------------------------------------
+
+
+def test_parse_indexer_map_skips_empty_value():
+    parse = _ac_mod._parse_indexer_map
+    result = parse("rutracker:")
+    assert result == {}
+
+
+# ------------------------------------------------------------------
+# _match_indexers ambiguous tie
+# ------------------------------------------------------------------
+
+
+def test_fuzzy_match_ambiguous_tie():
+    _match = _ac_mod._match_indexers
+    # Two ids equidistant from env_name "abcdef" — both add 1 char to 6-char base
+    catalog = [
+        {"id": "abcdef1", "name": "A B C D E F 1"},
+        {"id": "abcdef2", "name": "A B C D E F 2"},
+    ]
+    bundles = {"ABCDEF": {"username": "u", "password": "p"}}
+    matched, ambiguous, unmatched = _match(bundles, catalog, override={})
+    # Both score 12/13 ≈ 0.923 ≥ 0.85 threshold → must be tied
+    assert len(ambiguous) == 1
+    assert ambiguous[0].env_name == "ABCDEF"
+    assert set(ambiguous[0].candidates) == {"abcdef1", "abcdef2"}
+    assert matched == {}
+    assert unmatched == []
+
+
+# ------------------------------------------------------------------
+# autoconfigure_jackett — catalog parse variants
+# ------------------------------------------------------------------
+
+
+def _mock_session(
+    catalog_data: Any = None,
+    catalog_status: int = 200,
+    catalog_error: Exception | None = None,
+    warmup_status: int = 200,
+    template_data: Any = None,
+    post_status: int = 200,
+) -> MagicMock:
+    """Build a mock session for autoconfigure_jackett testing."""
+    warmup_resp = _mock_aiohttp_response(warmup_status)
+    if catalog_error:
+        catalog_resp = MagicMock()
+        catalog_resp.__aenter__ = AsyncMock(side_effect=catalog_error)
+        catalog_resp.__aexit__ = AsyncMock(return_value=False)
+    else:
+        catalog_resp = _mock_aiohttp_response(catalog_status, json_data=catalog_data)
+
+    template_resp = _mock_aiohttp_response(200, json_data=template_data or {"config": [{"id": "username", "value": ""}]})
+    post_resp = _mock_aiohttp_response(post_status, json_data={"ok": True})
+
+    session = MagicMock()
+    session.post = MagicMock(return_value=warmup_resp)
+
+    def get_side_effect(url: str, *args, **kwargs):
+        # Catalog URL is /api/v2.0/indexers (no /config suffix)
+        if "indexers" in url and "/config" not in url:
+            return catalog_resp
+        return template_resp
+
+    session.get = MagicMock(side_effect=get_side_effect)
+    return session
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_catalog_dict_with_indexers_key():
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+    catalog = {"Indexers": [{"id": "rutracker", "name": "RuTracker", "configured": False}]}
+    session = _mock_session(catalog_data=catalog)
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=session)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await autoconfigure_jackett(
+            jackett_url="http://jackett:9117",
+            api_key="key",
+            env={"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"},
+            timeout=10.0,
+        )
+    assert "rutracker" in result.configured_now
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_catalog_401():
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+    session = _mock_session(catalog_status=401)
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=session)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await autoconfigure_jackett(
+            jackett_url="http://jackett:9117",
+            api_key="key",
+            env={"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"},
+            timeout=10.0,
+        )
+    assert any("auth_failed" in e for e in result.errors)
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_catalog_5xx():
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+    session = _mock_session(catalog_status=500)
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=session)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await autoconfigure_jackett(
+            jackett_url="http://jackett:9117",
+            api_key="key",
+            env={"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"},
+            timeout=10.0,
+        )
+    assert any("http_500" in e for e in result.errors)
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_catalog_parse_failure():
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+    # Indexers key has non-list value — triggers line 316-318
+    session = _mock_session(catalog_data={"Indexers": "not_a_list"})
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=session)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await autoconfigure_jackett(
+            jackett_url="http://jackett:9117",
+            api_key="key",
+            env={"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"},
+            timeout=10.0,
+        )
+    assert any("catalog_parse_failed" in e for e in result.errors)
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_catalog_content_type_error():
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+
+    import aiohttp
+    from aiohttp import ContentTypeError
+
+    raw_resp = MagicMock()
+    raw_resp.status = 200
+    req_info = MagicMock()
+    raw_resp.json = AsyncMock(
+        side_effect=ContentTypeError(req_info, [], message="not json")
+    )
+    cm = MagicMock()
+    cm.__aenter__ = AsyncMock(return_value=raw_resp)
+    cm.__aexit__ = AsyncMock(return_value=False)
+
+    session = MagicMock()
+    session.post = MagicMock(return_value=_mock_aiohttp_response(200))
+    session.get = MagicMock(return_value=cm)
+
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=session)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await autoconfigure_jackett(
+            jackett_url="http://jackett:9117",
+            api_key="key",
+            env={"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"},
+            timeout=10.0,
+        )
+    assert any("catalog_parse_failed" in e for e in result.errors)
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_catalog_client_error():
+    """Trigger non-connector ClientError (lines 323-324)."""
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+
+    import aiohttp
+    from aiohttp import InvalidURL
+
+    cat_cm = MagicMock()
+    cat_cm.__aenter__ = AsyncMock(
+        side_effect=InvalidURL("bad url")
+    )
+    cat_cm.__aexit__ = AsyncMock(return_value=False)
+
+    session = MagicMock()
+    session.post = MagicMock(return_value=_mock_aiohttp_response(200))
+    session.get = MagicMock(return_value=cat_cm)
+
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=session)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await autoconfigure_jackett(
+            jackett_url="http://jackett:9117",
+            api_key="key",
+            env={"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"},
+            timeout=10.0,
+        )
+    assert any("network" in e for e in result.errors)
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_configure_one_error():
+    """Full flow where _configure_one returns error (line 363)."""
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+    catalog = [
+        {"id": "rutracker", "name": "RuTracker", "configured": False},
+    ]
+    # Template with no compatible fields → _configure_one returns error
+    template = {"config": [{"id": "apikey", "value": ""}]}
+    session = _mock_session(
+        catalog_data=catalog,
+        template_data=template,
+        post_status=200,
+    )
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=session)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await autoconfigure_jackett(
+            jackett_url="http://jackett:9117",
+            api_key="key",
+            env={"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"},
+            timeout=10.0,
+        )
+    assert any("indexer_config_failed" in e for e in result.errors)
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_catalog_network_error():
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+
+    import aiohttp
+    from aiohttp import ClientConnectorError
+    from aiohttp.client_reqrep import ConnectionKey
+
+    conn_key = ConnectionKey(
+        host="localhost",
+        port=9117,
+        is_ssl=False,
+        ssl=None,
+        proxy=None,
+        proxy_auth=None,
+        proxy_headers_hash=None,
+    )
+    cat_cm = MagicMock()
+    cat_cm.__aenter__ = AsyncMock(
+        side_effect=ClientConnectorError(conn_key, OSError("conn refused"))
+    )
+    cat_cm.__aexit__ = AsyncMock(return_value=False)
+
+    session = MagicMock()
+    session.post = MagicMock(return_value=_mock_aiohttp_response(200))
+    session.get = MagicMock(return_value=cat_cm)
+
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=session)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await autoconfigure_jackett(
+            jackett_url="http://jackett:9117",
+            api_key="key",
+            env={"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"},
+            timeout=10.0,
+        )
+    assert any("unreachable" in e for e in result.errors)
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_full_flow():
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+    catalog = [
+        {"id": "rutracker", "name": "RuTracker", "configured": False},
+        {"id": "kinozalbiz", "name": "KinoZal", "configured": True},
+    ]
+    template = {"config": [{"id": "username", "value": ""}, {"id": "password", "value": ""}]}
+    session = _mock_session(
+        catalog_data=catalog,
+        template_data=template,
+        post_status=200,
+    )
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=session)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        result = await autoconfigure_jackett(
+            jackett_url="http://jackett:9117",
+            api_key="key",
+            env={
+                "RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p",
+                "KINOZAL_USERNAME": "k", "KINOZAL_PASSWORD": "p",
+            },
+            timeout=10.0,
+        )
+    assert "rutracker" in result.configured_now
+    assert result.already_present == ["kinozalbiz"]
+    assert result.errors == []
+    assert len(result.configured_now) == 1
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_total_timeout():
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+
+    # Make the inner session block forever so asyncio.timeout(60) triggers
+    forever_cm = MagicMock()
+    forever_cm.__aenter__ = AsyncMock(side_effect=lambda: asyncio.sleep(999))
+    forever_cm.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("aiohttp.ClientSession") as mock_cls:
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=MagicMock())
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+        # Make _scan_env_credentials return bundles so we enter the timeout block
+        with patch.object(_ac_mod, "_scan_env_credentials", return_value={"FAKE": {"username": "u", "password": "p"}}):
+            with patch.object(_ac_mod, "asyncio") as mock_asyncio:
+                mock_asyncio.timeout.side_effect = TimeoutError("timed out")
+                result = await autoconfigure_jackett(
+                    jackett_url="http://jackett:9117",
+                    api_key="key",
+                    env={"FAKE_USERNAME": "u", "FAKE_PASSWORD": "p"},
+                    timeout=10.0,
+                )
+    assert any("total_timeout" in e for e in result.errors)
+
+
+@pytest.mark.asyncio
+async def test_autoconfigure_jackett_unexpected_exception():
+    autoconfigure_jackett = _ac_mod.autoconfigure_jackett
+
+    # Patch _configure_one (called inside the try/except block) to
+    # raise an unexpected exception, triggering the except Exception handler.
+    with patch.object(_ac_mod, "_configure_one", side_effect=ValueError("boom")):
+        # Also need to mock the session so the flow reaches _configure_one
+        with patch("aiohttp.ClientSession") as mock_cls:
+            mock_session = _mock_session(
+                catalog_data=[{"id": "rutracker", "name": "RuTracker", "configured": False}],
+                template_data={"config": [{"id": "username", "value": ""}]},
+            )
+            mock_cls.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+            mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+            result = await autoconfigure_jackett(
+                jackett_url="http://jackett:9117",
+                api_key="key",
+                env={"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"},
+                timeout=10.0,
+            )
+    assert any("unexpected" in e for e in result.errors)

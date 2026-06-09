@@ -518,3 +518,59 @@ class TestGetAllTrackerResults:
     def test_empty(self):
         orch = SearchOrchestrator()
         assert orch.get_all_tracker_results("nonexistent") == []
+
+    def test_with_results(self):
+        orch = SearchOrchestrator()
+        r = SearchResult(name="A", link="http://a", size="1 GB", seeds=1, leechers=0, engine_url="http://x")
+        orch._tracker_results["s1"] = {"rutor": [r], "piratebay": []}
+        result = orch.get_all_tracker_results("s1")
+        assert len(result) == 1
+
+
+class TestGetLiveResultsEdgeCases:
+    def test_empty_tracker_results_in_dict(self):
+        orch = SearchOrchestrator()
+        orch._tracker_results["s1"] = {"rutor": []}
+        result = orch.get_live_results("s1")
+        assert result == []
+
+
+class TestStreamTokens:
+    def test_issue_and_validate(self):
+        orch = SearchOrchestrator()
+        token = orch.issue_stream_token("sid")
+        assert orch.validate_stream_token("sid", token) is True
+
+    def test_wrong_token(self):
+        orch = SearchOrchestrator()
+        orch.issue_stream_token("sid")
+        assert orch.validate_stream_token("sid", "wrong") is False
+
+    def test_no_token_issued(self):
+        orch = SearchOrchestrator()
+        assert orch.validate_stream_token("missing", "any") is False
+
+    def test_none_token(self):
+        orch = SearchOrchestrator()
+        orch.issue_stream_token("sid")
+        assert orch.validate_stream_token("sid", None) is False
+
+
+class TestGetSearchStatusFound:
+    def test_found(self):
+        orch = SearchOrchestrator()
+        from merge_service.search import SearchMetadata
+        from datetime import datetime
+        meta = SearchMetadata(query="q", search_id="sid", started_at=datetime.now())
+        orch._active_searches["sid"] = meta
+        assert orch.get_search_status("sid") is meta
+
+
+class TestGetActiveSearchesNonEmpty:
+    def test_with_searches(self):
+        orch = SearchOrchestrator()
+        from merge_service.search import SearchMetadata
+        from datetime import datetime
+        meta = SearchMetadata(query="q", search_id="sid", started_at=datetime.now())
+        orch._active_searches["sid"] = meta
+        assert len(orch.get_active_searches()) == 1
