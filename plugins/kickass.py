@@ -11,6 +11,12 @@ class kickass(object):
     url = "https://kickasstorrents.to/"
     name = "Kickasstorrents"
 
+    # Hard cap on search-result pagination. A misbehaving / interstitial /
+    # index-ignoring upstream that re-serves matching rows for every page
+    # index would make the search loop run forever (compounded by the
+    # per-row sleep). Real result sets are far under this bound.
+    MAX_PAGES: int = 50
+
     supported_categories = {
         "all": "",
         "movies": "movies",
@@ -72,11 +78,15 @@ class kickass(object):
                 return "NotFound"
 
     def download_torrent(self, url):
+        if not url or not isinstance(url, str):
+            # Degenerate input (None / empty / non-string): there is no
+            # usable URL to resolve. Emit the qBittorrent-expected
+            # "<url> <engine_url>" fallback shape instead of crashing.
+            print("{0} {1}".format(url or "", self.url))
+            return
         if url.startswith("magnet:"):
             print(url + " " + self.url)
             return
-        from helpers import retrieve_url
-
         try:
             data = retrieve_url(url)
         except Exception:
@@ -95,7 +105,7 @@ class kickass(object):
         parser = self.HTMLParser(self.url)
         category = "" if cat == "all" else "category/{0}/".format(self.supported_categories[cat])
         counter: int = 0
-        while True:
+        while counter < self.MAX_PAGES:
             url = "{0}search/{1}/{2}{3}/".format(self.url, what, category, counter)
             try:
                 html = retrieve_url(url)

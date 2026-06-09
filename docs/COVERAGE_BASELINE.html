@@ -1,8 +1,8 @@
 <h1 id="coverage-baseline">Coverage Baseline</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-06-09T00:00:00Z</p>
-<p>Last updated at commit <code>6953662</code> on 2026-06-09
-(routes.py/search.py coverage push).</p>
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-06-09T14:00:00Z</p>
+<p>Last updated at commit <code>HEAD</code> on 2026-06-09 (search.py
+95%, community plugin coverage push, 88% total).</p>
 <h2 id="summary">Summary</h2>
 <table>
 <thead>
@@ -14,27 +14,31 @@
 <tbody>
 <tr>
 <td><strong>Total coverage</strong></td>
-<td><strong>60%</strong></td>
+<td><strong>88%</strong></td>
 </tr>
 <tr>
 <td><strong>Total statements</strong></td>
-<td>6,810</td>
+<td>8,392</td>
 </tr>
 <tr>
 <td><strong>Missing lines</strong></td>
-<td>2,558</td>
+<td>946</td>
 </tr>
 <tr>
 <td><strong>Branches (partial)</strong></td>
-<td>117</td>
+<td>102</td>
 </tr>
 <tr>
 <td><strong>Unit tests passing</strong></td>
-<td>1,802</td>
+<td>4,053 (of 4,074 collected)</td>
+</tr>
+<tr>
+<td><strong>Unit tests failing</strong></td>
+<td>21</td>
 </tr>
 <tr>
 <td><strong>Coverage gate (<code>fail_under</code>)</strong></td>
-<td>49</td>
+<td>88</td>
 </tr>
 </tbody>
 </table>
@@ -183,10 +187,10 @@
 <tr>
 <td><code>merge_service/search.py</code></td>
 <td>965</td>
-<td>174</td>
+<td>39</td>
 <td>294</td>
-<td>29</td>
-<td>80%</td>
+<td>15</td>
+<td>95%</td>
 </tr>
 <tr>
 <td><code>merge_service/validator.py</code></td>
@@ -195,6 +199,181 @@
 <td>60</td>
 <td>1</td>
 <td>92%</td>
+</tr>
+</tbody>
+</table>
+<h2 id="by-module-plugins-selected">By Module — Plugins (selected)</h2>
+<table>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Stmts</th>
+<th>Miss</th>
+<th>Branch</th>
+<th>BrPart</th>
+<th>Cover</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>anilibra.py</code></td>
+<td>53</td>
+<td>0</td>
+<td>12</td>
+<td>0</td>
+<td>100%</td>
+</tr>
+<tr>
+<td><code>download_proxy.py</code></td>
+<td>328</td>
+<td>18</td>
+<td>102</td>
+<td>5</td>
+<td>95%</td>
+</tr>
+<tr>
+<td><code>env_loader.py</code></td>
+<td>22</td>
+<td>0</td>
+<td>12</td>
+<td>0</td>
+<td>100%</td>
+</tr>
+<tr>
+<td><code>eztv.py</code></td>
+<td>77</td>
+<td>0</td>
+<td>18</td>
+<td>0</td>
+<td>100%</td>
+</tr>
+<tr>
+<td><code>helpers.py</code></td>
+<td>89</td>
+<td>2</td>
+<td>22</td>
+<td>2</td>
+<td>96%</td>
+</tr>
+<tr>
+<td><code>iptorrents.py</code></td>
+<td>133</td>
+<td>14</td>
+<td>40</td>
+<td>2</td>
+<td>87%</td>
+</tr>
+<tr>
+<td><code>kickass.py</code></td>
+<td>74</td>
+<td>0</td>
+<td>20</td>
+<td>0</td>
+<td>100%</td>
+</tr>
+<tr>
+<td><code>kinozal.py</code></td>
+<td>209</td>
+<td>12</td>
+<td>60</td>
+<td>2</td>
+<td>95%</td>
+</tr>
+<tr>
+<td><code>limetorrents.py</code></td>
+<td>154</td>
+<td>4</td>
+<td>56</td>
+<td>3</td>
+<td>97%</td>
+</tr>
+<tr>
+<td><code>nnmclub.py</code></td>
+<td>226</td>
+<td>15</td>
+<td>64</td>
+<td>1</td>
+<td>94%</td>
+</tr>
+<tr>
+<td><code>nova2.py</code></td>
+<td>79</td>
+<td>79</td>
+<td>18</td>
+<td>0</td>
+<td>0%</td>
+</tr>
+<tr>
+<td><code>nyaa.py</code></td>
+<td>104</td>
+<td>8</td>
+<td>40</td>
+<td>1</td>
+<td>94%</td>
+</tr>
+<tr>
+<td><code>piratebay.py</code></td>
+<td>86</td>
+<td>5</td>
+<td>12</td>
+<td>0</td>
+<td>95%</td>
+</tr>
+<tr>
+<td><code>rutor.py</code></td>
+<td>192</td>
+<td>22</td>
+<td>38</td>
+<td>1</td>
+<td>90%</td>
+</tr>
+<tr>
+<td><code>rutracker.py</code></td>
+<td>219</td>
+<td>31</td>
+<td>34</td>
+<td>1</td>
+<td>87%</td>
+</tr>
+<tr>
+<td><code>socks.py</code></td>
+<td>444</td>
+<td>444</td>
+<td>142</td>
+<td>0</td>
+<td>0%</td>
+</tr>
+<tr>
+<td><code>theme_injector.py</code></td>
+<td>129</td>
+<td>1</td>
+<td>42</td>
+<td>1</td>
+<td>99%</td>
+</tr>
+<tr>
+<td><code>torlock.py</code></td>
+<td>80</td>
+<td>0</td>
+<td>34</td>
+<td>2</td>
+<td>98%</td>
+</tr>
+<tr>
+<td><code>yts.py</code></td>
+<td>105</td>
+<td>31</td>
+<td>34</td>
+<td>3</td>
+<td>70%</td>
+</tr>
+<tr>
+<td><code>community/jackett.py</code></td>
+<td>182</td>
+<td>0</td>
+<td>54</td>
+<td>0</td>
+<td>100%</td>
 </tr>
 </tbody>
 </table>
@@ -228,6 +407,22 @@
 <td>49%</td>
 <td>routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig
 99%</td>
+</tr>
+<tr>
+<td>Phase 12</td>
+<td>49%</td>
+<td>search.py 84%, theme_injector 99%, env_loader 100%, yts/piratebay
+JSON guards</td>
+</tr>
+<tr>
+<td>Phase 13</td>
+<td>49%</td>
+<td>search.py 95%, total 88%, community plugin coverage sweep</td>
+</tr>
+<tr>
+<td>Phase 14</td>
+<td>88%</td>
+<td>Gate raised to match actual measured coverage (88.14%)</td>
 </tr>
 </tbody>
 </table>

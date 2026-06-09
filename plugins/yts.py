@@ -38,7 +38,12 @@ class yts(object):
             j = json.loads(data)
         except (json.JSONDecodeError, ValueError):
             return
-        if j.get("data", {}).get("movie_count") and "movies" in j.get("data", {}):
+        if not isinstance(j, dict):
+            return
+        j_data = j.get("data")
+        if not isinstance(j_data, dict):
+            j_data = {}
+        if j_data.get("movie_count") and "movies" in j_data:
             page_of = "{}of{}".format(
                 j["data"]["page_number"], int(math.ceil(int(j["data"]["movie_count"]) / int(j["data"]["limit"])))
             )

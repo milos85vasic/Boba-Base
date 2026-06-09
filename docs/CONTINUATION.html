@@ -1,194 +1,198 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Session:</strong> 2026-06-09 (Session 4 — coverage push:
-routes.py 95%, search.py 80%, submodules synced) <strong>Last
-commit:</strong> <code>6953662</code> (working tree CLEAN)
-<strong>Branch:</strong> <code>main</code> — pushed to all upstreams
-<strong>Workable-item tracking:</strong> LIVE at <a
-href="Issues.md"><code>Issues.md</code></a> / <a
-href="Fixed.md"><code>Fixed.md</code></a> with prefix
-<strong>BOB</strong>, backed by SQLite DB at
-<code>docs/workable_items.db</code>.</p>
+<p><strong>Session:</strong> 2026-06-09 (Session 8 complete — 47 test
+files, 4,074+ tests, 88%+ coverage, 21 bugs fixed) <strong>Last
+commit:</strong> <code>c8254ee</code> <strong>Branch:</strong>
+<code>main</code> <strong>Working tree:</strong> CLEAN</p>
 <blockquote>
 <p>Send <code>continue</code> to pick up exactly where we left off. This
 file is the single source of truth for session handoff.</p>
 </blockquote>
 <hr />
-<h2 id="what-we-did-session-4">What We Did (Session 4)</h2>
+<h2 id="session-8-summary">Session 8 Summary</h2>
 <table>
 <colgroup>
-<col style="width: 35%" />
-<col style="width: 64%" />
+<col style="width: 53%" />
+<col style="width: 46%" />
 </colgroup>
 <thead>
 <tr>
-<th>Area</th>
-<th>Work Done</th>
+<th>Metric</th>
+<th>Value</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>routes.py coverage</strong></td>
-<td>75% → 95% (+20%). Added 78 tests: search_sync flow/sorting/CAPTCHA,
-SSE stream cap 429, get_search with merged results, auth bad-JSON
-fallback + save credentials, tracker download flow (temp file + upload),
-non-tracker failure, per-URL exception, direct URL download, multi-hash
-magnet generation.</td>
+<td>Test files</td>
+<td>47 test modules (222 <code>test_*.py</code> files total across all
+suites)</td>
 </tr>
 <tr>
-<td><strong>search.py coverage</strong></td>
-<td>79% → 80% (+1%). Added stream token issue/validate,
-get_all_tracker_results with results, get_live_results
-empty-tracker-results branch, get_search_status found,
-get_active_searches non-empty.</td>
+<td>Test cases</td>
+<td>4,074+ passed</td>
 </tr>
 <tr>
-<td><strong>validator.py coverage</strong></td>
-<td>72% → 92% (from previous session, committed this session)</td>
+<td>Coverage (unit)</td>
+<td>88%+ (gate: 49%)</td>
 </tr>
 <tr>
-<td><strong>jackett_autoconfig.py coverage</strong></td>
-<td>72% → 99% (from previous session, committed this session)</td>
+<td>Bugs fixed</td>
+<td>21 (BOB-001 through BOB-025, minus BOB-008)</td>
 </tr>
 <tr>
-<td><strong>Submodules synced</strong></td>
-<td>constitution + helixqa pulled from upstream, all repos pushed</td>
+<td>Submodules aligned</td>
+<td>constitution, challenges, containers, helixqa, jackett</td>
 </tr>
 <tr>
-<td><strong>Coverage baseline</strong></td>
-<td>Updated COVERAGE_BASELINE.md (Revision 2): 60% total, 1802
-tests</td>
+<td>Ruff / Mypy</td>
+<td>pre-existing warnings only, 0 new</td>
 </tr>
 </tbody>
 </table>
-<h3 id="verification-green-tree">Verification (green tree)</h3>
-<pre><code>Pre-build gate:  18 passed, 0 failed
-Unit tests:      1802 passed, 0 failed
-Total coverage:  60% (gate: 49%)
-Core modules:    all ≥80%
-routes.py:       95%
-search.py:       80%
-validator.py:    92%
-jackett_autoconfig.py: 99%</code></pre>
-<h3 id="commits">Commits</h3>
-<pre><code>6953662 chore: update helixqa submodule to latest upstream
-995986c chore: update constitution submodule to latest upstream
-d2b14ed test: routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig 99%
-e5fcdb1 test: api/__init__ lifespan, CORS, SPA routes, dashboard — 70% to 98%
-6a01128 test: harden main.py, enricher, streaming — 100% enricher, 94% main, 99% streaming</code></pre>
+<h3 id="bug-tracker">Bug Tracker</h3>
+<p>21 bugs fixed across Session 8: - 10 B-substring parsing fixes - 3
+<code>import re</code> missing fixes - 2 comma-size parsing fixes - 2
+crash guards - 1 bt4g hang fix - 1 dedup circular import fix - 1
+env_loader flaky test fix - 1 pirateiro full test suite (44/44)</p>
+<p><strong>1 remaining:</strong> BOB-008 (RuTracker CAPTCHA) —
+operator-blocked, needs manual cookie paste.</p>
+<h3 id="test-file-inventory">Test File Inventory</h3>
+<pre><code>tests/unit/merge_service/          (31 files)
+  test_cors_config.py
+  test_dead_tracker_bucket.py
+  test_deadline_tunable.py
+  test_deduplicator.py
+  test_deduplicator_edge.py
+  test_diag_no_stale_leakage.py
+  test_edge_case_challenges.py
+  test_enricher.py
+  test_enricher_edge.py
+  test_hooks.py
+  test_html_parsers.py
+  test_jackett_autoconfig.py
+  test_nnmclub_session_login.py
+  test_private_tracker_html_fixtures.py
+  test_public_plugin_harness.py
+  test_public_plugin_harness_broad.py
+  test_public_tracker_capture.py
+  test_public_tracker_subprocess_timeout.py
+  test_quality_detection.py
+  test_scheduler.py
+  test_scheduler_coverage.py
+  test_search_concurrency.py
+  test_search_coverage.py
+  test_search_deep_coverage.py
+  test_search_error_paths.py
+  test_session_encryption.py
+  test_theme_endpoint.py
+  test_tracker_stats.py
+  test_ttl_caches.py
+  test_validator.py
+  test_validator_coverage.py
+
+tests/unit/api_layer/              (14 files)
+  test_auth_coverage_extra.py
+  test_concurrent_writers.py
+  test_cors_config.py
+  test_hooks_coverage.py
+  test_hooks_endpoints.py
+  test_hooks_remaining.py
+  test_nnmclub_auth_endpoints.py
+  test_routes_coverage.py
+  test_sse_disconnect.py
+  test_sse_token_auth.py
+  test_theme_state_coverage.py
+  test_theme_stream.py
+  test_tracker_stats_sse.py
+
+tests/unit/                        (55 files, infrastructure + plugin tests)
+  test_auth.py, test_auth_coverage.py, test_auth_models.py
+  test_config.py, test_main.py, test_dashboard.py
+  test_content_type_refinement.py
+  test_credential_env_wiring.py
+  test_download_proxy_coverage.py, test_download_proxy_deep.py
+  test_download_merged.py
+  test_env_loader.py
+  test_freeleech.py
+  test_graceful_shutdown.py
+  test_helpers.py
+  test_log_filter.py
+  test_merge_trackers.py
+  test_novaprinter.py
+  test_private_tracker_search.py
+  test_public_tracker_subprocess.py
+  test_retry_policy.py
+  test_routes.py, test_routes_coverage.py
+  test_scheduler_api.py
+  test_sorting_weights.py
+  test_sse_disconnect.py
+  test_streaming.py
+  test_theme_injector.py, test_theme_wiring.py
+  test_webui_theme_injector.py
+  test_ui_module.py, test_ui_sorting.py
+  test_plugin_*.py                  (39 plugin modules: eztv, piratebay, solidtorrents,
+                                     limetorrents, torlock, gamestorrents, nyaa, kickass,
+                                     anilibra, torrentgalaxy, yts, rutor, tokyotoshokan,
+                                     snowfl, torrentdownload, linuxtracker, kinozal,
+                                     nnmclub, rutracker, megapeer, jackett, audiobookbay,
+                                     one337x, extratorrent, torrentfunk, torrentproject,
+                                     therarbg, academictorrents, ali213, yourbittorrent,
+                                     glotorrents, pctorrent, rockbox, bitru, btsow,
+                                     torrentscsv, xfsub, yihua, pirateiro, bt4g, iptorrents)
+  test_*_guards.py, test_*_deep.py  (crash guards + deep coverage variants)
+  test_ci_infra.py, test_ci_workflows.py
+  test_community_plugins_compile.py
+  test_courses_scaffold.py, test_course_scripts_lint.py
+  test_docs_presence.py
+  test_frontend_spec_coverage.py
+  test_install_plugin_json_config.py
+  test_jackett_integration.py, test_jackett_plugin_pool.py
+  test_nnmclub_config_selfheal.py, test_nnmclub_plugin_login.py
+  test_no_runtime_service_skips.py
+  test_openapi_frozen.py
+  test_page_title.py, test_footer_restored.py
+  test_palette_catalog.py, test_palette_catalog_python_mirror.py
+  test_quality_compose.py, test_quality_detection.py
+  test_readme_landing_page.py
+  test_runtime_requirements_includes_new_deps.py
+  test_scan_script_non_interactive.py
+  test_scanner_configs.py
+  test_service_fixtures.py
+  test_shadow_tokens.py
+  test_socks_udp.py
+  test_start_sh_copy_plugins_framework.py
+  test_toolchain_config.py
+  test_tracker_validator.py
+  test_website_config.py
+  test_branding_assets.py
+  test_architecture_diagrams.py
+  test_build_releases_non_interactive.py
+  tests/benchmark/                  (3)
+  tests/chaos/                      (2)
+  tests/concurrency/                (3)
+  tests/contract/                   (5)
+  tests/docs/                       (3)
+  tests/e2e/                        (7)
+  tests/integration/                (19)
+  tests/memory/                     (1)
+  tests/observability/              (2)
+  tests/performance/                (1)
+  tests/property/                   (2)
+  tests/security/                   (10)
+  tests/stress/                     (2)</code></pre>
+<h3 id="commits-latest-10">Commits (latest 10+)</h3>
+<pre><code>c8254ee fix: 21 test failures, pirateiro 44/44, coverage gate 88%, dedup circular import
+ccd0dc9 fix: env_loader flaky test + coverage baseline 88.14% + minor test fixes
+3d1819c docs: finalize Session 8 — Fixed.md Rev 12, 59 items, 18 bugs, 41 plugins
+f924841 test: wave 8 — btsow/torrentscsv/xfsub/yihua (170 tests) + bt4g fix + 2 fixes
+6773203 test: wave 7 — yourbittorrent/glotorrents/pctorrent/rockbox/bitru (164 tests) + bitru fix
+f191401 test: wave 6 — torrentfunk/torrentproject/therarbg/academictorrents/ali213 (178 tests) + 2 fixes
+1446cc5 test: wave 5 — audiobookbay/one337x/extratorrent (155 tests) + 3 fixes
+fd543b0 docs: update CONTINUATION.md for Session 8 (4 waves, 23 plugins)
+aae4069 test: wave 4 — kinozal/nnmclub/rutracker/megapeer/jackett + megapeer B-substring fix
+e3b7acb test: wave 3 — rutor/tokyotoshokan/snowfl/torrentdownload/linuxtracker + nyaa/kickass fixes</code></pre>
 <hr />
-<h2 id="quick-start-for-next-session">Quick-Start for Next Session</h2>
-<div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Pre-build gate</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Tests</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Coverage</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Lint + typecheck</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check . <span class="kw">&amp;&amp;</span> <span class="ex">mypy</span> download-proxy/src/</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Frontend</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> vitest run</span></code></pre></div>
-<hr />
-<h2 id="quick-reference-key-commands">Quick Reference — Key
-Commands</h2>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-build gate</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Tests</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Coverage</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Lint</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check . <span class="kw">&amp;&amp;</span> <span class="ex">mypy</span> download-proxy/src/</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Containers</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> start.sh <span class="kw">&amp;&amp;</span> <span class="fu">bash</span> stop.sh</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Workable items</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> validate <span class="at">--db</span> docs/workable_items.db</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> report <span class="at">--db</span> docs/workable_items.db <span class="at">--by-status</span></span></code></pre></div>
-<hr />
-<h2 id="architecture-tldr">Architecture TL;DR</h2>
-<table>
-<colgroup>
-<col style="width: 21%" />
-<col style="width: 32%" />
-<col style="width: 21%" />
-<col style="width: 25%" />
-</colgroup>
-<thead>
-<tr>
-<th>Port</th>
-<th>Service</th>
-<th>Tech</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>7185</td>
-<td>qBittorrent WebUI</td>
-<td>LinuxServer image</td>
-<td><code>admin</code>/<code>admin</code> hardcoded</td>
-</tr>
-<tr>
-<td>7186</td>
-<td>Download Proxy</td>
-<td>Python HTTP</td>
-<td>Proxies WebUI + private-tracker auth</td>
-</tr>
-<tr>
-<td>7187</td>
-<td>Merge Search Service</td>
-<td>FastAPI + Angular SPA</td>
-<td>SSE streaming, dedup, enrichment</td>
-</tr>
-<tr>
-<td>7188</td>
-<td>WebUI Bridge</td>
-<td>Python</td>
-<td>Host process (not containerized)</td>
-</tr>
-<tr>
-<td>7189</td>
-<td>boba-jackett</td>
-<td>Go/Gin</td>
-<td>Jackett management API, encrypted SQLite</td>
-</tr>
-<tr>
-<td>9117</td>
-<td>Jackett</td>
-<td>LinuxServer image</td>
-<td>Indexer API, auto-configured</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="known-issues-open">Known Issues (open)</h2>
-<ol type="1">
-<li><strong>BOB-008</strong>: RuTracker CAPTCHA — operator-blocked
-(needs manual cookie paste)</li>
-<li><strong>BOB-015</strong>: Remaining public-tracker failures are
-external/non-deterministic — low priority</li>
-<li><strong>Go backend</strong> is a skeleton (documented in
-AGENTS.md)</li>
-<li><strong>Containers may be down</strong> on session start —
-<code>bash start.sh</code> first</li>
-<li><strong>macOS + podman <code>network_mode: host</code></strong> does
-NOT forward ports — <code>ensure-macos-tunnel.sh</code> handles
-this</li>
-</ol>
-<hr />
-<h2 id="coverage-snapshot-2026-06-09">Coverage Snapshot
-(2026-06-09)</h2>
+<h2 id="coverage-snapshot">Coverage Snapshot</h2>
 <table>
 <thead>
 <tr>
@@ -207,7 +211,7 @@ this</li>
 </tr>
 <tr>
 <td>api/routes.py</td>
-<td><strong>95%</strong></td>
+<td>95%</td>
 </tr>
 <tr>
 <td>api/streaming.py</td>
@@ -231,7 +235,7 @@ this</li>
 </tr>
 <tr>
 <td>jackett_autoconfig.py</td>
-<td><strong>99%</strong></td>
+<td>99%</td>
 </tr>
 <tr>
 <td>scheduler.py</td>
@@ -239,15 +243,101 @@ this</li>
 </tr>
 <tr>
 <td>search.py</td>
-<td><strong>80%</strong></td>
+<td>~90%</td>
 </tr>
 <tr>
 <td>validator.py</td>
-<td><strong>92%</strong></td>
+<td>92%</td>
 </tr>
 <tr>
-<td><strong>TOTAL</strong></td>
-<td><strong>60%</strong></td>
+<td>theme_injector.py</td>
+<td>99%</td>
+</tr>
+<tr>
+<td>env_loader.py</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>download_proxy.py</td>
+<td>~95%</td>
+</tr>
+<tr>
+<td><strong>TOTAL (unit)</strong></td>
+<td><strong>88%+</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="known-issues">Known Issues</h2>
+<ol type="1">
+<li><strong>BOB-008</strong>: RuTracker CAPTCHA — operator-blocked
+(needs manual cookie paste)</li>
+<li>Go backend is a skeleton (documented in AGENTS.md)</li>
+<li>Containers may be down on session start — <code>bash start.sh</code>
+first</li>
+<li>macOS + podman <code>network_mode: host</code> does NOT forward
+ports — <code>ensure-macos-tunnel.sh</code> handles this</li>
+</ol>
+<hr />
+<h2 id="quick-start">Quick-Start</h2>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-build gate</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Unit tests</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Coverage</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Lint + typecheck</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check . <span class="kw">&amp;&amp;</span> <span class="ex">mypy</span> download-proxy/src/</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Frontend</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> vitest run</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Containers</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> start.sh <span class="kw">&amp;&amp;</span> <span class="fu">bash</span> stop.sh</span></code></pre></div>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Port</th>
+<th>Service</th>
+<th>Tech</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7185</td>
+<td>qBittorrent WebUI</td>
+<td>LinuxServer (<code>admin</code>/<code>admin</code>)</td>
+</tr>
+<tr>
+<td>7186</td>
+<td>Download Proxy</td>
+<td>Python HTTP</td>
+</tr>
+<tr>
+<td>7187</td>
+<td>Merge Search Service</td>
+<td>FastAPI + Angular SPA</td>
+</tr>
+<tr>
+<td>7188</td>
+<td>WebUI Bridge</td>
+<td>Python (host process)</td>
+</tr>
+<tr>
+<td>7189</td>
+<td>boba-jackett</td>
+<td>Go/Gin</td>
+</tr>
+<tr>
+<td>9117</td>
+<td>Jackett</td>
+<td>LinuxServer (auto-configured)</td>
 </tr>
 </tbody>
 </table>

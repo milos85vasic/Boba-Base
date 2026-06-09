@@ -1,0 +1,97 @@
+<h1
+id="bob-060-degenerate-input-crash-guards-for-public-tracker-plugins">BOB-060
+— Degenerate-input crash guards for public-tracker plugins</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-09T00:00:00Z <strong>Type:</strong> Bug ·
+<strong>Severity:</strong> Low · <strong>Status:</strong> Fixed
+<strong>Mandate:</strong> §11.4.43 TDD (RED→GREEN), §11.4.115
+RED-on-broken-artifact, §11.4.118 discovery-pressure, §11.4.135
+permanent regression guard, §11.4.83 QA transcript.</p>
+<p>Four public-tracker plugins raised <strong>unhandled
+exceptions</strong> on degenerate / empty / malformed upstream
+responses. Each was reproduced (RED) on the pre-fix code, fixed with a
+minimal guard mirroring sibling-plugin patterns, and re-verified
+(GREEN). All inputs that did <em>not</em> crash were added as passing
+regression guards rather than fabricated as fixes (anti-bluff §11.4.6).
+One gap (piratebay) was found by a §11.4.118 discovery audit, not by the
+original report.</p>
+<hr />
+<h2
+id="tokyotoshokan-re.searchnone-typeerror-on-retrieve_url-none">tokyotoshokan
+— <code>re.search(None)</code> TypeError on
+<code>retrieve_url → None</code></h2>
+<p>Root cause: <code>search()</code> / <code>handle_more_pages()</code>
+call <code>re.search(data)</code> on the <code>retrieve_url</code>
+result; a network/SSL failure yielding <code>None</code> raised
+<code>TypeError: expected string or bytes-like object</code> before the
+<code>if not match</code> guard ran. Fix: <code>if not data:</code>
+early-return/break before the regex.</p>
+<pre><code>RED  → TypeError: expected string or bytes-like object  (plugins/tokyotoshokan.py:143)
+GREEN→ 4 passed in 0.06s</code></pre>
+<p>Files: <code>plugins/tokyotoshokan.py</code>,
+<code>tests/unit/test_plugin_tokyotoshokan_guards.py</code> (new).</p>
+<h2
+id="kickass-none.startswith-attributeerror-in-download_torrent">kickass
+— <code>None.startswith</code> AttributeError in
+<code>download_torrent</code></h2>
+<p>Root cause: <code>download_torrent(url)</code> called
+<code>url.startswith("magnet:")</code> before any guard;
+<code>download_torrent(None)</code> raised
+<code>AttributeError: 'NoneType' object has no attribute 'startswith'</code>.
+Fix: falsy/non-str guard emitting the qBittorrent fallback
+<code>&lt;url&gt; &lt;engine_url&gt;</code> shape. (A separate
+<code>while True</code> pagination/loop concern was honestly noted as
+out-of-scope.)</p>
+<pre><code>RED  → AttributeError: &#39;NoneType&#39; object has no attribute &#39;startswith&#39;  (plugins/kickass.py:75)
+GREEN→ 21 passed in 0.40s</code></pre>
+<p>Files: <code>plugins/kickass.py</code>,
+<code>tests/unit/test_plugin_kickass_guards.py</code> (+8 tests).</p>
+<h2 id="yts-attributeerror-on-non-dict-null-data-json">yts —
+<code>AttributeError</code> on non-dict / null-<code>data</code>
+JSON</h2>
+<p>Root cause: <code>j.get("data", {}).get("movie_count")</code> assumed
+<code>j</code> was a dict and <code>data</code> non-null; non-dict
+array, bare <code>null</code>, <code>{"data": null}</code>, and
+error-shaped JSON raised
+<code>AttributeError: 'list'/'NoneType' object has no attribute 'get'</code>.
+Fix: validate <code>j</code> is a dict, coerce <code>data</code> to
+<code>{}</code> when not a dict. Positive control proves well-formed
+responses still yield rows.</p>
+<pre><code>RED  → 4 failed (AttributeError, plugins/yts.py:41)
+GREEN→ 9 passed in 0.24s   (incl. positive control)</code></pre>
+<p>Files: <code>plugins/yts.py</code>,
+<code>tests/unit/test_plugin_yts_guards.py</code> (new).</p>
+<h2
+id="piratebay-typeerror-string-indices-must-be-integers-on-data-null">piratebay
+— <code>TypeError: string indices must be integers</code> on
+<code>{"data": null}</code></h2>
+<p>Found by the §11.4.118 discovery audit
+(<code>docs/research/bob015_plugin_degenerate_input_audit/REPORT.md</code>).
+Root cause: <code>json.loads('{"data": null}')</code> → dict
+<code>{"data": None}</code> (len 1, so the empty check never fires);
+<code>for result in response_json:</code> iterates dict
+<strong>keys</strong> and <code>result["info_hash"]</code> indexes a str
+with a str. Fix: mirror anilibra —
+<code>if not isinstance(response_json, list): return</code> before the
+len-check, plus a per-element
+<code>if not isinstance(result, dict): continue</code>. Positive control
+proves well-formed arrays still yield rows.</p>
+<pre><code>RED  → 3 failed (TypeError: string indices must be integers, plugins/piratebay.py:91)
+GREEN→ 7 passed in 0.18s   (incl. positive control)</code></pre>
+<p>Files: <code>plugins/piratebay.py</code>,
+<code>tests/unit/test_plugin_piratebay_guards.py</code> (new).</p>
+<hr />
+<h2
+id="consolidated-regression-guard-run-11.4.132-risk-ordered-11.4.135">Consolidated
+regression-guard run (§11.4.132 risk-ordered, §11.4.135)</h2>
+<pre><code>.venv/bin/python -m pytest \
+  tests/unit/test_plugin_tokyotoshokan_guards.py \
+  tests/unit/test_plugin_kickass_guards.py \
+  tests/unit/test_plugin_yts_guards.py \
+  tests/unit/test_plugin_piratebay_guards.py \
+  tests/unit/test_plugin_crash_guards.py \
+  tests/unit/test_plugin_parser_guards.py -q --import-mode=importlib
+→ 55 passed in 0.91s</code></pre>
+<p>These guard tests are the permanent regression suite for this defect
+class (§11.4.135): each <code>RED_MODE</code>-equivalent reproduced the
+crash on the pre-fix code and now asserts its absence.</p>

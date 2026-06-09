@@ -1,6 +1,6 @@
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T00:00:00Z</p>
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-06-09T20:00:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -123,3 +123,270 @@ returns.</p>
 audits don’t mis-attribute it. Open issue suggestion: stabilise by
 injecting a deterministic queue-full hook instead of racing against real
 goroutine scheduling.</p>
+<hr />
+<h2 id="session-7-fixes-env_loader-asyncmock-gamestorrents">2026-06-09 —
+Session 7 fixes (env_loader, AsyncMock, gamestorrents)</h2>
+<h3 id="env_loader-flaky-test-key2-leak-across-test-ordering">6.
+env_loader flaky test: KEY2 leak across test ordering</h3>
+<p><strong>Severity:</strong> LOW (test-only flake; not a production
+bug).</p>
+<p><strong>Root cause:</strong> <code>test_comment_lines_ignored</code>
+in <code>tests/unit/test_env_loader.py</code> asserted
+<code>os.environ.get("KEY2") is None</code> after calling
+<code>load_env_files()</code> with a config file where
+<code>KEY2=commented_out</code> was commented out. However,
+<code>load_env_files</code> has a “first wins” policy — if
+<code>KEY2</code> was already present in <code>os.environ</code> from a
+prior test’s <code>load_env_files</code> call, the function would not
+override it. Under <code>pytest-randomly</code> ordering, the test that
+sets <code>KEY2</code> sometimes ran before the comment-line test,
+causing intermittent failure.</p>
+<p><strong>Affected files:</strong> -
+<code>tests/unit/test_env_loader.py</code></p>
+<p><strong>Fix:</strong> Added explicit
+<code>os.environ.pop("KEY1", None)</code> and
+<code>os.environ.pop("KEY2", None)</code> at the START of the test
+(before calling <code>load_env_files</code>), ensuring a clean env state
+regardless of test execution order. The <code>finally</code> block was
+retained as a safety net.</p>
+<p><strong>Regression guard:</strong> -
+<code>tests/unit/test_env_loader.py::test_comment_lines_ignored</code> —
+ran 2147/2147 twice consecutively under random ordering with zero
+failures.</p>
+<hr />
+<h3 id="asyncmock-warning-in-search-deep-coverage-tests">7. AsyncMock
+warning in search deep-coverage tests</h3>
+<p><strong>Severity:</strong> LOW (test warning; not a production
+bug).</p>
+<p><strong>Root cause:</strong>
+<code>test_iptorrents_login_no_cookies</code> in
+<code>tests/unit/merge_service/test_search_deep_coverage.py</code> used
+<code>AsyncMock()</code> for <code>login_resp</code> and
+<code>mock_session</code>. These objects are used as context managers
+(<code>async with session.post(...) as resp</code>), not as directly
+awaited coroutines. <code>AsyncMock.__aenter__</code> returns a
+coroutine, but the test’s mock setup didn’t properly wire
+<code>__aenter__</code>/<code>__aexit__</code>, causing “coroutine was
+never awaited” RuntimeWarning.</p>
+<p><strong>Affected files:</strong> -
+<code>tests/unit/merge_service/test_search_deep_coverage.py</code></p>
+<p><strong>Fix:</strong> Changed <code>AsyncMock()</code> to
+<code>MagicMock()</code> with explicit <code>__aenter__</code> and
+<code>__aexit__</code> stubs, matching the actual usage pattern (context
+manager, not coroutine).</p>
+<p><strong>Regression guard:</strong> -
+<code>tests/unit/merge_service/test_search_deep_coverage.py</code> — 0
+AsyncMock warnings from this test (was 3).</p>
+<hr />
+<h3
+id="gamestorrents-_parse_size-b-substring-bug-documented-not-fixed">8.
+gamestorrents <code>_parse_size</code> B-substring bug (documented, not
+fixed)</h3>
+<p><strong>Severity:</strong> MEDIUM (plugin returns 0 for all realistic
+file sizes).</p>
+<p><strong>Root cause:</strong> Same class of bug as BOB-013
+(torrentkitty). The <code>multipliers</code> dict in
+<code>_parse_size</code> iterates in insertion order:
+<code>{"B": 1, "KB": 1024, ...}</code>. Since <code>"B"</code> is a
+substring of <code>"KB"</code>, <code>"MB"</code>, <code>"GB"</code>,
+and <code>"TB"</code>, the check <code>if unit in size_str</code>
+matches <code>"B"</code> first for all realistic sizes. Then
+<code>size_str.replace("B", "")</code> leaves a trailing unit character
+(e.g. <code>"35.2 G"</code>) which <code>float()</code> cannot parse,
+returning 0.</p>
+<p><strong>Affected files:</strong> -
+<code>plugins/gamestorrents.py</code> (line 74-86)</p>
+<p><strong>Fix:</strong> NOT FIXED in this session. Documented via tests
+that assert actual behavior (tests suffixed
+<code>_b_substring_bug</code>). Fix requires reordering the dict keys to
+check longest units first (same approach as BOB-013).</p>
+<p><strong>Regression guard:</strong> -
+<code>tests/unit/test_plugin_gamestorrents.py::TestParseSize</code> — 8
+tests documenting the bug across GB/MB/KB/TB/commas/uppercase.</p>
+<hr />
+<h2 id="session-8-parallel-plugin-tests-gamestorrents-fix">2026-06-09 —
+Session 8 parallel plugin tests + gamestorrents fix</h2>
+<h3 id="gamestorrents-_parse_size-b-substring-bug-fixed">9.
+gamestorrents <code>_parse_size</code> B-substring bug (fixed)</h3>
+<p><strong>Severity:</strong> MEDIUM (plugin returned 0 for all
+realistic file sizes).</p>
+<p><strong>Root cause:</strong> Same class of bug as BOB-013
+(torrentkitty). The <code>multipliers</code> dict in
+<code>_parse_size</code> iterated in insertion order:
+<code>{"B": 1, "KB": 1024, ...}</code>. Since <code>"B"</code> is a
+substring of <code>"KB"</code>, <code>"MB"</code>, <code>"GB"</code>,
+and <code>"TB"</code>, the check <code>if unit in size_str</code>
+matched <code>"B"</code> first for all realistic sizes. Then
+<code>size_str.replace("B", "")</code> left a trailing unit character
+(e.g. <code>"35.2 G"</code>) which <code>float()</code> could not parse,
+returning 0.</p>
+<p><strong>Affected files:</strong> -
+<code>plugins/gamestorrents.py</code> (line 74-86)</p>
+<p><strong>Fix:</strong> Reordered dict keys to check longest units
+first:
+<code>{"TB": ..., "GB": ..., "MB": ..., "KB": ..., "B": 1}</code>. Same
+approach as BOB-013.</p>
+<p><strong>Regression guard:</strong> -
+<code>tests/unit/test_plugin_gamestorrents.py::TestParseSize</code> — 8
+tests all pass with correct byte values for
+GB/MB/KB/TB/B/comma/uppercase.</p>
+<hr />
+<h3 id="piratebay-import-os-placed-after-use-documented-not-fixed">10.
+piratebay <code>import os</code> placed after use (documented, not
+fixed)</h3>
+<p><strong>Severity:</strong> LOW (only affects non-magnet torrent file
+downloads, which are rare).</p>
+<p><strong>Root cause:</strong> <code>piratebay.py:175</code> has
+<code>import os</code> placed after <code>os.fdopen</code> on line 172.
+When downloading a non-magnet torrent file, <code>os.fdopen</code> is
+called before <code>os</code> is imported, causing
+<code>UnboundLocalError</code>.</p>
+<p><strong>Affected files:</strong> - <code>plugins/piratebay.py</code>
+(line 172-175)</p>
+<p><strong>Fix:</strong> NOT FIXED in this session. Documented via test
+<code>test_torrent_file_download_known_bug_os_import_order</code>. Fix
+requires moving <code>import os</code> to the top of the
+<code>download_torrent</code> method or module level.</p>
+<p><strong>Regression guard:</strong> -
+<code>tests/unit/test_plugin_piratebay.py::TestDownloadTorrent::test_torrent_file_download_known_bug_os_import_order</code></p>
+<hr />
+<h3 id="torlock-search-does-not-catch-exceptions-from-retrieve_url">11.
+torlock <code>search()</code> does not catch exceptions from
+<code>retrieve_url()</code></h3>
+<p><strong>Severity:</strong> LOW (network errors crash the entire
+search loop instead of failing gracefully).</p>
+<p><strong>Root cause:</strong> <code>torlock.py</code>
+<code>search()</code> calls <code>retrieve_url()</code> without a
+try/except, so a network error propagates up and crashes the search
+loop.</p>
+<p><strong>Affected files:</strong> -
+<code>plugins/torlock.py</code></p>
+<p><strong>Fix:</strong> NOT FIXED in this session. Documented via test
+<code>test_search_exception_propagates</code>. Fix requires wrapping
+<code>retrieve_url()</code> in try/except with graceful error
+handling.</p>
+<p><strong>Regression guard:</strong> -
+<code>tests/unit/test_plugin_torlock.py::TestSearch::test_search_exception_propagates</code></p>
+<hr />
+<h2 id="session-8-wave-2-nyaakickassanilibratorrentgalaxyyts">2026-06-09
+— Session 8 wave 2: nyaa/kickass/anilibra/torrentgalaxy/yts</h2>
+<h3
+id="nyaa-download_torrent-missing-import-re-documented-not-fixed">12.
+nyaa <code>download_torrent</code> missing <code>import re</code>
+(documented, not fixed)</h3>
+<p><strong>Severity:</strong> MEDIUM (any nyaa.si URL passed to
+<code>download_torrent</code> raises <code>NameError</code>).</p>
+<p><strong>Root cause:</strong> <code>plugins/nyaa.py:170</code> calls
+<code>re.search()</code> but <code>import re</code> is absent from the
+module. The <code>search()</code> method works because <code>re</code>
+is imported transitively via other modules, but
+<code>download_torrent</code> fails with
+<code>NameError: name 're' is not defined</code>.</p>
+<p><strong>Affected files:</strong> - <code>plugins/nyaa.py</code> (line
+170)</p>
+<p><strong>Fix:</strong> NOT FIXED in this session. Documented via tests
+that assert the <code>NameError</code>. Fix requires adding
+<code>import re</code> at the top of the file.</p>
+<p><strong>Regression guard:</strong> -
+<code>tests/unit/test_plugin_nyaa.py::TestDownloadTorrent</code> — 6
+tests including the NameError documentation.</p>
+<hr />
+<h3
+id="kickass-comma-separated-size-not-matched-by-regex-documented-not-fixed">13.
+kickass comma-separated size not matched by regex (documented, not
+fixed)</h3>
+<p><strong>Severity:</strong> LOW (sizes like <code>1,234.5 MB</code>
+silently parse to 0).</p>
+<p><strong>Root cause:</strong> The HTMLParser regex
+<code>\d+\.\d+</code> doesn’t match comma-separated numbers like
+<code>1,234.5 MB</code>. The comma is not handled in the regex or the
+replacement logic.</p>
+<p><strong>Affected files:</strong> -
+<code>plugins/kickass.py</code></p>
+<p><strong>Fix:</strong> NOT FIXED in this session. Documented via test
+<code>test_comma_in_size_not_matched_by_regex</code>. Fix requires
+updating the regex to handle commas.</p>
+<p><strong>Regression guard:</strong> -
+<code>tests/unit/test_plugin_kickass.py::TestHTMLParserFeed::test_comma_in_size_not_matched_by_regex</code></p>
+<hr />
+<h3 id="kickass-crash-prone-patterns-fixed">14. kickass crash-prone
+patterns (fixed)</h3>
+<p><strong>Severity:</strong> MEDIUM (empty responses from
+<code>retrieve_url</code> crash the plugin).</p>
+<p><strong>Root cause:</strong> Three methods in <code>kickass.py</code>
+called <code>retrieve_url()</code> without try/except or empty-response
+guards: <code>__retrieve_download_link()</code>,
+<code>download_torrent()</code>, and <code>search()</code>. When
+<code>retrieve_url</code> returned <code>None</code> or empty string,
+subsequent <code>re.search</code>/<code>re.sub</code> calls crashed with
+<code>TypeError</code>.</p>
+<p><strong>Affected files:</strong> - <code>plugins/kickass.py</code>
+(lines 61, 74, 94)</p>
+<p><strong>Fix:</strong> Added try/except + empty-response guards to all
+three methods. Each now handles empty/None responses gracefully (returns
+“NotFound”, prints fallback URL, or breaks the loop respectively).</p>
+<p><strong>Regression guard:</strong> -
+<code>tests/unit/test_plugin_kickass_guards.py</code> — 13 tests proving
+empty response, None response, ConnectionError, TimeoutError, and
+malformed HTML don’t crash.</p>
+<hr />
+<h2
+id="waves-5-8-b-substring-epidemic-across-9-community-plugins">2026-06-09
+— Waves 5-8: B-substring epidemic across 9 community plugins</h2>
+<h3
+id="systemic-_parse_size-b-substring-bug-9-instances-found-all-fixed">15.
+Systemic <code>_parse_size</code> B-substring bug (9 instances found,
+all fixed)</h3>
+<p><strong>Severity:</strong> MEDIUM (all 9 plugins returned 0 for
+KB/MB/GB/TB — silently broken size reporting).</p>
+<p><strong>Root cause:</strong> The <code>_parse_size</code> method in
+each plugin uses a <code>multipliers</code> dict iterated in insertion
+order. With keys ordered <code>{"B": 1, "KB": 1024, ...}</code>, the
+check <code>"B" in size_str</code> matches the <code>"B"</code>
+substring inside <code>"KB"</code>, <code>"MB"</code>,
+<code>"GB"</code>, and <code>"TB"</code>. Then
+<code>size_str.replace("B", "")</code> leaves a trailing character
+(e.g. <code>"1.5 G"</code>) which <code>float()</code> cannot parse,
+returning 0.</p>
+<p><strong>Affected plugins (9 total):</strong> | Plugin | Status |
+|——–|——–| | <code>gamestorrents.py</code> | Fixed (BOB-024) | |
+<code>megapeer.py</code> | Fixed (BOB-042) | | <code>one337x.py</code> |
+Fixed (BOB-043) | | <code>extratorrent.py</code> | Fixed (BOB-044) | |
+<code>torrentfunk.py</code> | Fixed (BOB-045) | |
+<code>therarbg.py</code> | Fixed (BOB-047) | | <code>pctorrent.py</code>
+| Fixed (BOB-052, by subagent) | | <code>bitru.py</code> | Fixed
+(BOB-054) | | <code>xfsub.py</code> | Fixed (BOB-057) | |
+<code>yihua.py</code> | Fixed (BOB-058) |</p>
+<p><strong>Fix:</strong> Reorder dict keys longest-unit-first:
+<code>{"TB": ..., "GB": ..., "MB": ..., "KB": ..., "B": 1}</code>. Same
+approach as BOB-013 (torrentkitty).</p>
+<p><strong>Global regression guard:</strong> 10 dedicated test files,
+each with explicit <code>_parse_size</code> assertions for all 5 units
+(B/KB/MB/GB/TB).</p>
+<hr />
+<h3 id="systematic-import-re-omissions-3-instances-found-all-fixed">16.
+Systematic <code>import re</code> omissions (3 instances found, all
+fixed)</h3>
+<p><strong>Root cause:</strong> Three plugins called
+<code>re.search()</code> or <code>re.compile()</code> without importing
+<code>re</code> at module level. The <code>search()</code> method worked
+via transitive imports from helper modules, but
+<code>download_torrent()</code> failed with <code>NameError</code>.</p>
+<p><strong>Affected plugins:</strong> | Plugin | Status | |——–|——–| |
+<code>nyaa.py</code> | Fixed (BOB-035) | | <code>audiobookbay.py</code>
+| Fixed (BOB-042) | | (torlock <code>search()</code> also lacks
+exception handling — documented BOB-029) |</p>
+<p><strong>Fix:</strong> Added <code>import re</code> at module
+level.</p>
+<hr />
+<h3 id="bt4g-infinite-loop-test-only-fixed">17. bt4g infinite loop
+(test-only, fixed)</h3>
+<p><strong>Severity:</strong> LOW (test hang, not production).</p>
+<p><strong>Root cause:</strong> <code>search()</code> has a
+<code>while True</code> loop that breaks when
+<code>parser.noTorrents</code> is True. Tests that used
+<code>return_value=MATCHING_HTML</code> (not <code>side_effect</code>)
+caused every page to match, triggering infinite loop.</p>
+<p><strong>Fix:</strong> Changed to
+<code>side_effect=[MATCHING_HTML, EMPTY_HTML]</code> so page 2 triggers
+the <code>noTorrents</code> break condition.</p>

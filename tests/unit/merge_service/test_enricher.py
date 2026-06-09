@@ -75,12 +75,49 @@ class TestMetadataEnricher:
 
         assert enricher._cache == {}
 
-    def test_resolve_no_apis(self, enricher):
-        """Test resolve returns a result or None gracefully."""
+    def test_resolve_no_apis(self, enricher, monkeypatch):
+        """resolve() with no API keys must be deterministic + fully offline.
+
+        With no keys, the keyed lookups (TMDB/OMDb/AniList) skip immediately,
+        but the keyless lookups (TVMaze/OpenLibrary/MusicBrainz) would hit the
+        public internet with no bound — a network dependency that can hang the
+        event loop forever when a host throttles/blackholes (§11.4.98,
+        §11.4.69). Stub those three to async no-ops so the test never touches
+        the network and completes instantly, and assert NO real aiohttp
+        session is ever constructed (the regression guard).
+        """
         import asyncio
 
+        import aiohttp
+
+        async def _none(_query):
+            return None
+
+        enricher._lookup_tvmaze = _none
+        enricher._lookup_openlibrary = _none
+        enricher._lookup_musicbrainz = _none
+
+        # Regression guard: count every ClientSession construction. The
+        # lookup methods swallow exceptions (broad ``except``), so raising
+        # from a fake ctor would be silently eaten — instead spy on the
+        # constructor and assert AFTER the run that it was never reached.
+        # A non-zero count means a keyless lookup hit the network.
+        sessions_opened: list[None] = []
+        real_ctor = aiohttp.ClientSession
+
+        def _spy_ctor(*args, **kwargs):
+            sessions_opened.append(None)
+            return real_ctor(*args, **kwargs)
+
+        monkeypatch.setattr(aiohttp, "ClientSession", _spy_ctor)
+
         result = asyncio.run(enricher.resolve("Test Movie"))
-        assert result is None or hasattr(result, "source")
+
+        assert result is None
+        assert sessions_opened == [], (
+            f"resolve() with no API keys opened {len(sessions_opened)} network "
+            "session(s) — keyless lookups must be stubbed/offline"
+        )
 
 
 class TestMetadataResult:

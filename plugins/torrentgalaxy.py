@@ -12,6 +12,10 @@ from datetime import datetime
 class torrentgalaxy(object):
     url = "https://torrentgalaxy.one/"
     name = "TorrentGalaxy"
+    # Upper bound on pagination so a tracker that re-serves matching rows for
+    # every page index (interstitial / index-ignoring server) cannot make the
+    # search loop run forever.
+    MAX_PAGES = 50
     supported_categories = {
         "all": "",
         "movies": "Movies",
@@ -87,7 +91,7 @@ class torrentgalaxy(object):
         cat = "" if cat == "all" else f":category:{self.supported_categories[cat]}"
         parser = self.HTMLParser(self.url)
         current_page = 1
-        while True:
+        while current_page <= self.MAX_PAGES:
             url = "{0}get-posts/keywords:{1}{2}/?page={3}".format(
                 self.url, what, cat, current_page
             )

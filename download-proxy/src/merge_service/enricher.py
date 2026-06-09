@@ -16,6 +16,12 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
+# Total request budget for every external metadata API call. A slow,
+# throttled, or blackholed endpoint (MusicBrainz rate-limits hard) must
+# never be able to hang the event loop forever in ``selector.select`` —
+# this bounds every ``aiohttp.ClientSession`` lookup. (§11.4.69)
+_HTTP_TIMEOUT_SECONDS = 10.0
+
 
 @dataclass
 class MetadataResult:
@@ -114,7 +120,8 @@ class MetadataEnricher:
 
             url = f"http://www.omdbapi.com/?apikey={self._omdb_key}&t={query}"
 
-            async with aiohttp.ClientSession() as session, session.get(url) as response:
+            timeout = aiohttp.ClientTimeout(total=_HTTP_TIMEOUT_SECONDS)
+            async with aiohttp.ClientSession(timeout=timeout) as session, session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
                     if data.get("Response") == "True":
@@ -144,7 +151,8 @@ class MetadataEnricher:
             # Search
             search_url = f"https://api.themoviedb.org/3/search/multi?api_key={self._tmdb_key}&query={query}"
 
-            async with aiohttp.ClientSession() as session, session.get(search_url) as response:
+            timeout = aiohttp.ClientTimeout(total=_HTTP_TIMEOUT_SECONDS)
+            async with aiohttp.ClientSession(timeout=timeout) as session, session.get(search_url) as response:
                 if response.status == 200:
                     data = await response.json()
                     results = data.get("results", [])
@@ -177,7 +185,8 @@ class MetadataEnricher:
 
             url = f"https://api.tvmaze.com/search/shows?q={query}"
 
-            async with aiohttp.ClientSession() as session, session.get(url) as response:
+            timeout = aiohttp.ClientTimeout(total=_HTTP_TIMEOUT_SECONDS)
+            async with aiohttp.ClientSession(timeout=timeout) as session, session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
                     if data:
@@ -216,8 +225,9 @@ class MetadataEnricher:
             """
             variables = {"search": query}
 
+            timeout = aiohttp.ClientTimeout(total=_HTTP_TIMEOUT_SECONDS)
             async with (
-                aiohttp.ClientSession() as session,
+                aiohttp.ClientSession(timeout=timeout) as session,
                 session.post(
                     "https://graphql.anilist.co",
                     json={"query": query_str, "variables": variables},
@@ -248,7 +258,8 @@ class MetadataEnricher:
 
             url = f"https://musicbrainz.org/ws/2/release-group/?query={query}&fmt=json&limit=1"
 
-            async with aiohttp.ClientSession() as session, session.get(url) as response:
+            timeout = aiohttp.ClientTimeout(total=_HTTP_TIMEOUT_SECONDS)
+            async with aiohttp.ClientSession(timeout=timeout) as session, session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
                     release_groups = data.get("release-groups", [])
@@ -275,7 +286,8 @@ class MetadataEnricher:
 
             url = f"https://openlibrary.org/search.json?q={query}&limit=1"
 
-            async with aiohttp.ClientSession() as session, session.get(url) as response:
+            timeout = aiohttp.ClientTimeout(total=_HTTP_TIMEOUT_SECONDS)
+            async with aiohttp.ClientSession(timeout=timeout) as session, session.get(url) as response:
                 if response.status == 200:
                     data = await response.json()
                     docs = data.get("docs", [])

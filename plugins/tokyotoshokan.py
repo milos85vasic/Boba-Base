@@ -101,6 +101,10 @@ class tokyotoshokan(object):
         additional_links = re_compile(r"\?lastid=[0-9]+&page=[0-9]+&terms=" + query.replace("%20", r"\+"))
 
         data = retrieve_url(last_page_url)
+        if not data:
+            # None / empty body (network or SSL failure). Stop paging
+            # gracefully instead of crashing on re.search(None).
+            return last_page_url
         match = torrent_list.search(data)
         if not match:
             return last_page_url
@@ -117,6 +121,9 @@ class tokyotoshokan(object):
             page_count += 1
             last_page_url = res_link
             data = retrieve_url(res_link)
+            if not data:
+                # None / empty paged body — stop paging gracefully.
+                break
             match = torrent_list.search(data)
             if not match:
                 # Empty / garbage paged response (network or SSL failure, or
@@ -139,6 +146,10 @@ class tokyotoshokan(object):
             self.url, query, self.supported_categories[cat]
         )
         data = retrieve_url(request_url)
+        if not data:
+            # None / empty response body (network or SSL failure). Return
+            # 0 results instead of crashing on re.search(None).
+            return
 
         match = torrent_list.search(data)
         if not match:

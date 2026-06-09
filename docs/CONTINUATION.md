@@ -198,7 +198,7 @@ e3b7acb test: wave 3 — rutor/tokyotoshokan/snowfl/torrentdownload/linuxtracker
 | validator.py | 92% |
 | theme_injector.py | 99% |
 | env_loader.py | 100% |
-| download_proxy.py | ~55%+ |
+| download_proxy.py | ~95% |
 | **TOTAL (unit)** | **88%+** |
 
 ---

@@ -1,0 +1,114 @@
+<h1 id="bob-015-plugin-degenerate-input-crash-audit">BOB-015 — Plugin
+degenerate-input crash audit</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-09T00:00:00Z <strong>Mandate:</strong> §11.4.118
+discovery-pressure (confirm known-issue-set completeness; surface
+unreported crash-on-degenerate-input gaps before end users hit them)
+<strong>Method:</strong> read-only enumeration (no source/test edits);
+throwaway probe run from <code>/tmp</code>, then removed.</p>
+<hr />
+<h2 id="methodology">Methodology</h2>
+<p>Reproduced the existing offline-isolation harness pattern from
+<code>tests/unit/test_plugin_crash_guards.py</code> +
+<code>tests/unit/test_plugin_parser_guards.py</code>: stub
+<code>novaprinter</code> (capture <code>prettyPrinter</code> rows) and
+<code>helpers</code> (<code>retrieve_url</code>,
+<code>download_file</code>, <code>htmlentitydecode</code>,
+<code>unescape</code>, <code>get_torrent_socks_proxy</code>) into
+<code>sys.modules</code>, <code>importlib</code>-load each plugin,
+resolve its class by attribute match (nova2 contract), patch
+<code>retrieve_url</code> to return each degenerate payload, call
+<code>search("linux")</code>, and record CRASH vs OK. Run with
+<code>python3</code> 3.9.x. pytest suite NOT run. No
+<code>plugins/</code>, <code>tests/</code>, or source files edited.</p>
+<p><strong>Probed (15):</strong> curated set that ships as files —
+<code>eztv limetorrents piratebay solidtorrents torlock rutracker rutor kinozal nnmclub</code>
+— plus broad public plugins
+<code>anilibra bitsearch gamestorrents megapeer nyaa torrentgalaxy torrentkitty</code>.
+Excluded the 3 already under active repair this session
+(<code>tokyotoshokan</code>, <code>kickass</code>, <code>yts</code>).
+The curated names <code>jackett</code>, <code>torrentproject</code>,
+<code>torrentscsv</code> do NOT ship as plugin files → out of scope.</p>
+<p><strong>Input classes (9):</strong> <code>empty_str</code>,
+<code>whitespace</code>, <code>truncated_html</code>,
+<code>malformed_html</code>, <code>empty_json {}</code>,
+<code>empty_json_array []</code>, <code>malformed_json</code>,
+<code>json_data_null '{"data": null}'</code>,
+<code>none (None)</code>.</p>
+<hr />
+<h2 id="result-matrix-summary">Result matrix (summary)</h2>
+<p>Every probeable plugin handled all 8 <strong>string</strong> input
+classes gracefully (0 rows, no exception) — with ONE exception:
+<code>piratebay</code> on <code>json_data_null</code>. The
+<code>none</code> input crashed several plugins but is <strong>not
+reachable</strong> in production (see reachability note).</p>
+<ul>
+<li>All 14 string-probeable plugins:
+<code>empty_str / whitespace / truncated_html / malformed_html / {} / [] / malformed_json</code>
+→ <strong>OK</strong> everywhere.</li>
+<li><code>json_data_null</code> → <strong>OK everywhere EXCEPT
+<code>piratebay</code> (CRASH)</strong>.</li>
+<li><code>none</code> → CRASH in eztv, limetorrents, piratebay,
+solidtorrents, torlock, bitsearch, nyaa, torrentgalaxy; OK in rutor,
+kinozal, nnmclub, anilibra, gamestorrents, megapeer, torrentkitty.</li>
+<li><code>rutracker</code> → <strong>SKIP-with-reason</strong>:
+constructor performs a live login
+(<code>ValueError: Unable to connect using given credentials.</code>),
+cannot be driven offline. Not a crash.</li>
+</ul>
+<h2 id="reachability-note-11.4.6">Reachability note (§11.4.6)</h2>
+<p><code>plugins/helpers.py::retrieve_url</code> is typed
+<code>-&gt; str</code> and every return path returns a <code>str</code>
+(<code>""</code> on URLError; <code>dataStr</code> on success) — it
+NEVER returns <code>None</code>. So the <code>none</code>-class crashes
+are <strong>NOT reachable</strong> via the production helpers path; they
+are defensive observations, not user-facing defects.</p>
+<hr />
+<h2 id="new-reachable-guard-gap-beyond-tokyotoshokankickassyts">NEW
+reachable guard gap (beyond tokyotoshokan/kickass/yts)</h2>
+<h3
+id="gap-1-pluginspiratebay.py-crashes-on-realistic-upstream-data-null">GAP-1
+— <code>plugins/piratebay.py</code> crashes on realistic upstream
+<code>{"data": null}</code></h3>
+<p><strong>Reachability: REAL</strong> — <code>retrieve_url</code> can
+legitimately return a JSON <em>object</em> instead of the expected array
+(same upstream-shape class <code>anilibra</code> was already hardened
+against in <code>test_plugin_crash_guards.py</code>).</p>
+<p>Root cause (<code>piratebay.py</code> <code>search()</code>):
+<code>json.loads('{"data": null}')</code> → dict
+<code>{"data": None}</code>; the guard
+<code>if len(response_json) == 0</code> sees <code>len == 1</code> and
+does NOT fire; <code>for result in response_json:</code> then iterates
+dict <strong>keys</strong> so <code>result == "data"</code> (a str), and
+<code>result["info_hash"]</code> indexes a str with a str.</p>
+<p>Verbatim captured evidence
+(<code>retrieve_url -&gt; '{"data": null}'</code>):</p>
+<pre><code>Traceback (most recent call last):
+  File &quot;&lt;stdin&gt;&quot;, line 23, in &lt;module&gt;
+  File &quot;plugins/piratebay.py&quot;, line 91, in search
+    if result[&quot;info_hash&quot;] == &quot;0000000000000000000000000000000000000000&quot;:
+TypeError: string indices must be integers</code></pre>
+<p><strong>Suggested fix direction:</strong> after
+<code>json.loads</code>,
+<code>if not isinstance(response_json, list): return</code> before the
+empty-check / iteration — mirroring the existing anilibra
+non-list/null-data guard.</p>
+<hr />
+<h2 id="defensive-observations-not-reachable-no-fix-needed">Defensive
+observations (NOT reachable — no fix needed)</h2>
+<p><code>none</code>-only crashers, verbatim messages: eztv /
+limetorrents / solidtorrents / torlock / nyaa →
+<code>TypeError: can only concatenate str (not "NoneType") to str</code>;
+bitsearch / torrentgalaxy →
+<code>TypeError: expected string or bytes-like object</code>; piratebay
+(none) →
+<code>TypeError: the JSON object must be str, bytes or bytearray, not NoneType</code>.</p>
+<hr />
+<h2 id="bottom-line">Bottom line</h2>
+<p>Exactly <strong>one</strong> additional reachable gap beyond the
+three already fixed: <strong><code>piratebay</code> on
+<code>{"data": null}</code></strong>. No other reachable crash surfaced
+across 135 (plugin × input) cells. Honest coverage gaps:
+<code>rutracker</code> (live-login constructor → SKIP) and the
+un-shipped <code>jackett</code> / <code>torrentproject</code> /
+<code>torrentscsv</code> curated names were not exercised.</p>

@@ -678,3 +678,14 @@ failure remains unguarded.
   zero success→error flips — failures are external, not code-driven.
 - Orchestrator isolates per-tracker failures; no cascading crashes.
 
+## BOB-060 — Public-tracker plugins crash on degenerate/empty upstream responses
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-060/EVIDENCE.md
+**Severity:** Low
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+tokyotoshokan/kickass/yts/piratebay raised unhandled exceptions on empty/None/non-dict-JSON upstream responses; added empty-response guards + RED→GREEN regression tests (§11.4.118 audit found piratebay).
+

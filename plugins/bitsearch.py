@@ -13,6 +13,10 @@ from novaprinter import prettyPrinter
 class bitsearch(object):
     url = "https://bitsearch.to/"
     name = "BitSearch"
+    # Upper bound on pagination. An upstream / interstitial server that
+    # re-serves matching rows for every &page=N index would otherwise make
+    # search()'s loop run forever (noTorrents never trips).
+    MAX_PAGES = 50
     supported_categories = {
         "all": "",
         "movies": "2",
@@ -77,16 +81,16 @@ class bitsearch(object):
                     torrents.append(torrent_data)
             return torrents
 
-    def download_torrent(self, download_url):
+    def download_torrent(self, download_url: str) -> None:
         unquoted_magnet = unquote(download_url)
         print(unquoted_magnet + " " + unquoted_magnet)
 
-    def search(self, what, cat="all"):
+    def search(self, what: str, cat: str = "all") -> None:
         what = what.replace("%20", "+")
         cat = "" if cat == "all" else f"&category={self.supported_categories[cat]}"
         parser = self.HTMLParser(self.url)
         current_page = 1
-        while True:
+        while current_page <= self.MAX_PAGES:
             url = "{0}search?q={1}&page={2}{3}&sortBy=relevance".format(
                 self.url, what, current_page, cat
             )

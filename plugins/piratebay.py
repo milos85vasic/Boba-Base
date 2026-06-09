@@ -82,12 +82,20 @@ class piratebay:
         except (json.JSONDecodeError, ValueError):
             return
 
+        # guard against non-list shapes (e.g. ``{"data": null}`` or a bare
+        # ``null``) — apibay is expected to return an array of result dicts;
+        # anything else yields no results instead of crashing on iteration.
+        if not isinstance(response_json, list):
+            return
+
         # check empty response
         if len(response_json) == 0:
             return
 
         # parse results
         for result in response_json:
+            if not isinstance(result, dict):
+                continue
             if result["info_hash"] == "0000000000000000000000000000000000000000":
                 continue
             prettyPrinter(
