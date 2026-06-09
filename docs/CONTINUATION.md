@@ -1,7 +1,7 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-09 (Session 5 — search.py 84%, plugin coverage, BOB-015 fixes)
-**Last commit:** `HEAD` (working tree CLEAN)
+**Session:** 2026-06-09 (Session 6 — constitution submodule Rev 23, §11.4.132-§11.4.141)
+**Last commit:** `aa46f07` (working tree CLEAN)
 **Branch:** `main` — pushed to all upstreams
 **Workable-item tracking:** LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**, backed by SQLite DB at `docs/workable_items.db`.
 
@@ -10,29 +10,29 @@
 
 ---
 
-## What We Did (Session 5)
+## What We Did (Session 6)
 
 | Area | Work Done |
 |------|-----------|
-| **search.py coverage** | 80% → 84% (+4%). Added 44 tests: size-based quality fallback, cancel_search, no-creds early returns, deadline ValueError fallback, HTML parser malformed-result guards, EncryptedSessionStore iter, load_env fallback. |
-| **Plugin coverage** | theme_injector 0%→99%, env_loader 0%→100%, download_proxy 36%→46%. 136 new tests across 3 plugin test files. |
-| **BOB-015 fixes** | yts.py + piratebay.py JSON decode guards (empty/invalid JSON no longer crashes). Verified kickass, eztv, nyaa, limetorrents handle empty HTML gracefully. |
-| **Submodules synced** | constitution + helixqa pulled from upstream, all repos pushed |
+| **Constitution submodule** | Updated from Rev 22 (§11.4.131) to Rev 23 (§11.4.132-§11.4.141). Key additions: risk-ordered validation (§11.4.132), target-system safety (§11.4.133), code-review iterate-until-GO (§11.4.134), standing regression-guard (§11.4.135), real-content playback-test (§11.4.136), subtitle correctness oracle (§11.4.137), operator-escape bluff-audit (§11.4.138), fresh-process clean-artifact (§11.4.139), action-prefix system (§11.4.140), token-efficiency mandate (§11.4.141). |
+| **Action-prefix system** | Universal `ACTION_NAME ::` prompt-prefix system with 4 equivalent forms. Currently registers `BACKGROUND` action. Scripts: `action_prefix_lib.sh`, `action_prefix_expand.sh`, `install_action_prefix.sh`. |
+| **Token efficiency** | §11.4.141 mandate to cut token spend 60-70% via: prompt-cache governance prefix, subagent model-tiering (mechanical=Haiku, judgment=strong), thin index + on-demand detail, CodeGraph/retrieval-first, output reduction, tool-call batching. |
+| **Subagent tiering** | Registry mapping 7 mechanical classes (code_search, status_probe, doc_export, etc.) to Haiku + 6 judgment classes (verdict, fix_design, code_review, etc.) to strong model. |
+| **GEMINI.md** | New agent profile for Gemini CLI added to constitution. |
 
 ### Verification (green tree)
 
 ```
 Unit tests:      1989 passed, 0 failed
 Total coverage:  65% (gate: 49%)
-search.py:       84%
-theme_injector:  99%
-env_loader:      100%
+Constitution:    Rev 23 (§11.4.132-§11.4.141)
 ```
 
 ### Commits
 
 ```
-HEAD  feat: search.py 84%, plugin coverage (theme_injector/env_loader/download_proxy), BOB-015 JSON guards
+aa46f07 chore: update constitution submodule to latest upstream (Rev 23, §11.4.132-§11.4.141)
+ac226e0 feat: search.py 84%, plugin coverage (theme_injector/env_loader/download_proxy), BOB-015 JSON guards
 6953662 chore: update helixqa submodule to latest upstream
 995986c chore: update constitution submodule to latest upstream
 d2b14ed test: routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig 99%
