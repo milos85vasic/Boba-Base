@@ -688,6 +688,27 @@ class TestEnricherResolve:
         assert enricher.detect_quality("Movie BluRay") == "BluRay"
         assert enricher.detect_quality("Movie blu-ray") == "BluRay"
 
+    def test_detect_quality_sd(self, enricher):
+        """detect_quality should detect SD quality."""
+        assert enricher.detect_quality("Movie 480p") == "SD"
+        assert enricher.detect_quality("Movie sdrip") == "SD"
+        assert enricher.detect_quality("Movie camrip") == "SD"
+
+    def test_detect_quality_webdl(self, enricher):
+        """detect_quality should detect WEB-DL quality."""
+        assert enricher.detect_quality("Movie web-dl") == "WEB-DL"
+        assert enricher.detect_quality("Movie webrip") == "WEB-DL"
+        assert enricher.detect_quality("Movie WEB.DL") == "WEB-DL"
+
+    def test_detect_quality_hdtv(self, enricher):
+        """detect_quality should detect HDTV quality."""
+        assert enricher.detect_quality("Movie HDTV") == "HDTV"
+
+    def test_detect_quality_dvd(self, enricher):
+        """detect_quality should detect DVD quality."""
+        assert enricher.detect_quality("Movie DVD") == "DVD"
+        assert enricher.detect_quality("Movie dvdr") == "DVD"
+
     def test_clear_cache(self, enricher):
         """Clear cache should empty the cache."""
         enricher._cache["test"] = MetadataResult(
@@ -724,3 +745,70 @@ class TestEnricherResolve:
                 enricher = MetadataEnricher()
                 result = await enricher.resolve("Some Movie")
                 assert result is None
+
+    @pytest.mark.asyncio
+    async def test_resolve_fallback_to_anilist(self):
+        """resolve() should fall back to AniList when TMDB, OMDb, TVMaze fail."""
+        mock_session_cm = _make_mock_session(
+            {"data": {"Media": {"title": {"english": "Anime Title"}, "id": 1}}},
+            method="post",
+        )
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            with patch.dict(os.environ, {"ANILIST_CLIENT_ID": "test_key"}):
+                enricher = MetadataEnricher()
+                result = await enricher.resolve("Anime Title")
+                assert result is not None
+                assert result.source == "AniList"
+
+    @pytest.mark.asyncio
+    async def test_resolve_fallback_to_tvmaze(self):
+        """resolve() should fall back to TVMaze when TMDB and OMDb have no keys."""
+        mock_session_cm = _make_mock_session(
+            [{"show": {"name": "TV Show", "premiered": "2020-01-01", "summary": "A show"}}]
+        )
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            enricher = MetadataEnricher()
+            result = await enricher.resolve("TV Show")
+            assert result is not None
+            assert result.source == "TVMaze"
+            assert result.title == "TV Show"
+
+    @pytest.mark.asyncio
+    async def test_resolve_fallback_to_openlibrary(self):
+        """resolve() should fall back to OpenLibrary when upstream providers have no keys."""
+        mock_session_cm = _make_mock_session(
+            {"docs": [{"title": "A Book", "first_publish_year": 2000}]}
+        )
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            enricher = MetadataEnricher()
+            result = await enricher.resolve("A Book")
+            assert result is not None
+            assert result.source == "OpenLibrary"
+            assert result.title == "A Book"
+
+    @pytest.mark.asyncio
+    async def test_resolve_fallback_to_musicbrainz(self):
+        """resolve() should fall back to MusicBrainz when upstream providers fail."""
+        mock_session_cm = _make_mock_session(
+            {"release-groups": [{"title": "An Album", "id": "album123"}]}
+        )
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            enricher = MetadataEnricher()
+            result = await enricher.resolve("An Album")
+            assert result is not None
+            assert result.source == "MusicBrainz"
+            assert result.title == "An Album"
+
+    @pytest.mark.asyncio
+    async def test_resolve_all_fail_returns_none(self):
+        """resolve() should return None when all lookup methods fail."""
+        mock_session_cm = _make_mock_session({}, status=404)
+
+        with patch("aiohttp.ClientSession", return_value=mock_session_cm):
+            enricher = MetadataEnricher()
+            result = await enricher.resolve("NonExistent")
+            assert result is None
