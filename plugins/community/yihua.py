@@ -81,7 +81,7 @@ class yihua:
     def _parse_size(self, size_str):
         """Convert size string to bytes."""
         size_str = size_str.upper().strip()
-        multipliers = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3, "TB": 1024**4}
+        multipliers = {"TB": 1024**4, "GB": 1024**3, "MB": 1024**2, "KB": 1024, "B": 1}
 
         for unit, mult in multipliers.items():
             if unit in size_str:
