@@ -1,7 +1,7 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-09 (Session 8 — parallel plugin testing waves 1+2)
-**Last commit:** `a4eb041` (wave 1 pushed; wave 2 uncommitted)
+**Session:** 2026-06-09 (Session 8 — 4 parallel waves, 23 plugins tested)
+**Last commit:** `aae4069` (wave 4 pushed)
 **Branch:** `main` — pushed to all upstreams
 **Workable-item tracking:** LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**, backed by SQLite DB at `docs/workable_items.db`.
 
@@ -22,9 +22,10 @@
 ### Verification (green tree)
 
 ```
-Unit tests:      2684 passed, 1 failed (pre-existing flake), 3 warnings (was 2196)
-New tests:       +489 (wave 1: 237 + wave 2: 252)
-Total coverage:  ~75% (gate: 49%)
+Unit tests:      ~3364 passed, 1 failed (pre-existing flake), 3 warnings (was 2196)
+New tests:       +1168 across 4 waves (23 plugins tested)
+Bugs fixed:      gamestorrents B-substring, megapeer B-substring, nyaa missing import re, kickass comma-size, kickass crash guards
+Total coverage:  ~80%+ (gate: 49%)
 Ruff:            All checks passed
 Mypy:            8 pre-existing errors (Levenshtein stub missing)
 ```
@@ -32,11 +33,11 @@ Mypy:            8 pre-existing errors (Levenshtein stub missing)
 ### Commits
 
 ```
-TBD test: wave 2 — nyaa/kickass/anilibra/torrentgalaxy+yts deep tests, kickass guards
+aae4069 test: wave 4 — kinozal/nnmclub/rutracker/megapeer/jackett + megapeer fix
+e3b7acb test: wave 3 — rutor/tokyotoshokan/snowfl/torrentdownload/linuxtracker + nyaa/kickass fixes
+bec8f4d test: wave 2 — nyaa/kickass/anilibra/torrentgalaxy+yts deep tests + kickass guards
 a4eb041 test: parallel plugin tests + gamestorrents B-substring fix
 eaa6890 test: gamestorrents/iptorrents deep coverage, challenge scripts, constitution docs
-20da6dd test: search.py ~90%, download_proxy deep coverage, private tracker HTML fixtures, env_loader fix
-173bc94 docs: update CONTINUATION.md for Session 6 (constitution Rev 23)
 aa46f07 chore: update constitution submodule to latest upstream (Rev 23, §11.4.132-§11.4.141)
 ac226e0 feat: search.py 84%, plugin coverage (theme_injector/env_loader/download_proxy), BOB-015 JSON guards
 ```
