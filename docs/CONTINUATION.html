@@ -1,8 +1,8 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Session:</strong> 2026-06-08 (Session 3 — BOB-009 default,
-mutmut path fix, BOB-010 domain status docs) <strong>Last
-commit:</strong> <code>81af0eb</code> (working tree CLEAN)
+<p><strong>Session:</strong> 2026-06-09 (Session 4 — coverage push:
+routes.py 95%, search.py 80%, submodules synced) <strong>Last
+commit:</strong> <code>6953662</code> (working tree CLEAN)
 <strong>Branch:</strong> <code>main</code> — pushed to all upstreams
 <strong>Workable-item tracking:</strong> LIVE at <a
 href="Issues.md"><code>Issues.md</code></a> / <a
@@ -14,7 +14,7 @@ href="Fixed.md"><code>Fixed.md</code></a> with prefix
 file is the single source of truth for session handoff.</p>
 </blockquote>
 <hr />
-<h2 id="what-we-did-session-3">What We Did (Session 3)</h2>
+<h2 id="what-we-did-session-4">What We Did (Session 4)</h2>
 <table>
 <colgroup>
 <col style="width: 35%" />
@@ -28,78 +28,71 @@ file is the single source of truth for session handoff.</p>
 </thead>
 <tbody>
 <tr>
-<td><strong>BOB-009: boba-ctl default</strong></td>
-<td><code>--boba-ctl</code> flipped from opt-in to default.
-<code>--no-boba-ctl</code> flag added for fallback to raw compose.
-<code>start.sh</code>/<code>stop.sh</code> updated.</td>
+<td><strong>routes.py coverage</strong></td>
+<td>75% → 95% (+20%). Added 78 tests: search_sync flow/sorting/CAPTCHA,
+SSE stream cap 429, get_search with merged results, auth bad-JSON
+fallback + save credentials, tracker download flow (temp file + upload),
+non-tracker failure, per-URL exception, direct URL download, multi-hash
+magnet generation.</td>
 </tr>
 <tr>
-<td><strong>Mutmut module path fix</strong></td>
-<td>Root cause: mutmut’s <code>get_mutant_name</code> only strips
-<code>src.</code> prefix, but source is at
-<code>download-proxy/src/</code>. Patched venv’s
-<code>format_utils.py</code> to also strip
-<code>download-proxy.src.</code> prefix. Changed
-<code>source_paths</code> from <code>["src/"]</code> (symlink) to
-<code>["download-proxy/src/"]</code>. Updated conftest
-<code>MutmutPath</code> to point to
-<code>mutants/download-proxy/src/</code>. Removed unused
-<code>src/</code> symlink.</td>
+<td><strong>search.py coverage</strong></td>
+<td>79% → 80% (+1%). Added stream token issue/validate,
+get_all_tracker_results with results, get_live_results
+empty-tracker-results branch, get_search_status found,
+get_active_searches non-empty.</td>
 </tr>
 <tr>
-<td><strong>Mutmut e2e verified</strong></td>
-<td>Single mutant <code>api.auth.x__get_orchestrator</code> runs and
-gets <strong>killed</strong> correctly — pipeline works end-to-end. Full
-run (6568 mutants) started in background (PID 33493).</td>
+<td><strong>validator.py coverage</strong></td>
+<td>72% → 92% (from previous session, committed this session)</td>
 </tr>
 <tr>
-<td><strong>BOB-010: domain status docs</strong></td>
-<td>All 7 domain summary stubs replaced with real content: API,
-Architecture, CodeGraph, Demos, Migration, Scripts, Superpowers — each
-with status tables, doc inventories, and cross-links.</td>
+<td><strong>jackett_autoconfig.py coverage</strong></td>
+<td>72% → 99% (from previous session, committed this session)</td>
 </tr>
 <tr>
-<td><strong>Pre-build gate</strong></td>
-<td>18/18 PASS (including CM-MARKDOWN-EXPORT-SYNC after
-regeneration).</td>
+<td><strong>Submodules synced</strong></td>
+<td>constitution + helixqa pulled from upstream, all repos pushed</td>
+</tr>
+<tr>
+<td><strong>Coverage baseline</strong></td>
+<td>Updated COVERAGE_BASELINE.md (Revision 2): 60% total, 1802
+tests</td>
 </tr>
 </tbody>
 </table>
 <h3 id="verification-green-tree">Verification (green tree)</h3>
 <pre><code>Pre-build gate:  18 passed, 0 failed
-  - 15 constitution + infrastructure invariants
-  - Invariant 16: CM-MARKDOWN-EXPORT-SYNC (all-docs scope)
-  - Invariant 17: CM-WORKABLE-ITEMS-VALIDATE (SQLite DB, 20 items OK)
-  - Invariant 18: CM-DOCS-CHAIN-VALIDATE (docs_chain --check-only)
-Challenges:      11 run (8 PASS, 2 SKIP macOS, 1 SKIP creds)
-submodules:      6 active (constitution, challenges, containers, helixqa, jackett)
-Workable-items:  Issues(3: BOB-008 blocked, BOB-009 in-progress, BOB-015 queued)
-                 Fixed(17: BOB-001—BOB-007, BOB-010—BOB-016 inclusive)
-All invariants satisfied.
-HelixQA banks:   5 total (boba-services, boba-download-proxy, boba-frontend,
-                 boba-boba-ctl, boba-docs-chain) — 42 test cases
-Mutmut:          Background run in progress (PID 33493, 6568 mutants)</code></pre>
+Unit tests:      1802 passed, 0 failed
+Total coverage:  60% (gate: 49%)
+Core modules:    all ≥80%
+routes.py:       95%
+search.py:       80%
+validator.py:    92%
+jackett_autoconfig.py: 99%</code></pre>
 <h3 id="commits">Commits</h3>
-<pre><code>81af0eb chore: update jackett submodule to latest upstream
-65bee1e feat: mutmut v3.6 path fix with src/ symlink and MutmutPath redirect
-&lt;next&gt;   feat: BOB-009 default, BOB-010 domain docs, mutmut module path fix</code></pre>
+<pre><code>6953662 chore: update helixqa submodule to latest upstream
+995986c chore: update constitution submodule to latest upstream
+d2b14ed test: routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig 99%
+e5fcdb1 test: api/__init__ lifespan, CORS, SPA routes, dashboard — 70% to 98%
+6a01128 test: harden main.py, enricher, streaming — 100% enricher, 94% main, 99% streaming</code></pre>
 <hr />
 <h2 id="quick-start-for-next-session">Quick-Start for Next Session</h2>
 <div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Check mutmut results</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tail</span> <span class="at">-20</span> /tmp/mutmut-run.log</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> /tmp/mutmut-venv/bin/activate <span class="kw">&amp;&amp;</span> <span class="ex">python3</span> <span class="at">-m</span> mutmut results <span class="kw">&amp;&amp;</span> <span class="ex">deactivate</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Pre-build gate</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Tests</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> vitest run</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Workable items </span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> validate <span class="at">--db</span> docs/workable_items.db</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> export <span class="at">--db</span> docs/workable_items.db <span class="at">--out-dir</span> docs/</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Pre-build gate</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Tests</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Coverage</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Lint + typecheck</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check . <span class="kw">&amp;&amp;</span> <span class="ex">mypy</span> download-proxy/src/</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Frontend</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> vitest run</span></code></pre></div>
 <hr />
 <h2 id="quick-reference-key-commands">Quick Reference — Key
 Commands</h2>
@@ -107,40 +100,21 @@ Commands</h2>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-build gate</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Mutation testing (via Python 3.13 venv)</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> /tmp/mutmut-venv/bin/activate</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> mutmut run <span class="at">--max-children</span> 2 <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">|</span> <span class="fu">tee</span> /tmp/mutmut-run.log</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ex">mutmut</span> results</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ex">deactivate</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Tests</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Coverage</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Tests</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Lint</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check . <span class="kw">&amp;&amp;</span> <span class="ex">mypy</span> download-proxy/src/</span>
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Docs chain</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/docs_chain.sh</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/docs_chain.sh <span class="at">--check-only</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Export regeneration</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/generate_markdown_exports.sh</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Lint</span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check . <span class="kw">&amp;&amp;</span> <span class="ex">mypy</span> download-proxy/src/</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co"># boba-ctl</span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> start.sh <span class="at">--no-boba-ctl</span>  <span class="co"># fall back to raw compose</span></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> stop.sh <span class="at">--no-boba-ctl</span></span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Workable items</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> validate <span class="at">--db</span> docs/workable_items.db</span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> report <span class="at">--db</span> docs/workable_items.db <span class="at">--by-status</span></span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Coverage</span></span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Submodule sync</span></span>
-<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> submodules/helixqa <span class="kw">&amp;&amp;</span> <span class="fu">git</span> push origin main <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> ../..</span>
-<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> submodules/challenges <span class="kw">&amp;&amp;</span> <span class="fu">git</span> fetch <span class="at">--all</span> <span class="at">--prune</span> <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> ../..</span>
-<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> submodules/containers <span class="kw">&amp;&amp;</span> <span class="fu">git</span> fetch <span class="at">--all</span> <span class="at">--prune</span> <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> ../..</span></code></pre></div>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Containers</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> start.sh <span class="kw">&amp;&amp;</span> <span class="fu">bash</span> stop.sh</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Workable items</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> validate <span class="at">--db</span> docs/workable_items.db</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="ex">./bin/workable-items</span> report <span class="at">--db</span> docs/workable_items.db <span class="at">--by-status</span></span></code></pre></div>
 <hr />
 <h2 id="architecture-tldr">Architecture TL;DR</h2>
 <table>
@@ -197,37 +171,83 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="
 </tr>
 </tbody>
 </table>
-<p>Two-container compose <code>network_mode: host</code> (Python proxy +
-qBittorrent + Jackett + boba-jackett). Go backend opt-in via
-<code>--profile go</code>. <code>cmd/boba-ctl/</code> Go binary wraps
-containers submodule (now default for start/stop).</p>
 <hr />
 <h2 id="known-issues-open">Known Issues (open)</h2>
 <ol type="1">
 <li><strong>BOB-008</strong>: RuTracker CAPTCHA — operator-blocked
 (needs manual cookie paste)</li>
-<li><strong>BOB-009</strong> (complete): boba-ctl is now default
-(<code>--no-boba-ctl</code> to fall back to raw compose).</li>
-<li><strong>BOB-010</strong> (complete): All 7 domain summary pages
-populated with real status docs.</li>
 <li><strong>BOB-015</strong>: Remaining public-tracker failures are
 external/non-deterministic — low priority</li>
-<li><strong>mutmut</strong>: Full run in progress (PID 33493, 6568
-mutants). Module path mismatch fixed via venv patch to
-<code>get_mutant_name</code> +
-<code>source_paths = ["download-proxy/src/"]</code>. Stats collection
-phase passed — mapping verified. Expect improved killed/survived ratio
-over previous run.</li>
 <li><strong>Go backend</strong> is a skeleton (documented in
 AGENTS.md)</li>
 <li><strong>Containers may be down</strong> on session start —
-<code>bash start.sh</code> (defaults to boba-ctl) or
-<code>bash start.sh --no-boba-ctl</code> first</li>
+<code>bash start.sh</code> first</li>
 <li><strong>macOS + podman <code>network_mode: host</code></strong> does
 NOT forward ports — <code>ensure-macos-tunnel.sh</code> handles
 this</li>
-<li><strong>Constitution rebase</strong>: constitution submodule had
-upstream divergence (gitflic + GitHub had new <code>Auto-commit</code> +
-§11.4.134/133 commits). Cleanly rebased, but requires force-free
-upstream acceptance.</li>
 </ol>
+<hr />
+<h2 id="coverage-snapshot-2026-06-09">Coverage Snapshot
+(2026-06-09)</h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>api/<strong>init</strong>.py</td>
+<td>98%</td>
+</tr>
+<tr>
+<td>api/auth.py</td>
+<td>91%</td>
+</tr>
+<tr>
+<td>api/routes.py</td>
+<td><strong>95%</strong></td>
+</tr>
+<tr>
+<td>api/streaming.py</td>
+<td>99%</td>
+</tr>
+<tr>
+<td>main.py</td>
+<td>94%</td>
+</tr>
+<tr>
+<td>deduplicator.py</td>
+<td>94%</td>
+</tr>
+<tr>
+<td>enricher.py</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>hooks.py</td>
+<td>95%</td>
+</tr>
+<tr>
+<td>jackett_autoconfig.py</td>
+<td><strong>99%</strong></td>
+</tr>
+<tr>
+<td>scheduler.py</td>
+<td>93%</td>
+</tr>
+<tr>
+<td>search.py</td>
+<td><strong>80%</strong></td>
+</tr>
+<tr>
+<td>validator.py</td>
+<td><strong>92%</strong></td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td><strong>60%</strong></td>
+</tr>
+</tbody>
+</table>
