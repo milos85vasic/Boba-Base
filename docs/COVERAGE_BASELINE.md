@@ -1,19 +1,20 @@
 # Coverage Baseline
 
-**Revision:** 3
+**Revision:** 4
 **Last modified:** 2026-06-09T12:00:00Z
 
-Last updated at commit `HEAD` on 2026-06-09 (search.py 84%, plugin coverage push, BOB-015 fixes).
+Last updated at commit `HEAD` on 2026-06-09 (search.py 95%, community plugin coverage push, 88% total).
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| **Total coverage** | **65%** |
-| **Total statements** | 6,821 |
-| **Missing lines** | 2,264 |
-| **Branches (partial)** | 122 |
-| **Unit tests passing** | 1,802+ |
+| **Total coverage** | **88%** |
+| **Total statements** | 8,392 |
+| **Missing lines** | 946 |
+| **Branches (partial)** | 102 |
+| **Unit tests passing** | 4,053 (of 4,074 collected) |
+| **Unit tests failing** | 21 |
 | **Coverage gate (`fail_under`)** | 49 |
 
 ## By Module — Core (download-proxy/src)
@@ -36,8 +37,33 @@ Last updated at commit `HEAD` on 2026-06-09 (search.py 84%, plugin coverage push
 | `merge_service/jackett_autoconfig.py` | 205 | 1 | 76 | 2 | 99% |
 | `merge_service/retry.py` | 3 | 0 | 0 | 0 | 100% |
 | `merge_service/scheduler.py` | 126 | 6 | 20 | 2 | 93% |
-| `merge_service/search.py` | 965 | 143 | 294 | 23 | 84% |
+| `merge_service/search.py` | 965 | 39 | 294 | 15 | 95% |
 | `merge_service/validator.py` | 205 | 13 | 60 | 1 | 92% |
+
+## By Module — Plugins (selected)
+
+| Plugin | Stmts | Miss | Branch | BrPart | Cover |
+|--------|-------|------|--------|--------|-------|
+| `anilibra.py` | 53 | 0 | 12 | 0 | 100% |
+| `download_proxy.py` | 328 | 18 | 102 | 5 | 95% |
+| `env_loader.py` | 22 | 0 | 12 | 0 | 100% |
+| `eztv.py` | 77 | 0 | 18 | 0 | 100% |
+| `helpers.py` | 89 | 2 | 22 | 2 | 96% |
+| `iptorrents.py` | 133 | 14 | 40 | 2 | 87% |
+| `kickass.py` | 74 | 0 | 20 | 0 | 100% |
+| `kinozal.py` | 209 | 12 | 60 | 2 | 95% |
+| `limetorrents.py` | 154 | 4 | 56 | 3 | 97% |
+| `nnmclub.py` | 226 | 15 | 64 | 1 | 94% |
+| `nova2.py` | 79 | 79 | 18 | 0 | 0% |
+| `nyaa.py` | 104 | 8 | 40 | 1 | 94% |
+| `piratebay.py` | 86 | 5 | 12 | 0 | 95% |
+| `rutor.py` | 192 | 22 | 38 | 1 | 90% |
+| `rutracker.py` | 219 | 31 | 34 | 1 | 87% |
+| `socks.py` | 444 | 444 | 142 | 0 | 0% |
+| `theme_injector.py` | 129 | 1 | 42 | 1 | 99% |
+| `torlock.py` | 80 | 0 | 34 | 2 | 98% |
+| `yts.py` | 105 | 31 | 34 | 3 | 70% |
+| `community/jackett.py` | 182 | 0 | 54 | 0 | 100% |
 
 ## Coverage Gate History
 
@@ -47,6 +73,7 @@ Last updated at commit `HEAD` on 2026-06-09 (search.py 84%, plugin coverage push
 | Phase 10 | 49% | Raised to actual measured coverage |
 | Phase 11 | 49% | routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig 99% |
 | Phase 12 | 49% | search.py 84%, theme_injector 99%, env_loader 100%, yts/piratebay JSON guards |
+| Phase 13 | 49% | search.py 95%, total 88%, community plugin coverage sweep |
 
 ## Measurement Method
 

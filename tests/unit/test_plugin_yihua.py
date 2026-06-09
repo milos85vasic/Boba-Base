@@ -186,7 +186,7 @@ class TestParseResults:
         mod, cap = _load_yihua()
         mod._parse_results(YH_MB_SIZE_BUG)
         assert len(cap) == 1
-        assert cap[0]["size"] == str(int(500 * 1024**2))
+        assert cap[0]["size"] == str((500 * 1024**2))
 
     def test_pub_date_is_fresh_timestamp(self):
         mod, cap = _load_yihua()
@@ -208,7 +208,7 @@ class TestParseSize:
         assert self.mod._parse_size("512 KB") == 512 * 1024
 
     def test_megabytes(self):
-        assert self.mod._parse_size("100 MB") == int(100 * 1024**2)
+        assert self.mod._parse_size("100 MB") == (100 * 1024**2)
 
     def test_gigabytes(self):
         assert self.mod._parse_size("3.5 GB") == int(3.5 * 1024**3)

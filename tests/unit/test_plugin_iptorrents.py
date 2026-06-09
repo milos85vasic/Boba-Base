@@ -202,7 +202,7 @@ class TestIptorrentsGetLink:
         engine.session = MagicMock()
         mock_resp = MagicMock()
         mock_resp.info.return_value.get.return_value = "text/html"
-        mock_resp.read.return_value = "hello".encode("utf-8")
+        mock_resp.read.return_value = b"hello"
         engine.session.open.return_value = mock_resp
         result = engine._get_link("http://example.com")
         assert result == "hello"

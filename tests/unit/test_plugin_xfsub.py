@@ -171,7 +171,7 @@ class TestParseSize:
 
     def test_all_units_parse(self):
         assert self.mod._parse_size("512 KB") == 512 * 1024
-        assert self.mod._parse_size("750 MB") == int(750 * 1024**2)
+        assert self.mod._parse_size("750 MB") == (750 * 1024**2)
         assert self.mod._parse_size("1.5 GB") == int(1.5 * 1024**3)
         assert self.mod._parse_size("1.5 TB") == int(1.5 * 1024**4)
         assert self.mod._parse_size("1,024 MB") == 1024 * 1024**2

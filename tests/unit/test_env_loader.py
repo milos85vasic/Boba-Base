@@ -175,6 +175,7 @@ class TestGetEnv:
         assert result == ""
 
     def test_get_env_triggers_file_load(self, monkeypatch):
+        os.environ.pop("TEST_GETENV_NEVER_SET_KEY", None)
         call_count = 0
         original_load = load_env_files
 
