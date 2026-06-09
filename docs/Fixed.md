@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 6
-**Last modified:** 2026-06-06T19:45:00Z
+**Revision:** 7
+**Last modified:** 2026-06-09T12:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -257,4 +257,47 @@ Containers submodule integrated with Go wrapper
 **Evidence:** SQLite DB integrated with pre-build gate; 20 items tracked; docs_chain validation wired
 
 Workable-items SQLite DB integrated + pre-build gate wired (§11.4.93/§11.4.95)
+
+## BOB-021 — env_loader flaky test: KEY2 leak across test ordering
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Closed:** 2026-06-09 · **Commit:** pending
+
+`test_comment_lines_ignored` failed intermittently under `pytest-randomly` because
+`load_env_files` has a "first wins" policy — if `KEY2` was already set in
+`os.environ` by a prior test, the comment-line test's assertion `KEY2 is None`
+failed. Root cause: stale env vars from earlier tests leaking into later ones.
+**Fix:** Added explicit `os.environ.pop("KEY1", None)` + `KEY2` deletion at test
+START (not just `finally`), ensuring clean env state regardless of test ordering.
+**Evidence:** `tests/unit/test_env_loader.py::test_comment_lines_ignored` — passed
+2147/2147 twice consecutively under random ordering.
+
+## BOB-022 — AsyncMock warning in search deep-coverage tests
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Closed:** 2026-06-09 · **Commit:** pending
+
+`test_iptorrents_login_no_cookies` used `AsyncMock()` for `login_resp` and
+`mock_session`, producing "coroutine was never awaited" RuntimeWarning. The objects
+don't need to be awaitable — they are context managers, not coroutines.
+**Fix:** Changed to `MagicMock()` with explicit `__aenter__`/`__aexit__` stubs.
+**Evidence:** `tests/unit/merge_service/test_search_deep_coverage.py` — 0 warnings
+from this test (was 3 AsyncMock warnings).
+
+## BOB-023 — gamestorrents plugin deep-coverage tests + B-substring bug documented
+
+**Status:** Implemented (→ Fixed.md)
+**Type:** Feature
+**Closed:** 2026-06-09 · **Commit:** pending
+
+23 tests created for `plugins/gamestorrents.py` covering: `_parse_results` (article
+cards, single/multi, malformed, empty), `_parse_size` (all units, edge cases),
+search (URL construction, category mapping, exception handling), `download_torrent`
+(magnet link, .torrent file, URLError, no links). Discovered `_parse_size` has the
+same B-substring bug as BOB-013 (torrentkitty): dict iteration means `"B"` matches
+before `"GB"`/`"MB"`/`"KB"`/`"TB"`, so all realistic sizes parse to 0. Tests
+document actual behavior with `_b_substring_bug` suffix.
+**Evidence:** `tests/unit/test_plugin_gamestorrents.py` — 23 passed, ruff clean.
 

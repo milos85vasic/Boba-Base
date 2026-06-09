@@ -1133,13 +1133,15 @@ class TestSearchIptorrentsDeep:
         """Lines 1566-1567: login failure logged."""
         orch = search_mod.SearchOrchestrator()
         with patch.dict(os.environ, {"IPTORRENTS_USERNAME": "u", "IPTORRENTS_PASSWORD": "p"}, clear=False):
-            login_resp = AsyncMock()
+            login_resp = MagicMock()
             login_resp.status = 403
             login_resp.cookies = {}
+            login_resp.text = AsyncMock(return_value="")
             login_resp.__aenter__ = AsyncMock(return_value=login_resp)
             login_resp.__aexit__ = AsyncMock(return_value=False)
-            mock_session = AsyncMock()
+            mock_session = MagicMock()
             mock_session.post = MagicMock(return_value=login_resp)
+            mock_session.get = MagicMock(return_value=login_resp)
             mock_session.__aenter__ = AsyncMock(return_value=mock_session)
             mock_session.__aexit__ = AsyncMock(return_value=False)
             with patch("aiohttp.ClientSession", return_value=mock_session):

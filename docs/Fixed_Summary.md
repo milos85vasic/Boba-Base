@@ -6,11 +6,11 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 6 |
-| Feature | Implemented (→ Fixed.md) | 2 |
+| Bug | Fixed (→ Fixed.md) | 8 |
+| Feature | Implemented (→ Fixed.md) | 3 |
 | Task | Completed (→ Fixed.md) | 6 |
 | Task | Fixed (→ Fixed.md) | 2 |
-| **TOTAL** | | **16** |
+| **TOTAL** | | **19** |
 
 ## Items
 
@@ -21,9 +21,9 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | BOB-003 | Bug | Fixed (→ Fixed.md) | — | macOS tunnel port detection broken (ports never forwarded) |
 | BOB-004 | Task | Completed (→ Fixed.md) | — | Private-tracker credentials stored securely + verified working |
 | BOB-005 | Task | Fixed (→ Fixed.md) | — | Public-tracker plugins all raised an unhandled exception (systemic) |
-| BOB-006 | Feature | Implemented (→ Fixed.md) | — | NNMClub username/password login wired — NNMClub now uses the operator's `NNMCLUB_USERNAME`/`NNMCLUB_PASSWORD` (in . |
-| BOB-007 | Task | Completed (→ Fixed.md) | — | RuTor documented as public (no-auth) — RuTor is a public tracker with no login endpoint; `RUTOR_USERNAME/PASSWORD` are |
-| BOB-011 | Feature | Implemented (→ Fixed.md) | — | DOCX export support added — `generate_markdown_exports. |
+| BOB-006 | Feature | Implemented (→ Fixed.md) | — | NNMClub username/password login wired |
+| BOB-007 | Task | Completed (→ Fixed.md) | — | RuTor documented as public (no-auth) |
+| BOB-011 | Feature | Implemented (→ Fixed.md) | — | DOCX export support added |
 | BOB-012 | Task | Completed (→ Fixed.md) | — | Export-sync gate expanded to all docs (§11.4.65) |
 | BOB-013 | Bug | Fixed (→ Fixed.md) | — | torrentkitty `_parse_size` reported 0 for every KB/MB/GB/TB size |
 | BOB-014 | Bug | Fixed (→ Fixed.md) | — | Go `generateID()` collided under burst (UnixNano-only) |
@@ -32,3 +32,6 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | BOB-018 | Task | Completed (→ Fixed.md) | — | Jackett server image updated to latest |
 | BOB-019 | Task | Completed (→ Fixed.md) | — | Jackett added as a reference submodule (latest release) |
 | BOB-020 | Task | Completed (→ Fixed.md) | — | CodeGraph initialized + wired (§11.4.78/79/80) |
+| BOB-021 | Bug | Fixed (→ Fixed.md) | — | env_loader flaky test: KEY2 leak across test ordering |
+| BOB-022 | Bug | Fixed (→ Fixed.md) | — | AsyncMock warning in search deep-coverage tests |
+| BOB-023 | Feature | Implemented (→ Fixed.md) | — | gamestorrents plugin deep-coverage tests + B-substring bug documented |

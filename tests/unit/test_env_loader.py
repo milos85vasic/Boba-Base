@@ -98,6 +98,8 @@ class TestLoadEnvFiles:
             os.unlink(path)
 
     def test_comment_lines_ignored(self):
+        os.environ.pop("KEY1", None)
+        os.environ.pop("KEY2", None)
         content = "# this is a comment\nKEY1=val1\n#KEY2=should_not_load\n"
         with tempfile.NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
             f.write(content)
@@ -107,6 +109,7 @@ class TestLoadEnvFiles:
             assert os.environ.get("KEY1") == "val1"
             assert os.environ.get("KEY2") is None
         finally:
+            os.environ.pop("KEY1", None)
             os.unlink(path)
 
     def test_value_with_equals_sign(self):
