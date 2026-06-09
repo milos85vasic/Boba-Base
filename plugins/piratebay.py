@@ -77,7 +77,10 @@ class piratebay:
 
         # Calling custom `retrieve_url` function with adequate escaping
         data = self.retrieve_url(base_url % urlencode(params))
-        response_json = json.loads(data)
+        try:
+            response_json = json.loads(data)
+        except (json.JSONDecodeError, ValueError):
+            return
 
         # check empty response
         if len(response_json) == 0:

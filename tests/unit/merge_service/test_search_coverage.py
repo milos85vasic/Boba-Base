@@ -574,3 +574,409 @@ class TestGetActiveSearchesNonEmpty:
         meta = SearchMetadata(query="q", search_id="sid", started_at=datetime.now())
         orch._active_searches["sid"] = meta
         assert len(orch.get_active_searches()) == 1
+
+
+class TestDetectResultMetadataSizeFallback:
+    def test_size_fallback_uhd_from_raw_bytes(self):
+        ct, q = _detect_result_metadata("Generic File", str(50 * 1024**3))
+        assert q == "uhd_4k"
+        assert ct is None
+
+    def test_size_fallback_fullhd_from_raw_bytes(self):
+        ct, q = _detect_result_metadata("Generic File", str(10 * 1024**3))
+        assert q == "full_hd"
+        assert ct is None
+
+    def test_size_fallback_hd_from_raw_bytes(self):
+        ct, q = _detect_result_metadata("Generic File", str(3 * 1024**3))
+        assert q == "hd"
+
+    def test_size_fallback_sd_from_raw_bytes(self):
+        ct, q = _detect_result_metadata("Generic File", str(400 * 1024**2))
+        assert q == "sd"
+
+    def test_size_fallback_none_for_tiny(self):
+        ct, q = _detect_result_metadata("Generic File", str(10 * 1024**2))
+        assert q is None
+
+    def test_size_fallback_from_formatted_string_tb(self):
+        ct, q = _detect_result_metadata("Generic File", "2 TB")
+        assert q == "uhd_4k"
+
+    def test_size_fallback_from_formatted_string_gb(self):
+        ct, q = _detect_result_metadata("Generic File", "20 GB")
+        assert q == "full_hd"
+
+    def test_size_fallback_from_formatted_string_mb(self):
+        ct, q = _detect_result_metadata("Generic File", "500 MB")
+        assert q == "sd"
+
+    def test_size_fallback_from_unparseable_string(self):
+        ct, q = _detect_result_metadata("Generic File", "unknown")
+        assert q is None
+        assert ct is None
+
+    def test_size_fallback_none_size(self):
+        ct, q = _detect_result_metadata("Generic File", None)
+        assert q is None
+
+    def test_size_fallback_numeric_string(self):
+        ct, q = _detect_result_metadata("Generic File", "8589934592")
+        assert q == "full_hd"
+
+    def test_size_fallback_from_kb_string(self):
+        ct, q = _detect_result_metadata("Generic File", "500 KB")
+        assert q is None
+
+
+class TestCancelSearch:
+    def test_cancel_nonexistent_returns_false(self):
+        orch = SearchOrchestrator()
+        assert orch.cancel_search("nonexistent") is False
+
+    def test_cancel_found_sets_aborted(self):
+        orch = SearchOrchestrator()
+        meta = orch.start_search("test query")
+        assert orch.cancel_search(meta.search_id) is True
+        assert orch._active_searches[meta.search_id].status == "aborted"
+
+    def test_cancel_found_removes_task(self):
+        orch = SearchOrchestrator()
+        meta = orch.start_search("test query")
+        orch._search_tasks[meta.search_id] = None
+        assert orch.cancel_search(meta.search_id) is True
+        assert meta.search_id not in orch._search_tasks
+
+    def test_cancel_found_with_mock_task(self):
+        import asyncio
+
+        async def _run():
+            orch = SearchOrchestrator()
+            meta = orch.start_search("test query")
+            mock_task = asyncio.create_task(asyncio.sleep(999))
+            orch._search_tasks[meta.search_id] = mock_task
+            assert orch.cancel_search(meta.search_id) is True
+            assert meta.status == "aborted"
+            mock_task.cancel()
+
+        asyncio.run(_run())
+
+    def test_cancel_found_with_already_done_task(self):
+        import asyncio
+
+        orch = SearchOrchestrator()
+        meta = orch.start_search("test query")
+        loop = asyncio.new_event_loop()
+        mock_task = loop.create_task(asyncio.sleep(0))
+        loop.run_until_complete(asyncio.sleep(0.01))
+        orch._search_tasks[meta.search_id] = mock_task
+        assert orch.cancel_search(meta.search_id) is True
+        assert meta.status == "aborted"
+        loop.close()
+
+
+class TestNoCredsEarlyReturns:
+    def test_search_kinozal_no_creds(self):
+        import asyncio
+
+        async def _run():
+            orch = SearchOrchestrator()
+            with patch.dict(os.environ, {}, clear=True):
+                return await orch._search_kinozal("test", "all")
+
+        assert asyncio.run(_run()) == []
+
+    def test_nnmclub_login_no_creds(self):
+        import asyncio
+
+        async def _run():
+            orch = SearchOrchestrator()
+            with patch.dict(os.environ, {}, clear=True):
+                return await orch._nnmclub_login("https://nnm-club.me")
+
+        assert asyncio.run(_run()) == {}
+
+    def test_search_iptorrents_no_creds(self):
+        import asyncio
+
+        async def _run():
+            orch = SearchOrchestrator()
+            with patch.dict(os.environ, {}, clear=True):
+                return await orch._search_iptorrents("test", "all")
+
+        assert asyncio.run(_run()) == []
+
+    def test_search_kinozal_only_username(self):
+        import asyncio
+
+        async def _run():
+            orch = SearchOrchestrator()
+            with patch.dict(os.environ, {"KINOZAL_USERNAME": "u"}, clear=True):
+                return await orch._search_kinozal("test", "all")
+
+        assert asyncio.run(_run()) == []
+
+    def test_search_kinozal_only_password(self):
+        import asyncio
+
+        async def _run():
+            orch = SearchOrchestrator()
+            with patch.dict(os.environ, {"KINOZAL_PASSWORD": "p"}, clear=True):
+                return await orch._search_kinozal("test", "all")
+
+        assert asyncio.run(_run()) == []
+
+    def test_search_iptorrents_only_username(self):
+        import asyncio
+
+        async def _run():
+            orch = SearchOrchestrator()
+            with patch.dict(os.environ, {"IPTORRENTS_USERNAME": "u"}, clear=True):
+                return await orch._search_iptorrents("test", "all")
+
+        assert asyncio.run(_run()) == []
+
+    def test_nnmclub_login_only_username(self):
+        import asyncio
+
+        async def _run():
+            orch = SearchOrchestrator()
+            with patch.dict(os.environ, {"NNMCLUB_USERNAME": "u"}, clear=True):
+                return await orch._nnmclub_login("https://nnm-club.me")
+
+        assert asyncio.run(_run()) == {}
+
+
+class TestSearchTrackerDeadlineValueError:
+    def test_deadline_value_error_fallback(self):
+        import asyncio
+
+        async def _run():
+            orch = SearchOrchestrator()
+            tracker = TrackerSource(name="rutor", url="https://rutor.info", enabled=True)
+            with patch.dict(os.environ, {"PUBLIC_TRACKER_DEADLINE_SECONDS": "not-a-number"}, clear=False):
+                with patch.object(orch, "_search_public_tracker", return_value=[]):
+                    return await orch._search_tracker(tracker, "test", "all")
+
+        assert asyncio.run(_run()) == []
+
+
+class TestHTMLParserMalformedGuards:
+    def test_parse_rutracker_html_valid_row(self):
+        orch = SearchOrchestrator()
+        html = (
+            '<tr id="trs-tr-123" class="hl-tr">'
+            '<td class="topictitle">'
+            '<a data-topic_id="123" href="/forum/viewtopic.php?t=123">Good Movie 1080p</a>'
+            '</td>'
+            '<td data-ts_text="10737418240"></td>'
+            '<td data-ts_text="50"></td>'
+            '<td class="leechmed"><a>10</a></td>'
+            '<td data-ts_text="1700000000"></td>'
+            '</tr>'
+        )
+        results = orch._parse_rutracker_html(html, "https://rutracker.org")
+        assert len(results) == 1
+        assert results[0].name == "Good Movie 1080p"
+        assert results[0].seeds == 50
+
+    def test_parse_rutracker_html_malformed_skipped(self):
+        orch = SearchOrchestrator()
+        html = '<tr id="trs-tr-123" class="hl-tr"><td>incomplete</td></tr>'
+        results = orch._parse_rutracker_html(html, "https://rutracker.org")
+        assert results == []
+
+    def test_parse_kinozal_html_valid_row(self):
+        orch = SearchOrchestrator()
+        html = (
+            "<td class=\"nam\"><a href=\"/details.php?id=456\" class=\"r0\">Nice Movie 720p</a></td>"
+            "<td class=s'>&nbsp;</td>"
+            "<td class=s'>1.5 GB</td>"
+            "<td class=sl_s'>25</td>"
+            "<td class=sl_p'>5</td>"
+            "<td class=s'>2024-01-01</td>"
+        )
+        results = orch._parse_kinozal_html(html, "https://kinozal.tv")
+        assert len(results) == 1
+        assert results[0].name == "Nice Movie 720p"
+        assert results[0].seeds == 25
+
+    def test_parse_kinozal_html_malformed_skipped(self):
+        orch = SearchOrchestrator()
+        html = '<td class="nam"><a href="/details.php?id=456" class="r0">Bad Row</a></td>'
+        results = orch._parse_kinozal_html(html, "https://kinozal.tv")
+        assert results == []
+
+    def test_parse_nnmclub_html_valid_row(self):
+        orch = SearchOrchestrator()
+        html = (
+            '<a class="topictitle" href="viewtopic.php?t=789"><b>Great Show S01E01</b></a></span>'
+            '<td><a href="dlink.php?id=789">download</a></td>'
+            '<td><u>500</u></td>'
+            '<td><b>30</b></td>'
+            '<td><b>2</b></td>'
+            '<td><u>1609459200</u></td>'
+        )
+        results = orch._parse_nnmclub_html(html, "https://nnm-club.me")
+        assert len(results) == 1
+        assert results[0].name == "Great Show S01E01"
+        assert results[0].seeds == 30
+
+    def test_parse_nnmclub_html_malformed_skipped(self):
+        orch = SearchOrchestrator()
+        html = '<a class="topictitle" href="viewtopic.php?t=789"><b>Bad Row</b></a>'
+        results = orch._parse_nnmclub_html(html, "https://nnm-club.me")
+        assert results == []
+
+    def test_parse_iptorrents_html_no_table(self):
+        orch = SearchOrchestrator()
+        results = orch._parse_iptorrents_html("<html><body>no table</body></html>", "https://iptorrents.com")
+        assert results == []
+
+    def test_parse_iptorrents_html_no_name_match(self):
+        orch = SearchOrchestrator()
+        html = '<table id="torrents"><tr><td>no name link</td></tr></table>'
+        results = orch._parse_iptorrents_html(html, "https://iptorrents.com")
+        assert results == []
+
+    def test_parse_iptorrents_html_no_dl_match(self):
+        orch = SearchOrchestrator()
+        html = (
+            '<table id="torrents"><tr>'
+            '<td><a class=" hv" href="/t/123">Movie Name</a></td>'
+            '</tr></table>'
+        )
+        results = orch._parse_iptorrents_html(html, "https://iptorrents.com")
+        assert results == []
+
+    def test_parse_iptorrents_html_valid_row(self):
+        orch = SearchOrchestrator()
+        html = (
+            '<table id="torrents"><tr>'
+            '<th>header</th>'
+            '</tr><tr>'
+            '<td><a class=" hv" href="/t/456">Good Movie 1080p</a></td>'
+            '<td><a href="/download.php/456/good.torrent">dl</a></td>'
+            '<td>2.5 GB</td>'
+            '<td>50</td>'
+            '<td>10</td>'
+            '</tr></table>'
+        )
+        results = orch._parse_iptorrents_html(html, "https://iptorrents.com")
+        assert len(results) == 1
+        assert results[0].name == "Good Movie 1080p"
+        assert results[0].seeds == 50
+        assert results[0].size == "2.5 GB"
+
+    def test_parse_iptorrents_html_freeleech_row(self):
+        orch = SearchOrchestrator()
+        html = (
+            '<table id="torrents"><tr>'
+            '<td><a class=" hv" href="/t/789">Free Torrent</a></td>'
+            '<td><a href="/download.php/789/free.torrent">dl</a></td>'
+            '<td>1 GB</td>'
+            '<td>20</td>'
+            '<td>3</td>'
+            '<td class="free">free</td>'
+            '</tr></table>'
+        )
+        results = orch._parse_iptorrents_html(html, "https://iptorrents.com")
+        assert len(results) == 1
+        assert results[0].freeleech is True
+        assert "[free]" in results[0].name
+
+    def test_parse_iptorrents_html_malformed_skipped(self):
+        orch = SearchOrchestrator()
+        html = (
+            '<table id="torrents"><tr>'
+            '<td><a class=" hv" href="/t/999">Broken</a></td>'
+            '<td>no dl link</td>'
+            '</tr></table>'
+        )
+        results = orch._parse_iptorrents_html(html, "https://iptorrents.com")
+        assert results == []
+
+
+class TestEncryptedSessionStoreIter:
+    def test_iter_returns_keys(self):
+        from cachetools import TTLCache
+
+        store = _search_mod.EncryptedSessionStore(TTLCache(maxsize=8, ttl=60))
+        store["rutracker"] = {"a": 1}
+        store["kinozal"] = {"b": 2}
+        keys = list(store)
+        assert "rutracker" in keys
+        assert "kinozal" in keys
+        assert len(keys) == 2
+
+    def test_iter_empty_store(self):
+        from cachetools import TTLCache
+
+        store = _search_mod.EncryptedSessionStore(TTLCache(maxsize=8, ttl=60))
+        assert list(store) == []
+
+
+class TestLoadEnvFallback:
+    def test_fallback_parses_env_file(self):
+        orch = SearchOrchestrator()
+        env_content = 'TEST_VAR_FROM_FALLBACK="hello"\nANOTHER_VAR=world\n# comment\n\nEMPTY_VAR=\n'
+        mock_config = type(sys)("config")
+        mock_config.load_env = lambda: (_ for _ in ()).throw(Exception("fail"))
+        with patch.dict("sys.modules", {"config": mock_config}):
+            with patch("os.path.isfile", return_value=True):
+                with patch("builtins.open", create=True) as mock_open:
+                    mock_open.return_value.__enter__ = lambda s: iter(env_content.splitlines())
+                    mock_open.return_value.__exit__ = lambda *a: False
+                    orch._load_env()
+        assert os.environ.get("TEST_VAR_FROM_FALLBACK") == "hello"
+        assert os.environ.get("ANOTHER_VAR") == "world"
+
+    def test_fallback_skips_existing_vars(self):
+        orch = SearchOrchestrator()
+        os.environ["EXISTING_KEY"] = "original"
+        env_content = 'EXISTING_KEY=overwritten\nNEW_KEY=newval\n'
+        mock_config = type(sys)("config")
+        mock_config.load_env = lambda: (_ for _ in ()).throw(Exception("fail"))
+        with patch.dict("sys.modules", {"config": mock_config}):
+            with patch("os.path.isfile", return_value=True):
+                with patch("builtins.open", create=True) as mock_open:
+                    mock_open.return_value.__enter__ = lambda s: iter(env_content.splitlines())
+                    mock_open.return_value.__exit__ = lambda *a: False
+                    orch._load_env()
+        assert os.environ["EXISTING_KEY"] == "original"
+        assert os.environ.get("NEW_KEY") == "newval"
+        del os.environ["EXISTING_KEY"]
+        del os.environ["NEW_KEY"]
+
+    def test_fallback_skips_comment_lines(self):
+        orch = SearchOrchestrator()
+        env_content = '# this is a comment\nVALID_KEY=valid\n'
+        mock_config = type(sys)("config")
+        mock_config.load_env = lambda: (_ for _ in ()).throw(Exception("fail"))
+        with patch.dict("sys.modules", {"config": mock_config}):
+            with patch("os.path.isfile", return_value=True):
+                with patch("builtins.open", create=True) as mock_open:
+                    mock_open.return_value.__enter__ = lambda s: iter(env_content.splitlines())
+                    mock_open.return_value.__exit__ = lambda *a: False
+                    orch._load_env()
+        assert os.environ.get("VALID_KEY") == "valid"
+        del os.environ["VALID_KEY"]
+
+    def test_fallback_no_file_found(self):
+        orch = SearchOrchestrator()
+        mock_config = type(sys)("config")
+        mock_config.load_env = lambda: (_ for _ in ()).throw(Exception("fail"))
+        with patch.dict("sys.modules", {"config": mock_config}):
+            with patch("os.path.isfile", return_value=False):
+                orch._load_env()
+
+    def test_fallback_load_env_succeeds(self):
+        from unittest.mock import MagicMock
+
+        orch = SearchOrchestrator()
+        mock_load = MagicMock(return_value=None)
+        mock_config = type(sys)("config")
+        mock_config.load_env = mock_load
+        with patch.dict("sys.modules", {"config": mock_config}):
+            orch._load_env()
+            mock_load.assert_called_once()

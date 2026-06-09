@@ -34,10 +34,11 @@ class yts(object):
         params = job.paramBuilder(unquote(keyword))
         url = job.urlBuilder(self.url, ["api", "v2", "list_movies.json"], params)
         data = retrieve_url(url)
-        j = json.loads(data)
-        # with open("assets/yts.v181109.json", "w") as f:
-        #     json.dump(j, f)
-        if j["data"]["movie_count"] and "movies" in j["data"]:
+        try:
+            j = json.loads(data)
+        except (json.JSONDecodeError, ValueError):
+            return
+        if j.get("data", {}).get("movie_count") and "movies" in j.get("data", {}):
             page_of = "{}of{}".format(
                 j["data"]["page_number"], int(math.ceil(int(j["data"]["movie_count"]) / int(j["data"]["limit"])))
             )
@@ -79,8 +80,13 @@ class yts(object):
                     if movie_id:
                         url = job.urlBuilder(self.url, ["api", "v2", "movie_details.json"], {"movie_id": movie_id})
                         data_detail = retrieve_url(url)
-                        j = json.loads(data_detail)
-                        movies = j["data"]["movie"]
+                        try:
+                            j = json.loads(data_detail)
+                        except (json.JSONDecodeError, ValueError):
+                            continue
+                        movies = j.get("data", {}).get("movie", {})
+                        if not movies:
+                            continue
                         for torrent in movies["torrents"]:
                             res = {
                                 "link": job.magnetBuilder(torrent["hash"], movies["title"]),

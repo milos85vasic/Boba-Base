@@ -1,7 +1,7 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-09 (Session 4 — coverage push: routes.py 95%, search.py 80%, submodules synced)
-**Last commit:** `6953662` (working tree CLEAN)
+**Session:** 2026-06-09 (Session 5 — search.py 84%, plugin coverage, BOB-015 fixes)
+**Last commit:** `HEAD` (working tree CLEAN)
 **Branch:** `main` — pushed to all upstreams
 **Workable-item tracking:** LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**, backed by SQLite DB at `docs/workable_items.db`.
 
@@ -10,38 +10,32 @@
 
 ---
 
-## What We Did (Session 4)
+## What We Did (Session 5)
 
 | Area | Work Done |
 |------|-----------|
-| **routes.py coverage** | 75% → 95% (+20%). Added 78 tests: search_sync flow/sorting/CAPTCHA, SSE stream cap 429, get_search with merged results, auth bad-JSON fallback + save credentials, tracker download flow (temp file + upload), non-tracker failure, per-URL exception, direct URL download, multi-hash magnet generation. |
-| **search.py coverage** | 79% → 80% (+1%). Added stream token issue/validate, get_all_tracker_results with results, get_live_results empty-tracker-results branch, get_search_status found, get_active_searches non-empty. |
-| **validator.py coverage** | 72% → 92% (from previous session, committed this session) |
-| **jackett_autoconfig.py coverage** | 72% → 99% (from previous session, committed this session) |
+| **search.py coverage** | 80% → 84% (+4%). Added 44 tests: size-based quality fallback, cancel_search, no-creds early returns, deadline ValueError fallback, HTML parser malformed-result guards, EncryptedSessionStore iter, load_env fallback. |
+| **Plugin coverage** | theme_injector 0%→99%, env_loader 0%→100%, download_proxy 36%→46%. 136 new tests across 3 plugin test files. |
+| **BOB-015 fixes** | yts.py + piratebay.py JSON decode guards (empty/invalid JSON no longer crashes). Verified kickass, eztv, nyaa, limetorrents handle empty HTML gracefully. |
 | **Submodules synced** | constitution + helixqa pulled from upstream, all repos pushed |
-| **Coverage baseline** | Updated COVERAGE_BASELINE.md (Revision 2): 60% total, 1802 tests |
 
 ### Verification (green tree)
 
 ```
-Pre-build gate:  18 passed, 0 failed
-Unit tests:      1802 passed, 0 failed
-Total coverage:  60% (gate: 49%)
-Core modules:    all ≥80%
-routes.py:       95%
-search.py:       80%
-validator.py:    92%
-jackett_autoconfig.py: 99%
+Unit tests:      1989 passed, 0 failed
+Total coverage:  65% (gate: 49%)
+search.py:       84%
+theme_injector:  99%
+env_loader:      100%
 ```
 
 ### Commits
 
 ```
+HEAD  feat: search.py 84%, plugin coverage (theme_injector/env_loader/download_proxy), BOB-015 JSON guards
 6953662 chore: update helixqa submodule to latest upstream
 995986c chore: update constitution submodule to latest upstream
 d2b14ed test: routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig 99%
-e5fcdb1 test: api/__init__ lifespan, CORS, SPA routes, dashboard — 70% to 98%
-6a01128 test: harden main.py, enricher, streaming — 100% enricher, 94% main, 99% streaming
 ```
 
 ---
@@ -129,6 +123,8 @@ bash start.sh && bash stop.sh
 | hooks.py | 95% |
 | jackett_autoconfig.py | **99%** |
 | scheduler.py | 93% |
-| search.py | **80%** |
+| search.py | **84%** |
 | validator.py | **92%** |
-| **TOTAL** | **60%** |
+| theme_injector.py | **99%** |
+| env_loader.py | **100%** |
+| **TOTAL** | **65%** |

@@ -1,19 +1,19 @@
 # Coverage Baseline
 
-**Revision:** 2
-**Last modified:** 2026-06-09T00:00:00Z
+**Revision:** 3
+**Last modified:** 2026-06-09T12:00:00Z
 
-Last updated at commit `6953662` on 2026-06-09 (routes.py/search.py coverage push).
+Last updated at commit `HEAD` on 2026-06-09 (search.py 84%, plugin coverage push, BOB-015 fixes).
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| **Total coverage** | **60%** |
-| **Total statements** | 6,810 |
-| **Missing lines** | 2,558 |
-| **Branches (partial)** | 117 |
-| **Unit tests passing** | 1,802 |
+| **Total coverage** | **65%** |
+| **Total statements** | 6,821 |
+| **Missing lines** | 2,264 |
+| **Branches (partial)** | 122 |
+| **Unit tests passing** | 1,802+ |
 | **Coverage gate (`fail_under`)** | 49 |
 
 ## By Module — Core (download-proxy/src)
@@ -36,7 +36,7 @@ Last updated at commit `6953662` on 2026-06-09 (routes.py/search.py coverage pus
 | `merge_service/jackett_autoconfig.py` | 205 | 1 | 76 | 2 | 99% |
 | `merge_service/retry.py` | 3 | 0 | 0 | 0 | 100% |
 | `merge_service/scheduler.py` | 126 | 6 | 20 | 2 | 93% |
-| `merge_service/search.py` | 965 | 174 | 294 | 29 | 80% |
+| `merge_service/search.py` | 965 | 143 | 294 | 23 | 84% |
 | `merge_service/validator.py` | 205 | 13 | 60 | 1 | 92% |
 
 ## Coverage Gate History
@@ -46,6 +46,7 @@ Last updated at commit `6953662` on 2026-06-09 (routes.py/search.py coverage pus
 | Phase 0 | 1% | Baseline |
 | Phase 10 | 49% | Raised to actual measured coverage |
 | Phase 11 | 49% | routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig 99% |
+| Phase 12 | 49% | search.py 84%, theme_injector 99%, env_loader 100%, yts/piratebay JSON guards |
 
 ## Measurement Method
 
