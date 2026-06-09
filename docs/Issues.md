@@ -50,14 +50,3 @@ cookie via `/auth/rutracker/cookie-login`. WHO — operator.
 **Evidence:** live search per-tracker stat `rutracker status=error auth=True
 error="login returned no session cookie — likely CAPTCHA"`.
 
-## BOB-009 — Containers submodule integrated with Go wrapper
-
-**Status:** In progress
-**Type:** Task
-**Created:** 2026-06-06
-
-Submodule added; `cmd/boba-ctl/` Go binary wraps `pkg/compose` + `pkg/runtime`
-with `up`/`down`/`status`/`health`/`list` subcommands. Remaining work: wire
-`boba-ctl up` into `start.sh` as opt-in replacement for raw `podman compose up`,
-add HelixQA test bank for boba-ctl operations. See `docs/Issues.md` for pending
-sub-items.

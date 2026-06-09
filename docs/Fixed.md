@@ -242,3 +242,19 @@ dropped searches + broke `MAX_CONCURRENT_SEARCHES`. Fixed with an atomic
 counter.
 **Evidence:** `TestGenerateID_UniqueUnderBurst` (10k IDs unique) + queue-full
 test via real `StartSearch`; `go test -race` green, deterministic.
+## BOB-009 — Containers submodule integrated with Go wrapper
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** boba-ctl is now default for start/stop; --no-boba-ctl falls back to raw compose
+
+Containers submodule integrated with Go wrapper
+
+## BOB-010 — Workable-items SQLite DB integrated + pre-build gate wired (§11.4.93/§11.4.95)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** SQLite DB integrated with pre-build gate; 20 items tracked; docs_chain validation wired
+
+Workable-items SQLite DB integrated + pre-build gate wired (§11.4.93/§11.4.95)
+
