@@ -196,7 +196,8 @@ def _load_jackett(captured=None, *, api_key="test_key_123", url="http://127.0.0.
     sys.modules["jackett"] = mod
 
     with patch("builtins.open", mock_open(read_data=json.dumps(config_data))):
-        spec.loader.exec_module(mod)
+        with patch.dict(os.environ, {"JACKETT_API_KEY": "", "JACKETT_URL": ""}, clear=False):
+            spec.loader.exec_module(mod)
 
     mod.CONFIG_DATA = config_data
     mod.CONFIG_DATA.pop("malformed", None)
