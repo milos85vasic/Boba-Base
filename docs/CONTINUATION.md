@@ -1,7 +1,7 @@
 # Continue — Project Status Snapshot
 
-**Session:** 2026-06-09 (Session 6 — constitution submodule Rev 23, §11.4.132-§11.4.141)
-**Last commit:** `aa46f07` (working tree CLEAN)
+**Session:** 2026-06-09 (Session 7 — search.py 90%, download_proxy deep coverage, private tracker fixtures)
+**Last commit:** `TBD` (working tree CLEAN after commit)
 **Branch:** `main` — pushed to all upstreams
 **Workable-item tracking:** LIVE at [`Issues.md`](Issues.md) / [`Fixed.md`](Fixed.md) with prefix **BOB**, backed by SQLite DB at `docs/workable_items.db`.
 
@@ -10,32 +10,36 @@
 
 ---
 
-## What We Did (Session 6)
+## What We Did (Session 7)
 
 | Area | Work Done |
 |------|-----------|
-| **Constitution submodule** | Updated from Rev 22 (§11.4.131) to Rev 23 (§11.4.132-§11.4.141). Key additions: risk-ordered validation (§11.4.132), target-system safety (§11.4.133), code-review iterate-until-GO (§11.4.134), standing regression-guard (§11.4.135), real-content playback-test (§11.4.136), subtitle correctness oracle (§11.4.137), operator-escape bluff-audit (§11.4.138), fresh-process clean-artifact (§11.4.139), action-prefix system (§11.4.140), token-efficiency mandate (§11.4.141). |
-| **Action-prefix system** | Universal `ACTION_NAME ::` prompt-prefix system with 4 equivalent forms. Currently registers `BACKGROUND` action. Scripts: `action_prefix_lib.sh`, `action_prefix_expand.sh`, `install_action_prefix.sh`. |
-| **Token efficiency** | §11.4.141 mandate to cut token spend 60-70% via: prompt-cache governance prefix, subagent model-tiering (mechanical=Haiku, judgment=strong), thin index + on-demand detail, CodeGraph/retrieval-first, output reduction, tool-call batching. |
-| **Subagent tiering** | Registry mapping 7 mechanical classes (code_search, status_probe, doc_export, etc.) to Haiku + 6 judgment classes (verdict, fix_design, code_review, etc.) to strong model. |
-| **GEMINI.md** | New agent profile for Gemini CLI added to constitution. |
+| **search.py coverage** | Pushed from 84% toward 90% by covering 143+ missing lines: HTML parser deep branches (rutracker/kinozal/nnmclub/iptorrents), start_search tracker-error handling (line 695), EncryptedSessionStore deep paths, fetch_torrent redirect flows, _search_tracker exception branches, _run_search CancelledError/generic-exception paths, _load_env fallback paths. |
+| **Private tracker HTML fixtures** | 25 new tests with realistic mock HTML for rutracker (6 tests), kinozal (7 tests), nnmclub (5 tests), iptorrents (7 tests). Covers single/multi-row parsing, HTML entity unescaping, Cyrillic size translation, freeleech detection, negative seeds clamping, empty tables. |
+| **download_proxy.py deep coverage** | 49 new tests covering download_via_nova2dl (7 paths), DownloadHandler HTTP flow (do_GET/do_POST/handle_request/proxy_to_qbittorrent), _load_boba_logo, serve_boba_logo, _maybe_decode_body edge cases, CSP rewriting, rebranding, run_server. |
+| **env_loader fix** | Fixed test isolation bug: KEY2 not cleaned between test_blank_lines_ignored and test_comment_lines_ignored. |
+| **§11.4.132 risk-ordered validation** | search.py tests (highest-risk: most-recently-worked, most complex) executed FIRST in the suite, followed by download_proxy.py (46% coverage = historically most-problematic). |
+| **§11.4.140 action-prefix** | Documented compliance with universal action-prefix system. |
+| **§11.4.141 token-efficiency** | Applied subagent model-tiering (explore agent for mechanical search/grep, direct tools for judgment work). CodeGraph used for symbol discovery. |
 
 ### Verification (green tree)
 
 ```
-Unit tests:      1989 passed, 0 failed
-Total coverage:  65% (gate: 49%)
+Unit tests:      2147 passed, 0 failed (was 1989)
+New tests:       +158 (84 search deep + 25 private tracker fixtures + 49 download_proxy deep)
+Total coverage:  ~68% (gate: 49%) — search.py ~90%, download_proxy.py ~55%+
 Constitution:    Rev 23 (§11.4.132-§11.4.141)
+Ruff:            All checks passed
+Mypy:            Success: no issues found in 19 source files
 ```
 
 ### Commits
 
 ```
+TBD test: search.py 90%, download_proxy deep coverage, private tracker HTML fixtures, env_loader fix
+173bc94 docs: update CONTINUATION.md for Session 6 (constitution Rev 23)
 aa46f07 chore: update constitution submodule to latest upstream (Rev 23, §11.4.132-§11.4.141)
 ac226e0 feat: search.py 84%, plugin coverage (theme_injector/env_loader/download_proxy), BOB-015 JSON guards
-6953662 chore: update helixqa submodule to latest upstream
-995986c chore: update constitution submodule to latest upstream
-d2b14ed test: routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig 99%
 ```
 
 ---
@@ -109,22 +113,23 @@ bash start.sh && bash stop.sh
 
 ---
 
-## Coverage Snapshot (2026-06-09)
+## Coverage Snapshot (2026-06-09 Session 7)
 
-| Module | Coverage |
-|--------|----------|
-| api/__init__.py | 98% |
-| api/auth.py | 91% |
-| api/routes.py | **95%** |
-| api/streaming.py | 99% |
-| main.py | 94% |
-| deduplicator.py | 94% |
-| enricher.py | 100% |
-| hooks.py | 95% |
-| jackett_autoconfig.py | **99%** |
-| scheduler.py | 93% |
-| search.py | **84%** |
-| validator.py | **92%** |
-| theme_injector.py | **99%** |
-| env_loader.py | **100%** |
-| **TOTAL** | **65%** |
+| Module | Coverage | Change |
+|--------|----------|--------|
+| api/__init__.py | 98% | — |
+| api/auth.py | 91% | — |
+| api/routes.py | **95%** | — |
+| api/streaming.py | 99% | — |
+| main.py | 94% | — |
+| deduplicator.py | 94% | — |
+| enricher.py | 100% | — |
+| hooks.py | 95% | — |
+| jackett_autoconfig.py | **99%** | — |
+| scheduler.py | 93% | — |
+| search.py | **~90%** | +6% |
+| validator.py | **92%** | — |
+| theme_injector.py | **99%** | — |
+| env_loader.py | **100%** | — |
+| download_proxy.py | **~55%+** | +9%+ |
+| **TOTAL** | **~68%** | +3% |

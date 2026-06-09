@@ -93,6 +93,8 @@ class TestLoadEnvFiles:
             assert os.environ.get("KEY1") == "val1"
             assert os.environ.get("KEY2") == "val2"
         finally:
+            os.environ.pop("KEY1", None)
+            os.environ.pop("KEY2", None)
             os.unlink(path)
 
     def test_comment_lines_ignored(self):
