@@ -41,6 +41,11 @@ import { BobaClient } from "../api/boba-client";
 import { probeHealth, type HealthProbeResult } from "../api/health";
 import { OfflineQueue, type OfflineQueueItem } from "../api/queue";
 import {
+  batchGroupTorrents,
+  chromeGroupBatchDeps,
+  dispatchGroupBatch,
+} from "../tabgroups";
+import {
   BADGE_COLORS,
   EXT,
   STORAGE_KEYS,
@@ -587,9 +592,40 @@ function registerContextMenuClicks(): void {
             }
             break;
           }
-          case MENU_SEND_GROUP:
-            // Placeholder — tab-group send lands in a later phase.
+          case MENU_SEND_GROUP: {
+            // Phase 5: batch every detected torrent across the clicked tab's
+            // group (deduped, infohash-first) and send them in one POST.
+            // `tab.groupId` is TAB_GROUP_ID_NONE (-1) when the tab is ungrouped.
+            const groupId = tab?.groupId;
+            const config = await loadConfig();
+            const server = activeServer(config);
+            if (typeof groupId === "number" && groupId >= 0 && server) {
+              const batch = await batchGroupTorrents(
+                groupId,
+                chromeGroupBatchDeps((id) =>
+                  Promise.resolve(tabResults.get(id) ?? null),
+                ),
+              );
+              const client = await clientFor(server);
+              const dispatch = await dispatchGroupBatch(batch, (payload) =>
+                client
+                  .addMagnets(payload.downloadUrls)
+                  .then((r) => ({ accepted: r.accepted })),
+              );
+              if (config.showNotifications) {
+                notify(
+                  dispatch.accepted ? "Group sent!" : "Group send failed",
+                  dispatch.accepted
+                    ? `Sent ${String(dispatch.sent)} torrent(s) from the tab group to Boba.`
+                    : dispatch.sent === 0
+                      ? "No sendable torrents detected in this tab group."
+                      : "The backend rejected the group batch.",
+                  dispatch.accepted ? "success" : "error",
+                );
+              }
+            }
             break;
+          }
           default:
             break;
         }

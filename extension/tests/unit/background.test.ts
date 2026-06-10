@@ -416,6 +416,69 @@ describe("message router — send-torrent → client + notify / enqueue-on-fail"
     expect(logged).not.toContain(SYNTH_TOKEN);
   });
 
+  it("MENU_SEND_GROUP batches deduped torrents across the tab group and POSTs them once (Phase 5)", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ status: "initiated", added_count: 2 }),
+      } as unknown as Response),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { initBackground } = await loadBackground();
+    initBackground();
+    const ch = installed.chrome;
+    seedConfig(installed.store, makeServer());
+
+    // Tab group of two tabs (ids 7 & 8). The SAME magnet (A) is detected on both
+    // tabs + a distinct magnet (B) on tab 8 → cross-tab dedup must yield exactly
+    // TWO unique download URLs.
+    ch.tabs.query.mockResolvedValue([{ id: 7 }, { id: 8 }]);
+    await sendMessage(
+      ch,
+      {
+        type: "scan-result",
+        payload: { result: scanResult([{ id: INFOHASH_A, magnet: MAGNET_A, name: "Ubuntu" }]) },
+      },
+      { tab: { id: 7 } },
+    );
+    await sendMessage(
+      ch,
+      {
+        type: "scan-result",
+        payload: {
+          result: scanResult([
+            { id: INFOHASH_A, magnet: MAGNET_A, name: "Ubuntu" },
+            { id: INFOHASH_B, magnet: MAGNET_B, name: "Debian" },
+          ]),
+        },
+      },
+      { tab: { id: 8 } },
+    );
+
+    // Fire the context-menu "Send group" click on tab 7 (group id 3).
+    const onClicked = ch.contextMenus.onClicked.handlers[0];
+    expect(onClicked).toBeTypeOf("function");
+    onClicked?.({ menuItemId: "bobalink-send-group" }, { id: 7, groupId: 3 });
+    // Flush the fire-and-forget async handler chain (loadConfig → batch → client
+    // → dispatch → addMagnets → fetch).
+    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
+
+    // USER-OBSERVABLE: exactly ONE batched POST to /api/v1/download carrying the
+    // two DEDUPED magnets (A once, despite appearing on both tabs, + B).
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const url = (fetchMock.mock.calls[0] as unknown[])?.[0] as string;
+    expect(url).toContain("/api/v1/download");
+    const init = (fetchMock.mock.calls[0] as unknown[])?.[1] as RequestInit;
+    const body = JSON.parse(init.body as string) as { download_urls: string[] };
+    expect(body.download_urls).toHaveLength(2);
+    expect(body.download_urls).toContain(MAGNET_A);
+    expect(body.download_urls).toContain(MAGNET_B);
+    // queried the group's tabs by groupId (not a broad tabs scan)
+    expect(ch.tabs.query).toHaveBeenCalledWith({ groupId: 3 });
+  });
+
   it("on a client failure ENQUEUES the item into the real OfflineQueue (persisted)", async () => {
     // fetch always rejects → NetworkError after retries → enqueue
     const fetchMock = vi.fn(() => Promise.reject(new Error("ECONNREFUSED")));

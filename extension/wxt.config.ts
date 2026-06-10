@@ -31,6 +31,12 @@ export default defineConfig({
       "notifications",
       "activeTab",
       "contextMenus",
+      // Phase 5 tab-group batch send: read the clicked tab's group membership and
+      // query the group's tabs via chrome.tabs.query({groupId}). `tabGroups` grants
+      // NO host/content/URL access. `tabs` is intentionally NOT requested — the
+      // batcher reads only tab.id (not url/title/favIconUrl), which per the Chrome
+      // docs requires no `tabs` permission (least-privilege, Plan E §3.1).
+      "tabGroups",
     ],
 
     // localhost:7187 (Boba merge service) only — see _analysis/04 §8.

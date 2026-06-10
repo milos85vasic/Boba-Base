@@ -77,11 +77,21 @@ describe("manifest least-privilege — permissions array", () => {
     expect(Array.isArray(manifest.host_permissions)).toBe(true);
   });
 
-  it("requests ONLY the five least-privilege permissions (exact set)", () => {
+  it("requests ONLY the least-privilege permission set (exact set)", () => {
     // Catches: any NEW permission added to the array (the array is sorted-compared,
-    // so adding `scripting` or `tabs` changes the set and FAILs).
+    // so adding `scripting`/`tabs`/etc. changes the set and FAILs). `tabGroups` is
+    // the Phase-5 tab-group-batch permission (§11.4.120 reconciliation): it grants
+    // NO host/content/URL access and is NOT in FORBIDDEN_PERMISSIONS. `tabs` stays
+    // forbidden — the batcher reads only tab.id, never sensitive tab properties.
     expect([...manifest.permissions].sort()).toEqual(
-      ["activeTab", "alarms", "contextMenus", "notifications", "storage"].sort(),
+      [
+        "activeTab",
+        "alarms",
+        "contextMenus",
+        "notifications",
+        "storage",
+        "tabGroups",
+      ].sort(),
     );
   });
 
