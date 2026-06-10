@@ -45,6 +45,14 @@ export interface ServerConfig {
   /** API key for api_key auth (stored encrypted) */
   readonly encryptedApiKey: string | null;
 
+  /**
+   * Optional shared-secret token for Boba's merge-service download-write endpoints
+   * (`BOBA_API_TOKEN` on :7187). Stored encrypted. When set, the Phase-4 Boba client
+   * sends it as `Authorization: Bearer <token>` (or `X-Boba-Token`). The backend gate
+   * is OPEN by default — only enforced when the operator sets `BOBA_API_TOKEN`.
+   */
+  readonly encryptedBobaApiToken?: string | null;
+
   /** Timeout for API requests in milliseconds */
   readonly requestTimeout: number;
 

@@ -111,6 +111,19 @@ export const DEFAULT_URLS = {
 } as const;
 
 /**
+ * Headers the Phase-4 Boba client uses to present the optional shared-secret
+ * token (`BOBA_API_TOKEN`) to the merge-service download-write endpoints on :7187.
+ * Either header is accepted by the backend gate (constant-time compared); the
+ * gate is OPEN by default and only enforced when the operator sets the env var.
+ */
+export const BOBA_TOKEN_HEADERS = {
+  /** `Authorization: Bearer <token>` */
+  AUTHORIZATION: "Authorization",
+  /** `X-Boba-Token: <token>` (alternative for clients that can't set Authorization) */
+  X_BOBA_TOKEN: "X-Boba-Token",
+} as const;
+
+/**
  * qBitTorrent API endpoint paths.
  */
 export const QBITTORRENT_ENDPOINTS = {

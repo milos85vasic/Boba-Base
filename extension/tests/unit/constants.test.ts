@@ -22,6 +22,7 @@ import {
   TORRENT_FILE_VALIDATION_REGEX,
   SITE_SELECTORS,
   ENCRYPTION,
+  BOBA_TOKEN_HEADERS,
 } from "../../src/shared/constants";
 import { DEFAULT_AUTO_DISCOVERY } from "../../src/types/config";
 
@@ -109,5 +110,13 @@ describe("encryption parameters are the sound AES-256-GCM + PBKDF2 set", () => {
     expect(ENCRYPTION.KDF_ITERATIONS).toBe(100000);
     expect(ENCRYPTION.IV_LENGTH_BYTES).toBe(12);
     expect(ENCRYPTION.SALT_LENGTH_BYTES).toBe(16);
+  });
+
+  it("exposes the exact Boba download-write token header names the backend gate accepts", () => {
+    // The Phase-4 Boba client presents BOBA_API_TOKEN via one of these headers;
+    // they MUST match the backend gate (download-proxy require_api_token):
+    // Authorization: Bearer <token>  OR  X-Boba-Token: <token>.
+    expect(BOBA_TOKEN_HEADERS.AUTHORIZATION).toBe("Authorization");
+    expect(BOBA_TOKEN_HEADERS.X_BOBA_TOKEN).toBe("X-Boba-Token");
   });
 });

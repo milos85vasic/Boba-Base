@@ -3,6 +3,7 @@ API routes for the merge service.
 """
 
 import asyncio
+import hmac
 import json
 import logging
 import os
@@ -12,7 +13,7 @@ import uuid
 from typing import Annotated, Any
 
 import aiohttp
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from filelock import FileLock
 from pydantic import BaseModel, Field
@@ -751,8 +752,41 @@ def _is_tracker_url(url: str) -> str | None:
     return None
 
 
+def require_api_token(request: Request) -> None:
+    """Optional, env-gated shared-secret gate for the download-WRITE endpoints.
+
+    Read the token from the environment AT REQUEST TIME (not import time) so
+    operators can toggle it without restarting and so tests can monkeypatch
+    ``BOBA_API_TOKEN``.
+
+    * ``BOBA_API_TOKEN`` unset/empty -> return (OPEN). This is the DEFAULT and
+      preserves the current no-auth contract + dev workflow (§11.4.122).
+    * ``BOBA_API_TOKEN`` set -> the request MUST present a MATCHING token in
+      either ``Authorization: Bearer <token>`` OR ``X-Boba-Token: <token>``.
+      Comparison is constant-time (``hmac.compare_digest``). Missing/mismatch
+      -> ``401``.
+
+    §11.4.10: the token value and the supplied header value are NEVER logged.
+    """
+    token = os.getenv("BOBA_API_TOKEN", "").strip()
+    if not token:
+        return  # OPEN — default, no-auth contract preserved.
+
+    supplied = ""
+    auth = request.headers.get("authorization", "")
+    if auth.lower().startswith("bearer "):
+        supplied = auth[7:].strip()
+    if not supplied:
+        supplied = request.headers.get("x-boba-token", "").strip()
+
+    if not supplied or not hmac.compare_digest(supplied, token):
+        raise HTTPException(status_code=401, detail="Unauthorized: valid API token required")
+
+
 @router.post("/download")
-async def initiate_download(request: DownloadRequest, req: Request):  # type: ignore[no-untyped-def]
+async def initiate_download(
+    request: DownloadRequest, req: Request, _: None = Depends(require_api_token)
+):  # type: ignore[no-untyped-def]
     import tempfile
 
     from .hooks import dispatch_event
@@ -907,7 +941,9 @@ def _looks_like_torrent(data: bytes) -> bool:
 
 
 @router.post("/download/upload")
-async def upload_torrent(file: Annotated[UploadFile, File()]):  # type: ignore[no-untyped-def]
+async def upload_torrent(
+    file: Annotated[UploadFile, File()], _: None = Depends(require_api_token)
+):  # type: ignore[no-untyped-def]
     """Accept a raw ``.torrent`` file (multipart ``file`` field) and add it to
     qBittorrent.
 
@@ -994,7 +1030,9 @@ async def upload_torrent(file: Annotated[UploadFile, File()]):  # type: ignore[n
 
 
 @router.post("/download/file")
-async def download_torrent_file(request: DownloadRequest, req: Request):  # type: ignore[no-untyped-def]
+async def download_torrent_file(
+    request: DownloadRequest, req: Request, _: None = Depends(require_api_token)
+):  # type: ignore[no-untyped-def]
     """Download the first available .torrent file from the result's URLs."""
 
     orch = _get_orchestrator(req)
