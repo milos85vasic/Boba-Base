@@ -248,6 +248,33 @@ async function loadBackground() {
   return import("../../src/background/index");
 }
 
+/**
+ * Deterministically flush the fire-and-forget context-menu async handler chain
+ * by polling a real completion `signal` (e.g. "fetch was called", "the queue is
+ * persisted") instead of a fixed number of `setTimeout(0)` ticks. Polls on a
+ * short real-time interval up to a wall-clock `timeoutMs` so the client's own
+ * retry backoff (multi-second) on the network-error path has time to settle.
+ * Throws on timeout so a no-op handler fails LOUDLY (§11.4.1) rather than
+ * silently passing a too-short fixed loop.
+ *
+ * @param signal - Predicate that becomes true once the observed effect landed.
+ * @param label - Human-readable description used in the timeout error.
+ * @param timeoutMs - Wall-clock budget before failing.
+ */
+async function flushUntil(
+  signal: () => boolean,
+  label: string,
+  timeoutMs = 5000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (signal()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+  if (signal()) return;
+  throw new Error(`flushUntil timed out waiting for: ${label}`);
+}
+
 let installed: InstalledChrome;
 
 beforeEach(() => {
@@ -462,8 +489,13 @@ describe("message router — send-torrent → client + notify / enqueue-on-fail"
     expect(onClicked).toBeTypeOf("function");
     onClicked?.({ menuItemId: "bobalink-send-group" }, { id: 7, groupId: 3 });
     // Flush the fire-and-forget async handler chain (loadConfig → batch → client
-    // → dispatch → addMagnets → fetch).
-    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
+    // → dispatch → addMagnets → fetch) by awaiting a REAL completion signal: the
+    // addMagnets call settling, observed via the fetch spy (§11.4.50 — no fixed
+    // tick count that could pass before the chain runs or flake under load).
+    await flushUntil(
+      () => fetchMock.mock.calls.length > 0,
+      "group batch POST to reach fetch",
+    );
 
     // USER-OBSERVABLE: exactly ONE batched POST to /api/v1/download carrying the
     // two DEDUPED magnets (A once, despite appearing on both tabs, + B).
@@ -478,6 +510,123 @@ describe("message router — send-torrent → client + notify / enqueue-on-fail"
     // queried the group's tabs by groupId (not a broad tabs scan)
     expect(ch.tabs.query).toHaveBeenCalledWith({ groupId: 3 });
   });
+
+  it("MENU_SEND_GROUP enqueues the group's torrents into the real OfflineQueue when the backend REJECTS the batch (Phase 5 parity with Send-All)", async () => {
+    // 200 OK but the backend reports a wholesale failure → addMagnets resolves
+    // accepted:false (NOT a throw). The group's sendable torrents MUST land in
+    // the persisted queue for retry, exactly like the Send-All path does.
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ status: "failed", added_count: 0 }),
+      } as unknown as Response),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { initBackground } = await loadBackground();
+    initBackground();
+    const ch = installed.chrome;
+    seedConfig(installed.store, makeServer());
+
+    ch.tabs.query.mockResolvedValue([{ id: 7 }, { id: 8 }]);
+    await sendMessage(
+      ch,
+      {
+        type: "scan-result",
+        payload: { result: scanResult([{ id: INFOHASH_A, magnet: MAGNET_A, name: "Ubuntu" }]) },
+      },
+      { tab: { id: 7 } },
+    );
+    await sendMessage(
+      ch,
+      {
+        type: "scan-result",
+        payload: {
+          result: scanResult([
+            { id: INFOHASH_A, magnet: MAGNET_A, name: "Ubuntu" },
+            { id: INFOHASH_B, magnet: MAGNET_B, name: "Debian" },
+          ]),
+        },
+      },
+      { tab: { id: 8 } },
+    );
+
+    const onClicked = ch.contextMenus.onClicked.handlers[0];
+    onClicked?.({ menuItemId: "bobalink-send-group" }, { id: 7, groupId: 3 });
+
+    // Await the REAL completion signal: both deduped torrents persisted to the
+    // offline queue under STORAGE_KEYS.QUEUE.
+    await flushUntil(() => {
+      const q = installed.store.get(STORAGE_KEYS.QUEUE) as
+        | OfflineQueueItem[]
+        | undefined;
+      return Array.isArray(q) && q.length >= 2;
+    }, "rejected group batch to be persisted into the offline queue");
+
+    // USER-OBSERVABLE: the two DEDUPED torrents now live in the persisted queue.
+    const queued = installed.store.get(STORAGE_KEYS.QUEUE) as
+      | OfflineQueueItem[]
+      | undefined;
+    expect(queued).toBeDefined();
+    expect(queued).toHaveLength(2);
+    const names = (queued ?? []).map((q) => q.torrent.displayName).sort();
+    expect(names).toEqual(["Debian", "Ubuntu"]);
+    const magnets = (queued ?? []).map((q) => q.torrent.magnetUri).sort();
+    expect(magnets).toEqual([MAGNET_B, MAGNET_A].sort());
+  }, 10000);
+
+  it("MENU_SEND_GROUP on a NETWORK ERROR enqueues the torrents AND raises a 'Group send failed' notification (Phase 5)", async () => {
+    // fetch always rejects → addMagnets THROWS (NetworkError after retries) →
+    // the throw must NOT be silently swallowed: the group's torrents are queued
+    // for retry AND the user sees a failure notification.
+    const fetchMock = vi.fn(() => Promise.reject(new Error("ECONNREFUSED")));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { initBackground } = await loadBackground();
+    initBackground();
+    const ch = installed.chrome;
+    seedConfig(installed.store, makeServer());
+
+    ch.tabs.query.mockResolvedValue([{ id: 7 }]);
+    await sendMessage(
+      ch,
+      {
+        type: "scan-result",
+        payload: {
+          result: scanResult([
+            { id: INFOHASH_A, magnet: MAGNET_A, name: "Ubuntu" },
+            { id: INFOHASH_B, magnet: MAGNET_B, name: "Debian" },
+          ]),
+        },
+      },
+      { tab: { id: 7 } },
+    );
+
+    const onClicked = ch.contextMenus.onClicked.handlers[0];
+    onClicked?.({ menuItemId: "bobalink-send-group" }, { id: 7, groupId: 3 });
+
+    // Await the REAL completion signal: the torrents persisted to the queue.
+    await flushUntil(() => {
+      const q = installed.store.get(STORAGE_KEYS.QUEUE) as
+        | OfflineQueueItem[]
+        | undefined;
+      return Array.isArray(q) && q.length >= 2;
+    }, "network-failed group batch to be persisted into the offline queue", 15000);
+
+    // USER-OBSERVABLE: torrents queued for retry, not dropped on the floor.
+    const queued = installed.store.get(STORAGE_KEYS.QUEUE) as
+      | OfflineQueueItem[]
+      | undefined;
+    expect(queued).toHaveLength(2);
+
+    // USER-OBSERVABLE: a "Group send failed" notification was raised.
+    expect(ch.notifications.create).toHaveBeenCalled();
+    const titles = ch.notifications.create.mock.calls.map(
+      (c) => (c[0] as { title?: string }).title,
+    );
+    expect(titles).toContain("Group send failed");
+  }, 20000);
 
   it("on a client failure ENQUEUES the item into the real OfflineQueue (persisted)", async () => {
     // fetch always rejects → NetworkError after retries → enqueue

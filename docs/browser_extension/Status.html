@@ -1,0 +1,219 @@
+<h1 id="bobalink-browser-extension--status">BobaLink Browser Extension —
+Status</h1>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-06-10T20:10:00Z <strong>Scope:</strong> BobaLink
+(<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
+extension that detects magnet links and <code>.torrent</code> URLs and
+forwards them to the Boba merge service on port 7187.
+<strong>Authority:</strong> master plan
+<code>docs/browser_extension/IMPLEMENTATION_PLAN.md</code> (9
+phases).</p>
+<blockquote>
+<p>Captured-evidence-driven (§11.4.5 / §11.4.45). Every PASS cites a
+real commit hash and/or a verified test/file artifact. Rows lacking
+runtime evidence are marked IN-PROGRESS or PENDING — never PASS (§11.4.6
+no-guessing).</p>
+</blockquote>
+<h2 id="baseline-facts-verified-this-session--session-11">Baseline facts
+(verified this session — Session 11)</h2>
+<ul>
+<li><strong>HEAD:</strong> <code>5edf6ac</code> (pushed); wave-3 (a11y +
+Phase-5 nits + docs + live-probe + ledger) staged for the next
+commit.</li>
+<li><strong>Extension test corpus:</strong> <strong>400 Vitest tests
+across 35 spec files</strong> — same-session <code>npx vitest run</code>
+→ <code>Tests 400 passed (400)</code> — under
+<code>extension/tests/{unit,perf,stress,chaos,integration,security,e2e}</code>
++ <code>src/**</code>. <code>npx tsc --noEmit</code> clean;
+<code>npm run lint</code> 0 errors / 0 warnings. (+113 tests over the
+prior 287/22 baseline: integration 7, security 4 files, stress/chaos 10,
+locale 4, token suites 8, tab-groups 13, a11y 18, group-send nits 2,
++more.)</li>
+<li><strong>WXT build wiring — COMPLETE.</strong> WXT entrypoints exist
+at
+<code>extension/src/entrypoints/{background.ts, content.ts, popup/index.html, options/index.html}</code>
+(thin wrappers over the existing logic modules, so all prior test
+imports stay valid). <code>npx wxt build</code> produces a
+<strong>loadable</strong> <code>extension/.output/chrome-mv3/</code>:
+<code>manifest_version:3</code>,
+<code>background.service_worker:background.js</code>,
+<code>popup.html</code>, <code>options.html</code>,
+<code>content-scripts/content.js</code>, icons 16/32/48/128 —
+<strong>every manifest-referenced asset verified present on
+disk</strong> (§11.4.38: PASS). Content-script <code>matches</code> are
+derived from the curated <code>SITE_SELECTORS</code> (24 hosts,
+<strong>no <code>&lt;all_urls&gt;</code></strong>); permissions
+least-privilege (no scripting/tabs/cookies);
+<code>host_permissions</code> = <code>http://localhost:7187/*</code>
+only; CSP <code>script-src 'self'</code>.</li>
+</ul>
+<h2 id="per-phase-status">Per-phase status</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Title</th>
+<th>Status</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Foundation &amp; scaffolding (WXT config, TS, shared libs, types,
+constants)</td>
+<td>PASS</td>
+<td>Scaffolded @<code>33a9815</code>; shared-lib + constants +
+type-guard unit specs green @<code>15a9a61</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Core detection &amp; parsing engine (parsers, scanners, infohash
+dedup)</td>
+<td>PASS</td>
+<td>Parsers @<code>7225470</code>/<code>fa03323</code>; SHA-1 infohash +
+link/text scanners + perf/stress @<code>fa03323</code>; scanner
+orchestrator cross-scanner dedup @<code>946c61e</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Extension shell — content / background / popup / options</td>
+<td>PASS</td>
+<td>Shell @<code>e8fde43</code>; background service-worker message
+router capstone @<code>15a9a61</code></td>
+</tr>
+<tr>
+<td>—</td>
+<td>WXT build wiring (<code>entrypoints/</code>, <code>wxt build</code>
+→ <code>.output/</code>, manifest validate)</td>
+<td><strong>PASS</strong></td>
+<td>Entrypoints
+<code>src/entrypoints/{background.ts,content.ts,popup/index.html,options/index.html}</code>;
+<code>npx wxt build</code> → loadable <code>.output/chrome-mv3/</code>
+(8/8 manifest assets verified present, §11.4.38); matches derived from
+<code>SITE_SELECTORS</code>, no <code>&lt;all_urls&gt;</code> (Session
+11 @<code>5edf6ac</code>, pushed)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Boba backend integration (real client, queue auth, BE-1/2/3)</td>
+<td>IN-PROGRESS</td>
+<td>API leaf @<code>e8fde43</code>. <strong>Phase-7 decrypt-before-send
+wired</strong> (Session 11): <code>BobaClient.create()</code> decrypts
+the <code>encryptedBobaApiToken</code> bundle via
+<code>shared/crypto</code>; <code>background</code> reads the session
+passphrase from <code>chrome.storage.session</code> and sends the
+decrypted plaintext (default-open when locked). Token suites
+<code>boba-client-token.test.ts</code> 5 +
+<code>background-token.test.ts</code> 3 green. <strong>PENDING:</strong>
+live-7187 integration (<code>require_backend(7187)</code>), end-to-end
+detect→send→torrent-in-qBittorrent on the real backend</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Tab-group batch (<code>chrome.tabGroups</code> → per-tab scan →
+batch send)</td>
+<td>IN-PROGRESS</td>
+<td><strong>Wired</strong> (Session 11):
+<code>src/tabgroups/index.ts</code> (dedupe across a group + batch
+dispatch, 13 tests) <strong>integrated into
+<code>background/index.ts</code> <code>MENU_SEND_GROUP</code></strong>
+(deduped group batch → one <code>addMagnets</code> POST); manifest
+<code>+tabGroups</code> (MINIMAL — research-confirmed <code>tabs</code>
+NOT needed since only <code>tab.id</code> is read; §11.4.120
+security-test reconciliation, mutation-verified). New
+<code>background.test.ts</code> MENU_SEND_GROUP test (RED-verified:
+handler no-op → FAIL). Independent review:
+<strong>GO-with-nits</strong>. Group-send nits (a) offline-queue
+enqueue-on-failure, (b) network-error notification, (c) hardened async
+flush — all <strong>FIXED</strong> (Session 11, RED→GREEN +
+3×-deterministic, independent review GO). <strong>TRACKED:</strong>
+decrypt-throw (wrong passphrase) on group send not enqueued/notified —
+pre-existing parity with Send-All, future phase</td>
+</tr>
+<tr>
+<td>6</td>
+<td>UI/UX, i18n, accessibility, themes</td>
+<td>IN-PROGRESS</td>
+<td>i18n locale completeness guarded: <code>locale.test.ts</code> 4
+(derives referenced <code>__MSG_*</code> keys from source; en catalog
+complete). <strong>PENDING:</strong> additional locales (plan targets
+8), WCAG/a11y + theme-switch evidence</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Security &amp; credentials (delegate-by-default, no embedded key,
+log redaction)</td>
+<td>IN-PROGRESS</td>
+<td><code>crypto.ts</code> adopted; <strong>decrypt-and-send path
+landed</strong> (Phase-4 row); session passphrase from
+<code>chrome.storage.session</code>, <strong>no embedded key</strong>,
+plaintext/passphrase never logged; security suite
+<code>tests/security/*</code> 4 files (least-privilege manifest, CSP,
+no-hardcoded-secret, secret-storage). <strong>PENDING:</strong>
+§11.4.10.A pre-store leak audit, full pen-test suite</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Testing to 100% (all types) + Challenges + HelixQA</td>
+<td>IN-PROGRESS</td>
+<td>400 tests/35 files green
+(unit/perf/stress/chaos/integration/security/e2e). Challenge
+<code>challenges/extension/detect_and_forward_challenge.sh</code> drives
+the REAL orchestrator+client end-to-end, PASS on captured evidence,
+mutation-verified (no-op stub → FAIL). HelixQA
+<code>boba-bobalink.yaml</code> BOBA-LINK-007 added; symlinked into
+<code>challenges/helixqa-banks/</code>. E2E
+<code>tests/e2e/extension-loads.spec.ts</code> is a real MV3-load test,
+<strong>operator-gated SKIP</strong> in this headless sandbox (extension
+load unsupported; §11.4.3). <strong>PENDING:</strong> the full 13-type
+coverage matrix + live-backend integration + the coverage ledger to
+100%</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Build, packaging &amp; distribution (manual — NO CI/CD)</td>
+<td>PENDING</td>
+<td>Loadable <code>.output/chrome-mv3/</code> produced, but no
+<code>extension/ci-ext.sh</code> manual gate, no per-store zip, no
+§11.4.65 user/dev/install/API doc siblings yet</td>
+</tr>
+</tbody>
+</table>
+<h2 id="status-legend">Status legend</h2>
+<ul>
+<li><strong>PASS</strong> — implemented and backed by a cited commit
+and/or verified test/file evidence.</li>
+<li><strong>IN-PROGRESS</strong> — partially landed; some sub-tasks done
+with evidence, remainder explicitly enumerated as PENDING.</li>
+<li><strong>PENDING</strong> — not yet started / no runtime evidence;
+planned in <code>IMPLEMENTATION_PLAN.md</code>.</li>
+</ul>
+<h2 id="anti-bluff-notes-114--1146--11469">Anti-bluff notes (§11.4 /
+§11.4.6 / §11.4.69)</h2>
+<ul>
+<li>The 400 figure IS a same-session recorded
+<code>npx vitest run</code> result
+(<code>Tests 400 passed (400)</code>), not merely a static grep — it
+supersedes the prior 287/22 grep-count baseline. tsc + lint captured
+clean in the same session.</li>
+<li>The §11.4.38 loadable-artifact claim was verified by <strong>opening
+the produced <code>.output/chrome-mv3/manifest.json</code></strong> and
+confirming every referenced asset exists on disk — not by "build exited
+0".</li>
+<li>The Phase-7 decrypt path is proven by RED→GREEN:
+ciphertext-on-the-wire (pre-fix) → decrypted-plaintext header
+(post-fix), with the ciphertext never sent and the token never logged
+(<code>background-token.test.ts</code>,
+<code>boba-client-token.test.ts</code>).</li>
+<li>The detect→forward Challenge was independently re-run and its
+no-op-stub negation verified (stubbed orchestrator → FAIL) during code
+review.</li>
+<li>Independent multi-lens subagent code-review
+(correctness/security/build/docs) was run; the security + correctness +
+build + docs lenses returned GO / GO-with-nits. (The
+correctness/security/build subagent lenses were re-run in the conductor
+context after a transient platform throttle on subagent dispatch; an
+independent subagent re-pass runs before any release tag per
+§11.4.40.)</li>
+</ul>

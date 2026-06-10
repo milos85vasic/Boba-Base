@@ -26,8 +26,12 @@ export default defineConfig({
       "tests/chaos/**/*.test.ts",
       "tests/integration/**/*.test.ts",
       "tests/security/**/*.test.ts",
+      "tests/a11y/**/*.test.ts",
       "src/**/*.test.ts",
     ],
+    // NOTE: tests/live/** is intentionally NOT in the default suite — it needs a
+    // real backend on :7187 and a network probe. Run it explicitly via the
+    // `test:live` script (it SKIPs cleanly when the backend is unreachable).
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "html", "lcov"],

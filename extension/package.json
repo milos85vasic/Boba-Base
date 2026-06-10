@@ -27,7 +27,8 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:live": "vitest run --config tests/live/vitest.live.config.ts"
   },
   "dependencies": {
     "webextension-polyfill": "^0.12.0"

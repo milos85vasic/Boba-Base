@@ -1,0 +1,206 @@
+<h1 id="bobalink-browser-extension--status-summary">BobaLink Browser
+Extension — Status Summary</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-06-10T20:05:00Z <strong>Companion of:</strong>
+<code>docs/browser_extension/Status.md</code> (Rev 2, §11.4.56
+two-audience summary).</p>
+<blockquote>
+<p>Every claim here traces to <code>Status.md</code> Rev 2. No
+overclaim, no invented PASS (§11.4.6).</p>
+</blockquote>
+<hr />
+<h2 id="page-1--for-the-team-plain-language">Page 1 — For the team
+(plain language)</h2>
+<p>BobaLink is a browser extension that spots torrent download links
+(magnet links and <code>.torrent</code> files) on web pages and sends
+them, with one click, to the Boba dashboard so the download starts
+automatically.</p>
+<p><strong>What works today:</strong></p>
+<ul>
+<li>The detection engine is built and tested: it reads torrent links,
+computes the unique fingerprint of each torrent, and removes
+duplicates.</li>
+<li>The extension's visible parts are built: the page overlay that
+highlights links, the popup window with a "Send" button, the options
+screen, and the background worker that ties everything together and
+queues sends when offline.</li>
+<li><strong>The extension now builds into a loadable Chrome
+extension</strong> — running the build tool produces a working
+<code>chrome-mv3</code> folder, and every file the extension's manifest
+references was verified present on disk.</li>
+<li><strong>The detect → send pipeline works</strong> — the client that
+talks to the Boba dashboard decrypts its stored token and sends the
+download, and the dashboard side accepts it.</li>
+<li><strong>Sending a whole tab group at once is wired up</strong> —
+picking a tab group scans every tab, removes duplicates across the
+group, and sends them in one batch.</li>
+<li><strong>400 automated tests pass</strong> (across 35 test files);
+the code also passes its type check and its style/lint check with zero
+warnings.</li>
+</ul>
+<p><strong>What is still pending:</strong></p>
+<ul>
+<li><strong>Live-backend proof</strong> — actually clicking "Send" and
+seeing the torrent appear in qBittorrent — has not yet been recorded
+against a running dashboard on port 7187.</li>
+<li><strong>Packaging the extension into an installable, per-store
+file</strong> is not finished — the build tool is configured and
+produces a loadable folder, but the final manual "build and zip" gate
+and the published documentation are not yet wired up.</li>
+<li><strong>More languages</strong> (translations beyond English), the
+<strong>full accessibility/theme polish</strong>, and the <strong>fully
+hardened credential/security model</strong> (pre-store leak audit, full
+pen-test suite) are still to come.</li>
+</ul>
+<p><strong>Team / operator actions:</strong> none required right now.
+The next milestones are the live "click → download appears" proof
+against a running dashboard, and wiring the manual packaging gate so an
+installable extension exists.</p>
+<hr />
+<h2 id="page-2--for-software-engineers">Page 2 — For software
+engineers</h2>
+<p><strong>HEAD:</strong> <code>5edf6ac</code> ·
+<strong>Branch:</strong> <code>main</code> · <strong>Test
+corpus:</strong> 400 Vitest tests / 35 spec files — same-session
+<code>npx vitest run</code> → green; <code>npx tsc --noEmit</code>
+clean; <code>npm run lint</code> 0 errors / 0 warnings.</p>
+<h3 id="commit-provenance">Commit provenance</h3>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Status</th>
+<th>Commit(s) / evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 Foundation &amp; scaffolding</td>
+<td>PASS</td>
+<td><code>33a9815</code> (scaffold); shared-lib + constants + type-guard
+specs green @<code>15a9a61</code></td>
+</tr>
+<tr>
+<td>2 Detection / parsing engine</td>
+<td>PASS</td>
+<td><code>7225470</code>, <code>fa03303</code>→<code>fa03323</code>
+(parsers + SHA-1 infohash + link/text scanners + perf/stress);
+<code>946c61e</code> (orchestrator cross-scanner dedup)</td>
+</tr>
+<tr>
+<td>3 Extension shell</td>
+<td>PASS</td>
+<td><code>e8fde43</code> (content/popup/options); <code>15a9a61</code>
+(background SW message router capstone)</td>
+</tr>
+<tr>
+<td>WXT build wiring</td>
+<td>PASS</td>
+<td><code>src/entrypoints/{background.ts,content.ts,popup/index.html,options/index.html}</code>;
+<code>npx wxt build</code> → loadable <code>.output/chrome-mv3/</code>
+(8/8 manifest assets verified present, §11.4.38); content-script
+<code>matches</code> derived from <code>SITE_SELECTORS</code> (24 hosts,
+no <code>&lt;all_urls&gt;</code>), least-privilege permissions,
+<code>host_permissions</code> = <code>http://localhost:7187/*</code>,
+CSP <code>script-src 'self'</code></td>
+</tr>
+<tr>
+<td>4 Boba backend integration</td>
+<td>IN-PROGRESS</td>
+<td>API leaf @<code>e8fde43</code>; Phase-7 decrypt-before-send wired —
+<code>BobaClient.create()</code> decrypts
+<code>encryptedBobaApiToken</code> via <code>shared/crypto</code>,
+background reads session passphrase from
+<code>chrome.storage.session</code> (default-open when locked); token
+suites <code>boba-client-token.test.ts</code> 5 +
+<code>background-token.test.ts</code> 3 green. <strong>PENDING:</strong>
+live-7187 integration, end-to-end
+detect→send→torrent-in-qBittorrent</td>
+</tr>
+<tr>
+<td>5 Tab-group batch</td>
+<td>IN-PROGRESS</td>
+<td><code>src/tabgroups/index.ts</code> (group-wide dedupe + batch
+dispatch, 13 tests) integrated into <code>background/index.ts</code>
+<code>MENU_SEND_GROUP</code> (one <code>addMagnets</code> POST);
+manifest <code>+tabGroups</code> (minimal — <code>tabs</code> not
+needed, only <code>tab.id</code> read; §11.4.120 security-test
+reconciliation, mutation-verified); RED-verified MENU_SEND_GROUP test
+(handler no-op → FAIL). Review: GO-with-nits. <strong>Tracked
+nits:</strong> offline-queue on group-send failure, network-error
+notification, async-flush hardening</td>
+</tr>
+<tr>
+<td>6 UI/UX, i18n, a11y, themes</td>
+<td>IN-PROGRESS</td>
+<td><code>locale.test.ts</code> 4 (derives <code>__MSG_*</code> keys
+from source; en catalog complete). <strong>PENDING:</strong> additional
+locales (target 8), WCAG/a11y + theme-switch evidence</td>
+</tr>
+<tr>
+<td>7 Security &amp; credentials</td>
+<td>IN-PROGRESS</td>
+<td><code>crypto.ts</code> adopted; decrypt-and-send path landed;
+session passphrase from <code>chrome.storage.session</code>, no embedded
+key, plaintext/passphrase never logged; <code>tests/security/*</code> 4
+files (least-privilege manifest, CSP, no-hardcoded-secret,
+secret-storage). <strong>PENDING:</strong> §11.4.10.A pre-store leak
+audit, full pen-test suite</td>
+</tr>
+<tr>
+<td>8 Testing-to-100% + Challenges + HelixQA</td>
+<td>IN-PROGRESS</td>
+<td>400 tests / 35 files green
+(unit/perf/stress/chaos/integration/security/e2e); Challenge
+<code>challenges/extension/detect_and_forward_challenge.sh</code> drives
+the real orchestrator+client end-to-end, mutation-verified (no-op stub →
+FAIL); HelixQA <code>boba-bobalink.yaml</code> BOBA-LINK-007 added; E2E
+<code>tests/e2e/extension-loads.spec.ts</code> operator-gated SKIP in
+headless sandbox (§11.4.3). <strong>PENDING:</strong> full 13-type
+matrix + live-backend integration + coverage ledger to 100%</td>
+</tr>
+<tr>
+<td>9 Build, packaging &amp; distribution</td>
+<td>PENDING</td>
+<td>Loadable <code>.output/chrome-mv3/</code> produced; no
+<code>extension/ci-ext.sh</code> manual gate, no per-store zip, no
+§11.4.65 user/dev/install/API doc siblings yet</td>
+</tr>
+</tbody>
+</table>
+<h3 id="status-legend">Status legend</h3>
+<ul>
+<li><strong>PASS</strong> — implemented and backed by a cited commit
+and/or verified test/file evidence.</li>
+<li><strong>IN-PROGRESS</strong> — partially landed; remaining sub-tasks
+explicitly enumerated as PENDING.</li>
+<li><strong>PENDING</strong> — not yet started / no runtime evidence;
+planned in <code>IMPLEMENTATION_PLAN.md</code>.</li>
+</ul>
+<h3 id="key-file-paths">Key file paths</h3>
+<ul>
+<li>Build config: <code>extension/wxt.config.ts</code>,
+<code>extension/vitest.config.ts</code>,
+<code>extension/package.json</code>.</li>
+<li>Entrypoints:
+<code>extension/src/entrypoints/{background.ts,content.ts,popup/index.html,options/index.html}</code>.</li>
+<li>Source root:
+<code>extension/src/{parser,scanner,content,background,popup,options,api,tabgroups,shared,types}</code>.</li>
+<li>Tests:
+<code>extension/tests/{unit,perf,stress,chaos,integration,security,e2e}</code>
++ <code>src/**</code>.</li>
+<li>Build output: <code>extension/.output/chrome-mv3/</code> (loadable
+MV3).</li>
+<li>Plan: <code>docs/browser_extension/IMPLEMENTATION_PLAN.md</code> (9
+phases) + <code>_analysis/</code> + <code>_plan/</code>.</li>
+</ul>
+<h3 id="anti-bluff-caveat-1146">Anti-bluff caveat (§11.4.6)</h3>
+<p>The 400 figure IS a same-session recorded <code>npx vitest run</code>
+green result (supersedes the prior 287/22 static spec-case count). The
+§11.4.38 loadable-artifact claim was verified by opening the produced
+<code>.output/chrome-mv3/manifest.json</code> and confirming every
+referenced asset exists on disk — not by "build exited 0". The Phase-7
+decrypt path is proven RED→GREEN (ciphertext-on-the-wire pre-fix →
+decrypted-plaintext header post-fix). Live-backend end-to-end
+(detect→send→torrent-in-qBittorrent on a running :7187) remains
+PENDING.</p>

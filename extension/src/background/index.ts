@@ -359,6 +359,30 @@ async function enqueueFailed(
 }
 
 /**
+ * Enqueue every SENDABLE torrent of a tab-group batch into the persisted
+ * {@link OfflineQueue} so a failed group send retries later — the Send-All
+ * parity path for {@link MENU_SEND_GROUP}. A torrent with neither a magnet nor a
+ * `.torrent` URL has nothing to retry and is skipped (the same items
+ * {@link dispatchGroupBatch} counts as `skipped`). Honors `config.offlineQueue`
+ * via {@link enqueueFailed}.
+ *
+ * @param batch - The deduped torrents the group send attempted.
+ * @param serverId - Active server id.
+ * @param config - The current config (gates on `offlineQueue`).
+ */
+async function enqueueGroupBatch(
+  batch: readonly DetectedTorrent[],
+  serverId: string,
+  config: ExtensionConfig,
+): Promise<void> {
+  for (const item of batch) {
+    const url = downloadUrlOf(item);
+    if (url === null) continue;
+    await enqueueFailed(item, url, serverId, config);
+  }
+}
+
+/**
  * The injected queue SEND: re-attempt a queued item through a fresh
  * {@link BobaClient} for its target server. Resolves true on accept.
  *
@@ -607,21 +631,43 @@ function registerContextMenuClicks(): void {
                 ),
               );
               const client = await clientFor(server);
-              const dispatch = await dispatchGroupBatch(batch, (payload) =>
-                client
-                  .addMagnets(payload.downloadUrls)
-                  .then((r) => ({ accepted: r.accepted })),
-              );
-              if (config.showNotifications) {
-                notify(
-                  dispatch.accepted ? "Group sent!" : "Group send failed",
-                  dispatch.accepted
-                    ? `Sent ${String(dispatch.sent)} torrent(s) from the tab group to Boba.`
-                    : dispatch.sent === 0
-                      ? "No sendable torrents detected in this tab group."
-                      : "The backend rejected the group batch.",
-                  dispatch.accepted ? "success" : "error",
+              try {
+                const dispatch = await dispatchGroupBatch(batch, (payload) =>
+                  client
+                    .addMagnets(payload.downloadUrls)
+                    .then((r) => ({ accepted: r.accepted })),
                 );
+                // Backend REJECTED a real batch (HTTP ok but not accepted) →
+                // enqueue for retry, same as the Send-All path. `sent === 0`
+                // means nothing was sendable: there is nothing to queue.
+                if (!dispatch.accepted && dispatch.sent > 0) {
+                  await enqueueGroupBatch(batch, server.id, config);
+                }
+                if (config.showNotifications) {
+                  notify(
+                    dispatch.accepted ? "Group sent!" : "Group send failed",
+                    dispatch.accepted
+                      ? `Sent ${String(dispatch.sent)} torrent(s) from the tab group to Boba.`
+                      : dispatch.sent === 0
+                        ? "No sendable torrents detected in this tab group."
+                        : "The backend rejected the group batch; queued for retry.",
+                    dispatch.accepted ? "success" : "error",
+                  );
+                }
+              } catch (sendErr) {
+                // NETWORK error (addMagnets threw after retries): the throw must
+                // NOT be silently swallowed. Enqueue the group's torrents for
+                // retry AND surface the failure to the user.
+                log.warn("group send failed, queuing for retry");
+                log.debug("group send error", sendErr);
+                await enqueueGroupBatch(batch, server.id, config);
+                if (config.showNotifications) {
+                  notify(
+                    "Group send failed",
+                    "Could not reach Boba; the tab group was queued for retry.",
+                    "error",
+                  );
+                }
               }
             }
             break;
