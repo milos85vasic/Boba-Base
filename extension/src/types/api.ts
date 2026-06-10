@@ -469,7 +469,11 @@ export type MessageType =
   | "show-notification"
   | "update-badge"
   | "torrent-detected"
-  | "selection-change";
+  | "selection-change"
+  // Background → content-script directives (Phase 3 capstone): the background
+  // SENDS these to the active tab's content script over chrome.tabs.sendMessage.
+  | "scan-now"
+  | "highlight-toggle";
 
 /**
  * Base message interface for chrome.runtime messaging.
