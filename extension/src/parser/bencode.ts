@@ -443,6 +443,68 @@ function decodeDict(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Raw info-dict slice extraction (for correct infohash computation)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Locate and return the RAW bencoded bytes of the top-level `info` value,
+ * exactly as they appear in the input buffer.
+ *
+ * The BitTorrent infohash is `SHA-1(the raw bencoded info dictionary)` — NOT a
+ * re-encode of a decoded value. A decode-then-re-encode round-trip mangles the
+ * binary `info.pieces` field (20-byte SHA-1 hashes full of bytes 0x80–0xff): a
+ * UTF-8 decode of those bytes is lossy, so the re-encoded bytes differ from the
+ * originals and the computed infohash is WRONG for any real torrent. This
+ * helper sidesteps that entirely by returning the original byte slice.
+ *
+ * The outer dictionary is walked structurally (tracking byte offsets) so the
+ * `info` value's start and end positions in the buffer are known; the slice
+ * between them is returned untouched. The walk reuses the same decode machinery
+ * (in "binary" mode, which is lossless) purely to advance the cursor — its
+ * decoded values are discarded; only the offsets matter.
+ *
+ * @param data - Raw `.torrent` file contents (a bencoded dictionary)
+ * @returns The raw bytes of the top-level `info` value
+ * @throws ParseError if the data is not a dict or has no `info` key
+ */
+export function extractInfoDictBytes(data: Uint8Array): Uint8Array {
+  const state: DecoderState = { data, pos: 0 };
+
+  if (state.pos >= state.data.length || byteAt(state) !== BYTE_D) {
+    throw new ParseError("Torrent data is not a bencode dictionary");
+  }
+
+  // Skip 'd'.
+  state.pos++;
+
+  while (state.pos < state.data.length) {
+    if (byteAt(state) === BYTE_E) {
+      // 'e' — end of dict, no `info` key found.
+      break;
+    }
+
+    // Key is a byte string (decoded as UTF-8, like decodeDict).
+    const key = decodeByteString(state, "utf-8");
+    if (typeof key !== "string") {
+      throw new ParseError("Dictionary key must be a string");
+    }
+
+    // The value's raw bytes begin here.
+    const valueStart = state.pos;
+    // Advance the cursor past the value in lossless "binary" mode (the decoded
+    // value is discarded — only the resulting offset is used).
+    decodeValue(state, "binary");
+    const valueEnd = state.pos;
+
+    if (key === "info") {
+      return data.slice(valueStart, valueEnd);
+    }
+  }
+
+  throw new ParseError("Torrent missing required 'info' dictionary");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Text Encoding Utilities
 // ─────────────────────────────────────────────────────────────────────────────
 

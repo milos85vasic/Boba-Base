@@ -115,7 +115,9 @@ export abstract class BaseScanner {
    * @returns Scan results
    */
   protected async executeScan(
-    scanFn: () => Promise<readonly DetectedTorrent[]>,
+    scanFn: () =>
+      | readonly DetectedTorrent[]
+      | Promise<readonly DetectedTorrent[]>,
   ): Promise<readonly DetectedTorrent[]> {
     if (this.isScanning) {
       this.log.warn("Scan already in progress, skipping");

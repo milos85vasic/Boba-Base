@@ -19,12 +19,19 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
-    include: ["tests/unit/**/*.test.ts", "src/**/*.test.ts"],
+    include: [
+      "tests/unit/**/*.test.ts",
+      "tests/perf/**/*.test.ts",
+      "tests/stress/**/*.test.ts",
+      "src/**/*.test.ts",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "text-summary", "html", "lcov"],
       reportsDirectory: "coverage",
-      include: ["src/shared/**/*.ts", "src/types/**/*.ts"],
+      // All source logic is measured (parsers, scanners, shared, types) per §11.4.27;
+      // .d.ts and entrypoint index.ts files are excluded.
+      include: ["src/**/*.ts"],
       exclude: ["src/**/*.d.ts", "src/**/index.ts"],
     },
   },
