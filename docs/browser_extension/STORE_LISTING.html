@@ -1,0 +1,622 @@
+<h1 id="bobalink--store-listing--submission-checklist">BobaLink — Store
+Listing &amp; Submission Checklist</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T22:00:00Z <strong>Scope:</strong> Chrome Web Store + Firefox
+AMO listing content and a manual submission checklist for BobaLink, the
+Boba Project browser extension (<code>extension/</code>).
+<strong>Authority:</strong> <code>extension/wxt.config.ts</code>,
+<code>extension/package.json</code>,
+<code>docs/browser_extension/Status.md</code> (Rev 5),
+<code>docs/browser_extension/USER_GUIDE.md</code>.</p>
+<blockquote>
+<p>Accuracy note (§11.4.6): every permission justification, feature
+claim, and privacy statement below was traced to the real extension
+source/config — the generated <code>wxt.config.ts</code> manifest
+(permissions / <code>host_permissions</code> / CSP /
+<code>commands</code>), <code>package.json</code> (version
+<code>1.0.0</code>), the <code>_locales/en/messages.json</code>
+store-description string, and <code>src/shared/constants.ts</code>
+(<code>SITE_SELECTORS</code>, <code>DEFAULT_URLS</code>). Nothing reads
+as shipped that is not. Items not yet produced (screenshots, promo
+tiles) are marked <strong>(TODO — operator asset)</strong>.</p>
+</blockquote>
+<hr />
+<h2 id="listing-identity">Listing identity</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Name</td>
+<td><strong>BobaLink</strong></td>
+<td><code>_locales/en/messages.json</code> <code>extName</code>;
+<code>wxt.config.ts</code> <code>name: "__MSG_extName__"</code></td>
+</tr>
+<tr>
+<td>Version</td>
+<td><strong>1.0.0</strong></td>
+<td><code>wxt.config.ts</code> <code>version</code>;
+<code>package.json</code> <code>version</code></td>
+</tr>
+<tr>
+<td>Category (suggested)</td>
+<td>Productivity / Developer Tools</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Default locale</td>
+<td>English (<code>en</code>)</td>
+<td><code>wxt.config.ts</code> <code>default_locale: "en"</code></td>
+</tr>
+<tr>
+<td>Minimum Chrome version</td>
+<td>109</td>
+<td><code>wxt.config.ts</code> <code>minimum_chrome_version</code></td>
+</tr>
+<tr>
+<td>Manifest version</td>
+<td>MV3 (Chrome); MV2 build also produced for Firefox AMO</td>
+<td><code>wxt.config.ts</code>; <code>ci-ext.sh</code> builds
+<code>chrome-mv3/</code> + <code>firefox-mv2/</code></td>
+</tr>
+<tr>
+<td>License</td>
+<td>MIT</td>
+<td><code>package.json</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="short-description--132-characters">Short description (≤ 132
+characters)</h2>
+<p>This is the verbatim store-description string the extension already
+ships (<code>_locales/en/messages.json</code>
+<code>extDescription</code>) — 91 characters, within both the Chrome
+(132) and Firefox (132) short-description limits:</p>
+<blockquote>
+<p>Detects torrent files and magnet links, sending them to Boba
+Project's qBitTorrent dashboard</p>
+</blockquote>
+<p>(Length: 91 characters.)</p>
+<hr />
+<h2 id="detailed-description">Detailed description</h2>
+<blockquote>
+<p>BobaLink finds magnet links and <code>.torrent</code> files on the
+pages you visit and forwards them to your own self-hosted Boba Project
+merge service, which adds them to qBittorrent for you. It is a
+privacy-first, least-privilege Manifest V3 extension: it never talks to
+qBittorrent directly, never collects your data, and only ever contacts
+the Boba merge service running on your own machine at
+<code>http://localhost:7187</code>.</p>
+<p><strong>What it does</strong></p>
+<ul>
+<li><strong>Detects</strong> magnet links and <code>.torrent</code> file
+URLs on any page, with an extra-tuned selector table for popular
+trackers.</li>
+<li><strong>Parses</strong> each item to its BitTorrent infohash (magnet
+<code>btih</code> / <code>.torrent</code> → SHA-1) and
+<strong>deduplicates by infohash</strong>, so the same torrent is never
+sent twice.</li>
+<li><strong>Forwards</strong> them to your local Boba merge service on
+port 7187, which adds them to qBittorrent server-side.</li>
+<li><strong>Tab-group batch send</strong> (Chrome family): scan every
+tab in a tab group, deduplicate across the whole group, and send them as
+one batch.</li>
+<li><strong>Context-menu actions</strong>: "Send magnet to Boba", "Send
+all on page", "Send tab group".</li>
+<li><strong>Keyboard shortcuts</strong>: Send to Boba
+(<code>Ctrl/Cmd+Shift+B</code>), Scan page
+(<code>Ctrl/Cmd+Shift+S</code>), Open dashboard
+(<code>Ctrl/Cmd+Shift+D</code>).</li>
+<li><strong>A configurable options page</strong> (7 tabs: Server,
+Download Prefs, Queue, Notifications, Detection, UI, Security) with an
+optional offline queue for failed sends.</li>
+</ul>
+<p><strong>Privacy &amp; security first</strong></p>
+<ul>
+<li><strong>No data collection.</strong> BobaLink sends nothing to any
+third party. The only network destination is your own Boba merge service
+at <code>http://localhost:7187</code>.</li>
+<li><strong>Least privilege.</strong> No <code>tabs</code>, no
+<code>scripting</code>, no <code>cookies</code>, no
+<code>&lt;all_urls&gt;</code>. The content script only runs on the
+curated tracker host list, not every site.</li>
+<li><strong>Delegate-by-default credentials.</strong> In the normal
+localhost deployment BobaLink stores no decryptable secret — your Boba
+service already owns the qBittorrent and tracker credentials. The one
+optional secret (a Boba API token, only needed if your backend sets
+<code>BOBA_API_TOKEN</code>) is encrypted with AES-GCM-256 under a
+session passphrase you type, held only in
+<code>chrome.storage.session</code> and never written to disk or
+logged.</li>
+<li><strong>Tight CSP:</strong> <code>script-src 'self'</code> (no
+<code>unsafe-inline</code> / <code>unsafe-eval</code>),
+<code>connect-src</code> scoped to
+<code>http://localhost:7187</code>.</li>
+</ul>
+<p><strong>Internationalization &amp; accessibility</strong></p>
+<ul>
+<li>UI message catalogs for English, Russian, German, and French; the
+browser auto-selects by UI language, falling back to English.</li>
+<li>The popup and options UI carry ARIA roles, accessible names, and
+tablist/tabpanel wiring.</li>
+</ul>
+<p><strong>Requires a running Boba Project backend.</strong> BobaLink is
+a companion to a self-hosted Boba Project install — it needs the Boba
+merge service reachable on <code>http://localhost:7187</code>. It is not
+a standalone downloader.</p>
+</blockquote>
+<blockquote>
+<p>Status honesty (§11.4.6): the end-to-end detect → send →
+torrent-appears-in- qBittorrent path against a <strong>live</strong>
+backend is still <strong>in progress</strong> (Phase 4 in the plan).
+Detection, parsing, dedup, the popup/options UI, and the send-wiring are
+implemented and tested. Listing copy above describes the intended
+user-facing capability; do not publish to the public stores before Phase
+4 live-backend integration lands (see <code>Status.md</code>).</p>
+</blockquote>
+<hr />
+<h2 id="supported-torrent-sites-curated-selector-table">Supported
+torrent sites (curated selector table)</h2>
+<p>Detection works on <strong>any page</strong> via the generic
+<code>magnet:</code> and <code>.torrent</code> link patterns. In
+addition, BobaLink ships a curated selector table
+(<code>SITE_SELECTORS</code> in
+<code>extension/src/shared/constants.ts</code>) tuned for these hosts.
+The content script's <code>matches</code> are derived from this table —
+BobaLink does <strong>not</strong> request
+<code>&lt;all_urls&gt;</code>. The table has <strong>24 entries</strong>
+(one <code>generic</code> pattern set plus 23 site-specific hosts):</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Host</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>—</td>
+<td><code>generic</code></td>
+<td>magnet / <code>.torrent</code> / <code>download.php?id=</code>
+patterns applied everywhere</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>1337x.to</code></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>thepiratebay.org</code></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>thepiratebay10.org</code></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>rarbg.to</code></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>rarbgtorrents.org</code></td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>yts.mx</code></td>
+<td></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>yts.lt</code></td>
+<td></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>eztv.re</code></td>
+<td></td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>limetorrents.lol</code></td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>torrentgalaxy.to</code></td>
+<td></td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>nyaa.si</code></td>
+<td>anime</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>animetosho.org</code></td>
+<td></td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>torrentz2.eu</code></td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>fitgirl-repacks.site</code></td>
+<td></td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>rutracker.org</code></td>
+<td>Boba private tracker</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>kinozal.tv</code></td>
+<td>Boba private tracker</td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>nnmclub.to</code></td>
+<td>Boba private tracker</td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>rutor.info</code></td>
+<td>Boba public tracker</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>katcr.co</code></td>
+<td>Kickass Torrents</td>
+</tr>
+<tr>
+<td>20</td>
+<td><code>demonoid.is</code></td>
+<td></td>
+</tr>
+<tr>
+<td>21</td>
+<td><code>iptorrents.com</code></td>
+<td>Boba private tracker</td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>torrentleech.org</code></td>
+<td>private</td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>beyond-hd.me</code></td>
+<td>private</td>
+</tr>
+<tr>
+<td>24</td>
+<td><code>passthepopcorn.me</code></td>
+<td>private</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="permission-justification-table">Permission-justification
+table</h2>
+<p>Both stores require a per-permission justification. Each row below
+traces to the literal <code>permissions</code> /
+<code>host_permissions</code> array in
+<code>extension/wxt.config.ts</code> (lines 28–40, host_permissions line
+43). No permission is requested that is not justified here, and no
+justification claims a permission BobaLink does not request.</p>
+<table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>In manifest?</th>
+<th>Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>storage</code></td>
+<td>Yes (<code>wxt.config.ts:29</code>)</td>
+<td>Persist user settings, detected items per tab, the offline send
+queue, and send history (<code>chrome.storage.local</code>).</td>
+</tr>
+<tr>
+<td><code>alarms</code></td>
+<td>Yes (<code>wxt.config.ts:30</code>)</td>
+<td>Wake the MV3 service worker to run periodic backend health checks
+(no content/host access).</td>
+</tr>
+<tr>
+<td><code>notifications</code></td>
+<td>Yes (<code>wxt.config.ts:31</code>)</td>
+<td>Tell the user when a send succeeds or fails.</td>
+</tr>
+<tr>
+<td><code>activeTab</code></td>
+<td>Yes (<code>wxt.config.ts:32</code>)</td>
+<td>Act on the page the user explicitly invokes BobaLink on (toolbar
+click / shortcut / context menu) — granted transiently, not a standing
+all-sites grant.</td>
+</tr>
+<tr>
+<td><code>contextMenus</code></td>
+<td>Yes (<code>wxt.config.ts:33</code>)</td>
+<td>Provide the right-click "Send magnet to Boba", "Send all on page",
+"Send tab group" actions.</td>
+</tr>
+<tr>
+<td><code>tabGroups</code></td>
+<td>Yes (<code>wxt.config.ts:39</code>)</td>
+<td>"Send tab group": read which group the clicked tab belongs to and
+enumerate the group's tabs via
+<code>chrome.tabs.query({groupId})</code>. Grants no host/content/URL
+access.</td>
+</tr>
+<tr>
+<td><code>host_permissions: http://localhost:7187/*</code></td>
+<td>Yes (<code>wxt.config.ts:43</code>)</td>
+<td>Talk to the user's own local Boba merge service — the single network
+destination. Nothing else.</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="permissions-deliberately-not-requested-state-this-in-the-privacy-review">Permissions
+deliberately NOT requested (state this in the privacy review)</h3>
+<table>
+<thead>
+<tr>
+<th>Not requested</th>
+<th>Why it's safe to omit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tabs</code></td>
+<td>The tab-group batcher reads only <code>tab.id</code> (never
+<code>url</code>/<code>title</code>/<code>favIconUrl</code>), which per
+the Chrome docs needs no <code>tabs</code> permission.</td>
+</tr>
+<tr>
+<td><code>scripting</code></td>
+<td>Not requested — <code>wxt.config.ts</code> comment "scripting
+intentionally NOT requested" (least-privilege, Plan E §3.1).</td>
+</tr>
+<tr>
+<td><code>cookies</code></td>
+<td>Not requested — BobaLink never touches the user's cookies.</td>
+</tr>
+<tr>
+<td><code>&lt;all_urls&gt;</code></td>
+<td>Content-script match patterns are derived from the curated
+<code>SITE_SELECTORS</code> host list, not a blanket all-sites
+grant.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="privacy-policy-summary">Privacy-policy summary</h2>
+<p>Use the following as the public privacy statement (both stores
+require a privacy policy / data-use disclosure). Every clause is
+accurate to the real network behavior — the only
+<code>host_permissions</code> entry and the only
+<code>connect-src</code> CSP origin is
+<code>http://localhost:7187</code>.</p>
+<blockquote>
+<p><strong>BobaLink collects no personal data and transmits no data to
+BobaLink's authors or any third party.</strong></p>
+<ul>
+<li>The only network destination BobaLink contacts is the <strong>Boba
+merge service on the user's own machine at
+<code>http://localhost:7187</code></strong> (the sole
+<code>host_permissions</code> entry and the sole non-<code>'self'</code>
+<code>connect-src</code> CSP origin).</li>
+<li>BobaLink sends only the magnet links / <code>.torrent</code> URLs
+the user chooses to forward, and an optional Boba API token (only if the
+user's backend requires one). Nothing is sent to any remote server
+controlled by BobaLink.</li>
+<li>Settings, detected items, the offline queue, and history are stored
+<strong>locally</strong> in the browser
+(<code>chrome.storage.local</code>).</li>
+<li>The optional Boba API token is encrypted at rest (AES-GCM-256,
+PBKDF2) under a <strong>session passphrase</strong> held only in
+<code>chrome.storage.session</code> (never on disk), and is never
+logged. With no passphrase, no token is stored.</li>
+<li>BobaLink uses no analytics, no telemetry, and no remote code.</li>
+</ul>
+</blockquote>
+<p>CSP (verbatim, <code>wxt.config.ts:57–58</code>):</p>
+<pre><code>default-src &#39;self&#39;; script-src &#39;self&#39;; object-src &#39;self&#39;; style-src &#39;self&#39; &#39;unsafe-inline&#39;; connect-src &#39;self&#39; http://localhost:7187; img-src &#39;self&#39; data:; base-uri &#39;none&#39;; frame-ancestors &#39;none&#39;</code></pre>
+<hr />
+<h2 id="required-store-asset-checklist">Required store-asset
+checklist</h2>
+<table>
+<thead>
+<tr>
+<th>Asset</th>
+<th>Chrome Web Store</th>
+<th>Firefox AMO</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Icon 16×16</td>
+<td>(used in manifest)</td>
+<td>(used in manifest)</td>
+<td><strong>Done</strong> — <code>.output/chrome-mv3/icons/16.png</code>
+(rasterized from <code>src/assets/icon.png</code> by
+<code>@wxt-dev/auto-icons</code>)</td>
+</tr>
+<tr>
+<td>Icon 32×32</td>
+<td>optional</td>
+<td>used</td>
+<td><strong>Done</strong> — <code>icons/32.png</code></td>
+</tr>
+<tr>
+<td>Icon 48×48</td>
+<td>required</td>
+<td>required</td>
+<td><strong>Done</strong> — <code>icons/48.png</code></td>
+</tr>
+<tr>
+<td>Icon 128×128</td>
+<td>required (store icon)</td>
+<td>required</td>
+<td><strong>Done</strong> — <code>icons/128.png</code></td>
+</tr>
+<tr>
+<td>Short description (≤132 chars)</td>
+<td>required</td>
+<td>required (summary)</td>
+<td><strong>Done</strong> — see "Short description" above (91
+chars)</td>
+</tr>
+<tr>
+<td>Detailed description</td>
+<td>required</td>
+<td>required</td>
+<td><strong>Done</strong> — see "Detailed description" above</td>
+</tr>
+<tr>
+<td>Privacy policy / data-use disclosure</td>
+<td>required</td>
+<td>required</td>
+<td><strong>Done</strong> — see "Privacy-policy summary" above</td>
+</tr>
+<tr>
+<td>Permission justifications</td>
+<td>required (single-purpose + per-permission)</td>
+<td>required (in review notes)</td>
+<td><strong>Done</strong> — see "Permission-justification table"
+above</td>
+</tr>
+<tr>
+<td>Screenshots (1280×800 or 640×400; ≥1, up to 5)</td>
+<td>required</td>
+<td>required</td>
+<td><strong>(TODO — operator asset)</strong> — capture popup + options +
+detection-in-action</td>
+</tr>
+<tr>
+<td>Small promo tile 440×280</td>
+<td>optional</td>
+<td>n/a</td>
+<td><strong>(TODO — operator asset)</strong></td>
+</tr>
+<tr>
+<td>Marquee promo tile 1400×560</td>
+<td>optional</td>
+<td>n/a</td>
+<td><strong>(TODO — operator asset)</strong></td>
+</tr>
+<tr>
+<td>Promotional / featured images</td>
+<td>optional</td>
+<td>optional</td>
+<td><strong>(TODO — operator asset)</strong></td>
+</tr>
+<tr>
+<td>Support / homepage URL</td>
+<td>required</td>
+<td>required</td>
+<td><strong>(TODO — operator asset)</strong> — Boba Project repo / docs
+URL</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Icon note: only the four sizes 16 / 32 / 48 / 128 are produced and
+required; they are generated at build time from the single
+<code>src/assets/icon.png</code>. No other icon size is referenced by
+the manifest.</p>
+</blockquote>
+<hr />
+<h2 id="submission-checklist-manual--no-cicd">Submission checklist
+(manual — NO CI/CD)</h2>
+<p>Per the Boba constitution Hard Stop (no CI/CD), packaging is
+performed by the manual gate <code>extension/ci-ext.sh</code> only —
+there is no pipeline. Sequence:</p>
+<ol type="1">
+<li><strong>Pre-flight</strong> —
+<code>cd extension &amp;&amp; npm install</code> (populate
+<code>node_modules</code>); ensure <code>node</code>, <code>npx</code>,
+<code>jq</code> are on <code>PATH</code>.</li>
+<li><strong>Run the manual gate</strong> —
+<code>cd extension &amp;&amp; bash ci-ext.sh</code>. It runs, in order:
+tsc type gate → eslint → full vitest suite → Chrome MV3 build → Firefox
+build → §11.4.38 artifact-asset verification (opens the produced
+manifest and confirms every referenced asset + the
+<code>default_locale</code> catalog exist non-zero) → per-store
+<code>wxt zip</code>. It prints <code>CI-EXT: PASS</code> only if every
+step passed.</li>
+<li><strong>Collect the artifacts</strong> — on PASS,
+<code>.output/</code> contains:
+<ul>
+<li><code>bobalink-1.0.0-chrome.zip</code> — upload to the
+<strong>Chrome Web Store</strong>.</li>
+<li><code>bobalink-1.0.0-firefox.zip</code> — upload to <strong>Firefox
+AMO</strong>.</li>
+<li><code>bobalink-1.0.0-sources.zip</code> — Firefox AMO source-code
+submission (AMO requires sources for built extensions).</li>
+</ul></li>
+<li><strong>Chrome Web Store</strong> — Developer Dashboard → new item →
+upload <code>bobalink-1.0.0-chrome.zip</code> → paste the short
+description, detailed description, privacy disclosure, and
+per-permission justifications from this document → upload screenshots +
+(optional) promo tiles <strong>(TODO — operator asset)</strong> → set
+the support/homepage URL <strong>(TODO — operator asset)</strong> →
+submit for review.</li>
+<li><strong>Firefox AMO</strong> — addons.mozilla.org → submit a new
+add-on → upload <code>bobalink-1.0.0-firefox.zip</code> → upload
+<code>bobalink-1.0.0-sources.zip</code> when prompted for sources →
+paste the summary, detailed description, and privacy notes → add the
+permission justifications in the reviewer notes → upload screenshots
+<strong>(TODO — operator asset)</strong> → submit for review.</li>
+<li><strong>Pre-submission gate (release-readiness):</strong> do
+<strong>not</strong> submit to the public stores until Phase 4
+live-backend integration is GREEN with captured evidence
+(<code>Status.md</code> — the detect → send → torrent-in-qBittorrent
+round-trip against a live <code>:7187</code> backend is currently
+<strong>in progress</strong>). Listing copy is ready; the live-path
+proof is the remaining gate.</li>
+</ol>
+<hr />
+<h2 id="sources-verified">Sources verified</h2>
+<ul>
+<li><code>extension/wxt.config.ts</code> (permissions,
+<code>host_permissions</code>, CSP, <code>commands</code>,
+<code>version</code>, <code>default_locale</code>,
+<code>minimum_chrome_version</code>) — read 2026-06-10.</li>
+<li><code>extension/package.json</code> (<code>version: 1.0.0</code>,
+<code>name</code>, MIT license) — read 2026-06-10.</li>
+<li><code>extension/src/shared/constants.ts</code>
+(<code>SITE_SELECTORS</code> 24 entries, <code>DEFAULT_URLS</code>
+<code>:7187</code>, <code>ENCRYPTION</code>,
+<code>BOBA_TOKEN_HEADERS</code>, <code>ICON_SIZES</code>) — read
+2026-06-10.</li>
+<li><code>extension/src/public/_locales/en/messages.json</code>
+(<code>extDescription</code> short string; locales
+<code>en</code>/<code>ru</code>/<code>de</code>/<code>fr</code> present
+on disk) — read 2026-06-10.</li>
+<li><code>extension/ci-ext.sh</code> + <code>.output/</code> artifacts
+(<code>bobalink-1.0.0-{chrome,firefox,sources}.zip</code>,
+<code>icons/{16,32,48,128}.png</code>) — read 2026-06-10.</li>
+<li><code>docs/browser_extension/Status.md</code> (Rev 5),
+<code>docs/browser_extension/USER_GUIDE.md</code> (Rev 1) — read
+2026-06-10.</li>
+</ul>

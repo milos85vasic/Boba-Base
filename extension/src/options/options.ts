@@ -392,17 +392,62 @@ export async function saveOptions(
 
 /**
  * Wire the tab navigation: clicking a nav button shows its panel and marks it
- * selected (ARIA `aria-selected` + the `.active` class).
+ * selected (ARIA `aria-selected` + the `.active` class), and the WAI-ARIA Tabs
+ * keyboard pattern (automatic-activation variant) so the tablist is operable
+ * without a pointer (WCAG 2.1.1 Keyboard):
+ *   - ArrowRight / ArrowLeft  → previous/next tab, wrapping at the ends.
+ *   - Home / End              → first / last tab.
+ * Each navigation activates the target tab (panel + selection follow) AND moves
+ * keyboard focus to it, keeping the roving tabindex (set by {@link activateTab})
+ * in sync. Non-navigation keys are left untouched.
+ *
+ * Ref: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/ (automatic activation).
  *
  * @param doc - Document hosting the options form.
  */
 export function setupTabs(doc: Document = document): void {
-  const tabs = doc.querySelectorAll<HTMLElement>("[role='tab'][data-tab]");
-  for (const tab of Array.from(tabs)) {
+  const orderedTabs = (): HTMLElement[] =>
+    Array.from(doc.querySelectorAll<HTMLElement>("[role='tab'][data-tab]"));
+
+  for (const tab of orderedTabs()) {
     tab.addEventListener("click", () => {
       const target = tab.getAttribute("data-tab");
       if (!target) return;
       activateTab(doc, target);
+    });
+
+    tab.addEventListener("keydown", (event) => {
+      const tabs = orderedTabs();
+      const index = tabs.indexOf(tab);
+      if (index < 0 || tabs.length === 0) return;
+
+      let nextIndex: number | null = null;
+      switch (event.key) {
+        case "ArrowRight":
+        case "ArrowDown":
+          nextIndex = (index + 1) % tabs.length;
+          break;
+        case "ArrowLeft":
+        case "ArrowUp":
+          nextIndex = (index - 1 + tabs.length) % tabs.length;
+          break;
+        case "Home":
+          nextIndex = 0;
+          break;
+        case "End":
+          nextIndex = tabs.length - 1;
+          break;
+        default:
+          return; // not a navigation key — leave default behaviour intact
+      }
+
+      const next = tabs[nextIndex];
+      const target = next?.getAttribute("data-tab");
+      if (!next || !target) return;
+
+      event.preventDefault(); // stop the page from scrolling on Arrow/Home/End
+      activateTab(doc, target); // panel + selection + roving tabindex follow
+      next.focus(); // focus follows selection (automatic-activation pattern)
     });
   }
 }

@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Status
 
-**Revision:** 5
-**Last modified:** 2026-06-10T21:30:00Z
+**Revision:** 6
+**Last modified:** 2026-06-10T22:00:00Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 browser extension that detects magnet links and `.torrent` URLs and forwards them to the Boba merge service on port 7187.
 **Authority:** master plan `docs/browser_extension/IMPLEMENTATION_PLAN.md` (9 phases).
 
@@ -12,8 +12,8 @@
 ## Baseline facts (verified this session — Session 11)
 
 - **HEAD:** `2011810` (pushed); wave-4 (Phase-9 `ci-ext.sh` gate + per-store zips, `ru` locale, content-XSS, credential-leak audit, decrypt-throw parity, tab-group Challenge, and the `_locales` packaging fix) staged for the next commit.
-- **Extension test corpus:** **455 Vitest tests across 42 spec files** — same-session
-  `npx vitest run` → `Tests 455 passed (455)` — under
+- **Extension test corpus:** **496 Vitest tests across 47 spec files** — same-session
+  `npx vitest run` → `Tests 496 passed (496)` — under
   `extension/tests/{unit,perf,stress,chaos,integration,security,e2e}` + `src/**`.
   `npx tsc --noEmit` clean; `npm run lint` 0 errors / 0 warnings. (+126 tests over the
   prior 287/22 baseline: integration 7, security 4 files, stress/chaos 10, locale 4,
@@ -45,7 +45,7 @@
 | 5 | Tab-group batch (`chrome.tabGroups` → per-tab scan → batch send) | IN-PROGRESS | **Wired** (Session 11): `src/tabgroups/index.ts` (dedupe across a group + batch dispatch, 13 tests) **integrated into `background/index.ts` `MENU_SEND_GROUP`** (deduped group batch → one `addMagnets` POST); manifest `+tabGroups` (MINIMAL — research-confirmed `tabs` NOT needed since only `tab.id` is read; §11.4.120 security-test reconciliation, mutation-verified). New `background.test.ts` MENU_SEND_GROUP test (RED-verified: handler no-op → FAIL). Independent review: **GO-with-nits**. Group-send nits (a) offline-queue enqueue-on-failure, (b) network-error notification, (c) hardened async flush — all **FIXED** (Session 11, RED→GREEN + 3×-deterministic, independent review GO). **TRACKED:** decrypt-throw (wrong passphrase) on group send not enqueued/notified — pre-existing parity with Send-All, future phase |
 | 6 | UI/UX, i18n, accessibility, themes | IN-PROGRESS | i18n: `locale.test.ts` (en completeness) + **ru+de+fr locales added** (4 total, 29-key parity, packaged chrome+firefox) with generalized `locale-parity.test.ts` (key + placeholder parity, mutation-proven); **a11y**: `tests/a11y/{popup,options}.a11y.test.ts` (18 tests — roles/accessible-names/tablist↔tabpanel/live-regions, mutation-proven). **PENDING:** 6 more locales (plan targets 8), deeper WCAG (contrast/focus/keyboard), theme-switch evidence |
 | 7 | Security & credentials (delegate-by-default, no embedded key, log redaction) | IN-PROGRESS | `crypto.ts` adopted; **decrypt-and-send path landed** + **decrypt-throw on wrong passphrase now enqueues+notifies** (parity, RED→GREEN); session passphrase from `chrome.storage.session`, **no embedded key**, plaintext/passphrase never logged; security suite `tests/security/*` (least-privilege manifest, CSP, no-hardcoded-secret, secret-storage, **content-XSS** — render path proven safe via innerHTML-mutation→FAIL); **§11.4.10.A credential-leak audit** `challenges/security/credential_leak_audit.sh` (PASS, mutation-verified); **message-router robustness** `tests/security/message-router-robustness.test.ts` (16 tests) + **`isValidScanResult` scan-result trust-guard** (fixed a real content-script overwrite bug). **PENDING:** full pen-test suite (sender-origin validation, rate-limit) |
-| 8 | Testing to 100% (all types) + Challenges + HelixQA | IN-PROGRESS | 455 tests/42 files green (unit/perf/stress/chaos/integration/security/e2e). Challenge `challenges/extension/detect_and_forward_challenge.sh` drives the REAL orchestrator+client end-to-end, PASS on captured evidence, mutation-verified (no-op stub → FAIL). HelixQA `boba-bobalink.yaml` BOBA-LINK-007 (detect→forward) + BOBA-LINK-008 (tab-group batch) added; symlinked into `challenges/helixqa-banks/`. tab-group + detect→forward Challenges both mutation-verified. E2E `tests/e2e/extension-loads.spec.ts` is a real MV3-load test, **operator-gated SKIP** in this headless sandbox (extension load unsupported; §11.4.3). **PENDING:** the full 13-type coverage matrix + live-backend integration + the coverage ledger to 100% |
+| 8 | Testing to 100% (all types) + Challenges + HelixQA | IN-PROGRESS | 496 tests/47 files green (unit/perf/stress/chaos/integration/security/e2e). Challenge `challenges/extension/detect_and_forward_challenge.sh` drives the REAL orchestrator+client end-to-end, PASS on captured evidence, mutation-verified (no-op stub → FAIL). HelixQA `boba-bobalink.yaml` BOBA-LINK-007 (detect→forward) + BOBA-LINK-008 (tab-group batch) added; symlinked into `challenges/helixqa-banks/`. tab-group + detect→forward Challenges both mutation-verified. E2E `tests/e2e/extension-loads.spec.ts` is a real MV3-load test, **operator-gated SKIP** in this headless sandbox (extension load unsupported; §11.4.3). **PENDING:** the full 13-type coverage matrix + live-backend integration + the coverage ledger to 100% |
 | 9 | Build, packaging & distribution (manual — NO CI/CD) | IN-PROGRESS | **Manual gate `extension/ci-ext.sh`** (Session 11, §11.4.18 doc'd): tsc → lint → full vitest → chrome+firefox builds → §11.4.38 artifact-verify (opens the manifest, asserts every referenced asset + the `default_locale` catalog exist non-zero) → per-store `wxt zip`. **CI-EXT: PASS** — produces loadable `chrome-mv3/` + `firefox-mv2/` + `bobalink-1.0.0-{chrome,firefox,sources}.zip`. **PENDING:** store-listing metadata/submission + §11.4.65 user/dev/install doc siblings. NO CI/CD (manual only) |
 
 ## Status legend
@@ -56,7 +56,7 @@
 
 ## Anti-bluff notes (§11.4 / §11.4.6 / §11.4.69)
 
-- The 455 figure IS a same-session recorded `npx vitest run` result (`Tests 455 passed (455)`),
+- The 496 figure IS a same-session recorded `npx vitest run` result (`Tests 496 passed (496)`),
   not merely a static grep — it supersedes the prior 287/22 grep-count baseline. tsc + lint
   captured clean in the same session.
 - The §11.4.38 loadable-artifact claim is verified by `ci-ext.sh` **opening the produced

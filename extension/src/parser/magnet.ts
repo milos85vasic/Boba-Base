@@ -52,8 +52,12 @@ export const MAGNET_DISPLAY_NAME_FALLBACK = "Unknown";
  */
 export function sanitizeDisplayName(raw: string): string {
   // 1. Strip any HTML/XML tags outright (e.g. `<script>...</script>`,
-  //    `<img onerror=...>`). Greedy-safe, non-backtracking-friendly pattern.
-  let out = raw.replace(/<[^>]*>/g, "");
+  //    `<img onerror=...>`). The tag body excludes `<` (not just `>`): a real
+  //    tag never contains a `<`, and excluding it makes a hostile run of `<`
+  //    with no closing `>` (e.g. `"<".repeat(100000)`) strip in LINEAR time
+  //    instead of the O(n^2) backtracking `<[^>]*>` exhibits on that input —
+  //    a content-script DoS / ReDoS-class hang on attacker-controlled page text.
+  let out = raw.replace(/<[^<>]*>/g, "");
 
   // 2. Neutralize any leftover markup-significant characters so a partial /
   //    malformed tag (e.g. a lone `<script` with no closing `>`) cannot be
