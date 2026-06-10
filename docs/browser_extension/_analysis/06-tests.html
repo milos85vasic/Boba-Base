@@ -1,0 +1,1177 @@
+<h1 id="tests-extraction">06 — Tests extraction</h1>
+<p>Exhaustive extraction of the reference browser-extension (“BobaLink”)
+test suite, fixtures, and test configuration. Source base dir (note the
+spaces):
+<code>/Volumes/T7/Projects/Boba/docs/research/browser_extension/Browser Torrent Extension Guide/src</code></p>
+<p>This document drives the test-coverage phases of the implementation
+plan. Per Boba’s 100%-coverage-across-all-test-types mandate (CONST
+§11.4.27 / §11.4.25 / §11.4.85), the reference suite (only <strong>unit
++ e2e</strong>) is a STARTING point — the coverage map and missing-types
+list below enumerate the gap to 100%.</p>
+<hr />
+<h2 id="files-read">Files read</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 36%" />
+<col style="width: 31%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th style="text-align: right;">Lines</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit/chrome-mock.ts</code></td>
+<td style="text-align: right;">196</td>
+<td>Mock infra (chrome.* API)</td>
+</tr>
+<tr>
+<td><code>tests/unit/setup.ts</code></td>
+<td style="text-align: right;">48</td>
+<td>Jest setup-after-env</td>
+</tr>
+<tr>
+<td><code>tests/unit/api-client.test.ts</code></td>
+<td style="text-align: right;">217</td>
+<td>Unit (Jest)</td>
+</tr>
+<tr>
+<td><code>tests/unit/bencode.test.ts</code></td>
+<td style="text-align: right;">252</td>
+<td>Unit (Jest)</td>
+</tr>
+<tr>
+<td><code>tests/unit/crypto.test.ts</code></td>
+<td style="text-align: right;">656</td>
+<td>Unit (<strong>Vitest</strong>, self-contained)</td>
+</tr>
+<tr>
+<td><code>tests/unit/magnet.test.ts</code></td>
+<td style="text-align: right;">239</td>
+<td>Unit (Jest)</td>
+</tr>
+<tr>
+<td><code>tests/unit/queue.test.ts</code></td>
+<td style="text-align: right;">197</td>
+<td>Unit (Jest)</td>
+</tr>
+<tr>
+<td><code>tests/unit/scanner.test.ts</code></td>
+<td style="text-align: right;">213</td>
+<td>Unit (Jest)</td>
+</tr>
+<tr>
+<td><code>tests/unit/torrent-file.test.ts</code></td>
+<td style="text-align: right;">210</td>
+<td>Unit (Jest)</td>
+</tr>
+<tr>
+<td><code>tests/e2e/content.spec.ts</code></td>
+<td style="text-align: right;">93</td>
+<td>E2E (Playwright)</td>
+</tr>
+<tr>
+<td><code>tests/e2e/options.spec.ts</code></td>
+<td style="text-align: right;">93</td>
+<td>E2E (Playwright)</td>
+</tr>
+<tr>
+<td><code>tests/e2e/popup.spec.ts</code></td>
+<td style="text-align: right;">62</td>
+<td>E2E (Playwright)</td>
+</tr>
+<tr>
+<td><code>tests/fixtures/magnets.json</code></td>
+<td style="text-align: right;">55</td>
+<td>Fixture data</td>
+</tr>
+<tr>
+<td><code>jest.config.ts</code></td>
+<td style="text-align: right;">143</td>
+<td>Config (unit)</td>
+</tr>
+<tr>
+<td><code>playwright.config.ts</code></td>
+<td style="text-align: right;">133</td>
+<td>Config (e2e)</td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td style="text-align: right;"><strong>2807</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Test counts:</strong> 7 unit <code>.test.ts</code> files
+(≈121 <code>it</code> blocks), 3 e2e <code>.spec.ts</code> files (24
+<code>test</code> blocks). 1 fixture JSON. 2 configs. Plus 2 mock/setup
+support files.</p>
+<hr />
+<h2 id="critical-discrepancies-found-flag-for-plan">CRITICAL
+DISCREPANCIES FOUND (flag for plan)</h2>
+<ol type="1">
+<li><strong>Two test runners mixed.</strong> <code>crypto.test.ts</code>
+imports from <strong><code>vitest</code></strong>
+(<code>import { describe, it, expect, beforeAll } from 'vitest'</code>);
+every other unit test uses <strong>Jest</strong> globals.
+<code>jest.config.ts</code> <code>testMatch</code> would pick up
+<code>crypto.test.ts</code> but the <code>vitest</code> import would
+fail under Jest. The reference is internally inconsistent — the Boba
+implementation MUST standardize on ONE runner (likely Vitest, since the
+Boba <code>frontend/</code> already uses Vitest).</li>
+<li><strong><code>crypto.test.ts</code> tests a private copy, not the
+module.</strong> It does NOT import <code>src/utils/crypto.ts</code>; it
+re-implements
+<code>deriveKey/encrypt/decrypt/encryptObject/decryptObject</code>
+inline (comment line 27: “mirrors src/utils/crypto.ts”). <strong>This is
+a BLUFF per CONST §11.4 / §11.4.1</strong> — it can never fail against a
+no-op stub of the real module because it never calls the real module.
+Boba’s crypto tests MUST import the production <code>crypto</code>
+module.</li>
+<li><strong><code>setup.ts</code> references a wrong path.</strong> Line
+14 declares
+<code>var chrome: typeof import("../fixtures/chrome-mock").chromeMock</code>
+but the mock actually lives at <code>tests/unit/chrome-mock.ts</code>
+(NOT <code>tests/fixtures/</code>). <code>jest.config.ts</code>
+<code>setupFiles</code> correctly points at
+<code>&lt;rootDir&gt;/tests/unit/chrome-mock.ts</code>, so this is a
+stale type-only <code>declare global</code> reference — harmless at
+runtime but wrong.</li>
+<li><strong><code>playwright.config.ts</code> references missing
+files.</strong> <code>globalSetup: "./tests/e2e/global-setup.ts"</code>
+and <code>globalTeardown: "./tests/e2e/global-teardown.ts"</code> are
+referenced but DO NOT EXIST in <code>tests/e2e/</code>. Also
+<code>webServer.url: "http://localhost:3000"</code> is referenced but
+the build produces a static extension (no dev server on :3000) — likely
+dead config.</li>
+<li><strong>E2E tests navigate to
+<code>chrome-extension://test-id/...</code> hardcoded.</strong>
+popup/options specs
+<code>page.goto("chrome-extension://test-id/...")</code> with a fixed
+extension id. Real MV3 extension ids are assigned at load time; these
+specs would never resolve against a real loaded extension without a
+fixture that captures the actual id. <strong>These e2e tests are
+effectively non-functional</strong> as written (no fixture loads the
+extension and rewrites the URL). They are skeletons, not working e2e.
+Flag heavily — Boba e2e MUST load the real built extension and resolve
+the actual id.</li>
+<li><strong>Many “assert true” no-op tests</strong> (anti-bluff
+violations, see per-file notes): <code>api-client</code> Auth block
+(<code>expect(true).toBe(true)</code>), <code>queue</code>
+auto-processing block (<code>expect(true).toBe(true)</code>). These
+assert nothing user-observable and pass against a no-op stub.</li>
+<li><strong><code>collectCoverageFrom</code> EXCLUDES the entire UI +
+entrypoints</strong> (<code>!src/popup</code>,
+<code>!src/options</code>, <code>!src/content</code>,
+<code>!src/background</code>, <code>!src/**/index.ts</code>). So the 80%
+coverage threshold only applies to pure-logic modules
+(parser/api/scanner/shared/utils). UI/entrypoint logic has ZERO
+unit-coverage enforcement in the reference.</li>
+</ol>
+<hr />
+<h2 id="per-test-file-inventory">Per-test-file inventory</h2>
+<h3
+id="testsunitchrome-mock.ts-mock-infra"><code>tests/unit/chrome-mock.ts</code>
+(mock infra)</h3>
+<p>Provides a complete <code>chrome.*</code> mock, assigned to
+<code>globalThis.chrome</code> at module load (line 196). Loaded via
+Jest <code>setupFiles</code> BEFORE each test file.</p>
+<ul>
+<li><strong><code>MockStorageArea implements chrome.storage.StorageArea</code></strong>
+— backed by an in-memory <code>Map&lt;string, unknown&gt;</code>.
+Implements:
+<ul>
+<li><code>get(keys)</code> — supports <code>null</code> (all),
+<code>string</code> (single), <code>string[]</code> (subset), and
+object-keys form; returns a <code>Promise&lt;Record&gt;</code>.</li>
+<li><code>set(items)</code> — writes all entries.</li>
+<li><code>remove(keys)</code> — string or array.</li>
+<li><code>clear()</code> — empties the map.</li>
+<li><code>getBytesInUse</code> → always <code>Promise.resolve(0)</code>
+(stub).</li>
+<li><code>onChanged</code> — no-op listener stubs
+(<code>addListener/removeListener/hasListener/hasListeners</code>).</li>
+</ul></li>
+<li><strong><code>mockRuntime</code></strong> —
+<code>id: "test-extension-id"</code>;
+<code>onInstalled/onStartup/onMessage</code> no-op listener objects;
+<code>sendMessage()</code> →
+<code>Promise.resolve({ success: true })</code>;
+<code>openOptionsPage()</code> no-op; <code>getManifest()</code> →
+<code>{ manifest_version: 3, name: "BobaLink", version: "1.0.0" }</code>;
+<code>getURL(path)</code> →
+<code>chrome-extension://test-id/${path}</code>.</li>
+<li><strong><code>mockTabs</code></strong> — <code>query()</code> → one
+fake tab
+<code>{ id:1, url:"https://example.com", title:"Example", active:true, windowId:1 }</code>;
+<code>sendMessage()</code> → <code>{success:true}</code>;
+<code>create()</code> → <code>{id:2}</code>.</li>
+<li><strong><code>mockAlarms</code></strong> — <code>create()</code>
+no-op; <code>onAlarm</code> no-op listeners.</li>
+<li><strong><code>mockNotifications</code></strong> —
+<code>create()</code> no-op.</li>
+<li><strong><code>mockContextMenus</code></strong> —
+<code>create()</code> no-op; <code>onClicked</code> no-op
+listeners.</li>
+<li><strong><code>mockAction</code></strong> —
+<code>setBadgeText()</code>, <code>setBadgeBackgroundColor()</code>
+no-ops.</li>
+<li><strong><code>mockStorage</code></strong> —
+<code>local: new MockStorageArea()</code>; <code>onChanged</code> no-op
+listeners. (NOTE: no <code>sync</code>, <code>session</code>, or
+<code>managed</code> areas mocked.)</li>
+<li><strong><code>mockCommands</code></strong> — <code>onCommand</code>
+no-op listeners.</li>
+<li><strong><code>chromeMock</code></strong> — assembles all the above;
+assigned to <code>globalThis.chrome</code>.</li>
+</ul>
+<p><strong>Gap in mock:</strong> no <code>chrome.cookies</code>, no
+<code>chrome.webRequest</code>/<code>declarativeNetRequest</code>, no
+<code>chrome.scripting</code>, no <code>chrome.permissions</code>, no
+<code>chrome.storage.sync/session</code>, no
+<code>chrome.downloads</code>, no error-injection (every method is a
+happy-path stub returning success). Chaos/error-path unit tests cannot
+use this mock as-is.</p>
+<h3
+id="testsunitsetup.ts-jest-setup-after-env"><code>tests/unit/setup.ts</code>
+(Jest setup-after-env)</h3>
+<ul>
+<li>Imports <code>@testing-library/jest-dom</code> (extends matchers —
+e.g. <code>.toBeVisible()</code>, <code>.toHaveText()</code> for DOM
+assertions in jsdom).</li>
+<li><code>declare global { var chrome: typeof import("../fixtures/chrome-mock").chromeMock }</code>
+— <strong>wrong path</strong> (see discrepancy #3); type-only.</li>
+<li><strong>Console suppression</strong> (unless
+<code>process.env.DEBUG</code> set): in <code>beforeAll</code> replaces
+<code>console.log/debug/info/warn</code> with no-op, restores in
+<code>afterAll</code>. <code>console.error</code> deliberately KEPT
+visible.</li>
+<li><code>jest.setTimeout(10000)</code> — 10s default async
+timeout.</li>
+</ul>
+<h3
+id="testsunitapi-client.test.ts-unit-jest-bobaapiclient"><code>tests/unit/api-client.test.ts</code>
+(Unit, Jest) — <code>BobaAPIClient</code></h3>
+<p>Imports <code>BobaAPIClient</code> from
+<code>../../src/api/client</code>;
+<code>NetworkError, ServerError, RateLimitError</code> from
+<code>../../src/shared/errors</code>. Mocks <code>global.fetch</code>
+via <code>jest.fn()</code> (<code>mockFetch</code>).
+<code>beforeEach</code>: new client
+<code>("http://localhost:8080", 5000)</code>,
+<code>mockFetch.mockClear()</code>.</p>
+<ul>
+<li><strong><code>Constructor</code></strong>
+<ul>
+<li><code>creates client with base URL</code> —
+<code>getBaseUrl()</code> === <code>"http://localhost:8080"</code>.</li>
+<li><code>strips trailing slash from URL</code> —
+<code>"http://localhost:8080/"</code> → <code>getBaseUrl()</code> ===
+without slash.</li>
+</ul></li>
+<li><strong><code>Auth</code></strong> ⚠️ <strong>BLUFF</strong> — both
+tests end in <code>expect(true).toBe(true)</code>:
+<ul>
+<li><code>sets auth cookie</code> —
+<code>setAuthCookie("test-sid-123")</code> then asserts
+<code>true</code> (no observable check).</li>
+<li><code>clears auth cookie</code> — <code>setAuthCookie("test")</code>
+then <code>setAuthCookie(null)</code>, asserts <code>true</code>.</li>
+</ul></li>
+<li><strong><code>Login</code></strong> (mocks fetch Response):
+<ul>
+<li><code>returns true on successful login</code> — fetch 200 body
+<code>"Ok."</code> + <code>set-cookie: SID=abc123</code> →
+<code>login("admin","admin")</code> === <code>true</code>.</li>
+<li><code>returns false on failed login</code> — 200 body
+<code>"Fails."</code> → <code>false</code>.</li>
+<li><code>returns false on HTTP error</code> — 401 →
+<code>false</code>.</li>
+<li><code>handles network errors gracefully</code> —
+<code>mockRejectedValueOnce(Error)</code> → <code>false</code>.</li>
+</ul></li>
+<li><strong><code>Version check</code></strong>:
+<ul>
+<li><code>returns version string on success</code> — 200
+<code>"v4.6.0"</code> → <code>getVersion()</code> ===
+<code>"v4.6.0"</code>.</li>
+<li><code>throws NetworkError on timeout</code> — fetch rejects after
+100ms → <code>getVersion()</code> rejects
+<code>NetworkError</code>.</li>
+</ul></li>
+<li><strong><code>Add torrent from magnet</code></strong>:
+<ul>
+<li><code>returns true on success</code> — 200 <code>"Ok."</code> →
+<code>addTorrentFromMagnet(magnet:?xt=urn:btih:1234...5678)</code> ===
+<code>true</code>.</li>
+<li><code>throws ServerError on failure</code> — 200
+<code>"Fails."</code> → rejects <code>ServerError</code>.</li>
+</ul></li>
+<li><strong><code>Request method</code></strong>:
+<ul>
+<li><code>makes GET request</code> — 200 JSON
+<code>{"version":"v4.6.0"}</code> + content-type json →
+<code>get&lt;T&gt;("/api/test")</code> deep-equals object.</li>
+<li><code>makes POST request with FormData</code> — asserts
+<code>mockFetch</code> called and <code>init.method === "POST"</code>.
+Uses real <code>FormData</code>.</li>
+<li><code>retries on server error</code> — first 500, then 200 JSON →
+result equals <code>{ok:true}</code> AND <code>mockFetch</code> called
+<strong>2 times</strong> (asserts retry logic).</li>
+<li><code>throws RateLimitError on 429</code> — 429 +
+<code>retry-after: 60</code>, called with <code>{ retry: false }</code>
+→ rejects <code>ServerError</code>. (NOTE: test name says RateLimitError
+but asserts ServerError — possible inconsistency.)</li>
+</ul></li>
+<li><strong><code>Error handling</code></strong>:
+<ul>
+<li><code>handles text/plain responses</code> — 200
+<code>"v4.6.0"</code> text/plain → <code>get&lt;string&gt;</code> ===
+<code>"v4.6.0"</code>.</li>
+<li><code>handles 204 No Content</code> — 204 null body →
+<code>get&lt;undefined&gt;</code> === <code>undefined</code>.</li>
+</ul></li>
+</ul>
+<p><strong>Covers:</strong> request building, trailing-slash
+normalization, cookie auth (weakly), login flow, version, magnet add,
+GET/POST, retry-on-5xx, rate-limit/429, content-type branching
+(json/text/204). <strong>Does NOT cover:</strong> real cookie header
+propagation (the Auth block is a bluff), timeout boundary exactness,
+concurrent requests, abort-controller cancellation.</p>
+<h3
+id="testsunitbencode.test.ts-unit-jest-bencode-encodedecode"><code>tests/unit/bencode.test.ts</code>
+(Unit, Jest) — bencode encode/decode</h3>
+<p>Imports
+<code>encode, decode, bytesToHex, hexToBytes, type BencodeValue</code>
+from <code>../../src/parser/bencode</code>. Decodes via
+<code>new TextEncoder().encode(...)</code>, asserts via
+<code>new TextDecoder().decode(...)</code>.</p>
+<ul>
+<li><strong><code>Integers</code></strong>: encode 42→<code>i42e</code>,
+0→<code>i0e</code>, -42→<code>i-42e</code>; decode same three;
+<code>encode(3.14)</code> throws (non-integer).</li>
+<li><strong><code>Strings</code></strong>: encode
+<code>→`0:`, `hello`→`5:hello`, `hello world`→`11:hello world`; decode `5:hello`→`hello`, `0:`→</code>.</li>
+<li><strong><code>Lists</code></strong>: encode
+<code>[]</code>→<code>le</code>,
+<code>[1,2,3]</code>→<code>li1ei2ei3ee</code>,
+<code>[1,"hello"]</code>→<code>li1e5:helloe</code>; decode
+<code>le</code>→<code>[]</code>,
+<code>li1ei2ei3ee</code>→<code>[1,2,3]</code>.</li>
+<li><strong><code>Dictionaries</code></strong>: encode
+<code>{}</code>→<code>de</code>; encode
+<code>{b:2,a:1}</code>→<code>d1:ai1e1:bi2ee</code> (<strong>asserts key
+sorting</strong>); decode <code>de</code>→<code>{}</code>,
+<code>d1:ai1e1:bi2ee</code>→<code>{a:1,b:2}</code>; decode nested
+<code>d4:infod4:name5:helloee</code>→
+<code>info=={name:"hello"}</code>.</li>
+<li><strong><code>Nested structures</code></strong>: encode
+<code>[{a:1},{b:2}]</code>→<code>ld1:ai1eed1:bi2eee</code>; decode
+same.</li>
+<li><strong><code>Binary data</code></strong>: encode
+<code>Uint8Array([0,1,2,255])</code> → prefix <code>4:</code> (raw
+bytes). <strong>NOTE line 156 is dead code</strong>
+(<code>expect(result[0]).toCharCode ? undefined : undefined;</code> — a
+no-op typo, asserts nothing). Decode <code>5:hello</code> → default
+<code>typeof === "string"</code>; with <code>{encoding:"binary"}</code>
+→ <code>instanceof Uint8Array</code>.</li>
+<li><strong><code>Error handling</code></strong>: throws for
+unterminated integer <code>i42</code>, empty integer <code>ie</code>,
+unterminated list <code>li42e</code>, unterminated dict
+<code>d1:ai42e</code>, invalid start byte <code>x</code>, trailing data
+<code>i42eextra</code>.</li>
+<li><strong><code>Utility functions</code></strong>:
+<code>bytesToHex([0,15,255])</code>→<code>"000fff"</code>;
+<code>hexToBytes("000fff")</code>→ bytes; round-trip inverse on 8
+bytes.</li>
+<li><strong><code>Torrent-like structure</code></strong>: round-trips a
+dict with <code>announce</code>, <code>announce-list</code>,
+<code>creation date</code>, nested
+<code>info{name,piece length,pieces:Uint8Array(20),length}</code>;
+asserts decoded fields preserved.</li>
+</ul>
+<p><strong>Covers:</strong> all 4 bencode types, binary mode,
+key-sorting invariant, hex utils, malformed-input rejection, torrent
+round-trip. Solid. <strong>Dead-assert line 156 to remove.</strong></p>
+<h3
+id="testsunitcrypto.test.ts-unit-vitest-self-contained-not-importing-prod-credential-encryption"><code>tests/unit/crypto.test.ts</code>
+(Unit, <strong>Vitest</strong> — self-contained, NOT importing prod) —
+Credential Encryption</h3>
+<p>⚠️ <strong>BLUFF risk #2.</strong> Re-implements
+<code>deriveKey/getRandomBytes/toBase64/fromBase64/encrypt/decrypt/encryptObject/decryptObject</code>
+inline using Web Crypto (<code>crypto.subtle</code>). PBKDF2(SHA-256,
+100000 iters)→AES-GCM-256, 16-byte salt, 12-byte IV,
+<code>EncryptedData{ciphertext,iv,salt,version:1}</code> base64. Tests
+the inline copy, never <code>src/utils/crypto.ts</code>.</p>
+<ul>
+<li><strong><code>Roundtrip</code></strong> (11): simple string;
+password; API key; <strong>different ciphertext each encryption</strong>
+(iv/salt/ciphertext all differ); preserves <code>version===1</code>;
+produces valid base64 (fromBase64 not-throw on all 3 fields); Unicode
+(CJK + emoji + accents); very long (10000 chars); special chars;
+newlines (<code>\n\r\n</code>); tabs.</li>
+<li><strong><code>Wrong Password</code></strong> (6): wrong pw rejects;
+totally-different rejects; empty pw rejects; case variation
+(<code>Password</code>≠<code>password</code>) rejects; trailing-space pw
+rejects; different passwords → different derived keys (verified
+indirectly: <code>exportKey('raw')</code> returns null because key is
+non-extractable — asserts <code>raw1 === null</code>).</li>
+<li><strong><code>Empty Data</code></strong> (2): encrypt/decrypt
+<code>""</code> round-trips; empty input still has non-empty ciphertext
+(auth tag).</li>
+<li><strong><code>Large Data</code></strong> (4): 1 KB, 10 KB, 100 KB
+round-trip; 1 MB round-trip + <strong>perf assert
+<code>&lt;5000ms</code></strong>.</li>
+<li><strong><code>Object Encryption</code></strong> (6): credentials
+object deep-equal; nested object (server/auth/features) deep-equal;
+array data (3 trackers) length 3; booleans preserved
+(true/true/false/false); numerics preserved (incl. float 50.5); null
+values preserved.</li>
+<li><strong><code>IV and Salt</code></strong> (4): IV length 12; salt
+length 16; unique IV per encryption; unique salt per encryption.</li>
+<li><strong><code>Key Derivation</code></strong> (2): same pw+salt →
+interoperable keys (encrypt with key1, decrypt with key2); different
+salts → both keys defined.</li>
+<li><strong><code>Tamper Detection</code></strong> (3): flip ciphertext
+byte → decrypt rejects; flip IV byte → rejects; flip salt byte → rejects
+(GCM auth).</li>
+<li><strong><code>Performance</code></strong> (3): encrypt short
+<code>&lt;2000ms</code> (PBKDF2 slow by design); decrypt short
+<code>&lt;100ms</code>; 10 consecutive encrypt+decrypt round-trip
+<code>&lt;10000ms</code>.</li>
+<li><strong><code>Password Edge Cases</code></strong> (4): short pw
+<code>x</code>; very long pw (1024 chars); Unicode pw; pw with
+spaces.</li>
+<li><strong><code>Serialization</code></strong> (3): JSON-serializable;
+survives JSON round-trip; has all required fields with correct types
+(ciphertext/iv/salt:string, version:number).</li>
+</ul>
+<p><strong>Covers (conceptually):</strong> AES-GCM-256 + PBKDF2
+credential encryption, tamper detection, IV/salt randomness, perf
+budgets, object serialization. <strong>The single most thorough file (44
+tests).</strong> <strong>BUT</strong> it tests a copy → MUST be
+rewritten to import the real production crypto module so it fails
+against a no-op stub (CONST §11.4.1).</p>
+<h3
+id="testsunitmagnet.test.ts-unit-jest-magnet-parser"><code>tests/unit/magnet.test.ts</code>
+(Unit, Jest) — Magnet parser</h3>
+<p>Imports
+<code>containsMagnetLink, findMagnetUris, extractInfohash, isValidHexInfohash, isValidBase32Infohash, base32ToHex, parseMagnetUri, buildMagnetUri, getMagnetDisplayName</code>
+from <code>../../src/parser/magnet</code>; <code>fixtures</code> from
+<code>../fixtures/magnets.json</code>.</p>
+<ul>
+<li><strong><code>containsMagnetLink</code></strong>: true for text w/
+<code>magnet:?</code>; false for plain text; false for <code>""</code>;
+case-insensitive (<code>MAGNET:?XT=...</code>).</li>
+<li><strong><code>findMagnetUris</code></strong>: finds all in
+<code>fixtures.magnetsInText.text</code> (count ===
+<code>expectedCount</code>=2); <code>[]</code> for no-magnet text;
+<strong>deduplicates</strong> identical URIs (same uri twice → length
+1); <code>[]</code> for <code>""</code>.</li>
+<li><strong><code>extractInfohash</code></strong>: extracts 40-char hex
+from <code>validMagnets[0]</code> (=== its <code>infohash</code>); null
+for <code>http://example.com</code>; null for
+<code>magnet:?dn=test</code> (no btih); <strong>lowercases</strong>
+uppercase infohash.</li>
+<li><strong><code>isValidHexInfohash</code></strong>: true for 40-char
+lower-hex; true for 40-char UPPER-hex; false for 39-char; false for
+non-hex (<code>g…</code>); false for <code>""</code>.</li>
+<li><strong><code>isValidBase32Infohash</code></strong>: true for
+32-char base32 <code>MFRGGZDFMZTWQ2LKMNZXC4ZTFMRXCXBO</code>; false for
+31-char; false for non-base32 (<code>!…</code>).</li>
+<li><strong><code>base32ToHex</code></strong>: converts
+<code>fixtures.base32Infohash.base32</code> → <code>.hex</code> (length
+40); throws for <code>"invalid"</code>.</li>
+<li><strong><code>parseMagnetUri</code></strong>: parses complete URI
+(<code>validMagnets[0]</code> → infohash/displayName/uri match,
+<code>sourceElement===null</code>); parses trackers
+(<code>validMagnets[1]</code>); multiple trackers
+(<code>validMagnets[2]</code>, length 2); web seeds
+(<code>validMagnets[3]</code>, 1 seed); no display name
+(<code>validMagnets[4]</code> → <code>displayName===null</code>); throws
+for non-magnet; throws for magnet w/o valid infohash
+(<code>magnet:?dn=test</code>); <strong>stores
+<code>sourceElement</code></strong> when provided
+(<code>document.createElement("a")</code>); normalizes infohash to
+lowercase.</li>
+<li><strong><code>buildMagnetUri</code></strong>: minimal
+(<code>magnet:?xt=urn:btih:&lt;hash&gt;</code>); w/ display name
+(<code>&amp;dn=My+File</code>); w/ trackers (url-encoded
+<code>tr=udp%3A%2F%2F...</code>); throws for invalid infohash.</li>
+<li><strong><code>getMagnetDisplayName</code></strong>: returns display
+name when available (<code>"Ubuntu 22.04 LTS"</code>); returns truncated
+infohash fallback containing <code>"Torrent "</code> and
+<code>"..."</code> when no display name.</li>
+</ul>
+<p><strong>Covers:</strong> detection, multi-find + dedup, infohash
+extraction/validation (hex + base32), base32→hex conversion, full parse
+(trackers/webseeds/displayName/sourceElement), URI build + url-encoding,
+display-name fallback. Strong, fixture-driven. <strong>Uses jsdom
+<code>document</code> (in parse-with-element test).</strong></p>
+<h3
+id="testsunitqueue.test.ts-unit-jest-offlinequeue"><code>tests/unit/queue.test.ts</code>
+(Unit, Jest) — <code>OfflineQueue</code></h3>
+<p>Imports <code>OfflineQueue</code> from
+<code>../../src/api/queue</code>; <code>type ServerConfig</code> from
+<code>../../src/types/config</code>. <strong>Mocks
+<code>../../src/shared/storage</code></strong> via
+<code>jest.mock</code> —
+<code>storageGet/storageSet/storageRemove</code> backed by an in-memory
+<code>mockStorageData</code> object. Defines a full
+<code>testServer: ServerConfig</code> literal
+(id/name/url/authMethod:“none”/active/username:null/encrypted*:null/requestTimeout:5000/verifySsl/defaultCategory/defaultSavePath/startPaused/skipHashCheck/contentLayout:“original”/autoTMM/uploadLimit:0/downloadLimit:0).
+<code>beforeEach</code>: new <code>OfflineQueue(10)</code> + clear
+mockStorageData. <code>afterEach</code>:
+<code>stopAutoProcessing()</code>.</p>
+<ul>
+<li><strong><code>Basic operations</code></strong>: init size 0;
+<code>enqueue(infohash, magnet, null, displayName, serverId)</code> →
+size 1, <code>item.torrent.infohash</code>/<code>displayName</code> set,
+<code>attempts===0</code>; default priority <code>"normal"</code>;
+explicit priority <code>"high"</code>; <code>dequeue(id)</code> →
+<code>true</code> + size 0; <code>dequeue("non-existent")</code> →
+<code>false</code>.</li>
+<li><strong><code>Queue limits</code></strong>:
+<code>OfflineQueue(3)</code> with 4 enqueues → size 3 (respects max);
+<code>OfflineQueue(2)</code> with 3 → keeps 2 newest
+(items[0].infohash===“2”, items[1]===“3” — <strong>removes oldest, FIFO
+eviction</strong>).</li>
+<li><strong><code>Clear</code></strong>: <code>clear()</code> → size
+0.</li>
+<li><strong><code>Persistence</code></strong>: after enqueue,
+<code>mockStorageData</code> has keys (storageSet called).</li>
+<li><strong><code>Auto-processing</code></strong> ⚠️ partial BLUFF —
+both end <code>expect(true).toBe(true)</code>: start+stop no-error; no
+duplicate auto-processing (double-start no-throw).</li>
+<li><strong><code>Queue processing</code></strong>: empty queue →
+<code>{processed:0, succeeded:0, remaining:0}</code>; after 1 enqueue →
+<code>processQueue</code> → <code>processed:1</code>,
+<code>results.length:1</code> (will fail to send since adapter can’t
+connect, but structure asserted — does NOT assert succeeded/failed
+values).</li>
+</ul>
+<p><strong>Covers:</strong> enqueue/dequeue, priority default+explicit,
+max-size eviction (FIFO), clear, persistence-call, processQueue
+structure. <strong>Does NOT cover:</strong> retry/attempts increment,
+exponential backoff, actual success vs failure of processing (only
+structure), restore-from-storage on construction, concurrent
+enqueue.</p>
+<h3
+id="testsunitscanner.test.ts-unit-jest-jsdom-scanner-system"><code>tests/unit/scanner.test.ts</code>
+(Unit, Jest, jsdom) — Scanner system</h3>
+<p>Imports <code>ScannerOrchestrator</code> from
+<code>../../src/scanner/orchestrator</code>;
+<code>TypedEventEmitter</code> from
+<code>../../src/shared/events</code>;
+<code>getSiteConfig, isKnownTorrentSite</code> from
+<code>../../src/scanner/site-db</code>.</p>
+<ul>
+<li><strong><code>TypedEventEmitter</code></strong> (7): <code>on</code>
++ <code>emit</code> calls listener once; multiple listeners both fire;
+<code>on</code> returns unsub fn that stops events; <code>once</code>
+fires only once across 2 emits; <code>listenerCount</code> accurate
+(0→1→0 with unsub); emit w/ no listeners doesn’t throw; <strong>listener
+error isolation</strong> — bad listener throws but emit doesn’t throw
+and good listener still fires.</li>
+<li><strong><code>ScannerOrchestrator</code></strong> (3):
+<code>beforeEach</code> clears <code>document.body.innerHTML</code>,
+constructs orchestrator with
+<code>{enableLinkScanner:true, enableTextScanner:true, mutationDebounceMs:100, observeMutations:false}</code>;
+<code>afterEach</code> <code>stop()</code>. Tests: init
+<code>getDetectedCount()===0</code> +
+<code>hasInitialScanCompleted()===false</code>;
+<code>isCurrentlyScanning()===false</code>;
+<code>getDetectedTorrents()===[]</code>. <strong>NOTE:</strong> never
+actually runs a scan — only initial-state assertions.</li>
+<li><strong><code>Site Database</code></strong> (6): recognizes
+<code>1337x.to</code>, <code>nyaa.si</code>, <code>yts.mx</code> as
+known; false for <code>example.com</code>/<code>google.com</code>;
+<code>getSiteConfig("https://1337x.to")</code> → not null,
+<code>name==="1337x"</code>, <code>domain==="1337x.to"</code>,
+<code>selectors.length&gt;0</code>; null for unknown; <strong>www-prefix
+matching</strong> (<code>www.1337x.to</code> → domain
+<code>1337x.to</code>); 1337x config has a <code>href^="magnet:</code>
+selector.</li>
+<li><strong><code>DOM Magnet Link Detection</code></strong> (4):
+<code>beforeEach</code> clears body. Tests via <strong>raw
+<code>document.querySelectorAll</code></strong> (NOT the scanner code) —
+2 magnet anchors found; 1 <code>.torrent</code> link found
+(<code>a[href$=".torrent"]</code>); non-torrent links → 0 magnets;
+nested magnet anchor found. ⚠️ These 4 test jsdom/querySelector, NOT the
+production scanner — weak coverage of actual scan logic.</li>
+</ul>
+<p><strong>Covers:</strong> event emitter (thorough), site DB lookup +
+www-matching, orchestrator initial state. <strong>Does NOT
+cover:</strong> actual scanning of DOM (the orchestrator never scans in
+tests), MutationObserver-driven rescans, debounce behavior,
+link-scanner/text-scanner real extraction, deduplication of detected
+torrents.</p>
+<h3
+id="testsunittorrent-file.test.ts-unit-jest-.torrent-parser"><code>tests/unit/torrent-file.test.ts</code>
+(Unit, Jest) — <code>.torrent</code> parser</h3>
+<p>Imports <code>parseTorrentFile, computeInfohash</code> from
+<code>../../src/parser/torrent-file</code>; <code>encode</code> from
+<code>../../src/parser/bencode</code>. Two helper builders:
+<code>createMinimalTorrent()</code> (single-file: announce +
+info{name,piece
+length:262144,pieces:Uint8Array(20).fill(0xab),length:1024});
+<code>createMultiFileTorrent()</code> (announce + announce-list[2] +
+creation date + comment + info{name,piece
+length,pieces.fill(0xcd),files:[{512,[file1.txt]},{1024,[subdir,file2.txt]}]}).</p>
+<ul>
+<li><strong><code>computeInfohash</code></strong> (5): computes
+consistent 40-char <code>^[a-f0-9]{40}$</code>; different content →
+different hash; identical content → same hash (deterministic SHA1 of
+info dict); throws for invalid data (<code>"not a torrent"</code>);
+throws for torrent without info dict.</li>
+<li><strong><code>parseTorrentFile</code></strong> (11): minimal
+single-file (infohash regex, name <code>test-file.txt</code>,
+pieceLength 262144, numPieces 1, totalSize 1024, files.length 1,
+files[0].fullPath/length); multi-file (name <code>test-folder</code>,
+files 2, totalSize 1536=512+1024); extracts tracker URLs (&gt;0, first
+=== announce); multiple trackers from announce-list (2); metadata
+(creationDate 1700000000, comment “Test torrent”); private flag true
+when <code>private:1</code>; defaults private false; throws for
+non-dictionary (<code>i42e</code>); throws for no info; throws for no
+name; numPieces calc (20 bytes = 1 piece).</li>
+<li><strong><code>File information</code></strong> (1): multi-file path
+building — files[0].path <code>["file1.txt"]</code>/fullPath
+<code>"file1.txt"</code>; files[1].path
+<code>["subdir","file2.txt"]</code>/fullPath
+<code>"subdir/file2.txt"</code>.</li>
+</ul>
+<p><strong>Covers:</strong> infohash SHA1 computation (determinism,
+uniqueness, error paths), single+multi file parse, totalSize
+aggregation, tracker extraction (announce + announce-list), metadata
+(date/comment), private flag, piece count, nested file path joining,
+malformed rejection. Strong. Depends on <code>bencode.encode</code>
+(integration-ish but in unit dir).</p>
+<h3
+id="testse2econtent.spec.ts-e2e-playwright-content-script-detection"><code>tests/e2e/content.spec.ts</code>
+(E2E, Playwright) — Content-script detection</h3>
+<p><code>test.describe("Content Script Detection")</code>. Uses
+<code>page.setContent(html)</code> +
+<code>page.waitForTimeout(500)</code>. <strong>NOTE:</strong> does NOT
+load the extension/content-script — asserts on raw DOM via Playwright
+locators. So it verifies the <em>test page</em> shape, not that the
+content script ran. (See discrepancy #5 — no extension loaded.)</p>
+<ul>
+<li><code>detects magnet links on a simulated torrent page</code> — 2
+magnet anchors + 1 <code>.torrent</code> anchor present
+(<code>toHaveCount</code>).</li>
+<li><code>detects magnet links in text content</code> — body
+<code>toContainText("magnet:")</code>.</li>
+<li><code>ignores links inside script tags</code> — magnet inside
+<code>&lt;script&gt;</code> not counted; only the real anchor (count
+1).</li>
+<li><code>handles pages with no torrent content</code> — 0 magnet
+anchors.</li>
+</ul>
+<p><strong>Effective coverage:</strong> near-zero of actual extension
+behavior — these are DOM-shape sanity checks. Boba MUST rewrite to load
+the real built content script and assert it injected badges/detected
+torrents (user-observable).</p>
+<h3
+id="testse2eoptions.spec.ts-e2e-playwright-options-page-ui"><code>tests/e2e/options.spec.ts</code>
+(E2E, Playwright) — Options page UI</h3>
+<p><code>test.beforeEach</code>:
+<code>page.goto("chrome-extension://test-id/options/index.html")</code>
+(hardcoded id — see #5). 16 tests, all asserting DOM structure of the
+options page:</p>
+<ul>
+<li>loads page with <code>.sidebar</code>;
+<code>.sidebar-brand h1</code> text <code>"BobaLink"</code>.</li>
+<li>has 4 <code>.nav-item</code>s: Servers / General / Advanced /
+About.</li>
+<li><code>#section-servers</code> active by default.</li>
+<li>navigate to General → <code>#section-general</code> active,
+<code>#section-servers</code> not active.</li>
+<li>navigate to Advanced → <code>#section-advanced</code> active.</li>
+<li><code>#btn-add-server</code> visible + text “Add Server”.</li>
+<li>add-server opens <code>#server-modal</code> (visible) +
+<code>#modal-title</code> “Add Server”.</li>
+<li>server form fields
+<code>#server-name</code>/<code>#server-url</code>/<code>#server-auth</code>
+visible.</li>
+<li>close modal via <code>#modal-close</code> →
+<code>#server-modal</code> hidden.</li>
+<li>has <code>#btn-auto-discover</code> visible.</li>
+<li>General section toggles
+<code>#setting-auto-scan</code>/<code>#setting-highlight</code>/<code>#setting-notifications</code>
+visible.</li>
+<li>Advanced section numeric inputs
+<code>#setting-health-interval</code>/<code>#setting-max-history</code>/<code>#setting-max-queue</code>
+visible.</li>
+<li>About section active + <code>.about-card</code> contains
+“BobaLink”.</li>
+</ul>
+<p><strong>Covers (intent):</strong> options-page nav, server modal
+open/close, settings inputs presence. <strong>All hinge on the hardcoded
+extension URL resolving</strong> — non-functional without a fixture
+(#5). Asserts presence/visibility only, NOT that saving a server
+persists or that toggles change settings (no user-outcome
+assertion).</p>
+<h3
+id="testse2epopup.spec.ts-e2e-playwright-popup-ui"><code>tests/e2e/popup.spec.ts</code>
+(E2E, Playwright) — Popup UI</h3>
+<p><code>test.beforeEach</code>:
+<code>page.goto("chrome-extension://test-id/popup/index.html")</code>
+(hardcoded). 8 tests:</p>
+<ul>
+<li><code>.header-title</code> text “BobaLink”.</li>
+<li>empty state <code>#empty-state</code> visible +
+<code>.empty-title</code> contains “No torrents”.</li>
+<li><code>#connection-status</code> visible + not empty.</li>
+<li><code>#btn-scan-page</code> visible + text “Scan Page”.</li>
+<li><code>#btn-send</code> disabled when nothing selected.</li>
+<li>toolbar
+<code>#btn-select-all</code>/<code>#btn-deselect-all</code>/<code>#btn-refresh</code>
+visible.</li>
+<li><code>#btn-select-all</code> enabled + clickable (clicks, no outcome
+assert).</li>
+<li><code>#connection-warning</code> <code>toBeAttached()</code>
+(existence only, “may or may not be visible”).</li>
+</ul>
+<p><strong>Covers (intent):</strong> popup empty-state, connection
+status, toolbar buttons. Same #5 non-functionality. No assertion that
+sending a torrent actually calls the API or that detected torrents
+render.</p>
+<hr />
+<h2 id="fixture-data-testsfixturesmagnets.json-every-value">Fixture data
+— <code>tests/fixtures/magnets.json</code> (every value)</h2>
+<ul>
+<li><strong><code>validMagnets</code></strong> (5 entries):
+<ol type="1">
+<li><code>uri: magnet:?xt=urn:btih:1234567890abcdef1234567890abcdef12345678&amp;dn=Ubuntu+22.04+LTS</code>;
+<code>infohash: 1234567890abcdef1234567890abcdef12345678</code>;
+<code>displayName: "Ubuntu 22.04 LTS"</code>;
+<code>trackers: []</code>.</li>
+<li><code>uri: magnet:?xt=urn:btih:ABCDEF1234567890ABCDEF1234567890ABCDEF12&amp;dn=Big+Buck+Bunny&amp;tr=udp://tracker.example.com:80/announce</code>;
+<code>infohash: abcdef1234567890abcdef1234567890abcdef12</code>
+(lowercased); <code>displayName: "Big Buck Bunny"</code>;
+<code>trackers: ["udp://tracker.example.com:80/announce"]</code>.</li>
+<li><code>uri: ...btih:a1b2c3d4e5f6789012345678901234567890abcd&amp;dn=Debian+12+ISO&amp;tr=udp://tracker1.example.com:80&amp;tr=udp://tracker2.example.com:80</code>;
+<code>infohash: a1b2c3d4e5f6789012345678901234567890abcd</code>;
+<code>displayName: "Debian 12 ISO"</code>;
+<code>trackers: ["udp://tracker1.example.com:80","udp://tracker2.example.com:80"]</code>.</li>
+<li><code>uri: ...btih:deadbeef1234567890deadbeef1234567890dead&amp;dn=Test+File&amp;tr=udp://tracker.openbittorrent.com:80&amp;ws=http://seed.example.com/file</code>;
+<code>infohash: deadbeef1234567890deadbeef1234567890dead</code>;
+<code>displayName: "Test File"</code>;
+<code>trackers: ["udp://tracker.openbittorrent.com:80"]</code>;
+<code>webSeeds: ["http://seed.example.com/file"]</code>.</li>
+<li><code>uri: magnet:?xt=urn:btih:0000000000000000000000000000000000000000</code>;
+<code>infohash: 0000000000000000000000000000000000000000</code>;
+<code>displayName: null</code>; <code>trackers: []</code>.</li>
+</ol></li>
+<li><strong><code>invalidMagnets</code></strong> (7 strings — note: NOT
+referenced by any current test, an unused fixture):
+<code>"not-a-magnet"</code>, <code>"magnet:"</code>,
+<code>"magnet:?xt=urn:btih:short"</code>,
+<code>"magnet:?xt=urn:btih:GGGG...GGGG"</code> (40 G’s, non-hex),
+<code>"magnet:?xt=urn:btih:1234...5678&amp;dn="</code> (empty dn),
+<code>"http://example.com/file.torrent"</code>,
+<code>"ftp://invalid-protocol.example.com"</code>.</li>
+<li><strong><code>magnetsInText</code></strong>:
+<code>text: "Check out this magnet:?xt=urn:btih:1234567890abcdef1234567890abcdef12345678&amp;dn=Linux+ISO download. Also try magnet:?xt=urn:btih:abcdef1234567890abcdef1234567890abcdef12&amp;dn=Movie for movies."</code>;
+<code>expectedCount: 2</code>.</li>
+<li><strong><code>base32Infohash</code></strong>:
+<code>base32: "MFRGGZDFMZTWQ2LKMNZXC4ZTFMRXCXBO"</code>;
+<code>hex: "68ac55c71d6de1c48abdd2efebf1e7a8d09f1b1e"</code>.</li>
+</ul>
+<p><strong>Note:</strong> <code>invalidMagnets</code> is defined but
+never asserted in the reference magnet tests → negative-path fixture
+coverage is left on the table. Boba’s magnet tests should consume it
+(each must throw/return null).</p>
+<hr />
+<h2 id="test-config-extraction">Test config extraction</h2>
+<h3 id="jest.config.ts-unit"><code>jest.config.ts</code> (unit)</h3>
+<ul>
+<li><strong>preset:</strong> <code>ts-jest/presets/default-esm</code>
+(ESM + TypeScript).</li>
+<li><strong>testEnvironment:</strong> <code>jsdom</code> (overridable
+per-file via <code>@jest-environment</code> comment).</li>
+<li><strong>roots:</strong> <code>&lt;rootDir&gt;/tests/unit</code>,
+<code>&lt;rootDir&gt;/src</code>.</li>
+<li><strong>testMatch:</strong> <code>**/tests/unit/**/*.test.ts</code>,
+<code>**/src/**/*.test.ts</code> (co-located src tests allowed).</li>
+<li><strong>moduleNameMapper:</strong> <code>^~/(.*)$</code> and
+<code>^@/(.*)$</code> → <code>&lt;rootDir&gt;/src/$1</code>.</li>
+<li><strong>transform:</strong> <code>^.+\.tsx?$</code> via
+<code>ts-jest</code>
+<code>{ useESM:true, tsconfig:{ jsx:"preserve", esModuleInterop:true } }</code>.</li>
+<li><strong>moduleFileExtensions:</strong> ts, tsx, js, jsx, json,
+node.</li>
+<li><strong>collectCoverageFrom:</strong> <code>src/**/*.ts</code> MINUS
+<code>*.d.ts</code>, <code>index.ts</code>, <code>assets/**</code>,
+<strong><code>popup/**</code>, <code>options/**</code>,
+<code>content/**</code>, <code>background/**</code></strong> → coverage
+measured ONLY on pure-logic modules
+(parser/api/scanner/shared/utils/types).</li>
+<li><strong>coverageThreshold.global:</strong>
+branches/functions/lines/statements all <strong>80%</strong> (NOT 100% —
+well below Boba’s mandate).</li>
+<li><strong>coverageReporters:</strong> text, text-summary, lcov, html.
+<strong>coverageDirectory:</strong>
+<code>&lt;rootDir&gt;/coverage</code>.</li>
+<li><strong>setupFilesAfterEnv:</strong>
+<code>&lt;rootDir&gt;/tests/unit/setup.ts</code>.</li>
+<li><strong>setupFiles:</strong>
+<code>&lt;rootDir&gt;/tests/unit/chrome-mock.ts</code> (runs before
+framework — installs <code>globalThis.chrome</code>).</li>
+<li><strong>clearMocks:</strong> true. <strong>restoreMocks:</strong>
+true. <strong>testTimeout:</strong> 10000. <strong>verbose:</strong>
+true. <strong>extensionsToTreatAsEsm:</strong> <code>[".ts"]</code>.
+<strong>globals.ts-jest.useESM:</strong> true.</li>
+</ul>
+<h3 id="playwright.config.ts-e2e"><code>playwright.config.ts</code>
+(e2e)</h3>
+<ul>
+<li><strong>testDir:</strong> <code>./tests/e2e</code>.</li>
+<li><strong>fullyParallel:</strong> false (shared browser state).
+<strong>workers:</strong> 1. <strong>retries:</strong> CI 2 / local 0.
+<strong>forbidOnly:</strong> in CI.</li>
+<li><strong>reporter:</strong> <code>html</code> (open never),
+<code>list</code>, plus <code>github</code> in CI.</li>
+<li><strong>use:</strong>
+<code>baseURL: "chrome-extension://test-id/"</code> (placeholder id),
+<code>trace: "on-first-retry"</code>,
+<code>screenshot: "only-on-failure"</code>,
+<code>video: "on-first-retry"</code>,
+<code>viewport: 1280×720</code>.</li>
+<li><strong>use.launchOptions.args:</strong>
+<code>--disable-extensions-except=${EXTENSION_PATH||"./dist"}</code> and
+<code>--load-extension=${EXTENSION_PATH||"./dist"}</code> —
+<strong>extension-loading mechanism: load unpacked from
+<code>./dist</code> (or <code>$EXTENSION_PATH</code>).</strong>
+(Chromium only — Firefox MV3 extension loading via these args does NOT
+work the same way.)</li>
+<li><strong>projects:</strong> <code>chromium</code>
+(<code>devices["Desktop Chrome"]</code>,
+<code>channel:"chromium"</code>) AND <code>firefox</code>
+(<code>devices["Desktop Firefox"]</code>). ⚠️ Firefox project would not
+load the extension via Chromium args — effectively broken for extension
+e2e.</li>
+<li><strong>webServer:</strong> <code>command:"npm run build"</code>,
+<code>url:"http://localhost:3000"</code> (no such server — see #4),
+<code>reuseExistingServer</code> unless CI,
+<code>timeout:120000</code>.</li>
+<li><strong>globalSetup/globalTeardown:</strong>
+<code>./tests/e2e/global-setup.ts</code> /
+<code>global-teardown.ts</code> — <strong>MISSING FILES</strong>
+(#4).</li>
+<li><strong>timeout:</strong> 30000. <strong>expect.timeout:</strong>
+5000.</li>
+</ul>
+<p><strong>Extension-loading takeaway:</strong> the <em>intended</em>
+mechanism is <code>--load-extension=./dist</code> (built MV3 bundle)
+under persistent Chromium context. But no fixture captures the assigned
+extension id and rewrites <code>chrome-extension://test-id/...</code>,
+so popup/options specs cannot resolve. Boba’s e2e MUST: build → launch
+persistent context with <code>--load-extension</code> → read the
+service-worker/extension id → navigate to the real
+<code>chrome-extension://&lt;id&gt;/...</code>.</p>
+<hr />
+<h2 id="coverage-map-featuremodule-reference-tests-type-gaps">COVERAGE
+MAP (feature/module → reference tests → type → GAPS)</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature / module</th>
+<th>Reference test(s)</th>
+<th>Type</th>
+<th>What IS covered</th>
+<th>GAPS (not covered by reference)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>bencode</strong> <code>src/parser/bencode</code></td>
+<td><code>bencode.test.ts</code></td>
+<td>unit</td>
+<td>encode/decode all 4 types, binary mode, key-sort, hex utils,
+malformed rejection, torrent round-trip</td>
+<td>fuzz/property-based, huge payloads (stress), perf/benchmark,
+deeply-nested recursion limits (chaos)</td>
+</tr>
+<tr>
+<td><strong>magnet parser</strong> <code>src/parser/magnet</code></td>
+<td><code>magnet.test.ts</code>, fixture <code>magnets.json</code></td>
+<td>unit</td>
+<td>detect/find/dedup, infohash hex+base32 validate+convert, parse
+(trackers/webseeds/dn/sourceElement), build+encode, dn fallback</td>
+<td><code>invalidMagnets</code> fixture unused (7 negatives),
+malformed-fuzz, perf on huge pages, v2 (btmh/multihash) infohashes</td>
+</tr>
+<tr>
+<td><strong>.torrent parser</strong>
+<code>src/parser/torrent-file</code></td>
+<td><code>torrent-file.test.ts</code></td>
+<td>unit</td>
+<td>infohash SHA1 determinism+uniqueness+errors, single/multi parse,
+totalSize, trackers, metadata, private, piece count, path join</td>
+<td>real-world large <code>.torrent</code> files, hybrid v1+v2,
+corrupted-file chaos, perf/benchmark on big torrents</td>
+</tr>
+<tr>
+<td><strong>API client</strong> <code>src/api/client</code></td>
+<td><code>api-client.test.ts</code></td>
+<td>unit (fetch mocked)</td>
+<td>url normalize, login flow, version, magnet add, GET/POST, retry-5xx,
+429, content-type branching</td>
+<td>real cookie header propagation (Auth block is a bluff),
+timeout-exact, abort/cancel, concurrent, <strong>integration vs live
+qBittorrent</strong>, auth-method variants (apikey, basic)</td>
+</tr>
+<tr>
+<td><strong>offline queue</strong> <code>src/api/queue</code></td>
+<td><code>queue.test.ts</code> (storage mocked)</td>
+<td>unit</td>
+<td>enqueue/dequeue, priority, FIFO eviction, clear, persist-call,
+processQueue structure</td>
+<td>attempts/retry/backoff, success-vs-failure outcomes,
+restore-on-construct, concurrency (stress), persistence chaos (corrupt
+storage)</td>
+</tr>
+<tr>
+<td><strong>scanner: event emitter</strong>
+<code>src/shared/events</code></td>
+<td><code>scanner.test.ts</code></td>
+<td>unit</td>
+<td>on/once/unsub, multi-listener, count, error isolation</td>
+<td>high-volume emit (perf), reentrancy</td>
+</tr>
+<tr>
+<td><strong>scanner: site DB</strong>
+<code>src/scanner/site-db</code></td>
+<td><code>scanner.test.ts</code></td>
+<td>unit</td>
+<td>known-site recognition (1337x/nyaa/yts), config lookup, www-match,
+selector presence</td>
+<td>full site-db coverage (only 3 sites probed), stale-selector
+detection, regression for each shipped site</td>
+</tr>
+<tr>
+<td><strong>scanner: orchestrator</strong>
+<code>src/scanner/orchestrator</code></td>
+<td><code>scanner.test.ts</code></td>
+<td>unit</td>
+<td>initial-state only</td>
+<td><strong>actual scanning</strong>, mutation-observer rescans,
+debounce, link/text extraction, dedup — orchestrator never runs a
+scan</td>
+</tr>
+<tr>
+<td><strong>DOM detection</strong> (querySelector)</td>
+<td><code>scanner.test.ts</code> (DOM block),
+<code>content.spec.ts</code></td>
+<td>unit + e2e</td>
+<td>querySelector finds magnets/.torrent</td>
+<td>tests jsdom/raw DOM, NOT the production content script — real
+content-script injection unverified</td>
+</tr>
+<tr>
+<td><strong>credential crypto</strong>
+<code>src/utils/crypto</code></td>
+<td><code>crypto.test.ts</code></td>
+<td>unit (<strong>self-contained copy</strong>)</td>
+<td>AES-GCM/PBKDF2 roundtrip, wrong-pw, tamper, IV/salt, perf, object
+serialize</td>
+<td><strong>does NOT import prod module</strong> (bluff) — real
+<code>crypto.ts</code> is UNTESTED; key-rotation, versioned-format
+migration, storage integration</td>
+</tr>
+<tr>
+<td><strong>shared/storage</strong> <code>src/shared/storage</code></td>
+<td>(mocked away in queue.test)</td>
+<td>—</td>
+<td>NONE (always mocked)</td>
+<td>direct unit tests of storageGet/Set/Remove, quota handling,
+chrome.storage errors</td>
+</tr>
+<tr>
+<td><strong>shared/errors</strong> <code>src/shared/errors</code></td>
+<td>imported by api-client</td>
+<td>indirect</td>
+<td>error classes constructed</td>
+<td>direct error-class tests</td>
+</tr>
+<tr>
+<td><strong>popup UI</strong> <code>src/popup</code></td>
+<td><code>popup.spec.ts</code></td>
+<td>e2e (non-functional)</td>
+<td>DOM presence (title/empty-state/buttons)</td>
+<td>excluded from coverage; real render of detected torrents,
+select→send flow, API call on send, error states</td>
+</tr>
+<tr>
+<td><strong>options UI</strong> <code>src/options</code></td>
+<td><code>options.spec.ts</code></td>
+<td>e2e (non-functional)</td>
+<td>DOM presence (nav/modal/inputs)</td>
+<td>excluded from coverage; server save→persist, toggle→setting change,
+auto-discover behavior, validation</td>
+</tr>
+<tr>
+<td><strong>content script</strong> <code>src/content</code></td>
+<td><code>content.spec.ts</code></td>
+<td>e2e (non-functional)</td>
+<td>DOM shape only</td>
+<td>excluded from coverage; real injection, badge rendering, message
+passing to background</td>
+</tr>
+<tr>
+<td><strong>background/service worker</strong>
+<code>src/background</code></td>
+<td>NONE</td>
+<td>—</td>
+<td>NONE</td>
+<td>excluded from coverage; message router, alarms, context-menu
+handlers, badge updates, install/startup</td>
+</tr>
+<tr>
+<td><strong>types/config</strong> <code>src/types/config</code></td>
+<td>used by queue.test</td>
+<td>indirect</td>
+<td>ServerConfig shape exercised</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2
+id="test-types-the-reference-suite-is-missing-vs-bobas-100-coverage-mandate">Test
+TYPES the reference suite is MISSING (vs Boba’s 100%-coverage
+mandate)</h2>
+<p>The reference covers <strong>2 of the mandated types</strong> (unit +
+e2e), and even those have bluff/non-functional gaps. Per CONST §11.4.27
+(“100% test-type coverage”), §11.4.25, §11.4.85 (stress+chaos),
+§11.4.58/§11.4.83 (Challenges + QA evidence), the following MUST be
+added:</p>
+<ol type="1">
+<li><strong>Integration</strong> — real cross-module flows:
+parser→queue→api-client→<strong>live qBittorrent/proxy</strong> (Boba’s
+:7186 download proxy / :7187 merge service). The reference mocks fetch
+and storage everywhere; CONST §11.4.27(A) forbids mocks outside unit
+tests. NEEDED: content-script→background message passing,
+options-save→storage→api-auth, queue-process against a real WebUI.</li>
+<li><strong>E2E (functional, real extension)</strong> — load the actual
+built MV3 bundle, resolve the real extension id, drive the
+popup/options/content script end-to-end with user-observable assertions
+(torrent rendered, server saved+persisted, send→torrent appears in
+qBittorrent). The reference e2e is skeleton/non-functional (hardcoded
+<code>test-id</code>, no extension load fixture, missing
+global-setup).</li>
+<li><strong>Automation / autonomous QA</strong> — fully self-driving
+runs re-runnable N× (CONST §11.4.98 / §11.4.50), no manual intervention;
+HelixQA bank entries.</li>
+<li><strong>Security / penetration</strong> — credential-leak audits
+(CONST §11.4.10), XSS via injected magnet/dn into popup DOM, CSP of
+extension pages, permission-scope minimization, MV3 host-permission
+abuse, malformed-magnet/<code>.torrent</code> injection, cookie/SID
+handling, encrypted-credential at-rest verification (the crypto module —
+for real, not a copy).</li>
+<li><strong>DDoS / load</strong> — many torrents detected on one page
+(1000s of magnet links), rapid scan cycles, burst of queue enqueues, API
+request flooding/rate-limit behavior under load.</li>
+<li><strong>Scaling</strong> — large <code>.torrent</code> files, large
+queue (1000s items + persistence), large detected-set rendering in
+popup, many configured servers.</li>
+<li><strong>Chaos</strong> — fault injection: chrome.storage
+failures/corruption mid-write, network drop/timeout/reorder during queue
+processing, server-worker termination mid-operation, corrupt persisted
+state recovery, partial-write faults (CONST §11.4.85 closed-set:
+process-death, network-fault, input-corruption, resource-exhaustion,
+state-corruption). The current chrome-mock is happy-path only — needs an
+error-injecting variant.</li>
+<li><strong>Stress</strong> — sustained load (N≥100 iters / ≥30s),
+concurrent contention (N≥10 parallel enqueues/scans), boundary inputs
+(empty/max/off-by-one) with latency p50/p95/p99 captured (CONST
+§11.4.85).</li>
+<li><strong>Performance</strong> — only <code>crypto.test.ts</code> has
+perf asserts (and on a copy). NEEDED: parse-time benchmarks
+(bencode/torrent/magnet on large inputs), scan latency on heavy DOMs,
+popup render time, with captured evidence.</li>
+<li><strong>Benchmark</strong> — formal benchmark suite with baselines +
+regression detection (separate from inline perf asserts).</li>
+<li><strong>UI tests</strong> — beyond DOM-presence: actual rendering
+correctness, badge counts, list rendering of detected torrents, modal
+interactions producing state changes (current e2e asserts presence, not
+behavior).</li>
+<li><strong>UX tests</strong> — flows from the end-user’s perspective:
+detect→select→send happy path, error feedback, empty/loading/error
+states, accessibility (a11y), keyboard nav, the configured
+<code>chrome.commands</code> shortcuts.</li>
+<li><strong>Challenges</strong> (<code>./challenges/scripts/</code>) —
+CONST §11.4.27(B), driving the real built extension against a real
+qBittorrent + Boba proxy, asserting user-observable outcomes (no false
+success).</li>
+<li><strong>HelixQA banks + autonomous QA sessions</strong> — CONST
+§11.4.27 — registered test banks per surface, autonomous session
+execution with captured evidence per check.</li>
+<li><strong>Anti-bluff remediation across existing types</strong> —
+every test must fail against a no-op stub and assert user-observable
+outcomes (CONST §11.4 / §11.4.1). The reference contains explicit bluffs
+(the <code>expect(true).toBe(true)</code> Auth + auto-processing blocks;
+the crypto copy-not-module; non-functional e2e; dead-assert lines) that
+violate this — they are anti-patterns to fix, not patterns to copy.</li>
+</ol>
+<hr />
+<h2 id="open-questions-for-the-plan">Open questions (for the plan)</h2>
+<ol type="1">
+<li><strong>Runner:</strong> standardize on <strong>Vitest</strong>
+(matches Boba <code>frontend/</code> + crypto.test.ts) or
+<strong>Jest</strong> (matches the other 6 unit files)? Coverage config
+and ESM handling differ.</li>
+<li><strong>Coverage threshold:</strong> reference enforces
+<strong>80%</strong> and EXCLUDES all UI/entrypoint dirs. Boba mandates
+~100% across types — confirm the line/branch threshold AND whether
+popup/options/content/background must be brought INTO coverage (they
+must, per §11.4.27).</li>
+<li><strong>E2E extension-loading fixture:</strong> need a Playwright
+fixture that builds <code>./dist</code>, launches a persistent Chromium
+context with <code>--load-extension</code>, captures the real extension
+id (via the service worker target), and parameterizes
+<code>chrome-extension://&lt;id&gt;/...</code>. Does Boba target
+Chromium only, or must Firefox MV3 (different load mechanism) be
+supported? The reference’s Firefox project is broken for
+extensions.</li>
+<li><strong>Live backends for integration/challenge:</strong> which real
+services do extension tests run against — qBittorrent WebUI (:7185 via
+proxy :7186), merge service (:7187), webui-bridge (:7188), boba-jackett
+(:7189)? CONST §11.4.27 requires real services for all non-unit
+types.</li>
+<li><strong><code>global-setup.ts</code>/<code>global-teardown.ts</code></strong>
+referenced by playwright config but absent — define their contract
+(build extension, start backend containers, seed test data, capture
+extension id).</li>
+<li><strong>Crypto module path:</strong> reference comment says
+<code>src/utils/crypto.ts</code>; queue/torrent imports use
+<code>src/shared/*</code>, <code>src/parser/*</code>,
+<code>src/api/*</code>. Confirm the production crypto module path Boba
+will use, and rewrite crypto tests to import it.</li>
+<li><strong>Chrome mock error-injection:</strong> chaos/stress need a
+configurable mock that can throw / return failures / corrupt storage —
+extend <code>chrome-mock.ts</code> or build a separate fault-injecting
+harness?</li>
+<li><strong><code>invalidMagnets</code> fixture:</strong> wire the 7
+unused negative cases into magnet tests (each must throw or return
+null).</li>
+<li><strong>Manifest version source:</strong> chrome-mock hardcodes
+<code>name:"BobaLink", version:"1.0.0"</code> — does the plan rename to
+a Boba-branded extension, and should tests read the real manifest?</li>
+<li><strong>CI:</strong> Boba CI is manual (<code>./ci.sh</code>) and
+forbids <code>.github/workflows</code>. The playwright config’s
+<code>reporter: github</code> + <code>forbidOnly: !!CI</code> assume
+GitHub Actions — must be reworked for Boba’s manual-CI model.</li>
+</ol>

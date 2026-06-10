@@ -1,0 +1,561 @@
+<h1 id="a-backend-contract-extension-boba">A — Backend Contract
+(Extension → Boba)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T00:00:00Z <strong>Authority:</strong> Real source code (cited
+file:line). The browser-extension research docs (Dim01/Dim09) are NOT
+authoritative and were both partly wrong — see “Conflict resolution”
+below.</p>
+<hr />
+<h2
+id="verdict-on-the-conflicting-research-claims-11.4.123-evidence-only">Verdict
+on the conflicting research claims (§11.4.123 — evidence only)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Source</th>
+<th>Verdict</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Port <strong>8080</strong>, <strong>JWT</strong> auth,
+<code>/api/v1/torrents</code></td>
+<td>Dim09</td>
+<td><strong>FALSE</strong> — no such port, no JWT, no
+<code>/torrents</code> route anywhere</td>
+<td>No <code>8080</code> in <code>docker-compose.yml</code>; no
+JWT/bearer-app-auth in
+<code>routes.py</code>/<code>__init__.py</code>/<code>auth.py</code>;
+the only “torrents” path is qBittorrent’s own
+<code>/api/v2/torrents/add</code> called server-side
+(<code>routes.py:819</code>)</td>
+</tr>
+<tr>
+<td>Ports <strong>7186/7187/7189</strong> +
+<code>/api/v1/search\|download\|magnet</code></td>
+<td>Dim01</td>
+<td><strong>CORRECT</strong></td>
+<td><code>docker-compose.yml</code> port env; <code>routes.py</code>
+route decorators; <code>__init__.py:250</code> prefix</td>
+</tr>
+</tbody>
+</table>
+<p>Dim01 is the accurate one. Dim09 should be discarded.</p>
+<hr />
+<h2 id="live-probe-task-5">Live probe (Task 5)</h2>
+<p>Services were <strong>DOWN</strong> at probe time
+(<code>2026-06-10</code>):</p>
+<pre><code>$ curl -s -m4 http://localhost:7187/health   → (no response, connection refused)
+$ curl -s -m4 http://localhost:7187/openapi.json → (no response)
+$ curl -s -m4 -o/dev/null -w &#39;%{http_code}&#39; http://localhost:7186/ → 000
+$ curl -s -m4 -o/dev/null -w &#39;%{http_code}&#39; http://localhost:7189/ → 000</code></pre>
+<p><strong>Services not running — endpoints derived from source (source
+is authoritative).</strong></p>
+<hr />
+<h2 id="port-map-task-4-from-docker-compose.yml">Port map (Task 4 — from
+<code>docker-compose.yml</code>)</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Port</th>
+<th>Service</th>
+<th>container</th>
+<th>docker-compose evidence</th>
+<th>Extension uses?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>7185</strong></td>
+<td>qBittorrent WebUI (container-internal)</td>
+<td><code>qbittorrent</code></td>
+<td><code>:9</code> <code>WEBUI_PORT=7185</code>; health
+<code>:25</code></td>
+<td>No — answers 401 without proxy</td>
+</tr>
+<tr>
+<td><strong>7186</strong></td>
+<td>Download proxy → qBittorrent WebUI (reverse proxy, injects
+auth)</td>
+<td><code>qbittorrent-proxy</code></td>
+<td><code>:121</code> <code>PROXY_PORT=7186</code>; health
+<code>:158</code> curls <code>:7186/</code></td>
+<td>Optional (raw WebUI mirror)</td>
+</tr>
+<tr>
+<td><strong>7187</strong></td>
+<td><strong>Merge Search Service (FastAPI default, or
+Go/Gin)</strong></td>
+<td><code>qbittorrent-proxy</code> /
+<code>qbittorrent-proxy-go</code></td>
+<td><code>:122</code>/<code>:67</code>
+<code>MERGE_SERVICE_PORT=7187</code>; health
+<code>:104</code>/<code>:158</code></td>
+<td><strong>YES — primary</strong></td>
+</tr>
+<tr>
+<td><strong>7188</strong></td>
+<td>webui-bridge (host process / Go binary)</td>
+<td>host / <code>webui-bridge</code></td>
+<td><code>:70</code> <code>BRIDGE_PORT=7188</code></td>
+<td>No (private-tracker download helper)</td>
+</tr>
+<tr>
+<td><strong>7189</strong></td>
+<td>boba-jackett (Go) — Jackett creds/overrides/autoconfig</td>
+<td><code>boba-jackett</code></td>
+<td><code>:179</code> <code>PORT=7189</code>; health <code>:195</code>
+<code>/healthz</code></td>
+<td>No (admin UI backend)</td>
+</tr>
+<tr>
+<td><strong>9117</strong></td>
+<td>Jackett indexer</td>
+<td><code>jackett</code></td>
+<td><code>:48</code> health <code>:9117/health</code></td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Both the Python <code>download-proxy</code> container AND the Go
+<code>qbittorrent-proxy-go</code> container bind 7186 (proxy) + 7187
+(merge) — they are mutually exclusive (Go is opt-in via
+<code>--profile go</code>). <code>main.py:88-95</code> runs the original
+proxy (7186) and FastAPI merge service (7187) as <strong>two threads in
+one container</strong>.</p>
+</blockquote>
+<hr />
+<h2
+id="direct-qbittorrent-vs-boba-routing-task-3-the-key-answer">Direct-qBittorrent
+vs Boba routing (Task 3 — the key answer)</h2>
+<p><strong>The extension talks to Boba’s merge service on 7187, NOT to
+qBittorrent directly.</strong></p>
+<ul>
+<li>Boba’s <code>POST /api/v1/download</code> is the actual add-torrent
+path. Server-side it logs into qBittorrent
+(<code>{qbit_url}/api/v2/auth/login</code>,
+<code>routes.py:778-789</code>) using <strong>admin/admin</strong>
+(<code>_get_qbit_username/_password</code>,
+<code>routes.py:707-718</code>, default
+<code>QBITTORRENT_URL=http://localhost:7185</code>), then POSTs to
+qBittorrent’s <code>/api/v2/torrents/add</code>
+(<code>routes.py:819</code> for tracker-fetched <code>.torrent</code>,
+<code>routes.py:847</code> for plain URLs/magnets via
+<code>data={"urls": url}</code>).</li>
+<li>So qBittorrent auth (admin/admin) is <strong>handled by Boba on the
+server side</strong> — the extension never sends qBittorrent credentials
+and never calls 7185/<code>/api/v2</code>.</li>
+<li>Port <strong>7186</strong> is a separate raw reverse-proxy of the
+qBittorrent WebUI (the <code>download_proxy.run_server()</code> thread,
+<code>main.py:36-38</code>). The extension does NOT need it for adding
+torrents; it exists for humans/tools wanting the WebUI.</li>
+</ul>
+<h3 id="what-apiv1download-actually-accepts">What
+<code>/api/v1/download</code> actually accepts</h3>
+<p>Body model <code>DownloadRequest</code>
+(<code>routes.py:170-172</code>):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span> <span class="dt">&quot;result_id&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;string&gt;&quot;</span><span class="fu">,</span> <span class="dt">&quot;download_urls&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;&lt;url-or-magnet&gt;&quot;</span><span class="ot">,</span> <span class="er">...</span><span class="ot">]</span> <span class="fu">}</span></span></code></pre></div>
+<p><strong><code>result_id</code> is just a label</strong> (used for the
+download_id/event payload, NOT a DB lookup) — there is <strong>no
+requirement that the URLs came from a prior search.</strong> The handler
+iterates <code>download_urls[:5]</code> (<code>routes.py:791</code>) and
+for each: - <strong>Private-tracker page URL</strong>
+(rutracker/kinozal/nnmclub/iptorrents host, <code>TRACKER_DOMAINS</code>
+<code>routes.py:721-731</code>) → fetches the real <code>.torrent</code>
+with auth cookies via <code>orch.fetch_torrent(...)</code>, uploads as a
+file (<code>routes.py:806-844</code>). - <strong>Anything else —
+including an arbitrary <code>magnet:</code> link or a direct
+<code>.torrent</code> URL</strong> → forwarded straight to qBittorrent
+as <code>data={"urls": url}</code> (<code>routes.py:846-861</code>).</p>
+<p><strong>=&gt; An ad-hoc magnet IS accepted</strong> by
+<code>POST /api/v1/download</code> with
+<code>{"result_id":"anything","download_urls":["magnet:?xt=..."]}</code>.
+No search needed.</p>
+<blockquote>
+<p>⚠️ <strong>Go-profile gap:</strong> the Go
+<code>DownloadHandler</code>
+(<code>internal/api/download.go:17-39</code>) is a <strong>STUB</strong>
+— it echoes <code>{"status":"added"}</code> for every URL
+<strong>without ever contacting qBittorrent</strong>. If the deployment
+runs <code>--profile go</code>, downloads silently no-op. The
+extension’s real backend MUST be the <strong>Python</strong> merge
+service. (Flag this to the team; treat Go download path as
+not-implemented.)</p>
+</blockquote>
+<hr />
+<h2
+id="definitive-endpoint-enumeration-task-1-python-fastapi-the-source-of-truth">Definitive
+endpoint enumeration (Task 1 — Python FastAPI, the source of truth)</h2>
+<p>Base: <code>http://&lt;host&gt;:7187</code>. Routers mounted in
+<code>__init__.py</code>: <code>api_router</code> @ <code>/api/v1</code>
+(<code>:250</code>), <code>auth_router</code> @ <code>/api/v1</code>
+(<code>:252</code>), <code>hooks_router</code> @
+<code>/api/v1/hooks</code> (<code>:251</code>),
+<code>scheduler_router</code> @ <code>/api/v1/schedules</code>
+(<code>:253</code>). <strong>No app-level auth / JWT on any
+route.</strong> CORS allowlist defaults to <code>localhost:4200</code> +
+<code>localhost:7187</code> (<code>__init__.py:101-131</code>);
+extensions send <code>Origin: chrome-extension://…</code> so the team
+must add that origin to <code>ALLOWED_ORIGINS</code> (see Gaps).</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Full path</th>
+<th>Request</th>
+<th>Response (key fields)</th>
+<th>File:line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/health</code></td>
+<td>—</td>
+<td><code>{status:"healthy",service,version}</code></td>
+<td><code>__init__.py:140</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/config</code></td>
+<td>—</td>
+<td><code>{qbittorrent_url(=:7186 proxy),qbittorrent_internal_url,proxy_port,...}</code></td>
+<td><code>__init__.py:183</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/stats</code></td>
+<td>—</td>
+<td><code>{active_searches,completed_searches,trackers[],...}</code></td>
+<td><code>__init__.py:212</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/bridge/health</code></td>
+<td>—</td>
+<td><code>{healthy,status_code,bridge_url,port}</code></td>
+<td><code>__init__.py:145</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/search</code></td>
+<td><code>SearchRequest</code>
+(<code>query</code>,<code>category</code>,<code>limit</code>,<code>sort_by</code>,<code>sort_order</code>,…)</td>
+<td><code>SearchResponse</code>
+<code>{search_id,status:"running",stream_token,...}</code> (returns
+immediately)</td>
+<td><code>routes.py:244</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/search/sync</code></td>
+<td><code>SearchRequest</code></td>
+<td><code>SearchResponse</code> with full <code>results[]</code>
+(blocking)</td>
+<td><code>routes.py:329</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/search/stream/{search_id}</code></td>
+<td><code>?token=</code> or <code>Authorization: Bearer</code> (only if
+<code>SSE_REQUIRE_TOKEN</code>)</td>
+<td>SSE <code>event: theme</code>/results frames; 404 if unknown id; 429
+if &gt;32 streams</td>
+<td><code>routes.py:498</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/search/{search_id}</code></td>
+<td>—</td>
+<td><code>SearchResponse</code> (poll completed results)</td>
+<td><code>routes.py:537</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/search/{search_id}/abort</code></td>
+<td>—</td>
+<td><code>{search_id,status:"aborted"}</code></td>
+<td><code>routes.py:575</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/downloads/active</code></td>
+<td>—</td>
+<td><code>{downloads:[{name,progress,dlspeed,state,hash,...}],count}</code>
+(queries qBittorrent)</td>
+<td><code>routes.py:585</code></td>
+</tr>
+<tr>
+<td><strong>POST</strong></td>
+<td><strong><code>/api/v1/download</code></strong></td>
+<td><strong><code>DownloadRequest</code></strong>
+<code>{result_id,download_urls[]}</code></td>
+<td><code>{download_id,status:"initiated"|"failed",added_count,results[]}</code></td>
+<td><strong><code>routes.py:754</code></strong></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/download/file</code></td>
+<td><code>DownloadRequest</code></td>
+<td>streams <code>.torrent</code> (or <code>.magnet</code> text for
+magnet urls); 404 if none</td>
+<td><code>routes.py:892</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/magnet</code></td>
+<td><code>{result_id,download_urls[]}</code></td>
+<td><code>{magnet:"magnet:?dn=...&amp;xt=urn:btih:...",hashes[]}</code>
+(builds magnet from btih)</td>
+<td><code>routes.py:950</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/qbittorrent</code></td>
+<td><code>{username,password,save}</code> (defaults admin/admin)</td>
+<td><code>{status:"authenticated",version}</code></td>
+<td><code>routes.py:627</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/auth/status</code></td>
+<td>—</td>
+<td><code>{trackers:{rutracker,kinozal,nnmclub,iptorrents,qbittorrent}}</code></td>
+<td><code>auth.py:479</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/auth/rutracker/status</code></td>
+<td>—</td>
+<td><code>{authenticated,status,message}</code></td>
+<td><code>auth.py:56</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/auth/rutracker/captcha</code></td>
+<td>—</td>
+<td><code>{captcha_required,captcha_image(b64),captcha_token}</code></td>
+<td><code>auth.py:108</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/rutracker/login</code></td>
+<td><code>CaptchaLoginRequest</code></td>
+<td><code>{authenticated,...}</code></td>
+<td><code>auth.py:214</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/rutracker/cookie-login</code></td>
+<td><code>{cookie_string}</code></td>
+<td><code>{authenticated}</code></td>
+<td><code>auth.py:298</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/auth/nnmclub/status</code></td>
+<td>—</td>
+<td><code>{authenticated,status,message}</code></td>
+<td><code>auth.py:350</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/nnmclub/login</code></td>
+<td>— (env creds)</td>
+<td><code>{authenticated}</code></td>
+<td><code>auth.py:407</code></td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/v1/auth/qbittorrent/logout</code></td>
+<td>—</td>
+<td><code>{status:"logged_out"}</code></td>
+<td><code>auth.py:519</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/v1/theme</code>, PUT <code>/api/v1/theme</code>, GET
+<code>/api/v1/theme/stream</code></td>
+<td>theme dashboard state</td>
+<td>—</td>
+<td><code>routes.py:58/64/73</code></td>
+</tr>
+<tr>
+<td>GET/POST/DELETE</td>
+<td><code>/api/v1/hooks</code>, <code>/api/v1/hooks/{id}</code></td>
+<td>webhook CRUD</td>
+<td>—</td>
+<td><code>__init__.py:251</code></td>
+</tr>
+<tr>
+<td>GET/POST/DELETE</td>
+<td><code>/api/v1/schedules</code>,
+<code>/api/v1/schedules/{id}</code></td>
+<td>scheduled-search CRUD</td>
+<td>—</td>
+<td><code>__init__.py:253</code></td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/</code>, <code>/dashboard</code>, <code>/{path}</code></td>
+<td>Angular SPA</td>
+<td>index.html</td>
+<td><code>__init__.py:273/278/283</code></td>
+</tr>
+</tbody>
+</table>
+<h3
+id="searchrequest-fields-routes.py110-117"><code>SearchRequest</code>
+fields (<code>routes.py:110-117</code>)</h3>
+<p><code>query</code> (req, min 1), <code>category</code> (def
+<code>"all"</code>), <code>limit</code> (1–100, def 50),
+<code>enable_metadata</code> (def true), <code>validate_trackers</code>
+(def true), <code>sort_by</code> (def <code>"seeds"</code>),
+<code>sort_order</code> (def <code>"desc"</code>).</p>
+<hr />
+<h2 id="go-equivalent-task-2-qbittorrent-go-opt-in---profile-go">Go
+equivalent (Task 2 — <code>qBitTorrent-go/</code>, opt-in
+<code>--profile go</code>)</h2>
+<p>Same ports (7186 proxy / 7187 merge / 7188 bridge), routes registered
+in <code>cmd/qbittorrent-proxy/main.go:48-94</code>. Endpoint set ≈
+Python (search, search/sync, search/stream/:id, search/:id,
+search/:id/abort, download, download/file, magnet, downloads/active,
+auth/qbittorrent, theme, hooks, schedules, config, stats, bridge/health,
+health). <strong>Differences vs Python (material):</strong> -
+<code>DownloadHandler</code> is a <strong>no-op stub</strong>
+(<code>internal/api/download.go:17-39</code>) — does NOT add to
+qBittorrent. <strong>Do not rely on the Go backend for
+downloads.</strong> - <code>ActiveDownloadsHandler</code> returns empty
+<code>{downloads:[],count:0}</code> stub (<code>download.go:138</code>).
+- No <code>/api/v1/auth/rutracker/*</code>, <code>/nnmclub/*</code>,
+<code>/auth/status</code> routes (the Go proxy lacks the
+tracker-auth/CAPTCHA surface). - Go also has <strong>no JWT / no
+8080</strong> — confirms Dim09 wrong on both backends.</p>
+<hr />
+<h2
+id="definitive-extension-boba-integration-contract-task-6">DEFINITIVE
+extension → Boba integration contract (Task 6)</h2>
+<p><strong>Base URL: <code>http://&lt;host&gt;:7187</code></strong> (the
+merge service). Use the <strong>Python</strong> backend. No auth header
+required by Boba itself (no JWT).</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Extension capability</th>
+<th>Call</th>
+<th>Body / params</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>(a) Add an ad-hoc magnet</strong></td>
+<td><code>POST http://&lt;host&gt;:7187/api/v1/download</code></td>
+<td><code>{"result_id":"ext-&lt;id&gt;","download_urls":["magnet:?xt=urn:btih:..."]}</code></td>
+<td><code>result_id</code> is a free label; magnet forwarded to
+qBittorrent <code>urls=</code> (<code>routes.py:846</code>). Success =
+<code>added_count&gt;0</code> / <code>status:"initiated"</code>.</td>
+</tr>
+<tr>
+<td><strong>(b) Add a .torrent file</strong></td>
+<td><code>POST http://&lt;host&gt;:7187/api/v1/download</code></td>
+<td><code>{"result_id":"ext-&lt;id&gt;","download_urls":["https://…/x.torrent"]}</code></td>
+<td>Direct <code>.torrent</code> URL forwarded as <code>urls=</code>
+too. <strong>GAP:</strong> no multipart raw-file-bytes upload endpoint —
+see Gaps.</td>
+</tr>
+<tr>
+<td><strong>(c) Health / auth check</strong></td>
+<td><code>GET http://&lt;host&gt;:7187/health</code> (liveness) +
+<code>GET /api/v1/auth/status</code> (qBittorrent + tracker session
+state)</td>
+<td>—</td>
+<td><code>/health</code> proves merge service up;
+<code>/api/v1/auth/status</code> →
+<code>trackers.qbittorrent.has_session</code>.</td>
+</tr>
+<tr>
+<td><strong>(d) Search (optional)</strong></td>
+<td><code>POST /api/v1/search/sync</code> (blocking, simplest) OR
+<code>POST /api/v1/search</code> +
+<code>GET /api/v1/search/stream/{search_id}</code> (live SSE)</td>
+<td><code>{"query":"...","limit":50}</code></td>
+<td>sync returns full <code>results[]</code> with
+<code>download_urls[]</code> to feed into (a)/(b).</td>
+</tr>
+<tr>
+<td>Active downloads (status panel)</td>
+<td><code>GET /api/v1/downloads/active</code></td>
+<td>—</td>
+<td>live qBittorrent torrent list.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="backend-gaps-the-extension-needs-filled-task-6-flag">Backend
+gaps the extension needs filled (Task 6 flag)</h2>
+<ol type="1">
+<li><p><strong>CORS for the extension origin.</strong>
+<code>ALLOWED_ORIGINS</code> default (<code>__init__.py:101-106</code>,
+docker-compose <code>:85</code>/<code>:137</code>) lists only
+<code>localhost:4200</code> + <code>localhost:7187</code>. A browser
+extension sends <code>Origin: chrome-extension://&lt;id&gt;</code> (or
+<code>moz-extension://…</code>). Either the extension must call via
+background <code>fetch</code> exempt from CORS (MV3 with host
+permissions can), OR the team adds the extension origin to
+<code>ALLOWED_ORIGINS</code>. <code>allow_credentials=False</code> is
+fine (no cookies needed). <strong>Action: confirm the extension uses
+host-permission background fetch, else add the origin.</strong></p></li>
+<li><p><strong>Raw .torrent file-bytes upload.</strong>
+<code>/api/v1/download</code> only accepts <strong>URLs</strong>
+(<code>download_urls[]</code>). There is <strong>no endpoint to POST raw
+<code>.torrent</code> file bytes</strong> (multipart).
+<code>/api/v1/download/file</code> <em>returns</em> a torrent, it
+doesn’t accept one. If the extension must add a user-picked local
+<code>.torrent</code> file (bytes, not a URL), Boba needs a new
+<code>POST /api/v1/download/upload</code> (multipart → qBittorrent
+<code>/api/v2/torrents/add</code> with a <code>torrents</code> form
+field, mirroring the server-side code already at
+<code>routes.py:811-822</code>). <strong>Backend addition
+required.</strong></p></li>
+<li><p><strong>Go-profile download is a stub.</strong> If any deployment
+runs <code>--profile go</code>, <code>/api/v1/download</code> no-ops
+(<code>download.go:17-39</code>). Either implement the Go handler to
+mirror Python, or document that the extension requires the Python
+backend. <strong>Backend addition required if Go is to be
+supported.</strong></p></li>
+<li><p><strong>No JWT/token on Boba endpoints</strong> — the extension
+does NOT need to obtain or send a bearer token to Boba (only the SSE
+stream has an optional per-search <code>stream_token</code>, off by
+default). Dim09’s JWT requirement is fictional.</p></li>
+</ol>

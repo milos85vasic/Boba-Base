@@ -1,0 +1,1569 @@
+<h1 id="research-dimensions-extraction">02 — Research dimensions
+extraction</h1>
+<blockquote>
+<p>Exhaustive extraction of the 12-dimension Boba browser-extension
+research corpus plus the insight and cross-verification documents.
+Source dir (paths contain spaces):
+<code>/Volumes/T7/Projects/Boba/docs/research/browser_extension/Browser Torrent Extension Guide/research</code>.
+This document is the requirements backbone for the implementation
+plan.</p>
+</blockquote>
+<h2 id="files-read">Files read</h2>
+<table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 26%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>File</th>
+<th style="text-align: right;">Lines</th>
+<th>Topic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>boba_extension_dimensions.md</code></td>
+<td style="text-align: right;">49</td>
+<td>Index of the 12 dimensions</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>boba_extension_dim01.md</code></td>
+<td style="text-align: right;">990</td>
+<td>Boba project architecture deep dive</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>boba_extension_dim02.md</code></td>
+<td style="text-align: right;">2654</td>
+<td>qBittorrent WebUI API v2 complete reference</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>boba_extension_dim03.md</code></td>
+<td style="text-align: right;">2231</td>
+<td>Browser extension architecture (MV3)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>boba_extension_dim04.md</code></td>
+<td style="text-align: right;">1667</td>
+<td>Cross-browser compatibility matrix</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>boba_extension_dim05.md</code></td>
+<td style="text-align: right;">1498</td>
+<td>Tab Groups API (Chrome/Yandex)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>boba_extension_dim06.md</code></td>
+<td style="text-align: right;">1604</td>
+<td>Magnet link detection &amp; parsing</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>boba_extension_dim07.md</code></td>
+<td style="text-align: right;">2248</td>
+<td>.torrent detection, download &amp; bencode parsing</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>boba_extension_dim08.md</code></td>
+<td style="text-align: right;">2076</td>
+<td>Web page DOM scraping &amp; dynamic content</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>boba_extension_dim09.md</code></td>
+<td style="text-align: right;">3282</td>
+<td>Extension ↔︎ Boba API integration</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>boba_extension_dim10.md</code></td>
+<td style="text-align: right;">3908</td>
+<td>Extension UI/UX design patterns</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>boba_extension_dim11.md</code></td>
+<td style="text-align: right;">1989</td>
+<td>Security model &amp; privacy architecture</td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>boba_extension_dim12.md</code></td>
+<td style="text-align: right;">3364</td>
+<td>Testing, build system &amp; store distribution</td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>boba_extension_insight.md</code></td>
+<td style="text-align: right;">129</td>
+<td>Cross-dimension insights (10 insights)</td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>boba_extension_cross_verification.md</code></td>
+<td style="text-align: right;">90</td>
+<td>Cross-verification (tiers, conflicts, conclusions)</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>TOTAL</strong></td>
+<td style="text-align: right;"><strong>27,779</strong></td>
+<td>(corpus header states 27,560 research lines across 12 dims)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="dimension-01-boba-project-architecture-deep-dive">Dimension 01 —
+Boba Project Architecture Deep Dive</h2>
+<p><strong>Covers</strong> (Dim01 §1–15): Complete architecture of
+<code>milos85vasic/Boba-Base</code> — a multi-tracker meta-search
+platform for qBittorrent: service topology, full REST API catalog
+(Python FastAPI + Go/Gin), request/response schemas, auth mechanisms,
+data models, the qBittorrent nova3 plugin system, search/download flows,
+env vars, Angular 21 frontend, hook system, and the extension
+integration points.</p>
+<p><strong>Service topology / ports (Dim01 §1, table):</strong> -
+qBittorrent WebUI — port <strong>7185</strong> (container
+<code>qbittorrent</code>, C++ upstream). [This is the authoritative repo
+port; cross_verification #9 notes qBittorrent “typically on 8080”
+generically — Dim09 uses 8080, the conflict is C4-adjacent.] - Merge
+Search (FastAPI, Python 3.12) — port <strong>7187</strong> (container
+<code>qbittorrent-proxy</code>); main API, search orchestration, serves
+the Angular SPA. - Download Proxy (Python) — port <strong>7186</strong>
+(same container; legacy passthrough). - WebUI Bridge
+(<code>webui-bridge.py</code>, host process, Python 3) — port
+<strong>7188</strong>; private-tracker auth, theme injection. - Jackett
+(C#) — port <strong>9117</strong>. - boba-jackett (Go/Gin) — port
+<strong>7189</strong>; Jackett management API. - Go Proxy
+(<code>qbittorrent-proxy-go</code>, Gin) — port <strong>7187</strong>
+under compose profile <code>go</code> (alternative merge backend). -
+Optional quality stack (<code>docker-compose.quality.yml</code>):
+SonarQube :9000, Prometheus :9090, Grafana :3000.</p>
+<p><strong>FastAPI primary API (port 7187) — exact endpoints (Dim01
+§2.1):</strong> - Search: <code>POST /api/v1/search</code> (async
+fire-and-forget → SearchResponse status running),
+<code>POST /api/v1/search/sync</code> (blocking legacy),
+<code>GET /api/v1/search/{search_id}</code>,
+<code>GET /api/v1/search/stream/{search_id}</code> (SSE
+<code>text/event-stream</code>),
+<code>POST /api/v1/search/{search_id}/abort</code>. - Download:
+<code>POST /api/v1/download</code> (add torrent(s) to qBittorrent →
+<code>{download_id, status, added_count, results}</code>),
+<code>POST /api/v1/download/file</code> (returns Blob
+<code>application/x-bittorrent</code>), <code>POST /api/v1/magnet</code>
+(<code>{result_id, download_urls}</code> →
+<code>{magnet, hashes}</code>),
+<code>GET /api/v1/downloads/active</code>. - Auth:
+<code>POST /api/v1/auth/qbittorrent</code>
+(<code>{username,password,save?}</code>),
+<code>GET /api/v1/auth/rutracker/status</code>,
+<code>GET /api/v1/auth/rutracker/captcha</code>,
+<code>POST /api/v1/auth/rutracker/login</code>,
+<code>POST /api/v1/auth/rutracker/cookie-login</code>,
+<code>GET /api/v1/auth/status</code> (all trackers),
+<code>POST /api/v1/auth/qbittorrent/logout</code>. - Hooks:
+<code>GET/POST /api/v1/hooks</code>,
+<code>DELETE /api/v1/hooks/{hook_id}</code>,
+<code>GET /api/v1/hooks/logs?limit=50&amp;hook_name=</code>. -
+Schedules: <code>GET/POST /api/v1/schedules</code>,
+<code>GET/PATCH/DELETE /api/v1/schedules/{id}</code>. - Theme:
+<code>GET/PUT /api/v1/theme</code>,
+<code>GET /api/v1/theme/stream</code> (SSE). - Utility:
+<code>GET /health</code> (<code>{status, service, version}</code>),
+<code>GET /api/v1/bridge/health</code>, <code>GET /api/v1/config</code>
+(returns qbittorrent_url etc.), <code>GET /api/v1/stats</code>,
+<code>GET /docs</code> (Swagger), <code>GET /openapi.json</code>
+(OpenAPI 3.1, frozen for CI diffing).</p>
+<p><strong>Go boba-jackett API (port 7189) (Dim01 §2.2):</strong>
+<code>GET /healthz</code>, <code>GET /openapi.json</code>,
+<code>GET/POST /api/v1/jackett/credentials</code>,
+<code>GET /api/v1/jackett/indexers</code>,
+<code>GET /api/v1/jackett/catalog</code>,
+<code>POST /api/v1/jackett/catalog/refresh</code>,
+<code>GET /api/v1/jackett/autoconfig/runs</code>,
+<code>POST /api/v1/jackett/autoconfig/run</code>,
+<code>GET/POST /api/v1/jackett/overrides</code>. Go backend differences:
+uses qBittorrent native search API (<code>/api/v2/search/start</code>)
+instead of plugin subprocesses; SQLite (<code>boba.db</code> at
+<code>/config/boba.db</code>); admin/admin Basic Auth for mutating
+endpoints.</p>
+<p><strong>qBittorrent WebUI native (port 7185, proxied via 7186/7188)
+(Dim01 §2.3):</strong> <code>POST /api/v2/auth/login</code> (returns
+“Ok.”), <code>GET /api/v2/app/version</code>,
+<code>POST /api/v2/torrents/add</code>,
+<code>GET /api/v2/torrents/info</code>,
+<code>POST /api/v2/search/start</code>,
+<code>GET /api/v2/search/results</code>,
+<code>POST /api/v2/search/stop</code>,
+<code>GET /api/v2/search/plugins</code>.</p>
+<p><strong>Schemas (Dim01 §3) — exact defaults:</strong> -
+SearchRequest: <code>query</code> (required, min_length=1),
+<code>category</code> (default <code>'all'</code>), <code>limit</code>
+(1–100, default <strong>50</strong>), <code>enable_metadata</code>
+(default true), <code>validate_trackers</code> (default true),
+<code>sort_by</code> (default <code>'seeds'</code>),
+<code>sort_order</code> (<code>asc|desc</code>, default
+<code>desc</code>). - SearchResponse: <code>search_id</code> (uuid),
+status enum
+<code>running|completed|failed|no_results|captcha_required</code>,
+results[], total_results, merged_results, trackers_searched[], errors[],
+tracker_stats[], started_at/completed_at (ISO-8601). -
+SearchResultResponse: name, size, seeds, leechers, download_urls[],
+quality (<code>uhd_4k|full_hd|hd|sd|unknown</code>), content_type
+(<code>movie|tv|anime|music|game|software|ebook|other</code>),
+desc_link, tracker, sources[], metadata{source(OMDb|TMDB), title, year,
+poster_url, overview, genres[]}, freeleech (default false). -
+DownloadRequest: <code>{result_id, download_urls[]}</code>. -
+TrackerSearchStat: name, tracker_url, status
+(<code>pending|running|success|empty|error|timeout|cancelled</code>),
+results_count, started_at/completed_at, duration_ms, error, error_type
+(<code>upstream_http_403|dns_failure|plugin_crashed|null</code>),
+authenticated, attempt, http_status, category, query, notes.</p>
+<p><strong>Auth mechanisms (Dim01 §4):</strong> qBittorrent default
+creds <strong>admin/admin</strong> (cookie-based, <code>SID</code>
+cookie; saved creds at
+<code>/config/download-proxy/qbittorrent_creds.json</code>). Private
+trackers: RuTracker (env <code>RUTRACKER_USERNAME/PASSWORD</code> +
+CAPTCHA flow + cookie-login alternative), Kinozal (env, falls back to
+IPTorrents creds), NNM-Club (cookie-only <code>NNMCLUB_COOKIES</code>,
+proxy-sensitive), IPTorrents (env, <strong>freeleech-only
+enforced</strong>). Jackett: <code>JACKETT_API_KEY</code>. boba-jackett:
+admin/admin Basic; GET/HEAD/OPTIONS pass through unauthenticated,
+mutating requires <code>Authorization: Basic YWRtaW46YWRtaW4=</code>.
+<strong>CORS</strong>: <code>ALLOWED_ORIGINS</code> env (default
+<code>*</code> in dev).</p>
+<p><strong>Data architecture (Dim01 §5, §15):</strong> <strong>No
+relational DB</strong> — all state in-memory dataclasses + JSON files
+(<code>hooks.json</code>, <code>qbittorrent_creds.json</code>,
+<code>scheduling.json</code>, <code>theme.json</code>); SQLite
+<code>boba.db</code> only for the Go backend. Dataclasses:
+SearchMetadata, SearchResult, MergedResult, CanonicalIdentity (dedup
+fingerprint:
+infohash/title/year/content_type/season/episode/resolution/codec/group/metadata_source).
+ContentType enum:
+movie/tv/anime/music/audiobook/game/software/ebook/other/unknown.
+QualityTier enum: sd/hd/full_hd/uhd_4k/uhd_8k/unknown.</p>
+<p><strong>Plugins (Dim01 §6):</strong> <strong>48 built-in</strong>
+(qBittorrent nova3 format, installed to
+<code>/config/qBittorrent/nova3/engines/</code>); plugin contract =
+class with <code>url</code>, <code>name</code>,
+<code>supported_categories</code>, <code>search(what,cat)</code>,
+<code>download_torrent(url)</code>. Public trackers fan out via
+subprocess; private via aiohttp + session cookies. Dedup tiers: infohash
+&gt; normalized title+size &gt; Levenshtein fuzzy &gt; weak heuristic.
+<strong>IPTorrents freeleech results never merged with
+non-freeleech</strong> (preserves ratio). Dead trackers (excluded unless
+<code>ENABLE_DEAD_TRACKERS=1</code>): ali213, audiobookbay, bitru, bt4g,
+btsow, extratorrent, eztv, one337x, pctorrent, solidtorrents, therarbg,
+torrentfunk, xfsub, yihua. PRIVATE_TRACKERS: rutracker (rutracker.org),
+kinozal (kinozal.tv), nnmclub (nnm-club.me), iptorrents
+(iptorrents.com).</p>
+<p><strong>SSE event types (Dim01 §7.2):</strong>
+<code>search_start</code>, <code>tracker_started</code>,
+<code>tracker_completed</code>, <code>result_found</code>,
+<code>results_update</code>, <code>search_complete</code>,
+<code>error</code>, <code>close</code>.</p>
+<p><strong>Performance env defaults (Dim01 §9.3):</strong>
+MAX_CONCURRENT_SEARCHES=5, MAX_CONCURRENT_TRACKERS=10,
+MAX_CONCURRENT_SSE_STREAMS=32, PUBLIC_TRACKER_DEADLINE_SECONDS=15,
+PLUGIN_TIMEOUT=10, SSE_TIMEOUT=30. CAPTCHA: PENDING_CAPTCHAS_MAX=1024,
+PENDING_CAPTCHAS_TTL_SECONDS=900.</p>
+<p><strong>Frontend (Dim01 §10):</strong> Angular 21 SPA,
+<code>HttpClient</code> with <code>baseUrl = ''</code> (same-origin,
+served from :7187), <code>EventSource</code> for SSE. Hook events (Dim01
+§11): search_start, search_progress, search_complete, download_start,
+download_progress, download_complete, merge_complete,
+validation_complete.</p>
+<p><strong>Extension integration strategy (Dim01 §12):</strong>
+Extension talks directly to FastAPI :7187 — search via
+<code>/api/v1/search</code> + SSE stream, download via
+<code>/api/v1/download</code>, get torrent file via
+<code>/api/v1/download/file</code>, generate magnet via
+<code>/api/v1/magnet</code>, check auth via
+<code>/api/v1/auth/status</code>, get config via
+<code>/api/v1/config</code>. Production CORS:
+<code>ALLOWED_ORIGINS=http://localhost:7187,chrome-extension://YOUR_EXTENSION_ID</code>.
+Extension background scripts not subject to CORS. Recommended
+architecture: background SW (SSE, cache, downloads, creds) + popup
+(React/Vue) + content scripts + options page.</p>
+<p><strong>Cross-refs:</strong> Dim02 (qBittorrent API), Dim09
+(integration), Dim11 (security — hardcoded admin/admin noted as a
+risk).</p>
+<hr />
+<h2
+id="dimension-02-qbittorrent-webui-api-v2-complete-reference">Dimension
+02 — qBittorrent WebUI API v2 Complete Reference</h2>
+<p><strong>Covers</strong> (Dim02 §1–20): Every WebUI API v2
+namespace/endpoint/parameter/response for v4.1+ through v5.2+, auth
+(cookie + API key), add/upload, monitoring, management, preferences,
+categories/tags, search, RSS, log, error handling, v4↔︎v5 version diffs,
+the Python <code>qbittorrent-api</code> library, and SSE/WebSocket
+reality.</p>
+<p><strong>Base/general (Dim02 §1):</strong>
+<code>/api/v2/&lt;namespace&gt;/&lt;method&gt;</code>. GET for reads,
+POST for mutations/uploads. <strong>v4.4.4+ returns 405</strong> on
+wrong method. All methods require auth <strong>except</strong>
+<code>/api/v2/auth/login</code>. Namespaces: auth, app, torrents, sync,
+transfer, log, rss, search.</p>
+<p><strong>Authentication (Dim02 §2):</strong> - Cookie-based (all
+versions): <code>POST /api/v2/auth/login</code> form
+<code>username&amp;password</code> → 200 sets <code>SID</code> cookie /
+<strong>403 = IP banned</strong> (too many failures). <strong>CRITICAL
+CSRF:</strong> <code>Referer</code> (or <code>Origin</code>) header MUST
+equal the Host exactly (a <code>null</code> Origin is also accepted).
+Use <code>credentials:'include'</code>. Logout:
+<code>POST /api/v2/auth/logout</code>. - API key auth (v5.2.0+, API
+v2.14.1+): 32-char key, prefix <code>qbt_</code> + 28 alnum, 160 bits
+entropy, <strong>only one key at a time</strong>, rotation invalidates
+prior. Header <code>Authorization: Bearer qbt_...</code>. Cannot fetch
+WebUI/static assets, cannot use auth endpoints.</p>
+<p><strong>Add torrents <code>/api/v2/torrents/add</code> (Dim02
+§3–5):</strong> POST multipart. Params: <code>urls</code>
+(newline-separated; http/https/magnet/bc://bt), <code>torrents</code>
+(raw bytes, repeatable for batch), <code>savepath</code>,
+<code>cookie</code> (removed in API v2.11.3 — use
+<code>app/cookies</code>), <code>category</code>, <code>tags</code>
+(comma-sep), <code>skip_checking</code>, <code>paused</code>,
+<code>root_folder</code>, <code>rename</code>, <code>upLimit</code>,
+<code>dlLimit</code>, <code>ratioLimit</code> (v2.8.1+),
+<code>seedingTimeLimit</code> (min, v2.8.1+), <code>autoTMM</code>,
+<code>sequentialDownload</code>, <code>firstLastPiecePrio</code>,
+<code>content_layout</code>
+(<code>Original|Subfolder|NoSubfolder</code>, supersedes root_folder
+since v2.7), <code>downloadPath</code> (v5.0),
+<code>stopCondition</code>
+(<code>None|MetadataReceived|FilesChecked</code>, v5.0),
+ssl_certificate/ssl_private_key/ssl_dh_params (v5.0, API v2.10.4),
+<code>is_stopped</code> (v2.11.0), <code>forced</code> (v2.11.0).
+<strong>Returns 415 = invalid torrent; 200 = success (200 does NOT
+guarantee added).</strong></p>
+<p><strong>Monitoring (Dim02 §6):</strong> <code>/torrents/info</code>
+(filter values:
+all/downloading/seeding/completed/paused/active/inactive/resumed/stalled/stalled_uploading/stalled_downloading/errored;
+v5.0+ replaces <code>paused</code> with <code>stopped</code>, adds
+<code>running</code>; supports
+category/tag/sort/reverse/limit/offset/hashes). Full torrent fields
+documented (hash, state, progress, dlspeed, eta, ratio, num_seeds,
+<code>isPrivate</code>/<code>infohash_v1</code>/<code>infohash_v2</code>
+v5.0+, magnet_uri, etc.). <strong>Torrent states</strong> (key v5
+rename: <code>pausedUP→stoppedUP</code>,
+<code>pausedDL→stoppedDL</code>). <code>/sync/maindata?rid=</code> delta
+sync (rid=0 = full; maintain local state + merge).
+<code>/torrents/properties</code>, <code>/trackers</code>,
+<code>/files</code> (priority 0=skip,1=normal,6=high,7=maximal).</p>
+<p><strong>Management (Dim02 §7):</strong> stop (v5)/pause (v4); start
+(v5)/resume (v4); delete (<code>hashes</code>+<code>deleteFiles</code>
+default false since v2.7); recheck; reannounce; setCategory; setTags
+(v5.1)/addTags+removeTags; setAutoManagement; toggleSequentialDownload;
+setForceStart; setDownloadLimit/setUploadLimit (bytes/s, -1/0
+unlimited); setShareLimits (ratioLimit -2 global/-1 unlimited;
+seedingTimeLimit minutes -2/-1); setLocation; rename; priority
+(increasePrio/decreasePrio/topPrio/bottomPrio — <strong>409 if queueing
+disabled</strong>); filePrio. Hashes are <code>|</code>-separated or
+<code>all</code>.</p>
+<p><strong>Preferences/categories/tags/search/rss/log (Dim02
+§8–13):</strong> <code>app/preferences</code> &amp;
+<code>setPreferences</code> (json string, strings quoted, ints/bools
+not). <code>app/version</code>, <code>app/webapiVersion</code>,
+<code>app/buildInfo</code>, <code>app/defaultSavePath</code>.
+Categories: getAll/createCategory(savePath
+optional)/editCategory/removeCategories(newline-sep). Tags:
+tags/createTags(comma)/deleteTags/addTags/removeTags. <strong>Search
+API:</strong> <code>search/start</code>
+(<code>pattern</code>+<code>plugins</code>(<code>|</code>/all/enabled)+<code>category</code>;
+<strong>409 if max 5 concurrent</strong>), search/stop, search/status
+(Running/Stopped), search/results (id,limit,offset), search/delete,
+plugins/installPlugin/uninstallPlugin/enablePlugin/updatePlugins. RSS
+(experimental). Log (<code>log/main</code> types
+1=Normal/2=Info/4=Warning/8=Critical; <strong>timestamps were ms before
+v4.5.0, seconds since</strong>).</p>
+<p><strong>Error codes (Dim02 §14):</strong> 200 OK, 400 bad request,
+401 XSS/host-header fail, 403 not logged in/banned, 404 not found,
+<strong>405 wrong method (v4.4.4+)</strong>, 409 conflict (queueing not
+enabled / category missing), 415 invalid torrent, 500 server error.
+<strong>No native WebSocket/SSE</strong> — all real-time via polling;
+recommend <code>/sync/maindata</code> 1–5s (one user: ~60s with ~4000
+torrents on Atom CPU); for “add torrent” no polling needed.</p>
+<p><strong>Version diffs (Dim02 §15):</strong> New in v5.0+: isPrivate,
+downloadPath, stopCondition, is_stopped (replaces paused), forced;
+setTags (v5.1); app/cookies+setCookies (v2.11.3); API key auth (v5.2.0,
+API v2.14.1). Python lib <code>qbittorrent-api</code> auto-refreshes
+cookies.</p>
+<p><strong>Extension notes (Dim02 §19):</strong> Store creds in
+<code>chrome.storage.local</code> (not sync) and consider encrypting;
+Referer must match host; implement exponential backoff to avoid IP bans;
+HTTPS for remote.</p>
+<p><strong>Cross-refs:</strong> Dim01, Dim09 (both reference cookie auth
++ add endpoint — cross_verification #1, #2).</p>
+<hr />
+<h2
+id="dimension-03-browser-extension-architecture-manifest-v3">Dimension
+03 — Browser Extension Architecture (Manifest V3)</h2>
+<p><strong>Covers</strong> (Dim03 §1–17): MV3 manifest structure,
+service worker lifecycle, content scripts, fetch, messaging, storage,
+action, notifications, permissions, offscreen documents, CORS,
+packaging, a full reference implementation, and Firefox differences.</p>
+<p><strong>Manifest (Dim03 §1):</strong> Only
+<code>manifest_version</code>, <code>version</code>, <code>name</code>
+are mandatory. <code>host_permissions</code> is a separate key from
+<code>permissions</code> in MV3. SemVer
+<code>major.minor.patch.build</code>. Recommended torrent-ext
+permissions: storage, notifications, contextMenus, scripting, alarms,
+activeTab; optional clipboardWrite; host <code>http://*/</code>
+<code>https://*/</code>; optional_host <code>&lt;all_urls&gt;</code>.
+Background: <code>{service_worker, type:"module"}</code>.</p>
+<p><strong>Service worker lifecycle (Dim03 §2) — HARD timeouts:</strong>
+terminate after <strong>30s of inactivity</strong>, OR a single request
+<strong>&gt;5 min</strong>, OR a <code>fetch()</code> response
+<strong>&gt;30s</strong>. Chrome version behaviors: Chrome 120 alarms
+min 30s period; 116 WebSocket extends lifecycle; 114 persistent
+messaging keeps SW alive; 110/109 API calls/offscreen messages reset
+idle timer. Keep-alive: <strong>chrome.alarms</strong> (official; wakes
+SW even after termination) — <code>periodInMinutes: 0.5</code> (30s,
+Chrome 120+); long-lived ports; <code>waitUntil()</code> helper (25s
+interval <code>getPlatformInfo</code>). <strong>CRITICAL RULE:</strong>
+all event listeners MUST be registered synchronously at top level —
+listeners inside async callbacks don’t survive SW restarts.</p>
+<p><strong>Content scripts (Dim03 §3):</strong> <code>run_at</code> =
+document_start (loading) / document_end (interactive) /
+<strong>document_idle (default, complete — recommended for
+torrents</strong> since magnets load dynamically). Match patterns
+<code>&lt;scheme&gt;://&lt;host&gt;&lt;path&gt;</code>;
+<code>&lt;all_urls&gt;</code> matches all permitted schemes. Worlds:
+ISOLATED (default; separate JS scope, shares DOM, has chrome.runtime) vs
+MAIN (shared page scope, NO chrome.runtime — page can detect/interfere).
+Regexes:
+<code>MAGNET_REGEX = /magnet:\?xt=urn:[a-z0-9]+:[a-z0-9]{32,40}/gi</code>,
+<code>TORRENT_FILE_REGEX = /\.torrent($|\?|&amp;)/i</code>,
+<code>TRACKER_REGEX = /(udp|http|https):\/\/[^\s"'&lt;&gt;]+\/(announce|scrape)/gi</code>.</p>
+<p><strong>Messaging (Dim03 §5):</strong>
+<code>chrome.runtime.sendMessage</code> / <code>tabs.sendMessage</code>
+/ <code>runtime.connect</code> (ports). <strong><code>return true</code>
+from onMessage is REQUIRED for async sendResponse.</strong> Long-lived
+ports also keep SW alive.</p>
+<p><strong>Storage (Dim03 §6):</strong> local ~<strong>10 MB</strong>
+(unlimitedStorage to raise), sync ~<strong>100 KB total / 8 KB per
+item</strong> (cross-device), session ~<strong>10 MB</strong>
+(in-memory, lost on browser close — for SW runtime state), managed
+(admin read-only). <code>storage.onChanged</code> for cross-context
+sync.</p>
+<p><strong>action/notifications/permissions (Dim03 §7–9):</strong> Badge
+text recommended <strong>≤4 chars</strong>;
+<code>setBadgeText</code>/<code>setBadgeBackgroundColor</code> (per-tab
+via tabId). Context menus created in <code>runtime.onInstalled</code>,
+handled via <code>contextMenus.onClicked</code>. Notifications: 4
+templates (basic/list/progress/image); <strong>MV3 no Base64 data-URL
+icons — file path required</strong>; max 2 buttons; events
+onClicked/onButtonClicked/onClosed. Permissions categories: permissions
+(install), host_permissions (install; Firefox may need manual enable),
+optional_permissions/optional_host_permissions (runtime, <strong>must be
+requested synchronously in a user-gesture handler</strong>).
+<code>activeTab</code> grants temp access on user gesture + auto-grants
+scripting on that tab. <code>declarativeContent.PageStateMatcher</code>
+shows action only when CSS conditions met without persistent host
+permissions.</p>
+<p><strong>Offscreen documents (Dim03 §10):</strong> Provide DOM in MV3
+(DOMParser, clipboard, blobs, etc.); one per profile; reasons include
+DOM_PARSER, DOM_SCRAPING, CLIPBOARD, BLOBS, etc. Use for parsing HTML /
+.torrent files.</p>
+<p><strong>CORS (Dim03 §11):</strong> Extensions bypass CORS for
+<code>host_permissions</code> hosts via SW fetch (target server must
+still send appropriate CORS headers). Content scripts CANNOT fetch
+cross-origin — route through SW. Chrome adds
+<code>Origin: chrome-extension://&lt;id&gt;</code> header (cannot be
+overridden).</p>
+<p><strong>Packaging (Dim03 §12):</strong> <code>.crx</code> = signed
+ZIP; first pack generates <code>.pem</code> (keep secure — extension ID
+= hash of public key). Self-hosted update: <code>update.xml</code>
+(Omaha format: appid/codebase/version) + manifest
+<code>update_url</code>.</p>
+<p><strong>Firefox diffs (Dim03 §15):</strong> Firefox MV3 uses
+<strong>Event Pages (background scripts), NOT service workers</strong>;
+supports BOTH MV2 + MV3 (no deprecation); blocking webRequest still
+works in MV3; offscreen documents NOT supported; needs
+<code>service_worker</code> field (Firefox 121+) or
+<code>browser_specific_settings.gecko.id</code> +
+strict_min_version.</p>
+<p><strong>Gotchas (Dim03 §17):</strong> SW dies after 30s (use alarms
+not setInterval); top-level listeners; <code>return true</code>; no DOM
+in SW; no Base64 notification icons; server must accept
+<code>chrome-extension://</code> origin; permission request in click
+handler; storage.session not persistent; badge ≤4 chars.</p>
+<p><strong>Cross-refs:</strong> Dim04 (cross-browser), Dim11 (isolated
+world = security).</p>
+<hr />
+<h2 id="dimension-04-cross-browser-compatibility-matrix">Dimension 04 —
+Cross-Browser Compatibility Matrix</h2>
+<p><strong>Covers</strong> (Dim04 §1–12 + appendices):
+Chrome/Firefox/Opera/Yandex/Chromium/Edge compatibility, manifest
+differences, <code>chrome.*</code> vs <code>browser.*</code>,
+webextension-polyfill, runtime detection, build pipeline, store
+submission requirements.</p>
+<p><strong>Executive findings (Dim04 §1):</strong> Chrome
+<strong>mandates MV3 (MV2 removed from CWS June 2025)</strong>; Firefox
+supports MV2+MV3 (no deprecation, blocking webRequest works in MV3);
+Opera/Yandex/Edge are Chromium (<code>chrome.*</code>);
+webextension-polyfill bridges Promise <code>browser.*</code> on
+Chromium; WXT/vite-plugin-web-extension automate multi-browser
+manifests.</p>
+<p><strong>Engine/API/store per browser (Dim04 §2.1):</strong> Chrome
+(Blink, chrome.<em>, MV3 only, CWS), Firefox (Gecko,
+browser.</em>+chrome.<em>, MV2+MV3, AMO), Opera (Blink, chrome.</em>,
+Opera Add-ons), Yandex (Blink, chrome.<em>, MV3, <strong>CWS or
+<code>browser://tune/</code></strong>), Chromium (Blink, manual
+install), Edge (Blink v79+, chrome.</em>, Edge Add-ons). UA detection
+(order matters): Yandex <code>YaBrowser</code>/<code>Yowser</code>,
+Opera <code>OPR/</code>, Edge <code>Edg/</code>, Chrome
+<code>Chrome</code>+not-Opera/Edge, Chromium <code>Chromium</code>.
+<strong>Use feature detection primarily; UA as last resort.</strong></p>
+<p><strong>Compatibility matrix (Dim04 §3.1):</strong> Service worker
+required on all Chromium MV3; Firefox uses event pages.
+<code>browser.webRequest</code> blocking only Firefox; Chromium uses
+declarativeNetRequest (DNR).
+<code>storage.sync</code>/<code>storage.managed</code> <strong>NOT
+supported on Opera</strong>. Offscreen docs not in Firefox.
+<code>sidebarAction</code> only Firefox+Opera. <code>identity</code>
+Opera only <code>launchWebAuthFlow</code>. Firefox
+<code>browser.menus</code> is a superset of <code>contextMenus</code>
+(polyfill maps them).</p>
+<p><strong>Manifest diffs (Dim04 §4):</strong> Firefox MV3 background
+uses <code>scripts</code> (not <code>service_worker</code>) and
+<strong>REQUIRES
+<code>browser_specific_settings.gecko.id</code></strong> (AMO does NOT
+auto-assign for MV3) + <code>strict_min_version</code> (e.g. 109.0).
+Opera: <code>minimum_opera_version</code>, <code>sidebar_action</code>.
+Per-browser template via <code>{{chrome}}.</code>
+<code>{{firefox}}.</code> prefixes.</p>
+<p><strong>Polyfill (Dim04 §6):</strong> webextension-polyfill — Chrome
+officially supported, Firefox NO-OP, Opera/Edge (≥79.0.309) unofficially
+supported. <strong>Does NOT polyfill Firefox-only APIs onto
+Chrome</strong> — extension must do its own runtime feature detection.
+Install <code>webextension-polyfill</code> +
+<code>@types/webextension-polyfill</code>. Limitations: no callback
+support, tabs.executeScript Chrome only immediate values, missing-API
+not polyfilled, depends on api-metadata.json.</p>
+<p><strong>Build pipeline (Dim04 §8):</strong> Recommended
+<strong>WXT</strong> (Vite-based, supports all browsers, MV2+MV3, HMR,
+per-browser manifest generation, file-based entrypoints).
+<code>wxt build --browser chrome|firefox|edge|opera</code>. Output
+<code>.output/chrome-mv3/</code>, <code>firefox-mv2/</code>, etc.
+Alternatives: vite-plugin-web-extension, manual scripts.</p>
+<p><strong>Store requirements (Dim04 §9) — concrete:</strong> -
+<strong>Chrome Web Store:</strong> Google account + <strong>$5 one-time
+fee</strong> (covers all extensions, up to 20/account, valid for life);
+MV3 required; 128×128 PNG icon (96×96 actual + 16px padding);
+screenshots 1280×800 or 640×400 (min 1, max 5); small promo tile
+440×280; large promo 1400×560 (optional); description ≤16,000 chars;
+privacy policy if data collected; single purpose; permission
+justification; remote code = “No”; review automatic &lt;1h; <strong>2FA
+required</strong>. - <strong>Firefox AMO:</strong> Free; MV2/MV3;
+<strong>extension ID required for MV3</strong>; icon 48/96/128;
+screenshots 1280×800 or 640×480; <strong>data_collection_permissions
+required for new extensions since Nov 3 2025</strong>
+(<code>browser_specific_settings.gecko.data_collection_permissions</code>);
+source code may be required if minified; auto + manual review; unlisted
+self-distribution available; <strong>version format <code>x.y.z</code>
+only (no letters)</strong>. - <strong>Opera Add-ons:</strong> Free;
+MV2/MV3; icons 128/48/16; screenshots <strong>612×408 preferred (max
+800×600), white background, other extensions disabled</strong>; no
+external JS; <strong>manual review, no SLA</strong>; no 2FA. -
+<strong>Edge Add-ons:</strong> Free; MV2/MV3; icon 300×300 (min 128,
+1:1); screenshots 640×480 or 1280×800 (max 6); description 250–10,000
+chars; <strong>2FA required</strong>; manual review no SLA. -
+<strong>Yandex:</strong> No own store — install via CWS,
+<code>browser://tune/</code> (drag CRX3), or unpacked at
+<code>browser://extensions/</code>; checks against malicious-extension
+DB; ignores extensions that change new-tab. - <strong>Chromium:</strong>
+No store; developer mode / <code>--load-extension</code> (removed from
+branded Chrome v137+ — use <code>--remote-debugging-pipe</code> +
+<code>Extensions.loadUnpacked</code>) / drag CRX.</p>
+<p><strong>Permission mapping (Dim04 A.3):</strong> webRequest =
+DNR-only on Chromium, blocking on Firefox. Notifications “Partial” on
+Opera (no Image/List/Progress on Mac).</p>
+<p><strong>Cross-refs:</strong> Dim03 (MV3), Dim05 (Yandex tab groups),
+Dim12 (build/distribution).</p>
+<hr />
+<h2 id="dimension-05-tab-groups-api-chromeyandex">Dimension 05 — Tab
+Groups API (Chrome/Yandex)</h2>
+<p><strong>Covers</strong> (Dim05 §1–16): <code>chrome.tabGroups</code>
+reference, <code>chrome.tabs</code> integration, permissions, TabGroup
+type, group→URL enumeration, events, SW processing, context menus,
+collapsed/cross-window behavior, errors, Yandex specifics, edge
+cases.</p>
+<p><strong>Availability (Dim05 §2):</strong>
+<code>chrome.tabGroups</code> requires <strong>Chrome 89+, MV3+</strong>
+(undefined earlier). <code>TAB_GROUP_ID_NONE === -1</code>. Methods
+(Chrome 90+): <code>get(groupId)</code>,
+<code>query(queryInfo{collapsed?,color?,shared?(Chrome137+),title?(partial),windowId?})</code>,
+<code>update(groupId,{collapsed?,color?,title?})</code>,
+<code>move(groupId,{index,windowId?})</code>.
+<strong><code>tabGroups</code> API CANNOT create/alter/remove
+groups</strong> — use
+<code>tabs.group()</code>/<code>tabs.ungroup()</code> (Chrome 88+).</p>
+<p><strong>tabs integration (Dim05 §3):</strong>
+<code>tabs.group({tabIds, groupId?, createProperties{windowId?}})</code>
+→ groupId (validation error → tabs NOT modified).
+<code>tabs.ungroup(tabIds)</code> (empty group auto-deleted).
+<code>tabs.query({groupId})</code> (<code>TAB_GROUP_ID_NONE</code> for
+ungrouped). <code>Tab.groupId</code> property.</p>
+<p><strong>Permissions (Dim05 §4):</strong> <code>tabGroups</code> perm
+→ warning “View and manage your tab groups” (<strong>not shown as
+alarming / quiet permission per MDN</strong>); accessing
+<code>tab.url/title/favIconUrl</code> <strong>requires <code>tabs</code>
+permission</strong> (or host permissions) else undefined.
+<strong>tabs.group/ungroup and tabs.query({groupId}) do NOT require
+tabGroups permission</strong> (only <code>tabGroups.*</code> methods
+do).</p>
+<p><strong>TabGroup type (Dim05 §5):</strong> Color enum =
+grey/blue/red/yellow/green/pink/purple/cyan/orange. Fields: id
+(<strong>session-unique, NOT persistent across restarts — identify by
+title+color+member URLs</strong>), title, color, collapsed, windowId,
+shared (Chrome 137+).</p>
+<p><strong>Enumeration (Dim05 §6):</strong>
+<code>tabGroups.query({})</code> (all windows) → for each
+<code>tabs.query({groupId:group.id})</code> → map URLs. The Boba “send
+group to Boba” workflow extracts every tab URL.</p>
+<p><strong>Events (Dim05 §7):</strong>
+onCreated/onMoved/onRemoved/onUpdated (all <code>(group)</code>).
+<strong>onMoved does NOT fire on cross-window move</strong> (fires
+onRemoved+onCreated, NEW groupId). Tab add/remove from group detected
+via <code>tabs.onUpdated</code> <code>changeInfo.groupId</code>.</p>
+<p><strong>Collapsed/cross-window (Dim05 §10–11):</strong> Collapsing
+hides tabs in UI but <strong>does NOT restrict API access</strong> to
+tabs/URLs. Groups cannot span windows; move only between
+<code>windows.WindowType==="normal"</code>.</p>
+<p><strong>Errors (Dim05 §12):</strong> “No group with id” (deleted),
+invalid tab id, <strong>Chrome 148+ chrome://newtab cannot be
+grouped</strong> (“Grouping is not supported by tabs in this window” —
+use about:blank), Saved Tab Groups cannot be <code>update()</code>d
+while not open (Chromium bug 323982812).</p>
+<p><strong>Yandex (Dim05 §13):</strong> Chromium-based, currently
+<strong>~Chrome 147+</strong> (Yandex 26.3, April 2026) — well above the
+Chrome 89 minimum; full tabGroups support; native tab groups since
+~2021; own sync; own extension store; checks against malicious-extension
+DB.</p>
+<p><strong>Edge cases (Dim05 §15):</strong> groupId reuse across
+sessions; incognito groups don’t persist; <strong>pinned tabs
+auto-unpinned before grouping</strong>; max ~32–64 groups/window;
+chrome:// restricted tabs may not group; Brave <code>update()</code>
+title may not render until user interacts (bug 52949); ungroup last tab
+deletes group; <strong>Firefox uses a different (incompatible) tab
+groups API — this feature is Chrome/Yandex only</strong>.</p>
+<p><strong>Cross-refs:</strong> Dim01 (batch torrent flow), Dim04
+(Yandex), Dim10 (UI/UX).</p>
+<hr />
+<h2 id="dimension-06-magnet-link-detection-parsing-algorithms">Dimension
+06 — Magnet Link Detection &amp; Parsing Algorithms</h2>
+<p><strong>Covers</strong> (Dim06 §1–15 + appendices): BEP 9 magnet URI
+spec, BTIH v1/v2 formats, detection regexes, URI decoding, xt/dn/tr
+handling, JS/TS parser, validation, edge cases, generation, base32↔︎hex
+conversion, library comparison, performance, security.</p>
+<p><strong>Spec (Dim06 §1, BEP 9):</strong>
+<code>magnet:?xt=urn:btih:&lt;hash&gt;&amp;dn=&lt;name&gt;&amp;tr=&lt;tracker&gt;&amp;x.pe=&lt;peer&gt;</code>.
+<strong><code>xt</code> is the ONLY mandatory parameter.</strong>
+Params: xt (eXact Topic, required), dn (display name), tr (tracker,
+repeatable), xl (length bytes), xs (exact source), as (acceptable
+source), ws (web seed, BEP 19), kt (keyword), mt (manifest), so
+(select-only, BEP 53), x.pe (peer), x.* (experimental). Multiple files:
+repeat <code>xt=</code> OR numbered
+<code>xt.1=</code>/<code>xt.2=</code>.</p>
+<p><strong>Hash formats (Dim06 §2):</strong> v1 hex =
+<code>urn:btih:</code> + <strong>40 hex</strong> (SHA-1, 20 bytes); v1
+base32 = <code>urn:btih:</code> + <strong>32 base32 chars</strong> (RFC
+4648, legacy/Vuze — must convert to hex); v2 =
+<code>urn:btmh:1220</code> + <strong>64 hex</strong> (SHA-256 multihash,
+prefix <code>0x12 0x20</code>); hybrid = both prefixes. Example v1 hex
+<code>d2474e86c95b19b8bcfdb92bc12c9d44667cfa36</code>; base32
+<code>QHQXPYWMACKDWKP47RRVIV7VOURXFE5Q</code>.</p>
+<p><strong>Detection regex (Dim06 §3):</strong> Two-phase recommended —
+Phase 1 broad candidate <code>/magnet:\?\S+/gi</code>, Phase 2 validate
+xt: <code>/^urn:bti[h]?:[a-fA-F0-9]{40}$/i</code> OR
+<code>/^urn:bti[h]?:[A-Z2-7]{32}$/i</code> OR
+<code>/^urn:btmh:1220[a-fA-F0-9]{64}$/i</code>. Documented test cases
+(valid hex/base32/v2/hybrid/multiple-xt/numbered-xt/embedded; invalid:
+too short, missing xt, empty, unknown urn, extra chars after hash).</p>
+<p><strong>Decoding (Dim06 §4):</strong> <code>dn</code> →
+decodeURIComponent then <code>+</code>→space;
+<code>tr</code>/<code>xs</code>/<code>as</code>/<code>ws</code> →
+decodeURIComponent; <code>kt</code> → split on <code>+</code>;
+<code>ix</code>/<code>xl</code> → Number; <code>so</code> → parse BEP 53
+ranges (<code>0,2,4-6</code> → [0,2,4,5,6]). Duplicate params → array.
+Trackers deduplicated via Set (only http/https/udp protocols valid).</p>
+<p><strong>Parser/validation (Dim06 §8–9):</strong> Full TS
+<code>decodeMagnetURI</code>/<code>encodeMagnetURI</code>,
+base32Decode/bytesToHex, extractInfoHashes (normalizes base32 to hex),
+<code>isValidInfoHashV1</code> (40 hex), <code>isValidInfoHashV2</code>
+(64 hex), <code>isValidMagnetURI</code>,
+<code>validateMagnetStrict</code>. Supports <code>stream-magnet:</code>
+scheme too.</p>
+<p><strong>Edge cases (Dim06 §10):</strong> only-xt, trackerless
+(DHT-only), base32, mixed-case (normalize lowercase), duplicate
+trackers, hybrid, multiple/numbered xt, empty/encoded/unicode dn, x.pe,
+BEP 53 so, BEP 46 btpk, truncated, invalid hex, wrong length, missing
+<code>magnet:?</code>, trailing text.</p>
+<p><strong>base32↔︎hex (Dim06 §12):</strong> qBittorrent auto-converts
+base32→hex on add.
+<code>base32ToHex('WRN7ZT6NKMA6SSXYKAFRUGDDIFJUNKI2')</code> →
+<code>b45bfccfcd5301e94af8500b1a1863415346a91a</code>.</p>
+<p><strong>Libraries (Dim06 §13):</strong> <code>magnet-uri</code>
+(WebTorrent, most-used; deps <span class="citation"
+data-cites="thaunknown/thirty-two">@thaunknown/thirty-two</span>,
+bep53-range, uint8-util; no tracker URL validation; no stream-magnet);
+<code>parse-torrent</code> (broader, parses .torrent too, larger);
+<code>@ctrl/magnet-link</code> (TS port, fewer deps); <strong>custom =
+smallest, 0 deps, TS types</strong> — recommendation table favors custom
+or <span class="citation" data-cites="ctrl">@ctrl</span> for
+extensions.</p>
+<p><strong>Performance/security (Dim06 §14–15):</strong> DOM-first
+<code>querySelectorAll('a[href^="magnet:"]')</code> is orders of
+magnitude faster than text scanning; chunk large text (100KB) to avoid
+catastrophic backtracking; two-phase validation; deduplicate by
+infohash; debounce MutationObserver scans. <strong>Sanitize
+<code>dn</code> before HTML render</strong> (XSS): strip control chars +
+<code>&lt;&gt;</code>, limit 255 chars, use textContent. Strict CSP
+<code>script-src 'self'; object-src 'self'</code>.</p>
+<p><strong>Cross-refs:</strong> Dim07 (infohash from .torrent), Dim08
+(DOM scanning), Dim09 (unified identity / dedup).</p>
+<hr />
+<h2
+id="dimension-07-torrent-file-detection-download-bencode-parsing">Dimension
+07 — Torrent File Detection, Download &amp; Bencode Parsing</h2>
+<p><strong>Covers</strong> (Dim07 §1–15 + appendices): BEP 3/52 metainfo
+format, bencode spec, .torrent link detection, CORS-aware download,
+bencode parsing in JS/TS, infohash computation, single/multi-file
+structure, piece validation, magnet generation, private torrents (BEP
+27), validation, blob/arraybuffer handling, complete impl, edge cases,
+library comparison.</p>
+<p><strong>Format (Dim07 §1, BEP 3):</strong> .torrent = bencoded dict
+with required <code>announce</code> (tracker URL) + <code>info</code>
+(dict). Optional top-level: announce-list (BEP 12 tiered), creation
+date, comment, created by, encoding. <strong>info dict:</strong>
+required piece length (power of 2: 256KB=2^18, 1MB=2^20, 4MB=2^22),
+pieces (concat of <strong>20-byte SHA-1</strong> hashes, length multiple
+of 20), name, private (1 ⇒ disable DHT/PEX). Single-file:
+<code>length</code>. Multi-file: <code>files[]</code> (each
+<code>{length, path[]}</code>). <strong>v2 (BEP 52, Draft):</strong>
+SHA-256 infohash, SHA-256 piece hashes, merkle tree per file,
+<code>urn:btmh:</code> prefix; for DHT/trackers the SHA-256 infohash
+truncated to 20 bytes.</p>
+<p><strong>Bencode (Dim07 §2):</strong> byte string
+<code>&lt;len&gt;:&lt;content&gt;</code> (binary-safe, <code>0:</code>
+valid); integer <code>i&lt;num&gt;e</code> (no leading zeros except
+<code>i0e</code>, <code>i-0e</code> invalid); list <code>l...e</code>;
+dict <code>d...e</code> (<strong>keys must be byte strings in
+lexicographically-sorted RAW-byte order</strong> — essential for
+deterministic infohash). Decode by first byte: i/l/d/digit/e.</p>
+<p><strong>.torrent detection (Dim07 §3):</strong>
+<code>/\.torrent(?:\?.*)?(?:#.*)?$/i</code>; download-endpoint + passkey
+patterns (<code>/\w{32}/filename.torrent</code>).</p>
+<p><strong>CORS download (Dim07 §4):</strong> <strong>Content scripts
+CANNOT cross-origin fetch since Chrome 85</strong> — MUST delegate to SW
+(which fetches with <code>host_permissions</code>). MIME
+<code>application/x-bittorrent</code>. Read as ArrayBuffer → Uint8Array.
+<code>no-cors</code> returns opaque (only useful for HEAD existence
+check).</p>
+<p><strong>Bencode parsing libs (Dim07 §5, §15):</strong>
+<code>@ctrl/torrent-file</code> (native Uint8Array, no Buffer —
+<strong>recommended for extensions</strong>, ~8KB gzip, MV3-compatible,
+v2 support); <code>@substrate-system/bencode</code>;
+<code>bencode-js</code>;
+<code>parse-torrent</code>/<code>node-bencode</code> (need Buffer
+polyfill). Full zero-dep
+<code>BencodeDecoder</code>/<code>BencodeEncoder</code> provided
+(encoder sorts dict keys).</p>
+<p><strong>Infohash computation (Dim07 §6) — CRITICAL:</strong> Infohash
+= <strong>SHA-1 of the RAW bencoded <code>info</code> dictionary as it
+appears in the file</strong> (NOT decode-then-re-encode, which can
+reorder bytes). Per BEP 52, must reject invalid metainfo or extract
+substring directly — never decode-encode roundtrip on invalid data.
+Provided <code>extractInfoDict()</code> finds <code>4:info</code>,
+tracks nesting depth to find matching <code>e</code>, then
+<code>crypto.subtle.digest('SHA-1', infoDictBytes)</code> → hex. Web
+Crypto SHA-1 available Chrome 37+/Firefox 34+/Safari 7+/Edge 12+,
+<strong>secure contexts (HTTPS) only</strong>, works in SW/Web
+Workers.</p>
+<p><strong>Structure/pieces/magnet (Dim07 §7–9):</strong> Total size =
+<code>length</code> (single) or sum of <code>files[].length</code>
+(multi). Path = <code>[name, ...path]</code> joined <code>/</code>.
+Pieces split into 20-byte SHA-1 hashes; verify via constant-time
+compare.
+<code>generateMagnetUri({infoHash,name,trackers,size,webSeeds})</code>
+(URLSearchParams, <code>tr.append</code> for multiple) /
+<code>torrentToMagnet(data)</code>.</p>
+<p><strong>Private torrents (Dim07 §10, BEP 27):</strong>
+<code>info.private===1</code> ⇒ MUST disable DHT/PEX/LSD, tracker-only.
+Passkey in announce URL (<code>/UNIQUE_PASSKEY/announce</code>) is
+<strong>sensitive — never log/share; sanitize to
+<code>***PASSKEY***</code></strong>.</p>
+<p><strong>Validation (Dim07 §11):</strong> require
+info+announce/announce-list; info.name/piece length/pieces (length
+%20==0); either length XOR files; valid piece lengths [32768…8388608];
+per-file length+path; valid announce URL.</p>
+<p><strong>Blob handling (Dim07 §12):</strong>
+<code>response.arrayBuffer()</code>→Uint8Array; size limit (≤10MB
+typical, most &lt;1MB; example max 50MB); validate first byte
+<code>0x64</code> (‘d’). Constant-time equals helper.</p>
+<p><strong>Edge cases (Dim07 §14):</strong> empty file, invalid bencode
+(positioned errors), missing info, missing length+files, non-standard
+piece length (warning), unicode/binary filenames (TextDecoder utf-8 →
+fallback iso-8859-1), unterminated structures, leading zeros, negative
+zero, out-of-order keys (critical for infohash), CORS failure, timeout
+(AbortController), malformed magnet, robust retry (don’t retry 404/parse
+errors). BEP reference: BEP 3 (Final), 9 (Final), 12, 27, 47, 52
+(Draft), 53 (Draft).</p>
+<p><strong>Cross-refs:</strong> Dim06 (magnet/infohash,
+cross_verification #6,#7), Dim09 (download/integration).</p>
+<hr />
+<h2
+id="dimension-08-web-page-dom-scraping-dynamic-content-detection">Dimension
+08 — Web Page DOM Scraping &amp; Dynamic Content Detection</h2>
+<p><strong>Covers</strong> (Dim08 §1–15): content-script timing, DOM
+traversal, link detection, text-based magnet detection, magnet/.torrent
+URI patterns, MutationObserver, iframe, Shadow DOM, site-specific
+patterns, performance, complete impl, edge cases, test cases.</p>
+<p><strong>Timing (Dim08 §1):</strong> <code>document_idle</code>
+default &amp; recommended; for heavy SPAs (Gmail-class) wrap in
+<code>window.onload</code> readyState checks
+(<code>safeInitialize</code>). <code>initializeWhenReady</code> handles
+loading/interactive/complete.</p>
+<p><strong>Traversal (Dim08 §2):</strong> Fast path =
+<code>querySelectorAll('a[href^="magnet:"]')</code> /
+<code>a[href$=".torrent"]</code> / <code>[data-magnet]</code>.
+<strong>TreeWalker</strong> (NodeFilter.SHOW_TEXT) for text-node magnet
+scanning, skipping script/style/noscript (per MDN faster than recursive
+walking). Recursive traversal needed for Shadow DOM (with visited Set +
+maxDepth 100).</p>
+<p><strong>Detection (Dim08 §3–6):</strong> <code>LinkScanner</code>
+scans anchors, onclick handlers, data attributes, per-site selectors.
+Regexes:
+<code>MAGNET_FULL = /magnet:\?xt=urn:btih:[a-fA-F0-9]{32,40}(?:&amp;[^\s"'&lt;&gt;]+)*/gi</code>;
+<code>BTIH_EXTRACT = /xt=urn:btih:([a-fA-F0-9]{32,40})/i</code>; hash
+32=base32, 40=hex. <code>.torrent</code> patterns: DIRECT
+<code>/\.torrent(?:\?.*)?$/i</code>, download endpoints
+(<code>/download.php?...torrent</code>, <code>/torrent/download/</code>,
+etc.), file hosts (torcache/itorrents/zoink/etc.). BitTorrent v3.1
+(Tixati, medium confidence): <code>urn:btih-sha3:...</code>.</p>
+<p><strong>MutationObserver (Dim08 §7):</strong> Fires on microtask
+queue — <strong>~88× faster than setTimeout polling</strong>. Debounce
+<strong>500ms</strong>, maxBatchSize 100, filter childList added nodes;
+incremental scan only new nodes. IntersectionObserver (rootMargin 200px)
+for infinite scroll.</p>
+<p><strong>iframe (Dim08 §8):</strong> <code>all_frames:true</code>
+injects into matching frames; cross-origin iframe DOM inaccessible from
+JS — content script with all_frames handles it.
+<code>match_about_blank:true</code> runs in dynamically-created blank
+iframes. <code>window.self !== window.top</code> detects iframe
+context.</p>
+<p><strong>Shadow DOM (Dim08 §9):</strong> <code>querySelectorAll</code>
+does NOT pierce shadow boundaries — recurse <code>node.shadowRoot</code>
+manually (visited WeakSet); <code>createNodeIterator</code> to find
+shadow hosts; <code>salesforce/kagekiri</code> library option.</p>
+<p><strong>Site patterns (Dim08 §10):</strong> SITE_PATTERNS DB for
+thepiratebay (domains thepiratebay.org/.se/piratebay.live/baymirror.com;
+TPB title <code>Download this torrent using magnet</code>), 1337x
+(1337x.to/.st/x1337x.ws), nyaa (nyaa.si/.net), rutracker
+(rutracker.org/.net/.nl), generic fallback.
+<code>detectSitePattern()</code> by hostname.</p>
+<p><strong>Performance (Dim08 §11, summary):</strong> debounce 500ms,
+16ms/frame budget (yield to browser), dedupe by infohash, DOM-first,
+chunking; cleanup (<code>ScannerCleanup</code> tracks
+observers/timers/listeners, disconnect on navigation — memory-leak
+prevention).</p>
+<p><strong>Edge cases (Dim08 §13):</strong> URL-encoded magnet hrefs,
+<code>javascript:</code> URLs containing magnets, base32 hashes, data-*
+attributes (incl. data-hash 40-char), dedupe normalize by hash, safe
+querySelectorAll, memory-leak cleanup.</p>
+<p><strong>Key technical decisions (Dim08 §14 summary):</strong>
+document_idle + readyState checks; CSS selectors + TreeWalker +
+MutationObserver combo; debounced 500ms incremental; 16ms frame budget;
+dedup by infohash; all_frames:true + match_about_blank:true; shadow DOM
+recursive. Browser support: MutationObserver
+Chrome26+/FF14+/Safari7+/Edge12+; IntersectionObserver Chrome51+; Shadow
+DOM v1 Chrome53+.</p>
+<p><strong>Cross-refs:</strong> Dim03 (content scripts), Dim06 (magnet
+detection), Dim10 (UI). Insight 3 uses Dim08’s “90% of magnets via
+querySelectorAll” finding.</p>
+<hr />
+<h2 id="dimension-09-extension-boba-api-integration">Dimension 09 —
+Extension ↔︎ Boba API Integration</h2>
+<p><strong>Covers</strong> (Dim09 §1–16 + appendices): system
+architecture, qBittorrent API reference, <strong>INFERRED</strong> Boba
+endpoints, extension CORS privileges, auth strategies
+(cookie/JWT/apikey), complete API client, retry logic, SSE/WebSocket
+management, credential storage schema, health checks, offline queue,
+rate limiting/batching, config schema, manifest, security.</p>
+<blockquote>
+<p><strong>NOTE — port/endpoint discrepancy:</strong> Dim09 was written
+earlier/inferentially and uses qBittorrent + Boba on <strong>port
+8080</strong> and INFERS Boba endpoints (<code>/api/v1/health</code>,
+<code>/api/v1/torrents</code>, JWT auth with
+<code>/api/v1/auth/login|refresh</code>). Dim01 (actual repo analysis)
+has qBittorrent on <strong>7185</strong>, FastAPI on
+<strong>7187</strong>, no JWT, and real endpoints
+<code>/api/v1/download</code>, <code>/api/v1/search/stream/{id}</code>,
+<code>/health</code>. Cross_verification resolves C1 (auth: support BOTH
+cookie + JWT/apikey) and C4 (ports: both correct, user-configurable).
+<strong>The implementation should treat Dim01 as authoritative for
+actual Boba endpoints and Dim09 as the client-architecture/resilience
+reference.</strong></p>
+</blockquote>
+<p><strong>Communication patterns (Dim09 §1.2):</strong> fetch
+(extension→server), EventSource (SSE search results), WebSocket
+(real-time progress), runtime.sendMessage (popup↔︎SW), storage.local
+(config/creds/queue), alarms (health checks/sync/keep-alive).</p>
+<p><strong>Auth strategies (Dim09 §5):</strong> Comparison — Cookie/SID
+(qBittorrent direct, needs <code>credentials:'include'</code>, CSRF),
+JWT Bearer (Boba Go backend, stateless, token expiry mgmt), API key
+(FastAPI search), Basic (legacy). <code>JWTAuth</code> with 60s-buffer
+refresh, single-flight refresh promise (prevents simultaneous
+refreshes), persisted to storage.local, <strong>password NOT
+stored</strong>.</p>
+<p><strong>API client (Dim09 §6):</strong> Adds torrents direct
+(qBittorrent multipart) with fallback to Boba API;
+getTorrents/getTransferInfo/syncMainData(rid)/deleteTorrent/pauseTorrent/resumeTorrent.</p>
+<p><strong>Retry (Dim09 §7):</strong> Error classification table —
+retryable: 0/AbortError, 429 (respect Retry-After), 500/502/503/504, 401
+(refresh-then-retry); non-retryable: 400/403/404/415.
+<strong>Exponential backoff with jitter</strong> (DEFAULT_RETRY_CONFIG:
+maxRetries 3, baseDelay 1000ms, maxDelay 30000ms, backoffMultiplier 2,
+jitterFactor 0.5, retryableStatusCodes [0,429,500,502,503,504]).
+Request/response interceptor pattern for 401→refresh.</p>
+<p><strong>SSE/WebSocket (Dim09 §8):</strong> EventSource <strong>cannot
+send custom headers</strong> — auth via URL query param
+(<code>api_key=</code>). Reconnect with exponential backoff
+(1000·2^attempts, cap 30000ms). <strong>Chrome 116+ keeps SW alive while
+WebSocket active.</strong> WebSocketManager with ping (30s) + message
+queue. SW keep-alive: <code>chrome.alarms</code>
+<code>periodInMinutes:4</code> (&lt; 5min SW kill).</p>
+<p><strong>Credential storage (Dim09 §9):</strong> Storage schema keys
+(boba_config, boba_sid, boba_jwt, boba_refresh_token,
+boba_credentials{username,rememberMe — NO password}, boba_api_key,
+boba_offline_queue, boba_search_history, boba_preferences,
+boba_cached_torrents, boba_categories, boba_tags).
+<strong>chrome.storage.local NOT encrypted — store tokens only, never
+plaintext passwords; use chrome.identity for OAuth; token
+expiry+cleanup; clear on logout; HTTPS only; validate
+certs.</strong></p>
+<p><strong>Health checks (Dim09 §10):</strong> Separate liveness
+(<code>/api/v1/health</code>) from readiness
+(<code>/api/v1/health/ready</code>); parallel checks
+(boba/search/qbittorrent) with <code>AbortSignal.timeout(5000)</code>;
+status healthy/degraded/unhealthy.</p>
+<p><strong>Offline queue (Dim09 §11):</strong> Persist to storage.local,
+retry on reconnect, max 3 attempts per item, optimistic return when
+queued. <code>ConnectivityManager</code> on online/offline events
+(<code>navigator.onLine</code>). [Insight 6 strengthens this:
+navigator.onLine unreliable for LAN — use proactive
+<code>/app/version</code> ping every 30s via chrome.alarms.]</p>
+<p><strong>Rate limiting (Dim09 §12):</strong> <strong>Token
+bucket</strong> (strongest default). Per-endpoint limits: search
+{rps:2,burst:3}, torrents/add {5,10}, torrents/info {10,20},
+sync/maindata {2,5}, transfer/info {5,10}, default {10,20}.
+RequestBatcher (maxBatchSize 10, maxWaitMs 50).</p>
+<p><strong>Config defaults (Dim09 §13.2):</strong> bobaBaseUrl
+<code>http://localhost:8080</code>, searchApiUrl
+<code>http://localhost:7187</code>, qbittorrentUrl
+<code>http://localhost:8080</code>, authType <code>cookie</code>,
+requestTimeout 30000, maxRetries 3, retryBaseDelay 1000, retryMaxDelay
+30000, rateLimitRps 10, rateLimitBurst 20, enableOfflineQueue true,
+maxQueueSize 100, healthCheckInterval 30000, healthCheckTimeout 5000,
+sseReconnectDelay 5000, searchTimeout 30, searchLimit 100, syncInterval
+2000, backgroundSync true.</p>
+<p><strong>Manifest (Dim09 §14):</strong> permissions
+storage/alarms/notifications/contextMenus/activeTab; host_permissions
+localhost+127.0.0.1 (http+https, <code>*</code> port);
+<code>externally_connectable</code> matches localhost. <strong>Do NOT
+use <code>&lt;all_urls&gt;</code> in production — specify exact Boba
+URLs.</strong></p>
+<p><strong>Cross-refs:</strong> Dim01, Dim02, Dim11.</p>
+<hr />
+<h2 id="dimension-10-extension-uiux-design-patterns">Dimension 10 —
+Extension UI/UX Design Patterns</h2>
+<p><strong>Covers</strong> (Dim10 §1–12 + appendices): popup, options
+page, context menus, action/badge, notifications, keyboard shortcuts,
+side panel, icon states, dark/light theme, responsive design,
+accessibility, i18n.</p>
+<p><strong>Popup (Dim10 §1):</strong> Chrome hard limits <strong>800×600
+max / 25×25 min</strong> (Chromium <code>kMaxSize={800,600}</code>);
+sweet spot <strong>380–450px wide</strong> (top extensions ~400×500);
+recommended 300–400px wide × 400–600px tall. Use CSS reset, explicit
+body width (not 100%), <code>overflow-y:auto</code>, system font stack.
+Boba popup uses <code>--popup-width:400px</code>, min 400/max 580px
+height, fixed header (48px) + connection bar (28px) + scrollable main +
+footer (36px). States: empty / torrent-list / sending (progress ring) /
+success.</p>
+<p><strong>Options page (Dim10 §2.4):</strong>
+<code>chrome.storage.sync</code> for settings (100KB total, 8KB/item),
+<code>storage.local</code> for larger data, <code>storage.session</code>
+for temp MV3 state; storage API preserves types (no JSON.parse needed);
+<code>onChanged</code> listener.</p>
+<p><strong>Context menus (Dim10 §3):</strong> require
+<code>contextMenus</code> permission; <code>targetUrlPatterns</code>;
+types normal/checkbox/radio/separator; <strong>&gt;1 visible item
+auto-collapses into a parent labeled with extension name</strong>.</p>
+<p><strong>Badge/action (Dim10 §4):</strong> badge text <strong>max ~4
+chars visible</strong>; color RGBA[0-255] or CSS string; per-tab via
+tabId (auto-resets on tab close); setIcon accepts path object or
+ImageData.</p>
+<p><strong>Notifications (Dim10 §5):</strong> 4 templates
+(basic/image/list/progress), up to 2 buttons; events
+onClicked/onButtonClicked/onClosed/onPermissionLevelChanged.
+<strong>macOS Chrome 59+ shows native notifications (no images, list
+shows only first item).</strong></p>
+<p><strong>Keyboard shortcuts (Dim10 §6):</strong> <code>commands</code>
+— <strong>max 4 suggested keys/extension</strong>, all must include Ctrl
+or Alt; <code>_execute_action</code> (MV3); fires
+<code>chrome.commands.onCommand</code> in SW. Mac: ‘Ctrl’→‘Command’ by
+default, use ‘MacCtrl’ for actual Control. Boba commands:
+send-all-torrents (Ctrl+Shift+B), scan-page (Ctrl+Shift+S),
+open-dashboard (Ctrl+Shift+D), toggle-side-panel (Ctrl+Shift+P),
+_execute_action (Ctrl+Shift+U).</p>
+<p><strong>Side panel (Dim10 §7):</strong> <strong>Chrome 114+, MV3,
+<code>sidePanel</code> permission</strong>; opened by action click
+(setPanelBehavior), user gesture (sidePanel.open — needs
+tabId/windowId), context menu; <strong>cannot auto-open programmatically
+without user interaction</strong>; sidePanel.open() Chrome 116+, close()
+Chrome 141+. [Cross_verification #30 (low confidence): side panel Chrome
+114+ limits browser support.]</p>
+<p><strong>Icons (Dim10 §8):</strong> sizes 16 (favicon/menu), 32
+(Windows high-DPI), 48 (CWS), 128 (CWS listing); action toolbar uses
+16/24/32. Recommended set includes state variants: default, detecting,
+sending, error, offline, success.</p>
+<p><strong>Theme (Dim10 §9):</strong> dark via
+<code>prefers-color-scheme</code> media query +
+<code>&lt;meta color-scheme&gt;</code>; CSS variables; JS detect via
+<code>matchMedia</code>.</p>
+<p><strong>Responsive/accessibility/i18n (Dim10 §10–12):</strong> popup
+max 800×600 / recommended 380–450px / content-driven height with
+overflow-y:auto. ARIA: aria-label for icon-only buttons, role for custom
+widgets, visible focus indicators. i18n:
+<code>_locales/&lt;locale&gt;/messages.json</code>, manifest MUST define
+<code>default_locale</code> if _locales exists, <code>__MSG_key__</code>
+in manifest/CSS, <code>chrome.i18n.getMessage()</code> in JS, up to 9
+placeholders; predefined @<span class="citation"
+data-cites="ui_locale">@ui_locale</span>/@<span class="citation"
+data-cites="bidi_">@bidi_</span>* for RTL.</p>
+<p><strong>API version reference (Dim10 C):</strong> chrome.action
+(Chrome 88), storage.session (102), sidePanel (114), sidePanel.open
+(116), sidePanel.close (141), notifications (28), contextMenus (6),
+commands (35), i18n (1), storage.sync/local (1).</p>
+<p><strong>Cross-refs:</strong> Dim01 (“send to” satellite UI — Insight
+5), Dim09 (badge sync — Insight 9), Dim05 (tab group UI).</p>
+<hr />
+<h2 id="dimension-11-security-model-privacy-architecture">Dimension 11 —
+Security Model &amp; Privacy Architecture</h2>
+<p><strong>Covers</strong> (Dim11 §1–18): STRIDE threat model, manifest
+permissions, host pattern matching, credential encryption,
+content-script isolation, CSP, HTTPS enforcement, certificate validation
+for self-hosted Boba, input validation, rate limiting, privacy
+architecture, secure communication, update security, sandboxed iframes,
+a security checklist, privacy policy template.</p>
+<p><strong>Design principles (Dim11 §1):</strong> Least Privilege,
+Defense in Depth, Zero Trust, Secure by Default, Privacy First.</p>
+<p><strong>STRIDE (Dim11 §2):</strong> Spoofing (S1–S4: cert
+pinning/HTTPS, origin validation, isolated world/strict matches, magnet
+hash validation), Tampering (T1–T4: store-signed packages, HTTPS/HSTS,
+AES-GCM encryption, infohash validation), Repudiation (R1–R2: optional
+audit log), Information Disclosure (I1–I5: AES-256-GCM, minimal matches
+no <code>&lt;all_urls&gt;</code>, restrict web_accessible_resources +
+use_dynamic_url, sender validation, no telemetry of server URLs), DoS
+(D1–D3: client-side rate limiting, document_idle, storage quotas),
+Elevation of Privilege (E1–E3: sender validation + action allow-listing,
+keep Chrome updated, no eval + strict CSP). Trust boundaries
+TB1–TB4.</p>
+<p><strong>Permissions (Dim11 §3):</strong> <strong>Minimal
+manifest</strong> permissions = storage, alarms, notifications,
+activeTab; optional clipboardWrite; host_permissions = localhost only
+(http+https); optional_host_permissions <code>https://*/*</code>.
+<strong>MV3 CSP is an object</strong> (<code>extension_pages</code> +
+<code>sandbox</code>) —
+<code>script-src</code>/<code>object-src</code>/<code>worker-src</code>
+only
+<code>'self'</code>/<code>'none'</code>/<code>'wasm-unsafe-eval'</code>;
+no unsafe-inline/unsafe-eval/remote scripts. <strong>NEVER
+request</strong> <code>&lt;all_urls&gt;</code>, <code>tabs</code>,
+<code>cookies</code>, <code>webRequest</code>, <code>scripting</code>
+(if declared in manifest), <code>downloads</code>,
+<code>history</code>.</p>
+<p><strong>Host patterns (Dim11 §4):</strong> Use specific per-site
+<code>matches</code> (thepiratebay/1337x/nyaa/rutracker/yts/eztv/…).
+<strong>Wildcard <code>matches</code> nullify postMessage event-source
+protection</strong> (any origin can trigger the channel) — avoid
+wildcards.</p>
+<p><strong>Credential encryption (Dim11 §5) — concrete
+parameters:</strong> <strong>AES-256-GCM</strong> +
+<strong>PBKDF2-HMAC-SHA256, 100,000 iterations</strong>; salt 128-bit
+(16 bytes) random per encryption; IV 96-bit (12 bytes) random per
+encryption; non-extractable CryptoKey (not persisted); master password
+never stored (provided per session); only encrypted data on disk.
+Decrypted creds cached in <code>chrome.storage.session</code>
+(memory-only, lost on restart). <code>chrome.storage.local</code> is NOT
+encrypted by default.</p>
+<p><strong>Content-script isolation (Dim11 §6):</strong> isolated world
+— no access to page JS variables/functions, shares only DOM; prevents
+page JS reaching extension APIs.</p>
+<p><strong>CSP (Dim11 §7):</strong> Default extension_pages
+<code>script-src 'self'; object-src 'self';</code>. Boba CSP:
+<code>default-src 'self'; script-src 'self'; object-src 'self'; connect-src 'self' https:; img-src 'self' data:; style-src 'self' 'unsafe-inline';</code>.</p>
+<p><strong>HTTPS / certificates (Dim11 §8–9, §13):</strong> HTTPS-only
+(except localhost); HSTS. Self-hosted Boba self-signed cert: certificate
+bundling/pinning OR instruct user to install self-signed CA into system
+trusted root; optional fingerprint verification. Chrome respects system
+cert store.</p>
+<p><strong>Input validation (Dim11 §10):</strong> v1 magnet =
+<code>xt=urn:btih:</code> 40 hex (or 32 base32); v2 =
+<code>urn:btmh:</code> 64 hex; validate info-hash length; sanitize
+display names (textContent not innerHTML); validate Boba URL
+(protocol/hostname/no embedded credentials); <strong>reject
+<code>javascript:</code>/<code>data:</code>/<code>vbscript:</code>
+protocols; block dangerous ports.</strong></p>
+<p><strong>Rate limiting (Dim11 §11):</strong>
+<code>chrome.alarms</code> (MV3-recommended, survives SW termination +
+browser restart). Presets: conservative {10 req/60s}, normal {30/60s},
+relaxed {60/60s}, custom. User-configurable.</p>
+<p><strong>Privacy (Dim11 §12):</strong> Data matrix — collected: Boba
+URL/creds (encrypted local, until deleted), magnet links/torrent
+names/tab URLs (ephemeral, immediate discard); NOT collected: page
+content, browsing history, IP. Analytics/error-reporting <strong>opt-in
+only</strong> (analytics 30-day, errors 7-day local). Chrome Web Store
+“Limited Use” policy. Defaults: enableAnalytics false,
+enableErrorReporting false, autoClearHistory true, historyRetentionDays
+7, requirePasswordOnStartup true, autoLockTimeoutMinutes 30,
+verifyCertificates true, enforceHttps true. <code>eraseAllData()</code>
+for GDPR right-to-erasure. <strong>No third-party analytics; no data
+selling.</strong></p>
+<p><strong>Secure communication (Dim11 §13):</strong> Set
+<code>credentials:'omit'</code> and
+<code>referrerPolicy:'no-referrer'</code> on all fetch.</p>
+<p><strong>Update security (Dim11 §14):</strong> Distribute only through
+official stores (cryptographically signed); Firefox self-hosted update
+manifest on HTTPS with <code>update_hash</code>; verify permissions
+didn’t change on update + notify users.</p>
+<p><strong>Sandboxed iframes (Dim11 §15):</strong> for untrusted content
+rendering when needed.</p>
+<p><strong>Security checklist (Dim11 §16) — consolidated mandatory
+items:</strong> min permissions; host_permissions separate;
+optional_permissions for non-essential; never
+<code>&lt;all_urls&gt;</code>/tabs/cookies/history/downloads;
+<code>run_at:document_idle</code>; <code>all_frames:false</code> unless
+required; <code>use_dynamic_url:true</code>; restrict
+web_accessible_resources to matches; never include HTML in
+web_accessible_resources; strict CSP; AES-256-GCM creds; PBKDF2 ≥100k
+iterations; never store master password; storage.session for decrypted
+cache; clear on restart; “Clear All Data” function; validate
+<code>sender.id</code> + <code>sender.url</code> (chrome-extension://)
+on ALL onMessage handlers; action allow-listing; HTTPS for external;
+block non-HTTPS Boba (except localhost); <code>credentials:'omit'</code>
++ <code>referrerPolicy:'no-referrer'</code>; validate magnet links
+(regex + info-hash length 40 v1/64 v2); sanitize display names
+(textContent); reject javascript:/data:/vbscript:; block dangerous
+ports; client-side rate limiting via alarms; user-configurable limits;
+official-store distribution; HTTPS update manifests; no eval/new
+Function/inline scripts; no innerHTML with untrusted data; no hardcoded
+keys/creds/URLs; no remote script loading; no analytics without opt-in;
+privacy policy.</p>
+<p><strong>Cross-refs:</strong> Dim03 (isolated world,
+cross_verification #12), Dim04 (cross-browser permissions), Dim09
+(auth/storage). Insight 7 (privacy-first activeTab) is medium confidence
+— some reviewers prefer declared host_permissions.</p>
+<hr />
+<h2 id="dimension-12-testing-build-system-store-distribution">Dimension
+12 — Testing, Build System &amp; Store Distribution</h2>
+<p><strong>Covers</strong> (Dim12 §1–19 + appendices): tech stack, Jest
+setup, browser-API mocking, Playwright E2E, content-script/SW testing,
+build-tool selection, TypeScript config, lint/format, CI/CD, packaging,
+store submission, version management, coverage, cross-browser build,
+pre-commit hooks, dev-workflow README.</p>
+<p><strong>Key decisions (Dim12 §1):</strong> Build =
+<strong>WXT</strong> (Vite); test = <strong>Jest (unit) + Playwright
+(E2E)</strong>; mock = manual Jest mocks +
+<strong>sinon-chrome</strong>; CI = <strong>GitHub Actions</strong>
+matrix builds; versioning = <strong>release-please + Conventional
+Commits</strong>; stores = Chrome/Firefox/Edge/Opera/Yandex.</p>
+<p><strong>Tech stack versions (Dim12 §2):</strong> WXT ^0.20.x, Vite
+^6.x, TypeScript ^5.7.x, chrome-types ^0.1.x, webextension-polyfill
+^0.12.x, Jest ^29.x, Playwright ^1.49.x, ESLint ^9.x, typescript-eslint
+^8.x, Prettier ^3.4.x, Husky ^9.x, lint-staged ^15.x, release-please
+^16.x, web-ext ^8.x.</p>
+<p><strong>Testing (Dim12 §3–7):</strong> Jest preset ts-jest,
+testEnvironment jsdom, setupFiles mock-extension-apis.
+<strong>Playwright requires
+<code>chromium.launchPersistentContext</code> with
+<code>--load-extension</code> +
+<code>--disable-extensions-except</code></strong> (extensions attach to
+browser profiles at launch, not individual tabs — needs persistent
+context). Firefox E2E may have extension-ID extraction limits
+(cross_verification #29, low confidence). jsdom for DOM-scraping logic
+tests.</p>
+<p><strong>Build tool (Dim12 §8):</strong> WXT recommended (Vite under
+hood, Rollup production, sub-second dev start, sub-50ms HMR, supports
+all browsers + MV2/MV3, first-class TS, file-based entrypoints,
+automated publishing, 4K+ stars). Vite vs Webpack: &lt;1s cold start vs
+5–10s, &lt;50ms HMR vs 1.5–3s.
+<code>npx wxt build -b chrome|firefox|edge|opera|safari</code>.</p>
+<p><strong>TS/lint (Dim12 §9–10):</strong> ESLint 9+ flat config
+(<code>eslint.config.mjs</code>); Prettier 3.4.x.</p>
+<p><strong>CI/CD (Dim12 §11):</strong> GitHub Actions main CI + release
+workflow + release-please. Build matrix browsers [chrome, firefox, edge]
+× node [18, 20, 22] (exclude edge on node 18), fail-fast false.</p>
+<p><strong>Packaging (Dim12 §12):</strong> WXT build + ZIP; manifest
+validation; CRX generation for self-distribution.</p>
+<p><strong>Store distribution (Dim12 §13) — concrete:</strong> -
+Requirements summary table: Chrome ($5 one-time, API/CI upload, &lt;1h
+auto review, auto-publish yes, 2FA yes); Firefox (free, web-ext CLI,
+seconds auto + manual after, partial auto, 2FA yes); Edge (free, manual
+Partner Center, up to 7 days, no auto, 2FA yes); Opera (free, manual,
+manual review, no auto, no 2FA); Yandex (free, manual, unknown, no auto,
+no 2FA). - Chrome: $5 fee + OAuth 2.0
+(CHROME_CLIENT_ID/SECRET/REFRESH_TOKEN/EXTENSION_ID), publish via
+<code>chrome-webstore-upload-cli</code>. - Firefox: API key
+(AMO_JWT_ISSUER/SECRET), <code>web-ext sign --channel=listed</code>;
+must set <code>browser_specific_settings.gecko.id</code>; submit source
+if minified. - Edge: Partner Center manual first version. - Opera:
+manual upload, manual review no SLA, accepts standard Chromium .zip. -
+Pre-submission checklist: manifest updated; icons 16/32/48/128/512;
+clear description; screenshots 640×480 or 1280×800; privacy policy URL;
+no remote code; CSP set; <strong>no console.log in production</strong>;
+source maps removed.</p>
+<p><strong>Versioning (Dim12 §14):</strong> Conventional Commits →
+SemVer (fix:→PATCH, feat:→MINOR, BREAKING CHANGE:→MAJOR). release-please
+creates Release PRs.</p>
+<p><strong>Coverage (Dim12 §15):</strong> <strong>coverageThreshold
+global 70% (branches/functions/lines/statements)</strong> [note: Insight
+10 aspirationally targets 80%+]; reporters
+text/text-summary/lcov/html/json-summary; Codecov/Coveralls upload;
+optional SonarQube. [Insight 10: match Boba’s enterprise bar —
+pytest/Playwright/SonarQube/Snyk/Semgrep/Trivy/Gitleaks; security
+scanning in CI; signed releases; CI auto-publishes to all 5 stores.]</p>
+<p><strong>Cross-browser (Dim12 §16):</strong> WXT auto builds;
+browser-specific code via <code>getBrowser()</code> (gecko in manifest →
+firefox, Edg/ → edge, OPR/ → opera); webextension-polyfill; build matrix
+in CI.</p>
+<p><strong>Pre-commit (Dim12 §17):</strong> Husky 9+
+(<code>.husky/</code> + core.hooksPath) + lint-staged (staged files
+only).</p>
+<p><strong>Cross-refs:</strong> Dim01 (Boba quality bar), Dim04
+(build/distribution), Dim11 (security scanning).</p>
+<hr />
+<h2 id="insights-boba_extension_insight.md-all-10">Insights
+(boba_extension_insight.md) — all 10</h2>
+<ol type="1">
+<li><strong>Zero-Config Discovery</strong> (Dim01+09+04, High):
+Auto-discover services by trying well-known localhost ports (7187, 7189,
+8080) + <code>/app/version</code> / <code>/api/v2/app/version</code>
+health pings → one-click “Auto-Discover” vs 5+ manual fields. Mirrors
+Sonarr/Radarr.</li>
+<li><strong>Unified Torrent Identity</strong> (Dim06+07+09, High):
+Normalize every discovered item to
+<code>{infoHash, name, source, type:'magnet'|'torrent-file'|'torrent-url'}</code>
+— magnet (<code>xt=urn:btih</code>) and .torrent (SHA-1 of bencoded
+info) converge on the same 40-char BTIH. Enables dedup across a whole
+tab group + “already in queue” indicators; aligns with Boba’s own
+infohash dedup.</li>
+<li><strong>Progressive Enhancement Content Strategy</strong>
+(Dim08+06+10, High): 3-tier detection — (1) universal magnet/.torrent
+link scan (catches ~90% via
+<code>querySelectorAll('a[href^="magnet:"]')</code>), (2) site-specific
+selectors for top ~20 sites, (3) text-based magnet detection for
+forums/Reddit + MutationObserver. Works on ANY site immediately (unique
+vs competitors).</li>
+<li><strong>Yandex Tab Group as Batch Job</strong> (Dim05+01+10, High):
+Right-click group → “Send All to Boba” → extract all tab URLs → parse
+each → submit as batch to <code>/api/v1/download</code> (multiple URLs
+newline-separated). Differentiator — no competitor treats tab groups as
+batch operations.</li>
+<li><strong>Extension as Boba Satellite</strong> (Dim01+09+11, High):
+Design as a satellite (“send to”) client, not a management tool — use
+Boba’s auth model (API keys, not its own), respect Boba config
+(categories/save paths), extend Boba UI not duplicate it. ~30% less
+code, single config source.</li>
+<li><strong>Offline-Aware Queue</strong> (Dim09+03+11, High): Boba is
+self-hosted → frequently offline. Detect offline → queue in
+<code>chrome.storage.local</code> → retry exponential backoff → sync
+when back. <strong>navigator.onLine unreliable for LAN</strong> —
+proactive <code>/app/version</code> ping every 30s via chrome.alarms +
+persistent queue.</li>
+<li><strong>Privacy-First Permission Model</strong> (Dim11+03+04,
+<strong>Medium</strong> — some store reviewers prefer declared
+host_permissions): Use <code>activeTab</code> primary + optional host
+permissions for popular sites; inject content scripts via
+<code>chrome.scripting.executeScript()</code> on demand. Least
+privilege, better store approval. Tradeoff: requires a click before
+detection.</li>
+<li><strong>Multi-Client Gateway</strong> (Dim02+09+01,
+<strong>Medium</strong> — adds complexity, v2 feature): Abstract a
+<code>TorrentClient</code> interface with pluggable adapters
+(qBittorrent native, Transmission RPC, Deluge WebUI, rTorrent).
+Future-proof; Boba is one adapter.</li>
+<li><strong>Real-Time Badge Sync</strong> (Dim03+09+10, High): Poll
+<code>/sync/maindata</code> with incremental RID → badge text = download
+count, color = status (green downloading, blue complete, red error) via
+<code>setBadgeText</code>/<code>setBadgeBackgroundColor</code>. Ambient
+awareness, no notification spam.</li>
+<li><strong>Enterprise-Grade Testing</strong> (Dim12+01+11, High): Match
+Boba’s bar — <strong>80%+ coverage</strong>, automated E2E with real
+Boba in Docker, security scanning (Sonar/Snyk/Semgrep/Trivy/Gitleaks) in
+CI, signed releases, CI auto-publish to all 5 stores. Most extensions
+have zero tests — this is a differentiator.</li>
+</ol>
+<hr />
+<h2
+id="cross-verification-boba_extension_cross_verification.md">Cross-Verification
+(boba_extension_cross_verification.md)</h2>
+<p><strong>Date 2026-06-06; 12 dimensions; 27,560 research lines. Tiers:
+14 High / 11 Medium / 5 Low / 4 Conflicts (all resolved). Stats: High
+45%, Medium 35%, Low 16%.</strong></p>
+<p><strong>High confidence (14):</strong> qBittorrent cookie auth via
+<code>/api/v2/auth/login</code> → SID; <code>/torrents/add</code>
+accepts magnet in <code>urls</code> + .torrent via multipart
+<code>torrents</code>; MV3 requires service workers
+(Chrome/Opera/Chromium); chrome.tabGroups needs Chrome
+89+/MV3/tabGroups+tabs perms; magnet format
+<code>magnet:?xt=urn:btih:&lt;40-hex&gt;&amp;dn&amp;tr</code>; BTIH =
+SHA-1 of bencoded info dict; bencode types i/string/l/d; extensions
+bypass CORS for host_permissions via SW fetch; Boba FastAPI :7187 / Go
+:7189 / qBittorrent typically :8080; webextension-polyfill bridges
+browser.* across Chromium; Yandex Chromium v147+ supports chrome.*
+(browser://tune/); content scripts isolated world; MV3 storage.local
+OS-encrypted + survives restart; <strong>WXT recommended build
+tool</strong>.</p>
+<p><strong>Medium confidence (11):</strong> Boba uses JSON persistence
+(no relational DB) — in-memory dataclasses; qBittorrent v5.0 renamed
+pausedUP→stoppedUP / pausedDL→stoppedDL; <strong>Boba has 48 plugins (40
+public + 8 private)</strong>; Offscreen Documents enable DOM ops SW
+cannot; Firefox MV3 uses Event Pages (not SW); Opera unique
+<code>sidebarAction</code>; Yandex own extension store (separate from
+CWS); TreeWalker faster than recursive DOM walk; <strong>debounced
+MutationObserver at 500ms ~88× faster than polling</strong>;
+<strong>AES-256-GCM + PBKDF2 100k iterations recommended</strong>; WXT
+auto cross-browser builds.</p>
+<p><strong>Low confidence (5, needs verification):</strong> Boba SSE at
+<code>/api/v1/search/stream/{id}</code> — path not confirmed in official
+docs; exact Boba endpoint paths may vary (Python + Go backends);
+<strong>qBittorrent API key auth (Bearer) only v5.2.0+</strong>; Firefox
+E2E Playwright may have extension-ID extraction limits; side panel API
+Chrome 114+ limits browser support.</p>
+<p><strong>Conflicts found + resolutions (4, ALL resolved):</strong> -
+<strong>C1 — Auth method for Boba APIs:</strong> Dim02 says
+cookie-based, Dim09 says JWT/API key. <strong>RESOLVED: both valid —
+direct qBittorrent uses cookies; Boba’s own APIs may use JWT. Extension
+should support both.</strong> - <strong>C2 — Build tool:</strong> Dim12
+(WXT) vs Dim03 (Vite). <strong>RESOLVED: WXT is built on Vite — use WXT
+as the framework.</strong> - <strong>C3 — MV3 vs MV2 for
+Firefox:</strong> Dim03 (MV3 SW) vs Dim04 (MV2 for compat).
+<strong>RESOLVED: use MV3 everywhere; WXT handles Firefox Event Pages
+automatically.</strong> - <strong>C4 — Boba port numbers:</strong> Dim01
+mentions 7187 (FastAPI) + 7189 (Go); docker-compose may vary.
+<strong>RESOLVED: both correct — 7187 primary Python API, 7189 Go
+backend; user-configurable in extension.</strong></p>
+<p><strong>Overall assessment:</strong> Findings “highly consistent”
+with strong authoritative sourcing; all 4 conflicts resolved;
+architecture well-understood and ready for implementation. 10 validated
+architectural decisions: (1) MV3 + SW for Chrome/Opera/Yandex/Chromium;
+(2) WXT build tool; (3) direct qBittorrent WebUI API integration; (4)
+Boba 48-tracker plugin backend; (5) Tab Groups fully supported in Yandex
+(Chromium 147+); (6) mature magnet parsing; (7) bencode parsing feasible
+in browser JS/TS; (8) CORS bypassed via host_permissions from SW — no
+proxy needed; (9) AES-256-GCM credential encryption meets best
+practices; (10) Jest + Playwright industry-standard testing stack.</p>
+<hr />
+<h2
+id="consolidated-hard-requirements-decisions-constraints-risks-the-implementation-backbone">CONSOLIDATED
+HARD REQUIREMENTS / DECISIONS / CONSTRAINTS / RISKS (the implementation
+backbone)</h2>
+<h3 id="architecture-decisions-mandated-by-research">Architecture
+decisions (mandated by research)</h3>
+<ul>
+<li><strong>MV3 everywhere</strong>, service-worker background
+(Chrome/Edge/Opera/Yandex/Chromium); Firefox uses Event Pages (handled
+by WXT).</li>
+<li><strong>WXT</strong> (Vite-based) as the cross-browser build
+framework; per-browser manifest generation.</li>
+<li><strong>webextension-polyfill</strong> for <code>browser.*</code>
+Promise API across all targets; do own runtime feature detection for
+Firefox-only APIs.</li>
+<li>Extension = <strong>satellite “send-to” client</strong> of Boba (not
+a management tool); use Boba’s config/auth, extend (not duplicate)
+Boba’s UI.</li>
+<li><strong>All cross-origin fetch in the service worker</strong>
+(content scripts cannot cross-origin fetch since Chrome 85); bypass CORS
+via <code>host_permissions</code>.</li>
+<li><strong>Auto-discovery</strong> of services via well-known localhost
+ports + health endpoints; manual config fallback.</li>
+<li><strong>Support BOTH</strong> cookie auth (direct qBittorrent) AND
+JWT/API-key (Boba’s own APIs) — C1 resolution.</li>
+<li>Treat <strong>Dim01 endpoints/ports as authoritative</strong>
+(qBittorrent :7185, FastAPI :7187, Go :7189;
+<code>/api/v1/search</code>, <code>/api/v1/search/stream/{id}</code>,
+<code>/api/v1/download</code>, <code>/api/v1/download/file</code>,
+<code>/api/v1/magnet</code>, <code>/api/v1/auth/status</code>,
+<code>/api/v1/config</code>, <code>/health</code>); Dim09’s :8080 + JWT
+endpoints are inferred/client-architecture reference. Ports
+user-configurable (C4).</li>
+</ul>
+<h3 id="hard-technical-constraints">Hard technical constraints</h3>
+<ul>
+<li>Service worker terminates at <strong>30s idle / 5min single request
+/ 30s fetch response</strong> — use <code>chrome.alarms</code>
+keep-alive (<code>periodInMinutes</code> 0.5 for 30s tasks, 4 for
+SW-alive &lt; 5min kill); register ALL listeners synchronously at top
+level; <code>return true</code> for async sendResponse.</li>
+<li>Storage quotas: local ~10MB, sync ~100KB total/8KB item, session
+~10MB (in-memory). Badge text ≤4 chars.</li>
+<li>Popup max 800×600 / min 25×25; use 380–450px wide.</li>
+<li>EventSource cannot send custom headers — auth via URL query
+param.</li>
+<li>qBittorrent: Referer/Origin MUST match Host (CSRF); 403 = IP banned
+(use exponential backoff); 405 wrong method (v4.4.4+); 415 invalid
+torrent; 200 ≠ guaranteed added; search 409 if &gt;5 concurrent; v5
+state renames pausedUP→stoppedUP / pausedDL→stoppedDL.</li>
+<li>Infohash = SHA-1 of the <strong>RAW bencoded info dict</strong>
+(never decode-then-re-encode); Web Crypto SHA-1 needs HTTPS secure
+context.</li>
+<li>base32 (32-char) magnet hashes MUST be converted to hex
+(40-char).</li>
+<li>tabGroups: Chrome 89+/MV3; groupId not persistent across restarts
+(identify by title+color+URLs); collapsed groups still API-accessible;
+Firefox incompatible (Chrome/Yandex only); Chrome 148+ chrome://newtab
+cannot be grouped.</li>
+<li>Side panel Chrome 114+ only (open 116+, close 141+); cannot
+auto-open without user gesture.</li>
+<li>Firefox MV3 REQUIRES
+<code>browser_specific_settings.gecko.id</code>; version
+<code>x.y.z</code> only (no letters); data_collection_permissions
+required for new AMO submissions since Nov 2025.</li>
+<li>Opera does NOT support storage.sync/storage.managed; notifications
+partial on Mac.</li>
+</ul>
+<h3 id="securityprivacy-requirements-mandatory">Security/privacy
+requirements (mandatory)</h3>
+<ul>
+<li><strong>Minimal permissions</strong>: storage, alarms,
+notifications, activeTab; optional clipboardWrite; host_permissions
+localhost only (+ optional <code>https://*/*</code>). NEVER
+<code>&lt;all_urls&gt;</code>/tabs/cookies/webRequest/downloads/history.</li>
+<li>Specific per-site <code>matches</code> (never wildcard — wildcards
+nullify postMessage protection).</li>
+<li><strong>AES-256-GCM + PBKDF2-HMAC-SHA256 100,000
+iterations</strong>, 128-bit salt, 96-bit IV per encryption;
+non-extractable key; master password never stored; decrypted cache in
+storage.session only; “Clear All Data” (GDPR).</li>
+<li>Never store plaintext passwords; tokens only; clear on logout.</li>
+<li>Validate <code>sender.id</code> + <code>sender.url</code>
+(chrome-extension://) on ALL onMessage; action allow-listing.</li>
+<li>HTTPS only (except localhost); <code>credentials:'omit'</code> +
+<code>referrerPolicy:'no-referrer'</code> on fetch; cert
+validation/pinning for self-signed Boba.</li>
+<li>Validate magnet/info-hash (40 hex v1 / 64 hex v2); sanitize display
+names (textContent not innerHTML); reject javascript:/data:/vbscript:;
+block dangerous ports.</li>
+<li>MV3 strict CSP object (script-src/object-src ‘self’); no eval/new
+Function/inline scripts/remote code/hardcoded creds.</li>
+<li>Client-side rate limiting via chrome.alarms (token bucket;
+per-endpoint limits; presets conservative/normal/relaxed); respect
+Retry-After.</li>
+<li>Analytics/error-reporting opt-in only; no third-party data
+sharing/selling; privacy policy; official-store distribution + signed
+updates.</li>
+<li>STRIDE-mapped mitigations across S/T/R/I/D/E.</li>
+</ul>
+<h3 id="detectionparsing-requirements">Detection/parsing
+requirements</h3>
+<ul>
+<li>3-tier detection: universal link scan + site-specific selectors (top
+~20 sites) + text-based + MutationObserver (debounce 500ms, ~88× faster
+than polling).</li>
+<li>DOM-first scanning; chunk large text (100KB) against catastrophic
+backtracking; handle iframes (all_frames:true + match_about_blank:true)
++ Shadow DOM (recursive shadowRoot).</li>
+<li>Unified identity normalization
+<code>{infoHash, name, source, type}</code>; dedup by infohash.</li>
+<li>Bencode parser must enforce sorted dict keys; reject invalid
+metainfo; size limit (≤10MB typical/50MB max); private-torrent passkey
+sanitization.</li>
+</ul>
+<h3 id="resilience-requirements">Resilience requirements</h3>
+<ul>
+<li>Offline queue (storage.local, exponential backoff w/ jitter — base
+1000ms, max 30000ms, mult 2, jitter 0.5, max 3 attempts); proactive
+health ping every 30s (navigator.onLine unreliable for LAN).</li>
+<li>Retry classification: retry 0/429/500/502/503/504/401-after-refresh;
+don’t retry 400/403/404/415/parse errors.</li>
+<li>Real-time badge via <code>/sync/maindata</code> incremental RID
+polling (~2s); recommended sync 1–5s.</li>
+</ul>
+<h3
+id="testingbuilddistribution-requirements">Testing/build/distribution
+requirements</h3>
+<ul>
+<li><strong>Jest (unit) + Playwright (E2E with persistent context +
+–load-extension)</strong>; jsdom for DOM tests; sinon-chrome
+mocking.</li>
+<li>Coverage threshold ≥70% (config) / aspirational 80%+ (Insight 10);
+reporters lcov/html/json-summary; Codecov/Coveralls; optional SonarQube
++ security scanners.</li>
+<li>GitHub Actions matrix (browsers × node 18/20/22); release-please +
+Conventional Commits → SemVer.</li>
+<li>Store assets: icons 16/32/48/128 (+512 for some); screenshots
+640×480 or 1280×800; privacy policy; no console.log/source maps in prod;
+CSP set; no remote code.</li>
+<li>Per-store: Chrome $5 one-time + OAuth API publish + 2FA + MV3;
+Firefox API key + gecko.id + source-if-minified +
+data_collection_permissions; Edge manual Partner Center + 2FA; Opera
+manual review no SLA white-bg 612×408 screenshots; Yandex via
+CWS/browser://tune/.</li>
+</ul>
+<h3
+id="open-questions-low-confidence-items-to-verify-beforeduring-implementation">Open
+questions / low-confidence items to verify before/during
+implementation</h3>
+<ol type="1">
+<li><strong>Exact Boba endpoint paths</strong> — Dim01
+(<code>/api/v1/download</code>, <code>/api/v1/search/stream/{id}</code>)
+vs Dim09 inferred (<code>/api/v1/torrents</code>,
+<code>/api/v1/health</code>). SSE path
+<code>/api/v1/search/stream/{id}</code> is repo-derived but “not
+confirmed in official docs” (cross_verification #26–27). <strong>Confirm
+against the live OpenAPI spec (<code>/openapi.json</code> on :7187)
+before coding the API client.</strong></li>
+<li><strong>Boba’s actual auth for its own APIs</strong> — does the
+FastAPI service require any auth, or is it open (CORS <code>*</code>)?
+Dim01 shows <code>/api/v1/auth/qbittorrent</code> but no Boba-level JWT;
+Dim09 assumes JWT. C1 says support both — but the real default must be
+confirmed.</li>
+<li><strong>Port defaults</strong> — qBittorrent is :7185 (Dim01) not
+:8080 (Dim09 default). The extension’s default config and auto-discovery
+list must include 7185/7186/7187/7188/7189/9117 (Dim01) plus 8080
+fallback.</li>
+<li><strong>qBittorrent API key auth (v5.2.0+ only)</strong> — low
+confidence; only available on newer versions; cookie auth is the safe
+baseline.</li>
+<li><strong>Firefox E2E with Playwright</strong> — extension-ID
+extraction limitations (low confidence) — verify Firefox E2E
+approach.</li>
+<li><strong>Privacy-first activeTab vs declared
+host_permissions</strong> (Insight 7, medium) — some store reviewers
+prefer declared host_permissions; decide the permission model with
+store-approval risk in mind.</li>
+<li><strong>Multi-client gateway</strong> (Insight 8, medium) —
+explicitly deferred to v2; the v1 architecture should leave a
+<code>TorrentClient</code> seam but target Boba only.</li>
+<li><strong>Boba’s own <code>/api/v1/download</code> semantics</strong>
+— does it accept magnet URIs and tracker URLs directly, or only
+<code>result_id</code> from a prior search? Dim01 DownloadRequest is
+<code>{result_id, download_urls}</code> — clarify whether arbitrary
+magnets (not from a Boba search) can be added directly, or whether the
+extension must add them straight to qBittorrent
+<code>/api/v2/torrents/add</code>.</li>
+</ol>

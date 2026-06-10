@@ -1,0 +1,1154 @@
+<h1 id="diagrams-extraction">03 — Diagrams extraction</h1>
+<p>Exhaustive extraction of every architecture diagram for the
+<strong>BobaLink</strong> browser-extension implementation. Source:
+<code>/Volumes/T7/Projects/Boba/docs/research/browser_extension/Browser Torrent Extension Guide/diagrams/</code>.
+Project name in diagrams = <strong>BobaLink</strong>.</p>
+<h2 id="files-read">Files read</h2>
+<table>
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 22%" />
+<col style="width: 52%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Diagram</th>
+<th>Source formats read</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>01</td>
+<td>System architecture</td>
+<td><code>.mmd</code> + <code>.drawio.xml</code></td>
+<td>drawio adds Chrome APIs panel, Docker networks, legend flows</td>
+</tr>
+<tr>
+<td>02</td>
+<td>Data flow — torrent detection → download</td>
+<td><code>.mmd</code></td>
+<td>(no drawio/puml)</td>
+</tr>
+<tr>
+<td>03</td>
+<td>Data flow — tab-groups batch</td>
+<td><code>.mmd</code> + <code>.drawio.xml</code></td>
+<td>drawio is a stub (swimlanes only)</td>
+</tr>
+<tr>
+<td>04</td>
+<td>Sequence — single torrent send</td>
+<td><code>.mmd</code> + <code>.puml</code></td>
+<td>mmd has <code>par</code>, puml has <code>alt</code> (same two
+paths)</td>
+</tr>
+<tr>
+<td>05</td>
+<td>Sequence — tab-group batch send</td>
+<td><code>.mmd</code> + <code>.puml</code></td>
+<td></td>
+</tr>
+<tr>
+<td>06</td>
+<td>Component diagram</td>
+<td><code>.mmd</code> + <code>.puml</code></td>
+<td>mmd lists per-file functions; puml is package-only</td>
+</tr>
+<tr>
+<td>07</td>
+<td>ER diagram (DATA MODEL)</td>
+<td><code>.mmd</code> + <code>.puml</code> +
+<code>.drawio.xml</code></td>
+<td>mmd is authoritative (most fields); drawio drops a few fields</td>
+</tr>
+<tr>
+<td>08</td>
+<td>Extension lifecycle</td>
+<td><code>.mmd</code></td>
+<td></td>
+</tr>
+<tr>
+<td>09</td>
+<td>Offline-queue state machine</td>
+<td><code>.mmd</code></td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Security architecture</td>
+<td><code>.mmd</code> + <code>.drawio.xml</code></td>
+<td></td>
+</tr>
+<tr>
+<td>11</td>
+<td>Build pipeline</td>
+<td><code>.mmd</code></td>
+<td></td>
+</tr>
+<tr>
+<td>12</td>
+<td>Compatibility matrix</td>
+<td><code>.html</code> (read in full)</td>
+<td>no <code>.mmd</code>; only <code>.html</code>/<code>.svg</code>
+exist</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>.svg</code> / rendered <code>.html</code> exports of 01–11
+deliberately NOT read (redundant renders).
+<code>12-compatibility-matrix.html</code> read because no text-source
+<code>.mmd</code> exists for it.</p>
+</blockquote>
+<hr />
+<h2 id="manifest">1) Manifest</h2>
+<p>See “Files read” table above.</p>
+<hr />
+<h2 id="complete-data-model-er-diagram-07">2) COMPLETE DATA MODEL (ER
+diagram #07)</h2>
+<p>6 entities. The <code>.mmd</code> is authoritative (carries the most
+fields + key/comment annotations). PlantUML and drawio render fewer
+fields (gaps noted per-entity). Types below: <code>.mmd</code> uses
+generic
+(<code>string</code>/<code>number</code>/<code>boolean</code>/<code>datetime</code>/<code>json</code>);
+<code>.puml</code>/<code>.drawio</code> give SQL types
+(<code>VARCHAR</code>/<code>TEXT</code>/<code>INTEGER</code>/<code>BIGINT</code>/<code>BOOLEAN</code>/<code>DATETIME</code>/<code>JSON</code>).</p>
+<h3
+id="entity-extension_config-07-single-per-install-extension-settings">Entity:
+<code>extension_config</code> (#07 — single per-install extension
+settings)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type (mmd / sql)</th>
+<th>Key</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>config_id</td>
+<td>string / VARCHAR</td>
+<td><strong>PK</strong></td>
+<td>PRIMARY KEY</td>
+</tr>
+<tr>
+<td>server_url</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Boba server URL</td>
+</tr>
+<tr>
+<td>api_key</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>API authentication key</td>
+</tr>
+<tr>
+<td>qbittorrent_url</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>qBitTorrent WebUI URL</td>
+</tr>
+<tr>
+<td>username</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>qBitTorrent username</td>
+</tr>
+<tr>
+<td>password_encrypted</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Encrypted password</td>
+</tr>
+<tr>
+<td>auto_detect</td>
+<td>boolean / BOOLEAN</td>
+<td></td>
+<td>Auto-detect torrents</td>
+</tr>
+<tr>
+<td>default_category</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Default qBit category</td>
+</tr>
+<tr>
+<td>scan_interval_ms</td>
+<td>number / INTEGER</td>
+<td></td>
+<td>DOM scan interval</td>
+</tr>
+<tr>
+<td>max_retries</td>
+<td>number / INTEGER</td>
+<td></td>
+<td>Max retry attempts</td>
+</tr>
+<tr>
+<td>retry_delay_ms</td>
+<td>number / INTEGER</td>
+<td></td>
+<td>Base retry delay</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Record creation time</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Last update time</td>
+</tr>
+</tbody>
+</table>
+<h3 id="entity-discovered_torrents-07-torrents-found-on-pages">Entity:
+<code>discovered_torrents</code> (#07 — torrents found on pages)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Key</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>torrent_id</td>
+<td>string / VARCHAR</td>
+<td><strong>PK</strong></td>
+<td>UUID</td>
+</tr>
+<tr>
+<td>infohash</td>
+<td>string / VARCHAR</td>
+<td><strong>UK</strong> (unique)</td>
+<td>Unique infohash</td>
+</tr>
+<tr>
+<td>magnet_uri</td>
+<td>string / TEXT</td>
+<td></td>
+<td>Full magnet URI</td>
+</tr>
+<tr>
+<td>name</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Torrent display name</td>
+</tr>
+<tr>
+<td>size_bytes</td>
+<td>number / BIGINT</td>
+<td></td>
+<td>Torrent size</td>
+</tr>
+<tr>
+<td>source_url</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Page where found</td>
+</tr>
+<tr>
+<td>source_tab_id</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Browser tab ID</td>
+</tr>
+<tr>
+<td>status</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td><code>pending</code> | <code>sent</code> | <code>failed</code></td>
+</tr>
+<tr>
+<td>discovered_at</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Discovery timestamp</td>
+</tr>
+<tr>
+<td>sent_at</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Send timestamp</td>
+</tr>
+<tr>
+<td>error_message</td>
+<td>string / TEXT</td>
+<td></td>
+<td>Error if failed</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>drawio omits <code>source_tab_id</code>. mmd is the superset.</p>
+</blockquote>
+<h3 id="entity-download_queue-07-offlineretry-queue">Entity:
+<code>download_queue</code> (#07 — offline/retry queue)</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Key</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>queue_id</td>
+<td>string / VARCHAR</td>
+<td><strong>PK</strong></td>
+<td>UUID</td>
+</tr>
+<tr>
+<td>torrent_id</td>
+<td>string / VARCHAR</td>
+<td><strong>FK</strong> → discovered_torrents</td>
+<td>References discovered</td>
+</tr>
+<tr>
+<td>magnet_uri</td>
+<td>string / TEXT</td>
+<td></td>
+<td>Magnet link</td>
+</tr>
+<tr>
+<td>priority</td>
+<td>number / INTEGER</td>
+<td></td>
+<td>Queue priority 0–10</td>
+</tr>
+<tr>
+<td>retry_count</td>
+<td>number / INTEGER</td>
+<td></td>
+<td>Current retry count</td>
+</tr>
+<tr>
+<td>status</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td><code>queued</code> | <code>retrying</code> | <code>failed</code> |
+<code>completed</code></td>
+</tr>
+<tr>
+<td>queued_at</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Queue entry time</td>
+</tr>
+<tr>
+<td>last_retry_at</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Last retry timestamp</td>
+</tr>
+<tr>
+<td>error_log</td>
+<td>string / TEXT</td>
+<td></td>
+<td>JSON error history</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>drawio omits <code>last_retry_at</code>. mmd is the superset.</p>
+</blockquote>
+<h3
+id="entity-server_config-07-one-row-per-boba-server-multi-server-support">Entity:
+<code>server_config</code> (#07 — one row per Boba server, multi-server
+support)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Key</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>server_id</td>
+<td>string / VARCHAR</td>
+<td><strong>PK</strong></td>
+<td>UUID</td>
+</tr>
+<tr>
+<td>name</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Server display name</td>
+</tr>
+<tr>
+<td>fastapi_url</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>FastAPI endpoint URL</td>
+</tr>
+<tr>
+<td>go_service_url</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Go service endpoint URL</td>
+</tr>
+<tr>
+<td>qbittorrent_url</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>qBitTorrent WebUI URL</td>
+</tr>
+<tr>
+<td>api_key</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Authentication key</td>
+</tr>
+<tr>
+<td>is_active</td>
+<td>boolean / BOOLEAN</td>
+<td></td>
+<td>Is this server active</td>
+</tr>
+<tr>
+<td>health_check_interval</td>
+<td>number / INTEGER</td>
+<td></td>
+<td>Health check ms</td>
+</tr>
+<tr>
+<td>last_health_check</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Last check timestamp</td>
+</tr>
+<tr>
+<td>last_check_result</td>
+<td>boolean / BOOLEAN</td>
+<td></td>
+<td>Last check passed</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Creation time</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>drawio omits <code>last_health_check</code>. mmd is the superset.</p>
+</blockquote>
+<h3 id="entity-send_history-07-audit-log-of-every-send-attempt">Entity:
+<code>send_history</code> (#07 — audit log of every send attempt)</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Key</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>history_id</td>
+<td>string / VARCHAR</td>
+<td><strong>PK</strong></td>
+<td>UUID</td>
+</tr>
+<tr>
+<td>infohash</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Torrent infohash</td>
+</tr>
+<tr>
+<td>magnet_uri</td>
+<td>string / TEXT</td>
+<td></td>
+<td>Magnet link</td>
+</tr>
+<tr>
+<td>name</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Torrent name</td>
+</tr>
+<tr>
+<td>server_id</td>
+<td>string / VARCHAR</td>
+<td><strong>FK</strong> → server_config</td>
+<td>References server_config</td>
+</tr>
+<tr>
+<td>success</td>
+<td>boolean / BOOLEAN</td>
+<td></td>
+<td>Send succeeded</td>
+</tr>
+<tr>
+<td>qbittorrent_hash</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Hash from qBit</td>
+</tr>
+<tr>
+<td>category</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>qBit category used</td>
+</tr>
+<tr>
+<td>tags</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>qBit tags</td>
+</tr>
+<tr>
+<td>sent_at</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Send timestamp</td>
+</tr>
+<tr>
+<td>response_time_ms</td>
+<td>number / INTEGER</td>
+<td></td>
+<td>API response time</td>
+</tr>
+<tr>
+<td>error_message</td>
+<td>string / TEXT</td>
+<td></td>
+<td>Error if failed</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>drawio omits <code>magnet_uri</code>, <code>qbittorrent_hash</code>,
+<code>tags</code>. mmd is the superset.</p>
+</blockquote>
+<h3 id="entity-search_cache-07-cached-search-results-ttld">Entity:
+<code>search_cache</code> (#07 — cached search results, TTL’d)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Key</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cache_id</td>
+<td>string / VARCHAR</td>
+<td><strong>PK</strong></td>
+<td>UUID</td>
+</tr>
+<tr>
+<td>query_hash</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Hash of search query</td>
+</tr>
+<tr>
+<td>query_text</td>
+<td>string / VARCHAR</td>
+<td></td>
+<td>Original search text</td>
+</tr>
+<tr>
+<td>results</td>
+<td>json / JSON</td>
+<td></td>
+<td>Cached results JSON</td>
+</tr>
+<tr>
+<td>result_count</td>
+<td>number / INTEGER</td>
+<td></td>
+<td>Number of results</td>
+</tr>
+<tr>
+<td>cached_at</td>
+<td>datetime / DATETIME</td>
+<td></td>
+<td>Cache timestamp</td>
+</tr>
+<tr>
+<td>ttl_seconds</td>
+<td>number / INTEGER</td>
+<td></td>
+<td>Cache TTL</td>
+</tr>
+<tr>
+<td>is_valid</td>
+<td>boolean / BOOLEAN</td>
+<td></td>
+<td>Cache still valid</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>search_cache</code> has NO declared relationship to any other
+entity (standalone).</p>
+</blockquote>
+<h3 id="relationships-cardinality-07">Relationships (cardinality)
+(#07)</h3>
+<ul>
+<li><code>extension_config ||--o{ discovered_torrents</code> —
+one-to-many — label “references config”</li>
+<li><code>discovered_torrents ||--o{ download_queue</code> — one-to-many
+— label “queued for retry” (FK
+<code>download_queue.torrent_id</code>)</li>
+<li><code>server_config ||--o{ send_history</code> — one-to-many — label
+“sends tracked” (FK <code>send_history.server_id</code>)</li>
+</ul>
+<p>(<code>||--o{</code> = one mandatory ↔︎ zero-or-many.)</p>
+<hr />
+<h2 id="component-inventory-connections">3) COMPONENT INVENTORY +
+CONNECTIONS</h2>
+<h3 id="a-system-architecture-components-01">3a) System architecture
+components (#01)</h3>
+<p><strong>Browser Environment:</strong> - <em>Extension UI Layer</em>:
+<code>Popup UI</code> (popup.html/popup.js — torrent list &amp;
+controls), <code>Options Page</code> (options.html/options.js — server
+configuration), <code>Context Menu</code> (background.js — right-click
+actions) - <em>Extension Core Layer</em>: <code>Content Script</code>
+(content.js — DOM scanner &amp; injector; drawio adds “Torrent detection
+UI”), <code>Background Service Worker</code> (background.js — event
+handling &amp; API proxy; drawio adds “API proxy &amp; queue”) -
+<em>Extension Library Layer</em>: <code>parser/</code> (magnet:// &amp;
+.torrent parser), <code>scanner/</code> (DOM torrent detector),
+<code>api/BobaAPIClient</code> (HTTP client for services),
+<code>shared/</code> (constants &amp; utilities) - <em>Extension
+Storage</em>: <code>Local Storage</code> (extension_config),
+<code>Session Storage</code> (discovered_torrents) - <em>Chrome APIs
+Used</em> (drawio-only panel): <code>chrome.runtime</code> (messaging),
+<code>chrome.tabs</code> (tab management), <code>chrome.tabGroups</code>
+(group queries), <code>chrome.contextMenus</code> (right-click menu),
+<code>chrome.storage</code> (local &amp; session),
+<code>chrome.notifications</code> (desktop alerts),
+<code>fetch() API</code> (HTTP requests), <code>chrome.downloads</code>
+(file downloads)</p>
+<p><strong>Docker Host:</strong> - <em>Boba Services Network</em>:
+<code>Boba FastAPI</code> (Port <strong>7187</strong> — metadata &amp;
+search API; torrent info, search, health checks),
+<code>Boba Go Service</code> (Port <strong>7189</strong> — core torrent
+operations; add, remove, control) - <em>Torrent Network</em>:
+<code>qBitTorrent WebUI</code> (Port <strong>8080</strong> — torrent
+client API), <code>qBitTorrent Database</code> (resume data, settings,
+logs) - <em>Docker Networks</em> (drawio-only):
+<code>boba-network</code> (internal mesh: FastAPI↔︎Go↔︎qBit),
+<code>bridge/host</code> (external port mapping 7187, 7189, 8080),
+<code>Volume Mounts</code> (/downloads, /config)</p>
+<p><strong>External Services:</strong> <code>BitTorrent Trackers</code>
+(DHT, PEX, UDP announce; peer discovery &amp; metadata; magnet
+resolution), <code>Web Pages / Indexers</code> (torrent sites &amp;
+search engines; magnet hosting; .torrent download pages)</p>
+<p><strong>Connections (#01):</strong> - Popup ↔︎ BackgroundSW :
+<code>chrome.runtime.sendMessage</code> (bidirectional) - Options ↔︎
+LocalStorage : Save/Load config - ContextMenu → BackgroundSW : Trigger
+action - ContentScript ↔︎ BackgroundSW :
+<code>chrome.tabs.sendMessage</code> (bidirectional) - ContentScript →
+Scanner : Scan DOM - Scanner → Parser : Parse links - BackgroundSW →
+BobaAPIClient : HTTP requests - BobaAPIClient → Shared : API calls -
+ContentScript → SessionStorage : Store discovered - ContentScript →
+WebPages : Inject detection UI - BobaAPIClient → FastAPI : REST API
+:7187 - BobaAPIClient → GoService : REST API :7189 - FastAPI →
+qBitTorrent : Proxy operations - GoService → qBitTorrent : Direct API -
+qBitTorrent → qBitDB : Persist state - qBitTorrent → Trackers :
+Announce/Scrape - (drawio) WebPages → ContentScript : dashed (injection
+inbound)</p>
+<h3 id="b-modulefile-component-diagram-06-code-organization">3b)
+Module/file component diagram (#06) — code organization</h3>
+<p>8 packages, each with files + key functions (from <code>.mmd</code>):
+- <strong>parser/</strong>: <code>magnetParser.js</code>
+(<code>parseMagnetURI()</code>, <code>extractInfoHash()</code>),
+<code>torrentParser.js</code> (<code>parseTorrentFile()</code>,
+<code>extractMetadata()</code>), <code>hashNormalizer.js</code>
+(<code>normalizeInfoHash()</code>, <code>validateHash()</code>) -
+<strong>scanner/</strong>: <code>domScanner.js</code>
+(<code>scanForLinks()</code>, MutationObserver),
+<code>linkExtractor.js</code> (<code>extractMagnetLinks()</code>,
+<code>extractTorrentLinks()</code>), <code>torrentBadge.js</code>
+(<code>injectBadge()</code>, <code>highlightTorrents()</code>) -
+<strong>api/</strong>: <code>BobaAPIClient.js</code>
+(<code>sendTorrent()</code>, <code>sendBatch()</code>,
+<code>healthCheck()</code>), <code>authManager.js</code>
+(<code>getAuthHeaders()</code>, <code>refreshToken()</code>),
+<code>retryHandler.js</code> (<code>exponentialBackoff()</code>,
+<code>circuitBreaker()</code>) - <strong>background/</strong>:
+<code>background.js</code> (event listeners, message router),
+<code>contextMenuHandler.js</code> (<code>createMenus()</code>,
+<code>handleClicks()</code>), <code>queueManager.js</code>
+(<code>enqueue()</code>, <code>processQueue()</code>,
+<code>retryFailed()</code>), <code>tabGroupProcessor.js</code>
+(<code>queryGroups()</code>, <code>processTabs()</code>) -
+<strong>content/</strong>: <code>content.js</code>
+(<code>initialize()</code>, DOM scan trigger), <code>contentUI.js</code>
+(<code>injectPanel()</code>, <code>showTorrentList()</code>) -
+<strong>popup/</strong>: <code>popup.js</code>
+(<code>renderTorrentList()</code>, <code>handleSend()</code>,
+<code>handleConfig()</code>), <code>popup.html</code>,
+<code>popup.css</code> - <strong>options/</strong>:
+<code>options.js</code> (<code>saveConfig()</code>,
+<code>loadConfig()</code>, <code>validateServer()</code>),
+<code>options.html</code> - <strong>shared/</strong>:
+<code>constants.js</code> (<code>MSG_TYPES</code>,
+<code>API_ENDPOINTS</code>, <code>DEFAULTS</code>),
+<code>utils.js</code> (<code>debounce()</code>, <code>throttle()</code>,
+<code>formatBytes()</code>), <code>storageAPI.js</code>
+(<code>getConfig()</code>, <code>setConfig()</code>,
+<code>getHistory()</code>)</p>
+<p><strong>Module dependencies (#06, both mmd+puml agree):</strong> -
+scanner → parser (uses) - content → scanner (uses) - content →
+background (messaging, dashed) - popup → background (messaging, dashed)
+- background → api (uses) - background → shared (uses) - popup → shared
+(uses) - options → shared (uses) - api → shared (uses) - parser → shared
+(uses) - (mmd-only extra, likely typo) content → content (uses)</p>
+<hr />
+<h2 id="end-to-end-sequences">4) END-TO-END SEQUENCES</h2>
+<h3
+id="a-single-torrent-send-04-participants-user-popup-ui-content-script-cs-background-sw-bg-bobaapiclient-api-fastapi-7187-go-service-7189-qbittorrent-8080">4a)
+Single Torrent Send (#04) — participants: User, Popup UI, Content Script
+(CS), Background SW (BG), BobaAPIClient (API), FastAPI :7187, Go Service
+:7189, qBitTorrent :8080</h3>
+<p><strong>Detection phase:</strong> 1. User → CS: Browse torrent site
+2. CS → CS: MutationObserver detects <code>magnet:</code> link in DOM 3.
+CS → CS: <code>parser.normalizeURL()</code> 4. CS → BG:
+<code>chrome.runtime.sendMessage</code>
+<code>{type:"DISCOVERED_TORRENTS", torrents}</code> 5. BG → Popup:
+<code>chrome.runtime.sendMessage</code>
+<code>{type:"UPDATE_POPUP", torrents}</code> 6. Popup → Popup: Render
+torrent list 7. Popup –&gt; User: Show discovered torrents</p>
+<p><strong>Send phase:</strong> 8. User → Popup: Click “Send” button 9.
+Popup → BG: <code>chrome.runtime.sendMessage</code>
+<code>{type:"SEND_TORRENT", torrent}</code> 10. BG → API:
+<code>sendTorrent(torrent)</code> 11. API → API: Build request with auth
+headers — <strong>X-Api-Key + Basic Auth</strong></p>
+<p><strong>Two paths (mmd <code>par</code> / puml <code>alt</code> —
+both backends exercised):</strong> - <em>FastAPI path</em>: API →
+FastAPI <code>POST /api/torrents/add</code> (JSON body) → FastAPI
+validates torrent data → FastAPI → qBit
+<code>POST /api/v2/torrents/add</code> (form-data: urls, category) →
+qBit adds to BitTorrent engine → qBit → FastAPI
+<code>200 OK + {hash}</code> → FastAPI → API
+<code>200 OK + {hash, status}</code> - <em>Go Service path</em>: API →
+GoSvc <code>POST /api/torrents/add</code> (JSON body) → GoSvc validate +
+metadata lookup → GoSvc → qBit <code>POST /api/v2/torrents/add</code>
+(form-data) → qBit adds to engine → qBit → GoSvc
+<code>200 OK + {hash}</code> → GoSvc → API
+<code>200 OK + {hash, status, metadata}</code></p>
+<p><strong>Completion:</strong> 12. API –&gt; BG: Promise resolved
+<code>{success, hash, status}</code> 13. BG → BG: Store in
+<code>send_history</code>; Update badge count 14. BG → Popup:
+<code>chrome.runtime.sendMessage</code>
+<code>{type:"SEND_COMPLETE", result}</code> 15. Popup –&gt; User: ✓
+Notification “Torrent added” - Note (right of qBit): magnet links
+resolved via DHT for metadata.</p>
+<h3
+id="b-tab-group-batch-send-05-participants-user-context-menu-background-sw-bg-tab-groups-api-tgapi-chrome.tabgroups-tabs-api-tabsapi-chrome.tabs-content-scripts-cs-bobaapiclient-api-qbittorrent-8080">4b)
+Tab Group Batch Send (#05) — participants: User, Context Menu,
+Background SW (BG), Tab Groups API (TGAPI = chrome.tabGroups), Tabs API
+(TabsAPI = chrome.tabs), Content Scripts (CS), BobaAPIClient (API),
+qBitTorrent :8080</h3>
+<ol type="1">
+<li>User → Menu: Right-click on Tab Group</li>
+<li>Menu –&gt; User: Show context menu “Send all torrents to qBit”</li>
+<li>User → Menu: Select batch send option</li>
+<li>Menu → BG: <code>contextMenus.onClicked</code>
+<code>{menuItemId, parentMenuItemId}</code></li>
+<li>BG → TGAPI: <code>chrome.tabGroups.query</code>
+<code>{title: groupName}</code></li>
+<li>TGAPI –&gt; BG: Return group objects[] with
+<code>groupId</code></li>
+<li>BG → TabsAPI: <code>chrome.tabs.query</code>
+<code>{groupId: gid}</code></li>
+<li>TabsAPI –&gt; BG: Return tabs[] with <code>tabId, url</code></li>
+</ol>
+<p><strong>Loop — for each tab in group:</strong> 9. BG → CS:
+<code>chrome.scripting.executeScript</code>
+<code>{target:{tabId}, files:["content.js"]}</code> 10. CS → CS: Scan
+DOM for torrents 11. CS → CS: <code>parser.normalizeURLs()</code> 12. CS
+–&gt; BG: Return <code>[{torrents:[...]}]</code> (message
+<code>RETURN_TORRENTS</code> per #03)</p>
+<p><strong>Batch send:</strong> 13. BG → BG: Collect all torrents[] —
+<strong>Flatten &amp; deduplicate</strong> 14. BG → API:
+<code>sendBatch(allTorrents)</code> 15. API → API: Build batch request
+with auth headers 16. API → qBit: <code>POST /api/v2/torrents/add</code>
+(<code>urls=magnet1\nmagnet2\n...</code>) — note: mmd #05 hits qBit
+directly; data-flow #03 routes through
+<code>POST /api/torrents/batch</code> on Boba Services first 17. qBit →
+qBit: Process each torrent in parallel 18. qBit –&gt; API:
+<code>200 OK + results[]</code> 19. API –&gt; BG:
+<code>{added: N, failed: [...]}</code> 20. BG → BG: Store results in
+<code>send_history</code> 21. BG –&gt; User:
+<code>chrome.notifications</code> “N torrents added successfully”</p>
+<p><strong>Tab-groups data-flow detail (#03):</strong> message types
+<code>DISCOVERED_TORRENTS</code> / <code>RETURN_TORRENTS</code>; batch
+endpoint <code>POST /api/torrents/batch</code> (JSON array of magnets) →
+proxied to qBit <code>/api/v2/torrents/add</code> (multiple urls) →
+result <code>200 OK + results[]</code> → notification “X torrents
+added”.</p>
+<hr />
+<h2 id="state-machines">5) STATE MACHINES</h2>
+<h3 id="a-offline-queue-state-machine-09">5a) Offline-queue state
+machine (#09)</h3>
+<p>States: <code>Idle</code>, <code>Pending</code>,
+<code>Sending</code>, <code>Queued</code>, <code>Retry</code>,
+<code>Completed</code>, <code>Failed</code> (+ initial/final
+<code>[*]</code>).</p>
+<p>Transitions (source → target : guard/trigger): - <code>[*]</code> →
+Idle : Extension starts - Idle → Pending : Torrent detected - Pending →
+Sending : Online detected - Pending → Queued : Offline detected -
+Pending → Retry : Send failed - Sending → Completed : 200 OK - Sending →
+Failed : 4xx/5xx error - Sending → Retry : Timeout - Queued → Pending :
+Back online - Queued → Failed : Max age exceeded - Retry → Sending :
+Retry attempt - Retry → Failed : Max retries exceeded - Retry → Queued :
+Still offline - Completed → <code>[*]</code> : Cleanup after TTL -
+Failed → Pending : User retries - Failed → <code>[*]</code> :
+Abandoned</p>
+<p>State notes: - Pending: “Torrent detected in DOM / Awaiting send
+trigger” - Sending: “HTTP request in flight / BobaAPIClient active” -
+Queued: “Device offline / Stored for later retry” - Retry: “Exponential
+backoff 1s → 2s → 4s → 8s” - Completed: “200 OK received / Added to
+send_history” - Failed: “Irrecoverable error / Logged for review”</p>
+<h3
+id="b-extension-lifecycle-08-flow-not-a-formal-state-machine-a-staged-lifecycle">5b)
+Extension lifecycle (#08) — flow (not a formal state machine, a staged
+lifecycle)</h3>
+<p>Stages (in order): <code>Install</code> (from store or .crx) →
+<code>Grant</code> (permissions) → <code>Configure</code> (server
+settings) → <code>Discover</code> (auto-discover server) →
+<code>Browse</code> (torrent sites) → <code>Detect</code> (torrent
+links) → <code>Send</code> (to qBitTorrent) → <code>Monitor</code>
+(downloads) → loops back to Browse.</p>
+<p>Stage transitions w/ guards: - Install → Grant :
+<code>chrome.runtime.onInstalled</code> - Grant → Configure :
+Permissions granted (storage, scripting, tabs) - Configure → Discover :
+Save settings <code>chrome.storage.local</code> - Discover → Browse :
+Health check passed / server reachable - Browse → Detect : DOM contains
+torrent links on page - Detect → Send : Torrents discovered / shown in
+popup - Send → Monitor : Send successful / 200 OK received - Monitor →
+Browse : Continue browsing</p>
+<p>Chrome events feeding lifecycle: -
+<code>chrome.runtime.onInstalled</code> → Install -
+<code>chrome.runtime.onStartup</code> → Browse (Restore config from
+storage) - <code>chrome.runtime.onUpdateAvailable</code> → Configure
+(Show changelog / migrate data)</p>
+<p>Per-stage user actions: A1 Grant host/storage/scripting permissions
+(Install+Grant); A2 Enter server URL, API key, qBit URL (Configure); A3
+Test connection / auto-detect Docker (Discover); A4 Navigate to torrent
+sites (Browse); A5 Review detected torrents in popup (Detect); A6 Click
+send / batch send / auto-send (Send); A7 Check progress in popup &amp;
+qBit WebUI (Monitor).</p>
+<hr />
+<h2 id="security-controls-trust-boundaries-10">6) SECURITY CONTROLS +
+TRUST BOUNDARIES (#10)</h2>
+<p>Trust boundaries (subgraphs): <strong>Browser Environment</strong>,
+<strong>Network Layer</strong>, <strong>Boba Services</strong>,
+<strong>qBitTorrent</strong>.</p>
+<p><strong>Browser Environment controls:</strong> -
+<code>Extension Permissions</code> (manifest.json): host, storage,
+scripting, tabs, contextMenus - <em>Content Security Policy (CSP)</em>:
+<code>script-src: 'self'</code> (no inline scripts);
+<code>connect-src: *</code> (API endpoints only);
+<code>object-src: 'none'</code> (no plugins) - <em>Credential
+Storage</em>: <code>chrome.storage.local</code> — <strong>AES-256-GCM
+encrypted</strong>; <code>chrome.storage.session</code> — non-sensitive
+cache (plain) - <em>Crypto Operations</em>:
+<code>Offscreen Document</code> — Web Crypto API,
+<code>SubtleCrypto.encrypt</code>; <code>PBKDF2 Key Derivation</code> —
+user password → key</p>
+<p><strong>Network Layer controls:</strong> <code>HTTPS Only</code> (TLS
+1.2+ required); <code>Certificate Validation</code> (no self-signed
+certs / cert pinning)</p>
+<p><strong>Boba Services controls:</strong> <code>API Key Auth</code>
+(<code>X-Api-Key</code> header); <code>Basic Auth</code>
+(username:password); <code>Rate Limiting</code> (100 req/min per
+key)</p>
+<p><strong>qBitTorrent controls:</strong> <code>WebUI Security</code>
+(Cookie-based SID, CSRF protection); <code>IP Filtering</code>
+(allowlist mode)</p>
+<p><strong>Control flow / boundary crossings (#10):</strong>
+ExtPermissions → CSP → StorageSec → Crypto → (Encrypted payload) HTTPS →
+(Mutual TLS) BobaServices; HTTPS → (HTTPS + Cookie) qBitTorrent;
+BobaServices → Auth → RateLimit → (Proxied request) qBitTorrent.</p>
+<p>Additional security notes from #01 legend: HTTPS for all external
+comms | credentials in chrome.storage.local | offscreen document for
+crypto | retry queue for offline | rate limiting | CSP headers |
+permission validation for all API calls.</p>
+<hr />
+<h2 id="build-pipeline-stages-11">7) BUILD PIPELINE STAGES (#11)</h2>
+<p>Linear stages: <strong>Code</strong> → <strong>Lint</strong> →
+<strong>Test</strong> → <strong>Build</strong> →
+<strong>Package</strong> → <strong>Deployments</strong>. -
+<code>Code</code>: Git repository, <code>src/</code> directory -
+<code>Lint</code>: ESLint + Prettier, style checks - <code>Test</code>:
+Jest unit tests, coverage &gt; 80% - <code>Build</code>: Webpack/Vite,
+bundle + minify - <code>Package</code>: Extension ZIP, manifest
+validation</p>
+<p><strong>Stage transitions (with gates):</strong> - Code → Lint : git
+push - Lint → Test : Pass | Lint → Code : Fail - Test → Coverage : Pass
+- Coverage → Build : ≥ 80% | Coverage → Code : &lt; 80% - Build →
+ManifestValid : Bundle OK - ManifestValid → Package : Valid - Package →
+ChromeStore : Auto-deploy - Package → AMO : Auto-deploy - Package →
+Opera : Manual - Package → Edge : Auto-deploy - Package → Yandex :
+Manual</p>
+<p><strong>Deployment targets:</strong> Chrome Web Store ($5 one-time
+fee, review 1–3 days); Firefox AMO (free, 1–7 days); Opera Addons (free,
+2–5 days); Edge Addons (free, 1–5 days); Yandex Browser (free, 3–7
+days).</p>
+<p><strong>CI/CD — GitHub Actions triggers:</strong>
+<code>on: push</code> / <code>on: pull_request</code> → Lint;
+<code>on: release published</code> → Build; <code>on: schedule</code>
+(weekly dependency check) → Test. &gt; NOTE: contradicts Boba root
+constitution “NO CI/CD pipelines / no <code>.github/workflows</code>” —
+see open questions.</p>
+<p><strong>Quality Gates:</strong> Coverage ≥ 80%; 0 ESLint errors;
+Valid manifest.json; Package &lt; 5MB.</p>
+<hr />
+<h2 id="compatibility-matrix-12-full-every-cell">8) COMPATIBILITY MATRIX
+(#12 — full, every cell)</h2>
+<p>Legend: ✓ Full (native) | ⚠ Partial (polyfill/workaround) | ✗ No (not
+supported).</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Chrome</th>
+<th>Firefox</th>
+<th>Opera</th>
+<th>Edge</th>
+<th>Yandex</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Core Torrent Detection</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>Tab Group Batch Send</td>
+<td>✓ Full</td>
+<td>⚠ Partial</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>Context Menu Actions</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>Service Worker</td>
+<td>✓ MV3</td>
+<td>⚠ MV2</td>
+<td>✓ MV3</td>
+<td>✓ MV3</td>
+<td>✓ MV3</td>
+</tr>
+<tr>
+<td>Offscreen Document</td>
+<td>✓ Full</td>
+<td>✗ N/A</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>chrome.storage.session</td>
+<td>✓ Full</td>
+<td>✗ No</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>chrome.scripting API</td>
+<td>✓ Full</td>
+<td>⚠ Polyfill</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>chrome.notifications</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>Auto-Update</td>
+<td>✓ Store</td>
+<td>✓ Store</td>
+<td>✓ Store</td>
+<td>✓ Store</td>
+<td>⚠ Manual</td>
+</tr>
+<tr>
+<td>Credential Encryption</td>
+<td>✓ Full</td>
+<td>⚠ Fallback</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>Background Message</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>Badge Counter</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>Popup UI</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>Options Page</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+<tr>
+<td>Content Script Injection</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+<td>✓ Full</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Browser-specific notes:</strong> - <strong>Firefox:</strong>
+Tab Groups API not available (uses tab query fallback). Offscreen
+Document not supported (uses background-page crypto via Web Crypto API).
+storage.session replaced with localStorage fallback. MV2 uses background
+page instead of service worker. scripting API uses
+<code>browser.tabs.executeScript</code> via webextension-polyfill. All
+core features work with polyfills. - <strong>Yandex:</strong> Requires
+Opera extension package format. Auto-update must be checked manually via
+Yandex extension store. All Chromium APIs fully supported. -
+<strong>Opera/Edge:</strong> Fully Chromium compatible. Edge uses same
+package as Chrome. Opera requires <code>manifest</code> key in package.
+- <strong>Chrome:</strong> Reference implementation platform. All MV3
+APIs used natively. No polyfills required.</p>
+<hr />
+<h2 id="open-questions-inconsistencies">9) OPEN QUESTIONS /
+INCONSISTENCIES</h2>
+<ol type="1">
+<li><strong>CI/CD contradiction:</strong> #11 build pipeline mandates
+GitHub Actions (<code>on: push</code>, <code>on: release</code>,
+<code>on: schedule</code>) and “Auto-deploy” to stores. Boba root
+CLAUDE.md/Constitution Hard-Stop #1 forbids ALL CI/CD pipelines and
+<code>.github/workflows/*</code>. The plan MUST reconcile — likely the
+extension deploy pipeline runs as a manual script
+(<code>./ci.sh</code>-style), not GitHub Actions.</li>
+<li><strong>Single-send routing ambiguity:</strong> #04 single-send has
+the API client call BOTH FastAPI (<code>POST /api/torrents/add</code>)
+AND Go Service (<code>POST /api/torrents/add</code>) — modeled as
+parallel/alt. Is this an either-or (one configured backend) or genuinely
+dual-write? #02 shows FastAPI getting
+<code>POST /api/torrents/add</code> and Go getting
+<code>POST /api/torrents/batch</code> — inconsistent endpoint→service
+mapping vs #04.</li>
+<li><strong>Batch endpoint path inconsistency:</strong> #03/#02 route
+batch through Boba <code>POST /api/torrents/batch</code>; #05 sequence
+has BG→API→qBit directly via <code>POST /api/v2/torrents/add</code>,
+skipping the Boba batch endpoint. Which is authoritative?</li>
+<li><strong>Boba port reality vs diagrams:</strong> diagrams use qBit
+WebUI port <strong>8080</strong>; the real Boba repo (per CLAUDE.md)
+uses qBittorrent on <strong>7185</strong> proxied via
+<strong>7186</strong>, merge service <strong>7187</strong>, boba-jackett
+<strong>7189</strong>. FastAPI=7187 and Go=7189 roughly align, but qBit
+8080 does not match the repo’s 7185/7186. Plan must map BobaLink
+endpoints onto real Boba services.</li>
+<li><strong><code>extension_config</code> ↔︎
+<code>discovered_torrents</code> relationship</strong> is labeled
+“references config” but <code>discovered_torrents</code> has no
+<code>config_id</code> FK field — relationship is conceptual, not a
+declared FK. Confirm whether a FK column is needed.</li>
+<li><strong><code>search_cache</code> orphan:</strong> no relationship;
+which service populates it (FastAPi search?) and where is it stored
+(chrome.storage? IndexedDB?) — storage backend for all 6 entities is
+unspecified (extension uses chrome.storage.local/session per #01; ER
+implies relational/SQL types). Need a decision: chrome.storage vs
+IndexedDB vs server-side DB.</li>
+<li><strong>Auth model:</strong> #04 says
+<code>X-Api-Key + Basic Auth</code> together; #10 lists API Key Auth and
+Basic Auth as separate controls. Confirm both are sent on every request
+vs per-service.</li>
+<li><strong><code>source_tab_id</code>, <code>last_retry_at</code>,
+<code>last_health_check</code>,
+<code>magnet_uri</code>/<code>qbittorrent_hash</code>/<code>tags</code>
+(send_history)</strong> present in <code>.mmd</code> but dropped in
+<code>.drawio</code> — treat <code>.mmd</code> as authoritative (done
+above), but confirm the dropped fields are intended.</li>
+<li><strong>content→content self-dependency (#06 mmd line 56)</strong>
+is almost certainly a typo (should be content→shared or similar). Ignore
+unless intentional.</li>
+<li><strong>MV2/MV3 dual-target:</strong> matrix requires Firefox MV2
+(background page) + Chromium MV3 (service worker). Build pipeline must
+produce two manifest variants + webextension-polyfill — not shown as a
+build stage in #11.</li>
+</ol>

@@ -1,0 +1,1382 @@
+<h1 id="src-features-extraction">05 — src features extraction</h1>
+<p>Exhaustive extraction of the reference BobaLink browser-extension
+feature layer (the <code>Browser Torrent Extension Guide/src/src</code>
+tree). This is the implementation the Boba plan must reproduce and
+integrate with the 7186 (download-proxy) / 7187 (merge service) / 7189
+(boba-jackett) services. Every signature, endpoint, message type,
+storage key, and default below is cited to the file it lives in.</p>
+<blockquote>
+<p>⚠️ <strong>§11.4.10 secrets flag (read first):</strong> the reference
+code ships a <strong>HARD-CODED fixed passphrase</strong>
+<code>"bobalink-extension"</code> used to AES-encrypt every stored
+credential (<code>options/options.ts:327</code>). That is effectively no
+protection — anyone with the source can decrypt
+<code>chrome.storage.local</code>. Cookie-auth <code>sendTorrents</code>
+also passes an <strong>empty passphrase</strong>
+(<code>background/index.ts:409</code>), which can only ever decrypt
+creds that were encrypted with <code>""</code>. Both are leak vectors
+the Boba port MUST replace (see Open Questions).</p>
+</blockquote>
+<hr />
+<h2 id="files-read">Files read</h2>
+<h3 id="prompt-specified-files-read-in-full">Prompt-specified files
+(read in full)</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>api/client.ts</code></td>
+<td>565</td>
+</tr>
+<tr>
+<td><code>api/auth.ts</code></td>
+<td>364</td>
+</tr>
+<tr>
+<td><code>api/qbittorrent.ts</code></td>
+<td>247</td>
+</tr>
+<tr>
+<td><code>api/queue.ts</code></td>
+<td>385</td>
+</tr>
+<tr>
+<td><code>api/health.ts</code></td>
+<td>288</td>
+</tr>
+<tr>
+<td><code>parser/bencode.ts</code></td>
+<td>427</td>
+</tr>
+<tr>
+<td><code>parser/magnet.ts</code></td>
+<td>338</td>
+</tr>
+<tr>
+<td><code>parser/torrent-file.ts</code></td>
+<td>357</td>
+</tr>
+<tr>
+<td><code>scanner/base.ts</code></td>
+<td>274</td>
+</tr>
+<tr>
+<td><code>scanner/orchestrator.ts</code></td>
+<td>401</td>
+</tr>
+<tr>
+<td><code>scanner/link-scanner.ts</code></td>
+<td>253</td>
+</tr>
+<tr>
+<td><code>scanner/text-scanner.ts</code></td>
+<td>134</td>
+</tr>
+<tr>
+<td><code>scanner/site-db.ts</code></td>
+<td>326</td>
+</tr>
+<tr>
+<td><code>content/index.ts</code></td>
+<td>306</td>
+</tr>
+<tr>
+<td><code>content/scanner.ts</code></td>
+<td>90</td>
+</tr>
+<tr>
+<td><code>content/highlight.ts</code></td>
+<td>252</td>
+</tr>
+<tr>
+<td><code>content/styles.css</code></td>
+<td>87</td>
+</tr>
+<tr>
+<td><code>background/index.ts</code></td>
+<td>759</td>
+</tr>
+<tr>
+<td><code>popup/popup.ts</code></td>
+<td>496</td>
+</tr>
+<tr>
+<td><code>popup/index.html</code></td>
+<td>69</td>
+</tr>
+<tr>
+<td><code>popup/styles.css</code></td>
+<td>418</td>
+</tr>
+<tr>
+<td><code>options/options.ts</code></td>
+<td>710</td>
+</tr>
+<tr>
+<td><code>options/index.html</code></td>
+<td>292</td>
+</tr>
+<tr>
+<td><code>options/styles.css</code></td>
+<td>761 (not opened — pure presentation, not load-bearing for the
+plan)</td>
+</tr>
+<tr>
+<td><code>assets/icon.svg</code></td>
+<td>25</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="supporting-files-also-read-referenced-by-the-above-load-bearing-for-keysdefaultstypes">Supporting
+files also read (referenced by the above; load-bearing for
+keys/defaults/types)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Lines</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>shared/constants.ts</code></td>
+<td>403</td>
+<td>endpoints, storage keys, regexes, ports, retry/rate/timeout config,
+site selectors, badge colors</td>
+</tr>
+<tr>
+<td><code>shared/crypto.ts</code></td>
+<td>292</td>
+<td>AES-256-GCM / PBKDF2 credential encryption (§11.4.10)</td>
+</tr>
+<tr>
+<td><code>shared/storage.ts</code></td>
+<td>248</td>
+<td>chrome.storage.local wrapper + change listener</td>
+</tr>
+<tr>
+<td><code>shared/utils.ts</code></td>
+<td>366</td>
+<td>debounce, TokenBucket, retryWithBackoff, getDomain,
+isValidHttpUrl</td>
+</tr>
+<tr>
+<td><code>shared/events.ts</code></td>
+<td>175</td>
+<td>TypedEventEmitter + EventMap</td>
+</tr>
+<tr>
+<td><code>types/config.ts</code></td>
+<td>232</td>
+<td>ServerConfig, ExtensionConfig, DEFAULT_CONFIG</td>
+</tr>
+<tr>
+<td><code>types/api.ts</code></td>
+<td>486</td>
+<td>qBt types, AuthCredentials/AuthState, QueueItem, MessageType,
+ExtensionMessage</td>
+</tr>
+<tr>
+<td><code>types/torrent.ts</code></td>
+<td>223</td>
+<td>MagnetInfo, TorrentFile, ParsedTorrent, DetectedTorrent, SendResult,
+PageScanResult</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><code>shared/logger.ts</code> and <code>shared/errors.ts</code> exist
+(imported widely: <code>createLogger</code>, <code>ParseError</code>,
+<code>NetworkError</code>, <code>ServerError</code>,
+<code>RateLimitError</code>, <code>AuthError</code>,
+<code>ConfigError</code>, <code>TorrentError</code>,
+<code>StorageError</code>, <code>normalizeError</code>) but were not in
+the read scope; their behavior is inferred from call-sites (typed error
+classes with <code>getUserMessage()</code>, <code>cause</code>, and
+<code>context</code> fields).</p>
+</blockquote>
+<hr />
+<h2 id="manifest-what-this-extension-is">1. Manifest (what this
+extension is)</h2>
+<p>A <strong>Manifest V3</strong> Chrome/Chromium extension named
+<strong>BobaLink</strong> (<code>EXT.NAME</code>,
+<code>constants.ts</code>) that scans web pages for <strong>magnet
+links</strong> and <strong><code>.torrent</code> files</strong>, then
+sends them to a <strong>qBitTorrent WebUI</strong> (or a Boba backend
+exposing the same WebUI API). Architecture:</p>
+<ul>
+<li><strong>Background service worker</strong>
+(<code>background/index.ts</code>) — central message router / hub.</li>
+<li><strong>Content script</strong> (<code>content/*</code>) — runs on
+every page, scans DOM, highlights, reports up.</li>
+<li><strong>Popup UI</strong> (<code>popup/*</code>) — per-tab torrent
+list + send button + connection status.</li>
+<li><strong>Options UI</strong> (<code>options/*</code>) — server
+config, auth, general/advanced settings.</li>
+<li><strong>API layer</strong> (<code>api/*</code>) — qBittorrent WebUI
+client, auth, offline queue, health.</li>
+<li><strong>Parsers</strong> (<code>parser/*</code>) — bencode, magnet
+URI, <code>.torrent</code> file + infohash (SHA-1).</li>
+<li><strong>Scanners</strong> (<code>scanner/*</code>) — orchestrator +
+link/text scanners + known-site DB.</li>
+</ul>
+<p>Build stack (per <code>options/index.html</code> About): Manifest V3
+service worker, TypeScript 5.7, WXT build system, AES-256-GCM credential
+encryption. Version <code>v1.0.0</code>.</p>
+<hr />
+<h2 id="api-client-surface-auth-retry-queue-mechanics">2. API client
+surface, auth, retry &amp; queue mechanics</h2>
+<h3 id="bobaapiclient-apiclient.ts">2.1 <code>BobaAPIClient</code>
+(<code>api/client.ts</code>)</h3>
+<p>The low-level HTTP client. <strong>Base URL</strong> is passed to the
+constructor and normalized by stripping a trailing slash
+(<code>client.ts:83</code>). Talks to qBittorrent’s <strong>WebUI v2
+API</strong> (<code>/api/v2/...</code>). All endpoint path constants
+live in <code>QBITTORRENT_ENDPOINTS</code>
+(<code>constants.ts:109</code>).</p>
+<p><strong>Construction</strong> -
+<code>constructor(baseUrl: string, requestTimeout = REQUEST_TIMEOUTS.DEFAULT /*15000ms*/)</code>
+— builds a
+<code>TokenBucket(MAX_REQUESTS=10, refillRate=10/(1000/1000)=10 tok/s)</code>
+rate limiter (<code>client.ts:81-88</code>, <code>RATE_LIMIT</code> in
+<code>constants.ts:198</code>).</p>
+<p><strong>Auth / header state</strong> -
+<code>setAuthCookie(cookie: string | null): void</code> — stores the
+qBittorrent <code>SID</code> value; sent as
+<code>Cookie: SID=&lt;value&gt;</code> header on every request
+(<code>client.ts:98</code>, <code>client.ts:449-451</code>). -
+<code>setHeaders(headers: Record&lt;string,string&gt;): void</code> —
+custom headers (used for <code>X-API-Key</code> and
+<code>Authorization: Basic ...</code>) (<code>client.ts:108</code>). -
+<code>getBaseUrl(): string</code> (<code>client.ts:117</code>).</p>
+<p><strong>Auth endpoints</strong> -
+<code>login(username, password): Promise&lt;boolean&gt;</code> —
+<code>POST /api/v2/auth/login</code>
+(<code>QBITTORRENT_ENDPOINTS.AUTH_LOGIN</code>), body =
+<code>FormData{username,password}</code>, timeout
+<code>REQUEST_TIMEOUTS.AUTH</code> (10000ms). On HTTP 200 it extracts
+<code>SID</code> from the <code>set-cookie</code> header via regex
+<code>/SID=([^;]+)/</code>; if absent, falls back to checking the
+response text for <code>"ok"</code>. Returns <code>false</code> on any
+non-200 or thrown error (caught internally)
+(<code>client.ts:128-166</code>). - ⚠️ Note: browsers normally hide
+<code>set-cookie</code> from <code>fetch</code>; this relies on
+<code>credentials:"include"</code> and works in practice because the
+cookie is also set on the jar, but the explicit <code>SID</code> regex
+parse is fragile (Open Question). -
+<code>logout(): Promise&lt;void&gt;</code> —
+<code>POST /api/v2/auth/logout</code> with <code>retry:false</code>;
+clears the cookie (<code>client.ts:171-179</code>).</p>
+<p><strong>App / torrent endpoints</strong></p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Method</th>
+<th>Verb + path</th>
+<th>Payload</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getVersion(): Promise&lt;string&gt;</code></td>
+<td><code>GET /api/v2/app/version</code></td>
+<td>—</td>
+<td>timeout 5000ms (<code>HEALTH_CHECK</code>). Returns
+<code>.version</code> from <code>QBittorrentVersion</code>
+(<code>client.ts:186</code>).</td>
+</tr>
+<tr>
+<td><code>addTorrentFromMagnet(magnetUri, options?)</code></td>
+<td><code>POST /api/v2/torrents/add</code></td>
+<td><code>FormData{urls:&lt;magnet&gt;, ...addOpts}</code></td>
+<td>timeout 30000ms (<code>ADD_TORRENT</code>). Success = HTTP 200 AND
+body does NOT contain <code>"fail"</code>. Throws
+<code>ServerError</code> otherwise
+(<code>client.ts:201-230</code>).</td>
+</tr>
+<tr>
+<td><code>addTorrentFromFile(file: File, options?)</code></td>
+<td><code>POST /api/v2/torrents/add</code></td>
+<td><code>FormData{torrents:&lt;File&gt;, ...addOpts}</code></td>
+<td>Same success/error semantics (<code>client.ts:239-267</code>).</td>
+</tr>
+<tr>
+<td><code>getTorrents(filter?)</code></td>
+<td><code>GET /api/v2/torrents/info?filter=&lt;f&gt;</code></td>
+<td>—</td>
+<td>filter ∈ all/downloading/seeding/completed/paused/active/inactive.
+Returns <code>QBittorrentTorrentInfo[]</code>
+(<code>client.ts:275</code>).</td>
+</tr>
+<tr>
+<td><code>deleteTorrents(hashes[], deleteFiles=false)</code></td>
+<td><code>POST /api/v2/torrents/delete</code></td>
+<td><code>FormData{hashes:h1\|h2, deleteFiles:"true"/"false"}</code></td>
+<td>hashes pipe-joined (<code>client.ts:290</code>).</td>
+</tr>
+<tr>
+<td><code>pauseTorrents(hashes[])</code></td>
+<td><code>POST /api/v2/torrents/pause</code></td>
+<td><code>FormData{hashes:h1\|h2}</code></td>
+<td>(<code>client.ts:306</code>).</td>
+</tr>
+<tr>
+<td><code>resumeTorrents(hashes[])</code></td>
+<td><code>POST /api/v2/torrents/resume</code></td>
+<td><code>FormData{hashes:h1\|h2}</code></td>
+<td>(<code>client.ts:317</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>Defined-but-unused endpoint constants: <code>APP_PREFERENCES</code>,
+<code>APP_SET_PREFERENCES</code>, <code>TRANSFER_INFO</code>
+(<code>constants.ts:116-127</code>) — no client method calls them
+yet.</p>
+<p><strong><code>applyAddOptions(formData, options)</code></strong>
+(<code>client.ts:373-392</code>) maps
+<code>QBittorrentAddTorrentParams</code> fields onto the FormData:
+<code>savepath, category, tags, skip_checking, paused, root_folder, rename, upLimit, dlLimit, autoTMM, contentLayout, sequentialDownload, firstLastPiecePrio</code>.</p>
+<p><strong>Generic verbs</strong>: <code>get&lt;T&gt;(path,opts)</code>,
+<code>post&lt;T&gt;(path,body,opts)</code>,
+<code>delete&lt;T&gt;(path,opts)</code> — each calls
+<code>requestWithRetry</code> then <code>parseResponse&lt;T&gt;</code>
+(<code>client.ts:330-365</code>).</p>
+<p><strong>Retry / backoff / timeout / rate limiting</strong> -
+<code>requestWithRetry</code> (<code>client.ts:402</code>): if
+<code>options.retry !== false</code>, wraps <code>requestRaw</code> in
+<code>retryWithBackoff(fn, maxRetries=RETRY_CONFIG.MAX_RETRIES /*3*/, base=1000ms, max=30000ms)</code>.
+- <code>retryWithBackoff</code> (<code>utils.ts:168</code>): attempts
+<code>0..maxRetries</code>; delay =
+<code>min(base*2^attempt, max) + random*0.3*clampedDelay</code>
+(exponential + 30% jitter). Throws the last error after exhausting
+retries. - <code>requestRaw</code> (<code>client.ts:430</code>): -
+<strong>Rate limit</strong>: <code>rateLimiter.consume()</code>
+(TokenBucket). If no token, sleeps <code>1000 / availableTokens</code>
+ms then proceeds (it does NOT re-check — soft limiter)
+(<code>client.ts:436-440</code>). - <strong>Timeout</strong>:
+<code>AbortController</code> + <code>setTimeout(abort, timeout)</code>;
+on abort throws
+<code>NetworkError("Request timeout after &lt;ms&gt;ms")</code>
+(<code>client.ts:470-497</code>). - <strong>Headers</strong>:
+<code>Cookie: SID=...</code> if set, then custom headers, then
+per-request headers.
+<code>Content-Type: application/x-www-form-urlencoded</code> is set ONLY
+when body is not FormData (browser sets multipart boundary for FormData)
+(<code>client.ts:445-468</code>). -
+<code>fetch(url, {method, headers, body, signal, credentials:"include"})</code>
+(<code>client.ts:474</code>). - On <code>!response.ok</code> →
+<code>handleErrorResponse</code>. - <code>handleErrorResponse</code>
+(<code>client.ts:542</code>): HTTP <strong>429</strong> → reads
+<code>retry-after</code> header (seconds ×1000, default 60000) → throws
+<code>RateLimitError(msg, retryMs)</code>. Other non-OK → reads body
+text → throws <code>ServerError(message, status)</code>. -
+<code>parseResponse&lt;T&gt;</code> (<code>client.ts:512</code>): 204 or
+<code>content-length:"0"</code> → <code>undefined</code>.
+<code>text/plain</code> content-type → raw text. Else tries
+<code>response.json()</code>, falling back to text.</p>
+<h3 id="auth-flow-authhandler-apiauth.ts-11.4.10-relevant">2.2 Auth flow
+<code>AuthHandler</code> (<code>api/auth.ts</code>) — §11.4.10
+relevant</h3>
+<p>Four auth methods
+(<code>AuthMethod = "none" | "cookie" | "api_key" | "basic"</code>,
+<code>config.ts:13</code>):</p>
+<ul>
+<li><code>constructor(client, initialMethod="none")</code> builds an
+initial <code>AuthState</code> (all-null,
+<code>isAuthenticated:false</code>, <code>consecutiveFailures:0</code>)
+(<code>auth.ts:44</code>, <code>createInitialState</code> 352).</li>
+<li><code>authenticate(credentials: AuthCredentials): Promise&lt;boolean&gt;</code>
+(<code>auth.ts:73</code>) dispatches:
+<ul>
+<li><code>cookie</code> → <code>authenticateCookie(user,pass)</code> →
+<code>client.login()</code>; on success records <code>sidCookie</code>
+(read from <code>client["authCookie"]</code> private field — a TS escape
+hatch, <code>auth.ts:247</code>) +
+<code>sidExpiresAt = now + 3600_000</code>.</li>
+<li><code>api_key</code> → <code>authenticateApiKey(apiKey)</code> →
+<code>client.setHeaders({"X-API-Key": apiKey})</code>; <strong>always
+returns true</strong> (validated on first real request); stores a
+redacted <code>apiKeyHeader: "X-API-Key xxxx..."</code> (only first 4
+chars) (<code>auth.ts:261</code>).</li>
+<li><code>basic</code> → <code>authenticateBasic(user,pass)</code> →
+<code>btoa(user:pass)</code> →
+<code>client.setHeaders({Authorization:"Basic &lt;b64&gt;"})</code>;
+always true; stores redacted <code>basicAuthHeader</code> (first 8 b64
+chars) (<code>auth.ts:284</code>).</li>
+<li><code>none</code> → <code>authenticateNone()</code> → just calls
+<code>client.getVersion()</code> to confirm reachability
+(<code>auth.ts:307</code>).</li>
+<li>On success: sets
+<code>isAuthenticated:true, lastRefreshedAt:now, consecutiveFailures:0</code>.</li>
+<li>On failure: <code>recordFailure(msg)</code> increments
+<code>consecutiveFailures</code>; at
+<code>MAX_CONSECUTIVE_FAILURES = 3</code> throws <code>AuthError</code>
+(<code>auth.ts:28</code>, <code>327</code>).</li>
+</ul></li>
+<li><code>logout()</code>: calls <code>client.logout()</code>, then
+resets state + clears cookie + clears headers
+(<code>auth.ts:122</code>).</li>
+<li><code>refreshIfNeeded(credentials)</code>: api_key/basic/none never
+expire (returns current <code>isAuthenticated</code>). Cookie:
+re-authenticates if not authed, or if <code>lastRefreshedAt</code> older
+than <code>COOKIE_LIFETIME_MS = 3600_000</code>
+(<code>auth.ts:142</code>).</li>
+<li><strong><code>static createCredentialsFromConfig(config, passphrase)</code></strong>
+(<code>auth.ts:170</code>) — <strong>decrypt point</strong>: dynamically
+imports <code>shared/crypto</code>, parses
+<code>config.encryptedPassword</code> / <code>encryptedApiKey</code>
+(JSON <code>EncryptedBundle</code>) and
+<code>decrypt(bundle, passphrase)</code>s it to build the live
+<code>AuthCredentials</code>. Throws <code>ConfigError</code> if
+required fields are missing.</li>
+<li><code>getState()</code>, <code>isAuthenticated()</code>
+accessors.</li>
+</ul>
+<p><strong>Crypto (<code>shared/crypto.ts</code>)</strong> —
+AES-256-GCM, key derived per-encryption via PBKDF2
+(<code>ENCRYPTION</code> in <code>constants.ts:246</code>:
+<code>AES-GCM</code>, 256-bit key, 12-byte IV, 16-byte salt,
+<code>PBKDF2</code> <code>SHA-256</code>, <strong>100000
+iterations</strong>, key version 1).
+<code>encrypt(plaintext, passphrase)</code> returns
+<code>EncryptedBundle{salt,iv,ciphertext,version}</code> (all base64);
+<code>decrypt(bundle, passphrase)</code> reverses it. Also
+<code>sha256(str)</code>, <code>simpleHash(str)</code>,
+<code>isEncrypted(v)</code>, <code>generateSecurePassphrase()</code> (32
+random bytes, <strong>unused</strong> by the options flow which uses the
+fixed string instead). The 128-bit GCM tag is appended to
+ciphertext.</p>
+<h3 id="offline-queue-offlinequeue-apiqueue.ts">2.3 Offline queue
+<code>OfflineQueue</code> (<code>api/queue.ts</code>)</h3>
+<p>Persistent retry queue for failed sends, stored under
+<code>STORAGE_KEYS.QUEUE</code> (<code>"bobalink_queue"</code>).
+Constants: <code>DEFAULT_MAX_SIZE=50</code>,
+<code>PROCESS_INTERVAL_MS=60000</code>,
+<code>ITEM_SEND_DELAY_MS=500</code> (<code>queue.ts:24-34</code>).</p>
+<ul>
+<li><code>init()</code> — loads persisted <code>QueueItem[]</code> from
+storage (<code>queue.ts:62</code>).</li>
+<li><code>enqueue(infohash, magnetUri, torrentUrl, displayName, serverId, priority="normal"): Promise&lt;QueueItem&gt;</code>
+— evicts oldest while at/over <code>maxSize</code> (FIFO drop), builds a
+<code>QueueItem{id, torrent{infohash,magnetUri,torrentUrl,displayName}, serverId, addedAt, attempts:0, lastError:null, lastAttemptAt:null, priority}</code>,
+pushes, persists (<code>queue.ts:85</code>). Item id =
+<code>queue_&lt;ts&gt;_&lt;rand6&gt;</code>
+(<code>generateItemId</code>, 372).</li>
+<li><code>dequeue(itemId): Promise&lt;boolean&gt;</code> — removes by
+id, persists (<code>queue.ts:128</code>).</li>
+<li><code>processQueue(config: ServerConfig): Promise&lt;QueueProcessResult&gt;</code>
+(<code>queue.ts:144</code>):
+<ul>
+<li>Re-entrancy guard <code>processing</code>; no-op result if already
+processing or empty.</li>
+<li>Builds a <strong>fresh</strong>
+<code>BobaAPIClient(config.url, config.requestTimeout)</code> +
+<code>qBitTorrentAdapter</code>.</li>
+<li>Sorts a copy by priority
+<code>{high:0, normal:1, low:2}</code>.</li>
+<li>For each item: increments <code>attempts</code>, sets
+<code>lastAttemptAt</code>, calls <code>sendQueuedItem</code>, records
+<code>{itemId, success, error}</code>, marks successes for removal,
+delays <code>500ms</code> between sends. Per-item exceptions captured
+into <code>item.lastError</code> + a failed result.</li>
+<li>Removes successful items, persists, returns
+<code>{processed, succeeded, failed, remaining, results}</code>.</li>
+<li>⚠️ <strong>Auth gap</strong>: <code>processQueue</code> never
+authenticates the fresh client — queued private-tracker sends will fail
+unless the server needs no auth (Open Question).</li>
+</ul></li>
+<li><code>sendQueuedItem(item, adapter)</code>
+(<code>queue.ts:316</code>): magnetUri →
+<code>addTorrentFromMagnet</code>; else torrentUrl →
+<code>urlToFile(url)</code> (<code>fetch</code> with
+<code>credentials:"same-origin"</code>, blob → <code>File</code> named
+from the URL tail) → <code>addTorrentFromFile</code>.</li>
+<li><code>getSize()</code>, <code>getItems()</code> (copy),
+<code>clear()</code>.</li>
+<li><code>startAutoProcessing(config, intervalMs=60000)</code> /
+<code>stopAutoProcessing()</code> — <code>setInterval</code> wrapper
+around <code>processQueue</code> (<code>queue.ts:283</code>). Background
+wires this at <code>config.healthCheckInterval * 60000</code> ms when
+<code>config.offlineQueue</code> is on
+(<code>background/index.ts:155-159</code>).</li>
+</ul>
+<h3 id="health-checker-healthchecker-apihealth.ts">2.4 Health checker
+<code>HealthChecker</code> (<code>api/health.ts</code>)</h3>
+<p>Thresholds (<code>health.ts:28</code>): healthy
+<code>&lt;2000ms</code>, degraded <code>&lt;5000ms</code>,
+<code>MAX_FAILURES=2</code>.</p>
+<ul>
+<li><code>checkServer(config): Promise&lt;HealthCheckResult&gt;</code> —
+new <code>BobaAPIClient</code>, calls <code>getVersion()</code>, times
+it via <code>performance.now()</code>, derives status via
+<code>determineStatus</code>. On error: counts consecutive failures (1,
+or 2 if previous wasn’t healthy), status <code>unhealthy</code>
+(≥MAX_FAILURES) else <code>degraded</code>. Caches into a
+<code>Map&lt;serverId,result&gt;</code> (<code>health.ts:52</code>).
+Result fields:
+<code>serverId,url,status,version,responseTimeMs,authValid, error,checkedAt</code>.</li>
+<li><code>checkAllServers(configs): Promise&lt;HealthCheckResult[]&gt;</code>
+— sequential, re-entrancy guard, persists all results to
+<code>STORAGE_KEYS.HEALTH</code> keyed by serverId
+(<code>health.ts:113</code>, <code>persistResults</code> 271).</li>
+<li><code>testConnection(url): Promise&lt;ConnectionTestResult&gt;</code>
+— unauthenticated version probe (timeout 5000ms
+<code>HEALTH_CHECK</code>); returns
+<code>{success,url,version,error,responseTimeMs, testedAt}</code>
+(<code>health.ts:162</code>).</li>
+<li><code>autoDiscover(): Promise&lt;ConnectionTestResult[]&gt;</code> —
+probes <code>http://localhost:&lt;port&gt;</code> for <strong>ports
+<code>[8080, 7187, 7189]</code></strong> (<code>health.ts:201</code>)
+i.e. qBittorrent WebUI, Boba FastAPI merge service, boba-jackett.</li>
+<li><code>getLastResult(serverId)</code>, <code>getAllResults()</code>,
+<code>determineStatus(latency,success,failures)</code>.</li>
+</ul>
+<h3 id="qbittorrent-adapter-qbittorrentadapter-apiqbittorrent.ts">2.5
+qBittorrent adapter <code>qBitTorrentAdapter</code>
+(<code>api/qbittorrent.ts</code>)</h3>
+<p>Domain wrapper over the client. -
+<code>sendTorrent(torrent: DetectedTorrent, config): Promise&lt;SendResult&gt;</code>
+— magnet → <code>addMagnet(uri,config)</code>, torrent-file →
+<code>addTorrentFile(url,config)</code>, else throws
+<code>TorrentError</code>. Returns
+<code>SendResult{success,torrent,error,response,completedAt}</code>;
+never rethrows (normalizes errors to <code>getUserMessage()</code>)
+(<code>qbittorrent.ts:46</code>). -
+<code>sendTorrents(torrents[], config): Promise&lt;SendResult[]&gt;</code>
+— sequential with <strong>250ms</strong> delay between sends
+(<code>qbittorrent.ts:95-110</code>). -
+<code>addTorrentFile(url, config)</code> (private) —
+<code>fetch(url, {credentials:"same-origin"})</code> → blob →
+<code>File("application/x-bittorrent")</code> →
+<code>addTorrentFromFile</code> (<code>qbittorrent.ts:151</code>). -
+<code>buildAddOptions(config)</code> — maps <code>ServerConfig</code> →
+add params:
+<code>savepath, category,   skip_checking, paused, autoTMM, contentLayout (mapped), upLimit/dlLimit (KiB→bytes ×1024)</code>
+(<code>qbittorrent.ts:190</code>). <code>mapContentLayout</code>
+original→<code>Original</code> etc. - <code>getClient()</code>
+accessor.</p>
+<hr />
+<h2 id="parser-rules-bencode-magnet-torrent-file-infohash">3. Parser
+rules (bencode / magnet / torrent-file + infohash)</h2>
+<h3 id="bencode-parserbencode.ts">3.1 Bencode
+<code>parser/bencode.ts</code></h3>
+<p>Zero-dependency bencode using <code>Uint8Array</code>,
+<code>TextEncoder/Decoder</code>.
+<code>BencodeValue = number | string | Uint8Array | BencodeValue[] | {[k]:BencodeValue}</code>.</p>
+<p><strong><code>encode(value): Uint8Array</code></strong>
+(<code>bencode.ts:44</code>) — concatenates parts. - Integer
+<code>i&lt;N&gt;e</code>; throws <code>ParseError</code> if not
+<code>Number.isInteger</code>. - String → UTF-8 bytes →
+<code>&lt;len&gt;:&lt;bytes&gt;</code>. Raw <code>Uint8Array</code> →
+<code>&lt;len&gt;:&lt;bytes&gt;</code>. - List <code>l...e</code> (bytes
+<code>0x6c</code>/<code>0x65</code>). - Dict <code>d...e</code>;
+<strong>keys sorted lexicographically</strong> via
+<code>Object.keys().sort()</code> (spec requirement — load-bearing for
+stable infohash) (<code>bencode.ts:139-151</code>).</p>
+<p><strong><code>decode(data, {encoding?: "utf-8"|"binary"})</code></strong>
+(<code>bencode.ts:165</code>) — recursive descent on a
+<code>{data,pos}</code> cursor. Throws <code>ParseError</code> on
+<strong>trailing data</strong> after the top value. - <code>i</code> →
+integer: handles leading <code>-</code>, accumulates digits, requires
+<code>hasDigits</code>, throws on empty/unterminated/invalid digit
+(<code>bencode.ts:224</code>). - digit <code>0x30-0x39</code> →
+byte-string <code>&lt;len&gt;:&lt;bytes&gt;</code>: validates length
+digits, bounds-checks <code>pos+length &lt;= data.length</code> (throws
+“extends past end”); returns <code>Uint8Array</code> in binary mode,
+decoded UTF-8 string in utf-8 mode (<code>bencode.ts:270</code>). -
+<code>l</code> → list until <code>e</code>; <code>d</code> → dict until
+<code>e</code>. <strong>Dict keys are always decoded as utf-8
+strings</strong> even when the value encoding is binary
+(<code>bencode.ts:369</code>) — important: it decodes keys utf-8 but
+values may be binary. - Helpers <code>bytesToHex</code>,
+<code>hexToBytes</code>, and
+<code>sha1(data): Promise&lt;string&gt;</code> (Web Crypto
+<code>crypto.subtle.digest("SHA-1", ...)</code> → hex)
+(<code>bencode.ts:397-427</code>).</p>
+<h3 id="magnet-parsermagnet.ts">3.2 Magnet
+<code>parser/magnet.ts</code></h3>
+<ul>
+<li><code>containsMagnetLink(text)</code> — fast
+<code>text.includes("magnet:?")</code> (<code>magnet.ts:33</code>).</li>
+<li><code>findMagnetUris(text): string[]</code> —
+<code>MAGNET_REGEX</code>
+(<code>/magnet:\?xt=urn:btih:[a-fA-F0-9]{40}[^\s"'&lt;&gt;]*/gi</code>),
+dedups case-insensitively, keeps only those passing
+<code>MAGNET_VALIDATION_REGEX</code> (anchored full-URI form)
+(<code>magnet.ts:43</code>).</li>
+<li><code>extractInfohash(magnetUri): string|null</code> —
+<code>INFOHASH_REGEX</code>
+(<code>/xt=urn:btih:([a-fA-F0-9]{40})/i</code>), lowercased,
+hex-validated (<code>magnet.ts:72</code>).</li>
+<li><code>isValidHexInfohash</code> (<code>/^[a-fA-F0-9]{40}$/</code>),
+<code>isValidBase32Infohash</code> (<code>/^[A-Z2-7]{32}$/</code>).</li>
+<li><code>base32ToHex(base32Hash)</code> — RFC4648 alphabet
+<code>ABCDEFGHIJKLMNOPQRSTUVWXYZ234567</code>; each char → 5 bits →
+grouped into 4-bit nibbles → hex (<code>magnet.ts:110</code>).</li>
+<li><strong><code>parseMagnetUri(magnetUri, sourceElement=null): MagnetInfo</code></strong>
+(<code>magnet.ts:159</code>):
+<ol type="1">
+<li>requires <code>magnet:?</code> prefix (case-insensitive) else
+<code>ParseError</code>.</li>
+<li>hex infohash via <code>extractInfohash</code>; if none, tries base32
+(<code>/xt=urn:btih:([A-Z2-7]{32})/i</code>), converts to hex and
+<strong>recurses</strong> with the URI rewritten.</li>
+<li>Manually parses the query string (split on <code>&amp;</code> OR
+<code>;</code>) into a <code>Map&lt;string,string[]&gt;</code> so
+<strong>repeated keys</strong> (multiple <code>tr</code>,
+<code>xt</code>) are preserved; values
+<code>decodeURIComponent</code>-d.</li>
+<li>Extracts params: <strong><code>xt</code></strong> (primary infohash,
+lowercased), <strong><code>dn</code></strong> (display name),
+<strong><code>tr</code></strong> (trackers[]),
+<strong><code>ws</code></strong> (web seeds[]),
+<strong><code>xl</code></strong> (exact length, <code>parseInt</code>),
+<strong><code>xs</code></strong> (exact source / <code>.torrent</code>
+URL), <strong><code>kt</code></strong> (keywords, split on
+<code>[+\s]+</code>), <strong><code>as</code></strong> (acceptable
+source), <strong><code>mt</code></strong> (manifest). Returns full
+<code>MagnetInfo</code> (see §types) with <code>detectedAt</code> +
+<code>sourceElement</code>. Wraps non-ParseError throws in
+<code>ParseError</code>.</li>
+</ol></li>
+<li><code>buildMagnetUri(infohash, displayName?, trackers?)</code> —
+reconstructs
+<code>magnet:?xt=urn:btih:&lt;hash&gt;&amp;dn=...&amp;tr=...</code>
+(<code>magnet.ts:291</code>).</li>
+<li><code>getMagnetDisplayName(magnet)</code> — falls back to
+<code>Torrent &lt;first12hash&gt;...</code>.</li>
+</ul>
+<h3 id="torrent-file-parsertorrent-file.ts-infohash">3.3 Torrent file
+<code>parser/torrent-file.ts</code> + infohash</h3>
+<ul>
+<li><strong><code>parseTorrentFile(data: Uint8Array): Promise&lt;ParsedTorrent&gt;</code></strong>
+(<code>torrent-file.ts:26</code>):
+<ol type="1">
+<li><code>decode(data)</code>; must be a dict, else
+<code>ParseError</code>.</li>
+<li>requires <code>info</code> sub-dict.</li>
+<li><strong>Infohash = <code>sha1(encode(infoDict))</code></strong> —
+re-bencodes ONLY the info dict and SHA-1s it
+(<code>torrent-file.ts:46-48</code>). This is the canonical BitTorrent
+v1 infohash. <em>(Re-encode reorders dict keys lexicographically; for
+spec-compliant torrents this round-trips to the same bytes — but a
+torrent whose original <code>info</code> had non-sorted keys would hash
+differently. Caveat for the port.)</em></li>
+<li>requires <code>name</code>; extracts <code>creation date</code>,
+<code>comment</code>, <code>created by</code> (root),
+<code>source</code> (info), <code>piece length</code>,
+<code>private</code> (==1), counts pieces
+(<code>pieces.length/20</code>), trackers
+(<code>extractTrackers</code>), files (<code>extractFiles</code>),
+<code>totalSize</code> (sum of file lengths).</li>
+</ol>
+<ul>
+<li>Returns <code>ParsedTorrent</code> (see §types).</li>
+</ul></li>
+<li><code>parseTorrentFromUrl(url)</code> —
+<code>fetch(url,{credentials:"same-origin"})</code>, warns on unexpected
+content-type (expects <code>application/x-bittorrent</code> or
+<code>application/octet-stream</code>), then
+<code>parseTorrentFile(arrayBuffer)</code>
+(<code>torrent-file.ts:121</code>).</li>
+<li><code>computeInfohash(data): Promise&lt;string&gt;</code> —
+lightweight: decode → <code>sha1(encode(info))</code> without full parse
+(<code>torrent-file.ts:159</code>).</li>
+<li><code>extractTrackers(rootDict)</code> — <code>announce</code>
+(single) + <code>announce-list</code> (tiered nested arrays), dedup via
+<code>Set</code>, decodes Uint8Array trackers utf-8
+(<code>torrent-file.ts:191</code>).</li>
+<li><code>extractFiles(infoDict, defaultName)</code> — single-file (no
+<code>files</code> key) → one entry
+<code>{path:[name], length, fullPath:name}</code>; multi-file → iterate
+<code>files[]</code>, each
+<code>{path:[...], length, fullPath:path.join("/")}</code>
+(<code>torrent-file.ts:235</code>). <code>extractPath</code> decodes
+path components (utf-8) and filters empties.</li>
+<li>Type-safe extractors
+<code>getString/getStringOrNull/getNumber/getNumberOrNull</code> handle
+string-or-Uint8Array values.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> the <code>.torrent</code>-file PARSER
+(<code>parseTorrentFile</code>/<code>computeInfohash</code>) is fully
+built but is <strong>never invoked</strong> by the scanners, adapter, or
+background — torrent-file sends go straight to qBittorrent as raw
+<code>File</code> uploads (<code>addTorrentFromFile</code>). The parser
+is latent capability the Boba port could wire in for dedup/preview (Open
+Question).</p>
+</blockquote>
+<hr />
+<h2 id="scanner-architecture-orchestrator-linktext-site-db-batching">4.
+Scanner architecture (orchestrator + link/text + site-db +
+batching)</h2>
+<h3 id="basescanner-scannerbase.ts">4.1 <code>BaseScanner</code>
+(<code>scanner/base.ts</code>)</h3>
+<p>Abstract base.
+<code>ScannerOptions{scanShadowDom, maxElements, includeHidden, excludeSelector}</code>;
+<code>DEFAULT_SCANNER_OPTIONS = {scanShadowDom:true, maxElements:10000, includeHidden:false, excludeSelector:"script,style,noscript,template,textarea"}</code>
+(<code>base.ts:35</code>). - abstract
+<code>scan(root?): Promise&lt;DetectedTorrent[]&gt;</code>,
+<code>getScannerId(): string</code>. - <code>isActive()</code>,
+<code>executeScan(fn)</code> — re-entrancy guard + timing +
+swallow-and-return-<code>[]</code> on error (<code>base.ts:106</code>).
+- <code>shouldIncludeElement(el)</code> — skips excluded selectors and
+(unless <code>includeHidden</code>)
+<code>display:none</code>/<code>visibility:hidden</code> via
+<code>getComputedStyle</code> (<code>base.ts:137</code>). -
+<code>querySelectorAllDeep(root, selector)</code> — querySelectorAll +
+recursive <strong>shadow-DOM</strong> traversal
+(<code>scanShadowDOM</code> walks with <code>TreeWalker</code>, bounded
+by <code>maxElements</code>) (<code>base.ts:161</code>). -
+<code>createDetectedTorrent(type, displayName, magnet, torrentFile)</code>
+— builds the unified <code>DetectedTorrent</code>; id from
+<code>hashString(infohash ?? url ?? displayName)</code>; truncates
+display name to 80 chars (<code>base.ts:235</code>).
+<code>hashString</code> = djb2-ish
+<code>&lt;base36hash&gt;+&lt;base36 now&gt;</code> — <strong>id is
+time-salted, so the same torrent gets a different id each scan</strong>
+(relevant to the orchestrator’s dedup <code>Map</code>, which therefore
+dedups within a single scan pass only via the scanners’ own
+<code>seen</code> sets, not across pages reliably)
+(<code>base.ts:265</code>).</p>
+<h3 id="linkscanner-scannerlink-scanner.ts-getscannerid-link">4.2
+<code>LinkScanner</code> (<code>scanner/link-scanner.ts</code>) —
+<code>getScannerId() =&gt; "link"</code></h3>
+<p><code>scan(root=document.body)</code>: 1. <strong>Site-specific
+pass</strong>: <code>getSiteSelectors()</code> resolves CSS selectors by
+domain (<code>SITE_SELECTORS</code> exact → base-domain →
+<code>generic</code>), runs each via <code>querySelectorAllDeep</code>
+(shadow-DOM aware), dedups by normalized href (<code>seen</code> Set).
+2. <strong>Generic fallback pass</strong>:
+<code>scanRoot.querySelectorAll("a[href]")</code> over everything not
+yet seen. - For each href: <code>magnet:</code> →
+<code>processMagnetLink</code> (parse, displayName from
+<code>magnet.displayName ?? el.textContent ?? Magnet &lt;hash&gt;</code>);
+<code>.torrent</code> (via <code>TORRENT_FILE_VALIDATION_REGEX</code>
+<code>/^https?:\/\/.+\.torrent(\?.*)?$/i</code>) →
+<code>processTorrentLink</code> (resolve relative→absolute URL, extract
+filename, <code>sameOrigin</code> flag)
+(<code>link-scanner.ts:41</code>).</p>
+<h3 id="textscanner-scannertext-scanner.ts-getscannerid-text">4.3
+<code>TextScanner</code> (<code>scanner/text-scanner.ts</code>) —
+<code>getScannerId() =&gt; "text"</code></h3>
+<p><code>scan(root=document.body)</code> uses a
+<code>TreeWalker(SHOW_TEXT)</code> with an <code>acceptNode</code>
+filter that <strong>skips</strong> text inside
+<code>script,style,noscript,template,textarea,code</code> and text nodes
+shorter than 20 chars; bounded by <code>maxElements</code>. For each
+accepted node containing <code>magnet:?</code>,
+<code>findMagnetUris</code> extracts URIs, dedups, and
+<code>processMagnetText</code> parses + names them (display from
+<code>magnet.displayName ?? parent[title] ?? parent.textContent ?? Magnet &lt;hash&gt;</code>)
+(<code>text-scanner.ts:39</code>). Catches torrents pasted as plain text
+on forums.</p>
+<h3 id="scannerorchestrator-scannerorchestrator.ts">4.4
+<code>ScannerOrchestrator</code>
+(<code>scanner/orchestrator.ts</code>)</h3>
+<p>Coordinates scanners + MutationObserver.
+<code>OrchestratorOptions{enableLinkScanner, enableTextScanner, mutationDebounceMs, observeMutations}</code>;
+defaults all-on, debounce <code>DEBOUNCE_DELAYS.MUTATION=500</code>.
+Constructor (<code>orchestrator.ts:77</code>): - creates its own
+<code>TypedEventEmitter</code> (or accepts one), - <strong>per-site
+debounce</strong>: <code>getMutationDebounceForUrl(location.href)</code>
+overrides the default, - builds a
+<code>debounce(performScan, mutationDebounceMs)</code>, -
+<code>registerDefaultScanners()</code> → <code>LinkScanner</code> +
+<code>TextScanner</code>. - <code>start()</code> — initial
+<code>performScan()</code> + <code>setupMutationObserver()</code>. -
+<code>stop()</code> — cancel debounce + disconnect observer. -
+<code>scanNow(root?)</code> — manual immediate scan. -
+<code>getDetectedTorrents()/getDetectedCount()/clearDetected()/hasInitialScanCompleted()/   isCurrentlyScanning()</code>.
+- <code>performScan(root?)</code> (<code>orchestrator.ts:226</code>):
+re-entrancy guard; emits <strong><code>scan-started</code></strong>;
+runs each registered scanner sequentially (only if
+<code>!scanner.isActive()</code>), <strong><code>yieldToBrowser()</code>
+between scanners</strong> (cooperative, prevents main-thread block);
+aggregates; <code>mergeResults</code> dedups by <code>id</code> into
+<code>detectedMap</code> (emitting
+<strong><code>torrent-detected</code></strong> per new item); emits
+<strong><code>scan-completed</code></strong> (with counts + durationMs)
+or <strong><code>scan-error</code></strong>; returns
+<code>PageScanResult</code>. - <code>setupMutationObserver()</code>
+(<code>orchestrator.ts:354</code>): observes <code>document.body</code>
+<code>{childList:true, subtree:true, attributes:true, attributeFilter:["href"]}</code>.
+Only triggers the debounced rescan when a mutation is “relevant”: an
+added <code>&lt;a&gt;</code> / element containing
+<code>a[href^='magnet:'],a[href$='.torrent']</code>, an added text node
+containing <code>magnet:</code>, or an <code>href</code> attribute
+change to a magnet/<code>.torrent</code> value.</p>
+<p><strong>“Batching incl. tab-groups”</strong> — clarification: the
+reference code has <strong>no <code>chrome.tabGroups</code>
+usage</strong>. The batching that exists is (a) <strong>per-scanner
+sequential batching with <code>yieldToBrowser()</code> cooperative
+yielding</strong> in <code>performScan</code>, (b) the
+<strong><code>processInChunks</code></strong> helper in
+<code>utils.ts</code> (chunk size 50, yields between chunks — defined
+but unused by scanners), and (c) <strong>per-tab result storage</strong>
+in the background
+<code>tabTorrents: Map&lt;tabId,PageScanResult&gt;</code>. The plan’s
+“tab-group batching” must be designed fresh; the reference only batches
+DOM work within one tab. (Open Question.)</p>
+<h3 id="site-db-scannersite-db.ts">4.5 Site DB
+<code>scanner/site-db.ts</code></h3>
+<p>A richer
+<code>SiteConfig{domain,name,selectors,private,urlPatterns,dynamicContent, mutationDebounceMs}</code>
+registry (<code>SITES</code>, <code>site-db.ts:43</code>) for <strong>15
+sites</strong>: 1337x.to, thepiratebay.org, rarbg.to, yts.mx, eztv.re,
+nyaa.si, limetorrents.lol, torrentgalaxy.to, fitgirl-repacks.site,
+rutracker.org (private), animetosho.org, demonoid.is, iptorrents.com
+(private), torrentleech.org (private), beyond-hd.me (private),
+passthepopcorn.me (private). Each entry carries per-site
+<code>mutationDebounceMs</code> (400–800) and a
+<code>dynamicContent</code> flag. Exposed helpers:
+<code>getSiteConfig(url)</code> (exact domain → url-pattern →
+base-domain), <code>getSelectorsForUrl(url)</code>,
+<code>getMutationDebounceForUrl(url)</code> (default 500),
+<code>isKnownTorrentSite(url)</code>, <code>getSiteName(url)</code>,
+<code>listKnownSites()</code>.</p>
+<blockquote>
+<p>⚠️ <strong>Two overlapping selector tables</strong>:
+<code>LinkScanner</code> reads the <strong>flat</strong>
+<code>SITE_SELECTORS</code> map in <code>constants.ts</code> (covers ~21
+domains incl. rutracker, iptorrents, torrentleech), while
+<code>site-db.ts</code>’s <code>SITES</code> map (15 richer entries) is
+only used for the per-site debounce. rutracker.org/iptorrents.com/etc.
+are the privately-tracked sites Boba already supports — the port should
+reconcile these two tables.</p>
+</blockquote>
+<hr />
+<h2 id="message-protocol-content-background-popupoptions">5. Message
+protocol (content ↔︎ background ↔︎ popup/options)</h2>
+<p>Messages flow over <code>chrome.runtime.sendMessage</code> /
+<code>chrome.tabs.sendMessage</code>. Envelope =
+<code>ExtensionMessage{type: MessageType, payload?: Record&lt;string,unknown&gt;, requestId?}</code>;
+reply = <code>ExtensionMessageResponse{success, data?, error?}</code>
+(<code>types/api.ts:450-486</code>). The declared
+<code>MessageType</code> union and the actually-handled set differ
+slightly — both captured below.</p>
+<h3 id="handled-by-background-backgroundindex.ts224-handlemessage">5.1
+Handled by <strong>background</strong>
+(<code>background/index.ts:224</code> <code>handleMessage</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th><code>type</code></th>
+<th>payload in</th>
+<th>returns</th>
+<th>action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scan-result</code></td>
+<td><code>{result: PageScanResult}</code> (from content; tabId from
+sender)</td>
+<td><code>{success}</code></td>
+<td>stores into <code>tabTorrents.set(tabId,result)</code>,
+<code>updateBadge(items.length, DETECTED)</code></td>
+</tr>
+<tr>
+<td><code>get-detected</code></td>
+<td><code>{tabId?}</code> (fallback sender.tab.id)</td>
+<td><code>{success, data:{result}}</code></td>
+<td>returns <code>tabTorrents.get(tabId)</code></td>
+</tr>
+<tr>
+<td><code>send-torrent</code></td>
+<td><code>{ids:string[], tabId?}</code></td>
+<td><code>{success, data:{results:SendResult[]}}</code></td>
+<td><code>sendTorrents(tabId, ids)</code></td>
+</tr>
+<tr>
+<td><code>get-config</code></td>
+<td>—</td>
+<td><code>{success, data:{config}}</code></td>
+<td><code>loadConfig()</code></td>
+</tr>
+<tr>
+<td><code>set-config</code></td>
+<td><code>{config: ExtensionConfig}</code></td>
+<td><code>{success}</code></td>
+<td>persist + <code>initializeApiClient(config)</code></td>
+</tr>
+<tr>
+<td><code>health-check</code></td>
+<td>—</td>
+<td><code>{success, data:{results}}</code></td>
+<td><code>healthChecker.checkAllServers(config.servers)</code></td>
+</tr>
+<tr>
+<td><code>test-connection</code></td>
+<td><code>{url}</code></td>
+<td><code>{success, data:{result}}</code></td>
+<td><code>healthChecker.testConnection(url)</code></td>
+</tr>
+<tr>
+<td><code>auto-discover</code></td>
+<td>—</td>
+<td><code>{success, data:{results}}</code></td>
+<td><code>healthChecker.autoDiscover()</code> (ports
+8080/7187/7189)</td>
+</tr>
+<tr>
+<td><code>authenticate</code></td>
+<td><code>{serverId, passphrase?}</code></td>
+<td><code>{success, data:{authenticated}}</code></td>
+<td>rebuilds client+auth,
+<code>createCredentialsFromConfig(server,passphrase)</code>,
+<code>authenticate()</code></td>
+</tr>
+<tr>
+<td><code>scan-page</code></td>
+<td><code>{tabId?}</code></td>
+<td><code>{success}</code></td>
+<td><code>chrome.tabs.sendMessage(tabId,{type:"scan-now"})</code></td>
+</tr>
+<tr>
+<td><code>open-dashboard</code></td>
+<td>—</td>
+<td><code>{success}</code></td>
+<td>opens active server url (fallback
+<code>http://localhost:8080</code>)</td>
+</tr>
+<tr>
+<td><code>queue-status</code></td>
+<td>—</td>
+<td><code>{success, data:{size, items}}</code></td>
+<td><code>offlineQueue.getSize()/getItems()</code></td>
+</tr>
+<tr>
+<td><code>queue-process</code></td>
+<td>—</td>
+<td><code>{success, data:{result}}</code></td>
+<td><code>offlineQueue.processQueue(activeServer)</code></td>
+</tr>
+<tr>
+<td><em>(default)</em></td>
+<td>—</td>
+<td><code>{success:false, error:"Unknown message type: …"}</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="handled-by-content-script-contentindex.ts183-handlemessage">5.2
+Handled by <strong>content script</strong>
+(<code>content/index.ts:183</code> <code>handleMessage</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th><code>type</code></th>
+<th>payload in</th>
+<th>returns</th>
+<th>action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scan-now</code></td>
+<td>—</td>
+<td><code>{success}</code></td>
+<td><code>orchestrator.scanNow()</code></td>
+</tr>
+<tr>
+<td><code>get-detected</code></td>
+<td>—</td>
+<td><code>{success, torrents:[{id,type,displayName,selected,sent}]}</code></td>
+<td>simplified detected list (NOTE: a <em>different</em> shape than the
+background <code>get-detected</code>)</td>
+</tr>
+<tr>
+<td><code>toggle-selection</code></td>
+<td><code>{id}</code></td>
+<td><code>{success}</code></td>
+<td>flips <code>torrent.selected</code></td>
+</tr>
+<tr>
+<td><code>get-scan-status</code></td>
+<td>—</td>
+<td><code>{success, isScanning, hasScanned, torrentCount}</code></td>
+<td>orchestrator status</td>
+</tr>
+<tr>
+<td><em>(default)</em></td>
+<td>—</td>
+<td><code>{success:false, error}</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="sent-by-content-background">5.3 Sent by <strong>content →
+background</strong></h3>
+<ul>
+<li><code>scan-result</code> with <code>{result: PageScanResult}</code>
+— emitted from the orchestrator’s <code>scan-completed</code> event
+handler (<code>content/index.ts:243</code>
+<code>sendScanResultToBackground</code>).</li>
+</ul>
+<h3 id="sent-by-popup-background-content-popuppopup.ts">5.4 Sent by
+<strong>popup → background / content</strong>
+(<code>popup/popup.ts</code>)</h3>
+<ul>
+<li><code>get-detected {tabId}</code> → background; falls back to
+<code>chrome.tabs.sendMessage(tab.id, {type:"get-detected"})</code> to
+the content script directly (<code>popup.ts:157-185</code>).</li>
+<li><code>health-check</code> → background (connection status dot)
+(<code>popup.ts:198</code>).</li>
+<li><code>scan-now</code> → content script directly (Scan Page button)
+(<code>popup.ts:110</code>).</li>
+<li><code>send-torrent {tabId, ids[]}</code> → background (Send button)
+(<code>popup.ts:378</code>).</li>
+</ul>
+<h3 id="sent-by-options-background-optionsoptions.ts">5.5 Sent by
+<strong>options → background</strong>
+(<code>options/options.ts</code>)</h3>
+<ul>
+<li><code>set-config {config}</code> (on save)
+(<code>options.ts:102</code>).</li>
+<li><code>auto-discover</code> (<code>options.ts:422</code>).</li>
+<li><code>test-connection {url}</code>
+(<code>options.ts:507</code>).</li>
+</ul>
+<h3 id="declared-but-unrouted-message-types">5.6 Declared-but-unrouted
+message types</h3>
+<p><code>MessageType</code> (<code>types/api.ts:450</code>) also
+declares <code>send-result</code>, <code>get-auth-state</code>,
+<code>health-result</code>, <code>show-notification</code>,
+<code>update-badge</code>, <code>torrent-detected</code>,
+<code>selection-change</code> — these have NO handler branch (the
+background/content switches don’t cover them). They are aspirational /
+internal-event names overlapping the <code>EventMap</code>.
+<code>scan-page</code> is declared and IS handled by background but is
+only sent internally.</p>
+<h3 id="internal-event-bus-sharedevents.ts">5.7 Internal event bus
+(<code>shared/events.ts</code>)</h3>
+<p>Not chrome-messaging — an in-process <code>TypedEventEmitter</code>
+with <code>EventMap</code>: <code>torrent-detected</code>,
+<code>scan-started</code>, <code>scan-completed</code>,
+<code>scan-error</code>, <code>send-started</code>,
+<code>send-completed</code>, <code>send-error</code>,
+<code>auth-state-changed</code>, <code>connection-status</code>,
+<code>config-changed</code>, <code>queue-updated</code>,
+<code>badge-update</code>, <code>notification</code>. The orchestrator
+emits scan events; the <code>HighlightManager</code> and
+<code>ContentScanner</code> subscribe. <code>on()</code> returns an
+unsubscribe fn; <code>once()</code>, <code>emit()</code>,
+<code>off()</code>, <code>listenerCount()</code>,
+<code>hasListeners()</code>.</p>
+<hr />
+<h2
+id="background-service-worker-responsibilities-backgroundindex.ts">6.
+Background service worker responsibilities
+(<code>background/index.ts</code>)</h2>
+<p>Central hub. Module-level state: <code>events</code> (emitter),
+<code>apiClient</code>, <code>authHandler</code>,
+<code>healthChecker</code>, <code>offlineQueue</code>,
+<code>tabTorrents: Map&lt;number,PageScanResult&gt;</code>,
+<code>initialized</code>.</p>
+<ul>
+<li><strong>Lifecycle</strong>: <code>chrome.runtime.onInstalled</code>
+(on <code>install</code> seeds <code>DEFAULT_CONFIG</code>),
+<code>chrome.runtime.onStartup</code>, and an immediate
+<code>initialize()</code> call
+(<code>background/index.ts:735-759</code>). Also an empty
+<code>onMessage</code> listener purely to keep the SW alive
+(<code>background/index.ts:754</code>).</li>
+<li><code>initialize()</code> — loads config, inits logger + offline
+queue, sets up context menus, commands, message routing, storage
+listeners, alarms, and the API client; optional startup notification
+(<code>background/index.ts:80</code>).</li>
+<li><code>initializeApiClient(config)</code> — finds
+<code>activeServerId</code> server, builds <code>BobaAPIClient</code> +
+<code>AuthHandler</code>; if <code>config.offlineQueue</code>, starts
+<code>offlineQueue.startAutoProcessing(server, healthCheckInterval*60000)</code>.
+Badge cleared/error accordingly
+(<code>background/index.ts:132</code>).</li>
+<li><strong>Message routing</strong> (<code>setupMessageRouting</code>)
+— async-safe <code>onMessage</code> returning <code>true</code>;
+delegates to <code>handleMessage</code> (§5.1).</li>
+<li><strong>Torrent sending</strong>
+<code>sendTorrents(tabId, ids)</code>
+(<code>background/index.ts:388</code>): loads active server, ensures
+<code>apiClient</code>/<code>authHandler</code>,
+<code>refreshIfNeeded(creds)</code> with creds decrypted using an
+<strong>empty passphrase <code>""</code></strong> (⚠️ §11.4.10), pulls
+the tab’s <code>PageScanResult</code>, filters items by id, runs
+<code>adapter.sendTorrents</code>, <strong>enqueues failures</strong>
+into the offline queue (if enabled), marks successes
+<code>sent</code>/<code>sendStatus:"success"</code>, updates badge,
+optionally notifies.</li>
+<li><strong>Context menus</strong> (<code>setupContextMenus</code>):
+<code>bobalink-send</code> (on <code>link</code>, url patterns
+<code>magnet:*</code>, <code>*://*/*.torrent</code>,
+<code>*://*/*.torrent?*</code>), <code>bobalink-scan</code>
+(page/action), <code>bobalink-dashboard</code> (action/page).
+<code>onClicked</code> → <code>handleContextSend</code> (sends a single
+link directly: magnet → <code>addTorrentFromMagnet</code>,
+<code>.torrent</code> → fetch→File→<code>addTorrentFromFile</code>, with
+<code>category</code> from active server) / send <code>scan-now</code> /
+open dashboard (<code>background/index.ts:481-585</code>).</li>
+<li><strong>Keyboard commands</strong>
+(<code>setupCommandListeners</code>, <code>chrome.commands</code>):
+<code>send-to-boba</code> (sends all unsent items of the active tab),
+<code>scan-page</code>, <code>open-dashboard</code>
+(<code>background/index.ts:594</code>).</li>
+<li><strong>Alarms</strong> (<code>setupAlarms</code>,
+<code>chrome.alarms</code>): <code>keepalive</code> every <strong>0.33
+min (~20s)</strong> (touches storage to keep SW alive);
+<code>health-check</code> every <strong>5 min</strong> (runs
+<code>checkAllServers</code>)
+(<code>background/index.ts:637</code>).</li>
+<li><strong>Badge &amp; notifications</strong>:
+<code>updateBadge(count,color)</code>
+(<code>chrome.action.setBadgeText</code> /
+<code>setBadgeBackgroundColor</code>, caps at 99);
+<code>showNotification(title,message,type)</code>
+(<code>chrome.notifications.create</code>, icon
+<code>/icon-128.png</code>, error→priority 2)
+(<code>background/index.ts:682-709</code>). Badge colors from
+<code>BADGE_COLORS</code> (HEALTHY #4CAF50, DEGRADED #FF9800, ERROR
+#F44336, SCANNING #2196F3, DETECTED #9C27B0, DEFAULT #757575).</li>
+<li><strong>Storage listeners</strong>
+(<code>setupStorageListeners</code>): on <code>CONFIG</code> change →
+re-<code>initializeApiClient</code>
+(<code>background/index.ts:718</code>).</li>
+</ul>
+<hr />
+<h2 id="popup-options-control-setting-inventory">7. Popup + options
+control / setting inventory</h2>
+<h3 id="popup-popupindex.html-popuppopup.ts">7.1 Popup
+(<code>popup/index.html</code> + <code>popup/popup.ts</code>)</h3>
+<p>UI elements / controls: - Header: brand icon + title;
+<strong>connection status</strong> dot (<code>#status-dot</code>
+online/offline/warning) + text (<code>#status-text</code>) driven by
+<code>health-check</code> results (online if any healthy, warning if
+degraded, offline otherwise; “No server”/warning banner
+<code>#connection-warning</code> with an Open-Options link if no
+servers). - Toolbar buttons: <strong>Select All</strong>
+(<code>#btn-select-all</code> — selects all unsent),
+<strong>Deselect</strong> (<code>#btn-deselect-all</code>),
+<strong>Refresh</strong> (<code>#btn-refresh</code> — reloads list). -
+<strong>Torrent list</strong> (<code>#torrent-list</code>) — one row per
+<code>DetectedTorrent</code>: checkbox (disabled+checked if already
+<code>sent</code>), name (escaped+truncated 60), type icon/label,
+infohash first-16, “Sent” marker. Checkbox change toggles membership in
+a <code>selectedIds</code> Set. - <strong>Empty state</strong>
+(<code>#empty-state</code>) with a <strong>Scan Page</strong> button
+(<code>#btn-scan-page</code> → sends <code>scan-now</code> to the tab,
+shows a 2s progress overlay then reloads). - Footer: <strong>selection
+info</strong> (<code>#selection-info</code> “N selected”) + <strong>Send
+to Boba</strong> button (<code>#btn-send</code>, disabled when nothing
+selected → <code>sendSelectedTorrents</code> →
+<code>send-torrent</code>). - Progress overlay
+(<code>#progress-overlay</code>/<code>#progress-text</code>), error
+toast (3s auto-remove). - Open Options link
+(<code>chrome.runtime.openOptionsPage()</code>).</p>
+<p>Reads: detected torrents per active tab, server health. Writes:
+selection (local), triggers sends + scans. No persisted settings written
+from the popup.</p>
+<h3 id="options-optionsindex.html-optionsoptions.ts">7.2 Options
+(<code>options/index.html</code> + <code>options/options.ts</code>)</h3>
+<p>Sidebar sections: <strong>Servers, General, Advanced, About</strong>.
+Save bar (<code>#save-bar</code>) with Discard/Save Changes; tracks
+<code>hasChanges</code> on any input/select change.</p>
+<p><strong>Servers section</strong> — server cards (name, url, active
+badge, auth-method badge; Set Active / Edit / Delete). <strong>Add
+Server</strong> opens a modal form: - <code>#server-name</code>,
+<code>#server-url</code> (validated <code>isValidHttpUrl</code>),
+<code>#server-auth</code> (none/cookie/api_key/basic — toggles
+<code>.auth-fields-*</code> visibility), - cookie/basic:
+<code>#server-username</code> + <code>#server-password</code> (or
+<code>#server-basic-username/password</code>), api_key:
+<code>#server-apikey</code>, - <code>#server-category</code> (default
+“BobaLink”), <code>#server-savepath</code>, - <strong>Test
+Connection</strong> (<code>#btn-test-connection</code> →
+<code>test-connection</code>), <strong>Save Server</strong> (submit). -
+On save (<code>saveServerFromForm</code>): encrypts secrets via
+<code>encrypt(value, "bobalink-extension")</code> (⚠️ §11.4.10 fixed
+passphrase, <code>options.ts:327</code>), builds a full
+<code>ServerConfig</code> with hard-coded
+<code>requestTimeout:15000, verifySsl:true, startPaused:false, skipHashCheck:false,   contentLayout:"original", autoTMM:false, uploadLimit:0, downloadLimit:0</code>.
+First server becomes active. - <strong>Auto Discovery card</strong>:
+checkboxes (qBt 8080, FastAPI 7187, Go 7189 — display-only; actual ports
+hard-coded in <code>health.autoDiscover</code>), <strong>Discover
+Servers</strong> button → <code>auto-discover</code> → renders found
+servers with an <strong>Add</strong> button that prefills the modal.</p>
+<p><strong>General section</strong> toggles →
+<code>ExtensionConfig</code> fields:
+<code>#setting-auto-scan</code>→<code>autoScan</code>,
+<code>#setting-highlight</code>→<code>highlightTorrents</code>,
+<code>#setting-highlight-style</code>→<code>highlightStyle</code>
+(badge/border/glow), <code>#setting-notifications</code>→
+<code>showNotifications</code>,
+<code>#setting-auto-send</code>→<code>autoSend</code>,
+<code>#setting-offline-queue</code>→<code>offlineQueue</code>.</p>
+<p><strong>Advanced section</strong>:
+<code>#setting-health-interval</code>→<code>healthCheckInterval</code>
+(1–60), <code>#setting-max-history</code>→<code>maxHistoryItems</code>
+(10–500),
+<code>#setting-max-queue</code>→<code>maxOfflineQueueSize</code>
+(10–200), <code>#setting-request-timeout</code> (5–120s, displayed only
+— not written back to config),
+<code>#setting-debug</code>→<code>debugMode</code>. <strong>Danger
+Zone</strong>: Reset All (<code>#btn-reset</code> → restores
+<code>DEFAULT_CONFIG</code>).</p>
+<p><strong>About section</strong>: version, GitHub links, tech list.</p>
+<p>Reads <code>STORAGE_KEYS.CONFIG</code>; on save persists config +
+sends <code>set-config</code> to background.
+<code>populateFormValues</code>/<code>readFormValues</code> bridge
+form↔︎config.</p>
+<h3 id="assets-styles">7.3 Assets / styles</h3>
+<ul>
+<li><code>assets/icon.svg</code> — 128×128 gradient magnet glyph (purple
+<code>#667eea→#764ba2</code> bg, pink accent tips). HTML references
+rasterized <code>icon-32/48/128.png</code> (must be produced at build);
+badge notification icon path <code>/icon-128.png</code>.</li>
+<li><code>content/styles.css</code> — three highlight styles, all
+<code>.bobalink-*</code> + <code>!important</code>: badge (absolute
+top-right gradient pill with icon+text), border (purple outline), glow
+(box shadow). <code>popup/styles.css</code> (dark theme, 380–420px) and
+<code>options/styles.css</code> are presentation only.</li>
+</ul>
+<hr />
+<h2 id="defaults-keys-constants-quick-reference-for-the-port">8.
+Defaults, keys &amp; constants quick-reference (for the port)</h2>
+<ul>
+<li><strong>Storage keys</strong> (<code>constants.ts:213</code>, all
+<code>bobalink_*</code>): <code>CONFIG</code>, <code>AUTH_STATE</code>,
+<code>CREDENTIALS</code>, <code>DETECTED</code>, <code>HISTORY</code>,
+<code>QUEUE</code>, <code>HEALTH</code>, <code>KEY_MATERIAL</code>.
+(Actually written: <code>CONFIG</code>, <code>QUEUE</code>,
+<code>HEALTH</code>.
+<code>AUTH_STATE/CREDENTIALS/DETECTED/HISTORY/KEY_MATERIAL</code>
+declared but unused.)</li>
+<li><strong>DEFAULT_CONFIG</strong> (<code>config.ts:140</code>):
+<code>schemaVersion:1, servers:[], activeServerId:null, autoScan:true, autoScanDelay:2000, highlightTorrents:true, highlightStyle:"badge", showNotifications:true, notificationSound:false, autoSend:false, maxHistoryItems:100, debugMode:false, healthCheckInterval:5, offlineQueue:true, maxOfflineQueueSize:50, showContextMenu:true, keyboardShortcuts:true, lastUpdated:0, encryptionKeyVersion:1</code>.</li>
+<li><strong>Ports</strong>: FastAPI 7187, Go 7189, qBittorrent 8080
+(<code>DEFAULT_PORTS</code>). Auto-discover probes
+<code>[8080,7187,7189]</code>. Open-dashboard fallback
+<code>http://localhost:8080</code>.</li>
+<li><strong>Timeouts</strong> (<code>REQUEST_TIMEOUTS</code>): DEFAULT
+15000, HEALTH_CHECK 5000, AUTH 10000, ADD_TORRENT 30000, AUTO_DISCOVERY
+3000.</li>
+<li><strong>Retry</strong> (<code>RETRY_CONFIG</code>): MAX_RETRIES 3,
+BASE 1000, MAX 30000, JITTER 0.3.</li>
+<li><strong>Rate limit</strong> (<code>RATE_LIMIT</code>): 10 req /
+1000ms.</li>
+<li><strong>Debounce</strong> (<code>DEBOUNCE_DELAYS</code>): MUTATION
+500, STORAGE_WRITE 250, AUTO_SCAN 1000, BADGE_UPDATE 300, NOTIFICATION
+2000.</li>
+<li><strong>Encryption</strong> (<code>ENCRYPTION</code>): AES-GCM 256,
+IV 12B, salt 16B, PBKDF2 SHA-256 100000 iters.</li>
+</ul>
+<hr />
+<h2 id="open-questions-gaps-the-plan-must-resolve">9. Open questions /
+gaps the plan must resolve</h2>
+<ol type="1">
+<li><strong>§11.4.10 — credential handling is broken-by-design.</strong>
+The options page encrypts every secret with the <strong>literal fixed
+passphrase <code>"bobalink-extension"</code></strong>
+(<code>options.ts:327</code>), and <code>background.sendTorrents</code>
+decrypts with an <strong>empty passphrase <code>""</code></strong>
+(<code>index.ts:409</code>). The per-encryption PBKDF2/AES-GCM machinery
+is sound, but a static or empty key makes the ciphertext trivially
+reversible and the two call-sites are inconsistent (an
+<code>""</code>-decrypt cannot read a
+<code>"bobalink-extension"</code>-encrypted bundle). The Boba port MUST
+design a real key source (user master passphrase prompt, OS keychain, or
+delegate auth entirely to boba-jackett/the proxy which already owns
+encrypted credentials at <code>/config/boba.db</code>).</li>
+<li><strong>Boba service integration is only port-deep.</strong>
+Auto-discover knows ports 7187/7189 but the client only speaks the
+<strong>qBittorrent WebUI v2 API</strong>. There is NO code that talks
+to the Boba merge-search API (<code>types/api.ts</code> declares
+<code>BobaServerInfo</code>/<code>BobaSearchResponse</code> but nothing
+consumes them) or the proxy’s tracker-cookie download path (7186) or
+boba-jackett (7189). The plan must define how the extension reaches
+Boba’s own endpoints vs. raw qBt.</li>
+<li><strong><code>set-cookie</code> parsing for SID.</strong>
+<code>client.login</code> parses <code>SID</code> from the
+<code>set-cookie</code> response header, which browsers normally strip
+from <code>fetch</code>; works incidentally via the cookie jar +
+<code>credentials:"include"</code>. Brittle across CORS / cross-origin
+proxy setups.</li>
+<li><strong>No CORS / host-permissions story.</strong> All
+<code>fetch</code>es go cross-origin to localhost:8080/7187/ 7189; MV3
+needs <code>host_permissions</code> + qBittorrent must allow the
+extension origin (or the download-proxy must proxy). The manifest itself
+was not in scope — must be authored.</li>
+<li><strong>Offline queue never authenticates.</strong>
+<code>processQueue</code> builds a fresh client and never logs in, so
+retries against an authed server will 403/fail loop. Needs auth
+wiring.</li>
+<li><strong><code>.torrent</code> parser is dead code.</strong>
+<code>parseTorrentFile</code>/<code>computeInfohash</code> (full bencode
++ SHA-1 infohash) are implemented and tested-shaped but never called —
+sends upload the raw file. Port could wire it for local dedup /
+infohash-based dedup against Boba.</li>
+<li><strong>Two divergent site tables.</strong>
+<code>constants.SITE_SELECTORS</code> (used by LinkScanner) vs
+<code>site-db.SITES</code> (used only for debounce) overlap and
+disagree; the private trackers Boba actually supports
+(rutracker/iptorrents/etc.) are split across both. Reconcile.</li>
+<li><strong>“Tab-group batching” does not exist</strong> in the
+reference. Only intra-tab <code>yieldToBrowser</code> batching + per-tab
+<code>tabTorrents</code> map. The plan’s tab-group batch behavior is
+net-new design.</li>
+<li><strong>Time-salted detection ids.</strong>
+<code>BaseScanner.hashString</code> appends <code>Date.now()</code>, so
+a torrent’s <code>id</code> changes every scan; cross-scan / cross-tab
+dedup relies on per-pass <code>seen</code> sets and is unreliable. Port
+should use infohash-derived stable ids.</li>
+<li><strong>Two different <code>get-detected</code> response
+shapes</strong> (background returns <code>{data:{result}}</code>,
+content returns <code>{torrents:[...]}</code>) — the popup tries both; a
+unified contract is cleaner.</li>
+<li><strong>Unrouted declared message types</strong>
+(<code>send-result</code>, <code>get-auth-state</code>,
+<code>health-result</code>, <code>show-notification</code>,
+<code>update-badge</code>, <code>torrent-detected</code>,
+<code>selection-change</code>) — decide whether to implement or
+drop.</li>
+<li><strong>Manifest, commands, and icon rasterization</strong>
+(<code>manifest.json</code>, <code>chrome.commands</code> definitions
+for
+<code>send-to-boba</code>/<code>scan-page</code>/<code>open-dashboard</code>,
+PNG icon sizes 16/32/48/128) are referenced by code but not present in
+the read scope — must be produced for the port.</li>
+</ol>

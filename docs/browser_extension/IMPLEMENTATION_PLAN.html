@@ -1,0 +1,369 @@
+<h1 id="bobalink-browser-extension-master-implementation-plan">BobaLink
+Browser Extension — Master Implementation Plan</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T05:12:40Z <strong>Status:</strong> Planning complete — ready
+for phased, subagent-driven implementation <strong>Authority:</strong>
+This plan is derived exhaustively from
+<code>docs/research/browser_extension/</code> (205 files, ~50k lines)
+via the analysis files in <code>_analysis/01–06.md</code> and the
+planning artifacts in <code>_plan/A–F.md</code>. Per §11.4.118, the
+traceability matrix (<code>_plan/C-traceability-matrix.md</code>, 245
+items) proves nothing is skipped.</p>
+<hr />
+<h2 id="hard-constraints-non-negotiable-read-first">0. Hard constraints
+(non-negotiable — read first)</h2>
+<ol type="1">
+<li><strong>NO CI/CD — EVER.</strong> No
+<code>.github/workflows/</code>, no <code>.gitlab-ci.yml</code>, no
+Jenkins, no pipelines, no git hooks added for this subproject. The
+reference ships <code>ci.yml</code>/<code>release.yml</code> — they are
+<strong>DROPPED</strong>; their build/test/lint <em>commands</em> are
+extracted into a manual <code>extension/ci-ext.sh</code> shelled from
+the repo’s <code>./ci.sh</code>. (Operator-reinforced 2026-06-10; Boba
+Hard Stop.)</li>
+<li><strong>Anti-bluff (§11.4 / §11.4.107).</strong> Every test asserts
+a user-observable outcome and must fail against a no-op stub. The
+reference suite’s 10 known bluffs (<code>_plan/D</code>) are remediated,
+not adopted.</li>
+<li><strong>§11.4.10 credentials.</strong> The extension stores
+<strong>no decryptable secret by default</strong> (delegate-by-default,
+<code>_plan/E</code>). The hard-coded <code>"bobalink-extension"</code>
+passphrase + empty-passphrase decrypt are <strong>forbidden</strong>. No
+real credential in any test/fixture/doc.</li>
+<li><strong>§11.4.113 no force-push; §11.4.71 fetch-first; SSH remotes
+only.</strong></li>
+<li><strong>100% multi-type test coverage (§11.4.27/§11.4.85):</strong>
+unit, integration, e2e, security, load, scaling, chaos, stress,
+performance, benchmark, UI, UX, Challenges, HelixQA banks + autonomous
+QA sessions — for every feature/flow/use-case/edge-case.</li>
+<li><strong>§11.4.125/§11.4.134/§11.4.142 mandatory code-review</strong>
+of every change before it is “complete,” iterate-until-GO.</li>
+<li><strong>Real backend = Boba merge-service on 7187</strong>
+(<code>_plan/A</code>), not direct qBittorrent, not port 8080.</li>
+</ol>
+<hr />
+<h2 id="product-definition">1. Product definition</h2>
+<p><strong>BobaLink</strong> — a cross-browser <strong>Manifest V3
+WebExtension</strong> (WXT + TypeScript strict, Vitest+Playwright) that:
+- detects <strong>magnet links</strong> + <strong><code>.torrent</code>
+files</strong> on any page (MutationObserver, SPA-aware) and across
+<strong>tab groups</strong>; - parses them (bencode / magnet BEP-9 /
+<code>.torrent</code> → SHA-1 infohash), dedups by infohash; - forwards
+them to <strong>Boba’s merge-service (<code>:7187</code>)</strong>,
+which adds them to qBittorrent server-side; - provides popup + options
+UI, offline FIFO queue, badge/notifications, context menu, keyboard
+shortcuts, i18n (8 locales), WCAG 2.1 AA, dark/light themes; - targets
+Chrome ≥109, Firefox ≥109 (MV3 event pages via WXT), Opera, Edge, Yandex
+(Safari deferred).</p>
+<p><strong>Supported browsers / data model / sequences / state
+machines:</strong> see <code>_analysis/03-diagrams.md</code> (6 ER
+entities, 2 end-to-end sequences, offline-queue + lifecycle state
+machines, security architecture, compatibility matrix).</p>
+<hr />
+<h2 id="repository-placement-naming-proposed-operator-objectable">2.
+Repository placement &amp; naming (proposed — operator-objectable)</h2>
+<ul>
+<li><strong>Location:</strong> new top-level <code>extension/</code>
+directory (sibling to <code>frontend/</code>,
+<code>download-proxy/</code>). Snake_case per §11.4.29 where it doesn’t
+break tooling; the WXT/TS conventions inside <code>extension/src/</code>
+follow the framework.</li>
+<li><strong>Name:</strong> <code>BobaLink</code> (from the materials).
+Objectable.</li>
+<li><strong>Build artifact:</strong>
+<code>extension/.output/chrome-mv3-prod/</code> (+ firefox), zipped for
+manual store submission (no auto-submit).</li>
+</ul>
+<hr />
+<h2 id="backend-additions-required-in-boba-python-merge-service">3.
+Backend additions required in Boba (Python merge-service)</h2>
+<p>From <code>_plan/A</code> — the extension needs capabilities Boba
+doesn’t yet expose. These are <strong>Phase 4</strong> tasks (real,
+tested, anti-bluff): - <strong>BE-1 — CORS for extension
+origins:</strong> add <code>chrome-extension://*</code> +
+<code>moz-extension://*</code> to <code>ALLOWED_ORIGINS</code> (or
+document the host-permission background-fetch path that avoids CORS).
+File: <code>download-proxy/src/api/__init__.py</code> CORS middleware. -
+<strong>BE-2 — raw <code>.torrent</code> upload:</strong> new
+<code>POST /api/v1/download/upload</code> (multipart bytes → qBittorrent
+<code>/api/v2/torrents/add</code> multipart). Boba currently accepts
+URLs only. File: <code>download-proxy/src/api/routes.py</code>. -
+<strong>BE-3 — Go-profile parity (optional):</strong>
+<code>qBitTorrent-go/internal/api/download.go</code> is a stub that
+echoes <code>"added"</code> without contacting qBittorrent — either
+implement it or document that the extension targets the Python backend
+only.</p>
+<p>Each backend addition follows full TDD + four-layer coverage + its
+own code-review GO.</p>
+<hr />
+<h2 id="phased-implementation-plan">4. Phased implementation plan</h2>
+<blockquote>
+<p>Each phase lists <strong>Tasks → fine-grained Sub-tasks</strong>, the
+<strong>traceability IDs</strong> it satisfies (see
+<code>_plan/C</code>), the
+<strong>adopt/refactor/rewrite/net-new</strong> disposition
+(<code>_plan/F</code>), and the <strong>test types</strong> that gate it
+(<code>_plan/D</code>). Every phase ends with a code-review GO
+(§11.4.125) before merge. Phases are subagent-driven (§11.4.70),
+parallelized where file-scopes are disjoint (§11.4.103).</p>
+</blockquote>
+<h3
+id="phase-1-foundation-scaffolding-disposition-refactor-configs-adopt-types-shared-libs">Phase
+1 — Foundation &amp; scaffolding <em>(Disposition: REFACTOR configs /
+ADOPT types &amp; shared libs)</em></h3>
+<p><strong>Covers:</strong> build/config, data model, shared libs,
+constants, types. Traceability: FND-<em>, ER-</em>, NFR-maintainability.
+- <strong>T1.1 Scaffold WXT project</strong> — <code>extension/</code>
+with <code>package.json</code> (SSH repo URL, node ≥20, ESM),
+<code>wxt.config.ts</code> (MV3,
+<code>minimum_chrome_version 109</code>), <code>tsconfig.json</code>
+(strict, zero <code>any</code>),
+<code>.eslintrc</code>/<code>.prettierrc</code>. <strong>NO
+<code>.github/</code>.</strong> - Sub: port the npm scripts
+(dev/build/zip/compile/lint/test) — drop CI-only scripts. - Sub: WXT
+auto-icons → rasterize the missing icon PNGs from
+<code>assets/icon.svg</code> (net-new). - <strong>T1.2
+Manifest/permissions/CSP</strong> — least-privilege per
+<code>_plan/E</code>:
+<code>storage, alarms, notifications, activeTab, contextMenus</code>;
+<code>host_permissions</code> localhost-only (<code>:7187</code> +
+optional remote); MV3 CSP object form; <strong>no
+<code>&lt;all_urls&gt;</code>/<code>tabs</code>/<code>cookies</code></strong>.
+Re-target all <code>:8080</code> → <code>:7187</code>. - <strong>T1.3
+Types &amp; data model</strong> — ADOPT <code>types/torrent.ts</code>;
+de-dup <code>AuthMethod</code>/<code>ServerConfig</code> drift;
+reconcile the SQL schema (9 tables) vs <code>chrome.storage</code> JSON
+— <strong>decision:
+<code>chrome.storage.local</code>/<code>session</code> is the source of
+truth for v1</strong> (sql.js deferred unless needed); document the ER
+model as the logical schema. - <strong>T1.4 Shared libs</strong> — ADOPT
+<code>crypto.ts</code> (sound primitive), <code>errors.ts</code>,
+<code>events.ts</code>, <code>logger.ts</code>, <code>storage.ts</code>,
+<code>utils.ts</code>; fix the
+<code>RateLimitError</code>/<code>ServerError</code> name mismatch;
+constants port (ports/URLs/timeouts/STORAGE_KEYS). -
+<strong>Tests:</strong> unit (shared libs, constants, type guards) + the
+foundation Challenge (<code>artifact-open</code> §11.4.38). Vitest
+configured with UI/entrypoints <strong>in</strong> coverage.</p>
+<h3
+id="phase-2-core-detection-parsing-engine-adopt-parsersscanners-refactor">Phase
+2 — Core detection &amp; parsing engine <em>(ADOPT parsers/scanners +
+REFACTOR)</em></h3>
+<p><strong>Covers:</strong> FR-001..FR-010
+(detection/parsing/infohash/dedup), Dim06/Dim07/Dim08, EDGE-*. -
+<strong>T2.1 Parsers</strong> — ADOPT <code>bencode.ts</code>,
+<code>magnet.ts</code>; <strong>REFACTOR
+<code>torrent-file.ts</code></strong> (wire the dead
+<code>.torrent</code> parser; SHA-1 infohash =
+<code>SHA-1(bencode(info))</code> via WebCrypto; private-passkey
+sanitization). - <strong>T2.2 Scanners</strong> — ADOPT
+<code>link-scanner.ts</code>/<code>text-scanner.ts</code>/<code>content/scanner.ts</code>;
+<strong>REFACTOR <code>scanner/base.ts</code></strong> (remove
+<code>Date.now()</code>-salted unstable IDs → stable infohash-based
+IDs); <strong>merge the two divergent <code>site-db.ts</code> selector
+tables</strong> into one; MutationObserver 500ms debounce; Shadow-DOM
+recursion; iframe <code>all_frames</code>; 16ms frame budget +
+cooperative yielding. - <strong>T2.3 Dedup</strong> — by lowercase
+infohash (FR-007). - <strong>Tests:</strong> unit (every bencode type,
+every magnet param xt/dn/tr/xl/ws/x.pe, hex+base32 infohash, malformed
+rejection, infohash determinism) — <strong>remediate</strong> the
+bencode dead-assert; performance (≤5ms/link on 1000-link page); load
+(10k-link page, no frame &gt;16ms); stress (§11.4.85 boundary inputs);
+benchmark.</p>
+<h3
+id="phase-3-extension-shell-content-background-popup-options-refactor">Phase
+3 — Extension shell (content / background / popup / options)
+<em>(REFACTOR)</em></h3>
+<p><strong>Covers:</strong> FR-011..FR-018 (UI, context menu, shortcuts,
+badge), message protocol, lifecycle/state machines. - <strong>T3.1
+Content script</strong> — REFACTOR <code>content/index.ts</code> (unify
+the <code>get-detected</code> message contract); highlight UI; message
+passing to background. - <strong>T3.2 Background SW</strong> — REFACTOR
+<code>background/index.ts</code> (message router; context menus ×4;
+<code>chrome.commands</code> ×3–4; <code>chrome.alarms</code> keep-alive
+~20s + health 5min; badge/notifications); <strong>remove the
+empty-passphrase decrypt</strong> (→ Phase 7 secure model).
+Offline-queue state machine (<code>_analysis/03</code> #09):
+Idle→Pending→{Sending|Queued|Retry}→{Completed|Failed}, backoff 5s→5min,
+≤5 retries, max 1000, Dead-Letter. - <strong>T3.3 Popup</strong> —
+REFACTOR <code>popup/popup.ts</code> (detected list, Send, Send-All,
+status icon); every control → <code>ExtensionConfig</code> field. -
+<strong>T3.4 Options</strong> — REFACTOR <code>options/options.ts</code>
+(7 tabs: Server/Download/Queue/Notifications/Detection/UI/Security);
+<strong>remove the fixed <code>"bobalink-extension"</code>
+passphrase</strong>. - <strong>Tests:</strong> e2e (real extension
+loaded via persistent-context <code>--load-extension</code>, real id
+resolved from SW target — fixes the <code>test-id</code> bluff); UI/UX
+(WCAG 2.1 AA, keyboard nav, ARIA); integration (message protocol).</p>
+<h3
+id="phase-4-boba-backend-integration-net-new-the-be-123-backend-additions">Phase
+4 — Boba backend integration <em>(NET-NEW + the BE-1/2/3 backend
+additions)</em></h3>
+<p><strong>Covers:</strong> FR-019..FR-023 (send, queue, health, auth),
+Dim01/Dim09 (Dim01 authoritative). - <strong>T4.1 Real Boba
+client</strong> — NET-NEW <code>api/boba-client.ts</code>:
+<code>POST /api/v1/download</code> (magnet + URL),
+<code>GET /health</code>, <code>GET /api/v1/auth/status</code>; retry
+(exp backoff + jitter, 3×, 1s→30s); TokenBucket rate-limit (FR-025);
+AbortController timeout; auto-discovery of <code>:7187</code> (+
+7186/7189 fallback probes). - <strong>T4.2 Offline queue auth +
+persistence</strong> — REFACTOR <code>api/queue.ts</code> (inject the
+real send path; the reference queue never authenticated); durability
+across SW restart (100%, NFR). - <strong>T4.3 Backend additions (Boba
+side)</strong> — BE-1 CORS, BE-2 <code>/api/v1/download/upload</code>,
+BE-3 Go stub decision (§3 above). TDD on the Python/Go backend. -
+<strong>Tests:</strong> integration against <strong>live</strong> 7187
+(<code>require_backend(7187)</code> → SKIP-with-reason if down, never
+fail-open §11.4.3/§11.4.68); security (no creds sent to qBittorrent from
+the extension); chaos (backend drops mid-send → queue recovers); the
+end-to-end Challenge (detect→send→<strong>torrent appears in
+qBittorrent</strong>).</p>
+<h3
+id="phase-5-tab-group-batch-net-new-does-not-exist-in-the-reference">Phase
+5 — Tab-group batch <em>(NET-NEW — does not exist in the
+reference)</em></h3>
+<p><strong>Covers:</strong> FR-024, Dim05, sequence #05. -
+<strong>T5.1</strong> <code>chrome.tabGroups.query</code> →
+<code>chrome.tabs.query{groupId}</code> →
+<code>chrome.scripting.executeScript</code> per tab → scan → flatten +
+dedup → batch send (<code>urls=magnet1\nmagnet2…</code>). -
+<strong>T5.2</strong> Context-menu “Send tab group” + popup “Send All in
+group”; collapsed-group handling; Firefox-incompatible → graceful
+degrade. - <strong>Tests:</strong> e2e (real multi-tab group),
+integration (batch dedup), UX (progress notification), Challenge
+(tab-group batch → N torrents in qBittorrent).</p>
+<h3 id="phase-6-uiux-i18n-accessibility-themes-refactoradopt">Phase 6 —
+UI/UX, i18n, accessibility, themes <em>(REFACTOR/ADOPT)</em></h3>
+<p><strong>Covers:</strong> FR-016/FR-017, Dim10, NFR-a11y. -
+<strong>T6.1</strong> i18n (<code>_locales</code> — 8 locales;
+default_locale); <strong>T6.2</strong> dark/light via
+<code>prefers-color-scheme</code>; <strong>T6.3</strong> WCAG 2.1 AA
+audit (contrast, focus, ARIA, keyboard); <strong>T6.4</strong>
+notification templates (no Base64 icons; Mac limits); badge ≤4 chars. -
+<strong>Tests:</strong> UX (a11y automated + heuristic), UI (every
+control state), i18n (locale switch renders).</p>
+<h3
+id="phase-7-security-credentials-net-new-key-source-refactor-call-sites-crypto-module-adopted">Phase
+7 — Security &amp; credentials <em>(NET-NEW key source + REFACTOR
+call-sites; crypto module ADOPTED)</em></h3>
+<p><strong>Covers:</strong> SEC-*, Dim11, diagram #10, §11.4.10. Full
+design: <code>_plan/E</code>. - <strong>T7.1 Credential model</strong> —
+delegate-by-default (extension holds <strong>no decryptable
+secret</strong> in the localhost-proxy deployment); residual remote-Boba
+token → user-supplied session passphrase (PBKDF2,
+<code>chrome.storage.session</code> only, never persisted). Remove both
+broken call-sites. - <strong>T7.2 Controls</strong> — least-privilege
+manifest, MV3 CSP, HTTPS-off-localhost + cert verify,
+magnet/<code>dn</code> XSS sanitization,
+passkey→<code>***PASSKEY***</code> log redaction,
+no-cleartext-credential-logging,
+<code>sender.id</code>/<code>sender.url</code> validation, GDPR “Clear
+All Data.” - <strong>Tests (anti-bluff, each RED-on-broken first
+§11.4.115, permanent guards §11.4.135):</strong> T2 wrong-key fails (the
+<code>"bobalink-extension"</code> + <code>""</code> decrypts both
+THROW), T3 no embedded key (grep src + bundle → zero hits), T4 no secret
+in logs, T1 ciphertext-at-rest, T8 delegation proof (no qBt/tracker
+creds in extension state); security/pen-test suite; §11.4.10.A pre-store
+leak audit + pre-commit grep gate.</p>
+<h3
+id="phase-8-testing-to-100-all-types-challenges-helixqa-net-new">Phase 8
+— Testing to 100% (all types) + Challenges + HelixQA
+<em>(NET-NEW)</em></h3>
+<p><strong>Covers:</strong> the 13 mandated test types, every feature.
+Full matrix: <code>_plan/D</code>. - <strong>T8.1 Remediate the 10
+reference bluffs</strong> (B1–B10): inline-crypto→import real module;
+Jest→Vitest; <code>expect(true)</code> no-ops→real assertions;
+non-functional e2e→real-extension fixture + global-setup/teardown;
+coverage includes UI/entrypoints. - <strong>T8.2 Fill missing test
+types</strong> — integration, security, load (10k links + API flood vs
+rate-limiter), scaling, chaos (backend death, storage-quota, SW
+termination), stress (§11.4.85 ≥100 iters/≥10 concurrent, p50/p95/p99),
+performance + benchmark (NFR thresholds), UI, UX. - <strong>T8.3
+Challenges</strong> — 8 <code>challenges/scripts/boba_ext_*.sh</code>
+driving the <strong>real built extension</strong> end-to-end
+(detect→send→qBittorrent row; offline-queue durability; cred-at-rest;
+auto-discover; tab-group batch; artifact-open §11.4.38; cred-leak grep).
+No false success. - <strong>T8.4 HelixQA banks</strong> —
+<code>submodules/helixqa/banks/boba-bobalink.yaml</code>
+(<code>http:</code> style, backend endpoints, CI-gated) +
+<code>boba-bobalink-ui.yaml</code> (Playwright, extension UI). Resolve
+the helixqa build-blocker (add the 6 sibling submodules
+<strong>or</strong> consume bank-YAML only). Autonomous QA session,
+re-runnable N× (§11.4.98/§11.4.50), live JSONL verdict stream
+(§11.4.116). - <strong>T8.5</strong> Coverage ledger → 100% feature ×
+test-type; ratchet thresholds; every green proves a user-observable
+outcome.</p>
+<h3 id="phase-9-build-packaging-distribution-manual-no-cicd">Phase 9 —
+Build, packaging &amp; distribution (manual — NO CI/CD)</h3>
+<p><strong>Covers:</strong> BLD-*, Dim12, diagram #11. -
+<strong>T9.1</strong> <code>extension/ci-ext.sh</code> (manual gate:
+lint → format:check → <code>tsc --noEmit</code> → vitest –coverage →
+playwright → wxt build → zip + manifest-validate + bundle-size ≤350KB),
+shelled from <code>./ci.sh</code>. <strong>NO GitHub Actions / GitLab
+pipelines.</strong> - <strong>T9.2</strong> Per-store packaging
+(Chrome/Firefox-gecko.id/Opera/Edge/Yandex) — <strong>manual</strong>
+zips; document submission steps; no auto-submit, no store secrets in
+git. - <strong>T9.3</strong> User + developer + installation + API docs
+(port the 5 reference guides, corrected for the real 7187 contract),
+with §11.4.65 html/pdf siblings.</p>
+<hr />
+<h2
+id="testchallengehelixqa-coverage-strategy-summary-full-in-_pland">5.
+Test/Challenge/HelixQA coverage strategy (summary — full in
+<code>_plan/D</code>)</h2>
+<ul>
+<li><strong>Runner:</strong> Vitest + Playwright (matches Boba
+<code>frontend/</code>; one coverage tool
+<code>@vitest/coverage-v8</code>).</li>
+<li><strong>E2E:</strong> <code>wxt build</code> →
+<code>launchPersistentContext</code> + <code>--load-extension</code> →
+real id from SW target.</li>
+<li><strong>Live integration:</strong>
+<code>require_backend(7187)</code> SKIP-with-reason if down (never
+fail-open).</li>
+<li><strong>Coverage:</strong> UI/entrypoints <strong>in scope</strong>;
+ratchet ≥90%→100; anti-bluff is the real gate.</li>
+<li><strong>Per-feature × per-test-type matrix:</strong> 14 types × 13
+modules; N/A cells justified (DDoS N/A for a client parser, but Load IS
+in-scope for 10k-link pages + rate-limiter flood).</li>
+</ul>
+<h2 id="adoptrefactorrewrite-map-summary-full-in-_planf">6.
+Adopt/Refactor/Rewrite map (summary — full in <code>_plan/F</code>)</h2>
+<p>~80% reusable. ADOPT: parsers (bencode/magnet), scanners, shared libs
+incl. the crypto <strong>module</strong> (sound), types, i18n. REFACTOR:
+api targets (8080→7187), torrent-file wiring, scanner IDs/site-db, the
+two credential call-sites. REWRITE: the test suite’s bluffs + configs.
+NET-NEW: real Boba client, tab-groups, secure key source, the 13 missing
+test types, icon PNGs. DROP: both
+<code>.github/workflows/*.yml</code>.</p>
+<h2 id="open-operator-decisions">7. Open operator decisions</h2>
+<ol type="1">
+<li><strong>Subproject location</strong> — <code>extension/</code> at
+repo root (proposed). Object if you want it elsewhere.</li>
+<li><strong>Backend additions</strong> — OK to add BE-1 (CORS) + BE-2
+(<code>/api/v1/download/upload</code>) to the Python merge-service?
+(Required for <code>.torrent</code>-bytes upload + extension-origin
+calls.)</li>
+<li><strong>HelixQA build-blocker</strong> — add the 6 missing sibling
+submodules (<code>doc_processor</code>, <code>llm_orchestrator</code>,
+<code>llm_provider</code>, <code>llms_verifier</code>,
+<code>security</code>, <code>vision_engine</code>) so
+<code>bin/helixqa</code> builds in-repo, <strong>or</strong> consume
+bank-YAML only and run helixqa from a standalone checkout?</li>
+<li><strong>Session scope</strong> — proceed to Phase 1 scaffolding now
+(autonomous), or hold for your review of this plan first?</li>
+<li><strong>Product name</strong> <code>BobaLink</code> — keep?</li>
+</ol>
+<h2 id="traceability-provenance">8. Traceability &amp; provenance</h2>
+<ul>
+<li>Full requirements matrix (245 items, 240 v1 / 5 v2):
+<code>_plan/C-traceability-matrix.md</code> — every
+FR/NFR/Dim/ER/edge-case placed; none untraceable.</li>
+<li>Source extractions (every file read, manifests prove coverage):
+<code>_analysis/01–06.md</code>.</li>
+<li>Planning evidence: <code>_plan/A</code> (backend contract),
+<code>B</code> (HelixQA), <code>C</code> (traceability), <code>D</code>
+(tests), <code>E</code> (security), <code>F</code> (adopt/rewrite).</li>
+<li>v2-deferred (documented seams, not dropped): multi-client gateway,
+search_cache, Boba search/SSE, side-panel, qBt API-key auth.</li>
+</ul>

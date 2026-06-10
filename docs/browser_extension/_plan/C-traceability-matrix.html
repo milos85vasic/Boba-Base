@@ -1,0 +1,2882 @@
+<h1 id="c-master-traceability-matrix-browser-extension">C — Master
+Traceability Matrix (browser extension)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T00:00:00Z <strong>Purpose:</strong> Anti-skip backbone
+(operator mandate + §11.4.118 enumerated coverage). One row per atomic
+requirement / feature / entity / edge-case / NFR / dimension-decision
+drawn from ALL six analysis files
+(<code>docs/browser_extension/_analysis/01..06</code>). EVERY item from
+the source corpus appears. Proves nothing is silently dropped: deferred
+items are listed explicitly with rationale; untraceable items are listed
+OPEN.</p>
+<p><strong>Stable ID scheme:</strong> - <code>FR-001..FR-025</code> — 25
+functional requirements (file 01 §B). - <code>NFR-001..NFR-015</code> —
+15 non-functional requirements (file 01 §C). -
+<code>DIM01-Rxx .. DIM12-Rxx</code> — per-dimension consolidated
+decisions (file 02). - <code>ER-&lt;entity&gt;</code> — 6 ER entities
+(file 03 §2) + SQL-table superset (file 04 §4a). - <code>EDGE-xx</code>
+— documented edge cases (file 01 §I + scattered). - <code>SEC-xx</code>
+— security/STRIDE controls (file 02 Dim11 + file 03 §6 + file 01 §N). -
+<code>INS-xx</code> — 10 cross-dimension insights (file 02). -
+<code>CV-xx</code> — cross-verification conflicts/low-confidence items
+(file 02). - <code>FND-xx</code> — foundation/source-layer facts (files
+04/05). - <code>TST-xx</code> — test-type coverage requirements (file
+06). - <code>BLD-xx</code> — build/release/distribution (file 01 §M +
+file 02 Dim12 + file 03 §7). - <code>OQ-xx</code> — open questions /
+ambiguities (all files).</p>
+<p>Phase column uses the authoritative 8-phase impl-plan (file 01 §P.2):
+P1 Foundation, P2 Core Engine, P3 Extension Shell, P4 API Integration,
+P5 Tab Groups, P6 UI/UX Polish, P7 Testing, P8 Build/Dist.
+<code>v2</code> = deferred (see Coverage Ledger). Boba constraint flags
+are noted in Notes.</p>
+<hr />
+<h2 id="functional-requirements-25">1. Functional Requirements (25)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Requirement</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes/Dependencies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FR-001</td>
+<td>01 §B.1 FR-001</td>
+<td>Detect magnet links (<code>href</code> <code>magnet:?</code>) in DOM
+of any page, dynamic across SPA; iframe via all_frames; ≤500 ms after
+injection</td>
+<td>detection</td>
+<td>P2/P3</td>
+<td>MutationObserver debounce 500 ms (EDGE-06); regex
+<code>MAGNET_REGEX</code> (FND-12)</td>
+</tr>
+<tr>
+<td>FR-002</td>
+<td>01 §B.1 FR-002</td>
+<td>Detect <code>.torrent</code> file links via <code>.torrent</code>
+suffix (case-insens) +
+<code>Content-Type: application/x-bittorrent</code></td>
+<td>detection</td>
+<td>P2/P3</td>
+<td><code>TORRENT_FILE_REGEX</code> (FND-12); CORS-aware (DIM07)</td>
+</tr>
+<tr>
+<td>FR-003</td>
+<td>01 §B.1 FR-003</td>
+<td>Parse magnet URI per BEP-9: xt/dn/tr/xl/ws/x.pe; xt mandatory valid
+40-hex; dn fallback “Unknown Torrent”; malformed tr discarded</td>
+<td>parsing</td>
+<td>P2</td>
+<td>OQ-07 param-set drift (xs/as/kt/mt vs x.pe); DIM06</td>
+</tr>
+<tr>
+<td>FR-004</td>
+<td>01 §B.1 FR-004</td>
+<td>Download + parse <code>.torrent</code> via fetch; max 10 MB
+(<code>maxTorrentFileSize</code>); 30 s timeout; CORS→Boba-proxy
+fallback; bencode decode</td>
+<td>parsing/api</td>
+<td>P2/P4</td>
+<td>EDGE-04, EDGE-05; FND parser is dead code in ref (FND-23)</td>
+</tr>
+<tr>
+<td>FR-005</td>
+<td>01 §B.1 FR-005</td>
+<td>Compute SHA-1 over bencoded <code>info</code> dict → 40-hex
+infohash; MUST match xt</td>
+<td>parsing</td>
+<td>P2</td>
+<td>RAW bencode, not decode-re-encode (DIM07-R; FND-22)</td>
+</tr>
+<tr>
+<td>FR-006</td>
+<td>01 §B.1 FR-006</td>
+<td>Deduplicate torrents by lowercase infohash; merge longest
+displayName + union trackers + earliest detectedAt</td>
+<td>parsing</td>
+<td>P2</td>
+<td>INS-02 unified identity; ref time-salted ids unreliable (OQ-16)</td>
+</tr>
+<tr>
+<td>FR-007</td>
+<td>01 §B.2 FR-007</td>
+<td>Send magnets to qBitTorrent <code>/api/v2/torrents/add</code>
+<code>urls</code> param; cookie session; opt
+category/tags/savepath/rename</td>
+<td>api</td>
+<td>P4</td>
+<td>DIM02; Boba→7186 proxy (OQ-01)</td>
+</tr>
+<tr>
+<td>FR-008</td>
+<td>01 §B.2 FR-008</td>
+<td>Upload <code>.torrent</code> via multipart <code>torrents</code>
+field to <code>/api/v2/torrents/add</code>; blobs in-memory only</td>
+<td>api</td>
+<td>P4</td>
+<td><code>addTorrentFromFile</code> (FND-31)</td>
+</tr>
+<tr>
+<td>FR-009</td>
+<td>01 §B.2 FR-009</td>
+<td>Tab-group batch: enumerate group tabs, SCAN each, aggregate + dedup,
+transmit unified batch</td>
+<td>tab-groups</td>
+<td>P5</td>
+<td>NET-NEW design — ref has NO tabGroups code (OQ-17/FND-33)</td>
+</tr>
+<tr>
+<td>FR-010</td>
+<td>01 §B.2 FR-010</td>
+<td>Enumerate tab groups + extract URLs via
+<code>chrome.tabGroups.query()</code> +
+<code>chrome.tabs.query()</code>; show titles/colors; multi-select</td>
+<td>tab-groups</td>
+<td>P5</td>
+<td>DIM05; Chrome/Yandex only (EDGE-21)</td>
+</tr>
+<tr>
+<td>FR-011</td>
+<td>01 §B.3 FR-011</td>
+<td>Auto-discover Boba on LAN: probe well-known ports +
+<code>/health</code>; parse version ≥1.0.0; ranked list; persist</td>
+<td>api</td>
+<td>P4</td>
+<td>Re-point 8443/8080→7186/7187/7189 (OQ-01); INS-01</td>
+</tr>
+<tr>
+<td>FR-012</td>
+<td>01 §B.3 FR-012</td>
+<td>Support 4 auth methods: cookie (SID), API key (X-API-Key), Basic,
+Custom Header</td>
+<td>security/api</td>
+<td>P4</td>
+<td>C1: support both cookie+JWT/apikey; ref drops custom-header
+(OQ-06)</td>
+</tr>
+<tr>
+<td>FR-013</td>
+<td>01 §B.3 FR-013</td>
+<td>Encrypt stored credentials AES-256-GCM; PBKDF2 from per-install
+salt; key in storage.session; 96-bit IV; 128-bit tag</td>
+<td>security</td>
+<td>P1/P4</td>
+<td>§11.4.10; ref uses fixed/empty passphrase BLUFF (OQ-15/FND-30)</td>
+</tr>
+<tr>
+<td>FR-014</td>
+<td>01 §B.4 FR-014</td>
+<td>Offline FIFO queue: max 1000; exp backoff 5 s→5 min; max 5 retries;
+persist storage.local; Dead-Letter substore</td>
+<td>queue</td>
+<td>P4</td>
+<td>ref max 50 / 3 attempts diverges (OQ-19); DIM09</td>
+</tr>
+<tr>
+<td>FR-015</td>
+<td>01 §B.4 FR-015</td>
+<td>Badge: numeric queued count; colors green idle/blue sending/orange
+queued/red error; ≤200 ms update</td>
+<td>ui</td>
+<td>P3/P6</td>
+<td>INS-09 badge sync; BADGE_COLORS (FND-26)</td>
+</tr>
+<tr>
+<td>FR-016</td>
+<td>01 §B.5 FR-016</td>
+<td>Context menu: link(magnet)→Send Magnet; link(.torrent)→Download;
+page→Scan; tab-group→Send Group</td>
+<td>ui</td>
+<td>P3/P5</td>
+<td><code>chrome.contextMenus</code>; ref
+<code>bobalink-send/scan/dashboard</code> (FND-32)</td>
+</tr>
+<tr>
+<td>FR-017</td>
+<td>01 §B.5 FR-017</td>
+<td>Keyboard shortcuts: send-current-page Ctrl+Shift+B; open-popup
+Ctrl+Shift+L; send-tab-group Ctrl+Shift+G (customizable)</td>
+<td>ui</td>
+<td>P3</td>
+<td>OQ-08 3-vs-4 cmds; ref ships B/S/D not L/G (FND-29)</td>
+</tr>
+<tr>
+<td>FR-018</td>
+<td>01 §B.5 FR-018</td>
+<td>Cross-browser single codebase: Chrome 88+, Firefox 109+, Opera 74+,
+Yandex 21+; BrowserAdapter abstraction</td>
+<td>cross-browser</td>
+<td>P1/P8</td>
+<td>DIM04; WXT handles per-browser manifest</td>
+</tr>
+<tr>
+<td>FR-019</td>
+<td>01 §B.5 FR-019</td>
+<td>i18n via <code>_locales/{lang}/messages.json</code>: en default +
+zh_CN/zh_TW/es/fr/de/ja/ko; no hardcoded strings</td>
+<td>i18n</td>
+<td>P6</td>
+<td>ref ships en only (28 keys, FND-19)</td>
+</tr>
+<tr>
+<td>FR-020</td>
+<td>01 §B.5 FR-020</td>
+<td>Accessibility WCAG 2.1 AA: contrast ≥4.5:1; keyboard nav; ARIA on
+icon buttons; aria-live; focus indicators</td>
+<td>ui</td>
+<td>P6</td>
+<td>§11.4.117 pixel-oracle for verification</td>
+</tr>
+<tr>
+<td>FR-021</td>
+<td>01 §B.5 FR-021</td>
+<td>Dark/Light theme: respect <code>prefers-color-scheme</code> + manual
+override; CSS custom properties</td>
+<td>ui</td>
+<td>P6</td>
+<td>DIM10 §9; ref <code>ui.theme=auto</code> (FND-25)</td>
+</tr>
+<tr>
+<td>FR-022</td>
+<td>01 §B.5 FR-022</td>
+<td>Notifications via <code>chrome.notifications</code>: Sent / Send
+Failed(retry) / Batch Complete / Retrying; suppressible
+per-category</td>
+<td>ui</td>
+<td>P3/P6</td>
+<td>DIM10 §5; MV3 no base64 icons (DIM03)</td>
+</tr>
+<tr>
+<td>FR-023</td>
+<td>01 §B.5 FR-023</td>
+<td>Options page: server URL+mode, auth(masked)+test-connection, default
+category/tags/path, notif prefs, queue settings, theme, reset</td>
+<td>ui</td>
+<td>P3</td>
+<td>DIM10 §2; ref Servers/General/Advanced/About (FND-43)</td>
+</tr>
+<tr>
+<td>FR-024</td>
+<td>01 §B.5 FR-024</td>
+<td>Health check: poll 30 s; <code>/api/v2/app/version</code> or
+<code>/health</code>; states connected/connecting/disconnected/error;
+tooltip last-ping</td>
+<td>api</td>
+<td>P4</td>
+<td>ref <code>HealthChecker</code> thresholds 2 s/5 s (FND-34)</td>
+</tr>
+<tr>
+<td>FR-025</td>
+<td>01 §B.5 FR-025</td>
+<td>Rate limiting: 10 req/s burst, 60/min sustained; 1 concurrent + 500
+ms inter-call; honor 429 Retry-After; in-memory</td>
+<td>api</td>
+<td>P4</td>
+<td>Token-bucket (file 01 §S); ref RATE_LIMIT 10/1000ms (FND-27)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="non-functional-requirements-15">2. Non-Functional Requirements
+(15)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Requirement</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes/Dependencies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NFR-001</td>
+<td>01 §C.1</td>
+<td>Content script init ≤10 ms (<code>performance.now()</code>)</td>
+<td>performance</td>
+<td>P7</td>
+<td>benchmark test (TST-09)</td>
+</tr>
+<tr>
+<td>NFR-002</td>
+<td>01 §C.1</td>
+<td>Magnet detection ≤5 ms/link (1,000-link page benchmark)</td>
+<td>performance</td>
+<td>P7</td>
+<td>DOM-first querySelector (INS-03)</td>
+</tr>
+<tr>
+<td>NFR-003</td>
+<td>01 §C.1</td>
+<td>Popup render ≤100 ms (Lighthouse)</td>
+<td>performance</td>
+<td>P7</td>
+<td></td>
+</tr>
+<tr>
+<td>NFR-004</td>
+<td>01 §C.1</td>
+<td>Options page load ≤200 ms (Lighthouse)</td>
+<td>performance</td>
+<td>P7</td>
+<td></td>
+</tr>
+<tr>
+<td>NFR-005</td>
+<td>01 §C.1</td>
+<td>API round-trip ≤500 ms local (p95 over 100 calls)</td>
+<td>performance</td>
+<td>P7</td>
+<td></td>
+</tr>
+<tr>
+<td>NFR-006</td>
+<td>01 §C.1</td>
+<td>Service worker cold start ≤50 ms</td>
+<td>performance</td>
+<td>P7</td>
+<td></td>
+</tr>
+<tr>
+<td>NFR-007</td>
+<td>01 §C.1</td>
+<td>Bundle size compressed ≤350 KB</td>
+<td>build</td>
+<td>P8</td>
+<td>tree-shake + code-split</td>
+</tr>
+<tr>
+<td>NFR-008</td>
+<td>01 §C.2</td>
+<td>Credential encryption at rest: AES-256-GCM via Web Crypto</td>
+<td>security</td>
+<td>P1/P4</td>
+<td>composes FR-013/SEC-04</td>
+</tr>
+<tr>
+<td>NFR-009</td>
+<td>01 §C.2</td>
+<td>No cleartext credential logging (ESLint rule + review)</td>
+<td>security</td>
+<td>P1</td>
+<td>§11.4.10; logger must redact</td>
+</tr>
+<tr>
+<td>NFR-010</td>
+<td>01 §C.2</td>
+<td>HTTPS-only API comms (URL scheme validation + CSP)</td>
+<td>security</td>
+<td>P4</td>
+<td>except localhost (SEC-08)</td>
+</tr>
+<tr>
+<td>NFR-011</td>
+<td>01 §C.2</td>
+<td>CSP <code>script-src 'self'; object-src 'none'</code></td>
+<td>security</td>
+<td>P1</td>
+<td>MV3 CSP object (SEC-06)</td>
+</tr>
+<tr>
+<td>NFR-012</td>
+<td>01 §C.2</td>
+<td>Minimum permission model: activeTab + declared host perms only</td>
+<td>security</td>
+<td>P1</td>
+<td>OQ-09 activeTab vs https://*/ ; ref over-broad (FND-08)</td>
+</tr>
+<tr>
+<td>NFR-013</td>
+<td>01 §C.3</td>
+<td>Crash-free session rate ≥99.9%</td>
+<td>reliability</td>
+<td>P7</td>
+<td>chaos/stress (TST-07/08)</td>
+</tr>
+<tr>
+<td>NFR-014</td>
+<td>01 §C.3</td>
+<td>Offline queue durability 100% — all items survive restart</td>
+<td>reliability</td>
+<td>P4/P7</td>
+<td>persist storage.local; chaos test</td>
+</tr>
+<tr>
+<td>NFR-015</td>
+<td>01 §C.3</td>
+<td>API compatibility qBitTorrent 4.4.x–5.x</td>
+<td>api</td>
+<td>P4/P7</td>
+<td>version matrix (file 01 §R); v5 state renames (DIM02)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>NFR §4.4 Scalability sub-items (non-numbered, captured as
+NFR-SCAL):</strong> | ID | Source | Requirement | Category | Phase |
+Notes | |—|—|—|—|—|—| | NFR-SCAL-1 | 01 §C.4 | Tab-group batch size
+unlimited (memory-bound) | scalability | P5 | | | NFR-SCAL-2 | 01 §C.4 |
+Offline queue 1,000 default / 10,000 max | scalability | P4 | | |
+NFR-SCAL-3 | 01 §C.4 | 10,000+ links must not jank (&gt;16 ms frame);
+requestIdleCallback &gt;500 links | performance | P2/P7 | EDGE-13;
+yieldToBrowser (FND) | | NFR-MAINT-1 | 01 §C.5 | Coverage ≥80% unit /
+≥60% E2E; JSDoc; TS strict zero <code>any</code>; ≤20 runtime deps |
+maintainability | P7 | Boba mandate raises to ~100% types (TST-15) |</p>
+<h2 id="research-dimension-consolidated-decisions-12-dimensions">3.
+Research-Dimension Consolidated Decisions (12 dimensions)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Requirement / Decision</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes/Dependencies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DIM01-R1</td>
+<td>02 Dim01</td>
+<td>Treat Dim01 as authoritative Boba topology: qBt 7185 (proxy 7186),
+FastAPI 7187, bridge 7188, jackett 9117, boba-jackett 7189; Go proxy
+7187 (profile go)</td>
+<td>data-model/api</td>
+<td>P1/P4</td>
+<td>overrides spec 8443/8080 (OQ-01)</td>
+</tr>
+<tr>
+<td>DIM01-R2</td>
+<td>02 Dim01</td>
+<td>Extension talks to FastAPI :7187: <code>/api/v1/search</code>(+SSE
+stream), <code>/api/v1/download</code>,
+<code>/api/v1/download/file</code>, <code>/api/v1/magnet</code>,
+<code>/api/v1/auth/status</code>, <code>/api/v1/config</code>,
+<code>/health</code></td>
+<td>api</td>
+<td>P4</td>
+<td>confirm vs live OpenAPI (OQ-12)</td>
+</tr>
+<tr>
+<td>DIM01-R3</td>
+<td>02 Dim01</td>
+<td>Boba CORS via <code>ALLOWED_ORIGINS</code> env
+incl. <code>chrome-extension://&lt;id&gt;</code>; SW not subject to
+CORS</td>
+<td>security/api</td>
+<td>P4</td>
+<td>INS-05 satellite</td>
+</tr>
+<tr>
+<td>DIM01-R4</td>
+<td>02 Dim01</td>
+<td>qBt default creds admin/admin (cookie SID); private trackers
+env-driven; 48 nova3 plugins; freeleech-only IPTorrents</td>
+<td>api</td>
+<td>P4</td>
+<td>K.3 never commit secrets</td>
+</tr>
+<tr>
+<td>DIM02-R1</td>
+<td>02 Dim02</td>
+<td>qBt WebUI v2: cookie auth <code>/api/v2/auth/login</code>→SID;
+Referer/Origin MUST match Host (CSRF); 403=IP ban</td>
+<td>api/security</td>
+<td>P4</td>
+<td>exp backoff to avoid bans</td>
+</tr>
+<tr>
+<td>DIM02-R2</td>
+<td>02 Dim02</td>
+<td><code>/torrents/add</code>: magnets in <code>urls</code>, .torrent
+multipart <code>torrents</code>; 415 invalid; 200≠guaranteed-added; 405
+wrong-method v4.4.4+</td>
+<td>api</td>
+<td>P4</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM02-R3</td>
+<td>02 Dim02</td>
+<td>API-key auth (Bearer qbt_) v5.2.0+ only; cookie is safe
+baseline</td>
+<td>api</td>
+<td>P4</td>
+<td>CV low-confidence (CV-03)</td>
+</tr>
+<tr>
+<td>DIM02-R4</td>
+<td>02 Dim02</td>
+<td>Monitoring via polling <code>/sync/maindata?rid=</code> (no native
+WS/SSE); v5 renames pausedUP→stoppedUP/pausedDL→stoppedDL</td>
+<td>api</td>
+<td>P4</td>
+<td>INS-09 badge sync</td>
+</tr>
+<tr>
+<td>DIM03-R1</td>
+<td>02 Dim03</td>
+<td>MV3 manifest: host_permissions separate; background
+<code>{service_worker,type:module}</code>; perms
+storage/notifications/contextMenus/scripting/alarms/activeTab</td>
+<td>cross-browser</td>
+<td>P1</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM03-R2</td>
+<td>02 Dim03</td>
+<td>SW HARD timeouts: 30 s idle / 5 min request / 30 s fetch;
+chrome.alarms keep-alive; register listeners synchronously top-level;
+<code>return true</code> for async</td>
+<td>cross-browser</td>
+<td>P3</td>
+<td>EDGE-15; ref keepalive 20 s (FND)</td>
+</tr>
+<tr>
+<td>DIM03-R3</td>
+<td>02 Dim03</td>
+<td>Content scripts <code>document_idle</code>; ISOLATED world;
+cross-origin fetch routed through SW (CS can’t since Chrome 85)</td>
+<td>detection/security</td>
+<td>P3</td>
+<td>DIM07-R4</td>
+</tr>
+<tr>
+<td>DIM03-R4</td>
+<td>02 Dim03</td>
+<td>Storage quotas: local ~10 MB, sync ~100 KB/8 KB-item, session ~10 MB
+in-memory; badge ≤4 chars</td>
+<td>data-model</td>
+<td>P1</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM03-R5</td>
+<td>02 Dim03</td>
+<td>Offscreen documents for DOM/parse in MV3 (one/profile); NOT in
+Firefox</td>
+<td>parsing</td>
+<td>P2</td>
+<td>EDGE Firefox fallback</td>
+</tr>
+<tr>
+<td>DIM04-R1</td>
+<td>02 Dim04</td>
+<td>MV3 everywhere; Firefox uses Event Pages (WXT handles);
+webextension-polyfill for browser.* on Chromium + own
+feature-detect</td>
+<td>cross-browser</td>
+<td>P1/P8</td>
+<td>C2/C3 resolved</td>
+</tr>
+<tr>
+<td>DIM04-R2</td>
+<td>02 Dim04</td>
+<td>Firefox MV3 REQUIRES gecko.id + strict_min_version; version
+<code>x.y.z</code> only; data_collection_permissions since Nov 2025</td>
+<td>build</td>
+<td>P8</td>
+<td>BLD</td>
+</tr>
+<tr>
+<td>DIM04-R3</td>
+<td>02 Dim04</td>
+<td>Opera lacks storage.sync/storage.managed; notifications partial on
+Mac; sidebarAction Opera/FF only</td>
+<td>cross-browser</td>
+<td>P6/P8</td>
+<td>compat matrix (ER/diagram #12)</td>
+</tr>
+<tr>
+<td>DIM04-R4</td>
+<td>02 Dim04</td>
+<td>UA detection order Yandex→Opera→Edge→Chrome→Chromium; prefer feature
+detection</td>
+<td>cross-browser</td>
+<td>P1</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM05-R1</td>
+<td>02 Dim05</td>
+<td>tabGroups Chrome 89+/MV3; query/get/update/move; create via
+tabs.group/ungroup; groupId NOT persistent (id by title+color+URLs)</td>
+<td>tab-groups</td>
+<td>P5</td>
+<td>EDGE-21; Firefox incompatible</td>
+</tr>
+<tr>
+<td>DIM05-R2</td>
+<td>02 Dim05</td>
+<td>Accessing tab.url/title needs <code>tabs</code> perm or host perms;
+collapsed groups still API-accessible</td>
+<td>tab-groups</td>
+<td>P5</td>
+<td>conflicts NFR-012 minimal perms</td>
+</tr>
+<tr>
+<td>DIM05-R3</td>
+<td>02 Dim05</td>
+<td>Yandex Chromium ~147+ full tabGroups; Chrome 148+ chrome://newtab
+cannot be grouped</td>
+<td>tab-groups</td>
+<td>P5</td>
+<td>EDGE-21</td>
+</tr>
+<tr>
+<td>DIM06-R1</td>
+<td>02 Dim06</td>
+<td>Magnet BEP-9: xt only mandatory; hash v1 40-hex / 32-base32
+(convert) / v2 btmh 1220+64-hex; two-phase detect+validate</td>
+<td>parsing</td>
+<td>P2</td>
+<td>base32→hex (DIM06-R2)</td>
+</tr>
+<tr>
+<td>DIM06-R2</td>
+<td>02 Dim06</td>
+<td>base32 (32-char) infohash MUST convert to hex (40-char); RFC4648
+alphabet</td>
+<td>parsing</td>
+<td>P2</td>
+<td><code>base32ToHex</code> (FND)</td>
+</tr>
+<tr>
+<td>DIM06-R3</td>
+<td>02 Dim06</td>
+<td>Decode dn (decodeURIComponent + <code>+</code>→space); tr/xs/as/ws
+decode; kt split <code>+</code>; so BEP-53 ranges; duplicate
+params→array</td>
+<td>parsing</td>
+<td>P2</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM06-R4</td>
+<td>02 Dim06</td>
+<td>Sanitize dn before HTML render (strip control/<code>&lt;&gt;</code>,
+≤255, textContent); chunk large text 100 KB vs backtracking</td>
+<td>security/parsing</td>
+<td>P2</td>
+<td>SEC-10</td>
+</tr>
+<tr>
+<td>DIM07-R1</td>
+<td>02 Dim07</td>
+<td>.torrent = bencode dict announce+info; info required piece
+length/pieces(20-byte SHA-1)/name; single length XOR multi files[]</td>
+<td>parsing</td>
+<td>P2</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM07-R2</td>
+<td>02 Dim07</td>
+<td>Bencode: dict keys lexicographic RAW-byte sorted (load-bearing for
+infohash); strict type rules</td>
+<td>parsing</td>
+<td>P2</td>
+<td>TST bencode</td>
+</tr>
+<tr>
+<td>DIM07-R3</td>
+<td>02 Dim07</td>
+<td>Infohash = SHA-1 of RAW bencoded info dict as-in-file (never
+decode-re-encode); Web Crypto needs HTTPS secure ctx</td>
+<td>parsing</td>
+<td>P2</td>
+<td>FND-22 ref re-encodes (caveat)</td>
+</tr>
+<tr>
+<td>DIM07-R4</td>
+<td>02 Dim07</td>
+<td>CORS download: CS can’t cross-origin fetch since Chrome 85 →
+delegate to SW; size ≤10 MB (50 MB max); validate first byte
+<code>0x64</code></td>
+<td>api/parsing</td>
+<td>P2/P4</td>
+<td>EDGE-05</td>
+</tr>
+<tr>
+<td>DIM07-R5</td>
+<td>02 Dim07</td>
+<td>Private torrents (BEP-27): info.private==1 disables DHT/PEX;
+sanitize passkey to <strong><em>PASSKEY</em></strong> (never log)</td>
+<td>security</td>
+<td>P2</td>
+<td>SEC; §11.4.10</td>
+</tr>
+<tr>
+<td>DIM08-R1</td>
+<td>02 Dim08</td>
+<td>Content-script timing document_idle + readyState checks for heavy
+SPAs (safeInitialize)</td>
+<td>detection</td>
+<td>P3</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM08-R2</td>
+<td>02 Dim08</td>
+<td>DOM-first querySelectorAll(‘a[href^=“magnet:”]’) (~90% catch) +
+TreeWalker text-node scan skipping script/style</td>
+<td>detection</td>
+<td>P2</td>
+<td>INS-03 tier-1+tier-3</td>
+</tr>
+<tr>
+<td>DIM08-R3</td>
+<td>02 Dim08</td>
+<td>MutationObserver debounced 500 ms (~88× faster than polling),
+incremental scan new nodes; IntersectionObserver infinite scroll</td>
+<td>detection</td>
+<td>P2</td>
+<td>EDGE-06</td>
+</tr>
+<tr>
+<td>DIM08-R4</td>
+<td>02 Dim08</td>
+<td>iframe all_frames:true + match_about_blank:true; Shadow DOM
+recursive shadowRoot (querySelectorAll doesn’t pierce)</td>
+<td>detection</td>
+<td>P2</td>
+<td>EDGE-07</td>
+</tr>
+<tr>
+<td>DIM08-R5</td>
+<td>02 Dim08</td>
+<td>Site-specific selector DB top ~20 sites
+(TPB/1337x/nyaa/rutracker/generic) — tier-2 detection</td>
+<td>detection</td>
+<td>P2</td>
+<td>INS-03; FND two tables to reconcile (OQ)</td>
+</tr>
+<tr>
+<td>DIM08-R6</td>
+<td>02 Dim08</td>
+<td>Scanner cleanup: track observers/timers/listeners, disconnect on
+navigation (memory-leak prevention); 16 ms frame budget</td>
+<td>performance</td>
+<td>P2</td>
+<td>NFR-SCAL-3</td>
+</tr>
+<tr>
+<td>DIM09-R1</td>
+<td>02 Dim09</td>
+<td>Communication patterns: fetch (ext→server), EventSource SSE,
+WebSocket progress, runtime.sendMessage, storage.local, alarms</td>
+<td>api</td>
+<td>P4</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM09-R2</td>
+<td>02 Dim09</td>
+<td>Auth strategies: cookie/SID, JWT Bearer (60 s buffer + single-flight
+refresh, password NOT stored), API key, Basic</td>
+<td>security/api</td>
+<td>P4</td>
+<td>C1 support both</td>
+</tr>
+<tr>
+<td>DIM09-R3</td>
+<td>02 Dim09</td>
+<td>Retry classification: retry 0/429/500/502/503/504/401-after-refresh;
+non-retry 400/403/404/415; exp backoff+jitter (base 1000, max 30000, ×2,
+jitter 0.5, max 3)</td>
+<td>queue/api</td>
+<td>P4</td>
+<td>file 01 §F.3 differs (5 retries) (OQ-19)</td>
+</tr>
+<tr>
+<td>DIM09-R4</td>
+<td>02 Dim09</td>
+<td>SSE/EventSource cannot send custom headers — auth via URL query
+param; reconnect exp backoff; Chrome 116+ keeps SW alive on
+WebSocket</td>
+<td>api</td>
+<td>P4</td>
+<td>CV-low SSE path (CV-04)</td>
+</tr>
+<tr>
+<td>DIM09-R5</td>
+<td>02 Dim09</td>
+<td>Credential storage: store tokens only never plaintext password;
+chrome.storage.local NOT encrypted by default; clear on logout;
+HTTPS+validate certs</td>
+<td>security</td>
+<td>P4</td>
+<td>FR-013 adds encryption</td>
+</tr>
+<tr>
+<td>DIM09-R6</td>
+<td>02 Dim09</td>
+<td>Health: separate liveness/readiness; parallel checks
+AbortSignal.timeout(5000); status healthy/degraded/unhealthy</td>
+<td>api</td>
+<td>P4</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM09-R7</td>
+<td>02 Dim09</td>
+<td>Offline queue persist + retry on reconnect; navigator.onLine
+unreliable for LAN → proactive <code>/app/version</code> ping every 30 s
+via alarms</td>
+<td>queue</td>
+<td>P4</td>
+<td>INS-06</td>
+</tr>
+<tr>
+<td>DIM09-R8</td>
+<td>02 Dim09</td>
+<td>Rate limiting token-bucket per-endpoint; RequestBatcher (maxBatch
+10, maxWait 50 ms)</td>
+<td>api</td>
+<td>P4</td>
+<td>FR-025</td>
+</tr>
+<tr>
+<td>DIM09-R9</td>
+<td>02 Dim09</td>
+<td>Manifest host_permissions localhost+127.0.0.1 (http+https
+<code>*</code> port); externally_connectable localhost; NEVER
+<code>&lt;all_urls&gt;</code> in prod</td>
+<td>security</td>
+<td>P1</td>
+<td>NFR-012; OQ-09</td>
+</tr>
+<tr>
+<td>DIM10-R1</td>
+<td>02 Dim10</td>
+<td>Popup Chrome max 800×600 / min 25×25; sweet spot 380–450px wide;
+fixed header/connection bar/scroll/footer</td>
+<td>ui</td>
+<td>P3</td>
+<td>FND popup 400px</td>
+</tr>
+<tr>
+<td>DIM10-R2</td>
+<td>02 Dim10</td>
+<td>Context menus require contextMenus perm; &gt;1 visible item
+auto-collapses into extension-named parent</td>
+<td>ui</td>
+<td>P3</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM10-R3</td>
+<td>02 Dim10</td>
+<td>Badge text ≤4 chars; per-tab via tabId (resets on close);
+setBadgeText/Color</td>
+<td>ui</td>
+<td>P3</td>
+<td>FR-015</td>
+</tr>
+<tr>
+<td>DIM10-R4</td>
+<td>02 Dim10</td>
+<td>Commands max 4 suggested keys; all need Ctrl/Alt; Mac Ctrl→Command
+default; fires in SW</td>
+<td>ui</td>
+<td>P3</td>
+<td>OQ-08</td>
+</tr>
+<tr>
+<td>DIM10-R5</td>
+<td>02 Dim10</td>
+<td>Side panel Chrome 114+ (open 116+, close 141+); cannot auto-open
+without user gesture</td>
+<td>ui</td>
+<td>v2</td>
+<td>CV-low (CV-05); optional surface</td>
+</tr>
+<tr>
+<td>DIM10-R6</td>
+<td>02 Dim10</td>
+<td>i18n <code>_locales/&lt;locale&gt;/messages.json</code>; manifest
+default_locale required if _locales;
+<code>__MSG_key__</code>+<code>getMessage()</code>; @<span
+class="citation" data-cites="bidi">@bidi</span> for RTL</td>
+<td>i18n</td>
+<td>P6</td>
+<td>FR-019</td>
+</tr>
+<tr>
+<td>DIM11-R1</td>
+<td>02 Dim11</td>
+<td>Design principles: Least Privilege, Defense in Depth, Zero Trust,
+Secure by Default, Privacy First</td>
+<td>security</td>
+<td>P1</td>
+<td>SEC umbrella</td>
+</tr>
+<tr>
+<td>DIM11-R2</td>
+<td>02 Dim11</td>
+<td>STRIDE mitigations S1-4/T1-4/R1-2/I1-5/D1-3/E1-3 + trust boundaries
+TB1-4</td>
+<td>security</td>
+<td>P1/P7</td>
+<td>SEC-xx; security test (TST-04)</td>
+</tr>
+<tr>
+<td>DIM11-R3</td>
+<td>02 Dim11</td>
+<td>Minimal perms storage/alarms/notifications/activeTab; optional
+clipboardWrite; host localhost; NEVER
+all_urls/tabs/cookies/webRequest/scripting/downloads/history</td>
+<td>security</td>
+<td>P1</td>
+<td>NFR-012; ref declares scripting (FND-08)</td>
+</tr>
+<tr>
+<td>DIM11-R4</td>
+<td>02 Dim11</td>
+<td>Specific per-site matches (never wildcard — wildcards nullify
+postMessage protection)</td>
+<td>security</td>
+<td>P1</td>
+<td>conflicts ref <code>&lt;all_urls&gt;</code> CS (FND-08)</td>
+</tr>
+<tr>
+<td>DIM11-R5</td>
+<td>02 Dim11</td>
+<td>AES-256-GCM + PBKDF2-HMAC-SHA256 100k iters; 128-bit salt; 96-bit
+IV; non-extractable key; master pw never stored; decrypted cache
+storage.session; Clear All Data (GDPR)</td>
+<td>security</td>
+<td>P4</td>
+<td>FR-013/NFR-008</td>
+</tr>
+<tr>
+<td>DIM11-R6</td>
+<td>02 Dim11</td>
+<td>Input validation: magnet/info-hash 40-hex v1/64-hex v2; sanitize dn
+textContent; validate Boba URL; reject javascript:/data:/vbscript:;
+block dangerous ports</td>
+<td>security</td>
+<td>P2/P4</td>
+<td>SEC-10</td>
+</tr>
+<tr>
+<td>DIM11-R7</td>
+<td>02 Dim11</td>
+<td>Privacy: collect only Boba URL/creds(encrypted) + ephemeral
+magnet/names; NO page content/history/IP; analytics opt-in;
+eraseAllData(); no 3rd-party/selling</td>
+<td>privacy</td>
+<td>P6</td>
+<td>defaults analytics false</td>
+</tr>
+<tr>
+<td>DIM11-R8</td>
+<td>02 Dim11</td>
+<td>Secure fetch: <code>credentials:'omit'</code> +
+<code>referrerPolicy:'no-referrer'</code>; HTTPS-only except localhost;
+HSTS; self-signed cert pinning/CA install</td>
+<td>security</td>
+<td>P4</td>
+<td>conflicts qBt needs credentials:include (FND-31) — reconcile</td>
+</tr>
+<tr>
+<td>DIM11-R9</td>
+<td>02 Dim11</td>
+<td>Validate sender.id + sender.url (chrome-extension://) on ALL
+onMessage; action allow-listing</td>
+<td>security</td>
+<td>P3</td>
+<td>ref does NOT validate sender (OQ)</td>
+</tr>
+<tr>
+<td>DIM11-R10</td>
+<td>02 Dim11</td>
+<td>Update security: official-store signed distribution; FF self-hosted
+update_hash HTTPS; verify perms unchanged on update</td>
+<td>build</td>
+<td>P8</td>
+<td></td>
+</tr>
+<tr>
+<td>DIM12-R1</td>
+<td>02 Dim12</td>
+<td>Build WXT (Vite); test Jest unit + Playwright E2E; mock
+sinon-chrome; versioning Conventional Commits→SemVer</td>
+<td>build/testing</td>
+<td>P7/P8</td>
+<td>OQ Jest-vs-Vitest (OQ-03)</td>
+</tr>
+<tr>
+<td>DIM12-R2</td>
+<td>02 Dim12</td>
+<td>Playwright needs launchPersistentContext + –load-extension +
+–disable-extensions-except; jsdom for DOM tests</td>
+<td>testing</td>
+<td>P7</td>
+<td>E2E fixture (TST-02)</td>
+</tr>
+<tr>
+<td>DIM12-R3</td>
+<td>02 Dim12</td>
+<td>Coverage threshold global 70% config (aspirational 80%+ INS-10);
+reporters lcov/html/json-summary; optional
+Sonar/Snyk/Semgrep/Trivy/Gitleaks</td>
+<td>testing</td>
+<td>P7</td>
+<td>Boba→~100% types</td>
+</tr>
+<tr>
+<td>DIM12-R4</td>
+<td>02 Dim12</td>
+<td>Store assets: icons 16/32/48/128(+512); screenshots 640×480 or
+1280×800; privacy policy; no console.log/source-maps in prod; CSP set;
+no remote code</td>
+<td>build</td>
+<td>P8</td>
+<td>BLD</td>
+</tr>
+</tbody>
+</table>
+<h2 id="er-entities-data-model-6-er-sql-superset">4. ER Entities / Data
+Model (6 ER + SQL superset)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Entity / Requirement</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes/Dependencies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ER-extension_config</td>
+<td>03 §2; 04 §4a T2</td>
+<td>Single per-install settings (config_id PK, server_url, api_key,
+qbittorrent_url, username, password_encrypted, auto_detect,
+default_category, scan_interval_ms, max_retries, retry_delay_ms,
+timestamps)</td>
+<td>data-model</td>
+<td>P1</td>
+<td>SQL key-value form (25 seed rows); OQ FK to discovered (diagram
+#9)</td>
+</tr>
+<tr>
+<td>ER-discovered_torrents</td>
+<td>03 §2; 04 §4a T3</td>
+<td>Torrents found on pages (id=infohash PK UK, magnet_uri, name,
+size_bytes, source_url, source_tab_id, status, discovered_at, sent_at,
+error_message; SQL adds
+discovery_method/is_private/tab_group_id/selected/boba_status)</td>
+<td>data-model</td>
+<td>P2/P3</td>
+<td>mmd authoritative superset (file 03 note)</td>
+</tr>
+<tr>
+<td>ER-download_queue</td>
+<td>03 §2; 04 §4a T4</td>
+<td>Offline/retry queue (queue_id PK, torrent_id FK, magnet_uri,
+priority 0-10, retry_count, status queued/retrying/failed/completed,
+queued_at, last_retry_at, error_log; SQL adds
+next_retry_at/server_id/torrent_data_b64)</td>
+<td>queue/data-model</td>
+<td>P4</td>
+<td>FR-014</td>
+</tr>
+<tr>
+<td>ER-server_config</td>
+<td>03 §2; 04 §4a T5</td>
+<td>Per-Boba-server multi-server (server_id PK, name, fastapi_url,
+go_service_url, qbittorrent_url, api_key, is_active,
+health_check_interval, last_health_check, last_check_result; SQL ports
+7187/7189/8080→7186)</td>
+<td>data-model</td>
+<td>P1/P4</td>
+<td>DIM01-R1 port reconcile</td>
+</tr>
+<tr>
+<td>ER-send_history</td>
+<td>03 §2; 04 §4a T6</td>
+<td>Audit log every send (history_id PK, infohash, magnet_uri, name,
+server_id FK, success, qbittorrent_hash, category, tags, sent_at,
+response_time_ms, error_message)</td>
+<td>data-model</td>
+<td>P4</td>
+<td>immutable log</td>
+</tr>
+<tr>
+<td>ER-search_cache</td>
+<td>03 §2; 04 §4a (n/a)</td>
+<td>Cached search results TTL’d (cache_id PK, query_hash, query_text,
+results JSON, result_count, cached_at, ttl_seconds, is_valid) —
+standalone, no relationship</td>
+<td>data-model</td>
+<td>v2</td>
+<td>search aggregation gated Boba 1.2+; OQ-12 storage backend</td>
+</tr>
+<tr>
+<td>ER-REL</td>
+<td>03 §2 relationships</td>
+<td>Cardinality: extension_config 1—o{ discovered_torrents;
+discovered_torrents 1—o{ download_queue; server_config 1—o{
+send_history</td>
+<td>data-model</td>
+<td>P1</td>
+<td>extension_config→discovered FK conceptual only (OQ)</td>
+</tr>
+<tr>
+<td>ER-SQL-extra</td>
+<td>04 §4a T1/T7/T8/T9</td>
+<td>SQL superset tables: app_metadata, site_selectors (30 seed rows),
+queue_log, statistics (daily aggregates)</td>
+<td>data-model</td>
+<td>P1/P2</td>
+<td>sql.js-over-storage.local OR chrome.storage JSON — pick one (OQ
+dual-storage)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases-documented">5. Edge Cases (documented)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Edge case</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EDGE-01</td>
+<td>01 §I</td>
+<td>Magnet without dn → “Unknown Torrent”; qBt resolves from
+metadata</td>
+<td>parsing</td>
+<td>P2</td>
+<td>FR-003</td>
+</tr>
+<tr>
+<td>EDGE-02</td>
+<td>01 §I</td>
+<td>Duplicate infohash → silently skipped “duplicate”; merge longest
+dn+union tr+earliest ts</td>
+<td>parsing</td>
+<td>P2</td>
+<td>FR-006</td>
+</tr>
+<tr>
+<td>EDGE-03</td>
+<td>01 §I</td>
+<td>Malformed tracker URLs → logged + discarded</td>
+<td>parsing</td>
+<td>P2</td>
+<td>FR-003</td>
+</tr>
+<tr>
+<td>EDGE-04</td>
+<td>01 §I</td>
+<td>.torrent &gt;10 MB → not downloaded; E_FILE_TOO_LARGE 413 → “use
+magnet”</td>
+<td>api</td>
+<td>P4</td>
+<td>FR-004</td>
+</tr>
+<tr>
+<td>EDGE-05</td>
+<td>01 §I</td>
+<td>CORS-blocked .torrent → Boba proxies (Boba mode); qBt-direct manual
+copy</td>
+<td>api</td>
+<td>P4</td>
+<td>FR-004; E_CORS</td>
+</tr>
+<tr>
+<td>EDGE-06</td>
+<td>01 §I</td>
+<td>Dynamic SPA/infinite-scroll links → MutationObserver debounce
+250/500 ms</td>
+<td>detection</td>
+<td>P2</td>
+<td>DIM08-R3</td>
+</tr>
+<tr>
+<td>EDGE-07</td>
+<td>01 §I</td>
+<td>iframe links → only when all_frames; may be inaccessible</td>
+<td>detection</td>
+<td>P2</td>
+<td>DIM08-R4</td>
+</tr>
+<tr>
+<td>EDGE-08</td>
+<td>01 §I</td>
+<td>JS click-handler “links” (not real <code>&lt;a&gt;</code>) → not
+detected; manual copy</td>
+<td>detection</td>
+<td>P3</td>
+<td>documented limitation</td>
+</tr>
+<tr>
+<td>EDGE-09</td>
+<td>01 §I</td>
+<td>Non-standard/encoded magnet formats → not detected; manual copy</td>
+<td>detection</td>
+<td>P2</td>
+<td></td>
+</tr>
+<tr>
+<td>EDGE-10</td>
+<td>01 §I</td>
+<td>Login-gated / logged-in-only sites</td>
+<td>detection</td>
+<td>P3</td>
+<td>documented</td>
+</tr>
+<tr>
+<td>EDGE-11</td>
+<td>01 §I</td>
+<td>Strict-CSP pages → extension respects CSP, will NOT inject
+scripts</td>
+<td>detection/security</td>
+<td>P3</td>
+<td>threat model</td>
+</tr>
+<tr>
+<td>EDGE-12</td>
+<td>01 §I</td>
+<td>Forgotten encryption password → no recovery; reset extension +
+reconfigure</td>
+<td>security</td>
+<td>P4</td>
+<td>FR-013</td>
+</tr>
+<tr>
+<td>EDGE-13</td>
+<td>01 §I</td>
+<td>Pages 10,000+ links → no jank (&gt;16 ms); requestIdleCallback
+&gt;500; pagination</td>
+<td>performance</td>
+<td>P2</td>
+<td>NFR-SCAL-3</td>
+</tr>
+<tr>
+<td>EDGE-14</td>
+<td>01 §I</td>
+<td>Browser restart w/o password → session key lost → re-enter
+credentials</td>
+<td>security</td>
+<td>P4</td>
+<td>storage.session loss</td>
+</tr>
+<tr>
+<td>EDGE-15</td>
+<td>01 §I</td>
+<td>Storage quota exceeded → E_STORAGE_FULL; Firefox stricter; clear old
+queue</td>
+<td>data-model</td>
+<td>P4</td>
+<td>DIM03-R4</td>
+</tr>
+<tr>
+<td>EDGE-16</td>
+<td>01 §I</td>
+<td>MV3 SW termination → chrome.alarms keep-alive; Firefox suspends more
+aggressively</td>
+<td>cross-browser</td>
+<td>P3</td>
+<td>DIM03-R2</td>
+</tr>
+<tr>
+<td>EDGE-17</td>
+<td>01 §I</td>
+<td>qBt rejects duplicate → already downloading/completed</td>
+<td>api</td>
+<td>P4</td>
+<td>FR-007</td>
+</tr>
+<tr>
+<td>EDGE-18</td>
+<td>01 §I</td>
+<td>Private-tracker torrents → work if accessible; may need passkey in
+tracker URL</td>
+<td>api/security</td>
+<td>P4</td>
+<td>DIM07-R5</td>
+</tr>
+<tr>
+<td>EDGE-19</td>
+<td>01 §I</td>
+<td>Self-signed certs → browser exception / system trust; HTTPS-only
+temporarily disabled for testing</td>
+<td>security</td>
+<td>P4</td>
+<td>DIM11-R8</td>
+</tr>
+<tr>
+<td>EDGE-20</td>
+<td>01 §I</td>
+<td>macOS <code>__MACOSX</code> metadata folder in ZIP → load error,
+must delete</td>
+<td>build</td>
+<td>P8</td>
+<td></td>
+</tr>
+<tr>
+<td>EDGE-21</td>
+<td>01 §I</td>
+<td>Mobile browsers unsupported; Safari only Partial MV3 not tested;
+Firefox tab-groups incompatible</td>
+<td>cross-browser</td>
+<td>P8</td>
+<td>DIM05-R1</td>
+</tr>
+<tr>
+<td>EDGE-22</td>
+<td>02 Dim06/08</td>
+<td>URL-encoded magnet hrefs; javascript: URLs containing magnets;
+data-* attrs; base32 hashes</td>
+<td>detection</td>
+<td>P2</td>
+<td>DIM06/08</td>
+</tr>
+<tr>
+<td>EDGE-23</td>
+<td>02 Dim07</td>
+<td>Empty/invalid bencode, missing info, leading zeros, neg-zero,
+out-of-order keys, unicode/binary filenames, unterminated
+structures</td>
+<td>parsing</td>
+<td>P2</td>
+<td>TST bencode</td>
+</tr>
+<tr>
+<td>EDGE-24</td>
+<td>02 Dim05</td>
+<td>groupId reuse across sessions; incognito groups don’t persist;
+pinned tabs auto-unpinned; max ~32-64 groups/window</td>
+<td>tab-groups</td>
+<td>P5</td>
+<td>DIM05</td>
+</tr>
+</tbody>
+</table>
+<h2 id="security-stride-controls">6. Security / STRIDE Controls</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Control</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SEC-01</td>
+<td>01 §N; 02 Dim11</td>
+<td>Threat model: credential theft, MITM, XSS, privilege escalation,
+fingerprinting</td>
+<td>security</td>
+<td>P1</td>
+<td>DIM11-R2</td>
+</tr>
+<tr>
+<td>SEC-02</td>
+<td>02 Dim11 S</td>
+<td>Spoofing: cert pinning/HTTPS, origin validation, isolated world,
+magnet hash validation</td>
+<td>security</td>
+<td>P1/P4</td>
+<td></td>
+</tr>
+<tr>
+<td>SEC-03</td>
+<td>02 Dim11 T</td>
+<td>Tampering: store-signed packages, HTTPS/HSTS, AES-GCM, infohash
+validation</td>
+<td>security</td>
+<td>P1/P8</td>
+<td></td>
+</tr>
+<tr>
+<td>SEC-04</td>
+<td>01 §N; 02 Dim11 I</td>
+<td>Info disclosure: AES-256-GCM creds; minimal matches no all_urls;
+restrict web_accessible_resources + use_dynamic_url; sender validation;
+no telemetry</td>
+<td>security</td>
+<td>P1/P4</td>
+<td>FR-013</td>
+</tr>
+<tr>
+<td>SEC-05</td>
+<td>02 Dim11 D/E</td>
+<td>DoS: client rate-limit, document_idle, storage quotas; EoP: sender
+validation + action allow-list, no eval, strict CSP</td>
+<td>security</td>
+<td>P1/P4</td>
+<td></td>
+</tr>
+<tr>
+<td>SEC-06</td>
+<td>01 §N; 02 Dim11</td>
+<td>CSP object: extension_pages
+<code>script-src 'self'; object-src 'self'; connect-src 'self' https:</code></td>
+<td>security</td>
+<td>P1</td>
+<td>NFR-011; ref CSP (FND-09)</td>
+</tr>
+<tr>
+<td>SEC-07</td>
+<td>03 §6</td>
+<td>Crypto ops in Offscreen Document (Web Crypto SubtleCrypto.encrypt) +
+PBKDF2 key derivation</td>
+<td>security</td>
+<td>P4</td>
+<td>DIM03-R5; Firefox bg-page fallback</td>
+</tr>
+<tr>
+<td>SEC-08</td>
+<td>02 Dim11; 03 §6</td>
+<td>Network layer HTTPS-only TLS 1.2+ (except localhost); cert
+validation no self-signed / pinning</td>
+<td>security</td>
+<td>P4</td>
+<td>DIM11-R8</td>
+</tr>
+<tr>
+<td>SEC-09</td>
+<td>03 §6</td>
+<td>Boba-services controls: API-key auth (X-Api-Key), Basic auth,
+rate-limit 100 req/min/key</td>
+<td>security</td>
+<td>P4</td>
+<td>diagram #10</td>
+</tr>
+<tr>
+<td>SEC-10</td>
+<td>02 Dim06/Dim11</td>
+<td>Sanitize display names textContent; reject
+javascript:/data:/vbscript:; block dangerous ports; chunk text vs
+backtracking</td>
+<td>security</td>
+<td>P2</td>
+<td>DIM11-R6</td>
+</tr>
+<tr>
+<td>SEC-11</td>
+<td>02 Dim11</td>
+<td>Privacy policy + opt-in analytics/error-reporting; no third-party
+sharing/selling; Limited-Use compliance</td>
+<td>privacy</td>
+<td>P6/P8</td>
+<td>DIM11-R7</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cross-dimension-insights-10">7. Cross-Dimension Insights
+(10)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Insight</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INS-01</td>
+<td>02 Insight 1</td>
+<td>Zero-config discovery via well-known localhost ports
+(7187/7189/8080→7186) + version pings → one-click Auto-Discover</td>
+<td>api</td>
+<td>P4</td>
+<td>FR-011</td>
+</tr>
+<tr>
+<td>INS-02</td>
+<td>02 Insight 2</td>
+<td>Unified torrent identity <code>{infoHash,name,source,type}</code>;
+magnet + .torrent converge on 40-char BTIH; dedup across tab group</td>
+<td>parsing</td>
+<td>P2</td>
+<td>FR-006</td>
+</tr>
+<tr>
+<td>INS-03</td>
+<td>02 Insight 3</td>
+<td>3-tier progressive detection: universal link scan (~90%) +
+site-specific selectors + text-based + MutationObserver</td>
+<td>detection</td>
+<td>P2</td>
+<td>DIM08</td>
+</tr>
+<tr>
+<td>INS-04</td>
+<td>02 Insight 4</td>
+<td>Tab group as batch job: right-click group → extract all URLs → parse
+→ submit batch newline-separated</td>
+<td>tab-groups</td>
+<td>P5</td>
+<td>FR-009</td>
+</tr>
+<tr>
+<td>INS-05</td>
+<td>02 Insight 5</td>
+<td>Extension as Boba satellite (“send-to”), not management tool; use
+Boba auth/config; extend not duplicate UI (~30% less code)</td>
+<td>api</td>
+<td>P1/P4</td>
+<td>architecture decision</td>
+</tr>
+<tr>
+<td>INS-06</td>
+<td>02 Insight 6</td>
+<td>Offline-aware queue; navigator.onLine unreliable for LAN → proactive
+<code>/app/version</code> ping 30 s via alarms + persistent queue</td>
+<td>queue</td>
+<td>P4</td>
+<td>FR-014; DIM09-R7</td>
+</tr>
+<tr>
+<td>INS-07</td>
+<td>02 Insight 7</td>
+<td>Privacy-first activeTab + optional host perms +
+scripting.executeScript on demand (MEDIUM — reviewers may prefer
+declared host perms)</td>
+<td>security</td>
+<td>P1</td>
+<td>OQ-09 decision</td>
+</tr>
+<tr>
+<td>INS-08</td>
+<td>02 Insight 8</td>
+<td>Multi-client gateway: TorrentClient interface
+(qBt/Transmission/Deluge/rTorrent)</td>
+<td>data-model</td>
+<td><strong>v2</strong></td>
+<td>DEFERRED — adds complexity; v1 leaves seam, targets Boba only</td>
+</tr>
+<tr>
+<td>INS-09</td>
+<td>02 Insight 9</td>
+<td>Real-time badge sync: poll <code>/sync/maindata</code> incremental
+RID → badge count/color</td>
+<td>ui</td>
+<td>P3/P4</td>
+<td>FR-015</td>
+</tr>
+<tr>
+<td>INS-10</td>
+<td>02 Insight 10</td>
+<td>Enterprise-grade testing: 80%+ coverage, real-Boba-in-Docker E2E,
+security scanners, signed releases</td>
+<td>testing</td>
+<td>P7</td>
+<td>TST-15; Boba mandate</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cross-verification-conflicts-low-confidence-items">8.
+Cross-Verification Conflicts &amp; Low-Confidence Items</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Item</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CV-01</td>
+<td>02 cross-verif C1</td>
+<td>Auth for Boba APIs: cookie (qBt direct) AND JWT/API-key (Boba own) —
+support BOTH</td>
+<td>security/api</td>
+<td>P4</td>
+<td>RESOLVED both valid; FR-012</td>
+</tr>
+<tr>
+<td>CV-02</td>
+<td>02 cross-verif C2/C3</td>
+<td>Build tool WXT (built on Vite); MV3 everywhere (WXT handles FF Event
+Pages)</td>
+<td>build/cross-browser</td>
+<td>P1</td>
+<td>RESOLVED</td>
+</tr>
+<tr>
+<td>CV-03</td>
+<td>02 cross-verif low</td>
+<td>qBt API-key Bearer only v5.2.0+; cookie baseline</td>
+<td>api</td>
+<td>P4</td>
+<td>low-confidence; DIM02-R3</td>
+</tr>
+<tr>
+<td>CV-04</td>
+<td>02 cross-verif low/C4</td>
+<td>Boba SSE path <code>/api/v1/search/stream/{id}</code> not confirmed
+in official docs; ports user-configurable</td>
+<td>api</td>
+<td>P4</td>
+<td>confirm vs live OpenAPI (OQ-12)</td>
+</tr>
+<tr>
+<td>CV-05</td>
+<td>02 cross-verif low</td>
+<td>Firefox E2E Playwright extension-ID extraction limits; side panel
+Chrome 114+ limits</td>
+<td>testing/ui</td>
+<td>P7/v2</td>
+<td>TST-03; DIM10-R5</td>
+</tr>
+</tbody>
+</table>
+<h2 id="foundation-source-layer-facts-load-bearing-for-the-port">9.
+Foundation / Source-Layer Facts (load-bearing for the port)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Fact / Requirement</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FND-01</td>
+<td>04 §1</td>
+<td>Reference name <code>bobalink</code> v1.0.0 MIT (impl-plan says
+Apache-2.0 — OQ-10); rename for Boba (OQ naming)</td>
+<td>build</td>
+<td>P1</td>
+<td>LICENSE + name decision</td>
+</tr>
+<tr>
+<td>FND-02</td>
+<td>04 §2</td>
+<td>host_permissions 7187/7189/8080 — must change 8080→7186 (real qBt
+proxy)</td>
+<td>cross-browser/api</td>
+<td>P1</td>
+<td>OQ-01 critical</td>
+</tr>
+<tr>
+<td>FND-03</td>
+<td>04 §3</td>
+<td>TS strict posture: all strict flags + noUncheckedIndexedAccess +
+exactOptionalPropertyTypes; zero any (no-explicit-any error)</td>
+<td>build</td>
+<td>P1</td>
+<td>NFR-MAINT</td>
+</tr>
+<tr>
+<td>FND-04</td>
+<td>04 §3</td>
+<td>ESLint type-aware: no-floating-promises/no-misused-promises error;
+no-console warn (allow error/warn/info)</td>
+<td>build</td>
+<td>P1</td>
+<td>NFR-009</td>
+</tr>
+<tr>
+<td>FND-05</td>
+<td>04 §3</td>
+<td>Jest preset ts-jest ESM jsdom; coverage 80%; collectCoverageFrom
+EXCLUDES popup/options/content/background/index.ts</td>
+<td>testing</td>
+<td>P7</td>
+<td>TST-15 must include UI</td>
+</tr>
+<tr>
+<td>FND-06</td>
+<td>04 §3</td>
+<td>Playwright baseURL chrome-extension://test-id (placeholder);
+–load-extension=./dist; chromium+firefox projects</td>
+<td>testing</td>
+<td>P7</td>
+<td>TST-02; global-setup absent</td>
+</tr>
+<tr>
+<td>FND-07</td>
+<td>04 §2</td>
+<td>content_scripts matches <code>&lt;all_urls&gt;</code> run_at
+document_idle (ref) — reconcile with minimal-perms</td>
+<td>detection/security</td>
+<td>P1/P3</td>
+<td>DIM11-R4 conflict</td>
+</tr>
+<tr>
+<td>FND-08</td>
+<td>04 §2; 05 §9</td>
+<td>ref CSP connect-src localhost 7187/7189/8080; permissions include
+scripting (DIM11 says avoid)</td>
+<td>security</td>
+<td>P1</td>
+<td>OQ-09</td>
+</tr>
+<tr>
+<td>FND-09</td>
+<td>04 §6</td>
+<td>Regex set:
+MAGNET_REGEX/MAGNET_VALIDATION/INFOHASH/TORRENT_FILE/INFOHASH_HEX/BASE32/DN/TR</td>
+<td>parsing</td>
+<td>P2</td>
+<td>FR-001/002/003</td>
+</tr>
+<tr>
+<td>FND-10</td>
+<td>04 §6; 05 §8</td>
+<td>DEFAULT_PORTS FastAPI 7187/Go 7189/qBt 8080; DEFAULT_URLS;
+QBITTORRENT_ENDPOINTS map</td>
+<td>api</td>
+<td>P1/P4</td>
+<td>OQ-01</td>
+</tr>
+<tr>
+<td>FND-11</td>
+<td>04 §6</td>
+<td>Timing: DEBOUNCE MUTATION 500/AUTO_SCAN 1000; REQUEST_TIMEOUTS
+DEFAULT 15000/AUTH 10000/ADD 30000/DISCOVERY 3000; RETRY max 3 base 1000
+max 30000 jitter 0.3; RATE_LIMIT 10/1000ms</td>
+<td>api/detection</td>
+<td>P2/P4</td>
+<td>config drift (OQ-19)</td>
+</tr>
+<tr>
+<td>FND-12</td>
+<td>04 §6</td>
+<td>STORAGE_KEYS all bobalink_ prefixed
+(CONFIG/AUTH_STATE/CREDENTIALS/DETECTED/HISTORY/QUEUE/HEALTH/KEY_MATERIAL);
+only CONFIG/QUEUE/HEALTH actually written</td>
+<td>data-model</td>
+<td>P1</td>
+<td>unused keys (OQ)</td>
+</tr>
+<tr>
+<td>FND-13</td>
+<td>04 §6</td>
+<td>ENCRYPTION AES-GCM 256, IV 12B, salt 16B, PBKDF2 SHA-256 100000
+iters, key version 1; passphrase source UNDEFINED in foundation</td>
+<td>security</td>
+<td>P4</td>
+<td>OQ-15 critical</td>
+</tr>
+<tr>
+<td>FND-14</td>
+<td>04 §6</td>
+<td>BADGE_COLORS (HEALTHY #4CAF50/DEGRADED #FF9800/ERROR
+#F44336/SCANNING #2196F3/DETECTED #9C27B0/DEFAULT); ICON_SIZES
+16/32/48/128</td>
+<td>ui</td>
+<td>P6</td>
+<td>FR-015/FR-021</td>
+</tr>
+<tr>
+<td>FND-15</td>
+<td>04 §4b</td>
+<td>TS types: MagnetInfo, TorrentFile, ParsedTorrent, DetectedTorrent,
+SendResult, PageScanResult, ServerConfig(28 fields), ExtensionConfig,
+DEFAULT_CONFIG, AuthMethod, AutoDiscoveryConfig</td>
+<td>data-model</td>
+<td>P1</td>
+<td>type duplication (OQ)</td>
+</tr>
+<tr>
+<td>FND-16</td>
+<td>04 §5</td>
+<td>shared libs: crypto
+(encrypt/decrypt/sha256/generateSecurePassphrase), errors
+(BobaLinkError+8 subclasses), events (TypedEventEmitter 13-event
+EventMap), logger, storage (NamespacedStorage), utils
+(debounce/throttle/TokenBucket/retryWithBackoff/yieldToBrowser/processInChunks)</td>
+<td>data-model</td>
+<td>P1</td>
+<td>foundation modules</td>
+</tr>
+<tr>
+<td>FND-17</td>
+<td>05 §2.1</td>
+<td>BobaAPIClient:
+login/logout/getVersion/addTorrentFromMagnet/addTorrentFromFile/getTorrents/deleteTorrents/pauseTorrents/resumeTorrents;
+requestWithRetry+rate-limit+timeout</td>
+<td>api</td>
+<td>P4</td>
+<td>FR-007/008/024/025</td>
+</tr>
+<tr>
+<td>FND-18</td>
+<td>05 §2.2</td>
+<td>AuthHandler 4 methods (none/cookie/api_key/basic);
+createCredentialsFromConfig decrypt point; MAX_CONSECUTIVE_FAILURES
+3</td>
+<td>security/api</td>
+<td>P4</td>
+<td>FR-012; §11.4.10</td>
+</tr>
+<tr>
+<td>FND-19</td>
+<td>05 §2.3</td>
+<td>OfflineQueue: DEFAULT_MAX_SIZE 50, PROCESS_INTERVAL 60000,
+ITEM_SEND_DELAY 500; enqueue FIFO
+evict/dequeue/processQueue/startAutoProcessing</td>
+<td>queue</td>
+<td>P4</td>
+<td>FR-014; ref max 50 vs spec 1000 (OQ-19); auth-gap (OQ)</td>
+</tr>
+<tr>
+<td>FND-20</td>
+<td>05 §2.4</td>
+<td>HealthChecker: thresholds healthy&lt;2000/degraded&lt;5000,
+MAX_FAILURES 2;
+checkServer/checkAllServers/testConnection/autoDiscover(ports
+8080/7187/7189)</td>
+<td>api</td>
+<td>P4</td>
+<td>FR-024; FR-011</td>
+</tr>
+<tr>
+<td>FND-21</td>
+<td>05 §2.5</td>
+<td>qBitTorrentAdapter: sendTorrent/sendTorrents (250 ms
+delay)/addTorrentFile/buildAddOptions/mapContentLayout</td>
+<td>api</td>
+<td>P4</td>
+<td>FR-007/008</td>
+</tr>
+<tr>
+<td>FND-22</td>
+<td>05 §3</td>
+<td>bencode (zero-dep Uint8Array, sorted keys, sha1), magnet
+(parseMagnetUri xt/dn/tr/ws/xl/xs/kt/as/mt + base32ToHex), torrent-file
+(parseTorrentFile infohash=sha1(encode(info)))</td>
+<td>parsing</td>
+<td>P2</td>
+<td>FR-003/004/005; re-encode caveat</td>
+</tr>
+<tr>
+<td>FND-23</td>
+<td>05 §3 (note)</td>
+<td>.torrent parser fully built but NEVER invoked (dead code) — sends
+upload raw File</td>
+<td>parsing</td>
+<td>P4</td>
+<td>wire for dedup (OQ)</td>
+</tr>
+<tr>
+<td>FND-24</td>
+<td>05 §4</td>
+<td>Scanner: BaseScanner (shadow-DOM querySelectorAllDeep, maxElements
+10000), LinkScanner (site-specific+generic), TextScanner (TreeWalker),
+ScannerOrchestrator (MutationObserver debounce 500, per-site override,
+yieldToBrowser)</td>
+<td>detection</td>
+<td>P2/P3</td>
+<td>FR-001/002; INS-03</td>
+</tr>
+<tr>
+<td>FND-25</td>
+<td>05 §4 (note)</td>
+<td>NO chrome.tabGroups usage in ref; only intra-tab yieldToBrowser +
+per-tab tabTorrents Map — tab-group batching is net-new</td>
+<td>tab-groups</td>
+<td>P5</td>
+<td>OQ-17; FR-009</td>
+</tr>
+<tr>
+<td>FND-26</td>
+<td>05 §4.5</td>
+<td>Two overlapping selector tables: constants.SITE_SELECTORS (~21
+domains, used by LinkScanner) vs site-db.SITES (15 richer, used only for
+debounce) — reconcile</td>
+<td>detection</td>
+<td>P2</td>
+<td>OQ; INS-03</td>
+</tr>
+<tr>
+<td>FND-27</td>
+<td>05 §5</td>
+<td>Message protocol: ExtensionMessage{type,payload,requestId};
+background handles
+scan-result/get-detected/send-torrent/get-config/set-config/health-check/test-connection/auto-discover/authenticate/scan-page/open-dashboard/queue-status/queue-process</td>
+<td>api</td>
+<td>P3</td>
+<td>declared-but-unrouted types (OQ)</td>
+</tr>
+<tr>
+<td>FND-28</td>
+<td>05 §6</td>
+<td>Background SW: lifecycle onInstalled/onStartup, initialize,
+initializeApiClient, sendTorrents, context menus, commands, alarms
+(keepalive ~20 s / health 5 min), badge/notifications, storage
+listeners</td>
+<td>cross-browser</td>
+<td>P3</td>
+<td>DIM03-R2</td>
+</tr>
+<tr>
+<td>FND-29</td>
+<td>04 §2; 05 §6</td>
+<td>commands: send-to-boba Ctrl+Shift+B, scan-page Ctrl+Shift+S,
+open-dashboard Ctrl+Shift+D (ref ships 3, differs from FR-017
+B/L/G)</td>
+<td>ui</td>
+<td>P3</td>
+<td>OQ-08</td>
+</tr>
+<tr>
+<td>FND-30</td>
+<td>05 §9; 05 banner</td>
+<td>§11.4.10 BLUFF: options encrypts with FIXED passphrase
+“bobalink-extension”; background decrypts with EMPTY “” —
+broken-by-design, MUST replace</td>
+<td>security</td>
+<td>P4</td>
+<td>OQ-15 critical</td>
+</tr>
+<tr>
+<td>FND-31</td>
+<td>05 §2.5</td>
+<td>fetch uses credentials:include/same-origin (qBt SID needs it) —
+conflicts DIM11-R8 credentials:omit — reconcile</td>
+<td>security/api</td>
+<td>P4</td>
+<td>DIM11-R8</td>
+</tr>
+<tr>
+<td>FND-32</td>
+<td>05 §6</td>
+<td>Context menus bobalink-send (magnet/.torrent link patterns) /
+bobalink-scan / bobalink-dashboard</td>
+<td>ui</td>
+<td>P3</td>
+<td>FR-016</td>
+</tr>
+<tr>
+<td>FND-33</td>
+<td>05 §7.1</td>
+<td>Popup controls: status dot, Select All/Deselect/Refresh, torrent
+list (checkbox/name/type/infohash16/Sent), empty-state Scan Page, Send
+to Boba, progress overlay</td>
+<td>ui</td>
+<td>P3</td>
+<td>FR-023; DIM10-R1</td>
+</tr>
+<tr>
+<td>FND-34</td>
+<td>05 §7.2</td>
+<td>Options sections Servers/General/Advanced/About; server modal
+(name/url/auth/category/savepath/Test Connection); Auto Discovery card;
+General+Advanced toggles; Reset All</td>
+<td>ui</td>
+<td>P3</td>
+<td>FR-023</td>
+</tr>
+<tr>
+<td>FND-35</td>
+<td>04 §4a</td>
+<td>SQL dual-storage model: sql.js-over-storage.local (9 tables) vs
+STORAGE_KEYS JSON-blob + NamespacedStorage — pick one source of
+truth</td>
+<td>data-model</td>
+<td>P1</td>
+<td>OQ dual-storage</td>
+</tr>
+</tbody>
+</table>
+<h2 id="test-type-coverage-requirements-toward-100-per-11.4.27">10.
+Test-Type Coverage Requirements (toward 100% per §11.4.27)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Requirement</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TST-01</td>
+<td>06 §types 1</td>
+<td>Integration: real parser→queue→api-client→live qBt/proxy
+(7186/7187); no mocks outside unit</td>
+<td>testing</td>
+<td>P7</td>
+<td>§11.4.27(A)</td>
+</tr>
+<tr>
+<td>TST-02</td>
+<td>06 §types 2</td>
+<td>E2E functional: load real built MV3 bundle, resolve real ext id,
+drive popup/options/content with user-observable assertions</td>
+<td>testing</td>
+<td>P7</td>
+<td>fixture builds dist + captures id (OQ)</td>
+</tr>
+<tr>
+<td>TST-03</td>
+<td>06 §types 3</td>
+<td>Automation/autonomous QA: self-driving N×-rerunnable
+(§11.4.98/§11.4.50); HelixQA banks</td>
+<td>testing</td>
+<td>P7</td>
+<td>§11.4.116 sync channel</td>
+</tr>
+<tr>
+<td>TST-04</td>
+<td>06 §types 4</td>
+<td>Security/penetration: credential-leak audit (§11.4.10), XSS via
+magnet/dn, CSP, perm-scope, host-perm abuse, malformed injection, SID
+handling, crypto-at-rest</td>
+<td>security/testing</td>
+<td>P7</td>
+<td>SEC-xx</td>
+</tr>
+<tr>
+<td>TST-05</td>
+<td>06 §types 5</td>
+<td>DDoS/load: 1000s magnet links/page, rapid scan cycles, queue enqueue
+burst, API flood/rate-limit under load</td>
+<td>testing</td>
+<td>P7</td>
+<td>§11.4.85</td>
+</tr>
+<tr>
+<td>TST-06</td>
+<td>06 §types 6</td>
+<td>Scaling: large .torrent files, 1000s-item queue+persistence, large
+detected-set render, many servers</td>
+<td>testing</td>
+<td>P7</td>
+<td>NFR-SCAL</td>
+</tr>
+<tr>
+<td>TST-07</td>
+<td>06 §types 7</td>
+<td>Chaos: storage failure/corruption mid-write, network
+drop/timeout/reorder, SW termination mid-op, corrupt-state recovery
+(§11.4.85 closed-set)</td>
+<td>testing</td>
+<td>P7</td>
+<td>error-injecting mock needed</td>
+</tr>
+<tr>
+<td>TST-08</td>
+<td>06 §types 8</td>
+<td>Stress: sustained N≥100/≥30 s, concurrent N≥10 enqueues/scans,
+boundary inputs, p50/p95/p99 latency</td>
+<td>testing</td>
+<td>P7</td>
+<td>§11.4.85</td>
+</tr>
+<tr>
+<td>TST-09</td>
+<td>06 §types 9</td>
+<td>Performance: parse-time benchmarks, scan latency heavy DOM, popup
+render — captured evidence</td>
+<td>performance/testing</td>
+<td>P7</td>
+<td>NFR-001..006</td>
+</tr>
+<tr>
+<td>TST-10</td>
+<td>06 §types 10</td>
+<td>Benchmark: formal suite + baselines + regression detection</td>
+<td>testing</td>
+<td>P7</td>
+<td></td>
+</tr>
+<tr>
+<td>TST-11</td>
+<td>06 §types 11</td>
+<td>UI tests: rendering correctness, badge counts, list render, modal
+state changes</td>
+<td>testing</td>
+<td>P7</td>
+<td>beyond DOM-presence</td>
+</tr>
+<tr>
+<td>TST-12</td>
+<td>06 §types 12</td>
+<td>UX tests: detect→select→send happy path, error feedback,
+empty/loading/error states, a11y, keyboard nav, shortcuts</td>
+<td>testing</td>
+<td>P7</td>
+<td>FR-020</td>
+</tr>
+<tr>
+<td>TST-13</td>
+<td>06 §types 13</td>
+<td>Challenges (<code>./challenges/scripts/</code>): real built ext vs
+real qBt+proxy, user-observable outcomes</td>
+<td>testing</td>
+<td>P7</td>
+<td>§11.4.27(B)</td>
+</tr>
+<tr>
+<td>TST-14</td>
+<td>06 §types 14</td>
+<td>HelixQA banks + autonomous QA sessions with captured evidence</td>
+<td>testing</td>
+<td>P7</td>
+<td>§11.4.27</td>
+</tr>
+<tr>
+<td>TST-15</td>
+<td>06 §types 15; §critical</td>
+<td>Anti-bluff remediation: fix ref bluffs —
+<code>expect(true).toBe(true)</code> Auth/auto-proc blocks,
+crypto-copy-not-module, non-functional e2e (hardcoded test-id),
+dead-asserts; every test fails vs no-op stub; bring UI/entrypoints INTO
+coverage</td>
+<td>testing</td>
+<td>P7</td>
+<td>§11.4/§11.4.1; reference unit+e2e is starting floor</td>
+</tr>
+<tr>
+<td>TST-16</td>
+<td>06 fixtures</td>
+<td>Wire <code>invalidMagnets</code> (7 negative cases) +
+magnets.json/base32 fixtures; reference test inventory
+(bencode/magnet/torrent-file/api-client/queue/scanner strong; crypto
+thorough-but-copy)</td>
+<td>testing</td>
+<td>P7</td>
+<td>EDGE-23</td>
+</tr>
+</tbody>
+</table>
+<h2 id="build-release-distribution">11. Build / Release /
+Distribution</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Requirement</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BLD-01</td>
+<td>01 §M.1</td>
+<td>Build: npm install; npm run dev (WXT HMR); npm run build →
+chrome/firefox/opera/edge MV3 prod; per-browser
+<code>wxt build -b</code></td>
+<td>build</td>
+<td>P8</td>
+<td>DIM12-R1</td>
+</tr>
+<tr>
+<td>BLD-02</td>
+<td>01 §M.2</td>
+<td>Test commands: jest –coverage (80%), playwright; coverage
+thresholds; per-file targets</td>
+<td>testing</td>
+<td>P7</td>
+<td>TST-15</td>
+</tr>
+<tr>
+<td>BLD-03</td>
+<td>01 §M.3</td>
+<td>Release: main→release branch→bump manifest→CHANGELOG→full suite→git
+tag→build all→GitHub Release→submit stores</td>
+<td>build</td>
+<td>P8</td>
+<td>§K.1 strip auto-submit (CI/CD)</td>
+</tr>
+<tr>
+<td>BLD-04</td>
+<td>01 §M.4; 02 Dim12</td>
+<td>Distribution: Chrome Web Store CRX ($5), Firefox AMO XPI, Opera CRX,
+Edge, GitHub ZIP; per-store assets/2FA/review SLA</td>
+<td>build</td>
+<td>P8</td>
+<td>DIM12-R4; DIM04-R2</td>
+</tr>
+<tr>
+<td>BLD-05</td>
+<td>01 §M.5</td>
+<td>Git: GitHub Flow; Conventional Commits (feat/fix/…/scopes); branch
+prefixes — Boba: SSH remotes not HTTPS</td>
+<td>build</td>
+<td>P1/P8</td>
+<td>FND-01 repo URL HTTPS</td>
+</tr>
+<tr>
+<td>BLD-06</td>
+<td>03 §7</td>
+<td>Pipeline stages Code→Lint→Test(≥80%)→Build→Package→Deploy; quality
+gates 0 ESLint errors/valid manifest/&lt;5MB</td>
+<td>build</td>
+<td>P7/P8</td>
+<td>diagram #11</td>
+</tr>
+<tr>
+<td>BLD-07</td>
+<td>02 Dim12; 04 §7</td>
+<td>release-please + Husky pre-commit + lint-staged + web-ext sign —
+Boba: DROP Husky (git hooks forbidden)</td>
+<td>build</td>
+<td>P8</td>
+<td>§K.1</td>
+</tr>
+<tr>
+<td>BLD-08</td>
+<td>01 §K.1; 03 §9; 04 §7; 06 §10</td>
+<td><strong>CI/CD REMOVAL (Boba Hard-Stop):</strong> strip ALL
+<code>.github/workflows/*.yml</code> (ci.yml, release.yml), Husky hooks,
+“enforced in CI”, auto store-submission → convert to manual
+<code>./ci.sh</code>-style script</td>
+<td>build</td>
+<td>P8</td>
+<td>MANDATORY constraint</td>
+</tr>
+<tr>
+<td>BLD-09</td>
+<td>04 §7</td>
+<td>Manual version-bump touches package.json + wxt.config manifest +
+both SQL files + app_metadata/extension_config schema_version rows
+together</td>
+<td>build</td>
+<td>P8</td>
+<td>release.yml sed</td>
+</tr>
+</tbody>
+</table>
+<h2 id="open-questions-ambiguities-consolidated-for-conductor">12. Open
+Questions / Ambiguities (consolidated, for conductor)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source</th>
+<th>Question</th>
+<th>Category</th>
+<th>Phase</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OQ-01</td>
+<td>01 §T1; 03 §9.4; 04 §8.1; 05 §9.2</td>
+<td>Real Boba port mapping: 8443/8080→7186/7187/7189; qBt direct→proxy
+7186? Boba REST/SSE→7187? search→7189? Re-point all discovery
+defaults</td>
+<td>api</td>
+<td>P1/P4</td>
+<td>HIGH/critical</td>
+</tr>
+<tr>
+<td>OQ-02</td>
+<td>01 §T2; 03 §9.1; 04 §7; 06 §10</td>
+<td>CI/CD removal shape — manual <code>./ci.sh</code></td>
+<td>build</td>
+<td>P8</td>
+<td>HIGH; BLD-08</td>
+</tr>
+<tr>
+<td>OQ-03</td>
+<td>01 §T3; 06 §1</td>
+<td>Jest vs Vitest (Boba frontend uses Vitest; crypto.test.ts already
+Vitest)</td>
+<td>testing</td>
+<td>P7</td>
+<td>MED</td>
+</tr>
+<tr>
+<td>OQ-04</td>
+<td>01 §T4; 01 §O.3</td>
+<td>Two divergent source layouts (src/parser/scanner/api/shared vs
+src/modules/utils/content-scripts) — pick canonical</td>
+<td>data-model</td>
+<td>P1</td>
+<td>MED</td>
+</tr>
+<tr>
+<td>OQ-05</td>
+<td>01 §T5; 01 §P.1</td>
+<td>Two divergent phase plans (plan.md 10 vs impl-plan 8) — use
+8-phase</td>
+<td>build</td>
+<td>P1</td>
+<td>MED; this matrix uses 8</td>
+</tr>
+<tr>
+<td>OQ-06</td>
+<td>01 §T6; 01 §D.7</td>
+<td>Data-model vocabulary drift: source_type adds torrent-url; status
+completed vs dead-letter; auth_method adds none drops custom-header —
+reconcile enums</td>
+<td>data-model</td>
+<td>P1</td>
+<td>MED</td>
+</tr>
+<tr>
+<td>OQ-07</td>
+<td>01 §T7</td>
+<td>Magnet param superset: FR-003 xt/dn/tr/xl/ws/x.pe vs impl-plan
+xs/as/kt/mt (no x.pe) — which implemented</td>
+<td>parsing</td>
+<td>P2</td>
+<td>LOW; ref impl xt/dn/tr/ws/xl/xs/kt/as/mt</td>
+</tr>
+<tr>
+<td>OQ-08</td>
+<td>01 §T8; 04 §2; 05 §6</td>
+<td>Keyboard-shortcut count 3 vs 4; ref ships B/S/D, FR-017 says B/L/G;
+Ctrl+Shift+L collision</td>
+<td>ui</td>
+<td>P3</td>
+<td>LOW; FND-29</td>
+</tr>
+<tr>
+<td>OQ-09</td>
+<td>01 §T9; 02 INS-07; 04 §8</td>
+<td>host_permissions scope: https://*/ (ref) vs activeTab minimal
+(NFR-012) — store-review/privacy</td>
+<td>security</td>
+<td>P1</td>
+<td>LOW-MED</td>
+</tr>
+<tr>
+<td>OQ-10</td>
+<td>01 §T10; 04 §1</td>
+<td>LICENSE: impl-plan Apache 2.0 vs package.json MIT — confirm</td>
+<td>build</td>
+<td>P1</td>
+<td>LOW</td>
+</tr>
+<tr>
+<td>OQ-11</td>
+<td>01 §T11</td>
+<td>Naming: “BobaLink” reference name — confirm Boba repo extension name
++ icon</td>
+<td>build</td>
+<td>P1</td>
+<td>LOW</td>
+</tr>
+<tr>
+<td>OQ-12</td>
+<td>01 §T12; 02 §509-510; 03 §9.6</td>
+<td>Search/SSE scope: does Boba 7187 expose
+<code>/api/v1/torrents/search</code>+SSE as spec, or call existing merge
+routes? Confirm vs live <code>/openapi.json</code></td>
+<td>api</td>
+<td>P4</td>
+<td>MED; CV-04</td>
+</tr>
+<tr>
+<td>OQ-13</td>
+<td>01 §T13</td>
+<td>Boba <code>/api/v1/health</code> vs real <code>/health</code> —
+confirm path/port</td>
+<td>api</td>
+<td>P4</td>
+<td>LOW-MED</td>
+</tr>
+<tr>
+<td>OQ-14</td>
+<td>04 §8.3; 05 §9.3</td>
+<td>Dual storage model (sql.js 9-table vs JSON-blob NamespacedStorage) —
+one source of truth</td>
+<td>data-model</td>
+<td>P1</td>
+<td>FND-35</td>
+</tr>
+<tr>
+<td>OQ-15</td>
+<td>04 §8.2; 05 §9.1</td>
+<td>Encryption passphrase provenance UNDEFINED; ref
+fixed/empty-passphrase BLUFF — design real key source (master pw prompt
+/ OS keychain / delegate to boba-jackett /config/boba.db)</td>
+<td>security</td>
+<td>P4</td>
+<td>CRITICAL §11.4.10; FND-30</td>
+</tr>
+<tr>
+<td>OQ-16</td>
+<td>05 §9.9</td>
+<td>Time-salted detection ids (Date.now() in hashString) → unreliable
+cross-scan dedup → use infohash-derived stable ids</td>
+<td>parsing</td>
+<td>P2</td>
+<td>FR-006</td>
+</tr>
+<tr>
+<td>OQ-17</td>
+<td>05 §9.8; 04 §4.5</td>
+<td>Tab-group batching does NOT exist in ref — net-new design</td>
+<td>tab-groups</td>
+<td>P5</td>
+<td>FND-25; FR-009</td>
+</tr>
+<tr>
+<td>OQ-18</td>
+<td>05 §9.2</td>
+<td>Boba integration only port-deep — client speaks only qBt WebUI v2;
+no merge-search/proxy(7186)/boba-jackett(7189) code; define how ext
+reaches Boba’s own endpoints</td>
+<td>api</td>
+<td>P4</td>
+<td>DIM01-R2</td>
+</tr>
+<tr>
+<td>OQ-19</td>
+<td>01 §T6; 05 §2.3; 04 §8.5</td>
+<td>Config-value drift: queue max 50(ref)/1000(spec)/100(Dim09); retries
+3/5; RATE_LIMIT 10 vs DB seed 30; autoScanDelay 2000 vs DEBOUNCE 1000 —
+pick canonical</td>
+<td>queue/api</td>
+<td>P4</td>
+<td>FR-014/025</td>
+</tr>
+<tr>
+<td>OQ-20</td>
+<td>05 §9.5</td>
+<td>Offline queue processQueue never authenticates → 403 loop against
+authed server — wire auth</td>
+<td>queue</td>
+<td>P4</td>
+<td>FND-19</td>
+</tr>
+<tr>
+<td>OQ-21</td>
+<td>05 §9.10/9.11</td>
+<td>Two get-detected response shapes; unrouted message types
+(send-result/get-auth-state/health-result/show-notification/update-badge/torrent-detected/selection-change)
+— unify/decide</td>
+<td>api</td>
+<td>P3</td>
+<td>FND-27</td>
+</tr>
+<tr>
+<td>OQ-22</td>
+<td>05 §9.3/9.4/9.12</td>
+<td>set-cookie SID parsing brittle across CORS; CORS/host-perm story for
+cross-origin localhost; manifest/commands/icon rasterization to
+author</td>
+<td>api/build</td>
+<td>P3/P4</td>
+<td>DIM07-R4</td>
+</tr>
+<tr>
+<td>OQ-23</td>
+<td>06 §OQ</td>
+<td>E2E extension-loading fixture (build dist → persistent context
+–load-extension → capture id); Chromium-only vs Firefox MV3;
+global-setup/teardown contract; live backends for integration</td>
+<td>testing</td>
+<td>P7</td>
+<td>TST-02/03</td>
+</tr>
+<tr>
+<td>OQ-24</td>
+<td>03 §9.2/9.3/9.5/9.7</td>
+<td>Single-send routing dual-write FastAPI+Go ambiguity; batch endpoint
+path (<code>/api/torrents/batch</code> vs direct qBt);
+extension_config↔︎discovered FK conceptual; X-Api-Key+Basic together vs
+per-service</td>
+<td>api/data-model</td>
+<td>P4</td>
+<td>diagram inconsistencies</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="coverage-ledger">COVERAGE LEDGER</h2>
+<h3 id="item-counts-by-category-every-row-classified">Item counts by
+category (every row classified)</h3>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>detection</td>
+<td>22</td>
+</tr>
+<tr>
+<td>parsing</td>
+<td>27</td>
+</tr>
+<tr>
+<td>api</td>
+<td>41</td>
+</tr>
+<tr>
+<td>queue</td>
+<td>12</td>
+</tr>
+<tr>
+<td>ui</td>
+<td>24</td>
+</tr>
+<tr>
+<td>security</td>
+<td>35</td>
+</tr>
+<tr>
+<td>privacy</td>
+<td>4</td>
+</tr>
+<tr>
+<td>i18n</td>
+<td>3</td>
+</tr>
+<tr>
+<td>build</td>
+<td>18</td>
+</tr>
+<tr>
+<td>data-model</td>
+<td>22</td>
+</tr>
+<tr>
+<td>cross-browser</td>
+<td>11</td>
+</tr>
+<tr>
+<td>tab-groups</td>
+<td>12</td>
+</tr>
+<tr>
+<td>performance</td>
+<td>12</td>
+</tr>
+<tr>
+<td>reliability</td>
+<td>3</td>
+</tr>
+<tr>
+<td>scalability</td>
+<td>4</td>
+</tr>
+<tr>
+<td>maintainability</td>
+<td>1</td>
+</tr>
+<tr>
+<td>testing</td>
+<td>23</td>
+</tr>
+<tr>
+<td><strong>(rows are multi-tagged; primary-category tallies
+above)</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="item-counts-by-section-authoritative-row-totals">Item counts by
+section (authoritative row totals)</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Section</th>
+<th>Rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Functional Requirements</td>
+<td>25 (FR-001..FR-025)</td>
+</tr>
+<tr>
+<td>2. Non-Functional Requirements</td>
+<td>15 (NFR-001..NFR-015) + 4 scalability/maint (NFR-SCAL-1..3,
+NFR-MAINT-1)</td>
+</tr>
+<tr>
+<td>3. Research-Dimension Decisions</td>
+<td>56 (DIM01-R1..DIM12-R4 across all 12 dims)</td>
+</tr>
+<tr>
+<td>4. ER Entities / Data Model</td>
+<td>8 (6 ER entities + ER-REL + ER-SQL-extra)</td>
+</tr>
+<tr>
+<td>5. Edge Cases</td>
+<td>24 (EDGE-01..EDGE-24)</td>
+</tr>
+<tr>
+<td>6. Security / STRIDE</td>
+<td>11 (SEC-01..SEC-11)</td>
+</tr>
+<tr>
+<td>7. Insights</td>
+<td>10 (INS-01..INS-10)</td>
+</tr>
+<tr>
+<td>8. Cross-Verification</td>
+<td>5 (CV-01..CV-05)</td>
+</tr>
+<tr>
+<td>9. Foundation Facts</td>
+<td>35 (FND-01..FND-35)</td>
+</tr>
+<tr>
+<td>10. Test-Type Coverage</td>
+<td>16 (TST-01..TST-16)</td>
+</tr>
+<tr>
+<td>11. Build / Release</td>
+<td>9 (BLD-01..BLD-09)</td>
+</tr>
+<tr>
+<td>12. Open Questions</td>
+<td>24 (OQ-01..OQ-24)</td>
+</tr>
+<tr>
+<td><strong>TOTAL traceable items</strong></td>
+<td><strong>245</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="v1-vs-v2-split">v1 vs v2 split</h3>
+<ul>
+<li><strong>v1 (in-scope for initial release):</strong> 240 items — all
+FRs, all NFRs, all dimension decisions except deferred, all ER entities
+except search_cache, all edge cases, all security, 8 of 10 insights, all
+foundation facts, all test types, all build (CI/CD converted to manual),
+all open questions resolved during build.</li>
+<li><strong>v2 (explicitly deferred):</strong> 5 items.</li>
+</ul>
+<h3 id="items-intentionally-deferred-to-v2-with-rationale">Items
+intentionally deferred to v2 (with rationale)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Item</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INS-08</td>
+<td>Multi-Client Gateway (TorrentClient interface:
+Transmission/Deluge/rTorrent adapters)</td>
+<td>MEDIUM confidence; adds complexity; v1 targets Boba/qBittorrent
+only. v1 architecture leaves a <code>TorrentClient</code> seam but ships
+ONE adapter. (file 02 Insight 8; file 01 §509 OQ-7.)</td>
+</tr>
+<tr>
+<td>ER-search_cache</td>
+<td>Search-result cache entity (TTL’d, standalone, no FK)</td>
+<td>Search aggregation is gated to Boba 1.2+ (file 01 §R
+feature-availability); not needed for the core detect→send v1 flow.
+Storage backend unresolved (OQ-12/OQ-24).</td>
+</tr>
+<tr>
+<td>DIM01-R2 (search subset)</td>
+<td>Boba merge-search <code>/api/v1/search</code> + SSE
+<code>/api/v1/search/stream/{id}</code> live-progress in popup</td>
+<td>“Search aggregation = Boba 1.2+ only”; SSE progress = Boba 1.1+ only
+(file 01 §R). v1 ships detect→send + qBt-direct + basic health; rich
+search/SSE is a post-v1 enhancement. (Core <code>/api/v1/download</code>
++ <code>/api/v1/magnet</code> stay v1.)</td>
+</tr>
+<tr>
+<td>DIM10-R5</td>
+<td>Side panel (Chrome 114+, open 116+, close 141+; cannot
+auto-open)</td>
+<td>LOW confidence (CV-05); browser-floor too high vs Chrome 88 target;
+popup covers v1 UX. Optional surface.</td>
+</tr>
+<tr>
+<td>DIM02-R3 / CV-03</td>
+<td>qBittorrent API-key (Bearer <code>qbt_</code>) auth, v5.2.0+
+only</td>
+<td>LOW confidence; only on newest qBt; cookie auth is the safe v1
+baseline. API-key path deferred until version floor justifies it.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>NOTE: deferral means “not built in v1,” NOT “dropped.” Each carries a
+v1 seam (TorrentClient interface, search-cache storage decision, SSE
+client stub, side-panel optional entry, API-key auth branch) so v2 is
+additive.</p>
+</blockquote>
+<h3 id="cross-check-completeness-of-the-mandated-baselines">Cross-check:
+completeness of the mandated baselines</h3>
+<ul>
+<li><strong>25 FR — ALL represented:</strong> FR-001…FR-025 each have
+exactly one row (§1). ✓</li>
+<li><strong>15 NFR — ALL represented:</strong> NFR-001…NFR-015 each have
+one row; scalability/maintainability sub-clauses captured as
+NFR-SCAL-1..3 + NFR-MAINT-1 (§2). ✓</li>
+<li><strong>12 Dimensions — ALL represented:</strong> DIM01 (4), DIM02
+(4), DIM03 (5), DIM04 (4), DIM05 (3), DIM06 (4), DIM07 (5), DIM08 (6),
+DIM09 (9), DIM10 (6), DIM11 (10), DIM12 (4) — every dimension has ≥3
+consolidated decision rows; 56 total (§3). ✓</li>
+<li><strong>6 ER entities — ALL represented:</strong>
+ER-extension_config, ER-discovered_torrents, ER-download_queue,
+ER-server_config, ER-send_history, ER-search_cache; + ER-REL
+relationships + ER-SQL-extra
+(app_metadata/site_selectors/queue_log/statistics) superset (§4). ✓</li>
+<li><strong>Edge cases:</strong> all 16 file-01-§I cases (EDGE-01..21
+incl. multi-item lines) + Dim06/07/05/08 cases (EDGE-22..24) (§5).
+✓</li>
+<li><strong>Insights:</strong> all 10 (INS-01..10) (§7). ✓</li>
+<li><strong>Cross-verification:</strong> 4 conflicts + low-confidence
+set (CV-01..05) (§8). ✓</li>
+</ul>
+<h3 id="items-that-could-not-be-placed-open">Items that could NOT be
+placed (OPEN)</h3>
+<p><strong>NONE.</strong> Every FR, NFR, dimension-decision, ER entity,
+edge case, insight, cross-verification conflict, foundation fact,
+test-type, build step, and open question from all six analysis files has
+been assigned a stable ID and a row. No source item is unaccounted
+for.</p>
+<p>The reference-deliverable internal inconsistencies (dual source
+layouts, dual storage models, two phase plans, port mismatches,
+config-value drift, the §11.4.10 fixed/empty-passphrase bluff,
+dead/unrouted code, missing E2E fixtures, CI/CD-vs-Boba-Hard-Stop) are
+NOT untraceable items — they are captured as explicit OQ-xx / FND-xx
+rows requiring a conductor decision during the corresponding phase, per
+§11.4.118 enumerated coverage and §11.4.66 interactive
+clarification.</p>
+<hr />
+<p><em>End of C-traceability-matrix.md — anti-skip backbone for the
+implementation plan.</em></p>

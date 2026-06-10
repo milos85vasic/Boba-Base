@@ -1,0 +1,310 @@
+<h1 id="b-helixqa-submodule-update-test-bank-authoring-survey">B —
+HelixQA submodule update + test-bank authoring survey</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T00:00:00Z <strong>Scope:</strong> BobaLink browser-extension
+feature — HelixQA QA coverage planning <strong>Author:</strong> research
+subagent (relayed to conductor)</p>
+<blockquote>
+<p>NOTE: The constitution mandates no force-push (§11.4.113) and
+fetch-first (§11.4.71). The HelixQA pointer bump in the Boba parent repo
+is <strong>staged in the working tree but NOT committed</strong> — the
+conductor commits it as part of the planned work.</p>
+</blockquote>
+<hr />
+<h2 id="helixqa-submodule-update-fetch-pull">1. HelixQA submodule update
+(fetch + pull)</h2>
+<ul>
+<li><strong>Path:</strong> <code>submodules/helixqa</code></li>
+<li><strong>Remotes (all fetched OK):</strong> <code>origin</code> =
+<code>git@github.com:HelixDevelopment/HelixQA.git</code>,
+<code>GitHub</code> (HelixDevelopment), plus <code>GitLab</code> /
+<code>VasicDigitalGitHub</code> / <code>VasicDigitalGitLab</code>
+mirrors (vasic-digital).</li>
+<li><strong>Default branch:</strong> <code>main</code>
+(<code>git remote show origin</code> → <code>HEAD branch: main</code>).
+(A <code>master</code> branch also exists but is stale/unrelated —
+<code>main</code> is canonical.)</li>
+</ul>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th></th>
+<th>commit</th>
+<th>describe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Before</strong></td>
+<td><code>bcac23639082fa249d716f47a27d86ecc0728428</code></td>
+<td><code>v4.0.0-385-gbcac236</code></td>
+</tr>
+<tr>
+<td><strong>After</strong></td>
+<td><code>4d2dcb27f87b49e64b54b860689b982079f39c55</code></td>
+<td><code>v4.0.0-393-g4d2dcb2</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>How far behind:</strong> <strong>8 commits</strong> behind
+<code>origin/main</code>; <strong>0 ahead</strong> → clean fast-forward
+(no divergence).</li>
+<li><strong>Pull:</strong> <code>git pull --ff-only origin main</code>
+succeeded as a fast-forward.</li>
+<li><strong>Post-pull verification:</strong> working tree
+<strong>clean</strong> (<code>git status --porcelain</code> empty);
+<strong>no conflict markers</strong> in <code>banks/</code>,
+<code>cmd/</code>, <code>pkg/</code>.</li>
+<li><strong>Parent repo:</strong> Boba now shows
+<code>submodules/helixqa</code> pointer moved
+<code>bcac236..4d2dcb2</code> (staged, <strong>not committed</strong>
+per instruction).</li>
+</ul>
+<p><strong>The 8 new commits (directly relevant — they add the
+HTTP-bridge run mode):</strong></p>
+<pre><code>4d2dcb2 test(banks): HXC-048 — pin HXC-SYS-011 wrong-method status to 404
+f18a5d3 test(banks): add helixcode-system http bank — health/server-info/...
+d6c084d feat(cli): add `helixqa http` bridge to drive http: bank cases against
+        a live server (no browser/LLM)            ← KEY for BobaLink
+c7c8236 docs(governance): backfill §11.4.103-121 (CONST-047)
+7a19385 docs(governance): cascade §11.4.140/141 (CONST-047)
+4934030 test(banks): 6 more HelixCode self-driving banks (49 cases) (§11.4.98)
+618dd50 docs(governance): cascade constitution §11.4.122–139 (CONST-047/049)
+1ed8abf test(banks): add foundational HelixCode self-driving test banks (§11.4.98)</code></pre>
+<hr />
+<h2 id="test-bank-authoring-format-exact-paths">2. Test-bank authoring
+format + exact paths</h2>
+<h3 id="where-banks-live">Where banks live</h3>
+<ul>
+<li>All banks:
+<strong><code>submodules/helixqa/banks/&lt;name&gt;.yaml</code></strong>
+(85 YAML banks on disk).</li>
+<li><strong>Boba already has banks here</strong> (precedent to copy
+from):
+<ul>
+<li><code>banks/boba-frontend.yaml</code> — Angular dashboard
+(Playwright, <code>web</code> platform)</li>
+<li><code>banks/boba-services.yaml</code> — backend APIs (curl/jq,
+<code>api</code> platform)</li>
+<li><code>banks/boba-boba-ctl.yaml</code>,
+<code>banks/boba-download-proxy.yaml</code>,
+<code>banks/boba-docs-chain.yaml</code></li>
+</ul></li>
+<li>Filename convention: kebab-case
+<code>&lt;purpose&gt;-&lt;scope&gt;.yaml</code>. An optional JSON peer
+(<code>&lt;name&gt;.json</code>) may share the base name for tooling
+auto-pairing — not required.</li>
+</ul>
+<h3
+id="yaml-schema-verified-against-readme-test-bank-conventions-live-banks">YAML
+schema (verified against README “Test-bank conventions” + live
+banks)</h3>
+<p>Required top-level keys: <code>version</code> (“1.0”),
+<code>name</code>, <code>test_cases[]</code>. Common optional:
+<code>description</code>, <code>metadata{author,app,version}</code>.</p>
+<p>Per <code>test_case</code>: <code>id</code>
+(<code>PREFIX-NNN</code>), <code>name</code>, <code>category</code>
+(<code>functional</code>/<code>performance</code>/<code>security</code>/<code>ux</code>/<code>chaos</code>/…),
+<code>priority</code>
+(<code>critical</code>/<code>high</code>/<code>medium</code>/<code>low</code>),
+<code>platforms</code> (subset of
+<code>[android, android_tv, web, desktop, ios, aurora_os, harmony_os]</code>;
+banks also use <code>api</code>), <code>steps[]</code> (each
+<code>{name, action, expected}</code>), <code>tags[]</code>, optional
+<code>documentation_refs[]</code> /
+<code>fix_reference{bug_id,description,fix_file}</code>.</p>
+<h3 id="two-action-styles-pick-per-how-the-feature-is-driven">Two
+<code>action</code> styles (pick per how the feature is driven)</h3>
+<p><strong>(a) <code>http:</code> action — self-driving, NO browser/LLM
+(NEW, the d6c084d bridge).</strong> Best for API endpoints / extension
+backend. Extra per-step keys <code>expect_status</code> +
+<code>expect_body_contains</code> make it machine-checkable. Grammar:
+<code>action: "http: GET /path"</code> or
+<code>"http: POST /path"</code>; an <code>action: "auth:admin"</code>
+step logs in first. Reference bank:
+<code>banks/helixcode-system.yaml</code>,
+<code>banks/helixcode-auth.yaml</code>.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;GET /health&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">action</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;http: GET /health&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">expected</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;200 OK — body reports status healthy&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">expect_status</span><span class="kw">:</span><span class="at"> </span><span class="dv">200</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">expect_body_contains</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;healthy&quot;</span></span></code></pre></div>
+<p><strong>(b) Playwright / curl prose action — browser-driven (the
+<code>boba-frontend.yaml</code> style).</strong> The
+<code>action</code>/<code>expected</code> strings are read by the
+LLM-driven autonomous runner; they describe Playwright steps
+(<code>page.goto(...)</code>, <code>page.click(...)</code>,
+<code>page.waitForResponse(...)</code>) or shell
+(<code>curl ... | jq</code>). This is the path that can actually drive a
+Chromium UI — relevant because a <strong>browser extension only loads
+inside a real browser context</strong>.</p>
+<blockquote>
+<p>§11.4.98/§11.4.6: banks describe <strong>structure</strong>, assert
+machine-checkable outcomes; no hardcoded user-facing prose as the
+assertion; no guessed JSON paths — assert status + high-confidence
+substring when shape is unconfirmed.</p>
+</blockquote>
+<hr />
+<h2 id="how-autonomous-qa-sessions-banks-are-run">3. How autonomous QA
+sessions / banks are run</h2>
+<p>CLI: <code>submodules/helixqa/cmd/helixqa</code> →
+<code>bin/helixqa</code> (subcommands in <code>main.go</code>:
+<code>run</code>, <code>list</code>, <code>report</code>,
+<code>autonomous</code>, <code>http</code>, <code>replay</code>,
+<code>signoff</code>, <code>version</code>).</p>
+<p>Three run modes:</p>
+<ol type="1">
+<li><p><strong><code>helixqa http</code> — self-driving HTTP, no
+browser, no LLM</strong> (CI-friendly, the BobaLink-backend path). Exit
+0 only if every <code>http:</code> step passed.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">helixqa</span> http <span class="at">--bank</span> banks/boba-bobalink.yaml <span class="dt">\</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--base-url</span> http://localhost:7187 <span class="dt">\</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  [--admin-user X <span class="at">--admin-pass</span> Y] <span class="pp">[--</span><span class="ss">json</span><span class="pp">]</span> <span class="pp">[--</span><span class="ss">verbose</span><span class="pp">]</span></span></code></pre></div>
+<p><code>--base-url</code> is <strong>required</strong> (never
+hardcoded, CONST-051(B)). Cases with no <code>http:</code> steps report
+SKIPPED.</p></li>
+<li><p><strong><code>helixqa run</code> — structured bank run with
+platform filter</strong> (uses Playwright for <code>web</code>).</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">helixqa</span> run <span class="at">--banks</span> banks/ <span class="at">--platform</span> web      <span class="co"># or all / api / android</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">helixqa</span> list <span class="at">--banks</span> banks/ <span class="at">--platform</span> web      <span class="co"># dry list</span></span></code></pre></div></li>
+<li><p><strong><code>helixqa autonomous</code> — full LLM + vision
+4-phase session</strong> (Setup → Doc-Driven Verification → Curiosity
+Exploration → Report). Drives the app via NavigationEngine
+(Playwright/ADB/X11), captures screenshots+video, detects issues, emits
+MD/HTML/JSON report. Needs <code>.env</code> with ≥1 LLM API key.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">helixqa</span> autonomous <span class="at">--project</span> /path/to/Boba <span class="at">--platforms</span> web <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--env</span> .env <span class="at">--timeout</span> 30m <span class="at">--output</span> qa-results/ <span class="at">--report</span> markdown,html,json</span></code></pre></div></li>
+</ol>
+<hr />
+<h2 id="what-to-create-to-add-a-bobalink-bank">4. What to create to add
+a BobaLink bank</h2>
+<p>BobaLink is a <strong>browser extension</strong>. Two complementary
+banks (mirrors the existing boba-services / boba-frontend split):</p>
+<ol type="1">
+<li><p><strong><code>submodules/helixqa/banks/boba-bobalink.yaml</code></strong>
+— the extension’s <strong>backend / messaging endpoints</strong>
+(whatever Boba endpoint the extension calls — e.g. an add-by-URL /
+search proxy on <code>:7187</code>). Use the
+<strong><code>http:</code></strong> action style (self-driving,
+CI-gated) with <code>expect_status</code> +
+<code>expect_body_contains</code>. This is the highest-value, no-blocker
+path.</p></li>
+<li><p><strong><code>submodules/helixqa/banks/boba-bobalink-ui.yaml</code></strong>
+(optional, browser) — the <strong>in-browser extension UI</strong>
+(popup/content-script behavior). Use the Playwright prose-action style,
+<code>platforms: [web]</code>, driven by
+<code>helixqa run --platform web</code> or
+<code>helixqa autonomous</code>. NOTE: a true browser extension must be
+<strong>loaded into Chromium</strong> (<code>--load-extension=</code> /
+<code>chrome.runtime</code>), which the stock Playwright web path does
+not set up out-of-the-box — flag this for design (may need a launch-arg
+hook or an <code>autonomous</code> session configured with the unpacked
+extension dir).</p></li>
+</ol>
+<p><strong>Skeleton
+(<code>banks/boba-bobalink.yaml</code>):</strong></p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;1.0&quot;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Boba BobaLink Browser-Extension Backend Validation Suite&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Self-driving (§11.4.98) validation of the BobaLink extension&#39;s</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="st">  Boba backend surface: &lt;endpoints the extension calls&gt;.&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">metadata</span><span class="kw">:</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">author</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;vasic-digital&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">app</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;Boba&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">version</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;1.0.0&quot;</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="fu">test_cases</span><span class="kw">:</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> BOBA-LINK-001</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;BobaLink add-by-URL endpoint accepts a tracker URL&quot;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">category</span><span class="kw">:</span><span class="at"> functional</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">priority</span><span class="kw">:</span><span class="at"> critical</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">platforms</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">api</span><span class="kw">]</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;POST &lt;bobalink endpoint&gt;&quot;</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">action</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;http: POST /api/v1/&lt;bobalink-path&gt;&quot;</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">expected</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;200/202 — body confirms the link was queued&quot;</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">expect_status</span><span class="kw">:</span><span class="at"> </span><span class="dv">200</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">expect_body_contains</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;&lt;confirmed-substring&gt;&quot;</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">tags</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">boba</span><span class="kw">,</span><span class="at"> bobalink</span><span class="kw">,</span><span class="at"> extension</span><span class="kw">,</span><span class="at"> functional</span><span class="kw">]</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">estimated_duration</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;10s&quot;</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">expected_result</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;&lt;user-observable outcome&gt;&quot;</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">fix_reference</span><span class="kw">:</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">bug_id</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;BOBA-LINK-ADD-001&quot;</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">description</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;&lt;...&gt;&quot;</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="fu">fix_file</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;&lt;source path of the handler&gt;&quot;</span></span></code></pre></div>
+<p>Fill <code>&lt;endpoint&gt;</code>/<code>&lt;substring&gt;</code>
+from the actual BobaLink design + a real captured response (§11.4.6 — do
+not guess the JSON shape).</p>
+<p>Optionally register the bank in the project’s HelixQA Challenge bank
+/ coverage ledger if Boba maintains one (per §11.4.58 / §11.4.27 — none
+located yet under Boba; confirm with conductor).</p>
+<hr />
+<h2 id="blockers-setup-notes">5. Blockers / setup notes</h2>
+<ul>
+<li><strong>Go 1.24+</strong> required (helixqa <code>go.work</code>
+declares <code>go 1.26</code>). <code>make build</code> →
+<code>bin/helixqa</code>, or
+<code>go install digital.vasic.helixqa/cmd/helixqa@latest</code>.</li>
+<li><strong>BLOCKER — missing sibling modules.</strong>
+<code>helixqa/go.mod</code> has 8 local
+<code>replace ... =&gt; ../&lt;sibling&gt;</code> directives. They
+resolve to <code>submodules/&lt;sibling&gt;/</code> in the Boba layout.
+Present: <code>challenges</code>, <code>containers</code>.
+<strong>Missing:</strong> <code>doc_processor</code>,
+<code>llm_orchestrator</code>, <code>llm_provider</code>,
+<code>llms_verifier</code> (<code>../llms_verifier/llm-verifier</code>),
+<code>security</code>, <code>vision_engine</code>. Consequence: a full
+<code>go build ./cmd/helixqa/</code> <strong>fails</strong>
+(<code>open ../doc_processor/go.mod: no such file or directory</code>).
+<ul>
+<li>The <code>http</code> and <code>run</code> modes still need a
+buildable binary, so this must be resolved before any HelixQA run.
+Options for the conductor: add the 6 missing repos as siblings (SSH URLs
+in <code>helixqa/helix-deps.yaml</code>:
+DocProcessor/LLMOrchestrator/LLMProvider/VisionEngine on
+HelixDevelopment; LLMsVerifier/security on vasic-digital) via
+<code>install_upstreams</code> / <code>incorporate-submodule</code>
+(§11.4.31/§11.4.36), OR build helixqa in its own standalone checkout
+where the siblings exist and only consume the <strong>bank YAML</strong>
+from Boba’s <code>submodules/helixqa/banks/</code>.</li>
+</ul></li>
+<li><strong><code>autonomous</code> mode</strong> additionally needs
+<code>.env</code> with ≥1 LLM API key (OpenAI/Anthropic/Google/…), plus
+VisionEngine (GoCV/OpenCV) and the CLI agent binaries — heavyweight; the
+<strong><code>http</code> mode is the lightweight, dependency-light
+path</strong> and the right first target for BobaLink backend
+coverage.</li>
+<li><strong>Browser-extension specificity:</strong> stock
+<code>helixqa run --platform web</code> drives a plain Chromium page via
+Playwright; it does <strong>not</strong> auto-load an unpacked
+extension. Driving the actual extension UI/content-script needs the
+extension loaded into the browser (launch args). Treat as a design item
+for the UI bank.</li>
+</ul>
+<hr />
+<h3 id="evidence-commands-run-this-session">Evidence (commands run this
+session)</h3>
+<ul>
+<li><code>git -C submodules/helixqa fetch --all --prune</code> → all 5
+remotes fetched OK</li>
+<li><code>git -C submodules/helixqa rev-list --count HEAD..origin/main</code>
+→ <code>8</code>; <code>origin/main..HEAD</code> → <code>0</code></li>
+<li><code>git -C submodules/helixqa pull --ff-only origin main</code> →
+fast-forward to <code>4d2dcb2</code>;
+<code>git status --porcelain</code> → empty; conflict-marker grep →
+none</li>
+<li><code>git -C submodules/helixqa describe --tags</code> →
+<code>v4.0.0-393-g4d2dcb2</code></li>
+<li><code>go build ./cmd/helixqa/</code> → FAIL: missing
+<code>../doc_processor/go.mod</code> (+ 5 more)</li>
+</ul>

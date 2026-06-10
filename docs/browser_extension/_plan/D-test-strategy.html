@@ -1,0 +1,1296 @@
+<h1 id="d-bobalink-browser-extension-complete-test-strategy">D —
+BobaLink Browser Extension: Complete Test Strategy</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T00:00:00Z <strong>Status:</strong> active
+<strong>Scope:</strong> Defines the 100%-across-all-test-types,
+anti-bluff testing strategy for the BobaLink MV3 browser extension (the
+Boba-targeted port of the reference deliverable).
+<strong>Authority:</strong> CONST §11.4.27 (all test types / 100% type
+coverage), §11.4.25 (full-automation coverage), §11.4.85 (stress+chaos
+mandate), §11.4.50 (deterministic consistency), §11.4.107 (no-false-pass
+/ liveness), §11.4.4(b) (four-layer coverage), §11.4 / §11.4.1
+(anti-bluff), §11.4.83 (docs/qa evidence), §11.4.98 (full-automation,
+re-runnable end-to-end).</p>
+<blockquote>
+<p>Inputs: <code>_analysis/06-tests.md</code> (reference suite + bluffs
++ gaps), <code>_analysis/01-guides-and-plan.md</code> (FR/NFR +
+thresholds), <code>_analysis/05-src-features.md</code> (features under
+test). Repo conventions: <code>ci.sh</code>,
+<code>tests/{unit,integration,e2e,stress,chaos,load,performance,benchmark,security,property, contract,concurrency,memory,observability}/</code>,
+<code>challenges/scripts/</code>,
+<code>challenges/helixqa-banks/</code>, <code>frontend/</code> (Vitest +
+Playwright, the Boba runner precedent).</p>
+</blockquote>
+<hr />
+<h2 id="the-anti-bluff-rule-the-single-binding-contract">0. THE
+ANTI-BLUFF RULE (the single binding contract)</h2>
+<p><strong>Every green test MUST prove a user-observable outcome AND
+fail against a no-op stub of the feature it tests.</strong> A test that
+does not satisfy <em>both</em> clauses is a §11.4 PASS-bluff and is a
+release blocker — worse than a missing test, because it actively
+misleads.</p>
+<p>Operationally, for <strong>every</strong> cell below: 1. The
+assertion inspects a <strong>user-observable outcome</strong> — a DOM
+text/attribute the user sees, a <code>chrome.storage</code> row, a real
+HTTP body field, a torrent that actually appears in qBittorrent
+(<code>GET /api/v2/torrents/info</code>), a badge text, a decrypted
+credential, a rendered popup row — <strong>never</strong> just
+<code>status===200</code>, “no error thrown”, or
+<code>expect(true).toBe(true)</code>. 2. It is paired with a
+<strong>negation check</strong>: the test author confirms (in a
+<code>// §1.1 mutation:</code> comment) that stubbing the production
+function to a no-op / <code>return null</code> / <code>return []</code>
+makes the test FAIL. Where mechanizable, a paired §1.1 mutation gate
+runs this automatically. 3. <strong>Non-unit tests use real
+services</strong> (CONST §11.4.27(A)): real Chromium with the real built
+extension, real <code>chrome.storage</code>, real HTTP to
+7186/7187/7189. Mocks/stubs/fakes are permitted <strong>only</strong> in
+<code>tests/unit/</code>. Non-unit tests that cannot reach a real
+service <strong>SKIP-with-reason</strong> (CONST §11.4.3) — never
+PASS-by-default, never fail-open. 4. Every PASS for a user-visible
+feature cites a <strong>captured-evidence artifact</strong> under
+<code>docs/qa/&lt;run-id&gt;/</code> (CONST §11.4.83) — screenshot, DOM
+dump, request/response JSON, the <code>chrome.storage</code> snapshot,
+the qBittorrent <code>info</code> row, a latency <code>.json</code>, a
+<code>result.json</code>.</p>
+<hr />
+<h2 id="runner-decision-vitest-recommended">1. RUNNER DECISION — Vitest
+(recommended)</h2>
+<p><strong>Recommendation: standardize the entire extension test stack
+on Vitest + Playwright. Drop Jest entirely.</strong></p>
+<p>Rationale: - <strong>Boba precedent.</strong> <code>frontend/</code>
+already runs <strong>Vitest</strong>
+(<code>frontend/vitest.config.ts</code>, v8 coverage, jsdom) and
+<strong>Playwright</strong>
+(<code>frontend/playwright.config.ts</code>). One runner across the
+whole repo = one mental model, one coverage tool, one CI wiring. -
+<strong>The reference is already broken on this axis.</strong>
+<code>crypto.test.ts</code> imports from <code>vitest</code> while the
+other 6 unit files use Jest globals (06-tests §discrepancy 1). Jest’s
+<code>testMatch</code> would pick up the Vitest file and crash on the
+import. Picking Vitest resolves the inconsistency in the direction the
+most-thorough file already chose. - <strong>ESM + TS native.</strong>
+Vitest runs native ESM/TS without <code>ts-jest</code>’s
+<code>useESM</code> ceremony — the WXT bundle is ESM. Fewer transform
+shims. - <strong>jsdom + happy-dom + browser-mode.</strong> Vitest
+supports jsdom (parser/queue/scanner DOM tests), and
+<code>@vitest/browser</code> (real Chromium) for tests needing real
+<code>crypto.subtle</code>, <code>MutationObserver</code> timing
+fidelity, or real DOM layout — a cleaner escalation path than Jest’s
+jsdom-only world. - <strong>Coverage.</strong>
+<code>@vitest/coverage-v8</code> matches the frontend’s existing
+baseline-just-below-measured gate convention
+(<code>COVERAGE_BASELINE.md</code>), avoiding two coverage
+toolchains.</p>
+<p><strong>Coverage thresholds (override the reference’s 80% +
+UI-excluded model):</strong> - The reference
+<code>collectCoverageFrom</code> <strong>excludes</strong>
+<code>popup/options/content/background/**</code> and all
+<code>index.ts</code> (06-tests §discrepancy 7). <strong>This is
+forbidden</strong> — per CONST §11.4.27, popup, options, content script,
+and background SW logic <strong>MUST be in coverage</strong>. Move all
+four INTO the <code>include</code> list; keep only <code>*.d.ts</code>,
+<code>*.css</code>, <code>assets/**</code>, and pure type-only files
+excluded. - Target <strong>100% across all test types</strong> (the
+mandate). For line/branch unit coverage, adopt the frontend’s ratchet
+pattern: set the gate just below measured-current and raise toward 100%
+each cycle (start floor ≥ 90% statements / ≥ 85% branches given the
+per-file targets the spec already names: crypto 95%, magnet-uri 95%,
+api-client 90%, queue 85%). Coverage % is necessary but
+<strong>not</strong> sufficient — the anti-bluff rule (§0) is the real
+gate.</p>
+<p><strong>CI wiring (Boba manual-CI model, CONST Hard-Stop NO
+CI/CD):</strong> there is <strong>no</strong>
+<code>.github/workflows</code>. Strip the reference’s
+<code>ci.yml</code> / <code>release.yml</code> / Husky hooks /
+<code>reporter: 'github'</code> / <code>forbidOnly: !!CI</code>
+(06-tests §discrepancy 10, 01-guides §K.1). The extension test phases
+are invoked by an extension-local manual script
+<code>extension/ci-ext.sh</code> (mirrors <code>./ci.sh</code>):
+<code>lint → typecheck → unit (+coverage gate) → build → integration(live, skip-if-down) → e2e(real extension) → security → perf/load/stress/chaos → challenges → helixqa banks</code>.
+<code>./ci.sh</code> gains a Phase that shells out to it.</p>
+<hr />
+<h2 id="e2e-extension-load-mechanism-real-extension-real-id">2. E2E
+EXTENSION-LOAD MECHANISM (real extension, real id)</h2>
+<p>The reference e2e is <strong>non-functional</strong> — hardcoded
+<code>chrome-extension://test-id/...</code>, missing
+<code>global-setup.ts</code>/<code>global-teardown.ts</code>, and a
+Firefox project that can’t load the extension via Chromium args
+(06-tests §discrepancy 4, 5; §“Extension-loading takeaway”). It tests
+page-DOM shape, not the extension. Remediation — a <strong>real
+Playwright extension fixture</strong>:</p>
+<p><strong><code>tests/e2e/fixtures/extension.ts</code></strong>
+(Playwright <code>test.extend</code>): 1. <strong>Build first.</strong>
+<code>playwright.config.ts</code> <code>webServer</code> is replaced by
+a <code>globalSetup</code> that runs <code>wxt build -b chrome</code> →
+produces <code>.output/chrome-mv3-prod/</code> (no dev server on :3000 —
+that was dead config, §discrepancy 4). Assert the manifest +
+<code>popup/index.html</code> + <code>options/index.html</code> +
+content-script bundle exist in the output (CONST §11.4.38
+installable-asset evidence — open the artifact, verify each user-visible
+asset is present and non-degenerate). 2. <strong>Launch persistent
+context</strong> with the extension loaded (MV3 requires
+<code>launchPersistentContext</code>, not the default browser):
+<code>ts    const pathToExtension = path.resolve('.output/chrome-mv3-prod');    const context = await chromium.launchPersistentContext(userDataDir, {      channel: 'chromium',      args: [        `--disable-extensions-except=${pathToExtension}`,        `--load-extension=${pathToExtension}`,        '--no-first-run',      ],    });</code>
+3. <strong>Resolve the REAL extension id at runtime</strong> (no
+hardcoded <code>test-id</code>): wait for the MV3 service worker target
+and read its origin —
+<code>ts    let [sw] = context.serviceWorkers();    sw ??= await context.waitForEvent('serviceworker');    const extensionId = new URL(sw.url()).host;          // the real assigned id</code>
+Expose <code>extensionId</code> + a <code>extensionUrl(path)</code>
+helper to every spec.
+<code>page.goto(extensionUrl(    'popup/index.html'))</code> now
+resolves against the <strong>real loaded extension</strong>. 4.
+<strong>Teardown</strong> (<code>globalTeardown</code> + fixture
+<code>context.close()</code>): close context, delete the temp
+<code>userDataDir</code>, leave no orphan Chromium (CONST §11.4.14
+quiescence).</p>
+<p><strong>Cross-browser (FR-018, 4 browsers):</strong> -
+<strong>Chromium-family (Chrome/Opera/Yandex)</strong> — all Blink, load
+identically via <code>--load-extension</code>. One Playwright
+<code>chromium</code> project drives Chrome; Opera/Yandex are
+Chromium-compat → the <strong>adapter + manifest</strong> are validated
+by the same Chromium e2e plus a build-artifact challenge per target
+(<code>wxt build -b opera</code> etc., assert bundle opens). Full
+live-browser e2e on Opera/Yandex is <code>topology_unsupported</code>
+SKIP unless those binaries are installed (CONST §11.4.3). -
+<strong>Firefox 109+ (Gecko, MV3)</strong> — the reference Firefox
+project is broken (Chromium args don’t load extensions in Firefox). Use
+<strong><code>web-ext run</code></strong> /
+<code>firefox.launchPersistentContext</code> with the XPI, OR
+Playwright’s Firefox add-on install API, in a <strong>separate Firefox
+e2e project</strong>. Where the installed Firefox can’t be driven
+headless in CI, SKIP-with-reason + a tracked operator-attended migration
+item (CONST §11.4.52) — never fake-PASS the Gecko path.</p>
+<p><strong>Anti-bluff e2e assertions</strong> (must inspect what the
+user sees, per <code>frontend/playwright.config.ts</code> CONST-XII
+note): not “page loaded” but — popup renders a row whose text === the
+detected torrent’s displayName; clicking Send → the torrent appears in
+qBittorrent’s <code>GET /api/v2/torrents/info</code>
+(<code>http://localhost:7186</code>); options “Save Server” →
+<code>chrome.storage.local['bobalink_config']</code> contains the server
+AND the secret field is ciphertext, not plaintext.</p>
+<hr />
+<h2
+id="live-backend-integration-approach-real-718671877189-skip-if-down">3.
+LIVE-BACKEND INTEGRATION APPROACH (real 7186/7187/7189,
+skip-if-down)</h2>
+<p>Integration / e2e / challenge layers hit <strong>real Boba
+services</strong> (CONST §11.4.27(A) forbids mocks outside unit tests).
+Per 01-guides §J.3 the spec’s fictional 8443/8080 ports
+<strong>re-map</strong> to:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Spec role</th>
+<th>Real Boba service</th>
+<th>Port</th>
+<th>Extension calls</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qBittorrent-direct WebUI <code>/api/v2/*</code></td>
+<td><strong>download-proxy</strong> (injects tracker cookies)</td>
+<td><strong>7186</strong></td>
+<td><code>auth/login</code>, <code>torrents/add</code>,
+<code>torrents/info</code>, <code>app/version</code></td>
+</tr>
+<tr>
+<td>“Boba Server” REST / search / SSE / dashboard</td>
+<td><strong>merge-search service</strong></td>
+<td><strong>7187</strong></td>
+<td>search aggregation, dashboard, progress</td>
+</tr>
+<tr>
+<td>Search aggregation / Jackett creds</td>
+<td><strong>boba-jackett</strong></td>
+<td><strong>7189</strong></td>
+<td>indexer overrides, autoconfig</td>
+</tr>
+</tbody>
+</table>
+<p>WebUI creds are hardcoded <code>admin</code>/<code>admin</code>
+(CLAUDE.md) — integration tests log in with those against :7186; they
+<strong>must not</strong> commit any other secret and must verify
+<code>boba.db</code> never holds plaintext.</p>
+<p><strong>Reachability gate (CONST §11.4.3 + §11.4.68
+<code>*_require_reachable</code>):</strong> every live test calls a
+<code>require_backend(port)</code> helper at entry: - backend
+<strong>reachable</strong> → run the real assertion; - backend
+<strong>unreachable</strong> → <code>SKIP</code> with reason
+<code>network_unreachable_external</code> /
+<code>feature_disabled_   by_config</code> (from the §11.4.69 closed
+reason set) — <strong>never</strong> PASS-by-default,
+<strong>never</strong> fail-open to a counted SKIP that masks a real
+failure (the §11.4.68 forbidden pattern). - The Boba <code>tests/</code>
+pattern (<code>-m "not requires_compose"</code> in <code>ci.sh</code>,
+<code>_purge_qbittorrent_torrents</code> in <code>tests/stress/</code>)
+is the precedent — reuse the same “boot/skip + clean-state”
+discipline.</p>
+<p><strong>Self-driving (CONST §11.4.98):</strong> no manual step during
+a run. <code>global-setup</code> may boot the stack via the Containers
+submodule (<code>./start.sh</code> / boot helper, CONST §11.4.76) and
+seed a known torrent; credential bootstrap (<code>.env</code>,
+<code>admin</code>/<code>admin</code>) is the one allowed out-of-band
+step (§11.4.98(B)). Re-runnable N× with self-cleaning state (purge added
+torrents before/after, §11.4.50/§11.4.98).</p>
+<hr />
+<h2
+id="perf-load-stress-thresholds-from-the-nfrs-these-are-the-gate-values">4.
+PERF / LOAD / STRESS THRESHOLDS (from the NFRs — these ARE the gate
+values)</h2>
+<p>All from 01-guides §C (NFRs) + §I (edge cases). Each perf/load/stress
+test asserts the threshold AND captures a latency/throughput artifact
+(p50/p95/p99) under <code>docs/qa/&lt;run-id&gt;/</code> (CONST §11.4.5/
+§11.4.85). Thresholds are <strong>calibrated/confirmed on Boba’s own
+hardware</strong>, not blindly hardcoded (CONST §11.4.107(13)) — the NFR
+value is the ceiling, the measured baseline ratchets.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Threshold</th>
+<th>NFR</th>
+<th>Test type</th>
+<th>How measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Content-script init</td>
+<td>≤ 10 ms</td>
+<td>NFR-001</td>
+<td>performance</td>
+<td><code>performance.now()</code> delta on inject</td>
+</tr>
+<tr>
+<td>Magnet detection / link</td>
+<td>≤ 5 ms</td>
+<td>NFR-002</td>
+<td>benchmark</td>
+<td>benchmark on <strong>1,000-link page</strong></td>
+</tr>
+<tr>
+<td>Popup render</td>
+<td>≤ 100 ms</td>
+<td>NFR-003</td>
+<td>performance</td>
+<td>Lighthouse / Playwright trace</td>
+</tr>
+<tr>
+<td>Options page load</td>
+<td>≤ 200 ms</td>
+<td>NFR-004</td>
+<td>performance</td>
+<td>Lighthouse / trace</td>
+</tr>
+<tr>
+<td>API round-trip (local)</td>
+<td>≤ 500 ms <strong>p95 over 100 calls</strong></td>
+<td>NFR-005</td>
+<td>load + performance</td>
+<td>100 live calls to :7186, p95</td>
+</tr>
+<tr>
+<td>SW cold start</td>
+<td>≤ 50 ms</td>
+<td>NFR-006</td>
+<td>performance</td>
+<td>DevTools performance</td>
+</tr>
+<tr>
+<td>Bundle size (compressed)</td>
+<td>≤ 350 KB</td>
+<td>NFR-007</td>
+<td>benchmark + artifact gate</td>
+<td><code>du -h</code> on built CRX/ZIP</td>
+</tr>
+<tr>
+<td>Detection on 10,000+ links</td>
+<td><strong>no frame &gt; 16 ms</strong> (no UI jank)</td>
+<td>§C.4</td>
+<td>load + stress</td>
+<td><code>requestIdleCallback</code>/frame timing</td>
+</tr>
+<tr>
+<td>Offline queue</td>
+<td>1,000 default / <strong>10,000 max</strong></td>
+<td>§C.4, FR-014</td>
+<td>scaling + stress</td>
+<td>enqueue 10k, assert eviction + persist</td>
+</tr>
+<tr>
+<td>Crypto 1 MB encrypt</td>
+<td>&lt; 5,000 ms</td>
+<td>crypto perf</td>
+<td>performance</td>
+<td><code>performance.now()</code> around encrypt</td>
+</tr>
+<tr>
+<td>Crypto short encrypt / decrypt</td>
+<td>&lt; 2,000 ms / &lt; 100 ms</td>
+<td>crypto perf</td>
+<td>performance</td>
+<td>timed roundtrip</td>
+</tr>
+<tr>
+<td>Crash-free session</td>
+<td>≥ 99.9%</td>
+<td>NFR-013</td>
+<td>chaos + stress</td>
+<td>fault-injection survival rate</td>
+</tr>
+<tr>
+<td>Queue durability</td>
+<td>100% survive restart</td>
+<td>NFR-014</td>
+<td>chaos</td>
+<td>kill SW / restart, assert 0 loss</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Stress floors (CONST §11.4.85 closed-set):</strong> sustained
+≥ 100 iters OR ≥ 30 s (scan loop, enqueue loop, send loop) with
+p50/p95/p99 captured; concurrent ≥ 10 parallel (10 tabs scanning, 10
+parallel enqueues, 10 parallel sends) — no deadlock, no leak; boundary
+inputs (0-link page, 10k-link page, empty magnet, 10 MB
+<code>.torrent</code>, off-by-one infohash length).
+<strong>Load/DDoS-class:</strong> burst of queue enqueues, API request
+flood against the client rate limiter (10 req/s burst, 60 req/min
+sustained, FR-025 — assert it throttles, honors 429
+<code>Retry-After</code>), rapid scan cycles on mutation storms.</p>
+<hr />
+<h2 id="remediating-the-reference-bluffs-every-one-concretely">5.
+REMEDIATING THE REFERENCE BLUFFS (every one, concretely)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Reference bluff (06-tests)</th>
+<th>Remediation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>B1</strong></td>
+<td><code>crypto.test.ts</code> re-implements crypto
+<strong>inline</strong> and never imports
+<code>src/shared/crypto.ts</code> — cannot fail vs a no-op stub
+(§11.4.1)</td>
+<td><strong>Import the production <code>crypto</code> module</strong>
+(<code>encrypt</code>/<code>decrypt</code>/<code>sha256</code> from
+<code>src/shared/crypto.ts</code>). Keep all 44 conceptual cases
+(roundtrip, wrong-pw, tamper, IV/salt uniqueness, perf) but exercise the
+<strong>real</strong> functions. Add §1.1 mutation: stub
+<code>decrypt</code>→returns plaintext → tamper/wrong-pw tests MUST
+fail. <strong>Also test the real key source</strong> — the reference’s
+fixed passphrase <code>"bobalink-extension"</code> and empty-string
+decrypt (05-src §9.1, §11.4.10) are <strong>security defects the port
+must fix</strong>; tests assert ciphertext is NOT reversible with a
+static/empty key and that the chosen real key source roundtrips.</td>
+</tr>
+<tr>
+<td><strong>B2</strong></td>
+<td>Mixed <strong>Jest + Vitest</strong> runners —
+<code>crypto.test.ts</code> on Vitest, rest on Jest</td>
+<td>Standardize on <strong>Vitest</strong> (§1). Rewrite the 6 Jest
+files to Vitest globals (<code>vi.fn</code> for
+<code>fetch</code>/storage mocks). One config, one coverage tool.</td>
+</tr>
+<tr>
+<td><strong>B3</strong></td>
+<td><strong><code>expect(true).toBe(true)</code></strong> no-ops in
+api-client <code>Auth</code> block + queue <code>Auto-processing</code>
+block</td>
+<td><strong>Delete the tautologies; assert observable state.</strong>
+<code>setAuthCookie('sid')</code> → assert the next request actually
+sends <code>Cookie: SID=sid</code> (spy the real request headers).
+<code>setAuthCookie(null)</code> → assert no Cookie header. Queue
+auto-processing → assert <code>processQueue</code> actually fired (a
+real send attempt observed against a live/mock server, item state
+transitioned), not “no throw”.</td>
+</tr>
+<tr>
+<td><strong>B4</strong></td>
+<td><strong>Non-functional e2e</strong> — hardcoded
+<code>chrome-extension://test-id</code>, no extension loaded, missing
+<code>global-setup</code>/<code>global-teardown</code></td>
+<td>The <strong>real extension fixture</strong> (§2): build →
+<code>launchPersistentContext --load-extension</code> → resolve real id
+via service-worker target → drive popup/options/content against the
+loaded extension with user-observable assertions. Author the missing
+<code>global-setup.ts</code>/<code>global-teardown.ts</code>.</td>
+</tr>
+<tr>
+<td><strong>B5</strong></td>
+<td><code>setup.ts</code> declares wrong mock path
+(<code>tests/fixtures/chrome-mock</code>)</td>
+<td>Fix to actual path; under Vitest, install the chrome mock via
+<code>setupFiles</code>/<code>vi.stubGlobal('chrome', mock)</code>.</td>
+</tr>
+<tr>
+<td><strong>B6</strong></td>
+<td><code>playwright.config.ts</code> references missing
+<code>global-setup.ts</code>/<code>global-teardown.ts</code> + dead
+<code>:3000</code> webServer + broken Firefox extension project</td>
+<td>Author both setup files (build + boot backend + capture id + seed).
+Remove <code>:3000</code> webServer. Fix Firefox to
+<code>web-ext</code>/Firefox-addon load (§2) or SKIP-with-reason.</td>
+</tr>
+<tr>
+<td><strong>B7</strong></td>
+<td><strong>Dead-assert</strong> lines: <code>bencode.test.ts:156</code>
+(<code>.toCharCode ? undefined : undefined</code>) no-op</td>
+<td>Replace with a real assertion (binary-encode prefix bytes equal
+expected).</td>
+</tr>
+<tr>
+<td><strong>B8</strong></td>
+<td><strong>Coverage excludes UI + entrypoints</strong>
+(popup/options/content/background/index.ts)</td>
+<td>Bring all four INTO
+<code>collectCoverageFrom</code>/<code>include</code> (§1). Their logic
+is now unit + integration tested.</td>
+</tr>
+<tr>
+<td><strong>B9</strong></td>
+<td><code>invalidMagnets</code> fixture (7 negatives) <strong>never
+used</strong>; scanner DOM tests use <strong>raw querySelector</strong>,
+not the production scanner; orchestrator <strong>never runs a
+scan</strong></td>
+<td>Wire all 7 <code>invalidMagnets</code> into magnet tests (each must
+throw/return null). Replace raw-querySelector DOM tests with calls to
+the <strong>real
+<code>LinkScanner</code>/<code>TextScanner</code>/<code>ScannerOrchestrator</code></strong>,
+asserting detected-torrent output. Add tests that actually run
+<code>orchestrator.scanNow()</code> + MutationObserver-driven rescan +
+debounce.</td>
+</tr>
+<tr>
+<td><strong>B10</strong></td>
+<td>api-client test name says <code>RateLimitError</code> but asserts
+<code>ServerError</code> (possible inconsistency)</td>
+<td>Resolve the contract: assert the <strong>correct</strong> error
+class the production code throws (verify
+<code>handleErrorResponse</code> — 429 → <code>RateLimitError</code>
+with <code>retryMs</code>); fix the test name OR the code to match, with
+a comment citing the resolution.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="test-type-feature-matrix-compact">6. TEST-TYPE × FEATURE MATRIX
+(compact)</h2>
+<p>Legend per cell: <strong>what is tested · anti-bluff observable /
+no-op-stub failure · evidence artifact</strong>. <code>N/A</code> cells
+carry a one-line reason. Columns: U=Unit, I=Integration(live),
+E=E2E(Playwright real ext), Sec=Security/Pen, L=Load/DDoS, Sc=Scaling,
+Ch=Chaos, St=Stress, P=Performance, B=Benchmark, UI, UX, C=Challenge,
+HQ=HelixQA-bank.</p>
+<h3 id="parser-modules-bencode-magnet-.torrent">6.1 Parser modules
+(bencode / magnet / .torrent)</h3>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module</th>
+<th>U</th>
+<th>I</th>
+<th>E</th>
+<th>Sec</th>
+<th>L</th>
+<th>Sc</th>
+<th>Ch</th>
+<th>St</th>
+<th>P</th>
+<th>B</th>
+<th>UI</th>
+<th>UX</th>
+<th>C</th>
+<th>HQ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>bencode</strong> <code>parser/bencode</code></td>
+<td>encode/decode 4 types, key-sort, binary, hex, malformed reject ·
+decoded bytes equal expected / stub <code>decode</code>→{} fails ·
+<code>bencode_roundtrip.json</code></td>
+<td>parser→torrent-file→infohash chain on real <code>.torrent</code> ·
+computed infohash matches qBt-reported hash ·
+<code>infohash_match.json</code></td>
+<td>N/A — pure logic, no DOM/UI surface</td>
+<td>malformed/adversarial bencode (deep nesting, length-overflow,
+trailing data) cannot crash or hang · throws bounded, no OOM ·
+<code>fuzz_report.txt</code></td>
+<td>N/A — not network-facing</td>
+<td>huge payload (large pieces array) parses · time bounded</td>
+<td>recursion-depth / length-overflow fault → clean
+<code>ParseError</code>, no stack overflow ·
+<code>chaos_bencode.log</code></td>
+<td>100× decode of large torrent, p50/p95/p99 · all PASS identical
+(§11.4.50)</td>
+<td>decode time on large <code>.torrent</code> ≤ baseline ·
+<code>perf.json</code></td>
+<td>encode/decode throughput baseline + regression guard ·
+<code>bench.json</code></td>
+<td>N/A</td>
+<td>N/A</td>
+<td>indirectly via “send real torrent” challenge</td>
+<td>bank: <code>boba-ext-parser</code></td>
+</tr>
+<tr>
+<td><strong>magnet</strong> <code>parser/magnet</code></td>
+<td>detect/find/dedup, hex+base32 validate+convert,
+parse(tr/ws/dn/xs/kt), build · parsed infohash lowercased &amp; matches
+/ stub <code>parseMagnetUri</code>→null fails ·
+<code>magnet_parse.json</code> + <strong>all 7
+<code>invalidMagnets</code></strong></td>
+<td>content-script detects real magnet on a live torrent-site page
+(recorded HTML or live) · detected list contains the magnet’s
+displayName</td>
+<td>via content-script e2e (detection on page)</td>
+<td>XSS: malicious <code>dn</code>/magnet injected → escaped in popup
+DOM, no script exec · popup text is escaped, no alert ·
+<code>xss_magnet.png</code></td>
+<td>1,000 magnets in one page string · <code>findMagnetUris</code> time
+≤ NFR-002×N</td>
+<td>10,000-magnet page parse-all</td>
+<td>malformed/encoded magnet → returns null/throws, never crash</td>
+<td>parse 100× / concurrent 10× · identical</td>
+<td><strong>per-link ≤ 5 ms on 1,000-link page (NFR-002)</strong> ·
+<code>magnet_perf.json</code></td>
+<td>magnet-parse throughput baseline</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>“detect+send magnet” challenge</td>
+<td><code>boba-ext-parser</code></td>
+</tr>
+<tr>
+<td><strong>.torrent</strong> <code>parser/torrent-file</code></td>
+<td>SHA-1 infohash determinism/uniqueness/errors, single+multi parse,
+totalSize, trackers, private, path-join · infohash regex + matches qBt /
+stub <code>computeInfohash</code>→’’ fails ·
+<code>torrentfile_parse.json</code></td>
+<td>parse real downloaded <code>.torrent</code> (≤10 MB) → infohash →
+send → appears in qBt · qBt <code>info</code> row hash equals computed ·
+<code>torrentfile_send.json</code></td>
+<td>upload <code>.torrent</code> via context menu e2e → torrent in
+qBt</td>
+<td>10 MB boundary (FR-004 <code>E_FILE_TOO_LARGE</code>/413) enforced;
+corrupt-file no crash</td>
+<td>N/A</td>
+<td>large/real-world <code>.torrent</code>, hybrid v1+v2</td>
+<td>corrupted-file chaos → clean error, partial-read fault handled</td>
+<td>parse 100× large file · identical</td>
+<td>parse time on big torrent ≤ baseline</td>
+<td>infohash compute throughput</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>“download .torrent to Boba” challenge</td>
+<td><code>boba-ext-parser</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="network-api-queue-layer">6.2 Network / API / queue layer</h3>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module</th>
+<th>U</th>
+<th>I</th>
+<th>E</th>
+<th>Sec</th>
+<th>L</th>
+<th>Sc</th>
+<th>Ch</th>
+<th>St</th>
+<th>P</th>
+<th>B</th>
+<th>UI</th>
+<th>UX</th>
+<th>C</th>
+<th>HQ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>api-client</strong> <code>api/client</code></td>
+<td>url-normalize, login, version, magnet/file add, GET/POST, retry-5xx,
+429 <code>RateLimitError</code> (fix B3/B10), content-type branch,
+<strong>real Cookie-header propagation</strong> · spied request carries
+<code>Cookie: SID=</code> / stub <code>requestRaw</code>→{} fails ·
+<code>apiclient_unit.json</code></td>
+<td><strong>live :7186</strong>: login(admin/admin)→add magnet→torrent
+in <code>GET /torrents/info</code> · qBt state shows the hash ·
+<code>live_add.json</code></td>
+<td>send from popup → torrent appears in qBt (real)</td>
+<td>HTTPS-only scheme validation (NFR-010), no cleartext cred logging
+(NFR-009) · log scan finds no secret ·
+<code>cred_log_scan.txt</code></td>
+<td><strong>100 calls p95 ≤ 500 ms (NFR-005)</strong>; flood → client
+rate-limit throttles (FR-025) · 429 honored</td>
+<td>many configured servers; large <code>info</code> response</td>
+<td>network drop/timeout/reorder mid-request → typed error, no hang;
+SW-kill mid-add · <code>chaos_net.log</code></td>
+<td>sustained 100 sends / 10 concurrent · no leak, identical</td>
+<td>round-trip p95 ≤ 500 ms · <code>api_perf.json</code></td>
+<td>request-build throughput</td>
+<td>N/A</td>
+<td>error-feedback UX (auth fail → notification)</td>
+<td>“live qBt round-trip” challenge</td>
+<td><code>boba-ext-api</code></td>
+</tr>
+<tr>
+<td><strong>offline-queue</strong> <code>api/queue</code></td>
+<td>enqueue/dequeue, priority, FIFO eviction, clear, persist,
+<strong>attempts/backoff/restore-on-init</strong>, processQueue real
+outcome (fix B3) · storage row written / stub <code>enqueue</code>→noop
+fails; remove <code>expect(true)</code> ·
+<code>queue_unit.json</code></td>
+<td>queue a send while :7186 down → reconnect → item actually sent → in
+qBt · qBt shows hash after reconnect ·
+<code>queue_drain.json</code></td>
+<td>popup Queue tab: retry/remove/clear change row state</td>
+<td>N/A (no external attack surface beyond storage; covered by storage
+Sec)</td>
+<td><strong>burst 1,000 enqueues</strong>; queue process under
+flood</td>
+<td><strong>10,000 items max (§C.4)</strong> + persist + restore · count
+after restart == saved</td>
+<td><strong>chrome.storage failure/corruption mid-write</strong>,
+SW-death mid-process → 0 loss (NFR-014), corrupt-state recovery ·
+<code>chaos_queue.log</code></td>
+<td>100 enqueue/dequeue, 10 concurrent enqueue · identical, no dup</td>
+<td>enqueue/persist latency baseline</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>retry-then-success UX (badge orange→green)</td>
+<td>“offline queue durability” challenge</td>
+<td><code>boba-ext-queue</code></td>
+</tr>
+<tr>
+<td><strong>auth</strong> <code>api/auth</code></td>
+<td>4 methods (none/cookie/api_key/basic),
+failure-count→<code>AuthError</code>, refresh-if-needed, <strong>real
+<code>createCredentialsFromConfig</code> decrypt</strong> · decrypted
+creds drive a real login / stub <code>decrypt</code>→throws caught &amp;
+fails · <code>auth_unit.json</code></td>
+<td>cookie login vs :7186 succeeds; api_key header sent to :7187 ·
+server accepts/rejects observably</td>
+<td>options Test-Connection button → real result shown</td>
+<td><strong>credential at-rest encryption (NFR-008)</strong>, redaction
+(<code>X-API-Key xxxx</code>), no plaintext in storage/logs ·
+<code>chrome.storage</code> value is ciphertext ·
+<code>cred_at_rest.json</code></td>
+<td>N/A</td>
+<td>N/A</td>
+<td>session-key-lost-on-restart → “cannot decrypt” handled (edge case) ·
+<code>chaos_authkey.log</code></td>
+<td>repeated auth cycles · identical</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>auth-method selection + masked input UX</td>
+<td>cred-roundtrip challenge (mirror
+<code>cred_roundtrip_challenge.sh</code>)</td>
+<td><code>boba-ext-auth</code></td>
+</tr>
+<tr>
+<td><strong>health</strong> <code>api/health</code></td>
+<td>thresholds (healthy/degraded/unhealthy), failure-count,
+testConnection, autoDiscover ports [7186,7187,7189] (re-pointed) ·
+status derived from real latency / stub <code>getVersion</code>→’’ fails
+· <code>health_unit.json</code></td>
+<td><strong>live</strong>: checkServer vs :7187 returns real version +
+latency · version string matches <code>app/version</code> ·
+<code>live_health.json</code></td>
+<td>popup status dot reflects real connection (green/orange/red)</td>
+<td>N/A</td>
+<td>poll under load</td>
+<td>many servers polled</td>
+<td>server-down mid-poll → degraded→unhealthy transition ·
+<code>chaos_health.log</code></td>
+<td>100 polls · identical status</td>
+<td>poll latency baseline</td>
+<td>N/A</td>
+<td>status-dot color UI</td>
+<td>“is it connected?” status UX</td>
+<td>auto-discovery challenge (finds :7186/7187/7189)</td>
+<td><code>boba-ext-health</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="detection-scanning-content-layer">6.3 Detection / scanning /
+content layer</h3>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module</th>
+<th>U</th>
+<th>I</th>
+<th>E</th>
+<th>Sec</th>
+<th>L</th>
+<th>Sc</th>
+<th>Ch</th>
+<th>St</th>
+<th>P</th>
+<th>B</th>
+<th>UI</th>
+<th>UX</th>
+<th>C</th>
+<th>HQ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>scanner: orchestrator</strong>
+<code>scanner/orchestrator</code></td>
+<td><strong>run real scan</strong> (fix B9): scanNow finds seeded
+magnets; MutationObserver rescan on injected <code>&lt;a&gt;</code>;
+debounce; dedup · detected count == seeded / stub
+<code>performScan</code>→[] fails · <code>scan_unit.json</code></td>
+<td>content-script in real page scans → reports <code>scan-result</code>
+to background → badge updates · badge text == count ·
+<code>scan_integration.json</code></td>
+<td>e2e: load page → badge shows N → popup lists N rows</td>
+<td>strict-CSP page → scanner respects CSP, no inject (edge case)</td>
+<td><strong>10,000-link page: no frame &gt; 16 ms (§C.4)</strong> ·
+frame timing captured · <code>jank.json</code></td>
+<td>10k links detected; large detected-set</td>
+<td>MutationObserver storm (rapid DOM churn) → debounced, no runaway;
+mid-scan DOM teardown · <code>chaos_scan.log</code></td>
+<td>100 scan cycles / 10 tabs concurrent (single-owner per tab,
+§11.4.119) · identical counts</td>
+<td>scan latency on heavy DOM baseline</td>
+<td>scan throughput vs link count</td>
+<td>N/A</td>
+<td>“wait a few seconds” SPA re-render UX (500 ms, FR-001)</td>
+<td>“detect on real torrent site” challenge</td>
+<td><code>boba-ext-scanner</code></td>
+</tr>
+<tr>
+<td><strong>scanner: site-db</strong> <code>scanner/site-db</code></td>
+<td><strong>all shipped sites</strong> (reconcile
+<code>SITE_SELECTORS</code> vs <code>SITES</code>, 05-src §7),
+known-site recognition, www-match, selector presence, per-site debounce
+· config.name matches / stub <code>getSiteConfig</code>→null fails ·
+<code>sitedb_unit.json</code></td>
+<td>content-script uses site selectors on a real/recorded page from each
+site · site-specific magnets found</td>
+<td>N/A (logic)</td>
+<td>private-site selector correctness (rutracker/iptorrents Boba
+supports)</td>
+<td>N/A</td>
+<td>15+ sites</td>
+<td>stale-selector detection (site changed) → falls back to generic</td>
+<td>N/A</td>
+<td>selector-match time</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>per-private-site detection challenge</td>
+<td><code>boba-ext-scanner</code></td>
+</tr>
+<tr>
+<td><strong>event emitter</strong> <code>shared/events</code></td>
+<td>on/once/unsub, multi-listener, count, <strong>error
+isolation</strong> · listener fires once / stub <code>emit</code>→noop
+fails · <code>events_unit.json</code></td>
+<td>(exercised via scanner integration)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>high-volume emit (10k events)</td>
+<td>N/A</td>
+<td>bad-listener-throws → emit doesn’t throw, good listener still
+fires</td>
+<td>100k emits / concurrent · identical</td>
+<td>emit throughput</td>
+<td>emit baseline</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><code>boba-ext-scanner</code></td>
+</tr>
+<tr>
+<td><strong>content script</strong> <code>content/index</code> +
+highlight</td>
+<td>message handlers (scan-now/get-detected/toggle/status), highlight
+inject · DOM badge/border/glow appears / stub injects nothing fails ·
+<code>content_unit.json</code> (jsdom)</td>
+<td><strong>real injection</strong> (fix B9): content script runs on a
+real page, badges appear, message to background observed · highlighted
+element has <code>.bobalink-*</code> class ·
+<code>content_integration.json</code></td>
+<td>e2e: highlight visible on page (screenshot diff)</td>
+<td>XSS via injected dn into highlight tooltip → escaped ·
+<code>xss_highlight.png</code></td>
+<td>highlight on 10k links no jank</td>
+<td>N/A</td>
+<td>inject into hostile/teardown DOM → no crash</td>
+<td>re-inject 100× · identical</td>
+<td>inject latency ≤ NFR-001 (10 ms) ·
+<code>inject_perf.json</code></td>
+<td>N/A</td>
+<td>highlight styles render (badge/border/glow)</td>
+<td>highlight on/off, hover tooltip name+size UX</td>
+<td>“highlight torrents” challenge</td>
+<td><code>boba-ext-content</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="background-sw-popup-options-cross-cutting">6.4 Background SW /
+popup / options / cross-cutting</h3>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+<col style="width: 6%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module</th>
+<th>U</th>
+<th>I</th>
+<th>E</th>
+<th>Sec</th>
+<th>L</th>
+<th>Sc</th>
+<th>Ch</th>
+<th>St</th>
+<th>P</th>
+<th>B</th>
+<th>UI</th>
+<th>UX</th>
+<th>C</th>
+<th>HQ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>background SW</strong> <code>background/index</code></td>
+<td>message router (all 13 handled types), badge update,
+context-menu/command/alarm handlers, install seeds DEFAULT_CONFIG ·
+handler returns expected <code>{success,data}</code> / stub
+router→unknown fails · <code>bg_unit.json</code></td>
+<td>content→bg→api→qBt full chain; alarms keep-alive; storage-change
+re-init · torrent sent end-to-end · <code>bg_chain.json</code></td>
+<td>e2e: context menu “Send Magnet”→qBt; keyboard
+<code>Ctrl+Shift+B</code>→send; badge updates</td>
+<td>minimum-permission model (NFR-012): manifest declares only
+<code>activeTab</code>+host perms · manifest audit ·
+<code>perm_audit.txt</code></td>
+<td>message flood → router stable</td>
+<td>many tabs in <code>tabTorrents</code> map</td>
+<td><strong>SW termination mid-op → recovery via alarms</strong> (edge
+case, NFR-014); install/startup races · <code>chaos_sw.log</code></td>
+<td>100 message cycles / 10 concurrent · identical</td>
+<td>SW cold-start ≤ 50 ms (NFR-006) · <code>sw_cold.json</code></td>
+<td>N/A</td>
+<td>N/A</td>
+<td>context-menu + keyboard-shortcut UX flows</td>
+<td>“send via context menu” challenge</td>
+<td><code>boba-ext-background</code></td>
+</tr>
+<tr>
+<td><strong>popup UI</strong> <code>popup/popup</code></td>
+<td>render rows, selection set, send-enable logic, status dot · row text
+== displayName / stub render→empty fails · <code>popup_unit.json</code>
+(jsdom)</td>
+<td>popup→bg get-detected→render real detected torrents · rows match
+detected · <code>popup_integration.json</code></td>
+<td><strong>e2e real ext</strong>: empty-state, list renders N detected,
+select→Send enabled, Send→qBt, status reflects connection · DOM rows +
+qBt row · <code>popup_e2e.png</code></td>
+<td>XSS via dn in row → escaped</td>
+<td>render 1,000 detected rows no jank</td>
+<td>10k detected rows (pagination)</td>
+<td>bg unreachable → popup shows warning, no crash</td>
+<td>100 open/render · identical</td>
+<td><strong>render ≤ 100 ms (NFR-003)</strong> ·
+<code>popup_render.json</code></td>
+<td>N/A</td>
+<td>empty/list/sent states render correctly</td>
+<td>detect→select→send→feedback happy-path UX; a11y keyboard nav (WCAG,
+FR-020)</td>
+<td>“popup send flow” challenge</td>
+<td><code>boba-ext-popup</code></td>
+</tr>
+<tr>
+<td><strong>options UI</strong> <code>options/options</code></td>
+<td>form↔︎config bridge, validation (url), section nav, reset-to-defaults
+· saved config persisted / stub save→noop fails ·
+<code>options_unit.json</code></td>
+<td><strong>save server → <code>chrome.storage</code> persists + secret
+encrypted</strong>; test-connection live; auto-discover finds
+:7186/7187/7189 · storage value is ciphertext ·
+<code>options_save.json</code></td>
+<td><strong>e2e</strong>: add-server modal→save→reload→server still
+there + active; toggle→setting changes; reset→defaults · persisted state
+· <code>options_e2e.png</code></td>
+<td><strong>fixed-passphrase/empty-key defect fixed</strong> (B1);
+secret never plaintext in storage · <code>options_cred.json</code></td>
+<td>N/A</td>
+<td>many servers</td>
+<td>storage-quota-exceeded on save → <code>E_STORAGE_FULL</code> handled
+(edge) · <code>chaos_storage.log</code></td>
+<td>100 save cycles · identical</td>
+<td>options load ≤ 200 ms (NFR-004) ·
+<code>options_load.json</code></td>
+<td>N/A</td>
+<td>nav, modal open/close, all inputs render</td>
+<td>first-time setup wizard UX (mode→discover→test→finish); dark/light
+theme (FR-021)</td>
+<td>“configure + persist server” challenge</td>
+<td><code>boba-ext-options</code></td>
+</tr>
+<tr>
+<td><strong>security / crypto</strong> <code>shared/crypto</code></td>
+<td>(see B1) AES-256-GCM/PBKDF2 roundtrip, tamper, IV/salt unique,
+wrong-pw — <strong>on real module</strong> · decrypt fails on tamper /
+stub decrypt→plaintext fails · <code>crypto_unit.json</code></td>
+<td>encrypted cred persisted by options → decrypted by background →
+drives real login · live login succeeds with decrypted cred ·
+<code>crypto_chain.json</code></td>
+<td>N/A (no UI of its own)</td>
+<td><strong>pen-test</strong>: ciphertext not reversible w/ static/empty
+key; credential-leak grep (CONST §11.4.10, mirror
+<code>credential_leak_grep_challenge.sh</code>); CSP
+<code>script-src 'self'</code> enforced (NFR-011); no <code>eval</code>
+· grep finds 0 secrets · <code>cred_leak.txt</code></td>
+<td>N/A</td>
+<td>N/A</td>
+<td>corrupt ciphertext / wrong version → graceful
+<code>E_CRYPTO</code></td>
+<td>100 encrypt+decrypt · identical</td>
+<td>encrypt 1MB &lt; 5 s / decrypt short &lt; 100 ms ·
+<code>crypto_perf.json</code></td>
+<td>crypto throughput baseline</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>cred-leak + cred-roundtrip challenges</td>
+<td><code>boba-ext-security</code></td>
+</tr>
+<tr>
+<td><strong>cross-browser adapter</strong>
+<code>BrowserAdapter</code></td>
+<td>adapter resolves chrome.<em>↔︎browser.</em> per
+<code>import.meta.browser</code>; polyfill present · adapter returns
+Firefox API on gecko / stub→undefined fails ·
+<code>adapter_unit.json</code></td>
+<td>N/A (build-time)</td>
+<td>e2e per browser project (Chromium real; Firefox real/skip;
+Opera/Yandex artifact)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>missing-API graceful degrade</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>per-browser build-artifact challenge (<code>wxt build -b X</code>
+opens)</td>
+<td><code>boba-ext-xbrowser</code></td>
+</tr>
+<tr>
+<td><strong>tab-groups</strong> <code>TabManager</code> (net-new, 05-src
+§4.4)</td>
+<td>enumerate groups, send SCAN_REQUEST per tab, aggregate,
+dedup-across-tabs by infohash · batch list deduped / stub→[] fails ·
+<code>tabgroup_unit.json</code></td>
+<td>real: 3 tabs in a group → “Send Tab Group” → all magnets deduped +
+sent → in qBt · qBt count == unique ·
+<code>tabgroup_send.json</code></td>
+<td>e2e: create group, trigger batch, summary notif “N sent, 0
+failed”</td>
+<td>N/A</td>
+<td>unlimited batch (memory-bound, §C.4)</td>
+<td>many tabs/groups</td>
+<td>tab closed mid-batch → handled</td>
+<td>100 batch ops · identical</td>
+<td>batch latency baseline</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>tab-group batch UX (<code>Ctrl+Shift+G</code>)</td>
+<td>“tab-group batch send” challenge</td>
+<td><code>boba-ext-tabgroups</code></td>
+</tr>
+<tr>
+<td><strong>i18n</strong> <code>_locales</code></td>
+<td>all UI strings externalized, <code>en</code>+7 locales have every
+key, no hardcoded text (FR-019) · key lookup returns locale string /
+stub→key-name fails · <code>i18n_unit.json</code></td>
+<td>N/A</td>
+<td>e2e: switch locale → popup/options text changes</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>8 locales</td>
+<td>missing-key fallback to <code>en</code></td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>localized strings render</td>
+<td>RTL/locale UX, a11y aria-labels present</td>
+<td>“locale switch” challenge</td>
+<td><code>boba-ext-i18n</code></td>
+</tr>
+<tr>
+<td><strong>build artifact</strong> (manifest/bundle)</td>
+<td>manifest schema valid, MV3, perms minimal, CSP correct, icons
+rasterized 16/32/48/128 · manifest fields present / missing → fails ·
+<code>manifest_unit.json</code></td>
+<td>N/A</td>
+<td>N/A</td>
+<td>CSP + permission audit (NFR-011/012)</td>
+<td>N/A</td>
+<td>bundle ≤ 350 KB (NFR-007)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>bundle size ≤ 350 KB</strong> · <code>du</code> artifact
+(NFR-007)</td>
+<td>N/A</td>
+<td>N/A</td>
+<td><strong>CONST §11.4.38</strong>: open built CRX/ZIP, every asset
+present + non-degenerate (popup html, content bundle, icons, _locales) ·
+<code>artifact_open.txt</code></td>
+<td>per-browser build challenge</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="na-cell-reasons-ddos-server-side-types-on-a-client-extension">6.5
+N/A-cell reasons (DDoS / server-side types on a client extension)</h3>
+<ul>
+<li><strong>DDoS</strong> is <strong>N/A</strong> for pure client-side
+parsers (no server to flood) — <strong>but the client DOES need Load
+tests</strong>: 10,000-link-page detection (no jank, §C.4) and
+API-flood-against-the-client-rate- limiter (FR-025) ARE in-scope and
+appear in the matrix Load column. “DDoS N/A for a client-side parser;
+client load = heavy-page + request-burst, covered.”</li>
+<li><strong>Scaling</strong> is N/A for crypto/events (no scale
+dimension) but <strong>in-scope</strong> for queue (10k items),
+detection (10k links), servers list, locales.</li>
+<li><strong>Security/Pen</strong> is N/A for bencode-internals (covered
+by parser-fuzz under Sec) — the real attack surface is crypto (at-rest),
+content-script (XSS via dn), CSP, permissions, credential-leak.</li>
+<li><strong>UI/UX</strong> are N/A for non-rendering logic modules
+(parser/api/crypto/events) — those carry no user-facing surface of their
+own; their UX shows up through popup/options/content cells.</li>
+</ul>
+<hr />
+<h2 id="chaos-stress-detail-const-11.4.85-closed-set-per-fix-class">7.
+CHAOS + STRESS DETAIL (CONST §11.4.85 closed-set, per fix-class)</h2>
+<p>Reuse Boba’s <code>tests/chaos/</code> + <code>tests/stress/</code> +
+<code>stress_chaos.sh</code>-style helpers and the
+<code>_purge_qbittorrent_torrents</code> clean-state pattern. Every PASS
+cites a captured artifact.</p>
+<ul>
+<li><strong>Chaos — process-death:</strong> kill the MV3 service worker
+mid-<code>processQueue</code> / mid-send → on restart the queue restores
+from <code>chrome.storage.local</code> with <strong>0 loss</strong>
+(NFR-014) and resumes. <code>recovery_ trace.log</code>.</li>
+<li><strong>Chaos — network-fault:</strong> drop/delay/reorder responses
+from :7186 during add/queue → typed
+<code>E_NETWORK</code>/<code>E_TIMEOUT</code>, backoff engaged, no hang,
+item re-queued. <code>chaos_net.log</code>.</li>
+<li><strong>Chaos — input-corruption:</strong> corrupt the persisted
+queue JSON / a <code>.torrent</code> byte / <code>chrome. storage</code>
+config mid-test → <code>E_STORAGE_CORRUPT</code>/<code>E_CRYPTO</code>
+handled, recovery to consistent state.</li>
+<li><strong>Chaos — resource-exhaustion:</strong>
+<code>chrome.storage</code> quota full (<code>E_STORAGE_FULL</code>,
+Firefox stricter, edge case §I) → refuses cleanly, prompts
+clear-old-items, never crashes.</li>
+<li><strong>Chaos — state-corruption:</strong> mid-flight config change
+during a send / partial-write fault → recovery restores consistent
+config; <code>cleanup</code> in <code>trap</code>-equivalent leaves
+quiescent state (§11.4.14).</li>
+<li><strong>Stress:</strong> sustained scan/enqueue/send ≥ 100 iters or
+≥ 30 s with p50/p95/p99; concurrent ≥ 10 (10 tabs, 10 enqueues) —
+single-resource-owner per tab/sink (§11.4.119), no deadlock/leak;
+boundary (0/max/off-by-one) inputs categorized.</li>
+<li>Every chaos injection has a <strong>paired §1.1 mutation</strong>
+(strip the recovery code → the chaos test FAILs), proving the test
+catches the regression (CONST §11.4.85 4-layer).</li>
+</ul>
+<hr />
+<h2
+id="challenges-helixqa-banks-autonomous-qa-const-11.4.27b-11.4.98">8.
+CHALLENGES + HelixQA BANKS + AUTONOMOUS QA (CONST §11.4.27(B),
+§11.4.98)</h2>
+<p><strong>Challenges</strong>
+(<code>challenges/scripts/boba_ext_*.sh</code>, mirroring existing
+<code>cred_roundtrip_challenge.sh</code>/<code>credential_leak_grep_challenge.sh</code>
+style — build, boot, drive the <strong>real</strong> built extension
+against <strong>real</strong> :7186/:7187/:7189, assert user-observable
+outcomes, exit 0/1 with PASS/FAIL message, anti-bluff comment
+block):</p>
+<ol type="1">
+<li><code>boba_ext_detect_send_magnet_challenge.sh</code> — load ext →
+open a real torrent-site page → assert badge count &gt; 0 → popup lists
+it → Send → <code>GET :7186/api/v2/torrents/info</code> contains the
+hash.</li>
+<li><code>boba_ext_torrentfile_send_challenge.sh</code> — context-menu
+“Download .torrent to Boba” (≤10 MB) → torrent in qBt.</li>
+<li><code>boba_ext_offline_queue_durability_challenge.sh</code> — :7186
+down → Send → item queued → restart SW → reconnect → item in qBt
+(NFR-014 100% durability).</li>
+<li><code>boba_ext_cred_at_rest_challenge.sh</code> — save server with
+api-key → assert <code>chrome.storage.local</code> value is ciphertext
+AND no plaintext anywhere AND a static/empty key can’t decrypt (fixes
+B1).</li>
+<li><code>boba_ext_autodiscover_challenge.sh</code> — auto-discover
+finds the real :7186/7187/7189 services.</li>
+<li><code>boba_ext_tabgroup_batch_challenge.sh</code> — 3-tab group →
+batch send → unique hashes in qBt + “N sent” notification.</li>
+<li><code>boba_ext_artifact_challenge.sh</code> (CONST §11.4.38) — build
+each browser target, open the ZIP/CRX, assert manifest + popup html +
+content bundle + icons + <code>_locales</code> present &amp;
+non-degenerate &amp; bundle ≤ 350 KB.</li>
+<li><code>boba_ext_cred_leak_grep_challenge.sh</code> — repo-wide grep
+proves no extension secret is committed (CONST §11.4.10), no fixed
+passphrase shipped.</li>
+</ol>
+<p><strong>HelixQA banks</strong>
+(<code>challenges/helixqa-banks/boba-ext-*.yaml</code>, schema per
+existing <code>boba-frontend.yaml</code> — <code>test_cases</code> with
+id/name/category/priority/platforms/steps[action+expected]/
+tags/expected_result/fix_reference). One bank per surface:
+<code>boba-ext-parser</code>, <code>-api</code>, <code>-queue</code>,
+<code>-auth</code>, <code>-health</code>, <code>-scanner</code>,
+<code>-content</code>, <code>-background</code>, <code>-popup</code>,
+<code>-options</code>, <code>-security</code>, <code>-tabgroups</code>,
+<code>-i18n</code>, <code>-build</code>, <code>-xbrowser</code>. Each
+case’s <code>action</code> drives the real extension/backend (Playwright
++ curl) and <code>expected</code> is a user-observable outcome — never
+“status 200”.</p>
+<p><strong>Autonomous QA sessions (CONST §11.4.98 / §11.4.50):</strong>
+the banks + challenges run fully self-driving (no human keystroke after
+start), re-runnable N× with self-cleaning state, scored PASS only on
+captured evidence. Wired into <code>extension/ci-ext.sh</code> and
+surfaced through the existing <code>ci.sh</code> so a single manual run
+validates the whole extension. Real-time progress via an append-only
+JSONL event stream + status snapshot (CONST §11.4.116) so the conductor
+tails verdicts live, each verdict carrying its evidence path.</p>
+<hr />
+<h2 id="four-layer-coverage-per-feature-const-11.4.4b-wiring">9.
+FOUR-LAYER COVERAGE PER FEATURE (CONST §11.4.4(b)) — wiring</h2>
+<p>Every feature ships <strong>all four</strong>: (1) <strong>pre-build
+gate</strong> — unit/lint/typecheck + coverage threshold + §1.1
+paired-mutation gate (mutate the analyzer/feature → gate FAILs); (2)
+<strong>post-build</strong> — artifact-open (§11.4.38) asserts the byte
+landed in the bundle; (3) <strong>runtime-on-clean-target</strong> —
+e2e/integration/challenge against a freshly-built extension + clean
+<code>chrome.storage</code> (CONST §11.4.108 clean-baseline, no stale
+profile shadowing the build); (4) <strong>HelixQA Challenge</strong> for
+every user-visible feature. A fix is “done” only when its declared
+runtime signature (e.g. “torrent hash appears in qBt <code>info</code>
+after Send”) verifies on the clean target — source-green ≠ done
+(§11.4.108).</p>
+<hr />
+<h2
+id="open-questions-for-the-conductor-from-06-tests-open-questions">10.
+OPEN QUESTIONS FOR THE CONDUCTOR (from 06-tests §“Open questions”)</h2>
+<ol type="1">
+<li><strong>Runner</strong> — confirm Vitest (recommended, §1). 2.
+<strong>Coverage</strong> — confirm bringing popup/options/
+content/background INTO coverage + the floor (≥90/85, ratchet to 100).
+3. <strong>Firefox e2e</strong> — real <code>web-ext</code> drive vs
+SKIP-with-reason; is Gecko a release gate? 4. <strong>Crypto key
+source</strong> — the real replacement for the
+fixed-<code>"bobalink-extension"</code>/empty-string defect (user master
+passphrase / OS keychain / delegate to boba-jackett’s
+<code>/config/boba.db</code>)? Tests must import whatever is
+chosen.</li>
+<li><strong>Backend mapping</strong> — confirm :7186 (qBt-direct via
+proxy), :7187 (Boba REST/search/SSE), :7189 (boba-jackett) as the live
+integration targets. 6. <strong>Chrome-mock error-injection</strong> —
+extend <code>chrome-mock.ts</code> with a configurable fault-injecting
+variant for chaos unit tests (current mock is happy-path only). 7.
+<strong>Manifest/commands/icons</strong> — authored as part of
+build-artifact tests.</li>
+</ol>

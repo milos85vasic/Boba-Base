@@ -1,0 +1,1488 @@
+<h1 id="guides-plan-extraction">01 — Guides &amp; Plan extraction</h1>
+<blockquote>
+<p>Exhaustive extraction of the BobaLink reference deliverable’s
+top-level guide, the 5 formal docs, README, and the two plan documents.
+Every functional/non-functional requirement, feature, flow, edge case,
+config, API endpoint, dependency, build/release step, acceptance
+criterion, milestone, and backend-integration point is captured verbatim
+with file + section citation. Boba-specific constraint flags are called
+out explicitly. Source product is named <strong>BobaLink</strong>,
+v1.0.0, dated 2026-06-06. NOTE: BobaLink is a <em>reference/spec
+deliverable</em>, not the Boba repo’s own naming — the Boba
+implementation will rename/re-target.</p>
+</blockquote>
+<h2 id="files-read">Files read</h2>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 37%" />
+<col style="width: 43%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>File</th>
+<th>Lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>Browser Torrent Extension Guide.md</code> (master guide /
+index)</td>
+<td>240</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>Browser Torrent Extension Guide/docs/technical-specification.md</code></td>
+<td>1152</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>Browser Torrent Extension Guide/docs/api-reference.md</code></td>
+<td>2042</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>Browser Torrent Extension Guide/docs/developer-guide.md</code></td>
+<td>1334</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>Browser Torrent Extension Guide/docs/installation-guide.md</code></td>
+<td>949</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>Browser Torrent Extension Guide/docs/user-guide.md</code></td>
+<td>865</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>Browser Torrent Extension Guide/README.md</code>
+(byte-identical to file #1)</td>
+<td>240</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>Browser Torrent Extension Guide/plan.md</code> (master
+execution plan)</td>
+<td>96</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>Browser Torrent Extension Guide/implementation-plan.md</code></td>
+<td>410</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>TOTAL</strong></td>
+<td><strong>7328</strong></td>
+</tr>
+</tbody>
+</table>
+<p>All 9 files read IN FULL (chunked to EOF). Files #1 and #7 are
+byte-for-byte identical (the master guide is also the README).</p>
+<hr />
+<h2 id="a.-project-overview-key-metrics">A. PROJECT OVERVIEW &amp; KEY
+METRICS</h2>
+<p><strong>Source:</strong> master-guide §“Project Overview”; tech-spec
+§1 “Executive Summary”; README.</p>
+<ul>
+<li>BobaLink = cross-browser WebExtension (<strong>Manifest V3</strong>)
+that detects magnet links and <code>.torrent</code> file references on
+any web page (and across tab groups), deduplicates by cryptographic
+infohash, and transmits them to a <strong>Boba orchestration
+server</strong> OR directly to a <strong>qBitTorrent WebUI</strong>
+instance.</li>
+<li>Three core operational problems it solves (tech-spec §1): (1)
+Discovery-to-Download latency (eliminate manual copy/paste — reduce to
+single click); (2) Batch operation efficiency (tab groups as atomic
+units); (3) Operational resilience (offline-aware queue with exponential
+backoff so transient failures never lose torrents).</li>
+<li>Does NOT perform any BitTorrent protocol operations itself — it is a
+“thin client” / “intelligent scraper and forwarding agent” (tech-spec
+§2).</li>
+<li>Built on <strong>WXT framework</strong> +
+<strong>TypeScript</strong>; targets Chrome (≥88), Firefox (≥109),
+Opera, Yandex Browser; WCAG 2.1 AA; credentials encrypted at rest via
+<strong>AES-256-GCM</strong> (Web Crypto API).</li>
+</ul>
+<p><strong>Key Metrics at a Glance (tech-spec §1 table):</strong> |
+Metric | Target | |—|—| | Extension bundle size (compressed) | ≤ 350 KB
+| | Cold-start service worker | ≤ 50 ms | | Magnet link detection
+latency | ≤ 5 ms per link | | API call timeout | 30 s | | Offline queue
+retention | 30 days | | Supported browsers | 4 (Chrome, Firefox, Opera,
+Yandex) | | Functional requirements | 25 | | Non-functional requirements
+| 15 |</p>
+<p><strong>Deliverable inventory (master-guide §“File Count
+Summary”/“Key Statistics”):</strong> 60 source files; 36 diagrams (12
+types × 5 formats); 5 markdown docs (25,725+ words); research = 27,560
+lines across 12 dimensions; 320+ test cases (unit+E2E); 80%+ coverage
+target; ~4.8 MB total. <strong>133 files / 8 formats.</strong></p>
+<hr />
+<h2 id="b.-functional-requirements-25-frs-tech-spec-3-verbatim">B.
+FUNCTIONAL REQUIREMENTS (25 FRs — tech-spec §3, verbatim)</h2>
+<h3 id="b.1-torrent-detection-parsing-3.1">B.1 Torrent Detection &amp;
+Parsing (§3.1)</h3>
+<ul>
+<li><strong>FR-001 — Detect Magnet Links on Any Web Page</strong> (P0
+Critical; Content Script; trigger = DOM mutation via
+<code>MutationObserver</code> or page load). SHALL detect all magnet URI
+links (<code>href</code> beginning <code>magnet:?</code>) in DOM of any
+page; detection MUST be dynamic across SPA navigation.
+<strong>Acceptance:</strong> magnet links in dynamically injected
+content (React/Vue re-renders) detected within <strong>500 ms</strong>;
+works across all <code>http:</code>/<code>https:</code> origins; iframe
+magnet links detected when <code>all_frames</code> enabled.</li>
+<li><strong>FR-002 — Detect .torrent File Links</strong> (P0 Critical;
+Content Script). Detect via URL path suffix <code>.torrent</code>
+(case-insensitive) AND
+<code>Content-Type: application/x-bittorrent</code> response header
+(when accessible via CORS or Fetch API).</li>
+<li><strong>FR-003 — Parse Magnet URI Parameters</strong> (P0 Critical;
+Parser Module). Per <strong>BEP-0009</strong>: <code>xt</code> (Exact
+Topic, <code>urn:btih:</code> + 40-char hex infohash), <code>dn</code>
+(Display Name), <code>tr</code> (Tracker URL, repeatable),
+<code>xl</code> (Exact Length bytes, optional), <code>ws</code> (Web
+Seed, optional), <code>x.pe</code> (Peer Address host:port, optional).
+<strong>Validation:</strong> <code>xt</code> MUST be present + valid
+40-char hex infohash; <code>dn</code> SHOULD be present, fallback
+<code>"Unknown Torrent"</code>; <code>tr</code> entries MUST be valid
+HTTP(S) URLs, malformed trackers logged+discarded.</li>
+<li><strong>FR-004 — Download and Parse .torrent Files</strong> (P1
+High; Service Worker). Download via <code>fetch()</code>. Constraints:
+<strong>max file size 10 MB</strong> (configurable via
+<code>maxTorrentFileSize</code>); <strong>timeout 30 s</strong>; CORS
+policy falls back to <strong>proxying via Boba server</strong> when
+direct fetch blocked. Parse via Bencode decoder to extract
+<code>info.name</code>, <code>info.piece length</code>,
+<code>info.length</code>(or <code>info.files</code> multi-file),
+<code>announce</code> + <code>announce-list</code>.</li>
+<li><strong>FR-005 — Compute Infohash from Torrent Data</strong> (P1
+High; Crypto Module). Compute <strong>SHA-1</strong> over
+Bencode-encoded <code>info</code> dict → 40-char hex infohash; MUST
+match <code>xt</code> if both available.</li>
+<li><strong>FR-006 — Deduplicate Torrents by Infohash</strong> (P1 High;
+State Manager). In-memory <code>Map&lt;string, TorrentInfo&gt;</code>
+keyed by <strong>lowercase infohash</strong>. On duplicate (same
+infohash, different page): preserve most descriptive
+<code>displayName</code> (longest string), union of all tracker URLs,
+earliest <code>detectedAt</code>.</li>
+</ul>
+<h3 id="b.2-integration-and-transmission-3.2">B.2 Integration and
+Transmission (§3.2)</h3>
+<ul>
+<li><strong>FR-007 — Send Magnet Links to qBitTorrent via WebUI
+API</strong> (P0 Critical; API Client). Transmit to qBitTorrent
+<code>/api/v2/torrents/add</code>; support <code>urls</code> param
+(newline-separated magnets), optional
+<code>category</code>/<code>tags</code>/<code>savepath</code>/<code>rename</code>,
+automatic cookie-based session management.</li>
+<li><strong>FR-008 — Upload .torrent Files to qBitTorrent</strong> (P1
+High; API Client). Upload via <code>multipart/form-data</code> POST to
+<code>/api/v2/torrents/add</code> using <code>torrents</code> file
+field. File blobs kept in memory only for upload duration.</li>
+<li><strong>FR-009 — Support Tab Group Batch Operations</strong> (P1
+High; Tab Manager). Enumerate all tabs in a selected Chrome tab group;
+send <code>SCAN_REQUEST</code> to each tab’s content script; aggregate
+<code>SCAN_RESPONSE</code>; dedup across tabs; transmit unified list as
+batch.</li>
+<li><strong>FR-010 — Enumerate Tab Groups and Extract URLs</strong> (P1
+High; Tab Manager). Using <code>chrome.tabGroups.query()</code> +
+<code>chrome.tabs.query()</code>: list all tab groups in current window;
+display group titles + colors in popup; allow selecting one or more
+groups for batch.</li>
+</ul>
+<h3 id="b.3-service-discovery-and-authentication-3.3">B.3 Service
+Discovery and Authentication (§3.3)</h3>
+<ul>
+<li><strong>FR-011 — Auto-Discover Boba Services on Local
+Network</strong> (P2 Medium; Discovery Module). When no server
+configured: probe <code>https://boba.local:8443/health</code>,
+<code>https://boba.local:8080/health</code>,
+<code>https://boba:8443/health</code>; <code>fetch()</code> with
+<code>mode:'no-cors'</code> + 5 s timeout; parse version, validate min
+supported <code>&gt;=1.0.0</code>; present ranked list (fastest first);
+persist selection to encrypted storage. <strong>(NOTE — Boba flag: real
+Boba ports are 7186/7187/7189, NOT 8443/8080. See §J.)</strong></li>
+<li><strong>FR-012 — Support Multiple Authentication Methods</strong>
+(P1 High; Auth Module). Methods: <strong>Cookie-based</strong> (auto
+<code>SID</code> cookie from qBitTorrent login — default for qBT
+direct); <strong>API Key</strong> (<code>X-API-Key</code> header for
+Boba server — default for Boba mode); <strong>Basic Auth</strong>
+(<code>Authorization: Basic &lt;base64&gt;</code> — optional);
+<strong>Custom Header</strong> (user-defined name+value —
+optional).</li>
+<li><strong>FR-013 — Encrypt Stored Credentials</strong> (P0 Critical;
+Crypto Module). All sensitive data to <code>chrome.storage.local</code>
+encrypted <strong>AES-256-GCM</strong> (Web Crypto API): 256-bit master
+key derived from per-installation random salt via
+<strong>PBKDF2</strong>; encryption key stored in
+<code>chrome.storage.session</code> (in-memory only, cleared on browser
+restart); each credential gets a unique <strong>96-bit IV</strong>;
+<strong>128-bit auth tag</strong> prepended to ciphertext.</li>
+</ul>
+<h3 id="b.4-offline-and-resilience-3.4">B.4 Offline and Resilience
+(§3.4)</h3>
+<ul>
+<li><strong>FR-014 — Offline Queue with Retry</strong> (P1 High; Queue
+Manager). Persistent FIFO queue for failed sends: <strong>max queue size
+1,000</strong> (configurable); retry = <strong>exponential backoff
+starting 5 s, capped at 5 min</strong>; <strong>max retry attempts
+5</strong> (configurable); persisted to
+<code>chrome.storage.local</code>, survives restarts; items past max
+retries → <strong>“Dead Letter”</strong> sub-store for manual
+review.</li>
+<li><strong>FR-015 — Real-time Download Progress via Badge</strong> (P2
+Medium; Badge Manager). Toolbar badge displays numeric count of queued
+torrents; colors: <code>green</code>(idle), <code>blue</code>(sending),
+<code>orange</code>(queued/retrying), <code>red</code>(error); updates
+within <strong>200 ms</strong> of state change.</li>
+</ul>
+<h3 id="b.5-user-interface-3.5">B.5 User Interface (§3.5)</h3>
+<ul>
+<li><strong>FR-016 — Context Menu Integration</strong> (P1 High; UI
+Controller). Via <code>chrome.contextMenus</code>: Link(magnet)→“Send
+Magnet to Boba”; Link(.torrent)→“Download .torrent to Boba”; Page→“Scan
+Page for Torrents”; Tab Group→“Send Tab Group to Boba”.</li>
+<li><strong>FR-017 — Keyboard Shortcuts</strong> (P2 Medium; Command
+Handler). Via <code>chrome.commands</code>:
+<code>send-current-page</code> =
+<code>Ctrl+Shift+B</code>(<code>Cmd+Shift+B</code> mac);
+<code>open-popup</code> =
+<code>Ctrl+Shift+L</code>(<code>Cmd+Shift+L</code>);
+<code>send-tab-group</code> =
+<code>Ctrl+Shift+G</code>(<code>Cmd+Shift+G</code>). All
+user-customizable via <code>chrome://extensions/shortcuts</code>. (NOTE:
+user-guide §2.7 adds a 4th: “Scan page (without sending)” =
+<code>Ctrl+Shift+S</code>/<code>Cmd+Shift+S</code> — see §D.13
+ambiguity.)</li>
+<li><strong>FR-018 — Cross-Browser Compatibility</strong> (P0 Critical;
+Build System). Single codebase targets: Chrome 88+ (Blink, primary dev
+target); Firefox 109+ (Gecko, polyfill for <code>chrome.*</code>); Opera
+74+ (Blink, Chromium-compat); Yandex 21+ (Blink, Chromium-compat).
+Browser-specific code isolated behind <code>BrowserAdapter</code>
+abstraction.</li>
+<li><strong>FR-019 — Internationalization Support</strong> (P2 Medium;
+I18n Module). Via <code>_locales/{lang}/messages.json</code>:
+<code>en</code>(default), <code>zh_CN</code>, <code>zh_TW</code>,
+<code>es</code>, <code>fr</code>, <code>de</code>, <code>ja</code>,
+<code>ko</code>. All user-facing strings externalized; no hardcoded UI
+text.</li>
+<li><strong>FR-020 — Accessibility Compliance (WCAG 2.1 AA)</strong> (P1
+High; UI Layer). Contrast ≥4.5:1 normal text / 3:1 large; all
+interactive elements keyboard-navigable (Tab order, Enter/Space); ARIA
+labels on icon-only buttons; screen-reader announcements via
+<code>aria-live</code>; visible focus indicators.</li>
+<li><strong>FR-021 — Dark/Light Theme</strong> (P2 Medium; UI Layer).
+Respect <code>prefers-color-scheme</code> + manual override toggle in
+Options; CSS custom properties for all theme-aware colors.</li>
+<li><strong>FR-022 — Notifications for Download Events</strong> (P2
+Medium; Notification Manager). Via <code>chrome.notifications</code>:
+Send success→“Torrent Sent”; Send failed→“Send Failed” (click to retry);
+Batch complete→“Batch Complete” (<code>{count}</code> sent,
+<code>{failed}</code> failed); Queue retry→“Retrying Send” (attempt
+<code>{n}</code>). Suppressible per-category in Options.</li>
+<li><strong>FR-023 — Options Page Configuration</strong> (P1 High;
+Options Page). Provides: Server URL + connection mode (Boba proxy /
+qBitTorrent direct); auth credentials (masked input + test-connection
+button); default category/tags/download path; notification prefs; queue
+settings (max size, retry count, backoff strategy); keyboard shortcut
+display (non-editable, links to browser shortcuts page); theme
+(system/light/dark); reset to defaults with confirmation.</li>
+<li><strong>FR-024 — Health Check and Connection Status</strong> (P1
+High; Health Monitor). Persistent status indicator: poll interval
+<strong>30 s</strong> (configurable); endpoint
+<code>/api/v2/app/version</code> (qBitTorrent) or <code>/health</code>
+(Boba); states
+<code>connected</code>/<code>connecting</code>/<code>disconnected</code>/<code>error</code>;
+visual indicator in popup header; tooltip shows last successful ping
+time.</li>
+<li><strong>FR-025 — Rate Limiting for API Calls</strong> (P1 High; API
+Client). Client-side: default <strong>10 req/s burst, 60 req/min
+sustained</strong>; queue processing = max 1 concurrent API call + 500
+ms inter-call delay; respects HTTP 429 <code>Retry-After</code>;
+rate-limit state in-memory (non-persistent).</li>
+</ul>
+<hr />
+<h2 id="c.-non-functional-requirements-15-nfrs-tech-spec-4">C.
+NON-FUNCTIONAL REQUIREMENTS (15 NFRs — tech-spec §4)</h2>
+<h3 id="c.1-performance-4.1">C.1 Performance (§4.1)</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Target</th>
+<th>Measurement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NFR-001</td>
+<td>Content script initialization</td>
+<td>≤ 10 ms</td>
+<td><code>performance.now()</code> delta</td>
+</tr>
+<tr>
+<td>NFR-002</td>
+<td>Magnet link detection (per link)</td>
+<td>≤ 5 ms</td>
+<td>benchmark on 1,000-link page</td>
+</tr>
+<tr>
+<td>NFR-003</td>
+<td>Popup render time</td>
+<td>≤ 100 ms</td>
+<td>Lighthouse perf audit</td>
+</tr>
+<tr>
+<td>NFR-004</td>
+<td>Options page load time</td>
+<td>≤ 200 ms</td>
+<td>Lighthouse perf audit</td>
+</tr>
+<tr>
+<td>NFR-005</td>
+<td>API call round-trip (local network)</td>
+<td>≤ 500 ms</td>
+<td>p95 over 100 calls</td>
+</tr>
+<tr>
+<td>NFR-006</td>
+<td>Service worker cold start</td>
+<td>≤ 50 ms</td>
+<td>Chrome DevTools Performance</td>
+</tr>
+<tr>
+<td>NFR-007</td>
+<td>Bundle size (compressed CRX)</td>
+<td>≤ 350 KB</td>
+<td><code>du -h</code> on artifact</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c.2-security-4.2">C.2 Security (§4.2)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NFR-008</td>
+<td>Credential encryption at rest</td>
+<td>AES-256-GCM via Web Crypto API</td>
+</tr>
+<tr>
+<td>NFR-009</td>
+<td>No cleartext credential logging</td>
+<td>ESLint rule + code review</td>
+</tr>
+<tr>
+<td>NFR-010</td>
+<td>HTTPS-only API communication</td>
+<td>URL scheme validation + CSP</td>
+</tr>
+<tr>
+<td>NFR-011</td>
+<td>Content Security Policy</td>
+<td><code>script-src 'self'; object-src 'none'</code></td>
+</tr>
+<tr>
+<td>NFR-012</td>
+<td>Minimum permission model</td>
+<td><code>activeTab</code> + declared host permissions only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c.3-reliability-4.3">C.3 Reliability (§4.3)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Requirement</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NFR-013</td>
+<td>Crash-free session rate</td>
+<td>≥ 99.9%</td>
+</tr>
+<tr>
+<td>NFR-014</td>
+<td>Offline queue durability</td>
+<td>100% — all items survive restart</td>
+</tr>
+<tr>
+<td>NFR-015</td>
+<td>API compatibility coverage</td>
+<td>qBitTorrent 4.4.x through 5.x</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c.4-scalability-4.4">C.4 Scalability (§4.4)</h3>
+<ul>
+<li>Concurrent tab group batch size: <strong>unlimited</strong>
+(memory-bound).</li>
+<li>Offline queue: <strong>1,000 default, 10,000 maximum</strong>.</li>
+<li>Detection: pages with 10,000+ links must not cause UI jank (&gt; 16
+ms frame time).</li>
+</ul>
+<h3 id="c.5-maintainability-4.5">C.5 Maintainability (§4.5)</h3>
+<ul>
+<li>Coverage: <strong>≥ 80% unit, ≥ 60% E2E scenario</strong>.</li>
+<li>All public APIs documented w/ JSDoc.</li>
+<li>TypeScript strict mode; <strong>zero <code>any</code> in
+production</strong>.</li>
+<li><strong>≤ 20 runtime dependencies</strong>.</li>
+</ul>
+<hr />
+<h2 id="d.-data-models-type-definitions">D. DATA MODELS &amp; TYPE
+DEFINITIONS</h2>
+<h3 id="d.1-torrentinfo-tech-spec-6.1-api-ref-5.2">D.1 TorrentInfo
+(tech-spec §6.1; api-ref §5.2)</h3>
+<p><code>infohash</code> (40-char lowercase hex),
+<code>displayName</code>, <code>magnetUri</code>, <code>source</code>
+(<code>'magnet-link' | 'torrent-file'</code>),
+<code>trackers: string[]</code>, <code>totalSize?: number</code>,
+<code>webSeeds?: string[]</code>, <code>pageUrl</code>,
+<code>detectedAt</code> (Unix ms), <code>fileBlob?: Blob</code>
+(.torrent uploads only).</p>
+<h3 id="d.2-serverconfig-6.2-api-ref-5.2">D.2 ServerConfig (§6.2;
+api-ref §5.2)</h3>
+<p><code>mode</code> (<code>'boba' | 'qbittorrent-direct'</code>),
+<code>baseUrl</code>, <code>authMethod</code>
+(<code>'cookie'|'api-key'|'basic'|'custom-header'</code>),
+<code>credentials: EncryptedCredentials</code>,
+<code>defaultCategory?</code>, <code>defaultTags?: string[]</code>,
+<code>defaultSavePath?</code>, <code>timeout</code>,
+<code>healthCheckInterval</code>.</p>
+<h3 id="d.3-extensionconfig-6.3-api-ref-5.2">D.3 ExtensionConfig (§6.3;
+api-ref §5.2)</h3>
+<p><code>version</code>, <code>server: ServerConfig</code>,
+<code>ui</code> {<code>theme: 'system'|'light'|'dark'</code>,
+<code>badgeEnabled</code>,
+<code>notifications</code>{<code>sendSuccess</code>,<code>sendFailed</code>,<code>batchComplete</code>,<code>queueRetry</code>}},
+<code>queue</code>{<code>maxSize</code>,<code>maxRetries</code>,<code>retryBaseDelayMs</code>,<code>retryMaxDelayMs</code>},
+<code>detection</code>{<code>scanDynamically</code>,<code>maxTorrentFileSize</code>,<code>enableTabGroupScan</code>},
+<code>rateLimit</code>{<code>requestsPerSecond</code>,<code>requestsPerMinute</code>,<code>interCallDelayMs</code>}.</p>
+<h3 id="d.4-queueitem-6.4-api-ref-5.3">D.4 QueueItem (§6.4; api-ref
+§5.3)</h3>
+<p><code>id</code>, <code>torrent: TorrentInfo</code>,
+<code>status</code>
+(<code>'pending'|'retrying'|'failed'|'dead-letter'</code>),
+<code>attemptCount</code>, <code>nextRetryAt</code> (Unix ms),
+<code>lastError?</code>, <code>lastHttpStatus?</code>,
+<code>queuedAt</code>.</p>
+<h3 id="d.5-encryptedcredentials-api-ref-5.2">D.5 EncryptedCredentials
+(api-ref §5.2)</h3>
+<p><code>salt</code> (base64, 16 bytes), <code>ciphertext</code> (base64
+= IV 12 bytes + ciphertext + authTag 16 bytes),
+<code>encryptedAt</code>.</p>
+<h3 id="d.6-other-types-api-ref-5">D.6 Other types (api-ref §5)</h3>
+<p>Scalar types: <code>Infohash</code> (<code>/^[a-f0-9]{40}$/</code>),
+<code>MagnetUri</code>
+(<code>/^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}/</code>),
+<code>Priority</code> (<code>'low'|'normal'|'high'|'critical'</code>),
+<code>ConnectionState</code>, <code>AuthMethod</code>,
+<code>ConnectionMode</code>, <code>ThemePreference</code>,
+<code>QueueStatus</code>, <code>TorrentSource</code>. Also
+<code>ApiResponse&lt;T&gt;</code>, <code>ApiError</code>,
+<code>ConnectionTestResult</code>, <code>QueueSnapshot</code>,
+<code>RateLimitBucket</code>, <code>DeepPartial&lt;T&gt;</code>,
+<code>MessageHandler&lt;&gt;</code>. Full qBitTorrent types:
+<code>QBitTorrentInfo</code> (40+ fields), <code>TorrentState</code>
+(18-value union: error, missingFiles, uploading, pausedUP, queuedUP,
+stalledUP, checkingUP, forcedUP, allocating, downloading, metaDL,
+pausedDL, queuedDL, stalledDL, checkingDL, forcedDL, checkingResumeData,
+moving), <code>ServerState</code>, <code>MainDataResponse</code>.</p>
+<h3 id="d.7-sql-schema-implementation-plan-sql-schema-definitions">D.7
+SQL Schema (implementation-plan §“SQL Schema Definitions”)</h3>
+<p>Models <code>chrome.storage.local</code> as SQL-shaped tables:
+<code>extension_config(key PK, value, updated_at)</code>;
+<code>discovered_torrents(id=infoHash PK, page_url, magnet_uri, torrent_url, name, trackers JSON, size_bytes, source_type CHECK('magnet-link'|'torrent-file'|'torrent-url'), discovered_at, sent_to_boba, boba_status CHECK('pending'|'queued'|'added'|'error'))</code>;
+<code>download_queue(id AUTOINC, info_hash, magnet_uri, torrent_data BLOB base64, name, category, save_path, added_at, retry_count, last_error, status CHECK('pending'|'retrying'|'failed'|'completed'))</code>;
+<code>server_config(id=1, base_url, auth_method CHECK('none'|'cookie'|'api_key'|'basic'), api_key, username, password_encrypted, is_reachable, last_check, qbittorrent_version, boba_version)</code>;
+<code>send_history(id AUTOINC, info_hash, name, sent_at, success, error_message, server_url)</code>;
+optional
+<code>search_cache(id AUTOINC, query, category, results_json, cached_at, expires_at)</code>.
+<strong>NOTE:</strong> schema vocabularies disagree with TS types
+(<code>source_type</code> adds <code>'torrent-url'</code>;
+<code>status</code> uses <code>'completed'</code> not
+<code>'dead-letter'</code>; <code>auth_method</code> adds
+<code>'none'</code>, drops <code>'custom-header'</code>) — see §K
+ambiguities.</p>
+<hr />
+<h2 id="e.-apis-endpoints">E. APIs / ENDPOINTS</h2>
+<h3
+id="e.1-internal-message-passing-protocol-tech-spec-7.1-api-ref-2">E.1
+Internal message-passing protocol (tech-spec §7.1; api-ref §2)</h3>
+<p>Uniform envelope <code>ExtensionMessage&lt;T&gt;</code> {
+<code>type: MessageType</code>, <code>requestId?</code>,
+<code>payload: T</code>,
+<code>sender?</code>{<code>tabId?</code>,<code>frameId?</code>,<code>url?</code>}
+}. <strong>MessageType union (23 values):</strong>
+<code>SCAN_REQUEST</code>, <code>SCAN_RESPONSE</code>,
+<code>TORRENT_DETECTED</code>, <code>SEND_TORRENT</code>,
+<code>SEND_BATCH</code>, <code>GET_STATUS</code>,
+<code>STATUS_RESPONSE</code>, <code>GET_QUEUE</code>,
+<code>QUEUE_RESPONSE</code>, <code>RETRY_ITEM</code>,
+<code>REMOVE_ITEM</code>, <code>CLEAR_QUEUE</code>,
+<code>GET_CONFIG</code>, <code>CONFIG_RESPONSE</code>,
+<code>UPDATE_CONFIG</code>, <code>CONFIG_UPDATED</code>,
+<code>GET_HEALTH</code>, <code>HEALTH_RESPONSE</code>,
+<code>DISCOVER_SERVERS</code>, <code>DISCOVERY_RESPONSE</code>,
+<code>TEST_CONNECTION</code>, <code>CONNECTION_TEST_RESULT</code>.</p>
+<p>Per-message payloads (api-ref §2.2–2.10): - <code>SCAN_REQUEST</code>
+(SW→CS via <code>chrome.tabs.sendMessage</code>):
+<code>{requestId, deepScan, scope?}</code>. - <code>SCAN_RESPONSE</code>
+(CS→SW):
+<code>{requestId, torrents: TorrentInfo[], error?, meta:{linksScanned, magnetsFound, torrentFilesFound, scanDurationMs}}</code>.
+- <code>TORRENT_DETECTED</code> (CS→SW via
+<code>chrome.runtime.sendMessage</code>):
+<code>{torrents, pageUrl, timestamp}</code>. - <code>SEND_TORRENT</code>
+(Popup/CtxMenu→SW):
+<code>{torrent, priority?: 'normal'|'high', category?, tags?}</code>. -
+<code>SEND_BATCH</code> (TabMgr→SW):
+<code>{torrents, category?, tabGroupId?}</code>; response
+<code>{accepted, rejected, failed, results:[{infohash, status:'queued'|'sent'|'duplicate'|'failed', error?}]}</code>.
+- <code>GET_STATUS</code>→<code>STATUS_RESPONSE</code>:
+<code>{connection, serverUrl, serverVersion?, queueSize, pendingCount, deadLetterCount, lastHealthCheck?, extensionVersion}</code>.
+- <code>GET_QUEUE</code>:
+<code>{filter?, limit?(def 100), offset?}</code> →
+<code>{items, total, filtered}</code>. - <code>RETRY_ITEM</code>
+<code>{itemId}</code>; <code>REMOVE_ITEM</code> <code>{itemId}</code>;
+<code>CLEAR_QUEUE</code> <code>{status?}</code>. -
+<code>GET_CONFIG</code> (empty)→full <code>ExtensionConfig</code>;
+<code>UPDATE_CONFIG</code>
+<code>{config: DeepPartial&lt;ExtensionConfig&gt;}</code> (SW validates,
+merges, persists encrypted, broadcasts <code>CONFIG_UPDATED</code>). -
+<code>DISCOVER_SERVERS</code>
+<code>{timeout?(def 5000), targets?}</code> →
+<code>DISCOVERY_RESPONSE</code>
+<code>{servers:[{url,name,version,responseTimeMs,healthy}], targetsProbed, durationMs}</code>.</p>
+<h3
+id="e.2-boba-api-integration-tech-spec-7.2-api-ref-3-base-httpshostportapiv1">E.2
+Boba API integration (tech-spec §7.2; api-ref §3) — base
+<code>https://{host}:{port}/api/v1</code></h3>
+<ul>
+<li><code>POST /api/v1/auth/token</code> — body <code>{apiKey}</code> →
+<code>{token(JWT), expiresAt, type:"Bearer"}</code>; 401 →
+<code>{error:"E_AUTH_INVALID_KEY", message}</code>.</li>
+<li><code>POST /api/v1/auth/refresh</code> —
+<code>Authorization: Bearer {jwt}</code> →
+<code>{token, expiresAt}</code>.</li>
+<li><code>GET /api/v1/health</code> — no auth →
+<code>{status:"healthy", version, uptime, extensions:{qbittorrent, search, metadata}}</code>.</li>
+<li><code>GET /api/v1/torrents/search?q=&amp;category=&amp;limit=(def 50,max 100)&amp;offset=</code>
+— header <code>X-API-Key</code> →
+<code>{results:[{infohash, displayName, magnetUri, size, seeders, leechers, source, category, uploadedAt}], total, query, categories}</code>.</li>
+<li><code>POST /api/v1/torrents/download</code> — <code>X-API-Key</code>
++ JSON
+<code>{magnetUri?|infohash?, category?, tags?, savePath?, rename?, paused?, skipChecking?, sequentialDownload?, firstLastPiecePrio?}</code>
+→ 202 <code>{jobId, status:"queued", infohash, estimatedStart}</code>;
+409 →
+<code>{error:"E_DUPLICATE", message, existingInfohash}</code>.</li>
+<li><code>GET /api/v1/events/download-progress</code> —
+<code>X-API-Key</code>, <code>Accept: text/event-stream</code> (SSE).
+Event types: <code>progress</code>{infohash, progress(0–1), speed, eta,
+downloaded, total, numSeeds, numLeechs, state},
+<code>completed</code>{infohash, completionTime, ratio},
+<code>error</code>{infohash, error, code},
+<code>stopped</code>{infohash, reason}.</li>
+</ul>
+<h3
+id="e.3-qbittorrent-webui-api-v2-api-ref-4-base-e.g.-httpslocalhost8080">E.3
+qBitTorrent WebUI API v2 (api-ref §4) — base
+e.g. <code>https://localhost:8080</code></h3>
+<p><strong>ALL endpoints require <code>Referer</code> header matching
+qBitTorrent origin</strong> (else rejected); session via
+<code>SID</code> cookie. - <code>POST /api/v2/auth/login</code> — form
+<code>username</code>,<code>password</code>; 200 body
+<code>Ok.SID</code>; 403 invalid; 429 too many attempts. -
+<code>POST /api/v2/auth/logout</code>. -
+<code>POST /api/v2/torrents/add</code> — params:
+<code>urls</code>(newline-sep magnets/HTTP<em>) OR
+<code>torrents</code>(multipart file</em>) [≥1 required],
+<code>savepath</code>, <code>cookie</code>, <code>category</code>,
+<code>tags</code>(comma-sep), <code>skip_checking</code>,
+<code>paused</code>, <code>root_folder</code>, <code>rename</code>,
+<code>upLimit</code>, <code>dlLimit</code>, <code>ratioLimit</code>,
+<code>seedingTimeLimit</code>, <code>autoTMM</code>,
+<code>sequentialDownload</code>, <code>firstLastPiecePrio</code>.
+Responses: 200 ok, 400 missing urls/torrents, 403 not auth, 415
+unsupported media type, 500. -
+<code>GET /api/v2/torrents/info?filter=&amp;category=&amp;tag=&amp;sort=&amp;reverse=&amp;limit=&amp;offset=&amp;hashes=</code>
+(filter values: all, downloading, seeding, completed, paused, active,
+inactive, resumed, stalled, stalled_uploading, stalled_downloading,
+errored; hashes pipe-separated). -
+<code>POST /api/v2/torrents/delete</code> — <code>hashes</code>(pipe-sep
+or <code>all</code>), <code>deleteFiles</code>. -
+<code>POST /api/v2/torrents/pause</code> — <code>hashes</code>. -
+<code>POST /api/v2/torrents/start</code> — <code>hashes</code>. -
+<code>POST /api/v2/torrents/recheck</code> — <code>hashes</code>. -
+<code>POST /api/v2/torrents/reannounce</code> — <code>hashes</code>. -
+<code>GET /api/v2/torrents/categories</code>. -
+<code>POST /api/v2/torrents/createCategory</code> —
+<code>category</code>, <code>savePath?</code>. -
+<code>GET /api/v2/torrents/tags</code>. -
+<code>POST /api/v2/torrents/addTags</code> — <code>hashes</code>,
+<code>tags</code>. - <code>POST /api/v2/torrents/removeTags</code>
+(listed in §4.7 summary). - <code>GET /api/v2/sync/maindata?rid=</code>
+(0 = initial, then last <code>rid</code>). -
+<code>GET /api/v2/app/version</code> (plain text
+e.g. <code>v4.6.4</code>). - <code>GET /api/v2/app/webapiVersion</code>
+(plain text e.g. <code>2.9.3</code>). -
+<code>GET /api/v2/app/preferences</code> /
+<code>POST /api/v2/app/setPreferences</code> (<code>json=</code>). -
+<code>GET /api/v2/app/buildInfo</code>
+(qt/libtorrent/boost/openssl/zlib). -
+<code>GET /api/v2/transfer/info</code>.</p>
+<h3 id="e.4-base-urls-api-ref-base-urls">E.4 Base URLs (api-ref §“Base
+URLs”)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Env</th>
+<th>Boba</th>
+<th>qBitTorrent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Local (default)</td>
+<td><code>https://boba.local:8443</code></td>
+<td><code>https://localhost:8080</code></td>
+</tr>
+<tr>
+<td>Docker</td>
+<td><code>https://boba:8443</code></td>
+<td><code>https://qbittorrent:8080</code></td>
+</tr>
+<tr>
+<td>Custom</td>
+<td>user-configured</td>
+<td>user-configured</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="f.-error-handling">F. ERROR HANDLING</h2>
+<h3 id="f.1-tech-spec-9.1-categories">F.1 Tech-spec §9.1 categories</h3>
+<p><code>E_NETWORK</code> (backoff, silent/badge),
+<code>E_TIMEOUT</code> (immediate retry ×2 then backoff, silent),
+<code>E_AUTH</code> (no retry, immediate notification),
+<code>E_RATE_LIMIT</code>/429 (honor <code>Retry-After</code> then
+backoff, silent), <code>E_VALIDATION</code> (no retry, immediate
+notification), <code>E_SERVER</code>/5xx (backoff+jitter, badge+optional
+notif), <code>E_STORAGE</code> (no retry, immediate notification).
+<code>ExtensionError</code>{code, message, timestamp, context?,
+recoverable}.</p>
+<h3 id="f.2-api-ref-6.1-full-error-code-catalogue-22-codes">F.2 api-ref
+§6.1 full error-code catalogue (22 codes)</h3>
+<p><code>E_UNKNOWN</code>, <code>E_NETWORK</code>,
+<code>E_TIMEOUT</code>(408), <code>E_DNS</code>,
+<code>E_CONN_REFUSED</code>, <code>E_AUTH</code>(401),
+<code>E_AUTH_EXPIRED</code>(401), <code>E_RATE_LIMIT</code>(429),
+<code>E_CLIENT_RATE_LIMIT</code>, <code>E_VALIDATION</code>(400),
+<code>E_SERVER</code>(500), <code>E_SERVICE_UNAVAILABLE</code>(503),
+<code>E_TORRENT_INVALID</code>(400),
+<code>E_TORRENT_DUPLICATE</code>(409), <code>E_STORAGE_FULL</code>,
+<code>E_STORAGE_CORRUPT</code>, <code>E_CRYPTO</code>,
+<code>E_PERMISSION_DENIED</code>(403), <code>E_TAB_ACCESS</code>,
+<code>E_CORS</code>, <code>E_FILE_TOO_LARGE</code>(413),
+<code>E_UNSUPPORTED_BROWSER</code>. Boba error body:
+<code>{error, message, retryAfter?, details{limit, window, remaining}}</code>.</p>
+<h3 id="f.3-retry-strategies-api-ref-6.4">F.3 Retry strategies (api-ref
+§6.4)</h3>
+<p>Network: backoff, 5 retries (5→10→20→40→80 s). Timeout: backoff, 3
+(2→4→8 s). Rate-limit/429: honor Retry-After, 10. Auth: no retry. 5xx:
+backoff+jitter, 5 (5→10→20→40→80 s). Validation: no retry.</p>
+<hr />
+<h2
+id="g.-config-settings-options-page-user-guide-3.1-installation-guide-5">G.
+CONFIG / SETTINGS (Options page — user-guide §3.1, installation-guide
+§5)</h2>
+<p><strong>Server Settings:</strong> Connection Mode (Boba/qBT-direct),
+Server URL, Authentication (API Key / Username+Password / Basic / Custom
+Header), Test Connection, Connection Timeout (default <strong>30
+s</strong>), Health Check Interval (default <strong>30 s</strong>).
+<strong>Download Preferences:</strong> Default Category (—), Default
+Tags (—; e.g. <code>browser,auto</code>), Default Save Path (—;
+server-side path), Pause After Add (Off), Skip Hash Check (Off),
+Sequential Download (Off), First/Last Piece Priority (Off).
+<strong>Queue Settings:</strong> Max Queue Size
+(<strong>1,000</strong>), Max Retries (<strong>5</strong>), Base Retry
+Delay (<strong>5 s</strong>), Max Retry Delay (<strong>300 s</strong>).
+<strong>Notification Settings:</strong> Send Success (Enabled), Send
+Failed (Enabled), Batch Complete (Enabled), Queue Retry (Disabled).
+<strong>Detection Settings:</strong> Dynamic Scanning (On), Highlight on
+Page (Off), Max File Size MB (<strong>10</strong>), Tab Group Scanning
+(On). <strong>UI Settings:</strong> Theme (System/Light/Dark; default
+System), Show Badge (On), Badge Color (Default; per-state custom).
+<strong>Security Settings:</strong> Require Password on Startup (Off),
+Auto-Lock after N min inactivity (<strong>30</strong>), HTTPS Only (On),
+Certificate Pinning (Off). “Reset to Defaults” with confirmation;
+“Forgot Password” → no recovery, must reset extension.</p>
+<hr />
+<h2 id="h.-user-facing-flows-use-cases">H. USER-FACING FLOWS &amp; USE
+CASES</h2>
+<h3 id="h.1-core-workflows-tech-spec-2.2">H.1 Core workflows (tech-spec
+§2.2)</h3>
+<ul>
+<li><strong>W1 Single magnet detect+forward:</strong> content script
+observes DOM mutations → match regex
+<code>^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}</code> → parse to
+<code>TorrentInfo</code> → <code>chrome.runtime.sendMessage()</code> →
+SW enqueues or sends per connectivity → target API initiates
+download.</li>
+<li><strong>W2 Tab group batch ingestion:</strong> user triggers “Send
+Tab Group to Boba” → SW enumerates group tabs → each gets
+<code>SCAN_REQUEST</code> → aggregate, dedup by infohash, transmit
+batch.</li>
+<li><strong>W3 Auto-discovery:</strong> on first install / empty config,
+send mDNS/Bonjour-like probes to well-known local addresses → responsive
+Boba instances reply endpoint+version → user picks from ranked list →
+persists to encrypted storage.</li>
+</ul>
+<h3 id="h.2-send-methods-user-guide-2.2">H.2 Send methods (user-guide
+§2.2)</h3>
+<ol type="1">
+<li>Context menu right-click “Send Magnet to Boba”; (2) Popup → check
+torrents → “Send Selected”; (3) keyboard <code>Ctrl+Shift+B</code>; (4)
+Popup “Send All”.</li>
+</ol>
+<h3 id="h.3-.torrent-file-send-user-guide-2.3">H.3 .torrent file send
+(user-guide §2.3)</h3>
+<p>Context menu “Download .torrent to Boba” downloads (≤10 MB), parses,
+sends. CORS fallback: Boba mode auto-proxies; qBT-direct shows “CORS
+blocked” → user copies link to qBT manually.</p>
+<h3 id="h.4-tab-groups-batch-user-guide-2.4">H.4 Tab groups batch
+(user-guide §2.4)</h3>
+<p>Methods: Popup “Tab Groups” tab → “Send” next to group; right-click
+tab “Send Tab Group to Boba”; <code>Ctrl+Shift+G</code>. Result: scans
+every tab, collects, removes cross-tab dups, batch sends, summary notif
+(“Batch Complete — 12 sent, 0 failed”).</p>
+<h3 id="h.5-queue-management-user-guide-2.5">H.5 Queue management
+(user-guide §2.5)</h3>
+<p>Popup “Queue” tab — columns Name/Status/Attempts/Next Retry/Actions.
+Actions: Retry now (circular arrow), Remove (X, no recovery), Retry All
+Failed, Clear Queue (confirm). Behavior: auto-retry exponential backoff
+(5/10/20/40/80 s); max 5 → Dead Letter; dead-letter requires manual
+action; queue persists across restarts/reboots.</p>
+<h3 id="h.6-download-progress-user-guide-2.6">H.6 Download progress
+(user-guide §2.6)</h3>
+<p>Toolbar badge (number = queued/sending count; colors
+green/blue/orange/red/gray). Popup “Downloads” tab (SSE, Boba mode
+only): Name/Progress bar+%/Speed/ETA/Status. qBT-direct = no live
+progress in popup (check qBT WebUI).</p>
+<h3
+id="h.7-first-time-setup-wizard-user-guide-1.4-installation-guide-4">H.7
+First-time setup wizard (user-guide §1.4; installation-guide §4)</h3>
+<p>Step 1 choose Connection Mode (Boba Server recommended / qBitTorrent
+Direct); Step 2 (Boba) server discovery → “Discover Servers” scans
+<code>boba.local:8443</code>,<code>boba:8443</code>, ranked list,
+“Connect”; manual fallback (URL + API key + Test Connection); Step 3
+(qBT-direct) URL + username/password + Test Connection + optional
+default category/path; Step 4 “Finish Setup”.</p>
+<h3 id="h.8-connection-status-icon-states-user-guide-1.5">H.8 Connection
+status icon states (user-guide §1.5)</h3>
+<p>Green dot=connected; Blue spinner=connecting/sending; Orange
+dot=queued pending; Red dot=connection error; Gray dot=not
+configured.</p>
+<h3 id="h.9-detection-visuals-user-guide-2.1">H.9 Detection visuals
+(user-guide §2.1)</h3>
+<p>Default = no page modification. Optional “Highlight torrents on
+page”: magnet links green underline, .torrent links blue underline,
+hover tooltip with name+size.</p>
+<h3 id="h.10-power-user-workflows-user-guide-5.4">H.10 Power-user
+workflows (user-guide §5.4)</h3>
+<p>Nightly batch download (accumulate pages in “To Download” group →
+<code>Ctrl+Shift+G</code> at night); category-based org (set categories
++ qBT Automatic Torrent Management auto-move on completion); monitoring
+large batches (enable all notifications + watch).</p>
+<h3 id="h.11-verification-flow-installation-guide-6">H.11 Verification
+flow (installation-guide §6)</h3>
+<p>Test on known torrent site (Ubuntu downloads), verify detection
+(badge count, popup list name/size/source), verify send (“Send Selected”
+→ notif), check qBT for download, queue test
+(disconnect→send→reconnect→item sent), settings-persist test
+(restart→Options retained).</p>
+<hr />
+<h2 id="i.-edge-cases-explicitly-documented">I. EDGE CASES (explicitly
+documented)</h2>
+<ul>
+<li>Magnet without <code>dn</code> → display “Unknown Torrent”, name
+resolved by qBT from metadata (FR-003; FAQ Q16).</li>
+<li>Duplicate torrent (same infohash) → silently skipped, “duplicate”
+status; dedup merges longest displayName + union trackers + earliest
+timestamp (FR-006; FAQ Q17; api-ref dedup).</li>
+<li>Malformed tracker URLs → logged + discarded (FR-003).</li>
+<li><code>.torrent</code> &gt; 10 MB → not downloaded;
+<code>E_FILE_TOO_LARGE</code>(413) → “Use magnet link instead” (FR-004;
+api-ref §6.1).</li>
+<li>CORS-blocked <code>.torrent</code> download → Boba proxies (Boba
+mode); qBT-direct shows “CORS blocked”, manual copy (FR-004; user-guide
+§2.3; <code>E_CORS</code> → “Use Boba proxy mode”).</li>
+<li>Dynamically-loaded links (SPA/infinite scroll) → MutationObserver,
+debounced 250 ms (tech-spec §10.2) / 500 ms (impl-plan §2.3.5); “wait a
+few seconds” (user-guide §4.2).</li>
+<li>Links inside iframes → detected only when <code>all_frames</code>
+enabled; may be inaccessible (FR-001; user-guide §4.2).</li>
+<li>JS click-handler “links” (not real <code>&lt;a&gt;</code>) → not
+detected; manual copy (user-guide §4.2).</li>
+<li>Non-standard/encoded magnet formats → not detected; manual copy
+(user-guide §4.2).</li>
+<li>Site requires login / shows links only to logged-in users
+(user-guide §4.4).</li>
+<li>Strict-CSP pages → extension respects CSP, will NOT inject scripts
+on such pages (user-guide §4.2/§4.4; tech-spec threat model).</li>
+<li>Forgotten encryption password → no recovery; reset extension +
+reconfigure (user-guide §3.5; FAQ Q26; risk table).</li>
+<li>Browser restart without password protection → session encryption key
+lost → “Cannot decrypt credentials”; re-enter credentials (dev-guide
+§9.5).</li>
+<li>Storage quota exceeded → <code>E_STORAGE_FULL</code>; Firefox
+stricter limits, clear old queue items (api-ref §6.1; installation-guide
+§9.8).</li>
+<li>Pages with 10,000+ links → must not jank (&gt;16 ms frame);
+<code>requestIdleCallback</code> for &gt;500 links; pagination for large
+link sets (NFR §4.4; tech-spec §10.2; risk table).</li>
+<li>qBitTorrent rejects duplicate → may already be downloading/completed
+(user-guide §4.3).</li>
+<li>Private tracker torrents → work if magnet/.torrent accessible; may
+need passkeys in tracker URL (FAQ Q15).</li>
+<li>MV3 service worker termination → <code>chrome.alarms</code>
+keep-alive (dev-guide §6.1; risk table; impl-plan §3.2.3); Firefox
+suspends SW more aggressively (installation-guide §9.8).</li>
+<li>Self-signed certs → may need browser exception / system trust
+install; “HTTPS Only” can be temporarily disabled for testing
+(installation-guide §9.6; user-guide §4.1).</li>
+<li>macOS <code>__MACOSX</code> metadata folder in ZIP → load error,
+must delete (installation-guide §9.5).</li>
+<li>Mobile browsers unsupported (no full WebExtensions API / SW / tab
+groups) (FAQ Q4).</li>
+<li>Safari only “Partial” MV3, not tested (api-ref §8.2).</li>
+</ul>
+<hr />
+<h2 id="j.-backend-integration-points">J. BACKEND INTEGRATION
+POINTS</h2>
+<h3 id="j.1-two-operating-modes">J.1 Two operating modes</h3>
+<ul>
+<li><strong>Boba Server mode</strong> (recommended): extension → Boba
+REST <code>/api/v1/*</code> → Boba proxies/orchestrates to qBitTorrent.
+Adds: search aggregation, metadata enrichment, SSE progress streaming,
+auto-discovery, CORS proxy for <code>.torrent</code> downloads. Auth =
+API Key (<code>X-API-Key</code>) or JWT
+(<code>Authorization: Bearer</code>).</li>
+<li><strong>qBitTorrent Direct mode</strong>: extension → qBitTorrent
+WebUI <code>/api/v2/*</code> directly. Auth = cookie (<code>SID</code>)
+via <code>/api/v2/auth/login</code>, or Basic Auth. <code>Referer</code>
+header mandatory. No live progress in popup.</li>
+</ul>
+<h3 id="j.2-spec-documented-endpoints-the-extension-calls">J.2
+Spec-documented endpoints the extension calls</h3>
+<ul>
+<li>Send magnet/<code>.torrent</code>: Boba
+<code>POST /api/v1/torrents/download</code> OR qBT
+<code>POST /api/v2/torrents/add</code>.</li>
+<li>Health: Boba <code>GET /api/v1/health</code> (or
+<code>/health</code>); qBT <code>GET /api/v2/app/version</code>.</li>
+<li>Progress: Boba SSE
+<code>GET /api/v1/events/download-progress</code>; qBT polling
+<code>GET /api/v2/sync/maindata</code> +
+<code>GET /api/v2/torrents/info</code>.</li>
+<li>Search: Boba <code>GET /api/v1/torrents/search</code>.</li>
+<li>Categories/tags: qBT
+<code>GET/POST /api/v2/torrents/{categories,createCategory,tags,addTags,removeTags}</code>.</li>
+</ul>
+<h3
+id="j.3-mapping-onto-real-boba-services-per-task-brief-flagged-for-conductor">J.3
+Mapping onto REAL Boba services (per task brief — flagged for
+conductor)</h3>
+<p>The spec assumes generic Boba ports <strong>8443/8080</strong>, but
+the real Boba repo runs: - <strong>download-proxy on port 7186</strong>
+→ qBitTorrent WebUI (port 7185 internal). The qBT-direct
+<code>/api/v2/*</code> calls SHOULD target <strong>7186</strong> (the
+proxy), which already injects auth cookies for private trackers; WebUI
+creds are hardcoded <code>admin</code>/<code>admin</code>. -
+<strong>merge-search service on port 7187</strong> (FastAPI or Go/Gin) →
+maps to the spec’s Boba search/dashboard role
+(<code>/api/v1/torrents/search</code>, SSE progress, dashboard at
+<code>http://localhost:7187/</code>). The spec’s “Boba Server” REST
+surface is best mapped here. - <strong>boba-jackett on port
+7189</strong> (Go) → owns Jackett credentials/indexer
+overrides/autoconfig; relevant to the “search aggregation” feature. -
+<strong>CRITICAL FINDING — implementation-plan §4.1.4 ALREADY cites the
+real ports:</strong> “Auto-discovery — Scan localhost ports
+<strong>7187, 7189, 8080</strong>.” This is the strongest signal the
+extension’s backend discovery should target Boba’s real 7187/7189 (and
+the proxy 7186), NOT the spec’s fictional 8443. - Auto-discovery probe
+targets in FR-011/installation-guide (<code>boba.local:8443</code>,
+<code>boba:8443</code>, <code>localhost:8443</code>, <code>:8080</code>)
+must be <strong>re-pointed to 7186/7187/7189</strong> for the Boba
+implementation.</p>
+<hr />
+<h2 id="k.-boba-constraint-flags-task-mandated-callouts">K.
+BOBA-CONSTRAINT FLAGS (task-mandated callouts)</h2>
+<h3
+id="k.1-cicd-boba-forbids-all-cicd-the-reference-relies-heavily-on-github-actions">K.1
+⚠️ CI/CD — Boba FORBIDS all CI/CD; the reference relies heavily on
+GitHub Actions</h3>
+<p>The reference deliverable <strong>assumes GitHub Actions
+CI/CD</strong> in multiple places — ALL of these violate Boba’s
+permanent Hard-Stop “NO CI/CD pipelines” rule and MUST be
+dropped/replaced with a manual <code>./ci.sh</code>-style script: -
+master-guide / README §src tree: <code>.github/workflows/ci.yml</code>
+(lint, test, build, E2E) and <code>.github/workflows/release.yml</code>
+(release to all stores). - README “Verification Checklist”: “CI/CD
+pipelines (GitHub Actions) ✅”. - tech-spec §12.2 “CI/CD Pipeline”
+mermaid: Developer Push → Lint → Unit → Build → E2E → Coverage Gate →
+(main) Deploy to Chrome Web Store / AMO / GitHub Release. - dev-guide
+§1.1: Git workflow GitHub Flow; §7.5 release process auto-submits to
+stores; coverage thresholds “enforced in CI”. - impl-plan §8.1.3
+<code>ci.yml</code> (lint/test/build) + §8.1.4 <code>release.yml</code>
+(publish to stores). - <strong>Action for conductor:</strong> strip
+every <code>.github/workflows/*.yml</code>; convert
+lint/test/build/E2E/coverage into a manual script (Boba’s
+<code>./ci.sh</code> analogue). No auto-trigger on push/PR. Husky
+pre-commit hook (impl-plan §1.1.4) is ALSO a git-hook → Boba forbids git
+hooks → drop.</p>
+<h3
+id="k.2-hardcoded-localhostports-vs-const-xii-no-hardcoded-client-facing-urls">K.2
+⚠️ Hardcoded <code>localhost</code>/ports vs CONST-XII (no hardcoded
+client-facing URLs)</h3>
+<p>The spec hardwires <code>localhost:8080</code>,
+<code>boba.local:8443</code>, etc. Boba CONST-XII forbids hardcoded
+<code>localhost</code>/<code>127.0.0.1</code> for client-facing URLs —
+but for a browser extension the server URL is user-configured (Options),
+which satisfies the spirit. Discovery defaults must derive from config,
+not literals. Flag for review but lower severity.</p>
+<h3 id="k.3-boba-credentials-reality">K.3 Boba credentials reality</h3>
+<ul>
+<li>qBitTorrent WebUI creds are <strong>hardcoded
+<code>admin</code>/<code>admin</code></strong> in Boba — the extension’s
+qBT-direct auth defaults can assume this for local proxy (7186) but must
+not commit any real secret. Spec’s PBKDF2/AES-256-GCM credential
+encryption still applies for user-entered Boba/tracker keys.</li>
+<li>Never commit <code>.env</code> / tracker credentials (Boba rule) —
+extension build must not bundle them.</li>
+</ul>
+<h3 id="k.4-tdd-anti-bluff">K.4 TDD / anti-bluff</h3>
+<p>Reference targets 80% unit / 60% E2E coverage with Jest+Playwright.
+Boba mandates TDD (RED→GREEN) + anti-bluff (assert user-observable
+outcomes: real HTTP to 7186/7187, real DOM text, real container state) —
+the reference’s coverage targets are a floor; tests must drive the real
+proxy/merge stack, not mocks, for non-unit layers.</p>
+<h3 id="k.5-tooling-alignment-notes">K.5 Tooling alignment notes</h3>
+<ul>
+<li>Reference stack: WXT ≥0.17, Vite ≥5, TS ≥5, Jest ≥29, Playwright
+≥1.40, ESLint ≥8 (impl-plan says ESLint 9 flat config), Prettier ≥3.
+Boba’s existing frontend is <strong>Angular 21 + Vitest</strong> — the
+extension is a <em>separate</em> TS/WXT codebase, so Jest-vs-Vitest is a
+deliberate divergence to confirm with conductor (could standardize on
+Vitest to match Boba).</li>
+<li>Runtime deps (≤20): <code>bencode-js ^3.0.0</code>,
+<code>lz-string ^1.5.0</code>,
+<code>webextension-polyfill ^0.10.0</code>. Dev deps:
+<code>@types/chrome ^0.0.260</code>, <code>@types/jest</code>,
+<code>ts-jest</code>, <code>jest-environment-jsdom</code>,
+<code>@playwright/test</code>.</li>
+<li>LICENSE: impl-plan §1.1.1 says <strong>Apache 2.0</strong>;
+master-guide §1.1.1-adjacent unclear; FAQ Q2 says “free and open-source
+under its license terms” — confirm with conductor.</li>
+</ul>
+<hr />
+<h2 id="l.-dependencies-tech-stack-tech-spec-11-dev-guide-1.3">L.
+DEPENDENCIES &amp; TECH STACK (tech-spec §11; dev-guide §1.3)</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Tech</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language</td>
+<td>TypeScript</td>
+<td>≥ 5.0</td>
+</tr>
+<tr>
+<td>Framework</td>
+<td>WXT</td>
+<td>≥ 0.17</td>
+</tr>
+<tr>
+<td>Bundler</td>
+<td>Vite (via WXT)</td>
+<td>≥ 5.0</td>
+</tr>
+<tr>
+<td>Unit test</td>
+<td>Jest</td>
+<td>≥ 29.0</td>
+</tr>
+<tr>
+<td>E2E test</td>
+<td>Playwright</td>
+<td>≥ 1.40</td>
+</tr>
+<tr>
+<td>Lint</td>
+<td>ESLint</td>
+<td>≥ 8.0 (impl-plan: 9 flat config)</td>
+</tr>
+<tr>
+<td>Format</td>
+<td>Prettier</td>
+<td>≥ 3.0</td>
+</tr>
+<tr>
+<td>Crypto</td>
+<td>Web Crypto API</td>
+<td>native (AES-256-GCM, SHA-1, PBKDF2)</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>Extension Storage API (MV3)</td>
+<td>chrome.storage.local/session</td>
+</tr>
+<tr>
+<td>UI</td>
+<td>Vanilla TS + CSS</td>
+<td>no UI framework</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Runtime deps:</strong> bencode-js ^3.0.0, lz-string ^1.5.0,
+webextension-polyfill ^0.10.0. <strong>External deps (tech-spec
+§13.2):</strong> Node.js 18 LTS (MIT), qBitTorrent WebUI 4.4.0
+(GPL-2.0+), Boba Server 1.0.0 (proprietary), Chrome/Chromium 88, Firefox
+109 (MPL-2.0). <strong>Dev prereqs (dev-guide §1.1):</strong> Node.js 18
+LTS (rec 20 LTS), npm 9.x (rec 10.x), Git 2.40+, a supported browser.
+IDE: VS Code (settings + recommended extensions: Prettier, ESLint,
+Tailwind CSS IntelliSense, Coverage Gutters, Jest).</p>
+<hr />
+<h2 id="m.-build-release-steps">M. BUILD / RELEASE STEPS</h2>
+<h3 id="m.1-build-commands-dev-guide-3">M.1 Build commands (dev-guide
+§3)</h3>
+<ul>
+<li><code>npm install</code> (2–5 min).</li>
+<li><code>npm run dev</code> → WXT dev mode + HMR →
+<code>.output/chrome-mv3-dev/</code>. Load unpacked per browser.</li>
+<li><code>npm run build</code> → production builds:
+<code>.output/{chrome-mv3-prod, firefox-mv3-prod, opera-mv3-prod, edge-mv3-prod}/</code>
+(minified, tree-shaken, source-mapped, ZIP-ready).</li>
+<li>Per-browser: <code>npx wxt build -b chrome</code> /
+<code>-b firefox</code> / <code>--browser opera</code>.</li>
+<li>Browser differences via WXT browser-specific entry points
+(<code>popup/index.firefox.ts</code>), <code>import.meta.browser</code>
+conditional compilation, <code>webextension-polyfill</code>.</li>
+<li><code>wxt.config.ts</code> (dev-guide §3.4): srcDir
+<code>src</code>, outDir <code>.output</code>, manifest perms
+<code>['activeTab','storage','contextMenus','notifications']</code>,
+<code>host_permissions: ['https://*/']</code>, action.default_popup,
+options_ui (open_in_tab), commands.</li>
+</ul>
+<h3 id="m.2-test-commands-dev-guide-4">M.2 Test commands (dev-guide
+§4)</h3>
+<ul>
+<li><code>npm test</code> / <code>npx jest</code>
+(<code>--coverage</code>, <code>--watch</code>, single file,
+<code>--testNamePattern</code>). Coverage → <code>coverage/</code>
+(lcov-report HTML, lcov.info, coverage-summary.json).</li>
+<li>Coverage thresholds (CI-enforced): <strong>Statements 80%, Branches
+75%, Functions 80%, Lines 80%</strong>. Per-file targets: api-client
+90%, crypto-utils 95%, queue-manager 85%, magnet-scanner 80%, magnet-uri
+95%.</li>
+<li>E2E: <code>npx playwright install chromium firefox</code>;
+<code>npm run test:e2e</code>; <code>--headed</code>, <code>--ui</code>,
+<code>--project=chromium</code>, single spec.</li>
+</ul>
+<h3 id="m.3-release-process-dev-guide-7.5">M.3 Release process
+(dev-guide §7.5)</h3>
+<p>Accumulate on main → release branch → bump version in manifest →
+update CHANGELOG.md → full test suite → Git tag → build all targets →
+GitHub Release → submit Chrome Web Store + AMO + Opera Addons. SemVer
+(Major=breaking, Minor=new features, Patch=fixes). <strong>(All
+store-submission + GitHub Release auto-steps are CI/CD → see §K.1
+flag.)</strong></p>
+<h3 id="m.4-distribution-channels-tech-spec-12.3">M.4 Distribution
+channels (tech-spec §12.3)</h3>
+<table>
+<thead>
+<tr>
+<th>Channel</th>
+<th>Format</th>
+<th>Update</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chrome Web Store</td>
+<td>CRX</td>
+<td>automatic</td>
+</tr>
+<tr>
+<td>Firefox AMO</td>
+<td>XPI</td>
+<td>automatic</td>
+</tr>
+<tr>
+<td>Opera Addons</td>
+<td>CRX</td>
+<td>automatic</td>
+</tr>
+<tr>
+<td>GitHub Releases</td>
+<td>ZIP</td>
+<td>manual</td>
+</tr>
+</tbody>
+</table>
+<h3 id="m.5-git-conventions-dev-guide-7">M.5 Git conventions (dev-guide
+§7)</h3>
+<p>GitHub Flow; branch prefixes
+feature/bugfix/hotfix/docs/refactor/test; <strong>Conventional
+Commits</strong> (feat, fix, docs, style, refactor, test, chore, perf,
+security; scopes
+popup/options/content/background/api/queue/auth/crypto/i18n/build/deps;
+<code>!</code> + <code>BREAKING CHANGE:</code> footer). PR template +
+code-review checklist provided.</p>
+<h3 id="m.6-store-submission-specifics-impl-plan-8.2">M.6 Store
+submission specifics (impl-plan §8.2)</h3>
+<p>Chrome Web Store (screenshots, description, privacy policy,
+<strong>$5 fee</strong>); Firefox AMO (<code>web-ext sign</code>,
+listing, review responses); Opera Addons (Opera build, sidebar
+screenshot); Yandex (Chromium-compatible package, description).</p>
+<hr />
+<h2 id="n.-security-architecture-tech-spec-8">N. SECURITY ARCHITECTURE
+(tech-spec §8)</h2>
+<ul>
+<li><strong>Threat model:</strong> credential theft from disk (High →
+AES-256-GCM + key in session-only storage); MITM (High → HTTPS-only,
+optional cert pinning); XSS via malicious torrent site (Medium → CSP,
+content-script isolation, no <code>eval()</code>); privilege escalation
+(Medium → minimal manifest, <code>activeTab</code> default); extension
+fingerprinting (Low → no unique identifiers to web pages).</li>
+<li><strong>Encryption flow:</strong> user enters password/API key →
+random 16-byte salt → PBKDF2(100k iterations) derive key → store key in
+<code>chrome.storage.session</code> → AES-256-GCM encrypt → store
+<code>{iv+authTag+ciphertext, salt}</code> in
+<code>chrome.storage.local</code>. On startup: check session key; if
+exists use it, else re-derive from salt+password.</li>
+<li><strong>CSP:</strong>
+<code>"extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self' https:;"</code>.</li>
+</ul>
+<hr />
+<h2 id="o.-architecture-module-map">O. ARCHITECTURE &amp; MODULE
+MAP</h2>
+<h3 id="o.1-component-layers-tech-spec-5.2">O.1 Component layers
+(tech-spec §5.2)</h3>
+<p>Presentation (Popup, Options, Context Menu) → Controller (Message
+Router, Command Handler, Tab Manager) → Service (Parser, API Client,
+Queue Manager, Health) → Security (Auth Module, Crypto Module, Rate
+Limiter) → Storage (chrome.storage.local/session).</p>
+<h3 id="o.2-sw-core-modules-tech-spec-5.1">O.2 SW core modules
+(tech-spec §5.1)</h3>
+<p>Parser, Auth, API Client, Queue Manager, Health Monitor, Tab Manager,
+Badge Manager, Notification Manager, Crypto Module.</p>
+<h3 id="o.3-directory-layout-dev-guide-2.1-canonical-module-list">O.3
+Directory layout (dev-guide §2.1) — canonical module list</h3>
+<p><code>src/background/</code> (index, message-router, init);
+<code>src/content-scripts/</code> (index, magnet-scanner, dom-observer,
+torrent-parser); <code>src/popup/</code> (index.html/ts, popup.css,
+components: torrent-list, queue-view, status-bar, tab-groups);
+<code>src/options/</code> (index.html/ts, options.css, components:
+server-config, download-prefs, queue-settings, ui-settings);
+<code>src/modules/</code> (api-client, auth-manager, badge-manager,
+config-manager, crypto-utils, discovery-service, health-monitor, i18n,
+notification-manager, queue-manager, rate-limiter, state-manager,
+tab-manager); <code>src/types/</code> (index, messages, torrent, config,
+api); <code>src/utils/</code> (bencode, hash, magnet-uri, storage, time,
+validation); <code>tests/</code> (unit, e2e, mocks);
+<code>_locales/</code>. <strong>NOTE:</strong> master-guide/README §src
+tree shows a slightly different layout (<code>src/parser/</code>,
+<code>src/scanner/</code>, <code>src/api/</code>,
+<code>src/shared/</code>, <code>src/content/</code>) — two competing
+layouts exist → see §K/§P ambiguities.</p>
+<h3 id="o.3b-performance-impl-tech-spec-10">O.3b Performance impl
+(tech-spec §10)</h3>
+<p>WeakMap for DOM→torrent metadata; <code>URL.revokeObjectURL()</code>
+after upload; lazy module init; MutationObserver filters for link
+mutations only, debounced 250 ms; <code>requestIdleCallback</code> for
+&gt;500 links; tree-shaking; code-splitting (Options/Popup separate
+chunks); shared vendor chunk; LZ-string queue compression.</p>
+<h3 id="o.4-architecture-decisions-dev-guide-6">O.4 Architecture
+decisions (dev-guide §6)</h3>
+<p>MV3 over MV2 (store requirement, ephemeral SW, lower memory; mitigate
+SW lifetime via <code>chrome.alarms</code> +
+<code>chrome.storage</code>); WXT over raw Vite (extension scaffolding,
+HMR, multi-browser, manifest auto-gen, file-based routing);
+<code>activeTab</code> over broad <code>host_permissions</code>
+(privacy; optional_permissions for proactive detection); AES-256-GCM
+(authenticated encryption, Web Crypto support, NIST standard; PBKDF2
+100k iterations, 96-bit IV, 128-bit tag).</p>
+<hr />
+<h2 id="p.-reference-plan-phases-milestones">P. REFERENCE-PLAN PHASES /
+MILESTONES</h2>
+<h3 id="p.1-master-plan.md-7-stages-research-docs">P.1 master
+<code>plan.md</code> — 7 Stages (research → docs)</h3>
+<p>Stage 1 Deep Research (4 agents: Boba architecture, browser-extension
+APIs, torrent/magnet parsing, existing-solutions+security); Stage 2
+Architecture &amp; Technical Design (→ architecture.md); Stage 3
+Implementation Plan (Phase 1–10 listing); Stage 4 Source-code dev; Stage
+5 Diagrams (5 agents); Stage 6 Documentation (5 agents); Stage 7
+Multi-format conversion (docx/pdf/html). Note: plan.md §“Stage 3” lists
+10 phases (Phase 1 scaffold … Phase 10 docs+release) — a DIFFERENT
+decomposition than implementation-plan.md’s 8 phases.</p>
+<h3
+id="p.2-implementation-plan.md-8-phases-5-week-timeline-the-authoritative-dev-plan">P.2
+<code>implementation-plan.md</code> — 8 Phases / 5-week timeline (the
+authoritative dev plan)</h3>
+<ul>
+<li><strong>Phase 1 Foundation (Week 1):</strong> 1.1 Project Setup (git
+init + Apache-2.0 LICENSE + README; WXT for 5 browsers; tsconfig strict
++ <span class="citation" data-cites="types/chrome">@types/chrome</span>;
+ESLint 9 flat + Prettier + <strong>Husky pre-commit</strong>; dir
+structure). 1.2 Manifest V3 (base + Chrome SW + Firefox gecko ID + Opera
+sidebar/minimum_opera_version + Yandex
+<code>tune://</code>/<code>tune:</code> URL handling + permission model
+storage/alarms/notifications/activeTab/host_permissions). 1.3 Shared
+infra (types; logger; constants URLs/ports/regex; error classes; typed
+event bus).</li>
+<li><strong>Phase 2 Core Engine (Week 2):</strong> 2.1 Magnet
+detect+parse (regex engine; URI decoder for dn/tr/xl; BTIH validator
+40-char hex + <strong>base32 support</strong>; param extractor
+xt/dn/tr/xl/ws/xs/as/kt/mt; normalizer to
+<code>{infoHash,name,trackers}</code>; 50+ unit tests). 2.2 Torrent file
+parse (zero-dep Uint8Array bencode decoder; torrent parser class; SHA-1
+infohash via Web Crypto; magnet generator; validator announce/info/piece
+length; tests). 2.3 DOM scanner (base class w/ EventTarget; anchor
+scanner <code>a[href^="magnet:"],a[href$=".torrent"]</code>;
+<strong>TreeWalker text-node scanner</strong> for inline magnets;
+top-20-site CSS selector DB; MutationObserver debounced 500 ms;
+<strong>Shadow DOM recursive traversal</strong>; dedup Map by infoHash;
+perf budget rAF yielding 16 ms/frame).</li>
+<li><strong>Phase 3 Extension Shell (Week 2–3):</strong> 3.1 Content
+Script (entry; orchestrator; highlight/overlay; message handler
+SCAN_REQUEST; auto-scan <code>document_idle</code>; manual scan). 3.2
+Background SW (entry/lifecycle; message router; chrome.alarms
+keep-alive; context menu “Send to Boba”/“Scan Page”/“Open Dashboard”;
+shortcuts; health-check loop; badge updater; notifications). 3.3 Popup
+(HTML/CSS theme-aware; popup.ts list/actions/state; connection status;
+torrent list w/ checkboxes; send + progress; batch Select
+All/Deselect/Invert; quick settings auto-scan/notif). 3.4 Options
+(HTML/CSS; options.ts save/load; Boba server config URL/port/auth/creds;
+<strong>Test Connection</strong>; <strong>Auto-Discover</strong> port
+scan; download prefs category/save-path/start-paused; security
+creds-encryption toggle + HTTPS enforcement).</li>
+<li><strong>Phase 4 API Integration (Week 3):</strong> 4.1 Boba API
+Client (<code>BobaAPIClient</code>; auth handlers cookie/API-Key/Basic;
+health <code>/app/version</code>,<code>/api/v2/app/version</code>;
+<strong>auto-discovery scan localhost ports 7187, 7189, 8080</strong>;
+error handling backoff+classify; token-bucket rate limiter). 4.2
+qBitTorrent Direct (login/SID/CSRF; add torrents; add magnets; multipart
+.torrent upload; monitor <code>/torrents/info</code> hash-filter;
+<code>/sync/maindata</code> incremental RID). 4.3 Offline Queue
+(<code>OfflineQueue</code>; chrome.storage.local persistence;
+backoff+jitter retry; chrome.alarms processor; dedup by infohash).</li>
+<li><strong>Phase 5 Tab Groups (Week 3):</strong> 5.1 Enumeration
+(<code>chrome.tabGroups.query({})</code>;
+<code>chrome.tabs.query({groupId})</code>; URL aggregation; per-tab
+batch scan). 5.2 Context Menu (tab “Send Group to Boba”; group submenu
+w/ per-group torrent count; scan-all+batch-send handler; progress
+notif).</li>
+<li><strong>Phase 6 UI/UX Polish (Week 4):</strong> 6.1 Icons &amp;
+Theming (16/32/48/128 PNG + SVG; dynamic color badges;
+<code>prefers-color-scheme</code>; animations/spinners). 6.2 i18n
+(<code>_locales/en/messages.json</code>; English strings;
+<code>chrome.i18n.getMessage()</code> wrapper). 6.3 Accessibility (ARIA
+labels; keyboard nav; focus mgmt/trapping; screen-reader live
+regions).</li>
+<li><strong>Phase 7 Testing (Week 4–5):</strong> 7.1 Unit
+(Jest+ts-jest+jsdom; chrome.* mocks storage/tabs/runtime/alarms; magnet
+50+; torrent fixtures; DOM scanner jsdom; API client mock fetch; queue
+persistence/retry/dedup; <strong>80%+ line coverage</strong>). 7.2
+Integration (against real Boba docker; cookie+API-key auth;
+<strong>end-to-end Detect→Parse→Send→Verify download</strong>). 7.3 E2E
+(Playwright config w/ extension loading; extension fixture
+Chromium/Chrome; popup tests; content-script detection tests; options
+configure+test-connection).</li>
+<li><strong>Phase 8 Build &amp; Distribution (Week 5):</strong> 8.1
+Build pipeline (WXT prod build; cross-browser packages;
+<strong><code>.github/workflows/ci.yml</code></strong>;
+<strong><code>release.yml</code></strong> publish to stores). 8.2 Store
+submission (Chrome WS $5 fee; AMO web-ext sign; Opera Addons;
+Yandex).</li>
+</ul>
+<h3 id="p.3-gantt-impl-plan">P.3 Gantt (impl-plan)</h3>
+<p>Wk1: P1+P2start; Wk2: P2+P3start; Wk3: P3+P4+P5; Wk4: P6+P7start;
+Wk5: P7+P8.</p>
+<h3 id="p.4-risk-assessment-impl-plan-tech-spec-14">P.4 Risk assessment
+(impl-plan + tech-spec §14)</h3>
+<p>qBitTorrent API changes (High/Med → version detection, adapter
+pattern); CORS on torrent sites (High/Med → SW fetch bypasses CORS /
+proxy via Boba); MV3 SW termination (Med → chrome.alarms keep-alive);
+store review rejection (Low/Med → minimal permissions, guideline
+compliance); Yandex API differences (Low → Chromium-compatible code);
+Chrome MV3 policy changes (Med/High → MV2 fallback branch); user forgets
+encryption password (Med → optional hint, reset/reconfigure);
+third-party dep vulnerability (Med/High → Dependabot, lockfile pinning,
+SCA); large-page perf (Med → requestIdleCallback, pagination).</p>
+<hr />
+<h2 id="q.-acceptance-criteria-verification-consolidated">Q. ACCEPTANCE
+CRITERIA / VERIFICATION (consolidated)</h2>
+<ul>
+<li>FR-001: dynamic magnet links detected within <strong>500
+ms</strong>; all http/https origins; iframe when all_frames.</li>
+<li>FR-003: <code>xt</code> valid 40-char hex required; <code>dn</code>
+fallback “Unknown Torrent”; malformed <code>tr</code> discarded.</li>
+<li>FR-005: computed SHA-1 infohash matches <code>xt</code>.</li>
+<li>NFR targets (§C) are pass/fail acceptance gates with measurement
+methods.</li>
+<li>Installation verification checklist (installation-guide §6.4):
+extension installed (icon), server connected (green badge), detection
+works (badge count &gt;0), send works (success notif), queue works
+(disconnect→send→reconnect→sent), settings persist
+(restart→retained).</li>
+<li>Connection-test success output (installation-guide §4.3): Server /
+Mode / Status=Connected / Version / Latency / Auth=OK /
+API=Compatible.</li>
+<li>README “Verification Checklist” (24 items) — research, plan, source,
+SQL, unit (320+, 80%+), E2E (80+), CI/CD(GHA — ⚠️), spec (25 FR/15 NFR),
+API ref, user guide (30 FAQs), dev guide, install guide, all diagram
+types, multi-format docs.</li>
+</ul>
+<hr />
+<h2
+id="r.-version-compatibility-matrices-api-ref-8-installation-guide-7.3">R.
+VERSION COMPATIBILITY MATRICES (api-ref §8; installation-guide
+§7.3)</h2>
+<ul>
+<li><strong>qBitTorrent:</strong> 4.4.x (WebAPI 2.8.x,
+Compatible/legacy); 4.5.x (2.8.x, recommended min); 4.6.x (2.9.x,
+primary target); 5.0.x (2.10.x, compatible); 5.1.x (2.11.x, testing);
+&lt;4.4.0 unsupported.</li>
+<li><strong>Browsers:</strong> Chrome 88 min/120+ rec (full MV3,
+tested); Firefox 109/121+ (full w/ polyfill, tested); Opera 74/106+
+(full, tested); Yandex 21/24+ (full, tested); Edge 88/120+ (full,
+tested); Safari 16/17+ (partial, NOT tested).</li>
+<li><strong>Boba Server:</strong> 1.0.x↔︎ext 1.0.x compatible; 1.1.x
+backward-compatible; 1.2.x testing; 2.0.x↔︎ext 1.1.x+ planned.</li>
+<li><strong>Feature availability:</strong> SSE progress = Boba 1.1+
+only; search aggregation = Boba 1.2+ only; auto-discovery = Boba 1.0+
+only; magnet send / .torrent upload / categories / tags / sequential /
+first-last-piece = qBT 4.4+ (tags 4.3.2+) and all Boba.</li>
+</ul>
+<hr />
+<h2 id="s.-rate-limiting-detail-api-ref-7">S. RATE LIMITING DETAIL
+(api-ref §7)</h2>
+<p>Token-bucket
+<code>TokenBucketRateLimiter(capacity, refillRate, initialTokens)</code>.
+Default buckets: per-second cap 10 refill 10/s; per-minute cap 60 refill
+1/s; queue-processing cap 1 refill 2/s. Respects
+<code>X-RateLimit-Limit/Remaining/Reset</code> +
+<code>Retry-After</code>. Queue config: maxConcurrent 1,
+interCallDelayMs 500, batchSize 10, batchIntervalMs 5000.</p>
+<hr />
+<h2 id="t.-open-questions-ambiguities-for-conductor">T. OPEN QUESTIONS /
+AMBIGUITIES (for conductor)</h2>
+<ol type="1">
+<li><strong>Real Boba port mapping (HIGH).</strong> Spec uses fictional
+8443/8080; implementation-plan §4.1.4 already names <strong>7187, 7189,
+8080</strong>. Confirm: qBT-direct → proxy <strong>7186</strong>? Boba
+REST/search/SSE → merge service <strong>7187</strong>? search
+aggregation → <strong>boba-jackett 7189</strong>? All FR-011 /
+installation-guide discovery defaults must be re-pointed. The spec’s
+separate Boba <code>/api/v1/*</code> REST surface (auth/token, search,
+download, SSE) may not exist on 7187 as specified — needs reconciliation
+with the actual FastAPI/Go routes.</li>
+<li><strong>CI/CD removal (HIGH — Boba Hard-Stop).</strong> Reference is
+GitHub-Actions-centric (ci.yml, release.yml, Husky pre-commit, coverage
+“enforced in CI”, auto store-submission). ALL must be converted to a
+manual <code>./ci.sh</code>-style script + manual release; no
+<code>.github/workflows/</code>, no git hooks. Confirm the manual-CI
+shape.</li>
+<li><strong>Jest vs Vitest (MED).</strong> Reference mandates
+Jest+Playwright; Boba’s existing <code>frontend/</code> is Angular 21 +
+<strong>Vitest</strong>. Standardize the extension on Vitest to match
+Boba, or keep Jest? Playwright E2E likely stays.</li>
+<li><strong>Two divergent source layouts (MED).</strong>
+master-guide/README src tree (<code>src/parser</code>,
+<code>src/scanner</code>, <code>src/api</code>, <code>src/shared</code>,
+<code>src/content</code>) vs dev-guide §2.1 (<code>src/modules</code>,
+<code>src/utils</code>, <code>src/content-scripts</code>). Pick one
+canonical layout.</li>
+<li><strong>Two divergent phase plans (MED).</strong> plan.md lists 10
+phases; implementation-plan.md lists 8. Use the 8-phase impl-plan as
+authoritative?</li>
+<li><strong>Data-model vocabulary drift (MED).</strong> SQL schema
+<code>source_type</code> adds <code>'torrent-url'</code>;
+<code>status</code> uses <code>'completed'</code> (TS uses
+<code>'dead-letter'</code>); <code>auth_method</code> adds
+<code>'none'</code>, omits <code>'custom-header'</code>. TS
+<code>QueueStatus</code> and SQL <code>status</code> disagree. Reconcile
+the canonical enum sets.</li>
+<li><strong>Magnet param set drift (LOW).</strong> FR-003 lists
+xt/dn/tr/xl/ws/x.pe; impl-plan §2.1.4 lists
+xt/dn/tr/xl/ws/<strong>xs/as/kt/mt</strong> (no x.pe). Which param
+superset is implemented?</li>
+<li><strong>Keyboard-shortcut count (LOW).</strong> FR-017 defines 3
+commands; user-guide §2.7 + impl-plan add a 4th “Scan page (no send)”
+<code>Ctrl+Shift+S</code>. Confirm 3 or 4 commands;
+<code>open-popup</code> <code>Ctrl+Shift+L</code> may collide with
+browser defaults.</li>
+<li><strong><code>host_permissions</code> scope (LOW–MED).</strong>
+wxt.config uses <code>host_permissions: ['https://*/']</code> while
+NFR-012 + dev-guide §6.3 push <code>activeTab</code>-primary/minimal.
+Reconcile (broad https → store-review risk + privacy prompt).</li>
+<li><strong>LICENSE (LOW).</strong> impl-plan says Apache 2.0; FAQ says
+“open-source under its license terms”. Confirm license + Boba submodule
+conventions.</li>
+<li><strong>Naming (LOW).</strong> Product is “BobaLink” throughout the
+reference; confirm the Boba repo’s preferred extension name + icon (“tea
+bubble”).</li>
+<li><strong>Search/SSE feature scope (MED).</strong> Reference’s richest
+features (search aggregation, SSE live progress, auto-discovery) are
+gated to Boba-server mode. Does the Boba implementation expose
+<code>/api/v1/torrents/search</code> + SSE on 7187, or must the
+extension call the existing merge-service routes (different shape)?
+Determines how much of FR-011/§E.2 is buildable as-specified.</li>
+<li><strong>Boba <code>/api/v1/health</code> vs real
+<code>/health</code>.</strong> FR-024 + discovery probe
+<code>/health</code>; spec also uses <code>/api/v1/health</code>.
+Confirm the real Boba health endpoint path/port.</li>
+</ol>
+<hr />
+<p><em>End of extraction 01-guides-and-plan.md</em></p>

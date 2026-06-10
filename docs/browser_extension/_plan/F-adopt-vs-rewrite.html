@@ -1,0 +1,1024 @@
+<h1 id="f-adopt-vs-refactor-vs-rewrite-vs-net-new-decision-table">F —
+Adopt vs Refactor vs Rewrite vs Net-New decision table</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T00:00:00Z</p>
+<blockquote>
+<p>Per-module disposition of the reference BobaLink implementation (44
+<code>.ts</code> files under
+<code>docs/research/browser_extension/Browser Torrent Extension Guide/src/src/</code>)
+for the Boba browser-extension build. Decisions are evidence-based:
+every defect is cited to the reference file (and verified by direct read
+where the extraction’s claim was ambiguous).</p>
+<p><strong>Decision vocabulary</strong> - <strong>ADOPT</strong> — reuse
+mostly as-is (rename/port only; no logic change). §11.4.74 reuse. -
+<strong>REFACTOR</strong> — reuse the structure, fix bounded defects
+(1–N targeted edits). - <strong>REWRITE</strong> — defects too deep /
+design wrong; rebuild from the contract, may salvage shape. -
+<strong>NET-NEW</strong> — does not exist in the reference; must be
+authored.</p>
+<p>Anti-bluff (§11.4): a module is ADOPTed only when reading the source
+shows it is genuinely sound. Defective code is never ADOPTed just
+because it exists.</p>
+</blockquote>
+<p>Reference path prefix (note the spaces), abbreviated
+<code>&lt;REF&gt;/</code> below:
+<code>docs/research/browser_extension/Browser Torrent Extension Guide/src/src/</code></p>
+<hr />
+<h2 id="parser-layer">1. Parser layer</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment (defect cited or “sound”)</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>parser/bencode.ts</code></td>
+<td><strong>Sound.</strong> Zero-dep <code>Uint8Array</code> bencode;
+dict keys sorted lexicographically (<code>bencode.ts:139-151</code>) —
+load-bearing for stable infohash; rejects trailing data, unterminated
+ints/strings/lists/dicts; bounds-checks byte-strings; binary-vs-utf-8
+mode; <code>sha1</code> via Web Crypto. Strongly unit-tested
+(<code>bencode.test.ts</code>).</td>
+<td><strong>ADOPT</strong></td>
+<td>Remove dead-assert in test (<code>bencode.test.ts:156</code>). Add
+property/fuzz + deep-recursion-limit (chaos) tests per §11.4.85. No
+source change.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>parser/magnet.ts</code></td>
+<td><strong>Sound.</strong> Repeated-key query parsing (multiple
+<code>tr</code>/<code>xt</code> preserved), hex+base32 infohash,
+<code>base32ToHex</code> RFC4648, full param extraction
+(xt/dn/tr/ws/xl/xs/kt/as/mt), recurse on base32. Fixture-driven
+tests.</td>
+<td><strong>ADOPT</strong></td>
+<td>Wire the unused 7-case <code>invalidMagnets</code> negative fixture.
+Consider BitTorrent v2 (<code>btmh</code>/multihash) — out of scope
+unless required.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>parser/torrent-file.ts</code></td>
+<td><strong>Sound but DEAD CODE.</strong>
+<code>parseTorrentFile</code>/<code>computeInfohash</code> correct
+(infohash = <code>sha1(encode(infoDict))</code>, BT v1 canonical) and
+tested — <strong>but never invoked</strong> by
+scanners/adapter/background (sends upload raw <code>File</code>).
+Re-encode reorders non-sorted info keys (hash-divergence caveat,
+<code>torrent-file.ts:46-48</code>).</td>
+<td><strong>REFACTOR</strong></td>
+<td>Source is sound → keep. The fix is <strong>wiring</strong>: invoke
+<code>computeInfohash</code> in the scanner/adapter to derive stable ids
++ local dedup against Boba. §11.4.124 (don’t delete unwired code — wire
+it).</td>
+<td>Med (wiring touches scanner + adapter contracts)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="scanner-layer">2. Scanner layer</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scanner/base.ts</code></td>
+<td><strong>One real defect.</strong> Abstract base + shadow-DOM-aware
+<code>querySelectorAllDeep</code> + hidden-element skip + re-entrancy
+guard are sound. <strong>Defect (verified by read):</strong>
+<code>hashString</code> returns
+<code>Math.abs(hash).toString(36) + Date.now().toString(36)</code>
+(<code>base.ts:272</code>) — <strong>time-salts the id</strong> despite
+the doc-comment “stable ID”, so the same torrent gets a new id every
+scan; cross-scan/cross-tab dedup is unreliable.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Drop the <code>Date.now()</code> salt; derive id from
+<code>infohash</code> (now available once <code>torrent-file.ts</code>
+is wired) so ids are stable. One-method change.</td>
+<td>Med (dedup correctness depends on it)</td>
+</tr>
+<tr>
+<td><code>scanner/link-scanner.ts</code></td>
+<td><strong>Sound.</strong> Site-specific pass (resolve selectors by
+domain) + generic <code>a[href]</code> fallback, dedup by normalized
+href, relative→absolute resolution, <code>sameOrigin</code> flag.</td>
+<td><strong>ADOPT</strong></td>
+<td>Reconcile the selector source (see <code>site-db</code> row).</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>scanner/text-scanner.ts</code></td>
+<td><strong>Sound.</strong> <code>TreeWalker(SHOW_TEXT)</code> with
+skip-list + min-length filter, <code>findMagnetUris</code> dedup.
+Catches forum-pasted magnets.</td>
+<td><strong>ADOPT</strong></td>
+<td>None.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>scanner/orchestrator.ts</code></td>
+<td><strong>Sound.</strong> Coordinates scanners + MutationObserver,
+per-site debounce, cooperative <code>yieldToBrowser()</code> between
+scanners, relevant-mutation filter, emits scan events, dedups by id into
+a Map. Initial-state-only tested (orchestrator never actually scans in
+the reference suite).</td>
+<td><strong>ADOPT</strong></td>
+<td>Depends on the <code>base.ts</code> stable-id fix for reliable
+<code>mergeResults</code> dedup. Add real scan + mutation-rescan +
+debounce tests (the reference does not exercise scanning).</td>
+<td>Med (dedup correctness)</td>
+</tr>
+<tr>
+<td><code>scanner/site-db.ts</code></td>
+<td><strong>Defect: two divergent selector tables.</strong>
+<code>SITES</code> (15 rich entries, used ONLY for per-site debounce)
+overlaps and disagrees with <code>constants.SITE_SELECTORS</code> (~21
+flat entries, used by <code>LinkScanner</code>). The private trackers
+Boba actually supports (rutracker/iptorrents/kinozal/nnmclub) are split
+across both.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Merge into ONE authoritative site registry (single source of truth)
+covering Boba’s real trackers (rutracker, kinozal, nnmclub, rutor,
+IPTorrents). Reconcile against the SQL <code>site_selectors</code> seed
+(30 rows) too.</td>
+<td>Med (3-way reconcile: constants + site-db + SQL seed)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="api-layer">3. API layer</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>api/client.ts</code></td>
+<td><strong>Sound HTTP client, WRONG TARGET.</strong> TokenBucket
+rate-limit, AbortController timeout, <code>retryWithBackoff</code>,
+429→<code>RateLimitError</code>, content-type branching — all sound.
+<strong>But it speaks ONLY raw qBittorrent WebUI v2</strong>
+(<code>/api/v2/...</code>) and the default base assumes qBittorrent on
+<code>:8080</code>. Nothing reaches Boba’s real services (7186 proxy /
+7187 merge / 7189 jackett). <code>set-cookie</code> SID parse
+(<code>client.ts:128-166</code>) is browser-fragile.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Keep the transport (rate-limit/retry/timeout/error mapping).
+Re-point base URL/endpoints to Boba’s real ports and routes; add a
+Boba-endpoint path set distinct from the raw qBt path set. Harden SID
+handling.</td>
+<td><strong>HIGH</strong> (transport reuse is safe; endpoint
+re-targeting is the load-bearing integration work)</td>
+</tr>
+<tr>
+<td><code>api/auth.ts</code></td>
+<td><strong>Mostly sound, one crypto-coupling defect.</strong> Four auth
+methods + failure backoff + <code>refreshIfNeeded</code> are sound.
+<code>createCredentialsFromConfig(config, passphrase)</code>
+(<code>auth.ts:170</code>) decrypts via <code>shared/crypto</code> — its
+correctness is hostage to the broken passphrase provenance (see crypto
+rows). Reads <code>client["authCookie"]</code> private field
+(<code>auth.ts:247</code>) — fragile TS escape hatch.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Re-wire to the real key source (NET-NEW below). Replace the
+private-field read with a public accessor on the client. Decide which
+auth model Boba actually uses (delegate to proxy/jackett vs raw qBt
+login).</td>
+<td>High (couples to credential rewrite)</td>
+</tr>
+<tr>
+<td><code>api/qbittorrent.ts</code></td>
+<td><strong>Sound.</strong> Domain wrapper:
+<code>sendTorrent</code>/<code>sendTorrents</code> (250ms spacing),
+<code>buildAddOptions</code> maps <code>ServerConfig</code>→add params,
+never rethrows (normalizes to <code>getUserMessage()</code>).</td>
+<td><strong>ADOPT</strong></td>
+<td>Inherits the re-targeted client. None of its own logic is
+defective.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>api/queue.ts</code></td>
+<td><strong>Defect: never authenticates (verified by read).</strong>
+Enqueue/dequeue/FIFO-eviction/persist sound. But
+<code>processQueue</code> (<code>queue.ts:170</code>) builds
+<code>new BobaAPIClient(config.url,...)</code> + adapter and runs the
+send loop <strong>with no
+<code>login()</code>/<code>authenticate()</code> call</strong> — retries
+against an authed server 403/fail-loop forever.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Inject auth into <code>processQueue</code> (build+authenticate the
+client, or accept an authenticated client/adapter). Add
+retry/attempts/backoff tests (reference only asserts structure).</td>
+<td>Med-High (offline retries silently broken without it)</td>
+</tr>
+<tr>
+<td><code>api/health.ts</code></td>
+<td><strong>Sound, wrong port list.</strong> Health thresholds, caching,
+<code>testConnection</code>, <code>autoDiscover</code>.
+<strong>Defect:</strong> <code>autoDiscover</code> probes
+<code>[8080, 7187, 7189]</code> (<code>health.ts:201</code>) — 8080 is
+wrong for Boba (qBt WebUI is proxied on 7186).</td>
+<td><strong>REFACTOR</strong></td>
+<td>Change probe port set to Boba’s real map (7186/7187/7189).</td>
+<td>Low</td>
+</tr>
+</tbody>
+</table>
+<h2 id="content-layer">4. Content layer</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>content/index.ts</code></td>
+<td><strong>Sound.</strong> Wires orchestrator→background
+(<code>scan-result</code>), message handler
+(<code>scan-now</code>/<code>get-detected</code>/<code>toggle-selection</code>/<code>get-scan-status</code>).
+<strong>Defect (contract):</strong> content <code>get-detected</code>
+returns <code>{torrents:[…]}</code> while background
+<code>get-detected</code> returns <code>{data:{result}}</code> —
+divergent shapes the popup juggles.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Unify the <code>get-detected</code> response contract across content
++ background + popup.</td>
+<td>Med</td>
+</tr>
+<tr>
+<td><code>content/scanner.ts</code></td>
+<td><strong>Sound.</strong> Thin content-side orchestrator glue (90
+lines).</td>
+<td><strong>ADOPT</strong></td>
+<td>None.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>content/highlight.ts</code></td>
+<td><strong>Sound.</strong> Three highlight styles (badge/border/glow),
+event-bus driven.</td>
+<td><strong>ADOPT</strong></td>
+<td>None (presentation).</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>content/styles.css</code></td>
+<td>Presentation only, <code>.bobalink-*</code> +
+<code>!important</code>.</td>
+<td><strong>ADOPT</strong></td>
+<td>Rebrand class prefix if extension is renamed.</td>
+<td>Low</td>
+</tr>
+</tbody>
+</table>
+<h2 id="entrypoints-background-popup-options">5. Entrypoints (background
+/ popup / options)</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>background/index.ts</code></td>
+<td><strong>Sound hub, ONE critical defect.</strong> Lifecycle, message
+router, context menus, commands, alarms (keepalive ~20s / health 5min),
+badge/notifications — all sound. <strong>Critical (verified
+<code>index.ts:409</code>):</strong> <code>sendTorrents</code> decrypts
+creds with <strong>empty passphrase <code>""</code></strong> — can only
+ever read <code>""</code>-encrypted bundles, and is mutually
+incompatible with the options page’s <code>"bobalink-extension"</code>
+encryption ⇒ the whole credential path is broken end-to-end.
+<code>open-dashboard</code> fallback hardcodes <code>:8080</code>. Has
+zero unit coverage in the reference.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Replace the <code>""</code> decrypt call-site with the real key
+source. Fix <code>:8080</code> fallback. Add the missing background
+unit/integration coverage.</td>
+<td><strong>HIGH</strong> (credential correctness + the unrouted message
+types decision)</td>
+</tr>
+<tr>
+<td><code>popup/popup.ts</code> + <code>popup/index.html</code> +
+<code>popup/styles.css</code></td>
+<td><strong>Sound.</strong> Per-tab list, select/deselect, send,
+connection-status dot, empty-state scan. Excluded from reference
+coverage.</td>
+<td><strong>ADOPT</strong></td>
+<td>Adapt to the unified <code>get-detected</code> contract. Add real
+UI/UX behavior tests (reference e2e asserts presence only).</td>
+<td>Low-Med</td>
+</tr>
+<tr>
+<td><code>options/options.ts</code> + <code>index.html</code> +
+<code>styles.css</code></td>
+<td><strong>CRITICAL defect (verified
+<code>options.ts:327</code>).</strong> Form↔︎config bridge, server modal,
+test-connection, settings toggles all sound. <strong>But every secret is
+AES-encrypted with the literal fixed passphrase
+<code>"bobalink-extension"</code></strong> — trivially reversible by
+anyone with the source (§11.4.10 leak). Auto-discover checkboxes are
+display-only (real ports hardcoded elsewhere).</td>
+<td><strong>REFACTOR</strong></td>
+<td>Remove the fixed passphrase; route encryption through the real key
+source (NET-NEW). Wire the auto-discover checkboxes to actual
+config.</td>
+<td><strong>HIGH</strong> (§11.4.10 credential leak is a release
+blocker)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="shared-libs">6. Shared libs</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>shared/constants.ts</code></td>
+<td><strong>Sound values, WRONG PORTS + duplication.</strong> Regexes,
+timeouts, retry/rate config, badge colors, encryption params all sound.
+<strong>Defects:</strong> <code>DEFAULT_PORTS.QBITTORRENT=8080</code> /
+<code>DEFAULT_URLS.QBITTORRENT</code> wrong (should be 7186);
+<code>SITE_SELECTORS</code> duplicates <code>site-db.SITES</code>;
+<code>RATE_LIMIT.MAX_REQUESTS=10</code> disagrees with DB seed
+<code>behavior.rate_limit_requests=30</code>.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Fix qBt port 8080→7186 across
+host_permissions/CSP/URLs/PORTS/auto-discover. Collapse the duplicate
+selector table. Pick canonical rate-limit.</td>
+<td>Med (port fix is cross-cutting: constants + manifest + SQL +
+auto-discover)</td>
+</tr>
+<tr>
+<td><code>shared/crypto.ts</code></td>
+<td><strong>SOUND PRIMITIVE — extraction’s “REWRITE” is too broad
+(DISAGREE, see §8).</strong> Verified by read: PBKDF2 100k iters /
+AES-256-GCM / fresh 16-byte salt + 12-byte IV per op / 128-bit GCM tag /
+proper <code>StorageError</code> wrapping / rejects empty
+plaintext+passphrase. The crypto <em>module itself is correct and
+reusable</em>. The defect lives entirely in the
+<strong>callers’</strong> passphrase (<code>options.ts:327</code>,
+<code>background:409</code>), not here.</td>
+<td><strong>ADOPT</strong> (module)</td>
+<td>None to the module. The fix is the NET-NEW key source feeding it.
+Rewrite the <strong>test</strong> to import this real module (reference
+test tests a copy).</td>
+<td>Low (module) / High (caller key source — separate NET-NEW)</td>
+</tr>
+<tr>
+<td><code>shared/errors.ts</code></td>
+<td><strong>Sound.</strong> Typed error taxonomy
+(<code>BobaLinkError</code> + 8 subclasses),
+<code>getUserMessage</code>, <code>normalizeError</code>,
+<code>isBobaLinkError</code>.</td>
+<td><strong>ADOPT</strong></td>
+<td>Add direct error-class unit tests.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>shared/events.ts</code></td>
+<td><strong>Sound.</strong> <code>TypedEventEmitter</code> + 13-event
+<code>EventMap</code>, per-listener try/catch isolation, unsub returns.
+Thoroughly tested.</td>
+<td><strong>ADOPT</strong></td>
+<td>None.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>shared/logger.ts</code></td>
+<td><strong>Sound.</strong> Structured leveled logging,
+<code>timed</code>, <code>createLogger</code>, debug-gating.</td>
+<td><strong>ADOPT</strong></td>
+<td>None.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>shared/storage.ts</code></td>
+<td><strong>Sound.</strong> <code>chrome.storage.local</code> wrapper,
+<code>NamespacedStorage</code>, change listener,
+<code>bobalink_</code>-prefixed clear. <strong>Note:</strong> only the
+JSON-blob model is implemented here — the parallel SQL-schema (sql.js)
+model has NO wrapper file.</td>
+<td><strong>ADOPT</strong></td>
+<td>Decide one persistence source of truth (JSON-blob vs sql.js); the
+sql.js wrapper is NET-NEW if chosen. Add direct storage unit tests
+(always mocked away in the reference).</td>
+<td>Med (dual-storage architecture decision)</td>
+</tr>
+<tr>
+<td><code>shared/utils.ts</code></td>
+<td><strong>Sound.</strong> debounce/throttle,
+<code>retryWithBackoff</code>, <code>TokenBucket</code>,
+<code>processInChunks</code>, <code>formatBytes</code>, url helpers.
+<strong>Note:</strong> <code>escapeHtml</code> is DOM-dependent (not
+service-worker safe); <code>processInChunks</code> defined but
+unused.</td>
+<td><strong>ADOPT</strong></td>
+<td>Provide a SW-safe <code>escapeHtml</code> variant for background
+context.</td>
+<td>Low</td>
+</tr>
+</tbody>
+</table>
+<h2 id="types">7. Types</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>types/torrent.ts</code></td>
+<td><strong>Sound.</strong>
+<code>MagnetInfo</code>/<code>TorrentFile</code>/<code>ParsedTorrent</code>/<code>DetectedTorrent</code>/<code>SendResult</code>/<code>PageScanResult</code>.</td>
+<td><strong>ADOPT</strong></td>
+<td>None.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>types/config.ts</code></td>
+<td><strong>Sound, with duplication.</strong>
+<code>ServerConfig</code>/<code>ExtensionConfig</code>/<code>DEFAULT_CONFIG</code>.
+<strong>Defect:</strong> <code>AuthMethod</code> duplicated in
+<code>types/api.ts</code>; <code>ServerConfig</code> (TS) diverges from
+<code>server_config</code> (SQL) field naming.</td>
+<td><strong>REFACTOR</strong></td>
+<td>De-duplicate <code>AuthMethod</code> (single canonical). Reconcile
+TS <code>ServerConfig</code> ↔︎ SQL <code>server_config</code>. Fix
+default ports (auto-discovery <code>[7187,7189,8080]</code>→ Boba
+map).</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>types/api.ts</code></td>
+<td><strong>Sound, declares unused contracts.</strong>
+qBt/auth/health/queue/message types.
+<code>BobaServerInfo</code>/<code>BobaSearchResponse</code> declared but
+<strong>nothing consumes them</strong> (no Boba-API client).
+<code>MessageType</code> declares 7 values with no handler branch.</td>
+<td><strong>REFACTOR</strong></td>
+<td>De-dup <code>AuthMethod</code>. Decide which declared-but-unrouted
+message types to implement vs drop. The Boba-API consumer that uses
+<code>BobaSearchResponse</code> is NET-NEW.</td>
+<td>Low (types) / High (the consumer is net-new)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="sql-schema">8. SQL schema</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sql/schemas.sql</code> (=
+<code>migrations/001_initial.sql</code>)</td>
+<td><strong>Sound schema, wrong default + unresolved
+dual-storage.</strong> 9 tables, ~25 indexes, partial indexes,
+encrypted-credential columns
+(<code>api_key_encrypted</code>/<code>password_encrypted</code>), 30
+selector seeds, 25 config seeds — well-formed SQLite 3.38+/sql.js.
+<strong>Defects:</strong> seeds
+<code>qbittorrent_port DEFAULT 8080</code> +
+<code>server.base_url=http://localhost:8080</code>; and the runtime has
+NO sql.js wrapper (only the JSON-blob storage path is implemented) so it
+is currently unused-by-design.</td>
+<td><strong>REFACTOR</strong> (if SQL chosen) / <strong>drop</strong>
+(if JSON-blob chosen)</td>
+<td>First decide the single persistence model. If SQL: fix port seeds
+8080→7186, reconcile site-selector seed with the merged site registry,
+author the sql.js wrapper (NET-NEW). If JSON-blob: this schema is not
+adopted.</td>
+<td>Med (architecture decision gates everything)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="build-test-configs">9. Build / test configs</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wxt.config.ts</code></td>
+<td><strong>Sound MV3 manifest gen, wrong endpoints.</strong> WXT
+manifest, 6 permissions, CSP, commands, auto-icons.
+<strong>Defects:</strong> host_permissions + CSP
+<code>connect-src</code> include <code>:8080</code> (should be
+<code>:7186</code>); icon PNGs referenced but absent.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Fix 8080→7186 in host_permissions + CSP. Confirm Firefox MV3
+module-SW support.</td>
+<td>Med</td>
+</tr>
+<tr>
+<td><code>tsconfig.json</code></td>
+<td><strong>Sound.</strong> Very strict (all strict flags +
+<code>noUncheckedIndexedAccess</code> +
+<code>exactOptionalPropertyTypes</code>).</td>
+<td><strong>ADOPT</strong></td>
+<td>None.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>package.json</code></td>
+<td><strong>Sound, drift.</strong> Deps/scripts fine.
+<strong>Defects:</strong> HTTPS repo URL (Boba mandates SSH);
+release.yml references non-existent <code>build:chrome</code>
+script.</td>
+<td><strong>REFACTOR</strong></td>
+<td>SSH remote; rebrand name; align scripts; drop CI-only
+assumptions.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>jest.config.ts</code></td>
+<td><strong>Defect: 80% threshold + UI/entrypoints excluded from
+coverage.</strong> <code>collectCoverageFrom</code> excludes
+<code>popup/options/content/background/**/index.ts</code> —
+UI/entrypoint logic has ZERO coverage enforcement. Conflicts with
+§11.4.27.</td>
+<td><strong>REWRITE</strong> (or replace w/ Vitest)</td>
+<td>Decide runner (Vitest recommended — matches Boba
+<code>frontend/</code> + the crypto test). Bring UI/entrypoints INTO
+coverage; raise toward 100%.</td>
+<td>Med (runner decision is foundational)</td>
+</tr>
+<tr>
+<td><code>playwright.config.ts</code></td>
+<td><strong>Defect: non-functional e2e config.</strong> References
+missing <code>global-setup.ts</code>/<code>global-teardown.ts</code>;
+dead <code>webServer.url :3000</code>; Firefox project can’t load
+extension via Chromium args;
+<code>reporter:github</code>+<code>forbidOnly:CI</code> assume GitHub
+Actions.</td>
+<td><strong>REWRITE</strong></td>
+<td>Author global-setup/teardown (build <code>dist</code>, launch
+persistent Chromium with <code>--load-extension</code>, capture real
+extension id, rewrite <code>chrome-extension://&lt;id&gt;/...</code>).
+Remove GH-Actions assumptions (Boba manual CI).</td>
+<td>Med</td>
+</tr>
+<tr>
+<td><code>.eslintrc.json</code> / <code>.prettierrc</code></td>
+<td><strong>Sound.</strong> Type-aware lint
+(<code>no-explicit-any</code>/<code>no-floating-promises</code> errors),
+Prettier 100-col.</td>
+<td><strong>ADOPT</strong></td>
+<td>Align with Boba project lint config.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>_locales/en/messages.json</code></td>
+<td><strong>Sound.</strong> 28 i18n keys.</td>
+<td><strong>ADOPT</strong></td>
+<td>Rebrand strings if renamed.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>.github/workflows/ci.yml</code>, <code>release.yml</code></td>
+<td><strong>FORBIDDEN.</strong> Boba Hard-Stop: no
+<code>.github/workflows/*.yml</code> ever.</td>
+<td><strong>drop (do NOT port)</strong></td>
+<td>Extract only the <em>commands</em>
+(lint/compile/test/build/zip/sha256) into a manual
+<code>ci.sh</code>-style script. Never copy the YAML.</td>
+<td>Low (but a constitution hard-stop)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tests">10. Tests</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Module/File</th>
+<th>Quality assessment</th>
+<th>Decision</th>
+<th>Required fixes</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bencode.test.ts</code></td>
+<td>Sound; dead-assert line 156.</td>
+<td><strong>ADOPT</strong></td>
+<td>Remove dead assert; add fuzz/chaos.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>magnet.test.ts</code></td>
+<td>Sound, fixture-driven; <code>invalidMagnets</code> (7) unused.</td>
+<td><strong>ADOPT</strong></td>
+<td>Wire negative fixtures.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>torrent-file.test.ts</code></td>
+<td>Sound (infohash determinism, single/multi parse).</td>
+<td><strong>ADOPT</strong></td>
+<td>None.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>api-client.test.ts</code></td>
+<td><strong>Partial BLUFF.</strong> Auth block ends
+<code>expect(true).toBe(true)</code> (no observable check); 429 test
+asserts <code>ServerError</code> despite name saying
+<code>RateLimitError</code>.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Replace the bluff Auth assertions with real cookie-header
+propagation checks; fix the 429 assertion.</td>
+<td>Med</td>
+</tr>
+<tr>
+<td><code>queue.test.ts</code></td>
+<td><strong>Partial BLUFF.</strong> Auto-processing block ends
+<code>expect(true).toBe(true)</code>; processQueue only asserts
+<em>structure</em>, not success/failure.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Assert real retry/attempts/outcomes; remove no-ops.</td>
+<td>Med</td>
+</tr>
+<tr>
+<td><code>scanner.test.ts</code></td>
+<td><strong>Weak.</strong> Event-emitter block sound; but orchestrator
+block asserts initial-state only (never scans); DOM block tests raw
+<code>querySelectorAll</code>, NOT the production scanner.</td>
+<td><strong>REFACTOR</strong></td>
+<td>Drive the real orchestrator over real DOM; assert detected torrents
++ mutation rescans.</td>
+<td>Med</td>
+</tr>
+<tr>
+<td><code>crypto.test.ts</code></td>
+<td><strong>BLUFF (§11.4.1).</strong> 44 thorough tests — but against an
+<strong>inline re-implemented copy</strong>, never
+<code>src/shared/crypto.ts</code>. Cannot fail against a no-op stub of
+the real module. Also imports <code>vitest</code> while the other 6
+files use Jest (mixed runners).</td>
+<td><strong>REWRITE</strong></td>
+<td>Re-point every test at the production <code>shared/crypto</code>
+module; standardize runner.</td>
+<td>Med (it’s the most-thorough file but proves nothing as-is)</td>
+</tr>
+<tr>
+<td><code>chrome-mock.ts</code> / <code>setup.ts</code></td>
+<td>Mock infra; happy-path only (no error injection), no
+<code>cookies</code>/<code>scripting</code>/<code>sync</code>;
+<code>setup.ts:14</code> wrong path (type-only).</td>
+<td><strong>REFACTOR</strong></td>
+<td>Add error-injecting variant for chaos/stress; fix the stale
+path.</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><code>content.spec.ts</code> / <code>options.spec.ts</code> /
+<code>popup.spec.ts</code> (e2e)</td>
+<td><strong>NON-FUNCTIONAL.</strong> Hardcoded
+<code>chrome-extension://test-id/...</code>; no fixture loads the
+extension or resolves the real id; content spec asserts raw DOM, not the
+injected content script. Asserts presence/visibility, never user
+outcomes.</td>
+<td><strong>REWRITE</strong></td>
+<td>Real extension-loading fixture + user-observable assertions (torrent
+rendered, server persisted, send→appears in qBittorrent).</td>
+<td>High (load-bearing for §11.4 anti-bluff e2e)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="net-new-does-not-exist-in-the-reference-must-be-authored">11.
+NET-NEW (does not exist in the reference — must be authored)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Why net-new</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Real key source for credential encryption</strong></td>
+<td>crypto.ts is a sound primitive but has NO real passphrase provenance
+— callers use a fixed string + an empty string. Need a master-passphrase
+prompt, OS-keychain, OR delegation to boba-jackett/proxy (which already
+own encrypted creds at <code>/config/boba.db</code>). §11.4.10
+blocker.</td>
+<td><strong>HIGH</strong></td>
+</tr>
+<tr>
+<td><strong>Real Boba service integration (7186/7187/7189)</strong></td>
+<td>Reference speaks ONLY raw qBittorrent v2;
+<code>BobaServerInfo</code>/<code>BobaSearchResponse</code> types are
+declared but nothing consumes them. The merge-search API (7187),
+tracker-cookie download path (7186 proxy), and boba-jackett (7189)
+clients do not exist.</td>
+<td><strong>HIGH</strong></td>
+</tr>
+<tr>
+<td><strong><code>chrome.tabGroups</code> tab-group
+batching</strong></td>
+<td>Verified: the reference has NO <code>chrome.tabGroups</code> usage.
+The only “batching” is intra-tab <code>yieldToBrowser()</code>
+cooperative yielding + per-tab <code>tabTorrents</code> map + an unused
+<code>processInChunks</code>. Tab-group batch behavior is fresh
+design.</td>
+<td>Med</td>
+</tr>
+<tr>
+<td><strong>Icon PNG rasterization (16/32/48/128)</strong></td>
+<td>Verified: <code>src/assets/</code> contains <code>icon.svg</code>
+only — zero <code>.png</code> files. Code/manifest reference rasterized
+PNGs that must be produced at build (WXT auto-icons from the SVG).</td>
+<td>Low</td>
+</tr>
+<tr>
+<td><strong>sql.js storage wrapper</strong> (only if SQL persistence
+chosen)</td>
+<td>The 9-table schema exists but NO runtime wrapper implements it; only
+the JSON-blob <code>storage.ts</code> path is live.</td>
+<td>Med</td>
+</tr>
+<tr>
+<td><strong>Playwright <code>global-setup.ts</code> /
+<code>global-teardown.ts</code></strong></td>
+<td>Referenced by config, absent from tree. Must build
+<code>dist</code>, launch persistent Chromium
+<code>--load-extension</code>, capture real extension id.</td>
+<td>Med</td>
+</tr>
+<tr>
+<td><strong>Missing test TYPES</strong> (§11.4.27/§11.4.85): integration
+(real cross-module → live 7186/7187), functional e2e,
+automation/HelixQA, security/pen (credential-leak, XSS via magnet
+<code>dn</code>, CSP, permission-scope), DDoS/load, scaling, chaos
+(storage corruption / network fault / SW termination), stress,
+performance, benchmark, UI/UX, Challenges</td>
+<td>Reference covers only unit + e2e (and those have bluffs). 13 of 15
+mandated types absent.</td>
+<td><strong>HIGH</strong> (volume)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="reuse-estimate">Reuse estimate</h2>
+<p>Counting the <strong>44 <code>.ts</code> source files</strong> plus
+the SQL schema and the build/test configs:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Disposition</th>
+<th>Approx. count</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ADOPT</strong> (reuse ~as-is)</td>
+<td>~17</td>
+<td>bencode, magnet, link/text-scanner, content/scanner+highlight,
+qbittorrent adapter, crypto module, errors, events, logger, storage,
+utils, types/torrent, eslint/prettier/tsconfig, i18n</td>
+</tr>
+<tr>
+<td><strong>REFACTOR</strong> (bounded fixes)</td>
+<td>~18</td>
+<td>torrent-file (wire), base (un-salt id), site-db (merge tables),
+client (re-target), auth, queue (auth), health (ports), content/index
+(contract), background, options, popup, constants (ports), types/config,
+types/api, wxt.config, package.json, chrome-mock, sql schema</td>
+</tr>
+<tr>
+<td><strong>REWRITE</strong></td>
+<td>~7</td>
+<td>jest.config (runner + coverage), playwright.config, crypto.test,
+api-client.test (bluff), queue.test (bluff), scanner.test, all 3 e2e
+specs</td>
+</tr>
+<tr>
+<td><strong>NET-NEW</strong></td>
+<td>7+ areas</td>
+<td>key source, Boba-service clients, tab-groups, icon PNGs, sql.js
+wrapper, e2e global setup, 13 missing test types</td>
+</tr>
+<tr>
+<td><strong>DROP</strong></td>
+<td>2</td>
+<td>both <code>.github/workflows/*.yml</code> (constitution
+hard-stop)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Headline: roughly 80% of the reference’s logic/structure is
+reusable</strong> (ADOPT + REFACTOR ≈ 35 of ~44 source-bearing files —
+the parsers, scanners, shared libs, types, and the API transport are
+sound), <strong>~20% must be rewritten</strong> (the test suite’s
+bluffs/non-functional e2e + the runner/coverage configs), <strong>and
+the highest-value work is NET-NEW integration</strong> (real Boba
+endpoints + a real key source) that the reference never attempted. The
+reference is a strong <em>skeleton with sound primitives</em> whose two
+structural gaps — credential key-management and Boba-service integration
+— are exactly the parts it left as placeholders.</p>
+<h2 id="top-5-highest-risk-rewrites">Top 5 highest-risk rewrites</h2>
+<ol type="1">
+<li><strong>Real key source for credential encryption
+(NET-NEW).</strong> The sound crypto primitive is currently fed a fixed
+(<code>"bobalink-extension"</code>, <code>options.ts:327</code>) and an
+empty (<code>""</code>, <code>background:409</code>) passphrase that are
+even mutually incompatible — the credential path is broken end-to-end
+and is a §11.4.10 leak (release blocker). Touches options + background +
+auth.</li>
+<li><strong>Boba-service integration / <code>api/client.ts</code>
+re-target (REFACTOR→effectively rewrite of the endpoint layer).</strong>
+The client speaks only raw qBittorrent v2 on <code>:8080</code>; nothing
+reaches 7186/7187/7189. Re-targeting + adding the Boba-API consumer
+(<code>BobaSearchResponse</code>) is the load-bearing integration, and
+the SID/cookie + CORS/host-permission story is fragile.</li>
+<li><strong>Functional e2e suite (REWRITE all 3 specs + author
+global-setup/teardown).</strong> Every reference e2e is non-functional
+(hardcoded <code>chrome-extension://test-id</code>, no extension load,
+presence-only asserts). §11.4 anti-bluff demands real extension load +
+user-observable outcomes — this is from-scratch.</li>
+<li><strong><code>crypto.test.ts</code> (REWRITE).</strong> The single
+most thorough test file (44 cases) is a §11.4.1 bluff — it tests an
+inline copy, never the production module, so it passes against a no-op
+stub. Must be re-pointed at <code>shared/crypto</code> and the runner
+standardized (mixed Jest/Vitest).</li>
+<li><strong>Test runner + coverage config (jest.config
+REWRITE).</strong> 80% threshold with UI/entrypoints excluded conflicts
+with §11.4.27; the runner decision (Vitest vs Jest) is foundational and
+gates every other test file’s port. (Close behind: <code>queue.ts</code>
+auth-gap fix + the <code>base.ts</code> time-salted-id fix, both
+correctness-critical for offline retries and dedup.)</li>
+</ol>
+<hr />
+<h2
+id="disagreements-with-the-extractions-defect-claims-re-verified-by-reading-source">Disagreements
+with the extraction’s defect claims (re-verified by reading source)</h2>
+<ol type="1">
+<li><p><strong><code>crypto.ts</code> → the extraction tags it “🔴
+REWRITE”; I DISAGREE — the MODULE is ADOPT, the KEY SOURCE is
+NET-NEW.</strong> Direct read of <code>shared/crypto.ts</code> (lines
+42-228) shows the encrypt/decrypt machinery is genuinely sound: PBKDF2
+100k iterations, AES-256-GCM, a fresh 16-byte random salt + 12-byte IV
+per operation, a 128-bit GCM auth tag, and correct
+<code>StorageError</code> wrapping that rejects empty
+plaintext/passphrase. <strong>No defect exists inside this
+file.</strong> The defects the extraction cites — fixed passphrase
+<code>"bobalink-extension"</code> (verified <code>options.ts:327</code>)
+and empty passphrase <code>""</code> (verified
+<code>background/index.ts:409</code>) — live entirely in the
+<em>callers</em>, not in the crypto module. So the correct disposition
+is: <strong>ADOPT the crypto primitive unchanged; author the real key
+source as NET-NEW; REFACTOR the two call-sites.</strong> Rewriting the
+crypto module itself would be discarding sound, reusable work
+(§11.4.74). The extraction’s “🔴 crypto … → REWRITE” headline conflates
+the module with its misuse.</p></li>
+<li><p><strong>Minor: the extraction calls <code>base.ts</code> id
+generation a generic “unstable / time-salted” concern; verified it is a
+one-line REFACTOR, not a rewrite.</strong> <code>base.ts:272</code>
+literally appends <code>Date.now().toString(36)</code> to the hash;
+removing that suffix and sourcing the id from the (now-wireable)
+infohash is a bounded fix to a single private method — the rest of
+<code>base.ts</code> (shadow-DOM traversal, hidden-element filtering,
+re-entrancy guard) is sound and ADOPT-grade.</p></li>
+</ol>
+<p>All other extraction defect claims I sampled were verified accurate:
+the queue never authenticates (<code>queue.ts:170</code> builds+runs
+with no login), the <code>.torrent</code> parser is genuinely never
+invoked, the two selector tables genuinely diverge, the icon PNGs are
+genuinely absent (only <code>icon.svg</code>), and the two passphrase
+call-sites are genuinely incompatible.</p>

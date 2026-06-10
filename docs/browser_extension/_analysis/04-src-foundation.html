@@ -1,0 +1,1416 @@
+<h1 id="src-foundation-extraction">04 — src foundation extraction</h1>
+<blockquote>
+<p>Source:
+<code>docs/research/browser_extension/Browser Torrent Extension Guide/src/</code>
+Reference browser extension <strong>BobaLink</strong> (WXT + TypeScript
++ Manifest V3). This is the foundation layer (build/config + data layer
++ shared libs + types). Every file below was read IN FULL. Exact values
+are quoted with file + line citations.</p>
+</blockquote>
+<h2 id="files-read">Files read</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>package.json</code></td>
+<td>61</td>
+</tr>
+<tr>
+<td><code>tsconfig.json</code></td>
+<td>37</td>
+</tr>
+<tr>
+<td><code>wxt.config.ts</code></td>
+<td>169</td>
+</tr>
+<tr>
+<td><code>jest.config.ts</code></td>
+<td>143</td>
+</tr>
+<tr>
+<td><code>playwright.config.ts</code></td>
+<td>133</td>
+</tr>
+<tr>
+<td><code>.eslintrc.json</code></td>
+<td>56</td>
+</tr>
+<tr>
+<td><code>.prettierrc</code></td>
+<td>14</td>
+</tr>
+<tr>
+<td><code>_locales/en/messages.json</code></td>
+<td>118</td>
+</tr>
+<tr>
+<td><code>.github/workflows/ci.yml</code></td>
+<td>55</td>
+</tr>
+<tr>
+<td><code>.github/workflows/release.yml</code></td>
+<td>416</td>
+</tr>
+<tr>
+<td><code>sql/schemas.sql</code></td>
+<td>276</td>
+</tr>
+<tr>
+<td><code>sql/migrations/001_initial.sql</code></td>
+<td>267</td>
+</tr>
+<tr>
+<td><code>src/types/api.ts</code></td>
+<td>486</td>
+</tr>
+<tr>
+<td><code>src/types/config.ts</code></td>
+<td>232</td>
+</tr>
+<tr>
+<td><code>src/types/torrent.ts</code></td>
+<td>223</td>
+</tr>
+<tr>
+<td><code>src/shared/constants.ts</code></td>
+<td>403</td>
+</tr>
+<tr>
+<td><code>src/shared/crypto.ts</code></td>
+<td>292</td>
+</tr>
+<tr>
+<td><code>src/shared/errors.ts</code></td>
+<td>342</td>
+</tr>
+<tr>
+<td><code>src/shared/events.ts</code></td>
+<td>175</td>
+</tr>
+<tr>
+<td><code>src/shared/logger.ts</code></td>
+<td>167</td>
+</tr>
+<tr>
+<td><code>src/shared/storage.ts</code></td>
+<td>248</td>
+</tr>
+<tr>
+<td><code>src/shared/utils.ts</code></td>
+<td>366</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="package-metadata-dependencies-npm-scripts-package.json">1.
+Package metadata, dependencies, npm scripts
+(<code>package.json</code>)</h2>
+<ul>
+<li><strong>name</strong> <code>bobalink</code>,
+<strong>version</strong> <code>1.0.0</code>, <strong>type</strong>
+<code>module</code>, <strong>license</strong> <code>MIT</code>,
+<strong>author</strong> <code>Boba Project</code>.</li>
+<li><strong>engines.node</strong> <code>&gt;=20.0.0</code>.</li>
+<li><strong>repo</strong>
+<code>https://github.com/boba-project/bobalink.git</code> (HTTPS — note
+Boba constitution mandates SSH; placeholder only).</li>
+<li><strong>description</strong>: “Browser extension that detects
+torrent files and magnet links, sending them to Boba Project’s
+qBitTorrent dashboard”.</li>
+</ul>
+<h3 id="dependencies-1">Dependencies (1)</h3>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>webextension-polyfill</code></td>
+<td><code>^0.12.0</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="devdependencies-15">devDependencies (15)</h3>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@playwright/test</code></td>
+<td><code>^1.49.0</code></td>
+</tr>
+<tr>
+<td><code>@types/chrome</code></td>
+<td><code>^0.0.287</code></td>
+</tr>
+<tr>
+<td><code>@types/jest</code></td>
+<td><code>^29.5.14</code></td>
+</tr>
+<tr>
+<td><code>@types/node</code></td>
+<td><code>^22.10.0</code></td>
+</tr>
+<tr>
+<td><code>@types/webextension-polyfill</code></td>
+<td><code>^0.12.1</code></td>
+</tr>
+<tr>
+<td><code>@typescript-eslint/eslint-plugin</code></td>
+<td><code>^8.18.0</code></td>
+</tr>
+<tr>
+<td><code>@typescript-eslint/parser</code></td>
+<td><code>^8.18.0</code></td>
+</tr>
+<tr>
+<td><code>@wxt-dev/auto-icons</code></td>
+<td><code>^1.0.2</code></td>
+</tr>
+<tr>
+<td><code>eslint</code></td>
+<td><code>^9.17.0</code></td>
+</tr>
+<tr>
+<td><code>jest</code></td>
+<td><code>^29.7.0</code></td>
+</tr>
+<tr>
+<td><code>jest-environment-jsdom</code></td>
+<td><code>^29.7.0</code></td>
+</tr>
+<tr>
+<td><code>prettier</code></td>
+<td><code>^3.4.0</code></td>
+</tr>
+<tr>
+<td><code>ts-jest</code></td>
+<td><code>^29.2.0</code></td>
+</tr>
+<tr>
+<td><code>ts-node</code></td>
+<td><code>^10.9.2</code></td>
+</tr>
+<tr>
+<td><code>typescript</code></td>
+<td><code>^5.7.0</code></td>
+</tr>
+<tr>
+<td><code>wxt</code></td>
+<td><code>^0.19.0</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="npm-scripts-all-15">npm scripts (all 15)</h3>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dev</code></td>
+<td><code>wxt</code></td>
+</tr>
+<tr>
+<td><code>dev:firefox</code></td>
+<td><code>wxt -b firefox</code></td>
+</tr>
+<tr>
+<td><code>build</code></td>
+<td><code>wxt build</code></td>
+</tr>
+<tr>
+<td><code>build:firefox</code></td>
+<td><code>wxt build -b firefox</code></td>
+</tr>
+<tr>
+<td><code>zip</code></td>
+<td><code>wxt zip</code></td>
+</tr>
+<tr>
+<td><code>zip:firefox</code></td>
+<td><code>wxt zip -b firefox</code></td>
+</tr>
+<tr>
+<td><code>compile</code></td>
+<td><code>tsc --noEmit</code></td>
+</tr>
+<tr>
+<td><code>lint</code></td>
+<td><code>eslint src/ --ext .ts</code></td>
+</tr>
+<tr>
+<td><code>lint:fix</code></td>
+<td><code>eslint src/ --ext .ts --fix</code></td>
+</tr>
+<tr>
+<td><code>format</code></td>
+<td><code>prettier --write "src/**/*.ts"</code></td>
+</tr>
+<tr>
+<td><code>format:check</code></td>
+<td><code>prettier --check "src/**/*.ts"</code></td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td><code>jest --coverage</code></td>
+</tr>
+<tr>
+<td><code>test:watch</code></td>
+<td><code>jest --watch</code></td>
+</tr>
+<tr>
+<td><code>test:e2e</code></td>
+<td><code>playwright test</code></td>
+</tr>
+<tr>
+<td><code>test:e2e:ui</code></td>
+<td><code>playwright test --ui</code></td>
+</tr>
+<tr>
+<td><code>postinstall</code></td>
+<td><code>wxt prepare</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Note: <code>package.json</code> references <code>wxt build</code>
+(chrome default) + <code>build:firefox</code>. The
+<strong>release.yml</strong> workflow references
+<code>build:chrome</code> / <code>build:firefox</code> scripts that
+<strong>do not exist</strong> in <code>package.json</code> (drift in the
+reference repo — flagged for the plan).</p>
+</blockquote>
+<hr />
+<h2
+id="manifest-permissions-csp-config-wxt.config.ts-_localesenmessages.json">2.
+Manifest / permissions / CSP config (<code>wxt.config.ts</code> +
+<code>_locales/en/messages.json</code>)</h2>
+<p>WXT generates <code>manifest.json</code> from
+<code>wxt.config.ts</code>. Extracted manifest config:</p>
+<ul>
+<li><strong>manifest_version</strong>: <code>3</code></li>
+<li><strong>name</strong>: <code>__MSG_extName__</code> →
+“BobaLink”</li>
+<li><strong>description</strong>:
+<code>__MSG_extDescription__</code></li>
+<li><strong>version</strong>: <code>1.0.0</code></li>
+<li><strong>default_locale</strong>: <code>en</code></li>
+<li><strong>minimum_chrome_version</strong>: <code>"109"</code></li>
+<li><strong>outDir</strong>: <code>dist</code></li>
+</ul>
+<h3 id="permissions-6">Permissions (6)</h3>
+<p><code>storage</code>, <code>alarms</code>,
+<code>notifications</code>, <code>activeTab</code>,
+<code>scripting</code>, <code>contextMenus</code></p>
+<h3
+id="host_permissions-3-the-load-bearing-endpoint-set">host_permissions
+(3) — the load-bearing endpoint set</h3>
+<ul>
+<li><code>http://localhost:7187/*</code> — Boba FastAPI server</li>
+<li><code>http://localhost:7189/*</code> — Boba Go server</li>
+<li><code>http://localhost:8080/*</code> — qBitTorrent WebUI</li>
+</ul>
+<blockquote>
+<p>⚠️ Mismatch vs the real Boba port map: actual qBitTorrent WebUI proxy
+is <strong>7186</strong> (CLAUDE.md port table), merge service
+<strong>7187</strong>, boba-jackett <strong>7189</strong>. The extension
+hardcodes <strong>8080</strong> for qBitTorrent and assumes FastAPI on
+7187 / Go on 7189. The plan must reconcile (qBittorrent proxy is 7186,
+not 8080).</p>
+</blockquote>
+<h3 id="action-toolbar-popup">action (toolbar popup)</h3>
+<ul>
+<li><code>default_popup</code>: <code>popup/index.html</code></li>
+<li><code>default_icon</code>: 16 → <code>icon-16.png</code>, 32 →
+<code>icon-32.png</code></li>
+<li><code>default_title</code>: <code>__MSG_extName__</code></li>
+</ul>
+<h3 id="background-service-worker">background (service worker)</h3>
+<ul>
+<li><code>service_worker</code>: <code>background.js</code></li>
+<li><code>type</code>: <code>module</code> (ES module service
+worker)</li>
+</ul>
+<h3 id="content_scripts-1-entry">content_scripts (1 entry)</h3>
+<ul>
+<li><code>matches</code>: <code>["&lt;all_urls&gt;"]</code></li>
+<li><code>js</code>: <code>["content-scripts/content.js"]</code></li>
+<li><code>css</code>: <code>["content-scripts/content.css"]</code></li>
+<li><code>run_at</code>: <code>document_idle</code></li>
+</ul>
+<h3 id="options_page">options_page</h3>
+<ul>
+<li><code>options/index.html</code></li>
+</ul>
+<h3 id="web_accessible_resources">web_accessible_resources</h3>
+<ul>
+<li>resources <code>["assets/*"]</code>, matches
+<code>["&lt;all_urls&gt;"]</code></li>
+</ul>
+<h3 id="content_security_policy-extension_pages">content_security_policy
+(extension_pages)</h3>
+<pre><code>default-src &#39;self&#39;; script-src &#39;self&#39;; style-src &#39;self&#39; &#39;unsafe-inline&#39;; connect-src &#39;self&#39; http://localhost:7187 http://localhost:7189 http://localhost:8080; img-src &#39;self&#39; data:;</code></pre>
+<ul>
+<li>Strict: no inline scripts (<code>script-src 'self'</code>);
+<code>style-src</code> allows <code>'unsafe-inline'</code>;
+<code>connect-src</code> restricted to the three localhost backends;
+<code>img-src</code> allows <code>data:</code> URIs.</li>
+</ul>
+<h3 id="commands-keyboard-shortcuts-3">commands (keyboard shortcuts,
+3)</h3>
+<table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 31%" />
+<col style="width: 17%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Command</th>
+<th>Default</th>
+<th>Mac</th>
+<th>Description (msg)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>send-to-boba</code></td>
+<td><code>Ctrl+Shift+B</code></td>
+<td><code>Command+Shift+B</code></td>
+<td><code>__MSG_cmdSendToBoba__</code></td>
+</tr>
+<tr>
+<td><code>scan-page</code></td>
+<td><code>Ctrl+Shift+S</code></td>
+<td><code>Command+Shift+S</code></td>
+<td><code>__MSG_cmdScanPage__</code></td>
+</tr>
+<tr>
+<td><code>open-dashboard</code></td>
+<td><code>Ctrl+Shift+D</code></td>
+<td><code>Command+Shift+D</code></td>
+<td><code>__MSG_cmdOpenDashboard__</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="wxt-build-options">WXT build options</h3>
+<ul>
+<li><code>autoIcons.baseIconPath</code>:
+<code>src/assets/icon.svg</code> (auto-generates icon sizes from one
+SVG)</li>
+<li><code>dev.port</code>: <code>3000</code></li>
+<li><code>runner.disabled</code>: <code>true</code> (no auto browser
+launch)</li>
+</ul>
+<h3 id="i18n-messages-_localesenmessages.json-28-keys">i18n messages
+(<code>_locales/en/messages.json</code>) — 28 keys</h3>
+<p>Key UI strings: <code>extName</code>=“BobaLink”,
+<code>extDescription</code>, command descriptions
+(<code>cmdSendToBoba</code>/<code>cmdScanPage</code>/<code>cmdOpenDashboard</code>),
+popup (<code>popupTitle</code>=“BobaLink - Detected Torrents”,
+<code>noTorrentsDetected</code>, <code>sendToBoba</code>,
+<code>scanning</code>, <code>sending</code>, <code>sendSuccess</code>,
+<code>sendFailed</code>), connection states
+(<code>connectionOnline</code>=“Connected”,
+<code>connectionOffline</code>=“Disconnected”,
+<code>notConfigured</code>=“No server configured”), options page
+sections (<code>optionsTitle</code>, <code>serverSectionTitle</code>,
+<code>generalSectionTitle</code>, <code>advancedSectionTitle</code>),
+buttons (<code>addServer</code>, <code>testConnection</code>,
+<code>autoDiscover</code>, <code>saveChanges</code>,
+<code>discardChanges</code>), type labels (<code>magnetLink</code>,
+<code>torrentFile</code>), context menu (<code>contextMenuSend</code>,
+<code>contextMenuScan</code>, <code>contextMenuDashboard</code>).</p>
+<hr />
+<h2 id="typescript-compiler-config-tsconfig.json">3. TypeScript compiler
+config (<code>tsconfig.json</code>)</h2>
+<table>
+<colgroup>
+<col style="width: 53%" />
+<col style="width: 46%" />
+</colgroup>
+<thead>
+<tr>
+<th>Option</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>target</code></td>
+<td><code>ES2022</code></td>
+</tr>
+<tr>
+<td><code>module</code></td>
+<td><code>ESNext</code></td>
+</tr>
+<tr>
+<td><code>moduleResolution</code></td>
+<td><code>bundler</code></td>
+</tr>
+<tr>
+<td><code>lib</code></td>
+<td><code>["ES2022","DOM","DOM.Iterable"]</code></td>
+</tr>
+<tr>
+<td><code>jsx</code></td>
+<td><code>preserve</code></td>
+</tr>
+<tr>
+<td><code>strict</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>noImplicitAny</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>strictNullChecks</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>strictFunctionTypes</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>strictBindCallApply</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>strictPropertyInitialization</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>noImplicitReturns</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>noFallthroughCasesInSwitch</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>noUncheckedIndexedAccess</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>exactOptionalPropertyTypes</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>noUnusedLocals</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>noUnusedParameters</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>declaration</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>declarationMap</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>sourceMap</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>esModuleInterop</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>skipLibCheck</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>forceConsistentCasingInFileNames</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>resolveJsonModule</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>isolatedModules</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>types</code></td>
+<td><code>["chrome","jest","node","webextension-polyfill"]</code></td>
+</tr>
+<tr>
+<td><code>baseUrl</code></td>
+<td><code>.</code></td>
+</tr>
+<tr>
+<td><code>paths</code></td>
+<td><code>~/* → src/*</code>, <code>@/* → src/*</code></td>
+</tr>
+<tr>
+<td><code>include</code></td>
+<td><code>src/**/*.ts</code>, <code>tests/**/*.ts</code>,
+<code>wxt.config.ts</code>, <code>jest.config.ts</code>,
+<code>playwright.config.ts</code></td>
+</tr>
+<tr>
+<td><code>exclude</code></td>
+<td><code>node_modules</code>, <code>dist</code>, <code>.wxt</code></td>
+</tr>
+</tbody>
+</table>
+<p>Very strict TS posture (all strict flags +
+<code>noUncheckedIndexedAccess</code> +
+<code>exactOptionalPropertyTypes</code>).</p>
+<h3 id="eslint-.eslintrc.json">ESLint (<code>.eslintrc.json</code>)</h3>
+<ul>
+<li><code>parser</code>: <code>@typescript-eslint/parser</code>;
+<code>project: ./tsconfig.json</code> (type-aware lint).</li>
+<li>extends: <code>eslint:recommended</code>,
+<code>plugin:@typescript-eslint/recommended</code>,
+<code>...recommended-requiring-type-checking</code>,
+<code>...strict</code>.</li>
+<li>env: browser, es2022, node, webextensions, jest.</li>
+<li>Notable rules: <code>no-explicit-any</code> <strong>error</strong>;
+<code>no-floating-promises</code> <strong>error</strong>;
+<code>no-misused-promises</code> <strong>error</strong>;
+<code>prefer-nullish-coalescing</code> <strong>error</strong>;
+<code>no-console</code> warn (allows
+<code>error</code>/<code>warn</code>/<code>info</code>);
+<code>eqeqeq</code> error (null-ignore); <code>no-unused-vars</code>
+error with <code>^_</code> ignore. <code>tests/**</code> override turns
+off unsafe/any rules. Ignores <code>dist/</code>, <code>.wxt/</code>,
+<code>node_modules/</code>, <code>coverage/</code>.</li>
+</ul>
+<h3 id="prettier-.prettierrc">Prettier (<code>.prettierrc</code>)</h3>
+<p><code>semi:true</code>, <code>trailingComma:"all"</code>,
+<code>singleQuote:false</code>, <code>printWidth:100</code>,
+<code>tabWidth:2</code>, <code>useTabs:false</code>,
+<code>bracketSpacing:true</code>, <code>arrowParens:"always"</code>,
+<code>endOfLine:"lf"</code>, <code>quoteProps:"as-needed"</code>,
+<code>bracketSameLine:false</code>,
+<code>proseWrap:"preserve"</code>.</p>
+<h3 id="jest-jest.config.ts">Jest (<code>jest.config.ts</code>)</h3>
+<ul>
+<li>preset <code>ts-jest/presets/default-esm</code>,
+<code>testEnvironment: jsdom</code>, ESM
+(<code>extensionsToTreatAsEsm: [".ts"]</code>).</li>
+<li>roots <code>tests/unit</code> + <code>src</code>; testMatch
+<code>**/tests/unit/**/*.test.ts</code>,
+<code>**/src/**/*.test.ts</code>.</li>
+<li>moduleNameMapper mirrors tsconfig paths (<code>~/</code>,
+<code>@/</code>).</li>
+<li><strong>coverageThreshold global 80%
+(branches/functions/lines/statements)</strong>.</li>
+<li><code>collectCoverageFrom</code>: <code>src/**/*.ts</code> excluding
+<code>*.d.ts</code>, <code>index.ts</code>, <code>assets/</code>,
+<code>popup/</code>, <code>options/</code>, <code>content/</code>,
+<code>background/</code> (i.e. covers logic libs only —
+parsers/api/scanner/shared).</li>
+<li>setupFiles <code>tests/unit/chrome-mock.ts</code>;
+setupFilesAfterEnv <code>tests/unit/setup.ts</code>;
+<code>clearMocks</code>+<code>restoreMocks</code>;
+<code>testTimeout: 10000</code>; reporters
+<code>text,text-summary,lcov,html</code> → <code>coverage/</code>.</li>
+</ul>
+<h3 id="playwright-playwright.config.ts">Playwright
+(<code>playwright.config.ts</code>)</h3>
+<ul>
+<li>testDir <code>./tests/e2e</code>; <code>fullyParallel: false</code>;
+<code>workers: 1</code> (extension state); retries 2 in CI; reporters
+html+list (+github in CI).</li>
+<li><code>use.baseURL</code> <code>chrome-extension://test-id/</code>;
+trace on-first-retry; screenshot only-on-failure; video on-first-retry;
+viewport 1280×720.</li>
+<li>launchOptions load unpacked ext via
+<code>--load-extension=${EXTENSION_PATH||./dist}</code>.</li>
+<li>projects: <code>chromium</code> (channel chromium) +
+<code>firefox</code>.</li>
+<li><code>webServer</code>: <code>command: npm run build</code>, url
+<code>http://localhost:3000</code>, timeout 120000.</li>
+<li><code>globalSetup</code>/<code>globalTeardown</code>:
+<code>./tests/e2e/global-setup.ts</code> /
+<code>global-teardown.ts</code> (<strong>these files do not exist in the
+tree</strong> — referenced only).</li>
+<li><code>timeout: 30000</code>, expect timeout 5000.</li>
+</ul>
+<hr />
+<h2 id="data-model-sql-schema-typescript-types">4. Data model — SQL
+schema + TypeScript types</h2>
+<h3
+id="a.-sqlite-schema-sqlschemas.sql-migrations001_initial.sql-schema-v1.0.0">4a.
+SQLite schema (<code>sql/schemas.sql</code> =
+<code>migrations/001_initial.sql</code>, schema v1.0.0)</h3>
+<p>Persisted via <strong>chrome.storage.local with an sql.js
+wrapper</strong> (header comment). 9 tables, ~25 indexes (header says
+“7” but actual index count is higher), 30 default site selectors, 25
+default config rows. Migration file wraps everything in
+<code>BEGIN TRANSACTION; … COMMIT;</code> and adds a
+<code>migration_id='001_initial'</code> metadata row.</p>
+<p><strong>Table 1 — <code>app_metadata</code></strong> (key/value app
+state) | Col | Type | Constraint | |—–|——|———–| | key | TEXT | PRIMARY
+KEY | | value | TEXT | NOT NULL | | updated_at | INTEGER | NOT NULL
+|</p>
+<p>Seeded keys: <code>schema_version='1.0.0'</code>,
+<code>app_name='BobaLink'</code>, <code>app_version='1.0.0'</code>,
+<code>installed_at</code>, <code>last_db_vacuum</code> (migration also
+seeds <code>migration_id='001_initial'</code>).</p>
+<p><strong>Table 2 — <code>extension_config</code></strong> (typed
+key-value settings) | Col | Type | Constraint | |—–|——|———–| | key |
+TEXT | PRIMARY KEY | | value | TEXT | NOT NULL | | data_type | TEXT |
+CHECK IN
+(<code>string</code>,<code>number</code>,<code>boolean</code>,<code>json</code>,<code>encrypted</code>)
+NOT NULL | | description | TEXT | | | updated_at | INTEGER | NOT NULL
+|</p>
+<p>25 seeded config rows (key, value, data_type): -
+<code>server.base_url</code>=<code>http://localhost:8080</code>
+(string), <code>server.auth_method</code>=<code>cookie</code> (string),
+<code>server.api_key</code>=<code>(**encrypted**), `server.username`=</code>
+(string),
+<code>server.password</code>=<code>(**encrypted**) - `download.default_category`=</code>
+,
+<code>download.default_save_path</code>=`<code>,</code>download.start_paused<code>=</code>false<code>(bool),</code>download.auto_manage<code>=</code>true<code>(bool) -</code>behavior.auto_scan<code>=</code>true<code>,</code>behavior.highlight_detected<code>=</code>true<code>,</code>behavior.show_notifications<code>=</code>true<code>,</code>behavior.rate_limit_requests<code>=</code>30<code>(number),</code>behavior.max_storage_mb<code>=</code>50<code>(number) -</code>security.require_https<code>=</code>true<code>,</code>security.encrypt_credentials<code>=</code>true<code>,</code>security.session_timeout<code>=</code>3600<code>(number) -</code>ui.theme<code>=</code>auto<code>,</code>ui.popup_width<code>=</code>400<code>,</code>ui.popup_height<code>=</code>600<code>,</code>ui.show_tracker_list<code>=</code>true<code>,</code>ui.batch_select_default<code>=</code>true<code>-</code>advanced.debug_mode<code>=</code>false<code>,</code>advanced.scan_interval_ms<code>=</code>2000<code>,</code>advanced.max_torrent_size_gb<code>=</code>100`</p>
+<p><strong>Table 3 — <code>discovered_torrents</code></strong>
+(per-session discovery) | Col | Type | Notes | |—–|——|——-| | id | TEXT |
+PRIMARY KEY — infoHash (40-char hex) | | page_url | TEXT | NOT NULL | |
+page_title | TEXT | | | magnet_uri | TEXT | | | torrent_url | TEXT | | |
+torrent_data_b64 | TEXT | Base64 .torrent content | | name | TEXT | | |
+display_name | TEXT | URL-decoded for UI | | trackers | TEXT | JSON
+array | | size_bytes | INTEGER | nullable | | source_type | TEXT | CHECK
+IN
+(<code>magnet-link</code>,<code>torrent-file</code>,<code>torrent-url</code>,<code>infohash</code>)
+NOT NULL | | discovery_method | TEXT | CHECK IN
+(<code>link-scan</code>,<code>text-scan</code>,<code>site-specific</code>,<code>manual</code>)
+DEFAULT <code>link-scan</code> | | is_private | INTEGER | DEFAULT 0 | |
+detected_at | INTEGER | NOT NULL | | sent_to_boba | INTEGER | DEFAULT 0
+| | sent_at | INTEGER | | | boba_status | TEXT | CHECK IN
+(<code>pending</code>,<code>queued</code>,<code>sending</code>,<code>added</code>,<code>duplicate</code>,<code>error</code>,<code>retrying</code>)
+DEFAULT <code>pending</code> | | boba_error | TEXT | | | tab_id |
+INTEGER | | | tab_group_id | INTEGER | | | selected | INTEGER | DEFAULT
+1 | | metadata_json | TEXT | |</p>
+<p><strong>Table 4 — <code>download_queue</code></strong> (offline
+support) | Col | Type | Notes | |—–|——|——-| | id | INTEGER | PK
+AUTOINCREMENT | | info_hash | TEXT | NOT NULL | | magnet_uri | TEXT | |
+| torrent_data_b64 | TEXT | | | name | TEXT | | | category | TEXT | | |
+save_path | TEXT | | | tags | TEXT | JSON array | | add_paused | INTEGER
+| DEFAULT 0 | | skip_checking | INTEGER | DEFAULT 0 | |
+sequential_download | INTEGER | DEFAULT 0 | | first_last_piece_prio |
+INTEGER | DEFAULT 0 | | added_at | INTEGER | NOT NULL | | retry_count |
+INTEGER | DEFAULT 0 | | last_retry_at | INTEGER | | | next_retry_at |
+INTEGER | exponential backoff | | last_error | TEXT | | | error_code |
+TEXT | | | status | TEXT | CHECK IN
+(<code>pending</code>,<code>retrying</code>,<code>failed_permanent</code>,<code>completed</code>,<code>cancelled</code>)
+DEFAULT <code>pending</code> | | server_url | TEXT | NOT NULL | |
+server_id | INTEGER | → server_config.id |</p>
+<p><strong>Table 5 — <code>server_config</code></strong> (multi-server)
+| Col | Type | Notes | |—–|——|——-| | id | INTEGER | PK AUTOINCREMENT | |
+name | TEXT | NOT NULL | | base_url | TEXT | NOT NULL
+<strong>UNIQUE</strong> | | auth_method | TEXT | CHECK IN
+(<code>none</code>,<code>cookie</code>,<code>api_key</code>,<code>basic</code>)
+NOT NULL DEFAULT <code>none</code> | | api_key_encrypted | TEXT | | |
+username | TEXT | | | password_encrypted | TEXT | | | is_default |
+INTEGER | DEFAULT 0 | | is_reachable | INTEGER | DEFAULT 0 | |
+last_check_at | INTEGER | | | last_check_result | TEXT | CHECK IN
+(<code>success</code>,<code>auth_required</code>,<code>unreachable</code>,<code>error</code>)
+| | qbittorrent_version | TEXT | | | boba_version | TEXT | | |
+boba_fastapi_port | INTEGER | DEFAULT <strong>7187</strong> | |
+boba_go_port | INTEGER | DEFAULT <strong>7189</strong> | |
+qbittorrent_port | INTEGER | DEFAULT <strong>8080</strong> | |
+created_at | INTEGER | NOT NULL | | updated_at | INTEGER | NOT NULL | |
+notes | TEXT | |</p>
+<p><strong>Table 6 — <code>send_history</code></strong> (immutable send
+log) | Col | Type | Notes | |—–|——|——-| | id | INTEGER | PK
+AUTOINCREMENT | | info_hash | TEXT | NOT NULL | | name | TEXT | | |
+magnet_uri | TEXT | | | source_type | TEXT | NOT NULL | | sent_at |
+INTEGER | NOT NULL | | server_id | INTEGER | REFERENCES
+server_config(id) | | server_url | TEXT | NOT NULL | | success | INTEGER
+| NOT NULL (1/0) | | response_code | INTEGER | HTTP code | |
+error_message | TEXT | | | torrent_added_hash | TEXT | hash returned by
+qBitTorrent |</p>
+<p><strong>Table 7 — <code>site_selectors</code></strong> (CSS selectors
+per site) | Col | Type | Notes | |—–|——|——-| | id | INTEGER | PK
+AUTOINCREMENT | | domain_pattern | TEXT | NOT NULL
+(e.g. <code>thepiratebay.*</code>) | | selector_type | TEXT | CHECK IN
+(<code>magnet-link</code>,<code>torrent-link</code>,<code>name</code>,<code>size</code>,<code>seeders</code>,<code>leechers</code>,<code>date</code>,<code>uploader</code>)
+NOT NULL | | css_selector | TEXT | NOT NULL | | attribute | TEXT |
+e.g. <code>href</code>, null for text | | regex_filter | TEXT | optional
+| | priority | INTEGER | DEFAULT 100 (lower = higher prio) | |
+is_enabled | INTEGER | DEFAULT 1 | | notes | TEXT | |</p>
+<p>30 seeded selector rows covering: thepiratebay, 1337x
+(magnet+torrent), nyaa.si (magnet+torrent), rutracker (magnet+torrent),
+kinozal, nnm-club, iptorrents (torrent), limetorrents, torrentgalaxy,
+glodls, torlock, eztv, yts, rarbg, demonoid, torrentfunk,
+yourbittorrent, bitsearch, bt4g, solidtorrents, knaben, snowfl,
+bittorrent, megapeer, badasstorrents, extratorrent. Most use
+<code>a[href^="magnet:"]</code> @ priority 10; direct
+<code>.torrent</code> links @ priority 20 (or 10 for iptorrents).</p>
+<p><strong>Table 8 — <code>queue_log</code></strong> (queue event log) |
+Col | Type | Notes | |—–|——|——-| | id | INTEGER | PK AUTOINCREMENT | |
+queue_item_id | INTEGER | REFERENCES download_queue(id) | | action |
+TEXT | NOT NULL CHECK IN
+(<code>enqueue</code>,<code>retry</code>,<code>success</code>,<code>fail</code>,<code>cancel</code>,<code>skip</code>)
+| | timestamp | INTEGER | NOT NULL | | details | TEXT | JSON | | error |
+TEXT | |</p>
+<p><strong>Table 9 — <code>statistics</code></strong> (daily aggregates)
+| Col | Type | Notes | |—–|——|——-| | id | INTEGER | PK AUTOINCREMENT | |
+stat_type | TEXT | NOT NULL CHECK IN
+(<code>torrents_detected</code>,<code>torrents_sent</code>,<code>torrents_failed</code>,<code>api_calls</code>,<code>api_errors</code>,<code>queue_items</code>,<code>queue_retries</code>,<code>scans_performed</code>,<code>page_visits</code>)
+| | stat_value | INTEGER | NOT NULL DEFAULT 0 | | stat_date | TEXT | NOT
+NULL (YYYY-MM-DD) | | created_at | INTEGER | NOT NULL | | — | — |
+<strong>UNIQUE(stat_type, stat_date)</strong> |</p>
+<p><strong>Indexes</strong> (CREATE INDEX IF NOT EXISTS): -
+discovered_torrents: <code>idx_discovered_page_url(page_url)</code>,
+<code>idx_discovered_status(boba_status)</code>,
+<code>idx_discovered_tab(tab_id)</code>,
+<code>idx_discovered_detected(detected_at)</code>,
+<code>idx_discovered_selected(selected) WHERE selected=1</code>
+(partial) - download_queue: <code>idx_queue_status(status)</code>,
+<code>idx_queue_next_retry(next_retry_at)</code>,
+<code>idx_queue_hash(info_hash)</code>,
+<code>idx_queue_server(server_url)</code> - send_history:
+<code>idx_history_hash(info_hash)</code>,
+<code>idx_history_date(sent_at)</code>,
+<code>idx_history_server(server_id)</code> - extension_config:
+<code>idx_config_key(key)</code> - server_config:
+<code>idx_server_default(is_default) WHERE is_default=1</code>
+(partial), <code>idx_server_url(base_url)</code> - site_selectors:
+<code>idx_selectors_domain(domain_pattern)</code>,
+<code>idx_selectors_enabled(is_enabled) WHERE is_enabled=1</code>
+(partial) - queue_log: <code>idx_queue_log_item(queue_item_id)</code>,
+<code>idx_queue_log_timestamp(timestamp)</code> - statistics:
+<code>idx_stats_type_date(stat_type, stat_date)</code></p>
+<blockquote>
+<p>Compatible with SQLite 3.38+ / sql.js. <strong>§11.4.10
+note</strong>: <code>extension_config</code> stores
+<code>server.api_key</code> and <code>server.password</code> as
+<code>data_type='encrypted'</code>; <code>server_config</code> has
+<code>api_key_encrypted</code>/<code>password_encrypted</code> columns —
+credentials are designed to be encrypted-at-rest (see §6 crypto).</p>
+</blockquote>
+<h3 id="b.-typescript-domain-types">4b. TypeScript domain types</h3>
+<h4 id="srctypestorrent.ts"><code>src/types/torrent.ts</code></h4>
+<ul>
+<li><strong>interface <code>MagnetInfo</code></strong>:
+<code>uri:string</code>, <code>infohash:string</code> (40-char hex
+SHA-1), <code>displayName:string|null</code>,
+<code>trackers:readonly string[]</code>,
+<code>webSeeds:readonly string[]</code>,
+<code>exactLength:number|null</code>,
+<code>exactSource:string|null</code>,
+<code>keywords:readonly string[]</code>,
+<code>acceptableSource:string|null</code>,
+<code>manifest:string|null</code>, <code>detectedAt:number</code>,
+<code>sourceElement:Element|null</code>. (Covers magnet params
+xt/dn/tr/ws/xl/xs/kt/as/mt.)</li>
+<li><strong>interface <code>TorrentFile</code></strong>:
+<code>url:string</code>, <code>filename:string</code>,
+<code>size:number|null</code>, <code>sameOrigin:boolean</code>,
+<code>detectedAt:number</code>,
+<code>sourceElement:Element|null</code>.</li>
+<li><strong>interface <code>ParsedTorrent</code></strong>:
+<code>infohash:string</code>, <code>name:string</code>,
+<code>creationDate:number|null</code>, <code>comment:string|null</code>,
+<code>createdBy:string|null</code>, <code>pieceLength:number</code>,
+<code>isPrivate:boolean</code>, <code>trackers:readonly string[]</code>,
+<code>source:string|null</code>,
+<code>files:readonly TorrentFileInfo[]</code>,
+<code>totalSize:number</code>, <code>numPieces:number</code>.</li>
+<li><strong>interface <code>TorrentFileInfo</code></strong>:
+<code>path:readonly string[]</code>, <code>length:number</code>,
+<code>fullPath:string</code>.</li>
+<li><strong>type <code>TorrentContentType</code></strong> =
+<code>"magnet" | "torrent-file"</code>.</li>
+<li><strong>interface <code>DetectedTorrent</code></strong> (unified
+detection type): <code>id:string</code>,
+<code>type:TorrentContentType</code>,
+<code>magnet:MagnetInfo|null</code>,
+<code>torrentFile:TorrentFile|null</code>,
+<code>displayName:string</code>, <code>selected:boolean</code>
+(mutable), <code>sent:boolean</code> (mutable),
+<code>sendStatus:SendStatus|null</code> (mutable),
+<code>detectedAt:number</code>.</li>
+<li><strong>type <code>SendStatus</code></strong> =
+<code>"pending" | "sending" | "success" | "error" | "queued"</code>.</li>
+<li><strong>interface <code>SendResult</code></strong>:
+<code>success:boolean</code>, <code>torrent:DetectedTorrent</code>,
+<code>error:string|null</code>,
+<code>response:Record&lt;string,unknown&gt;|null</code>,
+<code>completedAt:number</code>.</li>
+<li><strong>interface <code>PageScanResult</code></strong>:
+<code>pageUrl:string</code>, <code>pageTitle:string</code>,
+<code>items:readonly DetectedTorrent[]</code>,
+<code>magnetCount:number</code>, <code>torrentFileCount:number</code>,
+<code>scannedAt:number</code>, <code>scanDurationMs:number</code>.</li>
+</ul>
+<h4 id="srctypesconfig.ts"><code>src/types/config.ts</code></h4>
+<ul>
+<li><strong>type <code>AuthMethod</code></strong> =
+<code>"none"|"cookie"|"api_key"|"basic"</code> (duplicated in
+<code>types/api.ts</code>).</li>
+<li><strong>interface <code>ServerConfig</code></strong> (28 fields):
+<code>id</code>, <code>name</code>, <code>url</code>,
+<code>active:boolean</code>, <code>authMethod:AuthMethod</code>,
+<code>username:string|null</code>,
+<code>encryptedPassword:string|null</code>,
+<code>encryptedApiKey:string|null</code>,
+<code>requestTimeout:number</code>, <code>verifySsl:boolean</code>,
+<code>defaultCategory:string|null</code>,
+<code>defaultSavePath:string|null</code>,
+<code>startPaused:boolean</code>, <code>skipHashCheck:boolean</code>,
+<code>contentLayout:"original"|"subfolder"|"no_subfolder"</code>,
+<code>autoTMM:boolean</code>, <code>uploadLimit:number</code> (KiB/s,
+0=unlimited), <code>downloadLimit:number</code>.</li>
+<li><strong>interface <code>ExtensionConfig</code></strong>:
+<code>schemaVersion:number</code>,
+<code>servers:readonly ServerConfig[]</code>,
+<code>activeServerId:string|null</code>, <code>autoScan:boolean</code>,
+<code>autoScanDelay:number</code>,
+<code>highlightTorrents:boolean</code>,
+<code>highlightStyle:"badge"|"border"|"glow"</code>,
+<code>showNotifications:boolean</code>,
+<code>notificationSound:boolean</code>, <code>autoSend:boolean</code>,
+<code>maxHistoryItems:number</code>, <code>debugMode:boolean</code>,
+<code>healthCheckInterval:number</code> (min),
+<code>offlineQueue:boolean</code>,
+<code>maxOfflineQueueSize:number</code>,
+<code>showContextMenu:boolean</code>,
+<code>keyboardShortcuts:boolean</code>, <code>lastUpdated:number</code>,
+<code>encryptionKeyVersion:number</code>.</li>
+<li><strong>const <code>DEFAULT_CONFIG</code></strong>:
+<code>schemaVersion:1</code>, <code>servers:[]</code>,
+<code>activeServerId:null</code>, <code>autoScan:true</code>,
+<code>autoScanDelay:2000</code>, <code>highlightTorrents:true</code>,
+<code>highlightStyle:"badge"</code>,
+<code>showNotifications:true</code>,
+<code>notificationSound:false</code>, <code>autoSend:false</code>,
+<code>maxHistoryItems:100</code>, <code>debugMode:false</code>,
+<code>healthCheckInterval:5</code>, <code>offlineQueue:true</code>,
+<code>maxOfflineQueueSize:50</code>, <code>showContextMenu:true</code>,
+<code>keyboardShortcuts:true</code>, <code>lastUpdated:0</code>,
+<code>encryptionKeyVersion:1</code>.</li>
+<li><strong>interface <code>AutoDiscoveryConfig</code></strong>:
+<code>ports:readonly number[]</code>, <code>scanTimeout:number</code>,
+<code>scanQbittorrent:boolean</code>, <code>scanFastApi:boolean</code>,
+<code>scanGo:boolean</code>.</li>
+<li><strong>const <code>DEFAULT_AUTO_DISCOVERY</code></strong>:
+<code>ports:[7187,7189,8080]</code>, <code>scanTimeout:3000</code>, all
+three scan flags <code>true</code>.</li>
+<li><strong>interface <code>ConnectionTestResult</code></strong>:
+<code>success</code>, <code>url</code>,
+<code>version:string|null</code>, <code>error:string|null</code>,
+<code>responseTimeMs</code>, <code>testedAt</code>.</li>
+<li><strong>interface <code>ConfigChangeEvent</code></strong>:
+<code>key</code>, <code>newValue:unknown</code>,
+<code>oldValue:unknown</code>, <code>changedAt</code>.</li>
+</ul>
+<h4 id="srctypesapi.ts"><code>src/types/api.ts</code></h4>
+<p>qBitTorrent API + auth + health + Boba + queue + messaging types: -
+<strong><code>QBittorrentVersion</code></strong>:
+<code>version:string</code>. -
+<strong><code>QBittorrentAppPreferences</code></strong>:
+<code>locale</code>, <code>save_path</code>, <code>temp_path</code>,
+<code>preallocate_all:boolean</code>, <code>listen_port</code>,
+<code>max_active_downloads</code>, <code>max_active_uploads</code>,
+<code>max_active_torrents</code>, <code>dl_limit</code>,
+<code>up_limit</code>, <code>web_ui_username</code> (all readonly). -
+<strong><code>QBittorrentAddTorrentParams</code></strong> (maps
+<code>/api/v2/torrents/add</code>): <code>urls?</code>,
+<code>torrents?:File</code>, <code>savepath?</code>,
+<code>cookie?</code>, <code>category?</code>, <code>tags?</code>,
+<code>skip_checking?</code> (“true”/“false” string),
+<code>paused?</code>, <code>root_folder?</code>, <code>rename?</code>,
+<code>upLimit?:number</code>, <code>dlLimit?:number</code>,
+<code>autoTMM?</code>, <code>sequentialDownload?</code>,
+<code>firstLastPiecePrio?</code>,
+<code>contentLayout?:"Original"|"Subfolder"|"NoSubfolder"</code>,
+<code>stopCondition?</code>. -
+<strong><code>QBittorrentAddResponse</code></strong>:
+<code>success:boolean</code>, <code>error?:string</code>. -
+<strong><code>QBittorrentTorrentInfo</code></strong>: hash, name,
+magnet_uri, size, progress (0–1), dlspeed, upspeed, priority, num_seeds,
+num_leechs, ratio, eta, state, category, tags, added_on, completion_on,
+save_path. - <strong>Auth credential interfaces</strong>:
+<code>CookieAuthCredentials{method:"cookie",username,password}</code>,
+<code>ApiKeyAuthCredentials{method:"api_key",apiKey}</code>,
+<code>BasicAuthCredentials{method:"basic",username,password}</code>,
+<code>NoAuthCredentials{method:"none"}</code>; union
+<strong><code>AuthCredentials</code></strong>. -
+<strong><code>AuthState</code></strong>: <code>method:AuthMethod</code>,
+<code>isAuthenticated:boolean</code>,
+<code>sidCookie:string|null</code>,
+<code>sidExpiresAt:number|null</code>,
+<code>basicAuthHeader:string|null</code>,
+<code>apiKeyHeader:string|null</code>,
+<code>lastRefreshedAt:number|null</code>,
+<code>consecutiveFailures:number</code>. - <strong>type
+<code>AuthMethod</code></strong> =
+<code>"none"|"cookie"|"api_key"|"basic"</code>. - <strong>type
+<code>HealthStatus</code></strong> =
+<code>"healthy"|"degraded"|"unhealthy"|"unknown"</code>. -
+<strong><code>HealthCheckResult</code></strong>: <code>serverId</code>,
+<code>url</code>, <code>status:HealthStatus</code>,
+<code>version:string|null</code>, <code>responseTimeMs</code>,
+<code>authValid:boolean</code>, <code>error:string|null</code>,
+<code>checkedAt</code>. - <strong><code>BobaServerInfo</code></strong>:
+<code>name</code>, <code>version</code>,
+<code>features:readonly string[]</code>,
+<code>qbittorrent_connected:boolean</code>,
+<code>qbittorrent_version:string|null</code>. -
+<strong><code>BobaSearchResult</code></strong>: <code>id</code>,
+<code>name</code>, <code>infohash</code>, <code>magnet_uri</code>,
+<code>size</code>, <code>seeders</code>, <code>leechers</code>,
+<code>source</code>, <code>upload_date</code>, <code>category</code>. -
+<strong><code>BobaSearchResponse</code></strong>:
+<code>results:readonly BobaSearchResult[]</code>, <code>total</code>,
+<code>page</code>, <code>per_page</code>. -
+<strong><code>QueueItem</code></strong>: <code>id</code>,
+<code>torrent:{infohash,magnetUri:string|null,torrentUrl:string|null,displayName}</code>,
+<code>serverId</code>, <code>addedAt</code>, <code>attempts</code>,
+<code>lastError:string|null</code>,
+<code>lastAttemptAt:number|null</code>,
+<code>priority:"high"|"normal"|"low"</code>. -
+<strong><code>QueueProcessResult</code></strong>:
+<code>processed</code>, <code>succeeded</code>, <code>failed</code>,
+<code>remaining</code>,
+<code>results:ReadonlyArray&lt;{itemId,success,error:string|null}&gt;</code>.
+- <strong>type <code>MessageType</code></strong> (20 values):
+<code>scan-page</code>, <code>scan-result</code>,
+<code>send-torrent</code>, <code>send-result</code>,
+<code>get-detected</code>, <code>get-config</code>,
+<code>set-config</code>, <code>get-auth-state</code>,
+<code>authenticate</code>, <code>health-check</code>,
+<code>health-result</code>, <code>queue-process</code>,
+<code>queue-status</code>, <code>open-dashboard</code>,
+<code>show-notification</code>, <code>update-badge</code>,
+<code>torrent-detected</code>, <code>selection-change</code>. -
+<strong><code>ExtensionMessage</code></strong>:
+<code>type:MessageType</code>,
+<code>payload?:Record&lt;string,unknown&gt;</code>,
+<code>requestId?:string</code>. -
+<strong><code>ExtensionMessageResponse</code></strong>:
+<code>success:boolean</code>,
+<code>data?:Record&lt;string,unknown&gt;</code>,
+<code>error?:string</code>.</p>
+<hr />
+<h2 id="shared-lib-api-surface-every-exported-fnclass-signature">5.
+Shared-lib API surface (every exported fn/class signature)</h2>
+<h3
+id="srcsharedcrypto.ts-aes-256-gcm-credential-encryption-web-crypto"><code>src/shared/crypto.ts</code>
+— AES-256-GCM credential encryption (Web Crypto)</h3>
+<ul>
+<li><strong>interface <code>EncryptedBundle</code></strong>:
+<code>salt:string</code> (b64), <code>iv:string</code> (b64),
+<code>ciphertext:string</code> (b64, auth tag appended),
+<code>version:number</code>.</li>
+<li><code>async function encrypt(plaintext:string, passphrase:string): Promise&lt;EncryptedBundle&gt;</code>
+— generates fresh random salt(16B)+IV(12B), derives key via PBKDF2,
+AES-GCM encrypt (tagLength 128). Throws <code>StorageError</code> on
+empty plaintext/passphrase or failure.</li>
+<li><code>async function decrypt(bundle:EncryptedBundle, passphrase:string): Promise&lt;string&gt;</code>
+— re-derives key from salt+passphrase, AES-GCM decrypt. Throws
+<code>StorageError</code> (“passphrase may be incorrect”) on
+failure.</li>
+<li><code>function generateSecurePassphrase(): string</code> — 32 random
+bytes → base64.</li>
+<li><code>function isEncrypted(value:unknown): value is EncryptedBundle</code>
+— structural type guard.</li>
+<li><code>async function sha256(input:string): Promise&lt;string&gt;</code>
+— hex SHA-256 digest.</li>
+<li><code>function simpleHash(input:string): number</code> — non-crypto
+32-bit hash (cache keys only).</li>
+<li>(private: <code>deriveKey</code>, <code>generateRandomBytes</code>,
+<code>bytesToBase64</code>, <code>base64ToBytes</code>.)</li>
+</ul>
+<h3
+id="srcsharederrors.ts-error-taxonomy"><code>src/shared/errors.ts</code>
+— error taxonomy</h3>
+<ul>
+<li><strong>class <code>BobaLinkError extends Error</code></strong>:
+fields <code>code:string</code>, <code>statusCode:number|null</code>,
+<code>recoverable:boolean</code>, <code>cause:Error|null</code>,
+<code>context:Readonly&lt;Record&lt;string,unknown&gt;&gt;</code>. Ctor
+<code>(message, options{code?,statusCode?,recoverable?,cause?,context?})</code>.
+Methods <code>getUserMessage():string</code>,
+<code>toJSON():Record&lt;string,unknown&gt;</code>. Default code
+<code>BOBA_UNKNOWN</code>.</li>
+<li><strong>class <code>AuthError</code></strong> — code
+<code>BOBA_AUTH_FAILED</code>, statusCode default 401, recoverable
+true.</li>
+<li><strong>class <code>NetworkError</code></strong> — code
+<code>BOBA_NETWORK_ERROR</code>, statusCode null, recoverable true.</li>
+<li><strong>class <code>TorrentError</code></strong> — code
+<code>BOBA_TORRENT_ERROR</code>, statusCode default 400, recoverable
+true.</li>
+<li><strong>class <code>ParseError</code></strong> — code
+<code>BOBA_PARSE_ERROR</code>, statusCode null, recoverable
+<strong>false</strong>.</li>
+<li><strong>class <code>ConfigError</code></strong> — code
+<code>BOBA_CONFIG_ERROR</code>, recoverable true.</li>
+<li><strong>class <code>StorageError</code></strong> — code
+<code>BOBA_STORAGE_ERROR</code>, recoverable true.</li>
+<li><strong>class <code>RateLimitError</code></strong> — code
+<code>BOBA_RATE_LIMITED</code>, statusCode 429, recoverable true, extra
+field <code>retryAfter:number</code>. Ctor
+<code>(message, retryAfter, options{context?})</code>.</li>
+<li><strong>class <code>ServerError</code></strong> — code
+<code>BOBA_SERVER_&lt;status&gt;</code>, statusCode required,
+recoverable when <code>&gt;=500 || ===429</code>. Ctor
+<code>(message, statusCode, options)</code>.</li>
+<li><code>function isBobaLinkError(value:unknown): value is BobaLinkError</code>.</li>
+<li><code>function normalizeError(error:unknown, context={}): BobaLinkError</code>.</li>
+</ul>
+<h3
+id="srcsharedevents.ts-typed-event-emitter"><code>src/shared/events.ts</code>
+— typed event emitter</h3>
+<ul>
+<li><strong>interface <code>EventMap</code></strong> (13 events):
+<code>torrent-detected{id,type:"magnet"|"torrent-file",displayName,url}</code>,
+<code>scan-started{url,timestamp}</code>,
+<code>scan-completed{url,magnetCount,torrentFileCount,durationMs}</code>,
+<code>scan-error{url,error}</code>, <code>send-started{ids}</code>,
+<code>send-completed{results[{id,success}]}</code>,
+<code>send-error{id,error}</code>,
+<code>auth-state-changed{method,authenticated}</code>,
+<code>connection-status{serverId,connected,latency:number|null}</code>,
+<code>config-changed{key,newValue,oldValue}</code>,
+<code>queue-updated{size}</code>,
+<code>badge-update{count,color}</code>,
+<code>notification{title,message,type:"info"|"success"|"warning"|"error"}</code>.</li>
+<li><strong>type <code>EventName</code></strong> = keyof EventMap;
+<strong>type <code>EventListener&lt;T&gt;</code></strong> =
+<code>(payload:EventMap[T])=&gt;void</code>.</li>
+<li><strong>class <code>TypedEventEmitter</code></strong>:
+<code>on&lt;T&gt;(event,listener):()=&gt;void</code> (returns unsub);
+<code>once&lt;T&gt;(event,listener):void</code>;
+<code>emit&lt;T&gt;(event,payload):void</code> (try/catch per listener);
+<code>off(event?):void</code>; <code>listenerCount(event):number</code>;
+<code>hasListeners(event):boolean</code>.</li>
+<li><strong>const <code>globalEvents</code></strong> = new
+TypedEventEmitter().</li>
+</ul>
+<h3
+id="srcsharedlogger.ts-structured-logging"><code>src/shared/logger.ts</code>
+— structured logging</h3>
+<ul>
+<li>type <code>LogLevel</code> =
+<code>"debug"|"info"|"warn"|"error"</code> (severity 0/1/2/3). Default
+min level <code>info</code>; <code>debug</code> when debug mode on.</li>
+<li><code>function initLogger(isDebug:boolean): void</code>.</li>
+<li><code>function debug/info/warn/error(context:string, message:string, data?:unknown): void</code>
+(error always emitted).</li>
+<li><code>function timed(context, operation): ()=&gt;void</code> — logs
+start, returns end fn logging duration.</li>
+<li><code>function createLogger(context:string)</code> →
+<code>{debug,info,warn,error,timed}</code> (bound). <strong>type
+<code>Logger</code></strong> = ReturnType.</li>
+<li><code>function isDebugEnabled(): boolean</code>.</li>
+<li>Format: <code>[ISO-timestamp] [LEVEL] [context] message</code>.</li>
+</ul>
+<h3
+id="srcsharedstorage.ts-chrome.storage.local-wrapper"><code>src/shared/storage.ts</code>
+— chrome.storage.local wrapper</h3>
+<ul>
+<li><code>async function storageGet&lt;T&gt;(key): Promise&lt;T|null&gt;</code>.</li>
+<li><code>async function storageSet&lt;T&gt;(key, value): Promise&lt;void&gt;</code>.</li>
+<li><code>async function storageRemove(key): Promise&lt;void&gt;</code>.</li>
+<li><code>async function storageGetMultiple&lt;T&gt;(keys:readonly string[]): Promise&lt;ReadonlyMap&lt;string,T|null&gt;&gt;</code>.</li>
+<li><code>async function storageClearAll(): Promise&lt;void&gt;</code> —
+removes only <code>bobalink_</code>-prefixed keys.</li>
+<li><code>function getStorageKeys(): typeof STORAGE_KEYS</code>.</li>
+<li><code>function onStorageChange&lt;T&gt;(keys, callback): ()=&gt;void</code>
+— local-area only; returns unsub.</li>
+<li><strong>class <code>NamespacedStorage</code></strong>: ctor
+<code>(namespace)</code> → prefix
+<code>bobalink_&lt;namespace&gt;_</code>; methods
+<code>get&lt;T&gt;(key)</code>, <code>set&lt;T&gt;(key,value)</code>,
+<code>remove(key)</code>, <code>getAllKeys()</code>,
+<code>clear()</code>. All errors wrapped as
+<code>StorageError</code>.</li>
+</ul>
+<h3 id="srcsharedutils.ts-utilities"><code>src/shared/utils.ts</code> —
+utilities</h3>
+<ul>
+<li><code>function debounce&lt;T extends unknown[]&gt;(fn, delay): {(...args:T):void; cancel():void}</code>.</li>
+<li><code>function throttle&lt;T extends unknown[]&gt;(fn, interval): {(...args:T):void; cancel():void}</code>.</li>
+<li><code>function generateId(): string</code> — crypto.randomUUID or
+timestamp+random fallback.</li>
+<li><code>function truncate(str, maxLength): string</code> —
+ellipsis.</li>
+<li><code>function escapeHtml(text): string</code> — via
+textContent/innerHTML (XSS-safe; <strong>DOM-dependent</strong>, not
+service-worker safe).</li>
+<li><code>function sleep(ms): Promise&lt;void&gt;</code>.</li>
+<li><code>async function retryWithBackoff&lt;T&gt;(fn, maxRetries=3, baseDelay=1000, maxDelay=30000): Promise&lt;T&gt;</code>
+— exponential backoff + 0.3 jitter.</li>
+<li><strong>class <code>TokenBucket</code></strong>: ctor
+<code>(capacity, refillRate)</code>; <code>consume():boolean</code>;
+<code>getAvailableTokens():number</code>; private
+<code>refill()</code>.</li>
+<li><code>function yieldToBrowser(): Promise&lt;void&gt;</code> — rAF or
+setTimeout(0).</li>
+<li><code>async function processInChunks&lt;T&gt;(items, processor, chunkSize=50): Promise&lt;void&gt;</code>.</li>
+<li><code>function isValidHttpUrl(url): boolean</code>.</li>
+<li><code>function getDomain(url): string</code> — hostname or ““.</li>
+<li><code>function formatBytes(bytes, decimals=2): string</code> —
+B/KB/MB/GB/TB/PB.</li>
+<li><code>function deepClone&lt;T&gt;(obj): T</code> — JSON
+round-trip.</li>
+<li><code>function arraysEqual&lt;T&gt;(a, b): boolean</code> —
+shallow.</li>
+</ul>
+<hr />
+<h2
+id="every-constant-value-srcsharedconstants.ts-esp.-urlsportstimeoutssecrets">6.
+Every constant value (<code>src/shared/constants.ts</code>) —
+esp. URLs/ports/timeouts/secrets</h2>
+<h3 id="regex-patterns">Regex patterns</h3>
+<ul>
+<li><code>MAGNET_REGEX</code> =
+<code>/magnet:\?xt=urn:btih:[a-fA-F0-9]{40}[^\s"'&lt;&gt;]*/gi</code></li>
+<li><code>MAGNET_VALIDATION_REGEX</code> =
+<code>/^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}(?:[&amp;;][^\s"'&lt;&gt;]*)?$/i</code></li>
+<li><code>INFOHASH_REGEX</code> =
+<code>/xt=urn:btih:([a-fA-F0-9]{40})/i</code></li>
+<li><code>TORRENT_FILE_REGEX</code> =
+<code>/https?:\/\/[^\s"'&lt;&gt;]+\.torrent(?:\?[^\s"'&lt;&gt;]*)?/gi</code></li>
+<li><code>TORRENT_FILE_VALIDATION_REGEX</code> =
+<code>/^https?:\/\/.+\.torrent(\?.*)?$/i</code></li>
+<li><code>INFOHASH_HEX_REGEX</code> =
+<code>/^[a-fA-F0-9]{40}$/</code></li>
+<li><code>INFOHASH_BASE32_REGEX</code> =
+<code>/^[A-Z2-7]{32}$/</code></li>
+<li><code>MAGNET_DN_REGEX</code> =
+<code>/[?&amp;]dn=([^&amp;;]*)/</code></li>
+<li><code>MAGNET_TR_REGEX</code> =
+<code>/[?&amp;]tr=([^&amp;;]*)/g</code></li>
+</ul>
+<h3 id="ports-urls-endpoints-load-bearing">Ports / URLs / endpoints
+(load-bearing)</h3>
+<ul>
+<li><code>DEFAULT_PORTS</code> =
+<code>{FAST_API:7187, GO:7189, QBITTORRENT:8080}</code></li>
+<li><code>DEFAULT_URLS</code> =
+<code>{FAST_API:"http://localhost:7187", GO:"http://localhost:7189", QBITTORRENT:"http://localhost:8080"}</code></li>
+<li><code>QBITTORRENT_ENDPOINTS</code>:
+<ul>
+<li><code>AUTH_LOGIN:"/api/v2/auth/login"</code>,
+<code>AUTH_LOGOUT:"/api/v2/auth/logout"</code></li>
+<li><code>APP_VERSION:"/api/v2/app/version"</code>,
+<code>APP_PREFERENCES:"/api/v2/app/preferences"</code>,
+<code>APP_SET_PREFERENCES:"/api/v2/app/setPreferences"</code></li>
+<li><code>TORRENTS_ADD:"/api/v2/torrents/add"</code>,
+<code>TORRENTS_INFO:"/api/v2/torrents/info"</code>,
+<code>TORRENTS_DELETE:"/api/v2/torrents/delete"</code>,
+<code>TORRENTS_PAUSE:"/api/v2/torrents/pause"</code>,
+<code>TORRENTS_RESUME:"/api/v2/torrents/resume"</code></li>
+<li><code>TRANSFER_INFO:"/api/v2/transfer/info"</code></li>
+</ul></li>
+</ul>
+<blockquote>
+<p>⚠️ Port reconciliation needed: extension assumes qBitTorrent direct
+on <strong>8080</strong>; Boba’s actual proxy exposes qBitTorrent WebUI
+on <strong>7186</strong> (merge service 7187, boba-jackett 7189).
+FastAPI 7187 + Go 7189 match. Magnet/.torrent send goes through
+<code>/api/v2/torrents/add</code> on the chosen base URL.</p>
+</blockquote>
+<h3 id="timing-retry-rate-limit">Timing / retry / rate limit</h3>
+<ul>
+<li><code>DEBOUNCE_DELAYS</code> =
+<code>{MUTATION:500, STORAGE_WRITE:250, AUTO_SCAN:1000, BADGE_UPDATE:300, NOTIFICATION:2000}</code>
+(ms)</li>
+<li><code>REQUEST_TIMEOUTS</code> =
+<code>{DEFAULT:15000, HEALTH_CHECK:5000, AUTH:10000, ADD_TORRENT:30000, AUTO_DISCOVERY:3000}</code>
+(ms)</li>
+<li><code>RETRY_CONFIG</code> =
+<code>{MAX_RETRIES:3, BASE_DELAY_MS:1000, MAX_DELAY_MS:30000, JITTER_FACTOR:0.3}</code></li>
+<li><code>RATE_LIMIT</code> =
+<code>{MAX_REQUESTS:10, WINDOW_MS:1000}</code> (note: differs from DB
+seed <code>behavior.rate_limit_requests=30</code>)</li>
+</ul>
+<h3 id="storage-keys-storage_keys-all-bobalink_-prefixed">Storage keys
+(<code>STORAGE_KEYS</code>, all <code>bobalink_</code>-prefixed)</h3>
+<ul>
+<li><code>CONFIG:"bobalink_config"</code>,
+<code>AUTH_STATE:"bobalink_auth_state"</code>,
+<code>CREDENTIALS:"bobalink_credentials"</code>,
+<code>DETECTED:"bobalink_detected"</code>,
+<code>HISTORY:"bobalink_history"</code>,
+<code>QUEUE:"bobalink_queue"</code>,
+<code>HEALTH:"bobalink_health"</code>,
+<code>KEY_MATERIAL:"bobalink_key_material"</code></li>
+</ul>
+<h3 id="encryption-encryption-11.4.10-secret-handling-scheme">Encryption
+(<code>ENCRYPTION</code>) — <strong>§11.4.10 secret-handling
+scheme</strong></h3>
+<ul>
+<li><code>ALGORITHM:"AES-GCM"</code>, <code>KEY_LENGTH_BITS:256</code>,
+<code>IV_LENGTH_BYTES:12</code>, <code>SALT_LENGTH_BYTES:16</code>,
+<code>KDF_ALGORITHM:"PBKDF2"</code>, <code>KDF_ITERATIONS:100000</code>,
+<code>KDF_HASH:"SHA-256"</code>,
+<code>CURRENT_KEY_VERSION:1</code>.</li>
+<li>Scheme: passphrase → PBKDF2 (100k iters, SHA-256, 16-byte random
+salt) → AES-256-GCM (12-byte random IV, 128-bit auth tag). Each
+<code>encrypt()</code> is independent (fresh salt+IV). Stored bundle =
+<code>{salt,iv,ciphertext,version}</code> all base64. Aligns with Boba’s
+AES-256-GCM master-key model (boba-jackett). The passphrase
+source/storage is <strong>not defined in these foundation files</strong>
+— see open questions.</li>
+</ul>
+<h3 id="ui-constants">UI constants</h3>
+<ul>
+<li><code>BADGE_COLORS</code> =
+<code>{HEALTHY:"#4CAF50", DEGRADED:"#FF9800", ERROR:"#F44336", SCANNING:"#2196F3", DETECTED:"#9C27B0", DEFAULT:"#757575"}</code></li>
+<li><code>ICON_SIZES</code> = <code>[16,32,48,128]</code></li>
+</ul>
+<h3
+id="site-selectors-site_selectors-code-level-supplement-to-db-table">Site
+selectors (<code>SITE_SELECTORS</code>, code-level supplement to DB
+table)</h3>
+<p>Record&lt;domain, selectors[]&gt;: <code>generic</code>
+(<code>a[href^="magnet:"]</code>, <code>a[href$=".torrent"]</code>,
+<code>a[href*=".torrent?"]</code>,
+<code>a[href*="download.php?id="]</code>); plus per-domain entries for
+1337x.to, thepiratebay.org/thepiratebay10.org,
+rarbg.to/rarbgtorrents.org, yts.mx/yts.lt, eztv.re, limetorrents.lol,
+torrentgalaxy.to, nyaa.si, animetosho.org, torrentz2.eu,
+fitgirl-repacks.site, rutracker.org, katcr.co, demonoid.is,
+iptorrents.com
+(<code>a[href$=".torrent"]</code>,<code>a[href*="download.php/"]</code>),
+torrentleech.org
+(<code>a[href$=".torrent"]</code>,<code>a[href*="/download/"]</code>),
+beyond-hd.me, passthepopcorn.me.</p>
+<h3 id="misc-ext">Misc (<code>EXT</code>)</h3>
+<ul>
+<li><code>ID:"bobalink"</code>, <code>NAME:"BobaLink"</code>,
+<code>DEFAULT_CATEGORY:"BobaLink"</code>,
+<code>MAX_POPUP_ITEMS:50</code>,
+<code>MAX_DISPLAY_NAME_LENGTH:80</code>.</li>
+</ul>
+<hr />
+<h2 id="ci-flag-which-buildtest-commands-to-keep-as-manual-scripts">7.
+CI flag + which build/test commands to keep as manual scripts</h2>
+<p>🚩 <strong>CONSTITUTION FLAG (Boba forbids ALL CI/CD — Hard Stop
+rule, CLAUDE.md):</strong> the reference repo ships <strong>two GitHub
+Actions workflows</strong> that MUST NOT be ported:</p>
+<ul>
+<li><code>.github/workflows/ci.yml</code> — jobs: <code>lint</code>
+(lint + format:check + compile), <code>unit-test</code> (test + coverage
+upload), <code>build</code> (npm run build + dist upload). Triggers on
+push/PR to main/develop.</li>
+<li><code>.github/workflows/release.yml</code> — 6 jobs: version-bump
+(semver validate, CHANGELOG check, manifest version edit), build-all
+(matrix chrome/firefox), sign-firefox (AMO via <code>web-ext sign</code>
++ Mozilla secrets), create-release (GitHub Release), upload-chrome
+(Chrome Web Store publish API), release-summary. Uses secrets
+<code>MOZILLA_API_KEY/SECRET</code>, <code>FIREFOX_EXTENSION_ID</code>,
+<code>CHROME_CLIENT_ID/SECRET/REFRESH_TOKEN</code>,
+<code>CHROME_WEBSTORE_ID</code>.</li>
+</ul>
+<p><strong>Both <code>.yml</code> files MUST be deleted / never
+copied</strong> into the Boba tree (no
+<code>.github/workflows/*.yml</code> allowed; CI is manual via
+<code>./ci.sh</code>). Extract only the <strong>commands</strong> worth
+keeping as manual scripts:</p>
+<p>Keep as manual local commands (e.g. wired into a
+<code>ci.sh</code>-style script or Makefile target): -
+<strong>Lint/format/compile gate</strong>: <code>npm run lint</code> →
+<code>npm run format:check</code> → <code>npm run compile</code>
+(<code>tsc --noEmit</code>). - <strong>Unit tests + coverage</strong>:
+<code>npm run test</code> (<code>jest --coverage</code>, 80% threshold).
+- <strong>E2E</strong>: <code>npm run test:e2e</code>
+(<code>playwright test</code>) — requires built <code>dist/</code> +
+globalSetup/teardown files (absent; must be authored). -
+<strong>Build</strong>: <code>npm run build</code> (chrome) /
+<code>npm run build:firefox</code>; package: <code>npm run zip</code> /
+<code>zip:firefox</code>. - <strong>Release packaging mechanics worth
+reusing manually</strong> (NOT as automation): zip dist dir,
+<code>sha256sum</code> checksum, inject
+<code>VERSION</code>/<code>BUILD_SHA</code>/<code>BUILD_DATE</code>
+files into dist. Firefox <code>web-ext sign</code> and Chrome Web Store
+upload are out of scope for the local-manual model (and need real store
+credentials — handle per §11.4.10 if ever used, never in-repo). - The
+release workflow’s
+<code>sed -i "s/1.0.0/$VERSION/g" src/sql/schemas.sql src/sql/migrations/001_initial.sql</code>
+shows version is also embedded in SQL seed rows — a manual bump script
+must touch package.json + wxt.config.ts manifest version + both SQL
+files + <code>app_metadata</code>/<code>extension_config</code>
+schema_version/app_version rows together.</p>
+<hr />
+<h2 id="open-questions-drift-to-resolve-in-the-plan">8. Open questions /
+drift to resolve in the plan</h2>
+<ol type="1">
+<li><strong>Port mismatch (critical).</strong> Extension hardcodes
+qBitTorrent on <strong>8080</strong> (host_permissions, CSP,
+DEFAULT_URLS/PORTS, DB defaults). Boba’s real qBitTorrent WebUI is
+proxied on <strong>7186</strong> (CLAUDE.md port table); 7187=merge
+service, 7189=boba-jackett. FastAPI(7187)/Go(7189) match but qBitTorrent
+must change 8080→7186 across <code>wxt.config.ts</code>
+(host_permissions + CSP connect-src), <code>constants.ts</code>, SQL
+seeds, and <code>DEFAULT_AUTO_DISCOVERY.ports</code>.</li>
+<li><strong>Encryption passphrase provenance undefined.</strong>
+<code>crypto.ts</code> requires a <code>passphrase</code> for
+encrypt/decrypt and <code>STORAGE_KEYS.KEY_MATERIAL</code> /
+<code>EXTENSION/encryptionKeyVersion</code> exist, but <strong>where the
+passphrase comes from / how it’s persisted</strong> is not in the
+foundation layer (must be in background/options — not in scope here).
+Must confirm it satisfies §11.4.10 (no plaintext secret at rest, no
+secret in git). The
+<code>server.api_key</code>/<code>server.password</code> SQL seeds are
+empty strings (data_type=encrypted) — fine.</li>
+<li><strong>Dual storage model.</strong> Two parallel persistence
+designs exist: (a) the SQL schema (sql.js over chrome.storage) with 9
+tables, and (b) the <code>STORAGE_KEYS</code> JSON-blob model +
+<code>NamespacedStorage</code>. The foundation does not show which is
+authoritative at runtime (storage.ts only implements the JSON-blob path;
+no sql.js wrapper file present in this layer). Plan must decide one
+source of truth.</li>
+<li><strong>Type duplication.</strong> <code>AuthMethod</code> defined
+identically in both <code>types/api.ts</code> and
+<code>types/config.ts</code>; <code>ServerConfig</code> (TS) and
+<code>server_config</code> (SQL) diverge in field naming
+(<code>url</code> vs <code>base_url</code>,
+<code>encryptedPassword</code> vs <code>password_encrypted</code>, port
+fields only in SQL). Reconcile.</li>
+<li><strong>Config-value mismatch.</strong>
+<code>RATE_LIMIT.MAX_REQUESTS=10</code>/<code>WINDOW_MS=1000</code>
+(constants) vs DB seed <code>behavior.rate_limit_requests=30</code>. And
+<code>autoScanDelay</code> default 2000 (config) vs
+<code>DEBOUNCE_DELAYS.AUTO_SCAN=1000</code>. Decide canonical.</li>
+<li><strong>Referenced-but-absent files</strong> (in this layer):
+<code>tests/e2e/global-setup.ts</code>,
+<code>tests/e2e/global-teardown.ts</code>,
+<code>src/assets/icon.svg</code>, popup/options/content/background
+source, and the sql.js wrapper. These are downstream layers, not
+foundation — flagged so the plan doesn’t assume they exist yet.</li>
+<li><strong>Release workflow references non-existent npm
+scripts</strong> (<code>build:chrome</code>) and non-existent
+<code>src/manifest.chrome.json</code>/<code>manifest.firefox.json</code>
+(WXT generates the manifest, there are no static manifest files). Drift
+in the reference repo — ignore for porting.</li>
+<li><strong>Repo URL is HTTPS</strong>
+(<code>https://github.com/boba-project/bobalink.git</code>) — Boba
+constitution mandates SSH remotes (<code>git@…</code>). Fix when
+integrating.</li>
+<li><strong><code>minimum_chrome_version "109"</code></strong> + MV3
+module service worker — confirm target browser floor is acceptable;
+Firefox MV3 support (release.yml builds firefox) needs verification of
+background <code>type:module</code> SW support.</li>
+</ol>
