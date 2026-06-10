@@ -1,0 +1,307 @@
+<h1 id="bobalink-browser-extension--feature-coverage-ledger">BobaLink
+Browser Extension — Feature Coverage Ledger</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-06-10T20:45:00Z <strong>Scope:</strong> BobaLink
+(<code>extension/</code>) — feature × test-type coverage ledger with a
+per-feature autonomous-verification class (§11.4.25
+full-automation-coverage, §11.4.52 autonomous-validation).
+<strong>Authority:</strong> master plan
+<code>docs/browser_extension/IMPLEMENTATION_PLAN.md</code> (Phase 8,
+T8.5); live status <code>docs/browser_extension/Status.md</code> (Rev
+4).</p>
+<blockquote>
+<p>§11.4.6 (no-guessing) / §11.4.5 (captured evidence): every ✓ cell
+cites a REAL test file backing it. A cell with no real test file is
+<strong>PENDING</strong> — never silently marked covered. The e2e row is
+honestly <code>OPERATOR_ATTENDED_ONLY</code> in this headless sandbox:
+the MV3-load test is real but SKIPs (no extension service worker
+registers — §11.4.3 topology dispatch), so it is not autonomous
+here.</p>
+</blockquote>
+<h2 id="ground-truth-baseline-this-session">Ground-truth baseline (this
+session)</h2>
+<ul>
+<li>Full suite: <strong>413 passed / 37 spec files</strong>
+(<code>npx vitest run</code>) under
+<code>extension/tests/{unit,perf,stress,chaos,integration,security,e2e}</code>
++ <code>src/**</code>.</li>
+<li>E2E (<code>tests/e2e/extension-loads.spec.ts</code>) is a real
+Playwright MV3-load test that <strong>SKIPs-with-reason</strong> in this
+headless/sandbox environment (no display / unpacked-extension load
+unsupported); it executes the popup/options assertions only on a
+headful-capable host. Honest gap per §11.4.3, never a faked PASS.</li>
+<li>Challenge:
+<code>challenges/extension/detect_and_forward_challenge.sh</code> drives
+the real orchestrator + client end-to-end (detect → POST
+<code>:7187/api/v1/download</code>), PASS on captured evidence,
+mutation-verified (no-op stub → FAIL).</li>
+<li>HelixQA bank:
+<code>challenges/helixqa-banks/boba-bobalink.yaml</code> (symlinked from
+<code>submodules/helixqa/banks/boba-bobalink.yaml</code>) —
+<code>http:</code> cases require a LIVE merge-service on
+<code>:7187</code>; reports connection failure if down (no
+fail-open).</li>
+</ul>
+<h2 id="legend">Legend</h2>
+<ul>
+<li><strong>✓ <code>path</code></strong> — covered by the cited real
+test file (assertion on a user-observable outcome; fails against a no-op
+stub).</li>
+<li><strong>SKIP</strong> — a real test exists but is operator-gated /
+topology-gated in this sandbox (e2e MV3 load; live-<code>:7187</code>
+HelixQA).</li>
+<li><strong>PENDING</strong> — no real test file yet (tracked in
+Gaps).</li>
+<li><strong>N/A</strong> — test type does not apply to this client-side
+feature.</li>
+</ul>
+<h3 id="autonomous-verification-class-11452">Autonomous-verification
+class (§11.4.52)</h3>
+<ul>
+<li><strong>AUTONOMOUS_VERIFIED</strong> — at least one autonomous path
+runs headlessly here with captured evidence + PASS/FAIL with no human in
+the loop.</li>
+<li><strong>AUTONOMOUS_DESIGNED</strong> — an autonomous path
+exists/designed but its primary end-to-end proof is gated on an external
+dependency not present in this sandbox (live <code>:7187</code>, headful
+extension load).</li>
+<li><strong>OPERATOR_ATTENDED_ONLY</strong> — the only proof path needs
+a host with a real display / operator (release blocker until promoted;
+tracked in Gaps).</li>
+<li><strong>NOT_APPLICABLE</strong> — feature class does not warrant the
+path.</li>
+</ul>
+<h2 id="coverage-matrix">Coverage matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Feature / flow</th>
+<th>unit</th>
+<th>integration</th>
+<th>security</th>
+<th>stress</th>
+<th>chaos</th>
+<th>e2e</th>
+<th>challenge</th>
+<th>Autonomous-verification class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Magnet detection (BEP-9 parse, scan, highlight)</td>
+<td>✓ <code>tests/unit/magnet.test.ts</code>,
+<code>tests/unit/link-scanner.test.ts</code>,
+<code>tests/unit/text-scanner.test.ts</code>,
+<code>tests/unit/content.test.ts</code></td>
+<td>✓ <code>tests/integration/pipeline.test.ts</code> (STAGE 1)</td>
+<td>PENDING</td>
+<td>✓ <code>tests/stress/parsers.stress.test.ts</code></td>
+<td>✓ <code>tests/stress/parsers.stress.test.ts</code>
+(input-corruption)</td>
+<td>SKIP <code>tests/e2e/extension-loads.spec.ts</code></td>
+<td>✓
+<code>challenges/extension/detect_and_forward_challenge.sh</code></td>
+<td>AUTONOMOUS_VERIFIED</td>
+</tr>
+<tr>
+<td><code>.torrent</code> infohash (bencode → SHA-1)</td>
+<td>✓ <code>tests/unit/torrent-file.test.ts</code>,
+<code>tests/unit/bencode.test.ts</code></td>
+<td>✓ <code>tests/integration/pipeline.test.ts</code> (STAGE 1
+<code>.torrent</code> link)</td>
+<td>PENDING</td>
+<td>✓ <code>tests/stress/parsers.stress.test.ts</code></td>
+<td>✓ <code>tests/stress/parsers.stress.test.ts</code> (corrupt
+bencode)</td>
+<td>N/A</td>
+<td>PENDING (challenge covers magnet path only)</td>
+<td>AUTONOMOUS_VERIFIED</td>
+</tr>
+<tr>
+<td>Cross-scanner dedup (by lowercase infohash)</td>
+<td>✓ <code>tests/unit/orchestrator.test.ts</code>,
+<code>tests/unit/scanner-base.test.ts</code></td>
+<td>✓ <code>tests/integration/pipeline.test.ts</code> (STAGE 1: magnet×2
+→ 1)</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>✓ <code>challenges/extension/detect_and_forward_challenge.sh</code>
+(exact deduped infohash)</td>
+<td>AUTONOMOUS_VERIFIED</td>
+</tr>
+<tr>
+<td>Send → Boba <code>:7187/api/v1/download</code></td>
+<td>✓ <code>tests/unit/boba-client.test.ts</code>,
+<code>tests/unit/api-queue.test.ts</code></td>
+<td>✓ <code>tests/integration/pipeline.test.ts</code> (STAGE 2/2b:
+captured request URL + body)</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>✓ <code>tests/chaos/queue.chaos.test.ts</code> (send-failure
+injection)</td>
+<td>SKIP <code>tests/e2e/extension-loads.spec.ts</code></td>
+<td>✓
+<code>challenges/extension/detect_and_forward_challenge.sh</code></td>
+<td>AUTONOMOUS_DESIGNED (live-<code>:7187</code> HelixQA
+<code>boba-bobalink.yaml</code> SKIPs when backend down)</td>
+</tr>
+<tr>
+<td>Offline FIFO queue (persist, retry, dead-letter, SW-restart)</td>
+<td>✓ <code>tests/unit/api-queue.test.ts</code></td>
+<td>✓ <code>tests/integration/pipeline.test.ts</code> (STAGE 3/3b/3c
+persist + round-trip + drain)</td>
+<td>PENDING</td>
+<td>✓ <code>tests/stress/queue.stress.test.ts</code> (≥1000 enqueue,
+FIFO, concurrent)</td>
+<td>✓ <code>tests/chaos/queue.chaos.test.ts</code> (corruption,
+soft/hard fail, dead-letter)</td>
+<td>N/A</td>
+<td>PENDING</td>
+<td>AUTONOMOUS_VERIFIED</td>
+</tr>
+<tr>
+<td>Popup UI (detected list, Send, Send-All, status)</td>
+<td>✓ <code>tests/unit/popup.test.ts</code>,
+<code>tests/a11y/popup.a11y.test.ts</code> (9 ARIA)</td>
+<td>—</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>SKIP <code>tests/e2e/extension-loads.spec.ts</code> (renders
+popup.html)</td>
+<td>N/A</td>
+<td>AUTONOMOUS_VERIFIED (DOM via jsdom; visual render gated on e2e
+load)</td>
+</tr>
+<tr>
+<td>Options UI (7 tabs, save/load config)</td>
+<td>✓ <code>tests/unit/options.test.ts</code>,
+<code>tests/a11y/options.a11y.test.ts</code> (9 ARIA)</td>
+<td>—</td>
+<td>✓ <code>tests/security/secret-storage.test.ts</code></td>
+<td>N/A</td>
+<td>N/A</td>
+<td>SKIP <code>tests/e2e/extension-loads.spec.ts</code> (7 tabs)</td>
+<td>N/A</td>
+<td>AUTONOMOUS_VERIFIED</td>
+</tr>
+<tr>
+<td>Background routing (SW message router, menus, badge, alarms)</td>
+<td>✓ <code>tests/unit/background.test.ts</code>,
+<code>tests/unit/background-token.test.ts</code></td>
+<td>—</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>SKIP <code>tests/e2e/extension-loads.spec.ts</code> (SW
+registers)</td>
+<td>N/A</td>
+<td>AUTONOMOUS_VERIFIED</td>
+</tr>
+<tr>
+<td>Token decrypt-before-send (no embedded key, session passphrase)</td>
+<td>✓ <code>tests/unit/crypto.test.ts</code>,
+<code>tests/unit/boba-client-token.test.ts</code>,
+<code>tests/unit/background-token.test.ts</code></td>
+<td>✓ <code>tests/integration/pipeline.test.ts</code> (STAGE 2c
+forward)</td>
+<td>✓ <code>tests/security/secret-storage.test.ts</code>,
+<code>tests/security/no-hardcoded-secret.test.ts</code></td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>AUTONOMOUS_VERIFIED</td>
+</tr>
+<tr>
+<td>Tab-group batch (dedup across group → one POST)</td>
+<td>✓ <code>tests/unit/tabgroups.test.ts</code>,
+<code>tests/unit/background.test.ts</code>
+(<code>MENU_SEND_GROUP</code>)</td>
+<td>—</td>
+<td>✓ <code>tests/security/manifest-least-privilege.test.ts</code>
+(<code>tabGroups</code> minimal, no <code>tabs</code>)</td>
+<td>PENDING</td>
+<td>PENDING</td>
+<td>N/A</td>
+<td>PENDING (tab-group end-to-end Challenge)</td>
+<td>AUTONOMOUS_VERIFIED (unit/integration headless; live multi-tab e2e
+PENDING)</td>
+</tr>
+<tr>
+<td>i18n (locale-key completeness)</td>
+<td>✓ <code>tests/unit/locale.test.ts</code></td>
+<td>—</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>AUTONOMOUS_VERIFIED (en catalog; additional locales PENDING)</td>
+</tr>
+<tr>
+<td>Manifest least-privilege / CSP (cross-cutting)</td>
+<td>—</td>
+<td>—</td>
+<td>✓ <code>tests/security/manifest-least-privilege.test.ts</code>,
+<code>tests/security/csp.test.ts</code></td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>PENDING (cred-leak grep Challenge)</td>
+<td>AUTONOMOUS_VERIFIED</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gaps-highest-priority-missing-coverage--tracked-follow-ups">Gaps
+(highest-priority missing coverage — tracked follow-ups)</h2>
+<ol type="1">
+<li><p><strong>Live <code>:7187</code> integration / end-to-end
+Challenge (Phase 4).</strong> The send-flow integration substitutes the
+network boundary (<code>fetchImpl</code> stub) and the HelixQA bank
+(<code>challenges/helixqa-banks/boba-bobalink.yaml</code>) SKIPs when
+the merge-service is down. PENDING: a <code>require_backend(7187)</code>
+integration that actually POSTs to a running backend and asserts the
+torrent appears in qBittorrent (detect → send → server-side add), plus
+BE-1 (CORS) / BE-2 (<code>.torrent</code> multipart upload) backend
+work. Promotes "Send → :7187" from AUTONOMOUS_DESIGNED →
+AUTONOMOUS_VERIFIED.</p></li>
+<li><p><strong>E2E real-extension load (Phase 8).</strong>
+<code>tests/e2e/extension-loads.spec.ts</code> is real but
+<code>OPERATOR_ATTENDED_ONLY</code> in this sandbox (no MV3
+unpacked-extension load; no display). PENDING: run on a headful-capable
+host so the popup/options/SW assertions actually execute, and add a real
+multi-tab tab-group e2e (Phase 5) and an offline-queue-durability e2e
+(SW termination).</p></li>
+<li><p><strong><code>.torrent</code> infohash end-to-end
+Challenge.</strong> The detect→forward Challenge covers the magnet path;
+the <code>.torrent</code>-file forward path has no challenge- level
+captured-evidence run yet. PENDING.</p></li>
+<li><p><strong>Additional locales + deeper-WCAG + theme evidence (Phase
+6).</strong> <code>locale.test.ts</code> guards only the <code>en</code>
+catalog; the plan targets 8 locales. Structural ARIA a11y IS now covered
+(<code>tests/a11y/popup.a11y.test.ts</code> +
+<code>options.a11y.test.ts</code> — 18 tests: roles / accessible-names /
+tablist↔︎tabpanel / live-regions, mutation-proven). PENDING: 7 more
+locale catalogs + a locale-switch render test, the deeper WCAG 2.1 AA
+checks a static HTML parse cannot cover (contrast ratios, focus order,
+keyboard traversal), and dark/light theme-switch evidence.</p></li>
+<li><p><strong>Security depth (Phase 7).</strong> Present:
+least-privilege manifest, CSP, no-hardcoded-secret, secret-storage.
+PENDING: §11.4.10.A pre-store credential-leak audit + pre-commit grep
+gate, a cred-leak-grep Challenge, and a fuller pen-test suite
+(magnet/<code>dn</code> XSS sanitization,
+<code>sender.id</code>/<code>sender.url</code> validation, log-redaction
+proof).</p></li>
+<li><p><strong>Stress/chaos breadth beyond parsers + queue.</strong>
+§11.4.85 stress+chaos exist for parsers and the offline queue. PENDING:
+stress/chaos for the scanner orchestrator (10k-link page, frame-budget),
+the BobaClient rate-limiter under API flood, and tab-group batching
+under many tabs.</p></li>
+<li><p><strong>Per-store packaging + manual gate (Phase 9).</strong> No
+<code>extension/ci-ext.sh</code> manual gate, per-store zips,
+bundle-size assertion, or §11.4.65 doc siblings yet. PENDING (NO CI/CD —
+manual only).</p></li>
+</ol>

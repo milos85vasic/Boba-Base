@@ -21,7 +21,7 @@ import { describe, expect, it } from "vitest";
 
 const EXT_ROOT = resolve(__dirname, "..", "..");
 const SRC_DIR = join(EXT_ROOT, "src");
-const CATALOG_PATH = join(SRC_DIR, "_locales", "en", "messages.json");
+const CATALOG_PATH = join(SRC_DIR, "public", "_locales", "en", "messages.json");
 
 /** Recursively collect files under `dir` matching one of `exts`. */
 function collectFiles(dir: string, exts: string[]): string[] {

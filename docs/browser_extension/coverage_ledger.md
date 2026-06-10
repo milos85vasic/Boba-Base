@@ -1,12 +1,12 @@
 # BobaLink Browser Extension — Feature Coverage Ledger
 
-**Revision:** 1
-**Last modified:** 2026-06-10T20:10:00Z
+**Revision:** 2
+**Last modified:** 2026-06-10T20:45:00Z
 **Scope:** BobaLink (`extension/`) — feature × test-type coverage ledger with a
 per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 §11.4.52 autonomous-validation).
 **Authority:** master plan `docs/browser_extension/IMPLEMENTATION_PLAN.md`
-(Phase 8, T8.5); live status `docs/browser_extension/Status.md` (Rev 3).
+(Phase 8, T8.5); live status `docs/browser_extension/Status.md` (Rev 4).
 
 > §11.4.6 (no-guessing) / §11.4.5 (captured evidence): every ✓ cell cites a REAL
 > test file backing it. A cell with no real test file is **PENDING** — never
@@ -17,7 +17,7 @@ per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 
 ## Ground-truth baseline (this session)
 
-- Full suite: **400 passed / 35 spec files** (`npx vitest run`) under
+- Full suite: **413 passed / 37 spec files** (`npx vitest run`) under
   `extension/tests/{unit,perf,stress,chaos,integration,security,e2e}` + `src/**`.
 - E2E (`tests/e2e/extension-loads.spec.ts`) is a real Playwright MV3-load test
   that **SKIPs-with-reason** in this headless/sandbox environment (no display /

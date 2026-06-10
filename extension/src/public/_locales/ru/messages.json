@@ -1,0 +1,118 @@
+{
+  "extName": {
+    "message": "BobaLink",
+    "description": "Extension name displayed in the browser toolbar"
+  },
+  "extDescription": {
+    "message": "Обнаруживает торрент-файлы и магнет-ссылки и отправляет их в панель qBitTorrent проекта Boba",
+    "description": "Extension description shown in the Chrome Web Store and extension management page"
+  },
+  "cmdSendToBoba": {
+    "message": "Отправить торренты текущей страницы в Boba",
+    "description": "Keyboard shortcut description for sending torrents"
+  },
+  "cmdScanPage": {
+    "message": "Сканировать текущую страницу на наличие торрентов",
+    "description": "Keyboard shortcut description for scanning the page"
+  },
+  "cmdOpenDashboard": {
+    "message": "Открыть панель Boba",
+    "description": "Keyboard shortcut description for opening the dashboard"
+  },
+  "popupTitle": {
+    "message": "BobaLink — обнаруженные торренты",
+    "description": "Title of the popup window"
+  },
+  "noTorrentsDetected": {
+    "message": "На этой странице торренты не обнаружены",
+    "description": "Message shown when no torrents are found"
+  },
+  "sendToBoba": {
+    "message": "Отправить в Boba",
+    "description": "Button label for sending torrents"
+  },
+  "scanning": {
+    "message": "Сканирование…",
+    "description": "Status text shown while scanning"
+  },
+  "sending": {
+    "message": "Отправка…",
+    "description": "Status text shown while sending torrents"
+  },
+  "sendSuccess": {
+    "message": "Торренты успешно отправлены!",
+    "description": "Success message after sending torrents"
+  },
+  "sendFailed": {
+    "message": "Не удалось отправить торренты",
+    "description": "Error message when sending fails"
+  },
+  "connectionOnline": {
+    "message": "Подключено",
+    "description": "Status indicating server connection is active"
+  },
+  "connectionOffline": {
+    "message": "Отключено",
+    "description": "Status indicating server connection is lost"
+  },
+  "notConfigured": {
+    "message": "Сервер не настроен",
+    "description": "Status when no server is set up"
+  },
+  "optionsTitle": {
+    "message": "Настройки BobaLink",
+    "description": "Title of the options page"
+  },
+  "serverSectionTitle": {
+    "message": "Настройка сервера",
+    "description": "Title of the server configuration section"
+  },
+  "generalSectionTitle": {
+    "message": "Общие настройки",
+    "description": "Title of the general settings section"
+  },
+  "advancedSectionTitle": {
+    "message": "Расширенные настройки",
+    "description": "Title of the advanced settings section"
+  },
+  "addServer": {
+    "message": "Добавить сервер",
+    "description": "Button to add a new server"
+  },
+  "testConnection": {
+    "message": "Проверить подключение",
+    "description": "Button to test server connection"
+  },
+  "autoDiscover": {
+    "message": "Автопоиск",
+    "description": "Button to auto-discover servers"
+  },
+  "saveChanges": {
+    "message": "Сохранить изменения",
+    "description": "Button to save settings"
+  },
+  "discardChanges": {
+    "message": "Отменить",
+    "description": "Button to discard unsaved changes"
+  },
+  "magnetLink": {
+    "message": "Магнет-ссылка",
+    "description": "Label for magnet link type"
+  },
+  "torrentFile": {
+    "message": "Торрент-файл",
+    "description": "Label for torrent file type"
+  },
+  "contextMenuSend": {
+    "message": "Отправить в Boba",
+    "description": "Context menu item to send a torrent"
+  },
+  "contextMenuScan": {
+    "message": "Сканировать страницу на наличие торрентов",
+    "description": "Context menu item to scan the page"
+  },
+  "contextMenuDashboard": {
+    "message": "Открыть панель Boba",
+    "description": "Context menu item to open dashboard"
+  }
+}

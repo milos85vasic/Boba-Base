@@ -36,6 +36,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createChromeStorageFake } from "./chrome-fake";
 import { STORAGE_KEYS } from "../../src/shared/constants";
+import { encrypt } from "../../src/shared/crypto";
 import { DEFAULT_CONFIG } from "../../src/types/config";
 import type {
   ExtensionConfig,
@@ -48,6 +49,9 @@ const INFOHASH_B = "abcdef1234567890abcdef1234567890abcdef12";
 const MAGNET_A = `magnet:?xt=urn:btih:${INFOHASH_A}&dn=Ubuntu`;
 const MAGNET_B = `magnet:?xt=urn:btih:${INFOHASH_B}&dn=Debian`;
 const SYNTH_TOKEN = `test-token-${crypto.randomUUID()}`;
+
+/** The session-storage key the background reads the unlock passphrase from. */
+const SESSION_PASSPHRASE_KEY = "bobalink_session_passphrase";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MV3 chrome surface fake
@@ -75,8 +79,41 @@ function listenerHub<F>() {
   };
 }
 
+/** A minimal in-memory chrome.storage.session fake (Map-backed). */
+function sessionStorageFake() {
+  const store = new Map<string, unknown>();
+  return {
+    store,
+    api: {
+      get(keys?: string | string[] | null): Promise<Record<string, unknown>> {
+        const out: Record<string, unknown> = {};
+        if (keys === null || keys === undefined) {
+          for (const [k, v] of store) out[k] = v;
+          return Promise.resolve(out);
+        }
+        const list = Array.isArray(keys) ? keys : [keys];
+        for (const k of list) {
+          if (store.has(k)) out[k] = store.get(k);
+        }
+        return Promise.resolve(out);
+      },
+      set(items: Record<string, unknown>): Promise<void> {
+        for (const [k, v] of Object.entries(items)) store.set(k, v);
+        return Promise.resolve();
+      },
+      remove(keys: string | string[]): Promise<void> {
+        const list = Array.isArray(keys) ? keys : [keys];
+        for (const k of list) store.delete(k);
+        return Promise.resolve();
+      },
+    },
+  };
+}
+
 interface FakeChrome {
-  storage: ReturnType<typeof createChromeStorageFake>["chrome"]["storage"];
+  storage: ReturnType<typeof createChromeStorageFake>["chrome"]["storage"] & {
+    session: ReturnType<typeof sessionStorageFake>["api"];
+  };
   runtime: {
     onMessage: ReturnType<typeof listenerHub<MessageHandler>>;
     onInstalled: ReturnType<typeof listenerHub<(d: { reason: string }) => void>>;
@@ -109,15 +146,17 @@ interface InstalledChrome {
   chrome: FakeChrome;
   badgeTexts: () => string[];
   store: Map<string, unknown>;
+  sessionStore: Map<string, unknown>;
 }
 
 /** Install a full MV3 chrome fake onto globalThis. Returns spy accessors. */
 function installChrome(): InstalledChrome {
   const storageFake = createChromeStorageFake();
+  const session = sessionStorageFake();
   const badgeTexts: string[] = [];
 
   const chrome: FakeChrome = {
-    storage: storageFake.chrome.storage,
+    storage: { ...storageFake.chrome.storage, session: session.api },
     runtime: {
       onMessage: listenerHub<MessageHandler>(),
       onInstalled: listenerHub<(d: { reason: string }) => void>(),
@@ -150,7 +189,12 @@ function installChrome(): InstalledChrome {
   };
 
   (globalThis as unknown as { chrome: unknown }).chrome = chrome;
-  return { chrome, badgeTexts: () => badgeTexts, store: storageFake.store };
+  return {
+    chrome,
+    badgeTexts: () => badgeTexts,
+    store: storageFake.store,
+    sessionStore: session.store,
+  };
 }
 
 /** Build a server config + persist a full ExtensionConfig with one active server. */
@@ -654,6 +698,126 @@ describe("message router — send-torrent → client + notify / enqueue-on-fail"
     expect(queued).toHaveLength(1);
     expect(queued?.[0]?.torrent.displayName).toBe("Ubuntu");
     expect(queued?.[0]?.torrent.magnetUri).toBe(MAGNET_A);
+  }, 20000);
+
+  it("send-torrent: a WRONG session passphrase (decrypt throws) ENQUEUES the item AND raises a 'failed' notification — not a silent log (§11.4.10)", async () => {
+    // The configured token is a REAL encrypted bundle; the available session
+    // passphrase is WRONG → BobaClient.create() → decrypt() throws StorageError
+    // BEFORE any fetch. The pre-fix code lets that throw escape sendTorrents to
+    // the message-router catch (silent {success:false}) — the item is LOST and
+    // the user sees nothing. The fix must treat a decrypt-throw like a failed
+    // send: enqueue for retry + notify.
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ status: "initiated", added_count: 1 }),
+      } as unknown as Response),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const bundle = await encrypt(SYNTH_TOKEN, "the-correct-passphrase");
+    const encryptedToken = JSON.stringify(bundle);
+
+    const { initBackground } = await loadBackground();
+    initBackground();
+    const ch = installed.chrome;
+    seedConfig(installed.store, makeServer({ encryptedBobaApiToken: encryptedToken }));
+    // Unlock flow stored a DIFFERENT (wrong) passphrase → decrypt will reject.
+    installed.sessionStore.set(SESSION_PASSPHRASE_KEY, "a-wrong-passphrase");
+
+    const result = scanResult([{ id: INFOHASH_A, magnet: MAGNET_A, name: "Ubuntu" }]);
+    await sendMessage(ch, { type: "scan-result", payload: { result } }, { tab: { id: 7 } });
+
+    const reply = (await sendMessage(ch, {
+      type: "send-torrent",
+      payload: { tabId: 7, ids: [INFOHASH_A] },
+    })) as { success: boolean; data?: { results?: Array<{ success: boolean }> } };
+    // the router still resolves (no uncaught throw to the channel)
+    expect(reply.success).toBe(true);
+    expect(reply.data?.results?.[0]?.success).toBe(false);
+
+    // USER-OBSERVABLE (a): no fetch ever happened (decrypt failed first), yet the
+    // item is NOT lost — it lives in the persisted offline queue for retry.
+    expect(fetchMock).not.toHaveBeenCalled();
+    const queued = installed.store.get(STORAGE_KEYS.QUEUE) as
+      | OfflineQueueItem[]
+      | undefined;
+    expect(queued).toBeDefined();
+    expect(queued).toHaveLength(1);
+    expect(queued?.[0]?.torrent.displayName).toBe("Ubuntu");
+    expect(queued?.[0]?.torrent.magnetUri).toBe(MAGNET_A);
+
+    // USER-OBSERVABLE (b): a failure notification was raised (not silent).
+    expect(ch.notifications.create).toHaveBeenCalled();
+  }, 20000);
+
+  it("MENU_SEND_GROUP: a WRONG session passphrase (decrypt throws) ENQUEUES the group AND raises a 'Group send failed' notification — parity with Send-All (§11.4.10)", async () => {
+    // Same decrypt-throw, group path: clientFor() is built BEFORE dispatch, so
+    // the StorageError escapes the inner try/catch to the outer context-menu
+    // catch (silent log.error) — the group is LOST and the user sees nothing.
+    // The fix must enqueue the group's torrents + notify, exactly like the
+    // network-error group path.
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ status: "initiated", added_count: 2 }),
+      } as unknown as Response),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const bundle = await encrypt(SYNTH_TOKEN, "the-correct-passphrase");
+    const encryptedToken = JSON.stringify(bundle);
+
+    const { initBackground } = await loadBackground();
+    initBackground();
+    const ch = installed.chrome;
+    seedConfig(installed.store, makeServer({ encryptedBobaApiToken: encryptedToken }));
+    installed.sessionStore.set(SESSION_PASSPHRASE_KEY, "a-wrong-passphrase");
+
+    ch.tabs.query.mockResolvedValue([{ id: 7 }]);
+    await sendMessage(
+      ch,
+      {
+        type: "scan-result",
+        payload: {
+          result: scanResult([
+            { id: INFOHASH_A, magnet: MAGNET_A, name: "Ubuntu" },
+            { id: INFOHASH_B, magnet: MAGNET_B, name: "Debian" },
+          ]),
+        },
+      },
+      { tab: { id: 7 } },
+    );
+
+    const onClicked = ch.contextMenus.onClicked.handlers[0];
+    onClicked?.({ menuItemId: "bobalink-send-group" }, { id: 7, groupId: 3 });
+
+    // Await the REAL completion signal: both torrents persisted to the queue.
+    await flushUntil(() => {
+      const q = installed.store.get(STORAGE_KEYS.QUEUE) as
+        | OfflineQueueItem[]
+        | undefined;
+      return Array.isArray(q) && q.length >= 2;
+    }, "decrypt-failed group batch to be persisted into the offline queue");
+
+    // USER-OBSERVABLE (a): no fetch happened (decrypt failed first), yet the two
+    // deduped torrents are NOT lost — they live in the persisted queue.
+    expect(fetchMock).not.toHaveBeenCalled();
+    const queued = installed.store.get(STORAGE_KEYS.QUEUE) as
+      | OfflineQueueItem[]
+      | undefined;
+    expect(queued).toHaveLength(2);
+    const names = (queued ?? []).map((q) => q.torrent.displayName).sort();
+    expect(names).toEqual(["Debian", "Ubuntu"]);
+
+    // USER-OBSERVABLE (b): a "Group send failed" notification was raised.
+    expect(ch.notifications.create).toHaveBeenCalled();
+    const titles = ch.notifications.create.mock.calls.map(
+      (c) => (c[0] as { title?: string }).title,
+    );
+    expect(titles).toContain("Group send failed");
   }, 20000);
 });
 

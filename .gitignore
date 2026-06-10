@@ -1,3 +1,7 @@
+# Runtime test/challenge evidence (regeneratable — §11.4.30; regen: re-run the
+# challenge/test that wrote it). Curated QA evidence lives under docs/qa/ (§11.4.83).
+.evidence/
+
 # qBittorrent Configuration
 config/qBittorrent/
 !config/qBittorrent/.gitkeep

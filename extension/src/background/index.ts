@@ -50,6 +50,7 @@ import {
   EXT,
   STORAGE_KEYS,
 } from "../shared/constants";
+import { StorageError } from "../shared/errors";
 import { createLogger, initLogger } from "../shared/logger";
 import { storageGet, storageSet } from "../shared/storage";
 import type { ExtensionMessage, ExtensionMessageResponse } from "../types/api";
@@ -264,7 +265,41 @@ async function sendTorrents(
     throw new Error("No matching torrents found");
   }
 
-  const client = await clientFor(server);
+  // Building the client DECRYPTS the configured token bundle (§11.4.10). A wrong
+  // session passphrase makes that throw a StorageError BEFORE any send. Treat it
+  // like a failed send for EVERY item — enqueue each for retry + report failure
+  // (the notify block below raises "Some sends failed") — rather than letting it
+  // escape and silently drop the whole batch.
+  let client: BobaClient;
+  try {
+    client = await clientFor(server);
+  } catch (err) {
+    if (err instanceof StorageError) {
+      const message = err.message;
+      const outcomes: SendOutcome[] = [];
+      for (const item of toSend) {
+        const url = downloadUrlOf(item);
+        outcomes.push({
+          id: item.id,
+          success: false,
+          displayName: item.displayName,
+          error: message,
+        });
+        if (url !== null) {
+          await enqueueFailed(item, url, server.id, config);
+        }
+      }
+      if (config.showNotifications) {
+        notify(
+          "Some sends failed",
+          `${String(outcomes.length)} torrent(s) queued for retry.`,
+          "warning",
+        );
+      }
+      return outcomes;
+    }
+    throw err;
+  }
   const outcomes: SendOutcome[] = [];
 
   for (const item of toSend) {
@@ -630,8 +665,13 @@ function registerContextMenuClicks(): void {
                   Promise.resolve(tabResults.get(id) ?? null),
                 ),
               );
-              const client = await clientFor(server);
               try {
+                // Building the client DECRYPTS the configured token bundle
+                // (§11.4.10) — a wrong session passphrase throws a StorageError
+                // here. Keep it INSIDE this try so the catch below enqueues the
+                // group + notifies, the same recoverable outcome as a network
+                // error (parity with the Send-All decrypt-throw path).
+                const client = await clientFor(server);
                 const dispatch = await dispatchGroupBatch(batch, (payload) =>
                   client
                     .addMagnets(payload.downloadUrls)

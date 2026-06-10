@@ -1,7 +1,7 @@
 <h1 id="bobalink-browser-extension--status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-06-10T20:10:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
+2026-06-10T20:40:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
@@ -17,15 +17,17 @@ no-guessing).</p>
 <h2 id="baseline-facts-verified-this-session--session-11">Baseline facts
 (verified this session — Session 11)</h2>
 <ul>
-<li><strong>HEAD:</strong> <code>5edf6ac</code> (pushed); wave-3 (a11y +
-Phase-5 nits + docs + live-probe + ledger) staged for the next
-commit.</li>
-<li><strong>Extension test corpus:</strong> <strong>400 Vitest tests
-across 35 spec files</strong> — same-session <code>npx vitest run</code>
-→ <code>Tests 400 passed (400)</code> — under
+<li><strong>HEAD:</strong> <code>2011810</code> (pushed); wave-4
+(Phase-9 <code>ci-ext.sh</code> gate + per-store zips, <code>ru</code>
+locale, content-XSS, credential-leak audit, decrypt-throw parity,
+tab-group Challenge, and the <code>_locales</code> packaging fix) staged
+for the next commit.</li>
+<li><strong>Extension test corpus:</strong> <strong>413 Vitest tests
+across 37 spec files</strong> — same-session <code>npx vitest run</code>
+→ <code>Tests 413 passed (413)</code> — under
 <code>extension/tests/{unit,perf,stress,chaos,integration,security,e2e}</code>
 + <code>src/**</code>. <code>npx tsc --noEmit</code> clean;
-<code>npm run lint</code> 0 errors / 0 warnings. (+113 tests over the
+<code>npm run lint</code> 0 errors / 0 warnings. (+126 tests over the
 prior 287/22 baseline: integration 7, security 4 files, stress/chaos 10,
 locale 4, token suites 8, tab-groups 13, a11y 18, group-send nits 2,
 +more.)</li>
@@ -34,18 +36,24 @@ at
 <code>extension/src/entrypoints/{background.ts, content.ts, popup/index.html, options/index.html}</code>
 (thin wrappers over the existing logic modules, so all prior test
 imports stay valid). <code>npx wxt build</code> produces a
-<strong>loadable</strong> <code>extension/.output/chrome-mv3/</code>:
-<code>manifest_version:3</code>,
+<strong>loadable</strong> <code>extension/.output/chrome-mv3/</code> AND
+<code>firefox-mv2/</code>: <code>manifest_version:3</code>,
 <code>background.service_worker:background.js</code>,
 <code>popup.html</code>, <code>options.html</code>,
-<code>content-scripts/content.js</code>, icons 16/32/48/128 —
-<strong>every manifest-referenced asset verified present on
-disk</strong> (§11.4.38: PASS). Content-script <code>matches</code> are
-derived from the curated <code>SITE_SELECTORS</code> (24 hosts,
-<strong>no <code>&lt;all_urls&gt;</code></strong>); permissions
-least-privilege (no scripting/tabs/cookies);
+<code>content-scripts/content.js</code>, icons 16/32/48/128, AND
+<code>_locales/{en,ru}/messages.json</code> (REQUIRED because
+<code>default_locale:"en"</code> + <code>__MSG_*__</code> — see the
+§11.4.138 note below). <strong>Every manifest-referenced asset + the
+default-locale catalog verified present on disk</strong> by the
+<code>ci-ext.sh</code> manual gate (§11.4.38). Content-script
+<code>matches</code> are derived from the curated
+<code>SITE_SELECTORS</code> (24 hosts, <strong>no
+<code>&lt;all_urls&gt;</code></strong>); permissions least-privilege (no
+scripting/tabs/cookies; <code>+tabGroups</code> for Phase-5);
 <code>host_permissions</code> = <code>http://localhost:7187/*</code>
-only; CSP <code>script-src 'self'</code>.</li>
+only; CSP <code>script-src 'self'</code>. Per-store zips
+(<code>bobalink-1.0.0-{chrome,firefox,sources}.zip</code>) produced by
+<code>ci-ext.sh</code>.</li>
 </ul>
 <h2 id="per-phase-status">Per-phase status</h2>
 <table>
@@ -135,10 +143,14 @@ pre-existing parity with Send-All, future phase</td>
 <td>6</td>
 <td>UI/UX, i18n, accessibility, themes</td>
 <td>IN-PROGRESS</td>
-<td>i18n locale completeness guarded: <code>locale.test.ts</code> 4
-(derives referenced <code>__MSG_*</code> keys from source; en catalog
-complete). <strong>PENDING:</strong> additional locales (plan targets
-8), WCAG/a11y + theme-switch evidence</td>
+<td>i18n: <code>locale.test.ts</code> (en completeness) +
+<strong><code>ru</code> locale added</strong> with
+<code>locale-parity.test.ts</code> (en⇄ru key + placeholder parity,
+mutation-proven); <strong>a11y</strong>:
+<code>tests/a11y/{popup,options}.a11y.test.ts</code> (18 tests —
+roles/accessible-names/tablist↔︎tabpanel/live-regions, mutation-proven).
+<strong>PENDING:</strong> 6 more locales (plan targets 8), deeper WCAG
+(contrast/focus/keyboard), theme-switch evidence</td>
 </tr>
 <tr>
 <td>7</td>
@@ -146,24 +158,31 @@ complete). <strong>PENDING:</strong> additional locales (plan targets
 log redaction)</td>
 <td>IN-PROGRESS</td>
 <td><code>crypto.ts</code> adopted; <strong>decrypt-and-send path
-landed</strong> (Phase-4 row); session passphrase from
+landed</strong> + <strong>decrypt-throw on wrong passphrase now
+enqueues+notifies</strong> (parity, RED→GREEN); session passphrase from
 <code>chrome.storage.session</code>, <strong>no embedded key</strong>,
 plaintext/passphrase never logged; security suite
-<code>tests/security/*</code> 4 files (least-privilege manifest, CSP,
-no-hardcoded-secret, secret-storage). <strong>PENDING:</strong>
-§11.4.10.A pre-store leak audit, full pen-test suite</td>
+<code>tests/security/*</code> (least-privilege manifest, CSP,
+no-hardcoded-secret, secret-storage, <strong>content-XSS</strong> —
+render path proven safe via innerHTML-mutation→FAIL); <strong>§11.4.10.A
+credential-leak audit</strong>
+<code>challenges/security/credential_leak_audit.sh</code> (PASS,
+mutation-verified). <strong>PENDING:</strong> full pen-test suite
+(sender-origin validation, rate-limit)</td>
 </tr>
 <tr>
 <td>8</td>
 <td>Testing to 100% (all types) + Challenges + HelixQA</td>
 <td>IN-PROGRESS</td>
-<td>400 tests/35 files green
+<td>413 tests/37 files green
 (unit/perf/stress/chaos/integration/security/e2e). Challenge
 <code>challenges/extension/detect_and_forward_challenge.sh</code> drives
 the REAL orchestrator+client end-to-end, PASS on captured evidence,
 mutation-verified (no-op stub → FAIL). HelixQA
-<code>boba-bobalink.yaml</code> BOBA-LINK-007 added; symlinked into
-<code>challenges/helixqa-banks/</code>. E2E
+<code>boba-bobalink.yaml</code> BOBA-LINK-007 (detect→forward) +
+BOBA-LINK-008 (tab-group batch) added; symlinked into
+<code>challenges/helixqa-banks/</code>. tab-group + detect→forward
+Challenges both mutation-verified. E2E
 <code>tests/e2e/extension-loads.spec.ts</code> is a real MV3-load test,
 <strong>operator-gated SKIP</strong> in this headless sandbox (extension
 load unsupported; §11.4.3). <strong>PENDING:</strong> the full 13-type
@@ -173,10 +192,17 @@ coverage matrix + live-backend integration + the coverage ledger to
 <tr>
 <td>9</td>
 <td>Build, packaging &amp; distribution (manual — NO CI/CD)</td>
-<td>PENDING</td>
-<td>Loadable <code>.output/chrome-mv3/</code> produced, but no
-<code>extension/ci-ext.sh</code> manual gate, no per-store zip, no
-§11.4.65 user/dev/install/API doc siblings yet</td>
+<td>IN-PROGRESS</td>
+<td><strong>Manual gate <code>extension/ci-ext.sh</code></strong>
+(Session 11, §11.4.18 doc'd): tsc → lint → full vitest → chrome+firefox
+builds → §11.4.38 artifact-verify (opens the manifest, asserts every
+referenced asset + the <code>default_locale</code> catalog exist
+non-zero) → per-store <code>wxt zip</code>. <strong>CI-EXT:
+PASS</strong> — produces loadable <code>chrome-mv3/</code> +
+<code>firefox-mv2/</code> +
+<code>bobalink-1.0.0-{chrome,firefox,sources}.zip</code>.
+<strong>PENDING:</strong> store-listing metadata/submission + §11.4.65
+user/dev/install doc siblings. NO CI/CD (manual only)</td>
 </tr>
 </tbody>
 </table>
@@ -192,15 +218,31 @@ planned in <code>IMPLEMENTATION_PLAN.md</code>.</li>
 <h2 id="anti-bluff-notes-114--1146--11469">Anti-bluff notes (§11.4 /
 §11.4.6 / §11.4.69)</h2>
 <ul>
-<li>The 400 figure IS a same-session recorded
+<li>The 413 figure IS a same-session recorded
 <code>npx vitest run</code> result
-(<code>Tests 400 passed (400)</code>), not merely a static grep — it
+(<code>Tests 413 passed (413)</code>), not merely a static grep — it
 supersedes the prior 287/22 grep-count baseline. tsc + lint captured
 clean in the same session.</li>
-<li>The §11.4.38 loadable-artifact claim was verified by <strong>opening
-the produced <code>.output/chrome-mv3/manifest.json</code></strong> and
-confirming every referenced asset exists on disk — not by "build exited
-0".</li>
+<li>The §11.4.38 loadable-artifact claim is verified by
+<code>ci-ext.sh</code> <strong>opening the produced
+<code>.output/chrome-mv3/manifest.json</code></strong> and confirming
+every referenced asset AND the <code>default_locale</code> catalog exist
+non-zero on disk — not by "build exited 0".</li>
+<li><strong>§11.4.138 bluff-audit (corrected this session).</strong> An
+earlier Status revision claimed the artifact was loadable on an "8/8
+referenced assets present" check. That check was INCOMPLETE: the
+manifest declares <code>default_locale:"en"</code> +
+<code>__MSG_*__</code>, but the build packaged <strong>no
+<code>_locales/</code></strong> (WXT copies static assets from
+<code>src/public/</code>, while the catalog lived at
+<code>src/_locales/</code>) — so Chrome would have REJECTED the
+extension at load. Caught by the new <code>ci-ext.sh</code> §11.4.38
+step (which checks the <code>default_locale → _locales/</code>
+invariant). Root cause fixed by moving the catalog to
+<code>src/public/_locales/{en,ru}/</code>; the rebuilt artifact now
+packages it (verified on disk). Permanent guard = <code>ci-ext.sh</code>
+(the regression can't recur silently). This is the §11.4.108 lesson:
+build-exit-0 ≠ deployable-artifact.</li>
 <li>The Phase-7 decrypt path is proven by RED→GREEN:
 ciphertext-on-the-wire (pre-fix) → decrypted-plaintext header
 (post-fix), with the ciphertext never sent and the token never logged

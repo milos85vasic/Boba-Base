@@ -1,6 +1,6 @@
 # BobaLink Browser Extension — Status Summary
 
-**Revision:** 2
+**Revision:** 3
 **Last modified:** 2026-06-10T20:05:00Z
 **Companion of:** `docs/browser_extension/Status.md` (Rev 2, §11.4.56 two-audience summary).
 
@@ -28,7 +28,7 @@ so the download starts automatically.
   decrypts its stored token and sends the download, and the dashboard side accepts it.
 - **Sending a whole tab group at once is wired up** — picking a tab group scans every
   tab, removes duplicates across the group, and sends them in one batch.
-- **400 automated tests pass** (across 35 test files); the code also passes its type
+- **413 automated tests pass** (across 37 test files); the code also passes its type
   check and its style/lint check with zero warnings.
 
 **What is still pending:**
@@ -50,7 +50,7 @@ packaging gate so an installable extension exists.
 
 ## Page 2 — For software engineers
 
-**HEAD:** `5edf6ac` · **Branch:** `main` · **Test corpus:** 400 Vitest tests / 35 spec
+**HEAD:** `5edf6ac` · **Branch:** `main` · **Test corpus:** 413 Vitest tests / 37 spec
 files — same-session `npx vitest run` → green; `npx tsc --noEmit` clean; `npm run lint`
 0 errors / 0 warnings.
 
@@ -66,7 +66,7 @@ files — same-session `npx vitest run` → green; `npx tsc --noEmit` clean; `np
 | 5 Tab-group batch | IN-PROGRESS | `src/tabgroups/index.ts` (group-wide dedupe + batch dispatch, 13 tests) integrated into `background/index.ts` `MENU_SEND_GROUP` (one `addMagnets` POST); manifest `+tabGroups` (minimal — `tabs` not needed, only `tab.id` read; §11.4.120 security-test reconciliation, mutation-verified); RED-verified MENU_SEND_GROUP test (handler no-op → FAIL). Review: GO-with-nits. **Tracked nits:** offline-queue on group-send failure, network-error notification, async-flush hardening |
 | 6 UI/UX, i18n, a11y, themes | IN-PROGRESS | `locale.test.ts` 4 (derives `__MSG_*` keys from source; en catalog complete). **PENDING:** additional locales (target 8), WCAG/a11y + theme-switch evidence |
 | 7 Security & credentials | IN-PROGRESS | `crypto.ts` adopted; decrypt-and-send path landed; session passphrase from `chrome.storage.session`, no embedded key, plaintext/passphrase never logged; `tests/security/*` 4 files (least-privilege manifest, CSP, no-hardcoded-secret, secret-storage). **PENDING:** §11.4.10.A pre-store leak audit, full pen-test suite |
-| 8 Testing-to-100% + Challenges + HelixQA | IN-PROGRESS | 400 tests / 35 files green (unit/perf/stress/chaos/integration/security/e2e); Challenge `challenges/extension/detect_and_forward_challenge.sh` drives the real orchestrator+client end-to-end, mutation-verified (no-op stub → FAIL); HelixQA `boba-bobalink.yaml` BOBA-LINK-007 added; E2E `tests/e2e/extension-loads.spec.ts` operator-gated SKIP in headless sandbox (§11.4.3). **PENDING:** full 13-type matrix + live-backend integration + coverage ledger to 100% |
+| 8 Testing-to-100% + Challenges + HelixQA | IN-PROGRESS | 413 tests / 37 files green (unit/perf/stress/chaos/integration/security/e2e); Challenge `challenges/extension/detect_and_forward_challenge.sh` drives the real orchestrator+client end-to-end, mutation-verified (no-op stub → FAIL); HelixQA `boba-bobalink.yaml` BOBA-LINK-007 added; E2E `tests/e2e/extension-loads.spec.ts` operator-gated SKIP in headless sandbox (§11.4.3). **PENDING:** full 13-type matrix + live-backend integration + coverage ledger to 100% |
 | 9 Build, packaging & distribution | PENDING | Loadable `.output/chrome-mv3/` produced; no `extension/ci-ext.sh` manual gate, no per-store zip, no §11.4.65 user/dev/install/API doc siblings yet |
 
 ### Status legend
@@ -86,7 +86,7 @@ files — same-session `npx vitest run` → green; `npx tsc --noEmit` clean; `np
 
 ### Anti-bluff caveat (§11.4.6)
 
-The 400 figure IS a same-session recorded `npx vitest run` green result (supersedes the
+The 413 figure IS a same-session recorded `npx vitest run` green result (supersedes the
 prior 287/22 static spec-case count). The §11.4.38 loadable-artifact claim was verified by
 opening the produced `.output/chrome-mv3/manifest.json` and confirming every referenced
 asset exists on disk — not by "build exited 0". The Phase-7 decrypt path is proven RED→GREEN
