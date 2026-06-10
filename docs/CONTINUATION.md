@@ -1,14 +1,34 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 13
-**Last modified:** 2026-06-10T00:00:00Z
-**Session:** 2026-06-10 (Session 9 — overnight autonomous stabilization)
-**Last commit:** `6230865`
+**Revision:** 14
+**Last modified:** 2026-06-10T05:12:40Z
+**Session:** 2026-06-10 (Session 10 — env_loader isolation fix + BOB-008 runbook + leak sweep)
+**Last commit:** `c10ad07` (Session-10 work commits on top of this)
 **Branch:** `main`
 **Working tree:** CLEAN (after the doc commit that carries this update)
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff (§12.10 / §11.4.131).
+
+---
+
+## CURRENT STATE — Session 10 (2026-06-10, subagent-driven loop)
+
+**Suite stays FULLY GREEN. This session was hardening + verification, subagent-driven (§11.4.70), every change code-reviewed before commit (§11.4.125/§11.4.134).**
+
+### What landed (Session 10)
+- **`test_credential_env_wiring.py` isolation fix** — resolved the Session-9 "known low-priority follow-up" below. A `merge_service` fake-namespace stub was installed at module-collection time with no teardown, so `conftest`'s `_isolate_download_proxy_modules` captured-and-restored the *fake* stub into siblings in some run orders. Fixed by moving stub install into a `search_mod` fixture that snapshots/restores the 3 injected keys (`merge_service`, `.search`, `.retry`) in `finally`. **Evidence:** RED reproduction (the 5 credential tests + a temporary leak-probe) went `1 failed` → all green; the file's own **5 tests pass** standalone; full unit suite **4121 passed** × seeds default/42/31337 (Session-10 run). Code-review **GO** (proved negation; no weakened assertions; ruff clean).
+- **`docs/qa/BOB-008/operator_runbook.md`** — copy-pasteable operator unblock procedure for BOB-008 (cookie path preferred; CAPTCHA path documented with its `cap_sid`/`cap_code_field` friction), every endpoint claim cited to `auth.py:line` (§11.4.83/§11.4.99).
+- **Latent-leak discovery sweep (§11.4.118)** — audited all of `tests/` for the module-level fake-stub-no-teardown pattern. Finding: the pattern is a **structural no-op wherever the test dir has an `__init__.py`** (real package pre-loads → `setdefault` never installs the fake), so the ~26 `tests/unit/merge_service/` matches and `test_tracker_stats.py` are **inert** (no RED reproduces; strict TDD → no fix). The single genuinely-uncovered root is `pirateiro` (see follow-up).
+- **Constitution inheritance verified (§11.4.32/§11.4.35)** — PASS: pointer present in both layers, 12/12 propagated anchors present in canonical source, no conflict markers, `pre_build_verification.sh` 18/18 green. Informational: the constitution submodule pin `60e2d66` is behind upstream `f26368b` — operator decision to advance (§11.4.66), not auto-pulled (pin may be load-bearing).
+
+### Open queue (Issues.md)
+- **BOB-008** — RuTracker CAPTCHA — **OPERATOR-BLOCKED**. Unblock procedure now documented at `docs/qa/BOB-008/operator_runbook.md` (preferred: paste `bb_session` via `POST /api/v1/auth/rutracker/cookie-login`).
+- Everything else closed (DB↔MD in sync, 62 items, `bin/workable-items validate` OK).
+
+### Known low-priority follow-up (NOT blocking — suite is green; not yet ticketed)
+- **`pirateiro` test-isolation defense-in-depth** — `tests/unit/test_plugin_pirateiro.py` injects `sys.modules['pirateiro']` at module scope; `pirateiro` is the one root NOT in `tests/conftest.py` `_POLLUTING_ROOTS`, so it persists across files. **Benign today** (real plugin module, no other test imports `pirateiro`; 4121 passed × 3 seeds; no RED reproduces → strict TDD §11.4.43 means no fix landed). Recommended: add `pirateiro` to `_POLLUTING_ROOTS` as defense-in-depth before any future test injects a *fake* `pirateiro` that would mask a real defect. Should be ticketed as a `BOB-` Task by the operator/next session (a stray `WIT-001` mis-add was reverted to keep the SSoT clean).
+- ~~`test_credential_env_wiring` / env_loader stub-teardown quirk~~ — **RESOLVED this session** (see above).
 
 ---
 

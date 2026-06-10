@@ -34,8 +34,22 @@ _MS_PATH = os.path.join(_SRC_PATH, "merge_service")
 if _SRC_PATH not in sys.path:
     sys.path.insert(0, _SRC_PATH)
 
-sys.modules.setdefault("merge_service", type(sys)("merge_service"))
-sys.modules["merge_service"].__path__ = [_MS_PATH]
+# Module roots this file injects/replaces in sys.modules so it can exec
+# merge_service/search.py without the package being installed. They MUST be
+# snapshotted + restored around every test (NOT clobbered unconditionally at
+# import time) — otherwise the FAKE namespace stub leaks into a sibling that
+# expects the REAL merge_service package, a latent §11.4.50 pollution that
+# the host suite only masks via run order. The autouse fixture below provides
+# the teardown; tests request it transitively through ``search_mod``.
+_INJECTED_MODULE_KEYS = ("merge_service", "merge_service.search", "merge_service.retry")
+
+
+def _install_merge_service_namespace_stub() -> None:
+    """Install the throw-away ``merge_service`` namespace package used so
+    ``merge_service/search.py`` can be exec'd standalone."""
+    sys.modules.setdefault("merge_service", type(sys)("merge_service"))
+    sys.modules["merge_service"].__path__ = [_MS_PATH]
+
 
 # FAKE, non-secret test credential values. NEVER real.
 _FAKE_USER = "fake-test-user-not-real"
@@ -65,7 +79,21 @@ def _import_search_module():
 
 @pytest.fixture
 def search_mod():
-    return _import_search_module()
+    """Import merge_service.search via the standalone-exec pattern, restoring
+    every sys.modules key this file injects on teardown so the FAKE
+    ``merge_service`` namespace stub never leaks into a sibling test that
+    expects the REAL package (§11.4.50 deterministic-consistency)."""
+    saved = {k: sys.modules.get(k) for k in _INJECTED_MODULE_KEYS}
+    _install_merge_service_namespace_stub()
+    try:
+        yield _import_search_module()
+    finally:
+        for k in _INJECTED_MODULE_KEYS:
+            prev = saved[k]
+            if prev is None:
+                sys.modules.pop(k, None)
+            else:
+                sys.modules[k] = prev
 
 
 @pytest.fixture

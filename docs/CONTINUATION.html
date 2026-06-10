@@ -1,16 +1,96 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
-2026-06-10T00:00:00Z <strong>Session:</strong> 2026-06-10 (Session 9 —
-overnight autonomous stabilization) <strong>Last commit:</strong>
-<code>6230865</code> <strong>Branch:</strong> <code>main</code>
-<strong>Working tree:</strong> CLEAN (after the doc commit that carries
-this update)</p>
+<p><strong>Revision:</strong> 14 <strong>Last modified:</strong>
+2026-06-10T05:12:40Z <strong>Session:</strong> 2026-06-10 (Session 10 —
+env_loader isolation fix + BOB-008 runbook + leak sweep) <strong>Last
+commit:</strong> <code>c10ad07</code> (Session-10 work commits on top of
+this) <strong>Branch:</strong> <code>main</code> <strong>Working
+tree:</strong> CLEAN (after the doc commit that carries this update)</p>
 <blockquote>
 <p>Send <code>continue</code> to pick up exactly where we left off. This
 file is the single source of truth for session handoff (§12.10 /
 §11.4.131).</p>
 </blockquote>
+<hr />
+<h2
+id="current-state-session-10-2026-06-10-subagent-driven-loop">CURRENT
+STATE — Session 10 (2026-06-10, subagent-driven loop)</h2>
+<p><strong>Suite stays FULLY GREEN. This session was hardening +
+verification, subagent-driven (§11.4.70), every change code-reviewed
+before commit (§11.4.125/§11.4.134).</strong></p>
+<h3 id="what-landed-session-10">What landed (Session 10)</h3>
+<ul>
+<li><strong><code>test_credential_env_wiring.py</code> isolation
+fix</strong> — resolved the Session-9 “known low-priority follow-up”
+below. A <code>merge_service</code> fake-namespace stub was installed at
+module-collection time with no teardown, so <code>conftest</code>’s
+<code>_isolate_download_proxy_modules</code> captured-and-restored the
+<em>fake</em> stub into siblings in some run orders. Fixed by moving
+stub install into a <code>search_mod</code> fixture that
+snapshots/restores the 3 injected keys (<code>merge_service</code>,
+<code>.search</code>, <code>.retry</code>) in <code>finally</code>.
+<strong>Evidence:</strong> RED reproduction (the 5 credential tests + a
+temporary leak-probe) went <code>1 failed</code> → all green; the file’s
+own <strong>5 tests pass</strong> standalone; full unit suite
+<strong>4121 passed</strong> × seeds default/42/31337 (Session-10 run).
+Code-review <strong>GO</strong> (proved negation; no weakened
+assertions; ruff clean).</li>
+<li><strong><code>docs/qa/BOB-008/operator_runbook.md</code></strong> —
+copy-pasteable operator unblock procedure for BOB-008 (cookie path
+preferred; CAPTCHA path documented with its
+<code>cap_sid</code>/<code>cap_code_field</code> friction), every
+endpoint claim cited to <code>auth.py:line</code>
+(§11.4.83/§11.4.99).</li>
+<li><strong>Latent-leak discovery sweep (§11.4.118)</strong> — audited
+all of <code>tests/</code> for the module-level fake-stub-no-teardown
+pattern. Finding: the pattern is a <strong>structural no-op wherever the
+test dir has an <code>__init__.py</code></strong> (real package
+pre-loads → <code>setdefault</code> never installs the fake), so the ~26
+<code>tests/unit/merge_service/</code> matches and
+<code>test_tracker_stats.py</code> are <strong>inert</strong> (no RED
+reproduces; strict TDD → no fix). The single genuinely-uncovered root is
+<code>pirateiro</code> (see follow-up).</li>
+<li><strong>Constitution inheritance verified
+(§11.4.32/§11.4.35)</strong> — PASS: pointer present in both layers,
+12/12 propagated anchors present in canonical source, no conflict
+markers, <code>pre_build_verification.sh</code> 18/18 green.
+Informational: the constitution submodule pin <code>60e2d66</code> is
+behind upstream <code>f26368b</code> — operator decision to advance
+(§11.4.66), not auto-pulled (pin may be load-bearing).</li>
+</ul>
+<h3 id="open-queue-issues.md">Open queue (Issues.md)</h3>
+<ul>
+<li><strong>BOB-008</strong> — RuTracker CAPTCHA —
+<strong>OPERATOR-BLOCKED</strong>. Unblock procedure now documented at
+<code>docs/qa/BOB-008/operator_runbook.md</code> (preferred: paste
+<code>bb_session</code> via
+<code>POST /api/v1/auth/rutracker/cookie-login</code>).</li>
+<li>Everything else closed (DB↔︎MD in sync, 62 items,
+<code>bin/workable-items validate</code> OK).</li>
+</ul>
+<h3
+id="known-low-priority-follow-up-not-blocking-suite-is-green-not-yet-ticketed">Known
+low-priority follow-up (NOT blocking — suite is green; not yet
+ticketed)</h3>
+<ul>
+<li><strong><code>pirateiro</code> test-isolation
+defense-in-depth</strong> —
+<code>tests/unit/test_plugin_pirateiro.py</code> injects
+<code>sys.modules['pirateiro']</code> at module scope;
+<code>pirateiro</code> is the one root NOT in
+<code>tests/conftest.py</code> <code>_POLLUTING_ROOTS</code>, so it
+persists across files. <strong>Benign today</strong> (real plugin
+module, no other test imports <code>pirateiro</code>; 4121 passed × 3
+seeds; no RED reproduces → strict TDD §11.4.43 means no fix landed).
+Recommended: add <code>pirateiro</code> to <code>_POLLUTING_ROOTS</code>
+as defense-in-depth before any future test injects a <em>fake</em>
+<code>pirateiro</code> that would mask a real defect. Should be ticketed
+as a <code>BOB-</code> Task by the operator/next session (a stray
+<code>WIT-001</code> mis-add was reverted to keep the SSoT clean).</li>
+<li><del><code>test_credential_env_wiring</code> / env_loader
+stub-teardown quirk</del> — <strong>RESOLVED this session</strong> (see
+above).</li>
+</ul>
 <hr />
 <h2
 id="current-state-session-9-2026-06-10-overnight-autonomous-loop">CURRENT
@@ -72,7 +152,7 @@ hardening
 (<code>search.py</code>/<code>routes.py</code>/<code>helpers.py</code>/<code>eztv.py</code>).
 Closed <strong>BOB-061</strong>, <strong>BOB-062</strong>.</li>
 </ul>
-<h3 id="open-queue-issues.md">Open queue (Issues.md)</h3>
+<h3 id="open-queue-issues.md-1">Open queue (Issues.md)</h3>
 <ul>
 <li><strong>BOB-008</strong> — RuTracker CAPTCHA —
 <strong>OPERATOR-BLOCKED</strong>: needs you to complete the CAPTCHA at

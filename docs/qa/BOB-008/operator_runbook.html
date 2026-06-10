@@ -1,0 +1,413 @@
+<h1 id="bob-008-rutracker-authentication-operator-runbook">BOB-008 —
+RuTracker Authentication Operator Runbook</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T05:12:40Z <strong>Ticket:</strong> BOB-008 (RuTracker CAPTCHA
+login — operator-blocked) <strong>Scope:</strong> QA evidence / operator
+procedure (constitution §11.4.83 <code>docs/qa</code>, §11.4.123
+rock-solid-proof, §11.4.21 operator-blocked discipline)</p>
+<blockquote>
+<p>This is a procedure document. The exact commands below are
+copy-pasteable. Do <strong>not</strong> run the live RuTracker steps
+against a CI/automation account — a CAPTCHA solve requires a human and
+the freeleech-only download rule still applies to any subsequent
+downloads.</p>
+</blockquote>
+<hr />
+<h2 id="why-this-is-operator-blocked-not-structurally-impossible">1. Why
+this is operator-blocked (not structurally impossible)</h2>
+<p>RuTracker’s <code>login.php</code> serves an <strong>image
+CAPTCHA</strong> (an
+<code>&lt;img src="https://static.rutracker.cc/captcha/…"&gt;</code>
+element on the login page — see
+<code>download-proxy/src/api/auth.py:134-137</code>). Solving it
+requires a human to <em>read the distorted image with their eyes</em>
+and type the characters; there is no in-process oracle the merge service
+can call to decode it autonomously. This makes BOB-008
+<strong><code>Operator-blocked</code></strong> per constitution §11.4.21
+— a human must perform exactly one irreducible step (reading the
+CAPTCHA). It is <strong>NOT</strong>
+<code>structurally-impossible</code> under §11.4.112: the login fully
+succeeds once a human supplies the correct text
+(<code>auth.py:254-262</code>), and the equally-valid
+<strong>cookie-login</strong> path (§3 below) sidesteps the CAPTCHA
+entirely by reusing a session a human already established in a browser.
+Every non-CAPTCHA part of the flow (request schemas, routing,
+env-credential wiring, error handling, cookie parsing) is autonomously
+tested (§6). Only the live-CAPTCHA-solve is irreducibly
+operator-blocked.</p>
+<hr />
+<h2 id="prerequisites">2. Prerequisites</h2>
+<ol type="1">
+<li><p><strong>Merge service running on port 7187.</strong> The auth
+router is mounted at <code>/api/v1/auth</code>
+(<code>download-proxy/src/api/__init__.py:239</code> imports
+<code>auth_router</code>; <code>__init__.py:252</code> mounts it with
+<code>prefix="/api/v1"</code> on top of the router’s own
+<code>prefix="/auth"</code> from <code>auth.py:23</code>). The app is
+served by <code>download-proxy/src/main.py</code> on
+<code>MERGE_SERVICE_PORT</code>, default <code>7187</code>
+(<code>api/__init__.py:100</code>). Confirm it is up:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7187/api/v1/auth/status <span class="kw">|</span> <span class="ex">python3</span> <span class="at">-m</span> json.tool</span></code></pre></div></li>
+<li><p><strong><code>RUTRACKER_USERNAME</code> /
+<code>RUTRACKER_PASSWORD</code> set in the environment</strong> that the
+merge-service process sees. Env priority (per project
+<code>CLAUDE.md</code> “Environment Variables”): shell env →
+<code>./.env</code> → <code>~/.qbit.env</code> → container env. See
+<code>.env.example:21-22</code> for the keys
+(<code>RUTRACKER_USERNAME</code>, <code>RUTRACKER_PASSWORD</code>;
+<code>.env.example:8</code> shows the <code>~/.bashrc</code> export
+pattern, <code>.env.example:19-20</code> notes the
+<code>RUTRACKER_USER</code>/<code>RUTRACKER_PASS</code> aliases). The
+service loads these via <code>SearchOrchestrator._load_env()</code>
+which consults <code>/config/.env</code>, <code>~/.qbit.env</code>,
+<code>/root/.qbit.env</code> as fallbacks
+(<code>search.py:632-636</code>).</p>
+<blockquote>
+<p><strong>Credentials are read server-side from env, NEVER from the
+request body.</strong> Both the CAPTCHA and the cookie path read
+<code>os.getenv("RUTRACKER_USERNAME")</code> /
+<code>os.getenv("RUTRACKER_PASSWORD")</code> inside the handler
+(<code>auth.py:115-116</code> for <code>/captcha</code>,
+<code>auth.py:221-222</code> for <code>/login</code>). The request body
+carries only the CAPTCHA text/token or the cookie string — never your
+password. (Mirrors the explicit NNMClub note at
+<code>auth.py:412-414</code>.)</p>
+</blockquote></li>
+<li><p><strong><code>RUTRACKER_MIRRORS</code></strong> (optional). If
+unset, the base URL defaults to <code>https://rutracker.org</code>
+(<code>auth.py:124</code>, <code>auth.py:315</code>).
+<code>.env.example:27</code> documents the override.</p></li>
+</ol>
+<hr />
+<h2 id="recommended-path-cookie-login-sidesteps-the-captcha">3.
+RECOMMENDED PATH — cookie login (sidesteps the CAPTCHA)</h2>
+<p>This is the preferred procedure. A human logs in once in a normal
+browser (solving the CAPTCHA there), then hands the resulting session
+cookie to the service. No CAPTCHA decoding in <code>curl</code> is
+involved.</p>
+<h3 id="a.-obtain-bb_session-from-a-browser">3a. Obtain
+<code>bb_session</code> from a browser</h3>
+<ol type="1">
+<li>Open <code>https://rutracker.org/forum/login.php</code> in a desktop
+browser and log in normally (you will solve the CAPTCHA in the browser
+UI).</li>
+<li>Open DevTools → <strong>Application/Storage → Cookies →
+<code>https://rutracker.org</code></strong>.</li>
+<li>Copy the value of the cookie named
+<strong><code>bb_session</code></strong>. (This is the only cookie the
+endpoint requires — <code>auth.py:309</code>.)</li>
+</ol>
+<h3 id="b.-post-it-to-the-cookie-login-endpoint">3b. POST it to the
+cookie-login endpoint</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> <span class="at">-X</span> POST http://localhost:7187/api/v1/auth/rutracker/cookie-login <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&#39;Content-Type: application/json&#39;</span> <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&#39;{&quot;cookie_string&quot;:&quot;bb_session=PASTE_YOUR_VALUE_HERE&quot;}&#39;</span></span></code></pre></div>
+<p>The body field is <strong><code>cookie_string</code></strong> — the
+only field of <code>CookieLoginRequest</code>
+(<code>auth.py:52-53</code>). You may paste the full
+<code>Cookie:</code> header string
+(e.g. <code>"bb_session=...; bb_data=...; cf_clearance=..."</code>); the
+handler splits on <code>;</code> and <code>=</code> and keeps every pair
+(<code>auth.py:303-307</code>), but it <strong>must contain
+<code>bb_session</code></strong> or it is rejected.</p>
+<h3 id="c.-responses-cited">3c. Responses (cited)</h3>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 30%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>HTTP</th>
+<th>When</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code>
+<code>{"authenticated": true, "message": "Successfully authenticated with RuTracker via cookie."}</code></td>
+<td>Cookie verified live (<code>/forum/index.php</code> returns the page
+containing <code>id="logged-in-username"</code>) and stored</td>
+<td><code>auth.py:329</code>, <code>auth.py:344-347</code></td>
+</tr>
+<tr>
+<td><code>400</code>
+<code>Cookie string must contain bb_session cookie.</code></td>
+<td>No <code>bb_session</code> in the parsed cookie jar</td>
+<td><code>auth.py:309-313</code></td>
+</tr>
+<tr>
+<td><code>401</code> <code>Cookie is invalid or expired.</code></td>
+<td>Cookie present but the verification fetch does NOT find
+<code>id="logged-in-username"</code> (i.e. not actually logged in)</td>
+<td><code>auth.py:329-333</code></td>
+</tr>
+<tr>
+<td><code>502</code>
+<code>Could not verify cookie: &lt;err&gt;</code></td>
+<td>The verification HTTP request to RuTracker itself failed
+(network/timeout)</td>
+<td><code>auth.py:336-337</code></td>
+</tr>
+</tbody>
+</table>
+<p>On <code>200</code>, the session cookie is stored in the
+orchestrator’s encrypted in-memory store under key
+<code>"rutracker"</code> (<code>auth.py:339-342</code>).</p>
+<hr />
+<h2
+id="captcha-path-fallback-currently-awkward-see-the-friction-note">4.
+CAPTCHA PATH (fallback — currently awkward, see the friction note)</h2>
+<p>Use this only if you cannot obtain a browser cookie. The flow is: GET
+<code>/captcha</code> → human reads the image → POST
+<code>/login</code>.</p>
+<h3 id="a.-fetch-the-captcha">4a. Fetch the CAPTCHA</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7187/api/v1/auth/rutracker/captcha <span class="op">&gt;</span> /tmp/bob008_captcha.json</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> json.tool /tmp/bob008_captcha.json <span class="kw">|</span> <span class="fu">head</span> <span class="at">-8</span></span></code></pre></div>
+<p>A CAPTCHA-required response looks like
+(<code>auth.py:200-206</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;captcha_required&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;authenticated&quot;</span><span class="fu">:</span> <span class="kw">false</span><span class="fu">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;captcha_image&quot;</span><span class="fu">:</span> <span class="st">&quot;data:image/png;base64,iVBORw0KGgo...&quot;</span><span class="fu">,</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;captcha_token&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;urlsafe-token&gt;&quot;</span><span class="fu">,</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;message&quot;</span><span class="fu">:</span> <span class="st">&quot;CAPTCHA detected. Submit the text via /auth/rutracker/login.&quot;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Other possible outcomes from <code>/captcha</code>: -
+<code>{"captcha_required": false, "authenticated": true, …}</code> —
+RuTracker let the service log in without a CAPTCHA; you’re done
+(<code>auth.py:157-161</code>). Verify with §5. -
+<code>{"captcha_required": false, "authenticated": false, …}</code> — no
+CAPTCHA found; try logging in directly (<code>auth.py:172-177</code>). -
+<code>400</code> —
+<code>RUTRACKER_USERNAME and RUTRACKER_PASSWORD not configured</code>
+(<code>auth.py:118-122</code>). - <code>502</code> — could not parse the
+CAPTCHA form fields or could not fetch the login page
+(<code>auth.py:182-186</code>, <code>auth.py:209-211</code>).</p>
+<h3 id="b.-decode-the-base64-image-to-a-png-a-human-can-view">4b. Decode
+the base64 image to a PNG a human can view</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-</span> <span class="op">&lt;&lt;&#39;PY&#39;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="st">import base64, json</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="st">data = json.load(open(&quot;/tmp/bob008_captcha.json&quot;))</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="st">url = data[&quot;captcha_image&quot;]                       # &quot;data:image/png;base64,....&quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="st">b64 = url.split(&quot;,&quot;, 1)[1]                          # strip the data-URL prefix</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="st">open(&quot;/tmp/bob008_captcha.png&quot;, &quot;wb&quot;).write(base64.b64decode(b64))</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="st">print(&quot;token:&quot;, data[&quot;captcha_token&quot;])</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="st">print(&quot;wrote /tmp/bob008_captcha.png — open it and read the text&quot;)</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="op">PY</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="ex">open</span> /tmp/bob008_captcha.png   <span class="co"># macOS; use xdg-open on Linux</span></span></code></pre></div>
+<h3
+id="c.-friction-login-needs-cap_sid-cap_code_field-that-captcha-does-not-return">4c.
+⚠️ FRICTION — <code>/login</code> needs <code>cap_sid</code> +
+<code>cap_code_field</code> that <code>/captcha</code> does NOT
+return</h3>
+<p><code>POST /rutracker/login</code> validates against
+<code>CaptchaLoginRequest</code>, whose <strong>required</strong> fields
+are <code>cap_sid</code>, <code>cap_code_field</code>,
+<code>captcha_text</code>, <code>captcha_token</code>
+(<code>auth.py:45-49</code>). <strong>But the <code>/captcha</code>
+response above only returns <code>captcha_image</code> +
+<code>captcha_token</code></strong> — it does NOT return
+<code>cap_sid</code> or <code>cap_code_field</code>. Those two values
+are parsed server-side from the login page
+(<code>auth.py:179-180</code>) and stored <strong>server-side</strong>
+inside the pending-CAPTCHA store, keyed by the
+<code>captcha_token</code> (<code>auth.py:193-198</code>); the actual
+login handler pops them back out of that store by token
+(<code>auth.py:230-237</code>) and ignores… no — it uses the
+<code>cap_sid</code> and <code>cap_code_field</code> <strong>from the
+request body</strong> (<code>auth.py:247-248</code>), even though it
+already holds the authoritative copies under the token.</p>
+<p><strong>Net effect for a <code>curl</code> operator:</strong> the
+values the body requires are not handed back to you, so you cannot
+correctly populate <code>cap_sid</code> / <code>cap_code_field</code>
+from the <code>curl</code> response alone. To complete this path by hand
+you would have to scrape <code>name="cap_sid" value="…"</code> and
+<code>name="cap_code_…"</code> out of
+<code>https://rutracker.org/forum/login.php</code> yourself (the same
+regexes the server uses: <code>auth.py:179-180</code>). This is why
+<strong>the cookie path (§3) is preferred</strong> — it has no such
+hidden-field requirement. A future BOB-008 follow-up should either echo
+<code>cap_sid</code>/<code>cap_code_field</code> in the
+<code>/captcha</code> response, or have <code>/login</code> use the
+token-stored copies and require only <code>captcha_text</code> +
+<code>captcha_token</code> from the body.</p>
+<h3 id="d.-submit-once-you-have-all-four-fields">4d. Submit (once you
+have all four fields)</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> <span class="at">-X</span> POST http://localhost:7187/api/v1/auth/rutracker/login <span class="dt">\</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&#39;Content-Type: application/json&#39;</span> <span class="dt">\</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&#39;{</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="st">        &quot;cap_sid&quot;:&quot;&lt;scraped from login page&gt;&quot;,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="st">        &quot;cap_code_field&quot;:&quot;&lt;e.g. cap_code_xxxxx, scraped&gt;&quot;,</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="st">        &quot;captcha_text&quot;:&quot;&lt;what you read in the PNG&gt;&quot;,</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="st">        &quot;captcha_token&quot;:&quot;&lt;from step 4a&gt;&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="st">      }&#39;</span></span></code></pre></div>
+<p>Responses: - <code>200</code>
+<code>{"authenticated": true, "message": "Successfully authenticated with RuTracker."}</code>
+— success, session stored (<code>auth.py:254-262</code>). -
+<code>200</code>
+<code>{"authenticated": false, "captcha_required": true, "captcha_image": …, "captcha_token": &lt;new&gt;, "message": "Wrong CAPTCHA. A new one has been generated."}</code>
+— wrong text; a fresh CAPTCHA + token are returned, retry from 4b
+(<code>auth.py:279-285</code>). - <code>200</code>
+<code>{"authenticated": false, "message": "Login failed. Check credentials."}</code>
+— bad credentials (<code>auth.py:287-290</code>). - <code>400</code>
+<code>Invalid or expired captcha_token…</code> — the token wasn’t in the
+pending store (expired after <code>PENDING_CAPTCHAS_TTL_SECONDS</code>,
+default 900s, <code>auth.py:31</code>; or already consumed — it is
+popped on use, <code>auth.py:230</code>). Fetch a new one
+(<code>auth.py:230-235</code>). - <code>400</code>
+<code>RUTRACKER_USERNAME and RUTRACKER_PASSWORD not configured</code>
+(<code>auth.py:224-228</code>). - <code>500</code>
+<code>Login failed: &lt;err&gt;</code> — unexpected error during the
+login request (<code>auth.py:293-295</code>).</p>
+<hr />
+<h2 id="post-login-verification">5. Post-login verification</h2>
+<p>Confirm the session is live:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7187/api/v1/auth/rutracker/status <span class="kw">|</span> <span class="ex">python3</span> <span class="at">-m</span> json.tool</span></code></pre></div>
+<p>Expect
+<code>{"authenticated": true, "status": "active", "message": "RuTracker session is active."}</code>
+— this is returned only when the stored <code>bb_session</code> cookie
+actually loads <code>/forum/index.php</code> and the page contains
+<code>id="logged-in-username"</code> (<code>auth.py:89-94</code>). Other
+states: <code>no_session</code> (nothing stored,
+<code>auth.py:61-66</code>), <code>no_cookie</code> (session present but
+no <code>bb_session</code>, <code>auth.py:69-74</code>),
+<code>expired</code> (cookie no longer logs in,
+<code>auth.py:95-99</code>), <code>error</code> (verification request
+failed, <code>auth.py:100-105</code>).</p>
+<blockquote>
+<p><strong>The session does NOT survive a merge-service
+restart.</strong> Sessions are stored in
+<code>SearchOrchestrator._tracker_sessions</code>, an
+<code>EncryptedSessionStore</code> wrapping an in-memory
+<code>TTLCache</code> (<code>search.py:586-588</code>). Per its own
+docstring the encryption key is per-process ephemeral and “sessions live
+only in the in-memory TTLCache and never outlive the process”
+(<code>search.py:508-511</code>); the cache also has a TTL
+(<code>search.py:586-587</code>, default from
+<code>_max_searches</code>/<code>_ttl</code>). Therefore <strong>BOB-008
+must be re-run after any merge-service restart</strong> (and after the
+TTL expires). Pinning <code>SESSION_ENCRYPTION_KEY</code>
+(<code>search.py:519</code>) only preserves the <em>key</em>, not the
+in-memory entries — a restart still loses every stored session.</p>
+</blockquote>
+<hr />
+<h2 id="autonomous-coverage-what-is-already-tested-without-a-human">6.
+Autonomous coverage (what is already tested without a human)</h2>
+<p>Everything except the live-CAPTCHA-solve is covered by existing
+automated tests, so only the irreducible human step is
+operator-blocked:</p>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 40%" />
+<col style="width: 31%" />
+</colgroup>
+<thead>
+<tr>
+<th>Area</th>
+<th>Test(s)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Request schemas (<code>CaptchaLoginRequest</code> /
+<code>CookieLoginRequest</code> field names, required-field
+validation)</td>
+<td><code>tests/unit/test_auth_models.py:18-37</code>,
+<code>tests/unit/test_auth.py:29-46</code></td>
+<td>Asserts the exact
+<code>cap_sid</code>/<code>cap_code_field</code>/<code>captcha_text</code>/<code>captcha_token</code>
+and <code>cookie_string</code> fields</td>
+</tr>
+<tr>
+<td>Router exists / mounted; pending-captcha store is a bounded
+mapping</td>
+<td><code>tests/unit/test_auth.py:13-27</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>/rutracker/status</code> all states (no_session / no_cookie /
+active / expired / error)</td>
+<td><code>tests/unit/test_auth_coverage.py:36-120</code></td>
+<td>Drives the status handler with mocked aiohttp</td>
+</tr>
+<tr>
+<td><code>/captcha</code> flow: missing-creds 400, CAPTCHA detected +
+token persisted, no-CAPTCHA direct login</td>
+<td><code>tests/unit/api_layer/test_auth_coverage_extra.py:55-95</code></td>
+<td>Asserts token stored with correct <code>cap_sid</code></td>
+</tr>
+<tr>
+<td>Cookie login: missing <code>bb_session</code> 400, invalid cookie
+401, valid cookie 200</td>
+<td><code>tests/unit/test_auth_coverage.py:149-208</code></td>
+<td>Cookie parsing + all three response paths</td>
+</tr>
+<tr>
+<td><code>/auth/status</code> aggregate (all trackers)</td>
+<td><code>tests/unit/test_auth_coverage.py:208-</code>…</td>
+<td></td>
+</tr>
+<tr>
+<td>CAPTCHA cache bounded + TTL-evicting (memory-safety)</td>
+<td><code>tests/security/test_captcha_cache_bounded.py:21-50</code></td>
+<td>Confirms <code>TTLCache</code>, maxsize ≤ 1024, ttl 900</td>
+</tr>
+<tr>
+<td>Credentials read from env (not body); tracker enabled/authed only
+when both creds set</td>
+<td><code>tests/unit/test_credential_env_wiring.py:115-174</code></td>
+<td>Proves server-side env wiring</td>
+</tr>
+<tr>
+<td>Auth-bypass / brute-force / no-credentials hardening</td>
+<td><code>tests/security/test_auth_bypass.py:27-101</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Irreducibly operator-blocked:</strong> only the human act of
+reading the distorted CAPTCHA image and typing the characters
+(<code>auth.py:134-137</code>, consumed at
+<code>auth.py:247-248</code>). Every surrounding mechanism is
+autonomously verified above.</p>
+<hr />
+<h2 id="sources-verified">Sources verified</h2>
+<p>Files read in this session (constitution §11.4.99):</p>
+<ul>
+<li><code>download-proxy/src/api/auth.py:1-532</code> — all RuTracker
+auth handlers, request models, response bodies, status codes (lines
+cited inline throughout).</li>
+<li><code>download-proxy/src/api/__init__.py:86-100, 239-253</code> —
+FastAPI app, <code>MERGE_SERVICE_PORT</code> default 7187,
+<code>auth_router</code> import + mount at <code>/api/v1</code> +
+<code>/auth</code>.</li>
+<li><code>download-proxy/src/main.py:10-55</code> — uvicorn entry point
+serving the FastAPI <code>app</code>.</li>
+<li><code>download-proxy/src/merge_service/search.py:496-563</code>
+(<code>EncryptedSessionStore</code>, ephemeral key, in-memory TTLCache),
+<code>:566-593</code> (orchestrator session-store wiring),
+<code>:622-648</code> (<code>_load_env</code> fallback paths).</li>
+<li><code>.env.example:8, 19-22, 27</code> —
+<code>RUTRACKER_USERNAME</code>/<code>RUTRACKER_PASSWORD</code>/<code>RUTRACKER_MIRRORS</code>
+keys and aliases.</li>
+<li><code>tests/unit/test_auth.py</code>,
+<code>tests/unit/test_auth_models.py</code>,
+<code>tests/unit/test_auth_coverage.py</code>,
+<code>tests/unit/api_layer/test_auth_coverage_extra.py</code>,
+<code>tests/security/test_captcha_cache_bounded.py</code>,
+<code>tests/security/test_auth_bypass.py</code>,
+<code>tests/unit/test_credential_env_wiring.py</code> — autonomous
+coverage cited in §6 (line ranges inline).</li>
+</ul>
