@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BobaLink — Options</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="options-container">
+      <!-- Tab navigation -->
+      <nav class="sidebar" aria-label="Settings sections">
+        <div class="sidebar-brand">
+          <h1>BobaLink</h1>
+        </div>
+        <div class="sidebar-nav" role="tablist" aria-orientation="vertical">
+          <button
+            type="button"
+            role="tab"
+            data-tab="server"
+            id="tab-server"
+            aria-controls="panel-server"
+            aria-selected="true"
+            class="nav-item active"
+          >
+            Server
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-tab="download"
+            id="tab-download"
+            aria-controls="panel-download"
+            aria-selected="false"
+            class="nav-item"
+            tabindex="-1"
+          >
+            Download Prefs
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-tab="queue"
+            id="tab-queue"
+            aria-controls="panel-queue"
+            aria-selected="false"
+            class="nav-item"
+            tabindex="-1"
+          >
+            Queue
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-tab="notifications"
+            id="tab-notifications"
+            aria-controls="panel-notifications"
+            aria-selected="false"
+            class="nav-item"
+            tabindex="-1"
+          >
+            Notifications
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-tab="detection"
+            id="tab-detection"
+            aria-controls="panel-detection"
+            aria-selected="false"
+            class="nav-item"
+            tabindex="-1"
+          >
+            Detection
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-tab="ui"
+            id="tab-ui"
+            aria-controls="panel-ui"
+            aria-selected="false"
+            class="nav-item"
+            tabindex="-1"
+          >
+            UI
+          </button>
+          <button
+            type="button"
+            role="tab"
+            data-tab="security"
+            id="tab-security"
+            aria-controls="panel-security"
+            aria-selected="false"
+            class="nav-item"
+            tabindex="-1"
+          >
+            Security
+          </button>
+        </div>
+      </nav>
+
+      <main class="main-content">
+        <!-- ── Server ──────────────────────────────────────────────────── -->
+        <section
+          id="panel-server"
+          role="tabpanel"
+          aria-labelledby="tab-server"
+          class="section active"
+        >
+          <h2>Server</h2>
+          <div class="field">
+            <label for="opt-server-name">Server name</label>
+            <input type="text" id="opt-server-name" value="Boba" />
+          </div>
+          <div class="field">
+            <label for="opt-server-url">Server URL</label>
+            <input
+              type="url"
+              id="opt-server-url"
+              value="http://localhost:7187"
+              placeholder="http://localhost:7187"
+            />
+            <p class="field-help">Boba merge service endpoint (default port 7187).</p>
+          </div>
+          <div class="field">
+            <label for="opt-server-auth">Authentication</label>
+            <select id="opt-server-auth">
+              <option value="none">None</option>
+              <option value="cookie">Username + Password (cookie)</option>
+              <option value="api_key">API Key</option>
+              <option value="basic">Basic</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="opt-boba-api-token">Boba API token (optional)</label>
+            <input
+              type="password"
+              id="opt-boba-api-token"
+              autocomplete="off"
+              placeholder="Optional Boba API token"
+            />
+            <p class="field-help">
+              Only needed if the Boba backend sets <code>BOBA_API_TOKEN</code>.
+              Stored encrypted under the session passphrase below — never a fixed key.
+            </p>
+          </div>
+          <div class="field">
+            <label for="opt-token-passphrase">Session passphrase</label>
+            <input
+              type="password"
+              id="opt-token-passphrase"
+              autocomplete="off"
+              placeholder="Required to encrypt the token above"
+            />
+            <p class="field-help">
+              The token is encrypted only under a passphrase you supply. Leave the
+              token blank to keep any previously stored value.
+            </p>
+          </div>
+          <div class="field">
+            <label for="opt-request-timeout">Connection timeout (seconds)</label>
+            <input type="number" id="opt-request-timeout" min="1" value="30" />
+          </div>
+          <div class="field">
+            <label for="opt-health-interval">Health check interval (minutes)</label>
+            <input type="number" id="opt-health-interval" min="1" value="5" />
+          </div>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-verify-ssl" checked />
+            <label for="opt-verify-ssl">Verify HTTPS certificates (HTTPS only)</label>
+          </div>
+        </section>
+
+        <!-- ── Download Prefs ──────────────────────────────────────────── -->
+        <section
+          id="panel-download"
+          role="tabpanel"
+          aria-labelledby="tab-download"
+          class="section"
+          hidden
+        >
+          <h2>Download Preferences</h2>
+          <div class="field">
+            <label for="opt-default-category">Default category</label>
+            <input type="text" id="opt-default-category" placeholder="e.g. BobaLink" />
+          </div>
+          <div class="field">
+            <label for="opt-default-savepath">Default save path</label>
+            <input type="text" id="opt-default-savepath" placeholder="server-side path" />
+          </div>
+          <div class="field">
+            <label for="opt-content-layout">Content layout</label>
+            <select id="opt-content-layout">
+              <option value="original">Original</option>
+              <option value="subfolder">Create subfolder</option>
+              <option value="no_subfolder">No subfolder</option>
+            </select>
+          </div>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-start-paused" />
+            <label for="opt-start-paused">Pause after add</label>
+          </div>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-skip-hashcheck" />
+            <label for="opt-skip-hashcheck">Skip hash check</label>
+          </div>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-auto-tmm" />
+            <label for="opt-auto-tmm">Automatic torrent management</label>
+          </div>
+        </section>
+
+        <!-- ── Queue ───────────────────────────────────────────────────── -->
+        <section
+          id="panel-queue"
+          role="tabpanel"
+          aria-labelledby="tab-queue"
+          class="section"
+          hidden
+        >
+          <h2>Queue</h2>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-offline-queue" checked />
+            <label for="opt-offline-queue">Enable offline queue for failed sends</label>
+          </div>
+          <div class="field">
+            <label for="opt-max-queue">Max queue size</label>
+            <input type="number" id="opt-max-queue" min="1" value="50" />
+          </div>
+          <div class="field">
+            <label for="opt-max-history">Max history items</label>
+            <input type="number" id="opt-max-history" min="1" value="100" />
+          </div>
+        </section>
+
+        <!-- ── Notifications ───────────────────────────────────────────── -->
+        <section
+          id="panel-notifications"
+          role="tabpanel"
+          aria-labelledby="tab-notifications"
+          class="section"
+          hidden
+        >
+          <h2>Notifications</h2>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-show-notifications" checked />
+            <label for="opt-show-notifications">Show notifications</label>
+          </div>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-notification-sound" />
+            <label for="opt-notification-sound">Play a sound on completion</label>
+          </div>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-auto-send" />
+            <label for="opt-auto-send">Auto-send detected torrents (no confirmation)</label>
+          </div>
+        </section>
+
+        <!-- ── Detection ───────────────────────────────────────────────── -->
+        <section
+          id="panel-detection"
+          role="tabpanel"
+          aria-labelledby="tab-detection"
+          class="section"
+          hidden
+        >
+          <h2>Detection</h2>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-auto-scan" checked />
+            <label for="opt-auto-scan">Automatically scan pages</label>
+          </div>
+          <div class="field">
+            <label for="opt-auto-scan-delay">Auto-scan delay (ms)</label>
+            <input type="number" id="opt-auto-scan-delay" min="0" value="2000" />
+          </div>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-highlight" checked />
+            <label for="opt-highlight">Highlight detected torrents</label>
+          </div>
+          <div class="field">
+            <label for="opt-highlight-style">Highlight style</label>
+            <select id="opt-highlight-style">
+              <option value="badge">Badge</option>
+              <option value="border">Border</option>
+              <option value="glow">Glow</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- ── UI ──────────────────────────────────────────────────────── -->
+        <section
+          id="panel-ui"
+          role="tabpanel"
+          aria-labelledby="tab-ui"
+          class="section"
+          hidden
+        >
+          <h2>UI</h2>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-show-context-menu" checked />
+            <label for="opt-show-context-menu">Show context-menu items</label>
+          </div>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-keyboard-shortcuts" checked />
+            <label for="opt-keyboard-shortcuts">Enable keyboard shortcuts</label>
+          </div>
+        </section>
+
+        <!-- ── Security ────────────────────────────────────────────────── -->
+        <section
+          id="panel-security"
+          role="tabpanel"
+          aria-labelledby="tab-security"
+          class="section"
+          hidden
+        >
+          <h2>Security</h2>
+          <p class="field-help">
+            BobaLink is delegate-by-default: no decryptable secret is stored unless
+            you opt in to a Boba API token, which is encrypted only under a session
+            passphrase you supply on the Server tab. No fixed encryption key is used.
+          </p>
+          <div class="field field-checkbox">
+            <input type="checkbox" id="opt-debug-mode" />
+            <label for="opt-debug-mode">Enable debug logging</label>
+          </div>
+        </section>
+
+        <div class="save-bar">
+          <button type="button" id="opt-save" class="btn btn-primary">Save settings</button>
+          <span id="opt-save-status" class="save-status" role="status" aria-live="polite"></span>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="./options.ts"></script>
+  </body>
+</html>

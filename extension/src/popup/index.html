@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BobaLink</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="popup-container">
+      <!-- Header -->
+      <header class="popup-header">
+        <div class="header-brand">
+          <img
+            src="../assets/icon-32.png"
+            alt=""
+            class="header-icon"
+            id="header-icon"
+            aria-hidden="true"
+          />
+          <h1 class="header-title">BobaLink</h1>
+        </div>
+        <div
+          class="header-status"
+          id="connection-status"
+          role="status"
+          aria-live="polite"
+        >
+          <span class="status-dot" id="status-dot" aria-hidden="true"></span>
+          <span class="status-text" id="status-text">Checking…</span>
+        </div>
+      </header>
+
+      <!-- Connection Warning -->
+      <div
+        class="connection-warning"
+        id="connection-warning"
+        role="alert"
+        style="display: none"
+      >
+        <span class="warning-icon" aria-hidden="true">&#9888;</span>
+        <span
+          >No server configured.
+          <a href="#" id="open-options-warning" class="options-link"
+            >Open Options</a
+          ></span
+        >
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar" id="toolbar" role="toolbar" aria-label="Torrent actions">
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          id="btn-refresh"
+          aria-label="Refresh detected torrents"
+        >
+          Refresh
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          id="btn-send-all"
+          aria-label="Send all detected torrents to Boba"
+          disabled
+        >
+          Send All
+        </button>
+      </div>
+
+      <!-- Torrent List -->
+      <main class="torrent-list-wrap">
+        <h2 class="section-title" id="list-heading">Detected torrents</h2>
+        <ul
+          class="torrent-list"
+          id="torrent-list"
+          aria-labelledby="list-heading"
+        ></ul>
+
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon" aria-hidden="true">&#128269;</div>
+          <p class="empty-title">No torrents detected</p>
+          <p class="empty-subtitle">
+            Browse a torrent site to detect magnet links and .torrent files.
+          </p>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="popup-footer">
+        <a href="#" id="open-options" class="options-link">Options</a>
+      </footer>
+
+      <!-- Live region for action results (accessibility) -->
+      <div
+        class="sr-status"
+        id="action-status"
+        role="status"
+        aria-live="polite"
+      ></div>
+    </div>
+
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>

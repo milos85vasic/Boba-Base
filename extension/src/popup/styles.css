@@ -1,0 +1,396 @@
+/**
+ * BobaLink Popup Styles (Phase 3, F popup REFACTOR).
+ *
+ * Ported from the reference dark-only popup and re-expressed via CSS custom
+ * properties so the popup follows the OS theme: dark by default, with a
+ * `prefers-color-scheme: light` override. Width is held to the 380–420px
+ * popup band (Dim10).
+ */
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Theme tokens
+   ──────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --bg: #1a1a2e;
+  --bg-elevated: #1e1e36;
+  --bg-row: #20203a;
+  --bg-row-hover: #262648;
+  --header-from: #16213e;
+  --header-to: #0f3460;
+  --border: #2a2a4a;
+  --text: #e0e0e0;
+  --text-muted: #a0a0b0;
+  --text-faint: #7a7a90;
+  --primary: #0f3460;
+  --primary-hover: #16498a;
+  --secondary: #2a2a4a;
+  --secondary-hover: #353560;
+  --link: #90caf9;
+  --link-hover: #bbdefb;
+  --warning-bg: #2d1f00;
+  --warning-border: #4a3500;
+  --warning-text: #ffb74d;
+  --online: #4caf50;
+  --offline: #f44336;
+  --warn: #ff9800;
+  --focus: #82b1ff;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f5f6fa;
+    --bg-elevated: #ffffff;
+    --bg-row: #ffffff;
+    --bg-row-hover: #eef1f8;
+    --header-from: #16498a;
+    --header-to: #0f3460;
+    --border: #d9dced;
+    --text: #1c1c28;
+    --text-muted: #5a5a70;
+    --text-faint: #8a8a9c;
+    --primary: #0f3460;
+    --primary-hover: #16498a;
+    --secondary: #e4e7f2;
+    --secondary-hover: #d4d9ea;
+    --link: #1565c0;
+    --link-hover: #0d47a1;
+    --warning-bg: #fff6e0;
+    --warning-border: #ffd591;
+    --warning-text: #9a6a00;
+    --online: #2e7d32;
+    --offline: #c62828;
+    --warn: #ef6c00;
+    --focus: #1565c0;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Base / Reset
+   ──────────────────────────────────────────────────────────────────────────── */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  min-width: 380px;
+  max-width: 420px;
+}
+
+.popup-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 540px;
+  overflow: hidden;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Header
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--header-from) 0%, var(--header-to) 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #d6d9ec;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #888;
+  transition: background 0.3s ease;
+}
+
+.status-dot.status-online {
+  background: var(--online);
+  box-shadow: 0 0 4px rgba(76, 175, 80, 0.5);
+}
+
+.status-dot.status-offline {
+  background: var(--offline);
+  box-shadow: 0 0 4px rgba(244, 67, 54, 0.5);
+}
+
+.status-dot.status-warning {
+  background: var(--warn);
+  box-shadow: 0 0 4px rgba(255, 152, 0, 0.5);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Connection Warning
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.connection-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--warning-bg);
+  border-bottom: 1px solid var(--warning-border);
+  font-size: 12px;
+  color: var(--warning-text);
+}
+
+.warning-icon {
+  font-size: 14px;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Toolbar
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.toolbar #btn-send-all {
+  margin-left: auto;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Buttons
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+  font-family: inherit;
+  color: #fff;
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+.btn-primary {
+  background: var(--primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--secondary-hover);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible,
+.options-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Torrent list
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.torrent-list-wrap {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  max-height: 380px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-faint);
+  padding: 10px 16px 4px;
+}
+
+.torrent-list {
+  list-style: none;
+}
+
+.torrent-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-row);
+}
+
+.torrent-item:hover {
+  background: var(--bg-row-hover);
+}
+
+.torrent-sent {
+  opacity: 0.6;
+}
+
+.torrent-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.torrent-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.torrent-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.torrent-type {
+  font-weight: 600;
+}
+
+.torrent-hash {
+  font-family: "SF Mono", "Roboto Mono", Menlo, Consolas, monospace;
+  color: var(--text-faint);
+}
+
+.torrent-status {
+  color: var(--online);
+  font-weight: 600;
+}
+
+.btn-send-one {
+  flex: 0 0 auto;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Empty state
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.empty-state {
+  text-align: center;
+  padding: 36px 24px;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+.empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.empty-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Footer
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.popup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.options-link {
+  color: var(--link);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.options-link:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Screen-reader-only live region
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.sr-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
