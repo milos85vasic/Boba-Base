@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# WXT build output + prepared types
+.output/
+.wxt/
+
+# Test coverage
+coverage/
+
+# Local secrets / captured credentials (§11.4.10 / §11.4.30 + Plan E §5.3)
+# The extension stores no decryptable secret in the localhost-proxy deployment;
+# these patterns guard any dev artifact that could ever capture a real token.
+*.secret.json
+*.token
+*.storage-dump.json
+qa-captures/
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+*.log
