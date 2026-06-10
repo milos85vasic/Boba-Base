@@ -1,0 +1,118 @@
+{
+  "extName": {
+    "message": "BobaLink",
+    "description": "Extension name displayed in the browser toolbar"
+  },
+  "extDescription": {
+    "message": "トレントファイルとマグネットリンクを検出し、Boba プロジェクトの qBitTorrent ダッシュボードに送信します",
+    "description": "Extension description shown in the Chrome Web Store and extension management page"
+  },
+  "cmdSendToBoba": {
+    "message": "現在のページのトレントを Boba に送信",
+    "description": "Keyboard shortcut description for sending torrents"
+  },
+  "cmdScanPage": {
+    "message": "現在のページをトレントについてスキャン",
+    "description": "Keyboard shortcut description for scanning the page"
+  },
+  "cmdOpenDashboard": {
+    "message": "Boba ダッシュボードを開く",
+    "description": "Keyboard shortcut description for opening the dashboard"
+  },
+  "popupTitle": {
+    "message": "BobaLink - 検出されたトレント",
+    "description": "Title of the popup window"
+  },
+  "noTorrentsDetected": {
+    "message": "このページでトレントは検出されませんでした",
+    "description": "Message shown when no torrents are found"
+  },
+  "sendToBoba": {
+    "message": "Boba に送信",
+    "description": "Button label for sending torrents"
+  },
+  "scanning": {
+    "message": "スキャン中…",
+    "description": "Status text shown while scanning"
+  },
+  "sending": {
+    "message": "送信中…",
+    "description": "Status text shown while sending torrents"
+  },
+  "sendSuccess": {
+    "message": "トレントを正常に送信しました！",
+    "description": "Success message after sending torrents"
+  },
+  "sendFailed": {
+    "message": "トレントの送信に失敗しました",
+    "description": "Error message when sending fails"
+  },
+  "connectionOnline": {
+    "message": "接続済み",
+    "description": "Status indicating server connection is active"
+  },
+  "connectionOffline": {
+    "message": "切断されました",
+    "description": "Status indicating server connection is lost"
+  },
+  "notConfigured": {
+    "message": "サーバーが設定されていません",
+    "description": "Status when no server is set up"
+  },
+  "optionsTitle": {
+    "message": "BobaLink の設定",
+    "description": "Title of the options page"
+  },
+  "serverSectionTitle": {
+    "message": "サーバー構成",
+    "description": "Title of the server configuration section"
+  },
+  "generalSectionTitle": {
+    "message": "一般設定",
+    "description": "Title of the general settings section"
+  },
+  "advancedSectionTitle": {
+    "message": "詳細設定",
+    "description": "Title of the advanced settings section"
+  },
+  "addServer": {
+    "message": "サーバーを追加",
+    "description": "Button to add a new server"
+  },
+  "testConnection": {
+    "message": "接続をテスト",
+    "description": "Button to test server connection"
+  },
+  "autoDiscover": {
+    "message": "自動検出",
+    "description": "Button to auto-discover servers"
+  },
+  "saveChanges": {
+    "message": "変更を保存",
+    "description": "Button to save settings"
+  },
+  "discardChanges": {
+    "message": "破棄",
+    "description": "Button to discard unsaved changes"
+  },
+  "magnetLink": {
+    "message": "マグネットリンク",
+    "description": "Label for magnet link type"
+  },
+  "torrentFile": {
+    "message": "トレントファイル",
+    "description": "Label for torrent file type"
+  },
+  "contextMenuSend": {
+    "message": "Boba に送信",
+    "description": "Context menu item to send a torrent"
+  },
+  "contextMenuScan": {
+    "message": "ページをトレントについてスキャン",
+    "description": "Context menu item to scan the page"
+  },
+  "contextMenuDashboard": {
+    "message": "Boba ダッシュボードを開く",
+    "description": "Context menu item to open dashboard"
+  }
+}

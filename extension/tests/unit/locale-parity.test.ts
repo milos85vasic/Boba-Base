@@ -1,5 +1,6 @@
 /**
- * i18n locale-parity guard (Phase 6 — locales `ru`, `de`, `fr`).
+ * i18n locale-parity guard (Phase 6 — locales `ru`, `de`, `fr`, `es`, `it`,
+ * `pt`, `ja`).
  *
  * The user-observable property: every non-default locale renders the SAME
  * set of UI strings the default locale (en) renders — no key the en catalog
@@ -30,7 +31,7 @@ const EXT_ROOT = resolve(__dirname, "..", "..");
 const LOCALES_DIR = join(EXT_ROOT, "src", "public", "_locales");
 
 /** Every non-default locale catalog that must stay in parity with en. */
-const LOCALES = ["ru", "de", "fr"] as const;
+const LOCALES = ["ru", "de", "fr", "es", "it", "pt", "ja"] as const;
 
 const EN_PATH = join(LOCALES_DIR, "en", "messages.json");
 const localePath = (locale: string): string =>
@@ -60,7 +61,7 @@ function extractPlaceholders(message: string): string[] {
   return [...tokens].sort();
 }
 
-describe("i18n locale parity (en ⇄ {ru, de, fr})", () => {
+describe("i18n locale parity (en ⇄ {ru, de, fr, es, it, pt, ja})", () => {
   it("the en source-of-truth catalog is valid JSON with at least one key", () => {
     const en = loadCatalog(EN_PATH);
     expect(Object.keys(en).length).toBeGreaterThan(0);

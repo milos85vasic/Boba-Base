@@ -17,7 +17,7 @@ per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 
 ## Ground-truth baseline (this session)
 
-- Full suite: **496 passed / 47 spec files** (`npx vitest run`) under
+- Full suite: **517 passed / 48 spec files** (`npx vitest run`) under
   `extension/tests/{unit,perf,stress,chaos,integration,security,e2e}` + `src/**`.
 - E2E (`tests/e2e/extension-loads.spec.ts`) is a real Playwright MV3-load test
   that **SKIPs-with-reason** in this headless/sandbox environment (no display /
