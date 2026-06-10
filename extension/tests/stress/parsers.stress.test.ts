@@ -331,7 +331,7 @@ describe("§11.4.85 STRESS: boundary inputs (empty / single-byte / max / off-by-
     // volume is HANDLED, not just survived) — re-encode equals original bytes.
     expect(perCase["max-realistic big torrent (valid)"]).toBe("ok");
     const redecoded = decode(bigTorrent, { encoding: "binary" });
-    expect(bytesToHex(encode(redecoded as BencodeValue))).toBe(
+    expect(bytesToHex(encode(redecoded))).toBe(
       bytesToHex(bigTorrent),
     );
 

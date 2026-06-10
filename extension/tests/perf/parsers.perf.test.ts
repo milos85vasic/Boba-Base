@@ -83,11 +83,15 @@ const MEASURED_RUNS = 7; // odd count → unambiguous median element
 
 /** Median of a numeric array (sorts a copy; for odd length picks the middle). */
 function median(samples: number[]): number {
+  if (samples.length === 0) throw new Error("median of empty sample set");
   const sorted = [...samples].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[mid - 1]! + sorted[mid]!) / 2
-    : sorted[mid]!;
+  const hi = sorted[mid];
+  if (hi === undefined) throw new Error("median index out of range");
+  if (sorted.length % 2 !== 0) return hi;
+  const lo = sorted[mid - 1];
+  if (lo === undefined) throw new Error("median index out of range");
+  return (lo + hi) / 2;
 }
 
 /**

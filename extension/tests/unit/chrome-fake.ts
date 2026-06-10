@@ -22,21 +22,21 @@ export function createChromeStorageFake() {
   const listeners = new Set<ChangeListener>();
 
   const local = {
-    async get(
+    get(
       keys?: string | string[] | null,
     ): Promise<StorageRecord> {
       const out: StorageRecord = {};
       if (keys === null || keys === undefined) {
         for (const [k, v] of store) out[k] = v;
-        return out;
+        return Promise.resolve(out);
       }
       const list = Array.isArray(keys) ? keys : [keys];
       for (const k of list) {
         if (store.has(k)) out[k] = store.get(k);
       }
-      return out;
+      return Promise.resolve(out);
     },
-    async set(items: StorageRecord): Promise<void> {
+    set(items: StorageRecord): Promise<void> {
       const changes: Record<string, { oldValue?: unknown; newValue?: unknown }> = {};
       for (const [k, v] of Object.entries(items)) {
         const oldValue = store.get(k);
@@ -44,8 +44,9 @@ export function createChromeStorageFake() {
         changes[k] = { oldValue, newValue: v };
       }
       emit(changes);
+      return Promise.resolve();
     },
-    async remove(keys: string | string[]): Promise<void> {
+    remove(keys: string | string[]): Promise<void> {
       const list = Array.isArray(keys) ? keys : [keys];
       const changes: Record<string, { oldValue?: unknown; newValue?: unknown }> = {};
       for (const k of list) {
@@ -55,6 +56,7 @@ export function createChromeStorageFake() {
         }
       }
       if (Object.keys(changes).length > 0) emit(changes);
+      return Promise.resolve();
     },
   };
 

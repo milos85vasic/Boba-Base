@@ -187,7 +187,7 @@ describe("torrent-file: infohash determinism + uniqueness", () => {
       name: "golden.iso",
       "piece length": 256,
       pieces: makePieces(4, 1),
-    } as BencodeValue);
+    });
     const bytes = concatBytes(ascii("d4:info"), infoBytes, ascii("e"));
 
     const parsed = await parseTorrentFile(bytes);
@@ -236,7 +236,7 @@ describe("torrent-file: infohash over REAL binary pieces", () => {
       name: "realistic-binary.iso",
       "piece length": 256,
       pieces,
-    } as BencodeValue);
+    });
 
     // Assemble the on-disk root buffer by hand: d 4:info <infoBytes> e.
     // The test now owns the EXACT raw info-dict slice that ends up on disk.
@@ -262,7 +262,7 @@ describe("torrent-file: infohash over REAL binary pieces", () => {
       name: "quick-binary.iso",
       "piece length": 256,
       pieces,
-    } as BencodeValue);
+    });
     const fileBytes = concatBytes(ascii("d4:info"), infoBytes, ascii("e"));
 
     const expected = await oracleInfohashFromInfoBytes(infoBytes);
@@ -278,7 +278,7 @@ describe("torrent-file: infohash over REAL binary pieces", () => {
       name: "Café Über — Москва.mkv", // genuine multi-byte UTF-8 name
       "piece length": 1024,
       pieces,
-    } as BencodeValue);
+    });
     const fileBytes = concatBytes(
       ascii("d8:announce"),
       ascii("31:udp://tracker.example:1337/anno"),

@@ -71,7 +71,7 @@ class TestScanner extends BaseScanner {
 
   // Drives the protected executeScan re-entrancy/guard path via a supplied fn.
   async scan(): Promise<readonly DetectedTorrent[]> {
-    return this.executeScan(async () => []);
+    return this.executeScan(() => Promise.resolve([]));
   }
 
   // Public passthrough so tests can exercise the protected builder.
@@ -233,9 +233,9 @@ describe("BaseScanner — options + scan lifecycle", () => {
     expect(s.isActive()).toBe(false);
 
     let activeDuring = false;
-    const p = s.run(async () => {
+    const p = s.run(() => {
       activeDuring = s.isActive();
-      return [];
+      return Promise.resolve([]);
     });
     await p;
 
@@ -247,7 +247,7 @@ describe("BaseScanner — options + scan lifecycle", () => {
     const s = new TestScanner("test", new TypedEventEmitter());
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
-    const second = vi.fn(async () => [] as readonly DetectedTorrent[]);
+    const second = vi.fn(() => Promise.resolve([] as readonly DetectedTorrent[]));
 
     const firstPromise = s.run(async () => {
       await gate;
@@ -265,9 +265,7 @@ describe("BaseScanner — options + scan lifecycle", () => {
   it("executeScan swallows a thrown error and returns [] (does not reject)", async () => {
     const s = new TestScanner("test", new TypedEventEmitter());
     const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const result = await s.run(async () => {
-      throw new Error("scan boom");
-    });
+    const result = await s.run(() => Promise.reject(new Error("scan boom")));
     expect(result).toEqual([]);
     expect(errSpy).toHaveBeenCalled();
     errSpy.mockRestore();

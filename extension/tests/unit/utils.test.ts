@@ -90,10 +90,10 @@ describe("retryWithBackoff", () => {
   it("retries on failure then returns the eventual success", async () => {
     vi.useFakeTimers();
     let calls = 0;
-    const fn = vi.fn(async () => {
+    const fn = vi.fn(() => {
       calls += 1;
-      if (calls < 3) throw new Error("fail");
-      return "ok";
+      if (calls < 3) return Promise.reject(new Error("fail"));
+      return Promise.resolve("ok");
     });
     const p = retryWithBackoff(fn, 5, 10, 100);
     await vi.runAllTimersAsync();
@@ -104,9 +104,7 @@ describe("retryWithBackoff", () => {
 
   it("throws the last error after exhausting retries", async () => {
     vi.useFakeTimers();
-    const fn = vi.fn(async () => {
-      throw new Error("always");
-    });
+    const fn = vi.fn(() => Promise.reject(new Error("always")));
     const p = retryWithBackoff(fn, 1, 10, 100);
     const assertion = expect(p).rejects.toThrow("always");
     await vi.runAllTimersAsync();
