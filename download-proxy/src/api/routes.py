@@ -9,10 +9,10 @@ import os
 import re
 import urllib.parse
 import uuid
-from typing import Any
+from typing import Annotated, Any
 
 import aiohttp
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from filelock import FileLock
 from pydantic import BaseModel, Field
@@ -886,6 +886,110 @@ async def initiate_download(request: DownloadRequest, req: Request):  # type: ig
         "urls_count": len(request.download_urls),
         "added_count": added_count,
         "results": results,
+    }
+
+
+# Raw .torrent uploads (browser-extension picks a local file): the extension
+# POSTs the file bytes as multipart, and we forward them to qBittorrent exactly
+# like the tracker-fetched path above (routes.py:810-822). 10 MiB is generous —
+# real .torrent metainfo files are KiB-to-low-MiB even for huge payloads.
+_MAX_TORRENT_UPLOAD_BYTES = 10 * 1024 * 1024
+
+
+def _looks_like_torrent(data: bytes) -> bool:
+    """Cheap content sniff: a .torrent is a bencoded dict (starts with ``d``)
+    and every real metainfo carries an ``info`` dict. We do not fully parse —
+    just reject obvious non-torrents (HTML, JSON, binary garbage) before
+    forwarding bytes to qBittorrent."""
+    if not data.startswith(b"d"):
+        return False
+    return b"4:infod" in data[:4096] or b"infod" in data[:4096]
+
+
+@router.post("/download/upload")
+async def upload_torrent(file: Annotated[UploadFile, File()]):  # type: ignore[no-untyped-def]
+    """Accept a raw ``.torrent`` file (multipart ``file`` field) and add it to
+    qBittorrent.
+
+    Mirrors the auth + multipart-forward pattern of ``/api/v1/download``
+    (routes.py:776-789 login, routes.py:810-822 ``torrents`` form upload) but
+    takes the bytes directly from the upload instead of fetching a URL. Returns
+    a user-observable body ``{download_id, status, filename, detail}``.
+    """
+    from .hooks import dispatch_event
+
+    download_id = str(uuid.uuid4())
+    filename = os.path.basename(file.filename or "uploaded.torrent")
+
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Uploaded .torrent file is empty")
+    if len(data) > _MAX_TORRENT_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Uploaded .torrent file exceeds the 10 MiB limit ({len(data)} bytes)",
+        )
+    if not _looks_like_torrent(data):
+        raise HTTPException(status_code=400, detail="Uploaded file is not a valid .torrent (bencode sniff failed)")
+
+    await dispatch_event(
+        "download_start",
+        {"download_id": download_id, "result_id": filename, "url_count": 1},
+    )
+
+    qbit_url = os.getenv("QBITTORRENT_URL", "http://localhost:7185")
+    qbit_user = _get_qbit_username()  # type: ignore[no-untyped-call]
+    qbit_pass = _get_qbit_password()  # type: ignore[no-untyped-call]
+
+    try:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
+            async with session.post(
+                f"{qbit_url}/api/v2/auth/login",
+                data={"username": qbit_user, "password": qbit_pass},
+            ) as resp:
+                login_text = await resp.text()
+                if resp.status != 200 or login_text.strip() != "Ok.":
+                    return {
+                        "download_id": download_id,
+                        "status": "auth_failed",
+                        "filename": filename,
+                    }
+                qbit_cookies = resp.cookies
+
+            form = aiohttp.FormData()
+            form.add_field(
+                "torrents",
+                data,
+                filename=filename,
+                content_type="application/x-bittorrent",
+            )
+            async with session.post(
+                f"{qbit_url}/api/v2/torrents/add",
+                data=form,
+                cookies=qbit_cookies,
+            ) as add_resp:
+                body = (await add_resp.text()).strip()
+                added = add_resp.status in (200, 201) and body.lower().startswith("ok")
+    except Exception as e:
+        return {
+            "download_id": download_id,
+            "status": "connection_failed",
+            "filename": filename,
+            "error": str(e),
+        }
+
+    await dispatch_event(
+        "download_complete",
+        {"download_id": download_id, "result_id": filename, "added_count": 1 if added else 0, "total_urls": 1},
+    )
+
+    if added:
+        return {"download_id": download_id, "status": "added", "filename": filename, "method": "upload"}
+    return {
+        "download_id": download_id,
+        "status": "failed",
+        "filename": filename,
+        "detail": body[:200] or f"HTTP {add_resp.status}",
     }
 
 

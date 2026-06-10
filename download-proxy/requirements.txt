@@ -2,6 +2,9 @@ requests>=2.31.0
 urllib3>=2.0.0
 fastapi>=0.110.0
 uvicorn>=0.29.0
+# Required by FastAPI's UploadFile/File multipart parsing for the raw
+# .torrent upload endpoint POST /api/v1/download/upload (BobaLink extension).
+python-multipart>=0.0.9
 aiohttp>=3.9.0
 pydantic>=2.0.0
 Levenshtein>=0.21.0

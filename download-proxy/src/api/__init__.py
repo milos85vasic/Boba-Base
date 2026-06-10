@@ -122,9 +122,22 @@ if "*" in _allowed_origins:
         "Set ALLOWED_ORIGINS to an explicit comma-separated allowlist in production."
     )
 
+# Browser extensions (e.g. the BobaLink WebExtension) call the merge service
+# from a background fetch whose Origin is ``chrome-extension://<32-char-id>``
+# (Chromium/Edge/Brave) or ``moz-extension://<uuid>`` (Firefox). A plain
+# allowlist cannot cover these because the extension id is per-install — and a
+# CORS wildcard ("*") would not even match, since the wildcard only applies to
+# the scheme-less host form. Starlette's ``allow_origin_regex`` is the
+# supported mechanism for matching a whole scheme://host pattern, so we admit
+# the two extension schemes via an anchored regex while keeping the explicit
+# host allowlist for everything else. The regex is anchored end-to-end so an
+# http(s) site whose host merely *contains* "chrome-extension" is NOT matched.
+_EXTENSION_ORIGIN_REGEX = r"^(chrome-extension|moz-extension)://[A-Za-z0-9._\-]+$"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
+    allow_origin_regex=_EXTENSION_ORIGIN_REGEX,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

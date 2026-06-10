@@ -1,6 +1,20 @@
 {
   "components": {
     "schemas": {
+      "Body_upload_torrent_api_v1_download_upload_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_torrent_api_v1_download_upload_post",
+        "type": "object"
+      },
       "CaptchaLoginRequest": {
         "properties": {
           "cap_code_field": {
@@ -904,6 +918,46 @@
           }
         },
         "summary": "Download Torrent File",
+        "tags": [
+          "search"
+        ]
+      }
+    },
+    "/api/v1/download/upload": {
+      "post": {
+        "description": "Accept a raw ``.torrent`` file (multipart ``file`` field) and add it to\nqBittorrent.\n\nMirrors the auth + multipart-forward pattern of ``/api/v1/download``\n(routes.py:776-789 login, routes.py:810-822 ``torrents`` form upload) but\ntakes the bytes directly from the upload instead of fetching a URL. Returns\na user-observable body ``{download_id, status, filename, detail}``.",
+        "operationId": "upload_torrent_api_v1_download_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_torrent_api_v1_download_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Torrent",
         "tags": [
           "search"
         ]
