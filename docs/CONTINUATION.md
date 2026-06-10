@@ -1,14 +1,38 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 15
+**Revision:** 16
 **Last modified:** 2026-06-10T05:12:40Z
-**Session:** 2026-06-10 (Session 10 — env_loader fix + BOB-008 runbook + leak sweep + BOB-063 pirateiro + constitution f26368b)
-**Last commit:** `3a8e932` (Session-10 batch-2 commits on top of this)
+**Session:** 2026-06-10 (Session 10 — BobaLink browser extension: discovery + 9-phase plan + Phase 1 + backend BE-1/BE-2 + env-gated token security fix)
+**Last commit:** `192b945` (env-gated `BOBA_API_TOKEN` on the three :7187 download-write endpoints)
 **Branch:** `main`
 **Working tree:** CLEAN (after the doc commit that carries this update)
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff (§12.10 / §11.4.131).
+
+---
+
+## CURRENT STATE — Session 10 (BobaLink browser extension)
+
+**New major feature in flight: the BobaLink browser extension. Plan + discovery + Phase 1 foundation + backend BE-1/BE-2 + a token-auth security fix landed. The Python unit suite stays FULLY GREEN at 4149 passed.**
+
+### What is BobaLink
+A WXT + TypeScript Manifest-V3 browser extension that detects magnet links and `.torrent` URLs on any page and forwards them to the running Boba merge service on port **7187**. Backend contract: `POST http://<host>:7187/api/v1/download`. The full plan, discovery analysis, and traceability live under `docs/browser_extension/` — master plan `IMPLEMENTATION_PLAN.md` (9 phases), analysis artifacts `_analysis/01–06`, planning artifacts `_plan/A–F`, and the 245-item traceability matrix `_plan/C-traceability-matrix.md` (240 v1 / 5 v2, proving nothing is skipped per §11.4.118).
+
+### What landed (Session 10 — BobaLink)
+- **`b2356ae`** — BobaLink master implementation plan + discovery/planning artifacts (`docs/browser_extension/`); also bumped HelixQA submodule `bcac236 → 4d2dcb2`.
+- **`33a9815`** — extension **Phase 1 foundation** scaffolded (`extension/` — WXT config, TS, shared libs/types under `extension/src/`); **71 anti-bluff Vitest unit tests** (vitest 71 passed, eslint clean — crypto imports the REAL module, not an inline copy).
+- **`d46bffb`** — backend **BE-1** (CORS for extension origins) + **BE-2** (raw `.torrent` upload endpoint) added to the Python :7187 API.
+- **`284d1c4`** — bumped HelixQA submodule `4d2dcb2 → bca3b36`; new Challenge bank `submodules/helixqa/banks/boba-bobalink.yaml` (6 cases).
+- **`192b945`** — **security fix**: env-gated shared-secret `BOBA_API_TOKEN` enforced on the three :7187 download-write endpoints (when the env var is set, requests must carry a matching `X-Boba-Token` / `Bearer` token; behaviour unchanged when unset). Verified by **15 token-auth tests** (`tests/unit/api_layer/test_download_token_auth.py`).
+
+### Suite status
+- Full Python unit suite: **4149 passed, 6 warnings in 358.95s** — `pytest tests/unit/ --import-mode=importlib` (this = 4134 + the 15 new token-auth tests). Latest evidence: `qa-results/tokenauth_fullsuite_*.log` (tail shows `4149 passed`).
+- Extension Vitest: **71 passed** (foundation libs; commit `33a9815`).
+
+### Current phase + next steps
+- **Phase 2 (core detection & parsing engine) IN PROGRESS** — porting/refactoring the parsers (`bencode.ts`, `magnet.ts`, wiring the dead `torrent-file.ts` SHA-1 infohash) and scanners (`link-scanner`/`text-scanner`/`content/scanner`, merging the divergent `site-db.ts` selector tables, MutationObserver debounce, Shadow-DOM/iframe handling) into `extension/src/`, plus infohash dedup.
+- **Next:** finish Phase 2 scanner integrators + content/dedup, then Phases 3–9 (extension shell → Boba backend client → notifications/queue → secure token model → packaging → release) per `docs/browser_extension/IMPLEMENTATION_PLAN.md`. Live working state also tracked in `.remember/remember.md`.
 
 ---
 
