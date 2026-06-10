@@ -711,3 +711,13 @@ Full pytest tests/unit/ stalled on an unbounded enricher network lookup; 13-34 o
 
 kickass/bitsearch/torrentgalaxy while-True search loops could run forever; search.py/routes.py/helpers.py/eztv.py network calls had no timeout. Fixed: MAX_PAGES=50 caps + aiohttp.ClientTimeout/urlopen timeout=30 across all sites.
 
+## BOB-063 — pirateiro test-isolation: add to conftest isolation + standing regression guard
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-063/evidence.md
+**Severity:** Low
+**Created-By:** Claude
+
+test_plugin_pirateiro.py injected sys.modules['pirateiro'] at module scope with no teardown; pirateiro was the one root not covered by conftest _isolate_download_proxy_modules, so it leaked into later tests. Fixed by caching+re-registering+purging the stub per unit test; added a standing isolation guard. RED 1-fail -> GREEN, full suite 4122 passed x2 seeds.
+

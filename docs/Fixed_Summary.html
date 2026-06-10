@@ -198,7 +198,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Task</td>
 <td>Completed (→ Fixed.md)</td>
-<td>8</td>
+<td>9</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -213,7 +213,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>61</strong></td>
+<td><strong>62</strong></td>
 </tr>
 </tbody>
 </table>
@@ -520,6 +520,18 @@ isolation. Now 4121 passed deterministic.</td>
 forever; search.py/routes.py/helpers.py/eztv.py network calls had no
 timeout. Fixed: MAX_PAGES=50 caps + aiohttp.ClientTimeout/urlopen
 timeout=30 across all sites.</td>
+</tr>
+<tr>
+<td>BOB-063</td>
+<td>Task</td>
+<td>Completed (→ Fixed.md)</td>
+<td>Low</td>
+<td>test_plugin_pirateiro.py injected sys.modules[‘pirateiro’] at module
+scope with no teardown; pirateiro was the one root not covered by
+conftest _isolate_download_proxy_modules, so it leaked into later tests.
+Fixed by caching+re-registering+purging the stub per unit test; added a
+standing isolation guard. RED 1-fail -&gt; GREEN, full suite 4122 passed
+x2 seeds.</td>
 </tr>
 </tbody>
 </table>

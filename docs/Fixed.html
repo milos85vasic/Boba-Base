@@ -907,5 +907,19 @@ Bug <strong>Evidence:</strong> docs/qa/BOB-061-062/EVIDENCE.md
 forever; search.py/routes.py/helpers.py/eztv.py network calls had no
 timeout. Fixed: MAX_PAGES=50 caps + aiohttp.ClientTimeout/urlopen
 timeout=30 across all sites.</p>
+<h2
+id="bob-063-pirateiro-test-isolation-add-to-conftest-isolation-standing-regression-guard">BOB-063
+— pirateiro test-isolation: add to conftest isolation + standing
+regression guard</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/qa/BOB-063/evidence.md <strong>Severity:</strong> Low
+<strong>Created-By:</strong> Claude</p>
+<p>test_plugin_pirateiro.py injected sys.modules[‘pirateiro’] at module
+scope with no teardown; pirateiro was the one root not covered by
+conftest _isolate_download_proxy_modules, so it leaked into later tests.
+Fixed by caching+re-registering+purging the stub per unit test; added a
+standing isolation guard. RED 1-fail -&gt; GREEN, full suite 4122 passed
+x2 seeds.</p>
 </body>
 </html>

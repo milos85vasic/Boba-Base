@@ -41,6 +41,13 @@ _POLLUTING_ROOTS = (
 
 _CORRECT_MS_PATH: str | None = None
 
+# Cache for the throw-away "pirateiro" stub that test_plugin_pirateiro.py
+# registers at module/collection scope. See _isolate_download_proxy_modules
+# for why it is re-registered before pirateiro-file tests and purged after
+# every unit test (§11.4.50 isolation; guarded by
+# tests/unit/test_pirateiro_isolation_guard.py per §11.4.135).
+_PIRATEIRO_STUB: Any = None
+
 
 def _fixup_merge_service_path() -> None:
     """Ensure merge_service in sys.modules has the correct __path__.
@@ -179,6 +186,21 @@ def _isolate_download_proxy_modules(request):
         return
     import socket
 
+    # test_plugin_pirateiro.py registers sys.modules["pirateiro"] at MODULE
+    # (collection) scope with no teardown. Because it is present before any
+    # per-test snapshot, the symmetric snapshot/restore below would preserve it
+    # forever and leak it into later tests/unit/ tests (§11.4.50). Its own tests
+    # need the stub present at each @patch("pirateiro....") setup. So: cache the
+    # stub the first time we see it, RE-REGISTER it before pirateiro-file tests,
+    # and PURGE it on teardown of every unit test. Guarded by
+    # tests/unit/test_pirateiro_isolation_guard.py (§11.4.135).
+    _is_pirateiro_test = "test_plugin_pirateiro.py" in test_path.replace("\\", "/")
+    global _PIRATEIRO_STUB
+    if "pirateiro" in sys.modules:
+        _PIRATEIRO_STUB = sys.modules["pirateiro"]
+    if _is_pirateiro_test and _PIRATEIRO_STUB is not None:
+        sys.modules["pirateiro"] = _PIRATEIRO_STUB
+
     saved = {
         k: v
         for k, v in sys.modules.items()
@@ -202,6 +224,10 @@ def _isolate_download_proxy_modules(request):
             if k in _POLLUTING_ROOTS or any(k.startswith(root + ".") for root in _POLLUTING_ROOTS):
                 del sys.modules[k]
         sys.modules.update(saved)
+        # Purge the collection-time pirateiro stub on the way out of EVERY unit
+        # test (see the setup note above). The cached _PIRATEIRO_STUB lets the
+        # next pirateiro-file test re-register it before its @patch setup runs.
+        sys.modules.pop("pirateiro", None)
         socket.socket = _saved_socket
         os.environ.clear()
         os.environ.update(_saved_environ)

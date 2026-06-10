@@ -1,0 +1,60 @@
+<h1
+id="bob-063-pirateiro-test-isolation-defense-in-depth-qa-evidence">BOB-063
+— pirateiro test-isolation defense-in-depth — QA evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T05:12:40Z <strong>Ticket:</strong> BOB-063 (Task — add
+pirateiro isolation to conftest; close it as Completed)
+<strong>Scope:</strong> QA evidence (§11.4.83 docs/qa, §11.4.115
+RED-on-broken polarity proof, §11.4.135 standing regression guard)</p>
+<h2 id="defect-discovered-11.4.118">Defect (discovered §11.4.118)</h2>
+<p><code>tests/unit/test_plugin_pirateiro.py:32</code> registers
+<code>sys.modules["pirateiro"] = &lt;plugins/community/pirateiro.py&gt;</code>
+at module-collection scope with no teardown. <code>pirateiro</code> was
+the one root NOT in <code>tests/conftest.py</code>
+<code>_POLLUTING_ROOTS</code>, so
+<code>_isolate_download_proxy_modules</code>’ per-test snapshot captured
+it and the leak persisted to every later <code>tests/unit/</code> test.
+Benign in the current suite (real module, no other importer) but a
+latent masking hazard.</p>
+<h2 id="root-cause-11.4.6-11.4.102-investigated-not-guessed">Root cause
+(§11.4.6 / §11.4.102 — investigated, not guessed)</h2>
+<p>Because the stub is in <code>sys.modules</code> BEFORE any per-test
+snapshot, simply adding <code>pirateiro</code> to
+<code>_POLLUTING_ROOTS</code> does NOT fix it — the leak is already
+inside each test’s <code>saved</code> snapshot, so the restore re-adds
+it. Deferring the injection into a helper broke 22 tests whose
+<code>@patch("pirateiro.retrieve_url")</code> decorators resolve the
+target before the test body.</p>
+<h2 id="fix-conftest-only">Fix (conftest-only)</h2>
+<p>Cache the stub on first sight (<code>_PIRATEIRO_STUB</code>),
+re-register it before pirateiro-file tests (so their <code>@patch</code>
+setup resolves), and purge it on teardown of every unit test.
+<code>tests/unit/test_plugin_pirateiro.py</code> left
+byte-identical.</p>
+<h2 id="red-green-evidence-11.4.115-polarity-switch">RED → GREEN
+evidence (§11.4.115 polarity switch)</h2>
+<ul>
+<li>RED command:
+<code>.venv/bin/python -m pytest tests/unit/test_plugin_pirateiro.py tests/unit/test_pirateiro_isolation_guard.py -p no:randomly -q --import-mode=importlib</code></li>
+<li>RED (pre-fix):
+<code>AssertionError: sys.modules['pirateiro'] leaked into this test (value: &lt;module 'pirateiro' from '.../plugins/community/pirateiro.py'&gt;)</code>
+→ <strong>1 failed, 44 passed</strong></li>
+<li>GREEN (post-fix, same command): <strong>45 passed in
+0.65s</strong></li>
+<li>Negation proof (§11.4.115): with the
+<code>sys.modules.pop("pirateiro", None)</code> teardown line disabled,
+the guard FAILS again (<code>1 failed, 44 passed</code>); restored →
+passes. The guard is not a tautology.</li>
+<li>Full unit suite (default seed): <strong>4122 passed, 3 warnings in
+266.03s</strong> (4121 + 1 new guard)</li>
+<li>Full unit suite (<code>--randomly-seed=42</code>): <strong>4122
+passed, 3 warnings in 269.13s</strong> (order-independent)</li>
+</ul>
+<h2 id="standing-regression-guard-11.4.135">Standing regression guard
+(§11.4.135)</h2>
+<p><code>tests/unit/test_pirateiro_isolation_guard.py</code> — permanent
+test asserting <code>"pirateiro" not in sys.modules</code> at the start
+of a fresh unit test; FAILS pre-fix, PASSES post-fix.</p>
+<h2 id="code-review">Code review</h2>
+<p>Reviewed under §11.4.125/§11.4.134/§11.4.142 before commit — see the
+session commit’s GO.</p>

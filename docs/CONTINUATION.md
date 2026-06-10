@@ -1,9 +1,9 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 14
+**Revision:** 15
 **Last modified:** 2026-06-10T05:12:40Z
-**Session:** 2026-06-10 (Session 10 — env_loader isolation fix + BOB-008 runbook + leak sweep)
-**Last commit:** `c10ad07` (Session-10 work commits on top of this)
+**Session:** 2026-06-10 (Session 10 — env_loader fix + BOB-008 runbook + leak sweep + BOB-063 pirateiro + constitution f26368b)
+**Last commit:** `3a8e932` (Session-10 batch-2 commits on top of this)
 **Branch:** `main`
 **Working tree:** CLEAN (after the doc commit that carries this update)
 
@@ -20,14 +20,16 @@
 - **`test_credential_env_wiring.py` isolation fix** — resolved the Session-9 "known low-priority follow-up" below. A `merge_service` fake-namespace stub was installed at module-collection time with no teardown, so `conftest`'s `_isolate_download_proxy_modules` captured-and-restored the *fake* stub into siblings in some run orders. Fixed by moving stub install into a `search_mod` fixture that snapshots/restores the 3 injected keys (`merge_service`, `.search`, `.retry`) in `finally`. **Evidence:** RED reproduction (the 5 credential tests + a temporary leak-probe) went `1 failed` → all green; the file's own **5 tests pass** standalone; full unit suite **4121 passed** × seeds default/42/31337 (Session-10 run). Code-review **GO** (proved negation; no weakened assertions; ruff clean).
 - **`docs/qa/BOB-008/operator_runbook.md`** — copy-pasteable operator unblock procedure for BOB-008 (cookie path preferred; CAPTCHA path documented with its `cap_sid`/`cap_code_field` friction), every endpoint claim cited to `auth.py:line` (§11.4.83/§11.4.99).
 - **Latent-leak discovery sweep (§11.4.118)** — audited all of `tests/` for the module-level fake-stub-no-teardown pattern. Finding: the pattern is a **structural no-op wherever the test dir has an `__init__.py`** (real package pre-loads → `setdefault` never installs the fake), so the ~26 `tests/unit/merge_service/` matches and `test_tracker_stats.py` are **inert** (no RED reproduces; strict TDD → no fix). The single genuinely-uncovered root is `pirateiro` (see follow-up).
-- **Constitution inheritance verified (§11.4.32/§11.4.35)** — PASS: pointer present in both layers, 12/12 propagated anchors present in canonical source, no conflict markers, `pre_build_verification.sh` 18/18 green. Informational: the constitution submodule pin `60e2d66` is behind upstream `f26368b` — operator decision to advance (§11.4.66), not auto-pulled (pin may be load-bearing).
+- **Constitution inheritance verified (§11.4.32/§11.4.35)** — PASS: pointer present in both layers, propagated anchors present in canonical source, no conflict markers, `pre_build_verification.sh` 18/18 green.
+- **`pirateiro` test-isolation fix — BOB-063 (operator-approved, implemented)** — `tests/unit/test_plugin_pirateiro.py` injected `sys.modules['pirateiro']` at module scope with no teardown; `pirateiro` was the one root uncovered by `conftest`'s isolation, so it leaked into later tests. The naive "add to `_POLLUTING_ROOTS`" does NOT work (the leak is already inside each per-test snapshot); the real fix caches+re-registers+purges the stub per unit test. **Evidence (§11.4.115):** RED `1 failed, 44 passed` → GREEN `45 passed`; negation proof (disable the purge → re-fails); full suite **4122 passed × seeds default/42**. Standing regression guard `tests/unit/test_pirateiro_isolation_guard.py` (§11.4.135). QA at `docs/qa/BOB-063/evidence.md`. **Closed BOB-063** (Task → Completed).
+- **Constitution submodule advanced `60e2d66` → `f26368b` (§11.4.26, clean fast-forward, §11.4.113-safe)** — pulled §11.4.140 v2 (BACKGROUND action), §11.4.142 (universal code-review — already actively enforced this session; added to CLAUDE.md propagated clauses), §11.4.143 (video-streaming real-user-journey — latent/N-A to this torrent-proxy project). Cascade gate **18/18 green** at the new pin.
 
 ### Open queue (Issues.md)
-- **BOB-008** — RuTracker CAPTCHA — **OPERATOR-BLOCKED**. Unblock procedure now documented at `docs/qa/BOB-008/operator_runbook.md` (preferred: paste `bb_session` via `POST /api/v1/auth/rutracker/cookie-login`).
-- Everything else closed (DB↔MD in sync, 62 items, `bin/workable-items validate` OK).
+- **BOB-008** — RuTracker CAPTCHA — **OPERATOR-BLOCKED**. Unblock procedure documented at `docs/qa/BOB-008/operator_runbook.md` (preferred: paste `bb_session` via `POST /api/v1/auth/rutracker/cookie-login`).
+- Everything else closed (DB↔MD in sync, **63 items**, `bin/workable-items validate` OK).
 
-### Known low-priority follow-up (NOT blocking — suite is green; not yet ticketed)
-- **`pirateiro` test-isolation defense-in-depth** — `tests/unit/test_plugin_pirateiro.py` injects `sys.modules['pirateiro']` at module scope; `pirateiro` is the one root NOT in `tests/conftest.py` `_POLLUTING_ROOTS`, so it persists across files. **Benign today** (real plugin module, no other test imports `pirateiro`; 4121 passed × 3 seeds; no RED reproduces → strict TDD §11.4.43 means no fix landed). Recommended: add `pirateiro` to `_POLLUTING_ROOTS` as defense-in-depth before any future test injects a *fake* `pirateiro` that would mask a real defect. Should be ticketed as a `BOB-` Task by the operator/next session (a stray `WIT-001` mis-add was reverted to keep the SSoT clean).
+### Known low-priority follow-up
+- ~~`pirateiro` test-isolation defense-in-depth~~ — **RESOLVED this session** (BOB-063, see above).
 - ~~`test_credential_env_wiring` / env_loader stub-teardown quirk~~ — **RESOLVED this session** (see above).
 
 ---
