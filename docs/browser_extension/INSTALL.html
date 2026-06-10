@@ -1,0 +1,167 @@
+<h1 id="bobalink--installation-guide">BobaLink — Installation Guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T21:00:00Z <strong>Scope:</strong> Building, loading, and
+running BobaLink (<code>extension/</code>) for end users and operators.
+<strong>Authority:</strong> <code>extension/package.json</code>,
+<code>extension/wxt.config.ts</code>, <code>extension/ci-ext.sh</code>,
+<code>docs/browser_extension/Status.md</code> (Rev 4).</p>
+<blockquote>
+<p>Accuracy note (§11.4.6): every command below is exactly as declared
+in <code>extension/package.json</code> /
+<code>extension/ci-ext.sh</code>. Steps not yet shipped are marked
+<strong>(planned)</strong>.</p>
+</blockquote>
+<hr />
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li><strong>Node.js ≥ 20</strong> (<code>extension/package.json</code> →
+<code>"engines": { "node": "&gt;=20.0.0" }</code>).</li>
+<li><strong>npm</strong> (ships with Node).</li>
+<li>For the artifact gate: <strong><code>jq</code></strong> on
+<code>PATH</code> (the <code>ci-ext.sh</code> pre-flight requires
+<code>node</code>, <code>npx</code>, and <code>jq</code>).</li>
+<li>A <strong>running Boba merge service on
+<code>http://localhost:7187</code></strong> to actually send torrents.
+BobaLink only talks to <code>localhost:7187</code>
+(<code>host_permissions</code> in <code>wxt.config.ts</code>). The
+extension <em>builds</em> and <em>loads</em> without it, but detect→send
+needs the backend up. Start it from the repo root with
+<code>./start.sh</code> (see the project <code>CLAUDE.md</code> for the
+full Boba stack).</li>
+<li>Target browsers: Chrome ≥ 109
+(<code>minimum_chrome_version: "109"</code>) and Firefox (the build
+produces a <code>firefox-mv2</code> artifact).</li>
+</ul>
+<p>There is <strong>no global install</strong> of BobaLink — you build
+it from source and load it unpacked (the store-listing/submission path
+is <strong>(planned)</strong> — Phase 9).</p>
+<hr />
+<h2 id="build">Build</h2>
+<p>From the <code>extension/</code> directory:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> extension</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install            <span class="co"># installs deps; postinstall runs `wxt prepare`</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> wxt build          <span class="co"># → .output/chrome-mv3/   (Chrome MV3, the default)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> wxt build <span class="at">-b</span> firefox   <span class="co"># → .output/firefox-mv2/</span></span></code></pre></div>
+<p>Convenience npm scripts (declared in
+<code>extension/package.json</code>) wrap the same commands:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build          <span class="co"># wxt build           (Chrome)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build:firefox  <span class="co"># wxt build -b firefox (Firefox)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run zip            <span class="co"># wxt zip   → .output/bobalink-1.0.0-chrome.zip</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run zip:firefox    <span class="co"># wxt zip -b firefox → firefox + sources zips</span></span></code></pre></div>
+<p><code>npm run zip</code> / <code>npm run zip:firefox</code> produce
+the per-store packages
+(<code>bobalink-1.0.0-{chrome,firefox,sources}.zip</code>) used for
+manual submission.</p>
+<hr />
+<h2 id="load-unpacked-in-chrome-and-chromium--edge--opera--yandex">Load
+unpacked in Chrome (and Chromium / Edge / Opera / Yandex)</h2>
+<ol type="1">
+<li>Run <code>npx wxt build</code> so
+<code>extension/.output/chrome-mv3/</code> exists.</li>
+<li>Open <code>chrome://extensions</code>.</li>
+<li>Toggle <strong>Developer mode</strong> on (top-right).</li>
+<li>Click <strong>Load unpacked</strong>.</li>
+<li>Select the
+<strong><code>extension/.output/chrome-mv3</code></strong>
+directory.</li>
+</ol>
+<p>BobaLink appears in the toolbar. The build emits a valid MV3 manifest
+(<code>manifest_version: 3</code>,
+<code>background.service_worker: background.js</code>,
+<code>popup.html</code>, <code>options.html</code>,
+<code>content-scripts/content.js</code>, icons 16/32/48/128, and
+<code>_locales/{en,ru}/messages.json</code>).</p>
+<blockquote>
+<p>The <code>_locales/&lt;default_locale&gt;/messages.json</code>
+catalog is <strong>required</strong> because the manifest sets
+<code>default_locale: "en"</code> and uses <code>__MSG_*__</code>
+placeholders — Chrome rejects the extension at load if it is missing.
+The <code>ci-ext.sh</code> gate asserts it is present (§11.4.38; see
+<code>Status.md</code> Rev 4 for the bluff-audit that caught a build
+which had dropped it).</p>
+</blockquote>
+<hr />
+<h2 id="load-in-firefox">Load in Firefox</h2>
+<ol type="1">
+<li>Run <code>npx wxt build -b firefox</code> so
+<code>extension/.output/firefox-mv2/</code> exists.</li>
+<li>Open <code>about:debugging#/runtime/this-firefox</code>.</li>
+<li>Click <strong>Load Temporary Add-on…</strong>.</li>
+<li>Select the <strong><code>manifest.json</code></strong> inside
+<code>extension/.output/firefox-mv2/</code>.</li>
+</ol>
+<p>(Temporary add-ons are removed when Firefox restarts; reload after
+each rebuild.)</p>
+<p>The Firefox build is MV2 (<code>firefox-mv2</code>) via WXT.
+Tab-group features are Chrome-only and degrade gracefully on
+Firefox.</p>
+<hr />
+<h2 id="the-ci-extsh-gate-manual-release-readiness-check">The
+<code>ci-ext.sh</code> gate (manual release-readiness check)</h2>
+<p><code>extension/ci-ext.sh</code> is the single,
+<strong>manual</strong> pre-release gate. Run it before packaging a
+release:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> extension</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> ci-ext.sh</span></code></pre></div>
+<p>It runs, FAILing loudly at the first failing step:</p>
+<ol type="1">
+<li><strong>type gate</strong> — <code>npx tsc --noEmit</code></li>
+<li><strong>lint gate</strong> — <code>npm run lint</code></li>
+<li><strong>unit suite</strong> — <code>npx vitest run</code> (exit-0
+required; the count is <strong>not</strong> hardcoded)</li>
+<li><strong>chrome build</strong> — <code>npx wxt build</code></li>
+<li><strong>firefox build</strong> —
+<code>npx wxt build -b firefox</code></li>
+<li><strong>§11.4.38 artifact verification</strong> — opens the produced
+<code>.output/chrome-mv3/manifest.json</code> (not the source), asserts
+<code>manifest_version == 3</code>, the service worker is declared, and
+<strong>every manifest-referenced asset plus the
+<code>_locales/&lt;default_locale&gt;/</code> catalog exists on disk and
+is non-zero</strong> — including following each HTML page's local
+<code>src</code>/<code>href</code> references.</li>
+<li><strong>per-store zips</strong> — <code>npm run zip</code> +
+<code>npm run zip:firefox</code>, asserting each store zip is at least
+10 KiB.</li>
+</ol>
+<p>On success the final line is <code>CI-EXT: PASS</code>. The script
+touches <strong>no git</strong>, makes <strong>no commit</strong>, and
+starts <strong>no container</strong>.</p>
+<hr />
+<h2 id="no-cicd--manual-only-permanent">NO CI/CD — manual only
+(permanent)</h2>
+<p>BobaLink has <strong>no CI/CD pipeline of any kind</strong> and none
+may be added:</p>
+<ul>
+<li>No <code>.github/workflows/</code>, no <code>.gitlab-ci.yml</code>,
+no Jenkins, no pipelines, no git hooks for this subproject (project
+<code>CLAUDE.md</code> "CI IS MANUAL"; plan §0.1; Boba Hard Stop
+§1).</li>
+<li>The reference materials shipped
+<code>ci.yml</code>/<code>release.yml</code> — those were
+<strong>dropped</strong>; their build/test/lint commands live only in
+the manual <code>extension/ci-ext.sh</code>.</li>
+</ul>
+<p>All validation runs by hand via <code>bash ci-ext.sh</code> (and, at
+the repo level, the manual <code>./ci.sh</code>).</p>
+<hr />
+<h2 id="verifying-a-working-install">Verifying a working install</h2>
+<ol type="1">
+<li>Build + load unpacked (above).</li>
+<li>Start the Boba stack so the merge service answers on
+<code>http://localhost:7187</code>.</li>
+<li>Visit a torrent page (e.g. one of the supported sites in
+<code>USER_GUIDE.md</code>).</li>
+<li>Open the popup — detected magnets/<code>.torrent</code> links should
+be listed.</li>
+<li>Click <strong>Send</strong> / <strong>Send All</strong>, or use a
+context-menu / keyboard action.</li>
+</ol>
+<blockquote>
+<p>The end-to-end "torrent then appears in qBittorrent" confirmation
+against a live <code>:7187</code> backend is <strong>(in
+progress)</strong> (Phase 4 — see <code>Status.md</code>). The
+build/load and on-page detection steps are shipped.</p>
+</blockquote>

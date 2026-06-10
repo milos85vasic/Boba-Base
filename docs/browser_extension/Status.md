@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Status
 
-**Revision:** 4
-**Last modified:** 2026-06-10T20:40:00Z
+**Revision:** 5
+**Last modified:** 2026-06-10T21:30:00Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 browser extension that detects magnet links and `.torrent` URLs and forwards them to the Boba merge service on port 7187.
 **Authority:** master plan `docs/browser_extension/IMPLEMENTATION_PLAN.md` (9 phases).
 
@@ -12,8 +12,8 @@
 ## Baseline facts (verified this session — Session 11)
 
 - **HEAD:** `2011810` (pushed); wave-4 (Phase-9 `ci-ext.sh` gate + per-store zips, `ru` locale, content-XSS, credential-leak audit, decrypt-throw parity, tab-group Challenge, and the `_locales` packaging fix) staged for the next commit.
-- **Extension test corpus:** **413 Vitest tests across 37 spec files** — same-session
-  `npx vitest run` → `Tests 413 passed (413)` — under
+- **Extension test corpus:** **455 Vitest tests across 42 spec files** — same-session
+  `npx vitest run` → `Tests 455 passed (455)` — under
   `extension/tests/{unit,perf,stress,chaos,integration,security,e2e}` + `src/**`.
   `npx tsc --noEmit` clean; `npm run lint` 0 errors / 0 warnings. (+126 tests over the
   prior 287/22 baseline: integration 7, security 4 files, stress/chaos 10, locale 4,
@@ -43,9 +43,9 @@
 | — | WXT build wiring (`entrypoints/`, `wxt build` → `.output/`, manifest validate) | **PASS** | Entrypoints `src/entrypoints/{background.ts,content.ts,popup/index.html,options/index.html}`; `npx wxt build` → loadable `.output/chrome-mv3/` (8/8 manifest assets verified present, §11.4.38); matches derived from `SITE_SELECTORS`, no `<all_urls>` (Session 11 @`5edf6ac`, pushed) |
 | 4 | Boba backend integration (real client, queue auth, BE-1/2/3) | IN-PROGRESS | API leaf @`e8fde43`. **Phase-7 decrypt-before-send wired** (Session 11): `BobaClient.create()` decrypts the `encryptedBobaApiToken` bundle via `shared/crypto`; `background` reads the session passphrase from `chrome.storage.session` and sends the decrypted plaintext (default-open when locked). Token suites `boba-client-token.test.ts` 5 + `background-token.test.ts` 3 green. **PENDING:** live-7187 integration (`require_backend(7187)`), end-to-end detect→send→torrent-in-qBittorrent on the real backend |
 | 5 | Tab-group batch (`chrome.tabGroups` → per-tab scan → batch send) | IN-PROGRESS | **Wired** (Session 11): `src/tabgroups/index.ts` (dedupe across a group + batch dispatch, 13 tests) **integrated into `background/index.ts` `MENU_SEND_GROUP`** (deduped group batch → one `addMagnets` POST); manifest `+tabGroups` (MINIMAL — research-confirmed `tabs` NOT needed since only `tab.id` is read; §11.4.120 security-test reconciliation, mutation-verified). New `background.test.ts` MENU_SEND_GROUP test (RED-verified: handler no-op → FAIL). Independent review: **GO-with-nits**. Group-send nits (a) offline-queue enqueue-on-failure, (b) network-error notification, (c) hardened async flush — all **FIXED** (Session 11, RED→GREEN + 3×-deterministic, independent review GO). **TRACKED:** decrypt-throw (wrong passphrase) on group send not enqueued/notified — pre-existing parity with Send-All, future phase |
-| 6 | UI/UX, i18n, accessibility, themes | IN-PROGRESS | i18n: `locale.test.ts` (en completeness) + **`ru` locale added** with `locale-parity.test.ts` (en⇄ru key + placeholder parity, mutation-proven); **a11y**: `tests/a11y/{popup,options}.a11y.test.ts` (18 tests — roles/accessible-names/tablist↔tabpanel/live-regions, mutation-proven). **PENDING:** 6 more locales (plan targets 8), deeper WCAG (contrast/focus/keyboard), theme-switch evidence |
-| 7 | Security & credentials (delegate-by-default, no embedded key, log redaction) | IN-PROGRESS | `crypto.ts` adopted; **decrypt-and-send path landed** + **decrypt-throw on wrong passphrase now enqueues+notifies** (parity, RED→GREEN); session passphrase from `chrome.storage.session`, **no embedded key**, plaintext/passphrase never logged; security suite `tests/security/*` (least-privilege manifest, CSP, no-hardcoded-secret, secret-storage, **content-XSS** — render path proven safe via innerHTML-mutation→FAIL); **§11.4.10.A credential-leak audit** `challenges/security/credential_leak_audit.sh` (PASS, mutation-verified). **PENDING:** full pen-test suite (sender-origin validation, rate-limit) |
-| 8 | Testing to 100% (all types) + Challenges + HelixQA | IN-PROGRESS | 413 tests/37 files green (unit/perf/stress/chaos/integration/security/e2e). Challenge `challenges/extension/detect_and_forward_challenge.sh` drives the REAL orchestrator+client end-to-end, PASS on captured evidence, mutation-verified (no-op stub → FAIL). HelixQA `boba-bobalink.yaml` BOBA-LINK-007 (detect→forward) + BOBA-LINK-008 (tab-group batch) added; symlinked into `challenges/helixqa-banks/`. tab-group + detect→forward Challenges both mutation-verified. E2E `tests/e2e/extension-loads.spec.ts` is a real MV3-load test, **operator-gated SKIP** in this headless sandbox (extension load unsupported; §11.4.3). **PENDING:** the full 13-type coverage matrix + live-backend integration + the coverage ledger to 100% |
+| 6 | UI/UX, i18n, accessibility, themes | IN-PROGRESS | i18n: `locale.test.ts` (en completeness) + **ru+de+fr locales added** (4 total, 29-key parity, packaged chrome+firefox) with generalized `locale-parity.test.ts` (key + placeholder parity, mutation-proven); **a11y**: `tests/a11y/{popup,options}.a11y.test.ts` (18 tests — roles/accessible-names/tablist↔tabpanel/live-regions, mutation-proven). **PENDING:** 6 more locales (plan targets 8), deeper WCAG (contrast/focus/keyboard), theme-switch evidence |
+| 7 | Security & credentials (delegate-by-default, no embedded key, log redaction) | IN-PROGRESS | `crypto.ts` adopted; **decrypt-and-send path landed** + **decrypt-throw on wrong passphrase now enqueues+notifies** (parity, RED→GREEN); session passphrase from `chrome.storage.session`, **no embedded key**, plaintext/passphrase never logged; security suite `tests/security/*` (least-privilege manifest, CSP, no-hardcoded-secret, secret-storage, **content-XSS** — render path proven safe via innerHTML-mutation→FAIL); **§11.4.10.A credential-leak audit** `challenges/security/credential_leak_audit.sh` (PASS, mutation-verified); **message-router robustness** `tests/security/message-router-robustness.test.ts` (16 tests) + **`isValidScanResult` scan-result trust-guard** (fixed a real content-script overwrite bug). **PENDING:** full pen-test suite (sender-origin validation, rate-limit) |
+| 8 | Testing to 100% (all types) + Challenges + HelixQA | IN-PROGRESS | 455 tests/42 files green (unit/perf/stress/chaos/integration/security/e2e). Challenge `challenges/extension/detect_and_forward_challenge.sh` drives the REAL orchestrator+client end-to-end, PASS on captured evidence, mutation-verified (no-op stub → FAIL). HelixQA `boba-bobalink.yaml` BOBA-LINK-007 (detect→forward) + BOBA-LINK-008 (tab-group batch) added; symlinked into `challenges/helixqa-banks/`. tab-group + detect→forward Challenges both mutation-verified. E2E `tests/e2e/extension-loads.spec.ts` is a real MV3-load test, **operator-gated SKIP** in this headless sandbox (extension load unsupported; §11.4.3). **PENDING:** the full 13-type coverage matrix + live-backend integration + the coverage ledger to 100% |
 | 9 | Build, packaging & distribution (manual — NO CI/CD) | IN-PROGRESS | **Manual gate `extension/ci-ext.sh`** (Session 11, §11.4.18 doc'd): tsc → lint → full vitest → chrome+firefox builds → §11.4.38 artifact-verify (opens the manifest, asserts every referenced asset + the `default_locale` catalog exist non-zero) → per-store `wxt zip`. **CI-EXT: PASS** — produces loadable `chrome-mv3/` + `firefox-mv2/` + `bobalink-1.0.0-{chrome,firefox,sources}.zip`. **PENDING:** store-listing metadata/submission + §11.4.65 user/dev/install doc siblings. NO CI/CD (manual only) |
 
 ## Status legend
@@ -56,7 +56,7 @@
 
 ## Anti-bluff notes (§11.4 / §11.4.6 / §11.4.69)
 
-- The 413 figure IS a same-session recorded `npx vitest run` result (`Tests 413 passed (413)`),
+- The 455 figure IS a same-session recorded `npx vitest run` result (`Tests 455 passed (455)`),
   not merely a static grep — it supersedes the prior 287/22 grep-count baseline. tsc + lint
   captured clean in the same session.
 - The §11.4.38 loadable-artifact claim is verified by `ci-ext.sh` **opening the produced
@@ -81,3 +81,17 @@
   correctness/security/build subagent lenses were re-run in the conductor context after a
   transient platform throttle on subagent dispatch; an independent subagent re-pass runs
   before any release tag per §11.4.40.)
+- **Two real bugs caught by the new tests + fixed (wave-5, RED→GREEN, independently
+  re-verified):** (1) a popup↔background CONTRACT bug the integration round-trip exposed —
+  the popup read `r.torrent.id` but the real background returns a flat `SendOutcome {id,…}`,
+  so a SUCCESSFUL send threw in the popup and showed a FALSE "Send failed" (row never flipped
+  to Sent); the popup-unit fake had masked it with the wrong shape. Fixed (popup reads `r.id`;
+  fake corrected; integration assertion reconciled §11.4.120). (2) a `scan-result` TRUST bug
+  the message-router robustness tests exposed — a hostile content script could send
+  `{items:<non-array>}` and overwrite a tab's good detection set with garbage; fixed with an
+  `isValidScanResult` shape-guard (16 robustness tests; the non-array test seeds-good→corrupt
+  and asserts the good set survives).
+- de/fr locales added (4 total, all 29-key parity, packaged in both chrome+firefox builds);
+  orchestrator + rate-limiter stress (evidence-captured, deterministic); popup/options↔
+  background integration round-trips (real sendMessage→onMessage bridge); USER/INSTALL/DEV
+  guides (§11.4.65 exports).

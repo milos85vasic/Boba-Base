@@ -137,9 +137,14 @@ function installChrome(opts: {
           return Promise.resolve({
             success: true,
             data: {
+              // Real background SendOutcome shape: flat `{ id, success,
+              // displayName, error }` — NOT `{ torrent: { id } }`. (Returning the
+              // wrong nested shape here previously masked the popup `r.torrent.id`
+              // false-failure bug that the integration round-trip exposed.)
               results: (msg.payload?.ids as string[]).map((id) => ({
+                id,
                 success: true,
-                torrent: { id, displayName: id },
+                displayName: id,
                 error: null,
               })),
             },

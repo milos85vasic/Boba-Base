@@ -34,7 +34,7 @@ download, and the dashboard side accepts it.</li>
 <li><strong>Sending a whole tab group at once is wired up</strong> —
 picking a tab group scans every tab, removes duplicates across the
 group, and sends them in one batch.</li>
-<li><strong>413 automated tests pass</strong> (across 37 test files);
+<li><strong>455 automated tests pass</strong> (across 42 test files);
 the code also passes its type check and its style/lint check with zero
 warnings.</li>
 </ul>
@@ -61,7 +61,7 @@ installable extension exists.</p>
 engineers</h2>
 <p><strong>HEAD:</strong> <code>5edf6ac</code> ·
 <strong>Branch:</strong> <code>main</code> · <strong>Test
-corpus:</strong> 413 Vitest tests / 37 spec files — same-session
+corpus:</strong> 455 Vitest tests / 42 spec files — same-session
 <code>npx vitest run</code> → green; <code>npx tsc --noEmit</code>
 clean; <code>npm run lint</code> 0 errors / 0 warnings.</p>
 <h3 id="commit-provenance">Commit provenance</h3>
@@ -150,7 +150,7 @@ audit, full pen-test suite</td>
 <tr>
 <td>8 Testing-to-100% + Challenges + HelixQA</td>
 <td>IN-PROGRESS</td>
-<td>413 tests / 37 files green
+<td>455 tests / 42 files green
 (unit/perf/stress/chaos/integration/security/e2e); Challenge
 <code>challenges/extension/detect_and_forward_challenge.sh</code> drives
 the real orchestrator+client end-to-end, mutation-verified (no-op stub →
@@ -195,7 +195,7 @@ MV3).</li>
 phases) + <code>_analysis/</code> + <code>_plan/</code>.</li>
 </ul>
 <h3 id="anti-bluff-caveat-1146">Anti-bluff caveat (§11.4.6)</h3>
-<p>The 413 figure IS a same-session recorded <code>npx vitest run</code>
+<p>The 455 figure IS a same-session recorded <code>npx vitest run</code>
 green result (supersedes the prior 287/22 static spec-case count). The
 §11.4.38 loadable-artifact claim was verified by opening the produced
 <code>.output/chrome-mv3/manifest.json</code> and confirming every

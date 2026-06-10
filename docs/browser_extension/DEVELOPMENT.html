@@ -1,0 +1,199 @@
+<h1 id="bobalink--development-guide">BobaLink — Development Guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T21:00:00Z <strong>Scope:</strong> Architecture, layout,
+testing, and contribution rules for BobaLink (<code>extension/</code>).
+<strong>Authority:</strong> <code>extension/package.json</code>,
+<code>extension/wxt.config.ts</code>,
+<code>docs/browser_extension/IMPLEMENTATION_PLAN.md</code>,
+<code>docs/browser_extension/Status.md</code> (Rev 4), project
+<code>CLAUDE.md</code> + <code>constitution/</code>.</p>
+<blockquote>
+<p>Accuracy note (§11.4.6): the architecture and commands below reflect
+the real tree at HEAD <code>2011810</code>. Phases still open are marked
+<strong>(in progress)</strong>.</p>
+</blockquote>
+<hr />
+<h2 id="stack">Stack</h2>
+<ul>
+<li><strong>WXT</strong> (<code>wxt ^0.19.0</code>) — the WebExtension
+build framework; generates the MV3 manifest from
+<code>wxt.config.ts</code> and bundles entrypoints into
+<code>.output/</code>.</li>
+<li><strong>TypeScript</strong> (<code>^5.7.0</code>, strict) —
+<code>npm run compile</code> is <code>tsc --noEmit</code>.</li>
+<li><strong>Vitest</strong> (<code>^2.1.8</code>) +
+<code>@vitest/coverage-v8</code> — unit/integration/etc. tests.</li>
+<li><strong>Playwright</strong> (<code>@playwright/test ^1.49.0</code>)
+— end-to-end (real MV3 extension load).</li>
+<li><strong>ESLint</strong> (<code>^9.17.0</code>) + Prettier —
+lint/format.</li>
+<li>Runtime dependency: <code>webextension-polyfill</code>.</li>
+<li>Node ≥ 20, ESM (<code>"type": "module"</code>).</li>
+</ul>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p>The pipeline, end to end:</p>
+<pre><code>page DOM
+  → parser        (magnet / bencode / .torrent → SHA-1 infohash)
+  → scanner       (link-scanner + text-scanner, MutationObserver, site selectors)
+  → orchestrator  (cross-scanner dedup by infohash)
+  → background    (service-worker message router; context menus; commands; alarms)
+  → boba-client   (POST to the Boba merge service on :7187; token header; retry)
+  → queue         (offline FIFO; persists across SW restart; auth-injected send)</code></pre>
+<p>Module map (under <code>extension/src/</code>):</p>
+<ul>
+<li><strong>parsers</strong> — magnet URI parsing, bencode decoding,
+<code>.torrent</code> → SHA-1 infohash
+(<code>SHA-1(bencode(info))</code> via WebCrypto). Dedup key is the
+lowercase infohash.</li>
+<li><strong>scanners</strong> — <code>link-scanner</code> /
+<code>text-scanner</code> + <code>content/scanner</code>; stable
+infohash-based IDs; Shadow-DOM/iframe aware; 500 ms MutationObserver
+debounce.</li>
+<li><strong>orchestrator</strong> — runs the scanners and deduplicates
+across them.</li>
+<li><strong><code>background/index.ts</code></strong> — the
+service-worker message router: dispatches context-menu clicks
+(<code>bobalink-send</code> / <code>bobalink-send-all</code> /
+<code>bobalink-send-group</code>), keyboard commands
+(<code>send-to-boba</code> / <code>scan-page</code> /
+<code>open-dashboard</code>), and <code>chrome.alarms</code> keep-alive
++ periodic health checks.</li>
+<li><strong><code>api/boba-client.ts</code></strong> — the Boba
+merge-service client (Phase 4, <strong>in progress</strong>): posts
+magnets/URLs to <code>:7187</code>, presents the optional decrypted Boba
+API token as an <code>Authorization</code>/<code>X-Boba-Token</code>
+header, with retry/backoff and an <code>AbortController</code>
+timeout.</li>
+<li><strong><code>api/queue.ts</code></strong> — the offline FIFO queue;
+enqueues on send failure and flushes when the backend recovers; durable
+across service-worker restart.</li>
+<li><strong><code>tabgroups/index.ts</code></strong> — dedupe + batch
+dispatch across a Chrome tab group, invoked from the background
+<code>MENU_SEND_GROUP</code> handler.</li>
+<li><strong><code>shared/</code></strong> — <code>constants.ts</code>,
+<code>crypto.ts</code> (AES-GCM-256 / PBKDF2), <code>errors.ts</code>,
+<code>events.ts</code>, <code>logger.ts</code>, <code>storage.ts</code>,
+<code>utils.ts</code>.</li>
+<li><strong><code>options/options.ts</code></strong> +
+<strong><code>popup/</code></strong> — the 7-tab options page and the
+detected-list popup with Send / Send-All.</li>
+</ul>
+<h3 id="wxt-entrypoints-thin-wrappers">WXT entrypoints (thin
+wrappers)</h3>
+<p>WXT discovers entrypoints under
+<code>extension/src/entrypoints/</code>:</p>
+<pre><code>src/entrypoints/
+  background.ts          → background.js service worker
+  content.ts             → content-scripts/content.js
+  popup/index.html       → popup.html
+  options/index.html     → options.html</code></pre>
+<p>These are <strong>thin wrappers</strong> over the logic modules
+listed above — the heavy logic lives in
+<code>src/{parsers,scanners,background,api,options,popup,shared,...}/</code>,
+so the existing unit tests import the logic modules directly and stay
+valid regardless of WXT's entrypoint plumbing (<code>Status.md</code>
+Rev 4, "WXT build wiring — COMPLETE").</p>
+<p><code>wxt.config.ts</code> sets <code>srcDir: "src"</code>,
+<code>outDir: ".output"</code>, the MV3 manifest (least-privilege
+permissions, localhost-only <code>host_permissions</code>, the CSP, the
+three keyboard <code>commands</code>), and
+<code>@wxt-dev/auto-icons</code> to rasterize icon sizes.</p>
+<hr />
+<h2 id="running-tests">Running tests</h2>
+<p>From <code>extension/</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> vitest run          <span class="co"># the full unit/integration/security/perf/etc. suite</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run test            <span class="co"># === vitest run --coverage</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run test:watch      <span class="co"># vitest in watch mode</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run test:live       <span class="co"># vitest run --config tests/live/vitest.live.config.ts</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run test:e2e        <span class="co"># playwright test (real MV3 extension load)</span></span></code></pre></div>
+<ul>
+<li>The Vitest corpus lives under
+<code>extension/tests/{unit,perf,stress,chaos,integration,security,e2e}</code>
+and alongside source in <code>src/**</code>. As of
+<code>Status.md</code> Rev 4 a same-session <code>npx vitest run</code>
+reported <code>Tests 413 passed (413)</code> across 37 spec files.</li>
+<li><strong><code>test:live</code></strong> targets a live backend; live
+integration uses a <code>require_backend(7187)</code> guard that
+<strong>SKIPs with reason</strong> when <code>:7187</code> is down
+(never fail-open, §11.4.3/§11.4.68).</li>
+<li><strong><code>test:e2e</code></strong> loads the real built
+extension via Playwright (<code>launchPersistentContext</code> +
+<code>--load-extension</code>, real id from the SW target). The MV3-load
+e2e is <strong>operator-gated SKIP</strong> in a headless sandbox where
+extension load is unsupported.</li>
+<li>Anti-bluff is the gate: each test asserts a user-observable outcome
+and must fail against a no-op stub (<code>IMPLEMENTATION_PLAN.md</code>
+§0.2). Challenges under <code>challenges/extension/</code> and
+<code>challenges/security/</code> drive the real
+orchestrator/client/audit end-to-end and are mutation-verified.</li>
+</ul>
+<p>Type + lint, run by <code>ci-ext.sh</code> and individually:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run compile         <span class="co"># tsc --noEmit</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run lint            <span class="co"># eslint src/ tests/ --ext .ts</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run format:check    <span class="co"># prettier --check &quot;src/**/*.ts&quot;</span></span></code></pre></div>
+<hr />
+<h2 id="constitution-constraints-read-before-contributing">Constitution
+constraints (read before contributing)</h2>
+<p>BobaLink inherits the Boba <code>CLAUDE.md</code> and the
+<code>constitution/</code> submodule. The load-bearing rules for this
+subproject:</p>
+<ul>
+<li><strong>Anti-bluff (§11.4).</strong> Every test/Challenge must prove
+the feature works for the end user — assert user-observable outcomes (DB
+rows, response bodies, DOM text), and each test must FAIL against a
+no-op stub. The reference suite's 10 known bluffs are remediated, not
+adopted.</li>
+<li><strong>TDD (§11.4.43/§11.4.115).</strong> Write the failing RED
+test first (reproducing the real defect / driving the real feature),
+watch it fail, then write minimal code to GREEN. "Test added after the
+fix" is a bluff.</li>
+<li><strong>NO CI/CD — ever (Hard Stop §1).</strong> No
+<code>.github/workflows/</code>, no pipelines, no git hooks. Validation
+is the manual <code>extension/ci-ext.sh</code>.</li>
+<li><strong>No force-push (§11.4.113); fetch-first (§11.4.71); SSH
+remotes only.</strong></li>
+<li><strong>§11.4.10 credentials.</strong> Delegate-by-default; no
+embedded/decryptable secret by default; no fixed/empty-passphrase
+decrypt; no real credential in any test/fixture/doc.</li>
+<li><strong>100% multi-type coverage (§11.4.27/§11.4.85).</strong>
+unit/integration/e2e/security/
+load/scaling/chaos/stress/performance/benchmark/UI/UX + Challenges +
+HelixQA.</li>
+<li><strong>Mandatory code review
+(§11.4.125/§11.4.134/§11.4.142)</strong> of every change,
+iterate-until-GO, before it is "complete".</li>
+</ul>
+<p>The single real backend is the <strong>Boba merge service on
+<code>:7187</code></strong> — never qBittorrent directly, never port
+8080 (the reference <code>:8080</code> values were all retargeted to
+<code>:7187</code>; see <code>src/shared/constants.ts</code>).</p>
+<hr />
+<h2 id="where-the-docs--status--ledger-live">Where the docs / Status /
+ledger live</h2>
+<p>All under <code>docs/browser_extension/</code>:</p>
+<ul>
+<li><strong><code>Status.md</code></strong> (+
+<code>.html</code>/<code>.pdf</code>) — the authoritative per-phase
+status (Rev 4 is the real state).</li>
+<li><strong><code>Status_Summary.md</code></strong> (+ siblings) — the
+two-audience summary companion.</li>
+<li><strong><code>IMPLEMENTATION_PLAN.md</code></strong> (+ siblings) —
+the 9-phase master plan with the hard constraints, backend additions
+(BE-1/2/3), and adopt/refactor/rewrite map.</li>
+<li><strong><code>coverage_ledger.md</code></strong> (+ siblings) — the
+feature × test-type coverage ledger.</li>
+<li><strong><code>USER_GUIDE.md</code></strong>,
+<strong><code>INSTALL.md</code></strong>,
+<strong><code>DEVELOPMENT.md</code></strong> (this file) — the Phase-9
+user/install/dev docs (+ <code>.html</code>/<code>.pdf</code> siblings
+per §11.4.65).</li>
+<li>Deeper provenance: <code>docs/browser_extension/_analysis/</code>
+and <code>_plan/</code>.</li>
+</ul>
+<p>The script companion for the gate is
+<code>docs/scripts/ci-ext.md</code> (§11.4.18). HelixQA banks:
+<code>submodules/helixqa/banks/boba-bobalink.yaml</code> (symlinked into
+<code>challenges/helixqa-banks/</code>).</p>

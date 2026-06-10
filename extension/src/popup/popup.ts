@@ -200,12 +200,16 @@ export async function initPopup(doc: Document): Promise<void> {
 
     try {
       const res = await sendMessage("send-torrent", { tabId: activeTabId, ids });
+      // The background reports each send as a flat SendOutcome
+      // `{ id, success, displayName, error }` (background/index.ts) — NOT a
+      // nested `{ torrent: { id } }`. Reading `r.id` is the contract fix for the
+      // false-failure bug the popup↔background integration test discovered.
       const results =
         (res.data?.["results"] as
-          | Array<{ success: boolean; torrent: { id: string } }>
+          | Array<{ success: boolean; id: string }>
           | undefined) ?? [];
       const ok = new Set(
-        results.filter((r) => r.success).map((r) => r.torrent.id),
+        results.filter((r) => r.success).map((r) => r.id),
       );
       if (ok.size > 0) {
         current = current.map((t) =>

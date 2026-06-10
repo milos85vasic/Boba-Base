@@ -1,0 +1,430 @@
+<h1 id="bobalink--user-guide">BobaLink — User Guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T21:00:00Z <strong>Scope:</strong> End-user guide for
+BobaLink, the Boba Project browser extension (<code>extension/</code>).
+<strong>Authority:</strong>
+<code>docs/browser_extension/Status.md</code> (Rev 4) +
+<code>docs/browser_extension/IMPLEMENTATION_PLAN.md</code>.</p>
+<blockquote>
+<p>Accuracy note (§11.4.6): every statement below reflects the real
+extension source/config as of HEAD <code>2011810</code>. Capabilities
+still in progress are marked <strong>(planned)</strong> or <strong>(in
+progress)</strong> so nothing reads as shipped that is not.</p>
+</blockquote>
+<hr />
+<h2 id="what-bobalink-does">What BobaLink does</h2>
+<p>BobaLink is a cross-browser <strong>Manifest V3</strong> WebExtension
+(built with WXT + TypeScript). It:</p>
+<ul>
+<li><strong>detects</strong> magnet links and <code>.torrent</code> file
+URLs on the pages you visit;</li>
+<li><strong>parses</strong> them (magnet <code>btih</code> infohash /
+<code>.torrent</code> → SHA-1 infohash) and
+<strong>deduplicates</strong> by infohash so the same torrent is never
+sent twice;</li>
+<li><strong>forwards</strong> them to the <strong>Boba merge service on
+<code>http://localhost:7187</code></strong>, which adds them to
+qBittorrent server-side.</li>
+</ul>
+<p>The extension never talks to qBittorrent directly — it only knows
+about the Boba merge service on port 7187.
+(<code>extension/wxt.config.ts</code> <code>host_permissions</code> =
+<code>http://localhost:7187/*</code>;
+<code>extension/src/shared/constants.ts</code>
+<code>DEFAULT_URLS</code>.)</p>
+<p>The end-to-end detect → send → torrent-appears-in-qBittorrent path
+against a <strong>live</strong> backend is <strong>(in
+progress)</strong> — Phase 4 in the plan. The detection, parsing, dedup,
+and UI layers are implemented and tested.</p>
+<hr />
+<h2 id="supported-torrent-sites">Supported torrent sites</h2>
+<p>Detection works on <strong>any page</strong> via the generic
+<code>magnet:</code> and <code>.torrent</code> link patterns. In
+addition, BobaLink ships a curated selector table
+(<code>SITE_SELECTORS</code> in
+<code>extension/src/shared/constants.ts</code>) tuned for these hosts.
+The content script's <code>matches</code> are derived from this table —
+BobaLink does <strong>not</strong> request
+<code>&lt;all_urls&gt;</code>.</p>
+<p>The curated table covers <strong>24 entries</strong> (one
+<code>generic</code> pattern set plus 23 site-specific hosts):</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Host</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>—</td>
+<td><code>generic</code></td>
+<td>magnet / <code>.torrent</code> / <code>download.php?id=</code>
+patterns applied everywhere</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>1337x.to</code></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>thepiratebay.org</code></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>thepiratebay10.org</code></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>rarbg.to</code></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>rarbgtorrents.org</code></td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>yts.mx</code></td>
+<td></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>yts.lt</code></td>
+<td></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>eztv.re</code></td>
+<td></td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>limetorrents.lol</code></td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>torrentgalaxy.to</code></td>
+<td></td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>nyaa.si</code></td>
+<td>anime</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>animetosho.org</code></td>
+<td></td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>torrentz2.eu</code></td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>fitgirl-repacks.site</code></td>
+<td></td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>rutracker.org</code></td>
+<td>Boba private tracker</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>kinozal.tv</code></td>
+<td>Boba private tracker</td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>nnmclub.to</code></td>
+<td>Boba private tracker</td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>rutor.info</code></td>
+<td>Boba public tracker</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>katcr.co</code></td>
+<td>Kickass Torrents</td>
+</tr>
+<tr>
+<td>20</td>
+<td><code>demonoid.is</code></td>
+<td></td>
+</tr>
+<tr>
+<td>21</td>
+<td><code>iptorrents.com</code></td>
+<td>Boba private tracker</td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>torrentleech.org</code></td>
+<td>private</td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>beyond-hd.me</code></td>
+<td>private</td>
+</tr>
+<tr>
+<td>24</td>
+<td><code>passthepopcorn.me</code></td>
+<td>private</td>
+</tr>
+</tbody>
+</table>
+<p>(That is 23 site-specific hosts plus the <code>generic</code> set —
+the project refers to this as the <strong>24 supported sites</strong>
+table.)</p>
+<hr />
+<h2 id="how-detection-works">How detection works</h2>
+<ul>
+<li>The content script scans the page for magnet links and
+<code>.torrent</code> URLs using the site selectors above plus the
+generic regex patterns (<code>MAGNET_REGEX</code>,
+<code>TORRENT_FILE_REGEX</code> in <code>constants.ts</code>).</li>
+<li>It watches the page for changes with a <code>MutationObserver</code>
+(500 ms debounce — <code>DEBOUNCE_DELAYS.MUTATION</code>) so links added
+by single-page-app navigation are picked up too.</li>
+<li>Each detected item is parsed to its infohash and
+<strong>deduplicated by lowercase infohash</strong>, so the same torrent
+appearing in several places on a page is sent once.</li>
+</ul>
+<hr />
+<h2 id="the-popup">The popup</h2>
+<p>Click the BobaLink toolbar icon to open the popup. It shows the
+torrents detected on the current page and lets you send them to
+Boba:</p>
+<ul>
+<li><strong>Send</strong> — send a single selected detected item to the
+Boba merge service.</li>
+<li><strong>Send All</strong> — send every detected item on the current
+page (deduplicated).</li>
+</ul>
+<p>The popup also surfaces a connection/status indicator (badge colours
+are defined in <code>BADGE_COLORS</code>: healthy / degraded / error /
+scanning / detected).</p>
+<blockquote>
+<p>The live-backend round-trip these buttons perform is <strong>(in
+progress)</strong> — Phase 4. The popup, detected-list rendering, and
+Send / Send-All wiring are implemented and tested.</p>
+</blockquote>
+<hr />
+<h2 id="context-menu-actions">Context-menu actions</h2>
+<p>Right-click a page (or a magnet link) to use BobaLink's context-menu
+items (defined in <code>extension/src/background/index.ts</code>):</p>
+<ul>
+<li><strong>Send magnet to Boba</strong> (<code>bobalink-send</code>) —
+send the right-clicked magnet link.</li>
+<li><strong>Send all on page</strong> (<code>bobalink-send-all</code>) —
+send every detected torrent on the current page.</li>
+<li><strong>Send tab group</strong> (<code>bobalink-send-group</code>) —
+scan <strong>every tab in the current tab group</strong>, deduplicate
+across the whole group, and send them as one batch.</li>
+</ul>
+<p>The "Send tab group" batch path is wired
+(<code>MENU_SEND_GROUP</code> → deduped group batch → a single
+<code>addMagnets</code> request). It is a Chrome-family feature (uses
+<code>chrome.tabGroups</code>); on browsers without tab groups it
+degrades gracefully.</p>
+<p>You can hide the context-menu items from <strong>Options → UI → Show
+context-menu items</strong>.</p>
+<hr />
+<h2 id="keyboard-shortcuts">Keyboard shortcuts</h2>
+<p>Three shortcuts are declared in <code>extension/wxt.config.ts</code>
+(<code>commands</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Windows / Linux</th>
+<th>macOS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Send to Boba (<code>send-to-boba</code>)</td>
+<td><code>Ctrl+Shift+B</code></td>
+<td><code>Command+Shift+B</code></td>
+</tr>
+<tr>
+<td>Scan page (<code>scan-page</code>)</td>
+<td><code>Ctrl+Shift+S</code></td>
+<td><code>Command+Shift+S</code></td>
+</tr>
+<tr>
+<td>Open dashboard (<code>open-dashboard</code>)</td>
+<td><code>Ctrl+Shift+D</code></td>
+<td><code>Command+Shift+D</code></td>
+</tr>
+</tbody>
+</table>
+<p>These are <em>suggested</em> keys; your browser may let you remap
+them on its extension shortcuts page (e.g.
+<code>chrome://extensions/shortcuts</code>). You can disable shortcut
+handling from <strong>Options → UI → Enable keyboard
+shortcuts</strong>.</p>
+<hr />
+<h2 id="the-7-options-tabs">The 7 options tabs</h2>
+<p>Open the options page (right-click the icon → Options, or your
+browser's extension-details "Extension options"). It has <strong>seven
+tabs</strong> (<code>extension/src/entrypoints/options/index.html</code>
++ <code>src/options/options.ts</code>, <code>TAB_IDS</code>):</p>
+<ol type="1">
+<li><strong>Server</strong> — server name, <strong>Server URL</strong>
+(default <code>http://localhost:7187</code>), authentication method
+(None / Username+Password cookie / API Key / Basic), the optional
+<strong>Boba API token</strong> + <strong>Session passphrase</strong>
+(see below), connection timeout (seconds), health-check interval
+(minutes), and "Verify HTTPS certificates (HTTPS only)".</li>
+<li><strong>Download Prefs</strong> — default category, default save
+path, content layout (Original / Create subfolder / No subfolder),
+pause-after-add, skip hash check, automatic torrent management.</li>
+<li><strong>Queue</strong> — enable the offline queue for failed sends,
+max queue size (default 50), max history items (default 100).</li>
+<li><strong>Notifications</strong> — show notifications, play a sound on
+completion, auto-send detected torrents (no confirmation).</li>
+<li><strong>Detection</strong> — automatically scan pages, auto-scan
+delay (ms), highlight detected torrents, highlight style (Badge / Border
+/ Glow).</li>
+<li><strong>UI</strong> — show context-menu items, enable keyboard
+shortcuts.</li>
+<li><strong>Security</strong> — explains the delegate-by-default model
+and offers an "Enable debug logging" toggle.</li>
+</ol>
+<hr />
+<h2 id="the-optional-boba-api-token--session-passphrase">The optional
+Boba API token + session passphrase</h2>
+<p>BobaLink follows a <strong>delegate-by-default</strong> security
+model: in the normal localhost deployment it stores <strong>no
+decryptable secret at all</strong> — it just posts magnets/URLs to the
+local merge service, which already owns the qBittorrent and tracker
+credentials.</p>
+<p>The <strong>only</strong> optional secret is a <strong>Boba API
+token</strong>, which is needed <em>only if</em> your Boba backend sets
+the <code>BOBA_API_TOKEN</code> environment variable (the backend token
+gate is open by default and enforced only when that variable is
+set).</p>
+<p>When you supply a token on the <strong>Server</strong> tab, BobaLink
+encrypts it <strong>only under a session passphrase you type</strong>
+(AES-GCM-256 via PBKDF2 — <code>ENCRYPTION</code> in
+<code>constants.ts</code>):</p>
+<ul>
+<li>The passphrase is held in <code>chrome.storage.session</code> only
+and is <strong>never persisted</strong> to disk.</li>
+<li>There is <strong>no fixed/embedded encryption key and no
+empty-passphrase path</strong> — if you enter a token but no passphrase,
+the token is <strong>not stored</strong> and a notice tells you to add a
+passphrase (<code>src/options/options.ts</code>).</li>
+<li>The plaintext token and the passphrase are never logged.</li>
+</ul>
+<p>When the token is present and unlocked, the Phase-4 client sends it
+as either an <code>Authorization: Bearer &lt;token&gt;</code> or
+<code>X-Boba-Token: &lt;token&gt;</code> header
+(<code>BOBA_TOKEN_HEADERS</code>). Full decrypt-and-send wiring is
+landed and tested; the end-to-end against a live token-gated backend is
+<strong>(in progress)</strong>.</p>
+<hr />
+<h2
+id="least-privilege-permissions--what-bobalink-asks-for-and-why">Least-privilege
+permissions — what BobaLink asks for and why</h2>
+<p>BobaLink requests only what it needs
+(<code>extension/wxt.config.ts</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Permission</th>
+<th>Why it is requested</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>storage</code></td>
+<td>persist your settings, detected items, the offline queue, and
+history</td>
+</tr>
+<tr>
+<td><code>alarms</code></td>
+<td>keep the service worker alive and run periodic health checks</td>
+</tr>
+<tr>
+<td><code>notifications</code></td>
+<td>tell you when a send succeeds/fails</td>
+</tr>
+<tr>
+<td><code>activeTab</code></td>
+<td>act on the page you explicitly invoke BobaLink on</td>
+</tr>
+<tr>
+<td><code>contextMenus</code></td>
+<td>provide the right-click "Send …" actions</td>
+</tr>
+<tr>
+<td><code>tabGroups</code></td>
+<td>read which group the clicked tab belongs to, for "Send tab
+group"</td>
+</tr>
+<tr>
+<td><code>host_permissions: http://localhost:7187/*</code></td>
+<td>talk to the local Boba merge service — nothing else</td>
+</tr>
+</tbody>
+</table>
+<h3 id="what-bobalink-deliberately-does-not-request">What BobaLink
+deliberately does <strong>not</strong> request</h3>
+<ul>
+<li><strong><code>tabs</code></strong> — the tab-group batcher reads
+only <code>tab.id</code>, which per the Chrome docs needs no
+<code>tabs</code> permission. BobaLink never reads tab
+URLs/titles/favicons.</li>
+<li><strong><code>scripting</code></strong> — not requested.</li>
+<li><strong><code>cookies</code></strong> — not requested; BobaLink
+never touches your cookies.</li>
+<li><strong><code>&lt;all_urls&gt;</code></strong> — the content
+script's match patterns are derived from the curated
+<code>SITE_SELECTORS</code> table, not a blanket all-sites grant.</li>
+</ul>
+<p>Its content security policy is tight: <code>script-src 'self'</code>
+(no <code>unsafe-inline</code> / <code>unsafe-eval</code>), and
+<code>connect-src</code> scoped to <code>http://localhost:7187</code>
+(<code>content_security_policy</code> in
+<code>wxt.config.ts</code>).</p>
+<hr />
+<h2 id="internationalization--accessibility">Internationalization &amp;
+accessibility</h2>
+<ul>
+<li>BobaLink ships UI message catalogs for <strong>English
+(<code>en</code>)</strong>, <strong>Russian (<code>ru</code>)</strong>,
+<strong>German (<code>de</code>)</strong>, and <strong>French
+(<code>fr</code>)</strong>
+(<code>src/public/_locales/{en,ru,de,fr}</code>, packaged into the
+build). Chrome/Firefox auto-select by the browser UI language, falling
+back to English. More locales are <strong>(planned)</strong> (the plan
+targets 8).</li>
+<li>The popup and options UI carry ARIA roles, accessible names, and
+tablist/tabpanel wiring, validated by an accessibility test suite.
+Deeper WCAG work (contrast/focus/full keyboard coverage) and
+theme-switch evidence are <strong>(in progress)</strong>.</li>
+</ul>
+<hr />
+<h2 id="current-status-at-a-glance">Current status at a glance</h2>
+<p>Phases 1–3 (foundation, detection/parsing, the
+content/background/popup/options shell) plus the WXT build wiring are
+<strong>PASS</strong>. Backend integration (Phase 4), tab-group batch
+polish (Phase 5), i18n/a11y/themes (Phase 6), the full
+security/credentials suite (Phase 7), full multi-type test coverage
+(Phase 8), and distribution (Phase 9) are <strong>in progress</strong>.
+See <code>docs/browser_extension/Status.md</code> for the authoritative
+per-phase state.</p>

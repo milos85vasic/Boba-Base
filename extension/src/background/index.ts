@@ -444,6 +444,30 @@ async function processQueueItem(queueItem: OfflineQueueItem): Promise<boolean> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Validate that an inbound `scan-result` payload is a shape-valid
+ * {@link PageScanResult} before it is trusted into {@link tabResults}.
+ *
+ * The `scan-result` message originates from a content script running on an
+ * arbitrary, possibly hostile page, so its `result` is untrusted. A malformed
+ * `result` (a non-object, or one whose `items` is not an array) must NOT be
+ * stored: doing so would overwrite a tab's previously-detected set with garbage
+ * that then surfaces to the popup via `get-detected`. The minimal contract the
+ * downstream code relies on is `Array.isArray(result.items)` (the badge counts
+ * `items.length`; the popup iterates `items`), so that is exactly what is
+ * checked here — nothing more, to stay surgical.
+ *
+ * @param result - The candidate scan result from `message.payload?.result`.
+ * @returns Whether `result` is safe to store as a {@link PageScanResult}.
+ */
+function isValidScanResult(result: unknown): result is PageScanResult {
+  return (
+    typeof result === "object" &&
+    result !== null &&
+    Array.isArray((result as { items?: unknown }).items)
+  );
+}
+
+/**
  * Handle a single incoming extension message. Pure async — the listener
  * adapter wires the reply + returns `true` for the async channel.
  *
@@ -459,7 +483,12 @@ async function handleMessage(
     case "scan-result": {
       const tabId = sender.tab?.id;
       const result = message.payload?.result as PageScanResult | undefined;
-      if (typeof tabId === "number" && result) {
+      // Trust boundary: `result` arrives from a content script on a possibly
+      // hostile page (`chrome.runtime.sendMessage`). Only a SHAPE-VALID scan
+      // result (an object whose `items` is a real array) may be stored — a
+      // malformed payload (`{ items: 5 }`, a string, …) must NOT overwrite a
+      // tab's previously-detected set with garbage that then flows to the popup.
+      if (typeof tabId === "number" && isValidScanResult(result)) {
         tabResults.set(tabId, result);
         updateBadge(result.items.length, BADGE_COLORS.DETECTED);
       }

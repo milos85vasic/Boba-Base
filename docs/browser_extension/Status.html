@@ -1,7 +1,7 @@
 <h1 id="bobalink-browser-extension--status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-06-10T20:40:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-06-10T21:30:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
@@ -22,9 +22,9 @@ no-guessing).</p>
 locale, content-XSS, credential-leak audit, decrypt-throw parity,
 tab-group Challenge, and the <code>_locales</code> packaging fix) staged
 for the next commit.</li>
-<li><strong>Extension test corpus:</strong> <strong>413 Vitest tests
-across 37 spec files</strong> — same-session <code>npx vitest run</code>
-→ <code>Tests 413 passed (413)</code> — under
+<li><strong>Extension test corpus:</strong> <strong>455 Vitest tests
+across 42 spec files</strong> — same-session <code>npx vitest run</code>
+→ <code>Tests 455 passed (455)</code> — under
 <code>extension/tests/{unit,perf,stress,chaos,integration,security,e2e}</code>
 + <code>src/**</code>. <code>npx tsc --noEmit</code> clean;
 <code>npm run lint</code> 0 errors / 0 warnings. (+126 tests over the
@@ -144,8 +144,9 @@ pre-existing parity with Send-All, future phase</td>
 <td>UI/UX, i18n, accessibility, themes</td>
 <td>IN-PROGRESS</td>
 <td>i18n: <code>locale.test.ts</code> (en completeness) +
-<strong><code>ru</code> locale added</strong> with
-<code>locale-parity.test.ts</code> (en⇄ru key + placeholder parity,
+<strong>ru+de+fr locales added</strong> (4 total, 29-key parity,
+packaged chrome+firefox) with generalized
+<code>locale-parity.test.ts</code> (key + placeholder parity,
 mutation-proven); <strong>a11y</strong>:
 <code>tests/a11y/{popup,options}.a11y.test.ts</code> (18 tests —
 roles/accessible-names/tablist↔︎tabpanel/live-regions, mutation-proven).
@@ -167,14 +168,18 @@ no-hardcoded-secret, secret-storage, <strong>content-XSS</strong> —
 render path proven safe via innerHTML-mutation→FAIL); <strong>§11.4.10.A
 credential-leak audit</strong>
 <code>challenges/security/credential_leak_audit.sh</code> (PASS,
-mutation-verified). <strong>PENDING:</strong> full pen-test suite
-(sender-origin validation, rate-limit)</td>
+mutation-verified); <strong>message-router robustness</strong>
+<code>tests/security/message-router-robustness.test.ts</code> (16 tests)
++ <strong><code>isValidScanResult</code> scan-result
+trust-guard</strong> (fixed a real content-script overwrite bug).
+<strong>PENDING:</strong> full pen-test suite (sender-origin validation,
+rate-limit)</td>
 </tr>
 <tr>
 <td>8</td>
 <td>Testing to 100% (all types) + Challenges + HelixQA</td>
 <td>IN-PROGRESS</td>
-<td>413 tests/37 files green
+<td>455 tests/42 files green
 (unit/perf/stress/chaos/integration/security/e2e). Challenge
 <code>challenges/extension/detect_and_forward_challenge.sh</code> drives
 the REAL orchestrator+client end-to-end, PASS on captured evidence,
@@ -218,9 +223,9 @@ planned in <code>IMPLEMENTATION_PLAN.md</code>.</li>
 <h2 id="anti-bluff-notes-114--1146--11469">Anti-bluff notes (§11.4 /
 §11.4.6 / §11.4.69)</h2>
 <ul>
-<li>The 413 figure IS a same-session recorded
+<li>The 455 figure IS a same-session recorded
 <code>npx vitest run</code> result
-(<code>Tests 413 passed (413)</code>), not merely a static grep — it
+(<code>Tests 455 passed (455)</code>), not merely a static grep — it
 supersedes the prior 287/22 grep-count baseline. tsc + lint captured
 clean in the same session.</li>
 <li>The §11.4.38 loadable-artifact claim is verified by
@@ -258,4 +263,23 @@ correctness/security/build subagent lenses were re-run in the conductor
 context after a transient platform throttle on subagent dispatch; an
 independent subagent re-pass runs before any release tag per
 §11.4.40.)</li>
+<li><strong>Two real bugs caught by the new tests + fixed (wave-5,
+RED→GREEN, independently re-verified):</strong> (1) a popup↔︎background
+CONTRACT bug the integration round-trip exposed — the popup read
+<code>r.torrent.id</code> but the real background returns a flat
+<code>SendOutcome {id,…}</code>, so a SUCCESSFUL send threw in the popup
+and showed a FALSE "Send failed" (row never flipped to Sent); the
+popup-unit fake had masked it with the wrong shape. Fixed (popup reads
+<code>r.id</code>; fake corrected; integration assertion reconciled
+§11.4.120). (2) a <code>scan-result</code> TRUST bug the message-router
+robustness tests exposed — a hostile content script could send
+<code>{items:&lt;non-array&gt;}</code> and overwrite a tab's good
+detection set with garbage; fixed with an <code>isValidScanResult</code>
+shape-guard (16 robustness tests; the non-array test seeds-good→corrupt
+and asserts the good set survives).</li>
+<li>de/fr locales added (4 total, all 29-key parity, packaged in both
+chrome+firefox builds); orchestrator + rate-limiter stress
+(evidence-captured, deterministic); popup/options↔︎ background
+integration round-trips (real sendMessage→onMessage bridge);
+USER/INSTALL/DEV guides (§11.4.65 exports).</li>
 </ul>
