@@ -13,6 +13,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "postinstall": "wxt prepare",
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
     "build": "wxt build",

@@ -31,7 +31,7 @@ import {
 import { STORAGE_KEYS } from "../../src/shared/constants";
 
 // Vitest runs with cwd = the extension/ project root (where vitest.config.ts is).
-const OPTIONS_HTML_PATH = resolve(process.cwd(), "src/options/index.html");
+const OPTIONS_HTML_PATH = resolve(process.cwd(), "src/entrypoints/options/index.html");
 const OPTIONS_TS_PATH = resolve(process.cwd(), "src/options/options.ts");
 
 /**

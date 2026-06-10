@@ -22,13 +22,17 @@
  * the test calls `initBackground()` explicitly against an installed fake — so
  * importing this module never touches a missing global.
  *
- * ## §11.4.10 — credentials
- * The configured Boba token (if any) is read from the active server's config
- * and passed to {@link BobaClient}, which sends it as a bearer header. The
- * token VALUE is NEVER logged here (only its presence is implied by behaviour);
- * the secure session-passphrase DECRYPT path is Phase 7. For now we read
- * whatever plaintext token the config exposes (`encryptedBobaApiToken`) or
- * `undefined` (→ default-open). No key is ever hard-coded.
+ * ## §11.4.10 — credentials (Phase-7 decrypt-before-send)
+ * The configured Boba token (`ServerConfig.encryptedBobaApiToken`) is stored as
+ * an AES-256-GCM `EncryptedBundle` (JSON), encrypted by the options page under a
+ * USER-SUPPLIED session passphrase — never a fixed key. The background DECRYPTS
+ * it via {@link BobaClient.create} (which calls `shared/crypto.decrypt`) and
+ * sends the resulting PLAINTEXT token as a bearer header. The passphrase comes
+ * from {@link readSessionPassphrase} — `chrome.storage.session` (an in-memory,
+ * non-disk store the unlock flow populates and the browser clears on close),
+ * NOT from any literal. When the passphrase is absent (locked) or no token is
+ * configured, the client is built default-open (NO auth header) — the ciphertext
+ * is NEVER sent as a token. The token VALUE and the passphrase are NEVER logged.
  *
  * @module background/index
  */
@@ -115,25 +119,55 @@ function activeServer(config: ExtensionConfig): ServerConfig | null {
 }
 
 /**
- * Build a {@link BobaClient} for a server, forwarding its plaintext token when
- * present. §11.4.10: the token value is never logged here.
+ * `chrome.storage.session` key under which the unlock flow stores the session
+ * passphrase used to decrypt `ServerConfig.encryptedBobaApiToken` (§11.4.10).
+ * `storage.session` is in-memory only (never written to disk) and is cleared
+ * when the browser closes — the passphrase is NEVER persisted.
+ */
+const SESSION_PASSPHRASE_KEY = "bobalink_session_passphrase";
+
+/**
+ * Read the session passphrase from `chrome.storage.session` (the unlock-flow
+ * store). Returns `undefined` when locked / absent / the surface is missing —
+ * in which case {@link clientFor} builds a default-open client (no token sent).
  *
- * Phase 7: `encryptedBobaApiToken` will be decrypted with the session
- * passphrase via `shared/crypto.ts` before being passed here. For now the
- * field is read as-is (plaintext or undefined → default-open). No key is
- * hard-coded.
+ * The passphrase value is NEVER logged or returned anywhere it could be logged.
+ *
+ * @returns The session passphrase, or `undefined` when not unlocked.
+ */
+async function readSessionPassphrase(): Promise<string | undefined> {
+  try {
+    const session = chrome.storage.session;
+    if (!session) return undefined;
+    const data = await session.get(SESSION_PASSPHRASE_KEY);
+    const value = (data as Record<string, unknown>)[SESSION_PASSPHRASE_KEY];
+    return typeof value === "string" && value.length > 0 ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Build a {@link BobaClient} for a server, DECRYPTING its `encryptedBobaApiToken`
+ * bundle with the session passphrase via {@link BobaClient.create} so the
+ * PLAINTEXT token (not the ciphertext) is sent as a bearer header (§11.4.10).
+ *
+ * Default-open contract: when no token is configured, OR no session passphrase
+ * is available (locked), OR the stored value is not a valid encrypted bundle,
+ * the client carries NO auth header — the ciphertext is NEVER sent as a token.
+ * `create()` itself reads the passphrase only to derive the AES key; neither the
+ * passphrase nor the plaintext token is ever logged here.
  *
  * @param server - The target server config.
- * @returns A configured {@link BobaClient}.
+ * @returns A configured {@link BobaClient}, decrypted token attached when present.
  */
-function clientFor(server: ServerConfig): BobaClient {
-  // Phase 7: decrypt `server.encryptedBobaApiToken` here before use.
-  const token = server.encryptedBobaApiToken ?? undefined;
-  return new BobaClient(
-    token !== undefined && token !== null
-      ? { baseUrl: server.url, token }
-      : { baseUrl: server.url },
-  );
+async function clientFor(server: ServerConfig): Promise<BobaClient> {
+  const passphrase = await readSessionPassphrase();
+  return BobaClient.create({
+    baseUrl: server.url,
+    encryptedToken: server.encryptedBobaApiToken ?? null,
+    ...(passphrase !== undefined ? { passphrase } : {}),
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -225,7 +259,7 @@ async function sendTorrents(
     throw new Error("No matching torrents found");
   }
 
-  const client = clientFor(server);
+  const client = await clientFor(server);
   const outcomes: SendOutcome[] = [];
 
   for (const item of toSend) {
@@ -336,7 +370,7 @@ async function processQueueItem(queueItem: OfflineQueueItem): Promise<boolean> {
   const url = queueItem.torrent.magnetUri ?? queueItem.torrent.torrentUrl;
   if (url === null) return false;
 
-  const client = clientFor(server);
+  const client = await clientFor(server);
   const add = await client.addMagnet(url);
   return add.accepted;
 }
@@ -527,7 +561,7 @@ function registerContextMenuClicks(): void {
             const config = await loadConfig();
             const server = activeServer(config);
             if (url && server) {
-              const client = clientFor(server);
+              const client = await clientFor(server);
               const add = await client.addMagnet(url);
               if (config.showNotifications) {
                 notify(

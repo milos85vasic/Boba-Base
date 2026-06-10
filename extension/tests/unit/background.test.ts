@@ -372,7 +372,7 @@ describe("message router — send-torrent → client + notify / enqueue-on-fail"
     expect(ch.notifications.create).toHaveBeenCalled();
   });
 
-  it("forwards the configured token to the client without ever logging it (§11.4.10)", async () => {
+  it("default-opens (never puts the configured value on the wire) when a token is set but the session is locked — and never logs it (§11.4.10 / §11.4.120)", async () => {
     const fetchMock = vi.fn(() =>
       Promise.resolve({
         ok: true,
@@ -397,10 +397,19 @@ describe("message router — send-torrent → client + notify / enqueue-on-fail"
       payload: { tabId: 7, ids: [INFOHASH_A] },
     });
 
-    // the token reached the wire as a bearer header (proves it was forwarded)
+    // §11.4.120 reconciliation: post-Phase-7 the background DECRYPTS the
+    // configured ciphertext bundle with the session passphrase (read from
+    // chrome.storage.session) before sending. This fake has no storage.session,
+    // so the unlock passphrase is unavailable (locked) → the client MUST be
+    // built default-open and MUST NEVER put the stored value on the wire as a
+    // bearer token. (The decrypt→forward happy path is proven in
+    // background-token.test.ts with a real encrypted bundle + a session passphrase.)
+    expect(fetchMock).toHaveBeenCalled();
     const init = (fetchMock.mock.calls[0] as unknown[])?.[1] as RequestInit;
     const headers = (init.headers as Record<string, string>) ?? {};
-    expect(headers["Authorization"]).toBe(`Bearer ${SYNTH_TOKEN}`);
+    expect(headers["Authorization"]).toBeUndefined();
+    expect(headers["X-Boba-Token"]).toBeUndefined();
+    expect(JSON.stringify(headers)).not.toContain(SYNTH_TOKEN);
 
     // …but the token VALUE never appears in any console line
     const logged = logSpy.mock.calls.map((c) => c.join(" ")).join("\n");

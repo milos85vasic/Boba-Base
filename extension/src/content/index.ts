@@ -332,29 +332,14 @@ function getRuntime(): RuntimeLike | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Auto-run (real extension content-script context only)
+// Lifecycle ownership
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Whether this module is loaded inside a real content-script context (a DOM is
- * present AND `chrome.runtime` exists). Under Vitest/jsdom `chrome.runtime` is
- * absent unless a test installs it, so importing the module never auto-runs.
- *
- * @returns True if the module should self-initialize at load
- */
-function isContentScriptContext(): boolean {
-  return typeof document !== "undefined" && getRuntime() !== null;
-}
-
-if (isContentScriptContext()) {
-  const run = (): void => {
-    initContentScript().catch((err) =>
-      log.error("Content script initialization failed", err),
-    );
-  };
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run, { once: true });
-  } else {
-    run();
-  }
-}
+//
+// This module deliberately does NOT self-init. The WXT content-script
+// entrypoint (`src/entrypoints/content.ts`) is the single driver: it declares
+// the manifest `matches` and calls `initContentScript()` from its `main()`,
+// honouring `run_at: document_idle`. A former module-load auto-run block was
+// removed because running it in addition to the entrypoint's `main()` would
+// double-register the `chrome.runtime.onMessage` listener (`initContentScript`
+// is not idempotent). Unit tests call `initContentScript()` explicitly, so this
+// change is invisible to them.

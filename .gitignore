@@ -214,3 +214,6 @@ cmd/boba-ctl/boba-ctl
 
 # Mutmut mutants directory (regenerated on each run)
 mutants/
+
+# Vite/Vitest cache (regenerated on each test run)
+.vite/

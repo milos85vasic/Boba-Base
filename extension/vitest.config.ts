@@ -23,6 +23,9 @@ export default defineConfig({
       "tests/unit/**/*.test.ts",
       "tests/perf/**/*.test.ts",
       "tests/stress/**/*.test.ts",
+      "tests/chaos/**/*.test.ts",
+      "tests/integration/**/*.test.ts",
+      "tests/security/**/*.test.ts",
       "src/**/*.test.ts",
     ],
     coverage: {

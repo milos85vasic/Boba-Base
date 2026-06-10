@@ -22,9 +22,15 @@
  * default-open contract.
  *
  * **The token value is NEVER logged (§11.4.10).** Logs only record
- * `[token: set]` / `[token: none]`. The client does no crypto itself — the
- * caller decrypts `encryptedBobaApiToken` (via `shared/crypto.ts`) and passes
- * the plaintext in.
+ * `[token: set]` / `[token: none]`. Two construction paths exist:
+ *   - {@link BobaClient} constructor — takes an already-decrypted plaintext
+ *     `token` (the caller did the crypto).
+ *   - {@link BobaClient.create} — the Phase-7 decrypt-and-send path: takes the
+ *     operator's ENCRYPTED `BOBA_API_TOKEN` bundle (the JSON-serialized
+ *     `EncryptedBundle` stored in `ServerConfig.encryptedBobaApiToken`) plus the
+ *     session passphrase, DECRYPTS it via `shared/crypto.ts`, and constructs a
+ *     client carrying the resulting plaintext token. The plaintext token and the
+ *     passphrase are NEVER logged and never persisted.
  *
  * @module api/boba-client
  */
@@ -36,6 +42,7 @@ import {
   REQUEST_TIMEOUTS,
   RETRY_CONFIG,
 } from "../shared/constants";
+import { decrypt, isEncrypted } from "../shared/crypto";
 import { NetworkError, ServerError } from "../shared/errors";
 import { createLogger, type Logger } from "../shared/logger";
 import { sleep, TokenBucket } from "../shared/utils";
@@ -83,6 +90,29 @@ export interface BobaClientOptions {
   readonly disableRateLimit?: boolean;
 }
 
+/**
+ * Construction options for {@link BobaClient.create} — the decrypt-and-send
+ * path. Identical to {@link BobaClientOptions} except the token is supplied
+ * ENCRYPTED (+ a passphrase) instead of as plaintext; `create()` decrypts it.
+ */
+export interface BobaClientCreateOptions
+  extends Omit<BobaClientOptions, "token"> {
+  /**
+   * The operator's encrypted `BOBA_API_TOKEN` — the JSON-serialized
+   * {@link import("../shared/crypto").EncryptedBundle} stored in
+   * `ServerConfig.encryptedBobaApiToken`. When absent/empty, no token is sent
+   * (default-open contract preserved).
+   */
+  readonly encryptedToken?: string | null;
+
+  /**
+   * Session passphrase used to derive the AES-256-GCM key. Required to decrypt
+   * {@link encryptedToken}; when absent, decryption is skipped (default-open) —
+   * the ciphertext is NEVER sent as a token.
+   */
+  readonly passphrase?: string;
+}
+
 /** Default `result_id` label when the caller does not supply one. */
 const DEFAULT_RESULT_ID = "bobalink";
 
@@ -123,6 +153,58 @@ export class BobaClient {
     this.log.info(
       `client created base=${this.baseUrl} [token: ${this.token ? "set" : "none"}]`,
     );
+  }
+
+  /**
+   * Decrypt-and-construct factory (Phase 7 residual / § Plan E + §11.4.10).
+   *
+   * Takes the operator's ENCRYPTED `BOBA_API_TOKEN` bundle + the session
+   * passphrase, decrypts the plaintext token via `shared/crypto.decrypt`, and
+   * returns a {@link BobaClient} that sends that plaintext on every request.
+   *
+   * Default-open contract: when no `encryptedToken` is configured, OR no
+   * `passphrase` is available, OR the stored value is not a valid encrypted
+   * bundle, the returned client sends NO auth header — the ciphertext is NEVER
+   * sent as a token. A wrong passphrase makes `decrypt` throw (a
+   * {@link import("../shared/errors").StorageError}); the error is propagated so
+   * the caller can surface it — no garbage/ciphertext token reaches the wire.
+   *
+   * The plaintext token and the passphrase are NEVER logged (§11.4.10).
+   *
+   * @param options - See {@link BobaClientCreateOptions}.
+   * @returns A configured {@link BobaClient}, decrypted token attached when present.
+   */
+  static async create(
+    options: BobaClientCreateOptions = {},
+  ): Promise<BobaClient> {
+    const { encryptedToken, passphrase, ...rest } = options;
+
+    const hasEncrypted =
+      typeof encryptedToken === "string" && encryptedToken.length > 0;
+    const hasPassphrase =
+      typeof passphrase === "string" && passphrase.length > 0;
+
+    // No token configured, or no passphrase to decrypt with → default-open.
+    // Never fall back to sending the ciphertext as the token.
+    if (!hasEncrypted || !hasPassphrase) {
+      return new BobaClient(rest);
+    }
+
+    // Parse the stored JSON bundle. Malformed/non-bundle → default-open
+    // (the value was never a valid encrypted token).
+    let bundle: unknown;
+    try {
+      bundle = JSON.parse(encryptedToken);
+    } catch {
+      bundle = null;
+    }
+    if (!isEncrypted(bundle)) {
+      return new BobaClient(rest);
+    }
+
+    // Decrypt — a wrong passphrase throws StorageError, which we let propagate.
+    const plaintext = await decrypt(bundle, passphrase);
+    return new BobaClient({ ...rest, token: plaintext });
   }
 
   /**

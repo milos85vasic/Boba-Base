@@ -27,7 +27,7 @@ import { dirname, resolve } from "node:path";
 import type { DetectedTorrent } from "../../src/types/torrent";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const POPUP_HTML = resolve(HERE, "../../src/popup/index.html");
+const POPUP_HTML = resolve(HERE, "../../src/entrypoints/popup/index.html");
 
 /**
  * Assert a value is present, returning it narrowed. A real assertion — if the

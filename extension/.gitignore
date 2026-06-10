@@ -8,6 +8,13 @@ node_modules/
 # Test coverage
 coverage/
 
+# Captured runtime test evidence (§11.4.30 — regeneratable; regen mechanism
+# per §11.4.77 is "re-run the stress/chaos/e2e suite"). The assertions live in
+# the test source; the .evidence/ payloads are reproduced on every run.
+tests/**/.evidence/
+test-results/
+playwright-report/
+
 # Local secrets / captured credentials (§11.4.10 / §11.4.30 + Plan E §5.3)
 # The extension stores no decryptable secret in the localhost-proxy deployment;
 # these patterns guard any dev artifact that could ever capture a real token.

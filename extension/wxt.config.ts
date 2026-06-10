@@ -37,11 +37,11 @@ export default defineConfig({
     host_permissions: ["http://localhost:7187/*"],
 
     action: {
-      default_popup: "popup/index.html",
-      default_icon: {
-        16: "icon-16.png",
-        32: "icon-32.png",
-      },
+      // `default_popup` is auto-wired by WXT from
+      // `src/entrypoints/popup/index.html` (→ popup.html). Action/manifest icons
+      // are supplied by @wxt-dev/auto-icons (manifest.icons → icons/<size>.png),
+      // rasterized from `src/assets/icon.png` at build time — so no manual
+      // default_icon map (which would reference non-existent files).
       default_title: "__MSG_extName__",
     },
 

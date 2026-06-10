@@ -1,9 +1,9 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 16
-**Last modified:** 2026-06-10T05:12:40Z
-**Session:** 2026-06-10 (Session 10 — BobaLink browser extension: discovery + 9-phase plan + Phase 1 + backend BE-1/BE-2 + env-gated token security fix)
-**Last commit:** `192b945` (env-gated `BOBA_API_TOKEN` on the three :7187 download-write endpoints)
+**Revision:** 17
+**Last modified:** 2026-06-10T11:55:33Z
+**Session:** 2026-06-10 (Session 11 — BobaLink browser extension: Phases 2 & 3 + shell + background SW + Phase 4 api leaf landed; 6-stream parallel session in flight)
+**Last commit:** `15a9a61` (Phase 3 capstone — background service worker message router)
 **Branch:** `main`
 **Working tree:** CLEAN (after the doc commit that carries this update)
 
@@ -26,13 +26,25 @@ A WXT + TypeScript Manifest-V3 browser extension that detects magnet links and `
 - **`284d1c4`** — bumped HelixQA submodule `4d2dcb2 → bca3b36`; new Challenge bank `submodules/helixqa/banks/boba-bobalink.yaml` (6 cases).
 - **`192b945`** — **security fix**: env-gated shared-secret `BOBA_API_TOKEN` enforced on the three :7187 download-write endpoints (when the env var is set, requests must carry a matching `X-Boba-Token` / `Bearer` token; behaviour unchanged when unset). Verified by **15 token-auth tests** (`tests/unit/api_layer/test_download_token_auth.py`).
 
-### Suite status
-- Full Python unit suite: **4149 passed, 6 warnings in 358.95s** — `pytest tests/unit/ --import-mode=importlib` (this = 4134 + the 15 new token-auth tests). Latest evidence: `qa-results/tokenauth_fullsuite_*.log` (tail shows `4149 passed`).
-- Extension Vitest: **71 passed** (foundation libs; commit `33a9815`).
+### What landed since Session 10 (BobaLink — Phases 2 & 3 + Phase 4 leaf)
+- **`7225470`** — Phase 2 wave-1: parsers (`bencode.ts`/`magnet.ts`) + scanner base/site-db.
+- **`fa03323`** — Phase 2 wave-2: `.torrent`-file SHA-1 infohash + link/text scanners + perf/stress.
+- **`946c61e`** — Phase 2 complete: scanner orchestrator (cross-scanner dedup).
+- **`2e59572`** — lint test files clean; lint script extended to `tests/`.
+- **`e8fde43`** — Phase 3 shell + Phase 4 api leaf: `api/{boba-client,queue}` + content/popup/options.
+- **`15a9a61`** — Phase 3 capstone: background service worker (message router). **HEAD.**
 
-### Current phase + next steps
-- **Phase 2 (core detection & parsing engine) IN PROGRESS** — porting/refactoring the parsers (`bencode.ts`, `magnet.ts`, wiring the dead `torrent-file.ts` SHA-1 infohash) and scanners (`link-scanner`/`text-scanner`/`content/scanner`, merging the divergent `site-db.ts` selector tables, MutationObserver debounce, Shadow-DOM/iframe handling) into `extension/src/`, plus infohash dedup.
-- **Next:** finish Phase 2 scanner integrators + content/dedup, then Phases 3–9 (extension shell → Boba backend client → notifications/queue → secure token model → packaging → release) per `docs/browser_extension/IMPLEMENTATION_PLAN.md`. Live working state also tracked in `.remember/remember.md`.
+### Suite status
+- Full Python unit suite: **4149 passed** — `pytest tests/unit/ --import-mode=importlib` (Session 10 baseline; unchanged this session). Evidence: `qa-results/tokenauth_fullsuite_*.log`.
+- Extension Vitest corpus: **379 passed across 33 spec files** — same-session `npx vitest run` (`Tests 379 passed (379)`); `tsc --noEmit` clean; `npm run lint` 0/0. (+92 over the 287/22 baseline.) Build: `npx wxt build` → **loadable `.output/chrome-mv3/`** (§11.4.38 — 8/8 manifest assets verified present).
+
+### Current phase + next steps (Session 11 — two parallel waves landed; reviewed checkpoint)
+- **Phases 1, 2, 3 + extension shell + background SW: COMPLETE.**
+- **WXT build wiring: COMPLETE** — entrypoints at `src/entrypoints/{background.ts,content.ts,popup/index.html,options/index.html}` (thin wrappers); `npx wxt build` → loadable `.output/chrome-mv3/`; matches derived from `SITE_SELECTORS` (24 hosts, no `<all_urls>`); least-privilege manifest; §11.4.38 verified.
+- **Phase 4 (backend integration): IN PROGRESS** — api leaf @`e8fde43`; **Phase-7 decrypt-before-send WIRED** — `BobaClient.create()` decrypts the `encryptedBobaApiToken` bundle; `background` reads the session passphrase from `chrome.storage.session`, sends decrypted plaintext, default-open when locked (RED→GREEN; token/passphrase never logged). **PENDING:** live-7187 integration (`require_backend(7187)`) + detect→send→torrent-in-qBittorrent E2E on the real backend.
+- **Phase 5 (tab groups): IN PROGRESS** — standalone `src/tabgroups/index.ts` (dedupe-across-group + batch dispatch) + 13 tests landed; **PENDING:** wire into `background` `MENU_SEND_GROUP` + add `tabGroups`/`tabs` perms (least-privilege review first).
+- **Phase 6 (i18n): IN PROGRESS** — `locale.test.ts` guards en-catalog completeness. **Phase 7 (security): IN PROGRESS** — decrypt path + `tests/security/*` (least-privilege/CSP/no-hardcoded-secret/secret-storage). **Phase 8: IN PROGRESS** — 379/33 green; real-module Challenge `challenges/extension/detect_and_forward_challenge.sh` (mutation-verified); HelixQA BOBA-LINK-007; e2e is an honest operator-gated SKIP (sandbox can't load extensions). **Phase 9: PENDING** — `ci-ext.sh` gate + per-store packaging + §11.4.65 doc siblings.
+- **Next actions:** (1) **independent-subagent code-review re-pass** for the correctness/security/build lenses once the platform subagent-dispatch throttle clears (done in-context this session; re-run before any release tag per §11.4.40); (2) Phase 5 integration into background + perms; (3) Phase 4 live-7187 integration + E2E; (4) Phase 9 packaging; (5) regenerate `Status_Summary.md` + §11.4.65 HTML/PDF siblings for the browser_extension Status docs. Status: `docs/browser_extension/Status.md` (Rev 2, accurate). QA evidence: `docs/qa/bobalink-2026-06-10-session11/`.
 
 ---
 
