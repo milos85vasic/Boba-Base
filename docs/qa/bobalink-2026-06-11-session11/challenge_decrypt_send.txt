@@ -1,0 +1,26 @@
+=== decrypt_and_send_challenge (BobaLink decrypt-before-send token path) ===
+Running real-module harness: decrypt_and_send.evidence.test.ts (jsdom, vitest)…
+
+ RUN  v2.1.9 /Volumes/T7/Projects/Boba
+
+stdout | challenges/extension/decrypt_and_send.evidence.test.ts > CHALLENGE: BobaLink decrypt-before-send token path (real crypto + client) > sends the DECRYPTED plaintext in Authorization (never the ciphertext); no passphrase ⇒ no auth header
+[2026-06-11T01:58:52.786Z] [ INFO] [BobaClient] client created base=http://localhost:7187 [token: set] 
+[2026-06-11T01:58:52.787Z] [ INFO] [BobaClient] POST /api/v1/download urls=1 [token: set] 
+[2026-06-11T01:58:52.788Z] [ INFO] [BobaClient] client created base=http://localhost:7187 [token: none] 
+[2026-06-11T01:58:52.788Z] [ INFO] [BobaClient] POST /api/v1/download urls=1 [token: none] 
+
+ ✓ challenges/extension/decrypt_and_send.evidence.test.ts (1 test) 28ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  06:58:52
+   Duration  595ms (transform 87ms, setup 0ms, collect 104ms, tests 28ms, environment 187ms, prepare 26ms)
+
+Asserting on captured evidence: /Volumes/T7/Projects/Boba/challenges/extension/.evidence/decrypt_and_send.json
+  OK — decrypted plaintext sent as Bearer (fingerprint match), ciphertext NOT on wire
+  OK — forward: POST http://localhost:7187/api/v1/download
+  OK — negative: no passphrase ⇒ no auth header (default-open)
+PASS: decrypt_and_send_challenge — the encrypted token is DECRYPTED and the
+      plaintext (not the ciphertext) is sent as Authorization: Bearer <token>
+      to POST http://localhost:7187/api/v1/download; no passphrase ⇒ no auth header (default-open)
+      evidence: /Volumes/T7/Projects/Boba/challenges/extension/.evidence/decrypt_and_send.json

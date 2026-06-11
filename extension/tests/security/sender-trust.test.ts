@@ -46,6 +46,9 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createChromeStorageFake } from "../unit/chrome-fake";
+import { STORAGE_KEYS } from "../../src/shared/constants";
+import { DEFAULT_CONFIG } from "../../src/types/config";
+import type { ExtensionConfig, ServerConfig } from "../../src/types/config";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // (A) MANIFEST surface — parsed from the REAL wxt.config.ts
@@ -263,6 +266,44 @@ function installChrome(): InstalledChrome {
   return { chrome, store: storageFake.store };
 }
 
+/**
+ * Build an active (auth-none) ServerConfig — mirrors background.test.ts's
+ * makeServer so the send-torrent path has a real server to resolve and POST to.
+ */
+function makeServer(over: Partial<ServerConfig> = {}): ServerConfig {
+  return {
+    id: "srv-1",
+    name: "Local Boba",
+    url: "http://localhost:7187",
+    active: true,
+    authMethod: "none",
+    username: null,
+    encryptedPassword: null,
+    encryptedApiKey: null,
+    requestTimeout: 30000,
+    verifySsl: true,
+    defaultCategory: null,
+    defaultSavePath: null,
+    startPaused: false,
+    skipHashCheck: false,
+    contentLayout: "original",
+    autoTMM: false,
+    uploadLimit: 0,
+    downloadLimit: 0,
+    ...over,
+  };
+}
+
+/** Persist a full ExtensionConfig with one active server (background.test.ts pattern). */
+function seedConfig(store: Map<string, unknown>, server: ServerConfig): void {
+  const config: ExtensionConfig = {
+    ...DEFAULT_CONFIG,
+    servers: [server],
+    activeServerId: server.id,
+  };
+  store.set(STORAGE_KEYS.CONFIG, config);
+}
+
 /** A minimal valid PageScanResult-shaped payload for scan-result. */
 function scanResult(items: Array<{ id: string; magnet: string; name: string }>) {
   return {
@@ -426,10 +467,29 @@ describe("sender-trust (router) — content script CANNOT read another tab via f
 });
 
 describe("sender-trust (router) — content script CANNOT trigger cross-tab send / scan via forged tabId", () => {
-  it("a content script on tab A forging payload.tabId=B for send-torrent does NOT send tab B's torrents", async () => {
+  it("a content script on tab A forging payload.tabId=B for send-torrent does NOT POST tab B's magnet", async () => {
+    // TIGHTENED (Phase-7 reviewer finding): the earlier form seeded NO active
+    // server, so `sendTorrents` threw "No active server configured" BEFORE the
+    // tab-resolve — the test would have PASSed against the VULNERABLE code too
+    // (the server short-circuit masked the cross-tab read). Here we SEED an
+    // active server AND install a capturing fetch so that against the vulnerable
+    // `payload.tabId ?? sender.tab.id` precedence the forged send WOULD resolve
+    // tab B's set and POST tab B's magnet (MAGNET_B) to /api/v1/download. The
+    // guard instead resolves the SENDER's tab (1, empty) → structured failure,
+    // and crucially NO fetch ever carries MAGNET_B. RED-on-vuln.
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ status: "initiated", added_count: 1 }),
+      } as unknown as Response),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
     const { initBackground } = await loadBackground();
     initBackground();
     const ch = installed.chrome;
+    seedConfig(installed.store, makeServer());
 
     // Tab B (id 2) has a sendable set; tab A (id 1) has nothing.
     await sendMessage(
@@ -439,21 +499,30 @@ describe("sender-trust (router) — content script CANNOT trigger cross-tab send
     );
 
     // Content script on tab A forges tabId=2 to trigger a send of tab B's torrents.
-    // With the guard the send targets the SENDER's tab (1) which has no detected
-    // set → "No torrents detected for this tab" (structured failure, no cross-tab
-    // send). Against the un-guarded code it would resolve tab B's set and attempt
-    // to send it: a confused-deputy cross-tab action.
     const reply = (await sendMessage(
       ch,
       { type: "send-torrent", payload: { tabId: 2, ids: [INFOHASH_B] } },
       { tab: { id: 1 } },
     )) as { success?: boolean; error?: string };
 
+    // USER-OBSERVABLE (the tight assertion): NO fetch — and certainly none to the
+    // download endpoint — carried tab B's magnet. We scan EVERY captured fetch's
+    // method + URL + body for MAGNET_B / INFOHASH_B. Against the vulnerable code a
+    // POST /api/v1/download whose body's download_urls includes MAGNET_B fires;
+    // here it must not. This is the real cross-tab-exfil proof.
+    for (const call of fetchMock.mock.calls as unknown[][]) {
+      const url = typeof call[0] === "string" ? call[0] : "";
+      const init = (call[1] ?? {}) as { body?: unknown };
+      const body = typeof init.body === "string" ? init.body : "";
+      const haystack = `${url} ${body}`;
+      expect(haystack).not.toContain(MAGNET_B);
+      expect(haystack).not.toContain(INFOHASH_B);
+    }
+
+    // …and the reply is the guard's structured failure (resolved empty tab 1),
+    // never a success. No cross-tab send occurred.
     expect(reply.success).toBe(false);
-    // Either "No torrents detected for this tab" (guard resolved empty tab 1) or
-    // "No active server configured" (no server seeded) — both prove NO cross-tab
-    // send of tab B's items occurred. It must NOT be a success.
-    expect(reply.error).toMatch(/No torrents detected|No active server|No matching/i);
+    expect(reply.error).toMatch(/No torrents detected|No matching/i);
   });
 
   it("a content script on tab A forging payload.tabId=B for scan-page does NOT scan tab B", async () => {

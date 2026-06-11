@@ -1,0 +1,36 @@
+{
+  "pass": true,
+  "capturedAt": "2026-06-11T01:58:55.332Z",
+  "feature": "storage_write",
+  "load": {
+    "storeEmptyBeforeLoad": true,
+    "loadedDefaultUrl": "http://localhost:7187"
+  },
+  "save": {
+    "persisted": true,
+    "savedServerUrl": "http://192.168.1.50:7187",
+    "savedServerName": "Home Boba",
+    "savedServerId": "76ccee2f-aa88-4f02-936d-3d59dc9df2af",
+    "savedHealthInterval": 9,
+    "savedActiveServerId": "76ccee2f-aa88-4f02-936d-3d59dc9df2af"
+  },
+  "roundTrip": {
+    "backgroundSuccess": true,
+    "readServerUrl": "http://192.168.1.50:7187",
+    "readServerName": "Home Boba",
+    "readServerId": "76ccee2f-aa88-4f02-936d-3d59dc9df2af",
+    "readHealthInterval": 9,
+    "readActiveServerId": "76ccee2f-aa88-4f02-936d-3d59dc9df2af",
+    "urlMatches": true,
+    "nameMatches": true,
+    "idMatches": true,
+    "healthIntervalMatches": true,
+    "activeServerMatches": true
+  },
+  "expected": {
+    "defaultUrl": "http://localhost:7187",
+    "newUrl": "http://192.168.1.50:7187",
+    "newName": "Home Boba",
+    "newHealthInterval": 9
+  }
+}

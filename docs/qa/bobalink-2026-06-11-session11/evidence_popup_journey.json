@@ -1,0 +1,43 @@
+{
+  "pass": true,
+  "capturedAt": "2026-06-11T01:58:54.541Z",
+  "feature": "network_throughput",
+  "detect": {
+    "seedAccepted": true,
+    "tabId": 42
+  },
+  "render": {
+    "renderedRowCount": 2,
+    "renderedIds": [
+      "1234567890abcdef1234567890abcdef12345678",
+      "abcdef1234567890abcdef1234567890abcdef12"
+    ],
+    "renderedNames": [
+      "Ubuntu 24.04 ISO",
+      "Debian 12 netinst"
+    ]
+  },
+  "send": {
+    "clickedId": "abcdef1234567890abcdef1234567890abcdef12",
+    "requestCount": 1,
+    "url": "http://localhost:7187/api/v1/download",
+    "method": "POST",
+    "downloadUrls": [
+      "magnet:?xt=urn:btih:abcdef1234567890abcdef1234567890abcdef12&dn=Debian"
+    ]
+  },
+  "rowSent": {
+    "sentRowId": "abcdef1234567890abcdef1234567890abcdef12",
+    "sentRowHasSentClass": true,
+    "sentButtonDisabled": true,
+    "otherRowStillUnsent": true
+  },
+  "expected": {
+    "renderedIds": [
+      "1234567890abcdef1234567890abcdef12345678",
+      "abcdef1234567890abcdef1234567890abcdef12"
+    ],
+    "sentMagnet": "magnet:?xt=urn:btih:abcdef1234567890abcdef1234567890abcdef12&dn=Debian",
+    "endpoint": "http://localhost:7187/api/v1/download"
+  }
+}

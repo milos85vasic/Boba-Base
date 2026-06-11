@@ -28,7 +28,8 @@
 
 import { createLogger } from "../shared/logger";
 import { truncate } from "../shared/utils";
-import { EXT } from "../shared/constants";
+import { EXT, STORAGE_KEYS } from "../shared/constants";
+import { storageGet } from "../shared/storage";
 import type { DetectedTorrent } from "../types/torrent";
 import type {
   ExtensionMessage,
@@ -40,6 +41,46 @@ const log = createLogger("Popup");
 
 /** Length of the infohash prefix shown in each row. */
 const SHORT_INFOHASH_LEN = 16;
+
+/**
+ * User theme preference. `"auto"` follows the OS `prefers-color-scheme`; an
+ * explicit `"light"` / `"dark"` overrides it. Declared locally (not on the
+ * frozen ExtensionConfig) so the popup stays decoupled from the config schema
+ * until the persisted field + UI control land (deferred — see {@link initPopup}).
+ */
+export type ThemePreference = "light" | "dark" | "auto";
+
+/**
+ * Apply a theme preference to a document's root element (§11.4 user-observable).
+ *
+ * Sets `documentElement.dataset.theme` to a concrete `"light"` / `"dark"` value
+ * — the attribute the stylesheets' `[data-theme="…"]` blocks key off, so it
+ * drives the rendered colours. `"auto"` (and any unrecognised value) resolves
+ * via `matchMedia("(prefers-color-scheme: dark)")` so the result is concrete
+ * and deterministic for a given OS state; when `matchMedia` is unavailable the
+ * dark default is kept (the stylesheets default to dark).
+ *
+ * @param doc - Document whose root receives the theme attribute.
+ * @param theme - The preference to apply (defaults to `"auto"`).
+ */
+export function applyTheme(
+  doc: Document,
+  theme: ThemePreference = "auto",
+): void {
+  let resolved: "light" | "dark";
+  if (theme === "light" || theme === "dark") {
+    resolved = theme;
+  } else {
+    const mql =
+      typeof doc.defaultView?.matchMedia === "function"
+        ? doc.defaultView.matchMedia("(prefers-color-scheme: dark)")
+        : typeof matchMedia === "function"
+          ? matchMedia("(prefers-color-scheme: dark)")
+          : null;
+    resolved = mql?.matches ? "dark" : "light";
+  }
+  doc.documentElement.dataset.theme = resolved;
+}
 
 /** Connection-status visual state. */
 type StatusState = "online" | "offline" | "warning";
@@ -72,6 +113,19 @@ async function sendMessage(
  */
 export async function initPopup(doc: Document): Promise<void> {
   log.debug("Popup initializing");
+
+  // Apply the stored theme preference before the first paint. The control that
+  // sets `config.theme` is deferred (Phase 6 ships the minimal applier + CSS);
+  // until then the field is absent and the popup follows the OS theme ("auto").
+  try {
+    const stored = await storageGet<{ theme?: ThemePreference }>(
+      STORAGE_KEYS.CONFIG,
+    );
+    applyTheme(doc, stored?.theme ?? "auto");
+  } catch (err) {
+    log.error("Failed to apply theme", err);
+    applyTheme(doc, "auto");
+  }
 
   const listNode = doc.getElementById("torrent-list");
   const emptyNode = doc.getElementById("empty-state");

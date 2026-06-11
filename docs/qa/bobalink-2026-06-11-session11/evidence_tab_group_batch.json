@@ -1,0 +1,53 @@
+{
+  "pass": true,
+  "capturedAt": "2026-06-11T01:58:51.959Z",
+  "feature": "network_throughput",
+  "group": {
+    "groupId": 7,
+    "tabIds": [
+      101,
+      102,
+      103
+    ],
+    "rawOccurrenceCount": 3
+  },
+  "dedup": {
+    "uniqueCount": 2,
+    "uniqueInfohashes": [
+      "08ada5a7a6183aae1e09d831df6748d566095a10",
+      "deadbeef00112233445566778899aabbccddeeff"
+    ],
+    "uniqueUris": [
+      "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=helixqa-sintel-test",
+      "magnet:?xt=urn:btih:deadbeef00112233445566778899aabbccddeeff&dn=helixqa-second-test"
+    ]
+  },
+  "forward": {
+    "requestCount": 1,
+    "url": "http://localhost:7187/api/v1/download",
+    "method": "POST",
+    "requestBody": {
+      "result_id": "bobalink-group-challenge",
+      "download_urls": [
+        "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=helixqa-sintel-test",
+        "magnet:?xt=urn:btih:deadbeef00112233445566778899aabbccddeeff&dn=helixqa-second-test"
+      ]
+    },
+    "sent": 2,
+    "skipped": 0
+  },
+  "expected": {
+    "infohashes": [
+      "08ada5a7a6183aae1e09d831df6748d566095a10",
+      "deadbeef00112233445566778899aabbccddeeff"
+    ],
+    "magnetUris": [
+      "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=helixqa-sintel-test",
+      "magnet:?xt=urn:btih:deadbeef00112233445566778899aabbccddeeff&dn=helixqa-second-test"
+    ],
+    "endpoint": "http://localhost:7187/api/v1/download",
+    "resultId": "bobalink-group-challenge",
+    "rawOccurrenceCount": 3,
+    "uniqueCount": 2
+  }
+}

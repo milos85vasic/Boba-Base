@@ -65,6 +65,46 @@ export const TAB_IDS = [
 
 export type TabId = (typeof TAB_IDS)[number];
 
+/**
+ * User theme preference. `"auto"` follows the OS `prefers-color-scheme`; an
+ * explicit `"light"` / `"dark"` overrides it. Declared locally (not on the
+ * frozen ExtensionConfig) so the module stays decoupled from the config schema
+ * until the persisted field + UI control land (deferred — see {@link initOptions}).
+ */
+export type ThemePreference = "light" | "dark" | "auto";
+
+/**
+ * Apply a theme preference to a document's root element (§11.4 user-observable).
+ *
+ * Sets `documentElement.dataset.theme` to a concrete `"light"` / `"dark"` value
+ * — the attribute the stylesheets' `[data-theme="…"]` blocks key off, so it
+ * drives the rendered colours. `"auto"` (and any unrecognised value) resolves
+ * via `matchMedia("(prefers-color-scheme: dark)")` so the result is concrete
+ * and deterministic for a given OS state; when `matchMedia` is unavailable the
+ * dark default is kept (the stylesheets default to dark).
+ *
+ * @param doc - Document whose root receives the theme attribute.
+ * @param theme - The preference to apply (defaults to `"auto"`).
+ */
+export function applyTheme(
+  doc: Document,
+  theme: ThemePreference = "auto",
+): void {
+  let resolved: "light" | "dark";
+  if (theme === "light" || theme === "dark") {
+    resolved = theme;
+  } else {
+    const mql =
+      typeof doc.defaultView?.matchMedia === "function"
+        ? doc.defaultView.matchMedia("(prefers-color-scheme: dark)")
+        : typeof matchMedia === "function"
+          ? matchMedia("(prefers-color-scheme: dark)")
+          : null;
+    resolved = mql?.matches ? "dark" : "light";
+  }
+  doc.documentElement.dataset.theme = resolved;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Small typed DOM helpers (operate on an explicit Document so tests can pass a
 // jsdom-loaded document; default to the ambient `document`).
@@ -250,6 +290,10 @@ export async function saveOptions(
     existing?.encryptedBobaApiToken ?? null;
   const tokenPlain = readValue(doc, "opt-boba-api-token", "");
   const tokenPassphrase = readValue(doc, "opt-token-passphrase", "");
+  // Tracks the token-entered-without-passphrase case so the FINAL save status
+  // reflects it (otherwise the "Settings saved" notice at the end would mask the
+  // "token not stored" warning — the user would wrongly think their token saved).
+  let tokenWithoutPassphrase = false;
   if (tokenPlain.length > 0) {
     if (tokenPassphrase.length > 0) {
       try {
@@ -262,11 +306,7 @@ export async function saveOptions(
     } else {
       // No passphrase supplied — refuse to auto-encrypt (anti-§11.4.10).
       // TODO(Phase 7): wire a session-passphrase prompt + unlock flow.
-      showNotice(
-        doc,
-        "Enter a session passphrase to store the Boba API token. Token not saved.",
-        "warn",
-      );
+      tokenWithoutPassphrase = true;
       log.warn("Boba API token entered without a passphrase — not stored");
     }
   }
@@ -381,7 +421,18 @@ export async function saveOptions(
   };
 
   await storageSet(STORAGE_KEYS.CONFIG, next);
-  showNotice(doc, "Settings saved", "success");
+  // The token-without-passphrase warning must NOT be masked by a plain success
+  // notice — surface it in the FINAL status so the user knows the token was not
+  // stored even though the other settings were.
+  if (tokenWithoutPassphrase) {
+    showNotice(
+      doc,
+      "Settings saved — but the Boba API token was NOT stored: enter a session passphrase to store it.",
+      "warn",
+    );
+  } else {
+    showNotice(doc, "Settings saved", "success");
+  }
   log.info("Options saved");
   return next;
 }
@@ -518,7 +569,14 @@ export async function initOptions(
     });
   });
 
-  return populateForm(doc);
+  const config = await populateForm(doc);
+
+  // Apply the stored theme preference. The control that sets `config.theme` is
+  // deferred (Phase 6 ships the minimal applier + CSS); until the field is
+  // persisted the page follows the OS theme ("auto").
+  applyTheme(doc, (config as { theme?: ThemePreference }).theme ?? "auto");
+
+  return config;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

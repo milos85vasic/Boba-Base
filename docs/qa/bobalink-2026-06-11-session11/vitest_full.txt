@@ -1,0 +1,25 @@
+[2026-06-11T02:17:11.378Z] [ INFO] [OfflineQueue] Enqueued: Ubuntu (queue size: 1) 
+[2026-06-11T02:17:11.378Z] [ INFO] [OfflineQueue] Enqueued: Debian (queue size: 2) 
+
+stdout | tests/unit/background.test.ts > message router — health-check → probed status > returns the status from the real probeHealth against the active server
+[2026-06-11T02:17:11.387Z] [ INFO] [Background] BobaLink background service worker listeners registered 
+
+stdout | tests/unit/background.test.ts > lifecycle — onInstalled > creates the context menus and seeds the default config into storage
+[2026-06-11T02:17:11.389Z] [ INFO] [Background] BobaLink background service worker listeners registered 
+[2026-06-11T02:17:11.389Z] [ INFO] [Background] extension install 
+
+stdout | tests/unit/background.test.ts > commands — keyboard shortcuts → content-script directives > toggle-highlight sends a highlight-toggle message to the active tab
+[2026-06-11T02:17:11.393Z] [ INFO] [Background] BobaLink background service worker listeners registered 
+
+stdout | tests/unit/background.test.ts > commands — keyboard shortcuts → content-script directives > scan-page command sends scan-now to the active tab
+[2026-06-11T02:17:11.395Z] [ INFO] [Background] BobaLink background service worker listeners registered 
+
+ ✓ tests/unit/background.test.ts (16 tests) 16366ms
+   ✓ message router — send-torrent → client + notify / enqueue-on-fail > MENU_SEND_GROUP on a NETWORK ERROR enqueues the torrents AND raises a 'Group send failed' notification (Phase 5) 8255ms
+   ✓ message router — send-torrent → client + notify / enqueue-on-fail > on a client failure ENQUEUES the item into the real OfflineQueue (persisted) 7896ms
+
+ Test Files  52 passed (52)
+      Tests  559 passed (559)
+   Start at  07:16:54
+   Duration  17.19s (transform 856ms, setup 0ms, collect 2.08s, tests 36.30s, environment 14.66s, prepare 2.21s)
+

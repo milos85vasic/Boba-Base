@@ -1,0 +1,30 @@
+{
+  "pass": true,
+  "capturedAt": "2026-06-11T01:58:52.788Z",
+  "feature": "network_throughput",
+  "fingerprints": {
+    "tokenSha256": "54316c735761cf5bb134728efa0edd5d8bffc1f3b64f9ccf4e36ecb0b6f930b3",
+    "ciphertextSha256": "a0da74556e151883088a4c997ea5b4e1a39b7b37ad313fc8ede8382282090dad"
+  },
+  "decryptAndSend": {
+    "url": "http://localhost:7187/api/v1/download",
+    "method": "POST",
+    "authHeaderSha256": "748462ed0b8f435e222f4ea6807ab8f3ea516e471ee3b3a8938bb40d0edd73ec",
+    "expectedAuthHeaderSha256": "748462ed0b8f435e222f4ea6807ab8f3ea516e471ee3b3a8938bb40d0edd73ec",
+    "authHeaderEqualsPlaintextBearer": true,
+    "xBobaTokenEqualsPlaintext": true,
+    "authHeaderContainsCiphertext": false,
+    "authHeaderContainsBundle": false,
+    "authHeaderContainsPassphrase": false
+  },
+  "negativeNoPassphrase": {
+    "url": "http://localhost:7187/api/v1/download",
+    "method": "POST",
+    "hasAuthHeader": false,
+    "hasXBobaHeader": false
+  },
+  "expected": {
+    "endpoint": "http://localhost:7187/api/v1/download",
+    "resultId": "bobalink-decrypt-challenge"
+  }
+}

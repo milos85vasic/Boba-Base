@@ -287,8 +287,10 @@ code {
    Light theme
    ────────────────────────────────────────────────────────────────────────── */
 
+/* Light token set, shared by the OS-preference ("auto") path and the explicit
+   `[data-theme="light"]` user choice below. */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --bg: #f5f5fa;
     --bg-elevated: #ffffff;
     --border: #d8d8e4;
@@ -297,4 +299,27 @@ code {
     --text-strong: #14141f;
     --text-muted: #6a6a7a;
   }
+}
+
+/* Explicit user choice. `applyTheme()` sets `documentElement.dataset.theme`
+   ("light"/"dark"); these blocks make that choice win over the OS preference
+   regardless of `prefers-color-scheme`. "auto" resolves to one of these too. */
+:root[data-theme="light"] {
+  --bg: #f5f5fa;
+  --bg-elevated: #ffffff;
+  --border: #d8d8e4;
+  --border-soft: #ececf4;
+  --text: #2a2a3a;
+  --text-strong: #14141f;
+  --text-muted: #6a6a7a;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f0f1a;
+  --bg-elevated: #16162a;
+  --border: #2a2a4a;
+  --border-soft: #1e1e3a;
+  --text: #c0c0d0;
+  --text-strong: #ffffff;
+  --text-muted: #a0a0b0;
 }

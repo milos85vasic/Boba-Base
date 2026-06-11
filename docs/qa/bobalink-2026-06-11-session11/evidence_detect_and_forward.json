@@ -1,0 +1,29 @@
+{
+  "pass": true,
+  "capturedAt": "2026-06-11T01:58:51.394Z",
+  "feature": "network_throughput",
+  "detection": {
+    "detectedCount": 1,
+    "magnetCount": 1,
+    "detectedInfohash": "08ada5a7a6183aae1e09d831df6748d566095a10",
+    "detectedUri": "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=helixqa-sintel-test",
+    "displayName": "helixqa-sintel-test"
+  },
+  "forward": {
+    "requestCount": 1,
+    "url": "http://localhost:7187/api/v1/download",
+    "method": "POST",
+    "requestBody": {
+      "result_id": "bobalink-challenge",
+      "download_urls": [
+        "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=helixqa-sintel-test"
+      ]
+    }
+  },
+  "expected": {
+    "infohash": "08ada5a7a6183aae1e09d831df6748d566095a10",
+    "magnetUri": "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=helixqa-sintel-test",
+    "endpoint": "http://localhost:7187/api/v1/download",
+    "resultId": "bobalink-challenge"
+  }
+}

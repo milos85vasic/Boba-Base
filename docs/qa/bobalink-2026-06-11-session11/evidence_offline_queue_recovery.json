@@ -1,0 +1,26 @@
+{
+  "pass": true,
+  "capturedAt": "2026-06-11T01:58:53.574Z",
+  "feature": "storage_write",
+  "config": {
+    "enqueued": 4,
+    "maxRetries": 3,
+    "serverId": "boba-merge-7187"
+  },
+  "failurePhase": {
+    "failingSenderCalls": 12,
+    "persistedAfterEnqueue": 4,
+    "persistedAfterFail": 4,
+    "deadLetteredCount": 4,
+    "allDeadLettered": true,
+    "allReachedRetryBudget": true
+  },
+  "recoverPhase": {
+    "drainedCount": 4,
+    "succeeded": 4,
+    "failed": 0,
+    "remaining": 0,
+    "persistedAfterDrain": 0,
+    "queueSizeAfterDrain": 0
+  }
+}

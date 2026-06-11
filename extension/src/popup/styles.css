@@ -37,8 +37,10 @@
   --focus: #82b1ff;
 }
 
+/* Light token set, shared by the OS-preference ("auto") path and the explicit
+   `[data-theme="light"]` user choice below. */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --bg: #f5f6fa;
     --bg-elevated: #ffffff;
     --bg-row: #ffffff;
@@ -63,6 +65,61 @@
     --warn: #ef6c00;
     --focus: #1565c0;
   }
+}
+
+/* Explicit user choice. `applyTheme()` sets `documentElement.dataset.theme`
+   ("light"/"dark"); these blocks make that choice win over the OS preference
+   regardless of `prefers-color-scheme`. "auto" resolves to one of these too. */
+:root[data-theme="light"] {
+  --bg: #f5f6fa;
+  --bg-elevated: #ffffff;
+  --bg-row: #ffffff;
+  --bg-row-hover: #eef1f8;
+  --header-from: #16498a;
+  --header-to: #0f3460;
+  --border: #d9dced;
+  --text: #1c1c28;
+  --text-muted: #5a5a70;
+  --text-faint: #8a8a9c;
+  --primary: #0f3460;
+  --primary-hover: #16498a;
+  --secondary: #e4e7f2;
+  --secondary-hover: #d4d9ea;
+  --link: #1565c0;
+  --link-hover: #0d47a1;
+  --warning-bg: #fff6e0;
+  --warning-border: #ffd591;
+  --warning-text: #9a6a00;
+  --online: #2e7d32;
+  --offline: #c62828;
+  --warn: #ef6c00;
+  --focus: #1565c0;
+}
+
+:root[data-theme="dark"] {
+  --bg: #1a1a2e;
+  --bg-elevated: #1e1e36;
+  --bg-row: #20203a;
+  --bg-row-hover: #262648;
+  --header-from: #16213e;
+  --header-to: #0f3460;
+  --border: #2a2a4a;
+  --text: #e0e0e0;
+  --text-muted: #a0a0b0;
+  --text-faint: #7a7a90;
+  --primary: #0f3460;
+  --primary-hover: #16498a;
+  --secondary: #2a2a4a;
+  --secondary-hover: #353560;
+  --link: #90caf9;
+  --link-hover: #bbdefb;
+  --warning-bg: #2d1f00;
+  --warning-border: #4a3500;
+  --warning-text: #ffb74d;
+  --online: #4caf50;
+  --offline: #f44336;
+  --warn: #ff9800;
+  --focus: #82b1ff;
 }
 
 /* ────────────────────────────────────────────────────────────────────────────

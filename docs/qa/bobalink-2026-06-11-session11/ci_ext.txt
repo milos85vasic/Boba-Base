@@ -1,0 +1,8 @@
+✔ Zipped extension in 116 ms
+  ├─ .output/bobalink-1.0.0-firefox.zip  59.35 kB 
+  └─ .output/bobalink-1.0.0-sources.zip  236.32 kB
+Σ Total size: 295.67 kB                
+✔ Finished in 646 ms
+  [PASS] firefox zip present (59350 bytes): .output/bobalink-1.0.0-firefox.zip
+
+CI-EXT: PASS
