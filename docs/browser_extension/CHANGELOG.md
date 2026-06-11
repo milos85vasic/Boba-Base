@@ -17,7 +17,7 @@ Boba merge service on port 7187.
 
 ---
 
-## [1.0.0] — Unreleased
+## [1.0.0-rc] — 2026-06-11
 
 **Status: code-complete + comprehensively tested, NOT yet released.** Per
 `RELEASE_READINESS.md` §6, a store release is gated on (a) the live-backend

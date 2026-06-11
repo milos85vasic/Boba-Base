@@ -244,3 +244,13 @@ Per §11.4.6, items flagged rather than asserted:
 - `extension/ci-ext.sh` — manual gate (tsc → lint → vitest → builds → §11.4.38 asset verify → zips)
 - `git log --oneline` — the 6 Session-11 commits (`024210f 5edf6ac 2011810 5fa78d9 e80c9d9 5e44c85`)
 - built `extension/.output/chrome-mv3/_locales/` (de/en/fr/ru) + committed `extension/src/public/_locales/`
+
+## Release-candidate tag — v1.0.0-rc (2026-06-11)
+Tagged at HEAD `68ff4c0` after the §11.4.40 full retest GREEN on a clean baseline:
+vitest 559/52, tsc 0, lint 0, CI-EXT PASS, 6 challenges PASS, credential-leak-audit PASS,
+live challenge honest-SKIP. 10 reviewed commits; 7 real defects fixed; every change
+independently code-reviewed (per-wave). **`-rc` precedes the final store release**, whose
+one remaining gate is the operator-blocked **live-7187 detect→send→torrent-in-qBittorrent**
+verification (§11.4.21 — needs `/Volumes/T7` shared into the podman VM) + operator store assets
+(screenshots/promo). The `-rc` is loadable, packaged (chrome+firefox zips), and comprehensively
+unit/integration/security/stress/chaos/perf/a11y/UX/challenge-tested.

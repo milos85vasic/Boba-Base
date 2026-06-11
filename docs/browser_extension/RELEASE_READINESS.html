@@ -515,3 +515,17 @@ feature × test-type matrix, Gaps</li>
 (de/en/fr/ru) + committed
 <code>extension/src/public/_locales/</code></li>
 </ul>
+<h2 id="release-candidate-tag--v100-rc-2026-06-11">Release-candidate tag
+— v1.0.0-rc (2026-06-11)</h2>
+<p>Tagged at HEAD <code>68ff4c0</code> after the §11.4.40 full retest
+GREEN on a clean baseline: vitest 559/52, tsc 0, lint 0, CI-EXT PASS, 6
+challenges PASS, credential-leak-audit PASS, live challenge honest-SKIP.
+10 reviewed commits; 7 real defects fixed; every change independently
+code-reviewed (per-wave). <strong><code>-rc</code> precedes the final
+store release</strong>, whose one remaining gate is the operator-blocked
+<strong>live-7187 detect→send→torrent-in-qBittorrent</strong>
+verification (§11.4.21 — needs <code>/Volumes/T7</code> shared into the
+podman VM) + operator store assets (screenshots/promo). The
+<code>-rc</code> is loadable, packaged (chrome+firefox zips), and
+comprehensively
+unit/integration/security/stress/chaos/perf/a11y/UX/challenge-tested.</p>
