@@ -444,6 +444,46 @@ async function processQueueItem(queueItem: OfflineQueueItem): Promise<boolean> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * Resolve the TARGET tab id for a tab-scoped op (`get-detected`,
+ * `send-torrent`, `scan-page`) honouring the sender-trust boundary (Phase-7
+ * pen-test finding).
+ *
+ * The three surfaces that reach the router carry DIFFERENT trust:
+ *  - a **content script** runs on an arbitrary, possibly hostile page, and its
+ *    `sender.tab.id` is the (browser-stamped, unforgeable) tab it lives on. It
+ *    must only ever read/act on ITS OWN tab — it scans its own page and has no
+ *    business touching another tab.
+ *  - the **popup / options** extension pages are trusted and have NO
+ *    `sender.tab`; they LEGITIMATELY steer by `payload.tabId` (the active tab
+ *    they queried via `chrome.tabs.query`, see `src/popup/popup.ts`).
+ *
+ * A content script could otherwise forge `payload.tabId = <other tab>` and, via
+ * the old `payload.tabId ?? sender.tab?.id` precedence, READ another tab's
+ * detected set (`get-detected`), trigger a cross-tab send (`send-torrent`), or
+ * poke another tab's content script (`scan-page`) — a confused-deputy / info-leak.
+ * The fix: when `sender.tab?.id` is present (the message came from a content
+ * script) it WINS and any `payload.tabId` is ignored; only a sender WITHOUT a
+ * `sender.tab` (an extension page) may steer by `payload.tabId`.
+ *
+ * @param payloadTabId - The `payload.tabId` the message carried (untrusted from a
+ *   content script; trusted from popup/options).
+ * @param sender - The chrome message sender (its `tab.id` is browser-stamped).
+ * @returns The resolved target tab id, or undefined when none can be determined.
+ */
+function resolveTargetTabId(
+  payloadTabId: unknown,
+  sender: chrome.runtime.MessageSender,
+): number | undefined {
+  // Content-script origin: the unforgeable sender tab WINS over any forged
+  // payload.tabId (sender-trust boundary).
+  if (typeof sender.tab?.id === "number") {
+    return sender.tab.id;
+  }
+  // Extension-page origin (no sender.tab): steer by the trusted payload.tabId.
+  return typeof payloadTabId === "number" ? payloadTabId : undefined;
+}
+
+/**
  * Validate that an inbound `scan-result` payload is a shape-valid
  * {@link PageScanResult} before it is trusted into {@link tabResults}.
  *
@@ -496,8 +536,10 @@ async function handleMessage(
     }
 
     case "get-detected": {
-      const tabId =
-        (message.payload?.tabId as number | undefined) ?? sender.tab?.id;
+      // Sender-trust: a content script reads ONLY its own tab; the popup/options
+      // page (no sender.tab) steers by payload.tabId. A forged payload.tabId from
+      // a content script is ignored (see {@link resolveTargetTabId}).
+      const tabId = resolveTargetTabId(message.payload?.tabId, sender);
       const result =
         typeof tabId === "number" ? tabResults.get(tabId) ?? null : null;
       return { success: true, data: { result } };
@@ -505,8 +547,9 @@ async function handleMessage(
 
     case "send-torrent": {
       const ids = message.payload?.ids as string[] | undefined;
-      const tabId =
-        (message.payload?.tabId as number | undefined) ?? sender.tab?.id;
+      // Sender-trust: a content script may only send from its OWN tab's set; a
+      // forged payload.tabId is ignored (see {@link resolveTargetTabId}).
+      const tabId = resolveTargetTabId(message.payload?.tabId, sender);
       if (typeof tabId !== "number" || !ids) {
         return { success: false, error: "Missing tabId or ids" };
       }
@@ -561,8 +604,9 @@ async function handleMessage(
     }
 
     case "scan-page": {
-      const tabId =
-        (message.payload?.tabId as number | undefined) ?? sender.tab?.id;
+      // Sender-trust: a content script may only re-scan its OWN tab; a forged
+      // payload.tabId is ignored (see {@link resolveTargetTabId}).
+      const tabId = resolveTargetTabId(message.payload?.tabId, sender);
       if (typeof tabId !== "number") {
         return { success: false, error: "No tab specified" };
       }

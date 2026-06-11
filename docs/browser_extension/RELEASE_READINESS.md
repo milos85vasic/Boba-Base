@@ -25,7 +25,7 @@ All figures are same-session recorded results cited in `Status.md` Rev 6 and the
 
 | Gate | Result | Source |
 |------|--------|--------|
-| Vitest suite | **517 passed / 48 spec files** (`npx vitest run` → `Tests 517 passed (517)`) | Status.md Rev 6 §"Baseline facts"; coverage_ledger §"Ground-truth baseline" |
+| Vitest suite | **527 passed / 49 spec files** (`npx vitest run` → `Tests 527 passed (527)`) | Status.md Rev 6 §"Baseline facts"; coverage_ledger §"Ground-truth baseline" |
 | TypeScript | `npx tsc --noEmit` — **0 errors** | Status.md Rev 6; `ci-ext.sh` STEP 1 |
 | Lint | `npm run lint` — **0 errors / 0 warnings** | Status.md Rev 6; `ci-ext.sh` STEP 2 |
 | Manual gate | `extension/ci-ext.sh` → **`CI-EXT: PASS`** | Status.md Rev 6 Phase 9; `ci-ext.sh` final line |

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ARCHITECTURE</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">ARCHITECTURE</h1>
+</header>
+<h1 id="bobalink-browser-extension--architecture">BobaLink Browser
+Extension — Architecture</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T23:55:00Z <strong>Scope:</strong> BobaLink
+(<code>extension/</code>) — WXT + TypeScript Manifest-V3 cross-browser
+extension that detects magnet links and <code>.torrent</code> URLs on
+supported pages and forwards them to the Boba merge service on port
+7187. <strong>Authority:</strong> the real source tree under
+<code>extension/src/</code>;
+<code>docs/browser_extension/Status.md</code> (Rev 7).</p>
+<blockquote>
+<p><strong>Anti-bluff (§11.4.6).</strong> Every component, edge, and
+message type below traces to a real module under
+<code>extension/src/</code> (verified by reading the source). No
+invented components. Where a name is load-bearing it is given exactly as
+it appears in the code (<code>isValidScanResult</code>,
+<code>MENU_SEND_GROUP</code>, <code>addMagnets</code>,
+<code>readSessionPassphrase</code>, <code>POST /api/v1/download</code>,
+…).</p>
+</blockquote>
+<hr />
+<h2 id="1-data-flow-diagram">1. Data-flow diagram</h2>
+<p>The diagram renders on GitHub. In the exported HTML it remains a
+fenced code block (per scope note) — the textual edges are the
+load-bearing record.</p>
+<pre class="mermaid"><code>flowchart TD
+    subgraph PAGE[&quot;Web page (content-script context — matches from SITE_SELECTORS)&quot;]
+        DOM[&quot;Page DOM&lt;br/&gt;(magnet: links, .torrent URLs, bare text)&quot;]
+        ENTRY_C[&quot;entrypoints/content.ts&lt;br/&gt;(WXT thin wrapper · run_at document_idle)&quot;]
+        CONTENT[&quot;content/index.ts&lt;br/&gt;initContentScript()&quot;]
+        ORCH[&quot;scanner/orchestrator.ts&lt;br/&gt;ScannerOrchestrator (cross-scanner dedup by stable id)&quot;]
+        SCAN[&quot;scanner/{link-scanner,text-scanner}.ts&lt;br/&gt;+ base.ts · site-db.ts&quot;]
+        PARSE[&quot;parser/{magnet,torrent-file,bencode}.ts&lt;br/&gt;(SHA-1 infohash)&quot;]
+        HL[&quot;content/highlight.ts&lt;br/&gt;HighlightManager (DOM marking, toggleable)&quot;]
+    end
+
+    subgraph SW[&quot;Background service worker (MV3)&quot;]
+        ENTRY_B[&quot;entrypoints/background.ts&lt;br/&gt;(WXT thin wrapper)&quot;]
+        BG[&quot;background/index.ts&lt;br/&gt;handleMessage() router + initBackground()&quot;]
+        GUARD[&quot;isValidScanResult()&lt;br/&gt;(trust boundary shape-guard)&quot;]
+        STATE[&quot;tabResults: Map&amp;lt;tabId, PageScanResult&amp;gt;&lt;br/&gt;+ action badge + notifications&quot;]
+        TG[&quot;tabgroups/index.ts&lt;br/&gt;batchGroupTorrents / dispatchGroupBatch&quot;]
+        CLIENT[&quot;api/boba-client.ts&lt;br/&gt;BobaClient (token-bucket + retry)&quot;]
+        QUEUE[&quot;api/queue.ts&lt;br/&gt;OfflineQueue (FIFO, persisted, dead-letter)&quot;]
+        HEALTH[&quot;api/health.ts&lt;br/&gt;probeHealth()&quot;]
+    end
+
+    subgraph CRED[&quot;Credentials (§11.4.10)&quot;]
+        CRYPTO[&quot;shared/crypto.ts&lt;br/&gt;AES-256-GCM decrypt() · PBKDF2&quot;]
+        SSTORE[&quot;chrome.storage.session&lt;br/&gt;session passphrase (in-memory only)&quot;]
+    end
+
+    subgraph UI[&quot;Extension UI pages&quot;]
+        POPUP[&quot;popup/popup.ts&lt;br/&gt;detected list + Send / Send-All&quot;]
+        OPTIONS[&quot;options/options.ts&lt;br/&gt;servers, config, token encrypt&quot;]
+        LSTORE[&quot;chrome.storage.local&lt;br/&gt;(shared/storage.ts)&quot;]
+    end
+
+    BOBA[&quot;Boba merge service :7187 (FastAPI)&lt;br/&gt;POST /api/v1/download · GET /health · GET /api/v1/auth/status&quot;]
+
+    DOM --&gt; ENTRY_C --&gt; CONTENT --&gt; ORCH
+    ORCH --&gt; SCAN --&gt; PARSE
+    ORCH --&gt;|scan-completed event| CONTENT
+    ORCH --&gt;|torrent-detected event| HL --&gt; DOM
+    CONTENT --&gt;|chrome.runtime.sendMessage &#39;scan-result&#39;| BG
+    BG --&gt; GUARD --&gt;|valid| STATE
+
+    POPUP --&gt;|&#39;get-detected&#39;| BG
+    BG --&gt;|&quot;{ result }&quot;| POPUP
+    POPUP --&gt;|&#39;send-torrent&#39; ids| BG
+    BG --&gt;|MENU_SEND_GROUP| TG --&gt; BG
+    BG --&gt;|addMagnet / addMagnets| CLIENT
+    CLIENT --&gt;|&quot;POST /api/v1/download {result_id, download_urls}&quot;| BOBA
+    CLIENT -.-&gt;|send failure → enqueueFailed| QUEUE
+    QUEUE -.-&gt;|&quot;processQueue(processQueueItem) retry&quot;| CLIENT
+    BG --&gt;|&#39;health-check&#39;| HEALTH --&gt; BOBA
+
+    CLIENT --&gt;|BobaClient.create decrypts token| CRYPTO
+    BG --&gt;|readSessionPassphrase| SSTORE --&gt; CRYPTO
+
+    OPTIONS --&gt;|&#39;get-config&#39; / &#39;set-config&#39;| BG
+    OPTIONS --&gt; LSTORE
+    BG --&gt; LSTORE
+
+    BG --&gt;|&quot;chrome.tabs.sendMessage &#39;scan-now&#39; / &#39;highlight-toggle&#39;&quot;| CONTENT</code></pre>
+<p><strong>Edge legend.</strong> Solid = primary request/response path;
+dotted = failure/retry path. Quoted labels are real
+<code>MessageType</code> strings or method names from the code.</p>
+<h3 id="narrative-trace-page--backend">Narrative trace (page →
+backend)</h3>
+<ol type="1">
+<li><strong>Page DOM → content script.</strong> The WXT content
+entrypoint (<code>entrypoints/content.ts</code>,
+<code>run_at: document_idle</code>, <code>matches</code> derived from
+<code>SITE_SELECTORS</code>) calls <code>initContentScript()</code>
+(<code>content/index.ts</code>), which builds a
+<code>ScannerOrchestrator</code>.</li>
+<li><strong>Orchestrator → scanners → parsers.</strong> The orchestrator
+runs <code>LinkScanner</code> + <code>TextScanner</code> over the DOM,
+deduping by the <code>base.ts</code> stable id; the parsers
+(<code>magnet.ts</code>, <code>torrent-file.ts</code>,
+<code>bencode.ts</code>) extract the SHA-1 infohash. On each
+<code>scan-completed</code> event the content script sends a typed
+<code>scan-result</code> envelope up via
+<code>chrome.runtime.sendMessage</code>. The
+<code>HighlightManager</code> marks detected links in the DOM
+(toggleable).</li>
+<li><strong>Background router.</strong> <code>background/index.ts</code>
+<code>handleMessage()</code> receives <code>scan-result</code>, passes
+it through <code>isValidScanResult()</code> (the trust-boundary
+shape-guard — a non-array <code>items</code> is rejected so a hostile
+page cannot poison the set), and stores it in <code>tabResults</code>
+keyed by tab id, updating the action badge.</li>
+<li><strong>Send.</strong> On <code>send-torrent</code> (or
+<code>MENU_SEND_GROUP</code>), the background builds a
+<code>BobaClient</code>, decrypting the configured token, and calls
+<code>addMagnet</code> / <code>addMagnets</code>, which
+<code>POST /api/v1/download</code> to <code>:7187</code> with
+<code>{result_id, download_urls:[…]}</code>.</li>
+<li><strong>Failure → offline queue → retry.</strong> Each failed send
+is <code>enqueueFailed</code>-ed into the persisted
+<code>OfflineQueue</code>; <code>processQueue(processQueueItem)</code>
+re-attempts queued items through a fresh client, dead-lettering after
+<code>maxRetries</code>.</li>
+<li><strong>Token decrypt.</strong> Building the client
+(<code>BobaClient.create</code>) decrypts the AES-256-GCM
+<code>encryptedBobaApiToken</code> bundle via
+<code>shared/crypto.decrypt</code>, keyed by the session passphrase read
+from <code>chrome.storage.session</code>
+(<code>readSessionPassphrase</code>). Default-open when locked — the
+ciphertext is never sent.</li>
+<li><strong>Popup / options / health.</strong> The popup queries
+<code>get-detected</code> and dispatches <code>send-torrent</code>; the
+options page round-trips config via <code>get-config</code> /
+<code>set-config</code>; the background's <code>health-check</code> and
+a periodic alarm probe <code>GET /health</code> via
+<code>probeHealth</code>.</li>
+</ol>
+<hr />
+<h2 id="2-module-responsibilities">2. Module responsibilities</h2>
+<table>
+<thead>
+<tr>
+<th>Module (<code>extension/src/…</code>)</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>parser/bencode.ts</code></td>
+<td>Bencode decoder for <code>.torrent</code> file bodies.</td>
+</tr>
+<tr>
+<td><code>parser/magnet.ts</code></td>
+<td>Parse <code>magnet:</code> URIs; <code>sanitizeDisplayName</code>
+(ReDoS-hardened linear tag-strip).</td>
+</tr>
+<tr>
+<td><code>parser/torrent-file.ts</code></td>
+<td>Parse <code>.torrent</code> files; compute the SHA-1 infohash.</td>
+</tr>
+<tr>
+<td><code>scanner/base.ts</code></td>
+<td><code>BaseScanner</code> contract + <code>computeStableId</code>
+(infohash → magnet URI → file URL → name).</td>
+</tr>
+<tr>
+<td><code>scanner/link-scanner.ts</code></td>
+<td>Detect torrents in <code>&lt;a href&gt;</code> links.</td>
+</tr>
+<tr>
+<td><code>scanner/text-scanner.ts</code></td>
+<td>Detect bare-text magnets / <code>.torrent</code> URLs in page
+text.</td>
+</tr>
+<tr>
+<td><code>scanner/orchestrator.ts</code></td>
+<td>Run all scanners, cross-scanner dedup by stable id, MutationObserver
+re-scan; emit <code>scan-completed</code> /
+<code>torrent-detected</code>.</td>
+</tr>
+<tr>
+<td><code>scanner/site-db.ts</code></td>
+<td>Curated per-site selector table (single source of truth).</td>
+</tr>
+<tr>
+<td><code>content/index.ts</code></td>
+<td><code>initContentScript()</code> — orchestrator + highlight +
+content↔︎background messaging; sends <code>scan-result</code>.</td>
+</tr>
+<tr>
+<td><code>content/highlight.ts</code></td>
+<td><code>HighlightManager</code> — DOM marking of detected links,
+runtime-toggleable.</td>
+</tr>
+<tr>
+<td><code>background/index.ts</code></td>
+<td>MV3 message-hub: <code>handleMessage</code> router, context menus,
+keyboard commands, alarms, badge, notifications, send + enqueue;
+<code>isValidScanResult</code> trust-guard;
+<code>MENU_SEND_GROUP</code>.</td>
+</tr>
+<tr>
+<td><code>popup/popup.ts</code></td>
+<td><code>initPopup(doc)</code> — detected-torrent list, per-row Send +
+Send-All, status indicator; talks to background ONLY via messages; safe
+DOM (no <code>innerHTML</code>).</td>
+</tr>
+<tr>
+<td><code>options/options.ts</code></td>
+<td>Servers/config UI, token encryption, WAI-ARIA tablist
+(Arrow/Home/End keyboard nav).</td>
+</tr>
+<tr>
+<td><code>api/boba-client.ts</code></td>
+<td><code>BobaClient</code> — the one network client to
+<code>:7187</code>; <code>addMagnet</code>/<code>addMagnets</code>
+(<code>POST /api/v1/download</code>), <code>health</code>,
+<code>authStatus</code>; token-bucket rate-limit + exponential-backoff
+retry; <code>BobaClient.create</code> decrypt-and-send.</td>
+</tr>
+<tr>
+<td><code>api/queue.ts</code></td>
+<td><code>OfflineQueue</code> — persisted FIFO retry queue; priority
+order, FIFO-evict at <code>maxSize</code>, retry-state, dead-letter;
+SEND injected as a <code>QueueSender</code>.</td>
+</tr>
+<tr>
+<td><code>api/health.ts</code></td>
+<td><code>probeHealth()</code> — liveness/latency/version probe of a
+server.</td>
+</tr>
+<tr>
+<td><code>tabgroups/index.ts</code></td>
+<td><code>batchGroupTorrents</code> / <code>dispatchGroupBatch</code> —
+dedupe a tab group, one batched <code>addMagnets</code> POST.</td>
+</tr>
+<tr>
+<td><code>shared/crypto.ts</code></td>
+<td>AES-256-GCM <code>encrypt</code>/<code>decrypt</code>, PBKDF2 key
+derivation, <code>EncryptedBundle</code>, <code>isEncrypted</code>.</td>
+</tr>
+<tr>
+<td><code>shared/storage.ts</code></td>
+<td><code>storageGet</code>/<code>storageSet</code> over
+<code>chrome.storage.local</code>.</td>
+</tr>
+<tr>
+<td><code>shared/events.ts</code></td>
+<td><code>TypedEventEmitter</code> + <code>EventMap</code> (in-process
+domain events; scanner↔︎content).</td>
+</tr>
+<tr>
+<td><code>shared/logger.ts</code></td>
+<td><code>createLogger</code>/<code>initLogger</code> (token/passphrase
+never logged).</td>
+</tr>
+<tr>
+<td><code>shared/constants.ts</code></td>
+<td><code>SITE_SELECTORS</code>, <code>STORAGE_KEYS</code>,
+<code>BADGE_COLORS</code>, <code>BOBA_TOKEN_HEADERS</code>,
+<code>RATE_LIMIT</code>, <code>RETRY_CONFIG</code>,
+<code>REQUEST_TIMEOUTS</code>, <code>EXT</code>,
+<code>ENCRYPTION</code>, <code>DEBOUNCE_DELAYS</code>.</td>
+</tr>
+<tr>
+<td><code>shared/utils.ts</code></td>
+<td><code>TokenBucket</code>, <code>debounce</code>, <code>sleep</code>,
+<code>truncate</code>, <code>yieldToBrowser</code>.</td>
+</tr>
+<tr>
+<td><code>shared/errors.ts</code></td>
+<td><code>NetworkError</code>, <code>ServerError</code>,
+<code>StorageError</code>.</td>
+</tr>
+<tr>
+<td><code>types/{api,config,torrent}.ts</code></td>
+<td><code>MessageType</code> / <code>ExtensionMessage</code> /
+<code>PageScanResult</code> / <code>DetectedTorrent</code> /
+<code>ExtensionConfig</code> / <code>ServerConfig</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-wxt-entrypoint--thin-wrapper-layout">3. WXT entrypoint /
+thin-wrapper layout</h2>
+<p>WXT generates the MV3 manifest and bundles the worker/scripts from
+the <code>entrypoints/</code> directory. Each entrypoint is a
+<strong>thin wrapper</strong> that calls into a fully unit-testable
+logic module, so the test corpus imports the logic modules directly
+while the entrypoints own the real browser lifecycle.</p>
+<table>
+<thead>
+<tr>
+<th>Entrypoint</th>
+<th>Wraps</th>
+<th>Manifest role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>entrypoints/background.ts</code></td>
+<td><code>initBackground()</code>
+(<code>background/index.ts</code>)</td>
+<td><code>background.service_worker</code>. Idempotent — safe even if
+the logic module auto-registers on import.</td>
+</tr>
+<tr>
+<td><code>entrypoints/content.ts</code></td>
+<td><code>initContentScript()</code>
+(<code>content/index.ts</code>)</td>
+<td><code>content_scripts</code> with <code>matches</code> derived from
+<code>SITE_SELECTORS</code> (no <code>&lt;all_urls&gt;</code>),
+<code>run_at: document_idle</code>, <code>all_frames: false</code>.
+SINGLE driver of the content logic (the logic module's self-init was
+removed to avoid double-registering the message listener).</td>
+</tr>
+<tr>
+<td><code>entrypoints/popup/index.html</code></td>
+<td>loads <code>popup/popup.ts</code></td>
+<td><code>action.default_popup</code>.</td>
+</tr>
+<tr>
+<td><code>entrypoints/options/index.html</code></td>
+<td>loads <code>options/options.ts</code></td>
+<td><code>options_ui</code> / options page.</td>
+</tr>
+</tbody>
+</table>
+<p>Build output: loadable <code>.output/chrome-mv3/</code> +
+<code>.output/firefox-mv2/</code>, plus per-store zips
+<code>bobalink-1.0.0-{chrome,firefox,sources}.zip</code> (produced by
+<code>extension/ci-ext.sh</code>, §11.4.38 artifact-verified).</p>
+<hr />
+<h2 id="4-message-type-catalog">4. Message-type catalog</h2>
+<p><code>MessageType</code> is the closed union in
+<code>types/api.ts</code>. The catalog below lists the messages actually
+routed by the two <code>handleMessage</code> switches (background in
+<code>background/index.ts</code>, content in
+<code>content/index.ts</code>) and their direction.</p>
+<h3 id="sender--background-routed-by-backgroundindexts">Sender →
+Background (routed by <code>background/index.ts</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Sender</th>
+<th>Background action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scan-result</code></td>
+<td>content script</td>
+<td>Trust-guard via <code>isValidScanResult</code>; store in
+<code>tabResults</code>; update badge.</td>
+</tr>
+<tr>
+<td><code>get-detected</code></td>
+<td>popup</td>
+<td>Return the tab's stored <code>PageScanResult</code>
+(<code>{ result }</code>).</td>
+</tr>
+<tr>
+<td><code>send-torrent</code></td>
+<td>popup</td>
+<td><code>sendTorrents(tabId, ids)</code> →
+<code>BobaClient.addMagnet</code>; enqueue failures.</td>
+</tr>
+<tr>
+<td><code>health-check</code></td>
+<td>popup / options</td>
+<td><code>probeHealth</code> every configured server; return per-server
+status.</td>
+</tr>
+<tr>
+<td><code>queue-status</code></td>
+<td>popup / options</td>
+<td>Return <code>OfflineQueue</code> size + items.</td>
+</tr>
+<tr>
+<td><code>queue-process</code></td>
+<td>popup / options</td>
+<td><code>offlineQueue.processQueue(processQueueItem)</code> (retry
+drain).</td>
+</tr>
+<tr>
+<td><code>get-config</code></td>
+<td>popup / options</td>
+<td>Return the persisted <code>ExtensionConfig</code>.</td>
+</tr>
+<tr>
+<td><code>set-config</code></td>
+<td>options</td>
+<td>Persist config; re-init the logger.</td>
+</tr>
+<tr>
+<td><code>scan-page</code></td>
+<td>popup / command</td>
+<td>Forward <code>scan-now</code> to the tab's content script.</td>
+</tr>
+<tr>
+<td><code>open-dashboard</code></td>
+<td>popup</td>
+<td>Open the active server URL in a new tab.</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="background--content-chrometabssendmessage-routed-by-contentindexts">Background
+→ Content (<code>chrome.tabs.sendMessage</code>, routed by
+<code>content/index.ts</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Content action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scan-now</code></td>
+<td>Re-scan the page (<code>rescan()</code> →
+<code>orchestrator.scanNow</code>); re-sends
+<code>scan-result</code>.</td>
+</tr>
+<tr>
+<td><code>highlight-toggle</code></td>
+<td>Toggle (or set) <code>HighlightManager</code> DOM highlighting.</td>
+</tr>
+<tr>
+<td><code>get-detected</code></td>
+<td>Return the orchestrator's detected set.</td>
+</tr>
+<tr>
+<td><code>toggle-selection</code></td>
+<td>Flip a detected torrent's <code>selected</code> flag.</td>
+</tr>
+<tr>
+<td><code>get-scan-status</code></td>
+<td>Report scanning/scanned state + count.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>The unused-by-router members of the <code>MessageType</code> union
+(<code>send-result</code>, <code>health-result</code>,
+<code>get-auth-state</code>, <code>authenticate</code>,
+<code>show-notification</code>, <code>update-badge</code>,
+<code>torrent-detected</code>, <code>selection-change</code>) are
+declared response / reserved variants; the load-bearing routed set is
+the two tables above.</p>
+</blockquote>
+<hr />
+<h2 id="sources-verified-2026-06-10">Sources verified 2026-06-10</h2>
+<ul>
+<li><code>extension/src/background/index.ts</code> — message router,
+<code>isValidScanResult</code>, <code>MENU_SEND_GROUP</code>, alarms,
+<code>readSessionPassphrase</code>, <code>clientFor</code></li>
+<li><code>extension/src/content/index.ts</code> —
+<code>initContentScript</code>, <code>scan-result</code> send, content
+message switch</li>
+<li><code>extension/src/api/boba-client.ts</code> —
+<code>POST /api/v1/download</code>, <code>addMagnet(s)</code>,
+<code>BobaClient.create</code> decrypt-and-send</li>
+<li><code>extension/src/api/queue.ts</code> — <code>OfflineQueue</code>,
+injected <code>QueueSender</code></li>
+<li><code>extension/src/scanner/orchestrator.ts</code> — cross-scanner
+dedup</li>
+<li><code>extension/src/shared/{crypto,events,constants,storage}.ts</code></li>
+<li><code>extension/src/entrypoints/{background.ts,content.ts}</code> —
+thin-wrapper layout</li>
+<li><code>extension/src/types/api.ts</code> — <code>MessageType</code>
+union</li>
+</ul>
+</body>
+</html>

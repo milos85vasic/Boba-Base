@@ -1,0 +1,195 @@
+<h1 id="bobalink-browser-extension--changelog">BobaLink Browser
+Extension — Changelog</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T23:55:00Z <strong>Scope:</strong> BobaLink
+(<code>extension/</code>) — WXT + TypeScript Manifest-V3 cross-browser
+extension that detects magnet links and <code>.torrent</code> URLs and
+forwards them to the Boba merge service on port 7187.
+<strong>Authority:</strong>
+<code>docs/browser_extension/Status.md</code> (Rev 7),
+<code>docs/browser_extension/RELEASE_READINESS.md</code>,
+<code>git log --oneline</code>.</p>
+<blockquote>
+<p>Format: <a href="https://keepachangelog.com/en/1.1.0/">Keep a
+Changelog</a>, <a href="https://semver.org/spec/v2.0.0.html">Semantic
+Versioning</a>. <strong>Anti-bluff (§11.4.6 / §11.4.123).</strong> Every
+entry cites a real commit hash from the Session-11 commit set
+(<code>024210f 5edf6ac 2011810 5fa78d9 e80c9d9 5e44c85 750e4e5</code>,
+verified via <code>git log --oneline</code>). The five Fixed defects
+each trace to the Status.md Rev 7 / RELEASE_READINESS.md §3 record. No
+invented entries.</p>
+</blockquote>
+<hr />
+<h2 id="100--unreleased">[1.0.0] — Unreleased</h2>
+<p><strong>Status: code-complete + comprehensively tested, NOT yet
+released.</strong> Per <code>RELEASE_READINESS.md</code> §6, a store
+release is gated on (a) the live-backend
+<code>detect → send → torrent-in-qBittorrent</code> round-trip against a
+running <code>:7187</code> turning GREEN (currently INFRA-BLOCKED,
+honest SKIP — <code>fetchImpl</code> stub substitutes the network
+boundary) and (b) operator-produced store assets (screenshots,
+promotional images, listing submission). Phases 1–3 are PASS; Phases 4–9
+are IN-PROGRESS with enumerated PENDING items.</p>
+<h3 id="added">Added</h3>
+<ul>
+<li><strong>WXT build wiring → loadable cross-browser
+artifacts.</strong> WXT entrypoints at
+<code>src/entrypoints/{background.ts, content.ts, popup/index.html, options/index.html}</code>
+(thin wrappers over the existing logic modules, so all prior test
+imports stay valid); <code>wxt build</code> produces a loadable
+<code>.output/chrome-mv3/</code> (<code>manifest_version:3</code>,
+service worker, popup, options, content-script, icons 16/32/48/128) AND
+<code>.output/firefox-mv2/</code>. Content-script <code>matches</code>
+are derived at build time from the curated <code>SITE_SELECTORS</code>
+table — no <code>&lt;all_urls&gt;</code>. (<code>024210f</code>,
+<code>5edf6ac</code>)</li>
+<li><strong>Tab-group batched send
+(<code>MENU_SEND_GROUP</code>).</strong>
+<code>src/tabgroups/index.ts</code> dedupes detected torrents across a
+tab group (infohash-first) and dispatches the batch as ONE
+<code>addMagnets</code> POST, wired into
+<code>background/index.ts</code>'s <code>MENU_SEND_GROUP</code>
+context-menu action. Manifest gains the minimal-privilege
+<code>tabGroups</code> permission only (research-confirmed
+<code>tabs</code> not needed — only <code>tab.id</code> is read).
+Group-send hardening: offline-queue enqueue-on-failure, network-error
+notification, hardened async flush. (<code>5edf6ac</code>,
+<code>2011810</code>)</li>
+<li><strong>Phase-7 decrypt-before-send credential path.</strong>
+<code>BobaClient.create()</code> decrypts the
+<code>ServerConfig.encryptedBobaApiToken</code> AES-256-GCM bundle via
+<code>shared/crypto</code>; the background reads the session passphrase
+from <code>chrome.storage.session</code> (in-memory, never
+disk-persisted) and sends the decrypted PLAINTEXT token as a bearer
+header. Default-open when locked / no token — the ciphertext is never
+sent. The token value and passphrase are never logged.
+(<code>e8fde43</code>, <code>2011810</code>)</li>
+<li><strong>8-locale internationalization.</strong>
+<code>_locales/{en,ru,de,fr,es,it,pt,ja}</code> — the plan's 8-locale
+target reached — each at 29-key + placeholder parity, packaged into both
+the chrome and firefox builds, mutation-proven by
+<code>locale-parity.test.ts</code> (every non-<code>en</code> locale
+checked against <code>en</code>). (<code>5fa78d9</code>,
+<code>e80c9d9</code>, <code>750e4e5</code>)</li>
+<li><strong>Accessibility — WAI-ARIA structure + keyboard
+navigation.</strong> Structural a11y tests
+(<code>tests/a11y/{popup,options}.a11y.test.ts</code>, 18 — roles /
+accessible names / tablist↔︎tabpanel / live-regions) plus the options
+tablist WAI-ARIA Arrow/Home/End keyboard pattern
+(<code>tests/a11y/keyboard-nav.a11y.test.ts</code>, 18), all
+mutation-proven. (<code>2011810</code>, <code>5e44c85</code>)</li>
+<li><strong>Multi-type test corpus.</strong> Performance/benchmark
+(<code>tests/perf/*</code> — parser / scanner / crypto distributions,
+10×-regression-catching, 3×-deterministic), stress
+(<code>tests/stress/{parsers,queue}.stress.test.ts</code> — ≥1000
+enqueue, FIFO, concurrent), chaos
+(<code>tests/chaos/queue.chaos.test.ts</code> — corruption, soft/hard
+fail, dead-letter, send-failure injection), security
+(<code>tests/security/*</code>), and integration
+(<code>tests/integration/pipeline.test.ts</code> — detect → POST
+<code>:7187</code> request URL+body → queue persist+drain over the real
+<code>sendMessage→onMessage</code> bridge). (<code>fa03323</code>,
+<code>024210f</code>, <code>2011810</code>, <code>5e44c85</code>,
+<code>750e4e5</code>)</li>
+<li><strong>Manual CI gate <code>extension/ci-ext.sh</code>.</strong>
+tsc → lint → full Vitest → chrome + firefox builds → §11.4.38
+artifact-verify (opens the produced <code>manifest.json</code> and
+asserts every referenced asset + the
+<code>default_locale → _locales/</code> catalog exist non-zero on disk)
+→ per-store <code>wxt zip</code>
+(<code>bobalink-1.0.0-{chrome,firefox,sources}.zip</code>). Final line
+<code>CI-EXT: PASS</code>. No CI/CD — manual only.
+(<code>5fa78d9</code>)</li>
+<li><strong>Challenges + HelixQA bank.</strong>
+<code>challenges/extension/detect_and_forward_challenge.sh</code> drives
+the REAL orchestrator + client end-to-end (PASS on captured evidence,
+mutation-verified: no-op stub → FAIL); plus
+<code>decrypt_and_send_challenge.sh</code>,
+<code>offline_queue_recovery_challenge.sh</code>; HelixQA bank
+<code>boba-bobalink.yaml</code> (BOBA-LINK-007/008/009/010,
+<code>http:</code> cases live-gated on <code>:7187</code>).
+(<code>2011810</code>, <code>5e44c85</code>)</li>
+</ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li><strong><code>_locales</code> packaging — would have FAILED Chrome
+load.</strong> The manifest declared <code>default_locale:"en"</code> +
+<code>__MSG_*__</code> but the build packaged no <code>_locales/</code>
+(WXT copies static assets from <code>src/public/</code>, the catalog
+lived at <code>src/_locales/</code>), so Chrome would have rejected the
+unpacked extension. Fixed by moving the catalog to
+<code>src/public/_locales/</code>; permanent guard is the
+<code>ci-ext.sh</code> §11.4.38 artifact-open step.
+(<code>5fa78d9</code>)</li>
+<li><strong>Popup false-failure — popup↔︎background contract
+bug.</strong> The popup read <code>r.torrent.id</code> but the real
+background returns a flat <code>SendOutcome {id,…}</code>, so a
+SUCCESSFUL send threw in the popup and showed a false "Send failed" (the
+row never flipped to Sent). Fixed (popup reads <code>r.id</code>; the
+popup-unit fake that had masked it corrected; integration assertion
+reconciled per §11.4.120). (<code>e80c9d9</code>)</li>
+<li><strong>Scan-result trust-overwrite — content-script trust
+bug.</strong> A hostile content script could send
+<code>{items:&lt;non-array&gt;}</code> and overwrite a tab's good
+detection set with garbage. Fixed with the
+<code>isValidScanResult</code> shape-guard in the background message
+router (the non-array test seeds-good→corrupt and asserts the good set
+survives). (<code>e80c9d9</code>)</li>
+<li><strong>ReDoS in <code>sanitizeDisplayName</code> — O(n²) →
+linear.</strong> A hostile magnet <code>dn</code> of
+<code>'&lt;'×100k</code> took 4s+ and could hang the content script.
+Fixed <code>/&lt;[^&gt;]*&gt;/g</code> →
+<code>/&lt;[^&lt;&gt;]*&gt;/g</code>: linear time (output identical on
+valid input, strictly safer on hostile — now catches
+<code>&lt;scr&lt;script&gt;ipt&gt;</code> evasion). 19 hostile-input
+tests in <code>tests/security/scanner-hostile-input.test.ts</code>.
+(<code>5e44c85</code>, <code>src/parser/magnet.ts</code>)</li>
+<li><strong>A11y keyboard gap — WAI-ARIA tablist arrow-key pattern (WCAG
+2.1.1).</strong> The options tablist lacked the arrow-key keyboard
+pattern; keyboard-only users could not traverse tabs. Added a keydown
+handler (Arrow/Home/End) reusing <code>activateTab</code>
+(non-breaking). 18 keyboard-nav tests. (<code>5e44c85</code>,
+<code>src/options/options.ts</code>)</li>
+</ul>
+<h3 id="security">Security</h3>
+<ul>
+<li><strong>ReDoS hardening of the magnet display-name
+sanitizer</strong> (see Fixed above) — linear-time tag stripping,
+hostile-input fuzz corpus. (<code>5e44c85</code>)</li>
+<li><strong>Scan-result trust-guard</strong> —
+<code>isValidScanResult</code> shape-validation at the
+content→background trust boundary so a hostile content script cannot
+poison a tab's detection set (16 message-router-robustness tests).
+(<code>e80c9d9</code>)</li>
+<li><strong>Least-privilege manifest.</strong> No
+<code>&lt;all_urls&gt;</code> (content-script <code>matches</code>
+derived from <code>SITE_SELECTORS</code>); no
+<code>scripting</code>/<code>tabs</code>/<code>cookies</code>;
+<code>tabGroups</code> added only for the Phase-5 batch send;
+<code>host_permissions</code> = <code>http://localhost:7187/*</code>
+only; CSP <code>script-src 'self'</code>. Backed by
+<code>tests/security/*</code> (least-privilege manifest, CSP,
+no-hardcoded-secret, secret-storage, content-XSS) and the §11.4.10.A
+<code>challenges/security/credential_leak_audit.sh</code>
+(mutation-verified). (<code>024210f</code>, <code>5fa78d9</code>)</li>
+<li><strong>No embedded key.</strong> The Boba token is stored
+AES-256-GCM-encrypted under a user-supplied session passphrase
+(<code>chrome.storage.session</code>, never disk); the plaintext token
+and passphrase are never logged or persisted.
+(<code>2011810</code>)</li>
+</ul>
+<hr />
+<h2 id="sources-verified-2026-06-10">Sources verified 2026-06-10</h2>
+<ul>
+<li><code>git log --oneline</code> — Session-11 commits
+<code>024210f 5edf6ac 2011810 5fa78d9 e80c9d9 5e44c85 750e4e5</code></li>
+<li><code>docs/browser_extension/Status.md</code> (Rev 7) — per-phase
+status, baseline facts, §11.4.138 bluff-audit</li>
+<li><code>docs/browser_extension/RELEASE_READINESS.md</code> (Rev 1) —
+five defects, release-blocker enumeration, honest classification</li>
+<li><code>extension/src/**</code> — the real modules each entry traces
+to (<code>background/index.ts</code>, <code>content/index.ts</code>,
+<code>api/boba-client.ts</code>, <code>parser/magnet.ts</code>,
+<code>options/options.ts</code>, <code>tabgroups/index.ts</code>,
+<code>entrypoints/*</code>)</li>
+</ul>

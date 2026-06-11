@@ -1,7 +1,7 @@
 <h1 id="bobalink-browser-extension--status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
-2026-06-10T22:30:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
+2026-06-10T23:00:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
@@ -22,9 +22,9 @@ no-guessing).</p>
 locale, content-XSS, credential-leak audit, decrypt-throw parity,
 tab-group Challenge, and the <code>_locales</code> packaging fix) staged
 for the next commit.</li>
-<li><strong>Extension test corpus:</strong> <strong>517 Vitest tests
-across 48 spec files</strong> — same-session <code>npx vitest run</code>
-→ <code>Tests 517 passed (517)</code> — under
+<li><strong>Extension test corpus:</strong> <strong>527 Vitest tests
+across 49 spec files</strong> — same-session <code>npx vitest run</code>
+→ <code>Tests 527 passed (527)</code> — under
 <code>extension/tests/{unit,perf,stress,chaos,integration,security,e2e}</code>
 + <code>src/**</code>. <code>npx tsc --noEmit</code> clean;
 <code>npm run lint</code> 0 errors / 0 warnings. (+126 tests over the
@@ -169,18 +169,20 @@ no-hardcoded-secret, secret-storage, <strong>content-XSS</strong> —
 render path proven safe via innerHTML-mutation→FAIL); <strong>§11.4.10.A
 credential-leak audit</strong>
 <code>challenges/security/credential_leak_audit.sh</code> (PASS,
-mutation-verified); <strong>message-router robustness</strong>
-<code>tests/security/message-router-robustness.test.ts</code> (16 tests)
-+ <strong><code>isValidScanResult</code> scan-result
-trust-guard</strong> (fixed a real content-script overwrite bug).
-<strong>PENDING:</strong> full pen-test suite (sender-origin validation,
-rate-limit)</td>
+mutation-verified); <strong>message-router robustness</strong> (16
+tests) + <strong><code>isValidScanResult</code> scan-result
+trust-guard</strong> + <strong><code>resolveTargetTabId</code> cross-tab
+confused-deputy guard</strong> (fixed a real content-script info-leak:
+forged payload.tabId could read another tab’s detections; sender.tab.id
+now wins) + scanner-hostile-input (19) + sender-trust (10) +
+content-XSS. <strong>PENDING:</strong> full pen-test suite
+(sender-origin validation, rate-limit)</td>
 </tr>
 <tr>
 <td>8</td>
 <td>Testing to 100% (all types) + Challenges + HelixQA</td>
 <td>IN-PROGRESS</td>
-<td>517 tests/48 files green
+<td>527 tests/49 files green
 (unit/perf/stress/chaos/integration/security/e2e). Challenge
 <code>challenges/extension/detect_and_forward_challenge.sh</code> drives
 the REAL orchestrator+client end-to-end, PASS on captured evidence,
@@ -224,9 +226,9 @@ planned in <code>IMPLEMENTATION_PLAN.md</code>.</li>
 <h2 id="anti-bluff-notes-114--1146--11469">Anti-bluff notes (§11.4 /
 §11.4.6 / §11.4.69)</h2>
 <ul>
-<li>The 517 figure IS a same-session recorded
+<li>The 527 figure IS a same-session recorded
 <code>npx vitest run</code> result
-(<code>Tests 517 passed (517)</code>), not merely a static grep — it
+(<code>Tests 527 passed (527)</code>), not merely a static grep — it
 supersedes the prior 287/22 grep-count baseline. tsc + lint captured
 clean in the same session.</li>
 <li>The §11.4.38 loadable-artifact claim is verified by
