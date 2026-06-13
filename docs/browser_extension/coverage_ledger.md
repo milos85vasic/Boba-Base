@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Feature Coverage Ledger
 
-**Revision:** 3
-**Last modified:** 2026-06-13T09:22:00Z
+**Revision:** 4
+**Last modified:** 2026-06-13T12:32:00Z
 **Scope:** BobaLink (`extension/`) — feature × test-type coverage ledger with a
 per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 §11.4.52 autonomous-validation).
@@ -17,10 +17,10 @@ per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 
 ## Ground-truth baseline (this session)
 
-- Full suite: **632 passed / 56 spec files** (`npx vitest run` via `extension/ci-ext.sh`
-  → `CI-EXT: PASS`, Session 12 / 2026-06-13) under
-  `extension/tests/{unit,perf,stress,chaos,integration,security,a11y,e2e}` + `src/**`.
-  (+73 over the 559 rc baseline.)
+- Full suite: **761 passed / 62 spec files** (`npx vitest run` via `extension/ci-ext.sh`
+  → `CI-EXT: PASS`, Session 12 wave-11 / 2026-06-13) under
+  `extension/tests/{unit,perf,stress,chaos,integration,security,a11y,i18n,e2e}` + `src/**`.
+  (+202 over the 559 rc baseline: +73 wave-10, +129 wave-11.)
 - **Session-12 coverage breadth added** (closing prior PENDING ledger gaps; all
   anti-bluff, no absolute wall-clock thresholds):
   - **stress/chaos breadth** beyond parsers+queue — `tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts`
@@ -33,6 +33,19 @@ per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
     (WCAG 2.4.3/2.4.7/2.1.2 focus management + 1.4.3 computed contrast from the real CSS).
   - **DoS scaling (machine-independent)** — `tests/perf/orchestrator-scaling.perf.test.ts`
     (metamorphic sub-quadratic ratio + oracle self-validation).
+- **Session-12 wave-11 coverage breadth added** (all anti-bluff, no absolute wall-clock thresholds):
+  - **dynamic-content re-scan** — `tests/unit/orchestrator-dynamic-content.test.ts` (MutationObserver
+    insert / href-mutation / relevance-filter / debounce-coalesce / stop-disconnect).
+  - **i18n locale safety (8 locales)** — `tests/i18n/locale-safety.test.ts` (placeholder/key parity,
+    XSS-inert values, JSON integrity).
+  - **client resilience** — `tests/chaos/boba-client-resilience.chaos.test.ts` (retry / backoff /
+    timeout / 4xx-vs-5xx classification under fault injection).
+  - **bencode/.torrent parser robustness** — `tests/security/bencode-torrentfile-hostile.test.ts`
+    (truncation, hostile lengths, integer edge forms, deep nesting, binary-safe infohash).
+  - **bare-text magnet detection** — `tests/unit/text-scanner-coverage.test.ts` (cross-scanner
+    id-equality, false-positive boundary, non-content-node skipping).
+  - **options-page a11y** — `tests/a11y/options-contrast-motion.a11y.test.ts` (contrast + focus +
+    reduced-motion; found+fixed 5 real WCAG defects).
 - E2E (`tests/e2e/extension-loads.spec.ts`) is a real Playwright MV3-load test
   that **SKIPs-with-reason** in this headless/sandbox environment (no display /
   unpacked-extension load unsupported); it executes the popup/options assertions

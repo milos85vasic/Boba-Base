@@ -669,5 +669,67 @@ fixed.</p>
 <p><strong>Regression guard:</strong> the 3 a11y tests flipped RED→GREEN
 on the fix (proving they catch the defect) and are permanent §11.4.135
 guards.</p>
+<hr />
+<h2
+id="bobalink-extension-wave-11-options-page-wcag-a11y-fixes">2026-06-13
+— BobaLink extension wave-11: options-page WCAG a11y fixes</h2>
+<p>Found by the new
+<code>extension/tests/a11y/options-contrast-motion.a11y.test.ts</code>
+(computes contrast ratios from the REAL committed
+<code>src/options/styles.css</code>; analyzer self-validated against
+WCAG reference extremes), kept RED until fixed. Batch verified by
+<code>extension/ci-ext.sh</code> →
+<strong><code>CI-EXT: PASS</code></strong> with the wave-11 coverage
+additions. All RED→GREEN proven; the §11.4.120 reconciliation rewrote
+the gates to assert the NEW mechanism (not fake-passed, not
+reverted).</p>
+<h3 id="save-button-text-below-wcag-aa-over-its-gradient-sc-1.4.3">22.
+Save-button text below WCAG AA over its gradient (SC 1.4.3)</h3>
+<p><strong>Severity:</strong> MEDIUM (accessibility, real). <strong>Root
+cause (computed):</strong> <code>.btn-primary</code> has
+<code>color:#fff</code> over
+<code>linear-gradient(--accent → --accent-2)</code>; white on the
+lighter <code>--accent</code> (#667eea) end is only
+<strong>3.66:1</strong> (14px normal-weight text needs ≥4.5).
+<strong>Fix:</strong> the global <code>--accent</code> is ALSO
+<code>.nav-item.active</code> text on a dark sidebar where darkening it
+would REDUCE contrast, so the button uses a
+<strong>button-local</strong> darker indigo start <code>#5a6fce</code>
+(<strong>4.57:1</strong>); the <code>--accent-2</code> end is already
+6.37:1. <strong>Affected:</strong> <code>src/options/styles.css</code>
+<code>.btn-primary</code>. <strong>Guard:</strong> the test now reads
+the button’s ACTUAL gradient stops and asserts #fff ≥ 4.5 over every
+stop.</p>
+<h3
+id="field-labels-nav-hover-invisible-in-light-theme-hard-coded-literals-sc-1.4.3">23
+&amp; 24. Field labels + nav-hover invisible in light theme — hard-coded
+literals (SC 1.4.3)</h3>
+<p><strong>Severity:</strong> MEDIUM (accessibility, real — labels
+effectively unreadable in light mode). <strong>Root cause
+(computed):</strong> <code>.field &gt; label</code>
+(<code>#d0d0e0</code>) and <code>.nav-item:hover</code>
+(<code>#e0e0e0</code>) were hard-coded <strong>dark-theme</strong>
+literals that never re-resolved per theme → <strong>1.40:1</strong> and
+<strong>1.12:1</strong> on the light backgrounds. <strong>Fix:</strong>
+tokenized to theme-aware tokens — label → <code>var(--text)</code>
+(10.6/13:1), nav-hover → <code>var(--text-strong)</code> (15.5/16.1:1) —
+legible in both themes. <strong>Affected:</strong>
+<code>src/options/styles.css</code>. <strong>Guard:</strong> the
+§11.4.120-reconciled test asserts the selectors now use a
+<code>var(--token)</code> (not a literal) AND the resolved token clears
+AA in BOTH themes.</p>
+<h3 id="no-prefers-reduced-motion-escape-sc-2.3.3-2.2.2">25 &amp; 26. No
+prefers-reduced-motion escape (SC 2.3.3 / 2.2.2)</h3>
+<p><strong>Severity:</strong> MEDIUM (accessibility, real). <strong>Root
+cause:</strong> the options CSS ships <code>@keyframes fadeIn</code>
+(panel reveal on tab activation) + transitions, and the popup CSS ships
+transitions, but neither had a
+<code>@media (prefers-reduced-motion: reduce)</code> block —
+motion-sensitive users had no way to suppress it. <strong>Fix:</strong>
+added the standard reduced-motion block (zeroing animation/transition
+durations) to BOTH <code>src/options/styles.css</code> and
+<code>src/popup/styles.css</code>. <strong>Guard:</strong> the a11y
+tests assert each stylesheet ships non-trivial motion AND a
+reduced-motion block (RED→GREEN on the fix).</p>
 </body>
 </html>

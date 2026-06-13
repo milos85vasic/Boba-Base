@@ -177,8 +177,8 @@
 </header>
 <h1 id="bobalink-browser-extension-feature-coverage-ledger">BobaLink
 Browser Extension — Feature Coverage Ledger</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-06-13T09:22:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
+2026-06-13T12:32:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — feature × test-type coverage ledger with a
 per-feature autonomous-verification class (§11.4.25
 full-automation-coverage, §11.4.52 autonomous-validation).
@@ -198,11 +198,12 @@ here.</p>
 <h2 id="ground-truth-baseline-this-session">Ground-truth baseline (this
 session)</h2>
 <ul>
-<li>Full suite: <strong>632 passed / 56 spec files</strong>
+<li>Full suite: <strong>761 passed / 62 spec files</strong>
 (<code>npx vitest run</code> via <code>extension/ci-ext.sh</code> →
-<code>CI-EXT: PASS</code>, Session 12 / 2026-06-13) under
-<code>extension/tests/{unit,perf,stress,chaos,integration,security,a11y,e2e}</code>
-+ <code>src/**</code>. (+73 over the 559 rc baseline.)</li>
+<code>CI-EXT: PASS</code>, Session 12 wave-11 / 2026-06-13) under
+<code>extension/tests/{unit,perf,stress,chaos,integration,security,a11y,i18n,e2e}</code>
++ <code>src/**</code>. (+202 over the 559 rc baseline: +73 wave-10, +129
+wave-11.)</li>
 <li><strong>Session-12 coverage breadth added</strong> (closing prior
 PENDING ledger gaps; all anti-bluff, no absolute wall-clock thresholds):
 <ul>
@@ -222,6 +223,31 @@ real CSS).</li>
 <li><strong>DoS scaling (machine-independent)</strong> —
 <code>tests/perf/orchestrator-scaling.perf.test.ts</code> (metamorphic
 sub-quadratic ratio + oracle self-validation).</li>
+</ul></li>
+<li><strong>Session-12 wave-11 coverage breadth added</strong> (all
+anti-bluff, no absolute wall-clock thresholds):
+<ul>
+<li><strong>dynamic-content re-scan</strong> —
+<code>tests/unit/orchestrator-dynamic-content.test.ts</code>
+(MutationObserver insert / href-mutation / relevance-filter /
+debounce-coalesce / stop-disconnect).</li>
+<li><strong>i18n locale safety (8 locales)</strong> —
+<code>tests/i18n/locale-safety.test.ts</code> (placeholder/key parity,
+XSS-inert values, JSON integrity).</li>
+<li><strong>client resilience</strong> —
+<code>tests/chaos/boba-client-resilience.chaos.test.ts</code> (retry /
+backoff / timeout / 4xx-vs-5xx classification under fault
+injection).</li>
+<li><strong>bencode/.torrent parser robustness</strong> —
+<code>tests/security/bencode-torrentfile-hostile.test.ts</code>
+(truncation, hostile lengths, integer edge forms, deep nesting,
+binary-safe infohash).</li>
+<li><strong>bare-text magnet detection</strong> —
+<code>tests/unit/text-scanner-coverage.test.ts</code> (cross-scanner
+id-equality, false-positive boundary, non-content-node skipping).</li>
+<li><strong>options-page a11y</strong> —
+<code>tests/a11y/options-contrast-motion.a11y.test.ts</code> (contrast +
+focus + reduced-motion; found+fixed 5 real WCAG defects).</li>
 </ul></li>
 <li>E2E (<code>tests/e2e/extension-loads.spec.ts</code>) is a real
 Playwright MV3-load test that <strong>SKIPs-with-reason</strong> in this

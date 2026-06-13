@@ -217,5 +217,10 @@ describe("perf: ScannerOrchestrator full scan — realistic ~1,000-anchor page",
     // Correctness asserted per-run above; bound asserted on the worst measured
     // run (p99/max) — a 10× regression FAILS, jitter does not.
     expect(dist.p99).toBeLessThanOrEqual(SCAN_WALL_BUDGET_MS);
-  });
+    // Generous explicit per-test timeout: this perf test runs WARMUP + 5 measured
+    // ~1,000-anchor scans sequentially; the default 5 s vitest per-test timeout
+    // flakes under concurrent-suite CPU contention (observed: timed out at 761
+    // tests, passes in 2.4 s isolated). The REAL budget is the SCAN_WALL_BUDGET_MS
+    // assertion above (asserted on p99), NOT the runner timeout (§11.4.50).
+  }, 120_000);
 });

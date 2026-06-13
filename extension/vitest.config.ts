@@ -19,6 +19,15 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    // Perf/stress tests legitimately run heavy sequential work (multi-thousand-
+    // anchor scans, PBKDF2, floods); the default 5 s per-test timeout flakes them
+    // under concurrent-suite CPU contention (a §11.4.50 FAIL-bluff — a test killed
+    // by the runner for a non-product reason). 30 s is generous enough that no
+    // legit test is killed under load, yet still surfaces a genuine hang. The REAL
+    // perf budgets are each test's own internal assertion (p99/ratio < threshold),
+    // which this does not touch. The two heaviest perf tests also set an explicit
+    // larger per-test timeout.
+    testTimeout: 30_000,
     include: [
       "tests/unit/**/*.test.ts",
       "tests/perf/**/*.test.ts",
@@ -27,6 +36,7 @@ export default defineConfig({
       "tests/integration/**/*.test.ts",
       "tests/security/**/*.test.ts",
       "tests/a11y/**/*.test.ts",
+      "tests/i18n/**/*.test.ts",
       "src/**/*.test.ts",
     ],
     // NOTE: tests/live/** is intentionally NOT in the default suite — it needs a

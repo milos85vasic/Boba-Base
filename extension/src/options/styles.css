@@ -115,7 +115,10 @@ code {
 
 .nav-item:hover {
   background: var(--border-soft);
-  color: #e0e0e0;
+  /* Theme-aware token (was hard-coded #e0e0e0, a dark-theme value that never
+     re-resolved → ~1.12:1 invisible on the light --border-soft). --text-strong
+     is >15:1 on --border-soft in both themes. */
+  color: var(--text-strong);
 }
 
 .nav-item.active {
@@ -177,7 +180,10 @@ code {
   display: block;
   margin-bottom: 6px;
   font-weight: 500;
-  color: #d0d0e0;
+  /* Theme-aware token (was hard-coded #d0d0e0, a dark-theme value that never
+     re-resolved → ~1.40:1 invisible field labels on the light --bg). --text is
+     >10:1 on --bg in both themes. */
+  color: var(--text);
 }
 
 .field input[type="text"],
@@ -258,7 +264,13 @@ code {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+  /* WCAG 2.1 AA (SC 1.4.3): white button text must clear 4.5:1 over the WHOLE
+     gradient. The global --accent (#667eea) is only 3.66:1 with #fff, but it is
+     ALSO used as `.nav-item.active` text on a dark sidebar where darkening the
+     token would REDUCE contrast — so the button uses a button-local darker
+     indigo start (#5a6fce = 4.57:1 with #fff) instead of the token. The
+     --accent-2 end (#764ba2) is already 6.37:1. */
+  background: linear-gradient(135deg, #5a6fce 0%, var(--accent-2) 100%);
   color: #fff;
   font-weight: 500;
 }
@@ -322,4 +334,21 @@ code {
   --text: #c0c0d0;
   --text-strong: #ffffff;
   --text-muted: #a0a0b0;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Reduced motion (WCAG 2.1 SC 2.3.3 Animation from Interactions / SC 2.2.2).
+   The options page reveals each settings panel via `@keyframes fadeIn` on tab
+   activation (an interaction) and transitions nav/field/button state. Users who
+   set the OS "reduce motion" preference get that motion neutralised here.
+   ────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

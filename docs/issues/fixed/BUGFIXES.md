@@ -492,3 +492,45 @@ RED until fixed.
 
 **Regression guard:** the 3 a11y tests flipped RED→GREEN on the fix (proving they
 catch the defect) and are permanent §11.4.135 guards.
+
+---
+
+## 2026-06-13 — BobaLink extension wave-11: options-page WCAG a11y fixes
+
+Found by the new `extension/tests/a11y/options-contrast-motion.a11y.test.ts` (computes
+contrast ratios from the REAL committed `src/options/styles.css`; analyzer self-validated
+against WCAG reference extremes), kept RED until fixed. Batch verified by `extension/ci-ext.sh`
+→ **`CI-EXT: PASS`** with the wave-11 coverage additions. All RED→GREEN proven; the §11.4.120
+reconciliation rewrote the gates to assert the NEW mechanism (not fake-passed, not reverted).
+
+### 22. Save-button text below WCAG AA over its gradient (SC 1.4.3)
+
+**Severity:** MEDIUM (accessibility, real). **Root cause (computed):** `.btn-primary` has
+`color:#fff` over `linear-gradient(--accent → --accent-2)`; white on the lighter `--accent`
+(#667eea) end is only **3.66:1** (14px normal-weight text needs ≥4.5). **Fix:** the global
+`--accent` is ALSO `.nav-item.active` text on a dark sidebar where darkening it would REDUCE
+contrast, so the button uses a **button-local** darker indigo start `#5a6fce` (**4.57:1**);
+the `--accent-2` end is already 6.37:1. **Affected:** `src/options/styles.css` `.btn-primary`.
+**Guard:** the test now reads the button's ACTUAL gradient stops and asserts #fff ≥ 4.5 over
+every stop.
+
+### 23 & 24. Field labels + nav-hover invisible in light theme — hard-coded literals (SC 1.4.3)
+
+**Severity:** MEDIUM (accessibility, real — labels effectively unreadable in light mode).
+**Root cause (computed):** `.field > label` (`#d0d0e0`) and `.nav-item:hover` (`#e0e0e0`)
+were hard-coded **dark-theme** literals that never re-resolved per theme → **1.40:1** and
+**1.12:1** on the light backgrounds. **Fix:** tokenized to theme-aware tokens — label →
+`var(--text)` (10.6/13:1), nav-hover → `var(--text-strong)` (15.5/16.1:1) — legible in both
+themes. **Affected:** `src/options/styles.css`. **Guard:** the §11.4.120-reconciled test
+asserts the selectors now use a `var(--token)` (not a literal) AND the resolved token clears
+AA in BOTH themes.
+
+### 25 & 26. No prefers-reduced-motion escape (SC 2.3.3 / 2.2.2)
+
+**Severity:** MEDIUM (accessibility, real). **Root cause:** the options CSS ships
+`@keyframes fadeIn` (panel reveal on tab activation) + transitions, and the popup CSS ships
+transitions, but neither had a `@media (prefers-reduced-motion: reduce)` block — motion-sensitive
+users had no way to suppress it. **Fix:** added the standard reduced-motion block (zeroing
+animation/transition durations) to BOTH `src/options/styles.css` and `src/popup/styles.css`.
+**Guard:** the a11y tests assert each stylesheet ships non-trivial motion AND a reduced-motion
+block (RED→GREEN on the fix).

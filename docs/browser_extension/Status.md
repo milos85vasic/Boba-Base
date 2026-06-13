@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Status
 
-**Revision:** 10
-**Last modified:** 2026-06-13T09:20:00Z
+**Revision:** 11
+**Last modified:** 2026-06-13T12:30:00Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 browser extension that detects magnet links and `.torrent` URLs and forwards them to the Boba merge service on port 7187.
 **Authority:** master plan `docs/browser_extension/IMPLEMENTATION_PLAN.md` (9 phases).
 
@@ -63,6 +63,36 @@ loadable, §11.4.38 asset-verify pass, both store zips ≥10 KiB.
   to perf), `crypto.perf` (p99→min budget), `parsers.perf` (median→min scaling ratio).
 - Full root-cause + evidence for all six fixes: `docs/issues/fixed/BUGFIXES.md` Rev 6
   (entries 18–21).
+
+### Session 12 — wave-11 (2026-06-13): 6 more coverage files + 5 options-page WCAG fixes
+
+Two further parallel-subagent waves (§11.4.103), verified together by `extension/ci-ext.sh`
+→ **`CI-EXT: PASS`**, full suite **761 passed (761)** (+129 over wave-10's 632).
+
+- **+129 new tests across 6 files** (each anti-bluff; no absolute wall-clock thresholds):
+  - `tests/unit/orchestrator-dynamic-content.test.ts` (5) — MutationObserver dynamic-content
+    re-scan (insert/href-mutation/relevance-filter/debounce-coalesce/stop-disconnect),
+    RED-proven against mutated production source.
+  - `tests/a11y/options-contrast-motion.a11y.test.ts` (16) — options-page contrast + focus +
+    reduced-motion (found 5 real WCAG defects, now fixed + guarded).
+  - `tests/i18n/locale-safety.test.ts` (41) — i18n catalog safety across all 8 locales
+    (placeholder/key parity, XSS-inert values, JSON integrity); `tests/i18n/**` wired into
+    `vitest.config.ts`.
+  - `tests/chaos/boba-client-resilience.chaos.test.ts` (9) — real `BobaClient` retry/backoff/
+    timeout/error-classification under fault injection (fake timers, ordering asserts).
+  - `tests/security/bencode-torrentfile-hostile.test.ts` (52) — bencode parser robustness
+    (truncation, hostile lengths, integer edge forms, deep nesting, wrong-typed `info`,
+    binary-safe infohash).
+  - `tests/unit/text-scanner-coverage.test.ts` (6) — bare-text magnet detection, cross-scanner
+    id-equality, false-positive boundary, non-content-node skipping.
+- **5 real WCAG AA options-page defects fixed** (`src/options/styles.css` + `src/popup/styles.css`;
+  RED→GREEN, §11.4.120-reconciled guards; BUGFIXES.md 22–26): Save-button gradient 3.66→4.57:1
+  (button-local), two light-theme-invisible labels tokenized (1.40/1.12 → 10–16:1), reduced-motion
+  blocks added to both stylesheets.
+- **1 more flaky perf test hardened** (§11.4.50/§11.4.118): `scanner.perf` + a global
+  `vitest.config.ts testTimeout: 30s` so heavy perf/stress tests are never killed by the default
+  5 s runner timeout under concurrent-suite contention (their real budgets are their own internal
+  assertions). Subagents found **no product defects** in client/bencode/text-scanner.
 
 ## Per-phase status
 

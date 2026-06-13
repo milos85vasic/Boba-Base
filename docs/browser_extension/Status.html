@@ -177,8 +177,8 @@
 </header>
 <h1 id="bobalink-browser-extension-status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 10 <strong>Last modified:</strong>
-2026-06-13T09:20:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 11 <strong>Last modified:</strong>
+2026-06-13T12:30:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
@@ -280,6 +280,54 @@ perf), <code>crypto.perf</code> (p99→min budget),
 <code>parsers.perf</code> (median→min scaling ratio).</li>
 <li>Full root-cause + evidence for all six fixes:
 <code>docs/issues/fixed/BUGFIXES.md</code> Rev 6 (entries 18–21).</li>
+</ul>
+<h3
+id="session-12-wave-11-2026-06-13-6-more-coverage-files-5-options-page-wcag-fixes">Session
+12 — wave-11 (2026-06-13): 6 more coverage files + 5 options-page WCAG
+fixes</h3>
+<p>Two further parallel-subagent waves (§11.4.103), verified together by
+<code>extension/ci-ext.sh</code> →
+<strong><code>CI-EXT: PASS</code></strong>, full suite <strong>761
+passed (761)</strong> (+129 over wave-10’s 632).</p>
+<ul>
+<li><strong>+129 new tests across 6 files</strong> (each anti-bluff; no
+absolute wall-clock thresholds):
+<ul>
+<li><code>tests/unit/orchestrator-dynamic-content.test.ts</code> (5) —
+MutationObserver dynamic-content re-scan
+(insert/href-mutation/relevance-filter/debounce-coalesce/stop-disconnect),
+RED-proven against mutated production source.</li>
+<li><code>tests/a11y/options-contrast-motion.a11y.test.ts</code> (16) —
+options-page contrast + focus + reduced-motion (found 5 real WCAG
+defects, now fixed + guarded).</li>
+<li><code>tests/i18n/locale-safety.test.ts</code> (41) — i18n catalog
+safety across all 8 locales (placeholder/key parity, XSS-inert values,
+JSON integrity); <code>tests/i18n/**</code> wired into
+<code>vitest.config.ts</code>.</li>
+<li><code>tests/chaos/boba-client-resilience.chaos.test.ts</code> (9) —
+real <code>BobaClient</code> retry/backoff/ timeout/error-classification
+under fault injection (fake timers, ordering asserts).</li>
+<li><code>tests/security/bencode-torrentfile-hostile.test.ts</code> (52)
+— bencode parser robustness (truncation, hostile lengths, integer edge
+forms, deep nesting, wrong-typed <code>info</code>, binary-safe
+infohash).</li>
+<li><code>tests/unit/text-scanner-coverage.test.ts</code> (6) —
+bare-text magnet detection, cross-scanner id-equality, false-positive
+boundary, non-content-node skipping.</li>
+</ul></li>
+<li><strong>5 real WCAG AA options-page defects fixed</strong>
+(<code>src/options/styles.css</code> +
+<code>src/popup/styles.css</code>; RED→GREEN, §11.4.120-reconciled
+guards; BUGFIXES.md 22–26): Save-button gradient 3.66→4.57:1
+(button-local), two light-theme-invisible labels tokenized (1.40/1.12 →
+10–16:1), reduced-motion blocks added to both stylesheets.</li>
+<li><strong>1 more flaky perf test hardened</strong>
+(§11.4.50/§11.4.118): <code>scanner.perf</code> + a global
+<code>vitest.config.ts testTimeout: 30s</code> so heavy perf/stress
+tests are never killed by the default 5 s runner timeout under
+concurrent-suite contention (their real budgets are their own internal
+assertions). Subagents found <strong>no product defects</strong> in
+client/bencode/text-scanner.</li>
 </ul>
 <h2 id="per-phase-status">Per-phase status</h2>
 <table>
