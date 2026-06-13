@@ -30,6 +30,33 @@ for arg in "$@"; do
     esac
 done
 
+# ---------------------------------------------------------------------------
+# Python interpreter selection. pyproject.toml declares requires-python ">=3.12"
+# (the suite uses tomllib + X|Y union syntax that a bare `python3` < 3.12 cannot
+# even COLLECT — it false-reds this gate on a host whose default python3 is older,
+# e.g. 3.9). Prefer the project venv, then a versioned python3.1x, then a bare
+# python3 that is >= 3.12; abort with a clear message if none qualifies. On a host
+# already on python3 >= 3.12 this is a no-op (same interpreter selected as before).
+# ---------------------------------------------------------------------------
+_select_python() {
+    local p
+    for p in "${PYTHON:-}" "$SCRIPT_DIR/.venv/bin/python" python3.13 python3.12 python3; do
+        [ -n "$p" ] || continue
+        if command -v "$p" >/dev/null 2>&1 \
+            && "$p" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)' 2>/dev/null; then
+            printf '%s\n' "$p"
+            return 0
+        fi
+    done
+    return 1
+}
+PYTHON="$(_select_python)" || {
+    echo "ERROR: no Python >= 3.12 found (pyproject requires-python = '>=3.12')." >&2
+    echo "       Tried: \$PYTHON, $SCRIPT_DIR/.venv/bin/python, python3.13, python3.12, python3." >&2
+    echo "       Create the venv (python3.12+ -m venv .venv && .venv/bin/pip install -e .) or install python3.12+." >&2
+    exit 1
+}
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -128,9 +155,9 @@ if [[ "$TESTS_ONLY" == "false" ]]; then
     for f in "${py_files[@]}"; do
         [[ -f "$f" ]] || continue
         ((PY_TOTAL++)) || true
-        if ! python3 -m py_compile "$f" 2>/dev/null; then
+        if ! "$PYTHON" -m py_compile "$f" 2>/dev/null; then
             # Show stderr so the actual syntax error is visible in logs
-            python3 -m py_compile "$f" 2>&1 || true
+            "$PYTHON" -m py_compile "$f" 2>&1 || true
             fail "$f"
             ((PY_FAIL++)) || true
         fi
@@ -161,7 +188,7 @@ fi
 section "PHASE 3: Unit Tests"
 
 step "pytest — unit tests"
-if python3 -m pytest "$SCRIPT_DIR/tests/unit/" -v --import-mode=importlib --tb=short -m "not requires_compose" 2>&1 | tail -3; then
+if "$PYTHON" -m pytest "$SCRIPT_DIR/tests/unit/" -v --import-mode=importlib --tb=short -m "not requires_compose" 2>&1 | tail -3; then
     pass "Unit tests"
 else
     fail "Unit tests"
@@ -176,7 +203,7 @@ else
     section "PHASE 4: Integration Tests"
 
     step "pytest — integration tests"
-    if python3 -m pytest "$SCRIPT_DIR/tests/integration/" -v --import-mode=importlib --tb=short --timeout=120 2>&1 | tail -3; then
+    if "$PYTHON" -m pytest "$SCRIPT_DIR/tests/integration/" -v --import-mode=importlib --tb=short --timeout=120 2>&1 | tail -3; then
         pass "Integration tests"
     else
         fail "Integration tests"
@@ -188,7 +215,7 @@ else
     section "PHASE 5: E2E Tests"
 
     step "pytest — e2e tests"
-    if python3 -m pytest "$SCRIPT_DIR/tests/e2e/" -v --import-mode=importlib --tb=short --timeout=120 2>&1 | tail -3; then
+    if "$PYTHON" -m pytest "$SCRIPT_DIR/tests/e2e/" -v --import-mode=importlib --tb=short --timeout=120 2>&1 | tail -3; then
         pass "E2E tests"
     else
         fail "E2E tests"

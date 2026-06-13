@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 9
-**Last modified:** 2026-06-13T13:00:00Z
+**Revision:** 10
+**Last modified:** 2026-06-13T13:20:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -604,3 +604,40 @@ in added comments — §11.4.67). **Affected:** `challenges/extension/live_detec
 PASS, mutation-verified (no-op/partial response stubs → FAIL); the cleanup trigger confirmed to fire
 on a simulated proxy-`added` + probe-`absent` response (the old code would not). The up-path runs
 when the operator brings the stack up.
+
+---
+
+## 2026-06-13 — Boba broader-project (merge-service / Go / plugins / frontend) verification + 2 fixes
+
+A full-project verification pass (parallel subagents, all run against the REAL toolchains, anti-bluff
+captured evidence) confirmed the broader Boba backend is green: **Go `qBitTorrent-go` 14 packages PASS
+under `-race`, vet clean, no data races**; **plugins: 60 `.py` compile, 12 curated contract-valid,
+901 plugin tests pass** (under `.venv`/py3.13); **Angular frontend: build GREEN + 342 unit tests pass**;
+**merge-service Python: 4149 unit tests pass, ruff clean** (under `.venv`/py3.13). Two genuine items found:
+
+### 30. `ci.sh` / `scripts/run-tests.sh` false-red under a host `python3` < 3.12
+
+**Severity:** MEDIUM (the project's own manual CI gate false-reds — a §11.4.1 FAIL-bluff at the
+toolchain layer). **Root cause (FACT, independently found by two subagents):** both scripts invoke a
+**bare `python3`**, which resolves to the host default. `pyproject.toml` declares
+`requires-python = ">=3.12"` and the suite uses `tomllib` + PEP-604 `X | Y` union syntax that a
+`python3` < 3.12 cannot even COLLECT. On this host `python3` = **3.9.25**, so `python3 -m pytest
+tests/unit/` aborts: **"Interrupted: 36 errors during collection"** (`TypeError: unsupported operand`),
+while the project `.venv` (py3.13) collects **4149** and passes all. **Fix:** both scripts now select a
+`>=3.12` interpreter via a `_select_python` helper (prefers `$PYTHON` → `.venv/bin/python` →
+`python3.13` → `python3.12` → a bare `python3` only if it is ≥3.12), aborting with a clear message if
+none qualifies. Backward-compatible: a host already on `python3 ≥ 3.12` selects the same interpreter.
+**Affected:** `ci.sh` (lines for py_compile + the unit/integration/e2e pytest steps),
+`scripts/run-tests.sh` (the 5 `exec … pytest` modes). **Verification (captured):** `bash -n` clean
+both; the selector picks `.venv` py3.13; bare py3.9 → "36 errors during collection" vs selected
+interpreter → "4149 tests collected" on the same `tests/unit/` dir.
+
+### 31. Go backend — 2 uncovered critical paths closed (coverage, not a defect)
+
+**Type:** Task (coverage). The `qBitTorrent-go` `merge_search` `RunSearch` goroutine-orchestration loop
+(every prior test passed a `nil` client) and the `sse_broker` concurrent pub/sub had zero real
+coverage. Added 4 anti-bluff tests (`internal/service/coverage_test.go`, real `httptest` qBittorrent
+server, no mocks) — RunSearch completes/accumulates + StartFails→failed + ContextCancel→abort, and an
+8-publisher/16-subscriber SSEBroker churn under `-race`. **Anti-bluff proof:** a no-op `return nil`
+stub in `RunSearch` made all three RunSearch tests FAIL, then reverted (production clean, §11.4.84).
+Verified GREEN under `-race` (service package `ok 5.933s`, no data race). Production code unchanged.

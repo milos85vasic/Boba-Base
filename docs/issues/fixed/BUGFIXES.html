@@ -176,8 +176,8 @@
 <h1 class="title">BUGFIXES</h1>
 </header>
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 9 <strong>Last modified:</strong>
-2026-06-13T13:00:00Z</p>
+<p><strong>Revision:</strong> 10 <strong>Last modified:</strong>
+2026-06-13T13:20:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -835,5 +835,69 @@ mutation-verified (no-op/partial response stubs → FAIL); the cleanup
 trigger confirmed to fire on a simulated proxy-<code>added</code> +
 probe-<code>absent</code> response (the old code would not). The up-path
 runs when the operator brings the stack up.</p>
+<hr />
+<h2
+id="boba-broader-project-merge-service-go-plugins-frontend-verification-2-fixes">2026-06-13
+— Boba broader-project (merge-service / Go / plugins / frontend)
+verification + 2 fixes</h2>
+<p>A full-project verification pass (parallel subagents, all run against
+the REAL toolchains, anti-bluff captured evidence) confirmed the broader
+Boba backend is green: <strong>Go <code>qBitTorrent-go</code> 14
+packages PASS under <code>-race</code>, vet clean, no data
+races</strong>; <strong>plugins: 60 <code>.py</code> compile, 12 curated
+contract-valid, 901 plugin tests pass</strong> (under
+<code>.venv</code>/py3.13); <strong>Angular frontend: build GREEN + 342
+unit tests pass</strong>; <strong>merge-service Python: 4149 unit tests
+pass, ruff clean</strong> (under <code>.venv</code>/py3.13). Two genuine
+items found:</p>
+<h3
+id="ci.sh-scriptsrun-tests.sh-false-red-under-a-host-python3-3.12">30.
+<code>ci.sh</code> / <code>scripts/run-tests.sh</code> false-red under a
+host <code>python3</code> &lt; 3.12</h3>
+<p><strong>Severity:</strong> MEDIUM (the project’s own manual CI gate
+false-reds — a §11.4.1 FAIL-bluff at the toolchain layer). <strong>Root
+cause (FACT, independently found by two subagents):</strong> both
+scripts invoke a <strong>bare <code>python3</code></strong>, which
+resolves to the host default. <code>pyproject.toml</code> declares
+<code>requires-python = "&gt;=3.12"</code> and the suite uses
+<code>tomllib</code> + PEP-604 <code>X | Y</code> union syntax that a
+<code>python3</code> &lt; 3.12 cannot even COLLECT. On this host
+<code>python3</code> = <strong>3.9.25</strong>, so
+<code>python3 -m pytest tests/unit/</code> aborts: <strong>“Interrupted:
+36 errors during collection”</strong>
+(<code>TypeError: unsupported operand</code>), while the project
+<code>.venv</code> (py3.13) collects <strong>4149</strong> and passes
+all. <strong>Fix:</strong> both scripts now select a
+<code>&gt;=3.12</code> interpreter via a <code>_select_python</code>
+helper (prefers <code>$PYTHON</code> → <code>.venv/bin/python</code> →
+<code>python3.13</code> → <code>python3.12</code> → a bare
+<code>python3</code> only if it is ≥3.12), aborting with a clear message
+if none qualifies. Backward-compatible: a host already on
+<code>python3 ≥ 3.12</code> selects the same interpreter.
+<strong>Affected:</strong> <code>ci.sh</code> (lines for py_compile +
+the unit/integration/e2e pytest steps),
+<code>scripts/run-tests.sh</code> (the 5 <code>exec … pytest</code>
+modes). <strong>Verification (captured):</strong> <code>bash -n</code>
+clean both; the selector picks <code>.venv</code> py3.13; bare py3.9 →
+“36 errors during collection” vs selected interpreter → “4149 tests
+collected” on the same <code>tests/unit/</code> dir.</p>
+<h3
+id="go-backend-2-uncovered-critical-paths-closed-coverage-not-a-defect">31.
+Go backend — 2 uncovered critical paths closed (coverage, not a
+defect)</h3>
+<p><strong>Type:</strong> Task (coverage). The
+<code>qBitTorrent-go</code> <code>merge_search</code>
+<code>RunSearch</code> goroutine-orchestration loop (every prior test
+passed a <code>nil</code> client) and the <code>sse_broker</code>
+concurrent pub/sub had zero real coverage. Added 4 anti-bluff tests
+(<code>internal/service/coverage_test.go</code>, real
+<code>httptest</code> qBittorrent server, no mocks) — RunSearch
+completes/accumulates + StartFails→failed + ContextCancel→abort, and an
+8-publisher/16-subscriber SSEBroker churn under <code>-race</code>.
+<strong>Anti-bluff proof:</strong> a no-op <code>return nil</code> stub
+in <code>RunSearch</code> made all three RunSearch tests FAIL, then
+reverted (production clean, §11.4.84). Verified GREEN under
+<code>-race</code> (service package <code>ok 5.933s</code>, no data
+race). Production code unchanged.</p>
 </body>
 </html>
