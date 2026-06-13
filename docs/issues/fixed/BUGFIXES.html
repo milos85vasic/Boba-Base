@@ -1,6 +1,6 @@
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 15 <strong>Last modified:</strong>
-2026-06-13T18:15:00Z</p>
+<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
+2026-06-13T19:30:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -1102,3 +1102,71 @@ startup/shutdown is owned by <code>./start.sh</code>.
 <strong>Affected:</strong> <code>tests/conftest.py</code>.
 <strong>Composes §11.4.119</strong> (single-resource-owner — tests must
 not seize a resource in use).</p>
+<h2
+id="merge-dashboard-over-a-lan-ip-qbit-login-loop-jackett-cors-dns-rebinding-hardening">2026-06-13
+— merge dashboard over a LAN IP: qBit login-loop + Jackett CORS (+
+DNS-rebinding hardening)</h2>
+<p>Operator-reported while testing the dashboard via
+<code>http://192.168.0.132:7187</code> (a LAN IP, not localhost).
+Systematic-debugging (§11.4.102), TDD (RED-proven), independent +
+automated-security review, live-verified.</p>
+<h3
+id="qbit-button-prompted-for-a-qbittorrent-login-on-every-click-never-remembered-it">42.
+qBit button prompted for a qBittorrent login on EVERY click + never
+remembered it</h3>
+<p><strong>Severity:</strong> HIGH (the qBit “send to qBittorrent”
+button was unusable). <strong>Type:</strong> Bug. <strong>Root cause
+(FACT, code + runtime):</strong>
+<code>auth.py::all_trackers_auth_status</code> computed
+<code>qbit_has_session = resp.status == 200 and login_text.strip() == "Ok."</code>
+— the SAME legacy-qBittorrent defect fixed in
+<code>routes._qbit_login_succeeded</code> but in <code>auth.py</code>,
+which the earlier fix MISSED (§11.4.118 — fixed the reported instance,
+not the whole class). Modern qBittorrent (v5.2.1) returns
+<code>204</code> + the <code>QBT_SID</code> cookie, so
+<code>has_session</code> was ALWAYS false →
+<code>qbitAuthenticated()</code> false → the dashboard opened the login
+dialog on every qBit-button click. SECOND: the probe ran only
+<code>if creds:</code>, so with no saved creds the default admin/admin
+was never even tried. <strong>Fix:</strong> always probe with the
+effective creds (saved else default admin/admin via
+<code>QBITTORRENT_USER/PASS</code>) and accept
+<code>204 + QBT_SID</code> (mirrors <code>_qbit_login_succeeded</code>).
+<strong>Affected:</strong> <code>download-proxy/src/api/auth.py</code>.
+<strong>Verified live:</strong> <code>/api/v1/auth/status</code> →
+qbittorrent <code>has_session=true</code> → the dashboard
+auto-authenticates with the default creds, the qBit button sends
+directly without prompting.</p>
+<h3
+id="jackett-button-0-unknown-error-over-a-lan-ip-cors-dns-rebinding-security-hardening">43.
+Jackett button “0 Unknown Error” over a LAN IP — CORS (+ DNS-rebinding
+security hardening)</h3>
+<p><strong>Severity:</strong> HIGH (Jackett page unusable
+off-localhost). <strong>Type:</strong> Bug. <strong>+ Security
+(HIGH).</strong> <strong>Root cause (FACT):</strong> boba-jackett’s CORS
+<code>defaultAllowedOrigins</code> were hardcoded
+<code>localhost</code>/<code>127.0.0.1</code>, so the dashboard origin
+<code>http://192.168.0.132:7187</code> was not allowed → the browser
+blocked the cross-origin call → status-0 “0 Unknown Error”.
+<strong>Fix:</strong> a <code>sameHost</code> rule allows an Origin
+co-hosted with the request — deriving the allowed origin FROM THE
+REQUEST (CLAUDE.md anti-bluff: no hardcoded localhost CORS).
+<strong>Security (DNS rebinding, caught by automated security
+review):</strong> an initial name-equality <code>sameHost</code> was
+vulnerable — an attacker DNS-rebinding
+<code>evil.example</code>→victim-LAN-IP gets a matching name in
+Origin+Host → CORS granted → response leaked. <strong>Hardened:</strong>
+<code>sameHost</code> matches ONLY IP-LITERAL hosts
+(<code>net.ParseIP</code> on both, <code>net.SplitHostPort</code> for
+IPv6) — a DNS-rebinding NAME can never match, while genuine LAN-IP
+access works. <strong>Affected:</strong>
+<code>qBitTorrent-go/internal/jackettapi/cors_middleware.go</code>.
+<strong>Regression guards (§11.4.115):</strong>
+<code>cors_middleware_test.go</code> — same-host-IP allowed,
+different-host blocked, <strong>DNS-rebinding-name blocked</strong>
+(RED-proven: the vulnerable version leaked
+<code>ACAO=http://attacker.example</code>), IPv6-literal allowed.
+<strong>Verified live:</strong> LAN-IP origin → ACAO echoed (page
+loads); <code>attacker.example</code> name origin → no ACAO (blocked).
+boba-jackett Go image rebuilt. <strong>Independent review GO; automated
+security review: finding resolved.</strong></p>
