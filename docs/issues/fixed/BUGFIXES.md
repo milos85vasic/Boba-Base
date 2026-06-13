@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 11
-**Last modified:** 2026-06-13T13:35:00Z
+**Revision:** 12
+**Last modified:** 2026-06-13T13:50:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -679,3 +679,41 @@ test-side only — `download-proxy/src/` unchanged; each verified green under `.
   raised `FileNotFoundError` (bandit is in `.venv/bin`, not on bare PATH). Added a `_resolve_bandit()`
   helper (prefers the running interpreter's bin dir, then `shutil.which`, SKIP if genuinely absent).
   Product clean: `.venv/bin/bandit` on `jackett_autoconfig.py` → 0 HIGH findings. Verified.
+
+---
+
+## 2026-06-13 — Boba broken-doc-links + perf-test container-boot (the last test-type suites)
+
+Ran the remaining test types (performance/benchmark/load/docs) under `.venv`. Benchmark: 9 infra-free
+pass (500×–4760× threshold headroom — not flaky, correctly left unchanged) + 5 by-design
+error-not-skip infra-down (intentional). Load: only a Locust `locustfile.py` (no pytest tests). Two
+real items fixed (BUGFIXES 33, 34).
+
+### 33. `docs/` test caught 8 broken internal markdown links + 1 test FAIL-bluff
+
+**Severity:** LOW-MEDIUM (broken doc links + a §11.4.1 test FAIL-bluff). **Root cause + fix (FACT):**
+`tests/docs/test_no_broken_links.py` (resolves links relative to each doc's own dir, the markdown
+convention) flagged 8 docs. Seven were genuine broken links — `docs/*_Summary.md` linked to siblings
+with a spurious `docs/` prefix (`[Architecture Summary](docs/Architecture_Summary.md)` in a doc
+already inside `docs/` → resolves to `docs/docs/...`). Fixed by dropping the prefix (`](docs/X)` →
+`](X)`); `docs/Scripts_Summary.md`'s `](scripts/pre_build_verification.sh)` → `](../scripts/...)` (the
+script is at repo-root). The 8th — a research doc — was a **TEST FALL-BLUFF**: the link extractor
+matched `[${tab.title}](${tab.url})` inside a **JS code block** (not a doc link). Fixed the extractor
+to STRIP fenced + inline code before matching. Anti-bluff verified (§1.1): a real broken link in
+**prose** still FAILs (the strip only removes code, not real links — not a tautology). **Affected:**
+7 `docs/*_Summary.md` (+regenerated `.html`/`.pdf`), `tests/docs/test_no_broken_links.py`.
+**Verified:** `tests/docs` → 129 passed / 0 failed / 2 honest skip (mkdocs absent).
+
+### 34. Performance test BOOTED CONTAINERS + hung 120 s on infra-down (§11.4.3 / no-boot)
+
+**Severity:** MEDIUM (a test that actively boots infra + hangs). **Root cause (FACT):**
+`tests/performance/test_concurrent_search.py::TestConcurrentSearch` consumed a `merge_service_live`
+fixture that, on ports-down, ran `podman/docker compose up -d` then `_wait_for_port(timeout=120)` —
+pytest-timeout killed the wait → 7 setup-ERRORs + 2 min wall-clock, and it was ACTIVELY booting
+containers. The suite's siblings (`stress`/`security`/`observability`) all use the fast
+`merge_service_required` probe-and-SKIP guard. **Fix:** applied that same `merge_service_required`
+guard (1 s socket+`/health` probe, never boots containers) → 7 honest infra-down SKIPs. Non-tautology:
+when the stack is up the class still runs every real assertion (status 200, latency ceilings, p50/p95)
+unchanged. (The benchmark suite's separate error-not-skip design is INTENTIONAL and was left untouched
+per §11.4.122/§11.4.6.) **Affected:** `tests/performance/test_concurrent_search.py`. **Verified:**
+7 SKIP cleanly, no container boot, `download-proxy/src/` unchanged.

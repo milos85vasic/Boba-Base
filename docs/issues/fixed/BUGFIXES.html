@@ -176,8 +176,8 @@
 <h1 class="title">BUGFIXES</h1>
 </header>
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 11 <strong>Last modified:</strong>
-2026-06-13T13:35:00Z</p>
+<p><strong>Revision:</strong> 12 <strong>Last modified:</strong>
+2026-06-13T13:50:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -963,5 +963,69 @@ bin dir, then <code>shutil.which</code>, SKIP if genuinely absent).
 Product clean: <code>.venv/bin/bandit</code> on
 <code>jackett_autoconfig.py</code> → 0 HIGH findings. Verified.</li>
 </ul>
+<hr />
+<h2
+id="boba-broken-doc-links-perf-test-container-boot-the-last-test-type-suites">2026-06-13
+— Boba broken-doc-links + perf-test container-boot (the last test-type
+suites)</h2>
+<p>Ran the remaining test types (performance/benchmark/load/docs) under
+<code>.venv</code>. Benchmark: 9 infra-free pass (500×–4760× threshold
+headroom — not flaky, correctly left unchanged) + 5 by-design
+error-not-skip infra-down (intentional). Load: only a Locust
+<code>locustfile.py</code> (no pytest tests). Two real items fixed
+(BUGFIXES 33, 34).</p>
+<h3
+id="docs-test-caught-8-broken-internal-markdown-links-1-test-fail-bluff">33.
+<code>docs/</code> test caught 8 broken internal markdown links + 1 test
+FAIL-bluff</h3>
+<p><strong>Severity:</strong> LOW-MEDIUM (broken doc links + a §11.4.1
+test FAIL-bluff). <strong>Root cause + fix (FACT):</strong>
+<code>tests/docs/test_no_broken_links.py</code> (resolves links relative
+to each doc’s own dir, the markdown convention) flagged 8 docs. Seven
+were genuine broken links — <code>docs/*_Summary.md</code> linked to
+siblings with a spurious <code>docs/</code> prefix
+(<code>[Architecture Summary](docs/Architecture_Summary.md)</code> in a
+doc already inside <code>docs/</code> → resolves to
+<code>docs/docs/...</code>). Fixed by dropping the prefix
+(<code>](docs/X)</code> → <code>](X)</code>);
+<code>docs/Scripts_Summary.md</code>’s
+<code>](scripts/pre_build_verification.sh)</code> →
+<code>](../scripts/...)</code> (the script is at repo-root). The 8th — a
+research doc — was a <strong>TEST FALL-BLUFF</strong>: the link
+extractor matched <code>[${tab.title}](${tab.url})</code> inside a
+<strong>JS code block</strong> (not a doc link). Fixed the extractor to
+STRIP fenced + inline code before matching. Anti-bluff verified (§1.1):
+a real broken link in <strong>prose</strong> still FAILs (the strip only
+removes code, not real links — not a tautology).
+<strong>Affected:</strong> 7 <code>docs/*_Summary.md</code>
+(+regenerated <code>.html</code>/<code>.pdf</code>),
+<code>tests/docs/test_no_broken_links.py</code>.
+<strong>Verified:</strong> <code>tests/docs</code> → 129 passed / 0
+failed / 2 honest skip (mkdocs absent).</p>
+<h3
+id="performance-test-booted-containers-hung-120-s-on-infra-down-11.4.3-no-boot">34.
+Performance test BOOTED CONTAINERS + hung 120 s on infra-down (§11.4.3 /
+no-boot)</h3>
+<p><strong>Severity:</strong> MEDIUM (a test that actively boots infra +
+hangs). <strong>Root cause (FACT):</strong>
+<code>tests/performance/test_concurrent_search.py::TestConcurrentSearch</code>
+consumed a <code>merge_service_live</code> fixture that, on ports-down,
+ran <code>podman/docker compose up -d</code> then
+<code>_wait_for_port(timeout=120)</code> — pytest-timeout killed the
+wait → 7 setup-ERRORs + 2 min wall-clock, and it was ACTIVELY booting
+containers. The suite’s siblings
+(<code>stress</code>/<code>security</code>/<code>observability</code>)
+all use the fast <code>merge_service_required</code> probe-and-SKIP
+guard. <strong>Fix:</strong> applied that same
+<code>merge_service_required</code> guard (1 s
+socket+<code>/health</code> probe, never boots containers) → 7 honest
+infra-down SKIPs. Non-tautology: when the stack is up the class still
+runs every real assertion (status 200, latency ceilings, p50/p95)
+unchanged. (The benchmark suite’s separate error-not-skip design is
+INTENTIONAL and was left untouched per §11.4.122/§11.4.6.)
+<strong>Affected:</strong>
+<code>tests/performance/test_concurrent_search.py</code>.
+<strong>Verified:</strong> 7 SKIP cleanly, no container boot,
+<code>download-proxy/src/</code> unchanged.</p>
 </body>
 </html>

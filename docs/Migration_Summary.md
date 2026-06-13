@@ -35,5 +35,5 @@ Python-to-Go migration blueprint and parity tracking.
 
 ## Related
 
-- [Architecture Summary](docs/Architecture_Summary.md) — current system topology
-- [PARITY_GAPS.md](docs/migration/PARITY_GAPS.md) — detailed parity audit
+- [Architecture Summary](Architecture_Summary.md) — current system topology
+- [PARITY_GAPS.md](migration/PARITY_GAPS.md) — detailed parity audit

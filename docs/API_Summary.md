@@ -28,5 +28,5 @@ OpenAPI specification for the Merge Search Service (FastAPI on `:7187`).
 
 ## Related
 
-- [Architecture Summary](docs/Architecture_Summary.md) — system topology and request lifecycle
-- [Architecture diagrams](docs/architecture/) — Mermaid sequence/flow diagrams
+- [Architecture Summary](Architecture_Summary.md) — system topology and request lifecycle
+- [Architecture diagrams](architecture/) — Mermaid sequence/flow diagrams

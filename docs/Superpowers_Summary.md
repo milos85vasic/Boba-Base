@@ -35,6 +35,6 @@ Design specs and implementation plans for major cross-cutting features ("superpo
 
 ## Related
 
-- [API Summary](docs/API_Summary.md) — REST endpoints implementing the plans
-- [Migration Summary](docs/Migration_Summary.md) — Go migration parity tracking
-- [Demos Summary](docs/Demos_Summary.md) — verification demos for shipped features
+- [API Summary](API_Summary.md) — REST endpoints implementing the plans
+- [Migration Summary](Migration_Summary.md) — Go migration parity tracking
+- [Demos Summary](Demos_Summary.md) — verification demos for shipped features

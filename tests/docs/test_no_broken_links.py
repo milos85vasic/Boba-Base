@@ -20,6 +20,13 @@ def _find_all_docs(docs_dir: str) -> list[str]:
 
 
 def _extract_internal_links(content: str, file_path: str) -> list[tuple[str, str]]:
+    # Strip fenced + inline code BEFORE extracting links: a markdown-link-shaped
+    # token inside a CODE example (e.g. a JS `console.log(`[${t.title}](${t.url})`)`
+    # snippet) is NOT a doc link — flagging it is a §11.4.1 FAIL-bluff, not a real
+    # broken link. Real links live in prose, never inside code spans/fences.
+    content = re.sub(r"```.*?```", "", content, flags=re.DOTALL)
+    content = re.sub(r"~~~.*?~~~", "", content, flags=re.DOTALL)
+    content = re.sub(r"`[^`\n]*`", "", content)
     links = []
     for match in MD_LINK_RE.finditer(content):
         text, target = match.group(1), match.group(2)

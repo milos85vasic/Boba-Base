@@ -31,5 +31,5 @@ System topology, data flow, and lifecycle diagrams for the Boba project.
 
 ## Related
 
-- [API Summary](docs/API_Summary.md) — REST endpoints served by the merge service
-- [Migration Summary](docs/migration/Migration_Python_Codebase_To_Go.md) — Go backend parity
+- [API Summary](API_Summary.md) — REST endpoints served by the merge service
+- [Migration Summary](migration/Migration_Python_Codebase_To_Go.md) — Go backend parity

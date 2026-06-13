@@ -30,5 +30,5 @@ The CodeGraph index is validated by:
 
 ## Related
 
-- [Scripts Summary](docs/scripts/codegraph_validate.md) — CodeGraph verification script
-- [Architecture Summary](docs/Architecture_Summary.md) — system topology
+- [Scripts Summary](scripts/codegraph_validate.md) — CodeGraph verification script
+- [Architecture Summary](Architecture_Summary.md) — system topology

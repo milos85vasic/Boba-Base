@@ -26,5 +26,5 @@ Build, validation, and utility scripts for the Boba project.
 
 ## Related
 
-- [CodeGraph Summary](docs/CodeGraph_Summary.md) — CodeGraph integration status
-- [Pre-build gate invariants](scripts/pre_build_verification.sh) — source of truth for CI gates
+- [CodeGraph Summary](CodeGraph_Summary.md) — CodeGraph integration status
+- [Pre-build gate invariants](../scripts/pre_build_verification.sh) — source of truth for CI gates

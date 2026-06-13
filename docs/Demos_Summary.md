@@ -22,5 +22,5 @@ End-to-end verification sessions demonstrating specific features and compliance 
 
 ## Related
 
-- [Superpowers Summary](docs/Superpowers_Summary.md) — design specs and plans for the implemented features
-- [Architecture Summary](docs/Architecture_Summary.md) — system topology referenced by demos
+- [Superpowers Summary](Superpowers_Summary.md) — design specs and plans for the implemented features
+- [Architecture Summary](Architecture_Summary.md) — system topology referenced by demos
