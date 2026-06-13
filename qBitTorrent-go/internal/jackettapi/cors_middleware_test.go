@@ -35,6 +35,75 @@ func TestWithCORS_AllowedOriginGetsACAOHeader(t *testing.T) {
 	}
 }
 
+// Operator-reported (2026-06-13): the dashboard accessed via a LAN IP
+// (http://192.168.0.132:7187) hit "0 Unknown Error" on the Jackett page because
+// boba-jackett's CORS only allowed hardcoded localhost origins. The same-host
+// rule allows any Origin co-hosted with this service (derives from the request
+// Host), so the dashboard works from localhost, a LAN IP, or any hostname.
+func TestWithCORS_SameHostDifferentPortAllowed(t *testing.T) {
+	var reached bool
+	h := WithCORS(nil, markerPostHandler(&reached))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/v1/jackett/credentials", nil)
+	req.Host = "192.168.0.132:7189" // this service, reached via the LAN IP
+	req.Header.Set("Origin", "http://192.168.0.132:7187")
+	h.ServeHTTP(rec, req)
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://192.168.0.132:7187" {
+		t.Fatalf("LAN-IP dashboard origin (same host) must be allowed, got %q", got)
+	}
+	if !reached {
+		t.Fatal("inner handler NOT reached on same-host GET")
+	}
+}
+
+// Anti-bluff polarity (§11.4.115): the same-host rule must NOT be over-permissive
+// — an Origin on a DIFFERENT host is still blocked.
+func TestWithCORS_DifferentHostStillBlocked(t *testing.T) {
+	var reached bool
+	h := WithCORS(nil, markerPostHandler(&reached))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/v1/jackett/credentials", nil)
+	req.Host = "192.168.0.132:7189"
+	req.Header.Set("Origin", "http://192.168.0.99:7187") // different host
+	h.ServeHTTP(rec, req)
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Fatalf("a different-host origin must NOT get a CORS header, got %q", got)
+	}
+}
+
+// SECURITY guard (DNS rebinding): the same-host rule must match ONLY IP-literal
+// hosts. A DNS-rebinding attacker re-points a NAME (evil.example) at the
+// victim's LAN IP, so the browser sends that NAME in both Origin and Host —
+// which would match a naive name-equality check and leak the response. The
+// IP-literal restriction blocks it. This test FAILS against a name-equality
+// sameHost and PASSES against the IP-literal one (§11.4.115 polarity).
+func TestWithCORS_DNSRebindingNameHostBlocked(t *testing.T) {
+	var reached bool
+	h := WithCORS(nil, markerPostHandler(&reached))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/v1/jackett/credentials", nil)
+	req.Host = "attacker.example:7189"                  // DNS-rebound NAME → victim LAN IP
+	req.Header.Set("Origin", "http://attacker.example") // same NAME as Host
+	h.ServeHTTP(rec, req)
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "" {
+		t.Fatalf("DNS-rebinding (matching NAME host+origin) must NOT get a CORS header, got %q", got)
+	}
+}
+
+// IPv6 literal same-host must work (net.SplitHostPort handles [::1]:port).
+func TestWithCORS_SameHostIPv6LiteralAllowed(t *testing.T) {
+	var reached bool
+	h := WithCORS(nil, markerPostHandler(&reached))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/v1/jackett/credentials", nil)
+	req.Host = "[fd00::1]:7189"
+	req.Header.Set("Origin", "http://[fd00::1]:7187")
+	h.ServeHTTP(rec, req)
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "http://[fd00::1]:7187" {
+		t.Fatalf("IPv6 same-host literal must be allowed, got %q", got)
+	}
+}
+
 func TestWithCORS_DisallowedOriginGetsNoCORSHeaders(t *testing.T) {
 	var reached bool
 	h := WithCORS(nil, markerPostHandler(&reached))

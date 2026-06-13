@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 15
-**Last modified:** 2026-06-13T18:15:00Z
+**Revision:** 16
+**Last modified:** 2026-06-13T19:30:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -866,3 +866,41 @@ live-probing tests) nuked qbittorrent + the proxy on teardown. **Fix:** add a `d
 returning `[]` (mirrors `docker_setup`) — the suite is now a pure observer; startup/shutdown is owned by
 `./start.sh`. **Affected:** `tests/conftest.py`. **Composes §11.4.119** (single-resource-owner — tests
 must not seize a resource in use).
+
+## 2026-06-13 — merge dashboard over a LAN IP: qBit login-loop + Jackett CORS (+ DNS-rebinding hardening)
+
+Operator-reported while testing the dashboard via `http://192.168.0.132:7187` (a LAN IP, not localhost).
+Systematic-debugging (§11.4.102), TDD (RED-proven), independent + automated-security review, live-verified.
+
+### 42. qBit button prompted for a qBittorrent login on EVERY click + never remembered it
+
+**Severity:** HIGH (the qBit "send to qBittorrent" button was unusable). **Type:** Bug.
+**Root cause (FACT, code + runtime):** `auth.py::all_trackers_auth_status` computed
+`qbit_has_session = resp.status == 200 and login_text.strip() == "Ok."` — the SAME legacy-qBittorrent
+defect fixed in `routes._qbit_login_succeeded` but in `auth.py`, which the earlier fix MISSED (§11.4.118
+— fixed the reported instance, not the whole class). Modern qBittorrent (v5.2.1) returns `204` + the
+`QBT_SID` cookie, so `has_session` was ALWAYS false → `qbitAuthenticated()` false → the dashboard
+opened the login dialog on every qBit-button click. SECOND: the probe ran only `if creds:`, so with no
+saved creds the default admin/admin was never even tried. **Fix:** always probe with the effective
+creds (saved else default admin/admin via `QBITTORRENT_USER/PASS`) and accept `204 + QBT_SID` (mirrors
+`_qbit_login_succeeded`). **Affected:** `download-proxy/src/api/auth.py`. **Verified live:**
+`/api/v1/auth/status` → qbittorrent `has_session=true` → the dashboard auto-authenticates with the
+default creds, the qBit button sends directly without prompting.
+
+### 43. Jackett button "0 Unknown Error" over a LAN IP — CORS (+ DNS-rebinding security hardening)
+
+**Severity:** HIGH (Jackett page unusable off-localhost). **Type:** Bug. **+ Security (HIGH).**
+**Root cause (FACT):** boba-jackett's CORS `defaultAllowedOrigins` were hardcoded `localhost`/`127.0.0.1`,
+so the dashboard origin `http://192.168.0.132:7187` was not allowed → the browser blocked the
+cross-origin call → status-0 "0 Unknown Error". **Fix:** a `sameHost` rule allows an Origin co-hosted
+with the request — deriving the allowed origin FROM THE REQUEST (CLAUDE.md anti-bluff: no hardcoded
+localhost CORS). **Security (DNS rebinding, caught by automated security review):** an initial
+name-equality `sameHost` was vulnerable — an attacker DNS-rebinding `evil.example`→victim-LAN-IP gets a
+matching name in Origin+Host → CORS granted → response leaked. **Hardened:** `sameHost` matches ONLY
+IP-LITERAL hosts (`net.ParseIP` on both, `net.SplitHostPort` for IPv6) — a DNS-rebinding NAME can never
+match, while genuine LAN-IP access works. **Affected:** `qBitTorrent-go/internal/jackettapi/cors_middleware.go`.
+**Regression guards (§11.4.115):** `cors_middleware_test.go` — same-host-IP allowed, different-host
+blocked, **DNS-rebinding-name blocked** (RED-proven: the vulnerable version leaked
+`ACAO=http://attacker.example`), IPv6-literal allowed. **Verified live:** LAN-IP origin → ACAO echoed
+(page loads); `attacker.example` name origin → no ACAO (blocked). boba-jackett Go image rebuilt.
+**Independent review GO; automated security review: finding resolved.**

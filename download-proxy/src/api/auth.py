@@ -492,22 +492,35 @@ async def all_trackers_auth_status():  # type: ignore[no-untyped-def]
 
     creds = _load_qbit_credentials()
     qbit_has_session = False
-    qbit_username = creds.get("username", "") if creds else ""
-    if creds:
-        qbit_url = os.getenv("QBITTORRENT_URL", "http://localhost:7185")
-        try:
-            async with (
-                aiohttp.ClientSession() as session,
-                session.post(
-                    f"{qbit_url}/api/v2/auth/login",
-                    data={"username": creds.get("username", "admin"), "password": creds.get("password", "admin")},
-                    timeout=aiohttp.ClientTimeout(total=5),
-                ) as resp,
-            ):
-                login_text = await resp.text()
-                qbit_has_session = resp.status == 200 and login_text.strip() == "Ok."
-        except Exception:  # noqa: S110
-            pass
+    # Always probe qBittorrent with the EFFECTIVE creds — saved if present, else
+    # the default admin/admin (the hardcoded WebUI creds). qBittorrent always
+    # accepts these, so the dashboard auto-authenticates and the qBit button
+    # never has to prompt for a login. Previously this ran only ``if creds:``, so
+    # with no saved creds ``has_session`` stayed false and every qBit-button
+    # click re-prompted for a login that never "stuck".
+    qbit_user = creds.get("username", "admin") if creds else os.getenv("QBITTORRENT_USER", "admin")
+    qbit_pass = creds.get("password", "admin") if creds else os.getenv("QBITTORRENT_PASS", "admin")
+    qbit_username = qbit_user
+    qbit_url = os.getenv("QBITTORRENT_URL", "http://localhost:7185")
+    try:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.post(
+                f"{qbit_url}/api/v2/auth/login",
+                data={"username": qbit_user, "password": qbit_pass},
+                timeout=aiohttp.ClientTimeout(total=5),
+            ) as resp,
+        ):
+            login_text = await resp.text()
+            # Modern qBittorrent (4.6+/5.x, linuxserver:latest) returns 204 +
+            # QBT_SID cookie on success, NOT the legacy 200 "Ok." — the old check
+            # left has_session permanently false. Mirror routes._qbit_login_succeeded.
+            qbit_has_session = (resp.status in (200, 204)) and (
+                any(c.key == "QBT_SID" or c.key.startswith("QBT_SID_") for c in resp.cookies.values())
+                or login_text.strip() == "Ok."
+            )
+    except Exception:  # noqa: S110
+        pass
     trackers["qbittorrent"] = {
         "has_session": qbit_has_session,
         "username": qbit_username,
