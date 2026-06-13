@@ -1,6 +1,6 @@
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 14 <strong>Last modified:</strong>
-2026-06-13T16:00:00Z</p>
+<p><strong>Revision:</strong> 15 <strong>Last modified:</strong>
+2026-06-13T18:15:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -1012,3 +1012,93 @@ adversarial review caught 2 BLOCKING (2 of the 4 login sites initially
 missed; an <code>int("N/A")</code> crash path) + 1 warning (loose
 <code>"SID"</code> substring) — all remediated + guarded; the re-review
 returned a clean GO.</p>
+<h2
+id="merge-dashboard-search-result-buttons-dead-during-search-results-collapse-on-completion">2026-06-13
+— merge dashboard: search-result buttons dead during search + results
+collapse on completion</h2>
+<p>Operator-reported (searched “Linux”, clicked buttons):
+“Magnet/Download/qBit buttons don’t work while the search is running;
+after completion they work but the results are just a fraction of what
+we saw streaming.” Root-caused via systematic-debugging (§11.4.102),
+fixed TDD (RED proven, §11.4.115), independent code review GO
+(§11.4.142/§11.4.134), live-verified on the running stack.</p>
+<h3
+id="search-result-buttons-magnet-download-qbit-were-a-no-op-while-a-search-was-in-progress">39.
+Search-result buttons (Magnet / Download / qBit) were a NO-OP while a
+search was in progress</h3>
+<p><strong>Severity:</strong> HIGH (core user action unusable
+mid-search). <strong>Type:</strong> Bug. <strong>Root cause (FACT, code
+evidence):</strong> the Angular dashboard grid renders
+<code>*ngFor="let r of sortedResults(); let i = index"</code> and the
+buttons call <code>doMagnet(i)</code>/<code>doSchedule(i)</code>/
+<code>doDownload(i)</code>, but the handlers read
+<code>this.results()[i]</code>. <code>results()</code> is EMPTY during a
+search (only <code>loadSearchResults()</code> sets it on
+<code>search_complete</code>) and in a DIFFERENT order after — while the
+grid shows <code>sortedResults()</code> (= <code>liveResults()</code>
+during search). So mid-search <code>results()[i]</code> is
+<code>undefined</code> → <code>if (!r) return</code> → every button did
+nothing; after search the index desynced from the sorted display
+(wrong-row risk). <strong>Fix:</strong> handlers resolve the row from
+<code>this.sortedResults()[index]</code> — the SAME array the template
+iterates. Plus the deferred qBit-login callback now captures the ROW
+object (<code>executeScheduleRow(r)</code>) instead of re-resolving by
+index, eliminating a search-completes- mid-dialog wrong-row race (review
+nit). <strong>Affected:</strong>
+<code>frontend/src/app/components/dashboard/dashboard.component.ts</code>.
+<strong>Regression guard (§11.4.115/§11.4.135):</strong>
+<code>dashboard.component.spec.ts</code> — 4 new tests (each button
+fires for the live row mid-search + the deferred-login row-capture);
+RED-proven (pre-fix → “expected one matching request, found none”).
+<strong>Verified live:</strong>
+<code>challenges/extension/search_buttons_live_challenge.sh</code> PASS
+— all 3 button backends (<code>/api/v1/magnet</code>,
+<code>/api/v1/download/file</code>, <code>/api/v1/download</code>)
+satisfy their real contract; the synthetic magnet is added +
+INDEPENDENTLY confirmed present in qBittorrent + cleaned up (§11.4.14).
+Full frontend suite 345 green.</p>
+<h3
+id="search-results-collapsed-to-a-fraction-50-on-completion-despite-thousands-streamed">40.
+Search results collapsed to a fraction (50) on completion despite
+thousands streamed</h3>
+<p><strong>Severity:</strong> HIGH (perceived data loss).
+<strong>Type:</strong> Bug. <strong>Root cause (FACT, code + runtime
+evidence):</strong> <code>get_search</code> (the endpoint the grid swaps
+to on <code>search_complete</code>) hardcoded
+<code>for m in merged[:50]:</code> (not even the requested
+<code>limit</code>). Captured live: a “Linux” search streamed
+<strong>2153 results</strong> into the live grid, but the final list was
+capped at <strong>50</strong> — the operator’s “just a fraction.”
+<strong>Fix:</strong>
+<code>get_search(search_id, req, limit: int = 0)</code> returns the FULL
+merged set by default
+(<code>display = merged if limit &lt;= 0 else merged[: max(0, limit)]</code>);
+the grid uses cdk virtual-scroll so the full set renders cheaply.
+<strong>Affected:</strong>
+<code>download-proxy/src/api/routes.py</code>. <strong>Regression guard
+(§11.4.115/§11.4.135):</strong>
+<code>tests/unit/test_search_results_not_capped.py</code> (3 tests: 73
+merged → all 73 not 50; optional <code>?limit</code> truncates; sub-50
+returned whole) — RED-proven (cap-50 → 50≠73). <strong>Verified live
+(§11.4.123):</strong> post-fix “Linux” search →
+<code>completed total=1363 merged=862 RESULTS_LEN=862</code> (was 50).
+The final set now matches the merged count.</p>
+<h3
+id="pytest-tore-down-the-operators-running-stack-on-every-suite-that-touched-docker_services">41.
+pytest tore down the operator’s running stack on every suite that
+touched docker_services</h3>
+<p><strong>Severity:</strong> MEDIUM (test-infra; repeatedly killed the
+live stack mid-session). <strong>Type:</strong> Bug. <strong>Root cause
+(FACT):</strong> <code>tests/conftest.py</code> overrode
+<code>docker_setup</code> → <code>[]</code> (skip compose-up) but NOT
+<code>docker_cleanup</code>, so <code>pytest-docker</code>’s default
+teardown ran <code>compose down</code>, destroying a stack the suite did
+NOT bring up. Any suite using the <code>docker_services</code> fixture
+(e.g. the contract/security live-probing tests) nuked qbittorrent + the
+proxy on teardown. <strong>Fix:</strong> add a
+<code>docker_cleanup</code> fixture returning <code>[]</code> (mirrors
+<code>docker_setup</code>) — the suite is now a pure observer;
+startup/shutdown is owned by <code>./start.sh</code>.
+<strong>Affected:</strong> <code>tests/conftest.py</code>.
+<strong>Composes §11.4.119</strong> (single-resource-owner — tests must
+not seize a resource in use).</p>
