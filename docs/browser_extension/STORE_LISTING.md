@@ -1,7 +1,7 @@
 # BobaLink — Store Listing & Submission Checklist
 
-**Revision:** 1
-**Last modified:** 2026-06-10T22:00:00Z
+**Revision:** 2
+**Last modified:** 2026-06-13T00:00:00Z
 **Scope:** Chrome Web Store + Firefox AMO listing content and a manual submission
 checklist for BobaLink, the Boba Project browser extension (`extension/`).
 **Authority:** `extension/wxt.config.ts`, `extension/package.json`,
@@ -34,12 +34,12 @@ checklist for BobaLink, the Boba Project browser extension (`extension/`).
 ## Short description (≤ 132 characters)
 
 This is the verbatim store-description string the extension already ships
-(`_locales/en/messages.json` `extDescription`) — 91 characters, within both the
+(`_locales/en/messages.json` `extDescription`) — 92 characters, within both the
 Chrome (132) and Firefox (132) short-description limits:
 
 > Detects torrent files and magnet links, sending them to Boba Project's qBitTorrent dashboard
 
-(Length: 91 characters.)
+(Length: 92 characters.)
 
 ---
 
@@ -89,8 +89,9 @@ Chrome (132) and Firefox (132) short-description limits:
 >
 > **Internationalization & accessibility**
 >
-> - UI message catalogs for English, Russian, German, and French; the browser
->   auto-selects by UI language, falling back to English.
+> - UI message catalogs for English, German, Spanish, French, Italian, Japanese,
+>   Portuguese, and Russian (8 locales); the browser auto-selects by UI
+>   language, falling back to English.
 > - The popup and options UI carry ARIA roles, accessible names, and
 >   tablist/tabpanel wiring.
 >
@@ -213,7 +214,7 @@ default-src 'self'; script-src 'self'; object-src 'self'; style-src 'self' 'unsa
 | Icon 32×32 | optional | used | **Done** — `icons/32.png` |
 | Icon 48×48 | required | required | **Done** — `icons/48.png` |
 | Icon 128×128 | required (store icon) | required | **Done** — `icons/128.png` |
-| Short description (≤132 chars) | required | required (summary) | **Done** — see "Short description" above (91 chars) |
+| Short description (≤132 chars) | required | required (summary) | **Done** — see "Short description" above (92 chars) |
 | Detailed description | required | required | **Done** — see "Detailed description" above |
 | Privacy policy / data-use disclosure | required | required | **Done** — see "Privacy-policy summary" above |
 | Permission justifications | required (single-purpose + per-permission) | required (in review notes) | **Done** — see "Permission-justification table" above |
@@ -274,7 +275,8 @@ manual gate `extension/ci-ext.sh` only — there is no pipeline. Sequence:
 - `extension/src/shared/constants.ts` (`SITE_SELECTORS` 24 entries, `DEFAULT_URLS`
   `:7187`, `ENCRYPTION`, `BOBA_TOKEN_HEADERS`, `ICON_SIZES`) — read 2026-06-10.
 - `extension/src/public/_locales/en/messages.json` (`extDescription` short
-  string; locales `en`/`ru`/`de`/`fr` present on disk) — read 2026-06-10.
+  string; 8 locales `de`/`en`/`es`/`fr`/`it`/`ja`/`pt`/`ru` present on disk and
+  in the built `.output/*/_locales/`) — read 2026-06-10.
 - `extension/ci-ext.sh` + `.output/` artifacts (`bobalink-1.0.0-{chrome,firefox,sources}.zip`,
   `icons/{16,32,48,128}.png`) — read 2026-06-10.
 - `docs/browser_extension/Status.md` (Rev 5), `docs/browser_extension/USER_GUIDE.md`

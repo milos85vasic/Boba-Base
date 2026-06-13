@@ -177,8 +177,8 @@
 </header>
 <h1 id="bobalink-browser-extension-status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 14 <strong>Last modified:</strong>
-2026-06-13T13:00:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 15 <strong>Last modified:</strong>
+2026-06-13T13:10:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
@@ -330,6 +330,20 @@ were found <strong>already implemented</strong> in the backend (see
 RELEASE_READINESS Rev 3). Default suite unchanged at <strong>814 passed
 (814)</strong> (the live test/challenge are out-of-suite, operator-run
 when the backend is up).</p>
+<p><strong>Wave-15 (2026-06-13) — remaining-blocker prep
+audits:</strong> <strong>Blocker #2 (headful e2e) substantially
+CLEARED</strong> — <code>tests/e2e/extension-loads.spec.ts</code> runs +
+passes <strong>4/4 autonomously</strong> (verified by a real
+<code>npx playwright test</code> run) via Playwright
+<code>--headless=new</code>: MV3 SW registers, popup + options render,
+and (new) the real content script auto-injects on a matched host +
+detects a magnet + badges it (mutation-proven). <strong>Blocker #3
+(store):</strong> <code>STORE_LISTING.md</code> audited submission-ready
+(all required fields + permission justifications match the manifests; a
+real locale drift 4→8 FIXED); remaining = operator visual assets +
+submission. The 6 sibling Challenge scripts audited — all already
+anti-bluff correct (no changes). See RELEASE_READINESS Rev 4. Default
+suite still <strong>814 passed (814)</strong>.</p>
 </blockquote>
 <ul>
 <li><strong>+129 new tests across 6 files</strong> (each anti-bluff; no

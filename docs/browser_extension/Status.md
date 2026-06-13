@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Status
 
-**Revision:** 14
-**Last modified:** 2026-06-13T13:00:00Z
+**Revision:** 15
+**Last modified:** 2026-06-13T13:10:00Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 browser extension that detects magnet links and `.torrent` URLs and forwards them to the Boba merge service on port 7187.
 **Authority:** master plan `docs/browser_extension/IMPLEMENTATION_PLAN.md` (9 phases).
 
@@ -95,6 +95,15 @@ Two further parallel-subagent waves (§11.4.103), verified together by `extensio
 > BE-1 (CORS) + BE-2 (`.torrent` upload) were found **already implemented** in the backend (see
 > RELEASE_READINESS Rev 3). Default suite unchanged at **814 passed (814)** (the live test/challenge
 > are out-of-suite, operator-run when the backend is up).
+>
+> **Wave-15 (2026-06-13) — remaining-blocker prep audits:** **Blocker #2 (headful e2e) substantially
+> CLEARED** — `tests/e2e/extension-loads.spec.ts` runs + passes **4/4 autonomously** (verified by a real
+> `npx playwright test` run) via Playwright `--headless=new`: MV3 SW registers, popup + options render,
+> and (new) the real content script auto-injects on a matched host + detects a magnet + badges it
+> (mutation-proven). **Blocker #3 (store):** `STORE_LISTING.md` audited submission-ready (all required
+> fields + permission justifications match the manifests; a real locale drift 4→8 FIXED); remaining =
+> operator visual assets + submission. The 6 sibling Challenge scripts audited — all already anti-bluff
+> correct (no changes). See RELEASE_READINESS Rev 4. Default suite still **814 passed (814)**.
 
 - **+129 new tests across 6 files** (each anti-bluff; no absolute wall-clock thresholds):
   - `tests/unit/orchestrator-dynamic-content.test.ts` (5) — MutationObserver dynamic-content

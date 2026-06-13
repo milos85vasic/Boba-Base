@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Release Readiness Report
 
-**Revision:** 3
-**Last modified:** 2026-06-13T13:00:00Z
+**Revision:** 4
+**Last modified:** 2026-06-13T13:10:00Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 cross-browser
 extension that detects magnet links and `.torrent` URLs and forwards them to the
 Boba merge service on port 7187. This report assesses release readiness at
@@ -71,6 +71,33 @@ the stack is up):**
   standing between here and a GREEN live round-trip is the operator bringing the stack up
   (`./start.sh` + sharing `/Volumes/T7` into the podman VM). The §6.1 "BE-1/BE-2 pending" note below
   is stale and superseded by this finding.
+
+**Blocker #2 (headful MV3-load e2e) — SUBSTANTIALLY CLEARED (wave-15, 2026-06-13):** the e2e
+`extension/tests/e2e/extension-loads.spec.ts` was AUDITED + HARDENED and **runs + passes 4/4
+autonomously in this environment** (verified by a real `npx playwright test` run, not a claim) via
+Playwright `--headless=new`, which supports unpacked MV3 + service workers. It loads the real built
+`.output/chrome-mv3/` and asserts USER-OBSERVABLE behavior: the MV3 service worker registers (real
+extension id), `popup.html` renders the real BobaLink UI, `options.html` renders the 7 settings tabs,
+AND (new) the **real content script auto-injects on a matched tracker host, detects a magnet, and
+marks it with the `.bobalink-badge`** (a route-served local fixture — no network — so the real
+ScannerOrchestrator + HighlightManager run; mutation-proven: drop the magnet → the test FAILs). The
+launch path now honest-SKIPs (never fail-opens) if no usable browser/display is present. NET: the
+MV3-load + popup + options + content-script-detection are proven autonomously; a real-display host is
+no longer a hard requirement for these assertions (a final headful confirmation remains nice-to-have).
+
+**Store-listing copy — SUBMISSION-READY (wave-15 audit):** `STORE_LISTING.md` was audited against the
+built Chrome MV3 + Firefox MV2 manifests — every required field present (name, both descriptions
+within store limits, privacy/single-purpose statement, a permission justification for EVERY manifest
+permission with no drift), CSP byte-for-byte, all four icon sizes built. A real locale drift was
+FIXED (it claimed 4 locales; the build ships 8). Remaining for blocker #3 are purely operator
+deliverables: screenshots, optional promo tiles, a support/homepage URL, and the actual store-account
+uploads.
+
+**Updated blocker status:** of the three operator-gated blockers, #2 (headful e2e) is now
+substantially cleared autonomously; #1 (live round-trip) is fully prepped + de-risked and needs only
+the operator to bring the backend up; #3 (store) is listing-ready with only operator visual assets +
+submission remaining. The sibling Challenge bank (6 scripts) was also audited — all already anti-bluff
+correct (mutation-verified, fail-closed, parse-safe), no changes needed.
 
 ---
 

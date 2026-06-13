@@ -1,7 +1,184 @@
-<h1 id="bobalink--store-listing--submission-checklist">BobaLink — Store
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>STORE_LISTING</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">STORE_LISTING</h1>
+</header>
+<h1 id="bobalink-store-listing-submission-checklist">BobaLink — Store
 Listing &amp; Submission Checklist</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-10T22:00:00Z <strong>Scope:</strong> Chrome Web Store + Firefox
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-06-13T00:00:00Z <strong>Scope:</strong> Chrome Web Store + Firefox
 AMO listing content and a manual submission checklist for BobaLink, the
 Boba Project browser extension (<code>extension/</code>).
 <strong>Authority:</strong> <code>extension/wxt.config.ts</code>,
@@ -23,6 +200,11 @@ tiles) are marked <strong>(TODO — operator asset)</strong>.</p>
 <hr />
 <h2 id="listing-identity">Listing identity</h2>
 <table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 31%" />
+<col style="width: 36%" />
+</colgroup>
 <thead>
 <tr>
 <th>Field</th>
@@ -72,17 +254,17 @@ tiles) are marked <strong>(TODO — operator asset)</strong>.</p>
 </tbody>
 </table>
 <hr />
-<h2 id="short-description--132-characters">Short description (≤ 132
+<h2 id="short-description-132-characters">Short description (≤ 132
 characters)</h2>
 <p>This is the verbatim store-description string the extension already
 ships (<code>_locales/en/messages.json</code>
-<code>extDescription</code>) — 91 characters, within both the Chrome
+<code>extDescription</code>) — 92 characters, within both the Chrome
 (132) and Firefox (132) short-description limits:</p>
 <blockquote>
 <p>Detects torrent files and magnet links, sending them to Boba
-Project's qBitTorrent dashboard</p>
+Project’s qBitTorrent dashboard</p>
 </blockquote>
-<p>(Length: 91 characters.)</p>
+<p>(Length: 92 characters.)</p>
 <hr />
 <h2 id="detailed-description">Detailed description</h2>
 <blockquote>
@@ -107,8 +289,8 @@ port 7187, which adds them to qBittorrent server-side.</li>
 <li><strong>Tab-group batch send</strong> (Chrome family): scan every
 tab in a tab group, deduplicate across the whole group, and send them as
 one batch.</li>
-<li><strong>Context-menu actions</strong>: "Send magnet to Boba", "Send
-all on page", "Send tab group".</li>
+<li><strong>Context-menu actions</strong>: “Send magnet to Boba”, “Send
+all on page”, “Send tab group”.</li>
 <li><strong>Keyboard shortcuts</strong>: Send to Boba
 (<code>Ctrl/Cmd+Shift+B</code>), Scan page
 (<code>Ctrl/Cmd+Shift+S</code>), Open dashboard
@@ -141,8 +323,9 @@ logged.</li>
 </ul>
 <p><strong>Internationalization &amp; accessibility</strong></p>
 <ul>
-<li>UI message catalogs for English, Russian, German, and French; the
-browser auto-selects by UI language, falling back to English.</li>
+<li>UI message catalogs for English, German, Spanish, French, Italian,
+Japanese, Portuguese, and Russian (8 locales); the browser auto-selects
+by UI language, falling back to English.</li>
 <li>The popup and options UI carry ARIA roles, accessible names, and
 tablist/tabpanel wiring.</li>
 </ul>
@@ -168,11 +351,16 @@ torrent sites (curated selector table)</h2>
 addition, BobaLink ships a curated selector table
 (<code>SITE_SELECTORS</code> in
 <code>extension/src/shared/constants.ts</code>) tuned for these hosts.
-The content script's <code>matches</code> are derived from this table —
+The content script’s <code>matches</code> are derived from this table —
 BobaLink does <strong>not</strong> request
 <code>&lt;all_urls&gt;</code>. The table has <strong>24 entries</strong>
 (one <code>generic</code> pattern set plus 23 site-specific hosts):</p>
 <table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 37%" />
+<col style="width: 43%" />
+</colgroup>
 <thead>
 <tr>
 <th>#</th>
@@ -319,6 +507,11 @@ traces to the literal <code>permissions</code> /
 43). No permission is requested that is not justified here, and no
 justification claims a permission BobaLink does not request.</p>
 <table>
+<colgroup>
+<col style="width: 29%" />
+<col style="width: 34%" />
+<col style="width: 36%" />
+</colgroup>
 <thead>
 <tr>
 <th>Permission</th>
@@ -354,21 +547,21 @@ all-sites grant.</td>
 <tr>
 <td><code>contextMenus</code></td>
 <td>Yes (<code>wxt.config.ts:33</code>)</td>
-<td>Provide the right-click "Send magnet to Boba", "Send all on page",
-"Send tab group" actions.</td>
+<td>Provide the right-click “Send magnet to Boba”, “Send all on page”,
+“Send tab group” actions.</td>
 </tr>
 <tr>
 <td><code>tabGroups</code></td>
 <td>Yes (<code>wxt.config.ts:39</code>)</td>
-<td>"Send tab group": read which group the clicked tab belongs to and
-enumerate the group's tabs via
+<td>“Send tab group”: read which group the clicked tab belongs to and
+enumerate the group’s tabs via
 <code>chrome.tabs.query({groupId})</code>. Grants no host/content/URL
 access.</td>
 </tr>
 <tr>
 <td><code>host_permissions: http://localhost:7187/*</code></td>
 <td>Yes (<code>wxt.config.ts:43</code>)</td>
-<td>Talk to the user's own local Boba merge service — the single network
+<td>Talk to the user’s own local Boba merge service — the single network
 destination. Nothing else.</td>
 </tr>
 </tbody>
@@ -377,10 +570,14 @@ destination. Nothing else.</td>
 id="permissions-deliberately-not-requested-state-this-in-the-privacy-review">Permissions
 deliberately NOT requested (state this in the privacy review)</h3>
 <table>
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 61%" />
+</colgroup>
 <thead>
 <tr>
 <th>Not requested</th>
-<th>Why it's safe to omit</th>
+<th>Why it’s safe to omit</th>
 </tr>
 </thead>
 <tbody>
@@ -392,12 +589,12 @@ the Chrome docs needs no <code>tabs</code> permission.</td>
 </tr>
 <tr>
 <td><code>scripting</code></td>
-<td>Not requested — <code>wxt.config.ts</code> comment "scripting
-intentionally NOT requested" (least-privilege, Plan E §3.1).</td>
+<td>Not requested — <code>wxt.config.ts</code> comment “scripting
+intentionally NOT requested” (least-privilege, Plan E §3.1).</td>
 </tr>
 <tr>
 <td><code>cookies</code></td>
-<td>Not requested — BobaLink never touches the user's cookies.</td>
+<td>Not requested — BobaLink never touches the user’s cookies.</td>
 </tr>
 <tr>
 <td><code>&lt;all_urls&gt;</code></td>
@@ -417,16 +614,16 @@ accurate to the real network behavior — the only
 <code>http://localhost:7187</code>.</p>
 <blockquote>
 <p><strong>BobaLink collects no personal data and transmits no data to
-BobaLink's authors or any third party.</strong></p>
+BobaLink’s authors or any third party.</strong></p>
 <ul>
 <li>The only network destination BobaLink contacts is the <strong>Boba
-merge service on the user's own machine at
+merge service on the user’s own machine at
 <code>http://localhost:7187</code></strong> (the sole
 <code>host_permissions</code> entry and the sole non-<code>'self'</code>
 <code>connect-src</code> CSP origin).</li>
 <li>BobaLink sends only the magnet links / <code>.torrent</code> URLs
 the user chooses to forward, and an optional Boba API token (only if the
-user's backend requires one). Nothing is sent to any remote server
+user’s backend requires one). Nothing is sent to any remote server
 controlled by BobaLink.</li>
 <li>Settings, detected items, the offline queue, and history are stored
 <strong>locally</strong> in the browser
@@ -443,7 +640,13 @@ logged. With no passphrase, no token is stored.</li>
 <hr />
 <h2 id="required-store-asset-checklist">Required store-asset
 checklist</h2>
-<table>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 39%" />
+<col style="width: 28%" />
+<col style="width: 17%" />
+</colgroup>
 <thead>
 <tr>
 <th>Asset</th>
@@ -483,26 +686,26 @@ checklist</h2>
 <td>Short description (≤132 chars)</td>
 <td>required</td>
 <td>required (summary)</td>
-<td><strong>Done</strong> — see "Short description" above (91
+<td><strong>Done</strong> — see “Short description” above (92
 chars)</td>
 </tr>
 <tr>
 <td>Detailed description</td>
 <td>required</td>
 <td>required</td>
-<td><strong>Done</strong> — see "Detailed description" above</td>
+<td><strong>Done</strong> — see “Detailed description” above</td>
 </tr>
 <tr>
 <td>Privacy policy / data-use disclosure</td>
 <td>required</td>
 <td>required</td>
-<td><strong>Done</strong> — see "Privacy-policy summary" above</td>
+<td><strong>Done</strong> — see “Privacy-policy summary” above</td>
 </tr>
 <tr>
 <td>Permission justifications</td>
 <td>required (single-purpose + per-permission)</td>
 <td>required (in review notes)</td>
-<td><strong>Done</strong> — see "Permission-justification table"
+<td><strong>Done</strong> — see “Permission-justification table”
 above</td>
 </tr>
 <tr>
@@ -546,7 +749,7 @@ required; they are generated at build time from the single
 the manifest.</p>
 </blockquote>
 <hr />
-<h2 id="submission-checklist-manual--no-cicd">Submission checklist
+<h2 id="submission-checklist-manual-no-cicd">Submission checklist
 (manual — NO CI/CD)</h2>
 <p>Per the Boba constitution Hard Stop (no CI/CD), packaging is
 performed by the manual gate <code>extension/ci-ext.sh</code> only —
@@ -610,9 +813,10 @@ proof is the remaining gate.</li>
 <code>BOBA_TOKEN_HEADERS</code>, <code>ICON_SIZES</code>) — read
 2026-06-10.</li>
 <li><code>extension/src/public/_locales/en/messages.json</code>
-(<code>extDescription</code> short string; locales
-<code>en</code>/<code>ru</code>/<code>de</code>/<code>fr</code> present
-on disk) — read 2026-06-10.</li>
+(<code>extDescription</code> short string; 8 locales
+<code>de</code>/<code>en</code>/<code>es</code>/<code>fr</code>/<code>it</code>/<code>ja</code>/<code>pt</code>/<code>ru</code>
+present on disk and in the built <code>.output/*/_locales/</code>) —
+read 2026-06-10.</li>
 <li><code>extension/ci-ext.sh</code> + <code>.output/</code> artifacts
 (<code>bobalink-1.0.0-{chrome,firefox,sources}.zip</code>,
 <code>icons/{16,32,48,128}.png</code>) — read 2026-06-10.</li>
@@ -620,3 +824,5 @@ on disk) — read 2026-06-10.</li>
 <code>docs/browser_extension/USER_GUIDE.md</code> (Rev 1) — read
 2026-06-10.</li>
 </ul>
+</body>
+</html>
