@@ -1,14 +1,44 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 17
-**Last modified:** 2026-06-10T11:55:33Z
-**Session:** 2026-06-10 (Session 11 — BobaLink browser extension: Phases 2 & 3 + shell + background SW + Phase 4 api leaf landed; 6-stream parallel session in flight)
-**Last commit:** `15a9a61` (Phase 3 capstone — background service worker message router)
+**Revision:** 18
+**Last modified:** 2026-06-13T16:40:00Z
+**Session:** 2026-06-13 (Session 13 — full container stack BOOTED; live detect→send→torrent round-trip GREEN; qBittorrent 5.x API-compat fixed)
+**Last commit:** `ef121e7` (macos-tunnel all-interface LAN bind)
 **Branch:** `main`
 **Working tree:** CLEAN (after the doc commit that carries this update)
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff (§12.10 / §11.4.131).
+
+---
+
+## CURRENT STATE — Session 13 (2026-06-13): stack booted + qBittorrent 5.x compat
+
+**The #1 release blocker is CLEARED.** The full multi-container stack is BOOTED and the live
+detect→send→torrent round-trip is GREEN — the synthetic infohash is independently confirmed in
+qBittorrent's real torrent list, then cleaned up (§11.4.14).
+
+- **Boot blocker (macOS/podman) — root-caused + fixed.** `/Volumes/T7` (external SSD) was not shared
+  into the podman applehv VM → `podman create` hung on an unreachable bind path (proven: py3.13 + 3.14
+  hung identically; NOT a python-version issue). Fix (operator-authorised §11.4.122): recreated the
+  machine with `--volume /Volumes/T7:/Volumes/T7 --cpus 4 --memory 6144`; `export
+  QBITTORRENT_DATA_DIR=/Volumes/T7/Projects/Boba/downloads`; `./start.sh`. All 5 containers healthy.
+  Earlier `boba-ctl up -d` boot bug fixed in `8b6d245`.
+- **3 REAL product defects (qBittorrent v5.2.1)** — `0dc247b`. The proxy spoke legacy text (`200 "Ok."`)
+  while linuxserver:latest speaks 5.x JSON/204. `download-proxy/src/api/routes.py`:
+  `_qbit_login_succeeded` (204+QBT_SID cookie, all 4 login sites) + `_qbit_add_succeeded` (modern JSON
+  add + 409-duplicate idempotency, all 3 add sites). Guard: `tests/unit/test_qbit_login_compat.py`
+  (19 tests). Independent code-review (§11.4.142/§11.4.134): 2 BLOCKING + 1 warning caught → clean GO.
+  Documented BUGFIXES.md Rev 14 entries 36–38.
+- **macOS LAN access** — `ef121e7`: `scripts/ensure-macos-tunnel.sh` now supports
+  `TUNNEL_BIND_ADDR=0.0.0.0` for LAN-IP access (default 127.0.0.1 unchanged).
+- **Manual testing (stack UP):** http://localhost:7187/ (dashboard) · http://localhost:7186
+  (qBittorrent admin/admin) · :7189 boba-jackett · :9117 Jackett. Re-tunnel after reboot:
+  `bash scripts/ensure-macos-tunnel.sh` (`TUNNEL_BIND_ADDR=0.0.0.0` for LAN).
+- **Remaining (operator-gated):** headful MV3-load e2e (needs a real display); store assets/submission.
+- **Process note:** a background integration suite (`test_live_containers.py`, which does compose
+  down/up) tore down the live stack mid-session; killed + restored. Parallel work during operator
+  testing MUST stay hermetic (§11.4.119) — no integration/e2e/container-touching tests.
 
 ---
 

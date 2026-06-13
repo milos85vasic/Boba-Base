@@ -1,18 +1,63 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 17 <strong>Last modified:</strong>
-2026-06-10T11:55:33Z <strong>Session:</strong> 2026-06-10 (Session 11 —
-BobaLink browser extension: Phases 2 &amp; 3 + shell + background SW +
-Phase 4 api leaf landed; 6-stream parallel session in flight)
-<strong>Last commit:</strong> <code>15a9a61</code> (Phase 3 capstone —
-background service worker message router) <strong>Branch:</strong>
-<code>main</code> <strong>Working tree:</strong> CLEAN (after the doc
-commit that carries this update)</p>
+<p><strong>Revision:</strong> 18 <strong>Last modified:</strong>
+2026-06-13T16:40:00Z <strong>Session:</strong> 2026-06-13 (Session 13 —
+full container stack BOOTED; live detect→send→torrent round-trip GREEN;
+qBittorrent 5.x API-compat fixed) <strong>Last commit:</strong>
+<code>ef121e7</code> (macos-tunnel all-interface LAN bind)
+<strong>Branch:</strong> <code>main</code> <strong>Working
+tree:</strong> CLEAN (after the doc commit that carries this update)</p>
 <blockquote>
 <p>Send <code>continue</code> to pick up exactly where we left off. This
 file is the single source of truth for session handoff (§12.10 /
 §11.4.131).</p>
 </blockquote>
+<hr />
+<h2
+id="current-state-session-13-2026-06-13-stack-booted-qbittorrent-5.x-compat">CURRENT
+STATE — Session 13 (2026-06-13): stack booted + qBittorrent 5.x
+compat</h2>
+<p><strong>The #1 release blocker is CLEARED.</strong> The full
+multi-container stack is BOOTED and the live detect→send→torrent
+round-trip is GREEN — the synthetic infohash is independently confirmed
+in qBittorrent’s real torrent list, then cleaned up (§11.4.14).</p>
+<ul>
+<li><strong>Boot blocker (macOS/podman) — root-caused + fixed.</strong>
+<code>/Volumes/T7</code> (external SSD) was not shared into the podman
+applehv VM → <code>podman create</code> hung on an unreachable bind path
+(proven: py3.13 + 3.14 hung identically; NOT a python-version issue).
+Fix (operator-authorised §11.4.122): recreated the machine with
+<code>--volume /Volumes/T7:/Volumes/T7 --cpus 4 --memory 6144</code>;
+<code>export QBITTORRENT_DATA_DIR=/Volumes/T7/Projects/Boba/downloads</code>;
+<code>./start.sh</code>. All 5 containers healthy. Earlier
+<code>boba-ctl up -d</code> boot bug fixed in <code>8b6d245</code>.</li>
+<li><strong>3 REAL product defects (qBittorrent v5.2.1)</strong> —
+<code>0dc247b</code>. The proxy spoke legacy text
+(<code>200 "Ok."</code>) while linuxserver:latest speaks 5.x JSON/204.
+<code>download-proxy/src/api/routes.py</code>:
+<code>_qbit_login_succeeded</code> (204+QBT_SID cookie, all 4 login
+sites) + <code>_qbit_add_succeeded</code> (modern JSON add +
+409-duplicate idempotency, all 3 add sites). Guard:
+<code>tests/unit/test_qbit_login_compat.py</code> (19 tests).
+Independent code-review (§11.4.142/§11.4.134): 2 BLOCKING + 1 warning
+caught → clean GO. Documented BUGFIXES.md Rev 14 entries 36–38.</li>
+<li><strong>macOS LAN access</strong> — <code>ef121e7</code>:
+<code>scripts/ensure-macos-tunnel.sh</code> now supports
+<code>TUNNEL_BIND_ADDR=0.0.0.0</code> for LAN-IP access (default
+127.0.0.1 unchanged).</li>
+<li><strong>Manual testing (stack UP):</strong> http://localhost:7187/
+(dashboard) · http://localhost:7186 (qBittorrent admin/admin) · :7189
+boba-jackett · :9117 Jackett. Re-tunnel after reboot:
+<code>bash scripts/ensure-macos-tunnel.sh</code>
+(<code>TUNNEL_BIND_ADDR=0.0.0.0</code> for LAN).</li>
+<li><strong>Remaining (operator-gated):</strong> headful MV3-load e2e
+(needs a real display); store assets/submission.</li>
+<li><strong>Process note:</strong> a background integration suite
+(<code>test_live_containers.py</code>, which does compose down/up) tore
+down the live stack mid-session; killed + restored. Parallel work during
+operator testing MUST stay hermetic (§11.4.119) — no
+integration/e2e/container-touching tests.</li>
+</ul>
 <hr />
 <h2 id="current-state-session-10-bobalink-browser-extension">CURRENT
 STATE — Session 10 (BobaLink browser extension)</h2>
