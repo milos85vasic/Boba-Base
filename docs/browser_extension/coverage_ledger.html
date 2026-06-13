@@ -177,8 +177,8 @@
 </header>
 <h1 id="bobalink-browser-extension-feature-coverage-ledger">BobaLink
 Browser Extension — Feature Coverage Ledger</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-06-13T12:32:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-06-13T12:40:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — feature × test-type coverage ledger with a
 per-feature autonomous-verification class (§11.4.25
 full-automation-coverage, §11.4.52 autonomous-validation).
@@ -198,12 +198,19 @@ here.</p>
 <h2 id="ground-truth-baseline-this-session">Ground-truth baseline (this
 session)</h2>
 <ul>
-<li>Full suite: <strong>761 passed / 62 spec files</strong>
+<li>Full suite: <strong>799 passed / 65 spec files</strong>
 (<code>npx vitest run</code> via <code>extension/ci-ext.sh</code> →
-<code>CI-EXT: PASS</code>, Session 12 wave-11 / 2026-06-13) under
+<code>CI-EXT: PASS</code>, Session 12 wave-12 / 2026-06-13) under
 <code>extension/tests/{unit,perf,stress,chaos,integration,security,a11y,i18n,e2e}</code>
-+ <code>src/**</code>. (+202 over the 559 rc baseline: +73 wave-10, +129
-wave-11.)</li>
++ <code>src/**</code>. (+240 over the 559 rc baseline: +73 wave-10, +129
+wave-11, +38 wave-12.)</li>
+<li><strong>Session-12 wave-12 coverage</strong> (no product defects
+found in any): AES-256-GCM crypto tamper/auth/fixed-IV
+(<code>tests/security/crypto-tamper.test.ts</code>), LinkScanner
+scheme-allowlist/ visibility/dedup
+(<code>tests/unit/link-scanner-coverage.test.ts</code>), content-script
+highlight-manager DOM no-leak/idempotency/href-preservation
+(<code>tests/unit/highlight-manager.test.ts</code>).</li>
 <li><strong>Session-12 coverage breadth added</strong> (closing prior
 PENDING ledger gaps; all anti-bluff, no absolute wall-clock thresholds):
 <ul>

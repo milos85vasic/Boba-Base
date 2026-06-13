@@ -516,27 +516,35 @@ describe("Security — infohash dedup under hostile repetition", () => {
     const blobSmall = one.repeat(2_500);
     const blobLarge = one.repeat(10_000); // 4× the work
 
-    // Warm up so JIT effects don't dominate the ratio.
-    findMagnetUris(blobSmall);
-
-    const t0 = performance.now();
-    const small = findMagnetUris(blobSmall);
-    const tSmall = performance.now() - t0;
-
-    const t1 = performance.now();
-    const large = findMagnetUris(blobLarge);
-    const tLarge = performance.now() - t1;
-
     // Correctness: the repeated identical magnet dedups to ONE valid result.
+    const small = findMagnetUris(blobSmall);
+    const large = findMagnetUris(blobLarge);
     expect(small.length).toBe(1);
     expect(large.length).toBe(1);
     expect(small[0]).toMatch(/urn:btih:[a-f0-9]{40}/i);
 
-    // Relative-scaling guard: 4× input must not cost dramatically worse than
-    // linear. Allow generous slack (≤ 40×) for timer noise on a shared host —
-    // a quadratic/ReDoS blowup would be orders of magnitude beyond this; a
-    // linear scan stays near 4×. Floor the small baseline to avoid div-by-near-0.
+    // Relative-scaling guard (§11.4.50/§11.4.85). Take the MIN over several reps
+    // at each size — the minimum is the contention-robust estimator of intrinsic
+    // cost (host stalls only ADD time). A SINGLE-run ratio with a 0.05 ms floor on
+    // a sub-ms baseline is noise-dominated (observed 53.6 vs ~4 intrinsic under
+    // full-suite load) — itself a §11.4.50 FAIL-bluff. With min-of-reps the ratio
+    // reflects true scaling: 4× input → ~4× for a linear scan, ~16× for an
+    // O(n²)/ReDoS blowup. The threshold 10 sits BETWEEN (so it actually CATCHES a
+    // quadratic regression — the prior ≤40 did not — while tolerating noise).
+    const minMs = (fn: () => void, reps: number): number => {
+      let best = Infinity;
+      for (let i = 0; i < reps; i++) {
+        const t = performance.now();
+        fn();
+        best = Math.min(best, performance.now() - t);
+      }
+      return best;
+    };
+    findMagnetUris(blobSmall); // warmup (JIT)
+    findMagnetUris(blobLarge);
+    const tSmall = minMs(() => void findMagnetUris(blobSmall), 7);
+    const tLarge = minMs(() => void findMagnetUris(blobLarge), 7);
     const ratio = tLarge / Math.max(tSmall, 0.05);
-    expect(ratio).toBeLessThan(40);
+    expect(ratio).toBeLessThan(10);
   });
 });

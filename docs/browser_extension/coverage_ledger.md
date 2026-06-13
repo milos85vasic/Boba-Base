@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Feature Coverage Ledger
 
-**Revision:** 4
-**Last modified:** 2026-06-13T12:32:00Z
+**Revision:** 5
+**Last modified:** 2026-06-13T12:40:00Z
 **Scope:** BobaLink (`extension/`) — feature × test-type coverage ledger with a
 per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 §11.4.52 autonomous-validation).
@@ -17,10 +17,14 @@ per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 
 ## Ground-truth baseline (this session)
 
-- Full suite: **761 passed / 62 spec files** (`npx vitest run` via `extension/ci-ext.sh`
-  → `CI-EXT: PASS`, Session 12 wave-11 / 2026-06-13) under
+- Full suite: **799 passed / 65 spec files** (`npx vitest run` via `extension/ci-ext.sh`
+  → `CI-EXT: PASS`, Session 12 wave-12 / 2026-06-13) under
   `extension/tests/{unit,perf,stress,chaos,integration,security,a11y,i18n,e2e}` + `src/**`.
-  (+202 over the 559 rc baseline: +73 wave-10, +129 wave-11.)
+  (+240 over the 559 rc baseline: +73 wave-10, +129 wave-11, +38 wave-12.)
+- **Session-12 wave-12 coverage** (no product defects found in any): AES-256-GCM crypto
+  tamper/auth/fixed-IV (`tests/security/crypto-tamper.test.ts`), LinkScanner scheme-allowlist/
+  visibility/dedup (`tests/unit/link-scanner-coverage.test.ts`), content-script highlight-manager
+  DOM no-leak/idempotency/href-preservation (`tests/unit/highlight-manager.test.ts`).
 - **Session-12 coverage breadth added** (closing prior PENDING ledger gaps; all
   anti-bluff, no absolute wall-clock thresholds):
   - **stress/chaos breadth** beyond parsers+queue — `tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts`

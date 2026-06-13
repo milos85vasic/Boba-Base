@@ -1,7 +1,184 @@
-<h1 id="bobalink-browser-extension--release-readiness-report">BobaLink
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>RELEASE_READINESS</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">RELEASE_READINESS</h1>
+</header>
+<h1 id="bobalink-browser-extension-release-readiness-report">BobaLink
 Browser Extension — Release Readiness Report</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-10T23:30:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-06-13T12:35:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 cross-browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187. This report
@@ -21,12 +198,104 @@ round-trip + store assets are pending). Claims that could not be
 verified are flagged in §8.</p>
 </blockquote>
 <hr />
-<h2 id="1-build-state-head-5e44c85">1. Build state (HEAD
+<h2
+id="current-state-2026-06-13-session-12-supersedes-the-session-11-snapshot-in-18-below">0.
+CURRENT STATE — 2026-06-13 (Session 12; supersedes the Session-11
+snapshot in §1–§8 below)</h2>
+<p>The §1–§8 report below is the <strong>Session-11 snapshot at HEAD
+<code>5e44c85</code></strong> and is retained for history. The current
+state has advanced materially:</p>
+<table>
+<colgroup>
+<col style="width: 9%" />
+<col style="width: 47%" />
+<col style="width: 42%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fact</th>
+<th>Session-11 snapshot (below)</th>
+<th><strong>Current (2026-06-13)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HEAD</td>
+<td><code>5e44c85</code></td>
+<td><strong><code>394cb6b</code></strong> (wave-11; wave-12 in
+flight)</td>
+</tr>
+<tr>
+<td>Tag</td>
+<td>—</td>
+<td><strong><code>v1.0.0-rc</code></strong> (2026-06-11)</td>
+</tr>
+<tr>
+<td>Vitest suite</td>
+<td>527 / 49</td>
+<td><strong>799 / 65</strong> (<code>ci-ext.sh</code> →
+<code>CI-EXT: PASS</code>; 761 at wave-11 + 38 wave-12)</td>
+</tr>
+<tr>
+<td>tsc / lint</td>
+<td>0 / 0</td>
+<td><strong>0 / 0</strong></td>
+</tr>
+<tr>
+<td>Builds + zips</td>
+<td>chrome+firefox loadable, per-store zips</td>
+<td><strong>unchanged — loadable + zips</strong></td>
+</tr>
+<tr>
+<td>Locales</td>
+<td>“4 committed” (doc was self-contradictory)</td>
+<td><strong>8 committed + built</strong> (de/en/es/fr/it/ja/pt/ru) — the
+8-locale plan target is <strong>MET</strong></td>
+</tr>
+<tr>
+<td>Real defects found+fixed by the test waves</td>
+<td>5</td>
+<td><strong>13</strong> (5 Session-11 + 8 Session-12 WCAG a11y) + 4
+flaky FAIL-bluffs hardened</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Session-12 additions (waves 10–12, all
+<code>CI-EXT: PASS</code>, pushed to all 4 remotes):</strong> -
+<strong>+240 tests</strong> over the 559 rc baseline across new suites:
+DoS-scaling (machine-independent metamorphic), stress/chaos breadth
+(orchestrator/client/ratelimiter/tabgroup/client-resilience), security
+(infohash, bencode parser robustness, crypto GCM-tamper/auth), a11y
+(popup+options contrast/focus/reduced-motion), i18n locale-safety (8
+locales), MutationObserver dynamic-content, text-scanner, LinkScanner
+filtering, highlight-manager DOM. - <strong>8 real WCAG 2.1 AA defects
+fixed</strong> (popup + options theme tokens, button gradient, two
+light-theme-invisible labels, reduced-motion blocks) — RED→GREEN,
+permanent guards (BUGFIXES 18–26). - <strong>4 flaky FAIL-bluffs
+hardened</strong> (§11.4.50): tight absolute wall-clock asserts →
+contention-robust intrinsic statistics + a global 30 s
+<code>testTimeout</code>.</p>
+<p><strong>Release verdict is UNCHANGED from §6</strong>: BobaLink is
+<strong>code-complete + comprehensively tested + loadable +
+packaged</strong>, but a store release still waits on the same
+<strong>operator-gated</strong> blockers — (1) the live-7187
+<code>detect → send → torrent-in-qBittorrent</code> round-trip (needs
+<code>/Volumes/T7</code> shared into the podman VM + a running backend),
+(2) the headful MV3-load e2e (needs a real-display host), (3)
+store-listing media + submission. No autonomous work can clear these
+three.</p>
+<hr />
+<h2 id="build-state-head-5e44c85">1. Build state (HEAD
 <code>5e44c85</code>)</h2>
 <p>All figures are same-session recorded results cited in
 <code>Status.md</code> Rev 6 and the <code>ci-ext.sh</code> manual gate
 — not static greps.</p>
 <table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 36%" />
+<col style="width: 36%" />
+</colgroup>
 <thead>
 <tr>
 <th>Gate</th>
@@ -39,8 +308,8 @@ verified are flagged in §8.</p>
 <td>Vitest suite</td>
 <td><strong>527 passed / 49 spec files</strong>
 (<code>npx vitest run</code> → <code>Tests 527 passed (527)</code>)</td>
-<td>Status.md Rev 6 §"Baseline facts"; coverage_ledger §"Ground-truth
-baseline"</td>
+<td>Status.md Rev 6 §“Baseline facts”; coverage_ledger §“Ground-truth
+baseline”</td>
 </tr>
 <tr>
 <td>TypeScript</td>
@@ -106,16 +375,21 @@ removed (see §8).</p>
 STEP 5 <strong>opening the produced <code>manifest.json</code></strong>
 and asserting every referenced asset — including the
 <code>default_locale → _locales/&lt;locale&gt;/messages.json</code>
-invariant — exists non-zero on disk, not by "build exited 0."</p>
+invariant — exists non-zero on disk, not by “build exited 0.”</p>
 <hr />
-<h2 id="2-the-6-reviewed-session-11-commits">2. The 6 reviewed
-Session-11 commits</h2>
+<h2 id="the-6-reviewed-session-11-commits">2. The 6 reviewed Session-11
+commits</h2>
 <p>All six are pushed and on <code>main</code> (fast-forward; <strong>no
 force-push</strong> per §11.4.113), each independently code-reviewed per
-§11.4.125/§11.4.134/§11.4.142 (Status.md Rev 6 "Independent multi-lens
-subagent code-review … GO / GO-with-nits"). Verified via
+§11.4.125/§11.4.134/§11.4.142 (Status.md Rev 6 “Independent multi-lens
+subagent code-review … GO / GO-with-nits”). Verified via
 <code>git log --oneline</code>:</p>
 <table>
+<colgroup>
+<col style="width: 8%" />
+<col style="width: 22%" />
+<col style="width: 68%" />
+</colgroup>
 <thead>
 <tr>
 <th>#</th>
@@ -163,7 +437,7 @@ HelixQA challenges (<strong>HEAD</strong>)</td>
 </tbody>
 </table>
 <hr />
-<h2 id="3-five-real-defects-found-and-fixed-by-the-test-waves">3. Five
+<h2 id="five-real-defects-found-and-fixed-by-the-test-waves">3. Five
 real defects found and fixed by the test waves</h2>
 <p>Each defect was caught by a NEW test (not the original suite),
 RED-proven on the pre-fix code (§11.4.115), fixed, and re-verified GREEN
@@ -181,20 +455,20 @@ step that opens the artifact and checks the
 <code>default_locale → _locales/</code> invariant. Fixed by moving the
 catalog to <code>src/public/_locales/</code>; the permanent guard is
 <code>ci-ext.sh</code>. <em>(Fix: wave-4 <code>5fa78d9</code>; this is
-the §11.4.108 "build-exit-0 ≠ deployable-artifact" lesson — §11.4.138
+the §11.4.108 “build-exit-0 ≠ deployable-artifact” lesson — §11.4.138
 bluff-audit documented in Status.md Rev 6.)</em></p></li>
 <li><p><strong>Popup false-failure — popup↔︎background CONTRACT
 bug.</strong> The popup read <code>r.torrent.id</code> but the real
 background returns a <strong>flat</strong>
 <code>SendOutcome {id,…}</code>, so a SUCCESSFUL send threw in the popup
-and showed a FALSE "Send failed" (row never flipped to Sent). The
+and showed a FALSE “Send failed” (row never flipped to Sent). The
 popup-unit fake had masked it with the wrong shape; exposed by the
 integration round-trip. Fixed (popup reads <code>r.id</code>; fake
 corrected; integration assertion reconciled §11.4.120). <em>(Fix: wave-5
 <code>e80c9d9</code>.)</em></p></li>
 <li><p><strong>Scan-result trust-overwrite — content-script trust
 bug.</strong> A hostile content script could send
-<code>{items:&lt;non-array&gt;}</code> and overwrite a tab's good
+<code>{items:&lt;non-array&gt;}</code> and overwrite a tab’s good
 detection set with garbage. Fixed with an <code>isValidScanResult</code>
 shape-guard
 (<code>tests/security/message-router-robustness.test.ts</code>, 16
@@ -221,9 +495,14 @@ handler (Arrow/Home/End) reusing <code>activateTab</code>
 <code>src/options/options.ts</code>.)</em></p></li>
 </ol>
 <hr />
-<h2 id="4-test-type-coverage-from-coverage_ledgermd-rev-2">4. Test-type
+<h2 id="test-type-coverage-from-coverage_ledger.md-rev-2">4. Test-type
 coverage (from <code>coverage_ledger.md</code> Rev 2)</h2>
 <table>
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 32%" />
+<col style="width: 32%" />
+</colgroup>
 <thead>
 <tr>
 <th>Test type</th>
@@ -310,12 +589,18 @@ connection failure if down — no fail-open)</td>
 <p><strong>Not yet covered (tracked Gaps in ledger):</strong> security
 for the detection/infohash paths (PENDING cells), <code>.torrent</code>
 infohash end-to-end Challenge, deeper WCAG (contrast/focus), 4 more
-locales toward the plan's 8, stress/chaos breadth beyond parsers+queue
+locales toward the plan’s 8, stress/chaos breadth beyond parsers+queue
 (scanner orchestrator, rate-limiter flood, tab-group at scale).</p>
 <hr />
-<h2 id="5-readiness-verdict-per-phase-19">5. Readiness verdict per phase
+<h2 id="readiness-verdict-per-phase-19">5. Readiness verdict per phase
 (1–9)</h2>
 <table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 23%" />
+<col style="width: 39%" />
+</colgroup>
 <thead>
 <tr>
 <th>Phase</th>
@@ -404,8 +689,7 @@ submission + remaining §11.4.65 doc siblings. NO CI/CD</td>
 sub-tasks plus explicitly enumerated PENDING items). No phase is fully
 PENDING.</p>
 <hr />
-<h2
-id="6-release-blockers--operator-required-items-1146--no-overclaim">6.
+<h2 id="release-blockers-operator-required-items-11.4.6-no-overclaim">6.
 Release blockers / operator-required items (§11.4.6 — no overclaim)</h2>
 <p>These MUST be resolved before store submission. They are honestly
 stated as <strong>blocked / operator-required</strong>, not silently
@@ -419,7 +703,7 @@ when the merge-service is down (no fail-open — §11.4.68). The full
 <strong>detect → send → torrent appears in qBittorrent</strong> path
 against a running <code>:7187</code> backend has <strong>no
 captured-evidence run</strong> (ledger Gap 1; Status.md Phase 4
-PENDING). This promotes "Send → :7187" from
+PENDING). This promotes “Send → :7187” from
 <code>AUTONOMOUS_DESIGNED</code> → <code>AUTONOMOUS_VERIFIED</code> and
 is a hard release gate. Also pending: BE-1 (CORS for extension origins)
 and BE-2 (<code>.torrent</code> multipart upload) backend work.</p></li>
@@ -451,7 +735,7 @@ detect→send→torrent-in-qBittorrent round-trip turning GREEN and (b) the
 operator store assets. The extension is <strong>code-complete +
 comprehensively tested, NOT yet released.</strong></p>
 <hr />
-<h2 id="7-honest-classification">7. Honest classification</h2>
+<h2 id="honest-classification">7. Honest classification</h2>
 <ul>
 <li><strong>What BobaLink IS (verified):</strong> code-complete through
 Phase 3; comprehensively multi-type tested (496/47 green, tsc 0, lint
@@ -467,13 +751,13 @@ media/submission are operator TODOs.</li>
 </ul>
 <hr />
 <h2
-id="8-statusmd--ledger-claims-that-could-not-be-fully-verified-at-write-time">8.
+id="status.md-ledger-claims-that-could-not-be-fully-verified-at-write-time">8.
 Status.md / ledger claims that could NOT be fully verified at write
 time</h2>
 <p>Per §11.4.6, items flagged rather than asserted:</p>
 <ol type="1">
 <li><p><strong>Locale count discrepancy (clarified, not a
-defect).</strong> Status.md Rev 6 says "4 total (en/ru/de/fr)" — this
+defect).</strong> Status.md Rev 6 says “4 total (en/ru/de/fr)” — this
 matches the <strong>committed + built</strong> state (built
 <code>.output/chrome-mv3/_locales/</code> = de/en/fr/ru). A raw
 <code>ls</code> of <code>src/public/_locales/</code> shows 5–6 dirs
@@ -490,9 +774,9 @@ ledger cite <strong>47</strong> spec files (the same-session
 disk. The 47 is the recorded vitest-run count and is the load-bearing
 figure; the 1-file delta is not material (a file may be
 un-collected/empty) but is noted for accuracy.</p></li>
-<li><p><strong>The "496 passed / tsc 0 / lint 0 / CI-EXT PASS" run was
+<li><p><strong>The “496 passed / tsc 0 / lint 0 / CI-EXT PASS” run was
 NOT re-executed in this docs-only ZERO-RISK session.</strong> These
-figures are cited from Status.md Rev 6 and <code>5e44c85</code>'s commit
+figures are cited from Status.md Rev 6 and <code>5e44c85</code>’s commit
 message as <strong>same-session recorded</strong> results from the
 implementing session — this report does not re-run them (strict
 docs-only scope). They are reported as cited evidence, not as freshly
@@ -515,8 +799,8 @@ feature × test-type matrix, Gaps</li>
 (de/en/fr/ru) + committed
 <code>extension/src/public/_locales/</code></li>
 </ul>
-<h2 id="release-candidate-tag--v100-rc-2026-06-11">Release-candidate tag
-— v1.0.0-rc (2026-06-11)</h2>
+<h2 id="release-candidate-tag-v1.0.0-rc-2026-06-11">Release-candidate
+tag — v1.0.0-rc (2026-06-11)</h2>
 <p>Tagged at HEAD <code>68ff4c0</code> after the §11.4.40 full retest
 GREEN on a clean baseline: vitest 559/52, tsc 0, lint 0, CI-EXT PASS, 6
 challenges PASS, credential-leak-audit PASS, live challenge honest-SKIP.
@@ -529,3 +813,5 @@ podman VM) + operator store assets (screenshots/promo). The
 <code>-rc</code> is loadable, packaged (chrome+firefox zips), and
 comprehensively
 unit/integration/security/stress/chaos/perf/a11y/UX/challenge-tested.</p>
+</body>
+</html>

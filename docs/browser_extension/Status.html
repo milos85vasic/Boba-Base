@@ -177,8 +177,8 @@
 </header>
 <h1 id="bobalink-browser-extension-status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 11 <strong>Last modified:</strong>
-2026-06-13T12:30:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 12 <strong>Last modified:</strong>
+2026-06-13T12:40:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
@@ -289,6 +289,17 @@ fixes</h3>
 <code>extension/ci-ext.sh</code> →
 <strong><code>CI-EXT: PASS</code></strong>, full suite <strong>761
 passed (761)</strong> (+129 over wave-10’s 632).</p>
+<blockquote>
+<p><strong>Wave-12 (2026-06-13):</strong> +38 more tests → <strong>799
+passed (799)</strong> (<code>CI-EXT: PASS</code>):
+<code>tests/security/crypto-tamper.test.ts</code> (17 — AES-256-GCM
+tamper/auth/fixed-IV),
+<code>tests/unit/link-scanner-coverage.test.ts</code> (10 — scheme
+allowlist/visibility/dedup),
+<code>tests/unit/highlight-manager.test.ts</code> (11 — content-script
+highlight DOM no-leak/idempotency). No product defects; 1 flaky
+scaling-ratio test hardened (BUGFIXES 27, §11.4.50/§11.4.118).</p>
+</blockquote>
 <ul>
 <li><strong>+129 new tests across 6 files</strong> (each anti-bluff; no
 absolute wall-clock thresholds):

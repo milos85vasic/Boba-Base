@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Status
 
-**Revision:** 11
-**Last modified:** 2026-06-13T12:30:00Z
+**Revision:** 12
+**Last modified:** 2026-06-13T12:40:00Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 browser extension that detects magnet links and `.torrent` URLs and forwards them to the Boba merge service on port 7187.
 **Authority:** master plan `docs/browser_extension/IMPLEMENTATION_PLAN.md` (9 phases).
 
@@ -68,6 +68,12 @@ loadable, §11.4.38 asset-verify pass, both store zips ≥10 KiB.
 
 Two further parallel-subagent waves (§11.4.103), verified together by `extension/ci-ext.sh`
 → **`CI-EXT: PASS`**, full suite **761 passed (761)** (+129 over wave-10's 632).
+
+> **Wave-12 (2026-06-13):** +38 more tests → **799 passed (799)** (`CI-EXT: PASS`):
+> `tests/security/crypto-tamper.test.ts` (17 — AES-256-GCM tamper/auth/fixed-IV),
+> `tests/unit/link-scanner-coverage.test.ts` (10 — scheme allowlist/visibility/dedup),
+> `tests/unit/highlight-manager.test.ts` (11 — content-script highlight DOM no-leak/idempotency).
+> No product defects; 1 flaky scaling-ratio test hardened (BUGFIXES 27, §11.4.50/§11.4.118).
 
 - **+129 new tests across 6 files** (each anti-bluff; no absolute wall-clock thresholds):
   - `tests/unit/orchestrator-dynamic-content.test.ts` (5) — MutationObserver dynamic-content

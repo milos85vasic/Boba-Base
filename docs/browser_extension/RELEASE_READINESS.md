@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Release Readiness Report
 
-**Revision:** 1
-**Last modified:** 2026-06-10T23:30:00Z
+**Revision:** 2
+**Last modified:** 2026-06-13T12:35:00Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 cross-browser
 extension that detects magnet links and `.torrent` URLs and forwards them to the
 Boba merge service on port 7187. This report assesses release readiness at
@@ -15,6 +15,40 @@ Boba merge service on port 7187. This report assesses release readiness at
 > distinguishes **code-complete + comprehensively tested** (what BobaLink is)
 > from **released** (what it is NOT — live-backend round-trip + store assets are
 > pending). Claims that could not be verified are flagged in §8.
+
+---
+
+## 0. CURRENT STATE — 2026-06-13 (Session 12; supersedes the Session-11 snapshot in §1–§8 below)
+
+The §1–§8 report below is the **Session-11 snapshot at HEAD `5e44c85`** and is
+retained for history. The current state has advanced materially:
+
+| Fact | Session-11 snapshot (below) | **Current (2026-06-13)** |
+|------|------------------------------|---------------------------|
+| HEAD | `5e44c85` | **`394cb6b`** (wave-11; wave-12 in flight) |
+| Tag | — | **`v1.0.0-rc`** (2026-06-11) |
+| Vitest suite | 527 / 49 | **799 / 65** (`ci-ext.sh` → `CI-EXT: PASS`; 761 at wave-11 + 38 wave-12) |
+| tsc / lint | 0 / 0 | **0 / 0** |
+| Builds + zips | chrome+firefox loadable, per-store zips | **unchanged — loadable + zips** |
+| Locales | "4 committed" (doc was self-contradictory) | **8 committed + built** (de/en/es/fr/it/ja/pt/ru) — the 8-locale plan target is **MET** |
+| Real defects found+fixed by the test waves | 5 | **13** (5 Session-11 + 8 Session-12 WCAG a11y) + 4 flaky FAIL-bluffs hardened |
+
+**Session-12 additions (waves 10–12, all `CI-EXT: PASS`, pushed to all 4 remotes):**
+- **+240 tests** over the 559 rc baseline across new suites: DoS-scaling (machine-independent
+  metamorphic), stress/chaos breadth (orchestrator/client/ratelimiter/tabgroup/client-resilience),
+  security (infohash, bencode parser robustness, crypto GCM-tamper/auth), a11y (popup+options
+  contrast/focus/reduced-motion), i18n locale-safety (8 locales), MutationObserver dynamic-content,
+  text-scanner, LinkScanner filtering, highlight-manager DOM.
+- **8 real WCAG 2.1 AA defects fixed** (popup + options theme tokens, button gradient, two
+  light-theme-invisible labels, reduced-motion blocks) — RED→GREEN, permanent guards (BUGFIXES 18–26).
+- **4 flaky FAIL-bluffs hardened** (§11.4.50): tight absolute wall-clock asserts → contention-robust
+  intrinsic statistics + a global 30 s `testTimeout`.
+
+**Release verdict is UNCHANGED from §6**: BobaLink is **code-complete + comprehensively tested +
+loadable + packaged**, but a store release still waits on the same **operator-gated** blockers —
+(1) the live-7187 `detect → send → torrent-in-qBittorrent` round-trip (needs `/Volumes/T7` shared
+into the podman VM + a running backend), (2) the headful MV3-load e2e (needs a real-display host),
+(3) store-listing media + submission. No autonomous work can clear these three.
 
 ---
 

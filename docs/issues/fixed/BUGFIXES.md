@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 6
-**Last modified:** 2026-06-13T09:15:00Z
+**Revision:** 7
+**Last modified:** 2026-06-13T12:40:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -534,3 +534,26 @@ users had no way to suppress it. **Fix:** added the standard reduced-motion bloc
 animation/transition durations) to BOTH `src/options/styles.css` and `src/popup/styles.css`.
 **Guard:** the a11y tests assert each stylesheet ships non-trivial motion AND a reduced-motion
 block (RED→GREEN on the fix).
+
+---
+
+## 2026-06-13 — BobaLink extension wave-12: scaling-ratio FAIL-bluff hardening
+
+Batch verified by `extension/ci-ext.sh` → **`CI-EXT: PASS`**, full suite **799 passed (799)**
+(+38 over wave-11: crypto-tamper 17, link-scanner-coverage 10, highlight-manager 11 — all green,
+no product defects). The one fix below was a flaky test exposed by the heavier 799-test load.
+
+### 27. infohash dedup scaling-ratio test — single-run + tiny-floor FAIL-bluff (§11.4.50)
+
+**Severity:** MEDIUM (flaky test — §11.4.1 FAIL-bluff; blocked the green gate). **Root cause
+(FACT):** `tests/security/infohash-detection-hostile.test.ts`'s relative-scaling guard used a
+SINGLE-run `tLarge / Math.max(tSmall, 0.05)`; on a sub-ms baseline the 0.05 ms floor made the
+ratio noise-dominated (**53.6** observed under full-suite contention vs ~4 intrinsic). Worse, the
+≤40 threshold was too loose to even catch the quadratic it guards (4× input → linear≈4,
+quadratic≈16 — both <40). Passed at 761 tests, tripped at 799. **Fix:** measure the MIN over 7
+reps at each size (intrinsic, contention-robust — host stalls only ADD time) and tighten the
+threshold to **10** (sits BETWEEN linear≈4 and quadratic≈16, so it now genuinely catches an O(n²)
+regression while never flaking). Verified stable 5/5 in isolation + full-suite `CI-EXT: PASS`.
+**Affected:** `extension/tests/security/infohash-detection-hostile.test.ts`. **Note:** completes
+the §11.4.118 flaky-scaling-test sweep — the sibling stress test already uses a median estimator +
+a 0.5 ms floor + a between-thresholds ratio (robust, unchanged).

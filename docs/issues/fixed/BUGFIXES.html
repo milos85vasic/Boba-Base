@@ -176,8 +176,8 @@
 <h1 class="title">BUGFIXES</h1>
 </header>
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
-2026-06-13T09:15:00Z</p>
+<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
+2026-06-13T12:40:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -731,5 +731,38 @@ durations) to BOTH <code>src/options/styles.css</code> and
 <code>src/popup/styles.css</code>. <strong>Guard:</strong> the a11y
 tests assert each stylesheet ships non-trivial motion AND a
 reduced-motion block (RED→GREEN on the fix).</p>
+<hr />
+<h2
+id="bobalink-extension-wave-12-scaling-ratio-fail-bluff-hardening">2026-06-13
+— BobaLink extension wave-12: scaling-ratio FAIL-bluff hardening</h2>
+<p>Batch verified by <code>extension/ci-ext.sh</code> →
+<strong><code>CI-EXT: PASS</code></strong>, full suite <strong>799
+passed (799)</strong> (+38 over wave-11: crypto-tamper 17,
+link-scanner-coverage 10, highlight-manager 11 — all green, no product
+defects). The one fix below was a flaky test exposed by the heavier
+799-test load.</p>
+<h3
+id="infohash-dedup-scaling-ratio-test-single-run-tiny-floor-fail-bluff-11.4.50">27.
+infohash dedup scaling-ratio test — single-run + tiny-floor FAIL-bluff
+(§11.4.50)</h3>
+<p><strong>Severity:</strong> MEDIUM (flaky test — §11.4.1 FAIL-bluff;
+blocked the green gate). <strong>Root cause (FACT):</strong>
+<code>tests/security/infohash-detection-hostile.test.ts</code>’s
+relative-scaling guard used a SINGLE-run
+<code>tLarge / Math.max(tSmall, 0.05)</code>; on a sub-ms baseline the
+0.05 ms floor made the ratio noise-dominated (<strong>53.6</strong>
+observed under full-suite contention vs ~4 intrinsic). Worse, the ≤40
+threshold was too loose to even catch the quadratic it guards (4× input
+→ linear≈4, quadratic≈16 — both &lt;40). Passed at 761 tests, tripped at
+799. <strong>Fix:</strong> measure the MIN over 7 reps at each size
+(intrinsic, contention-robust — host stalls only ADD time) and tighten
+the threshold to <strong>10</strong> (sits BETWEEN linear≈4 and
+quadratic≈16, so it now genuinely catches an O(n²) regression while
+never flaking). Verified stable 5/5 in isolation + full-suite
+<code>CI-EXT: PASS</code>. <strong>Affected:</strong>
+<code>extension/tests/security/infohash-detection-hostile.test.ts</code>.
+<strong>Note:</strong> completes the §11.4.118 flaky-scaling-test sweep
+— the sibling stress test already uses a median estimator + a 0.5 ms
+floor + a between-thresholds ratio (robust, unchanged).</p>
 </body>
 </html>
