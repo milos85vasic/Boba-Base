@@ -1,0 +1,107 @@
+<h1 id="qa-evidence-bobalink-session-11-2026-06-10">QA Evidence —
+BobaLink Session 11 (2026-06-10)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T11:55:33Z <strong>Run ID:</strong>
+<code>bobalink-2026-06-10-session11</code> <strong>Scope:</strong>
+BobaLink browser extension (<code>extension/</code>) — §11.4.83
+per-feature QA evidence directory for the 6-stream parallel session in
+flight at HEAD <code>15a9a61</code>.</p>
+<blockquote>
+<p>This directory holds the captured runtime evidence produced by the
+current parallel session’s test/build streams. Per §11.4.83, a feature
+is not “done” until its auditable runtime evidence lands here. Per
+§11.4.6, this README only describes the evidence that the session’s
+streams will deposit — it does NOT claim any artifact exists until the
+producing stream writes it.</p>
+</blockquote>
+<h2 id="evidence-this-session-is-expected-to-produce">Evidence this
+session is expected to produce</h2>
+<p>The 6-stream parallel session is mutating <code>extension/</code>
+concurrently with this status-doc stream. As each stream completes, it
+deposits its captured artifacts here:</p>
+<table>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 40%" />
+<col style="width: 36%" />
+</colgroup>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Producing stream</th>
+<th>What it proves</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vitest_run.log</code> + <code>coverage/</code></td>
+<td>unit/spec stream</td>
+<td>Same-session <code>vitest run --coverage</code> green capture
+(upgrades the Status.md PASS rows from commit-provenance to same-session
+evidence)</td>
+</tr>
+<tr>
+<td><code>integration_7187.log</code></td>
+<td>integration stream</td>
+<td>Live-backend integration against the Boba merge service on :7187
+(<code>require_backend(7187)</code> → SKIP-with-reason if down, never
+fail-open per §11.4.3/§11.4.68)</td>
+</tr>
+<tr>
+<td><code>security_review.md</code></td>
+<td>security stream</td>
+<td>No qBittorrent/tracker credentials sent from the extension; no
+embedded decrypt key; passkey log redaction; manifest least-privilege +
+MV3 CSP audit</td>
+</tr>
+<tr>
+<td><code>stress/</code> (<code>latency.json</code>,
+<code>categorised_errors.txt</code>)</td>
+<td>stress stream</td>
+<td>§11.4.85 sustained-load (≥100 iters / ≥30s) + concurrent contention
+(≥10 parallel) on the parsers/scanners with p50/p95/p99</td>
+</tr>
+<tr>
+<td><code>chaos/</code> (<code>recovery_trace.log</code>)</td>
+<td>chaos stream</td>
+<td>§11.4.85 backend-drop-mid-send → offline-queue recovery;
+storage-quota + SW-termination fault injection</td>
+</tr>
+<tr>
+<td><code>token_send_wire.txt</code></td>
+<td>E2E / token-send stream</td>
+<td>Wire capture of a real detect→send request to :7187
+(<code>POST /api/v1/download</code>), including the env-gated
+<code>X-Boba-Token</code>/<code>Bearer</code> header behaviour, and the
+resulting torrent row appearing in qBittorrent</td>
+</tr>
+<tr>
+<td><code>wxt_build/</code> (<code>build.log</code>,
+<code>manifest.json</code>, <code>bundle_listing.txt</code>)</td>
+<td>WXT build stream</td>
+<td><code>wxt build</code> → <code>.output/</code> artifact listing +
+generated MV3 manifest + bundle-size check (≤350 KB per Plan §T9.1);
+proves the §11.4.38 installable-asset chain</td>
+</tr>
+</tbody>
+</table>
+<h2 id="provenance-anchors-verified-at-session-start">Provenance anchors
+(verified at session start)</h2>
+<ul>
+<li>HEAD: <code>15a9a61</code> (Phase 3 capstone — background service
+worker message router).</li>
+<li>Recent history: <code>e8fde43</code> (Phase 3 shell + Phase 4 api
+leaf), <code>2e59572</code> (lint), <code>946c61e</code> (Phase 2
+orchestrator dedup), <code>fa03323</code> (Phase 2 wave-2),
+<code>7225470</code> (Phase 2 wave-1), <code>192b945</code> (env-gated
+<code>BOBA_API_TOKEN</code> security fix).</li>
+<li>Test corpus at session start: 287 Vitest cases / 22 spec files
+(<code>extension/tests/{unit,perf,stress}</code>).</li>
+</ul>
+<h2 id="anti-bluff-11.4.6-11.4.69">Anti-bluff (§11.4.6 / §11.4.69)</h2>
+<p>Each artifact above is described as EXPECTED, not present. No PASS
+may be claimed for any feature until its row’s artifact is actually
+written here by the producing stream and cites a user-observable outcome
+(a torrent row in qBittorrent, a green coverage report, a positive wire
+capture). Absent artifacts remain PENDING in
+<code>docs/browser_extension/Status.md</code>.</p>

@@ -1,4 +1,4 @@
-<h1 id="bobalink-browser-extension--status-summary">BobaLink Browser
+<h1 id="bobalink-browser-extension-status-summary">BobaLink Browser
 Extension — Status Summary</h1>
 <p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
 2026-06-10T20:05:00Z <strong>Companion of:</strong>
@@ -9,8 +9,8 @@ two-audience summary).</p>
 overclaim, no invented PASS (§11.4.6).</p>
 </blockquote>
 <hr />
-<h2 id="page-1--for-the-team-plain-language">Page 1 — For the team
-(plain language)</h2>
+<h2 id="page-1-for-the-team-plain-language">Page 1 — For the team (plain
+language)</h2>
 <p>BobaLink is a browser extension that spots torrent download links
 (magnet links and <code>.torrent</code> files) on web pages and sends
 them, with one click, to the Boba dashboard so the download starts
@@ -20,13 +20,13 @@ automatically.</p>
 <li>The detection engine is built and tested: it reads torrent links,
 computes the unique fingerprint of each torrent, and removes
 duplicates.</li>
-<li>The extension's visible parts are built: the page overlay that
-highlights links, the popup window with a "Send" button, the options
+<li>The extension’s visible parts are built: the page overlay that
+highlights links, the popup window with a “Send” button, the options
 screen, and the background worker that ties everything together and
 queues sends when offline.</li>
 <li><strong>The extension now builds into a loadable Chrome
 extension</strong> — running the build tool produces a working
-<code>chrome-mv3</code> folder, and every file the extension's manifest
+<code>chrome-mv3</code> folder, and every file the extension’s manifest
 references was verified present on disk.</li>
 <li><strong>The detect → send pipeline works</strong> — the client that
 talks to the Boba dashboard decrypts its stored token and sends the
@@ -34,18 +34,18 @@ download, and the dashboard side accepts it.</li>
 <li><strong>Sending a whole tab group at once is wired up</strong> —
 picking a tab group scans every tab, removes duplicates across the
 group, and sends them in one batch.</li>
-<li><strong>527 automated tests pass</strong> (across 49 test files);
+<li><strong>559 automated tests pass</strong> (across 52 test files);
 the code also passes its type check and its style/lint check with zero
 warnings.</li>
 </ul>
 <p><strong>What is still pending:</strong></p>
 <ul>
-<li><strong>Live-backend proof</strong> — actually clicking "Send" and
+<li><strong>Live-backend proof</strong> — actually clicking “Send” and
 seeing the torrent appear in qBittorrent — has not yet been recorded
 against a running dashboard on port 7187.</li>
 <li><strong>Packaging the extension into an installable, per-store
 file</strong> is not finished — the build tool is configured and
-produces a loadable folder, but the final manual "build and zip" gate
+produces a loadable folder, but the final manual “build and zip” gate
 and the published documentation are not yet wired up.</li>
 <li><strong>More languages</strong> (translations beyond English), the
 <strong>full accessibility/theme polish</strong>, and the <strong>fully
@@ -53,19 +53,24 @@ hardened credential/security model</strong> (pre-store leak audit, full
 pen-test suite) are still to come.</li>
 </ul>
 <p><strong>Team / operator actions:</strong> none required right now.
-The next milestones are the live "click → download appears" proof
+The next milestones are the live “click → download appears” proof
 against a running dashboard, and wiring the manual packaging gate so an
 installable extension exists.</p>
 <hr />
-<h2 id="page-2--for-software-engineers">Page 2 — For software
+<h2 id="page-2-for-software-engineers">Page 2 — For software
 engineers</h2>
 <p><strong>HEAD:</strong> <code>5edf6ac</code> ·
 <strong>Branch:</strong> <code>main</code> · <strong>Test
-corpus:</strong> 527 Vitest tests / 49 spec files — same-session
+corpus:</strong> 559 Vitest tests / 52 spec files — same-session
 <code>npx vitest run</code> → green; <code>npx tsc --noEmit</code>
 clean; <code>npm run lint</code> 0 errors / 0 warnings.</p>
 <h3 id="commit-provenance">Commit provenance</h3>
 <table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 21%" />
+<col style="width: 59%" />
+</colgroup>
 <thead>
 <tr>
 <th>Phase</th>
@@ -150,7 +155,7 @@ audit, full pen-test suite</td>
 <tr>
 <td>8 Testing-to-100% + Challenges + HelixQA</td>
 <td>IN-PROGRESS</td>
-<td>527 tests / 49 files green
+<td>559 tests / 52 files green
 (unit/perf/stress/chaos/integration/security/e2e); Challenge
 <code>challenges/extension/detect_and_forward_challenge.sh</code> drives
 the real orchestrator+client end-to-end, mutation-verified (no-op stub →
@@ -194,12 +199,12 @@ MV3).</li>
 <li>Plan: <code>docs/browser_extension/IMPLEMENTATION_PLAN.md</code> (9
 phases) + <code>_analysis/</code> + <code>_plan/</code>.</li>
 </ul>
-<h3 id="anti-bluff-caveat-1146">Anti-bluff caveat (§11.4.6)</h3>
-<p>The 527 figure IS a same-session recorded <code>npx vitest run</code>
+<h3 id="anti-bluff-caveat-11.4.6">Anti-bluff caveat (§11.4.6)</h3>
+<p>The 559 figure IS a same-session recorded <code>npx vitest run</code>
 green result (supersedes the prior 287/22 static spec-case count). The
 §11.4.38 loadable-artifact claim was verified by opening the produced
 <code>.output/chrome-mv3/manifest.json</code> and confirming every
-referenced asset exists on disk — not by "build exited 0". The Phase-7
+referenced asset exists on disk — not by “build exited 0”. The Phase-7
 decrypt path is proven RED→GREEN (ciphertext-on-the-wire pre-fix →
 decrypted-plaintext header post-fix). Live-backend end-to-end
 (detect→send→torrent-in-qBittorrent on a running :7187) remains

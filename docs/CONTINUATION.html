@@ -1,11 +1,11 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
-2026-06-10T05:12:40Z <strong>Session:</strong> 2026-06-10 (Session 10 —
-BobaLink browser extension: discovery + 9-phase plan + Phase 1 + backend
-BE-1/BE-2 + env-gated token security fix) <strong>Last commit:</strong>
-<code>192b945</code> (env-gated <code>BOBA_API_TOKEN</code> on the three
-:7187 download-write endpoints) <strong>Branch:</strong>
+<p><strong>Revision:</strong> 17 <strong>Last modified:</strong>
+2026-06-10T11:55:33Z <strong>Session:</strong> 2026-06-10 (Session 11 —
+BobaLink browser extension: Phases 2 &amp; 3 + shell + background SW +
+Phase 4 api leaf landed; 6-stream parallel session in flight)
+<strong>Last commit:</strong> <code>15a9a61</code> (Phase 3 capstone —
+background service worker message router) <strong>Branch:</strong>
 <code>main</code> <strong>Working tree:</strong> CLEAN (after the doc
 commit that carries this update)</p>
 <blockquote>
@@ -59,32 +59,90 @@ is set, requests must carry a matching <code>X-Boba-Token</code> /
 <strong>15 token-auth tests</strong>
 (<code>tests/unit/api_layer/test_download_token_auth.py</code>).</li>
 </ul>
+<h3
+id="what-landed-since-session-10-bobalink-phases-2-3-phase-4-leaf">What
+landed since Session 10 (BobaLink — Phases 2 &amp; 3 + Phase 4
+leaf)</h3>
+<ul>
+<li><strong><code>7225470</code></strong> — Phase 2 wave-1: parsers
+(<code>bencode.ts</code>/<code>magnet.ts</code>) + scanner
+base/site-db.</li>
+<li><strong><code>fa03323</code></strong> — Phase 2 wave-2:
+<code>.torrent</code>-file SHA-1 infohash + link/text scanners +
+perf/stress.</li>
+<li><strong><code>946c61e</code></strong> — Phase 2 complete: scanner
+orchestrator (cross-scanner dedup).</li>
+<li><strong><code>2e59572</code></strong> — lint test files clean; lint
+script extended to <code>tests/</code>.</li>
+<li><strong><code>e8fde43</code></strong> — Phase 3 shell + Phase 4 api
+leaf: <code>api/{boba-client,queue}</code> + content/popup/options.</li>
+<li><strong><code>15a9a61</code></strong> — Phase 3 capstone: background
+service worker (message router). <strong>HEAD.</strong></li>
+</ul>
 <h3 id="suite-status">Suite status</h3>
 <ul>
-<li>Full Python unit suite: <strong>4149 passed, 6 warnings in
-358.95s</strong> —
-<code>pytest tests/unit/ --import-mode=importlib</code> (this = 4134 +
-the 15 new token-auth tests). Latest evidence:
-<code>qa-results/tokenauth_fullsuite_*.log</code> (tail shows
-<code>4149 passed</code>).</li>
-<li>Extension Vitest: <strong>71 passed</strong> (foundation libs;
-commit <code>33a9815</code>).</li>
+<li>Full Python unit suite: <strong>4149 passed</strong> —
+<code>pytest tests/unit/ --import-mode=importlib</code> (Session 10
+baseline; unchanged this session). Evidence:
+<code>qa-results/tokenauth_fullsuite_*.log</code>.</li>
+<li>Extension Vitest corpus: <strong>379 passed across 33 spec
+files</strong> — same-session <code>npx vitest run</code>
+(<code>Tests 379 passed (379)</code>); <code>tsc --noEmit</code> clean;
+<code>npm run lint</code> 0/0. (+92 over the 287/22 baseline.) Build:
+<code>npx wxt build</code> → <strong>loadable
+<code>.output/chrome-mv3/</code></strong> (§11.4.38 — 8/8 manifest
+assets verified present).</li>
 </ul>
-<h3 id="current-phase-next-steps">Current phase + next steps</h3>
+<h3
+id="current-phase-next-steps-session-11-two-parallel-waves-landed-reviewed-checkpoint">Current
+phase + next steps (Session 11 — two parallel waves landed; reviewed
+checkpoint)</h3>
 <ul>
-<li><strong>Phase 2 (core detection &amp; parsing engine) IN
-PROGRESS</strong> — porting/refactoring the parsers
-(<code>bencode.ts</code>, <code>magnet.ts</code>, wiring the dead
-<code>torrent-file.ts</code> SHA-1 infohash) and scanners
-(<code>link-scanner</code>/<code>text-scanner</code>/<code>content/scanner</code>,
-merging the divergent <code>site-db.ts</code> selector tables,
-MutationObserver debounce, Shadow-DOM/iframe handling) into
-<code>extension/src/</code>, plus infohash dedup.</li>
-<li><strong>Next:</strong> finish Phase 2 scanner integrators +
-content/dedup, then Phases 3–9 (extension shell → Boba backend client →
-notifications/queue → secure token model → packaging → release) per
-<code>docs/browser_extension/IMPLEMENTATION_PLAN.md</code>. Live working
-state also tracked in <code>.remember/remember.md</code>.</li>
+<li><strong>Phases 1, 2, 3 + extension shell + background SW:
+COMPLETE.</strong></li>
+<li><strong>WXT build wiring: COMPLETE</strong> — entrypoints at
+<code>src/entrypoints/{background.ts,content.ts,popup/index.html,options/index.html}</code>
+(thin wrappers); <code>npx wxt build</code> → loadable
+<code>.output/chrome-mv3/</code>; matches derived from
+<code>SITE_SELECTORS</code> (24 hosts, no
+<code>&lt;all_urls&gt;</code>); least-privilege manifest; §11.4.38
+verified.</li>
+<li><strong>Phase 4 (backend integration): IN PROGRESS</strong> — api
+leaf @<code>e8fde43</code>; <strong>Phase-7 decrypt-before-send
+WIRED</strong> — <code>BobaClient.create()</code> decrypts the
+<code>encryptedBobaApiToken</code> bundle; <code>background</code> reads
+the session passphrase from <code>chrome.storage.session</code>, sends
+decrypted plaintext, default-open when locked (RED→GREEN;
+token/passphrase never logged). <strong>PENDING:</strong> live-7187
+integration (<code>require_backend(7187)</code>) +
+detect→send→torrent-in-qBittorrent E2E on the real backend.</li>
+<li><strong>Phase 5 (tab groups): IN PROGRESS</strong> — standalone
+<code>src/tabgroups/index.ts</code> (dedupe-across-group + batch
+dispatch) + 13 tests landed; <strong>PENDING:</strong> wire into
+<code>background</code> <code>MENU_SEND_GROUP</code> + add
+<code>tabGroups</code>/<code>tabs</code> perms (least-privilege review
+first).</li>
+<li><strong>Phase 6 (i18n): IN PROGRESS</strong> —
+<code>locale.test.ts</code> guards en-catalog completeness.
+<strong>Phase 7 (security): IN PROGRESS</strong> — decrypt path +
+<code>tests/security/*</code>
+(least-privilege/CSP/no-hardcoded-secret/secret-storage). <strong>Phase
+8: IN PROGRESS</strong> — 379/33 green; real-module Challenge
+<code>challenges/extension/detect_and_forward_challenge.sh</code>
+(mutation-verified); HelixQA BOBA-LINK-007; e2e is an honest
+operator-gated SKIP (sandbox can’t load extensions). <strong>Phase 9:
+PENDING</strong> — <code>ci-ext.sh</code> gate + per-store packaging +
+§11.4.65 doc siblings.</li>
+<li><strong>Next actions:</strong> (1) <strong>independent-subagent
+code-review re-pass</strong> for the correctness/security/build lenses
+once the platform subagent-dispatch throttle clears (done in-context
+this session; re-run before any release tag per §11.4.40); (2) Phase 5
+integration into background + perms; (3) Phase 4 live-7187 integration +
+E2E; (4) Phase 9 packaging; (5) regenerate
+<code>Status_Summary.md</code> + §11.4.65 HTML/PDF siblings for the
+browser_extension Status docs. Status:
+<code>docs/browser_extension/Status.md</code> (Rev 2, accurate). QA
+evidence: <code>docs/qa/bobalink-2026-06-10-session11/</code>.</li>
 </ul>
 <hr />
 <h2

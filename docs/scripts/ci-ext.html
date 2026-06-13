@@ -1,0 +1,111 @@
+<h1 id="extensionci-ext.sh">extension/ci-ext.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-10T15:30:00Z</p>
+<h2 id="overview">Overview</h2>
+<p><code>ci-ext.sh</code> is the <strong>manual</strong> pre-release
+gate for the BobaLink (Boba/BobaLink) browser extension. It is the ONLY
+release-readiness gate for the extension — there is no CI/CD pipeline
+and none may be created (Constitution Hard Stop §1 + project
+<code>CLAUDE.md</code> “CI IS MANUAL — permanent”). The operator runs it
+by hand before packaging/distributing the extension (Phase 9).</p>
+<p>It runs, in order, FAILing loudly on the first failing step, and
+prints <code>CI-EXT: PASS</code> only if every step succeeds:</p>
+<ol type="1">
+<li><strong>Type gate</strong> — <code>npx tsc --noEmit</code></li>
+<li><strong>Lint gate</strong> — <code>npm run lint</code> (eslint over
+<code>src/</code> + <code>tests/</code>)</li>
+<li><strong>Unit suite</strong> — <code>npx vitest run</code> (full
+suite; requires exit 0, no hardcoded pass-count)</li>
+<li><strong>Builds</strong> — <code>npx wxt build</code> (Chrome MV3) +
+<code>npx wxt build -b firefox</code>; both must succeed</li>
+<li><strong>§11.4.38 artifact asset verification</strong> (anti-bluff
+core — see below)</li>
+<li><strong>Packaging</strong> — <code>npm run zip</code> +
+<code>npm run zip:firefox</code>; each produced <code>.zip</code> must
+exist and exceed a minimum-size floor</li>
+</ol>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Run after <code>npm install</code> (a populated
+<code>node_modules</code>).</li>
+<li>Tools on <code>PATH</code>: <code>node</code>, <code>npx</code>,
+<code>jq</code>.</li>
+<li>npm scripts present in <code>package.json</code>: <code>lint</code>,
+<code>zip</code>, <code>zip:firefox</code> (all pre-existing).</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> extension <span class="kw">&amp;&amp;</span> <span class="fu">bash</span> ci-ext.sh</span></code></pre></div>
+<p>The script <code>cd</code>s to its own directory first, so it is
+invocable from any cwd. No CLI arguments, no env-var configuration.</p>
+<p>Exit codes: <code>0</code> all steps PASS (prints
+<code>CI-EXT: PASS</code>) · <code>1</code> first failing step (prints
+<code>CI-EXT: FAIL (step N)</code> to stderr).</p>
+<h2 id="artifact-asset-verification-anti-bluff-core">§11.4.38 artifact
+asset verification (anti-bluff core)</h2>
+<p>Step 5 is the §11.4.38 “installable-asset evidence” mandate made
+mechanical: a build can exit <code>0</code> and still ship a
+<strong>stripped / missing / empty</strong> asset. This step OPENS the
+produced artifact (it does NOT grep source) and proves every declared
+user-visible asset is present and non-degenerate:</p>
+<ul>
+<li><code>jq</code> reads <code>.output/chrome-mv3/manifest.json</code>
+and asserts <code>manifest_version == 3</code> and
+<code>background.service_worker</code> is declared.</li>
+<li>It enumerates every asset the manifest declares — icons, the service
+worker, content-script <code>js</code>/<code>css</code>, the action
+popup, the options page, web-accessible-resources, and (per Chrome’s
+rule) the <code>_locales/&lt;default_locale&gt;/messages.json</code>
+required whenever <code>default_locale</code> is set with
+<code>__MSG_*__</code> placeholders.</li>
+<li>For each referenced HTML page (popup/options) it also parses the
+page’s local <code>src="…"</code> / <code>href="…"</code> references
+(chunks/assets/icons), skipping
+<code>http(s):</code>/<code>data:</code>/<code>mailto:</code>/<code>#</code>
+refs.</li>
+<li>Every collected path is <code>stat</code>-checked: it must EXIST on
+disk and be NON-ZERO. Any missing or empty asset FAILs the step.</li>
+</ul>
+<p>This is genuinely anti-bluff: removing an icon from
+<code>.output</code>, or zeroing a content-script chunk, makes step 5
+FAIL (verified during authoring).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Concurrent checkout mutation (§11.4.84):</strong> transient
+files (e.g. a leftover <code>src/__leak_probe__.ts</code>) or in-flight
+test fixes in the working tree can flip steps 1–2 between runs. Re-run
+on a quiescent tree for a stable verdict.</li>
+<li><strong><code>_locales</code> packaging:</strong> if
+<code>default_locale</code> is set in the manifest but the build does
+not emit <code>_locales/&lt;locale&gt;/messages.json</code> (WXT copies
+<code>_locales</code> only from the <strong>public</strong> dir,
+e.g. <code>src/public/_locales/</code>, not <code>src/_locales</code>),
+step 5 FAILs — correctly, because Chrome rejects such an extension at
+load.</li>
+<li><strong>No fake PASS / no silent skip:</strong> a step that cannot
+run FAILs the gate (required-tool check FAILs hard). The script never
+converts a failure or a skipped step into a PASS.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<p>Pure read/build/package — no git, no commit, no container start.
+Writes only the <code>.output/</code> build + zip artifacts. Runs the
+full vitest suite offline (no live services). Stays well within
+host-safety limits.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>extension/package.json</code> — <code>lint</code>,
+<code>zip</code>, <code>zip:firefox</code> scripts the gate
+invokes.</li>
+<li><code>extension/wxt.config.ts</code> — manifest generator (build
+input).</li>
+<li>Constitution §11.4.38 — installable-asset evidence mandate (step
+5).</li>
+<li>Constitution §11.4.18 — script documentation mandate (this companion
+doc).</li>
+<li>Constitution Hard Stop §1 / project <code>CLAUDE.md</code> — CI is
+manual, no pipelines.</li>
+</ul>
+<p>Last verified: 2026-06-10 — steps 1–6 PASS, step 7 (§11.4.38)
+correctly FAILs on the genuine missing
+<code>_locales/en/messages.json</code> in the produced Chrome artifact
+(a real packaging defect outside this script’s scope to fix).</p>

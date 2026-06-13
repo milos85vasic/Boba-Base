@@ -1,183 +1,6 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>BUGFIXES</title>
-  <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
-    html {
-      color: #1a1a1a;
-      background-color: #fdfdfd;
-    }
-    body {
-      margin: 0 auto;
-      max-width: 36em;
-      padding-left: 50px;
-      padding-right: 50px;
-      padding-top: 50px;
-      padding-bottom: 50px;
-      hyphens: auto;
-      overflow-wrap: break-word;
-      text-rendering: optimizeLegibility;
-      font-kerning: normal;
-    }
-    @media (max-width: 600px) {
-      body {
-        font-size: 0.9em;
-        padding: 12px;
-      }
-      h1 {
-        font-size: 1.8em;
-      }
-    }
-    @media print {
-      html {
-        background-color: white;
-      }
-      body {
-        background-color: transparent;
-        color: black;
-        font-size: 12pt;
-      }
-      p, h2, h3 {
-        orphans: 3;
-        widows: 3;
-      }
-      h2, h3, h4 {
-        page-break-after: avoid;
-      }
-    }
-    p {
-      margin: 1em 0;
-    }
-    a {
-      color: #1a1a1a;
-    }
-    a:visited {
-      color: #1a1a1a;
-    }
-    img {
-      max-width: 100%;
-    }
-    svg {
-      height: auto;
-      max-width: 100%;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.4em;
-    }
-    h5, h6 {
-      font-size: 1em;
-      font-style: italic;
-    }
-    h6 {
-      font-weight: normal;
-    }
-    ol, ul {
-      padding-left: 1.7em;
-      margin-top: 1em;
-    }
-    li > ol, li > ul {
-      margin-top: 0;
-    }
-    blockquote {
-      margin: 1em 0 1em 1.7em;
-      padding-left: 1em;
-      border-left: 2px solid #e6e6e6;
-      color: #606060;
-    }
-    code {
-      white-space: pre-wrap;
-      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
-      font-size: 85%;
-      margin: 0;
-      hyphens: manual;
-    }
-    pre {
-      margin: 1em 0;
-      overflow: auto;
-    }
-    pre code {
-      padding: 0;
-      overflow: visible;
-      overflow-wrap: normal;
-    }
-    .sourceCode {
-     background-color: transparent;
-     overflow: visible;
-    }
-    hr {
-      border: none;
-      border-top: 1px solid #1a1a1a;
-      height: 1px;
-      margin: 1em 0;
-    }
-    table {
-      margin: 1em 0;
-      border-collapse: collapse;
-      width: 100%;
-      overflow-x: auto;
-      display: block;
-      font-variant-numeric: lining-nums tabular-nums;
-    }
-    table caption {
-      margin-bottom: 0.75em;
-    }
-    tbody {
-      margin-top: 0.5em;
-      border-top: 1px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    th {
-      border-top: 1px solid #1a1a1a;
-      padding: 0.25em 0.5em 0.25em 0.5em;
-    }
-    td {
-      padding: 0.125em 0.5em 0.25em 0.5em;
-    }
-    header {
-      margin-bottom: 4em;
-      text-align: center;
-    }
-    #TOC li {
-      list-style: none;
-    }
-    #TOC ul {
-      padding-left: 1.3em;
-    }
-    #TOC > ul {
-      padding-left: 0;
-    }
-    #TOC a:not(:hover) {
-      text-decoration: none;
-    }
-    span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    /* The extra [class] is a hack that increases specificity enough to
-       override a similar rule in reveal.js */
-    ul.task-list[class]{list-style: none;}
-    ul.task-list li input[type="checkbox"] {
-      font-size: inherit;
-      width: 0.8em;
-      margin: 0 0.8em 0.2em -1.6em;
-      vertical-align: middle;
-    }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-  </style>
-</head>
-<body>
-<header id="title-block-header">
-<h1 class="title">BUGFIXES</h1>
-</header>
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
-2026-06-13T14:10:00Z</p>
+<p><strong>Revision:</strong> 14 <strong>Last modified:</strong>
+2026-06-13T16:00:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -1070,5 +893,122 @@ combo; podman-compose support for 3.14 is not established). Native
 issue (fix: run podman-compose under a supported python, e.g. 3.11/3.12,
 or repair the podman-compose install), surfaced to the operator — the
 project’s <code>./start.sh</code> orchestrator code is now correct.</p>
-</body>
-</html>
+<p><strong>Clarifying footnote (2026-06-13, root-caused — supersedes the
+python@3.14 hypothesis above):</strong> the hang was NOT python@3.14.
+Captured live: the <code>vfkit</code> VM shares are
+<code>/Users,/private,/var/folders</code> and
+<code>podman machine inspect → Mounts:[]</code> — the repo lives on
+<code>/Volumes/T7</code> (external SSD), which is NOT shared into the
+podman applehv VM, so the first <code>podman create</code> stalls on an
+unreachable bind path. Proven by both python 3.13 AND 3.14 hanging
+identically (refuting the version theory). Fix (operator-authorised,
+§11.4.122): recreated the machine with
+<code>--volume /Volumes/T7:/Volumes/T7 --cpus 4 --memory 6144</code>;
+all 5 containers then booted healthy. On macOS the
+<code>network_mode: host</code> ports live in the VM, so an SSH
+<code>-L</code> tunnel (or <code>scripts/ensure-macos-tunnel.sh</code>)
+bridges :7186/:7187 to the Mac.</p>
+<h2
+id="qbittorrent-5.x-api-compat-download-round-trip-broken-login-add">2026-06-13
+— qBittorrent 5.x API-compat: download round-trip broken (login +
+add)</h2>
+<p>Surfaced by the live detect→send→torrent round-trip
+(<code>extension/tests/live/download-endpoint.live.test.ts</code>) once
+the stack was finally booted (qBittorrent <strong>v5.2.1</strong>,
+<code>linuxserver/qbittorrent:latest</code>). Three real PRODUCT defects
++ two test/challenge-quality items, each proven with captured live
+evidence. The whole class: the proxy + tests spoke legacy qBittorrent’s
+plain-text protocol (<code>200 "Ok."</code>) while the image speaks
+5.x’s JSON/204.</p>
+<h3
+id="proxy-reported-auth_failed-for-every-download-modern-qbittorrent-204-login">36.
+Proxy reported <code>auth_failed</code> for EVERY download — modern
+qBittorrent 204 login</h3>
+<p><strong>Severity:</strong> CRITICAL (no download could reach
+qBittorrent). <strong>Type:</strong> Bug. <strong>Root cause (FACT,
+captured live):</strong> <code>download-proxy/src/api/routes.py</code>
+judged WebUI login with
+<code>resp.status == 200 and body == "Ok."</code>. Modern qBittorrent
+(4.6+/5.x) returns <code>204 No Content</code> with an EMPTY body + the
+<code>QBT_SID</code> cookie (<code>HTTP/1.1 204</code> /
+<code>set-cookie: QBT_SID_7185=…</code>) → <code>status != 200</code>
+AND <code>body != "Ok."</code> → <code>{"status":"auth_failed"}</code>
+even though login succeeded. The defect lived at FOUR login call-sites
+(<code>/download</code>, <code>/download/upload</code>,
+<code>/downloads/active</code>, <code>/auth/qbittorrent</code>) — the
+active-downloads dashboard widget + credential-save endpoint were broken
+too. <strong>Fix:</strong> new
+<code>_qbit_login_succeeded(status, body, cookies)</code> —
+authoritative version-independent signal is “the server issued a
+<code>QBT_SID</code>/<code>QBT_SID_&lt;port&gt;</code> session cookie”
+(exact/prefix match, not a loose <code>"SID"</code> substring), legacy
+<code>Ok.</code> body as fallback; all four call-sites migrated.
+<strong>Affected:</strong>
+<code>download-proxy/src/api/routes.py</code>. <strong>Regression guard
+(§11.4.135):</strong> <code>tests/unit/test_qbit_login_compat.py</code>
+incl. <code>test_reproduces_pre_fix_defect_old_check_rejected_modern_204</code>
+(§11.4.115 polarity). <strong>Verified live:</strong>
+<code>POST /api/v1/auth/qbittorrent admin/admin</code> →
+<code>{"status":"authenticated","version":"v5.2.1"}</code>; the
+round-trip went from auth_failed-SKIP to GREEN.</p>
+<h3
+id="proxy-reported-failed-for-successful-adds-modern-qbittorrent-json-add-duplicate-409">37.
+Proxy reported <code>failed</code> for successful adds — modern
+qBittorrent JSON add + duplicate 409</h3>
+<p><strong>Severity:</strong> CRITICAL (a torrent that actually landed
+was reported failed). <strong>Type:</strong> Bug. <strong>Root cause
+(FACT, captured live):</strong> the add-success check was
+<code>body.lower().startswith("ok")</code>. Modern qBittorrent
+<code>/api/v2/torrents/add</code> returns a JSON summary, not
+<code>Ok.</code>:
+<code>{"added_torrent_ids":["&lt;hash&gt;"],"failure_count":0,"pending_count":0,"success_count":1}</code>
+— the torrent IS added (confirmed in <code>/torrents/info</code>) but
+the proxy saw <code>{</code> → <code>failed</code> with the JSON as
+<code>detail</code>. SECOND, related: BobaClient retries on
+network/timeout; attempt 1 added the magnet but was slow → client timed
+out → retry re-sent the SAME infohash → qBittorrent
+<code>409 Conflict</code> (duplicate) → <code>failed</code> (proven: one
+round-trip = TWO <code>/api/v1/download</code> requests in the proxy
+log). <strong>Fix:</strong> new
+<code>_qbit_add_succeeded(status, body)</code> — accepts the modern JSON
+(<code>added_torrent_ids</code> non-empty OR
+<code>success_count</code>/<code>pending_count</code> &gt;= 1, with
+defensive int-coercion so a malformed <code>"N/A"</code> count
+classifies as failure, never crashes the add path), legacy
+<code>Ok.</code>, AND treats <code>409 Conflict</code> as idempotent
+SUCCESS (the torrent IS present — makes a retried add safe); all three
+add call-sites migrated. <strong>Affected:</strong>
+<code>download-proxy/src/api/routes.py</code>. <strong>Regression
+guard:</strong> <code>tests/unit/test_qbit_login_compat.py</code>
+(modern-JSON / pending-only / all-failed / 409-duplicate /
+non-numeric-count / legacy-Ok / Fails / 415 cases). <strong>Verified
+live (×3, §11.4.50):</strong> the live round-trip +
+<code>challenges/extension/live_detect_send_challenge.sh</code> both
+GREEN — the synthetic infohash is INDEPENDENTLY confirmed present in
+qBittorrent’s real <code>/torrents/info</code>, then cleaned up
+(§11.4.14).</p>
+<h3
+id="live-test-challenge-could-not-cross-check-modern-qbittorrent-test-quality-no-product-defect">38.
+Live test + challenge could not cross-check modern qBittorrent
+(test-quality, no product defect)</h3>
+<p><strong>Severity:</strong> MEDIUM (anti-bluff held: tests SKIP’d
+honestly, never false-PASS’d). <strong>Type:</strong> Task. <strong>Root
+cause:</strong> (a) the live test’s own confirm-login helper had the
+same legacy <code>status==200 &amp;&amp; "Ok."</code> assumption → could
+not read <code>/torrents/info</code> on 204 → honest SKIP. (b) the
+challenge cross-checked qBittorrent at <code>:7185</code>
+(container-internal, not reachable off-host on macOS).
+<strong>Fix:</strong> (a) confirm-login now accepts 200/204 + keys on
+the <code>Set-Cookie</code> SID (mirrors the proxy); (b) challenge
+default qBittorrent base <code>:7185</code> → <code>:7186</code> (the
+documented WebUI access port, reachable on Linux + macOS).
+<strong>Affected:</strong>
+<code>extension/tests/live/download-endpoint.live.test.ts</code>,
+<code>challenges/extension/live_detect_send_challenge.sh</code>.
+<strong>Verified:</strong> both GREEN with real infohash-present
+confirmation + §11.4.14 cleanup.</p>
+<p><strong>Code review (§11.4.142/§11.4.134):</strong> an independent
+adversarial review caught 2 BLOCKING (2 of the 4 login sites initially
+missed; an <code>int("N/A")</code> crash path) + 1 warning (loose
+<code>"SID"</code> substring) — all remediated + guarded; the re-review
+returned a clean GO.</p>
