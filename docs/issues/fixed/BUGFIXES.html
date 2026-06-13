@@ -176,8 +176,8 @@
 <h1 class="title">BUGFIXES</h1>
 </header>
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 12 <strong>Last modified:</strong>
-2026-06-13T13:50:00Z</p>
+<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
+2026-06-13T14:10:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -1027,5 +1027,48 @@ INTENTIONAL and was left untouched per §11.4.122/§11.4.6.)
 <code>tests/performance/test_concurrent_search.py</code>.
 <strong>Verified:</strong> 7 SKIP cleanly, no container boot,
 <code>download-proxy/src/</code> unchanged.</p>
+<hr />
+<h2
+id="start.sh-boot-completely-broken-boba-ctl-up--d-flag-mismatch">2026-06-13
+— <code>start.sh</code> boot completely broken:
+<code>boba-ctl up -d</code> flag mismatch</h2>
+<h3
+id="start.sh-aborted-every-boot-at-the-container-start-step--d-flag">35.
+<code>./start.sh</code> aborted EVERY boot at the container-start step
+(<code>-d</code> flag)</h3>
+<p><strong>Severity:</strong> HIGH (the documented startup path
+<code>./start.sh</code> did not work at all). <strong>Root cause (FACT,
+found by actually running the boot):</strong>
+<code>start.sh::start_container()</code> runs the generic
+<code>$COMPOSE_CMD up -d</code>. In the default boba-ctl mode
+<code>$COMPOSE_CMD</code> = <code>scripts/boba-ctl.sh</code>, whose
+<code>up|down)</code> case did <code>exec "$BOBA_CTL_BIN" "$@"</code> —
+passing the compose-style <code>-d</code> (detach) straight to the
+<code>cmd/boba-ctl/boba-ctl</code> Go binary, whose <code>up</code>
+defines only <code>-profile</code>/<code>-wait</code>. Result every
+boot: <code>flag provided but not defined: -d</code> →
+<code>[ERROR] Failed to start container</code> → <code>exit 1</code>,
+before any container was created. <strong>Fix:</strong>
+<code>scripts/boba-ctl.sh</code>’s <code>up|down)</code> case now strips
+<code>-d</code>/<code>--detach</code> (boba-ctl runs detached by
+default) so it is a true drop-in for <code>compose up -d</code>.
+<strong>Affected:</strong> <code>scripts/boba-ctl.sh</code>.
+<strong>Verified:</strong> <code>bash -n</code> clean; the re-run boot
+proceeded past the step into <code>podman-compose ... up -d</code>
+(created <code>pod_boba</code>, pulled all images).</p>
+<p><strong>Operator-environment note (NOT a project defect, reported per
+§11.4.6):</strong> with the <code>-d</code> bug fixed, the boot then
+HUNG inside <code>podman-compose</code> itself — it created
+<code>pod_boba</code> + pulled every image, then froze at 0.0% CPU
+(<code>STAT=SN</code>) before creating any container.
+<code>podman</code> itself works (<code>podman run alpine</code> → OK),
+so the hang is specific to <code>podman-compose</code>, which on this
+host runs under homebrew <code>python@3.14</code> (a likely-incompatible
+combo; podman-compose support for 3.14 is not established). Native
+<code>podman compose</code> just delegates to the same
+<code>podman-compose</code>. This is an operator-environment toolchain
+issue (fix: run podman-compose under a supported python, e.g. 3.11/3.12,
+or repair the podman-compose install), surfaced to the operator — the
+project’s <code>./start.sh</code> orchestrator code is now correct.</p>
 </body>
 </html>

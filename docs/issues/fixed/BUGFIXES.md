@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 12
-**Last modified:** 2026-06-13T13:50:00Z
+**Revision:** 13
+**Last modified:** 2026-06-13T14:10:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -717,3 +717,29 @@ when the stack is up the class still runs every real assertion (status 200, late
 unchanged. (The benchmark suite's separate error-not-skip design is INTENTIONAL and was left untouched
 per §11.4.122/§11.4.6.) **Affected:** `tests/performance/test_concurrent_search.py`. **Verified:**
 7 SKIP cleanly, no container boot, `download-proxy/src/` unchanged.
+
+---
+
+## 2026-06-13 — `start.sh` boot completely broken: `boba-ctl up -d` flag mismatch
+
+### 35. `./start.sh` aborted EVERY boot at the container-start step (`-d` flag)
+
+**Severity:** HIGH (the documented startup path `./start.sh` did not work at all). **Root cause
+(FACT, found by actually running the boot):** `start.sh::start_container()` runs the generic
+`$COMPOSE_CMD up -d`. In the default boba-ctl mode `$COMPOSE_CMD` = `scripts/boba-ctl.sh`, whose
+`up|down)` case did `exec "$BOBA_CTL_BIN" "$@"` — passing the compose-style `-d` (detach) straight to
+the `cmd/boba-ctl/boba-ctl` Go binary, whose `up` defines only `-profile`/`-wait`. Result every boot:
+`flag provided but not defined: -d` → `[ERROR] Failed to start container` → `exit 1`, before any
+container was created. **Fix:** `scripts/boba-ctl.sh`'s `up|down)` case now strips `-d`/`--detach`
+(boba-ctl runs detached by default) so it is a true drop-in for `compose up -d`. **Affected:**
+`scripts/boba-ctl.sh`. **Verified:** `bash -n` clean; the re-run boot proceeded past the step into
+`podman-compose ... up -d` (created `pod_boba`, pulled all images).
+
+**Operator-environment note (NOT a project defect, reported per §11.4.6):** with the `-d` bug fixed,
+the boot then HUNG inside `podman-compose` itself — it created `pod_boba` + pulled every image, then
+froze at 0.0% CPU (`STAT=SN`) before creating any container. `podman` itself works (`podman run alpine`
+→ OK), so the hang is specific to `podman-compose`, which on this host runs under homebrew
+`python@3.14` (a likely-incompatible combo; podman-compose support for 3.14 is not established). Native
+`podman compose` just delegates to the same `podman-compose`. This is an operator-environment toolchain
+issue (fix: run podman-compose under a supported python, e.g. 3.11/3.12, or repair the podman-compose
+install), surfaced to the operator — the project's `./start.sh` orchestrator code is now correct.

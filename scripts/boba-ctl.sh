@@ -13,7 +13,19 @@ CMD="${1:-help}"
 
 case "$CMD" in
     up|down)
-        exec "$BOBA_CTL_BIN" "$@"
+        # Compose-compatibility: start.sh (and any docker/podman-compose caller)
+        # passes a `-d`/`--detach` flag. boba-ctl runs detached by default and its
+        # `up`/`down` Go flags are `-profile`/`-wait` only, so a bare `-d` aborts
+        # with "flag provided but not defined: -d" and the whole boot fails. Drop
+        # the detach flag here so boba-ctl is a true drop-in for compose `up -d`.
+        _bc_args=()
+        for _a in "$@"; do
+            case "$_a" in
+                -d|--detach|-d=true|--detach=true) continue ;;
+                *) _bc_args+=("$_a") ;;
+            esac
+        done
+        exec "$BOBA_CTL_BIN" "${_bc_args[@]}"
         ;;
     ps)
         exec "$BOBA_CTL_BIN" status
