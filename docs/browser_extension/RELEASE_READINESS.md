@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Release Readiness Report
 
-**Revision:** 2
-**Last modified:** 2026-06-13T12:35:00Z
+**Revision:** 3
+**Last modified:** 2026-06-13T13:00:00Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 cross-browser
 extension that detects magnet links and `.torrent` URLs and forwards them to the
 Boba merge service on port 7187. This report assesses release readiness at
@@ -49,6 +49,28 @@ loadable + packaged**, but a store release still waits on the same **operator-ga
 (1) the live-7187 `detect → send → torrent-in-qBittorrent` round-trip (needs `/Volumes/T7` shared
 into the podman VM + a running backend), (2) the headful MV3-load e2e (needs a real-display host),
 (3) store-listing media + submission. No autonomous work can clear these three.
+
+**Live-harness readiness (wave-14, 2026-06-13 — de-risks blocker #1 so it turns GREEN the moment
+the stack is up):**
+- `extension/tests/live/download-endpoint.live.test.ts` HARDENED: now drives the send via the real
+  `BobaClient`, **independently confirms the synthetic torrent actually appears in qBittorrent**
+  (login + `GET :7186/api/v2/torrents/info`, assert the infohash is in the live list — the real
+  "torrent-in-qBittorrent" assertion the test previously lacked), and **cleans up** the synthetic
+  torrent afterward (§11.4.14). Every live assertion is gated behind reachability → honest SKIP when
+  down (verified: `npm run test:live` SKIPs cleanly, tsc 0, lint 0), never a false PASS.
+- `challenges/extension/live_detect_send_challenge.sh` HARDENED: fixed a real §11.4.14 cleanup-race
+  defect (cleanup now keys off the proxy's authoritative `results[0].status=="added"`, not the
+  race-prone secondary probe, so no orphan synthetic torrent is left on PASS); clean SKIP (exit 77)
+  when down; `bash -n` + `sh -n` parseable; mutation-verified.
+- HelixQA bank `boba-bobalink.yaml` AUDITED correct + anti-bluff (4 live cases match the real
+  `routes.py` contract; the runner hard-FAILs on backend-down — no fail-open); canonical↔submodule
+  byte-identical (in sync).
+- **Backend deps for blocker #1 are already in place:** BE-1 (CORS for `chrome-extension://`
+  origins, via `_EXTENSION_ORIGIN_REGEX`) AND BE-2 (`.torrent` multipart upload at
+  `/api/v1/download/upload`) are **already implemented** in `download-proxy` — so the only thing
+  standing between here and a GREEN live round-trip is the operator bringing the stack up
+  (`./start.sh` + sharing `/Volumes/T7` into the podman VM). The §6.1 "BE-1/BE-2 pending" note below
+  is stale and superseded by this finding.
 
 ---
 

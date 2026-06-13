@@ -17,7 +17,11 @@ import { fileURLToPath } from "node:url";
  *
  * The live test self-guards: if the Boba merge service on :7187 is
  * unreachable it SKIPs with a clear reason rather than failing — so this
- * config is safe to run with or without the backend up.
+ * config is safe to run with or without the backend up. The same suite also
+ * INDEPENDENTLY confirms the sent torrent appears in qBittorrent's WebUI via
+ * the authenticated download proxy on :7186 (login → /api/v2/torrents/info)
+ * and cleans it up (/api/v2/torrents/delete) — each of those steps is gated
+ * behind its own reachability probe and SKIPs-with-reason if unavailable.
  *
  * Alternative (no sibling config): add the one line
  *   "tests/live/**\/*.live.test.ts"
@@ -35,8 +39,12 @@ export default defineConfig({
     // node env — this suite talks to a real HTTP service, no DOM needed.
     environment: "node",
     include: ["tests/live/**/*.live.test.ts"],
-    // Live calls (real qBittorrent add) can take a few seconds.
-    testTimeout: 30_000,
-    hookTimeout: 15_000,
+    // The full round-trip (send via BobaClient → raw-fetch body assert →
+    // qBittorrent login → torrents/info confirm) plus the afterAll cleanup
+    // (login → torrents/delete) make several real calls; give them headroom.
+    // These are vitest hang-guards, NOT pass/fail wall-clock thresholds — the
+    // test asserts no timing bound of its own.
+    testTimeout: 45_000,
+    hookTimeout: 20_000,
   },
 });

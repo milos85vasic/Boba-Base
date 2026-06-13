@@ -68,6 +68,17 @@ QBIT_PASS="${QBIT_PASS:-admin}"
 mkdir -p "$EVIDENCE_DIR"
 rm -f "$EVIDENCE"
 
+# Log into qBittorrent WebUI and echo the SID cookie; empty string on failure.
+# Factored into a function so neither the step-3 probe nor the cleanup repeats
+# the login command-substitution inline. Keep this comment free of shell
+# metacharacters; bash 3.2 POSIX mode used by macOS /bin/sh mis-lexes a stray
+# backtick or quote even inside a comment, per the section 11.4.67 sh -n rule.
+qbit_login() {
+  curl -sS -m 6 -c - -X POST "$QBIT_BASE/api/v2/auth/login" \
+    --data "username=${QBIT_USER}&password=${QBIT_PASS}" 2>/dev/null \
+    | awk '/SID/{print $7}' | tail -n1 || true
+}
+
 echo "=== live_detect_send_challenge (BobaLink Phase-4 LIVE :7187) ==="
 
 # --- Preconditions (honest blockers, never a faked PASS) ----------------------
@@ -166,9 +177,7 @@ echo "  body: $RESP_BODY"
 QBIT_FOUND="not_checked"
 QBIT_NOTE=""
 if curl -sS -m 5 -o /dev/null "$QBIT_BASE/" 2>/dev/null; then
-  SID="$(curl -sS -m 6 -c - -X POST "$QBIT_BASE/api/v2/auth/login" \
-         --data "username=${QBIT_USER}&password=${QBIT_PASS}" 2>/dev/null \
-         | awk '/SID/{print $7}' | tail -n1 || true)"
+  SID="$(qbit_login)"
   if [ -n "$SID" ]; then
     LIST="$(curl -sS -m 8 -H "Cookie: SID=$SID" \
             "$QBIT_BASE/api/v2/torrents/info?hashes=${INFOHASH}" 2>/dev/null || true)"
@@ -244,10 +253,20 @@ if body is not None:
         if not errors:
             verdict = "PASS"
 
+# Authoritative "did the proxy actually add a torrent?" signal — the per-url
+# verdict the proxy itself returned, not our separate (race-prone) qBit probe.
+# Cleanup keys off this so a magnet the proxy accepted is ALWAYS torn down.
+proxy_url_status = "none"
+if isinstance(body, dict):
+    results_list = body.get("results")
+    if isinstance(results_list, list) and results_list and isinstance(results_list[0], dict):
+        proxy_url_status = str(results_list[0].get("status") or "none")
+
 frag_obj = {
     "request": {"http_method": "POST", "url_path": "/api/v1/download"},
     "response": {"http": http, "body": body if body is not None else resp_body},
     "qbittorrent": {"infohash_lookup": qbit_found, "note": qbit_note},
+    "proxy_url_status": proxy_url_status,
     "assertions_failed": errors,
 }
 with open(frag, "w") as fh:
@@ -260,6 +279,15 @@ PY
 )"
 VERDICT="$(printf '%s' "$ASSERT_OUT" | head -n1)"
 
+# Pull the proxy authoritative per-url add verdict out of the assertion frag
+# written above, BEFORE write_evidence folds it into the evidence file. This is
+# the reliable proxy-added-a-torrent signal that drives the section 11.4.14
+# cleanup. A python one-liner avoids a second heredoc and keeps sh -n clean.
+PROXY_URL_STATUS="$(python3 -c 'import json,sys
+try: print((json.load(open(sys.argv[1])) or {}).get("proxy_url_status","none"))
+except Exception: print("none")' "$TMP_FRAG" 2>/dev/null || true)"
+[ -n "$PROXY_URL_STATUS" ] || PROXY_URL_STATUS="none"
+
 write_evidence "$VERDICT" "$TMP_FRAG"
 
 case "$VERDICT" in
@@ -267,12 +295,27 @@ case "$VERDICT" in
     echo "PASS: live :7187 /api/v1/download accepted the synthetic magnet and returned a"
     echo "      consistent REAL body (download_id, status, urls_count=1, results[1])."
     echo "      qBittorrent infohash lookup: $QBIT_FOUND ${QBIT_NOTE:+($QBIT_NOTE)}"
+    echo "      proxy per-url verdict: $PROXY_URL_STATUS"
     echo "      evidence: $EVIDENCE"
-    # Cleanup (§11.4.14): remove the synthetic torrent if it landed.
-    if [ "$QBIT_FOUND" = "present" ] && [ -n "${SID:-}" ]; then
-      curl -sS -m 6 -H "Cookie: SID=$SID" -X POST "$QBIT_BASE/api/v2/torrents/delete" \
-        --data "hashes=${INFOHASH}&deleteFiles=true" >/dev/null 2>&1 || true
-      echo "      cleanup: removed synthetic torrent $INFOHASH from qBittorrent"
+    # Cleanup per section 11.4.14: leave the target quiescent. The synthetic
+    # magnet is torn down whenever the proxy reported status added OR our own
+    # probe saw it present. Driving off the authoritative proxy verdict, not
+    # only the race-prone probe, guarantees we never orphan a torrent the proxy
+    # accepted but our separate torrents/info query happened to miss.
+    if [ "$PROXY_URL_STATUS" = "added" ] || [ "$QBIT_FOUND" = "present" ]; then
+      # The SID from the optional probe above may be empty when that probe
+      # raced or failed while the proxy still added the magnet; get a fresh one.
+      CLEAN_SID="${SID:-}"
+      if [ -z "$CLEAN_SID" ]; then
+        CLEAN_SID="$(qbit_login)"
+      fi
+      if [ -n "$CLEAN_SID" ]; then
+        curl -sS -m 6 -H "Cookie: SID=$CLEAN_SID" -X POST "$QBIT_BASE/api/v2/torrents/delete" \
+          --data "hashes=${INFOHASH}&deleteFiles=true" >/dev/null 2>&1 || true
+        echo "      cleanup (§11.4.14): removed synthetic torrent $INFOHASH from qBittorrent"
+      else
+        echo "      cleanup (§11.4.14): WARNING could not log into qBittorrent to remove $INFOHASH"
+      fi
     fi
     exit 0
     ;;

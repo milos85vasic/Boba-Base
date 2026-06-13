@@ -176,8 +176,8 @@
 <h1 class="title">BUGFIXES</h1>
 </header>
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
-2026-06-13T12:52:00Z</p>
+<p><strong>Revision:</strong> 9 <strong>Last modified:</strong>
+2026-06-13T13:00:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -801,5 +801,39 @@ still inflates every run including the min) and bumped reps
 scaling-ratio tests under concurrent load is MIN-of-reps, not
 median/mean — all six flaky-scaling fixes this session converge on
 it.</p>
+<hr />
+<h2
+id="bobalink-extension-wave-14-live-7187-harness-hardening">2026-06-13 —
+BobaLink extension wave-14: live-7187 harness hardening</h2>
+<p>Live-harness prep to de-risk the operator-gated live round-trip. The
+default suite is unchanged at <strong>814 passed (814)</strong>
+(<code>CI-EXT: PASS</code>); the live test + challenge are out-of-suite
+and operator-run.</p>
+<h3
+id="live_detect_send-challenge-11.4.14-cleanup-race-leaves-an-orphan-synthetic-torrent">29.
+live_detect_send challenge — §11.4.14 cleanup-race leaves an orphan
+synthetic torrent</h3>
+<p><strong>Severity:</strong> MEDIUM (anti-bluff/hygiene defect in a
+live Challenge). <strong>Root cause (FACT):</strong>
+<code>challenges/extension/live_detect_send_challenge.sh</code> cleaned
+up the synthetic torrent it adds ONLY when its secondary qBittorrent
+<code>torrents/info</code> probe reported <code>present</code>. But the
+proxy adds the magnet itself; that separate probe can race/auth-fail and
+read <code>absent</code> while the magnet IS added — so a PASS could
+leave an orphan synthetic torrent in qBittorrent (a §11.4.14 quiescence
+violation). <strong>Fix:</strong> cleanup now keys off the
+<strong>proxy’s authoritative per-url verdict</strong>
+(<code>results[0].status == "added"</code>) OR the probe, re-logs-in for
+a fresh SID when needed, and warns honestly if delete-login fails (never
+reds the run at teardown). Also fixed a <code>/bin/sh -n</code> parse
+issue (apostrophe/metachar in added comments — §11.4.67).
+<strong>Affected:</strong>
+<code>challenges/extension/live_detect_send_challenge.sh</code>.
+<strong>Verification:</strong> clean SKIP (exit 77) when the backend is
+down (no fail-open), <code>bash -n</code> + <code>sh -n</code> PASS,
+mutation-verified (no-op/partial response stubs → FAIL); the cleanup
+trigger confirmed to fire on a simulated proxy-<code>added</code> +
+probe-<code>absent</code> response (the old code would not). The up-path
+runs when the operator brings the stack up.</p>
 </body>
 </html>

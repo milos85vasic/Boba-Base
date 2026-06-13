@@ -177,8 +177,8 @@
 </header>
 <h1 id="bobalink-browser-extension-release-readiness-report">BobaLink
 Browser Extension — Release Readiness Report</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-06-13T12:35:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-06-13T13:00:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 cross-browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187. This report
@@ -284,6 +284,37 @@ packaged</strong>, but a store release still waits on the same
 (2) the headful MV3-load e2e (needs a real-display host), (3)
 store-listing media + submission. No autonomous work can clear these
 three.</p>
+<p><strong>Live-harness readiness (wave-14, 2026-06-13 — de-risks
+blocker #1 so it turns GREEN the moment the stack is up):</strong> -
+<code>extension/tests/live/download-endpoint.live.test.ts</code>
+HARDENED: now drives the send via the real <code>BobaClient</code>,
+<strong>independently confirms the synthetic torrent actually appears in
+qBittorrent</strong> (login +
+<code>GET :7186/api/v2/torrents/info</code>, assert the infohash is in
+the live list — the real “torrent-in-qBittorrent” assertion the test
+previously lacked), and <strong>cleans up</strong> the synthetic torrent
+afterward (§11.4.14). Every live assertion is gated behind reachability
+→ honest SKIP when down (verified: <code>npm run test:live</code> SKIPs
+cleanly, tsc 0, lint 0), never a false PASS. -
+<code>challenges/extension/live_detect_send_challenge.sh</code>
+HARDENED: fixed a real §11.4.14 cleanup-race defect (cleanup now keys
+off the proxy’s authoritative <code>results[0].status=="added"</code>,
+not the race-prone secondary probe, so no orphan synthetic torrent is
+left on PASS); clean SKIP (exit 77) when down; <code>bash -n</code> +
+<code>sh -n</code> parseable; mutation-verified. - HelixQA bank
+<code>boba-bobalink.yaml</code> AUDITED correct + anti-bluff (4 live
+cases match the real <code>routes.py</code> contract; the runner
+hard-FAILs on backend-down — no fail-open); canonical↔︎submodule
+byte-identical (in sync). - <strong>Backend deps for blocker #1 are
+already in place:</strong> BE-1 (CORS for
+<code>chrome-extension://</code> origins, via
+<code>_EXTENSION_ORIGIN_REGEX</code>) AND BE-2 (<code>.torrent</code>
+multipart upload at <code>/api/v1/download/upload</code>) are
+<strong>already implemented</strong> in <code>download-proxy</code> — so
+the only thing standing between here and a GREEN live round-trip is the
+operator bringing the stack up (<code>./start.sh</code> + sharing
+<code>/Volumes/T7</code> into the podman VM). The §6.1 “BE-1/BE-2
+pending” note below is stale and superseded by this finding.</p>
 <hr />
 <h2 id="build-state-head-5e44c85">1. Build state (HEAD
 <code>5e44c85</code>)</h2>

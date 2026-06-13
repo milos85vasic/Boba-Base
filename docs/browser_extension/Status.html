@@ -177,8 +177,8 @@
 </header>
 <h1 id="bobalink-browser-extension-status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
-2026-06-13T12:48:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 14 <strong>Last modified:</strong>
+2026-06-13T13:00:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
@@ -316,6 +316,20 @@ suites against production code. Also: a 6th flaky scaling test hardened
 intrinsic-cost estimator). Autonomous test-coverage is now saturated;
 remaining release work is operator-gated (live-7187 round-trip, headful
 e2e, store assets).</p>
+<p><strong>Wave-14 (2026-06-13) — live-7187 harness prep</strong>
+(de-risks the #1 operator-gated blocker so it turns GREEN the moment the
+stack is up): the live vitest test now drives the real
+<code>BobaClient</code> + <strong>independently confirms the synthetic
+torrent appears in qBittorrent</strong>
+(<code>:7186 /api/v2/torrents/info</code>) + <strong>cleans it
+up</strong> (§11.4.14), all SKIP-safe; the
+<code>live_detect_send_challenge.sh</code> had a real §11.4.14
+cleanup-race defect FIXED (BUGFIXES 29); the HelixQA bank audited
+correct + in sync; and BE-1 (CORS) + BE-2 (<code>.torrent</code> upload)
+were found <strong>already implemented</strong> in the backend (see
+RELEASE_READINESS Rev 3). Default suite unchanged at <strong>814 passed
+(814)</strong> (the live test/challenge are out-of-suite, operator-run
+when the backend is up).</p>
 </blockquote>
 <ul>
 <li><strong>+129 new tests across 6 files</strong> (each anti-bluff; no

@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 8
-**Last modified:** 2026-06-13T12:52:00Z
+**Revision:** 9
+**Last modified:** 2026-06-13T13:00:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -581,3 +581,26 @@ a genuine O(n²) regression still inflates every run including the min) and bump
 full-suite `CI-EXT: PASS`. **Affected:** `extension/tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts`.
 **Lesson (§11.4.118):** the robust estimator for CPU-bound scaling-ratio tests under concurrent load
 is MIN-of-reps, not median/mean — all six flaky-scaling fixes this session converge on it.
+
+---
+
+## 2026-06-13 — BobaLink extension wave-14: live-7187 harness hardening
+
+Live-harness prep to de-risk the operator-gated live round-trip. The default suite is unchanged at
+**814 passed (814)** (`CI-EXT: PASS`); the live test + challenge are out-of-suite and operator-run.
+
+### 29. live_detect_send challenge — §11.4.14 cleanup-race leaves an orphan synthetic torrent
+
+**Severity:** MEDIUM (anti-bluff/hygiene defect in a live Challenge). **Root cause (FACT):**
+`challenges/extension/live_detect_send_challenge.sh` cleaned up the synthetic torrent it adds ONLY
+when its secondary qBittorrent `torrents/info` probe reported `present`. But the proxy adds the
+magnet itself; that separate probe can race/auth-fail and read `absent` while the magnet IS added —
+so a PASS could leave an orphan synthetic torrent in qBittorrent (a §11.4.14 quiescence violation).
+**Fix:** cleanup now keys off the **proxy's authoritative per-url verdict** (`results[0].status ==
+"added"`) OR the probe, re-logs-in for a fresh SID when needed, and warns honestly if delete-login
+fails (never reds the run at teardown). Also fixed a `/bin/sh -n` parse issue (apostrophe/metachar
+in added comments — §11.4.67). **Affected:** `challenges/extension/live_detect_send_challenge.sh`.
+**Verification:** clean SKIP (exit 77) when the backend is down (no fail-open), `bash -n` + `sh -n`
+PASS, mutation-verified (no-op/partial response stubs → FAIL); the cleanup trigger confirmed to fire
+on a simulated proxy-`added` + probe-`absent` response (the old code would not). The up-path runs
+when the operator brings the stack up.
