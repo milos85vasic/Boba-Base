@@ -35,7 +35,11 @@
 #
 # Inputs:   none (synthetic magnet, no credentials in the request).
 #           Optional env: BOBA_BASE_URL (default http://localhost:7187),
-#                         QBIT_BASE_URL (default http://localhost:7185),
+#                         QBIT_BASE_URL (default http://localhost:7186 — the
+#                         download-proxy front for the qBittorrent WebUI per the
+#                         Port Map; :7185 is container-internal and not reachable
+#                         off-host on macOS, so the proxy port is the portable
+#                         cross-check + cleanup endpoint),
 #                         QBIT_USER/QBIT_PASS (default admin/admin).
 # Outputs:  challenges/extension/.evidence/live_detect_send.json (captured
 #           evidence: probe result, request, REAL response body, qBit lookup);
@@ -60,7 +64,7 @@ BOBA_BASE="${BOBA_BASE%/}"
 HEALTH_URL="$BOBA_BASE/health"
 DOWNLOAD_URL="$BOBA_BASE/api/v1/download"
 
-QBIT_BASE="${QBIT_BASE_URL:-http://localhost:7185}"
+QBIT_BASE="${QBIT_BASE_URL:-http://localhost:7186}"
 QBIT_BASE="${QBIT_BASE%/}"
 QBIT_USER="${QBIT_USER:-admin}"
 QBIT_PASS="${QBIT_PASS:-admin}"

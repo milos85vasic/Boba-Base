@@ -597,9 +597,9 @@ async def get_active_downloads():  # type: ignore[no-untyped-def]
                 data={"username": qbit_user, "password": qbit_pass},
             ) as resp:
                 login_text = await resp.text()
-                if resp.status != 200 or login_text.strip() != "Ok.":
-                    return {"downloads": [], "count": 0, "error": "auth failed"}
                 cookies = resp.cookies
+                if not _qbit_login_succeeded(resp.status, login_text, cookies):
+                    return {"downloads": [], "count": 0, "error": "auth failed"}
 
             async with session.get(f"{qbit_url}/api/v2/torrents/info", cookies=cookies) as resp:
                 if resp.status == 200:
@@ -651,8 +651,8 @@ async def auth_qbittorrent(request: Request):  # type: ignore[no-untyped-def]
             ) as resp,
         ):
             login_text = await resp.text()
-            if resp.status == 200 and login_text.strip() == "Ok.":
-                cookies = resp.cookies
+            cookies = resp.cookies
+            if _qbit_login_succeeded(resp.status, login_text, cookies):
                 async with session.get(f"{qbit_url}/api/v2/app/version", cookies=cookies) as vresp:
                     version = await vresp.text() if vresp.status == 200 else "unknown"
 
@@ -717,6 +717,77 @@ def _get_qbit_username():  # type: ignore[no-untyped-def]
     if saved:
         return saved.get("username", os.getenv("QBITTORRENT_USER", "admin"))
     return os.getenv("QBITTORRENT_USER", "admin")
+
+
+def _qbit_login_succeeded(status, body, cookies):  # type: ignore[no-untyped-def]
+    """Detect a successful qBittorrent ``/api/v2/auth/login`` across versions.
+
+    Legacy qBittorrent (<4.6) replies ``200`` with body ``Ok.``; modern
+    qBittorrent (4.6+/5.x, as shipped by ``linuxserver/qbittorrent:latest``)
+    replies ``204 No Content`` with an EMPTY body. Both issue the ``QBT_SID``
+    session cookie on success; a rejected login replies ``200 Fails.`` with no
+    cookie. The authoritative, version-independent success signal is therefore
+    "the server issued a session cookie", with the legacy ``Ok.`` body kept as
+    a fallback. Requiring ``status == 200 and body == 'Ok.'`` (the old check)
+    mis-classifies the modern 204 as ``auth_failed`` even though login worked —
+    the real defect surfaced by the live :7187 round-trip.
+    """
+    if status not in (200, 204):
+        return False
+    # qBittorrent's session cookie is ``QBT_SID`` (or ``QBT_SID_<port>``). Match
+    # it exactly/by prefix — a loose ``"SID" in key`` substring test would treat
+    # a foreign ``*SID*`` cookie (PHPSESSID, BSSID, …) as a successful login.
+    has_session_cookie = any(c.key == "QBT_SID" or c.key.startswith("QBT_SID_") for c in cookies.values())
+    return has_session_cookie or body.strip() == "Ok."
+
+
+def _qbit_add_succeeded(status, body):  # type: ignore[no-untyped-def]
+    """Detect a successful qBittorrent ``/api/v2/torrents/add`` across versions.
+
+    Legacy qBittorrent (<5.x) replies ``200`` with body ``Ok.`` (``Fails.`` on
+    rejection). Modern qBittorrent (5.x, as shipped by
+    ``linuxserver/qbittorrent:latest``) replies ``200`` with a JSON summary::
+
+        {"added_torrent_ids":["<hash>"],"failure_count":0,
+         "pending_count":0,"success_count":1}
+
+    The torrent landed when ``success_count`` or ``pending_count`` is >= 1, or
+    ``added_torrent_ids`` is non-empty (``pending_count`` covers a magnet whose
+    metadata is still resolving — it IS accepted into the session). Requiring
+    ``body.lower().startswith('ok')`` mis-classifies the modern JSON success as
+    ``failed`` even though the torrent was added — the real defect surfaced by
+    the live :7187 round-trip.
+
+    A ``409 Conflict`` is also a SUCCESS: qBittorrent returns it when the
+    torrent is already in the session (a duplicate add). Adding is idempotent
+    from the user's view — the torrent IS present — and a client retry of this
+    non-idempotent POST (e.g. BobaClient retrying after attempt 1 timed out
+    client-side but already landed server-side) produces exactly this. Treating
+    the duplicate as success makes the add retry-safe.
+    """
+    if status == 409:
+        return True
+    if status not in (200, 201):
+        return False
+    text = (body or "").strip()
+    if text.lower().startswith("ok"):
+        return True
+    try:
+        payload = json.loads(text)
+    except (ValueError, TypeError):
+        return False
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("added_torrent_ids"):
+        return True
+    # Coerce defensively — a malformed body like ``{"success_count":"N/A"}`` must
+    # classify as failure, never raise (``int("N/A")`` would crash the add path).
+    try:
+        success = int(payload.get("success_count") or 0)
+        pending = int(payload.get("pending_count") or 0)
+    except (ValueError, TypeError):
+        return False
+    return success >= 1 or pending >= 1
 
 
 TRACKER_DOMAINS = (
@@ -814,13 +885,13 @@ async def initiate_download(
                 data={"username": qbit_user, "password": qbit_pass},
             ) as resp:
                 login_text = await resp.text()
-                if resp.status != 200 or login_text.strip() != "Ok.":
+                qbit_cookies = resp.cookies
+                if not _qbit_login_succeeded(resp.status, login_text, qbit_cookies):
                     return {
                         "download_id": download_id,
                         "status": "auth_failed",
                         "results": [],
                     }
-                qbit_cookies = resp.cookies
 
             for url in request.download_urls[:5]:
                 try:
@@ -858,7 +929,7 @@ async def initiate_download(
                                     # ``Ok.`` on success and ``Fails.`` on
                                     # rejection — so status alone lies.
                                     body = (await add_resp.text()).strip()
-                                    if add_resp.status in (200, 201) and body.lower().startswith("ok"):
+                                    if _qbit_add_succeeded(add_resp.status, body):
                                         results.append(
                                             {
                                                 "url": url,
@@ -883,7 +954,7 @@ async def initiate_download(
                             cookies=qbit_cookies,
                         ) as resp:
                             body = (await resp.text()).strip()
-                            if resp.status in (200, 201) and body.lower().startswith("ok"):
+                            if _qbit_add_succeeded(resp.status, body):
                                 results.append({"url": url, "status": "added"})
                             else:
                                 results.append(
@@ -984,13 +1055,13 @@ async def upload_torrent(
                 data={"username": qbit_user, "password": qbit_pass},
             ) as resp:
                 login_text = await resp.text()
-                if resp.status != 200 or login_text.strip() != "Ok.":
+                qbit_cookies = resp.cookies
+                if not _qbit_login_succeeded(resp.status, login_text, qbit_cookies):
                     return {
                         "download_id": download_id,
                         "status": "auth_failed",
                         "filename": filename,
                     }
-                qbit_cookies = resp.cookies
 
             form = aiohttp.FormData()
             form.add_field(
@@ -1005,7 +1076,7 @@ async def upload_torrent(
                 cookies=qbit_cookies,
             ) as add_resp:
                 body = (await add_resp.text()).strip()
-                added = add_resp.status in (200, 201) and body.lower().startswith("ok")
+                added = _qbit_add_succeeded(add_resp.status, body)
     except Exception as e:
         return {
             "download_id": download_id,

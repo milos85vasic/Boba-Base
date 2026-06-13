@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 13
-**Last modified:** 2026-06-13T14:10:00Z
+**Revision:** 14
+**Last modified:** 2026-06-13T16:00:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -743,3 +743,74 @@ froze at 0.0% CPU (`STAT=SN`) before creating any container. `podman` itself wor
 `podman compose` just delegates to the same `podman-compose`. This is an operator-environment toolchain
 issue (fix: run podman-compose under a supported python, e.g. 3.11/3.12, or repair the podman-compose
 install), surfaced to the operator — the project's `./start.sh` orchestrator code is now correct.
+
+**Clarifying footnote (2026-06-13, root-caused — supersedes the python@3.14 hypothesis above):** the
+hang was NOT python@3.14. Captured live: the `vfkit` VM shares are `/Users,/private,/var/folders`
+and `podman machine inspect → Mounts:[]` — the repo lives on `/Volumes/T7` (external SSD), which is
+NOT shared into the podman applehv VM, so the first `podman create` stalls on an unreachable bind
+path. Proven by both python 3.13 AND 3.14 hanging identically (refuting the version theory). Fix
+(operator-authorised, §11.4.122): recreated the machine with `--volume /Volumes/T7:/Volumes/T7
+--cpus 4 --memory 6144`; all 5 containers then booted healthy. On macOS the `network_mode: host`
+ports live in the VM, so an SSH `-L` tunnel (or `scripts/ensure-macos-tunnel.sh`) bridges
+:7186/:7187 to the Mac.
+
+## 2026-06-13 — qBittorrent 5.x API-compat: download round-trip broken (login + add)
+
+Surfaced by the live detect→send→torrent round-trip
+(`extension/tests/live/download-endpoint.live.test.ts`) once the stack was finally booted (qBittorrent
+**v5.2.1**, `linuxserver/qbittorrent:latest`). Three real PRODUCT defects + two test/challenge-quality
+items, each proven with captured live evidence. The whole class: the proxy + tests spoke legacy
+qBittorrent's plain-text protocol (`200 "Ok."`) while the image speaks 5.x's JSON/204.
+
+### 36. Proxy reported `auth_failed` for EVERY download — modern qBittorrent 204 login
+
+**Severity:** CRITICAL (no download could reach qBittorrent). **Type:** Bug.
+**Root cause (FACT, captured live):** `download-proxy/src/api/routes.py` judged WebUI login with
+`resp.status == 200 and body == "Ok."`. Modern qBittorrent (4.6+/5.x) returns `204 No Content` with an
+EMPTY body + the `QBT_SID` cookie (`HTTP/1.1 204` / `set-cookie: QBT_SID_7185=…`) → `status != 200`
+AND `body != "Ok."` → `{"status":"auth_failed"}` even though login succeeded. The defect lived at
+FOUR login call-sites (`/download`, `/download/upload`, `/downloads/active`, `/auth/qbittorrent`) —
+the active-downloads dashboard widget + credential-save endpoint were broken too.
+**Fix:** new `_qbit_login_succeeded(status, body, cookies)` — authoritative version-independent signal
+is "the server issued a `QBT_SID`/`QBT_SID_<port>` session cookie" (exact/prefix match, not a loose
+`"SID"` substring), legacy `Ok.` body as fallback; all four call-sites migrated.
+**Affected:** `download-proxy/src/api/routes.py`. **Regression guard (§11.4.135):**
+`tests/unit/test_qbit_login_compat.py` incl. `test_reproduces_pre_fix_defect_old_check_rejected_modern_204`
+(§11.4.115 polarity). **Verified live:** `POST /api/v1/auth/qbittorrent admin/admin` →
+`{"status":"authenticated","version":"v5.2.1"}`; the round-trip went from auth_failed-SKIP to GREEN.
+
+### 37. Proxy reported `failed` for successful adds — modern qBittorrent JSON add + duplicate 409
+
+**Severity:** CRITICAL (a torrent that actually landed was reported failed). **Type:** Bug.
+**Root cause (FACT, captured live):** the add-success check was `body.lower().startswith("ok")`.
+Modern qBittorrent `/api/v2/torrents/add` returns a JSON summary, not `Ok.`:
+`{"added_torrent_ids":["<hash>"],"failure_count":0,"pending_count":0,"success_count":1}` — the torrent
+IS added (confirmed in `/torrents/info`) but the proxy saw `{` → `failed` with the JSON as `detail`.
+SECOND, related: BobaClient retries on network/timeout; attempt 1 added the magnet but was slow →
+client timed out → retry re-sent the SAME infohash → qBittorrent `409 Conflict` (duplicate) → `failed`
+(proven: one round-trip = TWO `/api/v1/download` requests in the proxy log).
+**Fix:** new `_qbit_add_succeeded(status, body)` — accepts the modern JSON (`added_torrent_ids`
+non-empty OR `success_count`/`pending_count` >= 1, with defensive int-coercion so a malformed `"N/A"`
+count classifies as failure, never crashes the add path), legacy `Ok.`, AND treats `409 Conflict` as
+idempotent SUCCESS (the torrent IS present — makes a retried add safe); all three add call-sites
+migrated. **Affected:** `download-proxy/src/api/routes.py`. **Regression guard:**
+`tests/unit/test_qbit_login_compat.py` (modern-JSON / pending-only / all-failed / 409-duplicate /
+non-numeric-count / legacy-Ok / Fails / 415 cases). **Verified live (×3, §11.4.50):** the live
+round-trip + `challenges/extension/live_detect_send_challenge.sh` both GREEN — the synthetic infohash
+is INDEPENDENTLY confirmed present in qBittorrent's real `/torrents/info`, then cleaned up (§11.4.14).
+
+### 38. Live test + challenge could not cross-check modern qBittorrent (test-quality, no product defect)
+
+**Severity:** MEDIUM (anti-bluff held: tests SKIP'd honestly, never false-PASS'd). **Type:** Task.
+**Root cause:** (a) the live test's own confirm-login helper had the same legacy `status==200 && "Ok."`
+assumption → could not read `/torrents/info` on 204 → honest SKIP. (b) the challenge cross-checked
+qBittorrent at `:7185` (container-internal, not reachable off-host on macOS).
+**Fix:** (a) confirm-login now accepts 200/204 + keys on the `Set-Cookie` SID (mirrors the proxy);
+(b) challenge default qBittorrent base `:7185` → `:7186` (the documented WebUI access port, reachable
+on Linux + macOS). **Affected:** `extension/tests/live/download-endpoint.live.test.ts`,
+`challenges/extension/live_detect_send_challenge.sh`. **Verified:** both GREEN with real
+infohash-present confirmation + §11.4.14 cleanup.
+
+**Code review (§11.4.142/§11.4.134):** an independent adversarial review caught 2 BLOCKING (2 of the 4
+login sites initially missed; an `int("N/A")` crash path) + 1 warning (loose `"SID"` substring) — all
+remediated + guarded; the re-review returned a clean GO.

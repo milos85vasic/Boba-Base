@@ -158,16 +158,22 @@ async function qbitLogin(): Promise<string> {
     );
   }
   const text = (await res.text()).trim();
-  if (res.status !== 200 || text !== "Ok.") {
+  // qBittorrent login is version-dependent: legacy (<4.6) returns 200 "Ok.";
+  // modern (4.6+/5.x, linuxserver:latest) returns 204 No Content with an empty
+  // body. BOTH issue the SID session cookie on success; a failed login returns
+  // 200 "Fails." with no cookie. Mirror the proxy's `_qbit_login_succeeded`:
+  // the authoritative, version-independent success signal is the issued SID
+  // cookie — not a specific status or the "Ok." body (which 204 omits).
+  if (res.status !== 200 && res.status !== 204) {
     throw new QBitUnavailable(
-      `qBittorrent login via proxy ${PROXY_BASE} returned HTTP ${res.status} body='${text.slice(0, 80)}' (expected 200 'Ok.').`,
+      `qBittorrent login via proxy ${PROXY_BASE} returned HTTP ${res.status} body='${text.slice(0, 80)}' (expected 200/204 + SID cookie).`,
     );
   }
   // qBittorrent issues an SID cookie on login. Forward it verbatim.
   const setCookie = res.headers.get("set-cookie");
   if (setCookie === null || setCookie.length === 0) {
     throw new QBitUnavailable(
-      `qBittorrent login via proxy ${PROXY_BASE} returned 'Ok.' but no Set-Cookie (SID) — cannot authorise the confirm read.`,
+      `qBittorrent login via proxy ${PROXY_BASE} (HTTP ${res.status}) issued no Set-Cookie (SID) — login not authenticated, cannot authorise the confirm read.`,
     );
   }
   // Keep only the cookie name=value pair(s), dropping attributes.
