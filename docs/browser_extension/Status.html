@@ -1,7 +1,184 @@
-<h1 id="bobalink-browser-extension--status">BobaLink Browser Extension —
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Status</h1>
+</header>
+<h1 id="bobalink-browser-extension-status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
-2026-06-10T23:00:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 10 <strong>Last modified:</strong>
+2026-06-13T09:20:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
@@ -14,7 +191,7 @@ real commit hash and/or a verified test/file artifact. Rows lacking
 runtime evidence are marked IN-PROGRESS or PENDING — never PASS (§11.4.6
 no-guessing).</p>
 </blockquote>
-<h2 id="baseline-facts-verified-this-session--session-11">Baseline facts
+<h2 id="baseline-facts-verified-this-session-session-11">Baseline facts
 (verified this session — Session 11)</h2>
 <ul>
 <li><strong>HEAD:</strong> <code>2011810</code> (pushed); wave-4
@@ -22,9 +199,9 @@ no-guessing).</p>
 locale, content-XSS, credential-leak audit, decrypt-throw parity,
 tab-group Challenge, and the <code>_locales</code> packaging fix) staged
 for the next commit.</li>
-<li><strong>Extension test corpus:</strong> <strong>527 Vitest tests
-across 49 spec files</strong> — same-session <code>npx vitest run</code>
-→ <code>Tests 527 passed (527)</code> — under
+<li><strong>Extension test corpus:</strong> <strong>559 Vitest tests
+across 52 spec files</strong> — same-session <code>npx vitest run</code>
+→ <code>Tests 559 passed (559)</code> — under
 <code>extension/tests/{unit,perf,stress,chaos,integration,security,e2e}</code>
 + <code>src/**</code>. <code>npx tsc --noEmit</code> clean;
 <code>npm run lint</code> 0 errors / 0 warnings. (+126 tests over the
@@ -55,8 +232,63 @@ only; CSP <code>script-src 'self'</code>. Per-store zips
 (<code>bobalink-1.0.0-{chrome,firefox,sources}.zip</code>) produced by
 <code>ci-ext.sh</code>.</li>
 </ul>
+<h2
+id="session-12-2026-06-13-test-coverage-breadth-flaky-test-hardening-wcag-fixes">Session
+12 (2026-06-13) — test-coverage breadth + flaky-test hardening + WCAG
+fixes</h2>
+<p>Parallel-subagent batch (§11.4.103); the whole batch is verified
+together by <code>extension/ci-ext.sh</code> →
+<strong><code>CI-EXT: PASS</code></strong>, full suite <strong>632
+passed (632)</strong> (+73 over the 559 rc baseline),
+<code>tsc --noEmit</code> clean, <code>npm run lint</code> 0/0,
+chrome+firefox builds loadable, §11.4.38 asset-verify pass, both store
+zips ≥10 KiB.</p>
+<ul>
+<li><strong>+73 new tests across 4 files</strong> (each anti-bluff, no
+absolute wall-clock thresholds):
+<ul>
+<li><code>tests/perf/orchestrator-scaling.perf.test.ts</code> —
+machine-independent metamorphic sub-quadratic DoS-scaling guard
+(<code>t(10·N)/t(N) &lt; 30</code>) + golden-good/golden-bad oracle
+self-validation (§11.4.107(10): <code>linearRatio=9.9</code> accept /
+<code>quadraticRatio=113</code> reject).</li>
+<li><code>tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts</code>
+(7) — orchestrator junk-flood, real <code>BobaClient</code> FIFO under a
+500-request flood, <code>TokenBucket</code> rate-limit engagement,
+tab-group dedup-batch at scale, + chaos flaky-tab fault injection.</li>
+<li><code>tests/security/infohash-detection-hostile.test.ts</code> (32)
+— infohash hex/base32 boundary + case, <code>xt=</code> confusion,
+<code>.torrent</code> URL allowlist (traversal/scheme/null-byte), SHA-1
+<code>.torrent</code> infohash correctness, dedup under hostile
+repetition.</li>
+<li><code>tests/a11y/focus-and-contrast.a11y.test.ts</code> (32) — focus
+management (WCAG 2.4.3/2.4.7/ 2.1.2) + computed colour-contrast (WCAG
+1.4.3) from the REAL committed CSS, analyzer self-validated.</li>
+</ul></li>
+<li><strong>3 real WCAG AA contrast defects fixed</strong>
+(<code>src/popup/styles.css</code>): <code>--text-faint</code> dark
+<code>#7a7a90</code>→<code>#838399</code> (4.07→4.61), light
+<code>#8a8a9c</code>→<code>#6c6c7e</code> (3.14→4.76),
+<code>--warning-text</code> light
+<code>#9a6a00</code>→<code>#946400</code> (4.40→4.78). RED→GREEN proven;
+permanent guards.</li>
+<li><strong>3 flaky perf/security tests hardened</strong> (§11.4.50 —
+were FAIL-bluffs under host load, proven load-coupled in isolation, then
+fixed to assert contention-robust intrinsic statistics): junk-flood
+security test (tight 5000 ms → 30 s hang-ceiling + scaling moved to
+perf), <code>crypto.perf</code> (p99→min budget),
+<code>parsers.perf</code> (median→min scaling ratio).</li>
+<li>Full root-cause + evidence for all six fixes:
+<code>docs/issues/fixed/BUGFIXES.md</code> Rev 6 (entries 18–21).</li>
+</ul>
 <h2 id="per-phase-status">Per-phase status</h2>
 <table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 25%" />
+<col style="width: 31%" />
+</colgroup>
 <thead>
 <tr>
 <th>Phase</th>
@@ -182,7 +414,7 @@ content-XSS. <strong>PENDING:</strong> full pen-test suite
 <td>8</td>
 <td>Testing to 100% (all types) + Challenges + HelixQA</td>
 <td>IN-PROGRESS</td>
-<td>527 tests/49 files green
+<td>559 tests/52 files green
 (unit/perf/stress/chaos/integration/security/e2e). Challenge
 <code>challenges/extension/detect_and_forward_challenge.sh</code> drives
 the REAL orchestrator+client end-to-end, PASS on captured evidence,
@@ -202,7 +434,7 @@ coverage matrix + live-backend integration + the coverage ledger to
 <td>Build, packaging &amp; distribution (manual — NO CI/CD)</td>
 <td>IN-PROGRESS</td>
 <td><strong>Manual gate <code>extension/ci-ext.sh</code></strong>
-(Session 11, §11.4.18 doc'd): tsc → lint → full vitest → chrome+firefox
+(Session 11, §11.4.18 doc’d): tsc → lint → full vitest → chrome+firefox
 builds → §11.4.38 artifact-verify (opens the manifest, asserts every
 referenced asset + the <code>default_locale</code> catalog exist
 non-zero) → per-store <code>wxt zip</code>. <strong>CI-EXT:
@@ -223,22 +455,22 @@ with evidence, remainder explicitly enumerated as PENDING.</li>
 <li><strong>PENDING</strong> — not yet started / no runtime evidence;
 planned in <code>IMPLEMENTATION_PLAN.md</code>.</li>
 </ul>
-<h2 id="anti-bluff-notes-114--1146--11469">Anti-bluff notes (§11.4 /
+<h2 id="anti-bluff-notes-11.4-11.4.6-11.4.69">Anti-bluff notes (§11.4 /
 §11.4.6 / §11.4.69)</h2>
 <ul>
-<li>The 527 figure IS a same-session recorded
+<li>The 559 figure IS a same-session recorded
 <code>npx vitest run</code> result
-(<code>Tests 527 passed (527)</code>), not merely a static grep — it
+(<code>Tests 559 passed (559)</code>), not merely a static grep — it
 supersedes the prior 287/22 grep-count baseline. tsc + lint captured
 clean in the same session.</li>
 <li>The §11.4.38 loadable-artifact claim is verified by
 <code>ci-ext.sh</code> <strong>opening the produced
 <code>.output/chrome-mv3/manifest.json</code></strong> and confirming
 every referenced asset AND the <code>default_locale</code> catalog exist
-non-zero on disk — not by "build exited 0".</li>
+non-zero on disk — not by “build exited 0”.</li>
 <li><strong>§11.4.138 bluff-audit (corrected this session).</strong> An
-earlier Status revision claimed the artifact was loadable on an "8/8
-referenced assets present" check. That check was INCOMPLETE: the
+earlier Status revision claimed the artifact was loadable on an “8/8
+referenced assets present” check. That check was INCOMPLETE: the
 manifest declares <code>default_locale:"en"</code> +
 <code>__MSG_*__</code>, but the build packaged <strong>no
 <code>_locales/</code></strong> (WXT copies static assets from
@@ -249,7 +481,7 @@ step (which checks the <code>default_locale → _locales/</code>
 invariant). Root cause fixed by moving the catalog to
 <code>src/public/_locales/{en,ru}/</code>; the rebuilt artifact now
 packages it (verified on disk). Permanent guard = <code>ci-ext.sh</code>
-(the regression can't recur silently). This is the §11.4.108 lesson:
+(the regression can’t recur silently). This is the §11.4.108 lesson:
 build-exit-0 ≠ deployable-artifact.</li>
 <li>The Phase-7 decrypt path is proven by RED→GREEN:
 ciphertext-on-the-wire (pre-fix) → decrypted-plaintext header
@@ -271,12 +503,12 @@ RED→GREEN, independently re-verified):</strong> (1) a popup↔︎background
 CONTRACT bug the integration round-trip exposed — the popup read
 <code>r.torrent.id</code> but the real background returns a flat
 <code>SendOutcome {id,…}</code>, so a SUCCESSFUL send threw in the popup
-and showed a FALSE "Send failed" (row never flipped to Sent); the
+and showed a FALSE “Send failed” (row never flipped to Sent); the
 popup-unit fake had masked it with the wrong shape. Fixed (popup reads
 <code>r.id</code>; fake corrected; integration assertion reconciled
 §11.4.120). (2) a <code>scan-result</code> TRUST bug the message-router
 robustness tests exposed — a hostile content script could send
-<code>{items:&lt;non-array&gt;}</code> and overwrite a tab's good
+<code>{items:&lt;non-array&gt;}</code> and overwrite a tab’s good
 detection set with garbage; fixed with an <code>isValidScanResult</code>
 shape-guard (16 robustness tests; the non-array test seeds-good→corrupt
 and asserts the good set survives).</li>
@@ -286,3 +518,5 @@ chrome+firefox builds); orchestrator + rate-limiter stress
 integration round-trips (real sendMessage→onMessage bridge);
 USER/INSTALL/DEV guides (§11.4.65 exports).</li>
 </ul>
+</body>
+</html>

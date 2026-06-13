@@ -200,17 +200,26 @@ describe("perf: magnet parse scales ~linearly (no accidental O(n²))", () => {
     expect(findMagnetUris(pageSmall).length).toBe(SMALL);
     expect(findMagnetUris(pageLarge).length).toBe(LARGE);
 
+    // Use the MIN run (intrinsic cost) at each size, not the median. The ratio
+    // is a scaling metamorphic relation; the SMALL (1000-link, ~5 ms) median is
+    // noise-sensitive under concurrent-suite CPU contention (observed ratio 3.09
+    // vs ~1.0 intrinsic when this file runs alongside the heavy perf/stress
+    // suites), which is a §11.4.50 FAIL-bluff. Contention only ADDS time, so the
+    // MINIMUM observed time is the contention-robust estimator of the true
+    // per-link cost — a genuine O(n²) regression still shows ratio ≈ 5 in the min
+    // run (the algorithmic cost is present even in the fastest run), so the cap of
+    // 3 keeps its full regression-catching power while never flaking on load.
     const smallPerLink =
-      median(
-        timeRuns(() => {
+      Math.min(
+        ...timeRuns(() => {
           const uris = findMagnetUris(pageSmall);
           for (const uri of uris) parseMagnetUri(uri);
         }),
       ) / SMALL;
 
     const largePerLink =
-      median(
-        timeRuns(() => {
+      Math.min(
+        ...timeRuns(() => {
           const uris = findMagnetUris(pageLarge);
           for (const uri of uris) parseMagnetUri(uri);
         }),

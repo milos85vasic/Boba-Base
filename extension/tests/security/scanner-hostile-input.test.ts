@@ -366,8 +366,23 @@ describe("Security — orchestrator DoS resilience (junk-flood page)", () => {
     const elapsed = performance.now() - start;
     orch.stop();
 
-    // Bounded time even with 50k anchors.
-    expect(elapsed).toBeLessThan(5000);
+    // DoS-resilience hang-ceiling — NOT a tight perf budget.
+    //
+    // The security property this test guards is "the orchestrator does not HANG
+    // or blow up to a pathological (≈O(n²)) scan on a 50k-anchor junk flood". A
+    // genuine quadratic regression over 50k anchors would take MINUTES (50k² ops
+    // vs the linear scan's tens-of-thousands), so any value in the seconds range
+    // catches it. The previous threshold here was a TIGHT 5000 ms — it failed
+    // for a NON-product reason (host wall-clock 6608 ms vs <5000 ms in isolation
+    // under heavy host load, load-avg 15), i.e. an absolute-wall-clock FAIL-bluff
+    // (Constitution §11.4.50 "flaky tests are bluffs", §11.4.1 a test that FAILs
+    // for a non-product reason is a bluff). The rigorous machine-INDEPENDENT
+    // sub-quadratic *scaling* guard now lives in
+    // tests/perf/orchestrator-scaling.perf.test.ts (§11.4.85 — scaling/distribution,
+    // not a tight absolute threshold). This 30 s ceiling is a generous hang-detector
+    // (≈4.5× the worst observed under load) that still FAILs a true hang / quadratic
+    // explosion but never on host jitter.
+    expect(elapsed).toBeLessThan(30_000);
 
     // ONLY the two real magnets are detected — junk is excluded.
     const magnets = result.items.filter(

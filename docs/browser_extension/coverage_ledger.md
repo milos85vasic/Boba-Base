@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Feature Coverage Ledger
 
-**Revision:** 2
-**Last modified:** 2026-06-10T20:45:00Z
+**Revision:** 3
+**Last modified:** 2026-06-13T09:22:00Z
 **Scope:** BobaLink (`extension/`) — feature × test-type coverage ledger with a
 per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 §11.4.52 autonomous-validation).
@@ -17,8 +17,22 @@ per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 
 ## Ground-truth baseline (this session)
 
-- Full suite: **559 passed / 52 spec files** (`npx vitest run`) under
-  `extension/tests/{unit,perf,stress,chaos,integration,security,e2e}` + `src/**`.
+- Full suite: **632 passed / 56 spec files** (`npx vitest run` via `extension/ci-ext.sh`
+  → `CI-EXT: PASS`, Session 12 / 2026-06-13) under
+  `extension/tests/{unit,perf,stress,chaos,integration,security,a11y,e2e}` + `src/**`.
+  (+73 over the 559 rc baseline.)
+- **Session-12 coverage breadth added** (closing prior PENDING ledger gaps; all
+  anti-bluff, no absolute wall-clock thresholds):
+  - **stress/chaos breadth** beyond parsers+queue — `tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts`
+    (orchestrator junk-flood, real client FIFO-flood, rate-limiter engagement,
+    tab-group at scale, chaos fault-injection).
+  - **security — detection/infohash paths** — `tests/security/infohash-detection-hostile.test.ts`
+    (hex/base32 boundary+case, `xt=` confusion, `.torrent` URL allowlist, SHA-1
+    infohash correctness, hostile-repetition dedup).
+  - **accessibility — focus + contrast (deeper WCAG)** — `tests/a11y/focus-and-contrast.a11y.test.ts`
+    (WCAG 2.4.3/2.4.7/2.1.2 focus management + 1.4.3 computed contrast from the real CSS).
+  - **DoS scaling (machine-independent)** — `tests/perf/orchestrator-scaling.perf.test.ts`
+    (metamorphic sub-quadratic ratio + oracle self-validation).
 - E2E (`tests/e2e/extension-loads.spec.ts`) is a real Playwright MV3-load test
   that **SKIPs-with-reason** in this headless/sandbox environment (no display /
   unpacked-extension load unsupported); it executes the popup/options assertions

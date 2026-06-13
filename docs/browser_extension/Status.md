@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Status
 
-**Revision:** 9
-**Last modified:** 2026-06-11T02:30:00Z
+**Revision:** 10
+**Last modified:** 2026-06-13T09:20:00Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 browser extension that detects magnet links and `.torrent` URLs and forwards them to the Boba merge service on port 7187.
 **Authority:** master plan `docs/browser_extension/IMPLEMENTATION_PLAN.md` (9 phases).
 
@@ -32,6 +32,37 @@
   (no scripting/tabs/cookies; `+tabGroups` for Phase-5); `host_permissions` =
   `http://localhost:7187/*` only; CSP `script-src 'self'`. Per-store zips
   (`bobalink-1.0.0-{chrome,firefox,sources}.zip`) produced by `ci-ext.sh`.
+
+## Session 12 (2026-06-13) — test-coverage breadth + flaky-test hardening + WCAG fixes
+
+Parallel-subagent batch (§11.4.103); the whole batch is verified together by
+`extension/ci-ext.sh` → **`CI-EXT: PASS`**, full suite **632 passed (632)** (+73 over
+the 559 rc baseline), `tsc --noEmit` clean, `npm run lint` 0/0, chrome+firefox builds
+loadable, §11.4.38 asset-verify pass, both store zips ≥10 KiB.
+
+- **+73 new tests across 4 files** (each anti-bluff, no absolute wall-clock thresholds):
+  - `tests/perf/orchestrator-scaling.perf.test.ts` — machine-independent metamorphic
+    sub-quadratic DoS-scaling guard (`t(10·N)/t(N) < 30`) + golden-good/golden-bad
+    oracle self-validation (§11.4.107(10): `linearRatio=9.9` accept / `quadraticRatio=113`
+    reject).
+  - `tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts` (7) — orchestrator
+    junk-flood, real `BobaClient` FIFO under a 500-request flood, `TokenBucket` rate-limit
+    engagement, tab-group dedup-batch at scale, + chaos flaky-tab fault injection.
+  - `tests/security/infohash-detection-hostile.test.ts` (32) — infohash hex/base32
+    boundary + case, `xt=` confusion, `.torrent` URL allowlist (traversal/scheme/null-byte),
+    SHA-1 `.torrent` infohash correctness, dedup under hostile repetition.
+  - `tests/a11y/focus-and-contrast.a11y.test.ts` (32) — focus management (WCAG 2.4.3/2.4.7/
+    2.1.2) + computed colour-contrast (WCAG 1.4.3) from the REAL committed CSS, analyzer
+    self-validated.
+- **3 real WCAG AA contrast defects fixed** (`src/popup/styles.css`): `--text-faint`
+  dark `#7a7a90`→`#838399` (4.07→4.61), light `#8a8a9c`→`#6c6c7e` (3.14→4.76),
+  `--warning-text` light `#9a6a00`→`#946400` (4.40→4.78). RED→GREEN proven; permanent guards.
+- **3 flaky perf/security tests hardened** (§11.4.50 — were FAIL-bluffs under host load,
+  proven load-coupled in isolation, then fixed to assert contention-robust intrinsic
+  statistics): junk-flood security test (tight 5000 ms → 30 s hang-ceiling + scaling moved
+  to perf), `crypto.perf` (p99→min budget), `parsers.perf` (median→min scaling ratio).
+- Full root-cause + evidence for all six fixes: `docs/issues/fixed/BUGFIXES.md` Rev 6
+  (entries 18–21).
 
 ## Per-phase status
 
