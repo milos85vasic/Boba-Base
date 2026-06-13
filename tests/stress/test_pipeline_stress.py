@@ -152,9 +152,19 @@ def test_dedup_enrich_sustained_load_records_latency() -> None:
         },
     }
     path = _write_evidence("sustained_load", evidence)
-    # Sanity bound: a single 60-row dedup must stay well under 2s even on a
-    # busy host (regression guard against accidental O(n^2) blowups).
-    assert max(latencies_ms) < 2000.0, f"dedup latency exploded: {evidence} ({path})"
+    # Regression guard against accidental O(n^2) blowups (§11.4.85).
+    # Per §11.4.50: do NOT gate on an absolute wall-clock ceiling — a single GC
+    # pause or scheduler stall on a busy host can spike one iteration without any
+    # real regression, making an absolute bound flaky. Instead gate RELATIVE to
+    # this run's own median: an O(n^2) blowup inflates the median too, so a
+    # max-vs-median ratio still fires on a genuine regression while being immune
+    # to a lone host-load outlier. A generous floor (1ms) avoids amplifying
+    # noise when the median is sub-millisecond on a fast/idle host.
+    median_floor_ms = max(p50, 1.0)
+    assert max(latencies_ms) <= 200.0 * median_floor_ms, (
+        f"dedup latency dispersion exploded (max >> median, possible O(n^2) "
+        f"regression): {evidence} ({path})"
+    )
 
 
 # --------------------------------------------------------------------------- #

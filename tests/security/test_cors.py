@@ -36,20 +36,33 @@ def _restore_env():
 
 
 @pytest.mark.security
-class TestCORSWildcardDefault:
-    """Default CORS is wildcard (*) for local-dev convenience (dashboard from phone/LAN)."""
+class TestCORSSecureDefault:
+    """Default CORS is a secure-by-default localhost/dev allowlist, NOT wildcard.
 
-    def test_default_allows_any_origin(self):
+    Reconciled per §11.4.120: the product was hardened (download-proxy/src/api/
+    __init__.py ``_DEFAULT_ORIGINS`` — "'*' ... is no longer the default
+    (CONTINUATION known-issue #5)"). The prior ``TestCORSWildcardDefault`` class
+    asserted the removed insecure wildcard-'*' default; this gate now asserts the
+    NEW secure default — known localhost/dev origins are reflected, an unknown
+    LAN/internet origin is NOT reflected.
+    """
+
+    def test_default_does_not_reflect_unknown_origin(self):
         client = _make_client(None)
         resp = client.get("/health", headers={"Origin": "http://192.168.1.100:7187"})
         acao = resp.headers.get("access-control-allow-origin")
-        assert acao == "*"
+        # An unknown LAN origin is not on the default allowlist → not reflected,
+        # and never the insecure wildcard.
+        assert acao != "*"
+        assert acao != "http://192.168.1.100:7187"
 
-    def test_default_allows_localhost(self):
+    def test_default_allows_localhost_dev_origin(self):
         client = _make_client(None)
         resp = client.get("/health", headers={"Origin": "http://localhost:7187"})
         acao = resp.headers.get("access-control-allow-origin")
-        assert acao == "*"
+        # localhost:7187 is on the secure default allowlist → reflected exactly,
+        # never the insecure wildcard.
+        assert acao == "http://localhost:7187"
 
 
 @pytest.mark.security

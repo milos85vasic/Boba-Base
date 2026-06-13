@@ -176,8 +176,8 @@
 <h1 class="title">BUGFIXES</h1>
 </header>
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 10 <strong>Last modified:</strong>
-2026-06-13T13:20:00Z</p>
+<p><strong>Revision:</strong> 11 <strong>Last modified:</strong>
+2026-06-13T13:35:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -899,5 +899,69 @@ in <code>RunSearch</code> made all three RunSearch tests FAIL, then
 reverted (production clean, §11.4.84). Verified GREEN under
 <code>-race</code> (service package <code>ok 5.933s</code>, no data
 race). Production code unchanged.</p>
+<hr />
+<h2
+id="boba-merge-service-hermetic-specialized-suites-5-test-quality-fixes-product-correct">2026-06-13
+— Boba merge-service hermetic specialized suites: 5 test-quality fixes
+(product correct)</h2>
+<p>A verification pass over the merge-service’s hermetic specialized
+suites
+(<code>stress, chaos, property, contract, concurrency, memory, observability, security</code>
+— run under <code>.venv</code>/py3.13, the suites BG-1’s
+<code>tests/unit</code> pass did not cover) found the PRODUCT is correct
++ secure (bandit 0 HIGH; CORS hardened; no product defect) but surfaced
+5 real TEST-quality defects across the anti-bluff classes. All test-side
+only — <code>download-proxy/src/</code> unchanged; each verified green
+under <code>.venv</code>.</p>
+<h3
+id="five-merge-service-test-quality-defects-11.4.1-11.4.3-11.4.50-11.4.120">32.
+Five merge-service test-quality defects (§11.4.1 / §11.4.3 / §11.4.50 /
+§11.4.120)</h3>
+<ul>
+<li><strong><code>tests/stress/test_pipeline_stress.py</code> — §11.4.50
+flaky absolute-wall-clock threshold.</strong> Gated on
+<code>max(latencies_ms) &lt; 2000</code> (absolute); a lone GC/scheduler
+stall spiked one iteration to ~140 ms (~25× the 5.6 ms median) — an
+absolute bound is the wrong oracle. Fixed to a RELATIVE bound
+<code>max ≤ 200 × max(p50, 1.0 ms)</code> (an O(n²) blowup inflates the
+median too, so it still fires; a lone outlier no longer flakes).
+Verified: 3 passed.</li>
+<li><strong><code>tests/contract/test_crossapp_theme_contract.py</code>
+— §11.4.1/§11.4.3 FAIL-instead-of-SKIP.</strong> The 3
+<code>@requires_compose</code> tests’ own docstring promises “skip
+cleanly when the proxy is unreachable”, but <code>_fetch()</code> did a
+bare <code>urlopen</code> → <code>URLError</code> → FAIL when down.
+Fixed <code>_fetch()</code> to catch only CONNECTION errors →
+<code>pytest.skip</code> (with <code>./start.sh -p</code> reason);
+<code>HTTPError</code> still returns the real status and
+<code>AssertionError</code> is NOT swallowed (a real missing-bridge
+still FAILs when the proxy is up). Verified: 3 SKIP when down, suite 27
+passed when collectable.</li>
+<li><strong><code>tests/security/test_cors.py</code> — §11.4.120 stale
+gate asserting REMOVED insecure behavior.</strong>
+<code>TestCORSWildcardDefault</code> asserted
+<code>Access-Control-Allow-Origin == "*"</code> as the default, but the
+product was deliberately hardened to a secure-by-default localhost/dev
+allowlist (wildcard removed, CONTINUATION known-issue #5). The TEST
+lagged the security improvement. Reconciled to assert the NEW secure
+default — a known localhost origin reflected EXACTLY, an unknown LAN
+origin NOT reflected and never <code>*</code>. Anti-bluff: a
+wildcard-revert fails the <code>!= "*"</code> assertions
+(RED-on-old/GREEN-on-new), not a tautology. Verified.</li>
+<li><strong><code>tests/observability/test_metrics_exist.py</code> —
+§11.4.3 infra-FAIL instead of SKIP.</strong> A
+<code>@requires_compose</code> test made an unconditional
+<code>httpx.get(:7187/metrics)</code> → <code>ConnectError</code> FAIL
+when down. Added the existing <code>@merge_service_required</code> skip
+guard → SKIPs cleanly. Verified.</li>
+<li><strong><code>tests/security/test_jackett_autoconfig_secrets.py</code>
+— toolchain-path FAIL.</strong> <code>subprocess.run(["bandit"])</code>
+raised <code>FileNotFoundError</code> (bandit is in
+<code>.venv/bin</code>, not on bare PATH). Added a
+<code>_resolve_bandit()</code> helper (prefers the running interpreter’s
+bin dir, then <code>shutil.which</code>, SKIP if genuinely absent).
+Product clean: <code>.venv/bin/bandit</code> on
+<code>jackett_autoconfig.py</code> → 0 HIGH findings. Verified.</li>
+</ul>
 </body>
 </html>

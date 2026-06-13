@@ -83,12 +83,31 @@ def test_jackett_log_file_does_not_contain_sentinels():
     assert SENTINEL_COOKIE not in content
 
 
+def _resolve_bandit() -> str | None:
+    """Locate the ``bandit`` executable.
+
+    Prefer the running interpreter's own bin directory (so the venv's
+    ``bandit`` is found even when it is not on the bare ``PATH``), then fall
+    back to ``PATH``. Returns ``None`` when bandit is genuinely unavailable so
+    the test SKIPs (§11.4.3) instead of raising FileNotFoundError.
+    """
+    import shutil
+
+    candidate = os.path.join(os.path.dirname(sys.executable), "bandit")
+    if os.path.exists(candidate):
+        return candidate
+    return shutil.which("bandit")
+
+
 def test_bandit_scan_module_clean():
     target = os.path.join(
         PROJECT_ROOT, "download-proxy", "src", "merge_service", "jackett_autoconfig.py"
     )
+    bandit_exe = _resolve_bandit()
+    if bandit_exe is None:
+        pytest.skip("bandit not installed — pip install bandit")
     result = subprocess.run(
-        ["bandit", "-q", "-f", "json", target],
+        [bandit_exe, "-q", "-f", "json", target],
         capture_output=True,
         text=True,
         check=False,

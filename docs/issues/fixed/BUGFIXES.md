@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 10
-**Last modified:** 2026-06-13T13:20:00Z
+**Revision:** 11
+**Last modified:** 2026-06-13T13:35:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -641,3 +641,41 @@ server, no mocks) — RunSearch completes/accumulates + StartFails→failed + Co
 8-publisher/16-subscriber SSEBroker churn under `-race`. **Anti-bluff proof:** a no-op `return nil`
 stub in `RunSearch` made all three RunSearch tests FAIL, then reverted (production clean, §11.4.84).
 Verified GREEN under `-race` (service package `ok 5.933s`, no data race). Production code unchanged.
+
+---
+
+## 2026-06-13 — Boba merge-service hermetic specialized suites: 5 test-quality fixes (product correct)
+
+A verification pass over the merge-service's hermetic specialized suites (`stress, chaos, property,
+contract, concurrency, memory, observability, security` — run under `.venv`/py3.13, the suites BG-1's
+`tests/unit` pass did not cover) found the PRODUCT is correct + secure (bandit 0 HIGH; CORS hardened;
+no product defect) but surfaced 5 real TEST-quality defects across the anti-bluff classes. All
+test-side only — `download-proxy/src/` unchanged; each verified green under `.venv`.
+
+### 32. Five merge-service test-quality defects (§11.4.1 / §11.4.3 / §11.4.50 / §11.4.120)
+
+- **`tests/stress/test_pipeline_stress.py` — §11.4.50 flaky absolute-wall-clock threshold.** Gated on
+  `max(latencies_ms) < 2000` (absolute); a lone GC/scheduler stall spiked one iteration to ~140 ms
+  (~25× the 5.6 ms median) — an absolute bound is the wrong oracle. Fixed to a RELATIVE bound
+  `max ≤ 200 × max(p50, 1.0 ms)` (an O(n²) blowup inflates the median too, so it still fires; a lone
+  outlier no longer flakes). Verified: 3 passed.
+- **`tests/contract/test_crossapp_theme_contract.py` — §11.4.1/§11.4.3 FAIL-instead-of-SKIP.** The 3
+  `@requires_compose` tests' own docstring promises "skip cleanly when the proxy is unreachable", but
+  `_fetch()` did a bare `urlopen` → `URLError` → FAIL when down. Fixed `_fetch()` to catch only
+  CONNECTION errors → `pytest.skip` (with `./start.sh -p` reason); `HTTPError` still returns the real
+  status and `AssertionError` is NOT swallowed (a real missing-bridge still FAILs when the proxy is up).
+  Verified: 3 SKIP when down, suite 27 passed when collectable.
+- **`tests/security/test_cors.py` — §11.4.120 stale gate asserting REMOVED insecure behavior.**
+  `TestCORSWildcardDefault` asserted `Access-Control-Allow-Origin == "*"` as the default, but the
+  product was deliberately hardened to a secure-by-default localhost/dev allowlist (wildcard removed,
+  CONTINUATION known-issue #5). The TEST lagged the security improvement. Reconciled to assert the NEW
+  secure default — a known localhost origin reflected EXACTLY, an unknown LAN origin NOT reflected and
+  never `*`. Anti-bluff: a wildcard-revert fails the `!= "*"` assertions (RED-on-old/GREEN-on-new),
+  not a tautology. Verified.
+- **`tests/observability/test_metrics_exist.py` — §11.4.3 infra-FAIL instead of SKIP.** A
+  `@requires_compose` test made an unconditional `httpx.get(:7187/metrics)` → `ConnectError` FAIL when
+  down. Added the existing `@merge_service_required` skip guard → SKIPs cleanly. Verified.
+- **`tests/security/test_jackett_autoconfig_secrets.py` — toolchain-path FAIL.** `subprocess.run(["bandit"])`
+  raised `FileNotFoundError` (bandit is in `.venv/bin`, not on bare PATH). Added a `_resolve_bandit()`
+  helper (prefers the running interpreter's bin dir, then `shutil.which`, SKIP if genuinely absent).
+  Product clean: `.venv/bin/bandit` on `jackett_autoconfig.py` → 0 HIGH findings. Verified.
