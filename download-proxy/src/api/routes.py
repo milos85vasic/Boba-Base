@@ -536,7 +536,7 @@ async def search_stream(search_id: str, req: Request, token: str | None = None):
 
 
 @router.get("/search/{search_id}", response_model=SearchResponse)
-async def get_search(search_id: str, req: Request):  # type: ignore[no-untyped-def]
+async def get_search(search_id: str, req: Request, limit: int = 0):  # type: ignore[no-untyped-def]
     orch = _get_orchestrator(req)
     metadata = orch.get_search_status(search_id)
     if metadata is None:
@@ -545,7 +545,14 @@ async def get_search(search_id: str, req: Request):  # type: ignore[no-untyped-d
     stored = orch._last_merged_results.get(search_id)
     if stored:
         merged, _all_results = stored
-        for m in merged[:50]:
+        # Return the FULL merged result set by default (limit<=0) so the grid the
+        # user sees after `search_complete` matches the live-streamed list. A
+        # hardcoded ``merged[:50]`` collapsed e.g. 2153 streamed results to 50 —
+        # the "just a fraction of results" defect. The grid uses cdk
+        # virtual-scroll, so rendering the full set is cheap. Optional ``?limit=N``
+        # truncates for callers that explicitly want a smaller page.
+        display = merged if limit <= 0 else merged[: max(0, limit)]
+        for m in display:
             best = m.original_results[0] if m.original_results else None
             if best:
                 ct = m.canonical_identity.content_type.value if m.canonical_identity else None

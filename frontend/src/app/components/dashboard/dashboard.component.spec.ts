@@ -909,6 +909,92 @@ describe('DashboardComponent', () => {
       http.expectOne('/api/v1/magnet').flush({ magnet: 'magnet:?xt=urn:btih:abc', hashes: ['abc'] });
       expect(openSpy).toHaveBeenCalled();
     });
+
+    // Defect A regression (§11.4.115): while a search is IN PROGRESS the grid
+    // renders liveResults() (via sortedResults()) and results() is still empty.
+    // The buttons MUST act on the displayed live row. Pre-fix the handlers read
+    // results()[index] → undefined → every button was a NO-OP mid-search. These
+    // assert a REAL request/dialog fires for the live row. Against the pre-fix
+    // code (results()[index]) every one of these fails with "expected one match".
+    describe('buttons work DURING an in-progress search (live rows)', () => {
+      function searchingWithLiveRow(fx: any): void {
+        fx.componentInstance.isSearching.set(true);
+        fx.componentInstance.results.set([]); // empty until search_complete
+        fx.componentInstance.liveResults.set([
+          makeResult({ name: 'live-row', download_urls: ['magnet:?xt=urn:btih:liverow'] }),
+        ]);
+      }
+
+      it('qBit (doSchedule) sends the live row mid-search — not a no-op', async () => {
+        const fx = bootstrap();
+        vi.spyOn(TestBed.inject(DialogService), 'confirm').mockResolvedValue(true);
+        fx.componentInstance.qbitAuthenticated.set(true);
+        searchingWithLiveRow(fx);
+        await fx.componentInstance.doSchedule(0);
+        const tr = http.expectOne('/api/v1/download');
+        expect(tr.request.method).toBe('POST');
+        expect(tr.request.body.download_urls).toEqual(['magnet:?xt=urn:btih:liverow']);
+        tr.flush({ download_id: 'd', status: 'initiated', urls_count: 1, added_count: 1, results: [] });
+      });
+
+      it('Download (doDownload) downloads the live row mid-search', async () => {
+        const fx = bootstrap();
+        vi.spyOn(TestBed.inject(DialogService), 'confirm').mockResolvedValue(true);
+        vi.spyOn(window.URL, 'createObjectURL').mockReturnValue('blob:x');
+        vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
+        searchingWithLiveRow(fx);
+        await fx.componentInstance.doDownload(0);
+        const dr = http.expectOne('/api/v1/download/file');
+        expect(dr.request.method).toBe('POST');
+        expect(dr.request.body.download_urls).toEqual(['magnet:?xt=urn:btih:liverow']);
+        dr.flush(new Blob(['torrent']));
+      });
+
+      it('Magnet (doMagnet) generates the live row magnet mid-search', () => {
+        const fx = bootstrap();
+        const openSpy = vi.fn();
+        (fx.componentInstance as any).magnetDialog = { open: openSpy };
+        searchingWithLiveRow(fx);
+        fx.componentInstance.doMagnet(0);
+        const mr = http.expectOne('/api/v1/magnet');
+        expect(mr.request.body.download_urls).toEqual(['magnet:?xt=urn:btih:liverow']);
+        mr.flush({ magnet: 'magnet:?xt=urn:btih:liverow', hashes: ['liverow'] });
+        expect(openSpy).toHaveBeenCalled();
+      });
+
+      // Deferred-login race (review nit): if the qBit login dialog is open when
+      // the search completes, sortedResults() re-orders — re-resolving by index
+      // would send the WRONG torrent. The handler captures the clicked ROW, so
+      // it must still send exactly what the user clicked. RED against the old
+      // re-resolve-by-index path, GREEN with the row-capture.
+      it('deferred qBit login sends the CLICKED row even if the search completes mid-dialog', async () => {
+        const fx = bootstrap();
+        vi.spyOn(TestBed.inject(DialogService), 'confirm').mockResolvedValue(true);
+        vi.spyOn(fx.componentInstance, 'loadAuthStatus').mockImplementation(() => {});
+        fx.componentInstance.qbitAuthenticated.set(false); // force the login dialog
+        // mid-search: row 0 is the one the user clicks
+        fx.componentInstance.isSearching.set(true);
+        fx.componentInstance.results.set([]);
+        fx.componentInstance.liveResults.set([
+          makeResult({ name: 'CLICKED', download_urls: ['magnet:?xt=urn:btih:clicked'] }),
+          makeResult({ name: 'OTHER', download_urls: ['magnet:?xt=urn:btih:other'] }),
+        ]);
+        let loginCb: (() => void) | undefined;
+        (fx.componentInstance as any).qbitDialog = { open: (cb: () => void) => { loginCb = cb; } };
+        await fx.componentInstance.doSchedule(0); // click row 0 = CLICKED
+        // search completes; the final list re-orders so index 0 is now a DIFFERENT row
+        fx.componentInstance.isSearching.set(false);
+        fx.componentInstance.results.set([
+          makeResult({ name: 'OTHER', download_urls: ['magnet:?xt=urn:btih:other'] }),
+          makeResult({ name: 'CLICKED', download_urls: ['magnet:?xt=urn:btih:clicked'] }),
+        ]);
+        fx.componentInstance.qbitAuthenticated.set(true);
+        loginCb!(); // user finishes login AFTER completion
+        const tr = http.expectOne('/api/v1/download');
+        expect(tr.request.body.download_urls).toEqual(['magnet:?xt=urn:btih:clicked']);
+        tr.flush({ download_id: 'd', status: 'initiated', urls_count: 1, added_count: 1, results: [] });
+      });
+    });
   });
 
   describe('tracker stats bar', () => {

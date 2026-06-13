@@ -122,7 +122,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   qbitUsername = signal<string | null>(null);
   trackerChips = signal<TrackerChip[]>([]);
   expandedChip = signal<string | null>(null);
-  pendingAction?: { type: 'schedule' | 'addMagnet'; index: number };
 
   // Bridge health. `null` = probe has not run yet (don't lie on first
   // render); `true` = bridge responded 200-ish; `false` = probe failed.
@@ -575,8 +574,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // Actions
   async doSchedule(index: number): Promise<void> {
-    const results = this.results();
-    const r = results[index];
+    // The grid renders `sortedResults()` (= liveResults() while a search is
+    // running, the sorted final list after). The button passes that row's
+    // display index, so the handlers MUST resolve the row from the SAME array
+    // the template iterates — not `results()`, which is empty during a search
+    // and in a different order after. Indexing `results()` made every button a
+    // no-op while searching (and acted on the wrong row after a sort).
+    const r = this.sortedResults()[index];
     if (!r) return;
 
     const confirmed = await this.dialog.confirm({
@@ -588,24 +592,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!confirmed) return;
 
     if (!this.qbitAuthenticated()) {
-      this.pendingAction = { type: 'schedule', index };
-      this.qbitDialog.open(() => { this.loadAuthStatus(); this.executeSchedule(index); });
+      // Capture the ROW object (not the index) for the deferred-login callback:
+      // a search can complete WHILE the login dialog is open, at which point
+      // sortedResults() pivots from liveResults() to the re-sorted final list —
+      // re-resolving by index would then act on a DIFFERENT row than the one the
+      // user clicked. The captured `r` is immune to that re-ordering race.
+      this.qbitDialog.open(() => { this.loadAuthStatus(); this.executeScheduleRow(r); });
       return;
     }
-    this.executeSchedule(index);
+    this.executeScheduleRow(r);
   }
 
+  // Thin index-based wrapper retained for existing call sites/tests — resolves
+  // the displayed row then delegates to the row-based implementation.
   executeSchedule(index: number): void {
-    const r = this.results()[index];
+    const r = this.sortedResults()[index];
     if (!r) return;
-    this.api.download({ result_id: String(index), download_urls: r.download_urls }).subscribe({
+    this.executeScheduleRow(r);
+  }
+
+  executeScheduleRow(r: SearchResult): void {
+    this.api.download({ result_id: r.name, download_urls: r.download_urls }).subscribe({
       next: (res) => {
         if (res.added_count > 0 || res.status === 'initiated') {
           this.toast.success(`Sent "${r.name}" to qBittorrent`);
         } else if (res.status === 'auth_failed') {
           this.toast.error('qBittorrent auth failed. Please login.');
-          this.pendingAction = { type: 'schedule', index };
-          this.qbitDialog.open(() => { this.loadAuthStatus(); this.executeSchedule(index); });
+          // Same row-capture discipline on the auth-failed re-login path.
+          this.qbitDialog.open(() => { this.loadAuthStatus(); this.executeScheduleRow(r); });
         } else {
           // Surface real failure reason from backend.
           const detail = (res.results || [])
@@ -622,7 +636,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   async doDownload(index: number): Promise<void> {
-    const r = this.results()[index];
+    const r = this.sortedResults()[index];
     if (!r) return;
 
     const confirmed = await this.dialog.confirm({
@@ -652,7 +666,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   async doMagnet(index: number): Promise<void> {
-    const r = this.results()[index];
+    const r = this.sortedResults()[index];
     if (!r) return;
     this.api.generateMagnet({ result_id: r.name, download_urls: r.download_urls }).subscribe({
       next: (res) => {

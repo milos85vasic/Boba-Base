@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 14
-**Last modified:** 2026-06-13T16:00:00Z
+**Revision:** 15
+**Last modified:** 2026-06-13T18:15:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -814,3 +814,55 @@ infohash-present confirmation + §11.4.14 cleanup.
 **Code review (§11.4.142/§11.4.134):** an independent adversarial review caught 2 BLOCKING (2 of the 4
 login sites initially missed; an `int("N/A")` crash path) + 1 warning (loose `"SID"` substring) — all
 remediated + guarded; the re-review returned a clean GO.
+
+## 2026-06-13 — merge dashboard: search-result buttons dead during search + results collapse on completion
+
+Operator-reported (searched "Linux", clicked buttons): "Magnet/Download/qBit buttons don't work while
+the search is running; after completion they work but the results are just a fraction of what we saw
+streaming." Root-caused via systematic-debugging (§11.4.102), fixed TDD (RED proven, §11.4.115),
+independent code review GO (§11.4.142/§11.4.134), live-verified on the running stack.
+
+### 39. Search-result buttons (Magnet / Download / qBit) were a NO-OP while a search was in progress
+
+**Severity:** HIGH (core user action unusable mid-search). **Type:** Bug.
+**Root cause (FACT, code evidence):** the Angular dashboard grid renders
+`*ngFor="let r of sortedResults(); let i = index"` and the buttons call `doMagnet(i)`/`doSchedule(i)`/
+`doDownload(i)`, but the handlers read `this.results()[i]`. `results()` is EMPTY during a search
+(only `loadSearchResults()` sets it on `search_complete`) and in a DIFFERENT order after — while the
+grid shows `sortedResults()` (= `liveResults()` during search). So mid-search `results()[i]` is
+`undefined` → `if (!r) return` → every button did nothing; after search the index desynced from the
+sorted display (wrong-row risk). **Fix:** handlers resolve the row from `this.sortedResults()[index]`
+— the SAME array the template iterates. Plus the deferred qBit-login callback now captures the ROW
+object (`executeScheduleRow(r)`) instead of re-resolving by index, eliminating a search-completes-
+mid-dialog wrong-row race (review nit). **Affected:** `frontend/src/app/components/dashboard/dashboard.component.ts`.
+**Regression guard (§11.4.115/§11.4.135):** `dashboard.component.spec.ts` — 4 new tests (each button
+fires for the live row mid-search + the deferred-login row-capture); RED-proven (pre-fix → "expected
+one matching request, found none"). **Verified live:** `challenges/extension/search_buttons_live_challenge.sh`
+PASS — all 3 button backends (`/api/v1/magnet`, `/api/v1/download/file`, `/api/v1/download`) satisfy
+their real contract; the synthetic magnet is added + INDEPENDENTLY confirmed present in qBittorrent +
+cleaned up (§11.4.14). Full frontend suite 345 green.
+
+### 40. Search results collapsed to a fraction (50) on completion despite thousands streamed
+
+**Severity:** HIGH (perceived data loss). **Type:** Bug.
+**Root cause (FACT, code + runtime evidence):** `get_search` (the endpoint the grid swaps to on
+`search_complete`) hardcoded `for m in merged[:50]:` (not even the requested `limit`). Captured live:
+a "Linux" search streamed **2153 results** into the live grid, but the final list was capped at **50**
+— the operator's "just a fraction." **Fix:** `get_search(search_id, req, limit: int = 0)` returns the
+FULL merged set by default (`display = merged if limit <= 0 else merged[: max(0, limit)]`); the grid
+uses cdk virtual-scroll so the full set renders cheaply. **Affected:** `download-proxy/src/api/routes.py`.
+**Regression guard (§11.4.115/§11.4.135):** `tests/unit/test_search_results_not_capped.py` (3 tests:
+73 merged → all 73 not 50; optional `?limit` truncates; sub-50 returned whole) — RED-proven (cap-50 →
+50≠73). **Verified live (§11.4.123):** post-fix "Linux" search → `completed total=1363 merged=862
+RESULTS_LEN=862` (was 50). The final set now matches the merged count.
+
+### 41. pytest tore down the operator's running stack on every suite that touched docker_services
+
+**Severity:** MEDIUM (test-infra; repeatedly killed the live stack mid-session). **Type:** Bug.
+**Root cause (FACT):** `tests/conftest.py` overrode `docker_setup` → `[]` (skip compose-up) but NOT
+`docker_cleanup`, so `pytest-docker`'s default teardown ran `compose down`, destroying a stack the
+suite did NOT bring up. Any suite using the `docker_services` fixture (e.g. the contract/security
+live-probing tests) nuked qbittorrent + the proxy on teardown. **Fix:** add a `docker_cleanup` fixture
+returning `[]` (mirrors `docker_setup`) — the suite is now a pure observer; startup/shutdown is owned by
+`./start.sh`. **Affected:** `tests/conftest.py`. **Composes §11.4.119** (single-resource-owner — tests
+must not seize a resource in use).

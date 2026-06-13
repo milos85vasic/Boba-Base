@@ -273,6 +273,19 @@ def docker_setup() -> list[str]:
     return []
 
 
+@pytest.fixture(scope="session")
+def docker_cleanup() -> list[str]:
+    """Skip automatic compose DOWN on teardown.
+
+    pytest-docker's default cleanup is ``compose down -v`` — which would tear
+    down a stack the test session did NOT bring up (``docker_setup`` is ``[]``).
+    That destroyed the operator's running stack mid-session every time a suite
+    touched the ``docker_services`` fixture. We own startup/shutdown via
+    ``./start.sh`` / the orchestrator, so the test suite must NEVER ``down`` the
+    stack. Empty list = no teardown command (mirrors ``docker_setup``)."""
+    return []
+
+
 from tests.fixtures.live_search import (
     _live_search_cache,
     fresh_magnet_hash,
