@@ -177,8 +177,8 @@
 </header>
 <h1 id="bobalink-browser-extension-status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 12 <strong>Last modified:</strong>
-2026-06-13T12:40:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
+2026-06-13T12:48:00Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
@@ -299,6 +299,23 @@ allowlist/visibility/dedup),
 <code>tests/unit/highlight-manager.test.ts</code> (11 — content-script
 highlight DOM no-leak/idempotency). No product defects; 1 flaky
 scaling-ratio test hardened (BUGFIXES 27, §11.4.50/§11.4.118).</p>
+<p><strong>Wave-13 (2026-06-13):</strong> +15 → <strong>814 passed
+(814)</strong>. <code>tests/unit/popup-states.test.ts</code> (5) closes
+a genuine new gap (the popup’s <strong>partial Send-All failure</strong>
+path: succeeded rows flip to Sent, failed rows stay retryable, the live
+region reports the failure count, Send-All re-enables). Plus <strong>two
+prior-session test files brought into git</strong> that were sitting
+UNTRACKED in the working tree (a working-tree-hygiene gap closed):
+<code>tests/unit/options-save-flow.test.ts</code> (4 — save
+validation/persistence/encryption) and
+<code>tests/unit/offline-queue-persistence.test.ts</code> (6 —
+cross-restart persistence/recovery), both verified real anti-bluff
+suites against production code. Also: a 6th flaky scaling test hardened
+(the tab-group <strong>median→min</strong> estimator, §11.4.50/§11.4.118
+— even a median spikes under 814-test contention; min is the
+intrinsic-cost estimator). Autonomous test-coverage is now saturated;
+remaining release work is operator-gated (live-7187 round-trip, headful
+e2e, store assets).</p>
 </blockquote>
 <ul>
 <li><strong>+129 new tests across 6 files</strong> (each anti-bluff; no

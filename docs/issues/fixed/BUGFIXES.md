@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 7
-**Last modified:** 2026-06-13T12:40:00Z
+**Revision:** 8
+**Last modified:** 2026-06-13T12:52:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -554,6 +554,30 @@ quadratic≈16 — both <40). Passed at 761 tests, tripped at 799. **Fix:** meas
 reps at each size (intrinsic, contention-robust — host stalls only ADD time) and tighten the
 threshold to **10** (sits BETWEEN linear≈4 and quadratic≈16, so it now genuinely catches an O(n²)
 regression while never flaking). Verified stable 5/5 in isolation + full-suite `CI-EXT: PASS`.
-**Affected:** `extension/tests/security/infohash-detection-hostile.test.ts`. **Note:** completes
-the §11.4.118 flaky-scaling-test sweep — the sibling stress test already uses a median estimator +
-a 0.5 ms floor + a between-thresholds ratio (robust, unchanged).
+**Affected:** `extension/tests/security/infohash-detection-hostile.test.ts`. **Note:** the sibling
+stress test's median estimator was initially assessed robust — but it ALSO flaked one wave later
+under heavier load (see entry 28), confirming that median is not enough; min is.
+
+---
+
+## 2026-06-13 — BobaLink extension wave-13: tab-group scaling median→min + working-tree hygiene
+
+Batch verified by `extension/ci-ext.sh` → **`CI-EXT: PASS`**, full suite **814 passed (814)**
+(+15 over wave-12: `popup-states` 5 — genuine partial-Send-All gap; plus two prior-session test
+files brought into git — `options-save-flow` 4 + `offline-queue-persistence` 6 — that were sitting
+UNTRACKED in the working tree). No product defects.
+
+### 28. tab-group scaling-ratio test — median estimator spikes under load (§11.4.50)
+
+**Severity:** MEDIUM (flaky test — §11.4.1 FAIL-bluff; blocked the green gate). **Root cause
+(FACT):** `tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts`'s scaling guard used the
+MEDIAN of 5 reps; under the heaviest concurrent load (814 tests) several reps landed on a busy core
+and dragged the median up, so the 10×-input ratio spiked past the 25 ceiling while the intrinsic
+ratio is ~5–8. (This refutes the wave-12 assessment that median was robust — entry 27's note.)
+**Fix:** switched the shared timing helper from median to **MIN** over reps (the minimum is the
+intrinsic-cost estimator — host stalls only ADD time, so the fastest run is closest to true cost;
+a genuine O(n²) regression still inflates every run including the min) and bumped reps (orchestrator
+3→5, tab-group 5→9). Verified stable 3/3 in isolation (ratios 4.76/6.41/8.25 vs the 25 ceiling) +
+full-suite `CI-EXT: PASS`. **Affected:** `extension/tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts`.
+**Lesson (§11.4.118):** the robust estimator for CPU-bound scaling-ratio tests under concurrent load
+is MIN-of-reps, not median/mean — all six flaky-scaling fixes this session converge on it.

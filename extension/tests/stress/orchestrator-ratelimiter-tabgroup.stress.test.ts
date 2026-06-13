@@ -40,10 +40,12 @@
  *   O(n²) shows ratio ≈ 100. The bar `ratio < MAX_SUBQUADRATIC_RATIO` (25) sits
  *   comfortably ABOVE the ~10 a healthy linear scan exhibits (so noise won't
  *   false-FAIL it) and well BELOW the ~100 a quadratic regression would exhibit
- *   (so it WILL catch the regression). To further damp scheduler noise the timed
- *   region is repeated and the MEDIAN of several samples is taken, and the larger
- *   workload's per-unit floor is guarded with a small epsilon so a sub-millisecond
- *   tiny baseline cannot divide-by-zero into a false ratio.
+ *   (so it WILL catch the regression). To be robust to host contention the timed
+ *   region is repeated and the MIN of several samples is taken (the minimum is the
+ *   intrinsic-cost estimator — stalls only ADD time, so a median/mean can be
+ *   dragged up under full-suite load), and the larger workload's per-unit floor is
+ *   guarded with a small epsilon so a sub-millisecond tiny baseline cannot
+ *   divide-by-zero into a false ratio.
  *
  * EVIDENCE (§11.4.85 MANDATORY): each test writes a captured-evidence JSON
  * artifact under `tests/stress/.evidence/` and asserts on the captured data
@@ -95,24 +97,24 @@ function captureEvidence(name: string, data: unknown): string {
  */
 const MAX_SUBQUADRATIC_RATIO = 25;
 
-/** Median of a numeric sample (odd/even safe). Used to damp scheduler jitter. */
-function median(samples: number[]): number {
-  const s = [...samples].sort((a, b) => a - b);
-  const mid = Math.floor(s.length / 2);
-  return s.length % 2 === 0
-    ? ((s[mid - 1] as number) + (s[mid] as number)) / 2
-    : (s[mid] as number);
-}
-
-/** Time `fn` REPS times and return the MEDIAN elapsed ms (jitter-resistant). */
-async function medianTimedMs(reps: number, fn: () => Promise<void>): Promise<number> {
-  const samples: number[] = [];
+/**
+ * Time `fn` REPS times and return the MIN elapsed ms — the contention-robust
+ * estimator of intrinsic cost. Host scheduler stalls only ADD time, so the
+ * fastest run is closest to the true cost; a median/mean gets dragged UP when
+ * several reps land on a busy core under full-suite load (observed: a median
+ * scaling ratio spiked past 25 at 814 tests while the intrinsic ratio is ~10).
+ * A genuine O(n²) regression still inflates EVERY run including the min, so the
+ * min-of-reps ratio keeps full regression-catching power while never flaking
+ * (§11.4.50).
+ */
+async function minTimedMs(reps: number, fn: () => Promise<void>): Promise<number> {
+  let best = Infinity;
   for (let r = 0; r < reps; r++) {
     const t0 = performance.now();
     await fn();
-    samples.push(performance.now() - t0);
+    best = Math.min(best, performance.now() - t0);
   }
-  return median(samples);
+  return best;
 }
 
 /**
@@ -229,9 +231,9 @@ describe("§11.4.85 STRESS: ScannerOrchestrator.scanNow() on a hostile junk-heav
     // an absolute wall-clock, so it is reproducible on a busy/slow host.
     const N = 60; // small workload
     const BIG = N * 10; // 10× larger workload (600 real magnets + ~9× junk each)
-    const REPS = 3; // median over REPS damps scheduler noise (real DOM scans are ~s each)
+    const REPS = 5; // min over REPS = intrinsic cost (real DOM scans are ~s each)
 
-    const small = await medianTimedMs(REPS, async () => {
+    const small = await minTimedMs(REPS, async () => {
       buildHostilePage(N);
       const o = new ScannerOrchestrator(undefined, { observeMutations: false });
       await o.scanNow();
@@ -239,7 +241,7 @@ describe("§11.4.85 STRESS: ScannerOrchestrator.scanNow() on a hostile junk-heav
       expect(o.getDetectedCount()).toBe(N);
     });
 
-    const big = await medianTimedMs(REPS, async () => {
+    const big = await minTimedMs(REPS, async () => {
       buildHostilePage(BIG);
       const o = new ScannerOrchestrator(undefined, { observeMutations: false });
       await o.scanNow();
@@ -627,16 +629,16 @@ describe("§11.4.85 STRESS: tab-group batched send at scale (many tabs → one d
     const PER_TAB = 50;
     const SHARED = 10;
     const BIG_TABS = SMALL_TABS * 10; // 10× the work (tabs scale linearly)
-    const REPS = 5;
+    const REPS = 9; // min over REPS — more samples = better chance of an uncontended run
 
     const smallBuilt = buildLargeGroup(1, SMALL_TABS, PER_TAB, SHARED);
     const bigBuilt = buildLargeGroup(2, BIG_TABS, PER_TAB, SHARED);
 
-    const small = await medianTimedMs(REPS, async () => {
+    const small = await minTimedMs(REPS, async () => {
       const b = await batchGroupTorrents(1, smallBuilt.deps);
       expect(b.length).toBe(smallBuilt.expectedUnique.size);
     });
-    const big = await medianTimedMs(REPS, async () => {
+    const big = await minTimedMs(REPS, async () => {
       const b = await batchGroupTorrents(2, bigBuilt.deps);
       expect(b.length).toBe(bigBuilt.expectedUnique.size);
     });

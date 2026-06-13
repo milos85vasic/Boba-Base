@@ -1,7 +1,7 @@
 # BobaLink Browser Extension — Feature Coverage Ledger
 
-**Revision:** 5
-**Last modified:** 2026-06-13T12:40:00Z
+**Revision:** 6
+**Last modified:** 2026-06-13T12:48:00Z
 **Scope:** BobaLink (`extension/`) — feature × test-type coverage ledger with a
 per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 §11.4.52 autonomous-validation).
@@ -17,8 +17,9 @@ per-feature autonomous-verification class (§11.4.25 full-automation-coverage,
 
 ## Ground-truth baseline (this session)
 
-- Full suite: **799 passed / 65 spec files** (`npx vitest run` via `extension/ci-ext.sh`
-  → `CI-EXT: PASS`, Session 12 wave-12 / 2026-06-13) under
+- Full suite: **814 passed / 68 spec files** (`npx vitest run` via `extension/ci-ext.sh`
+  → `CI-EXT: PASS`, Session 12 wave-13 / 2026-06-13; +5 popup partial-Send-All gap + 2 prior-session
+  files brought into git: options-save-flow (4) + offline-queue-persistence (6)) under
   `extension/tests/{unit,perf,stress,chaos,integration,security,a11y,i18n,e2e}` + `src/**`.
   (+240 over the 559 rc baseline: +73 wave-10, +129 wave-11, +38 wave-12.)
 - **Session-12 wave-12 coverage** (no product defects found in any): AES-256-GCM crypto
