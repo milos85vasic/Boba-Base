@@ -16,6 +16,13 @@
 set -euo pipefail
 
 PORTS=(7186 7187 7189 9117)
+# Bind address for the local forwards. Default 127.0.0.1 (localhost-only, safe).
+# Set TUNNEL_BIND_ADDR=0.0.0.0 to expose the stack on ALL interfaces so the Mac's
+# own LAN IP (e.g. http://192.168.x.y:7187) and other LAN devices can reach it.
+# SECURITY: 0.0.0.0 exposes qBittorrent (admin/admin via 7186), the merge
+# dashboard (7187), boba-jackett (7189), and Jackett (9117) to the local
+# network — only enable on a trusted LAN.
+BIND_ADDR="${TUNNEL_BIND_ADDR:-127.0.0.1}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 IDENTITY="$HOME/.local/share/containers/podman/machine/machine"
 
@@ -45,7 +52,7 @@ echo "Podman SSH port: $PODMAN_PORT"
 # Build the -L argument list
 TUNNEL_ARGS=()
 for port in "${PORTS[@]}"; do
-  TUNNEL_ARGS+=(-L "${port}:127.0.0.1:${port}")
+  TUNNEL_ARGS+=(-L "${BIND_ADDR}:${port}:127.0.0.1:${port}")
 done
 
 # Kill any existing tunnel processes for these ports
@@ -62,4 +69,4 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
   "${TUNNEL_ARGS[@]}" \
   core@127.0.0.1
 
-echo "SSH tunnel established: ports ${PORTS[*]}"
+echo "SSH tunnel established: ports ${PORTS[*]} (bind ${BIND_ADDR})"
