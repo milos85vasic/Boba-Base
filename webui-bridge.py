@@ -35,8 +35,42 @@ except Exception as _exc:  # pragma: no cover — defensive
     print(f"[WebUI-Bridge] theme_injector unavailable: {_exc}")
 
 # Configuration
-QBITTORRENT_HOST = os.environ.get("QBITTORRENT_HOST", "localhost")
-QBITTORRENT_PORT = int(os.environ.get("QBITTORRENT_PORT", "7185"))
+#
+# qBittorrent target resolution (§11.4.111 resolve-by-configured-address):
+# the qBittorrent WebUI on :7185 is CONTAINER-INTERNAL and NOT published to
+# the host. The host (and the host-side bridge process) reaches qBittorrent's
+# WebUI through the download-proxy on :7186 (published + tunneled). So the
+# default target MUST be the host-reachable download-proxy, not the
+# container-internal :7185. Precedence:
+#   1. BRIDGE_QBIT_URL / QBITTORRENT_URL — explicit base URL (preferred)
+#   2. QBITTORRENT_HOST + QBITTORRENT_PORT — legacy host/port pair
+#   3. default http://localhost:7186 (download-proxy → qBit WebUI)
+# A Linux/container deploy can set BRIDGE_QBIT_URL=http://qbittorrent:7185 (or
+# QBITTORRENT_HOST/PORT) and the same code path works unchanged.
+_DEFAULT_QBIT_URL = "http://localhost:7186"
+
+
+def _resolve_qbittorrent_url():
+    """Resolve the host-reachable qBittorrent base URL from the environment."""
+    explicit = os.environ.get("BRIDGE_QBIT_URL") or os.environ.get("QBITTORRENT_URL")
+    if explicit:
+        return explicit.rstrip("/")
+    host = os.environ.get("QBITTORRENT_HOST")
+    port = os.environ.get("QBITTORRENT_PORT")
+    if host or port:
+        return f"http://{host or 'localhost'}:{port or '7186'}".rstrip("/")
+    return _DEFAULT_QBIT_URL
+
+
+QBITTORRENT_URL = _resolve_qbittorrent_url()
+
+# Parsed host/port kept as module attributes for back-compat: callers (and
+# tests) may override QBITTORRENT_HOST / QBITTORRENT_PORT directly. The proxy
+# path prefers QBITTORRENT_URL but falls back to host:port so a monkeypatched
+# host/port still steers the target.
+_parsed_qbit = urllib.parse.urlparse(QBITTORRENT_URL)
+QBITTORRENT_HOST = _parsed_qbit.hostname or "localhost"
+QBITTORRENT_PORT = _parsed_qbit.port or 7186
 BRIDGE_PORT = int(os.environ.get("BRIDGE_PORT", "7188"))
 
 # Private tracker URL patterns
@@ -84,8 +118,8 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
 
                 backend_status = "unknown"
                 try:
-                    conn = _http.HTTPConnection("localhost", 7185, timeout=2)
-                    conn.request("GET", "/")
+                    conn = _http.HTTPConnection(QBITTORRENT_HOST, QBITTORRENT_PORT, timeout=2)
+                    conn.request("GET", "/api/v2/app/version")
                     resp = conn.getresponse()
                     backend_status = "ok" if resp.status < 500 else f"http_{resp.status}"
                     conn.close()

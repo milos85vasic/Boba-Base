@@ -70,3 +70,41 @@ class TestWebUIBridge:
         """log_message should be overridden to reduce noise."""
         # The handler should have a custom log_message
         assert hasattr(webui_bridge.WebUIBridgeHandler, "log_message")
+
+    def test_qbittorrent_target_is_host_reachable_not_container_internal(self):
+        """The qBittorrent target MUST default to the host-reachable address.
+
+        Root-cause regression guard (FACT 2026-06-14): the bridge previously
+        defaulted to ``localhost:7185`` — qBittorrent's WebUI port, which is
+        CONTAINER-INTERNAL and NOT published to the macOS host, so the
+        passthrough always failed with Errno 61. The host reaches qBittorrent's
+        WebUI through the download-proxy on :7186. With no env override the
+        resolved target MUST be :7186 (host-reachable), never :7185.
+        """
+        assert webui_bridge.QBITTORRENT_PORT != 7185, (
+            "bridge default target points at container-internal :7185 — "
+            "unreachable from the host; must be the :7186 download-proxy"
+        )
+        assert webui_bridge.QBITTORRENT_PORT == 7186
+        assert webui_bridge.QBITTORRENT_URL.endswith(":7186")
+
+    def test_qbittorrent_url_explicit_env_override(self, monkeypatch):
+        """An explicit BRIDGE_QBIT_URL / QBITTORRENT_URL steers the target.
+
+        Lets a Linux/container deploy point at ``http://qbittorrent:7185``
+        unchanged while the host default stays :7186.
+        """
+        monkeypatch.setenv("BRIDGE_QBIT_URL", "http://qbittorrent:7185")
+        assert webui_bridge._resolve_qbittorrent_url() == "http://qbittorrent:7185"
+        monkeypatch.delenv("BRIDGE_QBIT_URL", raising=False)
+        monkeypatch.setenv("QBITTORRENT_URL", "http://example:9999/")
+        # trailing slash trimmed
+        assert webui_bridge._resolve_qbittorrent_url() == "http://example:9999"
+
+    def test_qbittorrent_legacy_host_port_env_override(self, monkeypatch):
+        """Legacy QBITTORRENT_HOST/PORT env still resolves a target."""
+        monkeypatch.delenv("BRIDGE_QBIT_URL", raising=False)
+        monkeypatch.delenv("QBITTORRENT_URL", raising=False)
+        monkeypatch.setenv("QBITTORRENT_HOST", "qbit-host")
+        monkeypatch.setenv("QBITTORRENT_PORT", "7185")
+        assert webui_bridge._resolve_qbittorrent_url() == "http://qbit-host:7185"
