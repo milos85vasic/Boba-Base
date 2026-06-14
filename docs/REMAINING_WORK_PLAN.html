@@ -1,0 +1,368 @@
+<h1
+id="boba-remaining-work-plan-subagent-driven-path-to-zero-issues">Boba —
+Remaining-Work Plan (subagent-driven, path to zero-issues)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-14T18:55:00Z <strong>Status:</strong> active
+<strong>Baseline:</strong> HEAD <code>7de2802</code> on
+<code>main</code> (all 4 mirrors synced). Default Python/FastAPI path is
+the shipped product and is essentially debt-free + fully tested; the
+items below are the complete, evidence-backed set of what remains for
+“nothing unfinished, zero issues.” <strong>Method:</strong> assembled
+from 4 parallel READ-ONLY audits (code-debt, test-health,
+operational/UX, security/compliance) + the §11.4.85 plugin-parser sweep,
+2026-06-14. Every item cites real evidence (file:line / captured probe).
+No guessing (§11.4.6).</p>
+<hr />
+<h2 id="how-to-execute-this-plan-subagent-driven-11.4.70-default">0. How
+to execute this plan (subagent-driven, §11.4.70 default)</h2>
+<ul>
+<li>Each task <code>RW-NN</code> is sized for ONE subagent in an
+isolated context. Dispatch in the priority order below; non-contending
+tasks (different files) run in parallel (≥3 streams, §11.4.103).</li>
+<li><strong>Every fix is anti-bluff (§11.4 / §11.4.107):</strong>
+RED-on-broken test first (§11.4.115), fix at source (§11.4.1), GREEN
+with captured evidence, independent review → GO (§11.4.142/§11.4.134),
+commit + push all mirrors. Security fixes additionally get a regression
+guard (§11.4.135) and, where they change runtime behaviour, a §11.4.108
+runtime-signature verified on the redeployed container.</li>
+<li><strong>Acceptance = the named test passes AND the cited evidence is
+captured AND no regression</strong> (full unit suite stays green).
+“Done” requires pasted real output (§ Definition of Done).</li>
+<li>Items marked <strong>OPERATOR-DECISION</strong> are blocked on a
+choice only the operator can make (threat model, scope) — they are
+surfaced via §11.4.66, not auto-executed.</li>
+</ul>
+<hr />
+<h2 id="phase-1-security-hardening-highest-priority">1. PHASE 1 —
+Security hardening (HIGHEST PRIORITY)</h2>
+<p>The merge service exposes mutating endpoints; the operator runs it on
+a LAN via a <code>0.0.0.0</code> SSH tunnel, so these are reachable from
+any LAN host. <code>require_api_token</code> exists and is correctly
+written (constant-time, never logged) but is OPEN by default and only
+applied to the download routes.</p>
+<h3
+id="rw-01-high-authenticate-the-hooks-endpoint-sandbox-hook-execution">RW-01
+— [HIGH] Authenticate the hooks endpoint + sandbox hook execution</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>download-proxy/src/api/hooks.py</code> has zero
+<code>require_api_token</code>; <code>POST /api/v1/hooks</code>
+registers a <code>script_path</code> executed via
+<code>subprocess.run([hook.script_path], …)</code>
+(<code>merge_service/hooks.py:141</code>). Live unauth probe reached the
+handler (422 body-validation, not 401). A <code>..</code> guard +
+single-element argv exist (no shell injection), but an unauth LAN caller
+can register an existing in-container executable to run on event fire =
+code-exec.</li>
+<li><strong>Fix direction:</strong> add
+<code>Depends(require_api_token)</code> to all mutating hook routes;
+additionally restrict <code>script_path</code> to an allowlisted
+directory (e.g. <code>config/hooks/</code>) resolved + verified at
+registration; reject anything outside it.</li>
+<li><strong>Acceptance:</strong> RED test — unauth
+<code>POST/DELETE /api/v1/hooks</code> returns 401 when
+<code>BOBA_API_TOKEN</code> set; a hook <code>script_path</code> outside
+the allowlist is rejected. Regression guard added. No existing hook test
+regresses.</li>
+<li><strong>Discipline:</strong> §11.4.1/§11.4.115/§11.4.135.
+<strong>Priority: P0.</strong></li>
+</ul>
+<h3
+id="rw-02-high-close-the-default-open-write-surface-downloaduploadfile-schedules-theme">RW-02
+— [HIGH] Close the default-open write surface (download/upload/file +
+schedules + theme)</h3>
+<ul>
+<li><strong>Evidence:</strong> <code>require_api_token</code>
+(<code>routes.py:849-877</code>) returns (no auth) when
+<code>BOBA_API_TOKEN</code> is unset; it is unset in the running
+container. <code>scheduler.py</code> + <code>theme</code> routes have no
+token dep at all. Live unauth <code>POST /api/v1/download</code> → 200,
+torrent added.</li>
+<li><strong>Fix direction (OPERATOR-DECISION on default):</strong>
+Option A — keep open-by-default (documented §11.4.122
+no-auth-preservation) but make it LOUD: log a startup WARNING when
+<code>BOBA_API_TOKEN</code> is unset AND the bind is non-loopback.
+Option B — default-closed for non-loopback clients (derive client IP;
+require token unless request is from 127.0.0.1). Apply
+<code>require_api_token</code> consistently to schedules + theme
+mutations regardless.</li>
+<li><strong>Acceptance:</strong> with <code>BOBA_API_TOKEN</code> set,
+all mutating routes (download/upload/file/schedules/hooks/theme) return
+401 unauth + 200 with token; startup warning emitted when open +
+LAN-bound (captured log).</li>
+<li><strong>Discipline:</strong> §11.4.66 (decision) +
+§11.4.1/§11.4.135. <strong>Priority: P0.</strong></li>
+</ul>
+<h3 id="rw-03-med-high-block-ssrf-in-server-side-url-fetch">RW-03 —
+[MED-HIGH] Block SSRF in server-side URL fetch</h3>
+<ul>
+<li><strong>Evidence:</strong> <code>download_torrent_file</code>
+non-tracker branch + the <code>/download</code> flow do
+<code>aiohttp...get(&lt;user download_urls entry&gt;)</code> with no
+host validation (<code>routes.py:1170-1187</code>). A caller can make
+the proxy fetch <code>http://169.254.169.254/…</code>,
+<code>http://localhost:7185/…</code>, or LAN hosts and receive the
+body.</li>
+<li><strong>Fix direction:</strong> after DNS resolution, reject
+RFC-1918 / loopback / link-local / metadata (169.254.169.254) /
+multicast targets; or restrict to known tracker hosts. Apply to BOTH the
+<code>/download/file</code> and <code>/download</code> non-tracker fetch
+paths.</li>
+<li><strong>Acceptance:</strong> RED test — a <code>download_urls</code>
+entry pointing at a private/loopback/metadata IP is rejected (no fetch);
+a legit tracker URL still works. Regression guard.</li>
+<li><strong>Discipline:</strong> §11.4.1/§11.4.115/§11.4.135.
+<strong>Priority: P0.</strong></li>
+</ul>
+<h3 id="rw-04-med-auth-consistency-go-proxy-cors-jackett-admin">RW-04 —
+[MED] Auth-consistency + Go-proxy CORS + Jackett admin</h3>
+<ul>
+<li><strong>Evidence:</strong> <code>generate_magnet</code>
+(<code>routes.py:1195</code>) lacks <code>require_api_token</code>
+(siblings have it). Go Gin proxy <code>middleware.CORS("*")</code> +
+<code>Allow-Credentials:true</code>
+(<code>cmd/qbittorrent-proxy/main.go:45</code>,
+<code>internal/middleware/cors.go:11-14</code>) — forbidden
+wildcard+credentials combo (opt-in Go profile only). Jackett
+<code>:9117</code> has <code>AdminPassword_set=False</code>,
+LAN-exposed.</li>
+<li><strong>Fix direction:</strong> add token dep to
+<code>/magnet</code>; fix Go CORS to echo an allowlisted Origin (mirror
+the hardened <code>jackettapi/cors_middleware.go</code>); set a Jackett
+admin password (or document the localhost-only assumption + the
+<code>0.0.0.0</code> exception).</li>
+<li><strong>Acceptance:</strong> <code>/magnet</code> 401 unauth (token
+set); Go CORS no longer returns <code>*</code>+credentials (Go test);
+Jackett admin requires a password OR a documented operator
+decision.</li>
+<li><strong>Discipline:</strong> §11.4.1 + §11.4.66. <strong>Priority:
+P1.</strong></li>
+</ul>
+<h3 id="rw-05-med-operator-decision-lan-exposure-threat-model">RW-05 —
+[MED] OPERATOR-DECISION — LAN-exposure threat model</h3>
+<ul>
+<li><strong>Evidence:</strong> the tunnel binds <code>0.0.0.0</code>
+(<code>TUNNEL_BIND_ADDR=0.0.0.0</code>), exposing 7186/7187/7189/9117 to
+the LAN; several mutating endpoints + the Jackett admin are open.</li>
+<li><strong>Decision needed:</strong> is LAN access required, or should
+the tunnel bind <code>127.0.0.1</code>? If LAN is required, RW-01..04 +
+a Jackett password are mandatory; if not, binding loopback closes most
+of the surface at once.</li>
+<li><strong>Discipline:</strong> §11.4.66. <strong>Priority: P1 (gates
+how aggressive RW-02 must be).</strong></li>
+</ul>
+<hr />
+<h2 id="phase-2-functional-correctness-deployment">2. PHASE 2 —
+Functional correctness + deployment</h2>
+<h3
+id="rw-06-med-deploy-the-rutracker-redos-fix-to-the-running-container-11.4.108">RW-06
+— [MED] Deploy the rutracker ReDoS fix to the running container
+(§11.4.108)</h3>
+<ul>
+<li><strong>Evidence:</strong> the ReDoS fix landed in source
+(<code>plugins/rutracker.py</code>, HEAD 7de2802) but the running
+container uses the installed copy
+(<code>config/qBittorrent/nova3/engines/rutracker.py</code>). Until
+<code>install-plugin.sh</code> + proxy restart, live searches still use
+the vulnerable regex.</li>
+<li><strong>Fix:</strong> <code>./install-plugin.sh</code> (copies
+plugins→engines), clear <code>__pycache__</code>,
+<code>podman restart qbittorrent-proxy</code>; re-establish tunnel
+(self-healer handles it). Verify §11.4.108 runtime-signature: the
+installed engine file contains <code>{0,512}</code> and a live
+large-result rutracker search returns &lt; 2s parse.</li>
+<li><strong>Acceptance:</strong>
+<code>grep '0,512' config/qBittorrent/nova3/engines/rutracker.py</code>
+present on the container; captured timing of a large rutracker result
+page &lt; 2s.</li>
+<li><strong>Discipline:</strong> §11.4.108. <strong>Priority:
+P1.</strong></li>
+</ul>
+<h3 id="rw-07-med-nnmclub-authnnmclubstatus-sourceartifact-drift">RW-07
+— [MED] nnmclub <code>/auth/nnmclub/status</code> SOURCE→ARTIFACT
+drift</h3>
+<ul>
+<li><strong>Evidence:</strong> route exists in
+<code>download-proxy/src/api/auth.py</code> (BOB-006) but returns 404 on
+the running container;
+<code>tests/e2e/test_live_stack_evidence.py:265</code> skips because of
+it.</li>
+<li><strong>Fix:</strong> redeploy the proxy so source == artifact;
+confirm the route returns 200 live; the e2e test then asserts for real
+(un-skips).</li>
+<li><strong>Acceptance:</strong>
+<code>curl :7187/api/v1/auth/nnmclub/status</code> → 200; the e2e no
+longer skips. (Likely resolved together with RW-06’s restart —
+verify.)</li>
+<li><strong>Discipline:</strong> §11.4.108/§11.4.139. <strong>Priority:
+P1.</strong></li>
+</ul>
+<h3 id="rw-08-med-search-latency-searchsync-reset-over-tunnel">RW-08 —
+[MED] Search latency + <code>/search/sync</code> reset over tunnel</h3>
+<ul>
+<li><strong>Evidence:</strong> broad <code>ubuntu</code> search = ~67s
+in-container; over the tunnel <code>/search/sync</code> resets
+(<code>ConnectionResetError</code>) at ~13–40s. SSE path
+(<code>/search</code> + <code>/search/stream/{id}</code>) survives via
+15s keepalives; the dashboard uses it. Scripted/curl callers of
+<code>/search/sync</code> hang.</li>
+<li><strong>Fix direction:</strong> (a) tune per-plugin deadlines
+(<code>PUBLIC_TRACKER_DEADLINE_SECONDS</code>) to cut latency; (b)
+document/steer non-browser callers to the streaming endpoint; optionally
+add a keepalive/heartbeat to the sync path. Add a §11.4.85 chaos test
+for the sync-over-slow-link timeout behaviour.</li>
+<li><strong>Acceptance:</strong> documented guidance + (if tuned) a
+measured latency reduction with captured before/after; SSE path
+confirmed robust.</li>
+<li><strong>Discipline:</strong> §11.4.6/§11.4.85. <strong>Priority:
+P2.</strong></li>
+</ul>
+<hr />
+<h2
+id="phase-3-go-backend-parity-only-if-the-go-profile-is-to-become-viable">3.
+PHASE 3 — Go backend parity (only if the Go profile is to become
+viable)</h2>
+<p><code>docs/migration/PARITY_GAPS.md</code> (Rev 1): 6 ported / 4
+partial / <strong>8 missing</strong> of 18 features. The Go backend is
+opt-in (<code>--profile go</code>) and NOT running; the Python path is
+complete. Switching profiles today regresses. <strong>OPERATOR-DECISION
+(RW-09): is Go parity a goal for this release, or is the Go backend a
+future blueprint?</strong> If yes, file each gap as a ticket and
+execute; if no, mark them deferred-by-design and move on.</p>
+<ul>
+<li><strong>RW-10</strong> [Go] Scheduler driver loop — MISSING
+(verified): <code>scheduler_api.go</code> stores List/Create/Delete but
+has no ticker → Go-path schedules never fire. (Highest-impact silent
+functional hole on the Go path.)</li>
+<li><strong>RW-11</strong> [Go] Metadata enricher (no Go equiv of
+<code>enricher.py</code>) — search loses posters/year/type.</li>
+<li><strong>RW-12</strong> [Go] Public-tracker plugin fan-out (the ~42
+Python plugins are unreachable via Go).</li>
+<li><strong>RW-13</strong> [Go] Tracker validator (BEP 48/15 scrape),
+private-tracker auth/CAPTCHA REST, Jackett auto-config, shared retry
+policy, Jinja2 fallback dashboard,
+<code>/api/v1/jackett/autoconfig/last</code>.</li>
+<li><strong>Acceptance per task:</strong> Go RED→GREEN test
+(<code>go test -race</code>), parity feature reachable on
+<code>--profile go</code>, PARITY_GAPS.md row flipped to Ported.
+<strong>Priority: P3 (gated on RW-09).</strong></li>
+</ul>
+<hr />
+<h2 id="phase-4-coverage-completion-11.4.85-11.4.27">4. PHASE 4 —
+Coverage completion (§11.4.85 / §11.4.27)</h2>
+<p>§11.4.85 stress/chaos now covers: button endpoints (Py+Go), dedup,
+search-orchestration/SSE, bridge, auth, enricher, Go magnet handler,
+plugin parsers. <strong>Remaining surfaces lacking stress/chaos</strong>
+(each a P2 task, parallelizable, offline-mockable): -
+<strong>RW-14</strong> download-proxy tracker-fetch + cookie-auth path
+(the proxy that intercepts tracker URLs) — also overlaps the RW-03 SSRF
+surface. - <strong>RW-15</strong> scheduler driver + hooks dispatch +
+SSE broker (Python side). - <strong>RW-16</strong> boba-jackett (Go)
+autoconfig path + the encrypted SQLite DB ops. - <strong>RW-17</strong>
+[verify, from test-health audit] confirm the full coverage map + that
+every CM-* gate referenced in CLAUDE.md is actually enforced by a
+pre-build script (not documented-only); file any
+documented-but-unimplemented gate as a task. <em>(This section to be
+refined with the test-health audit’s coverage % + gate-enforcement
+findings when they land.)</em> - <strong>Acceptance per task:</strong>
+new <code>tests/stress/test_*_stress_chaos.py</code>, negation-proven,
+captured evidence, both deterministic + randomized. <strong>Priority:
+P2.</strong></p>
+<hr />
+<h2 id="phase-5-docs-release-readiness-housekeeping">5. PHASE 5 — Docs,
+release readiness, housekeeping</h2>
+<ul>
+<li><strong>RW-18</strong> [LOW] §11.4.65 export the 10
+<code>courses/0{1..4}-*/{README,script}.md</code> operator docs
+(<code>scripts/generate_markdown_exports.sh</code>). (Canonical
+<code>docs/</code> tree is already clean.)</li>
+<li><strong>RW-19</strong> [LOW] Fix stale
+<code>docs/browser_extension/RELEASE_READINESS.md</code> locale claim
+(it says 4 locales; all 8 are committed) + reconcile the live-7187
+round-trip status (CONTINUATION says GREEN, RELEASE_READINESS lists it
+open).</li>
+<li><strong>RW-20</strong> [LOW] Create a top-level Boba
+(proxy/merge-service) v1.0.0 readiness ledger (only the extension has
+one) before promoting <code>v1.0.0-rc</code> → <code>1.0.0</code>.</li>
+<li><strong>RW-21</strong> [INFO] Ensure contract tests
+(<code>tests/contract/test_openapi_frozen_in_sync.py</code>) run green
+under Python 3.12 (the new magnet/download endpoints are already in the
+frozen <code>docs/api/openapi.json</code> — no drift, just confirm under
+the right interpreter).</li>
+</ul>
+<hr />
+<h2 id="operator-blocked-decisions-surfaced-not-auto-executed">6.
+Operator-blocked / decisions (surfaced, not auto-executed)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Why blocked</th>
+<th>What we need</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>BOB-008</strong> RuTracker automated login</td>
+<td>CAPTCHA is an irreducible human step</td>
+<td>Operator solves CAPTCHA at
+<code>/api/v1/auth/rutracker/captcha</code>+<code>/login</code> OR
+pastes a fresh <code>bb_session</code> cookie. Runbook:
+<code>docs/qa/BOB-008/operator_runbook.md</code>. Every surrounding
+mechanism is tested.</td>
+</tr>
+<tr>
+<td><strong>RW-05</strong> LAN threat model</td>
+<td>Only operator knows the deployment</td>
+<td>Bind tunnel <code>127.0.0.1</code> vs keep <code>0.0.0.0</code>+auth
+(drives RW-02 aggressiveness).</td>
+</tr>
+<tr>
+<td><strong>RW-09</strong> Go parity goal</td>
+<td>Scope decision</td>
+<td>Is <code>--profile go</code> a release goal or a future
+blueprint?</td>
+</tr>
+<tr>
+<td><strong>“Jackett auto-login like qBit”</strong></td>
+<td>Ambiguous ask</td>
+<td>Jackett currently needs no login only because its admin password is
+unset; there is no auto-login parity with qBit’s
+<code>POST /api/v1/auth/qbittorrent</code>. Confirm whether parity UX is
+wanted (then it’s a new feature task) or “no login needed” already
+satisfies it.</td>
+</tr>
+<tr>
+<td><strong>Extension Phases 4–9</strong> (live-7187 E2E, Phase-5
+wiring, Phase-9 packaging, store assets)</td>
+<td>Operator-gated (shared <code>/Volumes/T7</code> into VM, real
+display, store media)</td>
+<td>Out of scope for the proxy/merge-service product; tracked in the
+extension’s own RELEASE_READINESS.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="suggested-execution-order-zero-issues-path">7. Suggested
+execution order (zero-issues path)</h2>
+<ol type="1">
+<li><strong>P0 security first, in parallel:</strong> RW-01 (hooks
+code-exec), RW-02 (default-open writes), RW-03 (SSRF) — these are the
+real exposure. Get RW-05 decision early as it shapes RW-02.</li>
+<li><strong>P1 deploy + consistency:</strong> RW-04, RW-06 (deploy ReDoS
+fix), RW-07 (nnmclub drift).</li>
+<li><strong>P2 coverage + ops:</strong> RW-08, RW-14..17.</li>
+<li><strong>P3 (if RW-09=yes):</strong> RW-10..13 Go parity.</li>
+<li><strong>P5 docs/release:</strong> RW-18..21, then the v1.0.0
+readiness gate (§11.4.40 full retest) before any tag.</li>
+</ol>
+<p><strong>Definition of “finally finished, zero issues”:</strong> all
+P0/P1 closed with regression guards + redeployed + §11.4.108-verified
+live; P2 coverage gaps closed; operator decisions (RW-05/09 + Jackett
+clarification) resolved; the v1.0.0 readiness ledger green; the full
+§11.4.40 retest passes; everything pushed to all mirrors.</p>
