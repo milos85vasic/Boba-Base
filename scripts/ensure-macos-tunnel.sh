@@ -61,8 +61,16 @@ for port in "${PORTS[@]}"; do
 done
 sleep 0.5
 
-# Create the tunnel
+# Create the tunnel.
+#   ServerAliveInterval/CountMax — probe the VM every 15s; after 3 missed
+#     probes (~45s) the ssh client tears the connection down instead of
+#     hanging half-open, so the keepalive supervisor can re-establish it.
+#   ExitOnForwardFailure=yes — if a -L forward can't be set up (e.g. the
+#     port is still held by a dying tunnel), ssh exits non-zero rather than
+#     sitting connected-but-useless.
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  -o ServerAliveInterval=15 -o ServerAliveCountMax=3 \
+  -o ExitOnForwardFailure=yes \
   -i "$IDENTITY" \
   -p "$PODMAN_PORT" \
   -N -f \
