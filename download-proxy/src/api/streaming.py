@@ -10,6 +10,7 @@ Provides:
 import asyncio
 import json
 import logging
+import time
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
@@ -17,6 +18,65 @@ from fastapi import Request
 from fastapi.responses import StreamingResponse
 
 logger = logging.getLogger(__name__)
+
+# Minimum wall-clock gap between two re-merge passes while a search is
+# still running. ``merge_results`` is O(n²) over the accumulated raw
+# results, so re-merging on every poll would melt the event loop on a
+# large "matrix"-class fan-out (~1800 raw rows). We re-merge at most once
+# per this interval AND only when new raw results have actually arrived
+# (the result-count watermark advanced) — plus one unconditional FINAL
+# re-merge immediately before ``search_complete`` so the last streamed
+# merged set equals what ``GET /search/{id}`` returns.
+MERGED_UPDATE_MIN_INTERVAL_S = 1.5
+
+
+def _build_merged_update(orchestrator: Any, search_id: str) -> dict[str, Any] | None:
+    """Re-merge the accumulated raw results and serialize them.
+
+    Returns the ``merged_update`` payload ``{"merged_results": int,
+    "results": [...]}`` or ``None`` when the orchestrator has no
+    deduplicator / serializer wired (defensive — never kills the stream).
+
+    The serialization goes through ``api.routes._serialize_merged_rows``,
+    the SAME helper ``GET /search/{id}`` uses, so a final
+    ``merged_update`` is byte-identical to the eventual GET payload.
+    """
+    dedup = getattr(orchestrator, "deduplicator", None)
+    if dedup is None:
+        return None
+    # Prefer the orchestrator's AUTHORITATIVE cached merge once the search has
+    # completed: ``_last_merged_results[search_id]`` holds the EXACT merged list
+    # that ``GET /search/{id}`` serializes. Using it for the FINAL emit makes the
+    # last ``merged_update`` byte-identical to the GET payload — zero drop at
+    # completion, no re-merge race (the cached value can include a tracker that
+    # landed between our last interim re-merge and completion). While the search
+    # is still running the cache is empty (``([], [])``), so we re-merge the
+    # accumulated raw results for the progressive interim snapshots.
+    merged = None
+    cache = getattr(orchestrator, "_last_merged_results", None)
+    if cache is not None:
+        try:
+            if search_id in cache:
+                stored = cache[search_id]
+                if stored and stored[0]:
+                    merged = stored[0]
+        except Exception:  # pragma: no cover - defensive cache access
+            merged = None
+    if merged is None:
+        get_all = getattr(orchestrator, "get_all_tracker_results", None)
+        raw = list(get_all(search_id)) if callable(get_all) else []
+        merged = dedup.merge_results(raw)
+
+    try:
+        from api.routes import _serialize_merged_rows
+    except ImportError:  # pragma: no cover - import shape varies under importlib
+        from .routes import _serialize_merged_rows  # type: ignore[no-redef]
+
+    rows = _serialize_merged_rows(merged)
+    serialized = [
+        r.model_dump() if hasattr(r, "model_dump") else (r.dict() if hasattr(r, "dict") else r) for r in rows
+    ]
+    return {"merged_results": len(merged), "results": serialized}
 
 
 class SSEHandler:
@@ -78,6 +138,11 @@ class SSEHandler:
 
         last_count = 0
         seen_hashes = set()
+        # merged_update throttle state. We re-merge (O(n²)) at most once
+        # per MERGED_UPDATE_MIN_INTERVAL_S and only when the raw result
+        # count advanced past the last value we re-merged at.
+        last_merged_emit_ts = 0.0
+        last_merged_raw_count = -1
         # Per-tracker status diff — lets us emit ``tracker_started`` /
         # ``tracker_completed`` events whenever a stat flips between
         # poll iterations.  Keyed by tracker name; value is the last
@@ -171,6 +236,24 @@ class SSEHandler:
                 except Exception:  # noqa: S110
                     pass
 
+                # FINAL merged_update — uses the orchestrator's authoritative
+                # cached merge (_last_merged_results, set at completion) so the
+                # last streamed merged set is byte-identical to GET /search/{id}
+                # (zero drop at completion). Emitted unconditionally immediately
+                # before search_complete — covers the case where the last tracker
+                # added no new raw results so the throttled interim emit was
+                # skipped. A failure here is non-fatal but MUST be observable.
+                try:
+                    final_merged = _build_merged_update(orchestrator, search_id)
+                    if final_merged is not None:
+                        yield SSEHandler.format_event(
+                            event="merged_update",
+                            data=final_merged,
+                            event_id=search_id,
+                        )
+                except Exception as e:
+                    logger.warning("final merged_update failed for %s: %s", search_id, e)
+
                 yield SSEHandler.format_event(event="search_complete", data=metadata.to_dict(), event_id=search_id)
                 break
 
@@ -212,6 +295,27 @@ class SSEHandler:
                     event_id=search_id,
                 )
                 last_count = metadata.total_results
+
+            # Throttled progressive merged_update. We re-merge (O(n²))
+            # only when (a) new raw results arrived since our last
+            # re-merge AND (b) at least MERGED_UPDATE_MIN_INTERVAL_S has
+            # elapsed. This grows the deduplicated grid smoothly toward
+            # the final unique count without melting the event loop.
+            try:
+                raw_count = metadata.total_results
+                now = time.monotonic()
+                if raw_count != last_merged_raw_count and (now - last_merged_emit_ts) >= MERGED_UPDATE_MIN_INTERVAL_S:
+                    payload = _build_merged_update(orchestrator, search_id)
+                    if payload is not None:
+                        yield SSEHandler.format_event(
+                            event="merged_update",
+                            data=payload,
+                            event_id=search_id,
+                        )
+                        last_merged_emit_ts = now
+                        last_merged_raw_count = raw_count
+            except Exception:  # noqa: S110
+                pass
 
             # Wait before next poll
             await asyncio.sleep(poll_interval)

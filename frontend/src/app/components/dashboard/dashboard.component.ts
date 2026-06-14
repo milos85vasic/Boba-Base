@@ -53,6 +53,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   searchStatus = signal('');
   results = signal<SearchResult[]>([]);
   liveResults = signal<SearchResult[]>([]);
+  // De-duplicated (merged) snapshot streamed during the search via the
+  // backend's `merged_update` SSE events. Once the first merged_update
+  // arrives, the grid prefers this over the raw `liveResults` so the
+  // displayed list IS the merged set as it builds — and the final
+  // merged_update equals what GET /search/{id} returns, so completion is
+  // seamless (no sudden shrink/overwrite of the count).
+  liveMergedResults = signal<SearchResult[]>([]);
   totalResults = signal(0);
   mergedResults = signal(0);
   searchErrors = signal<string[]>([]);
@@ -64,21 +71,34 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   // Memoised sorted view for fast rendering of thousands of rows.
   //
-  // While the search is running, stream the liveResults signal so the
-  // table fills in as every `result_found` SSE event arrives. The
-  // moment the search completes, `loadSearchResults` populates the
-  // `results` signal with the final merged/deduplicated list and the
-  // table swaps over. If the search completes and returned nothing
-  // live (e.g. a purely synchronous completion came back on the POST),
-  // still fall back to the merged `results` so we never render an
-  // empty grid when we have data.
+  // While the search is running, prefer the DEDUPLICATED (merged) view
+  // streamed via `merged_update` SSE events the moment it has data, so
+  // the grid renders the merged set as it builds and grows smoothly to
+  // the final unique count. Before the first `merged_update` arrives we
+  // fall back to the raw `liveResults` (the per-tracker `result_found`
+  // rows) so the table still fills in early. The moment the search
+  // completes, `loadSearchResults` populates the `results` signal from
+  // GET /search/{id} — which equals the LAST `merged_update`, so the
+  // swap is seamless: NO sudden shrink/overwrite of the row count. If
+  // the search completes and returned nothing live (e.g. a purely
+  // synchronous completion came back on the POST), still fall back to
+  // the merged `results` so we never render an empty grid when we have
+  // data.
   readonly sortedResults = computed(() => {
     const searching = this.isSearching();
+    const liveMerged = this.liveMergedResults();
     const live = this.liveResults();
     const merged = this.results();
-    const rows = searching && live.length > 0
-      ? live
-      : (merged.length > 0 ? merged : live);
+    let rows: SearchResult[];
+    if (searching) {
+      // Merged view wins as soon as it exists; otherwise the raw live
+      // rows that arrive before the first merged_update.
+      rows = liveMerged.length > 0 ? liveMerged : live;
+    } else {
+      // Completed: the final merged list from get_search (== last
+      // merged_update). Fall back to live rows only if it's empty.
+      rows = merged.length > 0 ? merged : (liveMerged.length > 0 ? liveMerged : live);
+    }
     const col = this.sortColumn();
     const dir = this.sortDirection();
     return this._sort(rows, col, dir);
@@ -295,6 +315,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.searchStatus.set('Searching...');
     this.results.set([]);
     this.liveResults.set([]);
+    this.liveMergedResults.set([]);
     this.searchErrors.set([]);
     this.trackerStats.set([]);
 
@@ -328,6 +349,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
       switch (event.event) {
         case 'result_found':
           this.addLiveResult(event.data);
+          break;
+        case 'merged_update':
+          // The de-duplicated set as it builds. Render it directly so
+          // the displayed list grows smoothly to the final unique
+          // count and never shrinks when the search completes.
+          this.liveMergedResults.set(event.data.results ?? []);
+          this.searchStatus.set(`Found ${event.data.merged_results} unique results…`);
           break;
         case 'results_update':
           this.searchStatus.set(`Found ${event.data.total_results} results...`);

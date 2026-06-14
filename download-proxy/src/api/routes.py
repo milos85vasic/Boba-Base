@@ -242,6 +242,34 @@ def _to_response(r: SearchResult, content_type: str | None = None) -> SearchResu
     )
 
 
+def _serialize_merged_rows(merged: list[Any]) -> list[SearchResultResponse]:
+    """Serialize a list of ``MergedResult`` into response rows.
+
+    Single source of truth for the merged→response-row mapping, called
+    from BOTH ``get_search`` (the final GET payload) AND the SSE
+    ``merged_update`` stream emission, so the live-streamed merged set is
+    BYTE-IDENTICAL to what ``GET /search/{id}`` returns. This is the hard
+    requirement behind progressive de-duplicated streaming — the last
+    streamed merged set MUST equal the final get_search set so the grid
+    never swaps a large raw list for a smaller merged one on completion.
+    """
+    rows: list[SearchResultResponse] = []
+    for m in merged:
+        best = m.original_results[0] if m.original_results else None
+        if not best:
+            continue
+        ct = m.canonical_identity.content_type.value if m.canonical_identity else None
+        resp = _to_response(best, ct)
+        resp.sources = [
+            {"tracker": orig.tracker, "seeds": orig.seeds, "leechers": orig.leechers} for orig in m.original_results
+        ]
+        resp.download_urls = list(dict.fromkeys(lnk for lnk in (orig.link for orig in m.original_results)))
+        resp.seeds = m.total_seeds
+        resp.leechers = m.total_leechers
+        rows.append(resp)
+    return rows
+
+
 @router.post("/search", response_model=SearchResponse)
 async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyped-def]
     """Kick off a search and return immediately.
@@ -552,19 +580,7 @@ async def get_search(search_id: str, req: Request, limit: int = 0):  # type: ign
         # virtual-scroll, so rendering the full set is cheap. Optional ``?limit=N``
         # truncates for callers that explicitly want a smaller page.
         display = merged if limit <= 0 else merged[: max(0, limit)]
-        for m in display:
-            best = m.original_results[0] if m.original_results else None
-            if best:
-                ct = m.canonical_identity.content_type.value if m.canonical_identity else None
-                resp = _to_response(best, ct)
-                resp.sources = [
-                    {"tracker": orig.tracker, "seeds": orig.seeds, "leechers": orig.leechers}
-                    for orig in m.original_results
-                ]
-                resp.download_urls = list(dict.fromkeys(lnk for lnk in (orig.link for orig in m.original_results)))
-                resp.seeds = m.total_seeds
-                resp.leechers = m.total_leechers
-                result_resp.append(resp)
+        result_resp = _serialize_merged_rows(display)
     return SearchResponse(
         search_id=metadata.search_id,
         query=metadata.query,

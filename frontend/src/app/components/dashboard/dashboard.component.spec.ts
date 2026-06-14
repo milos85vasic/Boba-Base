@@ -1308,6 +1308,145 @@ describe('DashboardComponent', () => {
       expect(fx.componentInstance.searchStatus()).toMatch(/Found 3 results/);
     });
 
+    it('merged_update renders the MERGED rows, not the raw liveResults, and tracks the count', () => {
+      const fx = bootstrap();
+      primeRunningSearch(fx);
+
+      // First, a couple of raw per-tracker rows arrive (pre-first-merged-update).
+      sseEvents?.next({
+        event: 'result_found',
+        data: { name: 'r1', size: '1 GB', seeds: 1, leechers: 0, tracker: 'ta', link: 'magnet:1' },
+      });
+      sseEvents?.next({
+        event: 'result_found',
+        data: { name: 'r2', size: '1 GB', seeds: 2, leechers: 0, tracker: 'tb', link: 'magnet:2' },
+      });
+      expect(fx.componentInstance.sortedResults()).toHaveLength(2);
+
+      // Now the backend emits the de-duplicated merged set: a single merged row.
+      const mergedRow = makeResult({
+        name: 'merged-1',
+        seeds: 50,
+        download_urls: ['magnet:m1'],
+        sources: [
+          { tracker: 'ta', seeds: 1, leechers: 0 },
+          { tracker: 'tb', seeds: 2, leechers: 0 },
+        ],
+      });
+      sseEvents?.next({ event: 'merged_update', data: { merged_results: 1, results: [mergedRow] } });
+
+      // The grid now shows the MERGED view (1 row, the merged name), NOT the 2 raw rows.
+      expect(fx.componentInstance.sortedResults()).toHaveLength(1);
+      expect(fx.componentInstance.sortedResults()[0].name).toBe('merged-1');
+      // The status line tracks the merged count.
+      expect(fx.componentInstance.searchStatus()).toContain('1 unique results');
+      // liveResults are still preserved underneath (not destroyed).
+      expect(fx.componentInstance.liveResults()).toHaveLength(2);
+    });
+
+    // KEY ANTI-BLUFF GUARD (§11.4.115): the displayed count must GROW smoothly
+    // through the merged_update sequence and NOT drop when the search completes.
+    // Pre-change the grid showed raw liveResults during the search (say, many
+    // per-tracker rows) and swapped to the smaller merged list on completion →
+    // a visible shrink. With the fix the grid renders liveMergedResults during
+    // the search, and the final get_search list equals the last merged_update,
+    // so the count stays put. We synthesise growing merged batches (50 → 400 →
+    // 663), complete, return the SAME 663 from get_search, and assert the
+    // displayed length never drops below the last merged_update count.
+    it('does NOT shrink on completion after growing merged_update events (50 → 400 → 663)', () => {
+      const fx = bootstrap();
+      primeRunningSearch(fx);
+
+      const batch = (n: number): SearchResult[] =>
+        Array.from({ length: n }, (_, i) =>
+          makeResult({ name: `m${i}`, seeds: i, download_urls: [`magnet:m${i}`] }),
+        );
+
+      // Growing de-duplicated snapshots.
+      sseEvents?.next({ event: 'merged_update', data: { merged_results: 50, results: batch(50) } });
+      expect(fx.componentInstance.sortedResults().length).toBe(50);
+
+      sseEvents?.next({ event: 'merged_update', data: { merged_results: 400, results: batch(400) } });
+      expect(fx.componentInstance.sortedResults().length).toBe(400);
+
+      const finalBatch = batch(663);
+      sseEvents?.next({ event: 'merged_update', data: { merged_results: 663, results: finalBatch } });
+      expect(fx.componentInstance.sortedResults().length).toBe(663);
+
+      const lengthBeforeComplete = fx.componentInstance.sortedResults().length;
+      expect(lengthBeforeComplete).toBe(663);
+
+      // Completion: total_results is the RAW per-tracker total (larger), but the
+      // de-duplicated/merged list returned by get_search equals the last
+      // merged_update (663).
+      sseEvents?.next({
+        event: 'search_complete',
+        data: { total_results: 1785, merged_results: 663, trackers_searched: ['ta', 'tb'] },
+      });
+      http.expectOne('/api/v1/search/live-1').flush({
+        search_id: 'live-1',
+        query: 'linux',
+        status: 'completed',
+        results: finalBatch,
+        total_results: 1785,
+        merged_results: 663,
+        trackers_searched: ['ta', 'tb'],
+        started_at: 'now',
+      });
+
+      // THE GUARD: the displayed count must NOT drop below the last
+      // merged_update count. It stays 663 — no sudden shrink/overwrite.
+      expect(fx.componentInstance.isSearching()).toBe(false);
+      const lengthAfterComplete = fx.componentInstance.sortedResults().length;
+      expect(lengthAfterComplete).toBe(663);
+      expect(lengthAfterComplete).toBeGreaterThanOrEqual(lengthBeforeComplete);
+    });
+
+    // ANTI-BLUFF GUARD (§11.4.115) for the COMPLETION-path `liveMerged`
+    // fallback in `sortedResults`:
+    //   rows = merged.length > 0 ? merged : (liveMerged.length > 0 ? liveMerged : live)
+    // The two existing tests cover (a) the during-search merged view and (b)
+    // the no-shrink guard where results() is NON-empty after completion.
+    // NEITHER exercises the case where, after completion, results() is EMPTY
+    // but liveMergedResults() is populated — e.g. a synchronous POST
+    // completion came back with no body while merged_update batches had
+    // already streamed in. If the `liveMerged.length > 0 ? liveMerged : live`
+    // sub-expression were dropped to a bare `: live`, this branch would
+    // render the (empty/raw) liveResults and silently lose the merged
+    // snapshot — and no other test would fail. This pins the fallback down.
+    it('after completion with empty results() but populated liveMergedResults, sortedResults falls back to the merged snapshot', () => {
+      const fx = bootstrap();
+      const c = fx.componentInstance;
+
+      // Drive the signals directly into the post-completion state we want to
+      // isolate: search done, NO get_search results, but a merged snapshot
+      // is present from earlier merged_update batches.
+      c.isSearching.set(false);
+      c.results.set([]); // get_search returned nothing
+      c.liveMergedResults.set([
+        makeResult({ name: 'merged-A', seeds: 90, download_urls: ['magnet:mA'] }),
+        makeResult({ name: 'merged-B', seeds: 80, download_urls: ['magnet:mB'] }),
+        makeResult({ name: 'merged-C', seeds: 70, download_urls: ['magnet:mC'] }),
+        makeResult({ name: 'merged-D', seeds: 60, download_urls: ['magnet:mD'] }),
+        makeResult({ name: 'merged-E', seeds: 50, download_urls: ['magnet:mE'] }),
+      ]);
+      // Raw live rows are present too — to PROVE the fallback prefers the
+      // merged snapshot over the raw liveResults, not just "non-empty wins".
+      c.liveResults.set([
+        makeResult({ name: 'raw-X', seeds: 5, download_urls: ['magnet:rX'] }),
+        makeResult({ name: 'raw-Y', seeds: 4, download_urls: ['magnet:rY'] }),
+      ]);
+
+      const rows = c.sortedResults();
+      // The merged snapshot (5 rows) is rendered, NOT the 2 raw liveResults.
+      expect(rows).toHaveLength(5);
+      const names = rows.map(r => r.name).sort();
+      expect(names).toEqual(['merged-A', 'merged-B', 'merged-C', 'merged-D', 'merged-E']);
+      // And it must NOT have fallen through to the raw liveResults.
+      expect(names).not.toContain('raw-X');
+      expect(names).not.toContain('raw-Y');
+    });
+
     it('search_complete swaps sortedResults over to the final merged list', () => {
       const fx = bootstrap();
       primeRunningSearch(fx);

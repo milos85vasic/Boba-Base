@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 16
-**Last modified:** 2026-06-13T19:30:00Z
+**Revision:** 17
+**Last modified:** 2026-06-14T13:00:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -904,3 +904,34 @@ blocked, **DNS-rebinding-name blocked** (RED-proven: the vulnerable version leak
 `ACAO=http://attacker.example`), IPv6-literal allowed. **Verified live:** LAN-IP origin → ACAO echoed
 (page loads); `attacker.example` name origin → no ACAO (blocked). boba-jackett Go image rebuilt.
 **Independent review GO; automated security review: finding resolved.**
+
+## 2026-06-14 — search results: large streaming list suddenly overwritten by a much smaller one
+
+Operator-reported: "during the search... suddenly different much smaller results list comes and
+overwrites everything." Systematic-debugging (§11.4.102) + operator product-decision (§11.4.66) +
+2 parallel implementer subagents + 2 review rounds (§11.4.142/§11.4.134).
+
+### 44. De-duplicated result list collapses on completion (now streamed progressively)
+
+**Severity:** HIGH (looked like the search lost most results). **Type:** Bug.
+**Root cause (FACT, measured live):** during a search the dashboard streamed every per-tracker copy
+(`liveResults`, deduped only by `tracker|link|name` → ~1785 rows for "matrix"); on `search_complete`
+it swapped to the backend's content-deduplicated merged set (`get_search`, ~663) → the count dropped
+~2.3×. The dedup is **correct + intentional** (the same torrent mirrored on 51/37/31 trackers merges
+into one row — NO distinct torrent is lost); the jarring drop was purely the raw-live vs merged-final
+view inconsistency. Operator chose (§11.4.66): "show the de-duplicated list as it builds."
+**Fix:** the backend now streams the de-duplicated set PROGRESSIVELY via a new `merged_update` SSE event
+(re-merge accumulated results, throttled ≥1.5s, + an unconditional FINAL emit before `search_complete`);
+serialization is a shared `_serialize_merged_rows` helper used by BOTH the stream AND `get_search`, and
+the FINAL emit reads the orchestrator's authoritative cached merge (`_last_merged_results`) so it is
+byte-identical to `get_search` → ZERO drop at completion. The frontend renders the merged snapshot
+(`liveMergedResults`) progressively while searching, so the list builds smoothly to the unique count.
+**Affected:** `download-proxy/src/api/streaming.py` (`_build_merged_update`, `merged_update` emits),
+`download-proxy/src/api/routes.py` (`_serialize_merged_rows`), `frontend/src/app/components/dashboard/dashboard.component.ts`.
+**Regression guards (§11.4.115):** `tests/unit/merge_service/test_merged_update_streaming.py` (progressive
+emits; final == cached-merge CONTENT identity via a late-tracker distinguisher — RED-proven) +
+dashboard.component.spec.ts (merged_update renders merged; **no-shrink-on-completion guard** 50→400→663;
+completion fallback). **Verified live:** "matrix" → `merged_update` progression `[0,54,68,153,289,345]`,
+**final merged_update 345 == get_search 345** (zero drop). Full frontend suite 349 pass; backend 4 pass.
+**Review (§11.4.142/§11.4.134):** first pass NOT-GO (final-emit/get_search race + missing anti-bluff
+coverage) → both fixed + re-verified → clean GO.
