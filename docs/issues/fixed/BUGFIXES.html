@@ -1,6 +1,6 @@
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
-2026-06-13T19:30:00Z</p>
+<p><strong>Revision:</strong> 17 <strong>Last modified:</strong>
+2026-06-14T13:00:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -1170,3 +1170,56 @@ different-host blocked, <strong>DNS-rebinding-name blocked</strong>
 loads); <code>attacker.example</code> name origin → no ACAO (blocked).
 boba-jackett Go image rebuilt. <strong>Independent review GO; automated
 security review: finding resolved.</strong></p>
+<h2
+id="search-results-large-streaming-list-suddenly-overwritten-by-a-much-smaller-one">2026-06-14
+— search results: large streaming list suddenly overwritten by a much
+smaller one</h2>
+<p>Operator-reported: “during the search… suddenly different much
+smaller results list comes and overwrites everything.”
+Systematic-debugging (§11.4.102) + operator product-decision (§11.4.66)
++ 2 parallel implementer subagents + 2 review rounds
+(§11.4.142/§11.4.134).</p>
+<h3
+id="de-duplicated-result-list-collapses-on-completion-now-streamed-progressively">44.
+De-duplicated result list collapses on completion (now streamed
+progressively)</h3>
+<p><strong>Severity:</strong> HIGH (looked like the search lost most
+results). <strong>Type:</strong> Bug. <strong>Root cause (FACT, measured
+live):</strong> during a search the dashboard streamed every per-tracker
+copy (<code>liveResults</code>, deduped only by
+<code>tracker|link|name</code> → ~1785 rows for “matrix”); on
+<code>search_complete</code> it swapped to the backend’s
+content-deduplicated merged set (<code>get_search</code>, ~663) → the
+count dropped ~2.3×. The dedup is <strong>correct + intentional</strong>
+(the same torrent mirrored on 51/37/31 trackers merges into one row — NO
+distinct torrent is lost); the jarring drop was purely the raw-live vs
+merged-final view inconsistency. Operator chose (§11.4.66): “show the
+de-duplicated list as it builds.” <strong>Fix:</strong> the backend now
+streams the de-duplicated set PROGRESSIVELY via a new
+<code>merged_update</code> SSE event (re-merge accumulated results,
+throttled ≥1.5s, + an unconditional FINAL emit before
+<code>search_complete</code>); serialization is a shared
+<code>_serialize_merged_rows</code> helper used by BOTH the stream AND
+<code>get_search</code>, and the FINAL emit reads the orchestrator’s
+authoritative cached merge (<code>_last_merged_results</code>) so it is
+byte-identical to <code>get_search</code> → ZERO drop at completion. The
+frontend renders the merged snapshot (<code>liveMergedResults</code>)
+progressively while searching, so the list builds smoothly to the unique
+count. <strong>Affected:</strong>
+<code>download-proxy/src/api/streaming.py</code>
+(<code>_build_merged_update</code>, <code>merged_update</code> emits),
+<code>download-proxy/src/api/routes.py</code>
+(<code>_serialize_merged_rows</code>),
+<code>frontend/src/app/components/dashboard/dashboard.component.ts</code>.
+<strong>Regression guards (§11.4.115):</strong>
+<code>tests/unit/merge_service/test_merged_update_streaming.py</code>
+(progressive emits; final == cached-merge CONTENT identity via a
+late-tracker distinguisher — RED-proven) + dashboard.component.spec.ts
+(merged_update renders merged; <strong>no-shrink-on-completion
+guard</strong> 50→400→663; completion fallback). <strong>Verified
+live:</strong> “matrix” → <code>merged_update</code> progression
+<code>[0,54,68,153,289,345]</code>, <strong>final merged_update 345 ==
+get_search 345</strong> (zero drop). Full frontend suite 349 pass;
+backend 4 pass. <strong>Review (§11.4.142/§11.4.134):</strong> first
+pass NOT-GO (final-emit/get_search race + missing anti-bluff coverage) →
+both fixed + re-verified → clean GO.</p>
