@@ -164,33 +164,69 @@ async def bridge_health():  # type: ignore[no-untyped-def]
     """
     import aiohttp
 
-    bridge_url = os.getenv("BRIDGE_URL", "http://localhost:7188")
     bridge_port = int(os.getenv("BRIDGE_PORT", "7188"))
+
+    # The webui-bridge runs as a HOST process (see webui-bridge.py). This
+    # merge service runs inside the qbittorrent-proxy container, where
+    # "localhost" resolves to the container's own loopback — NOT the host
+    # where the bridge listens. So when BRIDGE_URL is not pinned, probe a
+    # candidate-host chain: the container can reach the host bridge via
+    # host.containers.internal (Podman) / host.docker.internal (Docker),
+    # while a bare-host deployment reaches it via localhost. First host
+    # that answers < 500 wins. An explicit BRIDGE_URL short-circuits the
+    # chain (operator override).
+    explicit = os.getenv("BRIDGE_URL")
+    if explicit:
+        candidates = [explicit]
+    else:
+        candidates = [
+            f"http://localhost:{bridge_port}",
+            f"http://host.containers.internal:{bridge_port}",
+            f"http://host.docker.internal:{bridge_port}",
+        ]
+
+    last_error = None
+    last_status: int | None = None
     try:
-        async with (
-            aiohttp.ClientSession() as session,
-            session.get(
-                bridge_url,
-                timeout=aiohttp.ClientTimeout(total=2),
-                allow_redirects=False,
-            ) as resp,
-        ):
-            # Any 2xx / 3xx / 401 means something is listening.
-            healthy = resp.status < 500
-            return {
-                "healthy": healthy,
-                "status_code": resp.status,
-                "bridge_url": bridge_url,
-                "port": bridge_port,
-            }
+        async with aiohttp.ClientSession() as session:
+            for bridge_url in candidates:
+                try:
+                    async with session.get(
+                        bridge_url,
+                        timeout=aiohttp.ClientTimeout(total=2),
+                        allow_redirects=False,
+                    ) as resp:
+                        # Any 2xx / 3xx / 401 means the bridge is listening.
+                        if resp.status < 500:
+                            return {
+                                "healthy": True,
+                                "status_code": resp.status,
+                                "bridge_url": bridge_url,
+                                "port": bridge_port,
+                            }
+                        # Reached the bridge but it surfaced 5xx — record
+                        # and keep trying other candidates (none should be
+                        # a different bridge, but be defensive).
+                        last_error = f"{bridge_url} returned {resp.status}"
+                        last_status = resp.status
+                except Exception as e:
+                    last_error = f"{bridge_url}: {e}"
+                    logger.debug(f"Bridge health probe failed for {bridge_url}: {e}")
     except Exception as e:
-        logger.debug(f"Bridge health probe failed: {e}")
-        return {
-            "healthy": False,
-            "error": str(e),
-            "bridge_url": bridge_url,
-            "port": bridge_port,
-        }
+        last_error = str(e)
+        logger.debug(f"Bridge health probe session error: {e}")
+
+    return {
+        "healthy": False,
+        # Preserve the upstream 5xx code when a candidate WAS reached but
+        # surfaced a server error, so a dashboard consumer reading
+        # `status_code` on the unhealthy path still gets the real code
+        # (None only when no candidate answered at all).
+        "status_code": last_status,
+        "error": last_error or "no bridge candidate reachable",
+        "bridge_url": candidates[0],
+        "port": bridge_port,
+    }
 
 
 @app.get("/api/v1/config")

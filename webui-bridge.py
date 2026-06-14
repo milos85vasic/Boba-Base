@@ -11,10 +11,12 @@ Version: 2.0.0
 License: Apache 2.0
 """
 
+import json
 import os
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -241,6 +243,50 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
             print(f"[WebUI-Bridge] Upload error: {e}")
             return False
 
+    def _is_root_liveness_probe(self):
+        """True for a bare ``GET /`` with no torrent download in flight.
+
+        The dashboard's bridge-health probe
+        (``download-proxy/src/api/__init__.py:bridge_health``) GETs the
+        bridge root and treats ``status < 500`` as "the bridge is alive".
+        That probe must report on the *bridge process* liveness, which is
+        independent of whether the qBittorrent backend on :7185 is
+        reachable. When the passthrough to qBittorrent fails for such a
+        bare-root probe we answer with a 200 liveness payload instead of
+        leaking qBittorrent's connection error as a misleading 500 — a
+        listening bridge with a down upstream is NOT "down".
+        """
+        try:
+            parsed = urllib.parse.urlparse(self.path)
+        except Exception:
+            return False
+        if parsed.path != "/":
+            return False
+        if urllib.parse.parse_qs(parsed.query):
+            return False
+        return self.command == "GET"
+
+    def _send_root_liveness(self, backend_error):
+        """Answer a bare-root liveness probe when qBittorrent is unreachable.
+
+        Returns HTTP 200 with ``backend: unreachable`` so the dashboard
+        renders the bridge as UP (it is — it answered) while still
+        signalling that the qBittorrent passthrough is currently down.
+        """
+        payload = json.dumps(
+            {
+                "status": "alive",
+                "service": "webui-bridge",
+                "backend": "unreachable",
+                "backend_error": str(backend_error),
+            }
+        ).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
     def proxy_to_qbittorrent(self):
         """Proxy request to qBittorrent.
 
@@ -253,6 +299,12 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
           (``/api/v2/auth/login`` returns 401 if the Referer does not
           match its host), and without this rewrite every login
           attempt through the bridge would fail.
+
+        Upstream-down handling: if qBittorrent is unreachable
+        (``URLError`` — connection refused / network unreachable / DNS),
+        a bare-root liveness probe is answered 200 (the bridge is alive,
+        only its upstream is down); any other path returns 502 Bad
+        Gateway with correct gateway semantics instead of a generic 500.
         """
         try:
             target = f"http://{QBITTORRENT_HOST}:{QBITTORRENT_PORT}{self.path}"
@@ -337,6 +389,19 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
                 self.wfile.write(e.read() or e.reason.encode("utf-8"))
             except Exception:
                 self.send_error(e.code, e.reason)
+
+        except urllib.error.URLError as e:
+            # qBittorrent upstream unreachable (connection refused /
+            # network unreachable / DNS failure). HTTPError is a URLError
+            # subclass and is handled above, so this branch is the
+            # genuine transport-level failure. A bare-root liveness probe
+            # must still see the bridge as alive — answer 200; everything
+            # else gets a correct 502 Bad Gateway rather than a generic
+            # 500 that the dashboard would misread as "bridge down".
+            if self._is_root_liveness_probe():
+                self._send_root_liveness(e.reason)
+            else:
+                self.send_error(502, f"qBittorrent upstream unreachable: {e.reason}")
 
 
 def run_bridge():

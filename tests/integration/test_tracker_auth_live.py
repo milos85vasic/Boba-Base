@@ -102,12 +102,12 @@ def _merge_service_required() -> None:
         req = urllib.request.Request(health_url, method="GET")
         with urllib.request.urlopen(req, timeout=1) as resp:  # noqa: S310 (trusted localhost)
             if resp.status >= 400:
-                pytest.skip(f"merge service health returned HTTP {resp.status} at {health_url}")  # SKIP-OK: live-service-down
+                pytest.skip(f"merge service health returned HTTP {resp.status} at {health_url}")  # allow-skip: live-service-down (skip-without-booting credential guard)
             body = resp.read().decode("utf-8", errors="replace")
         if '"status"' not in body:
-            pytest.skip(f"merge service at {health_url} did not return a health body")  # SKIP-OK: live-service-down
+            pytest.skip(f"merge service at {health_url} did not return a health body")  # allow-skip: live-service-down (skip-without-booting credential guard)
     except (urllib.error.URLError, OSError, TimeoutError) as exc:
-        pytest.skip(  # SKIP-OK: live-service-down
+        pytest.skip(  # allow-skip: live-service-down (skip-without-booting credential guard)
             f"merge service unreachable at {health_url}: {exc!r}. "
             "Start the stack with `./start.sh -p` to run this credential guard."
         )
@@ -149,7 +149,7 @@ def _run_live_search() -> dict:
             break
 
     if final is None:
-        pytest.skip(  # SKIP-OK: live-service-down
+        pytest.skip(  # allow-skip: live-service-down (skip-without-booting credential guard)
             f"live search did not reach a terminal state within {_POLL_DEADLINE_S:.0f}s "
             f"(last status={last_status!r}). Treated as an operator-blocked transient, "
             "not a credential failure."
