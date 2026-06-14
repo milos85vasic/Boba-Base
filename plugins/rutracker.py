@@ -126,7 +126,18 @@ class RuTracker(object):
         "books": "21",
     }
 
-    re_search_queries = re.compile(r'<a.+?href="tracker\.php\?(.*?start=\d+)"')
+    # LENGTH-BOUNDED gaps so backtracking can never rescan the whole page: the
+    # original ``<a.+?href="tracker\.php\?(.*?start=\d+)"`` was quadratic — a
+    # hostile/MITM'd tracker response (or a legitimately huge 1000+ result page)
+    # made of ``<a``-anchor storms drove ~15s+ parses (ReDoS / DoS). NOTE a bare
+    # ``[^>]*?`` is NOT enough: a payload with no ``>`` at all (e.g. ``"<a "``
+    # repeated) still scans to EOF per ``<a`` (~76s measured). Capping the gap
+    # to a generous-but-finite attribute length ({0,512}) and the query value to
+    # {0,256} makes each ``<a`` probe O(1)-bounded → overall linear, while still
+    # matching every real ``<a … href="tracker.php?…start=N">`` (its href sits a
+    # few dozen chars in). re.S is NOT used, so ``[^>]``/``[^"]`` already stop at
+    # newlines too.
+    re_search_queries = re.compile(r'<a[^>]{0,512}?href="tracker\.php\?([^"]{0,256}?start=\d+)"')
     re_threads = re.compile(r'<tr id="trs-tr-\d+.*?</tr>', re.S)
     re_torrent_data = re.compile(
         r'a data-topic_id="(?P<id>\d+?)".*?>(?P<title>.+?)<'
