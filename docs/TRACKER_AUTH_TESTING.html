@@ -1,0 +1,183 @@
+<h1 id="tracker-credentials-live-testing">Tracker Credentials Live
+Testing</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-14T00:00:00Z <strong>Status:</strong> active <strong>Status
+summary:</strong> Live credential-validation tests + challenge for the 5
+supported trackers, wired into the integration suite and the challenge
+bank.</p>
+<h2 id="table-of-contents">Table of contents</h2>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#the-five-trackers">The five trackers</a></li>
+<li><a href="#how-the-live-tests-validate-credentials">How the live
+tests validate credentials</a></li>
+<li><a href="#honest-skip-vs-fail-rules">Honest-SKIP vs FAIL
+rules</a></li>
+<li><a href="#security-never-read-or-log-credential-values">Security:
+never read or log credential values</a></li>
+<li><a href="#how-to-run">How to run</a></li>
+<li><a href="#where-these-are-wired">Where these are wired</a></li>
+</ul>
+<h2 id="overview">Overview</h2>
+<p>Two artefacts live-validate that the merge service can authenticate
+against each supported tracker using the credentials configured in
+<code>.env</code>:</p>
+<ul>
+<li><code>tests/integration/test_tracker_auth_live.py</code> — a
+parametrized pytest live integration test, one parameter per
+tracker.</li>
+<li><code>challenges/scripts/tracker_auth_live_challenge.sh</code> — a
+bash challenge that drives the same end-to-end auth path.</li>
+</ul>
+<p>Both exercise the <strong>real running merge service</strong> (port
+<code>7187</code>) and assert on its reported authentication state. They
+never inspect, print, or log any credential value (constitution
+§11.4.10).</p>
+<h2 id="the-five-trackers">The five trackers</h2>
+<table>
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 9%" />
+<col style="width: 76%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tracker</th>
+<th>Type</th>
+<th>Auth model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rutracker</code></td>
+<td>private</td>
+<td>Username/password login (cookies; CAPTCHA may be required
+periodically)</td>
+</tr>
+<tr>
+<td><code>kinozal</code></td>
+<td>private</td>
+<td>Username/password (<code>KINOZAL_*</code>, falling back to
+<code>IPTORRENTS_*</code>)</td>
+</tr>
+<tr>
+<td><code>nnmclub</code></td>
+<td>private</td>
+<td>Cookie-based auth (<code>NNMCLUB_COOKIES</code>)</td>
+</tr>
+<tr>
+<td><code>iptorrents</code></td>
+<td>private</td>
+<td>Username/password (<code>IPTORRENTS_*</code>); freeleech-only
+downloads</td>
+</tr>
+<tr>
+<td><code>rutor</code></td>
+<td>public</td>
+<td><strong>No authentication</strong> — searches and downloads
+anonymously</td>
+</tr>
+</tbody>
+</table>
+<p>For the four private trackers the test asserts that valid credentials
+produce an authenticated session. For <code>rutor</code> there is no
+login endpoint; the test asserts only that it is reachable and needs no
+auth (a positive auth assertion is intentionally not made).</p>
+<h2 id="how-the-live-tests-validate-credentials">How the live tests
+validate credentials</h2>
+<p>The live test/challenge validates each credential by driving a REAL
+search through the merge service and reading the per-tracker
+authentication state the service itself reports during that search:</p>
+<ol type="1">
+<li>Confirm the merge service is up (<code>GET /health</code>).</li>
+<li>Start a real search — <code>POST /api/v1/search</code> with a public
+query (<code>{"query": "ubuntu", "limit": 50}</code>) — then poll
+<code>GET /api/v1/search/{search_id}</code> until the search reaches a
+terminal state (<code>completed</code> / <code>no_results</code>).</li>
+<li>The response carries a <code>tracker_stats</code> list — one entry
+per tracker — each shaped
+<code>{name, status, authenticated, results_count, error}</code>. For
+each <strong>private</strong> tracker (rutracker, kinozal, nnmclub,
+iptorrents) assert <code>authenticated</code> is <code>true</code> AND
+<code>status</code> is <code>success</code> or <code>empty</code> —
+proof the stored credentials logged in against the real tracker. For
+<strong>rutor</strong> (public, no login) assert
+<code>status == "success"</code> and
+<code>results_count &gt; 0</code>.</li>
+</ol>
+<p>The assertion oracle is the <strong><code>authenticated</code> flag
+the merge service reports for the tracker after attempting a real login
+during the search</strong> — a user-observable outcome of the real auth
+path — never the mere absence of an error and never any credential
+string (anti-bluff, constitution §11.4 / §11.4.10). No
+<code>/api/v1/auth/*</code> status endpoint is consulted; the search
+response’s <code>tracker_stats</code> is the single source of truth.</p>
+<h2 id="honest-skip-vs-fail-rules">Honest-SKIP vs FAIL rules</h2>
+<p>Per constitution §11.4.3 (topology-appropriate dispatch) and §11.4.69
+(no fail-open SKIP), the verdicts are:</p>
+<ul>
+<li><strong>SKIP</strong> — the merge service is <strong>down /
+unreachable</strong>: the topology required to validate is absent, so
+the test SKIPs with a reason rather than failing.</li>
+<li><strong>SKIP</strong> — a <strong>CAPTCHA or transient</strong>
+blocks login (e.g. RuTracker cookies expired and a CAPTCHA is now
+required): this is an operator-attended/transient condition, not a
+product defect, so it SKIPs with a reason.</li>
+<li><strong>FAIL</strong> — the service is up, no captcha/transient is
+in play, and the tracker reports <code>authenticated=false</code>: the
+configured credentials are genuinely <strong>bad</strong> (or the auth
+path is broken). This is a real failure.</li>
+</ul>
+<p>A SKIP is never silently counted as a PASS, and a missing/empty
+<code>authenticated</code> flag is treated as a failure to prove auth,
+not as proof.</p>
+<h2 id="security-never-read-or-log-credential-values">Security: never
+read or log credential values</h2>
+<ul>
+<li>The tests assert <strong>only</strong> on the service-reported
+<code>tracker_stats[].authenticated</code> boolean (plus
+<code>status</code> / <code>results_count</code>). They never read
+<code>RUTRACKER_PASSWORD</code>, <code>KINOZAL_PASSWORD</code>,
+<code>NNMCLUB_COOKIES</code>, <code>IPTORRENTS_PASSWORD</code>, or any
+other secret value, and never echo container env values.</li>
+<li><code>.env</code> is never committed (constitution §11.4.10; project
+<code>CLAUDE.md</code>).</li>
+<li>No credential value appears in test output, challenge output, or
+logs.</li>
+</ul>
+<h2 id="how-to-run">How to run</h2>
+<p>Prerequisite: the merge service must be running on port
+<code>7187</code> with valid credentials present in <code>.env</code>
+(otherwise the tests SKIP, see above).</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pytest live integration test (auto-collected by ci.sh PHASE 4)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/integration/test_tracker_auth_live.py <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># The bash challenge (auto-discovered by the challenge aggregator)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/tracker_auth_live_challenge.sh</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Or as part of the wider suites:</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">./ci.sh</span>                                  <span class="co"># PHASE 4 collects tests/integration/</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/run-tests.sh</span> live                <span class="co"># tests/integration + tests/e2e</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/run_all_challenges.sh</span></code></pre></div>
+<h2 id="where-these-are-wired">Where these are wired</h2>
+<ul>
+<li><strong>Pytest collection</strong> —
+<code>tests/integration/test_tracker_auth_live.py</code> is
+auto-collected by <code>ci.sh</code> PHASE 4
+(<code>pytest .../tests/integration/</code>) and by
+<code>scripts/run-tests.sh live</code>. No collection change was needed
+(default <code>python_files = test_*.py</code>; no override in
+<code>pyproject.toml</code>).</li>
+<li><strong>Challenge aggregator</strong> —
+<code>challenges/scripts/run_all_challenges.sh</code> globs
+<code>*_challenge.sh</code> in its own directory, so
+<code>tracker_auth_live_challenge.sh</code> is auto-discovered there. No
+explicit registration was needed.</li>
+<li><strong>HelixQA bank</strong> — <code>BOBA-SRV-015</code> in
+<code>submodules/helixqa/banks/boba-services.yaml</code> (symlinked into
+<code>challenges/helixqa-banks/boba-services.yaml</code>) references
+both artefacts by path with an anti-bluff note that the
+<code>authenticated</code> flag is the assertion oracle and that no
+credential value is ever read.</li>
+</ul>
