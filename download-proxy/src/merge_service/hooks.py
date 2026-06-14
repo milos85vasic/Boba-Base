@@ -19,6 +19,41 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# RW-01 sandbox: hook scripts may ONLY live inside this allowlisted directory.
+# An unauthenticated caller must never be able to register a hook whose
+# ``script_path`` points at an arbitrary in-container executable (``/bin/sh``,
+# etc.). The directory is configurable via ``BOBA_HOOKS_DIR`` (read at call time,
+# not import time, so tests/operators can change it without a restart). The
+# default sits beside the hooks.json registry under the bind-mounted config dir.
+DEFAULT_HOOKS_DIR = "/config/download-proxy/hooks"
+
+
+def get_hooks_dir() -> str:
+    """Absolute, symlink-resolved allowlist directory for hook scripts."""
+    raw = os.getenv("BOBA_HOOKS_DIR", "").strip() or DEFAULT_HOOKS_DIR
+    return os.path.realpath(raw)
+
+
+def is_script_path_allowed(script_path: str) -> bool:
+    """True iff ``script_path`` realpath-resolves to a file strictly inside the
+    allowlisted hooks directory.
+
+    Uses ``os.path.realpath`` on BOTH sides so a symlink planted inside the
+    allowlist dir that points outside it cannot escape the sandbox (a naive
+    string-prefix check would be fooled). ``os.path.commonpath`` gives a true
+    path-boundary test (``/config/download-proxy/hooks-evil`` does NOT count as
+    inside ``/config/download-proxy/hooks``).
+    """
+    if not script_path:
+        return False
+    allowed_dir = get_hooks_dir()
+    resolved = os.path.realpath(script_path)
+    try:
+        return os.path.commonpath([allowed_dir, resolved]) == allowed_dir and resolved != allowed_dir
+    except ValueError:
+        # Different drives / mix of absolute+relative -> not inside.
+        return False
+
 
 class HookEventType(Enum):
     """Types of events that can trigger hooks."""
@@ -69,6 +104,12 @@ class HookConfig:
         if not self.name:
             return False
         if not self.script_path:
+            return False
+        # RW-01 sandbox: refuse to execute any script outside the allowlisted
+        # hooks dir, even if it was somehow registered (defence in depth — the
+        # api/hooks.py create route also rejects at registration time).
+        if not is_script_path_allowed(self.script_path):
+            logger.warning(f"Hook script outside allowlisted hooks dir, refusing: {self.script_path}")
             return False
         if not os.path.exists(self.script_path):
             logger.warning(f"Hook script not found: {self.script_path}")

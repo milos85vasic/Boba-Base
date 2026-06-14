@@ -14,8 +14,13 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+
+# RW-02: env-gated shared-secret guard for the mutating routes. NO-OP when
+# BOBA_API_TOKEN is unset (current operator contract preserved). Imported from
+# routes.py (single source of truth — never redefined here).
+from .routes import require_api_token
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +109,7 @@ async def list_hooks():  # type: ignore[no-untyped-def]
 
 
 @router.post("", response_model=HookResponse)
-async def create_hook(request: HookCreateRequest):  # type: ignore[no-untyped-def]
+async def create_hook(request: HookCreateRequest, _: None = Depends(require_api_token)):  # type: ignore[no-untyped-def]
     if request.event not in VALID_EVENTS:
         raise HTTPException(
             status_code=400,
@@ -115,6 +120,18 @@ async def create_hook(request: HookCreateRequest):  # type: ignore[no-untyped-de
         raise HTTPException(
             status_code=400,
             detail="script_path cannot contain path traversal ('..')",
+        )
+
+    # RW-01 sandbox: the script must resolve inside the allowlisted hooks
+    # directory (BOBA_HOOKS_DIR, default /config/download-proxy/hooks).
+    # Registering a hook whose script_path is an arbitrary in-container
+    # executable would let an event fire run it via merge_service.hooks.
+    from merge_service.hooks import get_hooks_dir, is_script_path_allowed
+
+    if not is_script_path_allowed(request.script_path):
+        raise HTTPException(
+            status_code=400,
+            detail=(f"script_path must resolve to a file inside the allowlisted hooks dir ({get_hooks_dir()})"),
         )
 
     hook_id = str(uuid.uuid4())
@@ -148,7 +165,7 @@ async def create_hook(request: HookCreateRequest):  # type: ignore[no-untyped-de
 
 
 @router.delete("/{hook_id}")
-async def delete_hook(hook_id: str):  # type: ignore[no-untyped-def]
+async def delete_hook(hook_id: str, _: None = Depends(require_api_token)):  # type: ignore[no-untyped-def]
     hooks = _load_hooks()
     original_len = len(hooks)
     hooks = [h for h in hooks if h["hook_id"] != hook_id]

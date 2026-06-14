@@ -4,10 +4,12 @@ API routes for the merge service.
 
 import asyncio
 import hmac
+import ipaddress
 import json
 import logging
 import os
 import re
+import socket
 import urllib.parse
 import uuid
 from typing import Annotated, Any
@@ -877,6 +879,64 @@ def require_api_token(request: Request) -> None:
         raise HTTPException(status_code=401, detail="Unauthorized: valid API token required")
 
 
+def _is_safe_fetch_url(url: str) -> bool:
+    """SSRF guard for server-side fetches of user-supplied URLs (RW-03).
+
+    Returns ``True`` ONLY for an ``http(s)`` URL whose host resolves entirely
+    to public IP addresses. Rejects (returns ``False``) when the scheme is not
+    http/https, the host is missing, DNS resolution fails, or ANY resolved
+    address is loopback / private (RFC-1918) / link-local (incl. the
+    ``169.254.169.254`` cloud-metadata endpoint) / multicast / reserved /
+    unspecified.
+
+    A caller could otherwise make the proxy GET ``http://169.254.169.254/``,
+    ``http://127.0.0.1:7185/``, or LAN/RFC-1918 hosts and receive the body.
+    Legit public tracker URLs and magnets (which do no fetch) are unaffected.
+
+    The DNS lookup is bounded by a short ``socket.setdefaulttimeout`` window so
+    the SSRF check never blocks the request indefinitely on a hostile/slow
+    resolver. ``getaddrinfo`` covers every A/AAAA record so a multi-record host
+    cannot smuggle one private address past the check.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except (ValueError, TypeError):
+        return False
+    if parsed.scheme not in ("http", "https"):
+        return False
+    host = parsed.hostname
+    if not host:
+        return False
+
+    prev_timeout = socket.getdefaulttimeout()
+    try:
+        socket.setdefaulttimeout(5)
+        infos = socket.getaddrinfo(host, parsed.port or None, proto=socket.IPPROTO_TCP)
+    except (socket.gaierror, OSError, UnicodeError, ValueError):
+        return False
+    finally:
+        socket.setdefaulttimeout(prev_timeout)
+
+    addresses = {info[4][0] for info in infos}
+    if not addresses:
+        return False
+    for addr in addresses:
+        try:
+            ip = ipaddress.ip_address(addr.split("%", 1)[0])  # strip IPv6 zone id
+        except ValueError:
+            return False
+        if (
+            ip.is_private
+            or ip.is_loopback
+            or ip.is_link_local
+            or ip.is_multicast
+            or ip.is_reserved
+            or ip.is_unspecified
+        ):
+            return False
+    return True
+
+
 @router.post("/download")
 async def initiate_download(
     request: DownloadRequest, req: Request, _: None = Depends(require_api_token)
@@ -1168,7 +1228,14 @@ async def download_torrent_file(
                     },
                 )
             else:
-                # Try to fetch direct URL
+                # Try to fetch direct URL — but only after the SSRF guard
+                # (RW-03) confirms the host resolves to a public address.
+                # Reject (skip to the next URL) otherwise so a caller cannot
+                # make the proxy fetch loopback / RFC-1918 / cloud-metadata
+                # targets and receive the body.
+                if not _is_safe_fetch_url(url):
+                    logger.warning("Refusing SSRF-unsafe download URL (non-public target); skipping")
+                    continue
                 async with (
                     aiohttp.ClientSession() as session,
                     session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp,
@@ -1192,7 +1259,9 @@ async def download_torrent_file(
 
 
 @router.post("/magnet")
-async def generate_magnet(request: Request):  # type: ignore[no-untyped-def]
+async def generate_magnet(
+    request: Request, _: None = Depends(require_api_token)
+):  # type: ignore[no-untyped-def]
     from pydantic import BaseModel
 
     class MagnetRequest(BaseModel):

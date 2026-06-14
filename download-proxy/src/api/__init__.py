@@ -75,6 +75,21 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
 
     logger.info("Merge Service API started")
 
+    # RW-02: loud warning when the mutating write surface is unauthenticated.
+    # When BOBA_API_TOKEN is unset, the download / hooks / schedules POST+DELETE
+    # endpoints accept any caller. That is the historical default and fine on a
+    # loopback-only bind, but a non-loopback bind exposes them to every LAN host.
+    # We can't reliably know the bind address here, so we phrase it conditionally
+    # and recommend setting BOBA_API_TOKEN to harden.
+    if not os.getenv("BOBA_API_TOKEN", "").strip():
+        logger.warning(
+            "BOBA_API_TOKEN is not set — the mutating endpoints "
+            "(/api/v1/download, /api/v1/hooks, /api/v1/schedules POST/DELETE) are "
+            "UNAUTHENTICATED. Any host that can reach this service may use them. "
+            "Set BOBA_API_TOKEN to protect them, especially if this service is "
+            "exposed beyond localhost."
+        )
+
     yield
 
     await app.state.scheduler.stop()

@@ -26,7 +26,13 @@ def client(tmp_path, monkeypatch):
     import api.hooks
     fake_path = tmp_path / "hooks.json"
     monkeypatch.setattr(api.hooks, "HOOKS_FILE", str(fake_path))
-    return TestClient(api.app)
+    # RW-01 sandbox: register hook scripts only inside the allowlisted dir.
+    hooks_dir = tmp_path / "hooks"
+    hooks_dir.mkdir()
+    monkeypatch.setenv("BOBA_HOOKS_DIR", str(hooks_dir))
+    c = TestClient(api.app)
+    c._boba_hooks_dir = hooks_dir  # type: ignore[attr-defined]
+    return c
 
 
 class TestHooksEndpoints:
@@ -38,10 +44,13 @@ class TestHooksEndpoints:
         assert data["count"] == 0
 
     def _create_hook(self, client):
+        script = client._boba_hooks_dir / "test.sh"  # type: ignore[attr-defined]
+        script.write_text("#!/bin/sh\necho ok\n")
+        script.chmod(0o755)
         payload = {
             "name": "test-hook",
             "event": "search_start",
-            "script_path": "/usr/local/bin/test.sh",
+            "script_path": str(script),
         }
         resp = client.post("/api/v1/hooks", json=payload)
         assert resp.status_code == 200

@@ -4,8 +4,13 @@ API endpoints for scheduled search management.
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+
+# RW-02: env-gated shared-secret guard for the mutating routes. NO-OP when
+# BOBA_API_TOKEN is unset (current operator contract preserved). Imported from
+# routes.py (single source of truth — never redefined here).
+from .routes import require_api_token
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +62,9 @@ async def list_schedules(req: Request):  # type: ignore[no-untyped-def]
 
 
 @router.post("")
-async def create_schedule(request: ScheduleCreateRequest, req: Request):  # type: ignore[no-untyped-def]
+async def create_schedule(
+    request: ScheduleCreateRequest, req: Request, _: None = Depends(require_api_token)
+):  # type: ignore[no-untyped-def]
     scheduler = _get_scheduler(req)
     search = scheduler.add_scheduled_search(
         name=request.name,
@@ -117,7 +124,9 @@ async def update_schedule(schedule_id: str, request: ScheduleUpdateRequest, req:
 
 
 @router.delete("/{schedule_id}")
-async def delete_schedule(schedule_id: str, req: Request):  # type: ignore[no-untyped-def]
+async def delete_schedule(
+    schedule_id: str, req: Request, _: None = Depends(require_api_token)
+):  # type: ignore[no-untyped-def]
     scheduler = _get_scheduler(req)
     removed = scheduler.remove_scheduled_search(schedule_id)
     if not removed:

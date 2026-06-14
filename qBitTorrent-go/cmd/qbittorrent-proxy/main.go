@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/milos85vasic/qBitTorrent-go/internal/api"
@@ -42,7 +43,12 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.Use(middleware.CORS("*"))
+	// RW-04: pass an explicit allowlist (from ALLOWED_ORIGINS, default the
+	// dashboard origins) instead of a wildcard. The middleware echoes the
+	// matched Origin and never emits Allow-Origin:* together with credentials.
+	// An operator may still set ALLOWED_ORIGINS="*" to opt into a wildcard
+	// policy that echoes the specific Origin (no forbidden combination).
+	r.Use(middleware.CORS(parseAllowedOrigins(cfg.AllowedOrigins)...))
 	r.Use(middleware.Logger())
 
 	r.GET("/health", api.HealthHandler)
@@ -100,6 +106,25 @@ func main() {
 		log.Fatal().Err(err).Msg("server failed")
 		os.Exit(1)
 	}
+}
+
+// parseAllowedOrigins splits the comma-separated ALLOWED_ORIGINS config value
+// into a trimmed slice for middleware.CORS. An empty value yields nil, so CORS
+// falls back to its secure default allowlist. "*" passes through as a single
+// "*" entry, enabling the wildcard-but-echoed policy (never the forbidden
+// Allow-Origin:* + credentials combination).
+func parseAllowedOrigins(raw string) []string {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
 func parseLogLevel(level string) zerolog.Level {

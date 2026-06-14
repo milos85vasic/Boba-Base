@@ -235,8 +235,10 @@ class TestHookDispatcher:
         # The exception is logged but _execute_hook doesn't append to _execution_log
         assert len(dispatcher._execution_log) == 0
 
-    def test_execute_hook_success(self, tmp_path):
+    def test_execute_hook_success(self, tmp_path, monkeypatch):
         """A working hook script populates the execution log."""
+        # RW-01 sandbox: scripts must live inside the allowlisted hooks dir.
+        monkeypatch.setenv("BOBA_HOOKS_DIR", str(tmp_path))
         script = tmp_path / "success_hook.sh"
         script.write_text("#!/bin/sh\necho done")
         script.chmod(0o755)
@@ -256,8 +258,10 @@ class TestHookDispatcher:
         assert entry["success"] is True
         assert entry["hook_name"] == "good_hook"
 
-    def test_execute_hook_nonzero_exit(self, tmp_path):
+    def test_execute_hook_nonzero_exit(self, tmp_path, monkeypatch):
         """A hook that exits non-zero gets logged as failure."""
+        # RW-01 sandbox: scripts must live inside the allowlisted hooks dir.
+        monkeypatch.setenv("BOBA_HOOKS_DIR", str(tmp_path))
         script = tmp_path / "fail_hook.sh"
         script.write_text("#!/bin/sh\nexit 1")
         script.chmod(0o755)
