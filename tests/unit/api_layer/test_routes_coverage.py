@@ -1119,10 +1119,17 @@ class TestGenerateMagnetMultiHash:
         )
         assert resp.status_code == 200
         body = resp.json()
+        # The `hashes` field still reports every source infohash discovered
+        # (informational), but the MAGNET itself identifies ONE torrent:
+        # reconciled per §11.4.120 from the old multi-xt assertion that
+        # encoded the malformed-magnet bug. A merged content row's distinct
+        # tracker-copies must collapse to the primary (first) source.
         assert len(body["hashes"]) == 2
         assert h1 in body["hashes"]
         assert h2 in body["hashes"]
-        assert body["magnet"].count("xt=urn:btih:") == 2
+        assert body["magnet"].count("xt=urn:btih:") == 1
+        assert h1 in body["magnet"], "magnet must carry the PRIMARY (first) infohash"
+        assert h2 not in body["magnet"], "magnet must NOT embed secondary infohashes"
         assert "tracker.opentrackr.org" in body["magnet"]
 
     def test_magnet_with_existing_trackers(self, client_factory):

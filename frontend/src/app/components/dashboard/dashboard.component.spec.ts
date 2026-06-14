@@ -910,6 +910,67 @@ describe('DashboardComponent', () => {
       expect(openSpy).toHaveBeenCalled();
     });
 
+    // Button-responsiveness UX (operator mandate 2026-06-14): the moment a
+    // result-row button is clicked it MUST show a processing indicator and the
+    // grid MUST report that row+action as busy, cleared only when the async
+    // work resolves (success OR error). These assert the user-observable
+    // `isBusy()` signal toggles around the REAL request lifecycle — they fail
+    // against the pre-change handlers (no busy state → always false).
+    describe('instant button processing indicator (isBusy)', () => {
+      it('doMagnet: busy true in-flight, false after resolve', () => {
+        const fx = bootstrap();
+        (fx.componentInstance as any).magnetDialog = { open: vi.fn() };
+        fx.componentInstance.results.set([makeResult()]);
+        expect(fx.componentInstance.isBusy(0, 'magnet')).toBe(false);
+        fx.componentInstance.doMagnet(0);
+        expect(fx.componentInstance.isBusy(0, 'magnet')).toBe(true);
+        http.expectOne('/api/v1/magnet').flush({ magnet: 'magnet:?xt=urn:btih:abc', hashes: ['abc'] });
+        expect(fx.componentInstance.isBusy(0, 'magnet')).toBe(false);
+      });
+
+      it('doMagnet: busy cleared on error', () => {
+        const fx = bootstrap();
+        fx.componentInstance.results.set([makeResult()]);
+        fx.componentInstance.doMagnet(0);
+        expect(fx.componentInstance.isBusy(0, 'magnet')).toBe(true);
+        http.expectOne('/api/v1/magnet').error(new ProgressEvent('error'));
+        expect(fx.componentInstance.isBusy(0, 'magnet')).toBe(false);
+      });
+
+      it('doSchedule: busy true in-flight, false after add resolves', async () => {
+        const fx = bootstrap();
+        vi.spyOn(TestBed.inject(DialogService), 'confirm').mockResolvedValue(true);
+        fx.componentInstance.qbitAuthenticated.set(true);
+        fx.componentInstance.results.set([makeResult()]);
+        await fx.componentInstance.doSchedule(0);
+        expect(fx.componentInstance.isBusy(0, 'qbit')).toBe(true);
+        http.expectOne('/api/v1/download').flush({ download_id: 'd', status: 'initiated', urls_count: 1, added_count: 1, results: [] });
+        expect(fx.componentInstance.isBusy(0, 'qbit')).toBe(false);
+      });
+
+      it('doDownload: busy true in-flight, false after file resolves', async () => {
+        const fx = bootstrap();
+        vi.spyOn(TestBed.inject(DialogService), 'confirm').mockResolvedValue(true);
+        vi.spyOn(window.URL, 'createObjectURL').mockReturnValue('blob:x');
+        vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
+        fx.componentInstance.results.set([makeResult()]);
+        await fx.componentInstance.doDownload(0);
+        expect(fx.componentInstance.isBusy(0, 'download')).toBe(true);
+        http.expectOne('/api/v1/download/file').flush(new Blob(['torrent']));
+        expect(fx.componentInstance.isBusy(0, 'download')).toBe(false);
+      });
+
+      it('doDownload: busy cleared on error', async () => {
+        const fx = bootstrap();
+        vi.spyOn(TestBed.inject(DialogService), 'confirm').mockResolvedValue(true);
+        fx.componentInstance.results.set([makeResult()]);
+        await fx.componentInstance.doDownload(0);
+        expect(fx.componentInstance.isBusy(0, 'download')).toBe(true);
+        http.expectOne('/api/v1/download/file').error(new ProgressEvent('error'));
+        expect(fx.componentInstance.isBusy(0, 'download')).toBe(false);
+      });
+    });
+
     // Defect A regression (§11.4.115): while a search is IN PROGRESS the grid
     // renders liveResults() (via sortedResults()) and results() is still empty.
     // The buttons MUST act on the displayed live row. Pre-fix the handlers read
@@ -993,6 +1054,42 @@ describe('DashboardComponent', () => {
         const tr = http.expectOne('/api/v1/download');
         expect(tr.request.body.download_urls).toEqual(['magnet:?xt=urn:btih:clicked']);
         tr.flush({ download_id: 'd', status: 'initiated', urls_count: 1, added_count: 1, results: [] });
+      });
+
+      // Busy-state regression guard (§11.4.135, review nit): the deferred-login
+      // path is the most stuck-prone — busy must NOT latch true while the login
+      // dialog is open (no work yet), must go true once the callback fires the
+      // request, and must clear when it resolves. A latched spinner is a defect.
+      it('deferred qBit login: busy stays false until callback, true in-flight, false after — never stuck', async () => {
+        const fx = bootstrap();
+        vi.spyOn(TestBed.inject(DialogService), 'confirm').mockResolvedValue(true);
+        vi.spyOn(fx.componentInstance, 'loadAuthStatus').mockImplementation(() => {});
+        fx.componentInstance.qbitAuthenticated.set(false);
+        fx.componentInstance.results.set([makeResult()]);
+        let loginCb: (() => void) | undefined;
+        (fx.componentInstance as any).qbitDialog = { open: (cb: () => void) => { loginCb = cb; } };
+        await fx.componentInstance.doSchedule(0);
+        // Login dialog open, no request yet → NOT busy (waiting on the user).
+        http.expectNone('/api/v1/download');
+        expect(fx.componentInstance.isBusy(0, 'qbit')).toBe(false);
+        // User completes login → callback fires the real request.
+        fx.componentInstance.qbitAuthenticated.set(true);
+        loginCb!();
+        expect(fx.componentInstance.isBusy(0, 'qbit')).toBe(true);
+        http.expectOne('/api/v1/download').flush({ download_id: 'd', status: 'initiated', urls_count: 1, added_count: 1, results: [] });
+        expect(fx.componentInstance.isBusy(0, 'qbit')).toBe(false);
+      });
+
+      // auth_failed re-login: busy MUST clear (done() runs first) before the
+      // re-login dialog opens — otherwise the spinner latches forever.
+      it('executeScheduleRow auth_failed clears busy before re-prompting login', () => {
+        const fx = bootstrap();
+        (fx.componentInstance as any).qbitDialog = { open: vi.fn() };
+        vi.spyOn(fx.componentInstance, 'loadAuthStatus').mockImplementation(() => {});
+        fx.componentInstance.executeScheduleRow(makeResult(), 'qbit:0');
+        expect(fx.componentInstance.isBusy(0, 'qbit')).toBe(true);
+        http.expectOne('/api/v1/download').flush({ download_id: 'd', status: 'auth_failed', results: [] });
+        expect(fx.componentInstance.isBusy(0, 'qbit')).toBe(false);
       });
     });
   });

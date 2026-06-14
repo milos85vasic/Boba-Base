@@ -17,8 +17,11 @@ export default defineConfig({
   retries: 0,
   reporter: [['list']],
   timeout: 30_000,
+  outputDir: 'test-results/',
   use: {
     baseURL: APP_URL,
+    video: 'on',
+    actionTimeout: 15_000,
     // NOTE: do NOT inject extraHTTPHeaders here — they pollute every
     // browser XHR and trigger CORS preflights for headers the backend
     // doesn't whitelist. Specs read backend URL from process.env directly.

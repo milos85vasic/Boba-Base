@@ -1,6 +1,6 @@
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 17 <strong>Last modified:</strong>
-2026-06-14T13:00:00Z</p>
+<p><strong>Revision:</strong> 18 <strong>Last modified:</strong>
+2026-06-14T18:00:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
 files, fix description, regression guard.</p>
@@ -1223,3 +1223,110 @@ get_search 345</strong> (zero drop). Full frontend suite 349 pass;
 backend 4 pass. <strong>Review (§11.4.142/§11.4.134):</strong> first
 pass NOT-GO (final-emit/get_search race + missing anti-bluff coverage) →
 both fixed + re-verified → clean GO.</p>
+<h2
+id="merge-dashboard-result-row-buttons-malformed-multi-xt-magnet-multino-add-on-qbit-no-click-feedback">2026-06-14
+— merge dashboard result-row buttons: malformed multi-xt magnet,
+multi/no-add on qBit, no click feedback</h2>
+<p>Operator-reported on the merged search-results grid: “Magnet button
+fails with error, magnet link does not get generated!”; “qBit button
+does not work at all, press on it does not send torrent to qBitTorrent
+at all”; and “responsiveness of each clicked search results button must
+be flashing fast and with indicators (UI/UX) of something being prepared
+or processed!”. All three root-caused via live browser reproduction on
+2026-06-14 (§11.4.107 anti-bluff). The first two share one structural
+cause: a merged search-results row aggregates many DISTINCT
+tracker-copies of one content item (each a different infohash), and both
+endpoints treated all of those source infohashes as if they were one
+torrent.</p>
+<h3
+id="magnet-button-generated-a-malformed-multi-xt-magnet-up-to-21-xturnbtih-params">45.
+Magnet button generated a malformed multi-xt magnet (up to 21
+<code>xt=urn:btih:</code> params)</h3>
+<p><strong>Severity:</strong> HIGH (the Magnet button errored / produced
+an unusable magnet). <strong>Type:</strong> Bug. <strong>Root cause
+(FACT, captured live):</strong> a merged search-results row aggregates
+many DISTINCT tracker-copies of one content item, each carrying its own
+infohash. <code>generate_magnet</code> in
+<code>download-proxy/src/api/routes.py</code> joined EVERY source
+infohash into the magnet’s <code>xt</code>
+(<code>xt = "&amp;".join(...)</code>), producing a magnet with up to 21
+distinct <code>xt=urn:btih:</code> params. Confirmed live: an Ubuntu
+merged row’s Magnet dialog showed <strong>21</strong> distinct
+<code>xt</code> hashes. A magnet must identify exactly ONE torrent;
+qBittorrent rejects a multi-<code>xt</code> magnet → “magnet not
+generated”. <strong>Fix:</strong> build the magnet’s single
+<code>xt</code> from the PRIMARY (first = best / highest-seeded) source
+only, while STILL aggregating tracker (<code>tr=</code>) entries from
+all sources (preserving peer reach without ambiguous identity).
+<strong>Affected:</strong> <code>download-proxy/src/api/routes.py</code>
+(<code>generate_magnet</code>); mirrored in the Go backend
+<code>qBitTorrent-go/internal/api/download.go</code>
+(<code>MagnetHandler</code>). <strong>Regression guard
+(§11.4.115/§11.4.135):</strong> RED→GREEN
+<code>tests/unit/test_download_merged.py::TestMergedMagnetGeneration::test_magnet_endpoint_builds_single_xt_from_primary</code>
++ <code>::test_magnet_single_xt_for_21_source_merged_row</code>;
+reconciled the stale gate
+<code>tests/unit/api_layer/test_routes_coverage.py::TestGenerateMagnetMultiHash::test_multiple_btih_hashes</code>
+per §11.4.120 (rewritten to assert the NEW single-<code>xt</code>
+mechanism, not fake-passed/reverted). <strong>Verified live:</strong>
+served-endpoint check (<code>xt</code> count == 1); the SAME Ubuntu
+merged row that streamed 21 <code>xt</code> hashes now produces exactly
+1 — screenshots <code>qa-buttons-multixt-magnet-BEFORE.png</code> /
+<code>qa-buttons-singlext-magnet-AFTER.png</code> at repo root.</p>
+<h3
+id="qbit-button-added-multiple-wrong-torrents-or-none-of-the-intended-one-for-a-merged-row">46.
+qBit button added multiple wrong torrents (or none of the intended one)
+for a merged row</h3>
+<p><strong>Severity:</strong> HIGH (the qBit “send to qBittorrent”
+button did not deliver the picked torrent). <strong>Type:</strong> Bug.
+<strong>Root cause (FACT, captured live):</strong>
+<code>initiate_download</code> in
+<code>download-proxy/src/api/routes.py</code> looped
+<code>for url in request.download_urls[:5]</code> and added EACH url.
+For a merged row (many distinct tracker-copies of one item) this added
+up to 5 DIFFERENT torrents instead of the single one the user picked.
+Confirmed live: a merged row added <strong>3</strong> of 5 distinct
+torrents — so the user saw multiple unintended torrents (or, when the
+intended copy failed first, not the one they meant).
+<strong>Fix:</strong> add the PRIMARY (first) source and STOP after the
+first successful add; fall through to the next source ONLY if a prior
+one fails (primary-with-fallback), so exactly one torrent — the intended
+one — lands. <strong>Affected:</strong>
+<code>download-proxy/src/api/routes.py</code>
+(<code>initiate_download</code>). <strong>Regression guard
+(§11.4.115/§11.4.135):</strong> RED→GREEN
+<code>tests/unit/test_download_merged.py::TestMergedQbitAdd::test_qbit_adds_only_primary_source_of_merged_row</code>
+(asserts exactly ONE <code>/torrents/add</code> call +
+<code>added_count == 1</code>; FAILED pre-fix with 3 adds).</p>
+<h3
+id="result-row-buttons-gave-no-processing-feedback-on-click-no-uiux-busy-state">47.
+Result-row buttons gave no processing feedback on click (no UI/UX busy
+state)</h3>
+<p><strong>Severity:</strong> MEDIUM (UX — clicks looked unresponsive
+while the request was in flight). <strong>Type:</strong> Bug.
+<strong>Root cause (FACT):</strong> the Magnet / qBit / Download
+handlers fired their async work with no per-button busy state, so a
+click produced no visible “preparing / processing” indication while the
+request was in flight — the operator perceived the button as dead.
+<strong>Fix:</strong> a per-row, per-action busy signal in
+<code>frontend/src/app/components/dashboard/dashboard.component.ts</code>
+(<code>isBusy(index, action)</code>), wired into all three handlers (set
+on click, cleared on success AND on error). The template
+<code>frontend/src/app/components/dashboard/dashboard.component.html</code>
+adds <code>aria-busy</code>, a <code>.busy</code> class, and an inline
+<code>&lt;span class="btn-spinner"&gt;</code>;
+<code>dashboard.component.scss</code> adds an instant
+<code>:active</code> press-flash, a <code>.busy</code> pulse animation,
+and the spinner — so every click flashes immediately and shows in-flight
+progress. <strong>Affected:</strong>
+<code>frontend/src/app/components/dashboard/dashboard.component.ts</code>,
+<code>dashboard.component.html</code>,
+<code>dashboard.component.scss</code>. <strong>Regression guard
+(§11.4.135):</strong> 5 new Vitest specs in
+<code>dashboard.component.spec.ts</code>
+(<code>instant button processing indicator (isBusy)</code>) asserting
+busy <code>true</code> in-flight / <code>false</code> after resolve AND
+after error, for each of the three actions. Full dashboard suite
+<strong>103/103</strong> GREEN. <strong>Verified (§11.4.108):</strong>
+the deployed bundle contains <code>btnBusyPulse</code> /
+<code>btn-spinner</code> (served == built).</p>

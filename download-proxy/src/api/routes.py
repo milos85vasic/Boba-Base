@@ -989,6 +989,14 @@ async def initiate_download(
                                 )
                 except Exception as e:
                     results.append({"url": url, "status": "error", "message": str(e)})
+                # A merged content row's download_urls are many DISTINCT
+                # tracker-copies of ONE item. Add the best (first) source and
+                # stop — never fan one content item out into N torrents in the
+                # client. Fall through to the next source ONLY if this one
+                # failed (primary-with-fallback). Single-source rows are
+                # unaffected (their list has one URL).
+                if results and results[-1].get("status") == "added":
+                    break
     except Exception as e:
         return {
             "download_id": download_id,
@@ -1211,7 +1219,14 @@ async def generate_magnet(request: Request):  # type: ignore[no-untyped-def]
 
     name = req.result_id or "download"
     dn = urllib.parse.quote(name)
-    xt = "&".join(f"xt=urn:btih:{h}" for h in hashes) if hashes else ""
+    # A magnet identifies ONE torrent, so it carries exactly ONE xt. A merged
+    # content row aggregates many DISTINCT tracker-copies (each a different
+    # infohash) of the same item — joining every infohash produced a malformed
+    # multi-xt magnet that qBittorrent rejects (live defect, 2026-06-14: an
+    # Ubuntu merged row yielded a 21-xt magnet). Use the PRIMARY (first =
+    # best/highest-seeded) source only; trackers from ALL sources are still
+    # aggregated above to enrich that single torrent's swarm.
+    xt = f"xt=urn:btih:{hashes[0]}" if hashes else ""
     # Include source trackers + fallback public trackers
     default_trackers = [
         "udp://tracker.opentrackr.org:1337",

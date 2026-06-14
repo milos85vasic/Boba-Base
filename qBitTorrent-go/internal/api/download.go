@@ -121,8 +121,17 @@ func MagnetHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 
 		name := url.QueryEscape(body.ResultID)
 		magnet := "magnet:?dn=" + name
-		for _, h := range hashes {
-			magnet += "&xt=urn:btih:" + h
+		// A magnet identifies exactly ONE torrent, so it must carry exactly ONE
+		// xt=urn:btih:. A merged search-results row aggregates many DISTINCT
+		// tracker-copies of the same content, each with a different infohash;
+		// joining all of them produced a malformed multi-xt magnet that
+		// qBittorrent rejects (confirmed live 2026-06-14: an Ubuntu merged row
+		// produced a 21-xt magnet). Use only the PRIMARY source = the FIRST
+		// infohash discovered (download_urls[0]'s hash = best/highest-seeded
+		// source). Trackers from ALL sources are still aggregated below into this
+		// single torrent's magnet.
+		if len(hashes) > 0 {
+			magnet += "&xt=urn:btih:" + hashes[0]
 		}
 		for t := range trackers {
 			magnet += "&tr=" + url.QueryEscape(t)
@@ -192,8 +201,8 @@ func BridgeHealthHandler(bridgeURL string) gin.HandlerFunc {
 		defer resp.Body.Close()
 		c.JSON(http.StatusOK, gin.H{
 			"healthy":     resp.StatusCode < 500,
-			"status_code":  resp.StatusCode,
-			"bridge_url":   bridgeURL,
+			"status_code": resp.StatusCode,
+			"bridge_url":  bridgeURL,
 		})
 	}
 }

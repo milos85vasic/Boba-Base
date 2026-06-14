@@ -194,9 +194,15 @@
             </td>
             <td>
               <div class="btn-group">
-                <a class="download-btn btn-magnet" (click)="doMagnet(i); $event.preventDefault()" title="Get Magnet Link">Magnet</a>
-                <button class="download-btn btn-schedule" (click)="doSchedule(i)" title="Send to qBittorrent">qBit</button>
-                <button class="download-btn" (click)="doDownload(i)" title="Download">Download</button>
+                <a class="download-btn btn-magnet" [class.busy]="isBusy(i,'magnet')" [attr.aria-busy]="isBusy(i,'magnet')"
+                   (click)="!isBusy(i,'magnet') && doMagnet(i); $event.preventDefault()" title="Get Magnet Link">
+                  <span class="btn-spinner" *ngIf="isBusy(i,'magnet')" aria-hidden="true"></span>Magnet</a>
+                <button class="download-btn btn-schedule" [class.busy]="isBusy(i,'qbit')" [disabled]="isBusy(i,'qbit')"
+                        [attr.aria-busy]="isBusy(i,'qbit')" (click)="doSchedule(i)" title="Send to qBittorrent">
+                  <span class="btn-spinner" *ngIf="isBusy(i,'qbit')" aria-hidden="true"></span>qBit</button>
+                <button class="download-btn" [class.busy]="isBusy(i,'download')" [disabled]="isBusy(i,'download')"
+                        [attr.aria-busy]="isBusy(i,'download')" (click)="doDownload(i)" title="Download">
+                  <span class="btn-spinner" *ngIf="isBusy(i,'download')" aria-hidden="true"></span>Download</button>
               </div>
             </td>
           </tr>

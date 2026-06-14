@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -189,6 +190,55 @@ func TestMagnetHandler(t *testing.T) {
 	assert.True(t, ok)
 	assert.Contains(t, magnet, "magnet:?")
 	assert.Contains(t, magnet, "btih:0123456789abcdef0123456789abcdef01234567")
+}
+
+// TestMagnetHandler_SingleXtFromMergedSources is the RED-first regression guard
+// (constitution §11.4.115). A merged search-results row aggregates many DISTINCT
+// tracker-copies of the same content, each carrying a DIFFERENT infohash. A magnet
+// identifies exactly ONE torrent, so it MUST carry exactly ONE xt=urn:btih: — the
+// PRIMARY source (download_urls[0]'s hash, the best/highest-seeded copy). Joining
+// every infohash produces a malformed multi-xt magnet qBittorrent rejects (confirmed
+// live 2026-06-14: an Ubuntu merged row produced a 21-xt magnet). Trackers from ALL
+// sources MUST still aggregate into that single torrent's magnet.
+func TestMagnetHandler_SingleXtFromMergedSources(t *testing.T) {
+	svc := service.NewMergeSearchService(nil, 5)
+	r := gin.New()
+	r.POST("/magnet", MagnetHandler(svc))
+
+	const primaryHash = "1111111111111111111111111111111111111111"
+	const secondaryHash = "2222222222222222222222222222222222222222"
+
+	// Two distinct tracker-copies of the same content: different infohashes,
+	// each with its own tracker.
+	src1 := "magnet:?xt=urn:btih:" + primaryHash + "&tr=udp%3A%2F%2Ftracker.one%3A1111"
+	src2 := "magnet:?xt=urn:btih:" + secondaryHash + "&tr=udp%3A%2F%2Ftracker.two%3A2222"
+
+	body, _ := json.Marshal(map[string]interface{}{
+		"result_id":     "merged-row",
+		"download_urls": []string{src1, src2},
+	})
+	req, _ := http.NewRequest("POST", "/magnet", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var resp map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &resp)
+	magnet, ok := resp["magnet"].(string)
+	assert.True(t, ok)
+
+	// EXACTLY ONE xt=urn:btih: in the magnet.
+	assert.Equal(t, 1, strings.Count(magnet, "xt=urn:btih:"),
+		"merged row must yield exactly one xt=urn:btih:, got magnet: %s", magnet)
+	// The single xt is the PRIMARY (first) source's hash.
+	assert.Contains(t, magnet, "xt=urn:btih:"+primaryHash)
+	// The secondary source's hash must be ABSENT.
+	assert.NotContains(t, magnet, secondaryHash,
+		"secondary infohash must not appear in the magnet: %s", magnet)
+	// Trackers from BOTH sources still aggregate into the single torrent's magnet.
+	assert.Contains(t, magnet, "tracker.one")
+	assert.Contains(t, magnet, "tracker.two")
 }
 
 func TestCreateSchedule(t *testing.T) {

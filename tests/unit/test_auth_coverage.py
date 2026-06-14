@@ -206,6 +206,8 @@ class TestRutrackerCookieLogin:
 class TestAllTrackersAuthStatus:
     @pytest.mark.asyncio
     async def test_all_trackers_status(self):
+        from http.cookies import SimpleCookie
+
         from api.auth import all_trackers_auth_status
 
         mock_orch = MagicMock()
@@ -215,6 +217,15 @@ class TestAllTrackersAuthStatus:
         mock_resp = AsyncMock()
         mock_resp.text = AsyncMock(return_value="Ok.")
         mock_resp.status = 200
+        # Realistic cookie jar: modern qBittorrent sets a QBT_SID cookie on a
+        # successful login. A bare AsyncMock for `.cookies` raises when the
+        # has_session check iterates `.values()` — the exception is swallowed by
+        # auth.py's `except: pass`, leaving has_session false and turning a real
+        # product assertion into a §11.4.1 FAIL-bluff. SimpleCookie exercises the
+        # genuine cookie-presence path.
+        _jar = SimpleCookie()
+        _jar["QBT_SID"] = "test-session-id"
+        mock_resp.cookies = _jar
         mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
         mock_resp.__aexit__ = AsyncMock(return_value=False)
 

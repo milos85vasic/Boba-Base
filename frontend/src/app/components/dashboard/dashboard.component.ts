@@ -65,6 +65,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   searchErrors = signal<string[]>([]);
   trackerStats = signal<TrackerSearchStat[]>([]);
 
+  // Per-row, per-action processing state. Keyed `${action}:${rowIndex}` so the
+  // INSTANT a result-row button (Magnet/qBit/Download) is clicked it flashes a
+  // spinner + disables itself until its async work resolves — the user always
+  // sees that "something is being prepared". Cleared on success AND error.
+  private readonly _busy = signal<ReadonlySet<string>>(new Set<string>());
+  isBusy(index: number, action: 'magnet' | 'qbit' | 'download'): boolean {
+    return this._busy().has(`${action}:${index}`);
+  }
+  private setBusy(key: string, on: boolean): void {
+    const next = new Set(this._busy());
+    if (on) { next.add(key); } else { next.delete(key); }
+    this._busy.set(next);
+  }
+
   // Sorting
   sortColumn = signal('seeds');
   sortDirection = signal<'asc' | 'desc'>('desc');
@@ -619,16 +633,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
     if (!confirmed) return;
 
+    const key = `qbit:${index}`;
     if (!this.qbitAuthenticated()) {
       // Capture the ROW object (not the index) for the deferred-login callback:
       // a search can complete WHILE the login dialog is open, at which point
       // sortedResults() pivots from liveResults() to the re-sorted final list —
       // re-resolving by index would then act on a DIFFERENT row than the one the
       // user clicked. The captured `r` is immune to that re-ordering race.
-      this.qbitDialog.open(() => { this.loadAuthStatus(); this.executeScheduleRow(r); });
+      this.qbitDialog.open(() => { this.loadAuthStatus(); this.executeScheduleRow(r, key); });
       return;
     }
-    this.executeScheduleRow(r);
+    this.executeScheduleRow(r, key);
   }
 
   // Thin index-based wrapper retained for existing call sites/tests — resolves
@@ -636,18 +651,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
   executeSchedule(index: number): void {
     const r = this.sortedResults()[index];
     if (!r) return;
-    this.executeScheduleRow(r);
+    this.executeScheduleRow(r, `qbit:${index}`);
   }
 
-  executeScheduleRow(r: SearchResult): void {
+  executeScheduleRow(r: SearchResult, busyKey?: string): void {
+    if (busyKey) this.setBusy(busyKey, true);
+    const done = () => { if (busyKey) this.setBusy(busyKey, false); };
     this.api.download({ result_id: r.name, download_urls: r.download_urls }).subscribe({
       next: (res) => {
+        done();
         if (res.added_count > 0 || res.status === 'initiated') {
           this.toast.success(`Sent "${r.name}" to qBittorrent`);
         } else if (res.status === 'auth_failed') {
           this.toast.error('qBittorrent auth failed. Please login.');
           // Same row-capture discipline on the auth-failed re-login path.
-          this.qbitDialog.open(() => { this.loadAuthStatus(); this.executeScheduleRow(r); });
+          this.qbitDialog.open(() => { this.loadAuthStatus(); this.executeScheduleRow(r, busyKey); });
         } else {
           // Surface real failure reason from backend.
           const detail = (res.results || [])
@@ -658,6 +676,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
+        done();
         this.toast.error('Error: ' + (err.error?.error || err.message));
       }
     });
@@ -675,8 +694,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
     if (!confirmed) return;
 
+    const key = `download:${index}`;
+    this.setBusy(key, true);
     this.api.downloadFile({ result_id: String(index), download_urls: r.download_urls }).subscribe({
       next: (blob) => {
+        this.setBusy(key, false);
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -688,6 +710,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.toast.success(`Downloaded "${r.name}"`);
       },
       error: () => {
+        this.setBusy(key, false);
         this.toast.error('Download failed');
       }
     });
@@ -696,8 +719,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   async doMagnet(index: number): Promise<void> {
     const r = this.sortedResults()[index];
     if (!r) return;
+    const key = `magnet:${index}`;
+    this.setBusy(key, true);
     this.api.generateMagnet({ result_id: r.name, download_urls: r.download_urls }).subscribe({
       next: (res) => {
+        this.setBusy(key, false);
         this.magnetDialog.open(res.magnet, () => {
           this.api.download({ result_id: String(index), download_urls: [res.magnet] }).subscribe({
             next: (dres) => {
@@ -711,7 +737,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           });
         });
       },
-      error: () => this.toast.error('Failed to generate magnet link')
+      error: () => { this.setBusy(key, false); this.toast.error('Failed to generate magnet link'); }
     });
   }
 
