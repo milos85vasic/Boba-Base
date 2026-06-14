@@ -240,8 +240,10 @@ class MergedResult:
 
     def add_source(self, result: SearchResult) -> None:
         self.original_results.append(result)
-        self.total_seeds += result.seeds
-        self.total_leechers += result.leechers
+        # seeds/leechers are typed int but a tracker plugin can emit None (no
+        # count reported) — coerce to 0 so total_seeds/total_leechers stay int.
+        self.total_seeds += result.seeds or 0
+        self.total_leechers += result.leechers or 0
         if result.link not in self.download_urls:
             self.download_urls.append(result.link)
 

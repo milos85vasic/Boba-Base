@@ -66,7 +66,9 @@ class Deduplicator:
         # tie-breaker, items with equal seed counts preserve their input
         # order and drive different merge-group seeds depending on caller
         # order. Property test `test_merge_is_order_invariant` guards this.
-        unmatched.sort(key=lambda r: (-r.seeds, r.link or "", r.name or ""))
+        # `seeds` is typed int but a tracker plugin can emit None (no seed
+        # count reported) — coerce to 0 so the sort never raises TypeError.
+        unmatched.sort(key=lambda r: (-(r.seeds or 0), r.link or "", r.name or ""))
 
         while unmatched:
             # Take the first unmatched result as the seed for a new group
