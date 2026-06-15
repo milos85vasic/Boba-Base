@@ -1,0 +1,72 @@
+- generic [ref=e2]:
+  - navigation "Primary" [ref=e3]:
+    - generic [ref=e4]: Боба Dashboard
+    - list [ref=e5]:
+      - listitem [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+      - listitem [ref=e8]:
+        - link "Jackett" [ref=e9] [cursor=pointer]:
+          - /url: /jackett
+  - main [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - img "Боба Dashboard logo" [ref=e15]
+          - generic [ref=e16]:
+            - heading "Боба Dashboard" [level=1] [ref=e17]
+            - paragraph [ref=e18]: Multi-tracker meta-search with private-tracker bridge
+        - generic [ref=e19]:
+          - link "qBittorrent WebUI" [ref=e20] [cursor=pointer]:
+            - /url: http://localhost:7186
+          - link "Download Proxy" [ref=e21] [cursor=pointer]:
+            - /url: http://localhost:7186
+          - link "Боба Dashboard" [ref=e22]:
+            - /url: http://localhost:7187
+          - link "WebUI Bridge (down) Retry WebUI Bridge probe" [ref=e23]:
+            - /url: http://localhost:7188
+            - text: WebUI Bridge
+            - generic [ref=e24]:
+              - text: (down)
+              - button "Retry WebUI Bridge probe" [ref=e25] [cursor=pointer]: ↻
+        - generic [ref=e26]:
+          - generic [ref=e29] [cursor=pointer]: qBit Connected — admin
+          - generic [ref=e32] [cursor=pointer]: rutracker
+          - generic [ref=e35] [cursor=pointer]: kinozal
+          - generic [ref=e38] [cursor=pointer]: nnmclub
+          - generic [ref=e41] [cursor=pointer]: iptorrents
+          - generic [ref=e43]:
+            - button "Switch to light mode" [ref=e44] [cursor=pointer]: ☀
+            - button "Darcula (dark) ▾" [ref=e45] [cursor=pointer]:
+              - generic [ref=e46]: Darcula
+              - generic [ref=e47]: (dark)
+              - generic [ref=e48]: ▾
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - generic [ref=e52]: "0"
+          - generic [ref=e53]: Active Searches
+        - generic [ref=e54]:
+          - generic [ref=e55]: "3"
+          - generic [ref=e56]: Completed
+        - generic [ref=e57]:
+          - generic [ref=e58]: "29"
+          - generic [ref=e59]: Trackers
+      - generic [ref=e60]:
+        - heading "Search" [level=2] [ref=e61]
+        - generic [ref=e62]:
+          - textbox "Enter search query (e.g., Ubuntu 22.04)" [ref=e63]
+          - button "Search" [ref=e64] [cursor=pointer]
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - button "Results" [ref=e67] [cursor=pointer]
+          - button "Active Downloads" [ref=e68] [cursor=pointer]
+          - button "Trackers" [ref=e69] [cursor=pointer]
+          - button "Schedules" [ref=e70] [cursor=pointer]
+          - button "Hooks" [ref=e71] [cursor=pointer]
+        - generic [ref=e73]: No search results yet. Enter a query above.
+  - contentinfo [ref=e75]:
+    - text: Made with
+    - generic "love" [ref=e76]: ❤
+    - text: by
+    - link "Vasic Digital" [ref=e77] [cursor=pointer]:
+      - /url: https://www.vasic.digital

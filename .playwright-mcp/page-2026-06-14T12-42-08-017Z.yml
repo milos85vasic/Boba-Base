@@ -1,0 +1,141 @@
+- generic [ref=e2]:
+  - navigation "Primary" [ref=e3]:
+    - generic [ref=e4]: Боба Dashboard
+    - list [ref=e5]:
+      - listitem [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+      - listitem [ref=e8]:
+        - link "Jackett" [ref=e9] [cursor=pointer]:
+          - /url: /jackett
+  - main [ref=e10]:
+    - generic [ref=e12]:
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - img "Боба Dashboard logo" [ref=e15]
+          - generic [ref=e16]:
+            - heading "Боба Dashboard" [level=1] [ref=e17]
+            - paragraph [ref=e18]: Multi-tracker meta-search with private-tracker bridge
+        - generic [ref=e19]:
+          - link "qBittorrent WebUI" [ref=e20] [cursor=pointer]:
+            - /url: http://localhost:7186
+          - link "Download Proxy" [ref=e21] [cursor=pointer]:
+            - /url: http://localhost:7186
+          - link "Боба Dashboard" [ref=e22]:
+            - /url: http://localhost:7187
+          - link "WebUI Bridge (down) Retry WebUI Bridge probe" [ref=e23]:
+            - /url: http://localhost:7188
+            - text: WebUI Bridge
+            - generic [ref=e24]:
+              - text: (down)
+              - button "Retry WebUI Bridge probe" [ref=e25] [cursor=pointer]: ↻
+        - generic [ref=e26]:
+          - generic [ref=e29] [cursor=pointer]: qBit Connected — admin
+          - generic [ref=e32] [cursor=pointer]: rutracker
+          - generic [ref=e35] [cursor=pointer]: kinozal
+          - generic [ref=e38] [cursor=pointer]: nnmclub
+          - generic [ref=e41] [cursor=pointer]: iptorrents
+          - generic [ref=e43]:
+            - button "Switch to light mode" [ref=e44] [cursor=pointer]: ☀
+            - button "Darcula (dark) ▾" [ref=e45] [cursor=pointer]:
+              - generic [ref=e46]: Darcula
+              - generic [ref=e47]: (dark)
+              - generic [ref=e48]: ▾
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - generic [ref=e52]: "0"
+          - generic [ref=e53]: Active Searches
+        - generic [ref=e54]:
+          - generic [ref=e55]: "3"
+          - generic [ref=e56]: Completed
+        - generic [ref=e57]:
+          - generic [ref=e58]: "29"
+          - generic [ref=e59]: Trackers
+      - generic [ref=e60]:
+        - heading "Search" [level=2] [ref=e61]
+        - generic [ref=e62]:
+          - textbox "Enter search query (e.g., Ubuntu 22.04)" [ref=e63]: ubuntu
+          - button "Abort" [active] [ref=e78] [cursor=pointer]
+        - generic [ref=e79]: Found 0 results...
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - button "Results" [ref=e67] [cursor=pointer]
+          - button "Active Downloads" [ref=e68] [cursor=pointer]
+          - button "Trackers" [ref=e69] [cursor=pointer]
+          - button "Schedules" [ref=e70] [cursor=pointer]
+          - button "Hooks" [ref=e71] [cursor=pointer]
+        - generic [ref=e72]:
+          - generic [ref=e81]:
+            - heading "Trackers hit (0 / 29) … 29" [level=3] [ref=e82]:
+              - text: Trackers hit (0 / 29)
+              - generic [ref=e83]: … 29
+            - generic [ref=e84]:
+              - button "Details for academictorrents" [ref=e85] [cursor=pointer]:
+                - generic [ref=e87]: academictorrents
+              - button "Details for anilibra" [ref=e88] [cursor=pointer]:
+                - generic [ref=e90]: anilibra
+              - button "Details for bitsearch" [ref=e91] [cursor=pointer]:
+                - generic [ref=e93]: bitsearch
+              - button "Details for gamestorrents" [ref=e94] [cursor=pointer]:
+                - generic [ref=e96]: gamestorrents
+              - button "Details for glotorrents" [ref=e97] [cursor=pointer]:
+                - generic [ref=e99]: glotorrents
+              - button "Details for iptorrents" [ref=e100] [cursor=pointer]:
+                - generic [ref=e102]: iptorrents
+                - generic "authenticated" [ref=e103]: 🔒
+              - button "Details for jackett" [ref=e104] [cursor=pointer]:
+                - generic [ref=e106]: jackett
+              - button "Details for kickass" [ref=e107] [cursor=pointer]:
+                - generic [ref=e109]: kickass
+              - button "Details for kinozal" [ref=e110] [cursor=pointer]:
+                - generic [ref=e112]: kinozal
+                - generic "authenticated" [ref=e113]: 🔒
+              - button "Details for limetorrents" [ref=e114] [cursor=pointer]:
+                - generic [ref=e116]: limetorrents
+              - button "Details for linuxtracker" [ref=e117] [cursor=pointer]:
+                - generic [ref=e119]: linuxtracker
+              - button "Details for megapeer" [ref=e120] [cursor=pointer]:
+                - generic [ref=e122]: megapeer
+              - button "Details for nnmclub" [ref=e123] [cursor=pointer]:
+                - generic [ref=e125]: nnmclub
+                - generic "authenticated" [ref=e126]: 🔒
+              - button "Details for nyaa" [ref=e127] [cursor=pointer]:
+                - generic [ref=e129]: nyaa
+              - button "Details for piratebay" [ref=e130] [cursor=pointer]:
+                - generic [ref=e132]: piratebay
+              - button "Details for pirateiro" [ref=e133] [cursor=pointer]:
+                - generic [ref=e135]: pirateiro
+              - button "Details for rockbox" [ref=e136] [cursor=pointer]:
+                - generic [ref=e138]: rockbox
+              - button "Details for rutor" [ref=e139] [cursor=pointer]:
+                - generic [ref=e141]: rutor
+              - button "Details for rutracker" [ref=e142] [cursor=pointer]:
+                - generic [ref=e144]: rutracker
+                - generic "authenticated" [ref=e145]: 🔒
+              - button "Details for snowfl" [ref=e146] [cursor=pointer]:
+                - generic [ref=e148]: snowfl
+              - button "Details for tokyotoshokan" [ref=e149] [cursor=pointer]:
+                - generic [ref=e151]: tokyotoshokan
+              - button "Details for torlock" [ref=e152] [cursor=pointer]:
+                - generic [ref=e154]: torlock
+              - button "Details for torrentdownload" [ref=e155] [cursor=pointer]:
+                - generic [ref=e157]: torrentdownload
+              - button "Details for torrentgalaxy" [ref=e158] [cursor=pointer]:
+                - generic [ref=e160]: torrentgalaxy
+              - button "Details for torrentkitty" [ref=e161] [cursor=pointer]:
+                - generic [ref=e163]: torrentkitty
+              - button "Details for torrentproject" [ref=e164] [cursor=pointer]:
+                - generic [ref=e166]: torrentproject
+              - button "Details for torrentscsv" [ref=e167] [cursor=pointer]:
+                - generic [ref=e169]: torrentscsv
+              - button "Details for yourbittorrent" [ref=e170] [cursor=pointer]:
+                - generic [ref=e172]: yourbittorrent
+              - button "Details for yts" [ref=e173] [cursor=pointer]:
+                - generic [ref=e175]: yts
+          - generic [ref=e73]: No search results yet. Enter a query above.
+  - contentinfo [ref=e75]:
+    - text: Made with
+    - generic "love" [ref=e76]: ❤
+    - text: by
+    - link "Vasic Digital" [ref=e77] [cursor=pointer]:
+      - /url: https://www.vasic.digital
