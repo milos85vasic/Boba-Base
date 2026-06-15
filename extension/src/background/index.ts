@@ -83,7 +83,24 @@ const DEFAULT_HEALTH_PERIOD_MIN = 5;
 // In-memory state (per service-worker lifetime)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Detected scan result keyed by tab id (the popup's `get-detected` source). */
+/**
+ * In-memory WRITE-THROUGH cache of the detected scan result keyed by tab id
+ * (the popup's `get-detected` source). This is a fast lane ONLY — it does NOT
+ * survive a service-worker teardown.
+ *
+ * ## MV3 crash-risk S3 — why this is backed by `chrome.storage.session`
+ * BobaLink is an MV3 service worker: it idles out (~30s) and is torn down, then
+ * re-spawned on the next event. A bare top-level `Map` is LOST on every such
+ * teardown, so after an idle period the popup's `get-detected` and the
+ * context-menu "Send all" / `send-all` command paths would silently no-op (they
+ * are guarded by `if (result)`) — a real functional bug. The DURABLE store is
+ * {@link getTabResult} / {@link setTabResult}, which read/write
+ * `chrome.storage.session` (an in-memory store that survives SW restarts WITHIN
+ * a browser session and is cleared only on browser close — the correct lifetime
+ * for per-tab search results). Every WRITE goes through `chrome.storage.session`
+ * AND this cache; every READ awaits {@link getTabResult}, which falls back to
+ * `chrome.storage.session` so a freshly-respawned worker still finds results.
+ */
 const tabResults = new Map<number, PageScanResult>();
 
 /** The offline retry queue (committed module; SEND injected at process time). */
@@ -177,6 +194,81 @@ async function clientFor(server: ServerConfig): Promise<BobaClient> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Per-tab detected-results store (chrome.storage.session — survives SW teardown)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * `chrome.storage.session` key PREFIX under which each tab's detected
+ * {@link PageScanResult} is persisted (crash-risk S3). The full key is
+ * `${TAB_RESULT_KEY_PREFIX}${tabId}`. `storage.session` is in-memory only (never
+ * written to disk) and is cleared when the browser closes — the right lifetime
+ * for per-tab search results that must nonetheless survive a service-worker
+ * idle-teardown WITHIN a session.
+ */
+const TAB_RESULT_KEY_PREFIX = "bobalink_tab_result_";
+
+/** The `chrome.storage.session` key for a given tab id. */
+function tabResultKey(tabId: number): string {
+  return `${TAB_RESULT_KEY_PREFIX}${String(tabId)}`;
+}
+
+/**
+ * Persist a tab's detected set to `chrome.storage.session` (the durable store
+ * that survives a service-worker teardown) AND mirror it into the in-memory
+ * {@link tabResults} write-through cache. Best-effort on the session write — a
+ * missing/unavailable `storage.session` surface degrades to cache-only (the
+ * old behaviour) rather than throwing into the message router.
+ *
+ * @param tabId - The tab the result belongs to.
+ * @param result - The detected scan result to store.
+ */
+async function setTabResult(
+  tabId: number,
+  result: PageScanResult,
+): Promise<void> {
+  tabResults.set(tabId, result);
+  try {
+    const session = chrome.storage.session;
+    if (session) {
+      await session.set({ [tabResultKey(tabId)]: result });
+    }
+  } catch (err) {
+    log.debug("session storage set failed for tab result", err);
+  }
+}
+
+/**
+ * Resolve a tab's detected set: the in-memory {@link tabResults} cache first
+ * (fast lane), else REHYDRATE from `chrome.storage.session` (the store that
+ * survives a service-worker teardown) and re-populate the cache. Returns null
+ * when neither holds a value for the tab. This is the single read path every
+ * `tabResults` consumer goes through so a freshly-respawned worker still finds
+ * the results the previous worker stored (crash-risk S3).
+ *
+ * @param tabId - The tab whose detected set is requested.
+ * @returns The stored {@link PageScanResult}, or null when absent.
+ */
+async function getTabResult(tabId: number): Promise<PageScanResult | null> {
+  const cached = tabResults.get(tabId);
+  if (cached !== undefined) return cached;
+  try {
+    const session = chrome.storage.session;
+    if (!session) return null;
+    const key = tabResultKey(tabId);
+    const data = await session.get(key);
+    const value = (data as Record<string, unknown>)[key];
+    if (isValidScanResult(value)) {
+      tabResults.set(tabId, value);
+      return value;
+    }
+    return null;
+  } catch (err) {
+    log.debug("session storage get failed for tab result", err);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Badge + notifications
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -255,7 +347,7 @@ async function sendTorrents(
     throw new Error("No active server configured");
   }
 
-  const result = tabResults.get(tabId);
+  const result = await getTabResult(tabId);
   if (!result) {
     throw new Error("No torrents detected for this tab");
   }
@@ -529,7 +621,9 @@ async function handleMessage(
       // malformed payload (`{ items: 5 }`, a string, …) must NOT overwrite a
       // tab's previously-detected set with garbage that then flows to the popup.
       if (typeof tabId === "number" && isValidScanResult(result)) {
-        tabResults.set(tabId, result);
+        // Persist to chrome.storage.session (survives SW teardown, crash-risk
+        // S3) AND the in-memory write-through cache, then reflect the count.
+        await setTabResult(tabId, result);
         updateBadge(result.items.length, BADGE_COLORS.DETECTED);
       }
       return { success: true };
@@ -540,8 +634,10 @@ async function handleMessage(
       // page (no sender.tab) steers by payload.tabId. A forged payload.tabId from
       // a content script is ignored (see {@link resolveTargetTabId}).
       const tabId = resolveTargetTabId(message.payload?.tabId, sender);
+      // Rehydrate from chrome.storage.session when the in-memory cache was lost
+      // to a service-worker teardown (crash-risk S3).
       const result =
-        typeof tabId === "number" ? tabResults.get(tabId) ?? null : null;
+        typeof tabId === "number" ? await getTabResult(tabId) : null;
       return { success: true, data: { result } };
     }
 
@@ -714,7 +810,7 @@ function registerContextMenuClicks(): void {
           }
           case MENU_SEND_ALL: {
             if (typeof tab?.id === "number") {
-              const result = tabResults.get(tab.id);
+              const result = await getTabResult(tab.id);
               if (result && result.items.length > 0) {
                 await sendTorrents(
                   tab.id,
@@ -734,9 +830,7 @@ function registerContextMenuClicks(): void {
             if (typeof groupId === "number" && groupId >= 0 && server) {
               const batch = await batchGroupTorrents(
                 groupId,
-                chromeGroupBatchDeps((id) =>
-                  Promise.resolve(tabResults.get(id) ?? null),
-                ),
+                chromeGroupBatchDeps((id) => getTabResult(id)),
               );
               try {
                 // Building the client DECRYPTS the configured token bundle
@@ -812,7 +906,7 @@ function registerCommands(): void {
         switch (command) {
           case "send-all": {
             if (typeof tabId === "number") {
-              const result = tabResults.get(tabId);
+              const result = await getTabResult(tabId);
               if (result) {
                 const unsent = result.items
                   .filter((i) => !i.sent)

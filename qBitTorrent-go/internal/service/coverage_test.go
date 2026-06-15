@@ -72,7 +72,8 @@ func TestMergeSearchService_RunSearch_RealClient_CompletesAndAccumulates(t *test
 	err := svc.RunSearch(ctx, meta.SearchID, "ubuntu", "all")
 	require.NoError(t, err)
 
-	got := svc.GetSearchStatus(meta.SearchID)
+	got, ok := svc.GetSearchStatus(meta.SearchID)
+	require.True(t, ok)
 	require.NotNil(t, got)
 	assert.Equal(t, "completed", got.Status, "Stopped status from qBittorrent must flip search to completed")
 	assert.NotNil(t, got.CompletedAt, "completed search must carry a CompletedAt timestamp")
@@ -102,7 +103,8 @@ func TestMergeSearchService_RunSearch_RealClient_StartFailsMarksFailed(t *testin
 	err := svc.RunSearch(context.Background(), meta.SearchID, "ubuntu", "all")
 	require.Error(t, err)
 
-	got := svc.GetSearchStatus(meta.SearchID)
+	got, ok := svc.GetSearchStatus(meta.SearchID)
+	require.True(t, ok)
 	require.NotNil(t, got)
 	assert.Equal(t, "failed", got.Status)
 	assert.NotEmpty(t, got.Errors, "start failure must be recorded in Errors")
@@ -278,7 +280,7 @@ func TestMergeSearchService_RunSearch_NilClient(t *testing.T) {
 	assert.NoError(t, err)
 
 	// With a nil client RunSearch flips status to running then returns early.
-	found := svc.GetSearchStatus(meta.SearchID)
+	found, _ := svc.GetSearchStatus(meta.SearchID)
 	assert.Equal(t, "running", found.Status)
 }
 
@@ -320,7 +322,7 @@ func TestMergeSearchService_IsSearchQueueFull_CompletedFrees(t *testing.T) {
 	assert.True(t, svc.IsSearchQueueFull())
 
 	// Completing the only running search frees the queue.
-	meta := svc.GetSearchStatus(m.SearchID)
+	meta, _ := svc.GetSearchStatus(m.SearchID)
 	meta.Status = "completed"
 	assert.False(t, svc.IsSearchQueueFull())
 }

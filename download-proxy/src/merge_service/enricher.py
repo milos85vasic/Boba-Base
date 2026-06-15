@@ -12,9 +12,29 @@ Provides integration with:
 
 import logging
 import os
+import re
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
+
+# External metadata providers return year strings in inconsistent shapes:
+# OMDb ``Year`` can be ``"N/A"`` or a range ``"2011-2013"`` (incl. en-dash);
+# TMDB ``release_date`` / TVMaze ``premiered`` / MusicBrainz
+# ``first-release-date`` can be empty or malformed. A bare
+# ``int(s.split("-")[0])`` raises ``ValueError`` on any non-numeric leading
+# token, which the broad ``except`` swallows — SILENTLY DISCARDING the entire
+# otherwise-valid enriched record. ``_safe_year`` extracts the leading 4-digit
+# year if present and returns ``None`` otherwise, never raising. (§11.4.85)
+_YEAR_RE = re.compile(r"(\d{4})")
+
+
+def _safe_year(value: object) -> int | None:
+    """Return the leading 4-digit year in ``value`` as int, or ``None``.
+
+    Never raises: a missing, empty, or non-numeric token yields ``None``.
+    """
+    match = _YEAR_RE.match(str(value or ""))
+    return int(match.group(1)) if match else None
 
 # Total request budget for every external metadata API call. A slow,
 # throttled, or blackholed endpoint (MusicBrainz rate-limits hard) must
@@ -128,7 +148,7 @@ class MetadataEnricher:
                         return MetadataResult(
                             source="OMDb",
                             title=data.get("Title", ""),
-                            year=int(data.get("Year", "0").split("-")[0]) if data.get("Year") else None,
+                            year=_safe_year(data.get("Year")),
                             content_type="movie" if data.get("Type") == "movie" else "tv",
                             imdb_id=data.get("imdbID"),
                             poster_url=data.get("Poster"),
@@ -163,9 +183,7 @@ class MetadataEnricher:
                         return MetadataResult(
                             source="TMDB",
                             title=result.get("title") or result.get("name", ""),
-                            year=int(result.get("release_date", "").split("-")[0])
-                            if result.get("release_date")
-                            else None,
+                            year=_safe_year(result.get("release_date")),
                             content_type=media_type,
                             tmdb_id=str(result.get("id")),
                             poster_url=f"https://image.tmdb.org/t/p/w500{result.get('poster_path')}"
@@ -194,7 +212,7 @@ class MetadataEnricher:
                         return MetadataResult(
                             source="TVMaze",
                             title=result.get("name", ""),
-                            year=int(result.get("premiered", "").split("-")[0]) if result.get("premiered") else None,
+                            year=_safe_year(result.get("premiered")),
                             content_type="tv",
                             poster_url=result.get("image", {}).get("medium") if result.get("image") else None,
                             overview=result.get("summary", "").strip("<p></p>"),  # noqa: B005
@@ -268,9 +286,7 @@ class MetadataEnricher:
                         return MetadataResult(
                             source="MusicBrainz",
                             title=rg.get("title", ""),
-                            year=int(rg.get("first-release-date", "0").split("-")[0])
-                            if rg.get("first-release-date")
-                            else None,
+                            year=_safe_year(rg.get("first-release-date")),
                             content_type="music",
                             musicbrainz_id=rg.get("id"),
                         )

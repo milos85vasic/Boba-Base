@@ -79,7 +79,7 @@ func TestRunSearch_NoDuplicateAccumulation(t *testing.T) {
 	assert.Lenf(t, live, 1,
 		"BUG-3: identical row returned every poll must dedup to exactly 1 live result, got %d", len(live))
 
-	final := svc.GetSearchStatus(meta.SearchID)
+	final, _ := svc.GetSearchStatus(meta.SearchID)
 	assert.Equal(t, "completed", final.Status)
 	assert.Equalf(t, 1, final.MergedResults,
 		"BUG-3: MergedResults must reflect the merged count (1), got %d", final.MergedResults)

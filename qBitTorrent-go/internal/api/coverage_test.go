@@ -114,7 +114,7 @@ func TestSearchStreamHandler_CompletesStream(t *testing.T) {
 	meta := svc.StartSearch("ubuntu", "all", false, false)
 	// Pre-seed a live result and mark completed so the stream loop terminates.
 	svc.AddTrackerResult(meta.SearchID, models.TorrentResult{Name: "Ubuntu", Seeds: 9})
-	got := svc.GetSearchStatus(meta.SearchID)
+	got, _ := svc.GetSearchStatus(meta.SearchID)
 	got.Status = "completed"
 
 	r := gin.New()

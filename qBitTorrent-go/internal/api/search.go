@@ -91,8 +91,8 @@ func SearchSyncHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 func SearchStreamHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		searchID := c.Param("id")
-		meta := svc.GetSearchStatus(searchID)
-		if meta == nil {
+		meta, ok := svc.GetSearchStatus(searchID)
+		if !ok || meta == nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Search not found"})
 			return
 		}
@@ -116,8 +116,8 @@ func SearchStreamHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 			c.Writer.Flush()
 			return
 		case <-ticker.C:
-			currentMeta := svc.GetSearchStatus(searchID)
-			if currentMeta == nil {
+			currentMeta, ok := svc.GetSearchStatus(searchID)
+			if !ok || currentMeta == nil {
 				c.Writer.Write([]byte("event: error\ndata: {\"error\":\"Search not found\"}\n\n"))
 				c.Writer.Flush()
 				return
@@ -144,8 +144,8 @@ func SearchStreamHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 func GetSearchHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		searchID := c.Param("id")
-		meta := svc.GetSearchStatus(searchID)
-		if meta == nil {
+		meta, ok := svc.GetSearchStatus(searchID)
+		if !ok || meta == nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Search not found"})
 			return
 		}

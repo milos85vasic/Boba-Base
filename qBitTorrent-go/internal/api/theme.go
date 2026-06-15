@@ -8,7 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/milos85vasic/qBitTorrent-go/internal/models"
+	"github.com/rs/zerolog/log"
 )
+
+// defaultThemeState is the sensible fallback served whenever no valid theme
+// is persisted on disk. Kept as the single source of truth for the default so
+// load() can restore it after a corrupt/partial file.
+var defaultThemeState = models.ThemeState{PaletteID: "default", Mode: "dark"}
 
 var allowedModes = map[string]bool{
 	"light": true,
@@ -24,7 +30,7 @@ type ThemeStore struct {
 func NewThemeStore(file string) *ThemeStore {
 	store := &ThemeStore{
 		file:  file,
-		state: models.ThemeState{PaletteID: "default", Mode: "dark"},
+		state: defaultThemeState,
 	}
 	store.load()
 	return store
@@ -33,9 +39,19 @@ func NewThemeStore(file string) *ThemeStore {
 func (s *ThemeStore) load() {
 	data, err := os.ReadFile(s.file)
 	if err != nil {
+		// No file yet (first run) — keep the constructor default.
 		return
 	}
-	json.Unmarshal(data, &s.state)
+	// Decode into a scratch value so a corrupt/partial file can never
+	// half-overwrite the live state with zero-value garbage. On any error we
+	// keep the sensible default rather than silently serving a broken theme.
+	var loaded models.ThemeState
+	if err := json.Unmarshal(data, &loaded); err != nil {
+		log.Warn().Err(err).Str("file", s.file).Msg("theme: corrupt theme file, keeping default state")
+		s.state = defaultThemeState
+		return
+	}
+	s.state = loaded
 }
 
 func (s *ThemeStore) save() error {

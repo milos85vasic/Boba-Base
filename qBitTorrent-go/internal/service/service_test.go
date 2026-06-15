@@ -22,14 +22,16 @@ func TestMergeSearchService_StartSearch(t *testing.T) {
 
 func TestMergeSearchService_GetSearchStatus_NotFound(t *testing.T) {
 	svc := NewMergeSearchService(nil, 5)
-	meta := svc.GetSearchStatus("nonexistent")
+	meta, ok := svc.GetSearchStatus("nonexistent")
+	assert.False(t, ok)
 	assert.Nil(t, meta)
 }
 
 func TestMergeSearchService_GetSearchStatus_Exists(t *testing.T) {
 	svc := NewMergeSearchService(nil, 5)
 	meta := svc.StartSearch("ubuntu", "all", true, true)
-	found := svc.GetSearchStatus(meta.SearchID)
+	found, ok := svc.GetSearchStatus(meta.SearchID)
+	assert.True(t, ok)
 	assert.NotNil(t, found)
 	assert.Equal(t, meta.SearchID, found.SearchID)
 }

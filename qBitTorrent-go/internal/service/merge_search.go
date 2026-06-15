@@ -120,10 +120,14 @@ func (s *MergeSearchService) StartSearch(query, category string, enableMetadata,
 	return meta
 }
 
-func (s *MergeSearchService) GetSearchStatus(searchID string) *SearchMetadata {
+// GetSearchStatus returns the metadata for searchID. The comma-ok return makes
+// the missing-vs-present contract explicit: a missing id yields (nil, false),
+// a present id yields (meta, true). Callers MUST check ok before dereferencing.
+func (s *MergeSearchService) GetSearchStatus(searchID string) (*SearchMetadata, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.activeSearches[searchID]
+	meta, ok := s.activeSearches[searchID]
+	return meta, ok
 }
 
 func (s *MergeSearchService) AbortSearch(searchID string) string {
