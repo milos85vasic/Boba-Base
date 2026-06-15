@@ -41,7 +41,7 @@ Entry: `download-proxy/src/main.py` (starts legacy proxy thread + uvicorn `api:a
 
 | Feature | Impl | Wired | Tests | Validation | Video |
 |---------|------|-------|-------|------------|-------|
-| `POST /api/v1/search` — async fan-out search, returns search_id (`routes.py:275`) | implemented | yes | integration `tests/integration/test_merge_api.py`; e2e `test_full_pipeline.py`; stress `test_merge_search_stress_chaos.py` | tested-green-in-suite | PENDING |
+| `POST /api/v1/search` — async fan-out search, returns search_id (`routes.py:275`) | implemented | yes | integration `tests/integration/test_merge_api.py`; e2e `test_full_pipeline.py`; stress `test_merge_search_stress_chaos.py` | tested-green-in-suite + LIVE | **VIDEO-CONFIRMED 2026-06-16** — real web-UI journey (`debian`→829 found/288 merged), `boba-web-search-flow.mp4`; verdict `docs/qa/recordings-20260615/boba-web-search-flow-verdict.md` |
 | `POST /api/v1/search/sync` — synchronous search (`routes.py:360`) | implemented | yes | integration `test_merge_api.py`; stress `test_search_stress.py` | tested-green-in-suite; resets over tunnel (RW-08) | PENDING |
 | `GET /api/v1/search/stream/{id}` — SSE result stream (`routes.py:529`) | implemented | yes | integration `test_realtime_streaming.py`, `test_streaming_browser.py` | tested-green-in-suite | PENDING |
 | `GET /api/v1/search/{id}` — poll search state (`routes.py:568`) | implemented | yes | integration `test_merge_api.py` | tested-green-in-suite | PENDING |
