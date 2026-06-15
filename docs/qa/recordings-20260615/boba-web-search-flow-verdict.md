@@ -25,6 +25,12 @@ on-screen verification. Analysis by Claude Opus 4.8 vision (operator-chosen).
 | Results grid | 03 | full-page: hundreds of debian result rows densely populated | ✅ PASS |
 | Search complete | 04 | **"Found 829 results (288 merged)"**, **1 Completed**, Search button restored, result rows with action buttons | ✅ PASS — full pipeline: 29-tracker fan-out → 829 raw → 288 deduped → completed |
 
+## Additional confirmed pages (dashboard tour — `boba-web-dashboard-tour.mp4`)
+| Page/feature | Frame | On-screen result | Verdict |
+|---|---|---|---|
+| Trackers tab navigation | boba-web-05-trackers-tab.png | tab switches to Trackers (active/underlined); per-tracker stats header renders below the completed 829/288 search | ✅ PASS |
+| Jackett credentials page (`/jackett`) | boba-web-06-jackett-page.png | boba-jackett UI: "Credentials — encrypted at rest and mirrored to .env", "+ Add credential", empty-state "No credentials yet" | ✅ PASS (renders + routes) |
+
 ## Outcome
 The operator's #1 complaint ("search flows do not work at all") is verifiably
 RESOLVED on the actual user-facing web dashboard: a real typed query returns 829
