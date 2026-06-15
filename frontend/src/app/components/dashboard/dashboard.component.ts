@@ -385,6 +385,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
           if (event.data.total_results > 0) {
             this.searchStatus.set(`Found ${event.data.total_results} results (${event.data.merged_results} merged)`);
             this.loadSearchResults(searchId);
+          } else if (event.data.status === 'all_trackers_errored') {
+            // W1 (BUG-7 follow-up): every tracker failed (bad creds / CAPTCHA /
+            // expired cookies) — this is NOT a genuinely-empty search. Show an
+            // actionable message instead of the misleading "No results found."
+            // and surface the per-tracker errors so the user knows what to fix.
+            const errs = (event.data.errors as string[]) || [];
+            this.searchErrors.set(errs);
+            this.searchStatus.set('All trackers failed — check credentials/CAPTCHA (see tracker errors below).');
           } else {
             this.searchStatus.set('No results found.');
           }

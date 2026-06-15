@@ -372,8 +372,36 @@ describe('DashboardComponent', () => {
     it('search_complete with 0 results shows empty message', () => {
       const fx = bootstrap();
       primeSearch(fx);
-      sseEvents?.next({ event: 'search_complete', data: { total_results: 0, merged_results: 0 } });
+      sseEvents?.next({ event: 'search_complete', data: { total_results: 0, merged_results: 0, status: 'completed', errors: [] } });
       expect(fx.componentInstance.searchStatus()).toBe('No results found.');
+    });
+
+    // W1 (BUG-7 follow-up): when EVERY tracker errored (bad creds / CAPTCHA /
+    // expired cookies) the live search_complete event carries the distinct
+    // 'all_trackers_errored' status. The dashboard MUST show an actionable
+    // message — NOT the misleading generic "No results found." — and surface
+    // the per-tracker errors so the user knows to fix auth.
+    it('search_complete all_trackers_errored shows a distinct actionable message (not "No results found.")', () => {
+      const fx = bootstrap();
+      primeSearch(fx);
+      sseEvents?.next({
+        event: 'search_complete',
+        data: {
+          total_results: 0,
+          merged_results: 0,
+          status: 'all_trackers_errored',
+          errors: ['rutracker: auth failed', 'rutor: timeout', 'nyaa: 403'],
+        },
+      });
+      const status = fx.componentInstance.searchStatus();
+      // Must NOT be the misleading generic empty message.
+      expect(status).not.toBe('No results found.');
+      // Must be actionable — name the failure and point at credentials/CAPTCHA.
+      expect(status.toLowerCase()).toContain('all trackers failed');
+      expect(status.toLowerCase()).toMatch(/credential|captcha/);
+      // The per-tracker errors must be surfaced to the user.
+      expect(fx.componentInstance.searchErrors()).toHaveLength(3);
+      expect(disconnectSpy).toHaveBeenCalled();
     });
 
     it('error event warns and disconnects', () => {

@@ -230,3 +230,6 @@ mutants/
 .docs_chain/state.json
 .docs_chain/*.docs_chain.tmp
 qa-results/docs_chain/
+
+# Playwright MCP browser-session artifacts (snapshots/screenshots) — never tracked
+.playwright-mcp/

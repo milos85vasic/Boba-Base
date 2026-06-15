@@ -336,6 +336,14 @@ async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyp
                     "total_results": metadata.total_results,
                     "merged_results": metadata.merged_results,
                     "trackers_searched": metadata.trackers_searched,
+                    # W1 (BUG-7 follow-up): the dashboard's PRIMARY path is this
+                    # SSE event, so the distinct "all_trackers_errored" status and
+                    # the per-tracker errors MUST ride along — otherwise a search
+                    # where every tracker failed (bad creds/CAPTCHA) looks identical
+                    # to a genuinely-empty one and the user sees a misleading
+                    # "No results found." instead of an actionable banner.
+                    "status": metadata.status,
+                    "errors": metadata.errors,
                 },
             )
         except Exception as e:
