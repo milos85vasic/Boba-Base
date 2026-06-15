@@ -13,11 +13,15 @@ import json
 import math
 import sys
 import types
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-REPO = "/Volumes/T7/Projects/Boba"
+# Resolve the repo root dynamically (§11.4.111/§11.4.29) — a hardcoded
+# "/Volumes/T7/Projects/Boba" failed on the case-sensitive T7 volume (real
+# repo is lowercase "boba"), making every test here FileNotFoundError.
+REPO = Path(__file__).resolve().parents[2]
 PLUGINS = f"{REPO}/plugins"
 
 
