@@ -1,0 +1,44 @@
+# Docs Chain context — Feature Status doc set (§11.4.106 / §11.4.153)
+#
+# SCHEMA CONFIRMED 2026-06-15 against the real vasic-digital/docs_chain engine
+# (/Volumes/T7/Projects/docs_chain): internal/config/config.go (loader uses
+# yaml KnownFields(true) — unknown fields are REJECTED), internal/graph/graph.go
+# (NodeKind enum), and the engine's own dogfood context
+# .docs_chain/contexts/self-docs.yaml. Verified runnable with `docs_chain doctor`
+# + `docs_chain verify` (see qa-results/docs_chain/features-status/).
+#
+# Model: Status.md (kind: status) and Status_Summary.md (kind: status_summary) are
+# BOTH authored sources here (Status_Summary is the two-audience §11.4.56 doc,
+# authored alongside Status.md). HTML/PDF/DOCX are derived exports.
+#   - md  -> html : pandoc-html
+#   - html -> pdf : weasyprint-pdf  (PDF derives from HTML, the proven self-docs chain)
+#   - md  -> docx : pandoc-docx
+
+context: features-status
+description: >
+  Feature Status doc set for the Boba project (§11.4.153). Status.md +
+  Status_Summary.md are authored sources; HTML/PDF/DOCX are kept in sync as
+  exports (§11.4.65 universal markdown export).
+
+nodes:
+  status_md:           { kind: status,         path: docs/features/Status.md }
+  status_html:         { kind: html,           path: docs/features/Status.html }
+  status_pdf:          { kind: pdf,            path: docs/features/Status.pdf }
+  status_docx:         { kind: docx,           path: docs/features/Status.docx }
+  status_summary_md:   { kind: status_summary, path: docs/features/Status_Summary.md }
+  status_summary_html: { kind: html,           path: docs/features/Status_Summary.html }
+  status_summary_pdf:  { kind: pdf,            path: docs/features/Status_Summary.pdf }
+  status_summary_docx: { kind: docx,           path: docs/features/Status_Summary.docx }
+
+edges:
+  - { type: derive-from, from: status_md,           to: status_html,         transform: md2html }
+  - { type: derive-from, from: status_html,         to: status_pdf,          transform: html2pdf }
+  - { type: derive-from, from: status_md,           to: status_docx,         transform: md2docx }
+  - { type: derive-from, from: status_summary_md,   to: status_summary_html, transform: md2html }
+  - { type: derive-from, from: status_summary_html, to: status_summary_pdf,  transform: html2pdf }
+  - { type: derive-from, from: status_summary_md,   to: status_summary_docx, transform: md2docx }
+
+transforms:
+  md2html:  { builtin: pandoc-html }
+  html2pdf: { builtin: weasyprint-pdf }
+  md2docx:  { builtin: pandoc-docx }

@@ -150,10 +150,20 @@ func GetSearchHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 			return
 		}
 
+		// Return the merged result set the dashboard renders on completion.
+		// Previously Results was omitted entirely, so the Go-profile grid was
+		// always empty after a search (BUG-4). Fall back to the live set when
+		// no merged snapshot has been stored yet (search still running).
+		results, _ := svc.GetMergedResults(searchID)
+		if results == nil {
+			results = svc.GetLiveResults(searchID)
+		}
+
 		c.JSON(http.StatusOK, models.SearchResponse{
 			SearchID:         meta.SearchID,
 			Query:            meta.Query,
 			Status:           meta.Status,
+			Results:          results,
 			TotalResults:     meta.TotalResults,
 			MergedResults:    meta.MergedResults,
 			TrackersSearched: meta.TrackersSearched,

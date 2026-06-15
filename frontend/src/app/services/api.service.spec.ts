@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { ApiService } from './api.service';
+import { API_BASE_URL } from '../config/api-base';
 import type {
   SearchRequest,
   SearchResponse,
@@ -212,5 +213,44 @@ describe('ApiService', () => {
     tr.flush({ error: 'bad creds' }, { status: 401, statusText: 'Unauthorized' });
     expect(caught.status).toBe(401);
     expect(caught.error.error).toBe('bad creds');
+  });
+});
+
+// --- BUG-5 (search-flow-audit-20260615): a dashboard served from a
+// different origin than the API hit its OWN origin because baseUrl was a
+// hardcoded relative ''. The configured API base MUST prefix every
+// request. §11.4.135 regression guard.
+describe('ApiService (configured remote API base — BUG-5 RED)', () => {
+  let svc: ApiService;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: 'https://remote.example:7187' },
+      ],
+    });
+    svc = TestBed.inject(ApiService);
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    http.verify();
+  });
+
+  it('search() POSTs to the configured remote API base', () => {
+    svc.search({ query: 'ubuntu', limit: 10 }).subscribe();
+    const tr = http.expectOne('https://remote.example:7187/api/v1/search');
+    expect(tr.request.method).toBe('POST');
+    tr.flush({ search_id: 's1', status: 'started' });
+  });
+
+  it('getSearch() GETs the configured remote API base', () => {
+    svc.getSearch('abc').subscribe();
+    const tr = http.expectOne('https://remote.example:7187/api/v1/search/abc');
+    expect(tr.request.method).toBe('GET');
+    tr.flush({});
   });
 });

@@ -503,7 +503,7 @@ class Deduplicator:
             return True
         return b.tracker == "iptorrents" and a.tracker != "iptorrents" and not b.freeleech
 
-    def _fallback_quality(self, name: str, size: str) -> str:
+    def _fallback_quality(self, name: str, size: object) -> str:
         """Simple quality detection without api.routes dependency."""
         from .enricher import MetadataEnricher
 
@@ -538,12 +538,21 @@ class Deduplicator:
         return "unknown"
 
     @staticmethod
-    def _parse_size_to_bytes(size_str: str) -> int:
-        """Parse size string (e.g. 2.5 GB, 500 MB) to bytes."""
+    def _parse_size_to_bytes(size_str: object) -> int:
+        """Parse a size value to bytes.
+
+        Plugins emit ``size`` either as a pre-formatted string ("2.5 GB")
+        or as a raw int byte-count (including the -1 unknown sentinel).
+        Coerce to ``str`` before the regex — passing a raw int into
+        ``re.match`` raised ``TypeError`` and aborted the whole merge
+        (BUG-6, mirrors the same fix already applied in api.routes and
+        ``_parse_size``).
+        """
         import re
 
         if not size_str:
             return 0
+        size_str = str(size_str)
         match = re.match(r"([\d.]+)\s*(GB|GiB|MB|MiB|KB|KiB|TB|TiB|B)", size_str, re.I)
         if match:
             value = float(match.group(1))

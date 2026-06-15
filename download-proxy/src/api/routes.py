@@ -118,6 +118,14 @@ class SearchRequest(BaseModel):
     validate_trackers: bool = Field(default=True, description="Validate tracker health")
     sort_by: str = Field(default="seeds", description="Sort column")
     sort_order: str = Field(default="desc", description="Sort direction: asc or desc")
+    trackers: list[str] | None = Field(
+        default=None,
+        description=(
+            "Optional provider-selection filter (BUG-1): restrict the search to "
+            "this subset of tracker names (case-insensitive). Omit / null / empty "
+            "list searches every enabled tracker (back-compat)."
+        ),
+    )
 
 
 class SearchResultResponse(BaseModel):
@@ -308,6 +316,7 @@ async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyp
         category=request.category,
         enable_metadata=False,
         validate_trackers=request.validate_trackers,
+        trackers=request.trackers,
     )
 
     # Fire-and-forget: the task populates _tracker_results incrementally
@@ -385,6 +394,7 @@ async def search_sync(request: SearchRequest, req: Request):  # type: ignore[no-
         category=request.category,
         enable_metadata=False,
         validate_trackers=request.validate_trackers,
+        trackers=request.trackers,
     )
 
     stored = orch._last_merged_results.get(metadata.search_id)

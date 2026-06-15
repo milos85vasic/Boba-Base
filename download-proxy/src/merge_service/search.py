@@ -388,6 +388,9 @@ class SearchMetadata:
     errors: list[str] = field(default_factory=list)
     status: str = "running"
     tracker_stats: dict[str, "TrackerSearchStat"] = field(default_factory=dict)
+    # Optional provider-selection filter (BUG-1). ``None``/empty == all
+    # enabled trackers (back-compat). Internal-only; not serialised.
+    tracker_filter: list[str] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -665,6 +668,7 @@ class SearchOrchestrator:
         category: str = "all",
         enable_metadata: bool = True,
         validate_trackers: bool = True,
+        trackers: list[str] | None = None,
     ) -> SearchMetadata:
         """Kick off a search and return metadata synchronously.
 
@@ -673,19 +677,26 @@ class SearchOrchestrator:
         metadata is immediately available at ``get_search_status`` and in
         ``_active_searches`` so SSE consumers can attach before any
         tracker completes.
+
+        ``trackers`` (BUG-1) optionally restricts the fan-out to a chosen
+        subset by ``TrackerSource.name`` (case-insensitive). ``None`` or an
+        empty list searches every enabled tracker (back-compat). The filter
+        is persisted on the metadata so the async ``_run_search`` task picks
+        it up.
         """
         import uuid
 
         search_id = str(uuid.uuid4())
         metadata = SearchMetadata(search_id=search_id, query=query, category=category)
         metadata.status = "running"
+        metadata.tracker_filter = list(trackers) if trackers else None
         # Seed tracker_stats synchronously so the POST /search response
         # — which returns before the fan-out starts — can already tell
         # the dashboard which trackers will be hit.
         try:
-            trackers = self._get_enabled_trackers()
-            metadata.trackers_searched = [t.name for t in trackers]
-            for t in trackers:
+            trackers_sel = self._select_trackers(metadata.tracker_filter)
+            metadata.trackers_searched = [t.name for t in trackers_sel]
+            for t in trackers_sel:
                 metadata.tracker_stats[t.name] = TrackerSearchStat(
                     name=t.name,
                     tracker_url=t.url,
@@ -740,7 +751,9 @@ class SearchOrchestrator:
 
         self._active_search_count += 1
         try:
-            trackers = self._get_enabled_trackers()
+            # BUG-1: honour the per-search provider-selection filter that
+            # start_search persisted on the metadata. None/empty == all.
+            trackers = self._select_trackers(metadata.tracker_filter)
             metadata.trackers_searched = [t.name for t in trackers]
             # Clear any stale diag entries from a previous cancelled/errored
             # search before the fan-out so tracker_stats can't inherit an
@@ -856,7 +869,24 @@ class SearchOrchestrator:
             merged = self.deduplicator.merge_results(all_results)
             metadata.merged_results = len(merged)
             self._last_merged_results[search_id] = (merged, all_results)
-            metadata.status = "completed"
+            # BUG-7: when EVERY searched tracker errored and we have zero
+            # results, "completed" is indistinguishable from a genuinely
+            # empty search. Surface a distinct status so the dashboard can
+            # tell the user to fix auth/CAPTCHA/cookies rather than show a
+            # misleading "No results found.". The per-tracker errors are
+            # already accumulated in metadata.errors above.
+            errored = [
+                s for s in metadata.tracker_stats.values() if s.status in ("error", "timeout")
+            ]
+            if (
+                not merged
+                and metadata.total_results == 0
+                and trackers
+                and len(errored) == len(trackers)
+            ):
+                metadata.status = "all_trackers_errored"
+            else:
+                metadata.status = "completed"
             metadata.completed_at = datetime.now(UTC)
         except asyncio.CancelledError:
             metadata.status = "aborted"
@@ -876,16 +906,21 @@ class SearchOrchestrator:
         category: str = "all",
         enable_metadata: bool = True,
         validate_trackers: bool = True,
+        trackers: list[str] | None = None,
     ) -> SearchMetadata:
         """Blocking variant (legacy entry-point) — runs start + run in one
         call and waits for full completion.  Kept for the scheduler and
         for tests that expect the old synchronous-looking behaviour.
+
+        ``trackers`` (BUG-1) optionally restricts the fan-out to a chosen
+        subset; ``None``/empty == all enabled trackers (back-compat).
         """
         metadata = self.start_search(
             query=query,
             category=category,
             enable_metadata=enable_metadata,
             validate_trackers=validate_trackers,
+            trackers=trackers,
         )
         # total_results is bumped incrementally inside _run_search now, so
         # reset it first — the legacy callers expect the final number.
@@ -920,6 +955,24 @@ class SearchOrchestrator:
         if name == "iptorrents":
             return bool(os.getenv("IPTORRENTS_USERNAME") and os.getenv("IPTORRENTS_PASSWORD"))
         return False
+
+    def _select_trackers(self, tracker_filter: list[str] | None) -> list[TrackerSource]:
+        """Return the enabled trackers to fan out over (BUG-1).
+
+        With no filter (``None`` or empty list) this is every enabled
+        tracker — preserving the historical "search all" behaviour. With a
+        non-empty filter it keeps only the enabled trackers whose ``name``
+        matches an entry in the filter (case-insensitive). An unknown name
+        simply selects nothing for that name — never a crash — so a bogus
+        request degrades to an empty fan-out gracefully.
+        """
+        enabled = self._get_enabled_trackers()
+        if not tracker_filter:
+            return enabled
+        wanted = {name.strip().lower() for name in tracker_filter if name and name.strip()}
+        if not wanted:
+            return enabled
+        return [t for t in enabled if t.name.lower() in wanted]
 
     def _get_enabled_trackers(self) -> list[TrackerSource]:
         import os

@@ -8,11 +8,15 @@ import {
   ActiveDownload, Schedule, Hook, AuthStatus, QbitCredentials,
   MagnetResponse, StatsResponse
 } from '../models/search.model';
+import { API_BASE_URL } from '../config/api-base';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http = inject(HttpClient);
-  private baseUrl = '';
+  // BUG-5 (search-flow-audit-20260615): was a hardcoded relative '' which
+  // routed every request to the page origin instead of a configured remote
+  // API. Now injected + runtime-configurable (see config/api-base.ts).
+  private baseUrl = inject(API_BASE_URL);
 
   search(req: SearchRequest): Observable<SearchResponse> {
     return this.http.post<SearchResponse>(`${this.baseUrl}/api/v1/search`, req).pipe(timeout(API_TIMEOUT_MS));

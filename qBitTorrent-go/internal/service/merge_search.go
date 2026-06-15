@@ -203,6 +203,13 @@ func (s *MergeSearchService) RunSearch(ctx context.Context, searchID, query, cat
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
+	// seen tracks the dedup key (FileURL, falling back to name+size when the
+	// URL is empty) of every result already accumulated for this search.
+	// Without it the fixed offset-0 poll re-appended the same rows on every
+	// tick (BUG-3): the live set grew unbounded with duplicates and the merged
+	// count was never computed.
+	seen := make(map[string]struct{})
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -216,7 +223,7 @@ func (s *MergeSearchService) RunSearch(ctx context.Context, searchID, query, cat
 			if meta, ok := s.activeSearches[searchID]; ok {
 				meta.TotalResults = total
 				for _, r := range results {
-					s.trackerResults[searchID] = append(s.trackerResults[searchID], models.TorrentResult{
+					tr := models.TorrentResult{
 						Name:         r.FileName,
 						Size:         r.FileSize,
 						Seeds:        r.NbSeeders,
@@ -224,9 +231,22 @@ func (s *MergeSearchService) RunSearch(ctx context.Context, searchID, query, cat
 						DownloadURLs: []string{r.FileURL},
 						Tracker:      "qBittorrent",
 						DescLink:     r.DescrLink,
-					})
+					}
+					key := dedupKey(tr)
+					if _, dup := seen[key]; dup {
+						continue
+					}
+					seen[key] = struct{}{}
+					s.trackerResults[searchID] = append(s.trackerResults[searchID], tr)
 				}
 				if status == "Stopped" {
+					// Snapshot the deduplicated accumulation as the merged
+					// set and record the merged count so GetMergedResults and
+					// SearchResponse.MergedResults reflect reality (BUG-3 /
+					// BUG-4).
+					merged := append([]models.TorrentResult(nil), s.trackerResults[searchID]...)
+					s.lastMergedResults[searchID] = [][]models.TorrentResult{merged, merged}
+					meta.MergedResults = len(merged)
 					meta.Status = "completed"
 					now := time.Now().UTC().Format(time.RFC3339)
 					meta.CompletedAt = &now
@@ -237,6 +257,16 @@ func (s *MergeSearchService) RunSearch(ctx context.Context, searchID, query, cat
 			s.mu.Unlock()
 		}
 	}
+}
+
+// dedupKey derives a stable identity for a result. FileURL (magnet/infohash
+// or download link) is the strongest signal; when absent we fall back to
+// name+size so identical rows still collapse.
+func dedupKey(r models.TorrentResult) string {
+	if len(r.DownloadURLs) > 0 && r.DownloadURLs[0] != "" {
+		return r.DownloadURLs[0]
+	}
+	return fmt.Sprintf("%s|%v", r.Name, r.Size)
 }
 
 func (s *MergeSearchService) FetchTorrent(tracker, torrentURL string) ([]byte, error) {

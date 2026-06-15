@@ -1,5 +1,6 @@
 import { Injectable, inject, DestroyRef } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
+import { API_BASE_URL } from '../config/api-base';
 
 export interface SseEvent {
   event: string;
@@ -9,6 +10,10 @@ export interface SseEvent {
 @Injectable({ providedIn: 'root' })
 export class SseService {
   private destroyRef = inject(DestroyRef);
+  // BUG-5 (search-flow-audit-20260615): the SSE stream URL must target the
+  // configured API base so a dashboard served from a different origin than
+  // the API reaches the API, not its own page origin. '' = same-origin.
+  private baseUrl = inject(API_BASE_URL);
   private eventSource?: EventSource;
   private events$ = new Subject<SseEvent>();
 
@@ -20,8 +25,10 @@ export class SseService {
     // (CONTINUATION #6) rides as a query param. Harmless when the server
     // doesn't require it; required when SSE_REQUIRE_TOKEN is enabled.
     const query = token ? `?token=${encodeURIComponent(token)}` : '';
-    const url = `/api/v1/search/stream/${searchId}${query}`;
-    this.eventSource = new EventSource(url);
+    const url = `${this.baseUrl}/api/v1/search/stream/${searchId}${query}`;
+    // withCredentials so a cross-origin remote API can carry the session
+    // cookie when the server's CORS policy allows credentials.
+    this.eventSource = new EventSource(url, { withCredentials: !!this.baseUrl });
 
     this.eventSource.onopen = () => {
       this.events$.next({ event: 'connected', data: {} });
@@ -37,6 +44,25 @@ export class SseService {
 
     this.eventSource.addEventListener('results_update', (e: MessageEvent) => {
       this.events$.next({ event: 'results_update', data: this.safeParse(e.data) });
+    });
+
+    // BUG-2 (search-flow-audit-20260615): EventSource dispatches a NAMED
+    // event ONLY to a listener registered for that exact name — unregistered
+    // named events are silently dropped (no onmessage fallthrough). The
+    // backend emits merged_update / tracker_started / tracker_completed and
+    // the dashboard has case branches for them, but without these listeners
+    // the live de-duplicated grid never updated and tracker chips never
+    // flipped during a search.
+    this.eventSource.addEventListener('merged_update', (e: MessageEvent) => {
+      this.events$.next({ event: 'merged_update', data: this.safeParse(e.data) });
+    });
+
+    this.eventSource.addEventListener('tracker_started', (e: MessageEvent) => {
+      this.events$.next({ event: 'tracker_started', data: this.safeParse(e.data) });
+    });
+
+    this.eventSource.addEventListener('tracker_completed', (e: MessageEvent) => {
+      this.events$.next({ event: 'tracker_completed', data: this.safeParse(e.data) });
     });
 
     this.eventSource.addEventListener('search_complete', (e: MessageEvent) => {

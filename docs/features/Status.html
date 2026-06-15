@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Status</h1>
+</header>
+<h1 id="boba-feature-status-all-components">Boba — Feature Status (all
+components)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-15T00:00:00Z <strong>Scope:</strong> Every system component,
+service, infrastructure piece, and client app of the Boba project — one
+row per feature, grouped by component. <strong>Authority:</strong>
+assembled by READ-ONLY repo inventory (codegraph + grep + source
+reading) on 2026-06-15. Cross-references <code>AGENTS.md</code>,
+<code>CLAUDE.md</code>, <code>docs/REMAINING_WORK_PLAN.md</code>.</p>
+<blockquote>
+<p>Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.86). Every
+feature row cites a real source file (file:line where load-bearing).
+<strong>No invented features</strong> (§11.4.6). The
+<strong>Video-recording confirmation</strong> column is
+<code>PENDING</code> for every row — playback/UI screen recordings are
+NOT yet captured; they are a follow-up (§11.4.107/§11.4.143).</p>
+<p>Column legend: - <strong>Impl</strong> = implemented / partial / stub
+- <strong>Wired</strong> = reachable on a running default-profile stack
+(yes / no / opt-in / host) - <strong>Tests</strong> = test types present
++ cite file (unit / integration / e2e / security / stress-chaos /
+property / contract); <code>none</code> if no covering test found -
+<strong>Validation</strong> = honest validation posture
+(tested-green-in-suite / unit-only / live-evidence-captured /
+not-validated / operator-blocked) - <strong>Video</strong> =
+video-recording confirmation — <code>PENDING</code> everywhere this
+revision</p>
+</blockquote>
+<hr />
+<h2 id="component-summary">Component summary</h2>
+<table>
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 22%" />
+<col style="width: 32%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Component</th>
+<th>Service / Port</th>
+<th>Features cataloged</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Download Proxy + Merge Search Service (Python/FastAPI)</td>
+<td><code>qbittorrent-proxy</code> :7186 / :7187</td>
+<td>38</td>
+</tr>
+<tr>
+<td>2</td>
+<td>qBitTorrent-go backend (Go/Gin)</td>
+<td><code>qbittorrent-proxy-go</code> :7186/:7187/:7188 (opt-in
+<code>--profile go</code>)</td>
+<td>20</td>
+</tr>
+<tr>
+<td>3</td>
+<td>boba-jackett (Go)</td>
+<td><code>boba-jackett</code> :7189</td>
+<td>11</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Tracker plugins (<code>plugins/*.py</code>)</td>
+<td>run inside <code>qbittorrent-proxy</code></td>
+<td>16</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Angular 21 frontend dashboard (<code>frontend/</code>)</td>
+<td>served from :7187</td>
+<td>18</td>
+</tr>
+<tr>
+<td>6</td>
+<td>BobaLink browser extension (<code>extension/</code>)</td>
+<td>WXT MV3 client</td>
+<td>14</td>
+</tr>
+<tr>
+<td>7</td>
+<td>WebUI bridge (<code>webui-bridge.py</code>)</td>
+<td>host process :7188</td>
+<td>4</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Infrastructure / CLI / shell scripts</td>
+<td>host</td>
+<td>14</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Total features cataloged: 135</strong></p>
+<hr />
+<h2 id="download-proxy-merge-search-service-pythonfastapi-7186-7187">1.
+Download Proxy + Merge Search Service (Python/FastAPI) —
+<code>:7186</code> / <code>:7187</code></h2>
+<p>Entry: <code>download-proxy/src/main.py</code> (starts legacy proxy
+thread + uvicorn <code>api:app</code>). This is the <strong>shipped
+default product</strong>.</p>
+<h3
+id="a.-merge-search-service-rest-api-download-proxysrcapiroutes.py">1a.
+Merge Search Service — REST API
+(<code>download-proxy/src/api/routes.py</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /api/v1/search</code> — async fan-out search, returns
+search_id (<code>routes.py:275</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>tests/integration/test_merge_api.py</code>; e2e
+<code>test_full_pipeline.py</code>; stress
+<code>test_merge_search_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/search/sync</code> — synchronous search
+(<code>routes.py:360</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_merge_api.py</code>; stress
+<code>test_search_stress.py</code></td>
+<td>tested-green-in-suite; resets over tunnel (RW-08)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/search/stream/{id}</code> — SSE result stream
+(<code>routes.py:529</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_realtime_streaming.py</code>,
+<code>test_streaming_browser.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/search/{id}</code> — poll search state
+(<code>routes.py:568</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_merge_api.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/search/{id}/abort</code> — cancel in-flight
+search (<code>routes.py:601</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_merge_api.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/downloads/active</code> — qBit active torrents
+(<code>routes.py:611</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_buttons_api.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/download</code> — add torrent to qBit
+(magnet/url) (<code>routes.py:940</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_button_functions.py</code>,
+<code>test_buttons_api.py</code>; security
+<code>test_ssrf_and_magnet_auth.py</code></td>
+<td>tested-green-in-suite; SSRF gap RW-03</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/download/upload</code> — upload .torrent file to
+qBit (<code>routes.py:1105</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>unit <code>tests/unit/api_layer/test_download_upload.py</code></td>
+<td>unit-only + integration</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/download/file</code> — fetch tracker .torrent w/
+auth cookies (<code>routes.py:1194</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_buttons_api.py</code>; security
+<code>test_ssrf_and_magnet_auth.py</code></td>
+<td>tested-green-in-suite; SSRF gap RW-03</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/magnet</code> — resolve result → magnet link
+(<code>routes.py:1261</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_magnet_dialog.py</code>,
+<code>test_buttons_api.py</code></td>
+<td>tested-green-in-suite; auth gap RW-04</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/auth/qbittorrent</code> — qBit WebUI login
+(<code>routes.py:653</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_login_actions.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="b.-search-orchestration-internals-download-proxysrcmerge_servicesearch.py">1b.
+Search orchestration internals
+(<code>download-proxy/src/merge_service/search.py</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Concurrency caps <code>MAX_CONCURRENT_SEARCHES</code> (429 on
+saturation)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>concurrency <code>test_orchestrator_semaphore.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Per-search tracker semaphore
+<code>MAX_CONCURRENT_TRACKERS</code></td>
+<td>implemented</td>
+<td>yes</td>
+<td>concurrency <code>test_tracker_semaphore.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Public-tracker subprocess fan-out (NDJSON via patched
+novaprinter)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>e2e <code>test_public_trackers_return_results.py</code>; stress
+<code>test_search_orchestration_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Public-tracker deadline kill
+<code>PUBLIC_TRACKER_DEADLINE_SECONDS</code></td>
+<td>implemented</td>
+<td>yes</td>
+<td>chaos <code>test_tracker_failure.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Private-tracker aiohttp+cookie path
+(rutracker/kinozal/nnmclub/iptorrents)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_tracker_auth_live.py</code> (live-gated)</td>
+<td>partial — live-gated, BOB-008 operator-blocked</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Per-tracker <code>TrackerSearchStat</code> real-time stats</td>
+<td>implemented</td>
+<td>yes</td>
+<td>contract <code>test_tracker_stats_contract.py</code>; property
+<code>test_tracker_stats_properties.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Stderr error classification
+(<code>_classify_plugin_stderr</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>chaos <code>test_tracker_failure.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>TTL-bounded data stores (cachetools) — no leak</td>
+<td>implemented</td>
+<td>yes</td>
+<td>memory <code>test_orchestrator_caches_bounded.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c.-deduplication-enrichment-validation">1c. Deduplication /
+enrichment / validation</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tiered dedup (metadata→infohash→name+size→fuzzy Levenshtein)
+(<code>deduplicator.py</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>property <code>test_deduplicator_properties.py</code>; benchmark
+<code>test_deduplication_benchmark.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Enrichment: OMDb (<code>enricher.py:113</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>stress <code>test_enricher_stress_chaos.py</code></td>
+<td>tested-green-in-suite; needs <code>OMDB_API_KEY</code></td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Enrichment: TMDB</td>
+<td>implemented</td>
+<td>yes</td>
+<td>stress <code>test_enricher_stress_chaos.py</code></td>
+<td>tested-green; needs <code>TMDB_API_KEY</code></td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Enrichment: TVMaze</td>
+<td>implemented</td>
+<td>yes</td>
+<td>stress <code>test_enricher_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Enrichment: AniList</td>
+<td>implemented</td>
+<td>yes</td>
+<td>stress <code>test_enricher_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Enrichment: MusicBrainz</td>
+<td>implemented</td>
+<td>yes</td>
+<td>stress <code>test_enricher_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Enrichment: OpenLibrary</td>
+<td>implemented</td>
+<td>yes</td>
+<td>stress <code>test_enricher_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Tracker validation HTTP scrape BEP 48
+(<code>validator.py:101</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>none dedicated found (covered via merge tests)</td>
+<td>not-validated (no dedicated test)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Tracker validation UDP scrape BEP 15
+(<code>validator.py:162</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>none dedicated found</td>
+<td>not-validated (no dedicated test)</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<h3 id="d.-auth-hooks-scheduler-theme-health">1d. Auth / hooks /
+scheduler / theme / health</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET/POST /auth/rutracker/{status,captcha,login,cookie-login}</code>
+(<code>auth.py:56-339</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_auth_and_links.py</code>; e2e
+<code>test_live_stack_evidence.py</code></td>
+<td>partial — CAPTCHA operator-blocked (BOB-008)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET/POST /auth/nnmclub/{status,login}</code>
+(<code>auth.py:350-451</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>e2e <code>test_live_stack_evidence.py:265</code> (skips —
+SOURCE→ARTIFACT drift RW-07)</td>
+<td>partial — route 404 on running container</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /auth/status</code> — all-tracker session state
+(<code>auth.py:479</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_auth_state_ui.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /auth/qbittorrent/logout</code>
+(<code>auth.py:532</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_login_actions.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Kinozal auth (status/login) REST route</td>
+<td><strong>stub/missing</strong></td>
+<td>no</td>
+<td>none — no <code>kinozal/login</code> route in
+<code>auth.py</code></td>
+<td>not-implemented (search path uses cookies via orchestrator)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Hooks CRUD <code>GET/POST/DELETE /api/v1/hooks</code> +
+<code>/logs</code> (<code>hooks.py:105-179</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>unit <code>test_hooks_coverage.py</code>; concurrency
+<code>test_hooks_race.py</code>; security
+<code>test_hooks_schedules_auth.py</code></td>
+<td>tested-green-in-suite; auth gap RW-01</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Hook event dispatch (8 events: search_start..validation_complete)
+(<code>hooks.py:32</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>concurrency <code>test_hooks_race.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Hook subprocess execution (<code>merge_service/hooks.py</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>security <code>test_no_shell_injection.py</code></td>
+<td>tested-green; sandbox hardening RW-01</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Scheduler API
+<code>GET/POST/GET{id}/PATCH/DELETE /api/v1/schedules</code>
+(<code>scheduler.py:39-126</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>security <code>test_hooks_schedules_auth.py</code></td>
+<td>tested-green-in-suite; auth gap RW-02</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Scheduler engine (load/save/tick driver)
+(<code>merge_service/scheduler.py</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_dashboard_automation.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Theme API <code>GET/PUT /api/v1/theme</code> +
+<code>GET /theme/stream</code> (<code>routes.py:61-76</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>contract <code>test_crossapp_theme_contract.py</code>; e2e
+<code>test_crossapp_theme.py</code>,
+<code>test_theme_runtime.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /health</code> (<code>__init__.py:168</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_live_containers.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/bridge/health</code>
+(<code>__init__.py:173</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_bridge_root_liveness.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/config</code> (<code>__init__.py:247</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_merge_api.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/stats</code> (<code>__init__.py:276</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>observability <code>test_metrics_exist.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Jinja2 dashboard <code>GET /</code>, <code>/dashboard</code>, SPA
+catch-all (<code>__init__.py:337-347</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_dashboard_rendering.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Retry helpers (<code>merge_service/retry.py</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>covered indirectly</td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Jackett autoconfig (Python,
+<code>merge_service/jackett_autoconfig.py</code>) — legacy; canonical is
+boba-jackett</td>
+<td>implemented</td>
+<td>yes</td>
+<td>contract <code>test_jackett_autoconfig_contract.py</code>; e2e
+<code>test_jackett_autoconfig_e2e.py</code>; benchmark
+<code>test_jackett_autoconfig_perf.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Credential scrubbing log filter
+(<code>config/log_filter.py</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>security <code>test_credential_scrubbing.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<h3 id="e.-legacy-download-proxy-pluginsdownload_proxy.py-7186">1e.
+Legacy download proxy (<code>plugins/download_proxy.py</code>
+:7186)</h3>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTTP proxy → qBittorrent WebUI w/ tracker URL interception
+(<code>DownloadHandler</code> :767)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_bridge_header_rewrite.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Theme injection into proxied WebUI
+(<code>plugins/theme_injector.py</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_bridge_theme_injection.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="qbittorrent-go-backend-gogin-opt-in---profile-go">2.
+qBitTorrent-go backend (Go/Gin) — opt-in <code>--profile go</code></h2>
+<p>Entry: <code>qBitTorrent-go/cmd/qbittorrent-proxy/main.go</code>.
+<strong>Skeleton/rewrite-in-progress</strong> (per AGENTS.md +
+<code>docs/migration/PARITY_GAPS.md</code>: 6 ported / 4 partial / 8
+missing). NOT running by default.</p>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /health</code> (<code>api/health.go</code>)</td>
+<td>implemented</td>
+<td>opt-in</td>
+<td>go <code>internal/api/api_test.go</code></td>
+<td>unit-only (go test)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/search</code> (<code>api/search.go</code>)</td>
+<td>partial (proxies qBit search; no plugin fan-out)</td>
+<td>opt-in</td>
+<td>go <code>api_test.go</code>, <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/search/sync</code></td>
+<td>partial</td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/search/stream/:id</code> (SSE)</td>
+<td>partial</td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/search/:id</code></td>
+<td>partial</td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/search/:id/abort</code></td>
+<td>partial</td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/download</code>
+(<code>api/download.go</code>)</td>
+<td>partial</td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/download/file</code></td>
+<td>partial</td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/magnet</code></td>
+<td>implemented</td>
+<td>opt-in</td>
+<td>go <code>api_test.go</code>,
+<code>magnet_stress_chaos_test.go</code></td>
+<td>unit + stress-chaos (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/downloads/active</code></td>
+<td>implemented</td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /api/v1/auth/qbittorrent</code>
+(<code>client/auth.go</code>)</td>
+<td>implemented</td>
+<td>opt-in</td>
+<td>go <code>client/auth_test.go</code>,
+<code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET/PUT /api/v1/theme</code> (<code>api/theme.go</code>)</td>
+<td>implemented</td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Hooks <code>GET/POST/DELETE /api/v1/hooks</code>
+(<code>api/hooks.go</code>)</td>
+<td>partial (store only, no dispatch)</td>
+<td>opt-in</td>
+<td>go <code>api_test.go</code>, <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Schedules <code>GET/POST/DELETE /api/v1/schedules</code>
+(<code>api/scheduler_api.go</code>)</td>
+<td><strong>partial — no driver loop (RW-10), schedules never
+fire</strong></td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code> (store CRUD only)</td>
+<td>unit-only; functional hole</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/config</code>, <code>/api/v1/stats</code>,
+<code>/api/v1/bridge/health</code></td>
+<td>implemented</td>
+<td>opt-in</td>
+<td>go <code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Merge search orchestrator
+(<code>service/merge_search.go</code>)</td>
+<td>partial</td>
+<td>opt-in</td>
+<td>go <code>service/service_test.go</code>,
+<code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>SSE broker pub/sub (<code>service/sse_broker.go</code>)</td>
+<td>implemented</td>
+<td>opt-in</td>
+<td>go <code>service/coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>qBit Web API client (auth/search/torrents)
+(<code>client/*.go</code>)</td>
+<td>implemented</td>
+<td>opt-in</td>
+<td>go <code>client/client_test.go</code>,
+<code>coverage_test.go</code></td>
+<td>unit-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>webui-bridge binary (<code>cmd/webui-bridge/main.go</code>)</td>
+<td>partial (health + root only)</td>
+<td>opt-in</td>
+<td>none dedicated</td>
+<td>not-validated</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Metadata enricher (Go)</td>
+<td><strong>missing (RW-11)</strong></td>
+<td>no</td>
+<td>none</td>
+<td>not-implemented</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="boba-jackett-go-7189">3. boba-jackett (Go) —
+<code>:7189</code></h2>
+<p>Entry: <code>qBitTorrent-go/cmd/boba-jackett/main.go</code>; router
+<code>internal/jackettapi/router.go</code>. Owns Jackett credentials +
+indexer overrides + autoconfig run history; encrypted SQLite at
+<code>/config/boba.db</code>.</p>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET/POST /api/v1/jackett/credentials</code> +
+<code>DELETE /{name}</code> (<code>credentials.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>jackettapi/credentials_test.go</code>; integration
+<code>tests/integration/jackett_db_test.go</code></td>
+<td>unit + integration (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /indexers</code>,
+<code>POST/DELETE/PATCH /indexers/{id}</code>
+(<code>indexers.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>jackettapi/indexers_test.go</code></td>
+<td>unit (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>POST /indexers/{id}/test</code> — test indexer config
+(<code>indexers.go:239</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>indexers_test.go</code></td>
+<td>unit (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /catalog</code>, <code>POST /catalog/refresh</code>
+(<code>catalog.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>jackettapi/catalog_test.go</code>; benchmark
+<code>catalog_bench_test.go</code></td>
+<td>unit + bench (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /autoconfig/runs</code>, <code>GET /runs/{id}</code>,
+<code>POST /run</code> (<code>runs.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>jackettapi/runs_test.go</code>; e2e
+<code>tests/e2e/jackett_management_test.go</code></td>
+<td>unit + e2e (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET/POST /overrides</code>,
+<code>DELETE /overrides/{env}</code> (<code>overrides.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>jackettapi/overrides_test.go</code></td>
+<td>unit (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /healthz</code> (<code>health.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>jackettapi/health_test.go</code></td>
+<td>unit (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>GET /openapi.json</code> (<code>openapi.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>jackettapi/openapi_test.go</code>; contract
+<code>tests/contract/openapi_test.go</code></td>
+<td>unit + contract (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Jackett autoconfig engine + fuzzy indexer matcher
+(<code>jackett/autoconfig.go</code>, <code>matcher.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>jackett/autoconfig_test.go</code>,
+<code>matcher_test.go</code>, <code>autoconfig_bench_test.go</code></td>
+<td>unit + bench (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Encrypted SQLite store: AES-256-GCM crypto + migrations + repos
+(<code>db/*.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>db/crypto_test.go</code>, <code>migrate_test.go</code>,
+<code>repos/*_test.go</code>; security
+<code>tests/security/credential_leak_test.go</code></td>
+<td>unit + security (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Admin auth middleware (admin/admin on mutating routes) + hardened
+CORS (<code>jackettapi/auth_middleware.go</code>,
+<code>cors_middleware.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>auth_middleware_test.go</code>,
+<code>cors_middleware_test.go</code></td>
+<td>unit (go)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>.env</code> bootstrap import + master-key ensure
+(<code>bootstrap/*.go</code>, <code>envfile/*.go</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>bootstrap/bootstrap_test.go</code>,
+<code>envfile/parse_test.go</code>, <code>write_test.go</code></td>
+<td>unit (go)</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="tracker-plugins-plugins.py">4. Tracker plugins
+(<code>plugins/*.py</code>)</h2>
+<p>Plugin contract: class with <code>url</code>, <code>name</code>,
+<code>supported_categories</code>, <code>search()</code>,
+<code>download_torrent()</code>. Installed into container by
+<code>install-plugin.sh</code>. <strong>Curated/managed subset</strong>
+(per <code>install-plugin.sh</code> PLUGINS array):
+<code>eztv jackett kinozal limetorrents nnmclub piratebay rutor rutracker solidtorrents torlock torrentproject torrentscsv</code>.
+The full <code>plugins/</code> tree carries 24 <code>*.py</code>
+plugin/support files (27 total
+incl. helpers/nova2/novaprinter/socks/download_proxy/env_loader/theme_injector).</p>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 28%" />
+<col style="width: 10%" />
+<col style="width: 18%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th>Plugin</th>
+<th>Type</th>
+<th>Impl</th>
+<th>Wired (curated?)</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>eztv.py</code></td>
+<td>public</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>limetorrents.py</code></td>
+<td>public</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>piratebay.py</code></td>
+<td>public</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>solidtorrents.py</code></td>
+<td>public</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>torlock.py</code></td>
+<td>public</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>rutor.py</code></td>
+<td>public (anonymous)</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>jackett.py</code></td>
+<td>aggregator</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>covered via jackett autoconfig tests</td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>rutracker.py</code></td>
+<td>private (CAPTCHA)</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>integration <code>test_tracker_auth_live.py</code>; stress
+<code>test_plugin_parsers_stress_chaos.py</code> (ReDoS §11.4.85)</td>
+<td>partial — ReDoS fix in source, not yet deployed to container
+(RW-06); login operator-blocked BOB-008</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>kinozal.py</code></td>
+<td>private</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>integration <code>test_tracker_auth_live.py</code></td>
+<td>partial — live-gated</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>nnmclub.py</code></td>
+<td>private (cookies)</td>
+<td>implemented</td>
+<td>yes (curated)</td>
+<td>integration <code>test_tracker_auth_live.py</code></td>
+<td>partial — live-gated</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>iptorrents.py</code></td>
+<td>private (freeleech-only)</td>
+<td>implemented</td>
+<td>not in curated array; reachable via env creds</td>
+<td>integration <code>tests/integration/test_iptorrents.py</code></td>
+<td>partial — freeleech-only policy</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>torrentproject</code> / <code>torrentscsv</code></td>
+<td>public (curated names)</td>
+<td>declared curated but no matching <code>plugins/*.py</code> file
+found</td>
+<td>curated-name-only</td>
+<td>none</td>
+<td>not-implemented in repo tree (name in install array; file
+absent)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Other public plugins present but NOT curated:
+<code>anilibra, bitsearch, gamestorrents, kickass, megapeer, nyaa, tokyotoshokan, torrentgalaxy, torrentkitty, yts</code></td>
+<td>public</td>
+<td>implemented</td>
+<td>no (not in curated subset)</td>
+<td>stress <code>test_plugin_parsers_stress_chaos.py</code> (parser
+sweep)</td>
+<td>unit/stress parser-only</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Plugin support: <code>helpers.py</code>, <code>nova2.py</code>,
+<code>novaprinter.py</code>, <code>socks.py</code>,
+<code>env_loader.py</code></td>
+<td>support</td>
+<td>implemented</td>
+<td>yes</td>
+<td>covered via search e2e</td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Plugin download path (<code>download_torrent()</code> per
+plugin)</td>
+<td>feature</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_buttons_api.py</code> (download/file)</td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Freeleech-only download policy (IPTorrents <code>[free]</code>
+tag)</td>
+<td>policy</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_iptorrents.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>NOTE (§11.4.6): <code>torrentproject</code> and
+<code>torrentscsv</code> appear in the <code>install-plugin.sh</code>
+curated array but no <code>plugins/torrentproject.py</code> /
+<code>plugins/torrentscsv.py</code> file exists in the tree — flagged as
+a discrepancy, not asserted as working.</p>
+</blockquote>
+<hr />
+<h2 id="angular-21-frontend-dashboard-frontend">5. Angular 21 frontend
+dashboard (<code>frontend/</code>)</h2>
+<p>Standalone SPA, signals-based; built to
+<code>download-proxy/src/ui/dist/frontend</code>, served from :7187.
+Vitest unit tests; Playwright e2e under <code>frontend/e2e</code>.</p>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dashboard component — search box + result grid
+(<code>components/dashboard/</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest <code>dashboard.component.spec.ts</code>; py integration
+<code>test_dashboard_rendering.py</code>,
+<code>test_ui_comprehensive.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>API service (<code>services/api.service.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest (component specs)</td>
+<td>unit (vitest)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>SSE service — live result streaming
+(<code>services/sse.service.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>py integration <code>test_realtime_streaming.py</code>,
+<code>test_streaming_browser.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Result-row Magnet button → magnet dialog
+(<code>magnet-dialog.component.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest <code>magnet-dialog.component.spec.ts</code>; py
+<code>test_magnet_dialog.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Magnet dialog copy-to-clipboard + open + add-to-qbit callback
+(<code>dashboard.component.ts:727</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest <code>magnet-dialog.component.spec.ts</code></td>
+<td>unit (vitest)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Result-row add-to-qBittorrent / download button</td>
+<td>implemented</td>
+<td>yes</td>
+<td>py integration <code>test_button_functions.py</code>,
+<code>test_buttons_api.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Active downloads view
+(<code>dashboard.component.ts:745 loadDownloads</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>py <code>test_buttons_api.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>qBit login dialog (<code>qbit-login-dialog.component.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>py <code>test_login_actions.py</code>,
+<code>test_auth_state_ui.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Theme picker (<code>theme-picker.component.ts</code>) + theme
+service (<code>services/theme.service.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>py e2e <code>test_theme_runtime.py</code>,
+<code>test_crossapp_theme.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Toast notifications (<code>toast-container</code>,
+<code>services/toast.service.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest (component specs)</td>
+<td>unit (vitest)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Confirm dialog (<code>confirm-dialog.component.ts</code>,
+<code>services/dialog.service.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest</td>
+<td>unit (vitest)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Tracker-stat dialog — per-tracker live stats
+(<code>tracker-stat-dialog.component.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>py contract <code>test_tracker_stats_contract.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Site footer (<code>site-footer.component.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest</td>
+<td>unit (vitest)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Jackett: credentials tab + edit dialog
+(<code>jackett/credentials/</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest (jackett specs)</td>
+<td>unit (vitest)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Jackett: indexers — catalog / configured / history tabs
+(<code>jackett/indexers/</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest (jackett specs)</td>
+<td>unit (vitest)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Jackett: indexer add dialog
+(<code>indexer-add-dialog.component.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest</td>
+<td>unit (vitest)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Jackett: IPTorrents cookie-flow component
+(<code>iptorrents-cookie-flow.component.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest</td>
+<td>unit (vitest)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Frontend coverage thresholds (40% lines/branches/funcs/stmts,
+v8)</td>
+<td>infra</td>
+<td>yes</td>
+<td><code>vitest.config.ts</code></td>
+<td>enforced in vitest config</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="bobalink-browser-extension-extension">6. BobaLink browser
+extension (<code>extension/</code>)</h2>
+<p>WXT + TypeScript Manifest-V3. Detects magnet/.torrent links and
+forwards to merge service :7187. Status detail:
+<code>docs/browser_extension/Status.md</code> (Rev 15: 559 Vitest tests
+/ 52 specs). Built zips at
+<code>extension/.output/bobalink-1.0.0-{chrome,firefox}.zip</code>.</p>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Boba API client (<code>src/api/boba-client.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest unit; chaos
+<code>tests/chaos/boba-client-resilience.chaos.test.ts</code></td>
+<td>tested-green (559 vitest, per ext Status)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Health check (<code>src/api/health.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest unit</td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Send queue (<code>src/api/queue.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>chaos <code>tests/chaos/queue.chaos.test.ts</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Background service worker (<code>src/background/</code>,
+<code>entrypoints/background.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>tests/integration/*-background.test.ts</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Content script — link highlight
+(<code>src/content/highlight.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>content-background.test.ts</code>; security
+<code>content-xss.test.ts</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Link scanner (<code>src/scanner/link-scanner.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>security <code>scanner-hostile-input.test.ts</code>; perf
+<code>scanner.perf.test.ts</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Text scanner (<code>src/scanner/text-scanner.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>security <code>scanner-hostile-input.test.ts</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Scanner orchestrator (<code>src/scanner/orchestrator.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>perf <code>orchestrator-scaling.perf.test.ts</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Site DB — per-site match rules
+(<code>src/scanner/site-db.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest unit</td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Bencode / magnet / torrent-file parsers
+(<code>src/parser/</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>security <code>bencode-torrentfile-hostile.test.ts</code>,
+<code>infohash-detection-hostile.test.ts</code>; perf
+<code>parsers.perf.test.ts</code>, <code>magnet.perf.test.ts</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Popup — per-row Send + Send-All buttons
+(<code>src/popup/popup.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>a11y <code>tests/a11y/popup.a11y.test.ts</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Options page (<code>src/options/options.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>a11y <code>options.a11y.test.ts</code>; integration
+<code>options-background.test.ts</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Tab groups (<code>src/tabgroups/</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>vitest unit (tab-group Challenge per ext Status)</td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Crypto / storage / i18n locales (8 locales)
+(<code>src/shared/crypto.ts</code>, <code>storage.ts</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>security <code>crypto-tamper.test.ts</code>,
+<code>no-hardcoded-secret.test.ts</code>; i18n
+<code>locale-safety.test.ts</code></td>
+<td>tested-green-in-suite; RELEASE_READINESS locale claim stale
+(RW-19)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Live download endpoint round-trip
+(<code>tests/live/download-endpoint.live.test.ts</code>)</td>
+<td>implemented</td>
+<td>yes (live-gated)</td>
+<td>live <code>download-endpoint.live.test.ts</code></td>
+<td>partial — operator-gated live env</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="webui-bridge-webui-bridge.py-host-process-7188">7. WebUI bridge
+(<code>webui-bridge.py</code>) — host process <code>:7188</code></h2>
+<p>Bridges qBittorrent WebUI with private-tracker auth. NOT a
+container.</p>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WebUI proxy + header rewrite (<code>webui-bridge.py</code>)</td>
+<td>implemented</td>
+<td>host</td>
+<td>integration <code>test_webui_bridge.py</code>,
+<code>test_bridge_header_rewrite.py</code>; stress
+<code>test_bridge_stress_chaos.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Private-tracker auth bridging
+(rutracker/kinozal/nnmclub/iptorrents)</td>
+<td>implemented</td>
+<td>host</td>
+<td>integration <code>test_webui_bridge.py</code></td>
+<td>partial — live-gated</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Theme injection into bridged WebUI
+(<code>plugins/theme_injector.py</code>)</td>
+<td>implemented</td>
+<td>host</td>
+<td>integration <code>test_bridge_theme_injection.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Bridge root liveness (<code>/</code>)</td>
+<td>implemented</td>
+<td>host</td>
+<td>integration <code>test_bridge_root_liveness.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="infrastructure-cli-shell-scripts">8. Infrastructure / CLI /
+shell scripts</h2>
+<table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 12%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 25%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Impl</th>
+<th>Wired</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>start.sh</code> — container bring-up + Jackett key
+extraction/injection</td>
+<td>implemented</td>
+<td>host</td>
+<td>covered via e2e <code>test_fixtures_bring_up_services.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>stop.sh</code> — stop/remove/purge</td>
+<td>implemented</td>
+<td>host</td>
+<td>none dedicated</td>
+<td>not-validated</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>setup.sh</code> — one-time setup</td>
+<td>implemented</td>
+<td>host</td>
+<td>none dedicated</td>
+<td>not-validated</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>install-plugin.sh</code> — copy curated plugins → container
+engines</td>
+<td>implemented</td>
+<td>host</td>
+<td>covered indirectly (e2e search)</td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>ci.sh</code> — manual CI
+(syntax+unit+integration+e2e+health)</td>
+<td>implemented</td>
+<td>host</td>
+<td>self (is the gate)</td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>run-all-tests.sh</code> — full suite (hardcoded podman)</td>
+<td>implemented</td>
+<td>host</td>
+<td>self</td>
+<td>partial — fails on docker-only hosts (known gotcha)</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>test.sh</code> / <code>test-all.sh</code> /
+<code>test-full.sh</code> — validation wrappers</td>
+<td>implemented</td>
+<td>host</td>
+<td>self</td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>start-proxy.sh</code> — proxy container entry helper</td>
+<td>implemented</td>
+<td>host</td>
+<td>none dedicated</td>
+<td>not-validated</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>scripts/ensure-macos-tunnel.sh</code> +
+<code>scripts/tunnel-keepalive.sh</code> — <code>0.0.0.0</code> SSH
+tunnel + self-heal</td>
+<td>implemented</td>
+<td>host</td>
+<td>none dedicated (log at
+<code>qa-results/tunnel-keepalive.log</code>)</td>
+<td>not-validated; LAN threat-model RW-05</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>init-qbit-password.sh</code> /
+<code>fix-qbit-password.sh</code> — qBit admin password bootstrap</td>
+<td>implemented</td>
+<td>host</td>
+<td>none dedicated</td>
+<td>not-validated</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>setup-webui-bridge-service.sh</code> +
+<code>webui-bridge.service</code> — systemd unit for bridge</td>
+<td>implemented</td>
+<td>host</td>
+<td>none dedicated</td>
+<td>not-validated</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>docker-compose.yml</code> — 2-container default + Go profile +
+boba-jackett service</td>
+<td>infra</td>
+<td>yes</td>
+<td>e2e <code>test_live_containers.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td>Jackett auto-configuration at startup (key extract → inject
+<code>JACKETT_API_KEY</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_jackett_autoconfig_real.py</code></td>
+<td>tested-green-in-suite</td>
+<td>PENDING</td>
+</tr>
+<tr>
+<td><code>BOBA_MASTER_KEY</code> auto-generation (first-boot) for
+encrypted boba.db</td>
+<td>implemented</td>
+<td>yes</td>
+<td>go <code>bootstrap/bootstrap_test.go</code></td>
+<td>unit (go)</td>
+<td>PENDING</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2
+id="components-not-inventoried-discrepancies-honest-gaps-11.4.6">Components
+NOT inventoried / discrepancies (honest gaps, §11.4.6)</h2>
+<ul>
+<li><strong><code>boba-ctl.sh</code></strong> — referenced in tooling
+but no file exists at repo root or <code>scripts/</code>; could not
+inventory its subcommands.</li>
+<li><strong><code>plugins/torrentproject.py</code> /
+<code>plugins/torrentscsv.py</code></strong> — named in the
+<code>install-plugin.sh</code> curated array but absent from the tree;
+marked not-implemented-in-repo above.</li>
+<li><strong>Prometheus/OpenTelemetry metrics</strong> —
+<code>tests/observability/test_metrics_exist.py</code> +
+<code>observability/</code> dir exist, but no
+<code>prometheus_client</code>
+<code>Counter()/Histogram()/Gauge()</code> definitions were found in
+<code>download-proxy/src</code>; metrics surface is via
+<code>GET /api/v1/stats</code> (counters maintained in-process), not a
+<code>/metrics</code> Prometheus endpoint. Stated as fact, not
+assumed.</li>
+<li><strong>Video-recording confirmation</strong> — <code>PENDING</code>
+for ALL 135 rows; no playback/UI screen recordings captured this
+revision (follow-up per §11.4.107/§11.4.143).</li>
+</ul>
+</body>
+</html>

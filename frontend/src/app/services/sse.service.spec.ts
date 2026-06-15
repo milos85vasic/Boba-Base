@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { SseService, type SseEvent } from './sse.service';
+import { API_BASE_URL } from '../config/api-base';
 
 // Minimal EventSource mock capturing registered listeners so tests can
 // trigger them synchronously via dispatch().
@@ -157,5 +158,73 @@ describe('SseService', () => {
     MockEventSource.instances[0].dispatch('result_found', { name: 'x' });
     expect(a).toHaveLength(1);
     expect(b).toHaveLength(1);
+  });
+
+  // --- BUG-2 (search-flow-audit-20260615): the live merged grid never
+  // updated because EventSource silently drops named events with no
+  // registered listener. These RED tests fail until the missing
+  // merged_update / tracker_started / tracker_completed listeners are
+  // wired. §11.4.135 regression guard.
+
+  it('forwards merged_update events to the grid/state (BUG-2 RED)', () => {
+    const events: SseEvent[] = [];
+    svc.events.subscribe(e => events.push(e));
+    svc.connect('abc');
+    MockEventSource.instances[0].dispatch('merged_update', {
+      merged_results: 2,
+      results: [{ name: 'X' }, { name: 'Y' }],
+    });
+    const evt = events.find(e => e.event === 'merged_update');
+    expect(evt).toBeDefined();
+    expect(evt?.data).toEqual({ merged_results: 2, results: [{ name: 'X' }, { name: 'Y' }] });
+  });
+
+  it('forwards tracker_started events (BUG-2 RED)', () => {
+    const events: SseEvent[] = [];
+    svc.events.subscribe(e => events.push(e));
+    svc.connect('abc');
+    MockEventSource.instances[0].dispatch('tracker_started', { tracker: 'rutracker' });
+    const evt = events.find(e => e.event === 'tracker_started');
+    expect(evt).toBeDefined();
+    expect(evt?.data).toEqual({ tracker: 'rutracker' });
+  });
+
+  it('forwards tracker_completed events (BUG-2 RED)', () => {
+    const events: SseEvent[] = [];
+    svc.events.subscribe(e => events.push(e));
+    svc.connect('abc');
+    MockEventSource.instances[0].dispatch('tracker_completed', { tracker: 'rutracker', count: 5 });
+    const evt = events.find(e => e.event === 'tracker_completed');
+    expect(evt).toBeDefined();
+    expect(evt?.data).toEqual({ tracker: 'rutracker', count: 5 });
+  });
+
+  // --- BUG-5 (search-flow-audit-20260615): a dashboard served from a
+  // different origin than the API built a RELATIVE EventSource URL and
+  // hit its OWN origin, not the configured API. The stream URL MUST
+  // target the configured API base. §11.4.135 regression guard.
+
+  it('uses the configured API base for the stream URL (BUG-5 RED)', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [{ provide: API_BASE_URL, useValue: 'https://remote.example:7187' }],
+    });
+    const remoteSvc = TestBed.inject(SseService);
+    remoteSvc.connect('abc');
+    expect(MockEventSource.instances[0].url).toBe(
+      'https://remote.example:7187/api/v1/search/stream/abc',
+    );
+  });
+
+  it('configured base with token builds an absolute stream URL (BUG-5 RED)', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [{ provide: API_BASE_URL, useValue: 'https://remote.example:7187' }],
+    });
+    const remoteSvc = TestBed.inject(SseService);
+    remoteSvc.connect('abc', 'tok-123');
+    expect(MockEventSource.instances[0].url).toBe(
+      'https://remote.example:7187/api/v1/search/stream/abc?token=tok-123',
+    );
   });
 });

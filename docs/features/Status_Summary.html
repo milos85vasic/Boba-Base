@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status_Summary</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Status_Summary</h1>
+</header>
+<h1 id="boba-feature-status-summary">Boba — Feature Status Summary</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-15T00:00:00Z <strong>Scope:</strong> Two-audience summary
+companion of <code>docs/features/Status.md</code> (§11.4.56). Page 1 =
+product/operator audience; Page 2 = software-engineer audience.</p>
+<blockquote>
+<p>Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.56 / §11.4.86).
+Mirrors <code>Status.md</code> — when that file changes, regenerate this
+one (see <code>.docs_chain/contexts/features-status.yaml</code>).</p>
+</blockquote>
+<hr />
+<h2 id="page-1-for-the-product-operator-team">Page 1 — For the product /
+operator team</h2>
+<p><strong>What Boba does.</strong> Boba turns qBittorrent into a
+multi-tracker search-and-download hub. You type one query; it searches
+40+ public and private torrent trackers at once, removes duplicates,
+adds posters and metadata, and lets you add any result to qBittorrent
+with one click — from a web dashboard, from a browser extension, or via
+a themed WebUI proxy.</p>
+<p><strong>What works today (default product — Python/FastAPI on :7187 +
+:7186):</strong> - Multi-tracker search with live streaming results,
+de-duplication, and metadata enrichment (posters, year, type from
+OMDb/TMDB/TVMaze/AniList/MusicBrainz/OpenLibrary). - One-click
+add-to-qBittorrent, magnet copy/open, .torrent upload, and
+active-downloads view. - The Angular dashboard (search grid, magnet
+dialog, theme picker, qBit login, Jackett management tabs) and the
+BobaLink browser extension (detects magnet/.torrent links on any page,
+“Send” / “Send-All” to Boba) are both shipping and heavily tested (the
+extension alone has 559 passing tests). - Jackett indexers are
+auto-configured at startup; credentials live encrypted in a local
+database, edited from the dashboard’s Jackett page (boba-jackett service
+on :7189). - Private-tracker support (RuTracker, Kinozal, NNM-Club,
+IPTorrents) works through the WebUI bridge and download proxy.</p>
+<p><strong>What’s partial or pending:</strong> - <strong>RuTracker login
+needs a human</strong> — it has a CAPTCHA, so automated login is
+operator-assisted (paste a cookie or solve the CAPTCHA once). This is a
+real-world limit, not a bug. - <strong>A few security hardenings are
+queued</strong> — some write endpoints are open by default on the LAN
+tunnel, and a couple of fetch paths need SSRF protection (tracked as
+RW-01..RW-05 in the remaining-work plan). An operator decision on LAN
+exposure gates how aggressive these need to be. - <strong>One
+private-tracker status route (NNM-Club)</strong> needs a container
+redeploy to go live (a source-vs-running drift, RW-07). - <strong>The
+RuTracker ReDoS speed fix</strong> is in the code but needs to be pushed
+into the running container (RW-06). - <strong>The Go backend is an
+opt-in preview, not the product</strong> — it replicates the API shape
+but is missing real plugin search, enrichment, and a working scheduler.
+The Python backend is the complete one.</p>
+<p><strong>What you (the operator) may need to act on:</strong> - Decide
+whether the LAN tunnel should stay open (<code>0.0.0.0</code>) or bind
+to localhost (RW-05). - Solve the RuTracker CAPTCHA once when private
+RuTracker search is needed (BOB-008). - Decide whether the Go profile
+parity is a release goal (RW-09).</p>
+<p><strong>Honest note on testing depth:</strong> every feature in this
+catalog is backed by a real source file and, in nearly all cases, an
+automated test. <strong>No feature has a video/screen recording
+yet</strong> — that visual confirmation is a planned follow-up.</p>
+<hr />
+<h2 id="page-2-for-software-engineers">Page 2 — For software
+engineers</h2>
+<p><strong>Inventory method (2026-06-15):</strong> read-only codegraph +
+grep + source reading across the repo. 135 features cataloged across 8
+components. Every row in <code>Status.md</code> cites a source file
+(file:line where load-bearing) and the covering test file. No invented
+features (§11.4.6).</p>
+<p><strong>Component / feature counts + posture:</strong></p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 30%" />
+<col style="width: 23%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Component</th>
+<th>Path / port</th>
+<th>Features</th>
+<th>Posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Download Proxy + Merge Search (Python/FastAPI)</td>
+<td><code>download-proxy/src</code> :7186/:7187</td>
+<td>38</td>
+<td>Shipped default; nearly all tested-green-in-suite. Open gaps: hooks
+auth (RW-01), default-open write surface (RW-02), SSRF (RW-03), magnet
+auth (RW-04); validator (BEP48/15) has no dedicated test.</td>
+</tr>
+<tr>
+<td>qBitTorrent-go (Go/Gin)</td>
+<td><code>qBitTorrent-go</code> :7186/7187/7188 opt-in</td>
+<td>20</td>
+<td>Skeleton; unit-only (go test). Scheduler has no driver loop (RW-10,
+never fires); enricher missing (RW-11); plugin fan-out missing
+(RW-12).</td>
+</tr>
+<tr>
+<td>boba-jackett (Go)</td>
+<td><code>qBitTorrent-go/cmd/boba-jackett</code> :7189</td>
+<td>11</td>
+<td>Implemented; unit + integration + e2e + security (go). Encrypted
+SQLite (AES-256-GCM), autoconfig, runs history, overrides, admin auth,
+hardened CORS.</td>
+</tr>
+<tr>
+<td>Tracker plugins</td>
+<td><code>plugins/*.py</code></td>
+<td>16</td>
+<td>Curated subset installed via <code>install-plugin.sh</code>; parser
+sweep stress-chaos coverage. rutracker ReDoS fix not yet deployed
+(RW-06); <code>torrentproject</code>/<code>torrentscsv</code> named in
+curated array but file absent.</td>
+</tr>
+<tr>
+<td>Angular 21 frontend</td>
+<td><code>frontend/</code> served :7187</td>
+<td>18</td>
+<td>Vitest unit + Python Playwright/integration; signals-based; 40%
+coverage floor in <code>vitest.config.ts</code>.</td>
+</tr>
+<tr>
+<td>BobaLink extension</td>
+<td><code>extension/</code> (WXT MV3)</td>
+<td>14</td>
+<td>559 Vitest tests / 52 specs (per
+<code>docs/browser_extension/Status.md</code> Rev 15);
+unit/integration/security/chaos/perf/a11y/live; built zips present.</td>
+</tr>
+<tr>
+<td>WebUI bridge</td>
+<td><code>webui-bridge.py</code> :7188 host</td>
+<td>4</td>
+<td>Integration + stress-chaos; private-tracker auth live-gated.</td>
+</tr>
+<tr>
+<td>Infra / CLI / scripts</td>
+<td>repo root + <code>scripts/</code></td>
+<td>14</td>
+<td>start/stop/setup/install-plugin/ci/tunnel; several scripts
+un-validated (no dedicated test).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key evidence anchors (file:line):</strong> - FastAPI routes:
+<code>download-proxy/src/api/routes.py:61-1261</code>,
+<code>auth.py:56-532</code>, <code>hooks.py:105-179</code>,
+<code>scheduler.py:39-126</code>, <code>__init__.py:168-347</code>. -
+Orchestration: <code>download-proxy/src/merge_service/search.py</code>
+(semaphores, subprocess fan-out, <code>_classify_plugin_stderr</code>);
+<code>deduplicator.py</code> (tiered); <code>enricher.py:113</code> (6
+providers); <code>validator.py:101/162</code> (BEP48/15). - Go routes:
+<code>qBitTorrent-go/cmd/qbittorrent-proxy/main.go:54-100</code>;
+jackett <code>internal/jackettapi/router.go</code> + <code>*.go</code>
+handlers; <code>internal/db/crypto.go</code>, <code>repos/*.go</code>. -
+Frontend:
+<code>frontend/src/app/components/{dashboard,magnet-dialog,qbit-login-dialog,theme-picker,tracker-stat-dialog}/</code>,
+<code>services/{api,sse,theme,toast,dialog}.service.ts</code>,
+<code>jackett/{credentials,indexers}/</code>. - Extension:
+<code>extension/src/{api,scanner,parser,popup,options,tabgroups,shared}/</code>.</p>
+<p><strong>Test corpus locations:</strong> Python
+<code>tests/{unit,integration,e2e,security,stress,chaos,property,contract,concurrency,memory,observability,benchmark,performance,load,docs}/</code>;
+Go <code>qBitTorrent-go/internal/**/*_test.go</code> +
+<code>tests/{contract,e2e,integration,security}</code>; frontend
+<code>frontend/**/*.spec.ts</code> + <code>e2e/</code>; extension
+<code>extension/tests/{unit,integration,security,chaos,perf,a11y,e2e,live,i18n}</code>.</p>
+<p><strong>Open work cross-reference:</strong>
+<code>docs/REMAINING_WORK_PLAN.md</code> RW-01..RW-21 + BOB-008
+(operator-blocked CAPTCHA).</p>
+<p><strong>Engineering follow-ups for this doc:</strong> - Capture
+<code>video_display</code>/UI screen recordings per §11.4.107/§11.4.143
+(all 135 rows are <code>PENDING</code>) — currently the single biggest
+evidence gap. - Confirm whether a Prometheus <code>/metrics</code>
+endpoint exists or stats are in-process only
+(<code>GET /api/v1/stats</code>) — no
+<code>Counter()/Histogram()/Gauge()</code> definitions found in
+<code>download-proxy/src</code>. - Resolve the
+<code>torrentproject</code>/<code>torrentscsv</code>
+curated-name-vs-missing-file discrepancy. - Generate HTML/PDF/DOCX
+exports (deferred — see follow-up note below).</p>
+</body>
+</html>
