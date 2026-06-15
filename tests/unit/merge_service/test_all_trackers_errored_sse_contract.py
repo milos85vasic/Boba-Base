@@ -70,6 +70,18 @@ async def test_search_complete_sse_carries_status_and_errors(monkeypatch):
     """When every tracker errors, the live ``search_complete`` SSE event
     payload MUST include the distinct ``all_trackers_errored`` status and
     the per-tracker errors — the dashboard's only live signal."""
+    # Determinism (§11.4.50): the route resolves dispatch_event lazily via
+    # `from .hooks import dispatch_event`, i.e. it looks up sys.modules["api.hooks"]
+    # AT CALL TIME. In the full-suite run a prior test can leave a DIFFERENT
+    # api.hooks module instance cached, so our monkeypatch of api.hooks.dispatch_event
+    # patched an object the route never sees → the dispatch escaped capture and the
+    # test flaked ("no search_complete dispatched"). Drop any cached api* modules
+    # (monkeypatch.delitem auto-restores them after the test) so the freshly-imported
+    # routes_mod and the api.hooks we patch are guaranteed to be the SAME objects.
+    for _mod in list(sys.modules):
+        if _mod == "api" or _mod.startswith("api."):
+            monkeypatch.delitem(sys.modules, _mod, raising=False)
+
     import api
     from api import routes as routes_mod
     from api.routes import SearchRequest
