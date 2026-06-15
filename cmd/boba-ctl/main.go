@@ -49,7 +49,43 @@ func projectRoot() string {
 	if root := os.Getenv("PROJECT_ROOT"); root != "" {
 		return root
 	}
-	return "/Volumes/T7/Projects/Boba"
+	// Resolve dynamically — never hardcode an absolute, case-specific path
+	// (§11.4.111 resolve-by-stable-name, §11.4.29 case-correct). A hardcoded
+	// "/Volumes/T7/Projects/Boba" failed chdir on the case-sensitive T7 volume
+	// because the real repo is lowercase "boba".
+	if root := findRootWithComposeFile(); root != "" {
+		return root
+	}
+	if exe, err := os.Executable(); err == nil {
+		return filepath.Dir(exe)
+	}
+	return "."
+}
+
+// findRootWithComposeFile walks up from the working directory (then the
+// executable's directory) looking for docker-compose.yml, returning the first
+// directory that contains it. Returns "" when none is found.
+func findRootWithComposeFile() string {
+	var starts []string
+	if wd, err := os.Getwd(); err == nil {
+		starts = append(starts, wd)
+	}
+	if exe, err := os.Executable(); err == nil {
+		starts = append(starts, filepath.Dir(exe))
+	}
+	for _, start := range starts {
+		for dir := start; ; {
+			if _, err := os.Stat(filepath.Join(dir, "docker-compose.yml")); err == nil {
+				return dir
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+	return ""
 }
 
 func createOrchestrator() (*compose.DefaultOrchestrator, error) {
