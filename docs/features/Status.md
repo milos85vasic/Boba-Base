@@ -5,7 +5,7 @@
 **Scope:** Every system component, service, infrastructure piece, and client app of the Boba project — one row per feature, grouped by component.
 **Authority:** assembled by READ-ONLY repo inventory (codegraph + grep + source reading) on 2026-06-15. Cross-references `AGENTS.md`, `CLAUDE.md`, `docs/REMAINING_WORK_PLAN.md`.
 
-> Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.86). Every feature row cites a real source file (file:line where load-bearing). **No invented features** (§11.4.6). The **Video-recording confirmation** column is `PENDING` for every row — playback/UI screen recordings are NOT yet captured; they are a follow-up (§11.4.107/§11.4.143).
+> Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.86). Every feature row cites a real source file (file:line where load-bearing). **No invented features** (§11.4.6). The **Video-recording confirmation** column is `PENDING` for all rows EXCEPT the `boba-ctl` orchestrator row (VIDEO-CONFIRMED 2026-06-16 via Claude-vision frame analysis); remaining surfaces (web dashboard, Jinja dashboard, extension, per-feature flows) are an in-progress recording pass (§11.4.107/§11.4.143).
 >
 > Column legend:
 > - **Impl** = implemented / partial / stub
@@ -272,6 +272,7 @@ Bridges qBittorrent WebUI with private-tracker auth. NOT a container.
 | `docker-compose.yml` — 2-container default + Go profile + boba-jackett service | infra | yes | e2e `test_live_containers.py` | tested-green-in-suite | PENDING |
 | Jackett auto-configuration at startup (key extract → inject `JACKETT_API_KEY`) | implemented | yes | integration `test_jackett_autoconfig_real.py` | tested-green-in-suite | PENDING |
 | `BOBA_MASTER_KEY` auto-generation (first-boot) for encrypted boba.db | implemented | yes | go `bootstrap/bootstrap_test.go` | unit (go) | PENDING |
+| `boba-ctl` orchestrator (Go: up/down/status/health/list) — `cmd/boba-ctl/main.go` | implemented | host | go `cmd/boba-ctl/projectroot_test.go` | tested-green-in-suite + LIVE | **VIDEO-CONFIRMED 2026-06-16** — `boba-cli-orchestrator-demo.mp4`; Claude-vision verdict `docs/qa/recordings-20260615/boba-cli-verdict.md` |
 
 ---
 
@@ -280,4 +281,4 @@ Bridges qBittorrent WebUI with private-tracker auth. NOT a container.
 - **`boba-ctl.sh`** — referenced in tooling but no file exists at repo root or `scripts/`; could not inventory its subcommands.
 - **`plugins/torrentproject.py` / `plugins/torrentscsv.py`** — named in the `install-plugin.sh` curated array but absent from the tree; marked not-implemented-in-repo above.
 - **Prometheus/OpenTelemetry metrics** — `tests/observability/test_metrics_exist.py` + `observability/` dir exist, but no `prometheus_client` `Counter()/Histogram()/Gauge()` definitions were found in `download-proxy/src`; metrics surface is via `GET /api/v1/stats` (counters maintained in-process), not a `/metrics` Prometheus endpoint. Stated as fact, not assumed.
-- **Video-recording confirmation** — `PENDING` for ALL 135 rows; no playback/UI screen recordings captured this revision (follow-up per §11.4.107/§11.4.143).
+- **Video-recording confirmation** — `PENDING` for all rows EXCEPT `boba-ctl` (VIDEO-CONFIRMED 2026-06-16, recording `boba-cli-orchestrator-demo.mp4` + Claude-vision verdict). Remaining surfaces (web/Jinja dashboards, extension, per-feature flows) are an in-progress recording pass (§11.4.107/§11.4.143).
