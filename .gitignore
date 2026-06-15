@@ -208,6 +208,10 @@ submodules/jackett/
 # DOCX exports are generated on demand (regen: scripts/generate_markdown_exports.sh, §11.4.77);
 # not tracked to avoid dozens of binary blobs. HTML/PDF remain tracked.
 *.docx
+# §11.4.153 — the docs/features Status set MUST ship DOCX (operator mandate:
+# "all exported files (PDF, DOCX, HTML)"). Track these specific DOCX exports.
+!docs/features/Status.docx
+!docs/features/Status_Summary.docx
 
 # Runtime test/QA output (stress/chaos evidence) — regenerated per run.
 qa-results/
