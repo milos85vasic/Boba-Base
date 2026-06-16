@@ -1,0 +1,26 @@
+# Remote deploy hosts for distributed booting of the Boba System.
+# Consumed by scripts/deploy-remote.sh. Host shape mirrors the containers
+# submodule's pkg/remote.RemoteHost (§11.4.76 — distributed boot uses the
+# vasic-digital/containers machinery: SSH executor + remote podman-compose).
+#
+# §11.4.10: NO credential values here — secrets live only in the per-host
+# .env transferred per the operator's explicit choice (never committed).
+
+schema_version: 1
+
+hosts:
+  - name: nezha
+    address: nezha.local
+    port: 22
+    user: milosvasic
+    auth: key            # key-based SSH (no password; key preconfigured)
+    key_path: ~/.ssh/id_ed25519   # local key used to reach the host
+    # Distributed-boot target for heavy testing against real production services.
+    remote_path: /home/milosvasic/boba   # where the System is materialized on the host
+    runtime: podman                       # podman 5.7.1 + podman-compose 1.5.0 preinstalled
+    compose_file: docker-compose.yml
+    profile: ""                           # default (Python) profile; "go" for the Go backend
+    specs:                                # informational (i7 7th-gen, NVMe, 64GB)
+      cores: 8
+      mem_gib: 62
+      disk_free_gib: 431
