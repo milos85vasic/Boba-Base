@@ -16,21 +16,19 @@ _HOOKS_PATH = _SRC / "api" / "hooks.py"
 
 
 def _load_hooks():
-    saved = {k: v for k, v in sys.modules.items() if k == "api" or k.startswith("api.")}
+    # Load hooks.py *within* the `api` package so its relative import
+    # `from .routes import require_api_token` (added by the P0-security work)
+    # resolves. The previous standalone spec_from_file_location("_test_hooks_race")
+    # load gave the module no parent package → ImportError, so these race tests
+    # silently FAILed-on-load (a §11.4.1 FAIL-bluff — they tested nothing).
+    # We force a fresh module each call (pop from sys.modules + import) so
+    # per-test _execution_logs state never bleeds across tests.
+    if str(_SRC) not in sys.path:
+        sys.path.insert(0, str(_SRC))
     for key in list(sys.modules):
-        if key == "api" or key.startswith("api."):
+        if key == "api.hooks":
             del sys.modules[key]
-    try:
-        spec = importlib.util.spec_from_file_location("_test_hooks_race", _HOOKS_PATH)
-        assert spec is not None
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        return mod
-    finally:
-        for key in list(sys.modules):
-            if key == "api" or key.startswith("api."):
-                del sys.modules[key]
-        sys.modules.update(saved)
+    return importlib.import_module("api.hooks")
 
 
 @pytest.mark.asyncio
