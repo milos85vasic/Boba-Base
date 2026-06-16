@@ -1142,6 +1142,52 @@ class TestSearchNnmclubDeep:
 
 
 # --------------------------------------------------------------------------
+# _search_rutracker — RUTRACKER_COOKIES injection path (CAPTCHA bypass).
+# rutracker gates login.php behind a CAPTCHA when logins spike, so the
+# password POST may never yield a session. Operator-supplied browser cookies
+# (bb_session …) must bypass the login round-trip, mirroring NNMCLUB_COOKIES.
+# --------------------------------------------------------------------------
+
+
+class TestSearchRutrackerCookiesEnv:
+    @pytest.mark.asyncio
+    async def test_rutracker_cookies_env_bypasses_login(self, search_mod):
+        """RUTRACKER_COOKIES with bb_session → use cookies directly, NO login POST."""
+        orch = search_mod.SearchOrchestrator()
+        # No RUTRACKER_USERNAME/PASSWORD on purpose — cookies alone must work.
+        with patch.dict(os.environ, {"RUTRACKER_COOKIES": "bb_session=abc123; bb_t=xyz"}, clear=False):
+            os.environ.pop("RUTRACKER_USERNAME", None)
+            os.environ.pop("RUTRACKER_PASSWORD", None)
+            search_resp = AsyncMock()
+            search_resp.status = 200
+            search_resp.text = AsyncMock(return_value="<html><table></table></html>")
+            search_resp.__aenter__ = AsyncMock(return_value=search_resp)
+            search_resp.__aexit__ = AsyncMock(return_value=False)
+            mock_session = AsyncMock()
+            mock_session.get = MagicMock(return_value=search_resp)
+            mock_session.post = MagicMock()  # login POST must NOT be used
+            mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+            mock_session.__aexit__ = AsyncMock(return_value=False)
+            with patch("aiohttp.ClientSession", return_value=mock_session):
+                result = await orch._search_rutracker("the matrix", "all")
+                assert isinstance(result, list)
+                mock_session.post.assert_not_called()  # CAPTCHA-walled login bypassed
+                mock_session.get.assert_called()  # search performed with cookies
+                assert orch._tracker_sessions["rutracker"]["cookies"]["bb_session"] == "abc123"
+
+    @pytest.mark.asyncio
+    async def test_rutracker_cookies_env_no_bb_session_is_auth_failure(self, search_mod):
+        """RUTRACKER_COOKIES set but no bb_session → honest auth_failure diag, empty."""
+        orch = search_mod.SearchOrchestrator()
+        with patch.dict(os.environ, {"RUTRACKER_COOKIES": "bb_t=xyz"}, clear=False):
+            result = await orch._search_rutracker("query", "all")
+            assert result == []
+            diag = orch._last_public_tracker_diag.get("rutracker", {})
+            assert diag.get("error_type") == "auth_failure"
+            assert "bb_session" in diag.get("error", "")
+
+
+# --------------------------------------------------------------------------
 # _search_iptorrents — deep paths (lines 1532-1590)
 # --------------------------------------------------------------------------
 

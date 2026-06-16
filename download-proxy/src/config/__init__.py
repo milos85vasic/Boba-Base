@@ -39,6 +39,7 @@ class EnvConfig:
     kinozal_username: str | None = None
     kinozal_password: str | None = None
     nnmclub_cookies: str | None = None
+    rutracker_cookies: str | None = None
     iptorrents_username: str | None = None
     iptorrents_password: str | None = None
 
@@ -69,6 +70,7 @@ def load_env() -> EnvConfig:
     kinozal_username = os.environ.get("KINOZAL_USERNAME") or iptorrents_username
     kinozal_password = os.environ.get("KINOZAL_PASSWORD") or iptorrents_password
     nnmclub_cookies = os.environ.get("NNMCLUB_COOKIES")
+    rutracker_cookies = os.environ.get("RUTRACKER_COOKIES")
 
     config = EnvConfig(
         qbittorrent_host=qbittorrent_host,
@@ -85,6 +87,7 @@ def load_env() -> EnvConfig:
         kinozal_username=kinozal_username,
         kinozal_password=kinozal_password,
         nnmclub_cookies=nnmclub_cookies,
+        rutracker_cookies=rutracker_cookies,
         iptorrents_username=iptorrents_username,
         iptorrents_password=iptorrents_password,
     )

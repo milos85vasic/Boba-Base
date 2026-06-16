@@ -1211,6 +1211,55 @@ class SearchOrchestrator:
 
         logger = logging.getLogger(__name__)
         results: list[SearchResult] = []
+        base_url = os.getenv("RUTRACKER_MIRRORS", "https://rutracker.org").split(",")[0].strip()
+
+        # Operator-supplied browser cookies (RUTRACKER_COOKIES) take precedence —
+        # rutracker gates login.php behind a CAPTCHA when logins spike, so a
+        # username/password POST may never yield a session (the observed
+        # `no_cookie` / "Re-login required" state). Browser cookies (bb_session …)
+        # bypass the login round-trip entirely, mirroring the NNMCLUB_COOKIES
+        # path. §11.4.6: the CAPTCHA is the real blocker; cookies are the
+        # reliable auth path.
+        cookies_raw = os.getenv("RUTRACKER_COOKIES")
+        if cookies_raw:
+            cookie_dict: dict[str, str] = {}
+            for pair in cookies_raw.split(";"):
+                pair = pair.strip()
+                if "=" in pair:
+                    name, value = pair.split("=", 1)
+                    cookie_dict[name.strip()] = value.strip()
+            if "bb_session" not in cookie_dict:
+                self._last_public_tracker_diag["rutracker"] = {
+                    "error_type": "auth_failure",
+                    "error": "RUTRACKER_COOKIES is set but contains no bb_session cookie",
+                    "stderr_tail": "",
+                    "deadline_hit": False,
+                    "deadline_seconds": 0.0,
+                }
+                return results
+            self._tracker_sessions["rutracker"] = {"cookies": cookie_dict, "base_url": base_url}
+            try:
+                search_url = f"{base_url}/forum/tracker.php?{urlencode({'nm': query, 'fo': 1})}"
+                timeout = aiohttp.ClientTimeout(total=15)
+                async with (
+                    aiohttp.ClientSession(timeout=timeout) as session,
+                    session.get(search_url, cookies=cookie_dict) as resp,
+                ):
+                    html_content = await resp.text()
+                if len(html_content) < 1024 and "captcha" in html_content.lower():
+                    self._last_public_tracker_diag["rutracker"] = {
+                        "error_type": "upstream_captcha",
+                        "error": "rutracker served a CAPTCHA page instead of search results (cookies may be expired)",
+                        "stderr_tail": "",
+                        "deadline_hit": False,
+                        "deadline_seconds": 0.0,
+                    }
+                    return results
+                results = self._parse_rutracker_html(html_content, base_url)
+            except Exception as e:
+                logger.error(f"RuTracker search error (cookie path): {e}")
+            return results
+
         username = os.getenv("RUTRACKER_USERNAME")
         password = os.getenv("RUTRACKER_PASSWORD")
 
@@ -1218,7 +1267,6 @@ class SearchOrchestrator:
             return []
 
         try:
-            base_url = os.getenv("RUTRACKER_MIRRORS", "https://rutracker.org").split(",")[0].strip()
             search_url = f"{base_url}/forum/tracker.php?{urlencode({'nm': query, 'fo': 1})}"
 
             timeout = aiohttp.ClientTimeout(total=15)

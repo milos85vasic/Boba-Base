@@ -25,6 +25,7 @@ Environment variable loading and log filtering.
 | `kinozal_username` | `KINOZAL_USERNAME` | falls back to `IPTORRENTS_USERNAME` |
 | `kinozal_password` | `KINOZAL_PASSWORD` | falls back to `IPTORRENTS_PASSWORD` |
 | `nnmclub_cookies` | `NNMCLUB_COOKIES` | `None` |
+| `rutracker_cookies` | `RUTRACKER_COOKIES` | `None` (browser cookies bypass the CAPTCHA-walled login) |
 | `iptorrents_username` | `IPTORRENTS_USERNAME` | `None` |
 | `iptorrents_password` | `IPTORRENTS_PASSWORD` | `None` |
 
