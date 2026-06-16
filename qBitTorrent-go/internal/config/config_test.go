@@ -55,6 +55,19 @@ func TestLoad_TrackerAuth(t *testing.T) {
 	assert.Equal(t, "ipt_pass", cfg.IPTorrentsPassword)
 }
 
+func TestLoad_TrackerCookies(t *testing.T) {
+	os.Clearenv()
+	os.Setenv("NNMCLUB_COOKIES", "nnm-cookie-blob")
+	os.Setenv("RUTRACKER_COOKIES", "ru-cookie-blob")
+
+	cfg := Load()
+	// RUTRACKER_COOKIES MUST be read into RutrackerCookies (parity with
+	// NNMClubCookies). The docker-compose go-profile service passes
+	// RUTRACKER_COOKIES through; without this read it would be a dead env var.
+	assert.Equal(t, "ru-cookie-blob", cfg.RutrackerCookies)
+	assert.Equal(t, "nnm-cookie-blob", cfg.NNMClubCookies)
+}
+
 func TestLoad_KinozalFallback(t *testing.T) {
 	os.Clearenv()
 	os.Setenv("IPTORRENTS_USERNAME", "ipt_user")

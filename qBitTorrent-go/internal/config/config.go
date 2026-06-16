@@ -26,6 +26,7 @@ type Config struct {
 	KinozalUsername     string
 	KinozalPassword     string
 	NNMClubCookies     string
+	RutrackerCookies   string
 	IPTorrentsUsername string
 	IPTorrentsPassword string
 
@@ -60,6 +61,7 @@ func Load() *Config {
 		KinozalUsername:     getEnv("KINOZAL_USERNAME", getEnv("IPTORRENTS_USERNAME", "")),
 		KinozalPassword:     getEnv("KINOZAL_PASSWORD", getEnv("IPTORRENTS_PASSWORD", "")),
 		NNMClubCookies:     getEnv("NNMCLUB_COOKIES", ""),
+		RutrackerCookies:   getEnv("RUTRACKER_COOKIES", ""),
 		IPTorrentsUsername: getEnv("IPTORRENTS_USERNAME", ""),
 		IPTorrentsPassword: getEnv("IPTORRENTS_PASSWORD", ""),
 
