@@ -1536,10 +1536,21 @@ class SearchOrchestrator:
                 cookie_dict = {c.key: c.value for c in cookies.values()}
                 if "phpbb2mysql_4_sid" not in cookie_dict:
                     self._last_public_tracker_diag["nnmclub"] = {
-                        "error_type": "auth_failure",
+                        # §11.4.6 FACT (docs/qa/nnmclub-login-diagnosis-20260616.md):
+                        # nnmclub.to login.php is gated behind a Cloudflare
+                        # Turnstile JS CAPTCHA. A non-browser password POST sends
+                        # no cf-turnstile-response token, so the server returns
+                        # HTTP 200 with NO Set-Cookie before it ever evaluates the
+                        # credentials. This is NOT "likely a credential failure" —
+                        # it is the Turnstile gate. Fix: browser-obtained cookies
+                        # (run scripts/nnmclub-cookie-refresh.sh → NNMCLUB_COOKIES,
+                        # which this code path then prefers over the password POST).
+                        "error_type": "upstream_captcha",
                         "error": (
-                            "nnmclub login returned no session cookie — "
-                            "likely credential failure"
+                            "nnmclub login.php is gated by a Cloudflare Turnstile "
+                            "JS CAPTCHA; a password POST cannot obtain a session "
+                            "cookie. Set NNMCLUB_COOKIES from a logged-in browser "
+                            "session (run scripts/nnmclub-cookie-refresh.sh)."
                         ),
                         "stderr_tail": "",
                         "deadline_hit": False,
