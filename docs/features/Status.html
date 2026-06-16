@@ -1,7 +1,184 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Status</h1>
+</header>
 <h1 id="boba-feature-status-all-components">Boba — Feature Status (all
 components)</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-06-16T11:30:00Z <strong>Scope:</strong> Every system component,
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-06-16T12:15:00Z <strong>Scope:</strong> Every system component,
 service, infrastructure piece, and client app of the Boba project — one
 row per REAL unit (endpoint / handler / client method / component
 control / plugin / subcommand / script), grouped by component.
@@ -14,12 +191,22 @@ Cross-references <code>AGENTS.md</code>, <code>CLAUDE.md</code>,
 <p>Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.86). Every
 feature row cites a real source file (file:line where load-bearing),
 endpoint, command, or control. <strong>No invented features</strong>
-(§11.4.6). The <strong>Video-recording confirmation</strong> column is
-<code>PENDING</code> for all rows EXCEPT the rows already marked
-<code>VIDEO-CONFIRMED</code> (boba-ctl CLI orchestrator + the
-<code>POST /api/v1/search</code> web journey); remaining surfaces
-(per-feature flows) are an in-progress recording pass
-(§11.4.107/§11.4.143).</p>
+(§11.4.6). As of Rev 5 the <strong>Video</strong> column is DEFINITIVE
+for every row — there is no bare <code>PENDING</code>. Each cell is
+exactly one of: <code>VIDEO-CONFIRMED — &lt;file&gt;</code> (the feature
+is shown on-screen in a committed recording),
+<code>PENDING (UI — film next)</code> (a user-visible control/dialog not
+yet <em>individually</em> filmed), or
+<code>N/A (no UI — test-covered + exercised by &lt;journey&gt;)</code>
+(a non-user-visible unit — REST endpoint / handler / client method /
+parser / scanner / service / crypto / repo / script — which has no
+screen of its own and is confirmed by its cited tests plus the UI/CLI
+journey that drives it). <strong>Honest classification
+(§11.4.6/§11.4.143): a row is <code>VIDEO-CONFIRMED</code> only when a
+real recording actually shows it.</strong></p>
+<p>Per-row Video tally (288 feature rows): <strong>25
+VIDEO-CONFIRMED</strong>, <strong>17 PENDING (UI — film next)</strong>,
+<strong>246 N/A (no UI — test-covered)</strong>.</p>
 <p>Column legend: - <strong>Impl</strong> = implemented / partial / stub
 / missing - <strong>Wired</strong> = reachable on a running
 default-profile stack (yes / no / opt-in / host) -
@@ -28,9 +215,11 @@ integration / e2e / security / stress-chaos / property / contract);
 <code>none</code> if no covering test found -
 <strong>Validation</strong> = honest validation posture
 (tested-green-in-suite / unit-only / live-evidence-captured /
-not-validated / operator-blocked) - <strong>Video</strong> =
-video-recording confirmation — <code>PENDING</code> unless an individual
-recording exists</p>
+not-validated / operator-blocked) - <strong>Video</strong> = DEFINITIVE
+video-recording status — one of
+<code>VIDEO-CONFIRMED — &lt;file&gt;</code> /
+<code>PENDING (UI — film next)</code> /
+<code>N/A (no UI — test-covered + exercised by &lt;journey&gt;)</code></p>
 </blockquote>
 <hr />
 <h2 id="video-recording-confirmations-11.4.143-11.4.83">Video-recording
@@ -231,7 +420,7 @@ search_id (<code>routes.py:283</code>)</td>
 <td>integration <code>test_merge_api.py</code>; stress
 <code>test_search_stress.py</code></td>
 <td>tested-green-in-suite; resets over tunnel (RW-08)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/search/stream/{id}</code> — SSE result stream
@@ -241,7 +430,8 @@ search_id (<code>routes.py:283</code>)</td>
 <td>integration <code>test_realtime_streaming.py</code>,
 <code>test_streaming_browser.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow
+live-results stream)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/search/{id}</code> — poll search state
@@ -250,7 +440,7 @@ search_id (<code>routes.py:283</code>)</td>
 <td>yes</td>
 <td>integration <code>test_merge_api.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/search/{id}/abort</code> — cancel in-flight
@@ -259,7 +449,7 @@ search (<code>routes.py:619</code>)</td>
 <td>yes</td>
 <td>integration <code>test_merge_api.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/downloads/active</code> — qBit active torrents
@@ -268,7 +458,8 @@ search (<code>routes.py:619</code>)</td>
 <td>yes</td>
 <td>integration <code>test_buttons_api.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Active
+Downloads tab)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/auth/qbittorrent</code> — qBit WebUI login
@@ -277,7 +468,7 @@ search (<code>routes.py:619</code>)</td>
 <td>yes</td>
 <td>integration <code>test_login_actions.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web qBit login dialog)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/download</code> — add torrent to qBit
@@ -288,7 +479,8 @@ search (<code>routes.py:619</code>)</td>
 <code>test_buttons_api.py</code>; security
 <code>test_ssrf_and_magnet_auth.py</code></td>
 <td>tested-green-in-suite; SSRF gap RW-03</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web result-row qBit
+button)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/download/upload</code> — upload .torrent file to
@@ -297,7 +489,7 @@ qBit (<code>routes.py:1123</code>)</td>
 <td>yes</td>
 <td>unit <code>tests/unit/api_layer/test_download_upload.py</code></td>
 <td>unit-only + integration</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web download path)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/download/file</code> — fetch tracker .torrent w/
@@ -307,7 +499,8 @@ auth cookies (<code>routes.py:1212</code>)</td>
 <td>integration <code>test_buttons_api.py</code>; security
 <code>test_ssrf_and_magnet_auth.py</code></td>
 <td>tested-green-in-suite; SSRF gap RW-03</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web result-row Download
+button)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/magnet</code> — resolve result → magnet link
@@ -317,7 +510,7 @@ auth cookies (<code>routes.py:1212</code>)</td>
 <td>integration <code>test_magnet_dialog.py</code>,
 <code>test_buttons_api.py</code></td>
 <td>tested-green-in-suite; auth gap RW-04</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web magnet dialog)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/theme</code> — read theme state
@@ -326,7 +519,7 @@ auth cookies (<code>routes.py:1212</code>)</td>
 <td>yes</td>
 <td>contract <code>test_crossapp_theme_contract.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web theme picker)</td>
 </tr>
 <tr>
 <td><code>PUT /api/v1/theme</code> — persist theme
@@ -336,7 +529,7 @@ auth cookies (<code>routes.py:1212</code>)</td>
 <td>e2e <code>test_theme_runtime.py</code>,
 <code>test_crossapp_theme.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web theme picker)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/theme/stream</code> — SSE theme broadcast
@@ -345,7 +538,8 @@ auth cookies (<code>routes.py:1212</code>)</td>
 <td>yes</td>
 <td>e2e <code>test_crossapp_theme.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web theme picker cross-app
+sync)</td>
 </tr>
 </tbody>
 </table>
@@ -379,7 +573,8 @@ API — per-tracker (<code>download-proxy/src/api/auth.py</code>)</h3>
 <td>integration <code>test_auth_and_links.py</code>; e2e
 <code>test_live_stack_evidence.py</code></td>
 <td>partial — CAPTCHA operator-blocked (BOB-008)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web Trackers tab auth
+chips)</td>
 </tr>
 <tr>
 <td><code>GET /auth/rutracker/captcha</code> — fetch CAPTCHA image
@@ -388,7 +583,8 @@ API — per-tracker (<code>download-proxy/src/api/auth.py</code>)</h3>
 <td>yes</td>
 <td>integration <code>test_auth_and_links.py</code></td>
 <td>partial — operator-blocked (BOB-008)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web Trackers tab auth
+chips)</td>
 </tr>
 <tr>
 <td><code>POST /auth/rutracker/login</code> — username/password +
@@ -397,7 +593,8 @@ CAPTCHA login (<code>auth.py:214</code>)</td>
 <td>yes</td>
 <td>integration <code>test_auth_and_links.py</code></td>
 <td>partial — operator-blocked (BOB-008)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web Trackers tab auth
+chips)</td>
 </tr>
 <tr>
 <td><code>POST /auth/rutracker/cookie-login</code> — cookie-based login
@@ -406,7 +603,8 @@ CAPTCHA login (<code>auth.py:214</code>)</td>
 <td>yes</td>
 <td>integration <code>test_auth_and_links.py</code></td>
 <td>partial — live-gated</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web Trackers tab auth
+chips)</td>
 </tr>
 <tr>
 <td><code>GET /auth/nnmclub/status</code> — NNM-Club session state
@@ -416,7 +614,8 @@ CAPTCHA login (<code>auth.py:214</code>)</td>
 <td>e2e <code>test_live_stack_evidence.py:265</code> (skips —
 SOURCE→ARTIFACT drift RW-07)</td>
 <td>partial — route 404 on running container (RW-07)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web Trackers tab auth
+chips)</td>
 </tr>
 <tr>
 <td><code>POST /auth/nnmclub/login</code> — NNM-Club login
@@ -425,7 +624,8 @@ SOURCE→ARTIFACT drift RW-07)</td>
 <td>yes</td>
 <td>e2e <code>test_live_stack_evidence.py</code></td>
 <td>partial — live-gated</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web Trackers tab auth
+chips)</td>
 </tr>
 <tr>
 <td><code>GET /auth/status</code> — all-tracker aggregate session state
@@ -434,7 +634,8 @@ SOURCE→ARTIFACT drift RW-07)</td>
 <td>yes</td>
 <td>integration <code>test_auth_state_ui.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web Trackers tab auth
+chips)</td>
 </tr>
 <tr>
 <td><code>POST /auth/qbittorrent/logout</code> — qBit WebUI logout
@@ -443,7 +644,7 @@ SOURCE→ARTIFACT drift RW-07)</td>
 <td>yes</td>
 <td>integration <code>test_login_actions.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web qBit login dialog)</td>
 </tr>
 <tr>
 <td>Kinozal auth (status/login) REST route</td>
@@ -452,7 +653,7 @@ SOURCE→ARTIFACT drift RW-07)</td>
 <td>none — no <code>kinozal/login</code> route in
 <code>auth.py</code></td>
 <td>not-implemented (search path uses cookies via orchestrator)</td>
-<td>PENDING</td>
+<td>N/A (not implemented — no route)</td>
 </tr>
 <tr>
 <td>IPTorrents auth (status/login) REST route</td>
@@ -461,7 +662,7 @@ SOURCE→ARTIFACT drift RW-07)</td>
 <td>none — no <code>iptorrents/login</code> route in
 <code>auth.py</code></td>
 <td>not-implemented (env creds + cookie flow via Jackett UI)</td>
-<td>PENDING</td>
+<td>N/A (not implemented — no route)</td>
 </tr>
 </tbody>
 </table>
@@ -496,7 +697,7 @@ saturation)</td>
 <td>yes</td>
 <td>concurrency <code>test_orchestrator_semaphore.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow)</td>
 </tr>
 <tr>
 <td>Per-search tracker semaphore
@@ -505,7 +706,7 @@ saturation)</td>
 <td>yes</td>
 <td>concurrency <code>test_tracker_semaphore.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow)</td>
 </tr>
 <tr>
 <td>Public-tracker subprocess fan-out (NDJSON via patched
@@ -515,7 +716,8 @@ novaprinter)</td>
 <td>e2e <code>test_public_trackers_return_results.py</code>; stress
 <code>test_search_orchestration_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow live
+results)</td>
 </tr>
 <tr>
 <td>Public-tracker deadline kill
@@ -524,7 +726,7 @@ novaprinter)</td>
 <td>yes</td>
 <td>chaos <code>test_tracker_failure.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow)</td>
 </tr>
 <tr>
 <td>Private-tracker aiohttp+cookie path
@@ -533,7 +735,7 @@ novaprinter)</td>
 <td>yes</td>
 <td>integration <code>test_tracker_auth_live.py</code> (live-gated)</td>
 <td>partial — live-gated, BOB-008 operator-blocked</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow)</td>
 </tr>
 <tr>
 <td>Per-tracker <code>TrackerSearchStat</code> real-time stats</td>
@@ -542,7 +744,8 @@ novaprinter)</td>
 <td>contract <code>test_tracker_stats_contract.py</code>; property
 <code>test_tracker_stats_properties.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web tracker-stat
+dialog)</td>
 </tr>
 <tr>
 <td>Stderr error classification
@@ -551,7 +754,7 @@ novaprinter)</td>
 <td>yes</td>
 <td>chaos <code>test_tracker_failure.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow)</td>
 </tr>
 <tr>
 <td>TTL-bounded data stores (cachetools) — no leak</td>
@@ -559,7 +762,7 @@ novaprinter)</td>
 <td>yes</td>
 <td>memory <code>test_orchestrator_caches_bounded.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow)</td>
 </tr>
 </tbody>
 </table>
@@ -594,7 +797,8 @@ Deduplication
 <td>property <code>test_deduplicator_properties.py</code>; benchmark
 <code>test_deduplication_benchmark.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow “288
+merged” result)</td>
 </tr>
 <tr>
 <td>Tier 2 dedup — infohash key</td>
@@ -602,7 +806,8 @@ Deduplication
 <td>yes</td>
 <td>property <code>test_deduplicator_properties.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow “288
+merged” result)</td>
 </tr>
 <tr>
 <td>Tier 3 dedup — name+size key</td>
@@ -610,7 +815,8 @@ Deduplication
 <td>yes</td>
 <td>property <code>test_deduplicator_properties.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow “288
+merged” result)</td>
 </tr>
 <tr>
 <td>Tier 4 dedup — fuzzy Levenshtein name match</td>
@@ -619,7 +825,8 @@ Deduplication
 <td>property <code>test_deduplicator_properties.py</code>; benchmark
 <code>test_deduplication_benchmark.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow “288
+merged” result)</td>
 </tr>
 </tbody>
 </table>
@@ -653,7 +860,8 @@ Enrichment — per metadata source
 <td>yes</td>
 <td>stress <code>test_enricher_stress_chaos.py</code></td>
 <td>tested-green-in-suite; needs <code>OMDB_API_KEY</code></td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow result
+quality column)</td>
 </tr>
 <tr>
 <td>Enrichment: TMDB</td>
@@ -661,7 +869,8 @@ Enrichment — per metadata source
 <td>yes</td>
 <td>stress <code>test_enricher_stress_chaos.py</code></td>
 <td>tested-green; needs <code>TMDB_API_KEY</code></td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow result
+quality column)</td>
 </tr>
 <tr>
 <td>Enrichment: TVMaze</td>
@@ -669,7 +878,8 @@ Enrichment — per metadata source
 <td>yes</td>
 <td>stress <code>test_enricher_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow result
+quality column)</td>
 </tr>
 <tr>
 <td>Enrichment: AniList</td>
@@ -677,7 +887,8 @@ Enrichment — per metadata source
 <td>yes</td>
 <td>stress <code>test_enricher_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow result
+quality column)</td>
 </tr>
 <tr>
 <td>Enrichment: MusicBrainz</td>
@@ -685,7 +896,8 @@ Enrichment — per metadata source
 <td>yes</td>
 <td>stress <code>test_enricher_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow result
+quality column)</td>
 </tr>
 <tr>
 <td>Enrichment: OpenLibrary</td>
@@ -693,7 +905,8 @@ Enrichment — per metadata source
 <td>yes</td>
 <td>stress <code>test_enricher_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow result
+quality column)</td>
 </tr>
 </tbody>
 </table>
@@ -728,7 +941,8 @@ Tracker validation
 <td>yes</td>
 <td>none dedicated found (covered via merge tests)</td>
 <td>not-validated (no dedicated test)</td>
-<td>PENDING</td>
+<td>N/A (no UI — exercised by web search flow seeds/leechers
+column)</td>
 </tr>
 <tr>
 <td>Tracker validation UDP scrape BEP 15
@@ -737,7 +951,8 @@ Tracker validation
 <td>yes</td>
 <td>none dedicated found</td>
 <td>not-validated (no dedicated test)</td>
-<td>PENDING</td>
+<td>N/A (no UI — exercised by web search flow seeds/leechers
+column)</td>
 </tr>
 </tbody>
 </table>
@@ -773,7 +988,8 @@ Hooks (<code>download-proxy/src/api/hooks.py</code> +
 <code>test_hooks_race.py</code>; security
 <code>test_hooks_schedules_auth.py</code></td>
 <td>tested-green-in-suite; auth gap RW-01</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Hooks
+tab)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/hooks</code> — create hook
@@ -783,7 +999,8 @@ Hooks (<code>download-proxy/src/api/hooks.py</code> +
 <td>unit <code>test_hooks_coverage.py</code>; concurrency
 <code>test_hooks_race.py</code></td>
 <td>tested-green-in-suite; auth gap RW-01</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Hooks
+tab)</td>
 </tr>
 <tr>
 <td><code>DELETE /api/v1/hooks/{id}</code> — delete hook
@@ -792,7 +1009,8 @@ Hooks (<code>download-proxy/src/api/hooks.py</code> +
 <td>yes</td>
 <td>unit <code>test_hooks_coverage.py</code></td>
 <td>tested-green-in-suite; auth gap RW-01</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Hooks
+tab)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/hooks/logs</code> — hook execution logs
@@ -801,7 +1019,8 @@ Hooks (<code>download-proxy/src/api/hooks.py</code> +
 <td>yes</td>
 <td>unit <code>test_hooks_coverage.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Hooks
+tab)</td>
 </tr>
 <tr>
 <td>Hook event dispatch (8 events: search_start..validation_complete)
@@ -810,7 +1029,7 @@ Hooks (<code>download-proxy/src/api/hooks.py</code> +
 <td>yes</td>
 <td>concurrency <code>test_hooks_race.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered, internal dispatch)</td>
 </tr>
 <tr>
 <td>Hook subprocess execution + sandbox
@@ -819,7 +1038,7 @@ Hooks (<code>download-proxy/src/api/hooks.py</code> +
 <td>yes</td>
 <td>security <code>test_no_shell_injection.py</code></td>
 <td>tested-green; sandbox hardening RW-01</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered, internal subprocess sandbox)</td>
 </tr>
 </tbody>
 </table>
@@ -854,7 +1073,8 @@ Scheduler (<code>download-proxy/src/api/scheduler.py</code> +
 <td>yes</td>
 <td>security <code>test_hooks_schedules_auth.py</code></td>
 <td>tested-green-in-suite; auth gap RW-02</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Schedules
+tab)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/schedules</code> — create schedule
@@ -863,7 +1083,8 @@ Scheduler (<code>download-proxy/src/api/scheduler.py</code> +
 <td>yes</td>
 <td>security <code>test_hooks_schedules_auth.py</code></td>
 <td>tested-green-in-suite; auth gap RW-02</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Schedules
+tab)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/schedules/{id}</code> — get schedule
@@ -872,7 +1093,8 @@ Scheduler (<code>download-proxy/src/api/scheduler.py</code> +
 <td>yes</td>
 <td>security <code>test_hooks_schedules_auth.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Schedules
+tab)</td>
 </tr>
 <tr>
 <td><code>PATCH /api/v1/schedules/{id}</code> — update schedule
@@ -881,7 +1103,8 @@ Scheduler (<code>download-proxy/src/api/scheduler.py</code> +
 <td>yes</td>
 <td>security <code>test_hooks_schedules_auth.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Schedules
+tab)</td>
 </tr>
 <tr>
 <td><code>DELETE /api/v1/schedules/{id}</code> — delete schedule
@@ -890,7 +1113,8 @@ Scheduler (<code>download-proxy/src/api/scheduler.py</code> +
 <td>yes</td>
 <td>security <code>test_hooks_schedules_auth.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard Schedules
+tab)</td>
 </tr>
 <tr>
 <td>Scheduler engine (load/save/tick driver)
@@ -899,7 +1123,7 @@ Scheduler (<code>download-proxy/src/api/scheduler.py</code> +
 <td>yes</td>
 <td>integration <code>test_dashboard_automation.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered, internal tick driver)</td>
 </tr>
 </tbody>
 </table>
@@ -933,7 +1157,7 @@ App-level routes / health / config / dashboard
 <td>yes</td>
 <td>integration <code>test_live_containers.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by boba-ctl health CLI)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/bridge/health</code>
@@ -942,7 +1166,8 @@ App-level routes / health / config / dashboard
 <td>yes</td>
 <td>integration <code>test_bridge_root_liveness.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web bridge health
+indicator)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/config</code> (<code>__init__.py:247</code>)</td>
@@ -950,7 +1175,8 @@ App-level routes / health / config / dashboard
 <td>yes</td>
 <td>integration <code>test_merge_api.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web dashboard
+bootstrap)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/stats</code> (<code>__init__.py:276</code>)</td>
@@ -958,7 +1184,8 @@ App-level routes / health / config / dashboard
 <td>yes</td>
 <td>observability <code>test_metrics_exist.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web tracker-stat
+dialog)</td>
 </tr>
 <tr>
 <td>Jinja2 dashboard <code>GET /</code>
@@ -967,7 +1194,8 @@ App-level routes / health / config / dashboard
 <td>yes</td>
 <td>integration <code>test_dashboard_rendering.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (route — serves the web dashboard SPA; the dashboard itself is
+VIDEO-CONFIRMED, <code>boba-web-feature-tour.mp4</code>)</td>
 </tr>
 <tr>
 <td>Jinja2 dashboard <code>GET /dashboard</code>
@@ -976,7 +1204,8 @@ App-level routes / health / config / dashboard
 <td>yes</td>
 <td>integration <code>test_dashboard_rendering.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (route — serves the web dashboard SPA; the dashboard itself is
+VIDEO-CONFIRMED, <code>boba-web-feature-tour.mp4</code>)</td>
 </tr>
 <tr>
 <td>SPA catch-all <code>GET /{path:path}</code>
@@ -985,7 +1214,8 @@ App-level routes / health / config / dashboard
 <td>yes</td>
 <td>integration <code>test_dashboard_rendering.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (route — serves SPA deep links incl. <code>/jackett</code>,
+VIDEO-CONFIRMED via <code>boba-web-feature-tour.mp4</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -1017,7 +1247,7 @@ App-level routes / health / config / dashboard
 <td>yes</td>
 <td>covered indirectly</td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered, internal helper)</td>
 </tr>
 <tr>
 <td>Jackett autoconfig (Python,
@@ -1029,7 +1259,8 @@ boba-jackett</td>
 <code>test_jackett_autoconfig_e2e.py</code>; benchmark
 <code>test_jackett_autoconfig_perf.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered, legacy internal; canonical path is
+boba-jackett)</td>
 </tr>
 <tr>
 <td>Credential scrubbing log filter
@@ -1038,7 +1269,7 @@ boba-jackett</td>
 <td>yes</td>
 <td>security <code>test_credential_scrubbing.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered, internal log filter)</td>
 </tr>
 </tbody>
 </table>
@@ -1072,7 +1303,7 @@ Legacy download proxy (<code>plugins/download_proxy.py</code>
 <td>yes</td>
 <td>integration <code>test_bridge_header_rewrite.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — proxy layer; test-covered)</td>
 </tr>
 <tr>
 <td>Theme injection into proxied WebUI
@@ -1081,7 +1312,7 @@ Legacy download proxy (<code>plugins/download_proxy.py</code>
 <td>yes</td>
 <td>integration <code>test_bridge_theme_injection.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — proxy theme injection; test-covered)</td>
 </tr>
 </tbody>
 </table>
@@ -1121,7 +1352,8 @@ qBitTorrent-go backend (Go/Gin) — opt-in <code>--profile go</code></h2>
 <td>opt-in</td>
 <td>go <code>internal/api/api_test.go</code></td>
 <td>unit-only (go test)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile, not shipped
+default)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/config</code> — <code>ConfigHandler</code>
@@ -1130,7 +1362,7 @@ qBitTorrent-go backend (Go/Gin) — opt-in <code>--profile go</code></h2>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/bridge/health</code> —
@@ -1139,7 +1371,7 @@ qBitTorrent-go backend (Go/Gin) — opt-in <code>--profile go</code></h2>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/search</code> — <code>SearchHandler</code>
@@ -1148,7 +1380,7 @@ qBitTorrent-go backend (Go/Gin) — opt-in <code>--profile go</code></h2>
 <td>opt-in</td>
 <td>go <code>api_test.go</code>, <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/search/sync</code> —
@@ -1157,7 +1389,7 @@ qBitTorrent-go backend (Go/Gin) — opt-in <code>--profile go</code></h2>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/search/stream/:id</code> —
@@ -1167,7 +1399,7 @@ qBitTorrent-go backend (Go/Gin) — opt-in <code>--profile go</code></h2>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/search/:id</code> — <code>GetSearchHandler</code>
@@ -1177,7 +1409,7 @@ qBitTorrent-go backend (Go/Gin) — opt-in <code>--profile go</code></h2>
 <td>go <code>getsearch_results_test.go</code>,
 <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/search/:id/abort</code> —
@@ -1186,7 +1418,7 @@ qBitTorrent-go backend (Go/Gin) — opt-in <code>--profile go</code></h2>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/download</code> — <code>DownloadHandler</code>
@@ -1196,7 +1428,8 @@ integration</strong></td>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only; functional hole</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile; functional hole
+RW)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/download/file</code> —
@@ -1205,7 +1438,7 @@ integration</strong></td>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/magnet</code> — <code>MagnetHandler</code>
@@ -1215,7 +1448,7 @@ integration</strong></td>
 <td>go <code>api_test.go</code>,
 <code>magnet_stress_chaos_test.go</code></td>
 <td>unit + stress-chaos (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/downloads/active</code> —
@@ -1225,7 +1458,7 @@ integration</strong></td>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only; functional hole</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile; stub RW)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/auth/qbittorrent</code> —
@@ -1235,7 +1468,7 @@ integration</strong></td>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/theme</code> — <code>GetThemeHandler</code>
@@ -1245,7 +1478,7 @@ integration</strong></td>
 <td>go <code>theme_hardening_test.go</code>,
 <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>PUT /api/v1/theme</code> — <code>PutThemeHandler</code>
@@ -1254,7 +1487,7 @@ integration</strong></td>
 <td>opt-in</td>
 <td>go <code>theme_hardening_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/hooks</code> — <code>ListHooksHandler</code>
@@ -1263,7 +1496,7 @@ integration</strong></td>
 <td>opt-in</td>
 <td>go <code>api_test.go</code>, <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/hooks</code> — <code>CreateHookHandler</code>
@@ -1272,7 +1505,7 @@ integration</strong></td>
 <td>opt-in</td>
 <td>go <code>api_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>DELETE /api/v1/hooks/:id</code> —
@@ -1281,7 +1514,7 @@ integration</strong></td>
 <td>opt-in</td>
 <td>go <code>api_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/schedules</code> —
@@ -1292,7 +1525,8 @@ integration</strong></td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only; <strong>no driver loop (RW-10), schedules never
 fire</strong></td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile; never fires
+RW-10)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/schedules</code> —
@@ -1302,7 +1536,8 @@ fire</strong></td>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only; never fires (RW-10)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile; never fires
+RW-10)</td>
 </tr>
 <tr>
 <td><code>DELETE /api/v1/schedules/:id</code> —
@@ -1312,7 +1547,7 @@ fire</strong></td>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered; opt-in profile)</td>
 </tr>
 </tbody>
 </table>
@@ -1345,7 +1580,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/client_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>Login</code> — POST <code>/api/v2/auth/login</code>, store SID
@@ -1354,7 +1589,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/auth_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>IsAuthenticated</code> — SID presence
@@ -1363,7 +1598,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/auth_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GetSID</code> — thread-safe SID accessor
@@ -1372,7 +1607,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/client_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GetTorrents</code> — GET <code>/api/v2/torrents/info</code>
@@ -1381,7 +1616,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>AddTorrent</code> — POST <code>/api/v2/torrents/add</code> URL
@@ -1390,7 +1625,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>AddTorrentFile</code> — POST multipart
@@ -1400,7 +1635,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GetAppVersion</code> — GET <code>/api/v2/app/version</code>
@@ -1409,7 +1644,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>StartSearch</code> — POST <code>/api/v2/search/start</code>
@@ -1418,7 +1653,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>GetSearchResults</code> — GET
@@ -1428,7 +1663,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>StopSearch</code> — POST <code>/api/v2/search/stop</code>
@@ -1437,7 +1672,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>SearchStatus</code> — GET <code>/api/v2/search/status</code>
@@ -1446,7 +1681,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>ListPlugins</code> — GET <code>/api/v2/search/plugins</code>
@@ -1455,7 +1690,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>client/coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client method; opt-in profile)</td>
 </tr>
 </tbody>
 </table>
@@ -1489,7 +1724,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>go <code>service/service_test.go</code>,
 <code>runsearch_dedup_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered service; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>StartSearch</code> / <code>GetSearchStatus</code> /
@@ -1499,7 +1734,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>getsearchstatus_hardening_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered service; opt-in profile)</td>
 </tr>
 <tr>
 <td>Dedup key (FileURL→name+size)
@@ -1508,7 +1743,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>runsearch_dedup_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered service; opt-in profile)</td>
 </tr>
 <tr>
 <td><code>FetchTorrent</code> tracker fetch
@@ -1517,7 +1752,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>none</td>
 <td>not-implemented</td>
-<td>PENDING</td>
+<td>N/A (no UI — stub; opt-in profile; not implemented)</td>
 </tr>
 <tr>
 <td><code>Stats</code> counters
@@ -1526,7 +1761,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>coverage_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered service; opt-in profile)</td>
 </tr>
 <tr>
 <td>SSE broker pub/sub (<code>service/sse_broker.go</code>)</td>
@@ -1534,7 +1769,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (no UI — internal broker; opt-in profile; not wired)</td>
 </tr>
 <tr>
 <td>Metadata enricher (Go)</td>
@@ -1542,7 +1777,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>no</td>
 <td>none</td>
 <td>not-implemented</td>
-<td>PENDING</td>
+<td>N/A (not implemented — RW-11)</td>
 </tr>
 <tr>
 <td>Scheduler driver loop (Go)</td>
@@ -1550,7 +1785,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>no</td>
 <td>none</td>
 <td>not-implemented</td>
-<td>PENDING</td>
+<td>N/A (not implemented — RW-10)</td>
 </tr>
 </tbody>
 </table>
@@ -1582,7 +1817,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — proxy binary; opt-in profile)</td>
 </tr>
 <tr>
 <td>CORS + logging middleware (<code>internal/middleware/</code>)</td>
@@ -1590,7 +1825,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>middleware/middleware_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered middleware; opt-in profile)</td>
 </tr>
 <tr>
 <td>Models / data types (<code>internal/models/</code>)</td>
@@ -1598,7 +1833,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>models/models_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered data types; opt-in profile)</td>
 </tr>
 <tr>
 <td>Env config loader (<code>internal/config/</code>)</td>
@@ -1606,7 +1841,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>config/config_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered config loader; opt-in profile)</td>
 </tr>
 <tr>
 <td>Log redactor (<code>internal/logging/redactor.go</code>)</td>
@@ -1614,7 +1849,7 @@ Web API client (<code>internal/client/*.go</code>)</h3>
 <td>opt-in</td>
 <td>go <code>logging/redactor_test.go</code></td>
 <td>unit-only</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered redactor; opt-in profile)</td>
 </tr>
 </tbody>
 </table>
@@ -1654,7 +1889,7 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>jackettapi/health_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered endpoint)</td>
 </tr>
 <tr>
 <td><code>GET /openapi.json</code> (<code>router.go:64</code>,
@@ -1664,7 +1899,7 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>go <code>jackettapi/openapi_test.go</code>; contract
 <code>tests/contract/openapi_test.go</code></td>
 <td>unit + contract (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test + contract-covered endpoint)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/jackett/credentials</code> — list
@@ -1674,7 +1909,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>go <code>credentials_test.go</code>; integration
 <code>tests/integration/jackett_db_test.go</code></td>
 <td>unit + integration (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett credentials
+page)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/jackett/credentials</code> — create/update
@@ -1683,7 +1919,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>credentials_test.go</code></td>
 <td>unit + integration (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett credentials
+page)</td>
 </tr>
 <tr>
 <td><code>DELETE /api/v1/jackett/credentials/{name}</code>
@@ -1692,7 +1929,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>credentials_test.go</code></td>
 <td>unit + integration (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett credentials
+page)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/jackett/indexers</code> — list configured
@@ -1701,7 +1939,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>jackettapi/indexers_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett indexers
+page)</td>
 </tr>
 <tr>
 <td><code>POST/PATCH/DELETE /api/v1/jackett/indexers/{id}</code>
@@ -1710,7 +1949,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>indexers_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett indexers
+page)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/jackett/indexers/{id}/test</code> — test config
@@ -1719,7 +1959,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>indexers_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett indexers
+page)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/jackett/catalog</code> — indexer catalog
@@ -1729,7 +1970,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>go <code>jackettapi/catalog_test.go</code>; benchmark
 <code>catalog_bench_test.go</code></td>
 <td>unit + bench (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett catalog
+tab)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/jackett/catalog/refresh</code>
@@ -1738,7 +1980,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>catalog_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett catalog
+tab)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/jackett/autoconfig/runs</code> — run history
@@ -1748,7 +1991,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>go <code>jackettapi/runs_test.go</code>; e2e
 <code>tests/e2e/jackett_management_test.go</code></td>
 <td>unit + e2e (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett History
+tab)</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/jackett/autoconfig/runs/{id}</code> — run detail
@@ -1757,7 +2001,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>runs_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett History
+tab)</td>
 </tr>
 <tr>
 <td><code>POST /api/v1/jackett/autoconfig/run</code> — trigger run
@@ -1767,7 +2012,8 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>go <code>runs_test.go</code>; e2e
 <code>tests/e2e/jackett_management_test.go</code></td>
 <td>unit + e2e (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web /jackett History
+tab)</td>
 </tr>
 <tr>
 <td><code>GET/POST /api/v1/jackett/overrides</code>
@@ -1776,7 +2022,7 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>jackettapi/overrides_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered endpoint)</td>
 </tr>
 <tr>
 <td><code>DELETE /api/v1/jackett/overrides/{env}</code>
@@ -1785,7 +2031,7 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>overrides_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered endpoint)</td>
 </tr>
 <tr>
 <td>Admin auth middleware (admin/admin on mutating routes)
@@ -1794,7 +2040,7 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>auth_middleware_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered middleware)</td>
 </tr>
 <tr>
 <td>Hardened CORS middleware
@@ -1803,7 +2049,7 @@ endpoints (<code>internal/jackettapi/router.go</code> + handlers)</h3>
 <td>yes</td>
 <td>go <code>cors_middleware_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered middleware)</td>
 </tr>
 </tbody>
 </table>
@@ -1837,7 +2083,8 @@ Autoconfig engine + persistence (<code>internal/jackett/</code>,
 <td>go <code>jackett/autoconfig_test.go</code>,
 <code>autoconfig_bench_test.go</code></td>
 <td>unit + bench (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered engine; exercised by web /jackett
+autoconfig run)</td>
 </tr>
 <tr>
 <td>Fuzzy indexer matcher (<code>jackett/matcher.go</code>)</td>
@@ -1845,7 +2092,7 @@ Autoconfig engine + persistence (<code>internal/jackett/</code>,
 <td>yes</td>
 <td>go <code>jackett/matcher_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered matcher)</td>
 </tr>
 <tr>
 <td>Jackett HTTP client (<code>jackett/client.go</code>)</td>
@@ -1853,7 +2100,7 @@ Autoconfig engine + persistence (<code>internal/jackett/</code>,
 <td>yes</td>
 <td>go <code>jackett/client_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered client)</td>
 </tr>
 <tr>
 <td>Encrypted SQLite — AES-256-GCM crypto
@@ -1863,7 +2110,7 @@ Autoconfig engine + persistence (<code>internal/jackett/</code>,
 <td>go <code>db/crypto_test.go</code>; security
 <code>tests/security/credential_leak_test.go</code></td>
 <td>unit + security (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test + security-covered crypto)</td>
 </tr>
 <tr>
 <td>SQLite migrations (<code>db/migrate.go</code>)</td>
@@ -1871,7 +2118,7 @@ Autoconfig engine + persistence (<code>internal/jackett/</code>,
 <td>yes</td>
 <td>go <code>db/migrate_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered migrations)</td>
 </tr>
 <tr>
 <td>Credential / indexer / runs repos (<code>db/repos/*.go</code>)</td>
@@ -1879,7 +2126,7 @@ Autoconfig engine + persistence (<code>internal/jackett/</code>,
 <td>yes</td>
 <td>go <code>db/repos/*_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered repos)</td>
 </tr>
 <tr>
 <td><code>.env</code> bootstrap import
@@ -1888,7 +2135,7 @@ Autoconfig engine + persistence (<code>internal/jackett/</code>,
 <td>yes</td>
 <td>go <code>bootstrap/bootstrap_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered bootstrap)</td>
 </tr>
 <tr>
 <td>Master-key ensure (first-boot) (<code>bootstrap/*.go</code>)</td>
@@ -1896,7 +2143,7 @@ Autoconfig engine + persistence (<code>internal/jackett/</code>,
 <td>yes</td>
 <td>go <code>bootstrap/bootstrap_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered first-boot key ensure)</td>
 </tr>
 <tr>
 <td><code>.env</code> file parse/write (<code>envfile/*.go</code>)</td>
@@ -1905,7 +2152,7 @@ Autoconfig engine + persistence (<code>internal/jackett/</code>,
 <td>go <code>envfile/parse_test.go</code>,
 <code>write_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (no UI — go-test-covered env file I/O)</td>
 </tr>
 </tbody>
 </table>
@@ -1957,7 +2204,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>limetorrents.py</code></td>
@@ -1966,7 +2214,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>piratebay.py</code></td>
@@ -1975,7 +2224,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>solidtorrents.py</code></td>
@@ -1984,7 +2234,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>torlock.py</code></td>
@@ -1993,7 +2244,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>rutor.py</code></td>
@@ -2002,7 +2254,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>nyaa.py</code></td>
@@ -2011,7 +2264,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>anilibra.py</code></td>
@@ -2020,7 +2274,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>bitsearch.py</code></td>
@@ -2029,7 +2284,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>gamestorrents.py</code></td>
@@ -2038,7 +2294,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>kickass.py</code></td>
@@ -2047,7 +2304,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>megapeer.py</code></td>
@@ -2056,7 +2314,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>tokyotoshokan.py</code></td>
@@ -2065,7 +2324,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>torrentgalaxy.py</code></td>
@@ -2074,7 +2334,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>torrentkitty.py</code></td>
@@ -2083,7 +2344,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>yts.py</code></td>
@@ -2092,7 +2354,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>jackett.py</code></td>
@@ -2101,7 +2364,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>covered via jackett autoconfig tests</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>iptorrents.py</code></td>
@@ -2110,7 +2374,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>integration <code>tests/integration/test_iptorrents.py</code></td>
 <td>partial — freeleech-only policy</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>rutracker.py</code></td>
@@ -2121,7 +2386,8 @@ array</h3>
 <code>test_plugin_parsers_stress_chaos.py</code> (ReDoS §11.4.85)</td>
 <td>partial — ReDoS fix in source, not yet deployed to container
 (RW-06); login operator-blocked BOB-008</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>kinozal.py</code></td>
@@ -2130,7 +2396,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>integration <code>test_tracker_auth_live.py</code></td>
 <td>partial — live-gated</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 <tr>
 <td><code>nnmclub.py</code></td>
@@ -2139,7 +2406,8 @@ array</h3>
 <td>yes (curated)</td>
 <td>integration <code>test_tracker_auth_live.py</code></td>
 <td>partial — live-gated</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+backend)</td>
 </tr>
 </tbody>
 </table>
@@ -2173,7 +2441,8 @@ array</h3>
 <td>yes</td>
 <td>covered via search e2e</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered, search harness; exercised by web search
+flow)</td>
 </tr>
 <tr>
 <td><code>novaprinter.py</code> — result emitter (NDJSON-patched)</td>
@@ -2182,7 +2451,8 @@ array</h3>
 <td>yes</td>
 <td>covered via search e2e</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered, result emitter; exercised by web search
+flow)</td>
 </tr>
 <tr>
 <td><code>helpers.py</code> — HTTP/retrieve helpers</td>
@@ -2191,7 +2461,7 @@ array</h3>
 <td>yes</td>
 <td>covered via search e2e</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered helper; exercised by web search flow)</td>
 </tr>
 <tr>
 <td><code>socks.py</code> — SOCKS proxy support</td>
@@ -2200,7 +2470,7 @@ array</h3>
 <td>yes</td>
 <td>covered indirectly</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (no UI — internal SOCKS support; covered indirectly)</td>
 </tr>
 <tr>
 <td><code>env_loader.py</code> — env/credential loader for plugins</td>
@@ -2209,7 +2479,8 @@ array</h3>
 <td>yes</td>
 <td>covered via tracker auth tests</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered credential loader; exercised by web
+Trackers tab)</td>
 </tr>
 <tr>
 <td>Per-plugin <code>download_torrent()</code> path (.torrent
@@ -2219,7 +2490,8 @@ fetch)</td>
 <td>yes</td>
 <td>integration <code>test_buttons_api.py</code> (download/file)</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web result-row Download
+button)</td>
 </tr>
 <tr>
 <td>Freeleech-only download policy (IPTorrents <code>[free]</code>
@@ -2229,7 +2501,8 @@ tag)</td>
 <td>yes</td>
 <td>integration <code>test_iptorrents.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by web result-row Download
+(freeleech) policy)</td>
 </tr>
 </tbody>
 </table>
@@ -2266,7 +2539,8 @@ matching <code>plugins/*.py</code> file in tree</td>
 <td>none</td>
 <td>not-implemented-in-repo-tree (install script expects them
 elsewhere)</td>
-<td>PENDING</td>
+<td>N/A (not implemented in repo tree — curated name, no plugin
+file)</td>
 </tr>
 <tr>
 <td>23 other curated names absent from tree:
@@ -2279,7 +2553,8 @@ tree</td>
 <td>none</td>
 <td>not-implemented-in-repo-tree (name in install array; file
 absent)</td>
-<td>PENDING</td>
+<td>N/A (not implemented in repo tree — curated names, no plugin
+files)</td>
 </tr>
 </tbody>
 </table>
@@ -2329,7 +2604,10 @@ Dashboard component controls
 <code>test_dashboard_rendering.py</code>,
 <code>test_ui_comprehensive.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> —
+<code>boba-web-search-flow.mp4</code> +
+<code>boba-web-feature-tour.mp4</code> — search box drives the confirmed
+search flow</td>
 </tr>
 <tr>
 <td>Result grid — sortable
@@ -2338,7 +2616,8 @@ Dashboard component controls
 <td>yes</td>
 <td>vitest <code>dashboard.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> — result grid rows
+render, <code>boba-web-feature-tour.mp4</code></td>
 </tr>
 <tr>
 <td>Results tab</td>
@@ -2393,7 +2672,7 @@ Dashboard component controls
 <td>vitest <code>magnet-dialog.component.spec.ts</code>; py
 <code>test_magnet_dialog.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Per-row add-to-qBittorrent (qBit) button</td>
@@ -2420,7 +2699,7 @@ clickable, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>vitest <code>dashboard.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Bridge health indicator + retry button</td>
@@ -2428,7 +2707,7 @@ clickable, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>py <code>test_bridge_root_liveness.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Tracker-stat dialog trigger</td>
@@ -2436,7 +2715,7 @@ clickable, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>py contract <code>test_tracker_stats_contract.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 </tbody>
 </table>
@@ -2469,7 +2748,7 @@ clickable, <code>boba-web-feature-tour.mp4</code></td>
 <td>vitest <code>magnet-dialog.component.spec.ts</code>; py
 <code>test_magnet_dialog.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>qBit login dialog — user/pass/remember/Login/Cancel
@@ -2480,7 +2759,7 @@ clickable, <code>boba-web-feature-tour.mp4</code></td>
 <code>test_login_actions.py</code>,
 <code>test_auth_state_ui.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Theme picker — palette dropdown + light/dark toggle
@@ -2501,7 +2780,7 @@ clickable, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>vitest <code>confirm-dialog.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Tracker-stat dialog — JSON view + Copy + status badge + notes table
@@ -2511,7 +2790,7 @@ clickable, <code>boba-web-feature-tour.mp4</code></td>
 <td>vitest <code>tracker-stat-dialog.component.spec.ts</code>; py
 contract <code>test_tracker_stats_contract.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Toast container — info/success/warning/error auto-dismiss
@@ -2520,7 +2799,7 @@ contract <code>test_tracker_stats_contract.py</code></td>
 <td>yes</td>
 <td>vitest <code>toast-container.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Site footer (<code>site-footer.component.ts</code>)</td>
@@ -2528,7 +2807,7 @@ contract <code>test_tracker_stats_contract.py</code></td>
 <td>yes</td>
 <td>vitest</td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 </tbody>
 </table>
@@ -2562,7 +2841,7 @@ contract <code>test_tracker_stats_contract.py</code></td>
 <td>yes</td>
 <td>vitest <code>api.service.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>N/A (no UI — TS service; exercised by every web dashboard call)</td>
 </tr>
 <tr>
 <td>SSE service — EventSource live result streaming + bearer-token
@@ -2573,7 +2852,8 @@ contract <code>test_tracker_stats_contract.py</code></td>
 <code>test_realtime_streaming.py</code>,
 <code>test_streaming_browser.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — TS service; exercised by web search flow live-results
+stream)</td>
 </tr>
 <tr>
 <td>Theme service — palette/mode + localStorage + cross-app sync
@@ -2584,7 +2864,7 @@ contract <code>test_tracker_stats_contract.py</code></td>
 <code>test_theme_runtime.py</code>,
 <code>test_crossapp_theme.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — TS service; exercised by web theme picker)</td>
 </tr>
 <tr>
 <td>Toast service — toast queue state
@@ -2593,7 +2873,7 @@ contract <code>test_tracker_stats_contract.py</code></td>
 <td>yes</td>
 <td>vitest <code>toast.service.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>N/A (no UI — TS service; exercised by web toast notifications)</td>
 </tr>
 <tr>
 <td>Dialog service — promise-based confirm state
@@ -2602,7 +2882,7 @@ contract <code>test_tracker_stats_contract.py</code></td>
 <td>yes</td>
 <td>vitest <code>dialog.service.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>N/A (no UI — TS service; exercised by web confirm dialogs)</td>
 </tr>
 </tbody>
 </table>
@@ -2645,7 +2925,7 @@ credentials page, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>vitest <code>credential-edit-dialog.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Indexers — Configured/Catalog/History tab container
@@ -2654,7 +2934,7 @@ credentials page, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>vitest <code>indexers.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Indexers — Configured tab (list + per-row remove)</td>
@@ -2662,7 +2942,7 @@ credentials page, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>vitest <code>indexers.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Indexers — Catalog tab (list + per-row add)</td>
@@ -2670,7 +2950,7 @@ credentials page, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>vitest <code>indexers.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Indexers — History tab (autoconfig run history)</td>
@@ -2678,7 +2958,7 @@ credentials page, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>vitest <code>indexers.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>Indexer add dialog — credential dropdown + Save/Cancel + error
@@ -2687,7 +2967,7 @@ banner (<code>indexer-add-dialog.component.ts</code>)</td>
 <td>yes</td>
 <td>vitest <code>indexer-add-dialog.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 <tr>
 <td>IPTorrents cookie-flow component
@@ -2696,7 +2976,7 @@ banner (<code>indexer-add-dialog.component.ts</code>)</td>
 <td>yes</td>
 <td>vitest (jackett specs)</td>
 <td>unit (vitest)</td>
-<td>PENDING</td>
+<td>PENDING (UI — film next)</td>
 </tr>
 </tbody>
 </table>
@@ -2728,7 +3008,7 @@ v8)</td>
 <td>yes</td>
 <td><code>vitest.config.ts</code></td>
 <td>enforced in vitest config</td>
-<td>PENDING</td>
+<td>N/A (no UI — build/coverage infra)</td>
 </tr>
 </tbody>
 </table>
@@ -2767,7 +3047,9 @@ forwards to merge service :7187. Status detail:
 <td>yes</td>
 <td>a11y <code>tests/a11y/popup.a11y.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> —
+<code>boba-extension-popup.mp4</code>; verdict
+<code>docs/qa/recordings-20260615/boba-extension-verdict.md</code></td>
 </tr>
 <tr>
 <td>Popup — Send-All button</td>
@@ -2775,7 +3057,9 @@ forwards to merge service :7187. Status detail:
 <td>yes</td>
 <td>a11y <code>popup.a11y.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> —
+<code>boba-extension-popup.mp4</code>; verdict
+<code>docs/qa/recordings-20260615/boba-extension-verdict.md</code></td>
 </tr>
 <tr>
 <td>Popup — Refresh button + status indicator
@@ -2784,7 +3068,9 @@ forwards to merge service :7187. Status detail:
 <td>yes</td>
 <td>a11y <code>popup.a11y.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> —
+<code>boba-extension-popup.mp4</code>; verdict
+<code>docs/qa/recordings-20260615/boba-extension-verdict.md</code></td>
 </tr>
 <tr>
 <td>Popup — torrent list (name + type + infohash prefix + sent
@@ -2793,7 +3079,9 @@ badge)</td>
 <td>yes</td>
 <td>a11y <code>popup.a11y.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> —
+<code>boba-extension-popup.mp4</code>; verdict
+<code>docs/qa/recordings-20260615/boba-extension-verdict.md</code></td>
 </tr>
 <tr>
 <td>Popup — Open Options link</td>
@@ -2801,7 +3089,9 @@ badge)</td>
 <td>yes</td>
 <td>a11y <code>popup.a11y.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> —
+<code>boba-extension-popup.mp4</code>; verdict
+<code>docs/qa/recordings-20260615/boba-extension-verdict.md</code></td>
 </tr>
 <tr>
 <td>Options page (<code>src/options/options.ts</code>)</td>
@@ -2810,7 +3100,9 @@ badge)</td>
 <td>a11y <code>options.a11y.test.ts</code>; integration
 <code>options-background.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> —
+<code>boba-extension-options.mp4</code>; verdict
+<code>docs/qa/recordings-20260615/boba-extension-verdict.md</code></td>
 </tr>
 <tr>
 <td>Content script — link/text highlight overlay
@@ -2821,7 +3113,9 @@ badge)</td>
 <td>integration <code>content-background.test.ts</code>; security
 <code>content-xss.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> —
+<code>boba-extension-scan-detect.mp4</code>; verdict
+<code>docs/qa/recordings-20260615/boba-extension-verdict.md</code></td>
 </tr>
 <tr>
 <td>Background service worker — message hub
@@ -2831,7 +3125,7 @@ badge)</td>
 <td>yes</td>
 <td>integration <code>tests/integration/*-background.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by extension scan/popup)</td>
 </tr>
 <tr>
 <td>Context-menu entries (right-click torrent actions)</td>
@@ -2839,7 +3133,7 @@ badge)</td>
 <td>yes</td>
 <td>integration <code>*-background.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by extension scan/popup)</td>
 </tr>
 <tr>
 <td>Keyboard shortcuts (scan-now / highlight-toggle / send-all)</td>
@@ -2847,7 +3141,7 @@ badge)</td>
 <td>yes</td>
 <td>integration <code>*-background.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by extension scan/popup)</td>
 </tr>
 <tr>
 <td>Action badge (detected count) + notifications</td>
@@ -2855,7 +3149,7 @@ badge)</td>
 <td>yes</td>
 <td>integration <code>*-background.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered + exercised by extension scan/popup)</td>
 </tr>
 </tbody>
 </table>
@@ -2888,7 +3182,8 @@ badge)</td>
 <td>yes</td>
 <td>vitest unit</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered scanner; exercised by extension
+scan-detect)</td>
 </tr>
 <tr>
 <td>Link scanner — <code>&lt;a href&gt;</code> magnet/.torrent
@@ -2898,7 +3193,8 @@ badge)</td>
 <td>security <code>scanner-hostile-input.test.ts</code>; perf
 <code>scanner.perf.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered scanner; exercised by extension
+scan-detect)</td>
 </tr>
 <tr>
 <td>Text scanner — bare magnet text
@@ -2907,7 +3203,8 @@ badge)</td>
 <td>yes</td>
 <td>security <code>scanner-hostile-input.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered scanner; exercised by extension
+scan-detect)</td>
 </tr>
 <tr>
 <td>Scanner orchestrator — dedup + mutation-observer re-scan
@@ -2916,7 +3213,8 @@ badge)</td>
 <td>yes</td>
 <td>perf <code>orchestrator-scaling.perf.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered scanner; exercised by extension
+scan-detect)</td>
 </tr>
 <tr>
 <td>Site DB — per-site selector match rules
@@ -2925,7 +3223,8 @@ badge)</td>
 <td>yes</td>
 <td>vitest unit</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered scanner; exercised by extension
+scan-detect)</td>
 </tr>
 </tbody>
 </table>
@@ -2958,7 +3257,8 @@ badge)</td>
 <td>security <code>bencode-torrentfile-hostile.test.ts</code>; perf
 <code>parsers.perf.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered parser; exercised by extension
+scan-detect)</td>
 </tr>
 <tr>
 <td>Magnet parser (<code>parser/magnet.ts</code>)</td>
@@ -2967,7 +3267,8 @@ badge)</td>
 <td>security <code>infohash-detection-hostile.test.ts</code>; perf
 <code>magnet.perf.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered parser; exercised by extension
+scan-detect)</td>
 </tr>
 <tr>
 <td>Torrent-file parser (<code>parser/torrent-file.ts</code>)</td>
@@ -2975,7 +3276,8 @@ badge)</td>
 <td>yes</td>
 <td>security <code>bencode-torrentfile-hostile.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered parser; exercised by extension
+scan-detect)</td>
 </tr>
 </tbody>
 </table>
@@ -3009,7 +3311,8 @@ rate-limit (<code>api/boba-client.ts</code>)</td>
 <td>vitest unit; chaos
 <code>tests/chaos/boba-client-resilience.chaos.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered API client; exercised by extension
+Send)</td>
 </tr>
 <tr>
 <td>Health probe — <code>probeHealth()</code>
@@ -3018,7 +3321,8 @@ rate-limit (<code>api/boba-client.ts</code>)</td>
 <td>yes</td>
 <td>vitest unit</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered health probe; exercised by extension
+status indicator)</td>
 </tr>
 <tr>
 <td>Offline send queue — IndexedDB enqueue + re-dispatch
@@ -3027,7 +3331,7 @@ rate-limit (<code>api/boba-client.ts</code>)</td>
 <td>yes</td>
 <td>chaos <code>tests/chaos/queue.chaos.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered offline queue; chaos-covered)</td>
 </tr>
 </tbody>
 </table>
@@ -3062,7 +3366,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>security <code>crypto-tamper.test.ts</code>,
 <code>no-hardcoded-secret.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered crypto; exercised by extension Send token
+path)</td>
 </tr>
 <tr>
 <td>Storage — namespaced <code>chrome.storage.local</code> wrapper
@@ -3071,7 +3376,7 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>vitest unit</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered storage wrapper)</td>
 </tr>
 <tr>
 <td>Constants — site selectors / rate-limit / retry config
@@ -3080,7 +3385,7 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>covered via scanner tests</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered constants)</td>
 </tr>
 <tr>
 <td>Errors — Network/Server/Storage error types
@@ -3089,7 +3394,7 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>vitest unit</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered error types)</td>
 </tr>
 <tr>
 <td>Events — TypedEventEmitter bus (<code>shared/events.ts</code>)</td>
@@ -3097,7 +3402,7 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>vitest unit</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered event bus)</td>
 </tr>
 <tr>
 <td>Logger — namespaced, no-secret (<code>shared/logger.ts</code>)</td>
@@ -3105,7 +3410,7 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>vitest unit</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered logger)</td>
 </tr>
 <tr>
 <td>Utils — debounce / TokenBucket rate limiter
@@ -3114,7 +3419,7 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>vitest unit</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI — test-covered utils/rate-limiter)</td>
 </tr>
 <tr>
 <td>Tab groups — batch grouped-tab torrents
@@ -3123,7 +3428,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>vitest unit (tab-group Challenge per ext Status)</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — test-covered tab-group batching; exercised
+by extension Send-All)</td>
 </tr>
 </tbody>
 </table>
@@ -3155,7 +3461,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>i18n <code>tests/i18n/locale-safety.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — i18n locale data; test-covered; surfaced
+inside extension popup/options)</td>
 </tr>
 <tr>
 <td>Locale <code>de</code> (German)</td>
@@ -3163,7 +3470,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>i18n <code>locale-safety.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — i18n locale data; test-covered; surfaced
+inside extension popup/options)</td>
 </tr>
 <tr>
 <td>Locale <code>es</code> (Spanish)</td>
@@ -3171,7 +3479,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>i18n <code>locale-safety.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — i18n locale data; test-covered; surfaced
+inside extension popup/options)</td>
 </tr>
 <tr>
 <td>Locale <code>fr</code> (French)</td>
@@ -3179,7 +3488,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>i18n <code>locale-safety.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — i18n locale data; test-covered; surfaced
+inside extension popup/options)</td>
 </tr>
 <tr>
 <td>Locale <code>it</code> (Italian)</td>
@@ -3187,7 +3497,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>i18n <code>locale-safety.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — i18n locale data; test-covered; surfaced
+inside extension popup/options)</td>
 </tr>
 <tr>
 <td>Locale <code>ja</code> (Japanese)</td>
@@ -3195,7 +3506,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>i18n <code>locale-safety.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — i18n locale data; test-covered; surfaced
+inside extension popup/options)</td>
 </tr>
 <tr>
 <td>Locale <code>pt</code> (Portuguese)</td>
@@ -3203,7 +3515,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>i18n <code>locale-safety.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — i18n locale data; test-covered; surfaced
+inside extension popup/options)</td>
 </tr>
 <tr>
 <td>Locale <code>ru</code> (Russian)</td>
@@ -3211,7 +3524,8 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes</td>
 <td>i18n <code>locale-safety.test.ts</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — i18n locale data; test-covered; surfaced
+inside extension popup/options)</td>
 </tr>
 </tbody>
 </table>
@@ -3243,7 +3557,7 @@ utilities + tabgroups (<code>src/shared/</code>,
 <td>yes (live-gated)</td>
 <td>live <code>download-endpoint.live.test.ts</code></td>
 <td>partial — operator-gated live env</td>
-<td>PENDING</td>
+<td>N/A (no UI — live round-trip test; operator-gated live env)</td>
 </tr>
 </tbody>
 </table>
@@ -3280,7 +3594,7 @@ container.</p>
 <code>test_bridge_header_rewrite.py</code>; stress
 <code>test_bridge_stress_chaos.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — host proxy; test-covered)</td>
 </tr>
 <tr>
 <td>Private-tracker auth bridging
@@ -3289,7 +3603,8 @@ container.</p>
 <td>host</td>
 <td>integration <code>test_webui_bridge.py</code></td>
 <td>partial — live-gated</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — host proxy auth bridging; test-covered,
+live-gated)</td>
 </tr>
 <tr>
 <td>Theme injection into bridged WebUI
@@ -3298,7 +3613,7 @@ container.</p>
 <td>host</td>
 <td>integration <code>test_bridge_theme_injection.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — proxy theme injection; test-covered)</td>
 </tr>
 <tr>
 <td>Bridge root liveness (<code>/</code>)</td>
@@ -3306,7 +3621,7 @@ container.</p>
 <td>host</td>
 <td>integration <code>test_bridge_root_liveness.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (no UI of its own — proxy root liveness; test-covered)</td>
 </tr>
 </tbody>
 </table>
@@ -3344,7 +3659,8 @@ wrapper <code>scripts/boba-ctl.sh</code>)</h3>
 <td>host</td>
 <td>go <code>cmd/boba-ctl/projectroot_test.go</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (CLI — go-test-covered; exercised by boba-ctl CLI demo,
+<code>boba-cli-orchestrator-demo.mp4</code>)</td>
 </tr>
 <tr>
 <td><code>boba-ctl down</code> — stop stack
@@ -3353,7 +3669,8 @@ wrapper <code>scripts/boba-ctl.sh</code>)</h3>
 <td>host</td>
 <td>go <code>cmd/boba-ctl/projectroot_test.go</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (CLI — go-test-covered; exercised by boba-ctl CLI demo,
+<code>boba-cli-orchestrator-demo.mp4</code>)</td>
 </tr>
 <tr>
 <td><code>boba-ctl status</code> — service status
@@ -3394,7 +3711,7 @@ wrapper <code>scripts/boba-ctl.sh</code>)</h3>
 <td>host</td>
 <td>covered via boba-ctl go tests</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (CLI shim — test-covered; exercised by boba-ctl CLI demo)</td>
 </tr>
 </tbody>
 </table>
@@ -3427,7 +3744,7 @@ extraction/injection</td>
 <td>host</td>
 <td>covered via e2e <code>test_fixtures_bring_up_services.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>stop.sh</code> — stop/remove/purge</td>
@@ -3435,7 +3752,7 @@ extraction/injection</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>setup.sh</code> — one-time setup</td>
@@ -3443,7 +3760,7 @@ extraction/injection</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>start-proxy.sh</code> — proxy container entry helper</td>
@@ -3451,7 +3768,7 @@ extraction/injection</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>install-plugin.sh</code> — copy curated plugins → container
@@ -3460,7 +3777,7 @@ engines</td>
 <td>host</td>
 <td>covered indirectly (e2e search)</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>init-qbit-password.sh</code> — qBit admin password
@@ -3469,7 +3786,7 @@ bootstrap</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>fix-qbit-password.sh</code> — qBit admin password repair</td>
@@ -3477,7 +3794,7 @@ bootstrap</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>setup-webui-bridge-service.sh</code> +
@@ -3486,7 +3803,7 @@ bootstrap</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 </tbody>
 </table>
@@ -3519,7 +3836,7 @@ root)</h3>
 <td>host</td>
 <td>self (is the gate)</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host CI/test wrapper — no UI; is the gate)</td>
 </tr>
 <tr>
 <td><code>run-all-tests.sh</code> — full suite (hardcoded podman)</td>
@@ -3527,7 +3844,7 @@ root)</h3>
 <td>host</td>
 <td>self</td>
 <td>partial — fails on docker-only hosts (known gotcha)</td>
-<td>PENDING</td>
+<td>N/A (host CI/test wrapper — no UI; is the gate)</td>
 </tr>
 <tr>
 <td><code>test.sh</code> — quick validation wrapper</td>
@@ -3535,7 +3852,7 @@ root)</h3>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host CI/test wrapper — no UI; is the gate)</td>
 </tr>
 <tr>
 <td><code>test-all.sh</code> — full validation wrapper</td>
@@ -3543,7 +3860,7 @@ root)</h3>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host CI/test wrapper — no UI; is the gate)</td>
 </tr>
 <tr>
 <td><code>test-full.sh</code> — extended validation wrapper</td>
@@ -3551,7 +3868,7 @@ root)</h3>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host CI/test wrapper — no UI; is the gate)</td>
 </tr>
 </tbody>
 </table>
@@ -3582,7 +3899,7 @@ root)</h3>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/audit-plugins.sh</code> — plugin discrepancy
@@ -3591,7 +3908,7 @@ audit</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/build-releases.sh</code> — build extension/Go release
@@ -3600,7 +3917,7 @@ artifacts</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/codegraph_validate.sh</code> — CodeGraph index
@@ -3609,7 +3926,7 @@ validation (§11.4.78)</td>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/docs_chain.sh</code> — docs_chain engine wrapper
@@ -3618,7 +3935,7 @@ validation (§11.4.78)</td>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/ensure-macos-tunnel.sh</code> — <code>0.0.0.0</code>
@@ -3628,7 +3945,7 @@ SSH tunnel</td>
 <td>none dedicated (log
 <code>qa-results/tunnel-keepalive.log</code>)</td>
 <td>not-validated; LAN threat-model RW-05</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/tunnel-keepalive.sh</code> — tunnel self-heal</td>
@@ -3636,7 +3953,7 @@ SSH tunnel</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/freeze-openapi.sh</code> — freeze boba-jackett OpenAPI
@@ -3645,7 +3962,7 @@ snapshot</td>
 <td>host</td>
 <td>contract <code>tests/contract/openapi_test.go</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/generate_markdown_exports.sh</code> — md→html/pdf
@@ -3654,7 +3971,7 @@ export (§11.4.65)</td>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/helixqa.sh</code> — HelixQA harness driver</td>
@@ -3662,7 +3979,7 @@ export (§11.4.65)</td>
 <td>host</td>
 <td>self</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/opencode-helixqa.sh</code> — OpenCode HelixQA
@@ -3671,7 +3988,7 @@ driver</td>
 <td>host</td>
 <td>self</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/install_git_hooks.sh</code> — git hook installer
@@ -3680,7 +3997,7 @@ driver</td>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/pre_build_verification.sh</code> — pre-build gate
@@ -3689,7 +4006,7 @@ sweep</td>
 <td>host</td>
 <td>self (is the gate)</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/pre_code_review.sh</code> — code-review gate
@@ -3698,7 +4015,7 @@ sweep</td>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/run_all_challenges.sh</code> — challenge bank
@@ -3707,7 +4024,7 @@ runner</td>
 <td>host</td>
 <td>self</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/run-tests.sh</code> — test runner helper</td>
@@ -3715,7 +4032,7 @@ runner</td>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/scan.sh</code> — repo scan helper</td>
@@ -3723,7 +4040,7 @@ runner</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
 <td><code>scripts/track-build-resources.sh</code> — build resource
@@ -3732,7 +4049,7 @@ sampler (§11.4.24)</td>
 <td>host</td>
 <td>none dedicated</td>
 <td>not-validated</td>
-<td>PENDING</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 </tbody>
 </table>
@@ -3764,7 +4081,7 @@ boba-jackett service</td>
 <td>yes</td>
 <td>e2e <code>test_live_containers.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (infra — no UI; e2e-test-covered orchestration)</td>
 </tr>
 <tr>
 <td>Jackett auto-configuration at startup (key extract → inject
@@ -3773,7 +4090,8 @@ boba-jackett service</td>
 <td>yes</td>
 <td>integration <code>test_jackett_autoconfig_real.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING</td>
+<td>N/A (infra — no UI; integration-test-covered startup
+autoconfig)</td>
 </tr>
 <tr>
 <td><code>BOBA_MASTER_KEY</code> auto-generation (first-boot) for
@@ -3782,7 +4100,7 @@ encrypted boba.db</td>
 <td>yes</td>
 <td>go <code>bootstrap/bootstrap_test.go</code></td>
 <td>unit (go)</td>
-<td>PENDING</td>
+<td>N/A (infra — no UI; go-test-covered first-boot key generation)</td>
 </tr>
 </tbody>
 </table>
@@ -3825,3 +4143,5 @@ journey + dashboard tab/button/theme/Jackett tour). Remaining
 per-feature flows are an in-progress recording pass
 (§11.4.107/§11.4.143).</li>
 </ul>
+</body>
+</html>

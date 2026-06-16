@@ -1,7 +1,7 @@
 # Boba — Feature Status Summary
 
-**Revision:** 3
-**Last modified:** 2026-06-16T11:30:00Z
+**Revision:** 5
+**Last modified:** 2026-06-16T12:15:00Z
 **Scope:** Two-audience summary companion of `docs/features/Status.md` (§11.4.56). Page 1 = product/operator audience; Page 2 = software-engineer audience.
 
 > Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.56 / §11.4.86). Mirrors `Status.md` — when that file changes, regenerate this one (see `.docs_chain/contexts/features-status.yaml`).
@@ -31,7 +31,7 @@
 - Solve the RuTracker CAPTCHA once when private RuTracker search is needed (BOB-008).
 - Decide whether the Go profile parity is a release goal (RW-09).
 
-**Honest note on testing depth:** every feature in this catalog is backed by a real source file and, in nearly all cases, an automated test. **A few headline flows now have real screen recordings** — the boba-ctl CLI (status/health/list) and the web dashboard search journey, tab navigation, qBit/Download buttons, theme, and Jackett credentials page (`docs/qa/recordings-20260615/`). The remaining per-feature visual confirmations are an in-progress recording pass.
+**Honest note on testing depth:** every feature in this catalog is backed by a real source file and, in nearly all cases, an automated test. Each of the 288 rows now carries a DEFINITIVE video status (no row left vague): **25 are VIDEO-CONFIRMED** — shown on-screen in a committed recording (the boba-ctl CLI status/health/list, the web dashboard search journey + tab navigation + qBit/Download buttons + theme + Jackett credentials page, and the BobaLink extension scan/popup/options) (`docs/qa/recordings-20260615/`); **246 are N/A (no UI)** — back-end endpoints, handlers, parsers, services and scripts that have no screen of their own and are confirmed by their tests plus the UI/CLI journey that drives them; **17 are PENDING (UI — film next)** — user-visible dialogs/controls (magnet dialog, qBit login dialog, confirm/tracker-stat dialogs, the Jackett indexer dialogs/tabs) not yet *individually* filmed. The 17 PENDING-UI items are the remaining visual-confirmation pass.
 
 ---
 
@@ -64,7 +64,7 @@
 **Open work cross-reference:** `docs/REMAINING_WORK_PLAN.md` RW-01..RW-21 + BOB-008 (operator-blocked CAPTCHA).
 
 **Engineering follow-ups for this doc:**
-- Capture per-feature `video_display`/UI screen recordings per §11.4.107/§11.4.143 (most of the 288 rows are still `PENDING`; headline CLI + web flows are now VIDEO-CONFIRMED) — the largest remaining evidence gap.
+- The Video column is now DEFINITIVE for all 288 rows (25 VIDEO-CONFIRMED / 17 PENDING-UI / 246 N/A-no-UI). Remaining UI evidence gap = the 17 `PENDING (UI — film next)` rows (magnet/qBit-login/confirm/tracker-stat dialogs + Jackett indexer dialogs/tabs); film those per §11.4.107/§11.4.143 to close it. The 246 N/A rows are back-end/script units with no screen of their own (test-covered + exercised by the confirmed UI/CLI journeys) — not a recording gap.
 - Confirm whether a Prometheus `/metrics` endpoint exists or stats are in-process only (`GET /api/v1/stats`) — no `Counter()/Histogram()/Gauge()` definitions found in `download-proxy/src`.
 - Resolve the curated-name-vs-missing-file discrepancy for the ~23 plugins in the 44-entry `install-plugin.sh` array with no `plugins/*.py` (incl. `torrentproject`/`torrentscsv`).
 - Wire the Go `DownloadHandler`/`ActiveDownloadsHandler`/`FetchTorrent` stubs + scheduler driver loop (RW-10/RW-11) before the Go profile can claim parity.
