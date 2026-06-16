@@ -1,0 +1,384 @@
+<h1 id="boba-release-readiness-assessment-rw-18..21">Boba —
+Release-Readiness Assessment (RW-18..21)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T10:30:00Z <strong>Status:</strong> assessment only —
+<strong>NO tag created</strong> (per task constraint +
+§11.4.40/§11.4.113) <strong>Baseline:</strong> HEAD <code>8b9ef90</code>
+on <code>main</code>. Assembled by READ-ONLY investigation +
+this-session live test runs. Anti-bluff (§11.4.6): every claim cites a
+captured log, a live test run from this session, a commit, or a file.
+Hypotheses are labelled. <strong>Scope:</strong> is the proxy /
+merge-service product (the shipped default Python path) + its client
+apps tag-ready, and what concretely blocks a vN.0.0 tag.</p>
+<hr />
+<h2 id="headline-verdict">1. Headline verdict</h2>
+<p><strong>NOT YET tag-ready for a clean vN.0.0</strong>, but very
+close. The test suites are GREEN, the distribution build exists for the
+client apps, and the default Python product is debt-free per the plan.
+The blockers are: (a) the P0/P1 <strong>security</strong> items
+(RW-01..05) are still OPEN in the plan and gate any release that exposes
+mutating endpoints on the LAN; (b) two
+<strong>OPERATOR-DECISION</strong> items (RW-05 LAN threat model, RW-09
+Go-parity scope) must be resolved; (c) <strong>release-packaging
+gaps</strong> — <code>releases/0.1.0</code> ships the extension +
+frontend but <strong>not</strong> the download-proxy/merge-service
+artefact, and there is <strong>no top-level proxy/merge v1.0.0 readiness
+ledger</strong> (RW-20); (d) a full §11.4.40 retest must be run on a
+clean baseline immediately before the tag.</p>
+<p>Everything below is the evidence.</p>
+<hr />
+<h2
+id="test-suite-state-verified-live-this-session-counts-not-assumed">2.
+Test-suite state (verified live this session — counts NOT assumed)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Claimed</th>
+<th><strong>Verified this session</strong></th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python unit</td>
+<td>4209</td>
+<td><strong>4209 passed, 0 failed</strong></td>
+<td><code>qa-results/python-unit-resweep2.log</code> (16 Jun 01:59) —
+<code>4209 passed, 3 warnings in 434.11s</code>. The earlier
+<code>python-unit-resweep.log</code> (01:45) had 2 failures; commit
+<code>b7eb476</code> “fix(tests): close 2 residual full-suite failures
+(coverage + SSE flake)” fixed them, and resweep2 is the GREEN
+re-run.</td>
+</tr>
+<tr>
+<td>Go <code>-race</code></td>
+<td>13/13</td>
+<td><strong>13 packages OK with <code>-race</code></strong></td>
+<td>Ran
+<code>GOMAXPROCS=2 nice -n 19 go test -race -count=1 ./...</code> this
+session — all 13 <code>internal/*</code> packages <code>ok</code>; 3
+<code>cmd/*</code> have no test files (entrypoints).</td>
+</tr>
+<tr>
+<td>Frontend (Vitest)</td>
+<td>371</td>
+<td><strong>371 passed (30 files)</strong></td>
+<td>Ran <code>npx vitest run</code> in <code>frontend/</code> this
+session —
+<code>Test Files 30 passed (30) / Tests 371 passed (371)</code>.</td>
+</tr>
+<tr>
+<td>Extension (Vitest)</td>
+<td>816</td>
+<td><strong>814 passed (68 files)</strong></td>
+<td><code>qa-results/ci-ext_wave15_20260613.log</code> —
+<code>Test Files 68 passed (68) / Tests 814 passed (814) / CI-EXT: PASS</code>.
+(The “816” / “799” figures in older docs are superseded; 814 is the
+latest wave.)</td>
+</tr>
+</tbody>
+</table>
+<p>The 3 Python warnings are benign (a Starlette <code>httpx</code>
+deprecation + a <code>_bounded</code> coroutine resource-warning in two
+deep-coverage tests — not failures). <strong>All four suites are
+GREEN.</strong></p>
+<hr />
+<h2 id="rw-nn-status-done-vs-open-with-evidence">3. RW-NN status (DONE
+vs OPEN, with evidence)</h2>
+<h3 id="phase-1-security-p0p1-the-real-release-gate">PHASE 1 — Security
+(P0/P1) — the real release gate</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+<th>Evidence / note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RW-01</strong> hooks auth + sandbox</td>
+<td><strong>OPEN</strong></td>
+<td>Plan §RW-01; no commit found closing it. P0.</td>
+</tr>
+<tr>
+<td><strong>RW-02</strong> default-open write surface</td>
+<td><strong>OPEN</strong> (gated on RW-05)</td>
+<td>Plan §RW-02. P0.</td>
+</tr>
+<tr>
+<td><strong>RW-03</strong> SSRF block</td>
+<td><strong>PARTIAL</strong></td>
+<td>A guard exists — <code>routes.py:1254</code> logs “Refusing
+SSRF-unsafe download URL (non-public target); skipping”. Needs
+verification it covers BOTH <code>/download/file</code> and
+<code>/download</code> non-tracker paths + a RED→GREEN regression guard
+per the acceptance. P0.</td>
+</tr>
+<tr>
+<td><strong>RW-04</strong> auth-consistency + Go CORS + Jackett</td>
+<td><strong>PARTIAL</strong></td>
+<td>Commit <code>37a8c45</code> “fix(security): P0 hardening — SSRF
+block, hook sandbox, consistent auth, Go CORS” touches these surfaces;
+needs per-item verification against the acceptance criteria. P1.</td>
+</tr>
+<tr>
+<td><strong>RW-05</strong> LAN threat model</td>
+<td><strong>OPEN — OPERATOR-DECISION</strong></td>
+<td>Bind tunnel <code>127.0.0.1</code> vs keep
+<code>0.0.0.0</code>+auth. Gates RW-02 aggressiveness. P1.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Security is the dominant blocker.</strong> Commits
+<code>37a8c45</code> and <code>1108fc1</code> did P0 hardening, but the
+plan still lists RW-01..05 as the open exposure set, and no RED→GREEN
+regression-guard evidence per their acceptance criteria was found this
+session. Until each is verified closed (or the LAN surface is removed
+via RW-05 = bind loopback), a release that exposes the mutating
+endpoints is not honestly tag-ready.</p>
+</blockquote>
+<h3 id="phase-2-functional-correctness-deployment">PHASE 2 — Functional
+correctness + deployment</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RW-06</strong> deploy rutracker ReDoS fix</td>
+<td><strong>DONE (verified)</strong></td>
+<td>The installed engine
+<code>config/qBittorrent/nova3/engines/rutracker.py</code> contains the
+<code>{0,512}</code> bound (verified this session, matches
+<code>plugins/rutracker.py</code>). §11.4.108 source==artifact signature
+present.</td>
+</tr>
+<tr>
+<td><strong>RW-07</strong> nnmclub <code>/auth/.../status</code>
+drift</td>
+<td><strong>OPEN/UNVERIFIED</strong></td>
+<td>Plan says route 404s on the container; not re-probed this session
+(tunnel intermittently down per
+<code>qa-results/tunnel-keepalive-testsession.log</code>). Likely
+resolved with the RW-06 restart — needs a live 200 probe to
+confirm.</td>
+</tr>
+<tr>
+<td><strong>RW-08</strong> search latency / sync reset</td>
+<td><strong>DIAGNOSED (this session)</strong></td>
+<td>Full root-cause + fix proposal in
+<code>docs/qa/rw08-latency-diagnosis-20260616.md</code>. Not yet fixed
+(P2).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="phase-3-go-parity">PHASE 3 — Go parity</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RW-09..13</strong> Go backend parity</td>
+<td><strong>OPEN — OPERATOR-DECISION (RW-09)</strong></td>
+<td><code>docs/migration/PARITY_GAPS.md</code>: 6 ported / 4 partial / 8
+missing. Go path is opt-in (<code>--profile go</code>) and NOT the
+shipped product. Deferred-by-design unless RW-09 = yes. Does NOT block a
+Python-path release.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="phase-4-coverage">PHASE 4 — Coverage</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RW-14..17</strong> stress/chaos gaps</td>
+<td><strong>PARTIAL/IN PROGRESS</strong></td>
+<td><code>qa-results/</code> has <code>pipeline_stress/</code>,
+<code>pipeline_chaos/</code>, <code>search_stress/</code>,
+<code>search_orch_stress/</code>, <code>plugin_stress/</code>,
+<code>enricher_stress/</code> directories — substantial §11.4.85
+coverage landed. Remaining surfaces (tracker-fetch/cookie-auth,
+scheduler/hooks/SSE-broker, boba-jackett autoconfig) per plan; RW-17
+gate-enforcement audit not confirmed this session. P2.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="phase-5-docs-release-housekeeping">PHASE 5 — Docs / release /
+housekeeping</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Status</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RW-18</strong> export
+<code>courses/0{1..4}-*/{README,script}.md</code></td>
+<td><strong>OPEN</strong></td>
+<td>The 8 source <code>.md</code> exist
+(<code>courses/0{1..4}-*/</code>); <strong>no
+<code>.html</code>/<code>.pdf</code> siblings present</strong> →
+§11.4.65 export still pending. LOW.</td>
+</tr>
+<tr>
+<td><strong>RW-19</strong> stale extension RELEASE_READINESS locale
+claim</td>
+<td><strong>DONE</strong></td>
+<td><code>docs/browser_extension/RELEASE_READINESS.md</code> now states
+“8 committed + built” and §8 explicitly notes the 4→8 claim is
+FIXED.</td>
+</tr>
+<tr>
+<td><strong>RW-20</strong> top-level proxy/merge v1.0.0 readiness
+ledger</td>
+<td><strong>OPEN</strong></td>
+<td>Only the extension has a readiness report; <code>docs/</code> has
+<code>RELEASE_TORRENT_UPLOAD_FIX.*</code> but <strong>no
+proxy/merge-service v1.0.0 ledger</strong>. Must exist before promoting
+<code>v1.0.0-rc</code> → <code>1.0.0</code>. LOW but a named pre-tag
+gate.</td>
+</tr>
+<tr>
+<td><strong>RW-21</strong> contract tests green under 3.12</td>
+<td><strong>LIKELY GREEN</strong></td>
+<td>Contract tests are part of the 4209-green Python suite (run under
+the repo <code>.venv</code>, py3.13). New magnet/download endpoints are
+in the frozen <code>docs/api/openapi.json</code> per the plan; confirm
+under the intended interpreter. INFO.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="distribution-build-releases0.1.0">4. Distribution build
+(<code>releases/0.1.0</code>)</h2>
+<ul>
+<li><strong>Extension (BobaLink):</strong> built —
+<code>releases/0.1.0/extension/{debug,release}/</code> contains chrome +
+firefox + sources zips (<code>bobalink-1.0.0-*.zip</code>),
+<code>SHA256SUMS</code>, <code>BUILD_INFO.json</code>,
+<code>build.log</code>. Tagged <code>v1.0.0-rc</code> (2026-06-11).</li>
+<li><strong>Frontend (Angular):</strong> built —
+<code>releases/0.1.0/frontend/{debug,release}/frontend-b7eb4761fd22.tar.gz</code>
+<ul>
+<li><code>SHA256SUMS</code> + <code>BUILD_INFO.json</code>.</li>
+</ul></li>
+<li><strong>download-proxy / merge-service:</strong> <strong>NOT in
+<code>releases/0.1.0</code>.</strong> The
+<code>releases/README.md</code> layout <em>documents</em> a
+<code>download-proxy/{source,container-image}/</code> slot, but no such
+artefact was produced for 0.1.0. <strong>Gap:</strong> the core shipped
+product has no distribution artefact in the release tree.</li>
+<li><code>RELEASE_NOTES.md</code> (0.1.0): “Targets requested:
+extension; Builds completed: 1” — confirms only the extension was built
+for this release pass.</li>
+</ul>
+<p>So “both apps” (extension + frontend) are built; the <strong>server
+product is not packaged</strong>.</p>
+<hr />
+<h2 id="docsfeatures-status-288-features">5. docs/features Status (288
+features)</h2>
+<p><code>docs/features/Status.md</code> (Rev 6): <strong>288 feature
+rows</strong> (one per real unit). Per-row Video tally: <strong>28
+VIDEO-CONFIRMED</strong>, <strong>14 PENDING (UI — film next)</strong>,
+<strong>246 N/A (no UI — test-covered)</strong>. Honest classification
+per §11.4.143/§11.4.6 — a row is VIDEO-CONFIRMED only when a committed
+recording shows it. The 14 PENDING are user-visible controls not yet
+<em>individually</em> filmed (not failures); the 246 N/A are non-UI
+units confirmed by their cited tests + the journey that drives them.</p>
+<hr />
+<h2 id="concrete-blockers-to-a-vn.0.0-tag-honest-prioritized">6.
+Concrete blockers to a vN.0.0 tag (honest, prioritized)</h2>
+<ol type="1">
+<li><strong>[P0 — security] RW-01, RW-02, RW-03</strong> — close +
+verify each with a RED→GREEN regression guard (§11.4.135), redeployed
+and §11.4.108-verified on the container. These are the real exposure on
+a <code>0.0.0.0</code> LAN tunnel.</li>
+<li><strong>[P1 — decision] RW-05 LAN threat model</strong> — operator
+must choose loopback vs LAN+auth; it sets how aggressive RW-02 must be
+(could close most surface at once).</li>
+<li><strong>[P1 — verify] RW-04, RW-07</strong> — confirm the partial
+security fixes (<code>37a8c45</code>) meet each acceptance; live-probe
+the nnmclub status route returns 200.</li>
+<li><strong>[P1/P5 — packaging] RW-20 + download-proxy artefact</strong>
+— produce the proxy/merge v1.0.0 readiness ledger AND a download-proxy
+distribution artefact in <code>releases/</code>.</li>
+<li><strong>[P2 — robustness] RW-08</strong> — fix the sync-over-tunnel
+reset (heartbeat/SSE) + tune the fan-out deadline; diagnosis ready in
+<code>docs/qa/rw08-latency-diagnosis-20260616.md</code>.</li>
+<li><strong>[P5 — docs] RW-18</strong> — export the 8 course
+<code>.md</code> files to <code>.html</code>/<code>.pdf</code>
+(§11.4.65).</li>
+<li><strong>[decision] RW-09</strong> — declare Go parity in-scope or
+deferred-by-design.</li>
+<li><strong>[gate] §11.4.40 full retest</strong> on a clean baseline
+immediately before the tag — the suites are green now but the
+authoritative pre-tag retest has not been run post-all-fixes.</li>
+</ol>
+<p><strong>Not blockers:</strong> Go-path parity (opt-in, not shipped);
+the 14 PENDING-UI feature rows (filmed-next, not broken); BOB-008
+RuTracker CAPTCHA (irreducible human step, surrounding mechanism
+tested).</p>
+<hr />
+<h2 id="one-line-readiness-statement">7. One-line readiness
+statement</h2>
+<p>The four test suites are GREEN (Python 4209, Go 13/13
+<code>-race</code>, frontend 371, extension 814) and the client apps are
+built, but the project is <strong>not yet tag-ready</strong>: the P0
+security items (RW-01/02/03) remain open, two operator decisions
+(RW-05/RW-09) are unresolved, the server product is unpackaged with no
+v1.0.0 ledger (RW-20), and the §11.4.40 pre-tag full retest still has to
+run on a clean baseline. <strong>Do NOT tag until those
+close.</strong></p>

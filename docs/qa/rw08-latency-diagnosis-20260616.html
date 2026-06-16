@@ -1,0 +1,169 @@
+<h1
+id="rw-08-search-latency-searchsync-reset-over-tunnel-read-only-diagnosis">RW-08
+— Search-latency / <code>/search/sync</code> reset over tunnel —
+READ-ONLY diagnosis</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T10:00:00Z <strong>Status:</strong> diagnosis only — NO code
+edits (another agent owns <code>download-proxy/</code>)
+<strong>Author:</strong> background diagnostic subagent. Anti-bluff
+(§11.4.6): every claim cites a real file:line, the running tunnel log,
+or the source. Hypotheses are labelled as hypotheses; the confirmed
+facts are stated as facts. <strong>Scope:</strong> characterize RW-08
+(<code>docs/REMAINING_WORK_PLAN.md</code> §RW-08) and propose a fix
+direction for the main agent to implement later.</p>
+<hr />
+<h2 id="the-symptom-from-the-plan-live-evidence">1. The symptom (from
+the plan + live evidence)</h2>
+<ul>
+<li>Broad <code>ubuntu</code> search ≈ <strong>67 s</strong>
+in-container wall-clock (plan RW-08).</li>
+<li>Over the SSH tunnel, <code>POST /search/sync</code>
+<strong>resets</strong> (<code>ConnectionResetError</code>) at ~13–40 s;
+browser console shows <code>ERR_INCOMPLETE_CHUNKED_ENCODING</code>.</li>
+<li>The SSE path (<code>POST /search</code> +
+<code>GET /search/stream/{id}</code>) <strong>survives</strong> and the
+dashboard uses it; scripted/<code>curl</code> callers of
+<code>/search/sync</code> hang/reset.</li>
+</ul>
+<hr />
+<h2 id="root-cause-there-are-two-distinct-independent-problems">2. Root
+cause — there are TWO distinct, independent problems</h2>
+<h3
+id="a.-the-reset-is-an-ssh-tunnel-idle-timeout-artifact-not-a-server-fault-fact">2a.
+The reset is an SSH-tunnel idle-timeout artifact, NOT a server fault
+(FACT)</h3>
+<p><code>/search/sync</code>
+(<code>download-proxy/src/api/routes.py:377-406</code>) is <strong>fully
+blocking</strong>: it does
+<code>metadata = await orch.search(...)</code> (line 400), and
+<code>SearchOrchestrator.search</code> (<code>search.py:903-929</code>)
+calls <code>start_search</code> +
+<code>await self._run_search(...)</code> and only returns after the
+<strong>entire</strong> 29-tracker fan-out + dedup completes. FastAPI
+buffers the whole <code>SearchResponse</code> and sends the first bytes
+<strong>only at the end</strong>. So the HTTP response sends
+<strong>zero bytes for the full ~67 s</strong>.</p>
+<p>An SSH <code>-L</code> tunnel (and any intermediate proxy/NAT) drops
+a connection that is idle — no bytes in either direction — past its
+keepalive window. With nothing flowing for tens of seconds the tunnel
+tears the socket down; the client sees <code>ConnectionReset</code> /
+<code>ERR_INCOMPLETE_CHUNKED_ENCODING</code> while the <strong>server
+side still returns 200</strong> once it finishes (it just has no socket
+left to write to). This is corroborated by the live keepalive supervisor
+log <code>qa-results/tunnel-keepalive-testsession.log</code>, which
+shows the tunnel itself repeatedly going “health check FAILED on
+127.0.0.1:7187 — re-establishing” and recovering — i.e. the transport
+layer is intermittently dropping, independent of any single request.
+<strong>Conclusion: the reset is transport-layer (idle tunnel), not an
+application bug. The previously-established “console
+<code>ERR_INCOMPLETE_CHUNKED_ENCODING</code> is an SSH-tunnel artifact,
+server-side 200” finding holds.</strong></p>
+<p>Why the SSE path survives: <code>GET /search/stream/{id}</code>
+streams frames as trackers complete AND emits <code>: keepalive</code>
+comment lines (the same keepalive idiom is visible at
+<code>routes.py:99</code> for the theme SSE stream). Continuous bytes
+keep the tunnel’s idle timer from firing — so the SSE socket never goes
+quiet long enough to be reset. This is the structural reason the
+dashboard (SSE) works while <code>/search/sync</code> (one big blocking
+response) resets.</p>
+<h3
+id="b.-the-67-s-wall-clock-is-the-29-provider-fan-out-cost-fact-arithmetic">2b.
+The ~67 s wall-clock is the 29-provider fan-out cost (FACT +
+arithmetic)</h3>
+<p>Default fan-out is <strong>29 providers</strong>: 24 live public
+trackers (<code>PUBLIC_TRACKERS</code> = 38, minus
+<code>DEAD_PUBLIC_TRACKERS</code> = 14, default-excluded) + up to 4
+private + Jackett (<code>_get_enabled_trackers</code>,
+<code>search.py:977-998</code>). They run under a <strong>concurrency
+cap of 5</strong> (<code>MAX_CONCURRENT_TRACKERS</code>,
+<code>search.py:611</code>) with a <strong>per-public-tracker deadline
+of 60 s</strong> (<code>PUBLIC_TRACKER_DEADLINE_SECONDS</code>,
+<code>search.py:1027,1082</code>, clamped 5–120).</p>
+<p>So worst-case wall-clock ≈ ceil(29 / 5) ≈ <strong>6 waves</strong>,
+each bounded by the slowest tracker in the wave (≤ 60 s + 10 s outer
+<code>asyncio.wait_for</code> margin at
+<code>search.py:1031-1034</code>). A single slow/borderline-alive
+tracker in each wave dominates that wave. The observed ~67 s is
+consistent with a handful of slow-but-not-dead public trackers each
+chewing toward the deadline across several waves. The dead-tracker
+exclusion already removed the 14 worst offenders; the remaining cost is
+the long tail of live-but-slow trackers running 6 waves deep at a 60 s
+ceiling.</p>
+<hr />
+<h2 id="what-is-not-the-cause-ruled-out">3. What is NOT the cause (ruled
+out)</h2>
+<ul>
+<li><strong>Not</strong> an SSRF/auth/parse bug — the fan-out completes
+and returns 200 server-side.</li>
+<li><strong>Not</strong> the rutracker ReDoS (RW-06) — that fix is
+deployed (the installed engine
+<code>config/qBittorrent/nova3/engines/rutracker.py</code> contains the
+<code>{0,512}</code> bound; verified this session) and its parse is
+sub-second; it is not the latency driver.</li>
+<li><strong>Not</strong> unbounded fan-out — the semaphore (5) and the
+per-search cap (<code>MAX_CONCURRENT_SEARCHES</code>,
+<code>search.py:623</code>) are in place; the issue is total wall-clock
+under a 60 s per-tracker ceiling × 6 waves, plus the blocking-response
+transport interaction.</li>
+</ul>
+<hr />
+<h2
+id="proposed-fix-direction-for-the-main-agent-not-implemented-here">4.
+Proposed fix direction (for the main agent — NOT implemented here)</h2>
+<p>Two independent levers; do BOTH for the cleanest result.</p>
+<h3
+id="fix-a-keep-the-searchsync-socket-warm-addresses-the-reset-highest-value">Fix
+A — keep the <code>/search/sync</code> socket warm (addresses the reset;
+highest value)</h3>
+<p>Make <code>/search/sync</code> stop being a single silent blocking
+response. Lowest-risk option: emit a periodic heartbeat so the tunnel
+never sees an idle socket. Either: - (preferred) keep
+<code>/search/sync</code> returning the final
+<code>SearchResponse</code> JSON, but stream it as a
+<code>StreamingResponse</code> that flushes a whitespace/newline
+(<code>" "</code>/<code>"\n"</code>) heartbeat every ~10 s while the
+fan-out runs, then the JSON body at the end — mirrors the
+<code>: keepalive</code> idiom already used for the theme SSE at
+<code>routes.py:99</code>; OR - <strong>steer non-browser callers to the
+streaming endpoint</strong> — document <code>POST /search</code> +
+<code>GET /search/stream/{id}</code> as the canonical path for
+slow/tunnelled clients, and treat <code>/search/sync</code> as a
+localhost/test convenience only. Note: the operator’s own
+<code>tunnel-keepalive</code> supervisor only keeps the <em>tunnel
+process</em> alive; it does not keep an <em>individual idle request</em>
+from being reset — so a per-request heartbeat (or SSE) is still
+required.</p>
+<h3 id="fix-b-cut-the-wall-clock-addresses-the-67-s">Fix B — cut the
+wall-clock (addresses the 67 s)</h3>
+<ul>
+<li>Lower the default <code>PUBLIC_TRACKER_DEADLINE_SECONDS</code>
+(e.g. 60 → 20–25) so a slow tracker can’t dominate a wave; the dashboard
+already shows a <code>deadline_hit</code> chip
+(<code>search.py:1187</code>) so truncation stays honest/visible.</li>
+<li>Optionally raise <code>MAX_CONCURRENT_TRACKERS</code> (5 → 8–10) to
+cut the wave count from ~6 to ~3–4 — bounded by §12.6 memory budget
+(each public tracker is a subprocess) and the existing
+event-loop-starvation guardrails noted at
+<code>search.py:617-623</code>.</li>
+<li>Capture before/after timing of a broad search
+(e.g. <code>ubuntu</code>) per RW-08 acceptance.</li>
+</ul>
+<h3 id="fix-c-regression-guard-11.4.85">Fix C — regression guard
+(§11.4.85)</h3>
+<p>Add a chaos test for sync-over-slow-link: simulate a server that
+produces no bytes for &gt; tunnel-idle-window and assert the heartbeat
+path keeps the socket alive (and/or assert the SSE path is unaffected).
+Add a deterministic latency test asserting the wave-count / deadline
+math so a future deadline-default regression is caught.</p>
+<hr />
+<h2 id="root-cause-hypothesis-one-line">5. Root-cause hypothesis (one
+line)</h2>
+<p>The reset is an <strong>SSH-tunnel idle-timeout</strong> on
+<code>/search/sync</code>’s fully-blocking, zero-bytes-until-done
+response (server returns 200; the tunnel drops the idle socket
+mid-flight); the ~67 s wall-clock is the <strong>29-provider
+fan-out</strong> at 5-concurrent × 60 s-per-tracker (~6 waves). Fix =
+heartbeat/stream the sync path (or steer callers to SSE)
+<strong>and</strong> tune the per-tracker deadline / concurrency. The
+SSE path is structurally robust because its continuous frames +
+<code>: keepalive</code> keep the tunnel warm.</p>

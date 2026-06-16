@@ -1,0 +1,217 @@
+<h1 id="nnmclub-login-failure-root-cause-diagnosis">NNMClub Login
+Failure — Root-Cause Diagnosis</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T00:00:00Z <strong>Run-id:</strong>
+nnmclub-login-diagnosis-20260616 <strong>Authority:</strong> §11.4.6
+(no-guessing, FACT-grade), §11.4.114 (working-example comparison),
+§11.4.123 (rock-solid proof) <strong>Scope:</strong> READ-ONLY
+investigation. No production edits, no commit. No credential values
+captured/printed.</p>
+<hr />
+<h2 id="verdict-fact-grade">1. Verdict (FACT-grade)</h2>
+<p><strong>Root cause: nnmclub.to gates <code>login.php</code> behind a
+Cloudflare Turnstile JS challenge.</strong> The Boba password-login POST
+(<code>_nnmclub_login</code> in
+<code>download-proxy/src/merge_service/search.py</code>, and the plugin
+fallback <code>_password_login</code> in
+<code>plugins/nnmclub.py</code>) sends only <code>username</code> /
+<code>password</code> / <code>login</code>. The server requires a valid
+<code>cf-turnstile-response</code> token (produced by solving the JS
+widget in a real browser) before it will issue the
+<code>phpbb2mysql_4_sid</code> session cookie. Without it the POST
+returns <strong>HTTP 200 with NO <code>Set-Cookie</code></strong> → no
+session → <code>has_session=False</code>.</p>
+<p><strong>Classification: (a) CAPTCHA → operator must supply
+browser-exported <code>NNMCLUB_COOKIES</code>.</strong> This is NOT a
+code bug in the POST body, NOT a UA/Cloudflare-block on requests (plain
+<code>curl</code> reaches the form fine), and NOT (provably) an
+invalid-credentials problem — credentials never get a chance to be
+evaluated because the Turnstile gate fails first. The dead-domain fix
+(f6b2761, nnm-club.me→nnmclub.to) correctly restored reachability; the
+remaining failure is the Turnstile login gate.</p>
+<hr />
+<h2
+id="captured-evidence-from-nezha.local-direct-internet-no-mac-ssh-tunnel">2.
+Captured evidence (from nezha.local — direct internet, no Mac SSH
+tunnel)</h2>
+<p>All probes run as
+<code>ssh milosvasic@nezha.local 'curl ...'</code>.</p>
+<h3 id="a.-login-form-requires-a-js-captcha-hidden-fields">2a. Login
+form requires a JS CAPTCHA + hidden fields</h3>
+<p><code>GET https://nnmclub.to/forum/login.php</code>:</p>
+<pre><code>&lt;form action=&quot;login.php&quot; method=&quot;post&quot; target=&quot;_top&quot; id=&quot;loginFrm&quot;&gt;
+&lt;input name=&quot;f&quot;        type=&quot;hidden&quot; value=&quot;-1&quot;&gt;
+&lt;input               type=&quot;hidden&quot; name=&quot;redirect&quot; value=&quot;&quot; /&gt;
+&lt;input               type=&quot;hidden&quot; name=&quot;code&quot;     value=&quot;5cab14e06b8e112b&quot; /&gt;
+... CAPTCHA ...
+&lt;noscript&gt;&lt;b&gt;Для отображение CAPTCHA, пожалуйста, включите JavaScript&lt;/b&gt;&lt;/noscript&gt;</code></pre>
+<p>CAPTCHA widget tokens present in the page:</p>
+<pre><code>cf-turnstile
+turnstile
+data-sitekey</code></pre>
+<p>→ <strong>Cloudflare Turnstile.</strong> The visible CAPTCHA only
+renders with JavaScript; a non-browser client cannot produce the
+<code>cf-turnstile-response</code> token.</p>
+<h3
+id="b.-the-hidden-code-field-is-a-static-anti-csrf-token-not-the-blocker">2b.
+The hidden <code>code</code> field is a STATIC anti-CSRF token, not the
+blocker</h3>
+<p>Two separate <code>GET</code>s returned the
+<strong>identical</strong> value <code>code=5cab14e06b8e112b</code>. A
+per-session nonce would differ. So including <code>code</code> would not
+fix login — Turnstile is the gate.</p>
+<h3
+id="c.-credential-post-with-hidden-code-included-yields-no-session-cookie">2c.
+Credential POST (with hidden <code>code</code> included) yields NO
+session cookie</h3>
+<pre><code>fresh code=5cab14e06b8e112b
+POST .../login.php  (username=probe_xyz, password=probe_xyz, login=вход, redirect=, code=&lt;above&gt;)
+HTTP/2 200
+# (no Set-Cookie line in response headers)</code></pre>
+<p>A successful login would carry
+<code>Set-Cookie: phpbb2mysql_4_sid=...</code>. It is absent → server
+rejected the login at the Turnstile gate before evaluating
+credentials.</p>
+<h3 id="d.-cloudflare-in-front-but-not-blocking-the-request">2d.
+Cloudflare in front, but NOT blocking the request</h3>
+<pre><code>server: cloudflare
+cf-cache-status: DYNAMIC
+HTTP/2 200</code></pre>
+<p>The page loads (HTTP 200), so this is <strong>not</strong> a UA/IP
+Cloudflare challenge on the request itself — option (c) is ruled out.
+The block is the in-page Turnstile widget the login flow must
+satisfy.</p>
+<hr />
+<h2 id="working-tracker-comparison-11.4.114">3. Working-tracker
+comparison (§11.4.114)</h2>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 34%" />
+<col style="width: 28%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tracker</th>
+<th>login.php Turnstile?</th>
+<th>Boba auth method</th>
+<th>has_session</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rutracker.org</td>
+<td><strong>none</strong> (probe returned empty)</td>
+<td>password POST
+(<code>login_username</code>/<code>login_password</code>/<code>login</code>)</td>
+<td>True</td>
+</tr>
+<tr>
+<td>kinozal</td>
+<td>none observed</td>
+<td>password POST</td>
+<td>True</td>
+</tr>
+<tr>
+<td>iptorrents</td>
+<td>n/a (cookies)</td>
+<td>—</td>
+<td>True</td>
+</tr>
+<tr>
+<td><strong>nnmclub.to</strong></td>
+<td><strong>cf-turnstile present</strong></td>
+<td>password POST
+(<code>username</code>/<code>password</code>/<code>login</code>) —
+Turnstile token missing</td>
+<td><strong>False</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The Boba <code>_nnmclub_login</code> is a faithful clone of the
+rutracker pattern. It works for rutracker precisely because rutracker’s
+<code>login.php</code> has <strong>no Turnstile</strong>. nnmclub’s
+does, so the identical pattern cannot succeed there. The code is not
+“wrong” — the target’s auth surface is fundamentally different
+(browser-only).</p>
+<p>Probe contrast:</p>
+<pre><code>rutracker login.php turnstile grep → (empty)   # no widget
+nnmclub  login.php turnstile grep → cf-turnstile / turnstile / data-sitekey</code></pre>
+<hr />
+<h2 id="why-the-existing-diag-message-is-misleading-11.4.6">4. Why the
+existing diag message is misleading (§11.4.6)</h2>
+<p><code>search.py:1538-1547</code> records on failure:</p>
+<pre><code>&quot;nnmclub login returned no session cookie — likely credential failure&quot;</code></pre>
+<p>The word <strong>“likely”</strong> is a §11.4.6 no-guessing
+violation, and the guess is wrong: the FACT is a Turnstile gate, not a
+credential failure. Suggested corrected wording:
+<code>"nnmclub login.php is gated by Cloudflare Turnstile (JS CAPTCHA); password POST cannot obtain a session — set NNMCLUB_COOKIES from a browser session."</code></p>
+<hr />
+<h2 id="classification-required-action">5. Classification &amp; required
+action</h2>
+<p><strong>Classification (a): CAPTCHA → browser-exported cookies
+(operator/env, §11.4.3 topology).</strong></p>
+<h3
+id="operator-action-the-working-path-already-supported-by-code">Operator
+action (the working path — already supported by code)</h3>
+<p><code>_search_nnmclub</code> (search.py:1466-1474) ALREADY prefers
+<code>NNMCLUB_COOKIES</code> when set and skips the password login
+entirely. The operator must export cookies from a logged-in browser
+session at nnmclub.to and set the <code>NNMCLUB_COOKIES</code> env
+var.</p>
+<p><strong>Exact cookies required</strong> (the code’s hard gate is
+<code>phpbb2mysql_4_sid</code>; a full working session also carries the
+data + persistence cookies — export all <code>phpbb2mysql_4_*</code>): -
+<code>phpbb2mysql_4_sid</code> ← <strong>REQUIRED</strong> —
+search.py:1479 / plugin login() line 212 reject without it -
+<code>phpbb2mysql_4_data</code> ← needed for persistent auth (plugin
+<code>_init</code> line 341 keys on this) - <code>cf_clearance</code> ←
+recommended — Cloudflare clearance cookie, lets subsequent requests
+bypass the Turnstile interstitial</p>
+<p><code>NNMCLUB_COOKIES</code> format (semicolon-separated, per
+search.py:1470 and plugin login() line 188):</p>
+<pre><code>NNMCLUB_COOKIES=&quot;phpbb2mysql_4_sid=&lt;...&gt;; phpbb2mysql_4_data=&lt;...&gt;; cf_clearance=&lt;...&gt;&quot;</code></pre>
+<p>Cookies expire periodically (same operational caveat as RuTracker per
+CLAUDE.md) and must be re-exported when nnmclub auth lapses.</p>
+<h3 id="not-recommended-out-of-scope-fragile">NOT recommended (out of
+scope / fragile)</h3>
+<p>Automating Turnstile solving (3rd-party solver services,
+headless-browser token mint) is brittle, may violate the tracker ToS,
+and is not the established Boba pattern. The cookie-injection path
+(§11.4.3 operator-supplied evidence) is the correct, robust fix.</p>
+<h3 id="no-code-fix-needed-for-login-to-work">No code fix needed for
+login to work</h3>
+<p>The cookie path already works end-to-end in code. The only
+code-quality follow-ups (separate, optional): 1. Fix the §11.4.6 “likely
+credential failure” diag string (section 4) → state the Turnstile FACT
+so operators know to supply cookies. 2. Optionally have
+<code>_nnmclub_login</code> detect <code>cf-turnstile</code> in the
+login page and emit a <code>error_type: "upstream_captcha"</code> diag
+(mirroring rutracker’s <code>upstream_captcha</code> label at
+search.py:1255-1257) instead of <code>auth_failure</code>.</p>
+<h3
+id="red-test-design-for-the-diag-string-follow-up-if-pursued">RED-test
+design (for the diag-string follow-up, if pursued)</h3>
+<ul>
+<li>RED: assert that when <code>_nnmclub_login</code> is driven against
+a login page containing <code>cf-turnstile</code>, the recorded diag
+<code>error_type == "upstream_captcha"</code> (currently
+<code>auth_failure</code>) and the message contains “Turnstile”, not
+“likely”. Fails pre-fix.</li>
+<li>GREEN: classifier detects the <code>cf-turnstile</code> marker; flip
+RED_MODE=0 as the guard.</li>
+</ul>
+<hr />
+<h2 id="files-referenced">6. Files referenced</h2>
+<ul>
+<li><code>/Volumes/T7/Projects/boba/download-proxy/src/merge_service/search.py</code>
+— <code>_search_nnmclub</code> (1454), <code>_nnmclub_login</code>
+(1501), diag (1538), cookie-precedence (1466)</li>
+<li><code>/Volumes/T7/Projects/boba/plugins/nnmclub.py</code> —
+<code>login()</code> (180), <code>_password_login()</code> (217),
+<code>_init()</code> cookie load (311)</li>
+<li><code>/Volumes/T7/Projects/boba/download-proxy/src/api/auth.py</code>
+— nnmclub auth_status branch (not the cause; reflects has_session
+truthfully)</li>
+</ul>
