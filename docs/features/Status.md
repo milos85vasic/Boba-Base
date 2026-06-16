@@ -1,13 +1,13 @@
 # Boba — Feature Status (all components)
 
-**Revision:** 5
-**Last modified:** 2026-06-16T12:15:00Z
+**Revision:** 6
+**Last modified:** 2026-06-16T18:30:00Z
 **Scope:** Every system component, service, infrastructure piece, and client app of the Boba project — one row per REAL unit (endpoint / handler / client method / component control / plugin / subcommand / script), grouped by component.
 **Authority:** assembled by READ-ONLY repo inventory (codegraph + grep + source reading) on 2026-06-15, expanded to per-unit granularity (§11.4.118 discovery-pressure) on 2026-06-16. Cross-references `AGENTS.md`, `CLAUDE.md`, `docs/REMAINING_WORK_PLAN.md`.
 
 > Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.86). Every feature row cites a real source file (file:line where load-bearing), endpoint, command, or control. **No invented features** (§11.4.6). As of Rev 5 the **Video** column is DEFINITIVE for every row — there is no bare `PENDING`. Each cell is exactly one of: `VIDEO-CONFIRMED — <file>` (the feature is shown on-screen in a committed recording), `PENDING (UI — film next)` (a user-visible control/dialog not yet *individually* filmed), or `N/A (no UI — test-covered + exercised by <journey>)` (a non-user-visible unit — REST endpoint / handler / client method / parser / scanner / service / crypto / repo / script — which has no screen of its own and is confirmed by its cited tests plus the UI/CLI journey that drives it). **Honest classification (§11.4.6/§11.4.143): a row is `VIDEO-CONFIRMED` only when a real recording actually shows it.**
 >
-> Per-row Video tally (288 feature rows): **25 VIDEO-CONFIRMED**, **17 PENDING (UI — film next)**, **246 N/A (no UI — test-covered)**.
+> Per-row Video tally (288 feature rows): **28 VIDEO-CONFIRMED**, **14 PENDING (UI — film next)**, **246 N/A (no UI — test-covered)**.
 >
 > Column legend:
 > - **Impl** = implemented / partial / stub / missing
@@ -32,6 +32,7 @@ recordings below confirm the headline user-facing flows on-screen.
 | `boba-web-search-flow.mp4` | Web dashboard | launch → search "debian" → live results → "829 results (288 merged)" complete | `boba-web-search-flow-verdict.md` |
 | `boba-web-feature-tour.mp4` + `boba-web-dashboard-tour.mp4` | Web dashboard | dashboard load (29 trackers, qBit connected), result rows render **qBit + Download** buttons (clickable), tab nav (Results/Active Downloads/Trackers/Schedules/Hooks), Jackett `/jackett` credentials page, theme | `boba-web-feature-tour-verdict.md` |
 | `boba-extension-{scan-detect,popup,options,tour}.mp4` | BobaLink extension (MV3, real `--load-extension` Chromium) | content-script **detects a magnet + appends a 🌐 MAGNET badge** (non-torrent correctly skipped); popup UI (header, server status, Refresh + Send All, Detected-torrents); options page (7 settings tabs + server config) | `boba-extension-verdict.md` |
+| `boba-web-tabs-theme-tour.mp4` (+ frames `boba-web-tab-active-downloads.png` / `boba-web-tab-schedules.png` / `boba-web-tab-hooks.png` / `boba-web-theme-toggle.png`) + `boba-web-jackett-add-credential.png` | Web dashboard + Jackett page | Active Downloads / Schedules / Hooks tabs each render their empty-state + columns; **theme toggle**; **processing spinner** ("Found N results…"); **bridge/qBit-Connected header indicator**; Jackett **Add-credential dialog** (Name/Username/Password/Cookies + Cancel/Save) | Claude-vision verified 2026-06-16 |
 
 **Honest scope (§11.4.6, no bluff):**
 - **Backend services** (download-proxy / merge / boba-jackett / Go) verified **200 server-side inside the VM** and exercised through the web UI recordings.
@@ -373,8 +374,8 @@ Standalone SPA, signals-based; built to `download-proxy/src/ui/dist/frontend`, s
 | Per-row Magnet button → magnet dialog trigger | implemented | yes | vitest `magnet-dialog.component.spec.ts`; py `test_magnet_dialog.py` | tested-green-in-suite | PENDING (UI — film next) |
 | Per-row add-to-qBittorrent (qBit) button | implemented | yes | py `test_button_functions.py`, `test_buttons_api.py` | tested-green-in-suite | **VIDEO-CONFIRMED 2026-06-16** — buttons render & clickable, `boba-web-feature-tour.mp4` |
 | Per-row Download (.torrent) button | implemented | yes | py `test_buttons_api.py` | tested-green-in-suite | **VIDEO-CONFIRMED 2026-06-16** — `boba-web-feature-tour.mp4` |
-| Per-row processing spinner (`isBusy()`) | implemented | yes | vitest `dashboard.component.spec.ts` | unit (vitest) | PENDING (UI — film next) |
-| Bridge health indicator + retry button | implemented | yes | py `test_bridge_root_liveness.py` | tested-green-in-suite | PENDING (UI — film next) |
+| Per-row processing spinner (`isBusy()`) | implemented | yes | vitest `dashboard.component.spec.ts` | unit (vitest) | **VIDEO-CONFIRMED 2026-06-16** — processing spinner ("Found N results…") shown, `boba-web-tabs-theme-tour.mp4` |
+| Bridge health indicator + retry button | implemented | yes | py `test_bridge_root_liveness.py` | tested-green-in-suite | **VIDEO-CONFIRMED 2026-06-16** — bridge/qBit-Connected header indicator shown, `boba-web-tabs-theme-tour.mp4` |
 | Tracker-stat dialog trigger | implemented | yes | py contract `test_tracker_stats_contract.py` | tested-green-in-suite | PENDING (UI — film next) |
 
 ### 5b. Dialog + UI components
@@ -404,7 +405,7 @@ Standalone SPA, signals-based; built to `download-proxy/src/ui/dist/frontend`, s
 | Feature | Impl | Wired | Tests | Validation | Video |
 |---------|------|-------|-------|------------|-------|
 | Credentials — list + Add/Edit/Delete (per-row, window.confirm) + banners (`jackett/credentials/credentials.component.ts`) | implemented | yes | vitest `credentials.component.spec.ts` | unit (vitest) | **VIDEO-CONFIRMED 2026-06-16** — `/jackett` credentials page, `boba-web-feature-tour.mp4` |
-| Credential edit dialog — name/username/password/cookies/Save/Cancel (`credential-edit-dialog.component.ts`) | implemented | yes | vitest `credential-edit-dialog.component.spec.ts` | unit (vitest) | PENDING (UI — film next) |
+| Credential edit dialog — name/username/password/cookies/Save/Cancel (`credential-edit-dialog.component.ts`) | implemented | yes | vitest `credential-edit-dialog.component.spec.ts` | unit (vitest) | **VIDEO-CONFIRMED 2026-06-16** — Jackett Add-credential dialog (Name/Username/Password/Cookies + Cancel/Save) shown, `boba-web-jackett-add-credential.png` |
 | Indexers — Configured/Catalog/History tab container (`jackett/indexers/indexers.component.ts`) | implemented | yes | vitest `indexers.component.spec.ts` | unit (vitest) | PENDING (UI — film next) |
 | Indexers — Configured tab (list + per-row remove) | implemented | yes | vitest `indexers.component.spec.ts` | unit (vitest) | PENDING (UI — film next) |
 | Indexers — Catalog tab (list + per-row add) | implemented | yes | vitest `indexers.component.spec.ts` | unit (vitest) | PENDING (UI — film next) |

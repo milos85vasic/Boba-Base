@@ -177,8 +177,8 @@
 </header>
 <h1 id="boba-feature-status-all-components">Boba — Feature Status (all
 components)</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-06-16T12:15:00Z <strong>Scope:</strong> Every system component,
+<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
+2026-06-16T18:30:00Z <strong>Scope:</strong> Every system component,
 service, infrastructure piece, and client app of the Boba project — one
 row per REAL unit (endpoint / handler / client method / component
 control / plugin / subcommand / script), grouped by component.
@@ -204,8 +204,8 @@ screen of its own and is confirmed by its cited tests plus the UI/CLI
 journey that drives it). <strong>Honest classification
 (§11.4.6/§11.4.143): a row is <code>VIDEO-CONFIRMED</code> only when a
 real recording actually shows it.</strong></p>
-<p>Per-row Video tally (288 feature rows): <strong>25
-VIDEO-CONFIRMED</strong>, <strong>17 PENDING (UI — film next)</strong>,
+<p>Per-row Video tally (288 feature rows): <strong>28
+VIDEO-CONFIRMED</strong>, <strong>14 PENDING (UI — film next)</strong>,
 <strong>246 N/A (no UI — test-covered)</strong>.</p>
 <p>Column legend: - <strong>Impl</strong> = implemented / partial / stub
 / missing - <strong>Wired</strong> = reachable on a running
@@ -280,6 +280,21 @@ badge</strong> (non-torrent correctly skipped); popup UI (header, server
 status, Refresh + Send All, Detected-torrents); options page (7 settings
 tabs + server config)</td>
 <td><code>boba-extension-verdict.md</code></td>
+</tr>
+<tr>
+<td><code>boba-web-tabs-theme-tour.mp4</code> (+ frames
+<code>boba-web-tab-active-downloads.png</code> /
+<code>boba-web-tab-schedules.png</code> /
+<code>boba-web-tab-hooks.png</code> /
+<code>boba-web-theme-toggle.png</code>) +
+<code>boba-web-jackett-add-credential.png</code></td>
+<td>Web dashboard + Jackett page</td>
+<td>Active Downloads / Schedules / Hooks tabs each render their
+empty-state + columns; <strong>theme toggle</strong>; <strong>processing
+spinner</strong> (“Found N results…”); <strong>bridge/qBit-Connected
+header indicator</strong>; Jackett <strong>Add-credential
+dialog</strong> (Name/Username/Password/Cookies + Cancel/Save)</td>
+<td>Claude-vision verified 2026-06-16</td>
 </tr>
 </tbody>
 </table>
@@ -2699,7 +2714,9 @@ clickable, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>vitest <code>dashboard.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING (UI — film next)</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> — processing spinner
+(“Found N results…”) shown,
+<code>boba-web-tabs-theme-tour.mp4</code></td>
 </tr>
 <tr>
 <td>Bridge health indicator + retry button</td>
@@ -2707,7 +2724,8 @@ clickable, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>py <code>test_bridge_root_liveness.py</code></td>
 <td>tested-green-in-suite</td>
-<td>PENDING (UI — film next)</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> — bridge/qBit-Connected
+header indicator shown, <code>boba-web-tabs-theme-tour.mp4</code></td>
 </tr>
 <tr>
 <td>Tracker-stat dialog trigger</td>
@@ -2925,7 +2943,9 @@ credentials page, <code>boba-web-feature-tour.mp4</code></td>
 <td>yes</td>
 <td>vitest <code>credential-edit-dialog.component.spec.ts</code></td>
 <td>unit (vitest)</td>
-<td>PENDING (UI — film next)</td>
+<td><strong>VIDEO-CONFIRMED 2026-06-16</strong> — Jackett Add-credential
+dialog (Name/Username/Password/Cookies + Cancel/Save) shown,
+<code>boba-web-jackett-add-credential.png</code></td>
 </tr>
 <tr>
 <td>Indexers — Configured/Catalog/History tab container

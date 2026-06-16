@@ -176,8 +176,8 @@
 <h1 class="title">Status_Summary</h1>
 </header>
 <h1 id="boba-feature-status-summary">Boba — Feature Status Summary</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-06-16T12:15:00Z <strong>Scope:</strong> Two-audience summary
+<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
+2026-06-16T18:30:00Z <strong>Scope:</strong> Two-audience summary
 companion of <code>docs/features/Status.md</code> (§11.4.56). Page 1 =
 product/operator audience; Page 2 = software-engineer audience.</p>
 <blockquote>
@@ -231,19 +231,21 @@ parity is a release goal (RW-09).</p>
 <p><strong>Honest note on testing depth:</strong> every feature in this
 catalog is backed by a real source file and, in nearly all cases, an
 automated test. Each of the 288 rows now carries a DEFINITIVE video
-status (no row left vague): <strong>25 are VIDEO-CONFIRMED</strong> —
+status (no row left vague): <strong>28 are VIDEO-CONFIRMED</strong> —
 shown on-screen in a committed recording (the boba-ctl CLI
 status/health/list, the web dashboard search journey + tab navigation +
-qBit/Download buttons + theme + Jackett credentials page, and the
-BobaLink extension scan/popup/options)
+qBit/Download buttons + theme + processing spinner +
+bridge/qBit-Connected header indicator + Jackett credentials page &amp;
+Add-credential dialog, and the BobaLink extension scan/popup/options)
 (<code>docs/qa/recordings-20260615/</code>); <strong>246 are N/A (no
 UI)</strong> — back-end endpoints, handlers, parsers, services and
 scripts that have no screen of their own and are confirmed by their
-tests plus the UI/CLI journey that drives them; <strong>17 are PENDING
+tests plus the UI/CLI journey that drives them; <strong>14 are PENDING
 (UI — film next)</strong> — user-visible dialogs/controls (magnet
-dialog, qBit login dialog, confirm/tracker-stat dialogs, the Jackett
-indexer dialogs/tabs) not yet <em>individually</em> filmed. The 17
-PENDING-UI items are the remaining visual-confirmation pass.</p>
+dialog, qBit login dialog [can’t be shown without logout — qBit is
+already connected], confirm/tracker-stat dialogs, the Jackett indexer
+dialogs/tabs) not yet <em>individually</em> filmed. The 14 PENDING-UI
+items are the remaining visual-confirmation pass.</p>
 <hr />
 <h2 id="page-2-for-software-engineers">Page 2 — For software
 engineers</h2>
@@ -378,8 +380,8 @@ Go <code>qBitTorrent-go/internal/**/*_test.go</code> +
 <code>docs/REMAINING_WORK_PLAN.md</code> RW-01..RW-21 + BOB-008
 (operator-blocked CAPTCHA).</p>
 <p><strong>Engineering follow-ups for this doc:</strong> - The Video
-column is now DEFINITIVE for all 288 rows (25 VIDEO-CONFIRMED / 17
-PENDING-UI / 246 N/A-no-UI). Remaining UI evidence gap = the 17
+column is now DEFINITIVE for all 288 rows (28 VIDEO-CONFIRMED / 14
+PENDING-UI / 246 N/A-no-UI). Remaining UI evidence gap = the 14
 <code>PENDING (UI — film next)</code> rows
 (magnet/qBit-login/confirm/tracker-stat dialogs + Jackett indexer
 dialogs/tabs); film those per §11.4.107/§11.4.143 to close it. The 246
