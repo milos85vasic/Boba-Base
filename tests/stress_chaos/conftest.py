@@ -61,7 +61,9 @@ def load_classifier():
     try:
         from merge_service.search import _classify_plugin_stderr
     except Exception as exc:  # pragma: no cover - dependency gap
-        pytest.skip(f"merge_service.search not importable: {exc}")
+        pytest.skip(  # allow-skip: import-time dependency gap (unit harness, not a runtime-service availability skip)
+            f"merge_service.search not importable: {exc}"
+        )
     return _classify_plugin_stderr
 
 # Representative subset of the fixed plugins that interpolate the raw query

@@ -1134,11 +1134,15 @@ class TestSearchNnmclubDeep:
 
     @pytest.mark.asyncio
     async def test_nnmclub_no_session_cookie_returns_empty(self, search_mod):
-        """Lines 1420-1421: missing phpbb2mysql_4_sid returns empty."""
+        """Missing phpbb2mysql_4_sid returns empty AND sets an auth_failure diag
+        (F1 parity with the rutracker cookie path — no reasonless empty chip)."""
         orch = search_mod.SearchOrchestrator()
         with patch.dict(os.environ, {"NNMCLUB_COOKIES": "sid=abc123"}, clear=False):
             result = await orch._search_nnmclub("query", "all")
             assert result == []
+            diag = orch._last_public_tracker_diag.get("nnmclub", {})
+            assert diag.get("error_type") == "auth_failure"
+            assert "phpbb2mysql_4_sid" in diag.get("error", "")
 
 
 # --------------------------------------------------------------------------

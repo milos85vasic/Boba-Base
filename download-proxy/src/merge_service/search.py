@@ -278,7 +278,7 @@ def _classify_plugin_stderr(stderr: str, *, killed_by_deadline: bool, had_result
     if not tail and killed_by_deadline and not had_results:
         return {
             "error_type": "deadline_timeout",
-            "error": "plugin exceeded 25s per-tracker deadline with no results",
+            "error": "plugin exceeded the per-tracker deadline with no results",
             "stderr_tail": "",
         }
     if not tail:
@@ -1534,6 +1534,18 @@ class SearchOrchestrator:
             cookie_jar = await self._nnmclub_login(base_url)
 
         if "phpbb2mysql_4_sid" not in cookie_jar:
+            # F1 parity (§11.4.6): explain the empty result instead of a
+            # reasonless empty chip. _nnmclub_login already sets a diag on its
+            # failure path; the explicit-cookies branch did not — mirror the
+            # rutracker RUTRACKER_COOKIES no-bb_session handling.
+            if cookies_raw:
+                self._last_public_tracker_diag["nnmclub"] = {
+                    "error_type": "auth_failure",
+                    "error": "NNMCLUB_COOKIES is set but contains no phpbb2mysql_4_sid session cookie",
+                    "stderr_tail": "",
+                    "deadline_hit": False,
+                    "deadline_seconds": 0.0,
+                }
             return []
 
         try:
