@@ -260,3 +260,66 @@ def test_encrypted_session_store_roundtrip(search_mod):
     # The raw backing value must be an opaque (encrypted) token, never plaintext.
     raw = store._raw_values()[0]
     assert b"abc" not in raw
+
+
+# ---------------------------------------------------------------------------
+# §11.4.115 RED-baseline regression test — cold-search "plugin_crashed" storm.
+#
+# Forensic FACT (captured on nezha 2026-06-16, full-fleet cold search
+# "the matrix coldprobe2"): ~15 nova3 plugins reported status=error /
+# error_type=plugin_crashed in 89-150ms (NOT a deadline/timeout — deadline_hit
+# was None, duration far below the 60s wall). Their real stderr_tail was
+# identically shaped:
+#   {"__error__": "URL can't contain control characters. '...&q=the matrix...'
+#    (found at least ' ')"}
+# i.e. the plugin string-interpolated a query containing a literal SPACE into
+# a request path and urllib rejected it. This is a query-input/URL-ENCODING
+# defect in a fixed set of plugins, NOT a random crash — and "cold vs warm"
+# was a coincidence of the probe queries ("the matrix" has a space, "dune"
+# does not). Mislabelling it `plugin_crashed` is the source of the operator's
+# "app crashing a lot" report.
+#
+# RED_MODE=0 (default, standing GREEN guard): asserts the FIX — a distinct
+#   honest `plugin_bad_query_encoding` error_type so operators see the true
+#   cause, not a fake "crash". This is the polarity the suite runs in once the
+#   fix has landed (§11.4.115: flip the default to 0 post-fix).
+# RED_MODE=1: reproduces the DEFECT against the pre-fix code (the URL-control-
+#   char error misclassified as `plugin_crashed`) — the captured RED baseline.
+# ---------------------------------------------------------------------------
+
+# Real captured stderr_tails from the nezha cold-search forensic run.
+_REAL_BAD_QUERY_STDERRS = [
+    '{"__error__": "URL can\'t contain control characters. '
+    "'/all/torrents/the matrix coldprobe2.html?sort=seeds&page=1' "
+    '(found at least \' \')"}',  # torlock
+    '{"__error__": "URL can\'t contain control characters. '
+    "'/?f=0&s=seeders&o=desc&c=0_0&q=the matrix coldprobe2&p=1' "
+    '(found at least \' \')"}',  # nyaa
+    '{"__error__": "URL can\'t contain control characters. '
+    "'/browse-movies/the matrix coldprobe2/all/all/0/latest' "
+    '(found at least \' \')"}',  # yts
+]
+
+_RED_MODE = os.getenv("RED_MODE", "0") == "1"
+
+
+@pytest.mark.parametrize("stderr", _REAL_BAD_QUERY_STDERRS)
+def test_url_control_char_query_is_not_a_crash(search_mod, stderr):
+    """A multi-word-query URL-encoding failure must NOT be reported as a crash."""
+    diag = search_mod._classify_plugin_stderr(
+        stderr, killed_by_deadline=False, had_results=False
+    )
+    if _RED_MODE:
+        # Reproduce the defect on the current (pre-fix) code.
+        assert diag["error_type"] == "plugin_crashed", (
+            "RED baseline: current code mislabels the bad-query-encoding error "
+            f"as plugin_crashed (got {diag['error_type']!r})"
+        )
+    else:
+        # GREEN guard after the honesty fix lands.
+        assert diag["error_type"] == "plugin_bad_query_encoding", (
+            "FIX: URL-control-character (un-encoded query) must classify as "
+            f"plugin_bad_query_encoding, not {diag['error_type']!r}"
+        )
+        assert "encod" in diag["error"].lower() or "query" in diag["error"].lower()
+        assert diag["stderr_tail"]

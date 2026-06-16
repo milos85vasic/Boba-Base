@@ -316,6 +316,15 @@ def _classify_plugin_stderr(stderr: str, *, killed_by_deadline: bool, had_result
     elif "incompleteread" in lower:
         error_type = "upstream_incomplete"
         summary = "upstream closed the connection mid-response"
+    elif "url can't contain control characters" in lower:
+        # A plugin string-interpolated a multi-word query (containing a raw
+        # space) straight into a request path; urllib rejected it. This is a
+        # query-input/URL-encoding defect in a fixed set of plugins, NOT a
+        # crash — classifying it `plugin_crashed` falsely reports the System
+        # as "crashing a lot" (§11.4.6 honesty). The functional fix is to
+        # URL-encode the query in each affected plugin (tracked separately).
+        error_type = "plugin_bad_query_encoding"
+        summary = "plugin did not URL-encode the query (multi-word query rejected by urllib)"
     elif "traceback" in lower or "__error__" in lower:
         error_type = "plugin_crashed"
         summary = "plugin raised an unhandled exception"
