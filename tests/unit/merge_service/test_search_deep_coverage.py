@@ -1086,7 +1086,13 @@ class TestNnmclubLoginDeep:
                 result = await orch._nnmclub_login("https://nnmclub.to")
                 assert result == {}
                 diag = orch._last_public_tracker_diag.get("nnmclub", {})
-                assert diag.get("error_type") == "auth_failure"
+                # §11.4.120 reconciliation + §11.4.6: a no-Set-Cookie 200 on
+                # login.php is the Cloudflare Turnstile gate, NOT a credential
+                # failure (docs/qa/nnmclub-login-diagnosis-20260616.md). The diag
+                # must report the captcha FACT + the NNMCLUB_COOKIES remedy.
+                assert diag.get("error_type") == "upstream_captcha"
+                assert "Turnstile" in diag.get("error", "")
+                assert "NNMCLUB_COOKIES" in diag.get("error", "")
 
     @pytest.mark.asyncio
     async def test_nnmclub_login_exception_returns_empty(self, search_mod):
