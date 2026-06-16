@@ -246,6 +246,49 @@ class TestAllTrackersAuthStatus:
             assert result["trackers"]["qbittorrent"]["has_session"] is True
 
     @pytest.mark.asyncio
+    async def test_status_reflects_browser_cookies_before_first_search(self, monkeypatch):
+        """§11.4: operator-supplied RUTRACKER_COOKIES / NNMCLUB_COOKIES must make
+        /status report has_session=True even with EMPTY _tracker_sessions (before
+        any search runs) — otherwise the dashboard shows red chips for trackers
+        that actually work via cookies (the nezha-validation mismatch)."""
+        import os as _os
+
+        from api.auth import all_trackers_auth_status
+
+        mock_orch = MagicMock()
+        mock_orch._tracker_sessions = {}  # no live session yet
+        monkeypatch.setenv("RUTRACKER_COOKIES", "bb_session=abc; bb_t=x")
+        monkeypatch.setenv("NNMCLUB_COOKIES", "phpbb2mysql_4_sid=def; cf_clearance=y")
+        _os.environ.pop("RUTRACKER_MIRRORS", None)
+        _os.environ.pop("NNMCLUB_MIRRORS", None)
+
+        mock_resp = AsyncMock()
+        mock_resp.text = AsyncMock(return_value="")
+        mock_resp.status = 403
+        mock_resp.cookies = {}
+        mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+        mock_resp.__aexit__ = AsyncMock(return_value=False)
+        mock_session = AsyncMock()
+        mock_session.post = MagicMock(return_value=mock_resp)
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=False)
+
+        with (
+            patch("api.auth._get_orchestrator", return_value=mock_orch),
+            patch("api.auth._load_qbit_credentials", return_value=None),
+            patch("aiohttp.ClientSession", return_value=mock_session),
+            patch("aiohttp.ClientTimeout", return_value=None),
+        ):
+            result = await all_trackers_auth_status()
+        t = result["trackers"]
+        assert t["rutracker"]["has_session"] is True, "RUTRACKER_COOKIES not reflected"
+        assert t["rutracker"]["base_url"] == "https://rutracker.org"
+        assert t["nnmclub"]["has_session"] is True, "NNMCLUB_COOKIES not reflected"
+        assert t["nnmclub"]["base_url"] == "https://nnmclub.to"
+        # A tracker WITHOUT cookies + no session stays false (no false-green).
+        assert t["iptorrents"]["has_session"] is False
+
+    @pytest.mark.asyncio
     async def test_no_credentials(self):
         from api.auth import all_trackers_auth_status
 

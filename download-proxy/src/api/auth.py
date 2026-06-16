@@ -485,10 +485,22 @@ async def all_trackers_auth_status():  # type: ignore[no-untyped-def]
 
     for name in ["rutracker", "kinozal", "nnmclub", "iptorrents"]:
         session = orch._tracker_sessions.get(name)
-        trackers[name] = {
-            "has_session": session is not None,
-            "base_url": session.get("base_url", "") if session else "",
-        }
+        has_session = session is not None
+        base_url = session.get("base_url", "") if session else ""
+        # Reflect operator-supplied browser cookies: they ARE a valid session
+        # even BEFORE the first search populates _tracker_sessions. Otherwise the
+        # dashboard shows a red/unauthenticated chip for a tracker that actually
+        # works via cookies — the §11.4 user-observable mismatch the nezha
+        # validation surfaced (rutracker/nnmclub returned results while /status
+        # said has_session=false).
+        if not has_session:
+            if name == "rutracker" and "bb_session=" in os.getenv("RUTRACKER_COOKIES", ""):
+                has_session = True
+                base_url = os.getenv("RUTRACKER_MIRRORS", "https://rutracker.org").split(",")[0].strip()
+            elif name == "nnmclub" and "phpbb2mysql_4_sid=" in os.getenv("NNMCLUB_COOKIES", ""):
+                has_session = True
+                base_url = os.getenv("NNMCLUB_MIRRORS", "https://nnmclub.to").split(",")[0].strip()
+        trackers[name] = {"has_session": has_session, "base_url": base_url}
 
     creds = _load_qbit_credentials()
     qbit_has_session = False
