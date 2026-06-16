@@ -83,6 +83,19 @@ Full unit suite at HEAD `e6b9f8f`: **4277 passed, 0 failed** (9m51s) — up from
 4216 pre-session (all new tests for the search/cookie/auth fixes pass, zero
 regression).
 
+## 6. Definitive end-to-end proof — full-fleet multi-word search
+
+Full-fleet `the matrix` on nezha (search_id `4bd0dd12`, completed):
+
+- **total = 2600 results**, 29 trackers reported, **23 contributing**
+- **`encoding-crashed: NONE`**
+- **all four private trackers authenticate**: rutracker 50, nnmclub 50,
+  kinozal 50, iptorrents 49 — every one `success`
+
+This is the complete confirmation that search works for end users: the same
+multi-word query the pre-session build crashed ~17 plugins on now returns 2600
+results with every tracker healthy and all private-tracker auth working.
+
 _Captured 2026-06-16 against nezha.local; unit coverage: multiword tests (16
 plugins capture + snowfl focused + well-behaved no-regression) + rutracker-cookie
 + auth-status cookie-reflection tests, all with §1.1 negation proofs._
