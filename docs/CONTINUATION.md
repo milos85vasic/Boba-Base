@@ -1,14 +1,57 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 18
-**Last modified:** 2026-06-13T16:40:00Z
-**Session:** 2026-06-13 (Session 13 — full container stack BOOTED; live detect→send→torrent round-trip GREEN; qBittorrent 5.x API-compat fixed)
-**Last commit:** `ef121e7` (macos-tunnel all-interface LAN bind)
+**Revision:** 19
+**Last modified:** 2026-06-16T23:55:00Z
+**Session:** 2026-06-16 (Session 14 — search-broken/crashing fixed: multi-word encoding storm, private-tracker cookie auth, deploy pipeline, healthz, kickass; PROVEN on nezha — 2600 results, all 4 private trackers auth, none crashed. In-flight: P0 UTF-8/Cyrillic encoding fix)
+**Last commit:** `646b295` (Status ledger Rev 7 — proven search/auth/healthz fixes §11.4.153)
 **Branch:** `main`
-**Working tree:** CLEAN (after the doc commit that carries this update)
+**Working tree:** has the in-flight UTF-8 RED test untracked (`tests/unit/test_plugin_unicode_query_encoding.py`); search/auth/deploy fixes all published at HEAD
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff (§12.10 / §11.4.131).
+
+---
+
+## CURRENT STATE — Session 14 (2026-06-16): search fixed end-to-end + proven on nezha; one P0 in flight
+
+**Operator-reported "search is broken / crashing a lot" + "rutracker/nnmclub never authenticate" — ROOT-CAUSED and FIXED,
+proven live on the distributed-boot production stack (`nezha.local`, podman).** Definitive end-to-end proof: full-fleet
+`the matrix` on nezha returned **2600 results, 23/29 trackers contributing, encoding-crashed: NONE, all four private
+trackers authenticated** (rutracker 50 / nnmclub 50 / kinozal 50 / iptorrents 49). QA evidence:
+`docs/qa/search-fix-verify-20260616/` (`results.md` + html/pdf/docx). BUGFIXES.md Rev 19 entries 48–55.
+
+### What landed (Session 14 — all published at HEAD `646b295`)
+- **Multi-word query URL-encoding crash, 17 nova3 plugins** (`dbd3858` 7 maintained + `da7d709` 10 adopted) — a literal
+  space crashed urllib (`URL can't contain control characters`); single-word worked, multi-word silently dropped ~17
+  plugins → "search broken / crashing". Fix: per-plugin percent-encoding. **Verified live** (nezha): scoped `the matrix`
+  592, full-fleet 2600, NONE crashed. (BUGFIXES #48)
+- **`plugin_bad_query_encoding` honesty classifier** (`33d90f2`) — stopped reporting a self-inflicted encoding bug as a
+  remote `plugin_crashed` (§11.4.6). (BUGFIXES #49)
+- **Private-tracker cookie auth** — `RUTRACKER_COOKIES` injection bypasses the CAPTCHA-walled login (`2fc29fc`) +
+  existing `NNMCLUB_COOKIES`; cookies via `scripts/extract-tracker-cookies.sh` (§11.4.10). **Verified 50/50** on nezha.
+  (BUGFIXES #50)
+- **`/auth/status` cookie reflection** (`9c2f8dc`) — chips now show cookie-authenticated trackers green before the first
+  search. (BUGFIXES #51)
+- **JSON `/api/v1/healthz`** (`137d7ff`) — was swallowed by the SPA catch-all (returned HTML); now JSON. (BUGFIXES #52)
+- **`scripts/deploy-remote.sh` — 4 silent-failure bugs** (`d5b58cb` / `9e059d3` / `42cdb02` / `e6b9f8f`) that kept fixes
+  from landing on the remote (§11.4.108): inline-YAML-comment path, rsync abort on container-owned `config/`, `py_compile`
+  false "Syntax: Invalid", and install-plugin targeting only `qbittorrent` not `qbittorrent-proxy`. Pipeline now completes
+  `[1/5]→[5/5]` clean; re-verified via the pipeline (not manual cp). (BUGFIXES #53)
+- **kickass §11.4.112 Won't-fix** (`f3e7a4f`) — 403 behind a Cloudflare/JS challenge, structurally unsolvable by a
+  headless nova3 plugin; documented in `docs/research/`. (BUGFIXES #54)
+- **Regression baseline:** full unit suite at HEAD **4277 passed, 0 failed** (up from 4216 pre-session, zero regression).
+
+### Host note
+- **Host disk-full** observed this session (T7 / `/Volumes/T7/tmp` is the temp dir for this work). Keep an eye on free
+  space before any container rebuild or large deploy — a full disk silently fails rsync/builds.
+
+### In flight — NEXT ITEM (P0, do this first)
+- **UTF-8 / Cyrillic query crash in 15 plugins (OPEN — NOT yet fixed, §11.4.6).** A sibling defect class to #48
+  surfaced during the #48 discovery extend-pass (§11.4.146/§11.4.118): the percent-encoding fix addressed the
+  literal-space control-character crash; the non-ASCII (Cyrillic) byte path is a DISTINCT crash. RED reproduction test
+  is in the working tree (untracked): `tests/unit/test_plugin_unicode_query_encoding.py`. **NEXT:** complete per-plugin
+  UTF-8-safe encoding across the 15 affected engines, flip RED→GREEN (§11.4.115), run the §11.4.146 extend-pass to
+  enumerate the full affected set, verify live on nezha, then complete BUGFIXES #55 with the GREEN proof + commit hash.
 
 ---
 

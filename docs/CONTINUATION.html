@@ -1,17 +1,103 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 18 <strong>Last modified:</strong>
-2026-06-13T16:40:00Z <strong>Session:</strong> 2026-06-13 (Session 13 —
-full container stack BOOTED; live detect→send→torrent round-trip GREEN;
-qBittorrent 5.x API-compat fixed) <strong>Last commit:</strong>
-<code>ef121e7</code> (macos-tunnel all-interface LAN bind)
-<strong>Branch:</strong> <code>main</code> <strong>Working
-tree:</strong> CLEAN (after the doc commit that carries this update)</p>
+<p><strong>Revision:</strong> 19 <strong>Last modified:</strong>
+2026-06-16T23:55:00Z <strong>Session:</strong> 2026-06-16 (Session 14 —
+search-broken/crashing fixed: multi-word encoding storm, private-tracker
+cookie auth, deploy pipeline, healthz, kickass; PROVEN on nezha — 2600
+results, all 4 private trackers auth, none crashed. In-flight: P0
+UTF-8/Cyrillic encoding fix) <strong>Last commit:</strong>
+<code>646b295</code> (Status ledger Rev 7 — proven search/auth/healthz
+fixes §11.4.153) <strong>Branch:</strong> <code>main</code>
+<strong>Working tree:</strong> has the in-flight UTF-8 RED test
+untracked
+(<code>tests/unit/test_plugin_unicode_query_encoding.py</code>);
+search/auth/deploy fixes all published at HEAD</p>
 <blockquote>
 <p>Send <code>continue</code> to pick up exactly where we left off. This
 file is the single source of truth for session handoff (§12.10 /
 §11.4.131).</p>
 </blockquote>
+<hr />
+<h2
+id="current-state-session-14-2026-06-16-search-fixed-end-to-end-proven-on-nezha-one-p0-in-flight">CURRENT
+STATE — Session 14 (2026-06-16): search fixed end-to-end + proven on
+nezha; one P0 in flight</h2>
+<p><strong>Operator-reported “search is broken / crashing a lot” +
+“rutracker/nnmclub never authenticate” — ROOT-CAUSED and FIXED, proven
+live on the distributed-boot production stack (<code>nezha.local</code>,
+podman).</strong> Definitive end-to-end proof: full-fleet
+<code>the matrix</code> on nezha returned <strong>2600 results, 23/29
+trackers contributing, encoding-crashed: NONE, all four private trackers
+authenticated</strong> (rutracker 50 / nnmclub 50 / kinozal 50 /
+iptorrents 49). QA evidence:
+<code>docs/qa/search-fix-verify-20260616/</code>
+(<code>results.md</code> + html/pdf/docx). BUGFIXES.md Rev 19 entries
+48–55.</p>
+<h3 id="what-landed-session-14-all-published-at-head-646b295">What
+landed (Session 14 — all published at HEAD <code>646b295</code>)</h3>
+<ul>
+<li><strong>Multi-word query URL-encoding crash, 17 nova3
+plugins</strong> (<code>dbd3858</code> 7 maintained +
+<code>da7d709</code> 10 adopted) — a literal space crashed urllib
+(<code>URL can't contain control characters</code>); single-word worked,
+multi-word silently dropped ~17 plugins → “search broken / crashing”.
+Fix: per-plugin percent-encoding. <strong>Verified live</strong>
+(nezha): scoped <code>the matrix</code> 592, full-fleet 2600, NONE
+crashed. (BUGFIXES #48)</li>
+<li><strong><code>plugin_bad_query_encoding</code> honesty
+classifier</strong> (<code>33d90f2</code>) — stopped reporting a
+self-inflicted encoding bug as a remote <code>plugin_crashed</code>
+(§11.4.6). (BUGFIXES #49)</li>
+<li><strong>Private-tracker cookie auth</strong> —
+<code>RUTRACKER_COOKIES</code> injection bypasses the CAPTCHA-walled
+login (<code>2fc29fc</code>) + existing <code>NNMCLUB_COOKIES</code>;
+cookies via <code>scripts/extract-tracker-cookies.sh</code> (§11.4.10).
+<strong>Verified 50/50</strong> on nezha. (BUGFIXES #50)</li>
+<li><strong><code>/auth/status</code> cookie reflection</strong>
+(<code>9c2f8dc</code>) — chips now show cookie-authenticated trackers
+green before the first search. (BUGFIXES #51)</li>
+<li><strong>JSON <code>/api/v1/healthz</code></strong>
+(<code>137d7ff</code>) — was swallowed by the SPA catch-all (returned
+HTML); now JSON. (BUGFIXES #52)</li>
+<li><strong><code>scripts/deploy-remote.sh</code> — 4 silent-failure
+bugs</strong> (<code>d5b58cb</code> / <code>9e059d3</code> /
+<code>42cdb02</code> / <code>e6b9f8f</code>) that kept fixes from
+landing on the remote (§11.4.108): inline-YAML-comment path, rsync abort
+on container-owned <code>config/</code>, <code>py_compile</code> false
+“Syntax: Invalid”, and install-plugin targeting only
+<code>qbittorrent</code> not <code>qbittorrent-proxy</code>. Pipeline
+now completes <code>[1/5]→[5/5]</code> clean; re-verified via the
+pipeline (not manual cp). (BUGFIXES #53)</li>
+<li><strong>kickass §11.4.112 Won’t-fix</strong> (<code>f3e7a4f</code>)
+— 403 behind a Cloudflare/JS challenge, structurally unsolvable by a
+headless nova3 plugin; documented in <code>docs/research/</code>.
+(BUGFIXES #54)</li>
+<li><strong>Regression baseline:</strong> full unit suite at HEAD
+<strong>4277 passed, 0 failed</strong> (up from 4216 pre-session, zero
+regression).</li>
+</ul>
+<h3 id="host-note">Host note</h3>
+<ul>
+<li><strong>Host disk-full</strong> observed this session (T7 /
+<code>/Volumes/T7/tmp</code> is the temp dir for this work). Keep an eye
+on free space before any container rebuild or large deploy — a full disk
+silently fails rsync/builds.</li>
+</ul>
+<h3 id="in-flight-next-item-p0-do-this-first">In flight — NEXT ITEM (P0,
+do this first)</h3>
+<ul>
+<li><strong>UTF-8 / Cyrillic query crash in 15 plugins (OPEN — NOT yet
+fixed, §11.4.6).</strong> A sibling defect class to #48 surfaced during
+the #48 discovery extend-pass (§11.4.146/§11.4.118): the
+percent-encoding fix addressed the literal-space control-character
+crash; the non-ASCII (Cyrillic) byte path is a DISTINCT crash. RED
+reproduction test is in the working tree (untracked):
+<code>tests/unit/test_plugin_unicode_query_encoding.py</code>.
+<strong>NEXT:</strong> complete per-plugin UTF-8-safe encoding across
+the 15 affected engines, flip RED→GREEN (§11.4.115), run the §11.4.146
+extend-pass to enumerate the full affected set, verify live on nezha,
+then complete BUGFIXES #55 with the GREEN proof + commit hash.</li>
+</ul>
 <hr />
 <h2
 id="current-state-session-13-2026-06-13-stack-booted-qbittorrent-5.x-compat">CURRENT

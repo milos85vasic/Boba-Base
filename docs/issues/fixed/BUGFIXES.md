@@ -1,7 +1,7 @@
 # Bugfix Log
 
-**Revision:** 18
-**Last modified:** 2026-06-14T18:00:00Z
+**Revision:** 19
+**Last modified:** 2026-06-16T23:55:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause,
@@ -1001,3 +1001,125 @@ progress. **Affected:** `frontend/src/app/components/dashboard/dashboard.compone
 (`instant button processing indicator (isBusy)`) asserting busy `true` in-flight / `false` after resolve
 AND after error, for each of the three actions. Full dashboard suite **103/103** GREEN.
 **Verified (§11.4.108):** the deployed bundle contains `btnBusyPulse` / `btn-spinner` (served == built).
+
+## 2026-06-16 — search broken / "crashing a lot": multi-word query encoding storm, private-tracker auth, deploy pipeline, healthz, kickass
+
+Operator-reported: "search is broken / crashing a lot" and "rutracker/nnmclub never authenticate". Root-caused
+live on the distributed-boot production stack (`nezha.local`, podman) — §11.4.107 / §11.4.123 anti-bluff.
+Full QA evidence: `docs/qa/search-fix-verify-20260616/` (`results.md` + html/pdf/docx). Definitive end-to-end
+proof: full-fleet `the matrix` on nezha returned **2600 results, 23/29 trackers contributing, encoding-crashed: NONE,
+all four private trackers authenticated** (rutracker 50 / nnmclub 50 / kinozal 50 / iptorrents 49).
+
+### 48. Multi-word query URL-encoding crash across 17 nova3 plugins
+
+**Severity:** HIGH (multi-word search silently lost ~17 plugins; the user-visible "search broken / crashing"). **Type:** Bug.
+**Root cause (FACT, captured live):** ~17 nova3 engine plugins interpolated the RAW query string into a
+request URL. A literal space (any multi-word query) crashed urllib with
+`URL can't contain control characters`. Single-word queries worked; multi-word queries silently dropped
+each affected plugin from the results — so the fleet returned a fraction of its real coverage and looked
+"broken / crashing a lot".
+**Fix:** per-plugin percent-encoding of the query before URL interpolation, across 7 maintained engines
+(commit `dbd3858`) + 10 adopted/orphan engines incl. limetorrents (commit `da7d709`, which also adopted 9
+orphan engines into `plugins/` per §11.4.124).
+**Affected:** the 17 affected `plugins/*.py` nova3 engines (e.g. glotorrents, torrentdownload, torrentproject,
+snowfl, limetorrents, torrentscsv, bitsearch, torrentgalaxy, nyaa, rockbox, …).
+**Regression guard (§11.4.115/§11.4.135/§11.4.85):** multiword URL-oracle unit tests (16-plugin capture +
+snowfl focused + well-behaved-no-regression) hardened for py3.13 (`f991034`); stress+chaos coverage for the
+multi-word fix + classifier (`7e9cab5`).
+**Verified live (§11.4.107):** scoped multi-word `the matrix` of the adopted plugins → total **592** (glotorrents
+173, torrentdownload 249, torrentproject 68, snowfl 40, limetorrents 36, torrentscsv 25, rockbox 1), and the
+full-fleet run returned **2600** — `STILL bad_query_encoding/crashed: NONE`. Earliest definitive proof:
+**nezha** result counts confirm a real torrent like "Матрица / The Matrix" surfaced, 0 plugins crashed.
+
+### 49. `plugin_crashed` mislabel — un-encoded multi-word query is a code defect, not a tracker crash
+
+**Severity:** MEDIUM (honesty/diagnostic — §11.4.6: a self-inflicted encoding bug was being reported as if the
+remote tracker had crashed). **Type:** Bug.
+**Root cause (FACT):** the orchestrator classified the urllib control-character failure from an un-encoded
+multi-word query as `plugin_crashed`, conflating "we sent a malformed URL" with "the tracker is down" — the
+exact §11.4.6 guessing pattern.
+**Fix:** added a distinct `plugin_bad_query_encoding` failure class so the un-encoded-query defect is reported
+honestly as a code defect, not a tracker crash (commit `33d90f2`).
+**Affected:** `download-proxy/src/merge_service/` search orchestration / per-plugin failure classification.
+**Regression guard (§11.4.115/§1.1):** classifier unit test with the §1.1 negation proof (un-encoded query →
+`plugin_bad_query_encoding`, NOT `plugin_crashed`).
+
+### 50. Private-tracker cookie auth — rutracker (and nnmclub) never authenticated
+
+**Severity:** HIGH (rutracker/nnmclub failed every query — `no_cookie`/CAPTCHA on rutracker, Cloudflare
+Turnstile on nnmclub). **Type:** Bug.
+**Root cause (FACT):** rutracker's login endpoint is CAPTCHA-walled and nnmclub's is behind Cloudflare
+Turnstile, so the username/password login path could never authenticate; there was no path to inject the
+operator's already-valid browser session cookies for rutracker.
+**Fix:** `RUTRACKER_COOKIES` injection that bypasses the CAPTCHA-walled login (commit `2fc29fc`), complementing
+the existing `NNMCLUB_COOKIES`; cookies are extracted from the operator's browser export by
+`scripts/extract-tracker-cookies.sh` (only the tracker's own-domain cookies, §11.4.10).
+**Affected:** `plugins/rutracker.py` (cookie injection), `scripts/extract-tracker-cookies.sh`, container env wiring.
+**Regression guard (§11.4.115):** rutracker-cookie unit test with §1.1 negation.
+**Verified live (§11.4.107/§11.4.69):** on nezha, rutracker `the matrix` → **50** real results (sample title
+"Матрица / The Matrix (Энди/Ларри Вачовски)"); nnmclub → **50** ("The Matrix OST (1999)", "Matrix Resurrections
+(2021)"); container env confirmed carrying both cookie vars (`phpbb2mysql_4_sid`=1, `bb_session`=1).
+
+### 51. `/auth/status` did not reflect injected cookies (red chips despite working searches)
+
+**Severity:** MEDIUM (user-visible — the dashboard showed red/unauthenticated chips for rutracker/nnmclub even
+though their searches worked). **Type:** Bug.
+**Root cause (FACT):** `/auth/status` only read `_tracker_sessions`, which is populated AFTER the first search,
+so it ignored the `*_COOKIES` env-injected sessions and reported them unauthenticated on a fresh stack.
+**Fix:** `/auth/status` now also reflects the `*_COOKIES` env so the dashboard shows cookie-authenticated
+trackers green before the first search (commit `9c2f8dc`).
+**Affected:** `download-proxy/src/api/routes.py` (auth/status handler).
+**Regression guard (§11.4.115/§1.1):** auth-status cookie-reflection unit test with negation proof.
+
+### 52. `/api/v1/healthz` returned the SPA HTML, not JSON (swallowed by the catch-all)
+
+**Severity:** MEDIUM (health/observability — the health endpoint returned the SPA index instead of a JSON health
+body, breaking machine health checks). **Type:** Bug.
+**Root cause (FACT):** the SPA catch-all route matched `/api/v1/healthz` before the health handler, so the
+endpoint served HTML.
+**Fix:** dedicated JSON `/api/v1/healthz` endpoint registered ahead of the SPA catch-all (commit `137d7ff`).
+**Affected:** `download-proxy/src/api/routes.py` (route ordering + healthz handler).
+**Regression guard (§11.4.43):** healthz JSON-contract unit test (asserts JSON body, not HTML).
+
+### 53. `scripts/deploy-remote.sh` — 4 silent-failure bugs kept fixes from landing on the remote
+
+**Severity:** HIGH (§11.4.108 — fixes appeared committed but the deploy pipeline never delivered them to the
+running containers). **Type:** Bug.
+**Root cause (FACT):** four independent silent failures in the deploy pipeline: (a) an inline YAML comment was
+left in a parsed path; (b) under `set -e`, rsync aborted on container-owned `config/`; (c) `py_compile` wrote
+`__pycache__` into a container-owned dir → false "Syntax: Invalid" → exit 1; (d) install-plugin targeted only
+the `qbittorrent` container, not the `qbittorrent-proxy` container that actually runs the engine subprocess.
+**Fix:** (a) strip inline YAML comments from the parsed path + exclude container-owned engines (`d5b58cb`);
+(b) exclude container-owned `config/` + tolerate rsync exit 23/24 (`9e059d3`); (c) syntax-check via `compile()`
+not `py_compile` so nothing is written to the container dir (`42cdb02`); (d) install engines into
+`qbittorrent-proxy` too, not just `qbittorrent` (`e6b9f8f`).
+**Affected:** `scripts/deploy-remote.sh`, `install-plugin.sh`.
+**Regression guard (§11.4.108):** pipeline re-run completes `[1/5]→[5/5]` cleanly ("All plugins installed and
+valid!", 0 "Syntax: Invalid").
+**Verified live (§11.4.108):** re-run AFTER a clean pipeline deploy (engines installed by the pipeline, NOT a
+manual cp) — scoped multi-word `the matrix` total **573**; engine fix confirmed present in `qbittorrent-proxy`
+(glotorrents fix marker count 1) — installed by the pipeline, not hand-copied.
+
+### 54. kickass plugin — 403 is structurally blocked (Cloudflare / JS challenge), classified Won't-fix (§11.4.112)
+
+**Severity:** LOW (one community plugin cannot be made to work). **Type:** Bug → Won't-fix (`structurally-impossible`).
+**Root cause (FACT, researched):** kickass returns HTTP 403 behind a Cloudflare / JavaScript challenge that a
+headless nova3 plugin cannot solve; there is no server-side cookie-injection or header path that bypasses it.
+**Resolution (§11.4.112):** classified `Won't-fix: structurally-impossible` with the cited evidence documented
+in `docs/research/` (commit `f3e7a4f`). No further attempts unless the platform constraint changes (§11.4.34/§11.4.7).
+**Affected:** `plugins/kickass.py`, `docs/research/`.
+
+### 55. (OPEN — fix in progress) UTF-8 / Cyrillic query crash in 15 plugins
+
+**Severity:** HIGH. **Type:** Bug. **Status:** OPEN — under active fix this session; NOT yet verified fixed (§11.4.6).
+**Root cause (under investigation, FACT so far):** a sibling defect class to #48 — 15 nova3 plugins crash on a
+UTF-8 / Cyrillic (non-ASCII) query (the percent-encoding fix in #48 addressed the literal-space control-character
+crash; the non-ASCII byte path is a distinct failure that surfaced during the #48 discovery extend-pass per
+§11.4.146 / §11.4.118). A RED reproduction test is in the working tree
+(`tests/unit/test_plugin_unicode_query_encoding.py`, untracked at time of writing).
+**Fix:** IN PROGRESS — per-plugin UTF-8-safe query encoding across the 15 affected engines. Not claimed fixed;
+this entry will be completed with the GREEN proof + commit hash once the §11.4.115 RED→GREEN flip lands and is
+verified live on nezha.
+**Affected (preliminary):** the 15 affected `plugins/*.py` nova3 engines (final list pending the extend-pass).
+**Regression guard (planned, §11.4.115/§11.4.135):** `tests/unit/test_plugin_unicode_query_encoding.py`
+(RED-on-broken → GREEN-on-fixed) + extend-pass enumerated coverage per §11.4.146.
