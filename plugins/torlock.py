@@ -5,6 +5,7 @@
 from datetime import datetime, timedelta
 from html.parser import HTMLParser
 from typing import Any, Dict, List, Tuple, Union
+from urllib.parse import quote, unquote_plus
 
 from helpers import download_file, retrieve_url
 from novaprinter import prettyPrinter
@@ -99,10 +100,12 @@ class torlock:
 
     def search(self, query: str, cat: str = 'all') -> None:
         """ Performs search """
-        # Torlock uses dashes for spaces in its path. Handle BOTH the
-        # %20-encoded (nova2) and raw-space (merge service) caller
-        # conventions so a literal space never reaches urllib.
-        query = query.replace("%20", "-").replace(" ", "-")
+        # Torlock uses dashes for spaces in its URL PATH slug. Keep '-' as the
+        # word separator but percent-encode each word with quote(safe="") so a
+        # Cyrillic query is ASCII-safe (UTF-8 percent-encoded) and never reaches
+        # urllib as a non-ASCII char. unquote_plus first decodes the nova2
+        # (%20-encoded) caller so encoding happens exactly once.
+        query = "-".join(quote(word, safe="") for word in unquote_plus(query).split())
         category = self.supported_categories[cat]
 
         for page in range(1, 5):

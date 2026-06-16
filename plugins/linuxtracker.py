@@ -21,6 +21,7 @@ try:
 except ImportError:
     from html.parser import HTMLParser
 import re
+from urllib.parse import quote_plus, unquote_plus
 
 # import qBT modules
 try:
@@ -130,10 +131,11 @@ class linuxtracker(object):
         :param cat:  the name of a search category, see supported_categories.
         """
 
-        # ?search= query param: '+' encodes a space. Handle BOTH the %20-encoded
-        # (nova2) and raw-space (merge service) caller conventions so a literal
-        # space never reaches urllib.
-        what = what.replace("%20", "+").replace(" ", "+")
+        # ?search= query param: percent-encode (space -> +, UTF-8 percent-encoded).
+        # unquote_plus first decodes the nova2 (%20-encoded) caller so a Cyrillic
+        # query is encoded exactly once (no double-encoding); quote_plus then
+        # makes the value ASCII-safe so a non-ASCII char never reaches urllib.
+        what = quote_plus(unquote_plus(what))
         url = ("{0}/index.php?page=torrents&active=1&order=5&by=2&search={1}").format(self.url, what)
 
         hits = []

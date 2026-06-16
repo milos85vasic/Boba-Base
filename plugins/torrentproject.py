@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from html.parser import HTMLParser
 from typing import Any, Dict, List, Mapping, Tuple, Union
-from urllib.parse import unquote
+from urllib.parse import quote_plus, unquote, unquote_plus
 
 from helpers import retrieve_url
 from novaprinter import prettyPrinter
@@ -135,10 +135,11 @@ class torrentproject:
         return ""
 
     def search(self, what: str, cat: str = "all") -> None:
-        # ?t= query param: '+' encodes a space. Handle BOTH the %20-encoded (nova2)
-        # and raw-space (merge service) caller conventions so a literal space
-        # never reaches urllib.
-        what = what.replace("%20", "+").replace(" ", "+")
+        # ?t= query param: percent-encode (space -> +, UTF-8 percent-encoded).
+        # unquote_plus first decodes the nova2 (%20-encoded) caller so a Cyrillic
+        # query is encoded exactly once (no double-encoding); quote_plus then
+        # makes the value ASCII-safe so a non-ASCII char never reaches urllib.
+        what = quote_plus(unquote_plus(what))
         for currPage in range(0, 5):
             url = f"{self.url}/browse?t={what}&p={currPage}"
             html = retrieve_url(url)

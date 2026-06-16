@@ -72,10 +72,11 @@ class pirateiro(object):
                 raise Exception("Error, please fill a bug report!")
 
     def search(self, what, cat="all"):
-        # ?query= param: '+' encodes a space. Handle BOTH the %20-encoded (nova2)
-        # and raw-space (merge service) caller conventions so a literal space
-        # never reaches urllib.
-        what = what.replace("%20", "+").replace(" ", "+")
+        # ?query= param: percent-encode (space -> +, UTF-8 percent-encoded).
+        # unquote_plus first decodes the nova2 (%20-encoded) caller so a Cyrillic
+        # query is encoded exactly once (no double-encoding); quote_plus then
+        # makes the value ASCII-safe so a non-ASCII char never reaches urllib.
+        what = urllib.parse.quote_plus(urllib.parse.unquote_plus(what))
         parser = self.HTMLParser(self.url)
         cat_str = "" if cat == "all" else "&category={0}".format(self.supported_categories[cat])
         for currPage in range(1, self.max_pages):

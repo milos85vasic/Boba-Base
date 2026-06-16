@@ -22,6 +22,7 @@ except ModuleNotFoundError:
     from HTMLParser import HTMLParser
 
 import re
+from urllib.parse import quote_plus, unquote_plus
 
 # import qBT modules
 try:
@@ -186,10 +187,11 @@ class nyaa(object):
                      (e.g. "Ubuntu+Linux")
         :param cat:  the name of a search category, see supported_categories.
         """
-        # ?q= query param: '+' encodes a space. The merge service passes a
-        # raw query with literal spaces; nova2 passes one already escaped.
-        # Encode a raw space to '+' so it never reaches urllib.
-        what = what.replace(" ", "+")
+        # ?q= query param: percent-encode (space -> +, UTF-8 percent-encoded).
+        # unquote_plus first decodes the nova2 (%20-encoded) caller so a Cyrillic
+        # query is encoded exactly once (no double-encoding); quote_plus then
+        # makes the value ASCII-safe so a non-ASCII char never reaches urllib.
+        what = quote_plus(unquote_plus(what))
         url = str("{0}/?f=0&s=seeders&o=desc&c={1}&q={2}".format(self.url, self.supported_categories.get(cat), what))
 
         hits = []

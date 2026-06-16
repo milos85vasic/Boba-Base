@@ -3,6 +3,8 @@
 
 import re
 
+from urllib.parse import quote_plus, unquote_plus
+
 from helpers import retrieve_url
 from novaprinter import prettyPrinter
 from time import sleep
@@ -67,10 +69,11 @@ class torrentdownload(object):
         print(download_url + " " + download_url)
 
     def search(self, what, cat="all"):
-        # ?q= query param: '+' encodes a space. Handle BOTH the %20-encoded (nova2)
-        # and raw-space (merge service) caller conventions so a literal space
-        # never reaches urllib.
-        what = what.replace("%20", "+").replace(" ", "+")
+        # ?q= query param: percent-encode (space -> +, UTF-8 percent-encoded).
+        # unquote_plus first decodes the nova2 (%20-encoded) caller so a Cyrillic
+        # query is encoded exactly once (no double-encoding); quote_plus then
+        # makes the value ASCII-safe so a non-ASCII char never reaches urllib.
+        what = quote_plus(unquote_plus(what))
         parser = self.HTMLParser(self.url)
         for currPage in range(1, self.max_pages):
             url = "{0}search?q={1}&p={2}".format(self.url, what, currPage)

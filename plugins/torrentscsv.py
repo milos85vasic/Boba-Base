@@ -27,7 +27,7 @@
 
 import json
 from typing import Mapping
-from urllib.parse import urlencode
+from urllib.parse import quote_plus, unquote_plus, urlencode
 
 from helpers import retrieve_url
 from novaprinter import prettyPrinter
@@ -54,10 +54,11 @@ class torrentscsv:
     trackers = "&".join(urlencode({"tr": tracker}) for tracker in trackers_list)
 
     def search(self, what: str, cat: str = "all") -> None:
-        # ?q= query param: '+' encodes a space. Handle BOTH the %20-encoded
-        # (nova2) and raw-space (merge service) caller conventions so a literal
-        # space never reaches urllib.
-        what = what.replace("%20", "+").replace(" ", "+")
+        # ?q= query param: percent-encode (space -> +, UTF-8 percent-encoded).
+        # unquote_plus first decodes the nova2 (%20-encoded) caller so a Cyrillic
+        # query is encoded exactly once (no double-encoding); quote_plus then
+        # makes the value ASCII-safe so a non-ASCII char never reaches urllib.
+        what = quote_plus(unquote_plus(what))
         search_url = f"{self.url}/service/search?size=100&q={what}"
         desc_url = f"{self.url}/#/search/torrent/{what}/1"
 

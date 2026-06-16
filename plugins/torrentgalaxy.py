@@ -7,6 +7,7 @@ from helpers import download_file, retrieve_url
 from novaprinter import prettyPrinter
 from time import sleep
 from datetime import datetime
+from urllib.parse import quote, unquote_plus
 
 
 class torrentgalaxy(object):
@@ -88,10 +89,12 @@ class torrentgalaxy(object):
             raise Exception("Download link not found")
 
     def search(self, what, cat="all"):
-        # The query goes into the URL path (keywords:...). The merge service
-        # passes a raw query with literal spaces; nova2 passes a %20-encoded
-        # one. Encode a raw space to %20 so it never reaches urllib.
-        what = what.replace(" ", "%20")
+        # The query goes into the URL PATH (keywords:...): percent-encode with
+        # quote(safe="") so a space -> %20 and UTF-8 chars are percent-encoded
+        # ('+' is literal in a path, so quote_plus is wrong here). unquote_plus
+        # first decodes the nova2 (%20-encoded) caller so a Cyrillic query is
+        # encoded exactly once and never reaches urllib as a non-ASCII char.
+        what = quote(unquote_plus(what), safe="")
         cat = "" if cat == "all" else f":category:{self.supported_categories[cat]}"
         parser = self.HTMLParser(self.url)
         current_page = 1
