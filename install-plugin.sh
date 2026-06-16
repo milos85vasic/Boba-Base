@@ -266,29 +266,39 @@ for plugin in "${SELECTED_PLUGINS[@]}"; do
     fi
     
     print_info "Installing ${plugin}..."
-    
-    # Copy plugin file
-    cp "$plugin_file" "$ENGINES_DIR/"
-    chmod 644 "$ENGINES_DIR/$(basename "$plugin_file")" 2>/dev/null || true
-    
-    # Copy icon if exists
-    if [[ -f "$plugin_icon" ]]; then
-        cp "$plugin_icon" "$ENGINES_DIR/"
-        chmod 644 "$ENGINES_DIR/$(basename "$plugin_icon")" 2>/dev/null || true
+
+    # Copy plugin file to the host engines dir. This is BEST-EFFORT: when the
+    # qBittorrent container owns the bind-mounted config/ (e.g. a remote host
+    # where PUID-owned config is not writable by the SSH user), this host cp
+    # fails with "Permission denied". Under `set -e` that previously KILLED the
+    # whole script before the authoritative "Install to running container" block
+    # below — so a remote deploy silently installed zero plugins. Make it
+    # non-fatal: warn and fall through to the container-cp path.
+    if ! cp "$plugin_file" "$ENGINES_DIR/" 2>/dev/null; then
+        print_warning "host copy to $ENGINES_DIR failed (container-owned?) — will install via the running container if present"
+    else
+        chmod 644 "$ENGINES_DIR/$(basename "$plugin_file")" 2>/dev/null || true
     fi
 
-    # Copy JSON config if exists (e.g. jackett.json, kinozal.json)
+    # Copy icon if exists (best-effort)
+    if [[ -f "$plugin_icon" ]]; then
+        cp "$plugin_icon" "$ENGINES_DIR/" 2>/dev/null && \
+            chmod 644 "$ENGINES_DIR/$(basename "$plugin_icon")" 2>/dev/null || true
+    fi
+
+    # Copy JSON config if exists (e.g. jackett.json, kinozal.json) (best-effort)
     plugin_json="plugins/${plugin}.json"
     if [[ ! -f "$plugin_json" ]]; then
         plugin_json="plugins/community/${plugin}.json"
     fi
     if [[ -f "$plugin_json" ]]; then
-        cp "$plugin_json" "$ENGINES_DIR/"
-        chmod 644 "$ENGINES_DIR/$(basename "$plugin_json")" 2>/dev/null || true
-        print_info "  Config: $(basename "$plugin_json") copied"
+        if cp "$plugin_json" "$ENGINES_DIR/" 2>/dev/null; then
+            chmod 644 "$ENGINES_DIR/$(basename "$plugin_json")" 2>/dev/null || true
+            print_info "  Config: $(basename "$plugin_json") copied"
+        fi
     fi
 
-    print_success "${plugin} installed"
+    print_success "${plugin} staged"
 done
 
 # Install to running container if applicable
