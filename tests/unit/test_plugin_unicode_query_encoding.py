@@ -215,6 +215,67 @@ def test_nova2_percent_encoded_cyrillic_still_works(name: str) -> None:
         )
 
 
+def test_yts_browse_path_cyrillic_encoded() -> None:
+    """yts has TWO routes: a correctly ``urlencode``'d ``list_movies.json``
+    QUERY-param API path (never broken) AND a ``/browse-movies/<query>/...``
+    PATH route that interpolated the RAW query into a path segment
+    (``score.urlBuilder`` -> ``url = "{}/{}".format(url, seg)``) — the exact
+    construction that put raw "Война и мир" into the path and crashed urllib's
+    ASCII encode on the live nezha stack.
+
+    The shared ``_drive_search_with`` harness returns an EMPTY body, so yts's
+    ``json.loads("")`` fails and ``search()`` returns BEFORE the browse branch —
+    masking the defect. So drive the browse route explicitly: return a body that
+    parses to valid JSON with NO movies, forcing the ``elif
+    supported_browse_params`` branch, and capture the SECOND URL (the
+    browse-movies path) yts builds.
+
+    Polarity (§11.4.115): pre-fix the browse URL carries raw Cyrillic / a raw
+    space and urllib's ASCII encode raises; post-fix it is %20+%XX-encoded and
+    round-trips. '+' must NOT appear (literal in a path).
+    """
+    mod, _ = _load_plugin("yts")
+    captured: list[str] = []
+
+    # 1st call (list_movies.json) -> valid JSON, movie_count=0 -> falls through
+    # to the browse branch. 2nd call (browse-movies path) -> empty -> loop ends.
+    bodies = iter(['{"data": {"movie_count": 0}}', ""])
+
+    def _capture(url, *args, **kwargs):
+        captured.append(url)
+        try:
+            return next(bodies)
+        except StopIteration:
+            return ""
+
+    inst = mod.yts()
+    # yts binds ``retrieve_url`` into its OWN module namespace at import
+    # (``from helpers import retrieve_url``), so patch the plugin module attr.
+    with patch.object(mod, "retrieve_url", side_effect=_capture):
+        try:
+            inst.search(CYRILLIC_RAW, "all")
+        except Exception:
+            # A real retrieve_url would raise UnicodeEncodeError building the
+            # browse URL on pre-fix code; the captured list still holds it.
+            pass
+
+    assert len(captured) >= 2, (
+        f"yts: browse-movies route was not reached (captured={captured!r}); "
+        "harness must drive past the list_movies.json API call"
+    )
+    browse = captured[1]
+    assert "browse-movies" in browse, f"yts: 2nd URL is not the browse route: {browse!r}"
+    assert " " not in browse, f"yts: raw space in browse path (NOT encoded): {browse!r}"
+    assert "+" not in browse, f"yts: '+' is literal in a path segment: {browse!r}"
+    _assert_url_ascii_and_urllib_safe(browse, "yts(browse): ")
+    decoded = urllib.parse.unquote(browse)
+    for word in CYRILLIC_RAW.split():
+        assert word in decoded, (
+            f"yts: Cyrillic token {word!r} lost in browse-path round-trip: "
+            f"url={browse!r} decoded={decoded!r}"
+        )
+
+
 def test_snowfl_cyrillic_path_encoded() -> None:
     """snowfl builds the query into a URL PATH segment via
     ``Parser.generateQuery``; its token bootstrap (index.html + script) can't

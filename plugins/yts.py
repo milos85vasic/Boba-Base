@@ -6,10 +6,10 @@ import re
 import math
 
 try:
-    from urllib.parse import urlencode, unquote, quote_plus
+    from urllib.parse import urlencode, unquote, quote_plus, quote
     # from html.parser import HTMLParser
 except ImportError:
-    from urllib import urlencode, unquote, quote_plus
+    from urllib import urlencode, unquote, quote_plus, quote
     # from HTMLParser import HTMLParser
 
 # local
@@ -65,7 +65,14 @@ class yts(object):
                     job.done(res)
         elif job.supported_browse_params:
             url_params = job.supported_browse_params
-            url_path = list(map(lambda i: i in params and params[i] or url_params[i], url_params))
+            # §11.4.146: the query_term lands in a URL PATH segment here (the
+            # browse-movies route), NOT the urlencode'd list_movies.json query
+            # param above — so percent-encode each segment (quote, safe="" =>
+            # %20 for space + UTF-8 %XX for non-ASCII; '+' is wrong in a path).
+            # paramBuilder already unquote'd the query, so this never double-encodes.
+            url_path = list(
+                map(lambda i: quote(str(i in params and params[i] or url_params[i]), safe=""), url_params)
+            )
             url = job.urlBuilder(self.url, url_path, "page" in params and {"page": params["page"]})
             data = retrieve_url(url)
             data = re.sub(r"\s\s+", "", data).replace("\n", "").replace("\r", "")
