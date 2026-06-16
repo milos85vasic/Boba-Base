@@ -334,3 +334,105 @@ func TestParseIndexerMapCSV(t *testing.T) {
 		})
 	}
 }
+
+// TestIsServerError pins the 5xx-sniffing classifier that gates the
+// configureOne retry. Only a "config POST HTTP 5xx" message must retry;
+// 4xx and non-matching messages must NOT. RED-on-regression: if the
+// prefix check were dropped a "template fetch HTTP 503" would falsely
+// trigger a retry on the wrong call.
+func TestIsServerError(t *testing.T) {
+	cases := []struct {
+		msg  string
+		want bool
+	}{
+		{"config POST HTTP 500", true},
+		{"config POST HTTP 503", true},
+		{"config POST HTTP 404", false},
+		{"config POST HTTP 401", false},
+		{"template fetch HTTP 500", false}, // wrong prefix → not a config-POST 5xx
+		{"unreachable", false},
+		{"", false},
+	}
+	for _, tc := range cases {
+		if got := isServerError(tc.msg); got != tc.want {
+			t.Fatalf("isServerError(%q)=%v want %v", tc.msg, got, tc.want)
+		}
+	}
+}
+
+// TestConfigureOneRetriesOn5xx drives configureOne against a stateful
+// stub whose POST /config returns 500 on the first attempt and 200 on the
+// second. configureOne must retry (after its 2s backoff) and ultimately
+// succeed (empty error string). RED-on-regression: if the retry branch is
+// removed, the first 500 surfaces as "config POST HTTP 500" and this fails.
+func TestConfigureOneRetriesOn5xx(t *testing.T) {
+	if testing.Short() {
+		t.Skip("retry path includes a 2s backoff; SKIP-OK in -short")
+	}
+	var posts int
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/rutracker/config") && r.Method == "GET":
+			_, _ = w.Write([]byte(`[{"id":"username","value":""},{"id":"password","value":""}]`))
+		case strings.HasSuffix(r.URL.Path, "/rutracker/config") && r.Method == "POST":
+			posts++
+			if posts == 1 {
+				w.WriteHeader(500) // first attempt: server error -> retry
+				return
+			}
+			w.WriteHeader(200) // retry succeeds
+		default:
+			w.WriteHeader(404)
+		}
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	deps := AutoconfigDeps{Client: NewClient(srv.URL, "k")}
+	cred := &repos.Credential{
+		Name:        "RUTRACKER",
+		HasUsername: true,
+		HasPassword: true,
+		Username:    "u",
+		Password:    "p",
+	}
+	errStr := configureOne(deps, "RUTRACKER", "rutracker", cred)
+	if errStr != "" {
+		t.Fatalf("configureOne after retry: want success, got %q", errStr)
+	}
+	if posts != 2 {
+		t.Fatalf("expected exactly 2 POST attempts (1 fail + 1 retry), got %d", posts)
+	}
+}
+
+// TestConfigureOneNoRetryOn4xx confirms a 4xx is surfaced immediately with
+// NO retry. RED-on-regression: retrying a 4xx would make posts == 2.
+func TestConfigureOneNoRetryOn4xx(t *testing.T) {
+	var posts int
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/rutracker/config") && r.Method == "GET":
+			_, _ = w.Write([]byte(`[{"id":"username","value":""},{"id":"password","value":""}]`))
+		case strings.HasSuffix(r.URL.Path, "/rutracker/config") && r.Method == "POST":
+			posts++
+			w.WriteHeader(400)
+		default:
+			w.WriteHeader(404)
+		}
+	})
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	deps := AutoconfigDeps{Client: NewClient(srv.URL, "k")}
+	cred := &repos.Credential{
+		Name: "RUTRACKER", HasUsername: true, HasPassword: true,
+		Username: "u", Password: "p",
+	}
+	errStr := configureOne(deps, "RUTRACKER", "rutracker", cred)
+	if errStr != "config POST HTTP 400" {
+		t.Fatalf("want immediate 4xx surfacing, got %q", errStr)
+	}
+	if posts != 1 {
+		t.Fatalf("expected exactly 1 POST (no retry on 4xx), got %d", posts)
+	}
+}

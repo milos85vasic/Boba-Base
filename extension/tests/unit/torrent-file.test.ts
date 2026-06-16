@@ -16,10 +16,11 @@
  * mutation evidence in the session report).
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 
 import {
   parseTorrentFile,
+  parseTorrentFromUrl,
   computeInfohash,
   buildMagnetFromTorrent,
   sanitizePasskeyFromUrl,
@@ -520,5 +521,105 @@ describe("torrent-file: malformed input rejection", () => {
   it("rejects a top-level bencode list (not a dict)", async () => {
     const bytes = encode([1, 2, 3] as BencodeValue);
     await expect(parseTorrentFile(bytes)).rejects.toBeInstanceOf(ParseError);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// parseTorrentFromUrl — download + parse (fetch is the ONLY boundary mocked,
+// per §11.4.27 unit-test allowance; the parse path is the REAL parser).
+// ─────────────────────────────────────────────────────────────────────────────
+describe("parseTorrentFromUrl", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("downloads and parses a real .torrent, returning the parsed metadata", async () => {
+    const bytes = buildSingleFileTorrent({ name: "ubuntu.iso", length: 2048 });
+    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        headers: { get: () => "application/x-bittorrent" },
+        arrayBuffer: async () => ab,
+      })),
+    );
+    const parsed = await parseTorrentFromUrl("https://tracker.example/x.torrent");
+    // User-observable outcome: the parsed name + size come from the REAL parser,
+    // not the mock. RED-on-regression: if the success branch dropped the
+    // `parseTorrentFile(data)` call, name would be "" and this fails.
+    expect(parsed.name).toBe("ubuntu.iso");
+    expect(parsed.totalSize).toBe(2048);
+  });
+
+  it("throws ParseError with the HTTP status on a non-ok response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+        headers: { get: () => null },
+        arrayBuffer: async () => new ArrayBuffer(0),
+      })),
+    );
+    // RED-on-regression: if the `!response.ok` guard were dropped, an empty
+    // body would reach the parser and throw a DIFFERENT (decode) error, so the
+    // message assertion below would fail.
+    await expect(
+      parseTorrentFromUrl("https://tracker.example/missing.torrent"),
+    ).rejects.toThrow(/HTTP 404/);
+  });
+
+  it("wraps a network/transport failure as a ParseError (not a raw fetch error)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("ECONNREFUSED");
+      }),
+    );
+    // RED-on-regression: without the catch-and-rewrap, the raw Error("ECONNREFUSED")
+    // would surface instead of a ParseError and `toBeInstanceOf(ParseError)` fails.
+    await expect(
+      parseTorrentFromUrl("https://tracker.example/x.torrent"),
+    ).rejects.toBeInstanceOf(ParseError);
+  });
+
+  it("still parses on an unexpected content-type (warns but does not reject)", async () => {
+    const bytes = buildSingleFileTorrent({ name: "weird.iso" });
+    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        headers: { get: () => "text/html" }, // unexpected — must warn, not fail
+        arrayBuffer: async () => ab,
+      })),
+    );
+    const parsed = await parseTorrentFromUrl("https://tracker.example/x.torrent");
+    // RED-on-regression: if the content-type check rejected instead of warning,
+    // this would throw and the name assertion never runs.
+    expect(parsed.name).toBe("weird.iso");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// computeInfohash error path — a non-ParseError thrown inside is wrapped.
+// ─────────────────────────────────────────────────────────────────────────────
+describe("computeInfohash error handling", () => {
+  it("throws a ParseError for a buffer with no extractable info dict", async () => {
+    // "de" is a valid empty bencode dict with NO `info` key → extractInfoDictBytes
+    // throws a ParseError, which must surface as a ParseError (not a raw throw).
+    const notATorrent = ascii("de");
+    await expect(computeInfohash(notATorrent)).rejects.toBeInstanceOf(ParseError);
+  });
+
+  it("throws a ParseError for entirely non-bencode garbage", async () => {
+    const garbage = ascii("this is not bencode at all !!!");
+    await expect(computeInfohash(garbage)).rejects.toBeInstanceOf(ParseError);
   });
 });
