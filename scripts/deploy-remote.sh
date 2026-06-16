@@ -43,7 +43,7 @@ $SSH "cd '$RPATH' && chmod 600 .env && mkdir -p '$RPATH/tmp' \$HOME/boba-downloa
   sed -i 's#^QBITTORRENT_DATA_DIR=.*#QBITTORRENT_DATA_DIR='\"\$HOME\"'/boba-downloads#' .env"
 
 echo "[3/5] install curated plugins"
-$SSH "cd '$RPATH' && chmod +x install-plugin.sh && ./install-plugin.sh rutracker rutor kinozal nnmclub eztv jackett limetorrents piratebay solidtorrents torlock torrentproject torrentscsv"
+$SSH "cd '$RPATH' && chmod +x install-plugin.sh && ./install-plugin.sh rutracker rutor kinozal nnmclub eztv jackett limetorrents piratebay solidtorrents torlock torrentproject torrentscsv kickass nyaa bitsearch torrentgalaxy"
 
 echo "[4/5] podman-compose up"
 PROF=(); [[ -n "$PROFILE" ]] && PROF=(--profile "$PROFILE")
