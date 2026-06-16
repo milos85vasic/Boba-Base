@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>findings</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<h1 id="tracker-discovery-sweep-findings-11.4.118">Tracker Discovery
+Sweep — Findings (§11.4.118)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T00:00:00Z <strong>Status:</strong> active
+<strong>Scope:</strong> Boba merge-search tracker fleet —
+discovery-pressure sweep per §11.4.118 <strong>Authority:</strong>
+captured-evidence FACT from 3 sequential full-fleet nezha searches (29
+enabled trackers each)</p>
+<hr />
+<h2 id="why-this-document-exists-honest-provenance-11.4.6">Why this
+document exists (honest provenance — §11.4.6)</h2>
+<p>The §11.4.118 tracker discovery sweep ran on the <strong>live nezha
+stack</strong> (3 sequential full-fleet searches, 29 enabled trackers
+each) but <strong>could not write its findings doc at the time because
+the host disk was full</strong>. This document persists those captured
+findings verbatim-faithfully. No embellishment: every line below is
+either captured-evidence FACT or is explicitly labelled investigate /
+verify / known per §11.4.6.</p>
+<h2 id="queries-executed-captured-fact">Queries executed (captured
+FACT)</h2>
+<table>
+<colgroup>
+<col style="width: 4%" />
+<col style="width: 21%" />
+<col style="width: 20%" />
+<col style="width: 17%" />
+<col style="width: 25%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Query</th>
+<th>Charset</th>
+<th>Outcome</th>
+<th>Merged results</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>ubuntu</code></td>
+<td>ASCII</td>
+<td>completed</td>
+<td>435</td>
+<td>baseline</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>the matrix</code></td>
+<td>multi-word</td>
+<td>completed</td>
+<td>1217</td>
+<td><strong>ZERO</strong> <code>plugin_bad_query_encoding</code> — prior
+multi-word fix holds</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>Война</code></td>
+<td>Cyrillic</td>
+<td>completed</td>
+<td>1272</td>
+<td>exposes the P0 UTF-8 encoding bug</td>
+</tr>
+</tbody>
+</table>
+<h2 id="categorization-captured-fact">Categorization (captured
+FACT)</h2>
+<ul>
+<li><strong>WORKING:</strong> 12–14 trackers</li>
+<li><strong>EMPTY-no-error:</strong> 1 tracker</li>
+<li><strong>FAILING:</strong> 16 trackers (15 of them share one
+bug)</li>
+</ul>
+<h2 id="headline-p0-utf-8-encoding-crash-captured-stderr-fact">HEADLINE
+— P0 UTF-8 encoding crash (captured stderr FACT)</h2>
+<p>15 plugins crash on the Cyrillic query. The query is not
+UTF-8-encoded into the request URL. Captured stderr (example:
+<code>snowfl</code>):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;__error__&quot;</span><span class="fu">:</span> <span class="st">&quot;&#39;ascii&#39; codec can&#39;t encode characters in position 48-52: ordinal not in range(128)&quot;</span><span class="fu">}</span></span></code></pre></div>
+<h3 id="affected-plugins-15">Affected plugins (15)</h3>
+<p><code>bitsearch</code>, <code>glotorrents</code>,
+<code>linuxtracker</code>, <code>nyaa</code>, <code>pirateiro</code>,
+<code>rockbox</code>, <code>snowfl</code>, <code>tokyotoshokan</code>,
+<code>torlock</code>, <code>torrentdownload</code>,
+<code>torrentgalaxy</code>, <code>torrentproject</code>,
+<code>torrentscsv</code>, <code>yourbittorrent</code>,
+<code>yts</code>.</p>
+<p><strong>Fix (in progress, separate commit):</strong>
+<code>urllib</code> <code>quote</code> / <code>quote_plus</code> of the
+query before URL assembly.</p>
+<h2 id="per-tracker-status-matrix-captured-fact">Per-tracker status
+matrix (captured FACT)</h2>
+<p>Legend — status across the 3 queries: <code>OK</code> = completed
+with results · <code>crash</code> = ascii-codec crash on Cyrillic ·
+<code>timeout</code> = deadline_timeout · <code>403</code> = upstream
+HTTP 403 · <code>empty</code> = completed, zero results, no error.</p>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 17%" />
+<col style="width: 12%" />
+<col style="width: 18%" />
+<col style="width: 10%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tracker</th>
+<th><code>ubuntu</code> (ASCII)</th>
+<th><code>the matrix</code> (multi-word)</th>
+<th><code>Война</code> (Cyrillic)</th>
+<th>error_type</th>
+<th>category</th>
+<th>fixable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bitsearch</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>glotorrents</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>linuxtracker</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>nyaa</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>pirateiro</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>rockbox</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>snowfl</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>tokyotoshokan</td>
+<td>timeout</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec + deadline</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8) / verify slow</td>
+</tr>
+<tr>
+<td>torlock</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>torrentdownload</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>torrentgalaxy</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>torrentproject</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>torrentscsv</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>yourbittorrent</td>
+<td>timeout</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec + deadline</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8) / verify slow</td>
+</tr>
+<tr>
+<td>yts</td>
+<td>OK</td>
+<td>OK</td>
+<td>crash</td>
+<td>ascii-codec encode</td>
+<td>FAILING (P0)</td>
+<td>yes (UTF-8)</td>
+</tr>
+<tr>
+<td>kickass</td>
+<td>403</td>
+<td>403</td>
+<td>403</td>
+<td>upstream_http_403 (CF)</td>
+<td>FAILING (known)</td>
+<td>no (upstream)</td>
+</tr>
+<tr>
+<td>gamestorrents</td>
+<td>empty</td>
+<td>empty</td>
+<td>empty</td>
+<td>none</td>
+<td>EMPTY-no-error</td>
+<td>undetermined</td>
+</tr>
+</tbody>
+</table>
+<p>Trackers not listed above (the remaining 12 of the 29 enabled)
+completed all three queries with results and are categorized
+<strong>WORKING</strong> (no captured error).</p>
+<h2 id="other-captured-findings">Other captured findings</h2>
+<ul>
+<li><strong>kickass</strong> — <code>upstream_http_403</code> on all 3
+queries. Cloudflare block. KNOWN / upstream, not a code defect.</li>
+<li><strong>tokyotoshokan + yourbittorrent</strong> — additionally
+<code>deadline_timeout</code> on the ASCII query. Slow upstreams, not a
+code defect (distinct from the P0 crash).</li>
+<li><strong>gamestorrents</strong> — EMPTY-no-error on all 3 queries.
+<strong>Undetermined</strong> (§11.4.6): niche-no-match vs silent
+parse-fail — not proven either way.</li>
+</ul>
+<h2 id="prioritized-next-issues">Prioritized next-issues</h2>
+<table>
+<colgroup>
+<col style="width: 44%" />
+<col style="width: 24%" />
+<col style="width: 32%" />
+</colgroup>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Item</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P0</strong></td>
+<td>UTF-8 encoding crash in 15 plugins (ascii-codec on Cyrillic)</td>
+<td>being fixed (<code>urllib quote/quote_plus</code>, separate
+commit)</td>
+</tr>
+<tr>
+<td><strong>P1</strong></td>
+<td>gamestorrents 0-results on all queries</td>
+<td>investigate (niche-no-match vs silent parse-fail)</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>tokyotoshokan / yourbittorrent slow-upstream timeouts</td>
+<td>verify (slow upstream, not code)</td>
+</tr>
+<tr>
+<td><strong>KNOWN</strong></td>
+<td>kickass 403 (Cloudflare)</td>
+<td>upstream, no code fix</td>
+</tr>
+</tbody>
+</table>
+<h2 id="honest-coverage-note-11.4.6">Honest coverage note (§11.4.6)</h2>
+<ul>
+<li>Only the <strong>29 enabled</strong> trackers were probed in this
+sweep.</li>
+<li><strong>14 DEAD_PUBLIC_TRACKERS were NOT re-tested</strong> — they
+require <code>ENABLE_DEAD_TRACKERS=1</code> to participate. Their state
+is unknown from this sweep.</li>
+<li>The <strong>15-crash verdict is captured-evidence FACT</strong>
+(reproduced on the Cyrillic query with captured stderr).</li>
+<li><strong>gamestorrents (P1)</strong> and the <strong>slow-upstream
+timeouts (P2)</strong> are <em>investigate / verify</em> items,
+<strong>not proven</strong> root causes.</li>
+</ul>
+</body>
+</html>
