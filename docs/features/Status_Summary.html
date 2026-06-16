@@ -176,8 +176,8 @@
 <h1 class="title">Status_Summary</h1>
 </header>
 <h1 id="boba-feature-status-summary">Boba — Feature Status Summary</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-15T00:00:00Z <strong>Scope:</strong> Two-audience summary
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-06-16T11:30:00Z <strong>Scope:</strong> Two-audience summary
 companion of <code>docs/features/Status.md</code> (§11.4.56). Page 1 =
 product/operator audience; Page 2 = software-engineer audience.</p>
 <blockquote>
@@ -230,16 +230,24 @@ RuTracker search is needed (BOB-008). - Decide whether the Go profile
 parity is a release goal (RW-09).</p>
 <p><strong>Honest note on testing depth:</strong> every feature in this
 catalog is backed by a real source file and, in nearly all cases, an
-automated test. <strong>No feature has a video/screen recording
-yet</strong> — that visual confirmation is a planned follow-up.</p>
+automated test. <strong>A few headline flows now have real screen
+recordings</strong> — the boba-ctl CLI (status/health/list) and the web
+dashboard search journey, tab navigation, qBit/Download buttons, theme,
+and Jackett credentials page
+(<code>docs/qa/recordings-20260615/</code>). The remaining per-feature
+visual confirmations are an in-progress recording pass.</p>
 <hr />
 <h2 id="page-2-for-software-engineers">Page 2 — For software
 engineers</h2>
-<p><strong>Inventory method (2026-06-15):</strong> read-only codegraph +
-grep + source reading across the repo. 135 features cataloged across 8
-components. Every row in <code>Status.md</code> cites a source file
-(file:line where load-bearing) and the covering test file. No invented
-features (§11.4.6).</p>
+<p><strong>Inventory method (2026-06-15, expanded 2026-06-16):</strong>
+read-only codegraph + grep + source reading across the repo, then
+expanded to per-unit granularity (§11.4.118). <strong>288 features
+cataloged</strong> across 8 components (was 135 at Rev 2 — finer
+granularity, one row per real
+endpoint/handler/client-method/component-control/plugin/subcommand/script).
+Every row in <code>Status.md</code> cites a source file (file:line where
+load-bearing), endpoint, command, or control. No invented features
+(§11.4.6).</p>
 <p><strong>Component / feature counts + posture:</strong></p>
 <table>
 <colgroup>
@@ -260,50 +268,63 @@ features (§11.4.6).</p>
 <tr>
 <td>Download Proxy + Merge Search (Python/FastAPI)</td>
 <td><code>download-proxy/src</code> :7186/:7187</td>
-<td>38</td>
-<td>Shipped default; nearly all tested-green-in-suite. Open gaps: hooks
-auth (RW-01), default-open write surface (RW-02), SSRF (RW-03), magnet
-auth (RW-04); validator (BEP48/15) has no dedicated test.</td>
+<td>68</td>
+<td>Shipped default; nearly all tested-green-in-suite. Now itemized per
+route (search/auth/hooks/schedules/theme/download), per dedup tier, per
+enrichment source, per validator. Open gaps: hooks auth (RW-01),
+default-open write surface (RW-02), SSRF (RW-03), magnet auth (RW-04);
+validator (BEP48/15) has no dedicated test; Kinozal/IPTorrents have no
+REST auth route.</td>
 </tr>
 <tr>
 <td>qBitTorrent-go (Go/Gin)</td>
 <td><code>qBitTorrent-go</code> :7186/7187/7188 opt-in</td>
-<td>20</td>
-<td>Skeleton; unit-only (go test). Scheduler has no driver loop (RW-10,
-never fires); enricher missing (RW-11); plugin fan-out missing
-(RW-12).</td>
+<td>47</td>
+<td>Skeleton; unit-only (go test). Itemized per
+handler/client-method/service. <code>DownloadHandler</code> mock-only,
+<code>ActiveDownloadsHandler</code> empty stub,
+<code>FetchTorrent</code> stub; scheduler has no driver loop (RW-10,
+never fires); enricher missing (RW-11); SSE broker
+defined-but-unwired.</td>
 </tr>
 <tr>
 <td>boba-jackett (Go)</td>
 <td><code>qBitTorrent-go/cmd/boba-jackett</code> :7189</td>
-<td>11</td>
-<td>Implemented; unit + integration + e2e + security (go). Encrypted
-SQLite (AES-256-GCM), autoconfig, runs history, overrides, admin auth,
-hardened CORS.</td>
+<td>26</td>
+<td>Implemented; unit + integration + e2e + security (go). Itemized per
+endpoint + autoconfig engine/matcher/client +
+crypto/migrate/repos/bootstrap/envfile. Encrypted SQLite (AES-256-GCM),
+autoconfig, runs history, overrides, admin auth, hardened CORS.</td>
 </tr>
 <tr>
 <td>Tracker plugins</td>
 <td><code>plugins/*.py</code></td>
-<td>16</td>
-<td>Curated subset installed via <code>install-plugin.sh</code>; parser
-sweep stress-chaos coverage. rutracker ReDoS fix not yet deployed
-(RW-06); <code>torrentproject</code>/<code>torrentscsv</code> named in
-curated array but file absent.</td>
+<td>30</td>
+<td>One row per real plugin present in tree (21 with matching file) +
+support modules. Parser sweep stress-chaos coverage. rutracker ReDoS fix
+not yet deployed (RW-06). CORRECTION: <code>install-plugin.sh</code>
+PLUGINS array has <strong>44 entries</strong>, not 12; ~23
+(incl. <code>torrentproject</code>/<code>torrentscsv</code>) are curated
+names with no file in this tree — itemized as discrepancy rows, not
+asserted working.</td>
 </tr>
 <tr>
 <td>Angular 21 frontend</td>
 <td><code>frontend/</code> served :7187</td>
-<td>18</td>
+<td>34</td>
 <td>Vitest unit + Python Playwright/integration; signals-based; 40%
-coverage floor in <code>vitest.config.ts</code>.</td>
+coverage floor. Itemized per dashboard control (search/grid/5
+tabs/qBit+Download/magnet/theme/auth chips), per dialog, per service,
+per Jackett page control.</td>
 </tr>
 <tr>
 <td>BobaLink extension</td>
 <td><code>extension/</code> (WXT MV3)</td>
-<td>14</td>
-<td>559 Vitest tests / 52 specs (per
-<code>docs/browser_extension/Status.md</code> Rev 15);
-unit/integration/security/chaos/perf/a11y/live; built zips present.</td>
+<td>39</td>
+<td>Per <code>docs/browser_extension/Status.md</code>;
+unit/integration/security/chaos/perf/a11y/live; built zips present.
+Itemized per popup control, scanner, parser, api module, shared util,
+and <strong>8 locales</strong> (en/de/es/fr/it/ja/pt/ru).</td>
 </tr>
 <tr>
 <td>WebUI bridge</td>
@@ -314,9 +335,12 @@ unit/integration/security/chaos/perf/a11y/live; built zips present.</td>
 <tr>
 <td>Infra / CLI / scripts</td>
 <td>repo root + <code>scripts/</code></td>
-<td>14</td>
-<td>start/stop/setup/install-plugin/ci/tunnel; several scripts
-un-validated (no dedicated test).</td>
+<td>40</td>
+<td>Itemized: boba-ctl 5 subcommands + wrapper, lifecycle scripts,
+CI/test wrappers, and the full <code>scripts/</code> helper set.
+CORRECTION: <code>boba-ctl.sh</code> DOES exist
+(<code>scripts/boba-ctl.sh</code>), Rev 2 said it did not. Several
+scripts un-validated (no dedicated test).</td>
 </tr>
 </tbody>
 </table>
@@ -346,15 +370,21 @@ Go <code>qBitTorrent-go/internal/**/*_test.go</code> +
 <code>docs/REMAINING_WORK_PLAN.md</code> RW-01..RW-21 + BOB-008
 (operator-blocked CAPTCHA).</p>
 <p><strong>Engineering follow-ups for this doc:</strong> - Capture
-<code>video_display</code>/UI screen recordings per §11.4.107/§11.4.143
-(all 135 rows are <code>PENDING</code>) — currently the single biggest
-evidence gap. - Confirm whether a Prometheus <code>/metrics</code>
-endpoint exists or stats are in-process only
+per-feature <code>video_display</code>/UI screen recordings per
+§11.4.107/§11.4.143 (most of the 288 rows are still
+<code>PENDING</code>; headline CLI + web flows are now VIDEO-CONFIRMED)
+— the largest remaining evidence gap. - Confirm whether a Prometheus
+<code>/metrics</code> endpoint exists or stats are in-process only
 (<code>GET /api/v1/stats</code>) — no
 <code>Counter()/Histogram()/Gauge()</code> definitions found in
 <code>download-proxy/src</code>. - Resolve the
-<code>torrentproject</code>/<code>torrentscsv</code>
-curated-name-vs-missing-file discrepancy. - Generate HTML/PDF/DOCX
-exports (deferred — see follow-up note below).</p>
+curated-name-vs-missing-file discrepancy for the ~23 plugins in the
+44-entry <code>install-plugin.sh</code> array with no
+<code>plugins/*.py</code>
+(incl. <code>torrentproject</code>/<code>torrentscsv</code>). - Wire the
+Go
+<code>DownloadHandler</code>/<code>ActiveDownloadsHandler</code>/<code>FetchTorrent</code>
+stubs + scheduler driver loop (RW-10/RW-11) before the Go profile can
+claim parity.</p>
 </body>
 </html>
