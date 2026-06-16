@@ -361,9 +361,70 @@ Definitive end-to-end proof — full-fleet multi-word search</h2>
 the same multi-word query the pre-session build crashed ~17 plugins on
 now returns 2600 results with every tracker healthy and all
 private-tracker auth working.</p>
+<h2
+id="utf-8-cyrillic-query-fix-proven-live-p0-from-the-discovery-sweep">7.
+UTF-8 / Cyrillic query fix — proven live (P0 from the discovery
+sweep)</h2>
+<p>The §11.4.118 discovery sweep found 14 plugins crashed on a Cyrillic
+query (<code>'ascii' codec can't encode</code>). Fix
+<code>ae387b2</code> (per-plugin
+<code>quote</code>/<code>quote_plus</code> UTF-8-safe encoding).
+Re-deployed via the pipeline; live nezha Cyrillic search
+<code>Война и мир</code> (14 fixed plugins) — <strong>total = 290
+results, <code>CRASHED/encoding-err: NONE</code></strong>:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>plugin</th>
+<th>status</th>
+<th>results</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>torrentgalaxy</td>
+<td>success</td>
+<td>198</td>
+</tr>
+<tr>
+<td>bitsearch</td>
+<td>success</td>
+<td>80</td>
+</tr>
+<tr>
+<td>torrentscsv</td>
+<td>success</td>
+<td>11</td>
+</tr>
+<tr>
+<td>torrentdownload</td>
+<td>success</td>
+<td>1</td>
+</tr>
+<tr>
+<td>glotorrents/linuxtracker/nyaa/pirateiro/rockbox/snowfl/torrentproject</td>
+<td>empty</td>
+<td>0 (no error — handled, no match)</td>
+</tr>
+<tr>
+<td>tokyotoshokan/torlock/yourbittorrent</td>
+<td>deadline_timeout</td>
+<td>0 (slow upstream, NOT a crash)</td>
+</tr>
+</tbody>
+</table>
+<p>Before the fix every one of the 14 crashed with
+<code>ascii codec</code>; now zero crashes and real Cyrillic results —
+the core use case for a Russian-tracker fleet. Unit: 97 passed (43
+unicode + 54 multiword), §1.1 mutation proven.</p>
 <p><em>Captured 2026-06-16 against nezha.local; unit coverage: multiword
 tests (16 plugins capture + snowfl focused + well-behaved no-regression)
-+ rutracker-cookie + auth-status cookie-reflection tests, all with §1.1
-negation proofs.</em></p>
++ unicode/Cyrillic tests (14 plugins) + rutracker-cookie + auth-status
+cookie-reflection tests, all with §1.1 negation proofs.</em></p>
 </body>
 </html>

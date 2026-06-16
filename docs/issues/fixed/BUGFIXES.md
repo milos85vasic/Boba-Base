@@ -1,6 +1,6 @@
 # Bugfix Log
 
-**Revision:** 19
+**Revision:** 20
 **Last modified:** 2026-06-16T23:55:00Z
 
 Per CONST-MD-Bugfix-Documentation, every bug surfaced during
@@ -1109,17 +1109,21 @@ headless nova3 plugin cannot solve; there is no server-side cookie-injection or 
 in `docs/research/` (commit `f3e7a4f`). No further attempts unless the platform constraint changes (§11.4.34/§11.4.7).
 **Affected:** `plugins/kickass.py`, `docs/research/`.
 
-### 55. (OPEN — fix in progress) UTF-8 / Cyrillic query crash in 15 plugins
+### 55. UTF-8 / Cyrillic query crash in 14 plugins
 
-**Severity:** HIGH. **Type:** Bug. **Status:** OPEN — under active fix this session; NOT yet verified fixed (§11.4.6).
-**Root cause (under investigation, FACT so far):** a sibling defect class to #48 — 15 nova3 plugins crash on a
-UTF-8 / Cyrillic (non-ASCII) query (the percent-encoding fix in #48 addressed the literal-space control-character
-crash; the non-ASCII byte path is a distinct failure that surfaced during the #48 discovery extend-pass per
-§11.4.146 / §11.4.118). A RED reproduction test is in the working tree
-(`tests/unit/test_plugin_unicode_query_encoding.py`, untracked at time of writing).
-**Fix:** IN PROGRESS — per-plugin UTF-8-safe query encoding across the 15 affected engines. Not claimed fixed;
-this entry will be completed with the GREEN proof + commit hash once the §11.4.115 RED→GREEN flip lands and is
-verified live on nezha.
-**Affected (preliminary):** the 15 affected `plugins/*.py` nova3 engines (final list pending the extend-pass).
-**Regression guard (planned, §11.4.115/§11.4.135):** `tests/unit/test_plugin_unicode_query_encoding.py`
-(RED-on-broken → GREEN-on-fixed) + extend-pass enumerated coverage per §11.4.146.
+**Severity:** HIGH. **Type:** Bug. **Status:** FIXED (`ae387b2`) — verified live on nezha.
+**Root cause (FACT):** sibling defect class to #48 — 14 nova3 plugins crashed on a UTF-8 / Cyrillic (non-ASCII)
+query with `'ascii' codec can't encode characters` (captured stderr from the §11.4.118 discovery sweep). #48's
+fix only `.replace(" ", ...)`-ed literal spaces; the raw non-ASCII bytes still reached urllib and crashed. Surfaced
+during the #48 discovery extend-pass (§11.4.146 / §11.4.118).
+**Fix (`ae387b2`):** per-plugin UTF-8-safe query encoding (all `unquote*` first to avoid double-encoding the nova2
+caller): `quote_plus(unquote_plus(q))` for `?key=` params (bitsearch, glotorrents, linuxtracker, nyaa, pirateiro,
+rockbox, torrentdownload, torrentscsv, torrentproject, tokyotoshokan + `re_escape` for its pagination regex);
+`quote(...,safe="")` for path segments (torrentgalaxy, snowfl); `"-".join(quote(word,safe="")...)` for dash-slugs
+(torlock, yourbittorrent). §11.4.6: yts was NOT affected (already uses `urlencode()`) — left unchanged → 14, not 15.
+**Affected:** the 14 `plugins/*.py` above.
+**Regression guard (§11.4.115/§11.4.135):** `tests/unit/test_plugin_unicode_query_encoding.py` (RED 14 failed →
+GREEN 97 passed incl. 54 existing multiword; §1.1: strip nyaa encoding → FAIL → restore).
+**Verified:** live nezha Cyrillic search "Война и мир" → **290 results, CRASHED/encoding-err: NONE**
+(bitsearch 80, torrentgalaxy 198, torrentscsv 11, torrentdownload 1 success; rest empty-no-error / deadline_timeout,
+zero crashes). Evidence: `docs/qa/search-fix-verify-20260616/`.

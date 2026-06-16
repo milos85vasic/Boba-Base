@@ -1,5 +1,179 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>BUGFIXES</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
 <h1 id="bugfix-log">Bugfix Log</h1>
-<p><strong>Revision:</strong> 19 <strong>Last modified:</strong>
+<p><strong>Revision:</strong> 20 <strong>Last modified:</strong>
 2026-06-16T23:55:00Z</p>
 <p>Per CONST-MD-Bugfix-Documentation, every bug surfaced during
 implementation gets a permanent entry below: title, root cause, affected
@@ -1502,27 +1676,36 @@ documented in <code>docs/research/</code> (commit <code>f3e7a4f</code>).
 No further attempts unless the platform constraint changes
 (§11.4.34/§11.4.7). <strong>Affected:</strong>
 <code>plugins/kickass.py</code>, <code>docs/research/</code>.</p>
-<h3
-id="open-fix-in-progress-utf-8-cyrillic-query-crash-in-15-plugins">55.
-(OPEN — fix in progress) UTF-8 / Cyrillic query crash in 15 plugins</h3>
+<h3 id="utf-8-cyrillic-query-crash-in-14-plugins">55. UTF-8 / Cyrillic
+query crash in 14 plugins</h3>
 <p><strong>Severity:</strong> HIGH. <strong>Type:</strong> Bug.
-<strong>Status:</strong> OPEN — under active fix this session; NOT yet
-verified fixed (§11.4.6). <strong>Root cause (under investigation, FACT
-so far):</strong> a sibling defect class to #48 — 15 nova3 plugins crash
-on a UTF-8 / Cyrillic (non-ASCII) query (the percent-encoding fix in #48
-addressed the literal-space control-character crash; the non-ASCII byte
-path is a distinct failure that surfaced during the #48 discovery
-extend-pass per §11.4.146 / §11.4.118). A RED reproduction test is in
-the working tree
-(<code>tests/unit/test_plugin_unicode_query_encoding.py</code>,
-untracked at time of writing). <strong>Fix:</strong> IN PROGRESS —
-per-plugin UTF-8-safe query encoding across the 15 affected engines. Not
-claimed fixed; this entry will be completed with the GREEN proof +
-commit hash once the §11.4.115 RED→GREEN flip lands and is verified live
-on nezha. <strong>Affected (preliminary):</strong> the 15 affected
-<code>plugins/*.py</code> nova3 engines (final list pending the
-extend-pass). <strong>Regression guard (planned,
-§11.4.115/§11.4.135):</strong>
-<code>tests/unit/test_plugin_unicode_query_encoding.py</code>
-(RED-on-broken → GREEN-on-fixed) + extend-pass enumerated coverage per
-§11.4.146.</p>
+<strong>Status:</strong> FIXED (<code>ae387b2</code>) — verified live on
+nezha. <strong>Root cause (FACT):</strong> sibling defect class to #48 —
+14 nova3 plugins crashed on a UTF-8 / Cyrillic (non-ASCII) query with
+<code>'ascii' codec can't encode characters</code> (captured stderr from
+the §11.4.118 discovery sweep). #48’s fix only
+<code>.replace(" ", ...)</code>-ed literal spaces; the raw non-ASCII
+bytes still reached urllib and crashed. Surfaced during the #48
+discovery extend-pass (§11.4.146 / §11.4.118). <strong>Fix
+(<code>ae387b2</code>):</strong> per-plugin UTF-8-safe query encoding
+(all <code>unquote*</code> first to avoid double-encoding the nova2
+caller): <code>quote_plus(unquote_plus(q))</code> for <code>?key=</code>
+params (bitsearch, glotorrents, linuxtracker, nyaa, pirateiro, rockbox,
+torrentdownload, torrentscsv, torrentproject, tokyotoshokan +
+<code>re_escape</code> for its pagination regex);
+<code>quote(...,safe="")</code> for path segments (torrentgalaxy,
+snowfl); <code>"-".join(quote(word,safe="")...)</code> for dash-slugs
+(torlock, yourbittorrent). §11.4.6: yts was NOT affected (already uses
+<code>urlencode()</code>) — left unchanged → 14, not 15.
+<strong>Affected:</strong> the 14 <code>plugins/*.py</code> above.
+<strong>Regression guard (§11.4.115/§11.4.135):</strong>
+<code>tests/unit/test_plugin_unicode_query_encoding.py</code> (RED 14
+failed → GREEN 97 passed incl. 54 existing multiword; §1.1: strip nyaa
+encoding → FAIL → restore). <strong>Verified:</strong> live nezha
+Cyrillic search “Война и мир” → <strong>290 results,
+CRASHED/encoding-err: NONE</strong> (bitsearch 80, torrentgalaxy 198,
+torrentscsv 11, torrentdownload 1 success; rest empty-no-error /
+deadline_timeout, zero crashes). Evidence:
+<code>docs/qa/search-fix-verify-20260616/</code>.</p>
+</body>
+</html>

@@ -96,6 +96,28 @@ This is the complete confirmation that search works for end users: the same
 multi-word query the pre-session build crashed ~17 plugins on now returns 2600
 results with every tracker healthy and all private-tracker auth working.
 
+## 7. UTF-8 / Cyrillic query fix — proven live (P0 from the discovery sweep)
+
+The §11.4.118 discovery sweep found 14 plugins crashed on a Cyrillic query
+(`'ascii' codec can't encode`). Fix `ae387b2` (per-plugin `quote`/`quote_plus`
+UTF-8-safe encoding). Re-deployed via the pipeline; live nezha Cyrillic search
+`Война и мир` (14 fixed plugins) — **total = 290 results, `CRASHED/encoding-err:
+NONE`**:
+
+| plugin | status | results |
+|---|---|---|
+| torrentgalaxy | success | 198 |
+| bitsearch | success | 80 |
+| torrentscsv | success | 11 |
+| torrentdownload | success | 1 |
+| glotorrents/linuxtracker/nyaa/pirateiro/rockbox/snowfl/torrentproject | empty | 0 (no error — handled, no match) |
+| tokyotoshokan/torlock/yourbittorrent | deadline_timeout | 0 (slow upstream, NOT a crash) |
+
+Before the fix every one of the 14 crashed with `ascii codec`; now zero crashes
+and real Cyrillic results — the core use case for a Russian-tracker fleet.
+Unit: 97 passed (43 unicode + 54 multiword), §1.1 mutation proven.
+
 _Captured 2026-06-16 against nezha.local; unit coverage: multiword tests (16
-plugins capture + snowfl focused + well-behaved no-regression) + rutracker-cookie
-+ auth-status cookie-reflection tests, all with §1.1 negation proofs._
+plugins capture + snowfl focused + well-behaved no-regression) + unicode/Cyrillic
+tests (14 plugins) + rutracker-cookie + auth-status cookie-reflection tests, all
+with §1.1 negation proofs._
