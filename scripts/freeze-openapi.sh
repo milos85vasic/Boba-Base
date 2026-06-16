@@ -20,7 +20,10 @@ export PYTHONPATH="$REPO_ROOT/download-proxy/src:${PYTHONPATH:-}"
 export ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-http://localhost}"
 
 print_info "exporting OpenAPI schema"
-python3 - "$dest" <<'PY'
+# Prefer the project venv interpreter: the app source uses py3.10+ syntax
+# (e.g. `str | None`), which the host's bare `python3` (3.9) cannot import.
+PY_BIN="$REPO_ROOT/.venv/bin/python"; [[ -x "$PY_BIN" ]] || PY_BIN="python3"
+"$PY_BIN" - "$dest" <<'PY'
 import json, os, sys
 os.environ.setdefault("ALLOWED_ORIGINS", "http://localhost")
 from api import app

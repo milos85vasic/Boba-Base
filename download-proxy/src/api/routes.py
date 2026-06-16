@@ -34,6 +34,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["search"])
 
 
+@router.get("/healthz")
+def healthz():  # type: ignore[no-untyped-def]
+    """Machine-parsable JSON health probe (mounted at ``/api/v1/healthz``).
+
+    A bare ``GET /healthz`` fell through the SPA catch-all
+    (``api/__init__.py:spa_catch_all``) and returned the dashboard
+    ``index.html`` — a health probe could not parse a JSON status. This
+    route lives on the ``/api/v1`` router (registered BEFORE the catch-all
+    via ``include_router``) so a probe always gets a JSON body. The shape
+    mirrors the app-level ``/health`` endpoint so existing consumers are
+    unaffected; ``status: "ok"`` is the canonical machine-probe signal.
+    """
+    return {"status": "ok", "service": "merge-search", "version": "1.0.0"}
+
+
 def _get_orchestrator(request: Request) -> Any:
     from api import orchestrator_instance
 

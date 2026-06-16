@@ -294,6 +294,21 @@
             "title": "Sort Order",
             "type": "string"
           },
+          "trackers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional provider-selection filter (BUG-1): restrict the search to this subset of tracker names (case-insensitive). Omit / null / empty list searches every enabled tracker (back-compat).",
+            "title": "Trackers"
+          },
           "validate_trackers": {
             "default": true,
             "description": "Validate tracker health",
@@ -982,6 +997,26 @@
         ]
       }
     },
+    "/api/v1/healthz": {
+      "get": {
+        "description": "Machine-parsable JSON health probe (mounted at ``/api/v1/healthz``).\n\nA bare ``GET /healthz`` fell through the SPA catch-all\n(``api/__init__.py:spa_catch_all``) and returned the dashboard\n``index.html`` \u2014 a health probe could not parse a JSON status. This\nroute lives on the ``/api/v1`` router (registered BEFORE the catch-all\nvia ``include_router``) so a probe always gets a JSON body. The shape\nmirrors the app-level ``/health`` endpoint so existing consumers are\nunaffected; ``status: \"ok\"`` is the canonical machine-probe signal.",
+        "operationId": "healthz_api_v1_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Healthz",
+        "tags": [
+          "search"
+        ]
+      }
+    },
     "/api/v1/hooks": {
       "get": {
         "operationId": "list_hooks_api_v1_hooks_get",
@@ -1438,7 +1473,7 @@
     },
     "/api/v1/search/sync": {
       "post": {
-        "description": "Blocking search (legacy behaviour).\n\nPreserved for tests and schedulers that need the full merged result\nset in a single response.  Real-time clients should use\n``POST /search`` + ``GET /search/stream/{search_id}``.",
+        "description": "Blocking-equivalent search, streamed with a keepalive heartbeat.\n\nPreserved for tests and schedulers that need the full merged result set\nin a single response. Real-time clients should use ``POST /search`` +\n``GET /search/stream/{search_id}``.\n\nRW-08 fix: the fan-out can take ~60s+ during which the old handler sent\nZERO bytes, so an idle SSH tunnel / proxy tore the socket down mid-flight\n(\"search resets over tunnel\"). This handler instead returns a\n``StreamingResponse`` that flushes a single keepalive space every\n``SYNC_HEARTBEAT_SECONDS`` WHILE the search runs, then streams the final\nJSON body. A leading run of spaces is ignored by every JSON parser, so\nthe body stays valid and the result set is UNCHANGED \u2014 only the socket\nstays warm. (Mirrors the ``: keepalive`` idiom used for the theme SSE.)",
         "operationId": "search_sync_api_v1_search_sync_post",
         "requestBody": {
           "content": {
@@ -1489,6 +1524,16 @@
             "schema": {
               "title": "Search Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Limit",
+              "type": "integer"
             }
           }
         ],
