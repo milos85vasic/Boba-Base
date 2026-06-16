@@ -31,10 +31,10 @@ ABSENT post-fix — the SAME assertion is the standing GREEN guard.
 
 from __future__ import annotations
 
+import http.client
 import importlib.util
 import sys
 import types
-import urllib.request
 from pathlib import Path
 from unittest.mock import patch
 
@@ -47,6 +47,32 @@ COMMUNITY = PLUGINS / "community"
 # Multi-word query as the merge service would pass it: RAW, with a literal
 # space (NOT %20). This is the exact value that triggered the crash.
 MULTIWORD_RAW = "the matrix"
+
+# The AUTHORITATIVE urllib oracle (§11.4.107 different-domain cross-check).
+# This is the EXACT regex http.client uses in putrequest() to reject a URL —
+# urllib raises InvalidURL (a ValueError/HTTPException subclass) on any char
+# it matches (pattern = [\x00-\x20\x7f], which includes a raw space).
+#
+# We assert against this regex DIRECTLY rather than via
+# ``urllib.request.Request(first)``, because on Python 3.13
+# ``Request()`` no longer validates control chars at construction time — the
+# check moved to urlopen()/http.client. So ``Request(first)`` is a silent
+# NO-OP on 3.13 (it never raises on a raw-space URL), which would weaken this
+# guard to only the ``" " not in first`` string check. Replicating urllib's
+# own predicate keeps the oracle biting on py3.12 AND py3.13 alike — the same
+# authoritative approach the stress/chaos conftest uses (read + reused, not
+# re-invented).
+_DISALLOWED_URL_CHAR_RE = http.client._contains_disallowed_url_pchar_re  # noqa: SLF001
+
+
+def _assert_urllib_safe(url: str, ctx: str = "") -> None:
+    """Cross-oracle: urllib/http.client MUST accept this URL — i.e. it
+    contains none of urllib's disallowed control characters (raw space
+    among them). Reliable on every Python version, unlike Request()."""
+    assert _DISALLOWED_URL_CHAR_RE.search(url) is None, (
+        f"{ctx}urllib would reject the constructed URL "
+        f"(disallowed control char present): {url!r}"
+    )
 
 
 def _plugin_path(name: str) -> Path:
@@ -183,9 +209,9 @@ def test_multiword_query_is_url_encoded(name: str) -> None:
         f"{name}: constructed URL contains a raw space (NOT encoded): {first!r}. "
         "Multi-word queries from the merge service will crash urllib."
     )
-    # Cross-check (§11.4.107-style different-oracle): urllib must accept it.
-    # This is what the real retrieve_url does; a raw control char would raise.
-    urllib.request.Request(first)  # raises ValueError on a raw space
+    # Cross-check (§11.4.107 different-oracle): urllib must accept it.
+    # This is what the real retrieve_url does; a raw control char is rejected.
+    _assert_urllib_safe(first, f"{name}: ")
 
 
 @pytest.mark.parametrize("name", AFFECTED_PLUGINS)
@@ -199,7 +225,7 @@ def test_nova2_encoded_query_still_works(name: str) -> None:
     assert urls, f"{name}: built no URL for %20-encoded query"
     first = urls[0]
     assert " " not in first, f"{name}: raw space from %20 query: {first!r}"
-    urllib.request.Request(first)
+    _assert_urllib_safe(first, f"{name}: ")
 
 
 @pytest.mark.parametrize("name", AFFECTED_PLUGINS)
@@ -210,7 +236,7 @@ def test_singleword_query_unaffected(name: str) -> None:
     assert urls, f"{name}: built no URL for single-word query"
     first = urls[0]
     assert " " not in first
-    urllib.request.Request(first)
+    _assert_urllib_safe(first, f"{name}: ")
     assert "linux" in first.lower(), f"{name}: query token missing: {first!r}"
 
 
@@ -221,7 +247,7 @@ def test_snowfl_multiword_path_encoded() -> None:
     reaching generateQuery for a raw multi-word query must carry NO raw space
     (%20-encoded, since '+' is literal in a path)."""
     mod, _ = _load_plugin("snowfl")
-    cls = getattr(mod, "snowfl")
+    cls = mod.snowfl
     inst = cls()
     captured: list[str] = []
 
@@ -262,4 +288,4 @@ def test_well_behaved_plugins_not_regressed(name: str) -> None:
     assert urls, f"{name}: built no URL"
     first = urls[0]
     assert " " not in first, f"{name}: raw space in URL: {first!r}"
-    urllib.request.Request(first)
+    _assert_urllib_safe(first, f"{name}: ")
