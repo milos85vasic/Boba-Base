@@ -541,14 +541,14 @@ class TestParseNnmclubHtmlDeep:
             '<td><b>2</b></td>'
             '<td><u>1609459200</u></td>'
         )
-        results = orch._parse_nnmclub_html(html, "https://nnm-club.me")
+        results = orch._parse_nnmclub_html(html, "https://nnmclub.to")
         assert len(results) == 1
         assert results[0].name == "Show & Tell"
 
     def test_empty_html(self, search_mod):
         """Lines 1509: empty HTML returns empty list."""
         orch = search_mod.SearchOrchestrator()
-        results = orch._parse_nnmclub_html("", "https://nnm-club.me")
+        results = orch._parse_nnmclub_html("", "https://nnmclub.to")
         assert results == []
 
 
@@ -697,7 +697,7 @@ class TestFetchTorrentDeep:
         orch = search_mod.SearchOrchestrator()
         orch._tracker_sessions["nnmclub"] = {
             "cookies": {"sid": "abc"},
-            "base_url": "https://nnm-club.me",
+            "base_url": "https://nnmclub.to",
         }
         mock_resp = AsyncMock()
         mock_resp.status = 200
@@ -1083,7 +1083,7 @@ class TestNnmclubLoginDeep:
             mock_session.__aenter__ = AsyncMock(return_value=mock_session)
             mock_session.__aexit__ = AsyncMock(return_value=False)
             with patch("aiohttp.ClientSession", return_value=mock_session):
-                result = await orch._nnmclub_login("https://nnm-club.me")
+                result = await orch._nnmclub_login("https://nnmclub.to")
                 assert result == {}
                 diag = orch._last_public_tracker_diag.get("nnmclub", {})
                 assert diag.get("error_type") == "auth_failure"
@@ -1098,7 +1098,7 @@ class TestNnmclubLoginDeep:
             mock_session.__aenter__ = AsyncMock(return_value=mock_session)
             mock_session.__aexit__ = AsyncMock(return_value=False)
             with patch("aiohttp.ClientSession", return_value=mock_session):
-                result = await orch._nnmclub_login("https://nnm-club.me")
+                result = await orch._nnmclub_login("https://nnmclub.to")
                 assert result == {}
 
 

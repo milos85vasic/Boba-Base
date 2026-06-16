@@ -269,7 +269,7 @@ class TestAuthStressConcurrent:
         orch = _orch(
             {
                 "rutracker": {"cookies": {"bb_session": "x"}, "base_url": "https://rutracker.org"},
-                "nnmclub": {"cookies": {"phpbb2mysql_4_sid": "y"}, "base_url": "https://nnm-club.me"},
+                "nnmclub": {"cookies": {"phpbb2mysql_4_sid": "y"}, "base_url": "https://nnmclub.to"},
             }
         )
 
@@ -352,7 +352,7 @@ class TestAuthStressBoundary:
         """
         sessions = {f"extra_{i}": {"cookies": {"c": "v"}, "base_url": f"https://t{i}.example"} for i in range(60)}
         sessions["rutracker"] = {"cookies": {"bb_session": "x"}, "base_url": "https://rutracker.org"}
-        sessions["nnmclub"] = {"cookies": {"phpbb2mysql_4_sid": "y"}, "base_url": "https://nnm-club.me"}
+        sessions["nnmclub"] = {"cookies": {"phpbb2mysql_4_sid": "y"}, "base_url": "https://nnmclub.to"}
         orch = _orch(sessions)
         session = _qbit_session(_success_resp())
         p_orch, p_creds, p_sess, p_to = _patches(orch, session, {"username": "admin", "password": "admin"})

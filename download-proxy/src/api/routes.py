@@ -374,13 +374,37 @@ async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyp
     )
 
 
+def _sync_heartbeat_seconds() -> float:
+    """Heartbeat interval (seconds) for the streamed `/search/sync` response.
+
+    Read per-request (not cached at import) so tests/operators can tune it
+    without a restart. Default 10s — well under any reasonable SSH-tunnel /
+    proxy idle-timeout window. Clamped to a sane floor so a misconfigured
+    tiny value can't busy-spin the event loop.
+    """
+    try:
+        v = float(os.environ.get("SYNC_HEARTBEAT_SECONDS", "10"))
+    except ValueError:
+        v = 10.0
+    return max(0.05, v)
+
+
 @router.post("/search/sync", response_model=SearchResponse)
 async def search_sync(request: SearchRequest, req: Request):  # type: ignore[no-untyped-def]
-    """Blocking search (legacy behaviour).
+    """Blocking-equivalent search, streamed with a keepalive heartbeat.
 
-    Preserved for tests and schedulers that need the full merged result
-    set in a single response.  Real-time clients should use
-    ``POST /search`` + ``GET /search/stream/{search_id}``.
+    Preserved for tests and schedulers that need the full merged result set
+    in a single response. Real-time clients should use ``POST /search`` +
+    ``GET /search/stream/{search_id}``.
+
+    RW-08 fix: the fan-out can take ~60s+ during which the old handler sent
+    ZERO bytes, so an idle SSH tunnel / proxy tore the socket down mid-flight
+    ("search resets over tunnel"). This handler instead returns a
+    ``StreamingResponse`` that flushes a single keepalive space every
+    ``SYNC_HEARTBEAT_SECONDS`` WHILE the search runs, then streams the final
+    JSON body. A leading run of spaces is ignored by every JSON parser, so
+    the body stays valid and the result set is UNCHANGED — only the socket
+    stays warm. (Mirrors the ``: keepalive`` idiom used for the theme SSE.)
     """
 
     from .hooks import dispatch_event
@@ -397,13 +421,67 @@ async def search_sync(request: SearchRequest, req: Request):  # type: ignore[no-
 
     await dispatch_event("search_start", {"query": request.query})
 
-    metadata = await orch.search(
-        query=request.query,
-        category=request.category,
-        enable_metadata=False,
-        validate_trackers=request.validate_trackers,
-        trackers=request.trackers,
+    async def _build_body() -> str:
+        """Run the (slow) fan-out and build the final JSON body string.
+
+        Returns the serialized JSON (the same payload the old handler
+        returned). Captcha-required and result payloads alike are serialized
+        here so the streaming wrapper only ever has to write bytes.
+        """
+        metadata = await orch.search(
+            query=request.query,
+            category=request.category,
+            enable_metadata=False,
+            validate_trackers=request.validate_trackers,
+            trackers=request.trackers,
+        )
+        return await _assemble_sync_payload(orch, request, req, metadata)
+
+    async def _stream():  # type: ignore[no-untyped-def]
+        build = asyncio.ensure_future(_build_body())
+        interval = _sync_heartbeat_seconds()
+        try:
+            # Poll the build task with `asyncio.wait`, which (unlike
+            # `wait_for`) NEVER cancels the task on timeout — it just reports
+            # done/pending. While pending, flush a single keepalive space so
+            # an idle SSH tunnel / proxy never resets the socket. JSON parsers
+            # ignore leading whitespace, so the final body stays valid.
+            while not build.done():
+                done, _pending = await asyncio.wait({build}, timeout=interval)
+                if not done:
+                    yield b" "
+            # Task finished — surface its result or exception exactly once.
+            try:
+                body = await build
+            except Exception as exc:  # must not silently truncate the stream
+                # A build failure mid-stream MUST become a valid JSON error
+                # body, NOT a half-written chunked response (which the client
+                # sees as an "incomplete chunked read" reset — the very RW-08
+                # failure mode we are fixing).
+                logger.error(f"/search/sync build failed: {exc!r}", exc_info=True)
+                yield json.dumps({"status": "error", "error": str(exc), "results": []}).encode()
+                return
+            yield body.encode()
+        except asyncio.CancelledError:
+            build.cancel()
+            raise
+
+    return StreamingResponse(
+        _stream(),  # type: ignore[no-untyped-call]
+        media_type="application/json",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+async def _assemble_sync_payload(orch, request, req, metadata) -> str:  # type: ignore[no-untyped-def]
+    """Build the `/search/sync` JSON body (string) from completed search
+    metadata. Extracted so the streaming heartbeat wrapper can run it as a
+    task. Behaviour is identical to the pre-RW-08 blocking handler aside
+    from the captcha case being delivered as a 200 body with
+    ``status: "captcha_required"`` (the status code can no longer be 403 once
+    the heartbeat has begun streaming; the body field remains the signal)."""
+
+    from .hooks import dispatch_event
 
     stored = orch._last_merged_results.get(metadata.search_id)
     merged = stored[0] if stored else []
@@ -472,9 +550,8 @@ async def search_sync(request: SearchRequest, req: Request):  # type: ignore[no-
 
     captcha_errors = [e for e in metadata.errors if "captcha" in e.lower()]
     if captcha_errors and not results:
-        return JSONResponse(
-            status_code=403,
-            content={
+        return json.dumps(
+            {
                 "search_id": metadata.search_id,
                 "query": metadata.query,
                 "status": "captcha_required",
@@ -487,7 +564,7 @@ async def search_sync(request: SearchRequest, req: Request):  # type: ignore[no-
                 "message": "RuTracker requires CAPTCHA. Use /api/v1/auth/rutracker/captcha to solve it.",
                 "started_at": metadata.started_at.isoformat(),
                 "completed_at": metadata.completed_at.isoformat() if metadata.completed_at else None,
-            },
+            }
         )
 
     response = SearchResponse(
@@ -515,7 +592,7 @@ async def search_sync(request: SearchRequest, req: Request):  # type: ignore[no-
         },
     )
 
-    return response
+    return response.model_dump_json()
 
 
 _sse_stream_count = 0

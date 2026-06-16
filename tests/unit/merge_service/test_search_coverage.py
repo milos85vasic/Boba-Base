@@ -692,7 +692,7 @@ class TestNoCredsEarlyReturns:
         async def _run():
             orch = SearchOrchestrator()
             with patch.dict(os.environ, {}, clear=True):
-                return await orch._nnmclub_login("https://nnm-club.me")
+                return await orch._nnmclub_login("https://nnmclub.to")
 
         assert asyncio.run(_run()) == {}
 
@@ -742,7 +742,7 @@ class TestNoCredsEarlyReturns:
         async def _run():
             orch = SearchOrchestrator()
             with patch.dict(os.environ, {"NNMCLUB_USERNAME": "u"}, clear=True):
-                return await orch._nnmclub_login("https://nnm-club.me")
+                return await orch._nnmclub_login("https://nnmclub.to")
 
         assert asyncio.run(_run()) == {}
 
@@ -817,7 +817,7 @@ class TestHTMLParserMalformedGuards:
             '<td><b>2</b></td>'
             '<td><u>1609459200</u></td>'
         )
-        results = orch._parse_nnmclub_html(html, "https://nnm-club.me")
+        results = orch._parse_nnmclub_html(html, "https://nnmclub.to")
         assert len(results) == 1
         assert results[0].name == "Great Show S01E01"
         assert results[0].seeds == 30
@@ -825,7 +825,7 @@ class TestHTMLParserMalformedGuards:
     def test_parse_nnmclub_html_malformed_skipped(self):
         orch = SearchOrchestrator()
         html = '<a class="topictitle" href="viewtopic.php?t=789"><b>Bad Row</b></a>'
-        results = orch._parse_nnmclub_html(html, "https://nnm-club.me")
+        results = orch._parse_nnmclub_html(html, "https://nnmclub.to")
         assert results == []
 
     def test_parse_iptorrents_html_no_table(self):

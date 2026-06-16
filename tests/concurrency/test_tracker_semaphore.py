@@ -1,7 +1,7 @@
 """Verify the per-search tracker semaphore caps concurrent _search_one calls.
 
 Creates 40 mock trackers and asserts that at no point do more than
-MAX_CONCURRENT_TRACKERS (default 5) run simultaneously.
+MAX_CONCURRENT_TRACKERS (default 8) run simultaneously.
 """
 
 from __future__ import annotations
@@ -76,14 +76,15 @@ async def test_tracker_semaphore_never_exceeds_cap():
 
 
 @pytest.mark.asyncio
-async def test_tracker_semaphore_default_cap_is_5():
+async def test_tracker_semaphore_default_cap_is_8():
+    # RW-08: default raised 5 -> 8.
     for mod_name in [k for k in list(sys.modules) if k.startswith("merge_service")]:
         del sys.modules[mod_name]
     os.environ.pop("MAX_CONCURRENT_TRACKERS", None)
     from merge_service.search import SearchOrchestrator
 
     orch = SearchOrchestrator()
-    assert orch._max_concurrent_trackers == 5
+    assert orch._max_concurrent_trackers == 8
 
 
 @pytest.mark.asyncio

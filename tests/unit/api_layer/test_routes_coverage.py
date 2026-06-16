@@ -784,8 +784,16 @@ class TestSearchSync:
         orch.search = AsyncMock(return_value=meta)
         c = client_factory(orch)
         resp = c.post("/api/v1/search/sync", json={"query": "test"})
-        assert resp.status_code == 403
-        assert resp.json()["status"] == "captcha_required"
+        # RW-08: /search/sync is now a heartbeat StreamingResponse, so the HTTP
+        # status is committed to 200 before the captcha branch is reachable. The
+        # captcha signal moved into the body `status` field (the field callers
+        # actually switch on) + the actionable `message`. The body still parses
+        # as JSON despite the leading keepalive whitespace.
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "captcha_required"
+        assert "CAPTCHA" in body["message"]
+        assert body["results"] == []
 
     def test_sync_search_sort_by_type(self, client_factory, orch_with_results):
         c = client_factory(orch_with_results)

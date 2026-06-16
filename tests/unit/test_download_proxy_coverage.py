@@ -61,7 +61,7 @@ class TestIdentifyPlugin:
         assert dp.identify_plugin("https://nnmclub.to/forum/viewtopic.php?t=1") == "nnmclub"
 
     def test_nnmclub_me(self, dp):
-        assert dp.identify_plugin("https://nnm-club.me/forum/viewtopic.php?t=1") == "nnmclub"
+        assert dp.identify_plugin("https://nnmclub.to/forum/viewtopic.php?t=1") == "nnmclub"
 
     def test_iptorrents_com(self, dp):
         assert dp.identify_plugin("https://iptorrents.com/torrents/12345") == "iptorrents"

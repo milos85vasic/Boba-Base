@@ -204,7 +204,7 @@ class TestSearchTrackerRouting:
     async def test_private_tracker_nnmclub_routes(self):
         with patch.object(self.orch, "_search_nnmclub", new_callable=AsyncMock) as mock:
             mock.return_value = []
-            tracker = TrackerSource(name="nnmclub", url="https://nnm-club.me")
+            tracker = TrackerSource(name="nnmclub", url="https://nnmclub.to")
             await self.orch._search_tracker(tracker, "test", "all")
             mock.assert_called_once_with("test", "all")
 

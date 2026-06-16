@@ -608,7 +608,11 @@ class SearchOrchestrator:
         # spawns and aiohttp sessions starve the event loop under load.
         import os as _os
 
-        self._max_concurrent_trackers: int = max(1, int(_os.getenv("MAX_CONCURRENT_TRACKERS", "5")))
+        # RW-08: default raised 5 → 8 to cut the wave count of the ~29-provider
+        # fan-out from ~6 to ~4, shaving wall-clock without dropping any
+        # tracker (the per-tracker deadline stays generous). Still bounded by
+        # §12.6 host memory budget; env-overridable.
+        self._max_concurrent_trackers: int = max(1, int(_os.getenv("MAX_CONCURRENT_TRACKERS", "8")))
         # `_inflight_count` is an instrument for tests and Phase 6 metrics.
         # It is only meaningful while a search is running.
         self._inflight_count: int = 0

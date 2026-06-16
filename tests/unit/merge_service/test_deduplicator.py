@@ -442,7 +442,7 @@ class TestBestNameSelection:
                 size="2.2 GB",
                 seeds=60,
                 leechers=20,
-                engine_url="https://nnm-club.me",
+                engine_url="https://nnmclub.to",
                 tracker="nnmclub",
             ),
         ]

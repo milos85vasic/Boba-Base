@@ -68,7 +68,8 @@ async def test_semaphore_caps_inflight_at_3():
 
 
 @pytest.mark.asyncio
-async def test_default_cap_is_5_when_env_unset(monkeypatch):
+async def test_default_cap_is_8_when_env_unset(monkeypatch):
+    # RW-08: default raised 5 -> 8.
     monkeypatch.delenv("MAX_CONCURRENT_TRACKERS", raising=False)
     # Reimport to pick up the fresh env.
     for mod_name in [k for k in list(sys.modules) if k.startswith("merge_service")]:
@@ -76,4 +77,4 @@ async def test_default_cap_is_5_when_env_unset(monkeypatch):
     from merge_service.search import SearchOrchestrator
 
     orch = SearchOrchestrator()
-    assert orch._max_concurrent_trackers == 5
+    assert orch._max_concurrent_trackers == 8

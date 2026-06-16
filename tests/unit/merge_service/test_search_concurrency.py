@@ -83,13 +83,18 @@ async def test_custom_cap_is_respected(monkeypatch, search_mod):
 
 
 @pytest.mark.asyncio
-async def test_default_cap_is_five(monkeypatch, search_mod):
+async def test_default_cap_is_eight(monkeypatch, search_mod):
+    # RW-08: default tracker fan-out cap raised 5 -> 8 to cut the wave count
+    # (~6 -> ~4) without dropping any tracker. Env override still wins.
     monkeypatch.delenv("MAX_CONCURRENT_TRACKERS", raising=False)
     orch = search_mod.SearchOrchestrator()
 
+    assert orch._max_concurrent_trackers == 8
+
     peak, calls = await _run_bounded_search(orch, search_mod, num_trackers=20, tick=0.02)
 
-    assert peak <= 5, f"peak inflight {peak} exceeded default cap 5"
+    assert peak <= 8, f"peak inflight {peak} exceeded default cap 8"
+    assert peak > 5, f"peak inflight {peak} did not exceed the old cap of 5 — fan-out not widened"
     assert len(calls) == 20
 
 

@@ -442,7 +442,7 @@ NNMCLUB_EMPTY = """
 class TestNnmclubHtmlFixtures:
     def test_single_row(self, search_mod):
         results = search_mod.SearchOrchestrator()._parse_nnmclub_html(
-            NNMCLUB_SINGLE_ROW, "https://nnm-club.me"
+            NNMCLUB_SINGLE_ROW, "https://nnmclub.to"
         )
         assert len(results) == 1
         r = results[0]
@@ -450,13 +450,13 @@ class TestNnmclubHtmlFixtures:
         assert r.seeds == 95
         assert r.leechers == 8
         assert r.tracker == "nnmclub"
-        assert r.engine_url == "https://nnm-club.me"
+        assert r.engine_url == "https://nnmclub.to"
         assert "600" in r.link
         assert "600" in r.desc_link
 
     def test_multi_row(self, search_mod):
         results = search_mod.SearchOrchestrator()._parse_nnmclub_html(
-            NNMCLUB_MULTI_ROW, "https://nnm-club.me"
+            NNMCLUB_MULTI_ROW, "https://nnmclub.to"
         )
         assert len(results) == 3
         assert results[0].name == "Fedora Workstation 40"
@@ -468,19 +468,19 @@ class TestNnmclubHtmlFixtures:
 
     def test_html_entities(self, search_mod):
         results = search_mod.SearchOrchestrator()._parse_nnmclub_html(
-            NNMCLUB_HTML_ENTITIES, "https://nnm-club.me"
+            NNMCLUB_HTML_ENTITIES, "https://nnmclub.to"
         )
         assert len(results) == 1
         assert results[0].name == "Tom & Jerry Collection"
 
     def test_empty_table(self, search_mod):
         results = search_mod.SearchOrchestrator()._parse_nnmclub_html(
-            NNMCLUB_EMPTY, "https://nnm-club.me"
+            NNMCLUB_EMPTY, "https://nnmclub.to"
         )
         assert results == []
 
     def test_completely_empty_html(self, search_mod):
-        results = search_mod.SearchOrchestrator()._parse_nnmclub_html("", "https://nnm-club.me")
+        results = search_mod.SearchOrchestrator()._parse_nnmclub_html("", "https://nnmclub.to")
         assert results == []
 
 
