@@ -55,7 +55,26 @@ def client():
 def _reset_hooks_state(tmp_path, monkeypatch):
     hooks_file = str(tmp_path / "hooks.json")
     monkeypatch.setattr("api.hooks.HOOKS_FILE", hooks_file)
+    # RW-01 (§11.4.120 reconciliation): hook script_path is now restricted to an
+    # allowlisted dir. Point BOBA_HOOKS_DIR at a real tmp dir so the hook-create
+    # tests can register scripts that live INSIDE the allowlist.
+    hooks_dir = tmp_path / "hooks"
+    hooks_dir.mkdir()
+    monkeypatch.setenv("BOBA_HOOKS_DIR", str(hooks_dir))
     return
+
+
+@pytest.fixture
+def allowed_script(tmp_path):
+    """Create a script inside the BOBA_HOOKS_DIR allowlist and return its path."""
+
+    def _make(name="hook.sh"):
+        p = tmp_path / "hooks" / name
+        p.write_text("#!/bin/sh\necho ok\n")
+        p.chmod(0o755)
+        return str(p)
+
+    return _make
 
 
 class TestHealthEndpoint:
@@ -177,11 +196,11 @@ class TestHooksEndpoint:
         assert data["hooks"] == []
         assert data["count"] == 0
 
-    def test_create_hook_returns_hook_id(self, client):
+    def test_create_hook_returns_hook_id(self, client, allowed_script):
         hook_data = {
             "name": "test-hook",
             "event": "search_complete",
-            "script_path": "/tmp/test.sh",
+            "script_path": allowed_script("test.sh"),
             "enabled": True,
         }
         resp = client.post("/api/v1/hooks", json=hook_data)
@@ -200,11 +219,11 @@ class TestHooksEndpoint:
         resp = client.post("/api/v1/hooks", json=hook_data)
         assert resp.status_code == 400
 
-    def test_list_hooks_after_create(self, client):
+    def test_list_hooks_after_create(self, client, allowed_script):
         hook_data = {
             "name": "my-hook",
             "event": "download_complete",
-            "script_path": "/tmp/dl.sh",
+            "script_path": allowed_script("dl.sh"),
         }
         client.post("/api/v1/hooks", json=hook_data)
         resp = client.get("/api/v1/hooks")
@@ -213,11 +232,11 @@ class TestHooksEndpoint:
         assert data["count"] == 1
         assert data["hooks"][0]["name"] == "my-hook"
 
-    def test_delete_hook(self, client):
+    def test_delete_hook(self, client, allowed_script):
         hook_data = {
             "name": "to-delete",
             "event": "search_complete",
-            "script_path": "/tmp/del.sh",
+            "script_path": allowed_script("del.sh"),
         }
         create_resp = client.post("/api/v1/hooks", json=hook_data)
         hook_id = create_resp.json()["hook_id"]
@@ -240,11 +259,11 @@ class TestHooksEndpoint:
         )
         assert resp.status_code == 422
 
-    def test_create_hook_returns_created_at(self, client):
+    def test_create_hook_returns_created_at(self, client, allowed_script):
         hook_data = {
             "name": "dated-hook",
             "event": "merge_complete",
-            "script_path": "/tmp/merge.sh",
+            "script_path": allowed_script("merge.sh"),
         }
         resp = client.post("/api/v1/hooks", json=hook_data)
         assert resp.status_code == 200
@@ -252,10 +271,10 @@ class TestHooksEndpoint:
         assert "created_at" in data
         assert data["enabled"] is True
 
-    def test_hook_lifecycle_create_list_delete(self, client):
+    def test_hook_lifecycle_create_list_delete(self, client, allowed_script):
         hooks_to_create = [
-            {"name": "hook-a", "event": "search_start", "script_path": "/tmp/a.sh"},
-            {"name": "hook-b", "event": "download_start", "script_path": "/tmp/b.sh"},
+            {"name": "hook-a", "event": "search_start", "script_path": allowed_script("a.sh")},
+            {"name": "hook-b", "event": "download_start", "script_path": allowed_script("b.sh")},
         ]
         created_ids = []
         for h in hooks_to_create:
