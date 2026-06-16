@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>findings</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="dead_public_trackers-recovery-re-check-2026-06-16">DEAD_PUBLIC_TRACKERS
+recovery re-check — 2026-06-16</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T00:00:00Z</p>
+<p>Read-only HTTP probe of all 14 <code>DEAD_PUBLIC_TRACKERS</code>
+(<code>download-proxy/src/merge_service/search.py:482</code>) with the
+plugin Firefox UA, sequential + gentle, following redirects, grepping
+bodies for real listing markup vs Cloudflare/JS gates. §11.4.118
+discovery; §11.4.6 honest (a live 200 proves reachability, NOT that the
+plugin parser still extracts fields).</p>
+<p><strong>Counts: RECOVERED 4 · GATED 5 · STILL-DEAD 5.</strong></p>
+<h2
+id="recovered-candidates-to-re-enable-real-torrent-markup-no-gate">RECOVERED
+— candidates to re-enable (real torrent markup, no gate)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>tracker</th>
+<th>URL</th>
+<th>evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>audiobookbay</td>
+<td>http://theaudiobookbay.se/</td>
+<td>200, real <code>/abss/...</code> rows (audiobook-only niche,
+live)</td>
+</tr>
+<tr>
+<td>bitru</td>
+<td>https://bitru.org</td>
+<td>200, real <code>details.php?id=...</code> rows</td>
+</tr>
+<tr>
+<td>therarbg</td>
+<td>https://therarbg.com</td>
+<td>200, real <code>/post-detail/&lt;id&gt;/...</code> rows (~139 KB
+result page)</td>
+</tr>
+<tr>
+<td>solidtorrents</td>
+<td>301 → bitsearch.eu (via bitsearch.to)</td>
+<td>rebrand serves 40 real <code>magnet:</code> links/search — needs
+base-URL update + parser rewrite (different site)</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="gated-cloudflarejs-unusable-from-a-urllib-plugin-11.4.112-keep-disabled">GATED
+— Cloudflare/JS, unusable from a urllib plugin (§11.4.112, keep
+disabled)</h2>
+<p>bt4g (403 “Just a moment…”), btsow (200 “Loading…” JS shell),
+extratorrent (403 CF), eztv (root 200 at eztvx.to but search path 403
+CF), one337x (403 CF).</p>
+<h2 id="still-dead">STILL-DEAD</h2>
+<p>ali213 (200 but Chinese single-game portal, no torrent rows),
+pctorrent (DNS fail), torrentfunk (timeout), xfsub (timeout), yihua (DNS
+fail).</p>
+<h2
+id="re-enabling-path-11.4.122-operator-reviewed-not-done-here">Re-enabling
+path (§11.4.122 — OPERATOR-REVIEWED, not done here)</h2>
+<p>Re-enabling any tracker is a separate operator-reviewed change. A
+live 200 proves reachability only — each RECOVERED candidate’s plugin
+parser MUST be re-validated against current live markup first
+(solidtorrents→bitsearch is the clearest case where the domain works but
+the parser needs a rewrite). Recommended per-candidate: operator selects
+→ TDD (RED scraping the live site → fix parser → GREEN) → drop from
+<code>DEAD_PUBLIC_TRACKERS</code> in the same reviewed commit. NOT
+performed autonomously.</p>
+<p><em>Captured 2026-06-16 against the live tracker domains.</em></p>
+</body>
+</html>
