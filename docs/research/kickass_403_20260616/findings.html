@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>findings</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="kickass-plugin-upstream_http_403-deep-multi-angle-research-verdict">Kickass
+plugin <code>upstream_http_403</code> — deep multi-angle research +
+verdict</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T00:00:00Z <strong>Scope:</strong>
+<code>plugins/kickass.py</code> (Kickasstorrents qBittorrent search
+plugin) <strong>Anchors:</strong> §11.4.150 (deep multi-angle research),
+§11.4.112 (structural-impossibility won’t-fix), §11.4.6 (no-guessing),
+§11.4.123 (rock-solid proof)</p>
+<hr />
+<h2 id="verdict">Verdict</h2>
+<p><strong>STRUCTURALLY-BLOCKED (upstream anti-bot) — NO source fix
+applied.</strong></p>
+<p>Every reachable KickassTorrents (KAT) domain in 2026 is either
+Cloudflare/WAF-403 or returns HTTP 200 with a <strong>JavaScript
+bot-challenge / redirect body that contains ZERO of the markup the
+plugin parses</strong>. A qBittorrent search plugin issues a plain
+<code>urllib</code> GET with a browser User-Agent and <strong>cannot
+execute JavaScript</strong>, so it can never clear these gates. There is
+no mirror that serves the legacy
+<code>&lt;tr class="odd|even"&gt;</code> listing HTML to a non-JS
+client. Changing <code>kickass.py</code>’s <code>url</code> to any live
+mirror would NOT fix the 403/empty result — it would move the failure
+from <code>403</code> to
+<code>0 results from a JS-challenge page</code>. Therefore no
+<code>url</code>/mirror-fallback change is made (that would be a bluff
+fix per §11.4.6/§11.4.123). The plugin already degrades gracefully
+(<code>break</code> on non-200 / empty body), so live behaviour is an
+honest empty result, not a crash.</p>
+<p>This matches the <strong>upstream plugin maintainer’s own documented
+status</strong> (LightDestory — the author named in
+<code>plugins/kickass.py</code> header).</p>
+<hr />
+<h2 id="evidence-captured-live-from-this-host-2026-06-16">Evidence
+(captured live from this host, 2026-06-16)</h2>
+<p>Plugin User-Agent under test (computed from
+<code>plugins/helpers.py:_getBrowserUserAgent</code>, date 2026-06-16):
+<code>Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0</code></p>
+<h3 id="homepage-http-codes-curl--a-plugin-ua--l">1. Homepage HTTP codes
+(<code>curl -A "&lt;plugin UA&gt;" -L</code>)</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Domain</th>
+<th>Homepage HTTP</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>kickasstorrents.to (plugin’s current url)</td>
+<td><strong>403</strong></td>
+<td>Cloudflare/WAF block — the live <code>upstream_http_403</code></td>
+</tr>
+<tr>
+<td>kickasstorrents.cr</td>
+<td>403</td>
+<td></td>
+</tr>
+<tr>
+<td>kickass.sx</td>
+<td>403</td>
+<td></td>
+</tr>
+<tr>
+<td>kickasss.to</td>
+<td>403</td>
+<td></td>
+</tr>
+<tr>
+<td>katcr.to</td>
+<td>403</td>
+<td></td>
+</tr>
+<tr>
+<td>kickasstorrent.cr</td>
+<td>403</td>
+<td></td>
+</tr>
+<tr>
+<td>katcr.co</td>
+<td><strong>200</strong></td>
+<td>JS-challenge (see below) — NOT real content</td>
+</tr>
+<tr>
+<td>kat.am</td>
+<td><strong>200</strong></td>
+<td>JS anti-adblock/redirect wrapper — NOT real content</td>
+</tr>
+<tr>
+<td>newkatcr.co</td>
+<td>200</td>
+<td>JS-challenge</td>
+</tr>
+<tr>
+<td>kat.rip</td>
+<td>200</td>
+<td>JS-challenge</td>
+</tr>
+<tr>
+<td>thekat.cr / kickass.onl / kickasstorrents.ws / kickasstor.net</td>
+<td>000</td>
+<td>DNS/connection fail (dead)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-http-200-mirrors-are-js-bot-gates-not-torrent-listings">2.
+The HTTP-200 mirrors are JS bot-gates, not torrent listings</h3>
+<p>Probing the plugin’s EXACT URL shape
+<code>&lt;base&gt;/search/the%20matrix/0/</code>:</p>
+<ul>
+<li><p><code>katcr.co/search/the%20matrix/0/</code> -&gt; HTTP 200, body
+<strong>492 bytes</strong>, plugin markers
+(<code>tr class="odd|even"</code>, <code>torrentname</code>,
+<code>cellMainLink</code>, <code>magnet:</code>) = <strong>0</strong>.
+Body:
+<code>&lt;html&gt;&lt;head&gt;&lt;title&gt;Loading...&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;script ...&gt;window.location.replace('https://katcr.co/search/the%20matrix/0/?ch=1&amp;js=&lt;JWT&gt;...</code>
+A JS <code>window.location.replace</code> challenge keyed on a
+<code>?ch=1&amp;js=&lt;JWT&gt;</code> token.</p></li>
+<li><p><strong>Following</strong> that
+<code>?ch=1&amp;js=&lt;JWT&gt;</code> URL -&gt; a SECOND gate, then a
+<code>&lt;META http-equiv="refresh" ... URL='http://sarai-tid.com/zokredirect?...'&gt;</code>
+— i.e. it redirects a non-JS client into a <strong>malicious/ad redirect
+chain</strong>, never to listings. A cookie-jar two-pass
+(<code>-c</code>/<code>-b</code>) sets <strong>no</strong> unlocking
+cookie; the second pass returns the same 492-byte challenge.</p></li>
+<li><p><code>kat.am/search/the%20matrix/0/</code> -&gt; HTTP 200, body
+4595 bytes, plugin markers = 0; body is a JS anti-adblock/redirect
+wrapper (<code>Redirecting...</code>).</p></li>
+</ul>
+<p>Conclusion: <strong>no non-JS client can reach KAT listing HTML on
+any live domain.</strong></p>
+<h3 id="upstream-maintainer-confirms-independent-angle">3. Upstream
+maintainer confirms (independent angle)</h3>
+<p>LightDestory official README
+(<code>https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins/master/README.md</code>,
+accessed 2026-06-16) — Kickasstorrents plugin <strong>v1.2
+(22/02/2026)</strong>, status “Unreliable”, verbatim note:</p>
+<blockquote>
+<p>“KATCR uses Cloudflare; the plugin will not work when CF protection
+is active. It is unstable and only works when CF is set to low
+threats.”</p>
+</blockquote>
+<p>Same plugin version (<code># VERSION: 1.2</code>) shipped in
+<code>plugins/kickass.py</code>.</p>
+<hr />
+<h2 id="sources-cited-accessed-2026-06-16">Sources (cited, accessed
+2026-06-16)</h2>
+<ul>
+<li>Live <code>curl</code> probes from this host (commands + outputs
+captured in this session).</li>
+<li>LightDestory qBittorrent-Search-Plugins README (upstream maintainer,
+authoritative):
+https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins/master/README.md</li>
+<li>HackRead — “KickassTorrents is back as katcr.co domain”:
+https://hackread.com/kickasstorrents-is-back-as-katcr-co-domain/</li>
+<li>TechPP KAT proxy list (May 2026):
+https://techpp.com/2025/04/12/kickass-torrents-proxy-list/</li>
+</ul>
+<p>No external solution exists that lets a JS-less <code>urllib</code>
+client clear the KAT JS-challenge — the limitation is upstream anti-bot
+by design (cf. §11.4.112). A browser-engine fetch (headless Chromium /
+FlareSolverr-class JS solver) would be required; that is a separate
+architectural capability, out of scope for a stock nova3 plugin, and
+would still land in malicious ad-redirect chains for these mirrors.</p>
+<hr />
+<h2 id="recommendation-for-conductor-not-applied-here">Recommendation
+(for conductor; NOT applied here)</h2>
+<ol type="1">
+<li>Leave <code>plugins/kickass.py</code>’s <code>url</code> unchanged
+(no mirror responds usefully). The plugin already degrades to an honest
+empty result — no crash.</li>
+<li>Track as a §11.4.112 won’t-fix <code>structurally-impossible</code>
+(upstream-Cloudflare / JS challenge) item; reopen only on NEW evidence a
+KAT mirror serves listing HTML to a non-JS client (per §11.4.34 /
+§11.4.7).</li>
+<li>Optionally consider DROPPING kickass from the merge service
+PUBLIC_TRACKERS set so it stops contributing a permanent
+<code>upstream_http_403</code> to every query (operator decision per
+§11.4.122 — NOT done autonomously).</li>
+</ol>
+</body>
+</html>
