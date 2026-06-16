@@ -307,81 +307,50 @@ for plugin in "${SELECTED_PLUGINS[@]}"; do
     print_success "${plugin} staged"
 done
 
-# Install to running container if applicable
+# Install to running container(s) if applicable.
+# §11.4.108: the engine bytes MUST reach EVERY container that runs the nova3
+# engine subprocess. The merge service (download-proxy) spawns the engine
+# subprocess INSIDE `qbittorrent-proxy` — that is the container whose engines
+# the merge search actually reads — AND the qBittorrent WebUI runs them in
+# `qbittorrent`. Installing only into `qbittorrent` left the merge service
+# running stale engines (the bug that kept multi-word fixes from taking).
 if [[ "$LOCAL_MODE" == "false" ]]; then
-    CONTAINER_NAME="qbittorrent"
-    
-    # Check for podman
-    if command -v podman &> /dev/null; then
-        if podman ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-            print_info "Installing to running Podman container..."
-            
-            # Create directory in container
-            podman exec "$CONTAINER_NAME" mkdir -p /config/qBittorrent/nova3/engines 2>/dev/null || true
-            
-            # Copy all plugins
+    RUNTIME=""
+    if command -v podman &> /dev/null; then RUNTIME="podman"
+    elif command -v docker &> /dev/null; then RUNTIME="docker"; fi
+
+    if [[ -n "$RUNTIME" ]]; then
+        for CONTAINER_NAME in qbittorrent qbittorrent-proxy; do
+            "$RUNTIME" ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$" || {
+                print_warning "Container '$CONTAINER_NAME' not running — skipping."
+                continue
+            }
+            print_info "Installing plugins into ${RUNTIME} container ${CONTAINER_NAME}..."
+            "$RUNTIME" exec "$CONTAINER_NAME" mkdir -p /config/qBittorrent/nova3/engines 2>/dev/null || true
+
             for plugin in "${SELECTED_PLUGINS[@]}"; do
                 plugin_file="plugins/${plugin}.py"
-                plugin_icon="plugins/${plugin}.png"
-                
-                podman cp "$plugin_file" "${CONTAINER_NAME}:/config/qBittorrent/nova3/engines/" 2>/dev/null || {
-                    print_error "Failed to copy ${plugin} to container"
+                [[ -f "$plugin_file" ]] || plugin_file="plugins/community/${plugin}.py"
+                [[ -f "$plugin_file" ]] || continue  # source-less orphan: skip (not fatal)
+
+                if ! "$RUNTIME" cp "$plugin_file" "${CONTAINER_NAME}:/config/qBittorrent/nova3/engines/" 2>/dev/null; then
+                    print_error "Failed to copy ${plugin} to ${CONTAINER_NAME}"
                     continue
-                }
-                
-                if [[ -f "$plugin_icon" ]]; then
-                    podman cp "$plugin_icon" "${CONTAINER_NAME}:/config/qBittorrent/nova3/engines/" 2>/dev/null || true
                 fi
-                
-                # Fix permissions in container
-                podman exec "$CONTAINER_NAME" chmod 644 "/config/qBittorrent/nova3/engines/${plugin}.py" 2>/dev/null || true
-                
-                print_success "${plugin} copied to container"
-            done
-            
-            # Restart nova3 service or container to reload plugins
-            print_info "Restarting qBittorrent to load new plugins..."
-            podman restart "$CONTAINER_NAME" 2>/dev/null || true
-            sleep 2
-        else
-            print_warning "Container '$CONTAINER_NAME' not running. Plugins will be available after next start."
-        fi
-    fi
-    
-    # Check for docker
-    if command -v docker &> /dev/null; then
-        if docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-            print_info "Installing to running Docker container..."
-            
-            # Create directory in container
-            docker exec "$CONTAINER_NAME" mkdir -p /config/qBittorrent/nova3/engines 2>/dev/null || true
-            
-            # Copy all plugins
-            for plugin in "${SELECTED_PLUGINS[@]}"; do
-                plugin_file="plugins/${plugin}.py"
                 plugin_icon="plugins/${plugin}.png"
-                
-                docker cp "$plugin_file" "${CONTAINER_NAME}:/config/qBittorrent/nova3/engines/" 2>/dev/null || {
-                    print_error "Failed to copy ${plugin} to container"
-                    continue
-                }
-                
-                if [[ -f "$plugin_icon" ]]; then
-                    docker cp "$plugin_icon" "${CONTAINER_NAME}:/config/qBittorrent/nova3/engines/" 2>/dev/null || true
-                fi
-                
-                # Fix permissions in container
-                docker exec "$CONTAINER_NAME" chmod 644 "/config/qBittorrent/nova3/engines/${plugin}.py" 2>/dev/null || true
-                
-                print_success "${plugin} copied to container"
+                [[ -f "$plugin_icon" ]] && "$RUNTIME" cp "$plugin_icon" "${CONTAINER_NAME}:/config/qBittorrent/nova3/engines/" 2>/dev/null || true
+                "$RUNTIME" exec "$CONTAINER_NAME" chmod 644 "/config/qBittorrent/nova3/engines/${plugin}.py" 2>/dev/null || true
             done
-            
-            # Restart container to reload plugins
-            print_info "Restarting qBittorrent to load new plugins..."
-            docker restart "$CONTAINER_NAME" 2>/dev/null || true
-            sleep 2
-        else
-            print_warning "Container '$CONTAINER_NAME' not running. Plugins will be available after next start."
+            print_success "plugins installed into ${CONTAINER_NAME}"
+        done
+
+        # Clear the engine import cache in the merge-service container so its
+        # next (subprocess-spawned) engine import reads the FRESH source. No
+        # container restart is needed — each search imports engines in a fresh
+        # python3 subprocess; only a stale .pyc would shadow the new source.
+        if "$RUNTIME" ps --format "{{.Names}}" | grep -q "^qbittorrent-proxy$"; then
+            "$RUNTIME" exec qbittorrent-proxy sh -c \
+                'find /config/qBittorrent/nova3/engines -name __pycache__ -type d -exec rm -rf {} +' 2>/dev/null || true
         fi
     fi
 fi
