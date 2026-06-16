@@ -1,7 +1,7 @@
 # Boba — Feature Status (all components)
 
-**Revision:** 1
-**Last modified:** 2026-06-15T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-06-16T07:35:00Z
 **Scope:** Every system component, service, infrastructure piece, and client app of the Boba project — one row per feature, grouped by component.
 **Authority:** assembled by READ-ONLY repo inventory (codegraph + grep + source reading) on 2026-06-15. Cross-references `AGENTS.md`, `CLAUDE.md`, `docs/REMAINING_WORK_PLAN.md`.
 
@@ -13,6 +13,28 @@
 > - **Tests** = test types present + cite file (unit / integration / e2e / security / stress-chaos / property / contract); `none` if no covering test found
 > - **Validation** = honest validation posture (tested-green-in-suite / unit-only / live-evidence-captured / not-validated / operator-blocked)
 > - **Video** = video-recording confirmation — `PENDING` everywhere this revision
+
+---
+
+## Video-recording confirmations (§11.4.143 / §11.4.83)
+
+Real-use recordings (Claude-vision analyzed — the HelixAgent ensemble vision is a
+proven stub, see `docs/qa/recording-readiness-20260615/`) in
+`/Volumes/T7/Downloads/Recordings/` (project-prefix `boba-`). Per-row `Video`
+cells stay `PENDING` where a feature has not been *individually* filmed; the
+recordings below confirm the headline user-facing flows on-screen.
+
+| Recording | Surface | Features confirmed | Verdict |
+|---|---|---|---|
+| `boba-cli-orchestrator-demo.mp4` | CLI (`boba-ctl`) | status / health / list — 4 services running & healthy | `docs/qa/recordings-20260615/boba-cli-verdict.md` |
+| `boba-web-search-flow.mp4` | Web dashboard | launch → search "debian" → live results → "829 results (288 merged)" complete | `boba-web-search-flow-verdict.md` |
+| `boba-web-feature-tour.mp4` + `boba-web-dashboard-tour.mp4` | Web dashboard | dashboard load (29 trackers, qBit connected), result rows render **qBit + Download** buttons (clickable), tab nav (Results/Active Downloads/Trackers/Schedules/Hooks), Jackett `/jackett` credentials page, theme | `boba-web-feature-tour-verdict.md` |
+
+**Honest scope (§11.4.6, no bluff):**
+- **Backend services** (download-proxy / merge / boba-jackett / Go) verified **200 server-side inside the VM** and exercised through the web UI recordings.
+- **Console errors** seen in the web recordings are an **SSH-tunnel SSE/poll artifact** (macOS↔VM), NOT product defects — every endpoint is 200 in the VM. See the feature-tour verdict.
+- **BobaLink extension**: covered by **816 passing tests**; a real-use UI video needs a `--load-extension` browser the current MCP can't launch — documented tooling-limited follow-up (NOT faked).
+- **TUI / mobile / desktop**: do not exist in this project (server-side + Angular web + browser extension only) — nothing to record.
 
 ---
 

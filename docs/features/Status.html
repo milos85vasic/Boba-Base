@@ -1,7 +1,7 @@
 <h1 id="boba-feature-status-all-components">Boba — Feature Status (all
 components)</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-15T00:00:00Z <strong>Scope:</strong> Every system component,
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-06-16T07:35:00Z <strong>Scope:</strong> Every system component,
 service, infrastructure piece, and client app of the Boba project — one
 row per feature, grouped by component. <strong>Authority:</strong>
 assembled by READ-ONLY repo inventory (codegraph + grep + source
@@ -28,6 +28,70 @@ not-validated / operator-blocked) - <strong>Video</strong> =
 video-recording confirmation — <code>PENDING</code> everywhere this
 revision</p>
 </blockquote>
+<hr />
+<h2 id="video-recording-confirmations-11.4.143-11.4.83">Video-recording
+confirmations (§11.4.143 / §11.4.83)</h2>
+<p>Real-use recordings (Claude-vision analyzed — the HelixAgent ensemble
+vision is a proven stub, see
+<code>docs/qa/recording-readiness-20260615/</code>) in
+<code>/Volumes/T7/Downloads/Recordings/</code> (project-prefix
+<code>boba-</code>). Per-row <code>Video</code> cells stay
+<code>PENDING</code> where a feature has not been <em>individually</em>
+filmed; the recordings below confirm the headline user-facing flows
+on-screen.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Recording</th>
+<th>Surface</th>
+<th>Features confirmed</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boba-cli-orchestrator-demo.mp4</code></td>
+<td>CLI (<code>boba-ctl</code>)</td>
+<td>status / health / list — 4 services running &amp; healthy</td>
+<td><code>docs/qa/recordings-20260615/boba-cli-verdict.md</code></td>
+</tr>
+<tr>
+<td><code>boba-web-search-flow.mp4</code></td>
+<td>Web dashboard</td>
+<td>launch → search “debian” → live results → “829 results (288 merged)”
+complete</td>
+<td><code>boba-web-search-flow-verdict.md</code></td>
+</tr>
+<tr>
+<td><code>boba-web-feature-tour.mp4</code> +
+<code>boba-web-dashboard-tour.mp4</code></td>
+<td>Web dashboard</td>
+<td>dashboard load (29 trackers, qBit connected), result rows render
+<strong>qBit + Download</strong> buttons (clickable), tab nav
+(Results/Active Downloads/Trackers/Schedules/Hooks), Jackett
+<code>/jackett</code> credentials page, theme</td>
+<td><code>boba-web-feature-tour-verdict.md</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Honest scope (§11.4.6, no bluff):</strong> - <strong>Backend
+services</strong> (download-proxy / merge / boba-jackett / Go) verified
+<strong>200 server-side inside the VM</strong> and exercised through the
+web UI recordings. - <strong>Console errors</strong> seen in the web
+recordings are an <strong>SSH-tunnel SSE/poll artifact</strong>
+(macOS↔︎VM), NOT product defects — every endpoint is 200 in the VM. See
+the feature-tour verdict. - <strong>BobaLink extension</strong>: covered
+by <strong>816 passing tests</strong>; a real-use UI video needs a
+<code>--load-extension</code> browser the current MCP can’t launch —
+documented tooling-limited follow-up (NOT faked). - <strong>TUI / mobile
+/ desktop</strong>: do not exist in this project (server-side + Angular
+web + browser extension only) — nothing to record.</p>
 <hr />
 <h2 id="component-summary">Component summary</h2>
 <table>
