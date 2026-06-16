@@ -73,6 +73,13 @@ proves results_count > 0.
   defect — a per-plugin bug, NOT the P0 system crash. Core/private trackers are
   unaffected. This is a real residual finding; the task's "expect NONE" was not
   fully met for the yts plugin on the Cyrillic query.
+  UPDATE (post-test, same session): a sibling fix to `plugins/yts.py` —
+  percent-encoding each browse-movies path segment via `quote(..., safe="")` —
+  landed in the working tree with a dedicated RED→GREEN test
+  (`tests/unit/test_plugin_unicode_query_encoding.py::test_yts_browse_path_cyrillic_encoded`,
+  44/44 GREEN, §1.1 mutation confirmed). It is NOT yet committed or deployed to
+  the e800ebd live stack, so the numbers above reflect the live system as tested.
+  Re-test after deploy to confirm the yts Cyrillic crash clears.
 - **snowfl `plugin_crashed` on `ubuntu`**: stderr `Connection error: Service
   Unavailable` + non-JSON body → JSON-parse raise. Transient upstream flake, NOT
   an encoding crash. snowfl SUCCEEDED on `the matrix` (140 results), confirming
@@ -90,3 +97,12 @@ proves results_count > 0.
   concurrent service.
 - Proxy (7186) and merge service (7187) both HTTP 200 before testing.
 - Raw evidence JSON captured under `/Volumes/T7/tmp/{ubuntu,matrix_final,cyr_final}.json`.
+
+## Post-yts-fix re-verify (c05423e deployed)
+
+After deploying the yts browse-path UTF-8 fix (c05423e), the Cyrillic full-fleet
+`Война и мир` re-ran on nezha: **total=608, 29 trackers, `encoding-crashed/
+plugin_crashed: NONE`**. yts no longer emits plugin_bad_query_encoding — it now
+returns `upstream_http_403` (yts.mx is Cloudflare-gated, an UPSTREAM block like
+kickass §11.4.112, not a code defect). Net: **zero encoding crashes across the
+entire fleet on ASCII, multi-word, AND Cyrillic** — the residual is closed.
