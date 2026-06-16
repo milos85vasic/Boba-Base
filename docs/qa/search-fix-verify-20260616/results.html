@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>results</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="qa-evidence-search-auth-fixes-verified-on-nezha-2026-06-16">QA
+Evidence — search + auth fixes verified on nezha (2026-06-16)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T00:00:00Z</p>
+<p>Real end-to-end verification on the live distributed-boot production
+stack (<code>nezha.local</code>, podman). Anti-bluff §11.4 / §11.4.107 /
+§11.4.69 — assertions are on user-observable outcomes (result counts,
+real titles, per-tracker status), NOT status codes.</p>
+<h2
+id="private-tracker-cookie-auth-operator-supplied-browser-cookies">1.
+Private-tracker cookie auth (operator-supplied browser cookies)</h2>
+<p>Operator complaint: rutracker/nnmclub never authenticated. Fix:
+<code>NNMCLUB_COOKIES</code> (existing) + the new
+<code>RUTRACKER_COOKIES</code> injection (commit <code>2fc29fc</code>),
+cookies extracted from the operator’s browser export by
+<code>scripts/extract-tracker-cookies.sh</code> (only the tracker’s
+own-domain cookies, §11.4.10).</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tracker</th>
+<th>query</th>
+<th>status</th>
+<th>total</th>
+<th>sample real title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>rutracker</td>
+<td><code>the matrix</code></td>
+<td>completed</td>
+<td><strong>50</strong></td>
+<td>“Матрица / The Matrix (Энди/Ларри Вачовски)”</td>
+</tr>
+<tr>
+<td>nnmclub</td>
+<td><code>the matrix</code></td>
+<td>completed</td>
+<td><strong>50</strong></td>
+<td>“The Matrix OST (1999)”, “Matrix Resurrections (2021)”</td>
+</tr>
+</tbody>
+</table>
+<p>Both were auth-failing every query before (rutracker
+<code>no_cookie</code>/CAPTCHA, nnmclub Cloudflare Turnstile). Container
+env confirmed carrying both cookie vars
+(<code>phpbb2mysql_4_sid</code>=1, <code>bb_session</code>=1).</p>
+<h2
+id="multi-word-query-url-encoding-crash-the-search-broken-crashing-a-lot">2.
+Multi-word query URL-encoding crash (the “search broken / crashing a
+lot”)</h2>
+<p>Root cause (FACT): ~17 nova3 plugins interpolated the RAW query into
+a request URL; a literal space crashed urllib
+(<code>URL can't contain control characters</code>). Single-word worked,
+multi-word silently lost the plugin. Fix: per-plugin URL-encoding
+(commits <code>dbd3858</code> 7 maintained + <code>da7d709</code> 10
+adopted/limetorrents) + honesty classifier
+<code>plugin_bad_query_encoding</code> (<code>33d90f2</code>).</p>
+<p>Scoped multi-word search (<code>the matrix</code>) of the 10 adopted
+plugins — search_id <code>6a3da978-d2d4-4b2d-bb6b-a1dfb5d8c43f</code>,
+<strong>total=592</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>plugin</th>
+<th>status</th>
+<th>results</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>glotorrents</td>
+<td>success</td>
+<td>173</td>
+</tr>
+<tr>
+<td>torrentdownload</td>
+<td>success</td>
+<td>249</td>
+</tr>
+<tr>
+<td>torrentproject</td>
+<td>success</td>
+<td>68</td>
+</tr>
+<tr>
+<td>snowfl</td>
+<td>success</td>
+<td>40</td>
+</tr>
+<tr>
+<td>limetorrents</td>
+<td>success</td>
+<td>36</td>
+</tr>
+<tr>
+<td>torrentscsv</td>
+<td>success</td>
+<td>25</td>
+</tr>
+<tr>
+<td>rockbox</td>
+<td>success</td>
+<td>1</td>
+</tr>
+<tr>
+<td>linuxtracker</td>
+<td>empty</td>
+<td>0 (no error — no match for this query)</td>
+</tr>
+<tr>
+<td>pirateiro</td>
+<td>empty</td>
+<td>0 (no error)</td>
+</tr>
+<tr>
+<td>yourbittorrent</td>
+<td>error</td>
+<td>0 — <code>deadline_timeout</code> (slow, NOT an encoding crash)</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>STILL bad_query_encoding/crashed: NONE</code></strong>
+— the encoding-crash storm is eliminated. (Earlier maintained-7 run:
+bitsearch 60, torrentgalaxy 150, nyaa 5.) Full-fleet
+<code>the matrix</code> previously returned 1135–1705 results.</p>
+<h2 id="authstatus-now-reflects-cookies-commit-9c2f8dc">3. auth/status
+now reflects cookies (commit <code>9c2f8dc</code>)</h2>
+<p><code>/auth/status</code> previously showed red/unauthenticated chips
+for rutracker/nnmclub despite working searches (it only read
+<code>_tracker_sessions</code>, populated after a search). Now reflects
+the <code>*_COOKIES</code> env so the dashboard shows them green.</p>
+<p><em>Captured 2026-06-16 against nezha.local; unit coverage: 54
+multiword tests + auth-status cookie-reflection test, all with §1.1
+negation proofs.</em></p>
+</body>
+</html>
