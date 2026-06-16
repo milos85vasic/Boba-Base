@@ -43,48 +43,34 @@ def _load_gamestorrents(captured=None):
     return mod, captured
 
 
-# ─── HTML fixtures (matching the article-card regex with re.S|re.I) ──────
-# Pattern: <article>...<a href="URL">...<h2>NAME</h2>...
-# <div class="size">SIZE</div>...<div class="date">DATE</div>...</article>
+# ─── HTML fixtures (matching the live table.metalion layout, §11.4.120) ──
+# The site migrated from <article> cards to a <table class="table metalion">
+# (verified 2026-06-16 against the live site). Row layout: Nombre
+# (<td><a href=DETAIL>NAME</a></td>), Fecha (DD-MM-YYYY), Tamaño (e.g.
+# "35.2 GBs"), Version, Genero, Idioma. The parser keys on the first <td>
+# whose <a> points at a detail page + a size-token <td>; seeds/leech are
+# emitted as "-1" (this games tracker exposes no S/L).
 
-GS_SINGLE = '''<article class="post">
-<a href="https://www.gamestorrents.app/game/the-witcher-3-wild-hunt/">
-<h2>The Witcher 3: Wild Hunt</h2>
-<div class="size">35.2 GB</div>
-<div class="date">15-05-2025</div>
-</a>
-</article>'''
+GS_SINGLE = '''<table class="table metalion"><tbody>
+<tr><td><a href="https://www.gamestorrents.app/game/the-witcher-3-wild-hunt/">The Witcher 3: Wild Hunt</a></td><td>15-05-2025</td><td>35.2 GBs</td><td>v1.0</td><td>RPG</td><td>EN</td></tr>
+</tbody></table>'''
 
-GS_MULTI = '''<article class="post">
-<a href="https://www.gamestorrents.app/game/elden-ring/">
-<h2>Elden Ring</h2>
-<div class="size">49.8 GB</div>
-<div class="date">25-02-2022</div>
-</a>
-</article>
-<article class="post">
-<a href="https://www.gamestorrents.app/game/baldurs-gate-3/">
-<h2>Baldur's Gate 3</h2>
-<div class="size">122.5 GB</div>
-<div class="date">03-08-2023</div>
-</a>
-</article>'''
+GS_MULTI = '''<table class="table metalion"><tbody>
+<tr><td><a href="https://www.gamestorrents.app/game/elden-ring/">Elden Ring</a></td><td>25-02-2022</td><td>49.8 GBs</td><td>v1.0</td><td>RPG</td><td>EN</td></tr>
+<tr><td><a href="https://www.gamestorrents.app/game/baldurs-gate-3/">Baldur's Gate 3</a></td><td>03-08-2023</td><td>122.5 GBs</td><td>v1.0</td><td>RPG</td><td>EN</td></tr>
+</tbody></table>'''
 
-GS_FREELEECH = '''<article class="post">
-<a href="https://www.gamestorrents.app/game/free-game/">
-<h2>Free Game</h2>
-<div class="size">5.0 GB</div>
-<div class="date">01-01-2025</div>
-</a>
-</article>'''
+GS_FREELEECH = '''<table class="table metalion"><tbody>
+<tr><td><a href="https://www.gamestorrents.app/game/free-game/">Free Game</a></td><td>01-01-2025</td><td>5.0 GBs</td><td>v1.0</td><td>Action</td><td>EN</td></tr>
+</tbody></table>'''
 
 GS_EMPTY = '<html><body><p>No results found.</p></body></html>'
 
-GS_MALFORMED = '''<article class="post">
-<a href="https://www.gamestorrents.app/game/broken/">
-<h2>Broken Game</h2>
-</a>
-</article>'''
+# Malformed: a metalion row whose first cell has NO detail <a> (header-style)
+# — the parser skips it (no name_match) → 0 results.
+GS_MALFORMED = '''<table class="table metalion"><tbody>
+<tr><td>Broken Game</td><td>01-01-2025</td><td>9.9 GBs</td></tr>
+</tbody></table>'''
 
 GS_SMALL_SIZE = '''<article class="post">
 <a href="https://www.gamestorrents.app/game/small/">
@@ -136,8 +122,8 @@ class TestParseResults:
         assert cap[0]["link"] == "https://www.gamestorrents.app/game/the-witcher-3-wild-hunt/"
         assert cap[0]["desc_link"] == cap[0]["link"]
         assert cap[0]["engine_url"] == "https://www.gamestorrents.app"
-        assert cap[0]["seeds"] == "0"
-        assert cap[0]["leech"] == "0"
+        assert cap[0]["seeds"] == "-1"
+        assert cap[0]["leech"] == "-1"
 
     def test_multi_results(self):
         mod, cap = _load_gamestorrents()

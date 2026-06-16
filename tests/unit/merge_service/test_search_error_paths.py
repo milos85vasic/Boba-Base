@@ -52,7 +52,9 @@ def search_mod():
 def test_classify_empty_stderr_with_deadline_and_no_results(search_mod):
     diag = search_mod._classify_plugin_stderr("", killed_by_deadline=True, had_results=False)
     assert diag["error_type"] == "deadline_timeout"
-    assert "25s" in diag["error"]
+    # §11.4.120 reconcile: message no longer hard-codes a literal "25s" (the
+    # deadline is configurable, default 60s) — assert the accurate wording.
+    assert "per-tracker deadline" in diag["error"]
     assert diag["stderr_tail"] == ""
 
 
