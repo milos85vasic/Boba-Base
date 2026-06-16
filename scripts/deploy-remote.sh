@@ -20,7 +20,7 @@ HOSTS="deploy/hosts.yaml"
 # Minimal YAML field extraction for the named host block (structured file).
 _field() { awk -v h="$HOST_NAME" -v k="$2" '
   $0 ~ "name: *"h"$" {f=1} f && $0 ~ "^  - name:" && $0 !~ "name: *"h"$" {f=0}
-  f && $0 ~ "^ *"k":" {sub("^ *"k": *",""); gsub(/[ \t]+$/,""); print; exit}' "$HOSTS"; }
+  f && $0 ~ "^ *"k":" {sub("^ *"k": *",""); sub(/[ \t]+#.*$/,""); gsub(/[ \t]+$/,""); print; exit}' "$HOSTS"; }
 
 ADDR="$(_field x address)"; USER="$(_field x user)"; RPATH="$(_field x remote_path)"
 : "${ADDR:?host not found in $HOSTS}" "${USER:?}" "${RPATH:?}"
@@ -34,7 +34,15 @@ rsync -az --delete \
   --exclude='node_modules' --exclude='.venv' --exclude='qa-results' \
   --exclude='releases' --exclude='.playwright-mcp' --exclude='__pycache__' \
   --exclude='.angular' --exclude='*.db' --exclude='submodules/jackett' \
-  --exclude='.git-backup*' ./ "${USER}@${ADDR}:${RPATH}/"
+  --exclude='.git-backup*' \
+  --exclude='config/qBittorrent/nova3/engines' \
+  ./ "${USER}@${ADDR}:${RPATH}/"
+# NOTE: config/qBittorrent/nova3/engines/ is excluded — it is owned by the
+# qBittorrent container user (PUID), so rsync from the SSH user hits
+# "Permission denied". The engine files are installed in [3/5] by
+# install-plugin.sh, which falls through to `podman cp` into the running
+# container (container-user write) when the host cp is not permitted (§11.4.108:
+# this is how the fixed plugin bytes actually reach the running engines).
 
 echo "[2/5] transfer .env (operator-approved §11.4.10) + host-correct data dir"
 [[ -f .env ]] || { echo "no local .env"; exit 1; }
