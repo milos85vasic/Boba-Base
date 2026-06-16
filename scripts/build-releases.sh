@@ -31,7 +31,11 @@ print_error()   { printf '\033[0;31m[FAIL]\033[0m %s\n' "$*" >&2; }
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-VERSION="$(python3 -c 'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
+# Read project.version from pyproject.toml. tomllib is stdlib only on Python
+# >= 3.11; on an older host python3 (e.g. 3.9) fall back to a grep so the
+# distribution build is never blocked by the host interpreter version.
+VERSION="$(python3 -c 'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])' 2>/dev/null \
+  || grep -m1 -E '^version *= *' pyproject.toml | sed -E 's/^version *= *"?([^"]+)"?.*/\1/')"
 COMMIT_SHA="$(git rev-parse --short=12 HEAD)"
 FULL_SHA="$(git rev-parse HEAD)"
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -45,7 +49,8 @@ Usage:
   ./scripts/build-releases.sh [TARGETS...] [--channel debug|release|all]
 
 Targets (space-separated, omit for all):
-  frontend         Angular builds (debug + release)
+  frontend         Angular dashboard builds (debug + release)
+  extension        BobaLink browser extension (WXT) zips — Chrome + Firefox (debug + release)
   download-proxy   Python source tarball (+ container image if podman/docker present)
   plugins          Canonical 12 nova3 plugins tarball
   docs-site        `mkdocs build` output tarball (requires mkdocs installed)
@@ -69,7 +74,7 @@ while (( $# )); do
 done
 
 if (( ${#TARGETS[@]} == 0 )); then
-    TARGETS=(frontend download-proxy plugins docs-site)
+    TARGETS=(frontend extension download-proxy plugins docs-site)
 fi
 
 detect_container_runtime
@@ -141,6 +146,63 @@ build_frontend() {
             write_build_info "$dest" "$archive" "$channel" ""
             rm -rf "$tmpdir"
             print_success "frontend $channel → $dest/$archive"
+        done
+    )
+    builds_done=$((builds_done + 1))
+}
+
+build_extension() {
+    if [[ ! -d extension ]] || [[ ! -f extension/package.json ]]; then
+        print_warning "extension/ not found — skipping"
+        builds_skipped=$((builds_skipped + 1)); return 0
+    fi
+    if ! command -v npx >/dev/null 2>&1; then
+        print_warning "npx not on PATH — skipping extension"
+        builds_skipped=$((builds_skipped + 1)); return 0
+    fi
+
+    local channels=()
+    case "$CHANNELS" in
+        all) channels=(debug release) ;;
+        debug) channels=(debug) ;;
+        release) channels=(release) ;;
+        *) print_error "unknown channel: $CHANNELS"; exit 2 ;;
+    esac
+
+    (
+        cd extension
+        if [[ ! -d node_modules ]]; then
+            print_info "installing extension deps (npm ci)"
+            npm ci --no-audit --no-fund --no-progress
+        fi
+
+        for channel in "${channels[@]}"; do
+            local dest="$REPO_ROOT/$OUT_ROOT/extension/$channel"
+            mkdir -p "$dest"
+            # WXT default build is production; --mode development is the debug build.
+            local mode_args=()
+            [[ "$channel" == "debug" ]] && mode_args=(--mode development)
+            print_info "building BobaLink extension ($channel) — chrome + firefox"
+            # wxt zip runs build first and emits .output/<name>-<ver>-<browser>.zip
+            # (firefox additionally emits a -sources.zip for AMO review).
+            npx wxt zip "${mode_args[@]}" >"$dest/build.log" 2>&1 || {
+                print_error "wxt zip ($channel, chrome) failed; see $dest/build.log"; return 1; }
+            npx wxt zip -b firefox "${mode_args[@]}" >>"$dest/build.log" 2>&1 || {
+                print_error "wxt zip ($channel, firefox) failed; see $dest/build.log"; return 1; }
+            # Collect the produced zips; tag debug zips so they never collide with
+            # release zips of the same wxt name.
+            local suffix=""
+            [[ "$channel" == "debug" ]] && suffix="-debug"
+            local z copied=0
+            for z in .output/*-chrome.zip .output/*-firefox.zip .output/*-sources.zip; do
+                [[ -f "$z" ]] || continue
+                local base; base="$(basename "$z" .zip)"
+                cp "$z" "$dest/${base}${suffix}.zip"
+                copied=$((copied + 1))
+            done
+            (cd "$dest" && sha256sum ./*.zip > SHA256SUMS)
+            write_build_info "$dest" "bobalink ${channel} (chrome+firefox)" "$channel" ", \"browsers\": [\"chrome-mv3\", \"firefox-mv2\"]"
+            print_success "extension $channel → $dest ($copied zip(s))"
         done
     )
     builds_done=$((builds_done + 1))
@@ -242,6 +304,7 @@ build_docs_site() {
 for target in "${TARGETS[@]}"; do
     case "$target" in
         frontend)       build_frontend ;;
+        extension)      build_extension ;;
         download-proxy) build_download_proxy ;;
         plugins)        build_plugins ;;
         docs-site)      build_docs_site ;;

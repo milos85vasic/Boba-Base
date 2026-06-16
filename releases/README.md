@@ -19,6 +19,19 @@ releases/
 │   │   │   ├── frontend-<sha>.tar.gz
 │   │   │   └── SHA256SUMS
 │   │   └── BUILD_INFO.json
+│   ├── extension/                        BobaLink browser extension (WXT, MV3/MV2)
+│   │   ├── debug/                        wxt zip --mode development (Chrome + Firefox)
+│   │   │   ├── bobalink-<ver>-chrome-debug.zip
+│   │   │   ├── bobalink-<ver>-firefox-debug.zip
+│   │   │   ├── bobalink-<ver>-sources-debug.zip
+│   │   │   ├── SHA256SUMS
+│   │   │   └── BUILD_INFO.json
+│   │   └── release/                      wxt zip (Chrome + Firefox + AMO sources)
+│   │       ├── bobalink-<ver>-chrome.zip
+│   │       ├── bobalink-<ver>-firefox.zip
+│   │       ├── bobalink-<ver>-sources.zip
+│   │       ├── SHA256SUMS
+│   │       └── BUILD_INFO.json
 │   ├── download-proxy/                   Python service (no debug/release concept)
 │   │   ├── source/
 │   │   │   ├── download-proxy-<sha>.tar.gz
@@ -81,10 +94,13 @@ Every artefact ships a matching `SHA256SUMS` file and a `BUILD_INFO.json`:
 ## How to build
 
 ```bash
-./scripts/build-releases.sh              # all apps, all channels
-./scripts/build-releases.sh frontend     # one target
-./scripts/build-releases.sh --channel release
+./scripts/build-releases.sh                       # all apps, all channels
+./scripts/build-releases.sh frontend extension    # both user-facing apps
+./scripts/build-releases.sh extension --channel release
 ```
+
+Targets: `frontend` (Angular dashboard), `extension` (BobaLink, WXT —
+Chrome + Firefox zips), `download-proxy`, `plugins`, `docs-site`.
 
 The script is **non-interactive** and exits with `1` on any tool error
 (no silent partial releases). `tests/unit/test_releases_script_non_interactive.py`
