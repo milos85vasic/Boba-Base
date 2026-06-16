@@ -27,22 +27,28 @@ ADDR="$(_field x address)"; USER="$(_field x user)"; RPATH="$(_field x remote_pa
 SSH="ssh -o BatchMode=yes ${USER}@${ADDR}"
 echo "[deploy-remote] host=$HOST_NAME ${USER}@${ADDR}:${RPATH} profile='${PROFILE:-default}'"
 
-echo "[1/5] rsync System → remote (excluding secrets/build artifacts)"
+echo "[1/5] rsync System → remote (source only; container-owned config/ excluded)"
 $SSH "mkdir -p '$RPATH'"
+rsync_rc=0
 rsync -az --delete \
   --exclude='.git' --exclude='.env' --exclude='.env.*' --exclude='*.env' \
   --exclude='node_modules' --exclude='.venv' --exclude='qa-results' \
   --exclude='releases' --exclude='.playwright-mcp' --exclude='__pycache__' \
   --exclude='.angular' --exclude='*.db' --exclude='submodules/jackett' \
   --exclude='.git-backup*' \
-  --exclude='config/qBittorrent/nova3/engines' \
-  ./ "${USER}@${ADDR}:${RPATH}/"
-# NOTE: config/qBittorrent/nova3/engines/ is excluded — it is owned by the
-# qBittorrent container user (PUID), so rsync from the SSH user hits
-# "Permission denied". The engine files are installed in [3/5] by
-# install-plugin.sh, which falls through to `podman cp` into the running
-# container (container-user write) when the host cp is not permitted (§11.4.108:
-# this is how the fixed plugin bytes actually reach the running engines).
+  --exclude='config' \
+  ./ "${USER}@${ADDR}:${RPATH}/" || rsync_rc=$?
+# §11.4.108: the WHOLE config/ tree is owned by the qBittorrent container user
+# (PUID) — qBittorrent.conf, jackett/, boba.db, logs, BT_backup, nova3/engines.
+# Syncing it from the SSH user hits "Permission denied"; under set -e that
+# aborted the deploy BEFORE [3/5] install, so fixed plugin bytes never landed.
+# config/ is RUNTIME state, not source — the merge service source is
+# ./download-proxy (bind-mounted) and ./plugins (installed via podman cp by
+# install-plugin.sh in [3/5]). So config/ is excluded entirely. rsync exit
+# 23/24 (partial/vanished) is tolerated; any other code is fatal.
+if [[ $rsync_rc -ne 0 && $rsync_rc -ne 23 && $rsync_rc -ne 24 ]]; then
+  echo "[deploy-remote] rsync failed (rc=$rsync_rc)"; exit "$rsync_rc"
+fi
 
 echo "[2/5] transfer .env (operator-approved §11.4.10) + host-correct data dir"
 [[ -f .env ]] || { echo "no local .env"; exit 1; }
