@@ -1,0 +1,122 @@
+<h1
+id="recording-verdict-web-dashboard-search-flow-the-1-fixed-feature">Recording
+verdict — Web dashboard search flow (the #1 fixed feature)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T00:40:00Z</p>
+<p>§11.4.143 real-user-journey + §11.4.83 recorded evidence +
+§11.4.107/§11.4.117 on-screen verification. Analysis by Claude Opus 4.8
+vision (operator-chosen).</p>
+<h2 id="recording">Recording</h2>
+<ul>
+<li><strong>Surface:</strong> Web — Боба Dashboard (Angular SPA served
+at :7187), driven through its OWN UI in a real browser (playwright), NOT
+a deep-link/intent shortcut.</li>
+<li><strong>Artifacts</strong>
+(<code>/Volumes/T7/Downloads/Recordings/</code>):
+<code>boba-web-search-flow.mp4</code>
+<ul>
+<li>frames <code>boba-web-01-dashboard.png</code> /
+<code>-02-search-results.png</code> / <code>-03-results-grid.png</code>
+(full grid) / <code>-04-rows-closeup.png</code>.</li>
+</ul></li>
+<li><strong>Journey:</strong> launch dashboard → type
+<code>debian</code> in the search box → submit → live results →
+completed.</li>
+<li><strong>Tunnel:</strong> macOS↔︎podman-VM SSH forward
+(<code>scripts/ensure-macos-tunnel.sh</code>) so the host-net :7187 is
+reachable for the browser.</li>
+</ul>
+<h2 id="frame-verdict-real-on-screen-content-no-bluff">Frame verdict
+(real on-screen content, no bluff)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Step</th>
+<th>Frame</th>
+<th>On-screen result</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dashboard loaded</td>
+<td>01</td>
+<td>“Боба Dashboard”, qBit Connected — admin, 4 auth chips
+(rutracker/kinozal/nnmclub/iptorrents), <strong>29 Trackers</strong>,
+search box + Results/Downloads/Trackers/Schedules/Hooks tabs</td>
+<td>✅ PASS</td>
+</tr>
+<tr>
+<td>Search in progress</td>
+<td>02</td>
+<td><code>debian</code> typed; <strong>“Found 829 results…”</strong>
+with live spinner + Abort; <strong>1 Active Search</strong></td>
+<td>✅ PASS — live grid updates (confirms BUG-2 fix on real UI)</td>
+</tr>
+<tr>
+<td>Results grid</td>
+<td>03</td>
+<td>full-page: hundreds of debian result rows densely populated</td>
+<td>✅ PASS</td>
+</tr>
+<tr>
+<td>Search complete</td>
+<td>04</td>
+<td><strong>“Found 829 results (288 merged)”</strong>, <strong>1
+Completed</strong>, Search button restored, result rows with action
+buttons</td>
+<td>✅ PASS — full pipeline: 29-tracker fan-out → 829 raw → 288 deduped
+→ completed</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="additional-confirmed-pages-dashboard-tour-boba-web-dashboard-tour.mp4">Additional
+confirmed pages (dashboard tour —
+<code>boba-web-dashboard-tour.mp4</code>)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Page/feature</th>
+<th>Frame</th>
+<th>On-screen result</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trackers tab navigation</td>
+<td>boba-web-05-trackers-tab.png</td>
+<td>tab switches to Trackers (active/underlined); per-tracker stats
+header renders below the completed 829/288 search</td>
+<td>✅ PASS</td>
+</tr>
+<tr>
+<td>Jackett credentials page (<code>/jackett</code>)</td>
+<td>boba-web-06-jackett-page.png</td>
+<td>boba-jackett UI: “Credentials — encrypted at rest and mirrored to
+.env”, “+ Add credential”, empty-state “No credentials yet”</td>
+<td>✅ PASS (renders + routes)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="outcome">Outcome</h2>
+<p>The operator’s #1 complaint (“search flows do not work at all”) is
+verifiably RESOLVED on the actual user-facing web dashboard: a real
+typed query returns 829 results merged to 288, live-updating, through
+the real browse-search UI. No problems detected requiring a fix.
+(Single/selected-provider modes were separately live-proven via the API
+in c68bb3f; a UI per-provider-filter recording is a follow-up if the
+dashboard exposes that control.)</p>

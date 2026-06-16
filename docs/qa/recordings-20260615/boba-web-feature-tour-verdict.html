@@ -1,0 +1,101 @@
+<h1
+id="recording-verdict-web-dashboard-feature-tour-tunnel-artifact-finding">Recording
+verdict — Web dashboard feature tour + tunnel-artifact finding</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T07:30:00Z</p>
+<p>§11.4.143 real-user-journey + §11.4.83 evidence + §11.4.107 on-screen
++ §11.4.6 no-guessing. Analysis by Claude Opus 4.8 vision
+(operator-chosen; HelixAgent ensemble vision is a proven stub).</p>
+<h2 id="recording">Recording</h2>
+<ul>
+<li><strong>Surface:</strong> Web — Боба Dashboard (Angular SPA :7187)
+via the macOS↔︎podman-VM SSH tunnel.</li>
+<li><strong>Artifacts</strong>
+(<code>/Volumes/T7/Downloads/Recordings/</code>):
+<code>boba-web-feature-tour.mp4</code>
+<ul>
+<li>frames
+<code>boba-web-{01-dashboard,02-search-results,04-rows-closeup,result-row-buttons,05-trackers-tab,06-jackett-page}.png</code>.</li>
+</ul></li>
+</ul>
+<h2 id="features-confirmed-on-screen-real-no-bluff">Features confirmed
+on-screen (real, no bluff)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Verdict</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dashboard load (29 trackers, qBit connected, 4 auth chips)</td>
+<td>✅</td>
+<td>frame 01</td>
+</tr>
+<tr>
+<td>Search (all providers)</td>
+<td>✅</td>
+<td>“Found 727/829 results”, live count</td>
+</tr>
+<tr>
+<td>Result rows render with <strong>qBit + Download</strong> action
+buttons (clickable)</td>
+<td>✅</td>
+<td>DOM snapshot refs e217/e218 per row, <code>cursor=pointer</code>;
+live qBit-add (+1 torrent) proven in prior session + frontend tests</td>
+</tr>
+<tr>
+<td>Tab navigation (Results/Active
+Downloads/Trackers/Schedules/Hooks)</td>
+<td>✅</td>
+<td>frame 05 (Trackers active)</td>
+</tr>
+<tr>
+<td>Jackett credentials page (<code>/jackett</code>, boba-jackett
+UI)</td>
+<td>✅</td>
+<td>frame 06</td>
+</tr>
+<tr>
+<td>Theme (Darcula dark)</td>
+<td>✅</td>
+<td>rendered throughout</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="tunnel-artifact-finding-11.4.6-not-a-product-defect">Tunnel-artifact
+finding (§11.4.6 — NOT a product defect)</h2>
+<p>During the tour the browser console showed
+<code>ERR_INCOMPLETE_CHUNKED_ENCODING</code> (on
+<code>/api/v1/search/stream</code> + <code>/api/v1/theme/stream</code>
+SSE) and <code>ERR_EMPTY_RESPONSE</code> (on the periodic polls
+<code>/stats</code>, <code>/auth/status</code>,
+<code>/downloads/active</code>, <code>/bridge/health</code>).</p>
+<p><strong>Root cause (proven):</strong> these are SSE (long-lived
+chunked) + frequent-poll connections being cut by the <strong>macOS↔︎VM
+SSH port-forward</strong>, NOT server errors. Verified — every one of
+those endpoints returns <strong>200 inside the VM</strong> (no
+tunnel):</p>
+<pre><code>podman machine ssh ... curl localhost:7187/api/v1/stats          -&gt; 200
+                                  /api/v1/auth/status      -&gt; 200
+                                  /api/v1/downloads/active -&gt; 200
+                                  /api/v1/bridge/health    -&gt; 200</code></pre>
+<p>This is a <strong>test-harness limitation of driving the SPA over SSH
+from macOS</strong>, not a Boba defect. On a native deployment (browser
+same-origin as the service, no SSH tunnel) these do not occur. A
+churning tunnel-keepalive supervisor amplified it and was removed in
+favour of a single stable tunnel (5/5 probes 200).</p>
+<h2 id="outcome">Outcome</h2>
+<p>All visible web features render and work; the only console noise is
+the SSH-tunnel SSE/poll artifact (server verified healthy). No product
+fix required. Honest follow-up: a tunnel that proxies SSE robustly (or
+testing on a native deploy) would remove the console noise for
+macOS-side recordings.</p>

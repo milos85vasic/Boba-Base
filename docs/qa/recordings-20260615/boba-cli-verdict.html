@@ -1,0 +1,83 @@
+<h1 id="recording-verdict-boba-ctl-orchestrator-cli">Recording verdict —
+boba-ctl orchestrator CLI</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T00:30:00Z</p>
+<p>§11.4.83 recorded-evidence + §11.4.153 video-confirmation +
+§11.4.107/§11.4.117 on-screen verification. Analysis performed by Claude
+Opus 4.8 vision (operator- chosen analysis path — the HelixAgent
+ensemble vision endpoint is a proven stub, see
+<code>docs/qa/recording-readiness-20260615/</code>).</p>
+<h2 id="recording">Recording</h2>
+<ul>
+<li><strong>Surface:</strong> CLI — <code>boba-ctl</code> (Go
+orchestrator, <code>cmd/boba-ctl/main.go</code>)</li>
+<li><strong>Artifacts</strong> (external per operator,
+<code>/Volumes/T7/Downloads/Recordings/</code>):
+<code>boba-cli-orchestrator-demo.cast</code> / <code>.gif</code> /
+<code>.mp4</code> (14.1s)</li>
+<li><strong>Scenario:</strong> live stack — <code>boba-ctl status</code>
+→ <code>health</code> → <code>list</code></li>
+<li><strong>Pipeline:</strong> asciinema rec → agg (gif) → ffmpeg (mp4)
+→ ffmpeg fps=1 frames → Claude vision</li>
+</ul>
+<h2
+id="frame-by-frame-verdict-real-on-screen-content-no-bluff">Frame-by-frame
+verdict (real on-screen content, no bluff)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Frame</th>
+<th>On-screen result</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boba-ctl status</code></td>
+<td>frame_04</td>
+<td>NAME/STATE/HEALTH/PORTS table; qbittorrent, jackett, boba-jackett,
+download-proxy all <code>running</code></td>
+<td>✅ PASS</td>
+</tr>
+<tr>
+<td><code>boba-ctl health</code></td>
+<td>frame_13</td>
+<td>4 services all <code>OK</code></td>
+<td>✅ PASS (see note)</td>
+</tr>
+<tr>
+<td><code>boba-ctl list</code></td>
+<td>frame_13</td>
+<td>4 default services + <code>go</code> profile
+(<code>qbittorrent-proxy-go</code>) + <code>Runtime: podman</code></td>
+<td>✅ PASS</td>
+</tr>
+<tr>
+<td>banner</td>
+<td>frame_13</td>
+<td>“=== demo complete — 4 services running &amp; healthy ===”</td>
+<td>✅ PASS</td>
+</tr>
+</tbody>
+</table>
+<h2 id="honest-observation-not-a-failure-tracked-follow-up">Honest
+observation (not a failure → tracked follow-up)</h2>
+<p><code>health</code>/<code>status</code> show <code>-</code> / “no
+ports exposed” in the HEALTH/PORTS detail for ALL four services because
+they use <code>network_mode: host</code> (no published ports), and the
+Go health checker probes <em>published</em> ports.
+<code>STATE=running</code> / <code>STATUS=OK</code> is correct
+(containers ARE up and search works). Follow-up: make the health checker
+probe the in-VM listening port for host-net services so DETAIL reflects
+a real endpoint probe rather than “no ports exposed”.</p>
+<h2 id="outcome">Outcome</h2>
+<p>boba-ctl orchestrator features confirmed working on-screen. No
+problems requiring a fix detected (the health-detail gap is cosmetic,
+tracked above).</p>

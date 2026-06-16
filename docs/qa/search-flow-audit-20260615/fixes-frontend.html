@@ -1,0 +1,100 @@
+<h1 id="frontend-fixes-search-flow-audit-20260615-bug-2-bug-5">Frontend
+fixes — search-flow-audit-20260615 (BUG-2, BUG-5)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-15T00:00:00Z</p>
+<p>TDD (Vitest, §11.4.115 RED-first, §11.4.135 regression guards). Work
+scoped to <code>frontend/</code> only.</p>
+<h2
+id="bug-2-dashboard-sse-service-never-forwarded-merged_update-tracker_started-tracker_completed">BUG-2
+— Dashboard SSE service never forwarded merged_update / tracker_started
+/ tracker_completed</h2>
+<p>Root cause (confirmed in code): <code>EventSource</code> dispatches a
+NAMED event only to a listener registered for that exact name;
+unregistered named events are silently dropped (no
+<code>onmessage</code> fallthrough). <code>sse.service.ts</code>
+registered listeners for
+<code>search_start, result_found, results_update, search_complete, download_*</code>
+but NOT <code>merged_update</code>, <code>tracker_started</code>,
+<code>tracker_completed</code> — which the backend emits and
+<code>dashboard.component.ts</code> has <code>case</code> branches for
+(lines 367/377/380). Live de-duplicated grid + tracker chips never
+updated during a search.</p>
+<p>Fix: added the 3 missing <code>addEventListener</code> registrations,
+mirroring the existing pattern, wired to <code>events$</code>.</p>
+<h2
+id="bug-5-api-base-sse-url-hardcoded-relative-remote-api-instance-unreachable">BUG-5
+— API base + SSE URL hardcoded relative → remote API instance
+unreachable</h2>
+<p>Root cause (confirmed in code): <code>api.service.ts</code>
+<code>baseUrl = ''</code> and <code>sse.service.ts</code> built a
+relative EventSource URL (<code>/api/v1/search/stream/{id}</code>). A
+dashboard served from a different origin than the API hit its OWN
+origin, not the configured API.</p>
+<p>Fix: new <code>src/app/config/api-base.ts</code> exporting an
+<code>API_BASE_URL</code> <code>InjectionToken</code> (root-provided)
+with a factory that resolves a runtime-configured base from
+<code>window.__BOBA_API_BASE__</code> or
+<code>&lt;meta name="boba-api-base"&gt;</code>, defaulting to
+<code>''</code> (same-origin, back-compat) — no hardcoded localhost/host
+per CLAUDE.md. Both <code>ApiService</code> and <code>SseService</code>
+now <code>inject(API_BASE_URL)</code> and prefix it. SSE also sets
+<code>withCredentials</code> when a cross-origin base is configured.</p>
+<p>Follow-up (NOT done here — out of frontend scope): the Python
+(<code>download-proxy</code>) and Go SSE routes must allow the dashboard
+origin in CORS (and <code>Access-Control-Allow-Credentials</code> if a
+token/cookie is used) for a cross-origin remote instance to actually
+connect. Flagged for the server layer.</p>
+<h2 id="files-changed">Files changed</h2>
+<ul>
+<li><code>frontend/src/app/config/api-base.ts</code> (NEW — API_BASE_URL
+token + resolver)</li>
+<li><code>frontend/src/app/services/sse.service.ts</code> (inject base,
+absolute stream URL + withCredentials, 3 new listeners)</li>
+<li><code>frontend/src/app/services/api.service.ts</code> (inject base
+instead of hardcoded ’’)</li>
+</ul>
+<h2 id="red-tests-added-regression-guards">RED tests added (regression
+guards)</h2>
+<ul>
+<li><code>frontend/src/app/services/sse.service.spec.ts</code>:
+<ul>
+<li><code>forwards merged_update events to the grid/state (BUG-2 RED)</code></li>
+<li><code>forwards tracker_started events (BUG-2 RED)</code></li>
+<li><code>forwards tracker_completed events (BUG-2 RED)</code></li>
+<li><code>uses the configured API base for the stream URL (BUG-5 RED)</code></li>
+<li><code>configured base with token builds an absolute stream URL (BUG-5 RED)</code></li>
+</ul></li>
+<li><code>frontend/src/app/services/api.service.spec.ts</code>:
+<ul>
+<li><code>search() POSTs to the configured remote API base</code>
+(BUG-5)</li>
+<li><code>getSearch() GETs the configured remote API base</code>
+(BUG-5)</li>
+</ul></li>
+</ul>
+<h2 id="red-baseline-pre-fix-7-failures">RED baseline (pre-fix) — 7
+failures</h2>
+<pre><code> FAIL  src/app/services/sse.service.spec.ts &gt; uses the configured API base for the stream URL (BUG-5 RED)
+AssertionError: expected &#39;/api/v1/search/stream/abc&#39; to be &#39;https://remote.example:7187/api/v1/se…&#39;
+Expected: &quot;https://remote.example:7187/api/v1/search/stream/abc&quot;
+Received: &quot;/api/v1/search/stream/abc&quot;
+...
+ Test Files  2 failed (2)
+      Tests  7 failed | 30 passed (37)</code></pre>
+<p>(3 BUG-2 listener tests + 2 BUG-5 SSE-base + 2 BUG-5 API-base failed
+against pre-fix code.)</p>
+<h2 id="green-post-fix-targeted-specs">GREEN (post-fix) — targeted
+specs</h2>
+<pre><code> RUN  v4.1.8 /Volumes/T7/Projects/boba/frontend
+ Test Files  2 passed (2)
+      Tests  37 passed (37)
+   Duration  1.81s</code></pre>
+<h2 id="green-full-frontend-suite-no-regression">GREEN — full frontend
+suite (no regression)</h2>
+<pre><code> RUN  v4.1.8 /Volumes/T7/Projects/boba/frontend
+ Test Files  29 passed (29)
+      Tests  363 passed (363)
+   Duration  6.86s</code></pre>
+<p>(The “Not implemented: navigation to another Document” lines are
+pre-existing jsdom noise from download-file tests, unrelated to this
+change.)</p>

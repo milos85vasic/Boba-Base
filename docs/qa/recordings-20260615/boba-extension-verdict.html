@@ -1,0 +1,76 @@
+<h1
+id="recording-verdict-bobalink-browser-extension-gap-closed">Recording
+verdict — BobaLink browser extension (gap CLOSED)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-16T08:05:00Z</p>
+<p>§11.4.143 real-user-journey + §11.4.83 evidence + §11.4.107/§11.4.117
+on-screen + §11.4.123 (built the method — the prior “tooling-limited”
+was a research trigger, not acceptance). Analysis by Claude Opus 4.8
+vision.</p>
+<h2 id="how-the-prior-blocker-was-closed">How the prior blocker was
+closed</h2>
+<p>The Playwright MCP can’t launch a <code>--load-extension</code>
+browser. So I built a real harness —
+<code>extension/scripts/record-features.mjs</code> — that loads the
+BUILT MV3 artifact (<code>.output/chrome-mv3</code>) into a Chromium
+persistent context (<code>--headless=new --load-extension=...</code>)
+with <code>recordVideo</code> on, and drives genuine user journeys. The
+existing <code>tests/e2e/extension-loads.spec.ts</code> proved MV3 loads
+on this host (4/4 pass), so recording is real, not faked.</p>
+<h2 id="recordings-volumest7downloadsrecordings-boba--prefix">Recordings
+(<code>/Volumes/T7/Downloads/Recordings/</code>, <code>boba-</code>
+prefix)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Scenario</th>
+<th>On-screen verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boba-extension-scan-detect.mp4</code></td>
+<td>content-script scan on a matched tracker host (rutracker fixture,
+routed — no live network)</td>
+<td>✅ the real content script detects the magnet and appends a
+<strong>🌐 MAGNET</strong> badge inside the anchor; the non-torrent link
+is correctly <strong>NOT</strong> badged (discriminating detection)</td>
+</tr>
+<tr>
+<td><code>boba-extension-popup.mp4</code></td>
+<td>the BobaLink popup the user opens</td>
+<td>✅ header + logo + “No server” status, “No server configured · Open
+Options”, <strong>Refresh</strong> + <strong>Send All</strong> buttons,
+“DETECTED TORRENTS” section with empty-state (“Browse a torrent site to
+detect…”), Options link</td>
+</tr>
+<tr>
+<td><code>boba-extension-options.mp4</code></td>
+<td>the options/settings page</td>
+<td>✅ 7 tabs (Server / Download Prefs / Queue / Notifications /
+Detection / UI / Security); Server config (name “Boba”, URL
+http://localhost:7187, Auth, Boba API token, Session passphrase,
+timeout); <strong>Save settings</strong></td>
+</tr>
+<tr>
+<td><code>boba-extension-tour.mp4</code></td>
+<td>scan → popup → options concatenated</td>
+<td>the three above</td>
+</tr>
+</tbody>
+</table>
+<p>Extension id resolved live:
+<code>okacdgimolhjpopdibpmdbmdidpimmbj</code> (valid MV3).</p>
+<h2 id="outcome">Outcome</h2>
+<p>The BobaLink extension’s real-use UI + the genuine content-script
+detection are now <strong>video-confirmed</strong> (not just
+unit-tested). No defect detected — detection badges the magnet and skips
+the non-torrent, popup + options render fully. The harness is
+reproducible (<code>node scripts/record-features.mjs &lt;dir&gt;</code>)
+for future re-confirmation.</p>

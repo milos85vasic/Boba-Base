@@ -1,0 +1,262 @@
+<h1
+id="recording-readiness-inventory-boba-client-surfaces-helixagent-ensemble-per-surface-recording-plan">Recording
+readiness inventory — Boba client surfaces + HelixAgent ensemble +
+per-surface recording plan</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-15T00:00:00Z <strong>Scope:</strong> Feasibility for
+§11.4.153/.154/.155 video-recording confirmation of ALL Boba client
+apps, driven by the HelixAgent ensemble, saved to
+<code>/Volumes/T7/Downloads/Recordings</code> with a
+<code>boba---</code> prefix. Anti-bluff (§11.4.6): EXISTS/ABSENT claims
+below carry path evidence; unknowns are marked UNCONFIRMED.</p>
+<hr />
+<h2 id="client-surface-inventory-exists-does-not-exist-with-evidence">1.
+Client-surface inventory (EXISTS / DOES-NOT-EXIST, with evidence)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Status</th>
+<th>Evidence / path</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Web — Angular dashboard</strong></td>
+<td><strong>EXISTS</strong></td>
+<td><code>frontend/</code> (<code>angular.json</code>,
+<code>frontend/package.json</code> name=<code>frontend</code>,
+<code>frontend/playwright.config.ts</code>,
+<code>frontend/e2e/</code>)</td>
+<td>Angular 21 SPA. Playwright already configured for e2e → ideal
+recording driver. Routes incl. <code>/jackett</code>.</td>
+</tr>
+<tr>
+<td><strong>Web — FastAPI Jinja2 dashboard (:7187)</strong></td>
+<td><strong>EXISTS</strong></td>
+<td>merge service dashboard at <code>http://localhost:7187/</code>
+(CLAUDE.md port map; served by
+<code>download-proxy/src/api/</code>)</td>
+<td>Server-rendered HTML dashboard, separate from the Angular SPA.
+Browser-recordable.</td>
+</tr>
+<tr>
+<td><strong>CLI — <code>boba-ctl</code></strong></td>
+<td><strong>EXISTS (CLI, not TUI)</strong></td>
+<td><code>cmd/boba-ctl/main.go</code> (built binary
+<code>cmd/boba-ctl/boba-ctl</code>), wrapper
+<code>scripts/boba-ctl.sh</code></td>
+<td>Subcommand CLI: <code>up/down/status/health/list</code>. <strong>NO
+TUI</strong> — no bubbletea/tview/textual dep in
+<code>cmd/boba-ctl/go.mod</code>. The operator’s “boba-ctl TUI?” → it is
+a plain CLI. Record via terminal capture.</td>
+</tr>
+<tr>
+<td><strong>Shell-script CLIs</strong></td>
+<td><strong>EXISTS</strong></td>
+<td><code>start.sh</code>, <code>stop.sh</code>, <code>setup.sh</code>,
+<code>test.sh</code>, <code>ci.sh</code>,
+<code>install-plugin.sh</code>, <code>webui-bridge.py</code></td>
+<td>Operator-facing command surfaces; terminal-recordable.</td>
+</tr>
+<tr>
+<td><strong>Browser extension — BobaLink</strong></td>
+<td><strong>EXISTS</strong></td>
+<td><code>extension/</code> (WXT/Manifest V3,
+<code>extension/wxt.config.ts</code> name “BobaLink (Boba Project
+browser extension)”, <code>extension/playwright.config.ts</code>,
+<code>extension/tests/</code>)</td>
+<td>MV3 extension, popup/background. Scoped to merge service
+<code>localhost:7187</code>. Record popup + content via
+Playwright-with-extension / chrome-devtools.</td>
+</tr>
+<tr>
+<td><strong>TUI (dedicated terminal UI app)</strong></td>
+<td><strong>DOES-NOT-EXIST</strong></td>
+<td>grep for bubbletea/tview/textual/blessed → no Boba hit (only test
+files / a course demo.sh)</td>
+<td>No TUI surface. If the operator wants a “TUI”, boba-ctl CLI is the
+closest existing surface.</td>
+</tr>
+<tr>
+<td><strong>Mobile app (iOS/Android/Flutter)</strong></td>
+<td><strong>DOES-NOT-EXIST</strong></td>
+<td>no <code>*.swift</code> / <code>*.kt</code> / <code>*.dart</code> /
+<code>Info.plist</code> in repo (excluding submodules/node_modules)</td>
+<td>No mobile surface to record.</td>
+</tr>
+<tr>
+<td><strong>Desktop native (Electron/Tauri)</strong></td>
+<td><strong>DOES-NOT-EXIST</strong></td>
+<td>no <code>electron</code>/<code>tauri</code> dep in
+<code>frontend/package.json</code> or
+<code>extension/package.json</code></td>
+<td>The “desktop” surface is the web dashboard in a browser, not a
+native app.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Bottom line:</strong> 4 real recordable client surfaces — (1)
+Angular web <code>frontend/</code>, (2) FastAPI Jinja2 dashboard :7187,
+(3) <code>boba-ctl</code> CLI + shell scripts, (4) BobaLink browser
+extension. <strong>No</strong> TUI, <strong>no</strong> mobile,
+<strong>no</strong> desktop-native app. Do NOT produce recordings for
+apps that don’t exist (§11.4.6).</p>
+<hr />
+<h2 id="helixagent-ensemble-location-the-key-blocker">2. HelixAgent
+ensemble location — THE KEY BLOCKER</h2>
+<p>The operator wants recordings “driven by the helix agent ensemble
+obtained from the helix agent Submodule”.</p>
+<p><strong>Finding (FACT, with evidence):</strong> - The ensemble IS
+present on the host at
+<strong><code>/Volumes/T7/Projects/helix_code/submodules/helix_agent</code></strong>
+(EXISTS — verified). It is <strong>HelixAgent: AI-Powered Ensemble LLM
+Service</strong> (its <code>README.md</code> H1), a Go service with
+entrypoints <code>bin/helixagent</code>, <code>cmd/api</code>,
+<code>cmd/grpc-server</code>, <code>cmd/mcp-bridge</code>,
+<code>cmd/helixagent</code>. Catalogue:
+<code>vasic-digital/HelixAgent</code> +
+<code>HelixDevelopment/HelixAgent</code> (“LLMs Agent”). - Its
+containers ARE running: <code>helixagent-postgres</code>,
+<code>helixagent-redis</code>, <code>helixagent-chromadb</code>,
+<code>helixagent-cognee</code> (compose project
+<code>helix_agent</code>, config
+<code>/Volumes/T7/Projects/helix_code/submodules/helix_agent/docker-compose.yml</code>),
+plus <code>helix_ollama_video</code> (an Ollama instance, 6h uptime —
+plausibly the vision/video-analysis model host, UNCONFIRMED which model
+it serves). - <strong>BLOCKER 1:</strong> the ensemble is owned by
+<strong><code>helix_code</code>, NOT by Boba</strong>. It is NOT in
+Boba’s <code>.gitmodules</code> (Boba’s submodules are only:
+constitution, jackett, helixqa, challenges, containers). To use it per
+the constitution it must be incorporated into Boba per §11.4.74
+(catalogue-first) + §11.4.36 (install_upstreams on add) — OR consumed as
+a running service via its API/gRPC/MCP endpoints without a submodule.
+The operator’s phrase “obtained from the helix agent Submodule” implies
+incorporation; that decision is operator-gated. - <strong>BLOCKER 2
+(interface UNCONFIRMED):</strong> how exactly the ensemble ingests a
+VIDEO file and returns a per-feature analysis verdict is not yet
+verified. <code>helix_ollama_video</code> suggests a vision pipeline
+exists, but the concrete “analyse this mp4 → JSON verdict” entrypoint
+(API route / CLI flag / MCP tool) was NOT confirmed in this pass. The
+main agent must verify the ensemble’s video-analysis API before the
+§11.4.153 (4) remediation loop can be wired.</p>
+<p><strong>docs_chain (the §11.4.153 (5) sync engine) — secondary
+blocker:</strong> - <code>docs_chain</code> EXISTS at
+<code>/Volumes/T7/Projects/docs_chain</code> AND
+<code>/Volumes/T7/Projects/helix_code/submodules/docs_chain</code>, but
+is <strong>NOT a Boba submodule</strong> (absent from Boba
+<code>.gitmodules</code>). §11.4.106 requires consuming it by reference;
+Boba must wire it (register <code>.docs_chain/contexts/*.yaml</code>)
+before the always-in-sync clause holds.</p>
+<hr />
+<h2 id="recording-corpus-state-project-name-prefix">3. Recording-corpus
+state + project-name prefix</h2>
+<ul>
+<li>Recording path <code>/Volumes/T7/Downloads/Recordings</code>
+<strong>EXISTS</strong>. It currently holds
+<strong><code>helixcode-*</code></strong> files (mp4/png/.cast) —
+another project’s recordings. <strong>No <code>boba-*</code> /
+<code>boba---*</code> recordings yet.</strong></li>
+<li><strong>Prefix to use = <code>boba</code></strong> (§11.4.155
+resolution): <code>HELIX_RELEASE_PREFIX</code> is <strong>NOT
+set</strong> in Boba’s <code>.env</code> or <code>.env.example</code> →
+fallback to lowercased snake_case repo-dir name → repo dir is lowercase
+<strong><code>boba</code></strong>. Canonical filename form:
+<strong><code>boba---&lt;surface-or-feature&gt;---&lt;run-id&gt;.&lt;ext&gt;</code></strong>
+(triple-hyphen separator per §11.4.155). Recommend setting
+<code>HELIX_RELEASE_PREFIX=boba</code> in <code>.env</code> explicitly
+so the prefix is authoritative and matches §11.4.151 release-tag
+prefix.</li>
+<li>§11.4.154 fresh-corpus rotation applies only to Boba’s OWN prior
+<code>boba---*</code> recordings — the existing <code>helixcode-*</code>
+files are FOREIGN and MUST NOT be deleted (§11.4.122 + §9.2).</li>
+</ul>
+<hr />
+<h2 id="per-surface-recording-recommendation">4. Per-surface recording
+recommendation</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Recommended capture mechanism</th>
+<th>Window-scoped (§11.4.154)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Angular web <code>frontend/</code></td>
+<td><strong>Playwright</strong> (already configured:
+<code>frontend/playwright.config.ts</code>) with
+<code>video: 'on'</code> / <code>recordVideo</code>, OR
+chrome-devtools-mcp <code>performance_start_trace</code> + screen-record
+of the tab</td>
+<td>Yes — Playwright records the page viewport only, not the
+desktop</td>
+<td>Strongest path; e2e specs already exist in
+<code>frontend/e2e/</code>.</td>
+</tr>
+<tr>
+<td>FastAPI Jinja2 dashboard :7187</td>
+<td>Playwright / chrome-devtools-mcp against
+<code>http://localhost:7187/</code></td>
+<td>Yes — browser viewport</td>
+<td>Needs containers up (<code>boba-ctl up</code> /
+<code>start.sh</code>).</td>
+</tr>
+<tr>
+<td>BobaLink extension</td>
+<td>Playwright with the unpacked extension loaded
+(<code>.output/</code>) → record popup + content-script interaction; or
+chrome-devtools-mcp</td>
+<td>Yes — browser/popup window</td>
+<td><code>extension/playwright.config.ts</code> +
+<code>extension/tests/</code> already exist.</td>
+</tr>
+<tr>
+<td><code>boba-ctl</code> CLI + shell scripts</td>
+<td><strong>asciinema</strong> (<code>asciinema rec</code>) → convert to
+mp4 via <code>agg</code>/<code>ffmpeg</code>; or <code>script</code> +
+<code>ffmpeg</code>. (Existing <code>helixcode-cli-*.cast</code> files
+show asciinema is already the host’s CLI-recording tool.)</td>
+<td>Yes — record the terminal pane only (tmux target / window id), NOT
+the whole desktop</td>
+<td>Window-scope = single terminal window; do NOT
+<code>ffmpeg -f avfoundation</code> whole-screen.</td>
+</tr>
+</tbody>
+</table>
+<p>All four are window/surface-scoped by construction (Playwright =
+viewport, asciinema = terminal pane), so §11.4.154 is naturally
+satisfied — provided the asciinema→mp4 step captures only the terminal,
+and no whole-screen <code>avfoundation</code> fallback is used.</p>
+<hr />
+<h2 id="what-the-main-agent-must-resolve-with-the-operator-blockers">5.
+What the main agent must resolve with the operator (blockers)</h2>
+<ol type="1">
+<li><strong>Incorporate HelixAgent ensemble + docs_chain into
+Boba</strong> (per §11.4.74 + §11.4.36 + §11.4.106) — or confirm
+“consume as running service via API/gRPC/MCP, no submodule”.
+Operator-gated decision.</li>
+<li><strong>Confirm the ensemble’s video-analysis interface</strong>
+(the mp4 → verdict entrypoint) before wiring the §11.4.153 (4) loop —
+UNCONFIRMED in this pass.</li>
+<li><strong>Confirm <code>helix_ollama_video</code> is the intended
+vision model host</strong> for video analysis — UNCONFIRMED.</li>
+<li><strong>Decide PART 1 path</strong> (Option A project-instantiation
+vs Option B §11.4.153 refinement) — the rule already exists; a new
+§11.4.156 would duplicate §11.4.153/.154/.155.</li>
+</ol>

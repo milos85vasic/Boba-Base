@@ -1,0 +1,121 @@
+<h1 id="python-merge-service-fixes-search-flow-audit-2026-06-15">Python
+merge-service fixes — search-flow audit 2026-06-15</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-15T00:00:00Z</p>
+<p>Anti-bluff (§11.4): every fix RED-first (test reproduces the defect
+on the pre-fix code), permanent §11.4.135 regression guard added, GREEN
+proven by pytest + LIVE curl against the running stack.</p>
+<h2 id="bug-1-provider-selection-critical">BUG-1 — provider selection
+(CRITICAL)</h2>
+<p>Root cause: only “search all enabled providers” existed; no wire
+field, no orchestrator param, no plugin filter for single/subset.
+Single/selected UI modes silently behaved as “all”.</p>
+<p>Fix: - <code>api/routes.py</code> — <code>SearchRequest</code> gains
+<code>trackers: list[str] | None = None</code>;
+<code>POST /search</code> and <code>POST /search/sync</code> pass
+<code>request.trackers</code> down. -
+<code>merge_service/search.py</code> — new helper
+<code>_select_trackers(self, tracker_filter)</code> (calls
+<code>_get_enabled_trackers()</code>, then if filter non-empty keeps
+only trackers whose <code>.name</code> is in the case-insensitive filter
+set). <code>start_search(... trackers=None)</code> persists the filter
+on <code>SearchMetadata.tracker_filter</code>; <code>_run_search</code>
+reads it back via <code>_select_trackers</code>;
+<code>search(... trackers=None)</code> threads it through. Empty/None ==
+all (back-compat).</p>
+<p>RED tests:
+<code>tests/unit/merge_service/test_provider_selection.py</code> -
+<code>test_single_provider_filters_fanout</code> —
+trackers=[“rutracker”] → dispatched set == {“rutracker”},
+metadata.trackers_searched == [“rutracker”]. -
+<code>test_subset_provider_filters_fanout</code> — two-element subset. -
+<code>test_none_filter_fans_out_to_all</code> /
+<code>test_empty_filter_fans_out_to_all</code> — back-compat. -
+<code>test_filter_is_case_insensitive</code> — “RuTracker” →
+{“rutracker”}. -
+<code>test_unknown_name_yields_empty_fanout_gracefully</code> — unknown
+name → zero dispatch, no crash. -
+<code>test_start_search_seeds_filtered_trackers</code> — async POST path
+seeds only the subset. Asserts on actual dispatched tracker set +
+metadata.trackers_searched, not status codes.</p>
+<h2 id="bug-6-integer-size-crash-in-dedup-fallback">BUG-6 — integer-size
+crash in dedup fallback</h2>
+<p>Root cause: <code>deduplicator._parse_size_to_bytes</code> passed a
+raw int into <code>re.match</code> (no <code>str()</code>), raising
+TypeError; unguarded
+<code>_update_best_quality</code>→<code>merge_results</code> aborted the
+whole merge → zero results.</p>
+<p>Fix: <code>merge_service/deduplicator.py</code>
+<code>_parse_size_to_bytes</code> coerces <code>str(size_str)</code>
+after the falsy guard (mirrors the api.routes / <code>_parse_size</code>
+fix). <code>_fallback_quality</code> signature widened to
+<code>object</code>.</p>
+<p>RED tests:
+<code>tests/unit/merge_service/test_dedup_integer_size.py</code> -
+<code>test_parse_size_to_bytes_accepts_integer</code> /
+<code>_accepts_negative_sentinel</code>. -
+<code>test_fallback_quality_survives_integer_size</code>. -
+<code>test_merge_survives_integer_size</code> — forces the api.routes
+ImportError branch, int+(-1) sizes; asserts non-empty merge.</p>
+<h2 id="bug-7-all-tracker-failure-indistinguishable-from-empty">BUG-7 —
+all-tracker failure indistinguishable from empty</h2>
+<p>Root cause: every-provider-fail completed as status=“completed”,
+total_results=0 → dashboard “No results found.”, indistinguishable from
+genuinely empty.</p>
+<p>Fix: <code>merge_service/search.py</code> <code>_run_search</code> —
+when merged==0 AND total_results==0 AND every searched tracker stat is
+error/timeout, set <code>status = "all_trackers_errored"</code> (else
+“completed”). Per-tracker errors already accumulate in
+<code>metadata.errors</code>.</p>
+<p>RED tests:
+<code>tests/unit/merge_service/test_all_trackers_error.py</code> -
+<code>test_all_trackers_error_is_distinguishable</code> — all raise →
+status != “completed”, len(errors)==3. -
+<code>test_genuinely_empty_stays_completed</code> — no errors + 0
+results stays “completed”, errors==[].</p>
+<h2 id="verify">VERIFY</h2>
+<h3 id="pytest-green-the-3-new-regression-files">pytest GREEN (the 3 new
+regression files)</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/merge_service/test_provider_selection.py \
+    tests/unit/merge_service/test_dedup_integer_size.py \
+    tests/unit/merge_service/test_all_trackers_error.py -v --import-mode=importlib
+...
+============================== 13 passed in 0.78s ==============================</code></pre>
+<p>RED proof (pre-fix, same files): 12 failed / 1 passed — provider
+tests reject the <code>trackers=</code> kwarg, BUG-6 raises
+<code>TypeError: expected string or bytes-like object, got 'int'</code>,
+BUG-7 reports status==“completed”.</p>
+<h3 id="full-merge_service-unit-suite-no-regression">Full merge_service
+unit suite — no regression</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/merge_service/ -q --import-mode=importlib
+818 passed, 3 warnings in 84.99s</code></pre>
+<p>ruff: <code>All checks passed!</code> on the 3 source + 3 test files.
+(Pre-existing, unrelated: tests/unit/test_plugin_yts_deep.py fails 45 on
+a pristine stashed tree — collection error in the YTS plugin test, not
+touched by these fixes.)</p>
+<h3 id="live-running-stack-podman-vm-merge-service-7187">LIVE — running
+stack (podman VM, merge service :7187)</h3>
+<p>After editing: cleared <code>__pycache__</code>,
+<code>podman restart qbittorrent-proxy</code>, verified served code
+matches committed edits (<code>_select_trackers</code>,
+<code>all_trackers_errored</code>, <code>size_str = str(size_str)</code>
+all present in /config/download-proxy/…).</p>
+<pre><code>=== FILTERED trackers_searched (rutor only) ===
+status: completed | total: 3 | trackers_searched: [&#39;rutor&#39;]
+
+=== NO-FILTER (all enabled providers) ===
+status: completed | total: 1182 | n_trackers: 29 | trackers_searched:
+[&#39;rutracker&#39;,&#39;kinozal&#39;,&#39;nnmclub&#39;,&#39;iptorrents&#39;,&#39;jackett&#39;,&#39;academictorrents&#39;,
+&#39;anilibra&#39;,&#39;bitsearch&#39;,&#39;gamestorrents&#39;,&#39;glotorrents&#39;,&#39;kickass&#39;,&#39;limetorrents&#39;,
+&#39;linuxtracker&#39;,&#39;megapeer&#39;,&#39;nyaa&#39;,&#39;piratebay&#39;,&#39;pirateiro&#39;,&#39;rockbox&#39;,&#39;rutor&#39;,
+&#39;snowfl&#39;,&#39;tokyotoshokan&#39;,&#39;torlock&#39;,&#39;torrentdownload&#39;,&#39;torrentgalaxy&#39;,
+&#39;torrentkitty&#39;,&#39;torrentproject&#39;,&#39;torrentscsv&#39;,&#39;yourbittorrent&#39;,&#39;yts&#39;]</code></pre>
+<p>Filtered search hits ONLY rutor (3 results); no-filter hits all 29
+providers (1182 results) — provider selection proven end-to-end through
+the real HTTP path.</p>
+<p>Files changed: download-proxy/src/api/routes.py,
+download-proxy/src/merge_service/search.py,
+download-proxy/src/merge_service/deduplicator.py. Tests added:
+tests/unit/merge_service/test_provider_selection.py,
+test_dedup_integer_size.py, test_all_trackers_error.py. NOT
+committed.</p>
