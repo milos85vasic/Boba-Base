@@ -1,6 +1,6 @@
 # Boba — Feature Status (all components)
 
-**Revision:** 3
+**Revision:** 4
 **Last modified:** 2026-06-16T11:30:00Z
 **Scope:** Every system component, service, infrastructure piece, and client app of the Boba project — one row per REAL unit (endpoint / handler / client method / component control / plugin / subcommand / script), grouped by component.
 **Authority:** assembled by READ-ONLY repo inventory (codegraph + grep + source reading) on 2026-06-15, expanded to per-unit granularity (§11.4.118 discovery-pressure) on 2026-06-16. Cross-references `AGENTS.md`, `CLAUDE.md`, `docs/REMAINING_WORK_PLAN.md`.
@@ -29,11 +29,12 @@ recordings below confirm the headline user-facing flows on-screen.
 | `boba-cli-orchestrator-demo.mp4` | CLI (`boba-ctl`) | status / health / list — 4 services running & healthy | `docs/qa/recordings-20260615/boba-cli-verdict.md` |
 | `boba-web-search-flow.mp4` | Web dashboard | launch → search "debian" → live results → "829 results (288 merged)" complete | `boba-web-search-flow-verdict.md` |
 | `boba-web-feature-tour.mp4` + `boba-web-dashboard-tour.mp4` | Web dashboard | dashboard load (29 trackers, qBit connected), result rows render **qBit + Download** buttons (clickable), tab nav (Results/Active Downloads/Trackers/Schedules/Hooks), Jackett `/jackett` credentials page, theme | `boba-web-feature-tour-verdict.md` |
+| `boba-extension-{scan-detect,popup,options,tour}.mp4` | BobaLink extension (MV3, real `--load-extension` Chromium) | content-script **detects a magnet + appends a 🌐 MAGNET badge** (non-torrent correctly skipped); popup UI (header, server status, Refresh + Send All, Detected-torrents); options page (7 settings tabs + server config) | `boba-extension-verdict.md` |
 
 **Honest scope (§11.4.6, no bluff):**
 - **Backend services** (download-proxy / merge / boba-jackett / Go) verified **200 server-side inside the VM** and exercised through the web UI recordings.
 - **Console errors** seen in the web recordings are an **SSH-tunnel SSE/poll artifact** (macOS↔VM), NOT product defects — every endpoint is 200 in the VM. See the feature-tour verdict.
-- **BobaLink extension**: covered by passing test suite (per `docs/browser_extension/Status.md`); a real-use UI video needs a `--load-extension` browser the current MCP can't launch — documented tooling-limited follow-up (NOT faked).
+- **BobaLink extension**: ✅ **VIDEO-CONFIRMED** — the prior `--load-extension` tooling gap was closed by building `extension/scripts/record-features.mjs` (loads the built MV3 artifact into a real Chromium, records the scan/popup/options journeys). Plus its passing test suite.
 - **TUI / mobile / desktop**: do not exist in this project (server-side + Angular web + browser extension only) — nothing to record.
 
 ---
