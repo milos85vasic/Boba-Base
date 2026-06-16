@@ -163,8 +163,14 @@ verify_installation() {
                 print_info "  Size: $size bytes"
             fi
             
-            # Validate Python syntax
-            if python3 -m py_compile "$plugin_file" 2>/dev/null; then
+            # Validate Python syntax. Use compile() (in-memory) NOT
+            # `py_compile`: py_compile writes a __pycache__/.pyc next to the
+            # source, which fails with "Permission denied" when the engines dir
+            # is owned by the qBittorrent container user (PUID) on a remote host
+            # — turning a VALID plugin into a false "Syntax: Invalid", returning
+            # 1, and (under deploy-remote's set -e) aborting the whole deploy
+            # before the containers come up (§11.4.1 FAIL-bluff + §11.4.108).
+            if python3 -c "import sys; compile(open(sys.argv[1]).read(), sys.argv[1], 'exec')" "$plugin_file" 2>/dev/null; then
                 print_success "  Syntax: Valid"
             else
                 print_error "  Syntax: Invalid"
