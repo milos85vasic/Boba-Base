@@ -1,184 +1,7 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Status</title>
-  <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
-    html {
-      color: #1a1a1a;
-      background-color: #fdfdfd;
-    }
-    body {
-      margin: 0 auto;
-      max-width: 36em;
-      padding-left: 50px;
-      padding-right: 50px;
-      padding-top: 50px;
-      padding-bottom: 50px;
-      hyphens: auto;
-      overflow-wrap: break-word;
-      text-rendering: optimizeLegibility;
-      font-kerning: normal;
-    }
-    @media (max-width: 600px) {
-      body {
-        font-size: 0.9em;
-        padding: 12px;
-      }
-      h1 {
-        font-size: 1.8em;
-      }
-    }
-    @media print {
-      html {
-        background-color: white;
-      }
-      body {
-        background-color: transparent;
-        color: black;
-        font-size: 12pt;
-      }
-      p, h2, h3 {
-        orphans: 3;
-        widows: 3;
-      }
-      h2, h3, h4 {
-        page-break-after: avoid;
-      }
-    }
-    p {
-      margin: 1em 0;
-    }
-    a {
-      color: #1a1a1a;
-    }
-    a:visited {
-      color: #1a1a1a;
-    }
-    img {
-      max-width: 100%;
-    }
-    svg {
-      height: auto;
-      max-width: 100%;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.4em;
-    }
-    h5, h6 {
-      font-size: 1em;
-      font-style: italic;
-    }
-    h6 {
-      font-weight: normal;
-    }
-    ol, ul {
-      padding-left: 1.7em;
-      margin-top: 1em;
-    }
-    li > ol, li > ul {
-      margin-top: 0;
-    }
-    blockquote {
-      margin: 1em 0 1em 1.7em;
-      padding-left: 1em;
-      border-left: 2px solid #e6e6e6;
-      color: #606060;
-    }
-    code {
-      white-space: pre-wrap;
-      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
-      font-size: 85%;
-      margin: 0;
-      hyphens: manual;
-    }
-    pre {
-      margin: 1em 0;
-      overflow: auto;
-    }
-    pre code {
-      padding: 0;
-      overflow: visible;
-      overflow-wrap: normal;
-    }
-    .sourceCode {
-     background-color: transparent;
-     overflow: visible;
-    }
-    hr {
-      border: none;
-      border-top: 1px solid #1a1a1a;
-      height: 1px;
-      margin: 1em 0;
-    }
-    table {
-      margin: 1em 0;
-      border-collapse: collapse;
-      width: 100%;
-      overflow-x: auto;
-      display: block;
-      font-variant-numeric: lining-nums tabular-nums;
-    }
-    table caption {
-      margin-bottom: 0.75em;
-    }
-    tbody {
-      margin-top: 0.5em;
-      border-top: 1px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    th {
-      border-top: 1px solid #1a1a1a;
-      padding: 0.25em 0.5em 0.25em 0.5em;
-    }
-    td {
-      padding: 0.125em 0.5em 0.25em 0.5em;
-    }
-    header {
-      margin-bottom: 4em;
-      text-align: center;
-    }
-    #TOC li {
-      list-style: none;
-    }
-    #TOC ul {
-      padding-left: 1.3em;
-    }
-    #TOC > ul {
-      padding-left: 0;
-    }
-    #TOC a:not(:hover) {
-      text-decoration: none;
-    }
-    span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    /* The extra [class] is a hack that increases specificity enough to
-       override a similar rule in reveal.js */
-    ul.task-list[class]{list-style: none;}
-    ul.task-list li input[type="checkbox"] {
-      font-size: inherit;
-      width: 0.8em;
-      margin: 0 0.8em 0.2em -1.6em;
-      vertical-align: middle;
-    }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-  </style>
-</head>
-<body>
-<header id="title-block-header">
-<h1 class="title">Status</h1>
-</header>
 <h1 id="boba-feature-status-all-components">Boba — Feature Status (all
 components)</h1>
-<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
-2026-06-16T18:30:00Z <strong>Scope:</strong> Every system component,
+<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
+2026-06-16T23:30:00Z <strong>Scope:</strong> Every system component,
 service, infrastructure piece, and client app of the Boba project — one
 row per REAL unit (endpoint / handler / client method / component
 control / plugin / subcommand / script), grouped by component.
@@ -187,6 +10,29 @@ control / plugin / subcommand / script), grouped by component.
 granularity (§11.4.118 discovery-pressure) on 2026-06-16.
 Cross-references <code>AGENTS.md</code>, <code>CLAUDE.md</code>,
 <code>docs/REMAINING_WORK_PLAN.md</code>.</p>
+<blockquote>
+<p><strong>Rev 7 (2026-06-16) — live-PASS update for the search/auth fix
+batch (HEAD <code>7e9cab5</code>):</strong> the multi-word URL-encoding
+fix (<code>da7d709</code>, ~17 nova3 plugins), the new
+<code>RUTRACKER_COOKIES</code> injection (<code>2fc29fc</code>),
+<code>NNMCLUB_COOKIES</code> auth, <code>/auth/status</code> cookie
+reflection (<code>9c2f8dc</code>), the new
+<code>GET /api/v1/healthz</code> JSON endpoint (<code>137d7ff</code>),
+and §11.4.85 stress+chaos coverage for the multi-word fix
+(<code>7e9cab5</code>) were all PROVEN end-to-end on the live nezha
+stack — full-fleet <code>the matrix</code> = <strong>2600 results / 23
+contributing trackers / zero
+<code>plugin_bad_query_encoding</code></strong>, all four private
+trackers authenticate (rutracker 50, nnmclub 50, kinozal 50, iptorrents
+49). Evidence: <code>docs/qa/search-fix-verify-20260616/</code>.
+<code>kickass.py</code> reclassified <strong>Won’t-fix
+structurally-impossible (§11.4.112)</strong> per
+<code>docs/research/kickass_403_20260616/</code>. NOTE (§11.4.6): no Go
+files were touched this session — the Go rows are unchanged (the
+pre-existing <code>magnet_stress_chaos_test.go</code> guard stands; no
+NEW Go query-encoding guard was added this session, so none is claimed
+here).</p>
+</blockquote>
 <blockquote>
 <p>Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.86). Every
 feature row cites a real source file (file:line where load-bearing),
@@ -334,7 +180,7 @@ extension only) — nothing to record.</p>
 <td>1</td>
 <td>Download Proxy + Merge Search Service (Python/FastAPI)</td>
 <td><code>qbittorrent-proxy</code> :7186 / :7187</td>
-<td>68</td>
+<td>69</td>
 </tr>
 <tr>
 <td>2</td>
@@ -381,7 +227,8 @@ extension only) — nothing to record.</p>
 </tr>
 </tbody>
 </table>
-<p><strong>Total features cataloged: 288</strong></p>
+<p><strong>Total features cataloged: 289</strong> (Rev 7: +1 — new
+<code>GET /api/v1/healthz</code> endpoint)</p>
 <hr />
 <h2 id="download-proxy-merge-search-service-pythonfastapi-7186-7187">1.
 Download Proxy + Merge Search Service (Python/FastAPI) —
@@ -617,7 +464,11 @@ chips)</td>
 <td>implemented</td>
 <td>yes</td>
 <td>integration <code>test_auth_and_links.py</code></td>
-<td>partial — live-gated</td>
+<td><strong>PASS — LIVE 2026-06-16</strong> —
+<code>RUTRACKER_COOKIES</code> cookie path authenticates
+(<code>2fc29fc</code>); rutracker <code>the matrix</code> = 50 real
+results on nezha (<code>docs/qa/search-fix-verify-20260616/</code>
+§1)</td>
 <td>N/A (no UI — test-covered + exercised by web Trackers tab auth
 chips)</td>
 </tr>
@@ -647,8 +498,13 @@ chips)</td>
 (<code>auth.py:479</code>)</td>
 <td>implemented</td>
 <td>yes</td>
-<td>integration <code>test_auth_state_ui.py</code></td>
-<td>tested-green-in-suite</td>
+<td>integration <code>test_auth_state_ui.py</code>; auth-status
+cookie-reflection test (§1.1)</td>
+<td><strong>PASS — LIVE 2026-06-16</strong> — now reflects
+<code>RUTRACKER_COOKIES</code>/<code>NNMCLUB_COOKIES</code> env before
+first search (<code>9c2f8dc</code>), so dashboard chips show
+rutracker/nnmclub green
+(<code>docs/qa/search-fix-verify-20260616/</code> §3)</td>
 <td>N/A (no UI — test-covered + exercised by web Trackers tab auth
 chips)</td>
 </tr>
@@ -1166,6 +1022,18 @@ App-level routes / health / config / dashboard
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>GET /api/v1/healthz</code> — machine-parsable JSON health
+probe (<code>routes.py:37</code>)</td>
+<td>implemented</td>
+<td>yes</td>
+<td>integration <code>test_merge_api.py</code></td>
+<td><strong>PASS — LIVE 2026-06-16</strong> — NEW endpoint
+(<code>137d7ff</code>): a bare <code>/healthz</code> was swallowed by
+the SPA catch-all; now mounted under <code>/api/v1</code> returning JSON
+(§11.4.43)</td>
+<td>N/A (no UI — JSON health probe; test-covered)</td>
+</tr>
 <tr>
 <td><code>GET /health</code> (<code>__init__.py:168</code>)</td>
 <td>implemented</td>
@@ -2227,8 +2095,15 @@ backend)</td>
 <td>public</td>
 <td>implemented</td>
 <td>yes (curated)</td>
-<td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
-<td>tested-green-in-suite</td>
+<td>stress <code>test_plugin_parsers_stress_chaos.py</code>; multi-word
+<code>tests/unit/test_plugin_multiword_query_encoding.py</code> +
+stress/chaos
+<code>tests/stress_chaos/test_multiword_query_encoding_{stress,chaos}.py</code>
+(§11.4.85)</td>
+<td><strong>PASS — LIVE 2026-06-16</strong> — multi-word URL-encoding
+fix (<code>da7d709</code>) verified on nezha: <code>the matrix</code>
+returns results, zero <code>plugin_bad_query_encoding</code>
+(<code>docs/qa/search-fix-verify-20260616/</code>)</td>
 <td>N/A (no UI — test-covered + exercised by web search flow) (tracker
 backend)</td>
 </tr>
@@ -2315,11 +2190,17 @@ backend)</td>
 <tr>
 <td><code>kickass.py</code></td>
 <td>public</td>
-<td>implemented</td>
+<td>implemented (degrades to honest empty)</td>
 <td>yes (curated)</td>
 <td>stress <code>test_plugin_parsers_stress_chaos.py</code></td>
-<td>tested-green-in-suite</td>
-<td>N/A (no UI — test-covered + exercised by web search flow) (tracker
+<td><strong>Won’t-fix — structurally-impossible (§11.4.112)</strong> —
+every live KAT mirror is Cloudflare-403 or a JS bot-challenge a non-JS
+<code>urllib</code> client cannot clear; deep multi-angle research
+(§11.4.150) + live probes 2026-06-16 in
+<code>docs/research/kickass_403_20260616/</code>; upstream maintainer
+confirms. Reopen only on NEW evidence a mirror serves listing HTML to a
+non-JS client (§11.4.34/§11.4.7)</td>
+<td>N/A (no UI — test-covered; structurally blocked upstream) (tracker
 backend)</td>
 </tr>
 <tr>
@@ -2388,19 +2269,28 @@ backend)</td>
 <td>implemented</td>
 <td>yes (curated)</td>
 <td>integration <code>tests/integration/test_iptorrents.py</code></td>
-<td>partial — freeleech-only policy</td>
+<td><strong>PASS — LIVE 2026-06-16</strong> — full-fleet
+<code>the matrix</code> on nezha: <strong>49</strong> results,
+<code>success</code> (<code>docs/qa/search-fix-verify-20260616/</code>
+§6); freeleech-only policy enforced</td>
 <td>N/A (no UI — test-covered + exercised by web search flow) (tracker
 backend)</td>
 </tr>
 <tr>
 <td><code>rutracker.py</code></td>
-<td>private (CAPTCHA)</td>
+<td>private (cookies / CAPTCHA)</td>
 <td>implemented</td>
 <td>yes (curated)</td>
-<td>integration <code>test_tracker_auth_live.py</code>; stress
+<td>integration <code>test_tracker_auth_live.py</code>; cookie-injection
+<code>tests/unit/</code> rutracker-cookie test (§1.1); stress
 <code>test_plugin_parsers_stress_chaos.py</code> (ReDoS §11.4.85)</td>
-<td>partial — ReDoS fix in source, not yet deployed to container
-(RW-06); login operator-blocked BOB-008</td>
+<td><strong>PASS — LIVE 2026-06-16</strong> — new
+<code>RUTRACKER_COOKIES</code> injection (<code>2fc29fc</code>) bypasses
+the CAPTCHA-walled login; <code>the matrix</code> returns
+<strong>50</strong> results incl. “Матрица / The Matrix”
+(<code>docs/qa/search-fix-verify-20260616/</code> §1,§6). ReDoS fix in
+source not yet deployed (RW-06); CAPTCHA password-login still
+operator-blocked (BOB-008)</td>
 <td>N/A (no UI — test-covered + exercised by web search flow) (tracker
 backend)</td>
 </tr>
@@ -2410,7 +2300,10 @@ backend)</td>
 <td>implemented</td>
 <td>yes (curated)</td>
 <td>integration <code>test_tracker_auth_live.py</code></td>
-<td>partial — live-gated</td>
+<td><strong>PASS — LIVE 2026-06-16</strong> — full-fleet
+<code>the matrix</code> on nezha: <strong>50</strong> results,
+<code>success</code> (<code>docs/qa/search-fix-verify-20260616/</code>
+§6)</td>
 <td>N/A (no UI — test-covered + exercised by web search flow) (tracker
 backend)</td>
 </tr>
@@ -2420,7 +2313,11 @@ backend)</td>
 <td>implemented</td>
 <td>yes (curated)</td>
 <td>integration <code>test_tracker_auth_live.py</code></td>
-<td>partial — live-gated</td>
+<td><strong>PASS — LIVE 2026-06-16</strong> —
+<code>NNMCLUB_COOKIES</code> auth (Cloudflare Turnstile bypass):
+<code>the matrix</code> returns <strong>50</strong> results
+incl. “Matrix Resurrections (2021)”
+(<code>docs/qa/search-fix-verify-20260616/</code> §1,§6)</td>
 <td>N/A (no UI — test-covered + exercised by web search flow) (tracker
 backend)</td>
 </tr>
@@ -4163,5 +4060,3 @@ journey + dashboard tab/button/theme/Jackett tour). Remaining
 per-feature flows are an in-progress recording pass
 (§11.4.107/§11.4.143).</li>
 </ul>
-</body>
-</html>

@@ -1,7 +1,7 @@
 # Boba — Feature Status Summary
 
-**Revision:** 6
-**Last modified:** 2026-06-16T18:30:00Z
+**Revision:** 7
+**Last modified:** 2026-06-16T23:30:00Z
 **Scope:** Two-audience summary companion of `docs/features/Status.md` (§11.4.56). Page 1 = product/operator audience; Page 2 = software-engineer audience.
 
 > Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.56 / §11.4.86). Mirrors `Status.md` — when that file changes, regenerate this one (see `.docs_chain/contexts/features-status.yaml`).
@@ -18,9 +18,11 @@
 - The Angular dashboard (search grid, magnet dialog, theme picker, qBit login, Jackett management tabs) and the BobaLink browser extension (detects magnet/.torrent links on any page, "Send" / "Send-All" to Boba) are both shipping and heavily tested (the extension alone has 559 passing tests).
 - Jackett indexers are auto-configured at startup; credentials live encrypted in a local database, edited from the dashboard's Jackett page (boba-jackett service on :7189).
 - Private-tracker support (RuTracker, Kinozal, NNM-Club, IPTorrents) works through the WebUI bridge and download proxy.
+- **Search now handles multi-word queries (verified live 2026-06-16).** A bug crashed ~17 trackers whenever a query contained a space ("the matrix"); it is fixed. A full-fleet `the matrix` search on the live stack returns **2600 results from 23 trackers with zero plugin crashes**, and **all four private trackers authenticate** (RuTracker 50, NNM-Club 50, Kinozal 50, IPTorrents 49) using operator-supplied browser cookies. Proof: `docs/qa/search-fix-verify-20260616/`.
 
 **What's partial or pending:**
-- **RuTracker login needs a human** — it has a CAPTCHA, so automated login is operator-assisted (paste a cookie or solve the CAPTCHA once). This is a real-world limit, not a bug.
+- **RuTracker login** — automated cookie login now works: an operator pastes their browser cookies once (`RUTRACKER_COOKIES`) and RuTracker search authenticates without the CAPTCHA (verified live, 50 results for "the matrix"). Solving the CAPTCHA via username/password is still operator-assisted (BOB-008) — a real-world limit, not a bug.
+- **Kickass torrents is permanently unavailable (won't-fix)** — every live KickassTorrents mirror is behind Cloudflare or a JavaScript bot-challenge that the search plugin (a plain non-browser fetch) cannot pass. This is an upstream anti-bot design, not a Boba bug; the plugin returns an honest empty result. Research + live proof: `docs/research/kickass_403_20260616/`.
 - **A few security hardenings are queued** — some write endpoints are open by default on the LAN tunnel, and a couple of fetch paths need SSRF protection (tracked as RW-01..RW-05 in the remaining-work plan). An operator decision on LAN exposure gates how aggressive these need to be.
 - **One private-tracker status route (NNM-Club)** needs a container redeploy to go live (a source-vs-running drift, RW-07).
 - **The RuTracker ReDoS speed fix** is in the code but needs to be pushed into the running container (RW-06).
@@ -37,16 +39,16 @@
 
 ## Page 2 — For software engineers
 
-**Inventory method (2026-06-15, expanded 2026-06-16):** read-only codegraph + grep + source reading across the repo, then expanded to per-unit granularity (§11.4.118). **288 features cataloged** across 8 components (was 135 at Rev 2 — finer granularity, one row per real endpoint/handler/client-method/component-control/plugin/subcommand/script). Every row in `Status.md` cites a source file (file:line where load-bearing), endpoint, command, or control. No invented features (§11.4.6).
+**Inventory method (2026-06-15, expanded 2026-06-16):** read-only codegraph + grep + source reading across the repo, then expanded to per-unit granularity (§11.4.118). **289 features cataloged** across 8 components (Rev 7: +1 new `/api/v1/healthz` endpoint; was 135 at Rev 2 — finer granularity, one row per real endpoint/handler/client-method/component-control/plugin/subcommand/script). Every row in `Status.md` cites a source file (file:line where load-bearing), endpoint, command, or control. No invented features (§11.4.6).
 
 **Component / feature counts + posture:**
 
 | Component | Path / port | Features | Posture |
 |-----------|-------------|----------|---------|
-| Download Proxy + Merge Search (Python/FastAPI) | `download-proxy/src` :7186/:7187 | 68 | Shipped default; nearly all tested-green-in-suite. Now itemized per route (search/auth/hooks/schedules/theme/download), per dedup tier, per enrichment source, per validator. Open gaps: hooks auth (RW-01), default-open write surface (RW-02), SSRF (RW-03), magnet auth (RW-04); validator (BEP48/15) has no dedicated test; Kinozal/IPTorrents have no REST auth route. |
+| Download Proxy + Merge Search (Python/FastAPI) | `download-proxy/src` :7186/:7187 | 69 | Shipped default; nearly all tested-green-in-suite. **Rev 7: multi-word URL-encoding fix + cookie auth PROVEN live on nezha** (2600 results / 23 trackers / 0 encoding crashes; rutracker/nnmclub/kinozal/iptorrents 50/50/50/49). New `GET /api/v1/healthz` JSON endpoint (`routes.py:37`, `137d7ff`). Open gaps: hooks auth (RW-01), default-open write surface (RW-02), SSRF (RW-03), magnet auth (RW-04); validator (BEP48/15) has no dedicated test; Kinozal/IPTorrents have no REST auth route. |
 | qBitTorrent-go (Go/Gin) | `qBitTorrent-go` :7186/7187/7188 opt-in | 47 | Skeleton; unit-only (go test). Itemized per handler/client-method/service. `DownloadHandler` mock-only, `ActiveDownloadsHandler` empty stub, `FetchTorrent` stub; scheduler has no driver loop (RW-10, never fires); enricher missing (RW-11); SSE broker defined-but-unwired. |
 | boba-jackett (Go) | `qBitTorrent-go/cmd/boba-jackett` :7189 | 26 | Implemented; unit + integration + e2e + security (go). Itemized per endpoint + autoconfig engine/matcher/client + crypto/migrate/repos/bootstrap/envfile. Encrypted SQLite (AES-256-GCM), autoconfig, runs history, overrides, admin auth, hardened CORS. |
-| Tracker plugins | `plugins/*.py` | 30 | One row per real plugin present in tree (21 with matching file) + support modules. Parser sweep stress-chaos coverage. rutracker ReDoS fix not yet deployed (RW-06). CORRECTION: `install-plugin.sh` PLUGINS array has **44 entries**, not 12; ~23 (incl. `torrentproject`/`torrentscsv`) are curated names with no file in this tree — itemized as discrepancy rows, not asserted working. |
+| Tracker plugins | `plugins/*.py` | 30 | One row per real plugin present in tree (21 with matching file) + support modules. Parser sweep stress-chaos coverage. **Rev 7: multi-word URL-encoding fix live-verified (`limetorrents`/§4a adopted plugins); rutracker/nnmclub/kinozal/iptorrents auth PASS live (50/50/50/49); `kickass.py` reclassified Won't-fix structurally-impossible (§11.4.112, Cloudflare/JS-challenge).** rutracker ReDoS fix not yet deployed (RW-06). CORRECTION: `install-plugin.sh` PLUGINS array has **44 entries**, not 12; ~23 (incl. `torrentproject`/`torrentscsv`) are curated names with no file in this tree — itemized as discrepancy rows, not asserted working. |
 | Angular 21 frontend | `frontend/` served :7187 | 34 | Vitest unit + Python Playwright/integration; signals-based; 40% coverage floor. Itemized per dashboard control (search/grid/5 tabs/qBit+Download/magnet/theme/auth chips), per dialog, per service, per Jackett page control. |
 | BobaLink extension | `extension/` (WXT MV3) | 39 | Per `docs/browser_extension/Status.md`; unit/integration/security/chaos/perf/a11y/live; built zips present. Itemized per popup control, scanner, parser, api module, shared util, and **8 locales** (en/de/es/fr/it/ja/pt/ru). |
 | WebUI bridge | `webui-bridge.py` :7188 host | 4 | Integration + stress-chaos; private-tracker auth live-gated. |
@@ -61,7 +63,7 @@
 
 **Test corpus locations:** Python `tests/{unit,integration,e2e,security,stress,chaos,property,contract,concurrency,memory,observability,benchmark,performance,load,docs}/`; Go `qBitTorrent-go/internal/**/*_test.go` + `tests/{contract,e2e,integration,security}`; frontend `frontend/**/*.spec.ts` + `e2e/`; extension `extension/tests/{unit,integration,security,chaos,perf,a11y,e2e,live,i18n}`.
 
-**Open work cross-reference:** `docs/REMAINING_WORK_PLAN.md` RW-01..RW-21 + BOB-008 (operator-blocked CAPTCHA).
+**Open work cross-reference:** `docs/REMAINING_WORK_PLAN.md` RW-01..RW-21 + BOB-008 (operator-blocked CAPTCHA). **Live-verified fix batch (Rev 7):** `docs/qa/search-fix-verify-20260616/` (search/auth) + `docs/research/kickass_403_20260616/` (kickass won't-fix); commits `137d7ff`/`da7d709`/`2fc29fc`/`9c2f8dc`/`7e9cab5`.
 
 **Engineering follow-ups for this doc:**
 - The Video column is now DEFINITIVE for all 288 rows (28 VIDEO-CONFIRMED / 14 PENDING-UI / 246 N/A-no-UI). Remaining UI evidence gap = the 14 `PENDING (UI — film next)` rows (magnet/qBit-login/confirm/tracker-stat dialogs + Jackett indexer dialogs/tabs); film those per §11.4.107/§11.4.143 to close it. The 246 N/A rows are back-end/script units with no screen of their own (test-covered + exercised by the confirmed UI/CLI journeys) — not a recording gap.

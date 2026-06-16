@@ -1,9 +1,11 @@
 # Boba — Feature Status (all components)
 
-**Revision:** 6
-**Last modified:** 2026-06-16T18:30:00Z
+**Revision:** 7
+**Last modified:** 2026-06-16T23:30:00Z
 **Scope:** Every system component, service, infrastructure piece, and client app of the Boba project — one row per REAL unit (endpoint / handler / client method / component control / plugin / subcommand / script), grouped by component.
 **Authority:** assembled by READ-ONLY repo inventory (codegraph + grep + source reading) on 2026-06-15, expanded to per-unit granularity (§11.4.118 discovery-pressure) on 2026-06-16. Cross-references `AGENTS.md`, `CLAUDE.md`, `docs/REMAINING_WORK_PLAN.md`.
+
+> **Rev 7 (2026-06-16) — live-PASS update for the search/auth fix batch (HEAD `7e9cab5`):** the multi-word URL-encoding fix (`da7d709`, ~17 nova3 plugins), the new `RUTRACKER_COOKIES` injection (`2fc29fc`), `NNMCLUB_COOKIES` auth, `/auth/status` cookie reflection (`9c2f8dc`), the new `GET /api/v1/healthz` JSON endpoint (`137d7ff`), and §11.4.85 stress+chaos coverage for the multi-word fix (`7e9cab5`) were all PROVEN end-to-end on the live nezha stack — full-fleet `the matrix` = **2600 results / 23 contributing trackers / zero `plugin_bad_query_encoding`**, all four private trackers authenticate (rutracker 50, nnmclub 50, kinozal 50, iptorrents 49). Evidence: `docs/qa/search-fix-verify-20260616/`. `kickass.py` reclassified **Won't-fix structurally-impossible (§11.4.112)** per `docs/research/kickass_403_20260616/`. NOTE (§11.4.6): no Go files were touched this session — the Go rows are unchanged (the pre-existing `magnet_stress_chaos_test.go` guard stands; no NEW Go query-encoding guard was added this session, so none is claimed here).
 
 > Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.86). Every feature row cites a real source file (file:line where load-bearing), endpoint, command, or control. **No invented features** (§11.4.6). As of Rev 5 the **Video** column is DEFINITIVE for every row — there is no bare `PENDING`. Each cell is exactly one of: `VIDEO-CONFIRMED — <file>` (the feature is shown on-screen in a committed recording), `PENDING (UI — film next)` (a user-visible control/dialog not yet *individually* filmed), or `N/A (no UI — test-covered + exercised by <journey>)` (a non-user-visible unit — REST endpoint / handler / client method / parser / scanner / service / crypto / repo / script — which has no screen of its own and is confirmed by its cited tests plus the UI/CLI journey that drives it). **Honest classification (§11.4.6/§11.4.143): a row is `VIDEO-CONFIRMED` only when a real recording actually shows it.**
 >
@@ -46,7 +48,7 @@ recordings below confirm the headline user-facing flows on-screen.
 
 | # | Component | Service / Port | Features cataloged |
 |---|-----------|----------------|--------------------|
-| 1 | Download Proxy + Merge Search Service (Python/FastAPI) | `qbittorrent-proxy` :7186 / :7187 | 68 |
+| 1 | Download Proxy + Merge Search Service (Python/FastAPI) | `qbittorrent-proxy` :7186 / :7187 | 69 |
 | 2 | qBitTorrent-go backend (Go/Gin) | `qbittorrent-proxy-go` :7186/:7187/:7188 (opt-in `--profile go`) | 47 |
 | 3 | boba-jackett (Go) | `boba-jackett` :7189 | 26 |
 | 4 | Tracker plugins (`plugins/*.py`) | run inside `qbittorrent-proxy` | 30 |
@@ -55,7 +57,7 @@ recordings below confirm the headline user-facing flows on-screen.
 | 7 | WebUI bridge (`webui-bridge.py`) | host process :7188 | 4 |
 | 8 | Infrastructure / CLI / shell scripts | host | 40 |
 
-**Total features cataloged: 288**
+**Total features cataloged: 289** (Rev 7: +1 — new `GET /api/v1/healthz` endpoint)
 
 ---
 
@@ -89,10 +91,10 @@ Entry: `download-proxy/src/main.py` (starts legacy proxy thread + uvicorn `api:a
 | `GET /auth/rutracker/status` — RuTracker session state (`auth.py:56`) | implemented | yes | integration `test_auth_and_links.py`; e2e `test_live_stack_evidence.py` | partial — CAPTCHA operator-blocked (BOB-008) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `GET /auth/rutracker/captcha` — fetch CAPTCHA image (`auth.py:108`) | implemented | yes | integration `test_auth_and_links.py` | partial — operator-blocked (BOB-008) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `POST /auth/rutracker/login` — username/password + CAPTCHA login (`auth.py:214`) | implemented | yes | integration `test_auth_and_links.py` | partial — operator-blocked (BOB-008) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
-| `POST /auth/rutracker/cookie-login` — cookie-based login (`auth.py:298`) | implemented | yes | integration `test_auth_and_links.py` | partial — live-gated | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
+| `POST /auth/rutracker/cookie-login` — cookie-based login (`auth.py:298`) | implemented | yes | integration `test_auth_and_links.py` | **PASS — LIVE 2026-06-16** — `RUTRACKER_COOKIES` cookie path authenticates (`2fc29fc`); rutracker `the matrix` = 50 real results on nezha (`docs/qa/search-fix-verify-20260616/` §1) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `GET /auth/nnmclub/status` — NNM-Club session state (`auth.py:350`) | implemented | yes | e2e `test_live_stack_evidence.py:265` (skips — SOURCE→ARTIFACT drift RW-07) | partial — route 404 on running container (RW-07) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `POST /auth/nnmclub/login` — NNM-Club login (`auth.py:407`) | implemented | yes | e2e `test_live_stack_evidence.py` | partial — live-gated | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
-| `GET /auth/status` — all-tracker aggregate session state (`auth.py:479`) | implemented | yes | integration `test_auth_state_ui.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
+| `GET /auth/status` — all-tracker aggregate session state (`auth.py:479`) | implemented | yes | integration `test_auth_state_ui.py`; auth-status cookie-reflection test (§1.1) | **PASS — LIVE 2026-06-16** — now reflects `RUTRACKER_COOKIES`/`NNMCLUB_COOKIES` env before first search (`9c2f8dc`), so dashboard chips show rutracker/nnmclub green (`docs/qa/search-fix-verify-20260616/` §3) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `POST /auth/qbittorrent/logout` — qBit WebUI logout (`auth.py:532`) | implemented | yes | integration `test_login_actions.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web qBit login dialog) |
 | Kinozal auth (status/login) REST route | **missing** | no | none — no `kinozal/login` route in `auth.py` | not-implemented (search path uses cookies via orchestrator) | N/A (not implemented — no route) |
 | IPTorrents auth (status/login) REST route | **missing** | no | none — no `iptorrents/login` route in `auth.py` | not-implemented (env creds + cookie flow via Jackett UI) | N/A (not implemented — no route) |
@@ -163,6 +165,7 @@ Entry: `download-proxy/src/main.py` (starts legacy proxy thread + uvicorn `api:a
 
 | Feature | Impl | Wired | Tests | Validation | Video |
 |---------|------|-------|-------|------------|-------|
+| `GET /api/v1/healthz` — machine-parsable JSON health probe (`routes.py:37`) | implemented | yes | integration `test_merge_api.py` | **PASS — LIVE 2026-06-16** — NEW endpoint (`137d7ff`): a bare `/healthz` was swallowed by the SPA catch-all; now mounted under `/api/v1` returning JSON (§11.4.43) | N/A (no UI — JSON health probe; test-covered) |
 | `GET /health` (`__init__.py:168`) | implemented | yes | integration `test_live_containers.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by boba-ctl health CLI) |
 | `GET /api/v1/bridge/health` (`__init__.py:173`) | implemented | yes | integration `test_bridge_root_liveness.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web bridge health indicator) |
 | `GET /api/v1/config` (`__init__.py:247`) | implemented | yes | integration `test_merge_api.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web dashboard bootstrap) |
@@ -312,7 +315,7 @@ Plugin contract: class with `url`, `name`, `supported_categories`, `search()`, `
 | Plugin | Type | Impl | Wired (curated?) | Tests | Validation | Video |
 |--------|------|------|------------------|-------|------------|-------|
 | `eztv.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
-| `limetorrents.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
+| `limetorrents.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py`; multi-word `tests/unit/test_plugin_multiword_query_encoding.py` + stress/chaos `tests/stress_chaos/test_multiword_query_encoding_{stress,chaos}.py` (§11.4.85) | **PASS — LIVE 2026-06-16** — multi-word URL-encoding fix (`da7d709`) verified on nezha: `the matrix` returns results, zero `plugin_bad_query_encoding` (`docs/qa/search-fix-verify-20260616/`) | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `piratebay.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `solidtorrents.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `torlock.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
@@ -321,17 +324,17 @@ Plugin contract: class with `url`, `name`, `supported_categories`, `search()`, `
 | `anilibra.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `bitsearch.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `gamestorrents.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
-| `kickass.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
+| `kickass.py` | public | implemented (degrades to honest empty) | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | **Won't-fix — structurally-impossible (§11.4.112)** — every live KAT mirror is Cloudflare-403 or a JS bot-challenge a non-JS `urllib` client cannot clear; deep multi-angle research (§11.4.150) + live probes 2026-06-16 in `docs/research/kickass_403_20260616/`; upstream maintainer confirms. Reopen only on NEW evidence a mirror serves listing HTML to a non-JS client (§11.4.34/§11.4.7) | N/A (no UI — test-covered; structurally blocked upstream) (tracker backend) |
 | `megapeer.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `tokyotoshokan.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `torrentgalaxy.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `torrentkitty.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `yts.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `jackett.py` | aggregator | implemented | yes (curated) | covered via jackett autoconfig tests | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
-| `iptorrents.py` | private (freeleech-only) | implemented | yes (curated) | integration `tests/integration/test_iptorrents.py` | partial — freeleech-only policy | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
-| `rutracker.py` | private (CAPTCHA) | implemented | yes (curated) | integration `test_tracker_auth_live.py`; stress `test_plugin_parsers_stress_chaos.py` (ReDoS §11.4.85) | partial — ReDoS fix in source, not yet deployed to container (RW-06); login operator-blocked BOB-008 | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
-| `kinozal.py` | private | implemented | yes (curated) | integration `test_tracker_auth_live.py` | partial — live-gated | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
-| `nnmclub.py` | private (cookies) | implemented | yes (curated) | integration `test_tracker_auth_live.py` | partial — live-gated | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
+| `iptorrents.py` | private (freeleech-only) | implemented | yes (curated) | integration `tests/integration/test_iptorrents.py` | **PASS — LIVE 2026-06-16** — full-fleet `the matrix` on nezha: **49** results, `success` (`docs/qa/search-fix-verify-20260616/` §6); freeleech-only policy enforced | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
+| `rutracker.py` | private (cookies / CAPTCHA) | implemented | yes (curated) | integration `test_tracker_auth_live.py`; cookie-injection `tests/unit/` rutracker-cookie test (§1.1); stress `test_plugin_parsers_stress_chaos.py` (ReDoS §11.4.85) | **PASS — LIVE 2026-06-16** — new `RUTRACKER_COOKIES` injection (`2fc29fc`) bypasses the CAPTCHA-walled login; `the matrix` returns **50** results incl. "Матрица / The Matrix" (`docs/qa/search-fix-verify-20260616/` §1,§6). ReDoS fix in source not yet deployed (RW-06); CAPTCHA password-login still operator-blocked (BOB-008) | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
+| `kinozal.py` | private | implemented | yes (curated) | integration `test_tracker_auth_live.py` | **PASS — LIVE 2026-06-16** — full-fleet `the matrix` on nezha: **50** results, `success` (`docs/qa/search-fix-verify-20260616/` §6) | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
+| `nnmclub.py` | private (cookies) | implemented | yes (curated) | integration `test_tracker_auth_live.py` | **PASS — LIVE 2026-06-16** — `NNMCLUB_COOKIES` auth (Cloudflare Turnstile bypass): `the matrix` returns **50** results incl. "Matrix Resurrections (2021)" (`docs/qa/search-fix-verify-20260616/` §1,§6) | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 
 ### 4b. Plugin support modules
 
