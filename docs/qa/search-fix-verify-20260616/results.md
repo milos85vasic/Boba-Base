@@ -58,5 +58,31 @@ Full-fleet `the matrix` previously returned 1135–1705 results.
 despite working searches (it only read `_tracker_sessions`, populated after a
 search). Now reflects the `*_COOKIES` env so the dashboard shows them green.
 
-_Captured 2026-06-16 against nezha.local; unit coverage: 54 multiword tests +
-auth-status cookie-reflection test, all with §1.1 negation proofs._
+## 4. Deploy pipeline fully fixed + re-verified via the pipeline (not manual cp)
+
+`scripts/deploy-remote.sh` had 4 silent-failure bugs that kept fixes from landing
+on the remote (§11.4.108): inline-YAML-comment in the parsed path (`d5b58cb`),
+rsync abort on container-owned `config/` under set -e (`9e059d3`), `py_compile`
+writing `__pycache__` to a container-owned dir → false "Syntax: Invalid" → exit 1
+(`42cdb02`), and install-plugin targeting only `qbittorrent` not the
+`qbittorrent-proxy` container that runs the engine subprocess (`e6b9f8f`). After
+the fixes the pipeline completes `[1/5]→[5/5]` cleanly ("All plugins installed and
+valid!", 0 "Syntax: Invalid").
+
+Re-run AFTER a clean pipeline deploy (engines installed by the pipeline, NOT a
+manual cp) — scoped multi-word `the matrix`, **total=573**, glotorrents 173,
+torrentdownload 249, torrentproject 60, snowfl 40, limetorrents 25, torrentscsv
+25, rockbox 1 (success); linuxtracker/pirateiro empty-no-error; yourbittorrent
+`deadline_timeout` (slow, not a crash). **`STILL bad_query_encoding/crashed:
+NONE`.** Engine fix confirmed present in `qbittorrent-proxy` (glotorrents fix
+marker count 1) — installed by the pipeline.
+
+## 5. Regression baseline
+
+Full unit suite at HEAD `e6b9f8f`: **4277 passed, 0 failed** (9m51s) — up from
+4216 pre-session (all new tests for the search/cookie/auth fixes pass, zero
+regression).
+
+_Captured 2026-06-16 against nezha.local; unit coverage: multiword tests (16
+plugins capture + snowfl focused + well-behaved no-regression) + rutracker-cookie
++ auth-status cookie-reflection tests, all with §1.1 negation proofs._

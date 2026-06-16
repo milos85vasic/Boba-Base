@@ -317,8 +317,37 @@ now reflects cookies (commit <code>9c2f8dc</code>)</h2>
 for rutracker/nnmclub despite working searches (it only read
 <code>_tracker_sessions</code>, populated after a search). Now reflects
 the <code>*_COOKIES</code> env so the dashboard shows them green.</p>
-<p><em>Captured 2026-06-16 against nezha.local; unit coverage: 54
-multiword tests + auth-status cookie-reflection test, all with §1.1
+<h2
+id="deploy-pipeline-fully-fixed-re-verified-via-the-pipeline-not-manual-cp">4.
+Deploy pipeline fully fixed + re-verified via the pipeline (not manual
+cp)</h2>
+<p><code>scripts/deploy-remote.sh</code> had 4 silent-failure bugs that
+kept fixes from landing on the remote (§11.4.108): inline-YAML-comment
+in the parsed path (<code>d5b58cb</code>), rsync abort on
+container-owned <code>config/</code> under set -e
+(<code>9e059d3</code>), <code>py_compile</code> writing
+<code>__pycache__</code> to a container-owned dir → false “Syntax:
+Invalid” → exit 1 (<code>42cdb02</code>), and install-plugin targeting
+only <code>qbittorrent</code> not the <code>qbittorrent-proxy</code>
+container that runs the engine subprocess (<code>e6b9f8f</code>). After
+the fixes the pipeline completes <code>[1/5]→[5/5]</code> cleanly (“All
+plugins installed and valid!”, 0 “Syntax: Invalid”).</p>
+<p>Re-run AFTER a clean pipeline deploy (engines installed by the
+pipeline, NOT a manual cp) — scoped multi-word <code>the matrix</code>,
+<strong>total=573</strong>, glotorrents 173, torrentdownload 249,
+torrentproject 60, snowfl 40, limetorrents 25, torrentscsv 25, rockbox 1
+(success); linuxtracker/pirateiro empty-no-error; yourbittorrent
+<code>deadline_timeout</code> (slow, not a crash).
+<strong><code>STILL bad_query_encoding/crashed: NONE</code>.</strong>
+Engine fix confirmed present in <code>qbittorrent-proxy</code>
+(glotorrents fix marker count 1) — installed by the pipeline.</p>
+<h2 id="regression-baseline">5. Regression baseline</h2>
+<p>Full unit suite at HEAD <code>e6b9f8f</code>: <strong>4277 passed, 0
+failed</strong> (9m51s) — up from 4216 pre-session (all new tests for
+the search/cookie/auth fixes pass, zero regression).</p>
+<p><em>Captured 2026-06-16 against nezha.local; unit coverage: multiword
+tests (16 plugins capture + snowfl focused + well-behaved no-regression)
++ rutracker-cookie + auth-status cookie-reflection tests, all with §1.1
 negation proofs.</em></p>
 </body>
 </html>
