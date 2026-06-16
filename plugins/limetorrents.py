@@ -173,7 +173,11 @@ class limetorrents:
 
     def search(self, query: str, cat: str = "all") -> None:
         """Performs search and returns magnet links only."""
-        query = query.replace("%20", "-")
+        # limetorrents uses '-' for spaces in its search PATH. Handle BOTH the
+        # %20-encoded (nova2) and raw-space (merge service) caller conventions —
+        # the raw-space case was unhandled and crashed urllib on multi-word
+        # queries (observed on nezha as plugin_bad_query_encoding).
+        query = query.replace("%20", "-").replace(" ", "-")
         category = self.supported_categories[cat]
 
         for page in range(1, 3):  # Reduced from 5 to 3 pages for speed

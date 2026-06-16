@@ -123,6 +123,25 @@ AFFECTED_PLUGINS = [
     "torrentgalaxy",
     "eztv",
     "solidtorrents",
+    # §11.4.124-adopted orphan engines (operator-approved 2026-06-16): promoted
+    # from gitignored config/qBittorrent/nova3/engines/ into tracked plugins/
+    # source + fixed. The merge service searches all of these (PUBLIC_TRACKERS)
+    # and they crashed on multi-word queries on the live nezha stack.
+    "glotorrents",
+    # snowfl is NOT here: it fetches index.html for a token BEFORE building the
+    # query URL, so the simple retrieve_url stub never reaches its query URL
+    # (a capture pass would be misleading, §11.4.6). Covered by the dedicated
+    # test_snowfl_multiword_path_encoded below instead.
+    "pirateiro",
+    "rockbox",
+    "torrentdownload",
+    "torrentproject",
+    "torrentscsv",
+    "yourbittorrent",
+    "linuxtracker",
+    # limetorrents WAS misclassified well-behaved — it only did
+    # replace('%20','-'), never handling a raw space; real bug, now fixed.
+    "limetorrents",
 ]
 # NOTE: tokyotoshokan is NOT in the affected set — it already does
 # ``query.replace(" ", "+")`` (plugins/tokyotoshokan.py) so a raw multi-word
@@ -193,6 +212,45 @@ def test_singleword_query_unaffected(name: str) -> None:
     assert " " not in first
     urllib.request.Request(first)
     assert "linux" in first.lower(), f"{name}: query token missing: {first!r}"
+
+
+def test_snowfl_multiword_path_encoded() -> None:
+    """snowfl builds the query into a URL PATH segment via
+    ``Parser.generateQuery``; its token-bootstrap (index.html + script) can't
+    be driven under the simple stub, so verify the fix directly: the value
+    reaching generateQuery for a raw multi-word query must carry NO raw space
+    (%20-encoded, since '+' is literal in a path)."""
+    mod, _ = _load_plugin("snowfl")
+    cls = getattr(mod, "snowfl")
+    inst = cls()
+    captured: list[str] = []
+
+    # snowfl's real Parser.__init__ fetches index.html + a script to derive a
+    # token, which crashes on the empty stub body BEFORE generateQuery. Replace
+    # the whole Parser with a fake so the fix line (encoding before
+    # generateQuery) actually runs and we capture the post-encoding query.
+    class _FakeParser:
+        def __init__(self, url):
+            self.url = url
+
+        def generateQuery(self, what):
+            captured.append(what)
+            return f"{self.url}/dummy"
+
+        def feed(self, data):  # noqa: ANN001
+            pass
+
+    with patch.object(cls, "Parser", _FakeParser):
+        try:
+            inst.search(MULTIWORD_RAW, "all")
+        except Exception:
+            pass
+    assert captured, "snowfl: generateQuery was never reached"
+    assert " " not in captured[0], (
+        f"snowfl: a raw space reached the path-segment query: {captured[0]!r}"
+    )
+    # '+' would be wrong for a path segment; the fix uses %20.
+    assert "+" not in captured[0], f"snowfl: '+' is literal in a path: {captured[0]!r}"
 
 
 @pytest.mark.parametrize("name", WELL_BEHAVED_PLUGINS)

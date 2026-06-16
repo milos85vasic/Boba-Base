@@ -43,7 +43,11 @@ $SSH "cd '$RPATH' && chmod 600 .env && mkdir -p '$RPATH/tmp' \$HOME/boba-downloa
   sed -i 's#^QBITTORRENT_DATA_DIR=.*#QBITTORRENT_DATA_DIR='\"\$HOME\"'/boba-downloads#' .env"
 
 echo "[3/5] install curated plugins"
-$SSH "cd '$RPATH' && chmod +x install-plugin.sh && ./install-plugin.sh rutracker rutor kinozal nnmclub eztv jackett limetorrents piratebay solidtorrents torlock torrentproject torrentscsv kickass nyaa bitsearch torrentgalaxy"
+# Install ALL managed plugins that have plugins/ source (install-plugin.sh skips
+# any source-less orphan engine names gracefully). Self-maintaining: every
+# plugin with maintained source — incl. the multi-word-encoding fixes and the
+# §11.4.124 adopted plugins — lands in nova3/engines without a drifting hand-list.
+$SSH "cd '$RPATH' && chmod +x install-plugin.sh && ./install-plugin.sh --all"
 
 echo "[4/5] podman-compose up"
 PROF=(); [[ -n "$PROFILE" ]] && PROF=(--profile "$PROFILE")
