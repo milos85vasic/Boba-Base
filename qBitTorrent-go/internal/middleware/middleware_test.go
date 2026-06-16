@@ -120,6 +120,67 @@ func TestCORS_NoWildcardWithCredentials(t *testing.T) {
 		"the echoed origin MUST be the specific origin, never the wildcard")
 }
 
+// TestCORS_WildcardConfigured_NeverWildcardWithCredentials is the §11.4.135
+// standing regression guard for the latent coverage gap found in the P0 audit:
+// the production CORS("*") wildcard branch (cors.go: wildcard=true) was NOT
+// exercised by any test. Production main.go calls CORS(parseAllowedOrigins(...))
+// with a specific allowlist (never "*"), so the live config is safe — but a
+// regression that made the wildcard branch emit "Access-Control-Allow-Origin: *"
+// together with "Access-Control-Allow-Credentials: true" (the fetch-spec /
+// browser-forbidden combination, a §11.4 security defect) would survive
+// undetected. This test drives the REAL CORS("*") constructor directly and pins
+// its actual safe contract: for an arbitrary Origin it ECHOES that specific
+// Origin (never the literal "*") and therefore NEVER combines "*" with
+// credentials.
+//
+// RED_MODE=1 reproduces the negation against the pre-fix vulnerable middleware
+// (Allow-Origin:* + credentials for any origin) so the guard provably catches
+// the defect (§11.4.115 polarity switch); RED_MODE=0 (default standing guard)
+// asserts the fixed wildcard branch's real behaviour.
+func TestCORS_WildcardConfigured_NeverWildcardWithCredentials(t *testing.T) {
+	redMode := os.Getenv("RED_MODE") == "1"
+
+	newRouter := func() *gin.Engine {
+		r := gin.New()
+		if redMode {
+			// Pre-fix vulnerable wildcard behaviour: "*" + credentials for everyone.
+			r.Use(legacyVulnerableCORS("*"))
+		} else {
+			// The REAL production wildcard constructor — the previously-untested branch.
+			r.Use(CORS("*"))
+		}
+		r.GET("/test", func(c *gin.Context) { c.String(http.StatusOK, "ok") })
+		r.OPTIONS("/test", func(c *gin.Context) { c.String(http.StatusOK, "ok") })
+		return r
+	}
+
+	// An arbitrary, never-allowlisted Origin against the wildcard config.
+	const arbitraryOrigin = "http://arbitrary.example:9999"
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/test", nil)
+	req.Header.Set("Origin", arbitraryOrigin)
+	newRouter().ServeHTTP(w, req)
+
+	allowOrigin := w.Header().Get("Access-Control-Allow-Origin")
+	allowCreds := w.Header().Get("Access-Control-Allow-Credentials")
+
+	// CORE security invariant: never "*" + credentials simultaneously.
+	forbidden := allowOrigin == "*" && allowCreds == "true"
+	assert.False(t, forbidden,
+		"CORS(\"*\"): wildcard branch MUST NOT combine Allow-Origin:* with Allow-Credentials:true (got origin=%q creds=%q)",
+		allowOrigin, allowCreds)
+
+	// Pin the real safe contract: credentials ARE granted (wildcard accepts the
+	// origin), so the Allow-Origin MUST be the specific echoed origin, never "*".
+	if allowCreds == "true" {
+		assert.Equal(t, arbitraryOrigin, allowOrigin,
+			"CORS(\"*\") with credentials MUST echo the specific request Origin, never the literal \"*\"")
+		assert.NotEqual(t, "*", allowOrigin,
+			"the echoed Allow-Origin MUST be the specific origin, never the wildcard")
+	}
+}
+
 func TestLogger_NoPanic(t *testing.T) {
 	r := gin.New()
 	r.Use(Logger())
