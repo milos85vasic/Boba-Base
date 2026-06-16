@@ -840,7 +840,6 @@ TRACKER_DOMAINS = (
     "kinozal.guru",
     "nnmclub.to",
     "nnmclub.ro",
-    "nnm-club.me",
     "iptorrents.com",
     "iptorrents.me",
 )

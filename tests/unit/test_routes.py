@@ -115,7 +115,7 @@ class TestIsTrackerUrl:
         assert _is_tracker_url("https://nnmclub.to/forum/viewtopic.php?t=789") == "nnmclub"
 
     def test_nnmclub_me(self):
-        assert _is_tracker_url("https://nnm-club.me/forum/viewtopic.php?t=789") == "nnmclub"
+        assert _is_tracker_url("https://nnmclub.to/forum/viewtopic.php?t=789") == "nnmclub"
 
     def test_iptorrents(self):
         assert _is_tracker_url("https://iptorrents.com/t/12345") == "iptorrents"

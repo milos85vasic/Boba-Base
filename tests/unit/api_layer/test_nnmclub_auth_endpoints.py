@@ -64,7 +64,7 @@ class TestNnmclubStatus:
         orch = api.auth._get_orchestrator()
         orch._tracker_sessions["nnmclub"] = {
             "cookies": {"unrelated": "x"},
-            "base_url": "https://nnm-club.me",
+            "base_url": "https://nnmclub.to",
         }
 
         resp = client.get("/api/v1/auth/nnmclub/status")

@@ -157,7 +157,7 @@ async def test_login_stores_session_cookie(monkeypatch):
 
     session = orch._tracker_sessions.get("nnmclub")
     assert session is not None, "login must populate _tracker_sessions['nnmclub']"
-    assert session["base_url"] == "https://nnm-club.me"
+    assert session["base_url"] == "https://nnmclub.to"
     assert session["cookies"].get("phpbb2mysql_4_sid") == "SID123"
 
 

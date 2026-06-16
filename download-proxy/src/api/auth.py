@@ -373,7 +373,7 @@ async def nnmclub_auth_status():  # type: ignore[no-untyped-def]
 
     import aiohttp
 
-    base_url = session.get("base_url", "https://nnm-club.me")
+    base_url = session.get("base_url", "https://nnmclub.to")
     try:
         async with (
             aiohttp.ClientSession() as client,
@@ -421,7 +421,7 @@ async def nnmclub_password_login():  # type: ignore[no-untyped-def]
         )
 
     orch = _get_orchestrator()
-    base_url = os.getenv("NNMCLUB_MIRRORS", "https://nnm-club.me").split(",")[0].strip()
+    base_url = os.getenv("NNMCLUB_MIRRORS", "https://nnmclub.to").split(",")[0].strip()
 
     import aiohttp
 

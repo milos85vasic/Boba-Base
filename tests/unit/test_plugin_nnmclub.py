@@ -56,7 +56,7 @@ def _load_nnmclub(captured=None):
 def _make_cookie(name="phpbb2mysql_4_sid", value="abc123"):
     return Cookie(
         0, name, value, None, False,
-        "nnm-club.me", True, False, "/", True, False, None, False, None, None, {},
+        "nnmclub.to", True, False, "/", True, False, None, False, None, None, {},
     )
 
 
@@ -332,13 +332,13 @@ class TestDraw:
             inst.draw(NNM_SINGLE)
         assert len(cap) == 1
         assert cap[0]["name"] == "Ubuntu 24.04 LTS"
-        assert cap[0]["link"] == "https://nnm-club.me/forum/dl.php?t=12345"
-        assert cap[0]["desc_link"] == "https://nnm-club.me/forum/viewtopic.php?t=12345"
+        assert cap[0]["link"] == "https://nnmclub.to/forum/dl.php?t=12345"
+        assert cap[0]["desc_link"] == "https://nnmclub.to/forum/viewtopic.php?t=12345"
         assert cap[0]["size"] == "1548578624"
         assert cap[0]["seeds"] == 50
         assert cap[0]["leech"] == 12
         assert cap[0]["pub_date"] == 1700000000
-        assert cap[0]["engine_url"] == "https://nnm-club.me/forum/"
+        assert cap[0]["engine_url"] == "https://nnmclub.to/forum/"
 
     def test_multi_results(self):
         inst, mod, cap = _load_nnmclub()
@@ -394,7 +394,7 @@ class TestDraw:
         with patch.object(inst, "_fetch_magnet_from_topic", return_value=""):
             inst.draw(NNM_SINGLE)
         assert len(cap) == 1
-        assert cap[0]["link"].startswith("https://nnm-club.me/forum/dl.php")
+        assert cap[0]["link"].startswith("https://nnmclub.to/forum/dl.php")
 
     def test_size_is_numeric_string(self):
         inst, mod, cap = _load_nnmclub()
@@ -434,7 +434,7 @@ class TestDraw:
         with patch.object(inst, "_fetch_magnet_from_topic", return_value=""):
             inst.draw(NNM_SINGLE)
         assert len(cap) == 1
-        assert cap[0]["link"].startswith("https://nnm-club.me/forum/dl.php")
+        assert cap[0]["link"].startswith("https://nnmclub.to/forum/dl.php")
 
     def test_multiple_torrent_links_are_independent(self):
         inst, mod, cap = _load_nnmclub()
@@ -450,7 +450,7 @@ class TestDraw:
         fedora = next(r for r in cap if r["name"] == "Fedora 40")
         assert fedora["link"] == MAGNET_LINK
         arch = next(r for r in cap if r["name"] == "Arch Linux 2024")
-        assert arch["link"].startswith("https://nnm-club.me/forum/dl.php")
+        assert arch["link"].startswith("https://nnmclub.to/forum/dl.php")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -462,26 +462,26 @@ class TestFetchMagnet:
     def test_magnet_found(self):
         inst, mod, _ = _load_nnmclub()
         with patch.object(inst, "_request", return_value=NNM_TOPIC_WITH_MAGNET.encode("utf-8")):
-            result = inst._fetch_magnet_from_topic("https://nnm-club.me/forum/viewtopic.php?t=12345")
+            result = inst._fetch_magnet_from_topic("https://nnmclub.to/forum/viewtopic.php?t=12345")
         assert result.startswith("magnet:?xt=urn:btih:")
         assert "da39a3ee5e6b4b0d3255bfef95601890afd80709" in result
 
     def test_no_magnet_returns_empty(self):
         inst, mod, _ = _load_nnmclub()
         with patch.object(inst, "_request", return_value=NNM_TOPIC_NO_MAGNET.encode("utf-8")):
-            result = inst._fetch_magnet_from_topic("https://nnm-club.me/forum/viewtopic.php?t=99999")
+            result = inst._fetch_magnet_from_topic("https://nnmclub.to/forum/viewtopic.php?t=99999")
         assert result == ""
 
     def test_request_exception_returns_empty(self):
         inst, mod, _ = _load_nnmclub()
         with patch.object(inst, "_request", side_effect=Exception("network error")):
-            result = inst._fetch_magnet_from_topic("https://nnm-club.me/forum/viewtopic.php?t=12345")
+            result = inst._fetch_magnet_from_topic("https://nnmclub.to/forum/viewtopic.php?t=12345")
         assert result == ""
 
     def test_empty_response_returns_empty(self):
         inst, mod, _ = _load_nnmclub()
         with patch.object(inst, "_request", return_value=b""):
-            result = inst._fetch_magnet_from_topic("https://nnm-club.me/forum/viewtopic.php?t=12345")
+            result = inst._fetch_magnet_from_topic("https://nnmclub.to/forum/viewtopic.php?t=12345")
         assert result == ""
 
     def test_magnet_with_tracker_params(self):
@@ -491,7 +491,7 @@ class TestFetchMagnet:
         )
         inst, mod, _ = _load_nnmclub()
         with patch.object(inst, "_request", return_value=html.encode("utf-8")):
-            result = inst._fetch_magnet_from_topic("https://nnm-club.me/forum/viewtopic.php?t=11111")
+            result = inst._fetch_magnet_from_topic("https://nnmclub.to/forum/viewtopic.php?t=11111")
         assert "magnet:?xt=urn:btih:" in result
         assert "da39a3ee5e6b4b0d3255bfef95601890afd80709" in result
 
@@ -502,7 +502,7 @@ class TestFetchMagnet:
         )
         inst, mod, _ = _load_nnmclub()
         with patch.object(inst, "_request", return_value=html.encode("utf-8")):
-            result = inst._fetch_magnet_from_topic("https://nnm-club.me/forum/viewtopic.php?t=11111")
+            result = inst._fetch_magnet_from_topic("https://nnmclub.to/forum/viewtopic.php?t=11111")
         assert result.startswith("MAGNET:")
 
     def test_cp1251_encoded_page(self):
@@ -514,7 +514,7 @@ class TestFetchMagnet:
         )
         inst, mod, _ = _load_nnmclub()
         with patch.object(inst, "_request", return_value=topic_html.encode("cp1251")):
-            result = inst._fetch_magnet_from_topic("https://nnm-club.me/forum/viewtopic.php?t=11111")
+            result = inst._fetch_magnet_from_topic("https://nnmclub.to/forum/viewtopic.php?t=11111")
         assert "magnet:?xt=urn:btih:" in result
 
 
@@ -535,28 +535,28 @@ class TestSearching:
             patch.object(inst, "_request", return_value=_cp1251(NNM_LOGGED_IN_PAGE_25)),
             patch.object(inst, "_fetch_magnet_from_topic", return_value=""),
         ):
-            result = inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&f=-1", first=True)
+            result = inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&f=-1", first=True)
         assert result == 25
         assert len(cap) == 1
 
     def test_first_page_zero_results(self):
         inst, mod, cap = self._make_inst()
         with patch.object(inst, "_request", return_value=_cp1251(NNM_LOGGED_IN_PAGE_ZERO)):
-            result = inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&f=-1", first=True)
+            result = inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&f=-1", first=True)
         assert result == 0
 
     def test_first_page_no_tpver_raises(self):
         inst, mod, cap = self._make_inst()
         with patch.object(inst, "_request", return_value=_cp1251(NNM_LOGGED_IN_NO_TPVER)):
             with pytest.raises(mod.EngineError, match="Unexpected page content"):
-                inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&f=-1", first=True)
+                inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&f=-1", first=True)
 
     def test_unexpected_page_content_raises(self):
         inst, mod, cap = self._make_inst()
         page = '<span class="gen">\u0412\u044b\u0445\u043e\u0434 [ USERNAME ]</span><p>garbage</p>'
         with patch.object(inst, "_request", return_value=_cp1251(page)):
             with pytest.raises(mod.EngineError, match="Unexpected page content"):
-                inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&f=-1", first=True)
+                inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&f=-1", first=True)
 
     def test_subsequent_page_does_not_check_login(self):
         inst, mod, cap = self._make_inst()
@@ -564,7 +564,7 @@ class TestSearching:
             patch.object(inst, "_request", return_value=_cp1251(NNM_SINGLE)),
             patch.object(inst, "_fetch_magnet_from_topic", return_value=""),
         ):
-            result = inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&start=50")
+            result = inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&start=50")
         assert result == -1
 
     def test_missing_session_triggers_login(self):
@@ -579,7 +579,7 @@ class TestSearching:
             patch.object(inst, "login", side_effect=mock_login),
         ):
             with pytest.raises(mod.EngineError):
-                inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&f=-1", first=True)
+                inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&f=-1", first=True)
         assert len(login_called) == 1
 
     def test_empty_page_returns_zero(self):
@@ -590,13 +590,13 @@ class TestSearching:
             + NNM_EMPTY
         )
         with patch.object(inst, "_request", return_value=_cp1251(page)):
-            result = inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&f=-1", first=True)
+            result = inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&f=-1", first=True)
         assert result == 0
 
     def test_results_count_zero_returns_zero(self):
         inst, mod, cap = self._make_inst()
         with patch.object(inst, "_request", return_value=_cp1251(NNM_LOGGED_IN_PAGE_ZERO)):
-            result = inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&f=-1", first=True)
+            result = inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&f=-1", first=True)
         assert result == 0
 
     def test_first_false_returns_negative(self):
@@ -605,7 +605,7 @@ class TestSearching:
             patch.object(inst, "_request", return_value=_cp1251(NNM_SINGLE)),
             patch.object(inst, "_fetch_magnet_from_topic", return_value=""),
         ):
-            result = inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&f=-1", first=False)
+            result = inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&f=-1", first=False)
         assert result == -1
 
     def test_draw_called_for_each_page(self):
@@ -614,7 +614,7 @@ class TestSearching:
             patch.object(inst, "_request", return_value=_cp1251(NNM_LOGGED_IN_PAGE_25)),
             patch.object(inst, "_fetch_magnet_from_topic", return_value=""),
         ):
-            inst.searching("https://nnm-club.me/forum/tracker.php?nm=test&f=-1", first=True)
+            inst.searching("https://nnmclub.to/forum/tracker.php?nm=test&f=-1", first=True)
         assert len(cap) == 1
 
 
@@ -699,7 +699,7 @@ class TestSearch:
             with patch.object(inst, "searching", return_value=0) as mock_s:
                 inst.search("query", "all")
         called_url = mock_s.call_args[0][0]
-        assert called_url.startswith("https://nnm-club.me/forum/")
+        assert called_url.startswith("https://nnmclub.to/forum/")
 
     def test_search_results_emitted(self):
         inst, mod, cap = self._make_inst()
@@ -780,10 +780,10 @@ class TestDownloadTorrent:
             patch.object(inst, "_init"),
             patch.object(inst, "_request", return_value=b"torrent-file-content"),
         ):
-            inst.download_torrent("https://nnm-club.me/forum/dl.php?t=12345")
+            inst.download_torrent("https://nnmclub.to/forum/dl.php?t=12345")
         out = capsys.readouterr().out
         assert ".torrent" in out
-        assert "https://nnm-club.me/forum/dl.php?t=12345" in out
+        assert "https://nnmclub.to/forum/dl.php?t=12345" in out
 
     def test_request_error_caught_by_catch_errors(self):
         inst, mod, cap = self._make_inst()
@@ -791,7 +791,7 @@ class TestDownloadTorrent:
             patch.object(inst, "_init"),
             patch.object(inst, "_request", side_effect=mod.EngineError("blocked")),
         ):
-            inst.download_torrent("https://nnm-club.me/forum/dl.php?t=12345")
+            inst.download_torrent("https://nnmclub.to/forum/dl.php?t=12345")
         assert len(cap) == 1
         assert "[Error]" in cap[0]["name"]
         assert "blocked" in cap[0]["name"]
@@ -840,7 +840,7 @@ class TestCatchErrors:
             patch.object(inst, "_search", side_effect=mod.EngineError("auth failed")),
         ):
             inst.search("myquery", "all")
-        assert cap[0]["engine_url"] == "https://nnm-club.me/forum/"
+        assert cap[0]["engine_url"] == "https://nnmclub.to/forum/"
         assert cap[0]["size"] == "1 TB"
         assert cap[0]["seeds"] == 100
         assert cap[0]["leech"] == 100
@@ -1126,10 +1126,10 @@ class TestRequest:
         mock_response = MagicMock()
         mock_response.__enter__ = lambda s: s
         mock_response.__exit__ = MagicMock(return_value=False)
-        mock_response.geturl.return_value = "https://nnm-club.me/forum/page"
+        mock_response.geturl.return_value = "https://nnmclub.to/forum/page"
         mock_response.read.return_value = b"response data"
         with patch.object(inst.session, "open", return_value=mock_response):
-            result = inst._request("https://nnm-club.me/forum/page")
+            result = inst._request("https://nnmclub.to/forum/page")
         assert result == b"response data"
 
     def test_blocked_url_raises(self):
@@ -1156,12 +1156,12 @@ class TestRequest:
             mock_resp = MagicMock()
             mock_resp.__enter__ = lambda s: s
             mock_resp.__exit__ = MagicMock(return_value=False)
-            mock_resp.geturl.return_value = "https://nnm-club.me/forum/page"
+            mock_resp.geturl.return_value = "https://nnmclub.to/forum/page"
             mock_resp.read.return_value = b"ok"
             return mock_resp
 
         with patch.object(inst.session, "open", side_effect=side_effect):
-            result = inst._request("https://nnm-club.me/forum/page")
+            result = inst._request("https://nnmclub.to/forum/page")
         assert result == b"ok"
         assert call_count == 2
 
@@ -1171,7 +1171,7 @@ class TestRequest:
 
         with patch.object(inst.session, "open", side_effect=URLError("timed out")):
             with pytest.raises(mod.EngineError, match="timed out"):
-                inst._request("https://nnm-club.me/forum/page")
+                inst._request("https://nnmclub.to/forum/page")
 
     def test_no_host_error(self):
         inst, mod, _ = self._make_inst()
@@ -1179,7 +1179,7 @@ class TestRequest:
 
         with patch.object(inst.session, "open", side_effect=URLError("no host given")):
             with pytest.raises(mod.EngineError, match="Proxy is bad"):
-                inst._request("https://nnm-club.me/forum/page")
+                inst._request("https://nnmclub.to/forum/page")
 
     def test_http_error(self):
         inst, mod, _ = self._make_inst()
@@ -1188,7 +1188,7 @@ class TestRequest:
         err = HTTPError("url", 403, "Forbidden", {}, None)
         with patch.object(inst.session, "open", side_effect=err):
             with pytest.raises(mod.EngineError, match="status: 403"):
-                inst._request("https://nnm-club.me/forum/page")
+                inst._request("https://nnmclub.to/forum/page")
 
     def test_generic_url_error(self):
         inst, mod, _ = self._make_inst()
@@ -1196,28 +1196,28 @@ class TestRequest:
 
         with patch.object(inst.session, "open", side_effect=URLError("connection refused")):
             with pytest.raises(mod.EngineError, match="not response"):
-                inst._request("https://nnm-club.me/forum/page")
+                inst._request("https://nnmclub.to/forum/page")
 
     def test_data_passed_to_open(self):
         inst, mod, _ = self._make_inst()
         mock_response = MagicMock()
         mock_response.__enter__ = lambda s: s
         mock_response.__exit__ = MagicMock(return_value=False)
-        mock_response.geturl.return_value = "https://nnm-club.me/forum/login.php"
+        mock_response.geturl.return_value = "https://nnmclub.to/forum/login.php"
         mock_response.read.return_value = b"ok"
         with patch.object(inst.session, "open", return_value=mock_response) as mock_open:
-            inst._request("https://nnm-club.me/forum/login.php", data=b"payload")
-        mock_open.assert_called_once_with("https://nnm-club.me/forum/login.php", b"payload", 5)
+            inst._request("https://nnmclub.to/forum/login.php", data=b"payload")
+        mock_open.assert_called_once_with("https://nnmclub.to/forum/login.php", b"payload", 5)
 
     def test_bulk_url_accepted(self):
         inst, mod, _ = self._make_inst()
         mock_response = MagicMock()
         mock_response.__enter__ = lambda s: s
         mock_response.__exit__ = MagicMock(return_value=False)
-        mock_response.geturl.return_value = "https://bulk.nnm-club.me/file.torrent"
+        mock_response.geturl.return_value = "https://bulk.nnmclub.to/file.torrent"
         mock_response.read.return_value = b"torrent"
         with patch.object(inst.session, "open", return_value=mock_response):
-            result = inst._request("https://bulk.nnm-club.me/file.torrent")
+            result = inst._request("https://bulk.nnmclub.to/file.torrent")
         assert result == b"torrent"
 
     def test_repeated_flag_prevents_double_retry(self):
@@ -1226,7 +1226,7 @@ class TestRequest:
 
         with patch.object(inst.session, "open", side_effect=URLError("timed out")):
             with pytest.raises(mod.EngineError, match="timed out"):
-                inst._request("https://nnm-club.me/forum/page", repeated=True)
+                inst._request("https://nnmclub.to/forum/page", repeated=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1240,8 +1240,8 @@ class TestPrettyError:
         inst.pretty_error("myquery", "some error")
         assert len(cap) == 1
         assert "[myquery][Error]: some error" in cap[0]["name"]
-        assert cap[0]["link"] == "https://nnm-club.me/forum/error"
-        assert cap[0]["engine_url"] == "https://nnm-club.me/forum/"
+        assert cap[0]["link"] == "https://nnmclub.to/forum/error"
+        assert cap[0]["engine_url"] == "https://nnmclub.to/forum/"
 
     def test_pretty_error_size_and_seeds(self):
         inst, mod, cap = _load_nnmclub()
@@ -1287,11 +1287,11 @@ class TestClassAttributes:
 
     def test_url(self):
         inst, mod, _ = _load_nnmclub()
-        assert inst.url == "https://nnm-club.me/forum/"
+        assert inst.url == "https://nnmclub.to/forum/"
 
     def test_url_dl(self):
         inst, mod, _ = _load_nnmclub()
-        assert inst.url_dl == "https://bulk.nnm-club.me/"
+        assert inst.url_dl == "https://bulk.nnmclub.to/"
 
     def test_supported_categories_keys(self):
         inst, mod, _ = _load_nnmclub()
@@ -1325,7 +1325,7 @@ class TestSearchDrawIntegration:
             inst.search("ubuntu", "all")
         assert len(cap) == 1
         assert cap[0]["name"] == "Ubuntu 24.04 LTS"
-        assert cap[0]["engine_url"] == "https://nnm-club.me/forum/"
+        assert cap[0]["engine_url"] == "https://nnmclub.to/forum/"
 
     def test_search_with_magnet_preferred(self):
         inst, mod, cap = _load_nnmclub()

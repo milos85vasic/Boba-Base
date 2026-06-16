@@ -493,7 +493,7 @@ DEAD_PUBLIC_TRACKERS = frozenset(
 PRIVATE_TRACKERS = {
     "rutracker": "https://rutracker.org",
     "kinozal": "https://kinozal.tv",
-    "nnmclub": "https://nnm-club.me",
+    "nnmclub": "https://nnmclub.to",
     "iptorrents": "https://iptorrents.com",
 }
 
@@ -983,7 +983,7 @@ class SearchOrchestrator:
         if os.getenv("KINOZAL_USERNAME") and os.getenv("KINOZAL_PASSWORD"):
             trackers.append(TrackerSource(name="kinozal", url="https://kinozal.tv", enabled=True))
         if os.getenv("NNMCLUB_COOKIES") or (os.getenv("NNMCLUB_USERNAME") and os.getenv("NNMCLUB_PASSWORD")):
-            trackers.append(TrackerSource(name="nnmclub", url="https://nnm-club.me", enabled=True))
+            trackers.append(TrackerSource(name="nnmclub", url="https://nnmclub.to", enabled=True))
         if os.getenv("IPTORRENTS_USERNAME") and os.getenv("IPTORRENTS_PASSWORD"):
             trackers.append(TrackerSource(name="iptorrents", url="https://iptorrents.com", enabled=True))
         if os.getenv("JACKETT_API_KEY") and os.getenv("JACKETT_API_KEY") != "YOUR_API_KEY_HERE":
@@ -1457,7 +1457,7 @@ class SearchOrchestrator:
         logger = logging.getLogger(__name__)
         results = []
         cookies_raw = os.getenv("NNMCLUB_COOKIES")
-        base_url = os.getenv("NNMCLUB_MIRRORS", "https://nnm-club.me").split(",")[0].strip()
+        base_url = os.getenv("NNMCLUB_MIRRORS", "https://nnmclub.to").split(",")[0].strip()
 
         cookie_jar: dict[str, str] = {}
         if cookies_raw:

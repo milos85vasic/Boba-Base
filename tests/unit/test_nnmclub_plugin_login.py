@@ -59,7 +59,7 @@ def nnmclub_mod(tmp_path, monkeypatch):
 
 def _make_cookie(name, value):
     return Cookie(
-        0, name, value, None, False, "nnm-club.me", True, False,
+        0, name, value, None, False, "nnmclub.to", True, False,
         "/", True, False, None, False, None, None, {},
     )
 
