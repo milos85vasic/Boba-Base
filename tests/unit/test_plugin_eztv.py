@@ -397,9 +397,13 @@ class TestDoQuery:
         plugin, _ = self._make_plugin()
         with patch("eztv.retrieve_url", return_value="<html>results</html>") as mock_ru:
             result = plugin.do_query("breaking bad")
-            # self.url is 'https://eztvx.to/' so URL has double slash
+            # Reconciled per §11.4.120: EZTV uses dashes for spaces in its
+            # search path. A raw space (merge-service caller) is now encoded
+            # to '-' just like the %20 (nova2) caller, so it never reaches
+            # urllib as a control char. self.url has a trailing slash ->
+            # double slash.
             mock_ru.assert_called_once_with(
-                "https://eztvx.to//search/breaking bad",
+                "https://eztvx.to//search/breaking-bad",
                 request_data=b"layout=def_wlinks",
             )
             assert result == "<html>results</html>"

@@ -99,7 +99,10 @@ class torlock:
 
     def search(self, query: str, cat: str = 'all') -> None:
         """ Performs search """
-        query = query.replace("%20", "-")
+        # Torlock uses dashes for spaces in its path. Handle BOTH the
+        # %20-encoded (nova2) and raw-space (merge service) caller
+        # conventions so a literal space never reaches urllib.
+        query = query.replace("%20", "-").replace(" ", "-")
         category = self.supported_categories[cat]
 
         for page in range(1, 5):

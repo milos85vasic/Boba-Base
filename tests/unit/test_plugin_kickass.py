@@ -478,7 +478,10 @@ class TestSearch:
         assert captured[0]["name"] == "Bold Name"
 
     def test_search_with_special_characters(self):
-        """Plugin does not URL-encode the query; it passes through raw."""
+        """Spaces in the query are encoded to %20 so the URL is valid
+        (reconciled per §11.4.120: the plugin now encodes raw spaces — a
+        raw space crashed urllib for the merge-service caller). Other
+        special chars (+, &) pass through as before."""
         urls_seen = []
 
         def capture_url(url):
@@ -487,7 +490,8 @@ class TestSearch:
 
         plugin, captured = _load_kickass(retrieve_return=capture_url)
         plugin.search("c++ & friends")
-        assert urls_seen[0] == "https://kickasstorrents.to/search/c++ & friends/0/"
+        assert urls_seen[0] == "https://kickasstorrents.to/search/c++%20&%20friends/0/"
+        assert " " not in urls_seen[0]
 
     def test_search_exception_breaks_loop_silently(self):
         """search() catches Exception from retrieve_url and breaks the loop,

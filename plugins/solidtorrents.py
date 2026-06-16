@@ -152,6 +152,10 @@ class solidtorrents:
             + '&sort=seeders&sort=desc&page=' + str(page))
 
     def search(self, what: str, cat: str = 'all') -> None:
+        # ?q= query param: '+' encodes a space. The merge service passes a
+        # raw query with literal spaces; nova2 passes a %20-encoded one.
+        # Normalise both so a literal space never reaches urllib.
+        what = what.replace('%20', '+').replace(' ', '+')
         category = self.supported_categories[cat]
 
         for page in range(1, 5):

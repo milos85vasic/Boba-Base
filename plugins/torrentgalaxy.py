@@ -88,6 +88,10 @@ class torrentgalaxy(object):
             raise Exception("Download link not found")
 
     def search(self, what, cat="all"):
+        # The query goes into the URL path (keywords:...). The merge service
+        # passes a raw query with literal spaces; nova2 passes a %20-encoded
+        # one. Encode a raw space to %20 so it never reaches urllib.
+        what = what.replace(" ", "%20")
         cat = "" if cat == "all" else f":category:{self.supported_categories[cat]}"
         parser = self.HTMLParser(self.url)
         current_page = 1

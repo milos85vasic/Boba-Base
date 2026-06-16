@@ -86,7 +86,10 @@ class bitsearch(object):
         print(unquoted_magnet + " " + unquoted_magnet)
 
     def search(self, what: str, cat: str = "all") -> None:
-        what = what.replace("%20", "+")
+        # ?q= query param: '+' encodes a space. Handle BOTH the %20-encoded
+        # (nova2) and raw-space (merge service) caller conventions so a
+        # literal space never reaches urllib.
+        what = what.replace("%20", "+").replace(" ", "+")
         cat = "" if cat == "all" else f"&category={self.supported_categories[cat]}"
         parser = self.HTMLParser(self.url)
         current_page = 1

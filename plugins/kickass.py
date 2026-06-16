@@ -102,6 +102,10 @@ class kickass(object):
             print(url + " " + self.url)
 
     def search(self, what, cat="all"):
+        # The query goes into the URL path. The merge service passes a raw
+        # query with literal spaces; nova2 passes a %20-encoded one. Encode
+        # a raw space to %20 so it never reaches urllib (which rejects it).
+        what = what.replace(" ", "%20")
         parser = self.HTMLParser(self.url)
         category = "" if cat == "all" else "category/{0}/".format(self.supported_categories[cat])
         counter: int = 0

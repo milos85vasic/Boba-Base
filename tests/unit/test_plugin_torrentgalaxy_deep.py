@@ -427,7 +427,11 @@ class TestURLConstruction:
         ):
             instance.search("hello world")
 
-        assert "keywords:hello world" in urls_seen[0]
+        # Reconciled per §11.4.120: a raw space in the query is now encoded
+        # to %20 so the URL is valid for urllib (a raw space crashed the
+        # merge-service caller). The keyword still appears, %20-joined.
+        assert "keywords:hello%20world" in urls_seen[0]
+        assert " " not in urls_seen[0]
 
 
 # ─── download_torrent ─────────────────────────────────────────────────────────

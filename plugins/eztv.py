@@ -87,7 +87,12 @@ class eztv:
                 self.in_table_row = False
 
     def do_query(self, what: str) -> str:
-        url = f"{self.url}/search/{what.replace('%20', '-')}"
+        # EZTV uses dashes for spaces in its search path. Normalise BOTH
+        # caller conventions: nova2 passes a %20-encoded query, the merge
+        # service passes a raw query with literal spaces. Handle both so a
+        # raw space never reaches urllib (which would reject it).
+        what = what.replace('%20', '-').replace(' ', '-')
+        url = f"{self.url}/search/{what}"
         data = b"layout=def_wlinks"
         try:
             return retrieve_url(url, request_data=data)

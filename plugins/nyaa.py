@@ -186,6 +186,10 @@ class nyaa(object):
                      (e.g. "Ubuntu+Linux")
         :param cat:  the name of a search category, see supported_categories.
         """
+        # ?q= query param: '+' encodes a space. The merge service passes a
+        # raw query with literal spaces; nova2 passes one already escaped.
+        # Encode a raw space to '+' so it never reaches urllib.
+        what = what.replace(" ", "+")
         url = str("{0}/?f=0&s=seeders&o=desc&c={1}&q={2}".format(self.url, self.supported_categories.get(cat), what))
 
         hits = []
