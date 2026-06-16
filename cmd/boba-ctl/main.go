@@ -12,6 +12,7 @@ import (
 
 	"digital.vasic.containers/pkg/compose"
 	"digital.vasic.containers/pkg/logging"
+	"digital.vasic.containers/pkg/remote"
 	"digital.vasic.containers/pkg/runtime"
 	"gopkg.in/yaml.v3"
 )
@@ -25,6 +26,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  status   Show service status\n")
 		fmt.Fprintf(os.Stderr, "  health   Check service health endpoints\n")
 		fmt.Fprintf(os.Stderr, "  list     List services and profiles\n")
+		fmt.Fprintf(os.Stderr, "  deploy   Deploy + boot the System on a remote host\n")
 		os.Exit(1)
 	}
 
@@ -39,6 +41,8 @@ func main() {
 		cmdHealth()
 	case "list":
 		cmdList()
+	case "deploy":
+		cmdDeploy()
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", os.Args[1])
 		os.Exit(1)
@@ -416,4 +420,202 @@ func extractHostPort(portStr string) string {
 		return hostPart[idx+1:]
 	}
 	return hostPart
+}
+
+// deployHostsFile is the relative path (from project root) of the remote
+// deploy host registry consumed by `boba-ctl deploy`.
+const deployHostsFile = "deploy/hosts.yaml"
+
+// deployHost is the per-host shape parsed from deploy/hosts.yaml. It mirrors
+// the containers submodule's remote.RemoteHost field set plus the deploy-only
+// fields (remote_path / compose_file / profile) that the SSH-driven boot needs.
+// §11.4.10: no credential VALUES live here — only KeyPath points at a local
+// private key; the per-host .env is transferred out-of-band by the operator.
+type deployHost struct {
+	Name        string `yaml:"name"`
+	Address     string `yaml:"address"`
+	Port        int    `yaml:"port"`
+	User        string `yaml:"user"`
+	Auth        string `yaml:"auth"`
+	KeyPath     string `yaml:"key_path"`
+	Runtime     string `yaml:"runtime"`
+	RemotePath  string `yaml:"remote_path"`
+	ComposeFile string `yaml:"compose_file"`
+	Profile     string `yaml:"profile"`
+}
+
+// deployHostsConfig is the top-level deploy/hosts.yaml document.
+type deployHostsConfig struct {
+	SchemaVersion int          `yaml:"schema_version"`
+	Hosts         []deployHost `yaml:"hosts"`
+}
+
+// parseDeployHosts reads + unmarshals the deploy host registry from path.
+func parseDeployHosts(path string) (*deployHostsConfig, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+	var cfg deployHostsConfig
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parse %s: %w", path, err)
+	}
+	return &cfg, nil
+}
+
+// findDeployHost returns the named host block, or an error naming the
+// available hosts when not found.
+func findDeployHost(cfg *deployHostsConfig, name string) (*deployHost, error) {
+	for i := range cfg.Hosts {
+		if cfg.Hosts[i].Name == name {
+			return &cfg.Hosts[i], nil
+		}
+	}
+	names := make([]string, 0, len(cfg.Hosts))
+	for i := range cfg.Hosts {
+		names = append(names, cfg.Hosts[i].Name)
+	}
+	return nil, fmt.Errorf("host %q not found in registry (available: %s)", name, strings.Join(names, ", "))
+}
+
+// expandHome resolves a leading "~/" to the caller's home directory so a
+// key_path like "~/.ssh/id_ed25519" works when handed to ssh -i.
+func expandHome(p string) string {
+	if p == "~" || strings.HasPrefix(p, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			if p == "~" {
+				return home
+			}
+			return filepath.Join(home, p[2:])
+		}
+	}
+	return p
+}
+
+// authMethod maps the hosts.yaml `auth` field onto the containers submodule's
+// remote.AuthMethod closed set. "key" is the deploy registry's shorthand for
+// SSH-key auth (the submodule const is "ssh_key").
+func authMethod(s string) remote.AuthMethod {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "key", "ssh_key", "ssh-key":
+		return remote.AuthSSHKey
+	case "agent", "ssh_agent", "ssh-agent":
+		return remote.AuthSSHAgent
+	case "password":
+		return remote.AuthPassword
+	default:
+		return remote.AuthSSHKey
+	}
+}
+
+// toRemoteHost converts a parsed deployHost into the containers submodule's
+// remote.RemoteHost (§11.4.76 — the SSH executor + remote compose orchestrator
+// consume this type; we do NOT shell out to ssh ourselves).
+func (h *deployHost) toRemoteHost() remote.RemoteHost {
+	return remote.RemoteHost{
+		Name:    h.Name,
+		Address: h.Address,
+		Port:    h.Port,
+		User:    h.User,
+		KeyPath: expandHome(h.KeyPath),
+		Auth:    authMethod(h.Auth),
+		Runtime: h.Runtime,
+	}
+}
+
+func cmdDeploy() {
+	fs := flag.NewFlagSet("deploy", flag.ExitOnError)
+	profile := fs.String("profile", "", "compose profile to use on the remote host (e.g. go)")
+	fs.Parse(os.Args[2:])
+
+	if fs.NArg() < 1 {
+		fmt.Fprintf(os.Stderr, "Usage: boba-ctl deploy <host-name> [--profile go]\n")
+		os.Exit(1)
+	}
+	hostName := fs.Arg(0)
+
+	hostsPath := filepath.Join(projectRoot(), deployHostsFile)
+	cfg, err := parseDeployHosts(hostsPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	dh, err := findDeployHost(cfg, hostName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Profile precedence: --profile flag overrides the host's registry default.
+	profileToUse := dh.Profile
+	if *profile != "" {
+		profileToUse = *profile
+	}
+	composeFile := dh.ComposeFile
+	if composeFile == "" {
+		composeFile = "docker-compose.yml"
+	}
+
+	host := dh.toRemoteHost()
+	logger := logging.NewStdLogger("boba-ctl-deploy")
+
+	// §11.4.76: drive the remote boot through the containers submodule's
+	// SSH executor + remote compose orchestrator — never a hand-rolled ssh.
+	executor, err := remote.NewSSHExecutor(logger,
+		remote.WithConnectTimeout(10*time.Second),
+		remote.WithCommandTimeout(30*time.Minute),
+		remote.WithKeepAlive(30*time.Second),
+		remote.WithKeepAliveCountMax(10),
+	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: create SSH executor: %v\n", err)
+		os.Exit(1)
+	}
+	defer executor.Close()
+
+	ctx := context.Background()
+	fmt.Printf("Deploying to %s (%s@%s:%s) profile=%q\n",
+		host.Name, host.User, host.Address, dh.RemotePath, profileToUse)
+
+	if !executor.IsReachable(ctx, host) {
+		fmt.Fprintf(os.Stderr, "Error: host %s is not reachable over SSH (%s@%s)\n",
+			host.Name, host.User, host.Address)
+		os.Exit(1)
+	}
+	fmt.Printf("  [1/3] SSH reachable\n")
+
+	orch := remote.NewRemoteComposeOrchestrator(host, executor, logger)
+	project := compose.ComposeProject{
+		Name:    "boba",
+		File:    filepath.Join(dh.RemotePath, composeFile),
+		Profile: profileToUse,
+	}
+
+	// remote.RemoteComposeOrchestrator.Up runs the compose `up -d` on the
+	// remote host via the SSH executor, auto-detecting podman-compose first
+	// (matches the host's preinstalled podman-compose 1.5.0).
+	if err := orch.Up(ctx, project); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: remote compose up on %s: %v\n", host.Name, err)
+		os.Exit(1)
+	}
+	fmt.Printf("  [2/3] compose up -d (project=boba) issued on %s\n", host.Name)
+
+	// Health: query remote service status through the same orchestrator.
+	statuses, err := orch.Status(ctx, project)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: remote status on %s: %v\n", host.Name, err)
+		os.Exit(1)
+	}
+	fmt.Printf("  [3/3] remote service status:\n")
+	if len(statuses) == 0 {
+		fmt.Println("        (no services reported)")
+	}
+	for _, s := range statuses {
+		health := s.Health
+		if health == "" {
+			health = "-"
+		}
+		fmt.Printf("        %-25s %-12s %s\n", s.Name, s.State, health)
+	}
+	fmt.Printf("Deploy to %s complete.\n", host.Name)
 }
