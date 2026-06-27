@@ -54,18 +54,15 @@ func TestSearchHandler_QueueFull(t *testing.T) {
 	r := gin.New()
 	r.POST("/api/v1/search", SearchHandler(svc))
 
-	body, _ := json.Marshal(models.SearchRequest{Query: "q1", Category: "all"})
+	// Pre-fill the single slot so the handler sees a full queue.
+	svc.StartSearch("q1", "all", false, false)
+
+	body, _ := json.Marshal(models.SearchRequest{Query: "q2", Category: "all"})
 	req, _ := http.NewRequest("POST", "/api/v1/search", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	w2 := httptest.NewRecorder()
-	req2, _ := http.NewRequest("POST", "/api/v1/search", bytes.NewReader(body))
-	req2.Header.Set("Content-Type", "application/json")
-	r.ServeHTTP(w2, req2)
-	assert.Equal(t, http.StatusTooManyRequests, w2.Code)
+	assert.Equal(t, http.StatusTooManyRequests, w.Code)
 }
 
 func TestGetSearchHandler_NotFound(t *testing.T) {

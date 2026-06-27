@@ -99,6 +99,24 @@ func generateID() string {
 }
 
 func (s *MergeSearchService) StartSearch(query, category string, enableMetadata, validateTrackers bool) *SearchMetadata {
+	meta, _ := s.TryStartSearch(query, category, enableMetadata, validateTrackers)
+	return meta
+}
+
+func (s *MergeSearchService) TryStartSearch(query, category string, enableMetadata, validateTrackers bool) (*SearchMetadata, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	running := 0
+	for _, meta := range s.activeSearches {
+		if meta.Status == "pending" || meta.Status == "running" {
+			running++
+		}
+	}
+	if running >= s.maxConcurrentSearches {
+		return nil, false
+	}
+
 	meta := &SearchMetadata{
 		SearchID:         generateID(),
 		Query:            query,
@@ -112,12 +130,9 @@ func (s *MergeSearchService) StartSearch(query, category string, enableMetadata,
 		ValidateTrackers: validateTrackers,
 	}
 
-	s.mu.Lock()
 	s.activeSearches[meta.SearchID] = meta
 	s.trackerResults[meta.SearchID] = []models.TorrentResult{}
-	s.mu.Unlock()
-
-	return meta
+	return meta, true
 }
 
 // GetSearchStatus returns the metadata for searchID. The comma-ok return makes

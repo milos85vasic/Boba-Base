@@ -19,14 +19,13 @@ func SearchHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 			return
 		}
 
-		if svc.IsSearchQueueFull() {
+		meta, ok := svc.TryStartSearch(req.Query, req.Category, req.EnableMetadata, req.ValidateTrackers)
+		if !ok {
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error": "merge service has reached MAX_CONCURRENT_SEARCHES; retry shortly",
 			})
 			return
 		}
-
-		meta := svc.StartSearch(req.Query, req.Category, req.EnableMetadata, req.ValidateTrackers)
 
 		searchID, query, category := meta.SearchID, meta.Query, req.Category
 		go func() {
@@ -55,14 +54,13 @@ func SearchSyncHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 			return
 		}
 
-		if svc.IsSearchQueueFull() {
+		meta, ok := svc.TryStartSearch(req.Query, req.Category, req.EnableMetadata, req.ValidateTrackers)
+		if !ok {
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error": "merge service has reached MAX_CONCURRENT_SEARCHES; retry shortly",
 			})
 			return
 		}
-
-		meta := svc.StartSearch(req.Query, req.Category, req.EnableMetadata, req.ValidateTrackers)
 		meta.Status = "running"
 
 		ctx := c.Request.Context()
