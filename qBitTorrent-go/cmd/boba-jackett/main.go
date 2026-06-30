@@ -73,6 +73,11 @@ func run() error {
 	envPath := env("BOBA_ENV_PATH", defaultEnvPath)
 	jackettURL := env("JACKETT_URL", "http://localhost:9117")
 	jackettAPIKey := env("JACKETT_API_KEY", "")
+	// §6.R: the dashboard admin password is injected at runtime, never a
+	// literal. Default empty = the out-of-the-box Jackett install. Used only
+	// for the cookie-session login the MANAGEMENT API requires when the
+	// dashboard is password protected (the Torznab feeds use the apikey).
+	jackettAdminPassword := env("JACKETT_ADMIN_PASSWORD", "")
 	port := env("PORT", defaultPort)
 
 	// 1) Master-key bootstrap. EnsureMasterKey requires .env to exist;
@@ -104,7 +109,7 @@ func run() error {
 	catalogRepo := repos.NewCatalog(conn)
 	runsRepo := repos.NewRuns(conn)
 	overridesRepo := repos.NewOverrides(conn)
-	jClient := jackett.NewClient(jackettURL, jackettAPIKey)
+	jClient := jackett.NewClientWithPassword(jackettURL, jackettAPIKey, jackettAdminPassword)
 
 	// 4) Redactor — wrap stderr, then preload with current credential
 	// plaintexts so any accidental log of those values is masked. Set
@@ -138,6 +143,9 @@ func run() error {
 	// contain nulls and are never serialized to text, so we deliberately
 	// do NOT register them as a secret (would be a no-op anyway).
 	redactor.AddSecret(jackettAPIKey)
+	// §6.H: the dashboard admin password is a secret — register it so an
+	// accidental log never surfaces it. AddSecret no-ops on the empty default.
+	redactor.AddSecret(jackettAdminPassword)
 
 	// 5) First-pass autoconfig (synchronous, errors non-fatal). The
 	// orchestrator is idempotent so a re-trigger after a creds upsert

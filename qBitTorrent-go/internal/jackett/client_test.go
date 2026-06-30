@@ -7,23 +7,15 @@ import (
 	"testing"
 )
 
+// TestSessionWarmupAndCatalog exercises the explicit-WarmUp-then-browse flow
+// against the behaviorally-equivalent fake (see newPasswordProtectedJackett in
+// cookie_login_test.go): un-warmed management 302s to /UI/Login, the dashboard
+// login establishes the session cookie, and the warmed GetCatalog then
+// succeeds. (Previously this used a bluff-fake that returned 401 — not 302 —
+// for un-warmed management and accepted the catalog on a server-side bool
+// rather than the actual session cookie round-trip.)
 func TestSessionWarmupAndCatalog(t *testing.T) {
-	warmedUp := false
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.Method == "POST" && r.URL.Path == "/UI/Dashboard":
-			http.SetCookie(w, &http.Cookie{Name: "Jackett", Value: "session"})
-			warmedUp = true
-			w.WriteHeader(302)
-		case r.URL.Path == "/api/v2.0/indexers":
-			if !warmedUp {
-				w.WriteHeader(401)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`[{"id":"rutracker","name":"RuTracker.org","type":"private","configured":false}]`))
-		}
-	}))
+	srv := newPasswordProtectedJackett(t, "")
 	defer srv.Close()
 	c := NewClient(srv.URL, "test-key")
 	if err := c.WarmUp(); err != nil {
