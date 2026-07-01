@@ -11,6 +11,13 @@ services:
       - WEBUI_PASSWORD=admin
       - RUTRACKER_USERNAME=${RUTRACKER_USERNAME}
       - RUTRACKER_PASSWORD=${RUTRACKER_PASSWORD}
+      # Configurable outbound proxy for tracker-bound egress (qBittorrent's own
+      # nova3 search subprocesses use urllib, which honors these natively).
+      - BOBA_UPSTREAM_PROXY=${BOBA_UPSTREAM_PROXY:-}
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - ALL_PROXY=${ALL_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-127.0.0.1,localhost,qbittorrent,jackett,flaresolverr}
     volumes:
       - ./config:/config
       - ${QBITTORRENT_DATA_DIR:-/mnt/DATA}:/downloads
@@ -85,6 +92,13 @@ services:
       - LOG_LEVEL=INFO
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:7187,http://127.0.0.1:7187,http://localhost:4200,http://127.0.0.1:4200}
       - JACKETT_API_KEY=${JACKETT_API_KEY:-}
+      # Configurable outbound proxy for tracker-bound egress (internal/httpx).
+      # Loopback + sidecar (qbittorrent, jackett) hosts are bypassed via NO_PROXY.
+      - BOBA_UPSTREAM_PROXY=${BOBA_UPSTREAM_PROXY:-}
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - ALL_PROXY=${ALL_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-127.0.0.1,localhost,qbittorrent,jackett,flaresolverr}
     volumes:
       - ./config:/config
       - ./config/jackett:/jackett-config:ro
@@ -137,6 +151,14 @@ services:
       - ENABLE_DEAD_TRACKERS=${ENABLE_DEAD_TRACKERS:-0}
       - JACKETT_API_KEY=${JACKETT_API_KEY:-}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:7187,http://127.0.0.1:7187,http://localhost:4200,http://127.0.0.1:4200}
+      # Configurable outbound proxy for tracker-bound egress (config/proxy.py:
+      # apply_proxy_env maps BOBA_UPSTREAM_PROXY → HTTP(S)_PROXY/NO_PROXY for the
+      # urllib plugin subprocesses + trust_env aiohttp tracker sessions).
+      - BOBA_UPSTREAM_PROXY=${BOBA_UPSTREAM_PROXY:-}
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - ALL_PROXY=${ALL_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-127.0.0.1,localhost,qbittorrent,jackett,flaresolverr}
     volumes:
       - ./config:/config
       - ./config/jackett:/jackett-config:ro

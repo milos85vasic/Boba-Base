@@ -13,6 +13,35 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+# Opt-in DURABLE execution (§5 / pkg/remoteexec): when BOBA_DURABLE=1, re-exec
+# this aggregator as a transient systemd --user unit so a long run survives the
+# SSH/login session ending (logind would otherwise reap it). Default behavior is
+# unchanged when BOBA_DURABLE is unset. The mechanism is the shared containers
+# helper — single-sourced, not copy-pasted per repo.
+DURABLE_LIB="${PROJECT_ROOT}/submodules/containers/scripts/lib/durable-run.sh"
+if [[ "${BOBA_DURABLE:-0}" == "1" && "${BOBA_DURABLE_CHILD:-0}" != "1" ]]; then
+  if [[ ! -f "$DURABLE_LIB" ]]; then
+    echo "BOBA_DURABLE=1 but durable helper not found at $DURABLE_LIB" >&2; exit 2
+  fi
+  # shellcheck source=/dev/null
+  source "$DURABLE_LIB"
+  UNIT="${BOBA_DURABLE_UNIT:-boba-challenges-$(date +%s)}"
+  # Absolute self-path: the systemd --user unit runs with a different CWD, so a
+  # relative ${BASH_SOURCE[0]} would not resolve.
+  SELF="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
+  durable_launch_cmd "$UNIT" "BOBA_DURABLE_CHILD=1 bash ${SELF@Q} $*"
+  echo "[durable] challenge run launched as user unit: ${UNIT}"
+  if [[ "${BOBA_DURABLE_WAIT:-1}" == "1" ]]; then
+    rc="$(durable_wait_sentinel "$UNIT" "${BOBA_DURABLE_TIMEOUT:-3600}")" || {
+      echo "[durable] timed out waiting for ${UNIT}" >&2; exit 1; }
+    durable_fetch_log "$UNIT"
+    durable_stop "$UNIT"
+    exit "$rc"
+  fi
+  echo "[durable] detached; tail with: systemctl --user status ${UNIT}"
+  exit 0
+fi
+
 # Source anti-bluff helpers if available
 if [[ -f "${PROJECT_ROOT}/submodules/challenges/lib/anti_bluff.sh" ]]; then
   source "${PROJECT_ROOT}/submodules/challenges/lib/anti_bluff.sh"

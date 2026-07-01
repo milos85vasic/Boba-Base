@@ -56,6 +56,29 @@ scp -o BatchMode=yes .env "${USER}@${ADDR}:${RPATH}/.env"
 $SSH "cd '$RPATH' && chmod 600 .env && mkdir -p '$RPATH/tmp' \$HOME/boba-downloads && \
   sed -i 's#^QBITTORRENT_DATA_DIR=.*#QBITTORRENT_DATA_DIR='\"\$HOME\"'/boba-downloads#' .env"
 
+# Opt-in DURABLE remote execution (§5 / pkg/remoteexec): when BOBA_DURABLE=1,
+# the heavy install + compose-up steps run as a transient systemd --user unit ON
+# THE REMOTE HOST, so they survive this SSH session ending (logind would
+# otherwise reap them mid-deploy). Default behavior (BOBA_DURABLE unset) is the
+# original inline steps below, unchanged.
+DURABLE_LIB="${REPO_ROOT}/submodules/containers/scripts/lib/durable-run.sh"
+if [[ "${BOBA_DURABLE:-0}" == "1" ]]; then
+  [[ -f "$DURABLE_LIB" ]] || { echo "BOBA_DURABLE=1 but $DURABLE_LIB missing"; exit 2; }
+  echo "[3-4/5] DURABLE install + podman-compose up on remote (survives SSH drop)"
+  scp -o BatchMode=yes "$DURABLE_LIB" "${USER}@${ADDR}:${RPATH}/.durable-run.sh"
+  PROF=(); [[ -n "$PROFILE" ]] && PROF=(--profile "$PROFILE")
+  UNIT="boba-deploy-$(date +%s)"
+  $SSH "source '$RPATH/.durable-run.sh'; durable_launch_cmd '$UNIT' \"cd '$RPATH' && chmod +x install-plugin.sh && ./install-plugin.sh --all && podman-compose -f docker-compose.yml --project-name boba ${PROF[*]} up -d\""
+  echo "[deploy-remote] launched durable unit $UNIT on remote; waiting for completion"
+  rc="$($SSH "source '$RPATH/.durable-run.sh'; durable_wait_sentinel '$UNIT' ${BOBA_DURABLE_TIMEOUT:-1800}")" || {
+    echo "[deploy-remote] durable deploy timed out"; exit 1; }
+  $SSH "source '$RPATH/.durable-run.sh'; durable_fetch_log '$UNIT'; durable_stop '$UNIT'"
+  echo "[5/5] health"
+  $SSH "cd '$RPATH' && podman ps --format '{{.Names}}\t{{.Status}}' | grep -iE 'qbittorrent|jackett|download-proxy|boba'"
+  echo "[deploy-remote] done (durable) — ports inside host: 7186/7187/7189/9117"
+  exit "$rc"
+fi
+
 echo "[3/5] install curated plugins"
 # Install ALL managed plugins that have plugins/ source (install-plugin.sh skips
 # any source-less orphan engine names gracefully). Self-maintaining: every
