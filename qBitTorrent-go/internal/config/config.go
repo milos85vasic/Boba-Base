@@ -38,6 +38,13 @@ type Config struct {
 	MergeServicePort          int
 	QBittorrentDataDir      string
 	DisableThemeInjection    bool
+
+	// UpstreamProxy is the single configurable outbound proxy for
+	// tracker-bound egress (BOBA_UPSTREAM_PROXY: socks5:// | http:// |
+	// https://). Empty falls back to the standard HTTP_PROXY / HTTPS_PROXY /
+	// ALL_PROXY / NO_PROXY env vars. Loopback + sidecar (qbittorrent, jackett)
+	// hosts are always bypassed — see internal/httpx.
+	UpstreamProxy string
 }
 
 func Load() *Config {
@@ -73,6 +80,8 @@ func Load() *Config {
 		MergeServicePort:       getEnvAsInt("MERGE_SERVICE_PORT", 7187),
 		QBittorrentDataDir:   getEnv("QBITTORRENT_DATA_DIR", "/mnt/DATA"),
 		DisableThemeInjection: getEnv("DISABLE_THEME_INJECTION", "") == "1",
+
+		UpstreamProxy: getEnv("BOBA_UPSTREAM_PROXY", ""),
 	}
 }
 

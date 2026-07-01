@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/milos85vasic/qBitTorrent-go/internal/httpx"
 	"github.com/milos85vasic/qBitTorrent-go/internal/models"
 	"github.com/milos85vasic/qBitTorrent-go/internal/service"
 )
@@ -56,7 +57,12 @@ func DownloadFileHandler(svc *service.MergeSearchService) gin.HandlerFunc {
 				return
 			}
 
-			client := &http.Client{Timeout: 30 * time.Second}
+			// Tracker-bound fetch: u is an arbitrary upstream tracker URL
+			// (e.g. https://rutracker.org/forum/dl.php?t=...). Route it through
+			// the configured outbound proxy (BOBA_UPSTREAM_PROXY / *_PROXY) so a
+			// blocked egress IP can be worked around; loopback + sidecar hosts
+			// are bypassed inside httpx. See internal/httpx/proxy.go.
+			client := &http.Client{Timeout: 30 * time.Second, Transport: httpx.NewTransport()}
 			resp, err := client.Get(u)
 			if err != nil {
 				continue

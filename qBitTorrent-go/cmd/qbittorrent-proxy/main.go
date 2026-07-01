@@ -10,6 +10,7 @@ import (
 	"github.com/milos85vasic/qBitTorrent-go/internal/api"
 	"github.com/milos85vasic/qBitTorrent-go/internal/client"
 	"github.com/milos85vasic/qBitTorrent-go/internal/config"
+	"github.com/milos85vasic/qBitTorrent-go/internal/httpx"
 	"github.com/milos85vasic/qBitTorrent-go/internal/middleware"
 	"github.com/milos85vasic/qBitTorrent-go/internal/service"
 	"github.com/rs/zerolog"
@@ -21,6 +22,16 @@ func main() {
 
 	zerolog.SetGlobalLevel(parseLogLevel(cfg.LogLevel))
 	log.Info().Str("port", fmt.Sprintf("%d", cfg.ServerPort)).Msg("starting merge search service")
+
+	// Install the configurable outbound proxy for tracker-bound egress before
+	// any tracker-bound client is constructed. Fail-fast on a malformed value
+	// so a typo in BOBA_UPSTREAM_PROXY is loud, never silently ignored.
+	if err := httpx.Configure(cfg.UpstreamProxy); err != nil {
+		log.Fatal().Err(err).Msg("invalid BOBA_UPSTREAM_PROXY")
+	}
+	if cfg.UpstreamProxy != "" {
+		log.Info().Str("proxy", cfg.UpstreamProxy).Msg("tracker-bound egress routed through upstream proxy")
+	}
 
 	var qbitClient *client.Client
 	qc, err := client.NewClient(cfg.QBittorrentURL(), cfg.QBittorrentUsername, cfg.QBittorrentPassword)
