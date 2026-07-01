@@ -16,6 +16,27 @@ from cachetools import TTLCache
 
 from .retry import retry_policy
 
+# Configurable outbound proxy for tracker-bound egress (BOBA_UPSTREAM_PROXY /
+# *_PROXY). `apply_proxy_env()` maps the knob onto HTTP(S)_PROXY/NO_PROXY (the
+# public-tracker urllib subprocesses honor it natively); `_tracker_session_kwargs()`
+# returns {"trust_env": True} so the private-tracker aiohttp sessions honor the
+# same env with the loopback/sidecar NO_PROXY bypass. The guarded fallback keeps
+# search.py importable in embedded contexts where `config` is not on sys.path;
+# the container path always resolves the real module (see config/proxy.py).
+try:
+    from config.proxy import (
+        aiohttp_session_kwargs as _tracker_session_kwargs,
+    )
+    from config.proxy import (
+        apply_proxy_env as _apply_proxy_env,
+    )
+except Exception:  # pragma: no cover - config package not importable in some embeds
+    def _tracker_session_kwargs() -> dict:  # type: ignore[misc]
+        return {}
+
+    def _apply_proxy_env() -> None:  # type: ignore[misc]
+        return None
+
 _TRACKER_NAME_RE = _re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
@@ -665,6 +686,12 @@ class SearchOrchestrator:
                     except Exception as e:
                         logger.debug(f"Could not load env from {path}: {e}")
 
+        # Map BOBA_UPSTREAM_PROXY onto HTTP(S)_PROXY/NO_PROXY (idempotent) so the
+        # public-tracker nova3 plugin subprocesses — which inherit os.environ and
+        # fetch via urllib — egress through the configured proxy with the
+        # loopback/sidecar bypass. Runs before every search fan-out.
+        _apply_proxy_env()
+
     def is_search_queue_full(self) -> bool:
         """True when the number of in-flight `_run_search` tasks is at
         or above ``MAX_CONCURRENT_SEARCHES``.
@@ -1242,7 +1269,7 @@ class SearchOrchestrator:
                 search_url = f"{base_url}/forum/tracker.php?{urlencode({'nm': query, 'fo': 1})}"
                 timeout = aiohttp.ClientTimeout(total=15)
                 async with (
-                    aiohttp.ClientSession(timeout=timeout) as session,
+                    aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session,
                     session.get(search_url, cookies=cookie_dict) as resp,
                 ):
                     html_content = await resp.text()
@@ -1270,7 +1297,7 @@ class SearchOrchestrator:
             search_url = f"{base_url}/forum/tracker.php?{urlencode({'nm': query, 'fo': 1})}"
 
             timeout = aiohttp.ClientTimeout(total=15)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
                 async with session.post(
                     f"{base_url}/forum/login.php",
                     data={
@@ -1431,7 +1458,7 @@ class SearchOrchestrator:
         try:
             base_url = os.getenv("KINOZAL_MIRRORS", "https://kinozal.tv").split(",")[0].strip()
             timeout = aiohttp.ClientTimeout(total=15)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
                 login_data = urlencode({"username": username, "password": password}, encoding="cp1251")
                 async with session.post(
                     f"{base_url}/takelogin.php",
@@ -1550,7 +1577,7 @@ class SearchOrchestrator:
 
         try:
             timeout = aiohttp.ClientTimeout(total=15)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
                 async with session.get(
                     f"{base_url}/forum/tracker.php?{urlencode({'nm': query, 'f': '-1'})}",
                     cookies=cookie_jar,
@@ -1591,7 +1618,7 @@ class SearchOrchestrator:
 
         try:
             timeout = aiohttp.ClientTimeout(total=15)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
                 async with session.post(
                     f"{base_url}/forum/login.php",
                     data={
@@ -1694,7 +1721,7 @@ class SearchOrchestrator:
         }
         try:
             timeout = aiohttp.ClientTimeout(total=15)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
                 async with session.post(
                     f"{base_url}/do-login.php",
                     data={"username": username, "password": password},
@@ -1824,7 +1851,7 @@ class SearchOrchestrator:
 
         try:
             timeout = aiohttp.ClientTimeout(total=30)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
                 headers = {"Referer": base_url}
                 async with session.get(url, cookies=cookies, headers=headers, allow_redirects=True) as resp:
                     if resp.status != 200:

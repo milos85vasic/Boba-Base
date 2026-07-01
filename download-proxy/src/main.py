@@ -85,6 +85,21 @@ def main() -> None:
     logger.info("Боба Search Service Starting")
     logger.info("=" * 60)
 
+    # Map BOBA_UPSTREAM_PROXY → HTTP(S)_PROXY/NO_PROXY before any worker thread
+    # starts, so tracker-bound urllib + aiohttp egress honors the configured
+    # outbound proxy with the loopback/sidecar bypass. No-op when unset.
+    try:
+        src_dir = os.path.dirname(os.path.abspath(__file__))
+        if src_dir not in sys.path:
+            sys.path.insert(0, src_dir)
+        from config.proxy import apply_proxy_env, upstream_proxy
+
+        apply_proxy_env()
+        if upstream_proxy():
+            logger.info("Tracker-bound egress routed through upstream proxy (BOBA_UPSTREAM_PROXY/*_PROXY)")
+    except Exception as e:  # pragma: no cover - never block startup on proxy setup
+        logger.warning(f"Upstream proxy setup skipped: {e}")
+
     proxy_thread = threading.Thread(target=start_original_proxy, daemon=True)
     fastapi_thread = threading.Thread(target=start_fastapi_server, daemon=True)
 
