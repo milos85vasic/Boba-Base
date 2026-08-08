@@ -106,7 +106,9 @@ async def get_schedule(schedule_id: str, req: Request):  # type: ignore[no-untyp
 
 
 @router.patch("/{schedule_id}")
-async def update_schedule(schedule_id: str, request: ScheduleUpdateRequest, req: Request):  # type: ignore[no-untyped-def]
+async def update_schedule(
+    schedule_id: str, request: ScheduleUpdateRequest, req: Request, _: None = Depends(require_api_token)
+):  # type: ignore[no-untyped-def]
     scheduler = _get_scheduler(req)
     search = scheduler.get_scheduled_search(schedule_id)
     if not search:

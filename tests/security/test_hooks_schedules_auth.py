@@ -77,6 +77,16 @@ def _make_scheduler():
     created.next_run = None
     sched.add_scheduled_search.return_value = created
 
+    # GA-11: a JSON-serializable double for get_scheduled_search, so
+    # PATCH /schedules/{id}'s `{"id": search.id, "name": search.name,
+    # "enabled": search.enabled}` response body encodes cleanly instead of
+    # crashing on an un-serialized nested MagicMock.
+    found = MagicMock()
+    found.id = "sched-1"
+    found.name = "nightly"
+    found.enabled = True
+    sched.get_scheduled_search.return_value = found
+
     async def _save():
         return None
 
@@ -88,12 +98,16 @@ def _make_scheduler():
 @pytest.fixture
 def client_factory(tmp_path, monkeypatch):
     """Build a TestClient with: HOOKS_FILE redirected to tmp, BOBA_HOOKS_DIR set
-    to a real tmp allowlist dir, and app.state.scheduler swapped for a double so
-    schedule routes never touch a live scheduler loop."""
+    to a real tmp allowlist dir, THEME_STATE_PATH redirected to tmp (the real
+    default `/config/merge-service/theme.json` is not writable outside a
+    container and would crash `PUT /theme` with an unrelated PermissionError,
+    masking the auth-gate signal), and app.state.scheduler swapped for a
+    double so schedule routes never touch a live scheduler loop."""
     created_clients = []
     hooks_dir = tmp_path / "hooks"
     hooks_dir.mkdir()
     monkeypatch.setenv("BOBA_HOOKS_DIR", str(hooks_dir))
+    monkeypatch.setenv("THEME_STATE_PATH", str(tmp_path / "theme.json"))
 
     def _build():
         _purge_api_module()
@@ -192,11 +206,24 @@ def _delete_schedule(c, headers, _hooks_dir):
     return c.delete("/api/v1/schedules/some-id", headers=headers)
 
 
+def _patch_schedule(c, headers, _hooks_dir):
+    return c.patch("/api/v1/schedules/some-id", json={"enabled": False}, headers=headers)
+
+
+def _put_theme(c, headers, _hooks_dir):
+    return c.put("/api/v1/theme", json={"paletteId": "darcula", "mode": "dark"}, headers=headers)
+
+
 _MUTATING = [
     ("POST /api/v1/hooks", _post_hook),
     ("DELETE /api/v1/hooks/{id}", _delete_hook),
     ("POST /api/v1/schedules", _post_schedule),
     ("DELETE /api/v1/schedules/{id}", _delete_schedule),
+    # GA-11 (docs/GOVERNANCE_AUDIT_2026-08-07.md): RW-02's original _MUTATING
+    # enumeration never included these two — the fix and its test were scoped
+    # incompletely together, leaving both routes open even with a token set.
+    ("PATCH /api/v1/schedules/{id}", _patch_schedule),
+    ("PUT /api/v1/theme", _put_theme),
 ]
 
 

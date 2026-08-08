@@ -59,6 +59,44 @@ def _get_orchestrator(request: Request) -> Any:
     return SearchOrchestrator()
 
 
+def require_api_token(request: Request) -> None:
+    """Optional, env-gated shared-secret gate for the download-WRITE endpoints.
+
+    Read the token from the environment AT REQUEST TIME (not import time) so
+    operators can toggle it without restarting and so tests can monkeypatch
+    ``BOBA_API_TOKEN``.
+
+    * ``BOBA_API_TOKEN`` unset/empty -> return (OPEN). This is the DEFAULT and
+      preserves the current no-auth contract + dev workflow (§11.4.122).
+    * ``BOBA_API_TOKEN`` set -> the request MUST present a MATCHING token in
+      either ``Authorization: Bearer <token>`` OR ``X-Boba-Token: <token>``.
+      Comparison is constant-time (``hmac.compare_digest``). Missing/mismatch
+      -> ``401``.
+
+    §11.4.10: the token value and the supplied header value are NEVER logged.
+
+    Defined here (near the top of the module, before ``ThemeUpdate``/
+    ``put_theme``) rather than further down: a route's ``Depends(...)``
+    default-argument expression is evaluated at function-DEFINITION time
+    (module load), so every route using this dependency must be defined
+    AFTER this function — GA-11's ``PUT /theme`` fix is the first route
+    above the old definition site to need it, which is what moved this here.
+    """
+    token = os.getenv("BOBA_API_TOKEN", "").strip()
+    if not token:
+        return  # OPEN — default, no-auth contract preserved.
+
+    supplied = ""
+    auth = request.headers.get("authorization", "")
+    if auth.lower().startswith("bearer "):
+        supplied = auth[7:].strip()
+    if not supplied:
+        supplied = request.headers.get("x-boba-token", "").strip()
+
+    if not supplied or not hmac.compare_digest(supplied, token):
+        raise HTTPException(status_code=401, detail="Unauthorized: valid API token required")
+
+
 class ThemeUpdate(BaseModel):
     """Body for ``PUT /api/v1/theme``.
 
@@ -80,7 +118,7 @@ def get_theme():  # type: ignore[no-untyped-def]
 
 
 @router.put("/theme")
-def put_theme(body: ThemeUpdate):  # type: ignore[no-untyped-def]
+def put_theme(body: ThemeUpdate, _: None = Depends(require_api_token)):  # type: ignore[no-untyped-def]
     """Persist the user's palette + mode choice and fan out to subscribers."""
     try:
         return theme_state.get_store().put(body.paletteId, body.mode).to_dict()
@@ -955,37 +993,6 @@ def _is_tracker_url(url: str) -> str | None:
     except Exception as e:
         logger.debug(f"Could not identify tracker from URL: {e}")
     return None
-
-
-def require_api_token(request: Request) -> None:
-    """Optional, env-gated shared-secret gate for the download-WRITE endpoints.
-
-    Read the token from the environment AT REQUEST TIME (not import time) so
-    operators can toggle it without restarting and so tests can monkeypatch
-    ``BOBA_API_TOKEN``.
-
-    * ``BOBA_API_TOKEN`` unset/empty -> return (OPEN). This is the DEFAULT and
-      preserves the current no-auth contract + dev workflow (§11.4.122).
-    * ``BOBA_API_TOKEN`` set -> the request MUST present a MATCHING token in
-      either ``Authorization: Bearer <token>`` OR ``X-Boba-Token: <token>``.
-      Comparison is constant-time (``hmac.compare_digest``). Missing/mismatch
-      -> ``401``.
-
-    §11.4.10: the token value and the supplied header value are NEVER logged.
-    """
-    token = os.getenv("BOBA_API_TOKEN", "").strip()
-    if not token:
-        return  # OPEN — default, no-auth contract preserved.
-
-    supplied = ""
-    auth = request.headers.get("authorization", "")
-    if auth.lower().startswith("bearer "):
-        supplied = auth[7:].strip()
-    if not supplied:
-        supplied = request.headers.get("x-boba-token", "").strip()
-
-    if not supplied or not hmac.compare_digest(supplied, token):
-        raise HTTPException(status_code=401, detail="Unauthorized: valid API token required")
 
 
 def _is_safe_fetch_url(url: str) -> bool:
