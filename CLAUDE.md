@@ -14,6 +14,14 @@ For deeper reference (technology stack, per-test-file mapping, full gotchas), se
 
 ## Critical Constraints
 
+- **Multi-track identity: this project is Track 11** in the operator's multi-track development
+  fleet (permanently adopted 2026-08-08). Trunk (`main`) work always labels `T1` per the
+  constitution's own hard-coded TRUNK RULE (never overridden); non-trunk (feature/product/flavor)
+  work from this checkout labels `T11` via `scripts/multitrack/track_branch_label.sh` (a
+  boba-owned wrapper, never a copy, around the shared constitution labeler). See
+  `docs/MULTITRACK.md` for the full rationale. Execution is single-track until the operator asks
+  for parallel dispatch.
+
 - **TDD is MANDATORY for all bug fixes and features**:
   - Write failing test first (RED)
   - Watch it fail

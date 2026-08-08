@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Fixed_Summary</title>
   <style>
@@ -156,8 +156,12 @@
       text-decoration: none;
     }
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -218,320 +222,357 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 </tbody>
 </table>
 <h2 id="items">Items</h2>
-<table>
+<table style="width:100%;">
 <colgroup>
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
 </colgroup>
 <thead>
 <tr>
-<th>ATM ID</th>
-<th>Type</th>
+<th>#</th>
+<th>Level</th>
 <th>Status</th>
-<th>Severity</th>
-<th>Description</th>
+<th>Type</th>
+<th>Fixed-In Tag(s)</th>
+<th>One-line description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>BOB-001</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
+<td>1</td>
 <td>—</td>
-<td>start.sh BSD-sed incompatibility aborted the boot</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-001 — start.sh BSD-sed incompatibility aborted the boot</td>
 </tr>
 <tr>
-<td>BOB-002</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
+<td>2</td>
 <td>—</td>
-<td>start.sh <code>podman unshare</code> incompatible with macOS remote
-podman</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-002 — start.sh <code>podman unshare</code> incompatible with
+macOS remote podman</td>
 </tr>
 <tr>
-<td>BOB-003</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
+<td>3</td>
 <td>—</td>
-<td>macOS tunnel port detection broken (ports never forwarded)</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-003 — macOS tunnel port detection broken (ports never
+forwarded)</td>
 </tr>
 <tr>
-<td>BOB-004</td>
-<td>Task</td>
+<td>4</td>
+<td>—</td>
 <td>Completed (→ Fixed.md)</td>
+<td>Task</td>
 <td>—</td>
-<td>Private-tracker credentials stored securely + verified working</td>
+<td>BOB-004 — Private-tracker credentials stored securely + verified
+working</td>
 </tr>
 <tr>
-<td>BOB-005</td>
-<td>Task</td>
-<td>Fixed (→ Fixed.md)</td>
+<td>5</td>
 <td>—</td>
-<td>Public-tracker plugins all raised an unhandled exception
+<td>Fixed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-005 — Public-tracker plugins all raised an unhandled exception
 (systemic)</td>
 </tr>
 <tr>
-<td>BOB-006</td>
-<td>Feature</td>
+<td>6</td>
+<td>—</td>
 <td>Implemented (→ Fixed.md)</td>
+<td>Feature</td>
 <td>—</td>
-<td>NNMClub username/password login wired — NNMClub now uses the
-operator’s <code>NNMCLUB_USERNAME</code>/<code>NNMCLUB_PASSWORD</code>
-(in .</td>
+<td>BOB-006 — NNMClub username/password login wired — NNMClub now uses
+the operator’s
+<code>NNMCLUB_USERNAME</code>/<code>NNMCLUB_PASSWORD</code> (in .</td>
 </tr>
 <tr>
-<td>BOB-007</td>
-<td>Task</td>
-<td>Completed (→ Fixed.md)</td>
+<td>7</td>
 <td>—</td>
-<td>RuTor documented as public (no-auth) — RuTor is a public tracker
-with no login endpoint; <code>RUTOR_USERNAME/PASSWORD</code> are</td>
+<td>Completed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-007 — RuTor documented as public (no-auth) — RuTor is a public
+tracker with no login endpoint; <code>RUTOR_USERNAME/PASSWORD</code>
+are</td>
 </tr>
 <tr>
-<td>BOB-009</td>
-<td>Task</td>
-<td>Completed (→ Fixed.md)</td>
+<td>8</td>
 <td>—</td>
-<td>Containers submodule integrated with Go wrapper</td>
+<td>Completed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-009 — Containers submodule integrated with Go wrapper</td>
 </tr>
 <tr>
-<td>BOB-010</td>
-<td>Task</td>
-<td>Completed (→ Fixed.md)</td>
+<td>9</td>
 <td>—</td>
-<td>Workable-items SQLite DB integrated + pre-build gate wired
+<td>Completed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-010 — Workable-items SQLite DB integrated + pre-build gate wired
 (§11.4.93/§11.4.95)</td>
 </tr>
 <tr>
-<td>BOB-011</td>
-<td>Feature</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>10</td>
 <td>—</td>
-<td>DOCX export support added —
-<code>generate_markdown_exports. | | BOB-012 | Task | Completed (→ Fixed.md) | — | Export-sync gate expanded to all docs (§11.4.65) | | BOB-013 | Bug | Fixed (→ Fixed.md) | — | torrentkitty</code>_parse_size<code>reported 0 for every KB/MB/GB/TB size | | BOB-014 | Bug | Fixed (→ Fixed.md) | — | Go</code>generateID()<code>collided under burst (UnixNano-only) | | BOB-015 | Task | Fixed (→ Fixed.md) | — | Remaining public-tracker failures are external / non-deterministic | | BOB-016 | Task | Fixed (→ Fixed.md) | — | Jackett plugin crashed (</code>Pool(0)<code>) when zero indexers are configured | | BOB-017 | Bug | Fixed (→ Fixed.md) | — | NNMClub plugin self-heal crashed on invalid ICON | | BOB-018 | Task | Completed (→ Fixed.md) | — | Jackett server image updated to latest | | BOB-019 | Task | Completed (→ Fixed.md) | — | Jackett added as a reference submodule (latest release) | | BOB-020 | Task | Completed (→ Fixed.md) | — | CodeGraph initialized + wired (§11.4.78/79/80) | | BOB-021 | Bug | Fixed (→ Fixed.md) | — | env_loader flaky test: KEY2 leak across test ordering | | BOB-022 | Bug | Fixed (→ Fixed.md) | — | AsyncMock warning in search deep-coverage tests | | BOB-023 | Feature | Implemented (→ Fixed.md) | — | gamestorrents plugin deep-coverage tests + B-substring bug documented | | BOB-024 | Bug | Fixed (→ Fixed.md) | — | gamestorrents</code>_parse_size<code>B-substring bug fixed | | BOB-025 | Feature | Implemented (→ Fixed.md) | — | eztv.py deep-coverage tests (54 tests) — 54 tests covering MyHtmlParser (size units, date patterns, defaults, special chars), | | BOB-026 | Feature | Implemented (→ Fixed.md) | — | piratebay.py deep-coverage tests + import-order bug documented | | BOB-027 | Feature | Implemented (→ Fixed.md) | — | solidtorrents.py deep-coverage tests (37 tests) | | BOB-028 | Feature | Implemented (→ Fixed.md) | — | limetorrents.py deep-coverage tests (52 tests) | | BOB-029 | Feature | Implemented (→ Fixed.md) | — | torlock.py deep-coverage tests (55 tests) | | BOB-030 | Feature | Implemented (→ Fixed.md) | — | nyaa.py deep-coverage tests + missing import re bug documented | | BOB-031 | Feature | Implemented (→ Fixed.md) | — | kickass.py deep-coverage tests + comma-size gap documented | | BOB-032 | Feature | Implemented (→ Fixed.md) | — | anilibra.py deep-coverage tests (49 tests) | | BOB-033 | Bug | Fixed (→ Fixed.md) | — | kickass.py crash guards added (BOB-015 defense-in-depth) | | BOB-034 | Feature | Implemented (→ Fixed.md) | — | torrentgalaxy.py + yts.py deeper coverage (80 new tests) | | BOB-035 | Bug | Fixed (→ Fixed.md) | — | nyaa.py missing import re fixed —</code>download_torrent()<code>called</code>re.</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Feature</td>
+<td>—</td>
+<td>BOB-011 — DOCX export support added —
+<code>generate_markdown_exports. | | 11 | — | Completed (→ Fixed.md) | Task | — | BOB-012 — Export-sync gate expanded to all docs (§11.4.65) | | 12 | — | Fixed (→ Fixed.md) | Bug | — | BOB-013 — torrentkitty</code>_parse_size<code>reported 0 for every KB/MB/GB/TB size | | 13 | — | Fixed (→ Fixed.md) | Bug | — | BOB-014 — Go</code>generateID()<code>collided under burst (UnixNano-only) | | 14 | — | Fixed (→ Fixed.md) | Task | — | BOB-015 — Remaining public-tracker failures are external / non-deterministic | | 15 | — | Fixed (→ Fixed.md) | Task | — | BOB-016 — Jackett plugin crashed (</code>Pool(0)<code>) when zero indexers are configured | | 16 | — | Fixed (→ Fixed.md) | Bug | — | BOB-017 — NNMClub plugin self-heal crashed on invalid ICON | | 17 | — | Completed (→ Fixed.md) | Task | — | BOB-018 — Jackett server image updated to latest | | 18 | — | Completed (→ Fixed.md) | Task | — | BOB-019 — Jackett added as a reference submodule (latest release) | | 19 | — | Completed (→ Fixed.md) | Task | — | BOB-020 — CodeGraph initialized + wired (§11.4.78/79/80) | | 20 | — | Fixed (→ Fixed.md) | Bug | — | BOB-021 — env_loader flaky test: KEY2 leak across test ordering | | 21 | — | Fixed (→ Fixed.md) | Bug | — | BOB-022 — AsyncMock warning in search deep-coverage tests | | 22 | — | Implemented (→ Fixed.md) | Feature | — | BOB-023 — gamestorrents plugin deep-coverage tests + B-substring bug documented | | 23 | — | Fixed (→ Fixed.md) | Bug | — | BOB-024 — gamestorrents</code>_parse_size<code>B-substring bug fixed | | 24 | — | Implemented (→ Fixed.md) | Feature | — | BOB-025 — eztv.py deep-coverage tests (54 tests) — 54 tests covering MyHtmlParser (size units, date patterns, defaults, special chars), | | 25 | — | Implemented (→ Fixed.md) | Feature | — | BOB-026 — piratebay.py deep-coverage tests + import-order bug documented | | 26 | — | Implemented (→ Fixed.md) | Feature | — | BOB-027 — solidtorrents.py deep-coverage tests (37 tests) | | 27 | — | Implemented (→ Fixed.md) | Feature | — | BOB-028 — limetorrents.py deep-coverage tests (52 tests) | | 28 | — | Implemented (→ Fixed.md) | Feature | — | BOB-029 — torlock.py deep-coverage tests (55 tests) | | 29 | — | Implemented (→ Fixed.md) | Feature | — | BOB-030 — nyaa.py deep-coverage tests + missing import re bug documented | | 30 | — | Implemented (→ Fixed.md) | Feature | — | BOB-031 — kickass.py deep-coverage tests + comma-size gap documented | | 31 | — | Implemented (→ Fixed.md) | Feature | — | BOB-032 — anilibra.py deep-coverage tests (49 tests) | | 32 | — | Fixed (→ Fixed.md) | Bug | — | BOB-033 — kickass.py crash guards added (BOB-015 defense-in-depth) | | 33 | — | Implemented (→ Fixed.md) | Feature | — | BOB-034 — torrentgalaxy.py + yts.py deeper coverage (80 new tests) | | 34 | — | Fixed (→ Fixed.md) | Bug | — | BOB-035 — nyaa.py missing import re fixed —</code>download_torrent()<code>called</code>re.</td>
 </tr>
 <tr>
-<td>BOB-036</td>
-<td>Bug</td>
+<td>35</td>
+<td>—</td>
 <td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
 <td>—</td>
-<td>kickass.py comma-separated size regex fixed</td>
+<td>BOB-036 — kickass.py comma-separated size regex fixed</td>
 </tr>
 <tr>
-<td>BOB-037</td>
+<td>36</td>
+<td>—</td>
+<td>Implemented (→ Fixed.md)</td>
 <td>Feature</td>
-<td>Implemented (→ Fixed.md)</td>
 <td>—</td>
-<td>rutor.py deep-coverage tests (83 tests) — 83 tests covering date
-normalization, pagination math, config, proxy,</td>
+<td>BOB-037 — rutor.py deep-coverage tests (83 tests) — 83 tests
+covering date normalization, pagination math, config, proxy,</td>
 </tr>
 <tr>
-<td>BOB-038</td>
+<td>37</td>
+<td>—</td>
+<td>Implemented (→ Fixed.md)</td>
 <td>Feature</td>
-<td>Implemented (→ Fixed.md)</td>
 <td>—</td>
-<td>tokyotoshokan.py deep-coverage tests (60 tests)</td>
+<td>BOB-038 — tokyotoshokan.py deep-coverage tests (60 tests)</td>
 </tr>
 <tr>
-<td>BOB-039</td>
+<td>38</td>
+<td>—</td>
+<td>Implemented (→ Fixed.md)</td>
 <td>Feature</td>
-<td>Implemented (→ Fixed.md)</td>
 <td>—</td>
-<td>snowfl.py deep-coverage tests (30 tests)</td>
+<td>BOB-039 — snowfl.py deep-coverage tests (30 tests)</td>
 </tr>
 <tr>
-<td>BOB-040</td>
+<td>39</td>
+<td>—</td>
+<td>Implemented (→ Fixed.md)</td>
 <td>Feature</td>
-<td>Implemented (→ Fixed.md)</td>
 <td>—</td>
-<td>torrentdownload.py deep-coverage tests (35 tests)</td>
+<td>BOB-040 — torrentdownload.py deep-coverage tests (35 tests)</td>
 </tr>
 <tr>
-<td>BOB-041</td>
+<td>40</td>
+<td>—</td>
+<td>Implemented (→ Fixed.md)</td>
 <td>Feature</td>
-<td>Implemented (→ Fixed.md)</td>
 <td>—</td>
-<td>linuxtracker.py deep-coverage tests (30 tests)</td>
+<td>BOB-041 — linuxtracker.py deep-coverage tests (30 tests)</td>
 </tr>
 <tr>
-<td>BOB-042</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>41</td>
 <td>—</td>
-<td>audiobookbay.py deep-coverage tests + missing import re fixed</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-042 — audiobookbay.py deep-coverage tests + missing import re
+fixed</td>
 </tr>
 <tr>
-<td>BOB-043</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>42</td>
 <td>—</td>
-<td>one337x.py deep-coverage tests + B-substring fixed</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-043 — one337x.py deep-coverage tests + B-substring fixed</td>
 </tr>
 <tr>
-<td>BOB-044</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>43</td>
 <td>—</td>
-<td>extratorrent.py deep-coverage tests + B-substring fixed</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-044 — extratorrent.py deep-coverage tests + B-substring
+fixed</td>
 </tr>
 <tr>
-<td>BOB-045</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>44</td>
 <td>—</td>
-<td>torrentfunk.py deep-coverage tests + B-substring fixed</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-045 — torrentfunk.py deep-coverage tests + B-substring
+fixed</td>
 </tr>
 <tr>
-<td>BOB-046</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>45</td>
 <td>—</td>
-<td>torrentproject.py deep-coverage tests — 36 tests covering
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-046 — torrentproject.py deep-coverage tests — 36 tests covering
 MyHTMLParser (handle_starttag/endtag/data), feed, fetch_magnet.</td>
 </tr>
 <tr>
-<td>BOB-047</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>46</td>
 <td>—</td>
-<td>therarbg.py deep-coverage tests + B-substring fixed</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-047 — therarbg.py deep-coverage tests + B-substring fixed</td>
 </tr>
 <tr>
-<td>BOB-048</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>47</td>
 <td>—</td>
-<td>academictorrents.py deep-coverage tests — 48 tests covering XML
-parsing, concurrent.</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-048 — academictorrents.py deep-coverage tests — 48 tests
+covering XML parsing, concurrent.</td>
 </tr>
 <tr>
-<td>BOB-049</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>48</td>
 <td>—</td>
-<td>ali213.py deep-coverage tests — 25 tests covering threaded gamepage
-handling, retry loop (20 ceiling), magnet extraction.</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-049 — ali213.py deep-coverage tests — 25 tests covering threaded
+gamepage handling, retry loop (20 ceiling), magnet extraction.</td>
 </tr>
 <tr>
-<td>BOB-050</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>49</td>
 <td>—</td>
-<td>yourbittorrent.py deep-coverage tests — 30 tests covering
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-050 — yourbittorrent.py deep-coverage tests — 30 tests covering
 HTMLParser, download_file, 7 categories.</td>
 </tr>
 <tr>
-<td>BOB-051</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>50</td>
 <td>—</td>
-<td>glotorrents.py deep-coverage tests — 40 tests covering pagination, 9
-categories, magnet extraction, sleep.</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-051 — glotorrents.py deep-coverage tests — 40 tests covering
+pagination, 9 categories, magnet extraction, sleep.</td>
 </tr>
 <tr>
-<td>BOB-052</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>51</td>
 <td>—</td>
-<td>pctorrent.py deep-coverage tests + B-substring pre-fixed</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-052 — pctorrent.py deep-coverage tests + B-substring
+pre-fixed</td>
 </tr>
 <tr>
-<td>BOB-053</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>52</td>
 <td>—</td>
-<td>rockbox.py deep-coverage tests — 32 tests covering datetime,
-sleep(3) pagination, kb/mb/gb sizes.</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-053 — rockbox.py deep-coverage tests — 32 tests covering
+datetime, sleep(3) pagination, kb/mb/gb sizes.</td>
 </tr>
 <tr>
-<td>BOB-054</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>53</td>
 <td>—</td>
-<td>bitru.py deep-coverage tests + B-substring fixed</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-054 — bitru.py deep-coverage tests + B-substring fixed</td>
 </tr>
 <tr>
-<td>BOB-055</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>54</td>
 <td>—</td>
-<td>btsow.py deep-coverage tests — Tests covering data-list card
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-055 — btsow.py deep-coverage tests — Tests covering data-list
+card parsing, search, download_torrent.</td>
+</tr>
+<tr>
+<td>55</td>
+<td>—</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-056 — torrentscsv.py deep-coverage tests — 33 tests covering CSV
 parsing, search, download_torrent.</td>
 </tr>
 <tr>
-<td>BOB-056</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>56</td>
 <td>—</td>
-<td>torrentscsv.py deep-coverage tests — 33 tests covering CSV parsing,
-search, download_torrent.</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-057 — xfsub.py deep-coverage tests + B-substring fixed</td>
 </tr>
 <tr>
-<td>BOB-057</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>57</td>
 <td>—</td>
-<td>xfsub.py deep-coverage tests + B-substring fixed</td>
+<td>Implemented (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-058 — yihua.py deep-coverage tests + B-substring fixed</td>
 </tr>
 <tr>
-<td>BOB-058</td>
-<td>Task</td>
-<td>Implemented (→ Fixed.md)</td>
+<td>58</td>
 <td>—</td>
-<td>yihua.py deep-coverage tests + B-substring fixed</td>
-</tr>
-<tr>
-<td>BOB-059</td>
-<td>Task</td>
 <td>Fixed (→ Fixed.md)</td>
+<td>Task</td>
 <td>—</td>
-<td>bt4g.py tests fixed (was hanging) — 3 tests had bugs: infinite loop
-from constant <code>return_value</code> (should use</td>
+<td>BOB-059 — bt4g.py tests fixed (was hanging) — 3 tests had bugs:
+infinite loop from constant <code>return_value</code> (should use</td>
 </tr>
 <tr>
-<td>BOB-060</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
+<td>59</td>
 <td>Low</td>
-<td>tokyotoshokan/kickass/yts/piratebay raised unhandled exceptions on
-empty/None/non-dict-JSON upstream responses; added empty-response guards
-+ RED→GREEN regression tests (§11.4.118 audit found piratebay).</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-060 — Public-tracker plugins crash on degenerate/empty upstream
+responses</td>
 </tr>
 <tr>
-<td>BOB-061</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
+<td>60</td>
 <td>High</td>
-<td>Full pytest tests/unit/ stalled on an unbounded enricher network
-lookup; 13-34 order-dependent failures from
-sys.modules/socket/os.environ leakage across files. Fixed: enricher
-ClientTimeout + tests/conftest.py path/POLLUTING_ROOTS/socket/environ
-isolation. Now 4121 passed deterministic.</td>
-</tr>
-<tr>
-<td>BOB-062</td>
-<td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>Medium</td>
-<td>kickass/bitsearch/torrentgalaxy while-True search loops could run
-forever; search.py/routes.py/helpers.py/eztv.py network calls had no
-timeout. Fixed: MAX_PAGES=50 caps + aiohttp.ClientTimeout/urlopen
-timeout=30 across all sites.</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-061 — Unit suite hang + order-dependent test-pollution
+(non-deterministic failures)</td>
 </tr>
 <tr>
-<td>BOB-063</td>
-<td>Task</td>
-<td>Completed (→ Fixed.md)</td>
+<td>61</td>
+<td>Medium</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-062 — Unbounded plugin pagination loops + unbounded network I/O
+(hang risk)</td>
+</tr>
+<tr>
+<td>62</td>
 <td>Low</td>
-<td>test_plugin_pirateiro.py injected sys.modules[‘pirateiro’] at module
-scope with no teardown; pirateiro was the one root not covered by
-conftest _isolate_download_proxy_modules, so it leaked into later tests.
-Fixed by caching+re-registering+purging the stub per unit test; added a
-standing isolation guard. RED 1-fail -&gt; GREEN, full suite 4122 passed
-x2 seeds.</td>
+<td>Completed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-063 — pirateiro test-isolation: add to conftest isolation +
+standing regression guard</td>
 </tr>
 </tbody>
 </table>

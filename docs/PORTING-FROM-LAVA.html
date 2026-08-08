@@ -1,0 +1,211 @@
+<h1
+id="porting-lava-autonomous-qa-solutions-boba-base-submodules-driven">Porting
+Lava autonomous-QA solutions → Boba-Base (submodules-driven)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-07-01T16:18:43Z <strong>Status:</strong> active</p>
+<p>Maps the Lava deep-research playbook
+(<code>Lava:docs/autonomous-qa/PORTING-PLAYBOOK.md</code>) onto
+<strong>Boba-Base’s actual stack</strong> (Go
+<code>qBitTorrent-go</code> + Python
+<code>download-proxy</code>/<code>merge_service</code> +
+<code>plugins</code> + <code>frontend</code>/<code>extension</code> +
+Jackett), respecting Boba-Base’s <strong>TDD + anti-bluff
+(CONST-XII)</strong> mandate. Both repos already share
+<code>submodules/{containers, jackett, challenges, helixqa}</code> +
+<code>constitution</code>, so the reusable pieces land <strong>in the
+shared submodule</strong> (consumed by both), and only thin glue stays
+per-repo.</p>
+<h2 id="applicability-triage-honest-not-a-blind-copy">Applicability
+triage (honest — not a blind copy)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Lava §</th>
+<th>Solution</th>
+<th>Applies to Boba-Base?</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>§1</td>
+<td>Containerized <strong>Android</strong> emulator</td>
+<td>❌ no</td>
+<td>Boba-Base has no Android; UI is web
+(<code>frontend</code>/<code>extension</code>) → browser E2E
+(Playwright-in-container) is the analog, separate work</td>
+</tr>
+<tr>
+<td>§2</td>
+<td>Android guest-net <code>ndc</code> fix</td>
+<td>❌ no</td>
+<td>Android-only</td>
+</tr>
+<tr>
+<td>§7</td>
+<td>Compose UI Challenge + off-main nav</td>
+<td>❌ no</td>
+<td>Android-only</td>
+</tr>
+<tr>
+<td><strong>§0/§4</strong></td>
+<td><strong>Egress-path insight + VPN-host egress</strong></td>
+<td>✅ <strong>YES — primary</strong></td>
+<td>Same datacenter-IP tracker block; affects Jackett +
+<code>merge_service</code> + <code>download-proxy</code> + plugin
+engines</td>
+</tr>
+<tr>
+<td><strong>§3</strong></td>
+<td><strong>Configurable outbound proxy</strong></td>
+<td>✅ <strong>YES</strong></td>
+<td><code>download-proxy</code>/<code>qBitTorrent-go</code>/Jackett
+tracker calls need a configurable egress</td>
+</tr>
+<tr>
+<td><strong>§5</strong></td>
+<td><strong>Durable remote execution (systemd-linger)</strong></td>
+<td>✅ <strong>YES</strong></td>
+<td><code>run_all_challenges.sh</code>/<code>ci.sh</code>/<code>helixqa</code>
+long runs on remote hosts get reaped by logind</td>
+</tr>
+<tr>
+<td><strong>§8</strong></td>
+<td><strong>Jackett cookie-login + cookie-harvest</strong></td>
+<td>⚠️ partial — already present</td>
+<td>Boba-Base has <code>nnmclub-cookie-*</code>,
+<code>extract-tracker-cookies.sh</code>,
+<code>extract-jackett-key.py</code>; ADD the apikey-vs-cookie management
+distinction + test fake-equivalence</td>
+</tr>
+<tr>
+<td><strong>§6/§9</strong></td>
+<td><strong>Anti-bluff QA verdict + diagnostics</strong></td>
+<td>✅ YES</td>
+<td>strengthen <code>run_all_challenges.sh</code> verdicts + the
+diagnostic gotchas</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-four-high-value-ports-in-order">The four high-value ports
+(in order)</h2>
+<h3
+id="p1-durable-remote-execution-5-submodule-containers-glue-scripts">P1
+— Durable remote execution (§5) [submodule: containers; glue:
+scripts/]</h3>
+<p><strong>Problem Boba-Base shares:</strong> long QA/deploy runs on a
+remote host die when the SSH session ends. <strong>Root cause:</strong>
+remote <code>systemd-logind KillUserProcesses</code> reaps detached user
+processes (tmux/nohup/setsid all die). <strong>Fix:</strong>
+<code>loginctl enable-linger</code> +
+<code>systemd-run --user --unit=&lt;n&gt; --collect bash runner.sh</code>;
+poll <code>systemctl --user is-active</code>; sentinel file for
+completion. Avoid piping the long command through <code>tail -N</code>
+(buffers until exit) — log per-step artifacts. <strong>Port:</strong>
+add <code>containers</code> submodule helper <code>pkg/remoteexec</code>
+(or <code>scripts/lib/durable-run.sh</code>) shared by both repos; wire
+<code>scripts/deploy-remote.sh</code> +
+<code>run_all_challenges.sh</code> to use it. <strong>TDD:</strong> a
+test that launches a 60s sleeper via the helper, drops the SSH session,
+and asserts it’s STILL running after (fails against the old nohup
+approach).</p>
+<h3
+id="p2-egress-decision-vpn-host-routing-04-submodule-containers-glue-scripts-jackettproxy-env">P2
+— Egress decision + VPN-host routing (§0/§4) [submodule: containers;
+glue: scripts/ + Jackett/proxy env]</h3>
+<p><strong>Problem Boba-Base shares:</strong> on a datacenter host,
+trackers are network-blocked (DNS-fail/TLS-MITM, <strong>not</strong>
+Cloudflare → FlareSolverr can’t fix). Affects Jackett indexer fetches +
+<code>merge_service</code>/<code>download-proxy</code> + plugin engines.
+<strong>Diagnosis (port the script):</strong>
+<code>curl https://api.ipify.org</code> (host IP) +
+<code>curl -o /dev/null -w %{http_code} https://&lt;tracker&gt;/</code>
+direct vs via a VPN-host SOCKS proxy. Different egress IP + 200 via
+proxy ⇒ confirmed. <strong>Fix:</strong> route outbound through a
+VPN-connected host (the nezha pattern). SOCKS tunnel
+<code>ssh -D 127.0.0.1:1080 -N &lt;vpnhost&gt;</code> (use
+<code>--socks5-hostname</code> for remote DNS); point Jackett +
+<code>download-proxy</code> + <code>qBitTorrent-go</code> at it (P3).
+For browser-cookie harvest, run the harvester ON the VPN host.
+<strong>Port:</strong> <code>containers</code> submodule
+<code>pkg/egress</code> (tunnel up/verify) +
+<code>scripts/egress-via-vpn.sh</code> glue; reuse Boba-Base’s existing
+<code>ensure-macos-tunnel.sh</code> style. <strong>TDD:</strong> assert
+the via-proxy egress IP ≠ direct host IP AND a known-blocked tracker
+returns 200 via proxy.</p>
+<h3 id="p3-configurable-outbound-proxy-in-the-services-3">P3 —
+Configurable outbound proxy in the services (§3)</h3>
+<p><strong>download-proxy (Python):</strong>
+<code>httpx</code>/<code>requests</code> honor
+<code>HTTP_PROXY</code>/<code>HTTPS_PROXY</code>/<code>ALL_PROXY</code>/<code>NO_PROXY</code>
+env natively — add an explicit <code>BOBA_UPSTREAM_PROXY</code> config
+that sets these for tracker-bound clients, with loopback bypass
+(<code>NO_PROXY=127.0.0.1,localhost,jackett</code>).
+<strong>qBitTorrent-go:</strong> set <code>http.Transport.Proxy</code>
+(socks5 native, remote DNS) from a <code>BOBA_UPSTREAM_PROXY</code> env
+— mirror Lava <code>internal/httpx/proxy.go</code>.
+<strong>Jackett:</strong> has a built-in proxy setting (configure via
+its API/ServerConfig). <strong>Deploy gotcha (port):</strong> the env
+must be FORWARDED into the containers (<code>docker-compose.yml</code>
+env / the boba-ctl deploy) — Lava’s bug was a missing allow-list entry.
+<strong>Verify on distroless via <code>podman inspect</code>, not
+<code>exec printenv</code>.</strong> <strong>TDD:</strong> a test with a
+local proxy asserts the service’s tracker request traverses it;
+falsifiability: disable the wiring → test fails.</p>
+<h3
+id="p4-jackett-cookie-login-hardening-8-submodule-jackett-integration-helixqa-fakes">P4
+— Jackett cookie-login hardening (§8) [submodule: jackett integration +
+helixqa fakes]</h3>
+<p><strong>Add to Boba-Base’s existing cookie infra:</strong> Jackett’s
+<strong>management API</strong> (<code>/api/v2.0/indexers</code>,
+indexer <code>/config</code>) needs a <strong>dashboard session
+cookie</strong> (empty-password <code>POST /UI/Dashboard</code>) — the
+apikey only authorizes Torznab <code>/results</code>+<code>/caps</code>.
+If <code>boba-jackett</code>/<code>extract-jackett-key.py</code> only
+uses the apikey, <code>ListIndexers</code>/config silently
+302→<code>/UI/Login</code>. <strong>Critical for anti-bluff:</strong>
+the test fake MUST 302-without-cookie like real Jackett (behavioral
+equivalence) or the gap stays hidden. <strong>TDD:</strong> fake 302s
+management without the cookie; assert discovery succeeds via the cookie
+path; falsifiability: remove cookie login → 302 failure.</p>
+<h2
+id="submodules-driven-principle-per-decoupled-reusable-architecture">Submodules-driven
+principle (per Decoupled Reusable Architecture)</h2>
+<ul>
+<li><strong><code>containers</code> submodule</strong> is the home for
+P1 (durable-exec) + P2 (egress/tunnel) — generic, both repos + future
+projects consume. Contribute upstream first, then bump the pin in Lava
+AND Boba-Base.</li>
+<li><strong><code>jackett</code> integration +
+<code>helixqa</code></strong> is the home for P4’s cookie-login + the
+behaviorally-equivalent fake.</li>
+<li><strong>Per-repo glue only:</strong> P3’s env wiring (each service’s
+HTTP client + each repo’s compose/deploy).</li>
+</ul>
+<h2
+id="execution-order-tdd-per-const-xii-each-step-redgreen-with-pasted-evidence">Execution
+order (TDD per CONST-XII — each step RED→GREEN with pasted
+evidence)</h2>
+<ol type="1">
+<li>P1 durable-exec helper in <code>containers</code> + wire
+<code>run_all_challenges.sh</code>/<code>deploy-remote.sh</code>.</li>
+<li>P2 egress diagnosis + VPN-host tunnel helper in
+<code>containers</code> + <code>scripts/egress-via-vpn.sh</code>.</li>
+<li>P3 <code>BOBA_UPSTREAM_PROXY</code> in <code>download-proxy</code> +
+<code>qBitTorrent-go</code> + Jackett + compose env-forward.</li>
+<li>P4 Jackett cookie-login + fake-equivalence test.</li>
+<li>Re-run <code>run_all_challenges.sh</code> from the VPN-routed host →
+real tracker search→download evidence.</li>
+</ol>
+<blockquote>
+<p>Source playbook (full root-cause detail + Lava code refs):
+<code>Lava:docs/autonomous-qa/PORTING-PLAYBOOK.md</code>. Each P-item
+there has the exact mechanism + the falsifiability rehearsal to
+replicate under Boba-Base’s CONST-XII.</p>
+</blockquote>

@@ -1,14 +1,106 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 19
-**Last modified:** 2026-06-16T23:55:00Z
-**Session:** 2026-06-16 (Session 14 — search-broken/crashing fixed: multi-word encoding storm, private-tracker cookie auth, deploy pipeline, healthz, kickass; PROVEN on nezha — 2600 results, all 4 private trackers auth, none crashed. In-flight: P0 UTF-8/Cyrillic encoding fix)
-**Last commit:** `646b295` (Status ledger Rev 7 — proven search/auth/healthz fixes §11.4.153)
+**Revision:** 20
+**Last modified:** 2026-08-08T17:36:59Z
+**Session:** 2026-08-08 (Session 15 — full constitution/governance re-audit (Round 2), one P0 security
+fix landed (source+tests done, live verify owed), a host-level root-cause found (session-killing
+`KillUserProcesses`), Track 11 multi-track identity adopted, new constitution anchor §11.4.238
+landed via a live cross-session collision, workable-items DB reconciled.)
+**Last commit:** `50c7a66` (chore(constitution): bump submodule pointer to 177f2b0, §11.4.238)
 **Branch:** `main`
-**Working tree:** has the in-flight UTF-8 RED test untracked (`tests/unit/test_plugin_unicode_query_encoding.py`); search/auth/deploy fixes all published at HEAD
+**Working tree:** docs_chain regeneration in flight (HTML/PDF exports); `docs/Issues.md` /
+`docs/workable_items.db` reconciled and committed-pending; `scripts/multitrack/` +
+`docs/MULTITRACK.md` untracked (new, not yet committed).
 
 > Send `continue` to pick up exactly where we left off.
 > This file is the single source of truth for session handoff (§12.10 / §11.4.131).
+
+---
+
+## CURRENT STATE — Session 15 (2026-08-08): governance re-audit + P0 security fix + host root-cause + multi-track kickoff
+
+**Operator asked for a full deep-research constitutional-compliance audit** (rules followed,
+constitution-derived technology incorporated, gaps/danger-zones/inconsistencies identified,
+systematic root-cause remediation plan with live verification). Delivered as
+`docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md` (Rev 3) — live re-verification of every item in the
+2026-08-07 audit (GA-01..27) + the original 2026-06-14 plan (RW-01..21), a fresh gap scan (RD2-01
+through RD2-09), and root-cause forensics on two previously-unattributed "Auto-commit" commits.
+**Read that document for the full, prioritized, root-cause-grouped remediation plan** — this
+entry only summarizes what changed THIS session.
+
+### What landed (Session 15)
+
+- **Governance audit, Round 2 (`docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md`).** Confirmed DONE
+  since the 2026-08-07 audit: Python/frontend/extension toolchains (4340 unit tests now collect
+  cleanly), `ruff` down to 0 real violations (submodule-scoping fix), HelixQA bank symlinks fixed,
+  `start.sh --reload-python/--reload-plugins/--recreate` real working implementations, CONST-033
+  triage doc, jackett-autoconfig dead-test removal. Confirmed STILL OPEN: 3 test files mislabeled
+  integration/e2e/contract that mock the system under test, 14 `#legacy-untriaged` tags, Go
+  backend parity (operator-decision, unchanged), stress/chaos coverage gaps, HelixQA hardcoded
+  `/Volumes/T7` paths, `docker-compose.quality.yml` missing container-hygiene limits, a
+  `.trivyignore.yaml` with placeholder CVE IDs, DDoS-class testing fully absent. **NEW P0
+  finding (RD2-40):** boba does not yet comply with the just-landed constitution anchor §11.4.238
+  (no manual-discovery ledger, no coverage-escape-audit process) — every finding in this very
+  audit round is itself an instance of the out-of-band-discovery channel that anchor targets.
+- **RD2-22 (P0 security) — source fix DONE, live-verify still owed.** `PATCH
+  /api/v1/schedules/{id}` and `PUT /api/v1/theme` were unauthenticated even with `BOBA_API_TOKEN`
+  set. TDD RED (`tests/security/test_hooks_schedules_auth.py` extended) → GREEN
+  (`Depends(require_api_token)` added to both routes in `download-proxy/src/api/scheduler.py` +
+  `routes.py`) → 31/31 security suite + 176/176 theme/scheduler regression tests pass. A
+  root-cause function-ordering bug (`require_api_token` referenced before its own definition,
+  crashing the whole API module) was found and fixed during GREEN — `require_api_token` moved
+  earlier in `routes.py`. **Still owed:** the full `tests/contract/+tests/unit/` regression sweep
+  (interrupted mid-run by a session kill — see below) and a live curl-verify (401 unauth / 200
+  with-token) on a running container.
+- **Host root-cause found: `KillUserProcesses=true`.** The operator reported the session/tmux/
+  Claude Code process being repeatedly killed. Systematic-debugging (journalctl OOM-killer check
+  → zero hits; `systemd-oomd` → no kill-decision log lines; live `busctl` read of
+  `org.freedesktop.login1.Manager.KillUserProcesses` → confirmed `true`) found the real
+  mechanism: every time the local GDM/GNOME session closes, systemd-logind SIGKILLs the ENTIRE
+  `user@1000.service` slice — tmux server, Claude Code, everything — regardless of `Linger=yes`.
+  Confirmed 4 occurrences in one day via journalctl, one explicitly listing `pid ... (claude)` in
+  its kill list. **Awaiting operator decision**: a `logind.conf.d` drop-in
+  (`KillUserProcesses=no` blanket, or `KillExcludeUsers=milosvasic` narrower) — not yet applied,
+  host-wide change, needs explicit go-ahead.
+- **Track 11 — multi-track identity permanently adopted.** `docs/MULTITRACK.md` +
+  `scripts/multitrack/track_branch_label.sh` (boba-owned wrapper around the constitution's shared,
+  inherited-by-reference labeler — never edited in place). This checkout is registered as the
+  home of Track 11; trunk (`main`) work stays `T1` per the constitution's own hard-coded TRUNK
+  RULE (never overridden); non-trunk work from this checkout labels `T11`. Execution stays
+  single-track for now per operator instruction — no parallel ruler/ subagent streams spawned.
+- **New constitution anchor §11.4.238** ("automated QA must be the DISCOVERER, not the
+  confirmer" — manual QA must find zero new issues). Landed via a **live cross-session
+  collision**: a parallel Claude session (Opus 5, same host observed via a +0500 timezone offset)
+  independently authored and published the same anchor number first; this session's own
+  unpublished duplicate was discarded (never reached any remote, safe to abandon) per
+  §11.4.227(B)'s anchor-collision rule. `constitution` submodule pointer bumped + pushed
+  (`50c7a66`). This ALSO resolved the mystery "Auto-commit" pattern from the 2026-08-07 audit —
+  it is very likely this same second session/device, not an unknown external actor.
+- **workable_items.db reconciled.** BOB-008's DB↔MD body drift fixed (`sync md-to-db`) plus a
+  genuine §11.4.148(D3) finding surfaced and fixed along the way (the `Operator-Block-Details`
+  UNBLOCK clause needed enumerated `[A]`/`[B]` choices, not free prose). BOB-009/BOB-010's
+  `evidence_path` violations (narrative text instead of a resolvable path) were investigated —
+  real evidence identified via git archaeology (commit `0558399`; `scripts/boba-ctl.sh` +
+  `scripts/docs_chain.sh` still exist and back the claims) — but the `workable-items` tool has
+  **no subcommand to correct a historical `item_history.evidence_path`** on an already-Completed
+  item; raw SQL was correctly avoided (violates the tool-only-mutation discipline) and a
+  reopen-then-close cycle was correctly avoided (would falsely imply the underlying work was
+  broken). Tracked as an honest, open tooling gap, not silently worked around.
+
+### In flight / NEXT ITEM (P0, do this first)
+
+1. **Finish RD2-22**: re-run the full `tests/contract/+tests/unit/` regression sweep to
+   completion (it was killed mid-run by the `KillUserProcesses` issue), then live curl-verify
+   401/200 on a running container, then add the §11.4.135 regression guard + HelixQA Challenge
+   entry.
+2. **Operator decision needed**: apply the `KillUserProcesses` fix (blanket vs. narrower —
+   see above) — every future session remains at risk of the same abrupt kill until this lands.
+3. Work through `docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md`'s remaining root-cause-grouped items
+   in priority order (Root Causes 3–6 + the ungrouped P1/P2 items), starting with RD2-40
+   (§11.4.238 compliance) given its zero-grace-period "no escape hatch" clause.
+4. Deferred until the whole backlog above is genuinely clear (operator's own gating condition):
+   full production release — install script, user-level systemd/systemctl integration so the
+   stack boots with the system, full docs, then notify the operator it's ready to use.
 
 ---
 

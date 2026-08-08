@@ -1,7 +1,7 @@
 # Governance & Constitution Compliance Audit — Round 2 — 2026-08-08
 
-**Revision:** 2
-**Last modified:** 2026-08-08T15:03:54Z
+**Revision:** 3
+**Last modified:** 2026-08-08T17:27:57Z
 **Status:** active
 **Scope:** Live re-verification of every item in `docs/GOVERNANCE_AUDIT_2026-08-07.md` (GA-01..27)
 and `docs/REMAINING_WORK_PLAN.md` (RW-01..21) against the current tree, PLUS a fresh gap scan of
@@ -14,6 +14,64 @@ real command output (§11.4.6 — no guessing).
 since, two of them more bare `Auto-commit` commits (`9c8f684`, `743097a`) produced **during this
 very investigation**. Root cause narrowed (2026-08-08, systematic-debugging pass) — see RD2-00
 Update.
+
+**Rev-3 addendum (2026-08-08T17:27:57Z) — status of in-flight remediation + one new finding:**
+- **RD2-22 (P0 auth gap): source fix DONE, live-verification still owed.** TDD RED→GREEN complete
+  (`tests/security/test_hooks_schedules_auth.py` 31/31; `tests/unit -k "theme or scheduler"`
+  176/176). A root-cause function-ordering bug (`require_api_token` referenced before definition)
+  was found and fixed during GREEN. Full `tests/contract/+tests/unit/` regression sweep was
+  interrupted mid-run by the RD2-00-class session kill (see RD2-00 Update 2, below) and has not
+  yet completed; live curl-verify on a running container (401 unauth / 200 with-token) is still
+  outstanding. **Not yet closeable — do not mark RD2-22 done until both finish.**
+- **RD2-00 Update 2 (2026-08-08, confirmed): root cause is a second live session, not a rogue
+  process.** A parallel Claude session (Opus 5, same +0500 host) independently landed
+  `constitution` commit `177f2b0` (new anchor §11.4.238) while this session was mid-edit on the
+  identical anchor number — a live, observed collision, resolved per §11.4.227(B) by deferring to
+  the already-published version (this session's unpublished duplicate was never pushed anywhere,
+  confirmed via `git branch -r --contains` across all 8 remotes before discarding). This
+  **downgrades RD2-00's severity band**: the mechanism is not an unidentified external actor, it
+  is (most likely) the operator's own second session/device, still bypassing per-commit
+  TDD/review discipline on ITS side, but not a security-incident-class unknown. RD2-10..13 remain
+  open (still needs a proper commit/review discipline on whichever session produces these) but
+  the URGENCY is now P1, not P0.
+- **NEW — RD2-40 [P0]: boba does not yet comply with the just-landed §11.4.238** (constitution
+  `Constitution.md` — "automated QA must be the DISCOVERER, not the confirmer"; every project
+  inheriting this constitution is bound the moment it lands, §11.4.96-style latent-binding). No
+  discovery-channel ledger exists anywhere in this repo; no coverage-escape-audit process exists
+  for defects found by manual QA / operator report / agent code-reading (the exact channel every
+  finding in this very governance-audit round was found through — including RD2-22 itself, which
+  was discovered by audit, not by HelixQA); no `CM-QA-IS-THE-DISCOVERER` /
+  `CM-MANUAL-QA-FINDS-NOTHING-NEW` gate exists. **This is a real, live, self-referential gap**:
+  every RD2-NN / GA-NN finding in this document was found by an agent reading code or running
+  commands by hand — precisely the "out-of-band discovery channel" §11.4.238(C) requires an
+  audit + a new automated check for, per finding. Full retroactive compliance (auditing all
+  ~50 findings in this document) is a separate, large undertaking — tracked here as its own item
+  rather than silently assumed satisfied. **Priority: P0** (a brand-new universal anchor with a
+  zero-grace-period "no escape hatch" clause).
+- **NEW — RD2-41 [P1]: `scripts/docs_chain.sh` (FIXED this session) and
+  `scripts/pre_build_verification.sh` invariant 17 (FIXED this session) both hardcoded a
+  non-existent `bin/workable-items` path, silently no-op'ing/skipping their DB-export and
+  DB-validate steps on every run — root-caused and fixed via the same resolution chain already
+  proven in `constitution/scripts/reporting/report_item.sh` (env override → committed
+  constitution copy → on-demand `go build`). Regression guards:
+  `tests/unit/test_docs_chain_binary_resolution.sh` (RED→GREEN verified) +
+  `tests/unit/test_pre_build_workable_items_invariant.sh` (RED→GREEN verified). **A SEPARATE,
+  still-open defect surfaced while fixing this**: `pre_build_verification.sh`'s earlier
+  "pre-code-review" mutation-marker scan aborts the ENTIRE script (exit 1) before invariant 17 is
+  ever reached, on carrier false-positives — legitimate `constitution/**/*_mutation_test.sh` +
+  `*_test.go` files that intentionally contain the literal strings `MUTATED`/`# MUTATION` as part
+  of their OWN §1.1 testing logic (verified 36 hits, all under `constitution/scripts/{gates,
+  multitrack,workable-items}/`, all self-referential test/gate files, none genuine residue) — the
+  exact §11.4.201 carrier-false-positive class already found twice this session (GA-24's
+  `guard-forbidden-commands.sh` on `constitution/docs/scripts/guard-forbidden-commands.md`, and
+  this session's own "sudo"-substring block on an unrelated echo string). **Practical impact: the
+  ENTIRE pre-build gate has not completed a full run for as long as this false-positive has been
+  live** — no invariant past the mutation-marker check (including the just-fixed 17 and 18) has
+  been genuinely enforced. Not fixed this session (real scope-creep risk after already fixing two
+  root causes) — needs the marker-scanner to exclude self-referential test/gate files (or use a
+  more structural check than a bare substring match), matching the fix direction already scoped
+  for GA-24/RD2-01. **Priority: P1**, arguably should be P0 given it silently defeats the entire
+  pre-build gate — flagged for the next work session.
 
 ---
 

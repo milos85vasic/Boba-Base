@@ -60,27 +60,46 @@ header, <code>window.location</code>, or an explicit
 universally — every submodule and sub-project inherits.</li>
 </ul></li>
 <li><strong>Pick the right restart level</strong> (verified 2026-04-19
-against the real <code>docker-compose.yml</code> mount strategy):
+against the real <code>docker-compose.yml</code> mount strategy; wrapper
+subcommands added 2026-08-08 per Hard Stop #3 — container orchestration
+is owned exclusively by the project’s own binary/orchestrator,
+<code>start.sh</code> — see
+<code>docs/GOVERNANCE_AUDIT_2026-08-07.md</code> GA-27). Operators MUST
+use the <code>start.sh</code> subcommand for each level — never type raw
+<code>podman</code>/<code>docker</code> commands directly:
 <ul>
 <li><strong>Python source in <code>download-proxy/src/</code> (including
 <code>merge_service/*.py</code>)</strong> — bind-mounted via
-<code>./download-proxy:/config/download-proxy</code>. Just
-<code>podman exec qbittorrent-proxy find /config/download-proxy -name __pycache__ -type d -exec rm -rf {} +</code>
-then <code>podman restart qbittorrent-proxy</code>.</li>
+<code>./download-proxy:/config/download-proxy</code>. Run
+<code>./start.sh --reload-python</code>. <em>(Under the hood: clears
+<code>__pycache__</code> inside the <code>qbittorrent-proxy</code>
+container via
+<code>podman|docker exec qbittorrent-proxy find /config/download-proxy -name __pycache__ -type d -exec rm -rf {} +</code>,
+then <code>podman|docker restart qbittorrent-proxy</code> —
+auto-detecting the runtime exactly like the rest of
+<code>start.sh</code>.)</em></li>
 <li><strong>Plugin files in <code>plugins/</code></strong> — also
-bind-mounted through <code>./config:/config</code>. After editing,
-<code>./install-plugin.sh</code> copies them into
-<code>config/qBittorrent/nova3/engines/</code> (that path IS the host
-side of the mount) and <code>podman restart qbittorrent-proxy</code>
-picks them up. A direct edit to
+bind-mounted through <code>./config:/config</code>. After editing, run
+<code>./install-plugin.sh</code> FIRST (copies <code>plugins/X.py</code>
+into <code>config/qBittorrent/nova3/engines/</code> — that path IS the
+host side of the mount), THEN <code>./start.sh --reload-plugins</code>
+to pick them up. A direct edit to
 <code>config/qBittorrent/nova3/engines/X.py</code> works for a one-shot
 try but will be clobbered on the next install — source of truth is
-<code>plugins/X.py</code>.</li>
+<code>plugins/X.py</code>. <em>(Under the hood:
+<code>--reload-plugins</code> only restarts the container —
+<code>podman|docker restart qbittorrent-proxy</code> — it does not copy
+files; <code>./install-plugin.sh</code> must run first.)</em></li>
 <li><strong><code>docker-compose.yml</code>,
-<code>start-proxy.sh</code>, env vars, base image</strong> —
-<code>podman compose down &amp;&amp; podman compose up -d</code> (full
-recreate). A <code>podman build</code> is only needed when
-<code>python:3.12-alpine</code> itself needs to change.</li>
+<code>start-proxy.sh</code>, env vars, base image</strong> — run
+<code>./start.sh --recreate</code> (full recreate). A rebuild of the
+<code>python:3.12-alpine</code>-based image is only needed when the base
+image itself needs to change. <em>(Under the hood:
+<code>&lt;compose&gt; down &amp;&amp; &lt;compose&gt; up -d</code>,
+using whatever compose invocation <code>start.sh</code> already uses for
+the initial <code>up</code> — <code>boba-ctl</code> by default, or raw
+<code>podman-compose</code>/<code>docker compose</code> with
+<code>--no-boba-ctl</code>.)</em></li>
 <li>In ALL cases:
 <code>VERIFY served content matches committed code</code> by curling the
 endpoint or grepping <code>podman exec ... cat /config/...</code> — this

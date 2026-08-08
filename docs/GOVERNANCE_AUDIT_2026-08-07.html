@@ -1,0 +1,672 @@
+<h1 id="governance-constitution-compliance-audit-2026-08-07">Governance
+&amp; Constitution Compliance Audit — 2026-08-07</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-07T19:10:54Z <strong>Status:</strong> active
+<strong>Scope:</strong> Full-repository audit against the inherited
+Helix Constitution (constitution/CLAUDE.md,
+constitution/Constitution.md) + verification of
+<code>docs/REMAINING_WORK_PLAN.md</code> (2026-06-14) closure claims +
+live-toolchain health. Assembled from 6 parallel read-only subagent
+audits, 2026-08-07. No file was modified by the audit itself; every
+finding below cites file:line, commit, or command output as evidence
+(§11.4.6 — no guessing).</p>
+<p><strong>Baseline:</strong> HEAD <code>0d05ec1</code> on
+<code>main</code>. <code>docs/CONTINUATION.md</code> was last updated at
+commit <code>646b295</code> (2026-06-16, “Session 14”) — 21 commits /
+~52 days behind HEAD at audit time.</p>
+<hr />
+<h2 id="how-to-execute-this-plan">0. How to execute this plan</h2>
+<p>Same discipline as <code>REMAINING_WORK_PLAN.md</code>: each
+<code>GA-NN</code> item is TDD-first (RED before fix,
+§11.4.43/§11.4.115), gets a regression guard where it closes a defect
+(§11.4.135), and closes only with pasted live command output (no
+self-certification words without evidence). Items marked
+<strong>OPERATOR-DECISION</strong> are surfaced, not auto-executed.
+Non-contending items run in parallel subagent streams
+(§11.4.70/§11.4.103).</p>
+<hr />
+<h2
+id="phase-0-toolchain-unblock-p0-prerequisite-for-verifying-everything-else">Phase
+0 — Toolchain unblock (P0, prerequisite for verifying everything
+else)</h2>
+<h3
+id="ga-01-python-test-toolchain-is-abi-broken-no-project-.venv">GA-01 —
+Python test toolchain is ABI-broken; no project <code>.venv</code></h3>
+<ul>
+<li><strong>Evidence:</strong> live run of the documented command
+<code>python3 -m pytest tests/unit/ -q --import-mode=importlib</code>
+crashes during plugin auto-load:
+<code>ModuleNotFoundError: No module named 'rpds.rpds'</code> /
+<code>No module named 'pydantic_core._pydantic_core'</code>.
+<code>python3</code> resolves to 3.14.6; every native extension in
+<code>~/.local/lib/python3/site-packages</code> is compiled for
+<code>cpython-313</code>. No <code>.venv/</code> exists in the repo.
+<strong>Zero tests can currently run</strong> —
+<code>CONTINUATION.md</code>’s “4277 passed” claim is unreproducible
+today.</li>
+<li><strong>Blast radius:</strong> blocks the entire unit suite, RW-21
+verification, and 3 Challenge scripts
+(<code>download_proxy_deep_challenge.sh</code>,
+<code>private_tracker_html_challenge.sh</code>,
+<code>search_deep_coverage_challenge.sh</code>) that need
+<code>.venv</code>.</li>
+<li><strong>Fix:</strong> create a project-pinned <code>.venv</code>
+(Python 3.12, matching <code>pyproject.toml</code>’s
+<code>target-version</code>/<code>mypy python_version</code>),
+<code>pip install -r tests/requirements.txt</code> (+ any
+<code>download-proxy</code> requirements), verify
+<code>pytest tests/unit/ -q --import-mode=importlib</code> actually
+collects and runs, paste the real N-passed/N-failed count. Document the
+exact bootstrap in <code>docs/TESTING.md</code> and
+<code>CONTINUATION.md</code>’s Quick-Start (which currently omits venv
+activation entirely).</li>
+<li><strong>Acceptance:</strong> real pytest run completes (not crashes)
+with a captured summary line; count compared against the 4277 baseline
+and any delta explained.</li>
+<li><strong>Priority: P0.</strong></li>
+</ul>
+<h3 id="ga-02-frontend-vitest-toolchain-broken-stale-node_modules">GA-02
+— Frontend Vitest toolchain broken (stale
+<code>node_modules</code>)</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>cd frontend &amp;&amp; npx vitest run</code> fails before any test
+executes:
+<code>Error: Cannot find module '@analogjs/vite-plugin-angular'</code>
+while loading <code>vitest.config.ts</code>.
+<code>frontend/node_modules</code> exists (332M) but is
+incomplete/stale.</li>
+<li><strong>Fix:</strong> <code>cd frontend &amp;&amp; npm ci</code> (or
+<code>npm install</code> if no lockfile match), re-run
+<code>npx vitest run</code>, capture the real pass count.</li>
+<li><strong>Priority: P0.</strong></li>
+</ul>
+<h3 id="ga-03-extension-vitest-toolchain-never-bootstrapped">GA-03 —
+Extension Vitest toolchain never bootstrapped</h3>
+<ul>
+<li><strong>Evidence:</strong> <code>extension/node_modules</code>
+absent entirely. All 8 <code>challenges/extension/*.sh</code> scripts
+fail cleanly and honestly
+(<code>FAIL: vitest not installed ... run 'cd extension &amp;&amp; npm install' first</code>)
+rather than false-passing — the challenges themselves are not buggy, the
+environment is just never set up. Blocks verification of the “379 passed
+/ 33 spec files” claim in <code>CONTINUATION.md</code> Session 10.</li>
+<li><strong>Fix:</strong>
+<code>cd extension &amp;&amp; npm install</code>, re-run
+<code>npx vitest run</code> + all 8 extension challenges, capture real
+counts.</li>
+<li><strong>Priority: P1.</strong></li>
+</ul>
+<hr />
+<h2 id="phase-1-governancetracking-seam-reconnection">Phase 1 —
+Governance/tracking seam reconnection</h2>
+<p><strong>Root cause:</strong> the mandated tracking chain
+(CONTINUATION.md → Issues.md/Fixed.md/workable_items.db → README
+entry-point) stopped being touched on 2026-06-16 while real engineering
+work (19 substantive commits) kept landing cleanly and correctly on
+<code>main</code>. The code is fine; the seam that is supposed to keep
+governance docs synced with code was silently disconnected — precisely
+the “prose exists, nobody wired the seam” failure mode the
+constitution’s own §11.4.205/§11.4.226/ §11.4.227 anchors describe.</p>
+<h3 id="ga-04-continuation.md-52-day-21-commit-staleness-gap">GA-04 —
+<code>CONTINUATION.md</code> 52-day / 21-commit staleness gap</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>git log --oneline 646b295..HEAD</code> = 21 commits (19
+substantive), spanning 2026-06-16T23:30 → 2026-08-07T21:52, none
+reflected in the file. Themed: Cyrillic/UTF-8 encoding-fix wave (6
+commits, <code>029c045</code>..<code>cdec407</code>), tracker/plugin
+fixes (7), egress/proxy/ Jackett feature wave (4:
+<code>2f160cd</code>,<code>4e62eca</code>,<code>b44a2e4</code>,<code>be5062d</code>),
+doc-sync (1), host-mirror sync (2, no-op for CONTINUATION
+purposes).</li>
+<li><strong>Violates:</strong> §12.10 / §11.4.131 (standing
+session-resumption file, always current).</li>
+<li><strong>Fix:</strong> author a new “Session 15” entry summarizing
+all 19 substantive commits by theme, update
+<code>**Last commit:**</code>/<code>**Last modified:**</code>/<code>**Revision:**</code>,
+reconcile the “In flight — NEXT ITEM” section (the P0 Cyrillic item it
+names as in-flight is now DONE per commit
+<code>4aee3c4</code>/<code>8918d4b</code> — verify and close it in the
+doc).</li>
+<li><strong>Priority: P0.</strong></li>
+</ul>
+<h3
+id="ga-05-lava-p1p4-porting-work-never-landed-as-tracked-workable-items">GA-05
+— Lava P1–P4 porting work never landed as tracked workable items</h3>
+<ul>
+<li><strong>Evidence:</strong> <code>docs/PORTING-FROM-LAVA.md</code>
+(created <code>be5062d</code>, 2026-07-01) maps 4 items to Lava-audit
+finding numbers: P1 §5 durable remote-exec, P2 §0/§4 egress/VPN routing,
+P3 §3 configurable outbound proxy, P4 §8 Jackett cookie-session login.
+All four are implemented in code (<code>scripts/deploy-remote.sh</code>,
+<code>containers/pkg/remote/executor.go</code>,
+<code>scripts/egress-via-vpn.sh</code>,
+<code>download-proxy/src/config/proxy.py</code>,
+<code>qBitTorrent-go/internal/httpx/proxy.go</code>, commit
+<code>2f160cd</code> explicitly “port Lava §8 finding”) — but
+<code>grep -in "lava|egress|BOBA_UPSTREAM_PROXY|durable-run|remote-exec" docs/Issues.md docs/Fixed.md</code>
+returns zero hits. A §6/§9 item (“anti-bluff QA verdict/diagnostics
+strengthening”) is listed applicable in the porting doc’s own triage
+table but no commit closes it — status unknown.</li>
+<li><strong>Violates:</strong> §11.4.148 / §11.4.202 / §11.4.208 (every
+actionable finding must land as a tracked item, not merely a commit
+message).</li>
+<li><strong>Fix:</strong> create BOB-064..067 via the
+<code>workable-items</code> tool (not raw MD edits, to keep DB↔︎MD
+custody intact — <code>workable-items validate</code>/<code>diff</code>
+already confirmed the DB↔︎MD pair is internally in sync, just frozen at
+BOB-063), cite the implementing commit + file as evidence, close as
+Implemented/Fixed. Determine the true status of the §6/§9 item and
+either close it with evidence or track it honestly as open.</li>
+<li><strong>Priority: P0.</strong></li>
+</ul>
+<h3
+id="ga-06-docsporting-from-lava.md-missing-11.4.44-revision-header">GA-06
+— <code>docs/PORTING-FROM-LAVA.md</code> missing §11.4.44 revision
+header</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>grep -n Revision docs/PORTING-FROM-LAVA.md</code> → empty.</li>
+<li><strong>Fix:</strong> add <code>**Revision:** N</code> /
+<code>**Last modified:**</code> header block.</li>
+<li><strong>Priority: P2.</strong></li>
+</ul>
+<h3
+id="ga-07-readme.md-has-no-11.4.5711.4.212-doc-link-entry-point-section">GA-07
+— README.md has no §11.4.57/§11.4.212 doc-link entry-point section</h3>
+<ul>
+<li><strong>Evidence:</strong> <code>README.md</code>’s
+<code>## Documentation</code> section (lines 108–162) links 20+ docs but
+contains <strong>zero</strong> references to
+<code>docs/Issues.md</code>, <code>docs/Fixed.md</code>,
+<code>docs/CONTINUATION.md</code>,
+<code>docs/PORTING-FROM-LAVA.md</code>,
+<code>docs/browser_extension/Status.md</code>,
+<code>docs/browser_extension/RELEASE_READINESS.md</code>,
+<code>docs/COMPLETION_STATUS.md</code>, or
+<code>docs/RELEASE_READINESS_20260616.md</code>. Every tracker/status
+doc audited here is an orphan relative to README.</li>
+<li><strong>Violates:</strong> §11.4.57
+(<code>Tracked-Items + Status Documents</code> mandated section) /
+§11.4.212 (README as canonical entry point for ALL project
+documentation).</li>
+<li><strong>Fix:</strong> add the mandated table (Document | Last
+modified | Revision | Markdown | HTML | PDF) covering every
+tracker/status doc in the repo, including this audit doc and
+<code>REMAINING_WORK_PLAN.md</code>.</li>
+<li><strong>Priority: P0</strong> (structural, repo-wide).</li>
+</ul>
+<h3 id="ga-08-docsbrowser_extensionstatus.md-stale-by-4-commits">GA-08 —
+<code>docs/browser_extension/Status.md</code> stale by 4 commits</h3>
+<ul>
+<li><strong>Evidence:</strong> Rev 15,
+<code>2026-06-13T13:10:00Z</code>. Commits since, untouched in the doc:
+<code>a410b91</code> (coverage), <code>0897248</code> (video-confirm),
+<code>ee4a01b</code> (crash-hardening), <code>0dc247b</code>
+(qBittorrent 5.x compat).</li>
+<li><strong>Fix:</strong> update Status.md + regenerate
+<code>Status_Summary.md</code> + HTML/PDF siblings
+(§11.4.45/§11.4.56).</li>
+<li><strong>Priority: P2.</strong></li>
+</ul>
+<h3
+id="ga-09-workable_items.db-bob-008-missing-operator_block_details-row">GA-09
+— <code>workable_items.db</code>: BOB-008 missing
+<code>operator_block_details</code> row</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>workable-items validate --db docs/workable_items.db</code> → 1
+violation: “BOB-008: Operator-blocked with no operator_block_details row
+(§11.4.148 D3)”. The prose in <code>Issues.md</code> DOES contain the
+<code>**Operator-Block-Details:**</code> line — this is a DB-column
+population gap, not a doc gap.</li>
+<li><strong>Fix:</strong> populate via the <code>workable-items</code>
+tool’s proper subcommand (not raw SQL).</li>
+<li><strong>Priority: P3.</strong></li>
+</ul>
+<h3
+id="ga-10-no-successor-to-docsrelease_readiness_20260616.md-no-top-level-v1.0.0-ledger">GA-10
+— No successor to <code>docs/RELEASE_READINESS_20260616.md</code>; no
+top-level v1.0.0 ledger</h3>
+<ul>
+<li><strong>Evidence:</strong> the doc is a self-labeled point-in-time
+snapshot (HEAD <code>8b9ef90</code>); 20 commits since have touched the
+audited surfaces. Its own text names “no top-level proxy/merge-service
+v1.0.0 readiness ledger” as an open blocker — this is RW-20 in the
+existing plan, still NOT-DONE (confirmed by the RW-plan verification
+agent).</li>
+<li><strong>Fix:</strong> create the ledger doc (dedupes with RW-20 —
+track under one ticket, not two).</li>
+<li><strong>Priority: P2.</strong></li>
+</ul>
+<hr />
+<h2
+id="phase-2-security-correctness-gaps-corrections-to-rw-plan-closure-claims">Phase
+2 — Security correctness gaps (corrections to RW-plan closure
+claims)</h2>
+<h3
+id="ga-11-rw-02-incomplete-2-mutating-routes-still-unauthenticated">GA-11
+— RW-02 incomplete: 2 mutating routes still unauthenticated</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>routes.py</code>/<code>scheduler.py</code>’s auth rollout covers
+download/upload/file/magnet (routes.py) and POST/DELETE schedules — but
+<code>PATCH /api/v1/schedules/{id}</code>
+(<code>scheduler.py:108</code>) and <code>PUT /api/v1/theme</code>
+(<code>routes.py:82</code>) have <strong>no</strong>
+<code>Depends(require_api_token)</code>. Confirmed by omission:
+<code>tests/security/test_hooks_schedules_auth.py:194-198</code>’s own
+<code>_MUTATING</code> enumeration never included them — the original
+fix and its test were scoped incompletely together.</li>
+<li><strong>Fix (TDD):</strong> RED — extend <code>_MUTATING</code> to
+include PATCH schedule + PUT theme, confirm the new assertions fail (401
+expected, currently unauthenticated) → add
+<code>Depends(require_api_token)</code> to both routes → GREEN → live
+curl-verify 401-unauth / 200-with-token on a running container.</li>
+<li><strong>Priority: P0</strong> (security).</li>
+</ul>
+<h3
+id="ga-12-rw-06-unverifiable-rutracker-redos-fix-not-confirmed-deployed">GA-12
+— RW-06 unverifiable: rutracker ReDoS fix not confirmed deployed</h3>
+<ul>
+<li><strong>Evidence:</strong> source fix present
+(<code>plugins/rutracker.py:140</code>, <code>{0,512}</code> bound); no
+live container running on the audit host to check
+<code>config/qBittorrent/nova3/engines/rutracker.py</code> (the
+installed copy) or measure live parse timing — a §11.4.108
+SOURCE≠ARTIFACT/RUNTIME gap that is unverified, not necessarily
+unfixed.</li>
+<li><strong>Fix:</strong> bring up the compose stack
+(<code>./start.sh</code>), run <code>./install-plugin.sh</code>, verify
+<code>grep '{0,512}' config/qBittorrent/nova3/engines/rutracker.py</code>
+on the container, capture timing of a large rutracker result page.</li>
+<li><strong>Priority: P1</strong> (needs live stack).</li>
+</ul>
+<h3
+id="ga-13-rw-07-partial-nnmclub-e2e-skip-on-404-fallback-never-removed">GA-13
+— RW-07 partial: nnmclub e2e SKIP-on-404 fallback never removed</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>tests/e2e/test_live_stack_evidence.py:265</code> still contains
+the skip fallback; the acceptance criterion (“un-skip”) is unmet
+regardless of live container state — the route existing in source
+(<code>download-proxy/src/api/auth.py:350</code>) isn’t what was asked
+for.</li>
+<li><strong>Fix:</strong> with the live stack up, confirm
+<code>curl :7187/api/v1/auth/nnmclub/status</code> → 200, remove the
+skip fallback, let the assertion run for real, capture the pass.</li>
+<li><strong>Priority: P1</strong> (needs live stack).</li>
+</ul>
+<hr />
+<h2
+id="phase-3-test-type-integrity-constitutions-non-unit-tests-hit-real-services-rule">Phase
+3 — Test-type integrity (constitution’s “non-unit tests hit real
+services” rule)</h2>
+<h3
+id="ga-14-ga-15-ga-16-three-test-files-mislabeled-by-directory-mock-the-exact-system-under-test">GA-14,
+GA-15, GA-16 — Three test files mislabeled by directory mock the exact
+system under test</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<ul>
+<li><code>tests/integration/test_merge_api.py</code> (577 lines) — own
+docstring: “Uses FastAPI TestClient with mocked SearchOrchestrator.”
+Every route test
+<code>@patch("api.routes._get_orchestrator")</code>.</li>
+<li><code>tests/e2e/test_full_pipeline.py</code> — docstring claims
+“End-to-end”, but patches
+<code>SearchOrchestrator._get_enabled_trackers</code>/<code>_search_tracker</code>
+with a synthetic fake — no real tracker HTTP call ever happens.</li>
+<li><code>tests/contract/test_tracker_stats_contract.py:80-81</code> —
+same <code>monkeypatch.setattr</code> pattern on the same two
+methods.</li>
+</ul></li>
+<li><strong>Violates:</strong> CLAUDE.md’s inherited rule: “Mocks,
+stubs… are permitted ONLY in unit tests … All other test types MUST
+interact with real fully implemented System” (§11.4.27).</li>
+<li><strong>Fix:</strong> for each file — (a) relocate the mocked
+version into <code>tests/unit/</code> under an honest name (the coverage
+IS valuable as unit-level route-contract testing), AND (b) author a new
+real-service replacement in the original directory using the project’s
+EXISTING live-stack fixtures (<code>tests/fixtures/compose.py</code>,
+<code>tests/fixtures/services.py</code>,
+<code>tests/integration/test_fixtures_bring_up_services.py</code>
+already demonstrate this pattern is viable in this repo) so the
+directory’s contract (integration/e2e/contract = real services) is
+actually met.</li>
+<li><strong>Priority: P1</strong> (each file independent,
+parallelizable).</li>
+</ul>
+<h3
+id="ga-17-legacy-untriaged-skip-tag-family-never-actually-triaged">GA-17
+— <code>#legacy-untriaged</code> skip-tag family never actually
+triaged</h3>
+<ul>
+<li><strong>Evidence:</strong> ~10 sites
+(<code>tests/e2e/test_public_trackers_return_results.py:128</code>,
+<code>tests/unit/test_openapi_frozen.py:15,23</code>,
+<code>tests/unit/test_plugin_smoke.py:45</code>,
+<code>tests/docs/test_no_broken_links.py:51</code>,
+<code>tests/fixtures/services.py:9</code>, others) carry
+<code>SKIP-OK: #legacy-untriaged</code> — syntactically satisfies the
+format, but the “ticket” is a literal placeholder admitting it was never
+triaged.</li>
+<li><strong>Fix:</strong> triage each site individually — determine the
+real reason, either fix/un-skip or replace the placeholder with a real
+ticket id + reason.</li>
+<li><strong>Priority: P3.</strong></li>
+</ul>
+<h3
+id="ga-18-7-permanently-skipped-dead-jackett-autoconfig-python-tests">GA-18
+— 7 permanently-skipped dead Jackett-autoconfig Python tests</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>tests/contract/test_jackett_autoconfig_contract.py:18,24</code>,
+<code>tests/integration/test_jackett_autoconfig_real.py:71,77,83</code>,
+<code>tests/e2e/test_jackett_autoconfig_e2e.py:32,38</code>,
+<code>tests/security/test_jackett_autoconfig_secrets.py:41</code> — all
+skip with “endpoint moved to boba-jackett:7189”. Migration confirmed
+deliberate: <code>download-proxy/src/api/__init__.py:301-306</code>
+explicitly removes the Python endpoint in favour of the Go service
+(RW-13 evidence).</li>
+<li><strong>Fix (§11.4.124 investigate-before-remove — investigation
+above already satisfies the proof requirement):</strong> delete these
+dead test bodies in one dedicated commit citing the
+git-history/migration evidence; the replacement coverage lives in
+<code>qBitTorrent-go/tests/integration/jackett_db_test.go</code> and the
+Go autoconfig package.</li>
+<li><strong>Priority: P3.</strong></li>
+</ul>
+<hr />
+<h2 id="phase-4-go-backend-parity-blocked-on-operator-decision">Phase 4
+— Go backend parity (blocked on operator decision)</h2>
+<h3
+id="ga-19-operator-decision-is---profile-go-parity-still-a-release-goal">GA-19
+— OPERATOR-DECISION: is <code>--profile go</code> parity still a release
+goal?</h3>
+<ul>
+<li><strong>Evidence:</strong> this is RW-09, unresolved since
+2026-06-14. <code>docs/migration/PARITY_GAPS.md</code> and
+<code>docs/features/Status.md:52,194</code> are unrevised (“Last audited
+2026-04-27”, 6 ported / 4 partial / 8 missing). Confirmed-missing since
+the plan was written: scheduler driver loop (<code>qBitTorrent-go</code>
+scheduler files have no <code>time.Ticker</code>), metadata enricher (no
+equivalent package), public-tracker plugin fan-out (no
+<code>exec.Command</code> fan-out in <code>internal/service</code>).
+Jackett autoconfig (RW-13) is now PARTIAL — implemented as its own Go
+service, canonical per
+<code>download-proxy/src/api/__init__.py:301-306</code>, but
+BEP48/scrape validation and a CAPTCHA REST endpoint are still absent
+from the Go side.</li>
+<li><strong>This gates:</strong> RW-10 (scheduler driver —
+“highest-impact silent functional hole on the Go path” per the RW-plan’s
+own words), RW-11 (enricher), RW-12 (plugin fan-out), the remainder of
+RW-13, and GA-20’s stress/chaos items RW-14/RW-15 to the extent they’re
+Go-path-specific.</li>
+<li><strong>Decision needed:</strong> commit real scope to close the 3
+missing Go subsystems (multi-day effort), or mark the Go backend a
+documented future blueprint and stop implying it’s a near-term parity
+target in Status.md.</li>
+<li><strong>Priority: P1, surfaced via §11.4.66 — not
+auto-executed.</strong></li>
+</ul>
+<h3
+id="ga-20-rw-14rw-15-stresschaos-coverage-claims-were-inaccurate-still-not-done">GA-20
+— RW-14/RW-15 stress/chaos coverage claims were inaccurate; still
+NOT-DONE</h3>
+<ul>
+<li><strong>Evidence:</strong> commit <code>a410b91</code> (“close Go +
+extension coverage gaps RW-14/RW-16”) actually added Go
+<code>internal/jackett</code>/<code>internal/logging</code> unit tests
+and an extension parser test — NOT §11.4.85-conformant stress/chaos
+coverage for the tracker-fetch/cookie-auth path (RW-14) or the
+scheduler+hooks+SSE-broker surface (RW-15). No matching test files
+exist. <code>RW-16</code>’s Go-DB concurrent-write test
+(<code>jackett_db_test.go:440-500</code>) predates the plan (commit
+<code>8936545</code>, 2026-04-27) and has no fault-injection — genuinely
+PARTIAL, not the chaos coverage the plan calls for.</li>
+<li><strong>Fix:</strong> author real
+<code>tests/stress/test_tracker_fetch_stress_chaos.py</code>
+(download-proxy cookie-auth path, overlapping the RW-03 SSRF surface)
+and <code>tests/stress/test_scheduler_hooks_sse_stress_chaos.py</code>,
+plus a chaos-fault-injection extension to the existing Go DB concurrency
+test (process-kill / resource-exhaustion, not just concurrent writes).
+Correct the historical claim in a follow-up doc note (§11.4.6 — don’t
+leave the false “closed” claim standing).</li>
+<li><strong>Priority: P2.</strong></li>
+</ul>
+<hr />
+<h2 id="phase-5-challenges-helixqa-infrastructure-bugs">Phase 5 —
+Challenges / HelixQA infrastructure bugs</h2>
+<h3
+id="ga-21-jackett_autoconfig_clean_slate.sh-polls-a-retired-endpoint">GA-21
+— <code>jackett_autoconfig_clean_slate.sh</code> polls a retired
+endpoint</h3>
+<ul>
+<li><strong>Evidence:</strong> 3 references to
+<code>/api/v1/jackett/autoconfig/last</code> (lines 8, 58, 62) — this
+endpoint was deliberately removed per CLAUDE.md (“The Python
+<code>/api/v1/jackett/autoconfig/last</code> endpoint was removed”). The
+challenge would always fail step 5 against the current
+architecture.</li>
+<li><strong>Fix:</strong> update to poll the Go <code>:7189</code>
+autoconfig-runs API (<code>GET /api/v1/jackett/autoconfig/runs</code> or
+<code>/runs/{id}</code> per
+<code>qBitTorrent-go/internal/jackettapi/router.go</code>).</li>
+<li><strong>Priority: P1.</strong></li>
+</ul>
+<h3
+id="ga-22-all-6-helixqa-bank-symlinks-are-dangling-absolute-macos-paths">GA-22
+— All 6 HelixQA bank symlinks are dangling absolute macOS paths</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>challenges/helixqa-banks/*.yaml</code> → symlinks to
+<code>/Volumes/T7/Projects/Boba/submodules/helixqa/banks/*.yaml</code>,
+authored on a different dev machine. Broken on this (and any
+non-that-exact-Mac) host. The real files exist and are correct at
+<code>submodules/helixqa/banks/*.yaml</code> (37-entry populated
+submodule, confirmed not empty).</li>
+<li><strong>Fix:</strong> replace with relative symlinks
+(<code>ln -sf ../../submodules/helixqa/banks/&lt;name&gt;.yaml</code>).</li>
+<li><strong>Priority: P1.</strong></li>
+</ul>
+<h3
+id="ga-23-helixqa-bank-action-steps-hardcode-volumest7projectsboba...">GA-23
+— HelixQA bank action steps hardcode
+<code>/Volumes/T7/Projects/Boba/...</code></h3>
+<ul>
+<li><strong>Evidence:</strong> e.g. <code>boba-boba-ctl.yaml</code>:
+<code>cd /Volumes/T7/Projects/Boba/cmd/boba-ctl &amp;&amp; go build ...</code>;
+<code>boba-docs-chain.yaml</code>:
+<code>bash /Volumes/T7/Projects/Boba/scripts/docs_chain.sh</code>.
+Non-portable to this or any other checkout.</li>
+<li><strong>Fix:</strong> parametrize with a
+<code>$PROJECT_ROOT</code>/<code>$REPO_ROOT</code> variable the HelixQA
+runner resolves at invocation time, or make paths script-relative.</li>
+<li><strong>Priority: P2.</strong></li>
+</ul>
+<h3
+id="ga-24-no_suspend_calls_challenge.sh-false-positives-on-a-governance-doc">GA-24
+— <code>no_suspend_calls_challenge.sh</code> false-positives on a
+governance doc</h3>
+<ul>
+<li><strong>Evidence:</strong> flags
+<code>constitution/docs/scripts/guard-forbidden-commands.md</code>
+because that doc <em>quotes</em> the forbidden systemctl/loginctl verbs
+it documents/enforces. Its <code>EXCLUDE_PATHS</code> allowlist covers
+<code>CONSTITUTION.md</code>/<code>AGENTS.md</code>/<code>CLAUDE.md</code>
+but not this file — a carrier false-positive, the exact §11.4.201
+pattern the constitution itself warns about.</li>
+<li><strong>Fix:</strong> add the file to <code>EXCLUDE_PATHS</code> in
+<code>scripts/host-power-management/check-no-suspend-calls.sh</code>.</li>
+<li><strong>Priority: P3.</strong></li>
+</ul>
+<hr />
+<h2
+id="phase-6-const-033-real-signal-high-projects-own-hard-ban-class">Phase
+6 — CONST-033 real signal (HIGH — project’s own hard-ban class)</h2>
+<h3
+id="ga-25-host_no_auto_poweroff_challenge.sh-found-1-genuine-post-fix-poweroff-broadcast">GA-25
+— <code>host_no_auto_poweroff_challenge.sh</code> found 1 genuine
+post-fix poweroff broadcast</h3>
+<ul>
+<li><strong>Evidence:</strong> 4/5 checks pass; 1 fails — a “will power
+off” journal broadcast recorded AFTER the documented fix marker
+(<code>2026-04-28T20:54:31+03:00</code>).</li>
+<li><strong>This is the exact incident class CLAUDE.md’s own CONST-033
+Operational Note exists for.</strong> Per that note, the correct
+response is triage BEFORE assuming host-code causation and BEFORE
+dismissing it: (1) <code>uptime</code> cross-check against any alleged
+downtime window, (2)
+<code>journalctl -k --since "24 hours ago" | grep -iE "will suspend|systemd-suspend"</code>,
+(3)
+<code>journalctl -k --since "24 hours ago" | grep -iE "oom-kill|killed process"</code>
++ decode the <code>oom_memcg</code> cgroup path if present, (4) re-run
+both CONST-033 challenges, (5) document findings in
+<code>docs/incidents/&lt;date&gt;-*.md</code> regardless of outcome.
+<strong>Only read-only diagnostic commands</strong> — nothing that
+triggers a power-state transition, per the absolute Hard Ban.</li>
+<li><strong>Priority: P0</strong> — triage this first, independent of
+everything else in this plan, given the project’s own stated severity
+for this incident class (prior data-loss history cited in
+CLAUDE.md).</li>
+</ul>
+<hr />
+<h2 id="phase-7-gate-scoping-bug">Phase 7 — Gate-scoping bug</h2>
+<h3
+id="ga-26-ruff-check-.-sweeps-submodulescontainers-a-separately-governed-submodule">GA-26
+— <code>ruff check .</code> sweeps <code>submodules/containers/</code>
+(a separately-governed submodule)</h3>
+<ul>
+<li><strong>Evidence:</strong> <code>[tool.ruff]</code> in
+<code>pyproject.toml</code> has no
+<code>exclude</code>/<code>extend-exclude</code> at all. 71 ruff
+violations found; sampled violations are exclusively in
+<code>submodules/containers/scripts/resource-policy/*.py</code> — a
+submodule that owns its own engineering standards per §11.4.28
+decoupling. This inflates boba’s own lint-gate count with debt that
+isn’t boba’s to fix.</li>
+<li><strong>Fix:</strong> add
+<code>extend-exclude = ["submodules/", "constitution/", ".worktrees/"]</code>
+to <code>[tool.ruff]</code>, re-run <code>ruff check .</code>, report
+the TRUE boba-only violation count (may be 0, may be nonzero — verify,
+don’t assume).</li>
+<li><strong>Priority: P2.</strong></li>
+</ul>
+<hr />
+<h2
+id="phase-8-governance-layer-ambiguity-needs-operator-clarification">Phase
+8 — Governance-layer ambiguity (needs operator clarification)</h2>
+<h3
+id="ga-27-operator-decision-hard-stop-3-vs.-this-projects-documented-maintenance-workflow">GA-27
+— OPERATOR-DECISION: Hard Stop #3 vs. this project’s documented
+maintenance workflow</h3>
+<ul>
+<li><strong>Evidence:</strong> the inherited constitution’s Hard Stop #3
+states container orchestration must be owned exclusively by the
+project’s own binary/orchestrator, with direct
+<code>docker</code>/<code>podman</code> commands “prohibited as
+workflows.” This project’s own CLAUDE.md “Critical Constraints” section
+explicitly prescribes direct
+<code>podman exec qbittorrent-proxy ...</code>,
+<code>podman restart qbittorrent-proxy</code>, and
+<code>podman compose down &amp;&amp; podman compose up -d</code> as the
+mandated procedure for Python-source reload, plugin reload, and
+compose/env changes.</li>
+<li><strong>Decision needed:</strong> either (a) formally classify this
+as an intentional, documented exception per §11.4.17 (with a one-line
+rationale — e.g. “restart-level granularity below full stack lifecycle
+is exempt because start.sh/stop.sh don’t yet expose it”), or (b) extend
+<code>start.sh</code>/<code>stop.sh</code> with subcommands that wrap
+these exact operations (e.g. <code>./start.sh --restart-proxy</code>,
+<code>./start.sh --reload-plugins</code>) so operators never type raw
+podman commands, closing the gap for real.</li>
+<li><strong>Priority: P1, surfaced via §11.4.66 — not
+auto-executed.</strong></li>
+</ul>
+<hr />
+<h2 id="summary-table">Summary table</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Phase</th>
+<th>Items</th>
+<th>Blocking on live infra?</th>
+<th>Blocking on operator decision?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 — Toolchain unblock</td>
+<td>GA-01..03</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>1 — Governance/tracking</td>
+<td>GA-04..10</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>2 — Security corrections</td>
+<td>GA-11..13</td>
+<td>GA-12/13 yes</td>
+<td>No</td>
+</tr>
+<tr>
+<td>3 — Test-type integrity</td>
+<td>GA-14..18</td>
+<td>GA-14..16 partial (real-service replacements)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>4 — Go parity</td>
+<td>GA-19..20</td>
+<td>No</td>
+<td><strong>GA-19 yes</strong></td>
+</tr>
+<tr>
+<td>5 — Challenge/HelixQA bugs</td>
+<td>GA-21..24</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>6 — CONST-033 signal</td>
+<td>GA-25</td>
+<td>No (read-only triage)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>7 — Gate scoping</td>
+<td>GA-26</td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>8 — Governance ambiguity</td>
+<td>GA-27</td>
+<td>No</td>
+<td><strong>GA-27 yes</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cross-reference:</strong> GA-11..13, GA-19..20 correct/extend
+<code>docs/REMAINING_WORK_PLAN.md</code>’s RW-02/06/07/09/14/15 entries
+— that document’s status table should be updated in the same pass to
+avoid two divergent trackers describing the same defects (§11.4.186
+anti-divergence).</p>
+<p><strong>Definition of done for this audit:</strong> every GA item
+above reaches DONE (with live-captured evidence), OPERATOR-DECISION
+items (GA-19, GA-27) are resolved, <code>REMAINING_WORK_PLAN.md</code>’s
+corrected items are reconciled, README carries the doc-link section,
+CONTINUATION.md is current, and every fix ships with a regression guard
++ (where the surface is user-facing) a HelixQA Challenge entry.</p>

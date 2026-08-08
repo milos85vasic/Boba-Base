@@ -1,0 +1,67 @@
+<h1 id="boba-multi-track-development-registration">Boba — Multi-Track
+Development Registration</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-08T17:10:00Z <strong>Status:</strong> active</p>
+<h2 id="decision-operator-mandate-2026-08-08">Decision (operator
+mandate, 2026-08-08)</h2>
+<p>Boba permanently adopts the constitution’s multi-track development
+discipline (§11.4.58 parallel work-unit pipeline, §11.4.176
+work-division, §11.4.178 track-qualified identity, §11.4.182 work-stream
+labels, §11.4.187 automatic ruler orchestration, §11.4.192 continuous
+auto-backfill) as its <strong>standing working mode going
+forward</strong> — not a one-off exercise.</p>
+<p><strong>This checkout
+(<code>/run/media/milosvasic/DATA4TB/Projects/boba</code>, host
+<code>nezha</code>) is permanently registered as the home of Track
+11</strong> in the operator’s multi-track fleet, chosen to avoid
+colliding with track numbers already in use by other projects/hosts
+(<code>/mnt/track1..4</code> are occupied elsewhere).</p>
+<p><strong>Execution scope right now (operator instruction, 2026-08-08):
+single-track only.</strong> No parallel background ruler/subagent
+streams have been spawned for this project yet. The identity/labeling
+convention below is adopted immediately and permanently; actual parallel
+dispatch is deferred until the operator asks for it.</p>
+<h2 id="label-convention">Label convention</h2>
+<p>Every work-stream label for boba follows §11.4.182’s
+<code>(T&lt;N&gt;/&lt;branch&gt; - &lt;alias&gt; - &lt;model&gt; - &lt;effort&gt;)</code>
+form, derived via <code>scripts/multitrack/track_branch_label.sh</code>
+(a thin, boba-owned wrapper — never a copy — around the canonical,
+fleet-wide
+<code>constitution/scripts/multitrack/track_branch_label.sh</code>, per
+§11.4.28(B)/ §11.4.177 decoupling: shared engines are wrapped, never
+edited in place).</p>
+<ul>
+<li><strong>Trunk (<code>main</code>/<code>master</code>) work is ALWAYS
+<code>T1</code></strong> — the canonical script’s hard-coded TRUNK RULE
+(§11.4.182 amendment, 2026-07-28) is intentionally <strong>never
+overridden</strong>. This is deliberate: the rule exists so trunk work
+is never mistaken for “an unknown track” across the operator’s whole
+fleet, and weakening it here would misrepresent trunk work as a numbered
+track it isn’t.</li>
+<li><strong>Non-trunk work
+(<code>feat/</code>/<code>product/</code>/<code>flavor/</code> branches
+per §11.4.195) dispatched from this checkout is
+<code>T11</code>.</strong> The canonical script has no way to know that
+a checkout outside <code>/mnt/track&lt;N&gt;</code> should map to track
+11 — it honestly emits <code>T?</code> there — so the wrapper’s only job
+is filling that specific <code>?</code> in with <code>11</code>, and
+only on non-trunk branches.</li>
+</ul>
+<p>Verified 2026-08-08 (real invocation, on <code>main</code>):</p>
+<pre><code>$ bash scripts/multitrack/track_branch_label.sh
+(T1/main - milos85vasic - ? - xhigh)</code></pre>
+<p>(<code>?</code> for <code>&lt;model&gt;</code> is the labeler’s own
+honest fallback for this native-alias’s session-transcript lookup shape
+— not a bug in this wrapper.)</p>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><code>scripts/multitrack/track_branch_label.sh</code> — the
+boba-owned wrapper.</li>
+<li><code>constitution/scripts/multitrack/track_branch_label.sh</code> —
+the canonical, inherited-by-reference engine this wrapper delegates
+to.</li>
+<li><code>docs/CONTINUATION.md</code> — session handoff, references this
+decision.</li>
+<li><code>CLAUDE.md</code> — Critical Constraints section carries a
+one-line pointer here.</li>
+</ul>

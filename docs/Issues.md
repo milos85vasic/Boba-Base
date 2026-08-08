@@ -18,9 +18,9 @@
 **Operator-Block-Details:** WHAT — RuTracker login with stored creds returns
 no session cookie (CAPTCHA wall). WHY — automated user/pass login is
 CAPTCHA-gated; self-resolution exhausted (creds correct + wired, login
-attempted, `auth=True`). UNBLOCK — operator completes the CAPTCHA flow at
-`/api/v1/auth/rutracker/captcha` + `/login`, or pastes a fresh `bb_session`
-cookie via `/auth/rutracker/cookie-login`. WHO — operator.
+attempted, `auth=True`). UNBLOCK — [A] operator completes the CAPTCHA flow
+at `/api/v1/auth/rutracker/captcha` + `/login`. [B] operator pastes a fresh
+`bb_session` cookie via `/auth/rutracker/cookie-login`. WHO — operator.
 
 **Evidence:** live search per-tracker stat `rutracker status=error auth=True
 error="login returned no session cookie — likely CAPTCHA"`.

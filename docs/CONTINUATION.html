@@ -1,22 +1,156 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 19 <strong>Last modified:</strong>
-2026-06-16T23:55:00Z <strong>Session:</strong> 2026-06-16 (Session 14 —
-search-broken/crashing fixed: multi-word encoding storm, private-tracker
-cookie auth, deploy pipeline, healthz, kickass; PROVEN on nezha — 2600
-results, all 4 private trackers auth, none crashed. In-flight: P0
-UTF-8/Cyrillic encoding fix) <strong>Last commit:</strong>
-<code>646b295</code> (Status ledger Rev 7 — proven search/auth/healthz
-fixes §11.4.153) <strong>Branch:</strong> <code>main</code>
-<strong>Working tree:</strong> has the in-flight UTF-8 RED test
-untracked
-(<code>tests/unit/test_plugin_unicode_query_encoding.py</code>);
-search/auth/deploy fixes all published at HEAD</p>
+<p><strong>Revision:</strong> 20 <strong>Last modified:</strong>
+2026-08-08T17:36:59Z <strong>Session:</strong> 2026-08-08 (Session 15 —
+full constitution/governance re-audit (Round 2), one P0 security fix
+landed (source+tests done, live verify owed), a host-level root-cause
+found (session-killing <code>KillUserProcesses</code>), Track 11
+multi-track identity adopted, new constitution anchor §11.4.238 landed
+via a live cross-session collision, workable-items DB reconciled.)
+<strong>Last commit:</strong> <code>50c7a66</code> (chore(constitution):
+bump submodule pointer to 177f2b0, §11.4.238) <strong>Branch:</strong>
+<code>main</code> <strong>Working tree:</strong> docs_chain regeneration
+in flight (HTML/PDF exports); <code>docs/Issues.md</code> /
+<code>docs/workable_items.db</code> reconciled and committed-pending;
+<code>scripts/multitrack/</code> + <code>docs/MULTITRACK.md</code>
+untracked (new, not yet committed).</p>
 <blockquote>
 <p>Send <code>continue</code> to pick up exactly where we left off. This
 file is the single source of truth for session handoff (§12.10 /
 §11.4.131).</p>
 </blockquote>
+<hr />
+<h2
+id="current-state-session-15-2026-08-08-governance-re-audit-p0-security-fix-host-root-cause-multi-track-kickoff">CURRENT
+STATE — Session 15 (2026-08-08): governance re-audit + P0 security fix +
+host root-cause + multi-track kickoff</h2>
+<p><strong>Operator asked for a full deep-research
+constitutional-compliance audit</strong> (rules followed,
+constitution-derived technology incorporated,
+gaps/danger-zones/inconsistencies identified, systematic root-cause
+remediation plan with live verification). Delivered as
+<code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code> (Rev 3) — live
+re-verification of every item in the 2026-08-07 audit (GA-01..27) + the
+original 2026-06-14 plan (RW-01..21), a fresh gap scan (RD2-01 through
+RD2-09), and root-cause forensics on two previously-unattributed
+“Auto-commit” commits. <strong>Read that document for the full,
+prioritized, root-cause-grouped remediation plan</strong> — this entry
+only summarizes what changed THIS session.</p>
+<h3 id="what-landed-session-15">What landed (Session 15)</h3>
+<ul>
+<li><strong>Governance audit, Round 2
+(<code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code>).</strong>
+Confirmed DONE since the 2026-08-07 audit: Python/frontend/extension
+toolchains (4340 unit tests now collect cleanly), <code>ruff</code> down
+to 0 real violations (submodule-scoping fix), HelixQA bank symlinks
+fixed, <code>start.sh --reload-python/--reload-plugins/--recreate</code>
+real working implementations, CONST-033 triage doc, jackett-autoconfig
+dead-test removal. Confirmed STILL OPEN: 3 test files mislabeled
+integration/e2e/contract that mock the system under test, 14
+<code>#legacy-untriaged</code> tags, Go backend parity
+(operator-decision, unchanged), stress/chaos coverage gaps, HelixQA
+hardcoded <code>/Volumes/T7</code> paths,
+<code>docker-compose.quality.yml</code> missing container-hygiene
+limits, a <code>.trivyignore.yaml</code> with placeholder CVE IDs,
+DDoS-class testing fully absent. <strong>NEW P0 finding
+(RD2-40):</strong> boba does not yet comply with the just-landed
+constitution anchor §11.4.238 (no manual-discovery ledger, no
+coverage-escape-audit process) — every finding in this very audit round
+is itself an instance of the out-of-band-discovery channel that anchor
+targets.</li>
+<li><strong>RD2-22 (P0 security) — source fix DONE, live-verify still
+owed.</strong> <code>PATCH /api/v1/schedules/{id}</code> and
+<code>PUT /api/v1/theme</code> were unauthenticated even with
+<code>BOBA_API_TOKEN</code> set. TDD RED
+(<code>tests/security/test_hooks_schedules_auth.py</code> extended) →
+GREEN (<code>Depends(require_api_token)</code> added to both routes in
+<code>download-proxy/src/api/scheduler.py</code> +
+<code>routes.py</code>) → 31/31 security suite + 176/176 theme/scheduler
+regression tests pass. A root-cause function-ordering bug
+(<code>require_api_token</code> referenced before its own definition,
+crashing the whole API module) was found and fixed during GREEN —
+<code>require_api_token</code> moved earlier in <code>routes.py</code>.
+<strong>Still owed:</strong> the full
+<code>tests/contract/+tests/unit/</code> regression sweep (interrupted
+mid-run by a session kill — see below) and a live curl-verify (401
+unauth / 200 with-token) on a running container.</li>
+<li><strong>Host root-cause found:
+<code>KillUserProcesses=true</code>.</strong> The operator reported the
+session/tmux/ Claude Code process being repeatedly killed.
+Systematic-debugging (journalctl OOM-killer check → zero hits;
+<code>systemd-oomd</code> → no kill-decision log lines; live
+<code>busctl</code> read of
+<code>org.freedesktop.login1.Manager.KillUserProcesses</code> →
+confirmed <code>true</code>) found the real mechanism: every time the
+local GDM/GNOME session closes, systemd-logind SIGKILLs the ENTIRE
+<code>user@1000.service</code> slice — tmux server, Claude Code,
+everything — regardless of <code>Linger=yes</code>. Confirmed 4
+occurrences in one day via journalctl, one explicitly listing
+<code>pid ... (claude)</code> in its kill list. <strong>Awaiting
+operator decision</strong>: a <code>logind.conf.d</code> drop-in
+(<code>KillUserProcesses=no</code> blanket, or
+<code>KillExcludeUsers=milosvasic</code> narrower) — not yet applied,
+host-wide change, needs explicit go-ahead.</li>
+<li><strong>Track 11 — multi-track identity permanently
+adopted.</strong> <code>docs/MULTITRACK.md</code> +
+<code>scripts/multitrack/track_branch_label.sh</code> (boba-owned
+wrapper around the constitution’s shared, inherited-by-reference labeler
+— never edited in place). This checkout is registered as the home of
+Track 11; trunk (<code>main</code>) work stays <code>T1</code> per the
+constitution’s own hard-coded TRUNK RULE (never overridden); non-trunk
+work from this checkout labels <code>T11</code>. Execution stays
+single-track for now per operator instruction — no parallel ruler/
+subagent streams spawned.</li>
+<li><strong>New constitution anchor §11.4.238</strong> (“automated QA
+must be the DISCOVERER, not the confirmer” — manual QA must find zero
+new issues). Landed via a <strong>live cross-session collision</strong>:
+a parallel Claude session (Opus 5, same host observed via a +0500
+timezone offset) independently authored and published the same anchor
+number first; this session’s own unpublished duplicate was discarded
+(never reached any remote, safe to abandon) per §11.4.227(B)’s
+anchor-collision rule. <code>constitution</code> submodule pointer
+bumped + pushed (<code>50c7a66</code>). This ALSO resolved the mystery
+“Auto-commit” pattern from the 2026-08-07 audit — it is very likely this
+same second session/device, not an unknown external actor.</li>
+<li><strong>workable_items.db reconciled.</strong> BOB-008’s DB↔︎MD body
+drift fixed (<code>sync md-to-db</code>) plus a genuine §11.4.148(D3)
+finding surfaced and fixed along the way (the
+<code>Operator-Block-Details</code> UNBLOCK clause needed enumerated
+<code>[A]</code>/<code>[B]</code> choices, not free prose).
+BOB-009/BOB-010’s <code>evidence_path</code> violations (narrative text
+instead of a resolvable path) were investigated — real evidence
+identified via git archaeology (commit <code>0558399</code>;
+<code>scripts/boba-ctl.sh</code> + <code>scripts/docs_chain.sh</code>
+still exist and back the claims) — but the <code>workable-items</code>
+tool has <strong>no subcommand to correct a historical
+<code>item_history.evidence_path</code></strong> on an already-Completed
+item; raw SQL was correctly avoided (violates the tool-only-mutation
+discipline) and a reopen-then-close cycle was correctly avoided (would
+falsely imply the underlying work was broken). Tracked as an honest,
+open tooling gap, not silently worked around.</li>
+</ul>
+<h3 id="in-flight-next-item-p0-do-this-first">In flight / NEXT ITEM (P0,
+do this first)</h3>
+<ol type="1">
+<li><strong>Finish RD2-22</strong>: re-run the full
+<code>tests/contract/+tests/unit/</code> regression sweep to completion
+(it was killed mid-run by the <code>KillUserProcesses</code> issue),
+then live curl-verify 401/200 on a running container, then add the
+§11.4.135 regression guard + HelixQA Challenge entry.</li>
+<li><strong>Operator decision needed</strong>: apply the
+<code>KillUserProcesses</code> fix (blanket vs. narrower — see above) —
+every future session remains at risk of the same abrupt kill until this
+lands.</li>
+<li>Work through
+<code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code>’s remaining
+root-cause-grouped items in priority order (Root Causes 3–6 + the
+ungrouped P1/P2 items), starting with RD2-40 (§11.4.238 compliance)
+given its zero-grace-period “no escape hatch” clause.</li>
+<li>Deferred until the whole backlog above is genuinely clear
+(operator’s own gating condition): full production release — install
+script, user-level systemd/systemctl integration so the stack boots with
+the system, full docs, then notify the operator it’s ready to use.</li>
+</ol>
 <hr />
 <h2
 id="current-state-session-14-2026-06-16-search-fixed-end-to-end-proven-on-nezha-one-p0-in-flight">CURRENT
@@ -83,8 +217,8 @@ regression).</li>
 on free space before any container rebuild or large deploy — a full disk
 silently fails rsync/builds.</li>
 </ul>
-<h3 id="in-flight-next-item-p0-do-this-first">In flight — NEXT ITEM (P0,
-do this first)</h3>
+<h3 id="in-flight-next-item-p0-do-this-first-1">In flight — NEXT ITEM
+(P0, do this first)</h3>
 <ul>
 <li><strong>UTF-8 / Cyrillic query crash in 15 plugins (OPEN — NOT yet
 fixed, §11.4.6).</strong> A sibling defect class to #48 surfaced during
@@ -729,23 +863,28 @@ ports — <code>ensure-macos-tunnel.sh</code> handles this</li>
 <hr />
 <h2 id="quick-start">Quick-Start</h2>
 <div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-build gate</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Unit tests</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Coverage</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Lint + typecheck</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="ex">ruff</span> check . <span class="kw">&amp;&amp;</span> <span class="ex">mypy</span> download-proxy/src/</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Frontend</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> vitest run</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Containers</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> start.sh <span class="kw">&amp;&amp;</span> <span class="fu">bash</span> stop.sh</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One-time venv bootstrap (gitignored .venv/ — see docs/</span><span class="al">TESTING</span><span class="co">.md &quot;Bootstrap&quot;)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> venv .venv</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/pip</span> install <span class="at">--upgrade</span> pip</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/pip</span> install <span class="at">-r</span> tests/requirements.txt</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-build gate</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build_verification.sh</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Unit tests</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Coverage</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">--cov</span><span class="op">=</span>download-proxy/src <span class="at">--cov</span><span class="op">=</span>plugins <span class="at">--cov-report</span><span class="op">=</span>term <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Lint + typecheck</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/ruff</span> check . <span class="kw">&amp;&amp;</span> <span class="ex">.venv/bin/mypy</span> download-proxy/src/</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Frontend</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> vitest run</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Containers</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> start.sh <span class="kw">&amp;&amp;</span> <span class="fu">bash</span> stop.sh</span></code></pre></div>
 <hr />
 <h2 id="architecture">Architecture</h2>
 <table>

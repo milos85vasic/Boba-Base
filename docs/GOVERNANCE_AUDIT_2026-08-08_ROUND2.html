@@ -1,0 +1,903 @@
+<h1
+id="governance-constitution-compliance-audit-round-2-2026-08-08">Governance
+&amp; Constitution Compliance Audit — Round 2 — 2026-08-08</h1>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-08-08T17:27:57Z <strong>Status:</strong> active
+<strong>Scope:</strong> Live re-verification of every item in
+<code>docs/GOVERNANCE_AUDIT_2026-08-07.md</code> (GA-01..27) and
+<code>docs/REMAINING_WORK_PLAN.md</code> (RW-01..21) against the current
+tree, PLUS a fresh gap scan of domains neither document covered, PLUS
+forensics on two anonymous “Auto-commit” commits that landed between the
+two audits. Assembled from 3 parallel read-only subagent audits + direct
+verification, 2026-08-08. No file was modified by this audit. Every
+finding cites file:line or real command output (§11.4.6 — no
+guessing).</p>
+<p><strong>Baseline:</strong> HEAD <code>743097a</code> on
+<code>main</code>. GA-audit baseline was <code>0d05ec1</code>; three
+more commits landed since, two of them more bare
+<code>Auto-commit</code> commits (<code>9c8f684</code>,
+<code>743097a</code>) produced <strong>during this very
+investigation</strong>. Root cause narrowed (2026-08-08,
+systematic-debugging pass) — see RD2-00 Update.</p>
+<p><strong>Rev-3 addendum (2026-08-08T17:27:57Z) — status of in-flight
+remediation + one new finding:</strong> - <strong>RD2-22 (P0 auth gap):
+source fix DONE, live-verification still owed.</strong> TDD RED→GREEN
+complete (<code>tests/security/test_hooks_schedules_auth.py</code>
+31/31; <code>tests/unit -k "theme or scheduler"</code> 176/176). A
+root-cause function-ordering bug (<code>require_api_token</code>
+referenced before definition) was found and fixed during GREEN. Full
+<code>tests/contract/+tests/unit/</code> regression sweep was
+interrupted mid-run by the RD2-00-class session kill (see RD2-00 Update
+2, below) and has not yet completed; live curl-verify on a running
+container (401 unauth / 200 with-token) is still outstanding.
+<strong>Not yet closeable — do not mark RD2-22 done until both
+finish.</strong> - <strong>RD2-00 Update 2 (2026-08-08, confirmed): root
+cause is a second live session, not a rogue process.</strong> A parallel
+Claude session (Opus 5, same +0500 host) independently landed
+<code>constitution</code> commit <code>177f2b0</code> (new anchor
+§11.4.238) while this session was mid-edit on the identical anchor
+number — a live, observed collision, resolved per §11.4.227(B) by
+deferring to the already-published version (this session’s unpublished
+duplicate was never pushed anywhere, confirmed via
+<code>git branch -r --contains</code> across all 8 remotes before
+discarding). This <strong>downgrades RD2-00’s severity band</strong>:
+the mechanism is not an unidentified external actor, it is (most likely)
+the operator’s own second session/device, still bypassing per-commit
+TDD/review discipline on ITS side, but not a security-incident-class
+unknown. RD2-10..13 remain open (still needs a proper commit/review
+discipline on whichever session produces these) but the URGENCY is now
+P1, not P0. - <strong>NEW — RD2-40 [P0]: boba does not yet comply with
+the just-landed §11.4.238</strong> (constitution
+<code>Constitution.md</code> — “automated QA must be the DISCOVERER, not
+the confirmer”; every project inheriting this constitution is bound the
+moment it lands, §11.4.96-style latent-binding). No discovery-channel
+ledger exists anywhere in this repo; no coverage-escape-audit process
+exists for defects found by manual QA / operator report / agent
+code-reading (the exact channel every finding in this very
+governance-audit round was found through — including RD2-22 itself,
+which was discovered by audit, not by HelixQA); no
+<code>CM-QA-IS-THE-DISCOVERER</code> /
+<code>CM-MANUAL-QA-FINDS-NOTHING-NEW</code> gate exists. <strong>This is
+a real, live, self-referential gap</strong>: every RD2-NN / GA-NN
+finding in this document was found by an agent reading code or running
+commands by hand — precisely the “out-of-band discovery channel”
+§11.4.238(C) requires an audit + a new automated check for, per finding.
+Full retroactive compliance (auditing all ~50 findings in this document)
+is a separate, large undertaking — tracked here as its own item rather
+than silently assumed satisfied. <strong>Priority: P0</strong> (a
+brand-new universal anchor with a zero-grace-period “no escape hatch”
+clause).</p>
+<hr />
+<h2
+id="rd2-00-critical-unattributed-unreviewed-auto-commit-mechanism-actively-pushing-to-main">RD2-00
+— CRITICAL: unattributed, unreviewed “Auto-commit” mechanism actively
+pushing to <code>main</code></h2>
+<p><strong>This is the single most urgent finding in this document —
+more urgent than any individual security gap below, because it is an
+ACTIVE, ONGOING process, not a static defect.</strong></p>
+<ul>
+<li><strong>Evidence:</strong> Three commits at HEAD carry the bare
+message “Auto-commit” with no body, no ticket reference, no TDD trail:
+<code>54e313f</code> (26 files, 2026-08-08T11:18:51+03:00),
+<code>9c8f684</code> (6 files,
+2026-08-08T16:18:21<strong>+05:00</strong>), <code>743097a</code> (2
+files, 2026-08-08T16:25:52+05:00). The latter two landed <strong>while
+this audit was in progress</strong> — confirmed by re-running
+<code>git log</code> mid-investigation and finding new commits that were
+not present at session start.</li>
+<li><strong>Source unidentified, ruled out exhaustively:</strong> no
+crontab entry (<code>crontab -l</code> → none), no systemd user/system
+timer or service referencing boba/commit/auto, no running process on
+this host (<code>ps -ef</code>) matching a commit loop, no script
+anywhere in the tree (<code>grep -rn "Auto-commit"</code> across
+<code>.sh/.py/.js/.ts</code>) that emits that literal string, no
+<code>core.hooksPath</code> configured, no PostToolUse/Stop hook in
+<code>.claude/settings.json</code> (only a PreToolUse guard). The
+<strong>timezone on the two newest commits (+0500) does not match this
+host’s own current timezone (+0300 MSK, hostname
+<code>nezha</code>)</strong> — proving the commits originate from a
+different host or session with push access to the same GitHub remotes,
+not this machine. Per §11.4.6, this is recorded as <strong>UNKNOWN —
+external source, not reproducible from this host</strong>, not guessed
+at.</li>
+<li><strong>RD2-00 Update (2026-08-08, systematic-debugging root-cause
+pass):</strong> <code>git reflog</code> on this host proves
+<code>9c8f684</code> and <code>743097a</code> were <strong>never
+committed here</strong> — they arrived via
+<code>HEAD@{2026-08-08 14:26:30 +0300}: pull: Fast-forward</code>,
+i.e. authored + pushed on the +0500 host, then simply fast-forwarded
+into this clone by an ordinary <code>git pull</code>.
+<code>CronList</code> confirms zero scheduled cloud agents visible to
+this session. Critically, the reflog also shows this project
+<strong>already has an established, named cross-host sync
+pattern</strong> from 2026-06-28:
+<code>55b8671</code>/<code>cdb555f</code> —
+<code>pull --rebase origin main (start/finish)</code> wrapping commits
+explicitly titled <code>"sync: post-rsync commit 20260628"</code> and
+<code>"sync: auto-commit before cross-host sync 20260628"</code>. The
+bare <code>"Auto-commit"</code> commits are almost certainly the
+<em>same</em> mechanism (rsync between this host and a second machine —
+CONTINUATION.md’s own Session-13 notes reference a macOS host mounting
+<code>/Volumes/T7</code>), just invoked with a less-descriptive commit
+message than the June instance. <strong>This narrows RD2-00 from
+“unknown process” to “a known-but-under-labeled operational sync script
+running on a second host this session cannot reach or inspect.”</strong>
+Root cause is now at the boundary of what’s discoverable without
+operator input: which second host, is the sync script itself
+intentional-but-needs-a-real-message-and-review-gate, or is it a
+leftover/misconfigured job that should be retired. <strong>Surfaced as
+OPERATOR-DECISION, not auto-executed</strong> — the operator knows which
+other machine(s) hold push credentials to this repo; this session does
+not and should not guess (§11.4.6/§11.4.101).</li>
+<li><strong>Why this is severity-critical regardless of source:</strong>
+every commit produced by this mechanism bypasses §2 (mandated commit
+wrapper, never raw <code>git commit</code>), §11.4.43 (TDD-fix
+discipline), §11.4.92 (5-pass evaluation),
+§11.4.125/§11.4.142/§11.4.194/§11.4.209 (mandatory independent
+Fable-xhigh code review before any commit — <strong>no exception,
+ever</strong>), and §11.4.234 (dedicated hook-validation script). It has
+already, in substance, silently applied fixes for GA-18, GA-21, GA-22,
+GA-25, GA-26, GA-27 (all verified correct in outcome — see below)
+alongside a <code>docs/workable_items.db</code> binary rewrite with
+<strong>no corresponding
+<code>docs/Issues.md</code>/<code>Fixed.md</code> update</strong> (a
+live §11.4.106(F) write-seam violation — see RD2-38). A mechanism that
+is <em>usually</em> correct is not evidence it is <em>safe</em>: the
+next unreviewed auto-commit could just as easily push a broken security
+change, a corrupted DB, or a secret.</li>
+<li><strong>Fix:</strong> (1) <strong>OPERATOR:</strong> confirm which
+second host runs the rsync/sync job identified in the Update above, and
+whether it is the intended, sanctioned mechanism (in which case: give it
+a descriptive commit message matching the June precedent, and — since it
+already has push access — wire it through the §11.4.234-mandated
+dedicated commit/push script with real validation stages instead of a
+raw <code>git add -A &amp;&amp; commit &amp;&amp; push</code>) or a
+stale/misconfigured job that should be retired; (2) until resolved,
+treat every future bare “Auto-commit” commit as an incident — do not
+assume its contents are safe without the same live re-verification this
+document performed.</li>
+<li><strong>Priority: P0 — investigate before anything else in this
+plan, independent of severity ranking below, because it can silently
+invalidate any other item’s “done” status at any moment.</strong></li>
+</ul>
+<hr />
+<h2
+id="part-a-corrections-to-governance_audit_2026-08-07.md-ga-01..27-live-reverified-2026-08-08">Part
+A — Corrections to <code>GOVERNANCE_AUDIT_2026-08-07.md</code>
+(GA-01..27), live-reverified 2026-08-08</h2>
+<p>Verdict legend: <strong>DONE</strong> (fully closed, live-evidenced)
+· <strong>DONE-BUT-PROCESS-VIOLATION</strong> (outcome correct, but
+landed via RD2-00’s anonymous mechanism with zero TDD/review trail — the
+<em>code</em> is fine, the <em>governance</em> is not, and both need
+separate remediation) · <strong>PARTIAL</strong> ·
+<strong>NOT-DONE</strong> ·
+<strong>OPERATOR-DECISION-STILL-OPEN</strong>.</p>
+<h3 id="toolchain-ga-01..03">Toolchain (GA-01..03)</h3>
+<ul>
+<li><strong>GA-01 (python venv/toolchain) — DONE.</strong>
+<code>.venv/</code> now exists (created 2026-08-08T00:09, pinned
+interpreter). Live-verified:
+<code>.venv/bin/python -m pytest tests/unit/ --co -q</code> →
+<strong>4340 tests collected in 5.21s, zero collection errors</strong>
+(previously crashed with <code>ModuleNotFoundError: rpds.rpds</code>).
+Toolchain genuinely unblocked. <em>(A full run, not just collection, is
+still owed — fold into RD2-34.)</em></li>
+<li><strong>GA-02 (frontend Vitest) — DONE.</strong>
+<code>frontend/node_modules</code> reinstalled (368 entries, 365M, mtime
+2026-08-08). <code>@angular/core@21.2.9</code>,
+<code>vitest@4.1.8</code> both match declared ranges.</li>
+<li><strong>GA-03 (extension Vitest) — DONE.</strong>
+<code>extension/node_modules</code> now populated (was completely absent
+at audit time).</li>
+</ul>
+<h3 id="governancetracking-seam-ga-04..10">Governance/tracking seam
+(GA-04..10)</h3>
+<ul>
+<li><strong>GA-04 (CONTINUATION.md staleness) — NOT-DONE.</strong> Still
+<code>Revision: 19</code>,
+<code>Last modified: 2026-06-16T23:55:00Z</code>, “Session 14” — now
+<strong>~53 days / 24+ commits</strong> behind HEAD, one commit worse
+than when the first audit found it. Every commit since (including the
+RD2-00 auto-commits) is unreflected.</li>
+<li><strong>GA-05 (Lava porting items untracked) — NOT-DONE.</strong>
+<code>grep -in "lava\|BOB-06[4-7]" docs/Issues.md docs/Fixed.md</code> →
+<strong>zero hits</strong>. Still no tracked workable item for the four
+implemented-in-code Lava findings.</li>
+<li><strong>GA-06 (PORTING-FROM-LAVA.md revision header) —
+DONE.</strong> <code>**Revision:** 1</code> /
+<code>**Last modified:** 2026-07-01T16:18:43Z</code> present (predates
+this round; the original audit’s citation was already stale by the time
+it was read, or this landed between the two audits — either way, the
+header requirement is now satisfied).</li>
+<li><strong>GA-07 (README doc-link section) — DONE (structure),
+row-completeness unverified.</strong>
+<code>### Tracked-Items + Status Documents</code> heading now exists at
+<code>README.md:112</code> (added in <code>54e313f</code>, +25 lines).
+<strong>Not independently re-verified this round whether every mandated
+doc (CONTINUATION.md, Issues.md, Fixed.md, PORTING-FROM-LAVA.md, both
+new GA/RD2 audit docs, every
+<code>Status.md</code>/<code>Status_Summary.md</code> pair) actually has
+a row</strong> — fold a completeness check into RD2-35.</li>
+<li><strong>GA-08 (browser_extension Status.md staleness) —
+NOT-DONE.</strong> No evidence found that this file changed; not touched
+by any commit since the original audit.</li>
+<li><strong>GA-09 (workable_items.db BOB-008 operator_block_details row)
+— DONE.</strong> Re-ran
+<code>workable-items validate --db docs/workable_items.db</code> —
+BOB-008 no longer appears in the violation list (only BOB-009/BOB-010, a
+<strong>different, newly-surfaced</strong> defect — see RD2-19).</li>
+<li><strong>GA-10 (no top-level v1.0.0 readiness ledger) —
+NOT-DONE.</strong> Only
+<code>docs/RELEASE_READINESS_20260616.html/.md/.pdf</code> (dated
+point-in-time snapshot) and the extension’s own ledger exist; no
+top-level proxy/merge-service ledger created.</li>
+</ul>
+<h3
+id="security-corrections-ga-11..13-plus-original-rw-010304-p0-re-verification">Security
+corrections (GA-11..13) — plus original RW-01/03/04 P0
+re-verification</h3>
+<ul>
+<li><strong>RW-01 (hooks endpoint auth + sandboxing) — DONE, confirmed
+independently this round.</strong>
+<code>download-proxy/src/api/hooks.py:112,168</code> — both
+<code>create_hook</code>/<code>delete_hook</code> carry
+<code>Depends(require_api_token)</code>. Real, attributed fix commit
+<code>37a8c45</code> (“fix(security): P0 hardening — SSRF block, hook
+sandbox, consistent auth, Go CORS”) predates both audits — this was done
+properly, with a real commit message, not via RD2-00.</li>
+<li><strong>RW-03 (SSRF guard) — DONE, confirmed independently this
+round.</strong> <code>download-proxy/src/api/routes.py:997-1039</code> —
+real <code>ipaddress.ip_address(...).is_private / is_loopback</code>
+checks covering
+RFC-1918/loopback/link-local/<code>169.254.169.254</code>, same
+<code>37a8c45</code> commit.
+<ul>
+<li><strong><code>Multi-word query</code> note:</strong> not audited
+further; SSRF guard’s presence and correctness should still get a
+dedicated live-container probe as part of RD2-34 (source-confirmed
+only).</li>
+</ul></li>
+<li><strong>RW-04 (magnet auth / Go CORS / Jackett admin) — DONE (magnet
++ CORS), Jackett admin unverified.</strong> <code>/magnet</code> route
+(<code>routes.py:1368-1371</code>) carries
+<code>Depends(require_api_token)</code>.
+<code>qBitTorrent-go/internal/middleware/cors.go</code> has a real
+allowlist mechanism explicitly commented “RW-04 fix” (never emits
+<code>*</code> + credentials). Jackett <code>AdminPassword_set</code>
+value in <code>config/jackett/Jackett/ServerConfig.json</code> not read
+this round — fold into RD2-34.</li>
+<li><strong>GA-11 (PATCH schedules / PUT theme still unauthenticated) —
+NOT-DONE. Real, live P0 security gap, unchanged since the first
+audit.</strong> <code>download-proxy/src/api/scheduler.py:108-109</code>
+(<code>PATCH /{schedule_id}</code>) and
+<code>download-proxy/src/api/routes.py:82-83</code>
+(<code>PUT /theme</code>) both have <strong>zero</strong>
+<code>Depends(require_api_token)</code> — confirmed by direct reading,
+contrasted against sibling routes in the same files that DO have it.
+<code>tests/security/test_hooks_schedules_auth.py:195-200</code>’s
+<code>_MUTATING</code> enumeration is unchanged (still only 4 entries,
+missing both). Neither RD2-00 auto-commit touched these files.</li>
+<li><strong>GA-12 (rutracker ReDoS deployed) — DONE (source), runtime
+unverified.</strong> <code>plugins/rutracker.py:140</code> confirmed
+<code>{0,512}</code>/<code>{0,256}</code>-bounded. No live container
+stack running on this host at investigation time (<code>podman ps</code>
+shows only unrelated containers) — deploy-and-verify step still owed
+(RD2-34).</li>
+<li><strong>GA-13 (nnmclub SKIP-on-404 fallback) — NOT-DONE.</strong>
+<code>tests/e2e/test_live_stack_evidence.py:265</code> still contains
+the skip. Unchanged.</li>
+</ul>
+<h3 id="test-type-integrity-ga-14..18">Test-type integrity
+(GA-14..18)</h3>
+<ul>
+<li><strong>GA-14 (<code>tests/integration/test_merge_api.py</code>
+mocks SearchOrchestrator) — NOT-DONE.</strong> 12×
+<code>@patch("api.routes._get_orchestrator")</code> still present; no
+real-service sibling added.</li>
+<li><strong>GA-15 (<code>tests/e2e/test_full_pipeline.py</code> mocks
+SearchOrchestrator) — NOT-DONE.</strong> Same pattern, unchanged.</li>
+<li><strong>GA-16
+(<code>tests/contract/test_tracker_stats_contract.py</code> mocks
+SearchOrchestrator) — NOT-DONE.</strong> Same pattern, unchanged.</li>
+<li><strong>GA-17 (<code>#legacy-untriaged</code> tags never triaged) —
+NOT-DONE, and WORSE than first measured: 14 live sites</strong> (vs. the
+original audit’s “~10”):
+<code>test_public_trackers_return_results.py:128</code>,
+<code>test_iptorrents.py:160</code>,
+<code>test_no_runtime_service_skips.py:4,10,36,84,94</code> (5 sites in
+one file), <code>test_openapi_frozen.py:15,23</code>,
+<code>test_plugin_smoke.py:45</code>,
+<code>test_fixtures/services.py:9</code>,
+<code>test_mkdocs_builds.py:22,36</code>,
+<code>test_no_broken_links.py:51</code>.</li>
+<li><strong>GA-18 (7 dead jackett-autoconfig test bodies) —
+DONE-BUT-PROCESS-VIOLATION.</strong> All correctly removed (one file
+deleted entirely, three others’ skip-only bodies stripped, replacement
+coverage pointers to the Go package preserved) — but landed anonymously
+inside <code>54e313f</code> bundled with 25 unrelated files, not “one
+dedicated commit citing the git-history/migration evidence” as GA-18
+explicitly demanded.</li>
+</ul>
+<h3 id="go-parity-stress-chaos-ga-19..20">Go parity / stress-chaos
+(GA-19..20)</h3>
+<ul>
+<li><strong>GA-19 (Go <code>--profile go</code> parity) —
+OPERATOR-DECISION-STILL-OPEN.</strong> Confirmed unchanged: zero
+<code>time.Ticker</code> anywhere in <code>qBitTorrent-go</code>, no
+enricher package, zero <code>exec.Command</code> fan-out. Surfaced only,
+not auto-executed, per §11.4.66.</li>
+<li><strong>GA-20 (RW-14/15/16 stress/chaos) — NOT-DONE /
+PARTIAL.</strong> No <code>test_tracker_fetch_stress_chaos.py</code> or
+<code>test_scheduler_hooks_sse_stress_chaos.py</code> exists.
+<code>tests/stress/</code> has 9 real files but none covers the
+download-proxy tracker-fetch-with-cookie path or the Go
+scheduler+hooks+SSE-broker triangle
+(<code>grep -rl "sse_broker\|SSEBroker\|hooks" tests/stress/*.py</code>
+→ zero hits). <code>jackett_db_test.go:440-500</code> remains
+concurrency-only, no fault injection, predates the RW plan (commit
+<code>8936545</code>, unchanged since).</li>
+</ul>
+<h3
+id="challengeshelixqa-const-033-gate-scoping-hard-stop-3-ga-21..27">Challenges/HelixQA
++ CONST-033 + gate scoping + Hard Stop #3 (GA-21..27)</h3>
+<ul>
+<li><strong>GA-21 (jackett_autoconfig_clean_slate.sh retired endpoint) —
+DONE-BUT-PROCESS-VIOLATION.</strong>
+<code>challenges/scripts/jackett_autoconfig_clean_slate.sh</code> now
+correctly polls the Go <code>:7189</code>
+<code>/api/v1/jackett/autoconfig/runs</code> API with a header comment
+citing “GA-21, 2026-08-08”. Landed inside the anonymous
+<code>54e313f</code>.</li>
+<li><strong>GA-22 (HelixQA bank dangling symlinks) —
+DONE-BUT-PROCESS-VIOLATION.</strong> All 6
+<code>challenges/helixqa-banks/*.yaml</code> are now relative symlinks
+(<code>../../submodules/helixqa/banks/…</code>) and every one resolves.
+Same anonymous commit.</li>
+<li><strong>GA-23 (HelixQA bank hardcoded <code>/Volumes/T7/...</code>)
+— NOT-DONE.</strong>
+<code>grep -rn "/Volumes/T7" submodules/helixqa/banks/*.yaml</code> →
+still 20 hits. Neither auto-commit touched this submodule’s
+content.</li>
+<li><strong>GA-24 (<code>no_suspend_calls_challenge.sh</code> carrier
+false-positive) — PARTIAL, and a NEW instance of the same defect class
+was introduced in the same commit that fixed the old one.</strong>
+<code>scripts/host-power-management/check-no-suspend-calls.sh:65</code>
+now excludes
+<code>constitution/docs/scripts/guard-forbidden-commands.md</code>
+(fixed, correctly). But <strong>the live script still FAILs
+today</strong>:
+<code>docs/incidents/2026-08-07-const033-poweroff-signal-triage.md</code>
+(a NEW file added in the SAME <code>54e313f</code> commit) quotes
+forbidden power-management verbs in its own prose (lines 106-108,
+178-179) and is not in <code>EXCLUDE_PATHS</code> — a fresh carrier
+false-positive on a file that did not exist when the original exclusion
+list was written. This session independently reproduced the SAME
+false-positive class firsthand (see RD2-01 below) — this is not a
+one-off, it is a structural weakness in the guard’s substring-matching
+approach.</li>
+<li><strong>GA-25 (CONST-033 real-signal triage) —
+DONE-BUT-PROCESS-VIOLATION (content excellent).</strong>
+<code>docs/incidents/2026-08-07-const033-poweroff-signal-triage.md</code>
+(230 lines) fully satisfies the mandated triage sequence (uptime
+cross-check, kernel suspend-signal grep, OOM-kill grep, both CONST-033
+challenges re-run with real output pasted, root-cause identified as a
+genuine orderly human-initiated poweroff — correctly ruled NOT a
+CONST-033 violation). Content quality is not in question; only the
+anonymous-commit process is.</li>
+<li><strong>GA-26 (ruff sweeping <code>submodules/containers/</code>) —
+DONE-BUT-PROCESS-VIOLATION.</strong> <code>pyproject.toml:89</code> now
+has
+<code>extend-exclude = ["submodules", "constitution", ".worktrees", ".venv"]</code>.
+Live-verified: <code>ruff check .</code> → <strong>“All checks passed!”
+— 0 violations, confirmed true boba-only count.</strong></li>
+<li><strong>GA-27 (Hard Stop #3 — start.sh subcommands) —
+DONE-BUT-PROCESS-VIOLATION, and untested.</strong>
+<code>start.sh</code>’s <code>reload_python()</code> (lines 697-717),
+<code>reload_plugins()</code> (726-741), and
+<code>recreate_stack()</code> (750-763) are real, non-stub
+implementations exactly matching CLAUDE.md’s documented behaviour (clear
+<code>__pycache__</code> via <code>exec</code> + restart; restart-only
+with an explicit “run install-plugin.sh first” warning; real
+<code>down &amp;&amp; up</code>). <code>bash -n start.sh</code> is
+syntax-clean. <strong>But
+<code>grep -rln "reload_python\|reload_plugins\|recreate_stack" tests/ challenges/</code>
+→ zero hits</strong> — shipped with no test-first coverage at all, a
+direct §11.4.224 violation on top of the commit-hygiene one.</li>
+</ul>
+<hr />
+<h2
+id="part-b-fresh-gap-scan-domains-not-covered-by-ga-01..27-or-rw-01..21">Part
+B — Fresh gap scan (domains not covered by GA-01..27 or RW-01..21)</h2>
+<h3
+id="rd2-01-the-projects-own-guard-forbidden-commands.sh-hook-has-a-live-reproducible">RD2-01
+— The project’s own <code>guard-forbidden-commands.sh</code> hook has a
+live, reproducible</h3>
+<p>substring carrier false-positive (self-demonstrated this session)</p>
+<ul>
+<li><strong>Evidence:</strong> during this investigation, the command
+<code>echo "=== systemd system-level (may need no sudo for list) ==="</code>
+was <strong>blocked</strong> by the PreToolUse hook with
+<code>BLOCKED — §6.U no-sudo</code>, because the guard does a substring
+match for <code>sudo</code> against the ENTIRE command line, including
+inside an unrelated echo string (“need no <strong>sudo</strong> for
+list”). This is the exact §11.4.201 carrier-false-positive class GA-24
+already documented for a different file — now independently reproduced
+live, proving it is a structural pattern in the guard’s matching
+approach, not a one-off content gap.</li>
+<li><strong>Fix:</strong> the guard needs word-boundary /
+shell-token-aware matching (or restrict the sudo/su check to actual
+command-invocation position) rather than an unanchored substring grep
+across the whole line, mirroring the fix direction already scoped for
+GA-24 (EXCLUDE_PATHS is a band-aid per-file; the root cause is the
+matching strategy itself).</li>
+<li><strong>Priority: P2</strong> (annoying, self-correcting via retry,
+but a real false-positive class that will keep recurring on new
+content).</li>
+</ul>
+<h3
+id="rd2-02-docker-compose.quality.yml-88-services-violate-the-projects-own-mandatory">RD2-02
+— <code>docker-compose.quality.yml</code>: 8/8 services violate the
+project’s own mandatory</h3>
+<p>container-hygiene corollary</p>
+<ul>
+<li><strong>Evidence:</strong> CLAUDE.md’s CONST-033 Operational Note
+states, verbatim: <em>“Container hygiene corollary (mandatory for every
+new compose service): <code>mem_limit</code>, <code>pids_limit</code>,
+and <code>oom_score_adj: 500</code>.”</em>
+<code>docker-compose.yml</code>’s 5 services all correctly carry all
+three fields (verified). <code>docker-compose.quality.yml</code>’s 8
+services (<code>sonarqube</code>, <code>sonar-db</code>,
+<code>snyk</code>, <code>semgrep</code>, <code>trivy</code>,
+<code>gitleaks</code>, <code>prometheus</code>, <code>grafana</code>)
+have <strong>zero</strong> of the three fields on <strong>any</strong>
+service — including two <code>restart: unless-stopped</code>
+long-running services (<code>sonarqube</code> JVM, <code>sonar-db</code>
+postgres, <code>prometheus</code>, <code>grafana</code>) that could
+consume unbounded host memory under pressure, precisely the failure mode
+CONST-033 exists to prevent.</li>
+<li><strong>Fix:</strong> add
+<code>mem_limit</code>/<code>pids_limit</code>/<code>oom_score_adj: 500</code>
+to every service in <code>docker-compose.quality.yml</code>, sized
+appropriately per service (JVM/postgres need more headroom than the
+scanner CLIs).</li>
+<li><strong>Priority: P1</strong> (mitigated only by this file being
+profile-gated, not started by default — still a real host-safety gap the
+moment an operator runs the quality stack).</li>
+</ul>
+<h3
+id="rd2-03-docsworkable_items.db-machine-caught-ssot-integrity-violations-90-of-closures">RD2-03
+— <code>docs/workable_items.db</code>: machine-caught SSoT integrity
+violations + 90% of closures</h3>
+<p>have zero audit trail</p>
+<ul>
+<li><strong>Evidence:</strong>
+<code>constitution/scripts/workable-items/bin/workable-items validate --db docs/workable_items.db</code>
+exits 1 with <strong>2 real violations</strong>: BOB-009 and BOB-010
+both have a <code>closure evidence_path</code> that “does not resolve
+(narrative or multi-value text in a single-path field)”. Beyond the
+tool’s own catch, a direct SQL sweep shows <strong>56 of 62 closed items
+(90%) have zero rows in <code>item_history</code></strong> and
+<strong>all 62 closed items have empty <code>closure_criteria</code> and
+<code>commit_ref</code> columns</strong> — the constitution names this
+DB the authoritative SSoT for closure audit trails
+(§11.4.93/§11.4.148(D4)/§11.4.226), but the trail exists only in git
+history for the overwhelming majority of items, not in the DB
+itself.</li>
+<li><strong>Fix:</strong> (1) fix BOB-009/BOB-010’s evidence_path values
+via the <code>workable-items</code> tool’s proper update path (never raw
+SQL); (2) for the 56 audit-trail-empty closures, backfill
+<code>item_history</code> rows from git log where recoverable, and
+explicitly mark genuinely-unrecoverable ones (§11.4.6 —
+<code>UNKNOWN</code> rather than fabricated); (3) wire the docs_chain
+sync (see RD2-04) so future closures never land without a trail.</li>
+<li><strong>Priority: P1.</strong></li>
+</ul>
+<h3
+id="rd2-04-docsworkable_items.db-and-docsissues.mdfixed.md-have-drifted">RD2-04
+— <code>docs/workable_items.db</code> and
+<code>docs/Issues.md</code>/<code>Fixed.md</code> have drifted</h3>
+<ul>
+<li><strong>Evidence:</strong>
+<code>workable-items diff --db docs/workable_items.db --issues docs/Issues.md --fixed docs/Fixed.md</code>
+→
+<strong><code>~ BOB-008 body differs (md=703 bytes db=576 bytes)</code></strong>.
+Root cause: <code>54e313f</code> rewrote the DB (file grew 135168→229376
+bytes, two new BOB-008 <code>item_history</code> rows dated 2026-08-08)
+but did <strong>not</strong> touch
+<code>docs/Issues.md</code>/<code>Fixed.md</code> in the same commit — a
+live §11.4.106(F) write-seam violation (the mandated commit-time doc/DB
+sync hook did not fire, or doesn’t exist).</li>
+<li><strong>Fix:</strong> reconcile BOB-008’s body between DB and MD via
+the <code>workable-items</code> tool (<code>sync</code> or
+<code>md-to-db</code>/<code>db-to-md</code> as appropriate — determine
+which side is authoritative for this specific drift), then verify/wire
+the commit-seam sync hook per §11.4.106(F) so this class of drift is
+prevented mechanically, not just fixed once.</li>
+<li><strong>Priority: P1</strong> (composes directly with RD2-00 — this
+drift is a direct symptom of the unattributed-commit problem).</li>
+</ul>
+<h3
+id="rd2-05-docstokens_and_keys.md-documents-3-non-existent-env-var-behaviours-and-omits-1-real-one">RD2-05
+— <code>docs/TOKENS_AND_KEYS.md</code> documents 3 non-existent env-var
+behaviours and omits 1 real one</h3>
+<ul>
+<li><strong>Evidence:</strong> spot-check of 6 documented “optional
+metadata enrichment” env vars against
+<code>download-proxy/src/merge_service/enricher.py</code>:
+<ul>
+<li><code>TMDB_API_KEY</code> — real, used (enricher.py:73,165,172).
+Correct.</li>
+<li><code>OMDB_API_KEY</code> — real, used (enricher.py:72,102,135),
+<strong>but missing from the doc’s own § 4 table entirely</strong>
+despite being the first metadata source tried.</li>
+<li><code>TVDB_API_KEY</code> — documented, <strong>never read
+anywhere</strong>; TVMaze (keyless) is the actual source.</li>
+<li><code>MUSICBRAINZ_USER_AGENT</code> — documented with a specific
+default embedding the operator’s own handle; <strong>never
+read</strong>, and the actual MusicBrainz call (enricher.py:280) sends
+no User-Agent header at all. The doc describes a configuration knob that
+does not exist in code.</li>
+<li><code>ANIDB_CLIENT</code> — documented, never read (AniList GraphQL
+used instead, keyless).</li>
+<li><code>OPENLIBRARY_USER_AGENT</code> — documented, never read.</li>
+</ul></li>
+<li><strong>Fix:</strong> remove the 3 fictional vars from the doc (or
+implement the described behaviour if it’s actually wanted — operator
+decision), add the missing <code>OMDB_API_KEY</code> row.</li>
+<li><strong>Priority: P2.</strong></li>
+</ul>
+<h3
+id="rd2-06-.trivyignore.yaml-contains-placeholder-non-real-cve-ids">RD2-06
+— <code>.trivyignore.yaml</code> contains placeholder, non-real CVE
+IDs</h3>
+<ul>
+<li><strong>Evidence:</strong> two entries with literal placeholder IDs
+<code>CVE-2025-XXXX-0001</code> / <code>CVE-2025-XXXX-0002</code> that
+match no real vulnerability — template boilerplate never filled in.
+<code>tests/unit/test_scanner_configs.py</code> (the only covering test)
+validates structural well-formedness only, never that CVE IDs are real,
+and never enforces the expiry-date convention the file’s own header
+comment promises via a referenced test
+(<code>tests/unit/test_scan_config.py</code>) that <strong>does not
+exist anywhere in the repo under that name</strong>. A green
+scanner-config test is masking non-functional CVE suppressions.</li>
+<li><strong>Fix:</strong> replace the placeholders with real CVE IDs (or
+delete the entries if they were never real), then either author the
+promised <code>test_scan_config.py</code> expiry-enforcement test or
+correct the header comment to stop referencing a nonexistent test.</li>
+<li><strong>Priority: P2.</strong></li>
+</ul>
+<h3
+id="rd2-07-ddos-class-testing-is-fully-absent-from-the-mandated-test-type-matrix">RD2-07
+— DDoS-class testing is fully absent from the mandated test-type
+matrix</h3>
+<ul>
+<li><strong>Evidence:</strong> <code>tests/</code> has 18 subdirectories
+covering unit/integration/e2e/security/chaos/
+stress/performance/benchmark/UI (13 of the constitution’s ~14 mandated
+categories present). <code>tests/load/locustfile.py</code> covers
+throughput/scale only. <strong>No file anywhere mentions DDoS, flood, or
+attack-resilience testing</strong> — a distinct mandated category per
+§11.4.27, and not legitimately N/A given this is an internet-facing
+FastAPI/Gin service with public HTTP endpoints reachable over a LAN
+tunnel.</li>
+<li><strong>Fix:</strong> author <code>tests/ddos/</code> (or extend
+<code>tests/load/</code>) with rate-limit-enforcement,
+malformed-request-flood, and resource-exhaustion-under-attack coverage
+for the exposed download-proxy/merge-service endpoints.</li>
+<li><strong>Priority: P2.</strong></li>
+</ul>
+<h3
+id="rd2-08-docsfeaturesstatus.md-and-docscodegraphstatus.md-are-stale-same-root-cause">RD2-08
+— <code>docs/features/Status.md</code> and
+<code>docs/codegraph/Status.md</code> are stale (same root cause</h3>
+<p>as GA-04/GA-08, different files, not previously tracked)</p>
+<ul>
+<li><strong>Evidence:</strong> <code>docs/features/Status.md</code> —
+<code>Revision: 7</code>,
+<code>Last modified: 2026-06-16T23:30:00Z</code> — same ~2-month
+staleness class as CONTINUATION.md.
+<code>docs/codegraph/Status.md</code> — <code>Revision: 1</code>,
+<code>2026-06-06T14:40:00Z</code> — even further behind.</li>
+<li><strong>Fix:</strong> fold into the same remediation pass as
+GA-04/GA-08 (RD2-35) since they share the exact root cause: the doc-sync
+mechanism was not invoked after the recent commit wave.</li>
+<li><strong>Priority: P1</strong> (same class as the already-P0-adjacent
+GA-04).</li>
+</ul>
+<h3
+id="rd2-09-submodulesjackett-fork-1-commit-behind-upstream-informational">RD2-09
+— <code>submodules/jackett</code> fork 1 commit behind upstream
+(informational)</h3>
+<ul>
+<li><strong>Evidence:</strong> <code>git submodule status</code> + fetch
+shows <code>submodules/jackett</code> 1 commit behind
+<code>origin/master</code> (<code>e12342eb4</code>, a trivial
+false-positive fix). All other submodules (constitution, challenges,
+containers, helixqa) are exactly at their upstream tip.</li>
+<li><strong>Fix:</strong> bump when convenient; not blocking
+anything.</li>
+<li><strong>Priority: P3.</strong></li>
+</ul>
+<hr />
+<h2 id="part-c-merged-root-cause-grouped-remediation-plan">Part C —
+Merged, root-cause-grouped remediation plan</h2>
+<p>The 40+ individual findings above cluster into <strong>6 root
+causes</strong>. Fixing the root cause closes multiple line items at
+once; fixing symptoms one-by-one (as the anonymous auto-commits
+partially did) does not.</p>
+<h3
+id="root-cause-1-an-unreviewed-unattributed-commit-mechanism-is-bypassing-every-governance-gate">Root
+Cause 1 — An unreviewed, unattributed commit mechanism is bypassing
+every governance gate</h3>
+<p><strong>Closes: RD2-00 (and prevents recurrence of the
+“DONE-BUT-PROCESS-VIOLATION” pattern across
+GA-18/21/22/25/26/27).</strong></p>
+<ol type="1">
+<li><strong>RD2-10 [P0, OPERATOR-DECISION]</strong> Root-caused as far
+as this host allows (see RD2-00 Update): <code>reflog</code> proves the
+two newest commits arrived via plain <code>pull: Fast-forward</code>
+from a +0500 host, matching this project’s own established 2026-06-28
+cross-host rsync-sync pattern
+(<code>cdb555f</code>/<code>55b8671</code>). <strong>Needs operator
+input to go further</strong> — which second host runs it, and is it the
+intended mechanism (just needs a real message + review gate) or a stale
+job to retire. Not auto-executed (§11.4.6/§11.4.101 — this session
+cannot inspect or guess at a host it has no access to).</li>
+<li><strong>RD2-11 [P0]</strong> Once identified: either wire it through
+a real §11.4.234 dedicated commit/push script (with the hook-validation
+stages this project already has via <code>.claude/settings.json</code>’s
+PreToolUse guard, extended to a real pre-commit content check) or shut
+it down if it serves no purpose.</li>
+<li><strong>RD2-12 [P1]</strong> Retroactively give proper, attributed,
+reviewed commit messages / history notes to the technically-correct
+changes it already made (GA-18, GA-21, GA-22, GA-25, GA-26, GA-27) —
+this can be a documentation/changelog note rather than a history rewrite
+(§11.4.113 — never rewrite published history), citing the git-history
+evidence per §11.4.124’s investigate-before-attribute pattern.</li>
+<li><strong>RD2-13 [P1]</strong> Retroactively run the mandatory
+independent Fable-xhigh code review (§11.4.125/§11.4.142/§11.4.209)
+against the substantive diffs it introduced (<code>start.sh</code>’s
+three new functions especially, since they have zero test coverage — see
+Root Cause 4) — even though the changes already landed, a post-hoc
+review closes the governance gap and will surface RD2-27 (GA-27’s
+missing tests) if not already caught.</li>
+</ol>
+<p><strong>Verification:</strong> no new bare “Auto-commit” commit lands
+after RD2-11; <code>git log</code> audited weekly until confirmed
+stable; the retroactive review (RD2-13) produces either a clean GO or a
+remediation item for each finding.</p>
+<h3
+id="root-cause-2-the-mandated-tracking-chain-continuation-issuesfixeddb-readme-has-been">Root
+Cause 2 — The mandated tracking chain (CONTINUATION → Issues/Fixed/DB →
+README) has been</h3>
+<p>silently disconnected since 2026-06-16 <strong>Closes: GA-04, GA-05,
+GA-08, GA-10, RD2-04, RD2-08, and prevents the next 53-day
+gap.</strong></p>
+<ol start="5" type="1">
+<li><strong>RD2-14 [P0]</strong> Author a new CONTINUATION.md “Session
+15” entry summarizing every substantive commit since
+<code>646b295</code> by theme (Cyrillic/UTF-8 fix wave, tracker/plugin
+fixes, egress/proxy/ Jackett feature wave, the two governance audits,
+RD2-00’s discovery). Update
+<code>**Last commit:**</code>/<code>**Last modified:**</code>/<code>**Revision:**</code>.</li>
+<li><strong>RD2-15 [P0]</strong> Create tracked workable items
+(BOB-064..067, via the <code>workable-items</code> tool — never raw MD
+edits) for the four Lava-porting findings, citing implementing commits
+as evidence, closed as Implemented.</li>
+<li><strong>RD2-16 [P1]</strong> Regenerate
+<code>docs/browser_extension/Status.md</code>,
+<code>docs/features/Status.md</code>,
+<code>docs/codegraph/Status.md</code> + their
+<code>Status_Summary.md</code>/HTML/PDF siblings
+(§11.4.45/§11.4.56).</li>
+<li><strong>RD2-17 [P1]</strong> Reconcile BOB-008’s DB/MD body drift
+(RD2-04) via the <code>workable-items</code> tool.</li>
+<li><strong>RD2-18 [P2]</strong> Create the top-level Boba
+(proxy/merge-service) v1.0.0 readiness ledger (GA-10) — dedupe with the
+browser_extension’s existing one as the template.</li>
+<li><strong>RD2-19 [P2]</strong> Fix BOB-009/BOB-010’s evidence_path
+values + backfill <code>item_history</code> audit trails for the 56
+silent closures where recoverable from git log (RD2-03).</li>
+<li><strong>RD2-20 [P0]</strong> Wire (or fix) the docs_chain /
+commit-seam sync hook per §11.4.106(F) so a
+<code>docs/workable_items.db</code> write can never again land without
+its MD mirror in the same commit — this is the mechanical fix that
+prevents Root Cause 2 from recurring, not just a one-time catch-up.</li>
+<li><strong>RD2-21 [P1]</strong> Complete/verify the README
+<code>Tracked-Items + Status Documents</code> table row-completeness
+(GA-07’s remaining half).</li>
+</ol>
+<p><strong>Verification:</strong> <code>workable-items diff</code>
+reports zero differences; CONTINUATION.md’s <code>Last commit</code>
+matches actual HEAD; a fresh
+<code>git log --oneline &lt;last-continuation-commit&gt;..HEAD</code>
+after this pass returns empty (nothing unreflected).</p>
+<h3
+id="root-cause-3-two-real-unauthenticated-mutating-http-endpoints-remain-lan-reachable">Root
+Cause 3 — Two real, unauthenticated mutating HTTP endpoints remain
+LAN-reachable</h3>
+<p><strong>Closes: GA-11 (the last remaining piece of
+RW-02).</strong></p>
+<ol start="13" type="1">
+<li><strong>RD2-22 [P0, TDD] — SOURCE FIX DONE, LIVE VERIFICATION STILL
+OWED.</strong> RED: extended
+<code>tests/security/test_hooks_schedules_auth.py</code>’s
+<code>_MUTATING</code> enumeration to include
+<code>PATCH /api/v1/schedules/{id}</code> and
+<code>PUT /api/v1/theme</code> (+ a <code>THEME_STATE_PATH</code>
+tmp-redirect in the fixture, needed so the theme store’s real
+<code>/config</code> write path didn’t mask the auth signal with an
+unrelated <code>PermissionError</code> — the RED failure had to be
+re-verified as “wrong status code” not “wrong exception” per TDD
+discipline). Confirmed 4 clean RED failures (401-expected, got 200) for
+the right reason. GREEN: added <code>Depends(require_api_token)</code>
+to <code>scheduler.py</code>’s <code>update_schedule</code> and
+<code>routes.py</code>’s <code>put_theme</code>. <strong>Root-cause
+wrinkle found during GREEN:</strong> <code>require_api_token</code> was
+defined at <code>routes.py:960</code>, after <code>put_theme</code> — a
+<code>Depends(...)</code> default-argument is evaluated at
+function-definition time, so referencing it before its definition raised
+<code>NameError</code> at import time (crashing every route in the
+file). Fixed at the root: moved <code>require_api_token</code>’s
+definition to before <code>ThemeUpdate</code>/<code>put_theme</code> (it
+has no dependencies on anything defined between the old and new
+location). <strong>Verified GREEN:
+<code>tests/security/test_hooks_schedules_auth.py</code> 31/31 passed;
+regression sweep of <code>tests/unit -k "theme or scheduler"</code>
+176/176 passed.</strong> Full <code>tests/contract/ + tests/unit/</code>
+regression sweep in progress. <strong>Still owed:</strong> a live
+curl-verify on a running container — 401 unauth, 200 with-token — for
+both routes (§11.4.108 runtime-signature, source+test-level fix is not
+yet artifact/runtime-verified) — and the §11.4.135
+regression-guard/HelixQA Challenge entry (RD2-23).</li>
+<li><strong>RD2-23 [P1]</strong> Regression guard (§11.4.135) + HelixQA
+Challenge entry for both routes (user-facing mutating surface).</li>
+</ol>
+<p><strong>Verification:</strong> RED test fails pre-fix, passes
+post-fix on the exact same assertions (§11.4.115 polarity-switch); live
+curl output pasted per Definition of Done.</p>
+<h3
+id="root-cause-4-recently-shipped-code-has-zero-test-first-coverage-11.4.224-violations">Root
+Cause 4 — Recently-shipped code has zero test-first coverage (§11.4.224
+violations)</h3>
+<p><strong>Closes: the test-coverage half of GA-27; composes with Root
+Cause 1’s RD2-13.</strong></p>
+<ol start="15" type="1">
+<li><strong>RD2-24 [P1, TDD]</strong> Author RED-first tests for
+<code>start.sh</code>’s <code>reload_python()</code>,
+<code>reload_plugins()</code>, <code>recreate_stack()</code> — real
+executing tests through the actual invocation path (per §11.4.224(A):
+never a <code>bash -n</code> parse-check alone), asserting exit status +
+the documented side effects (pycache-clear-then-restart, restart-only,
+down-then-up) against a live or realistically-mocked container
+runtime.</li>
+<li><strong>RD2-25 [P2]</strong> Add a HelixQA Challenge entry
+exercising all three subcommands end-to-end against the real compose
+stack.</li>
+</ol>
+<p><strong>Verification:</strong> tests fail against a stubbed/reverted
+version of the three functions, pass against current
+<code>start.sh</code> (§11.4.115).</p>
+<h3
+id="root-cause-5-three-test-files-claim-a-directory-mandated-real-service-contract-but-mock-the">Root
+Cause 5 — Three test files claim a directory-mandated real-service
+contract but mock the</h3>
+<p>system under test; a live skip-fallback masks a drift the
+constitution forbids masking <strong>Closes: GA-13, GA-14, GA-15,
+GA-16.</strong></p>
+<ol start="17" type="1">
+<li><strong>RD2-26 [P1, parallelizable — 4 independent files]</strong>
+For each of <code>tests/integration/test_merge_api.py</code>,
+<code>tests/e2e/test_full_pipeline.py</code>,
+<code>tests/contract/test_tracker_stats_contract.py</code>: (a) relocate
+the existing mocked version into <code>tests/unit/</code> under an
+honest name (the coverage is valuable as unit-level route-contract
+testing — keep it, just where it belongs); (b) author a real-service
+replacement in the original directory using the repo’s existing
+live-stack fixtures (<code>tests/fixtures/compose.py</code>,
+<code>tests/fixtures/services.py</code>,
+<code>tests/integration/test_fixtures_bring_up_services.py</code>
+already prove this pattern works here).</li>
+<li><strong>RD2-27 [P1]</strong>
+<code>tests/e2e/test_live_stack_evidence.py:265</code> — with the live
+stack up, confirm <code>curl :7187/api/v1/auth/nnmclub/status</code> →
+200 (redeploy first if source≠artifact drift persists — see Root Cause
+6), remove the skip fallback entirely, let the real assertion run.</li>
+</ol>
+<p><strong>Verification:</strong> each relocated/replaced file’s
+directory-appropriate real-service test actually issues a real HTTP call
+to a real running service and asserts on the real response — no
+<code>@patch</code>/<code>monkeypatch</code> targeting
+<code>SearchOrchestrator</code> anywhere outside
+<code>tests/unit/</code>.</p>
+<h3
+id="root-cause-6-source-layer-fixes-are-unverifiedundeployed-at-the-artifactruntime-layer">Root
+Cause 6 — Source-layer fixes are unverified/undeployed at the
+artifact/runtime layer</h3>
+<p>(§11.4.108 SOURCE≠ARTIFACT/RUNTIME gap), compounding with
+stress/chaos coverage gaps <strong>Closes: GA-12, GA-20, and the
+runtime-verification half of RD2-22/RD2-27.</strong></p>
+<ol start="19" type="1">
+<li><strong>RD2-28 [P1]</strong> Bring up the live compose stack
+(<code>./start.sh</code>), run <code>./install-plugin.sh</code>, verify
+<code>grep '{0,512}' config/qBittorrent/nova3/engines/rutracker.py</code>
+on the container, and capture timing of a large rutracker result page
+(&lt;2s per the original RW-06 acceptance criterion).</li>
+<li><strong>RD2-29 [P2, parallelizable]</strong> Author
+<code>tests/stress/test_tracker_fetch_stress_chaos.py</code>
+(download-proxy tracker-fetch + cookie-auth path, overlapping the
+already-fixed SSRF surface) with real §11.4.85 fault injection
+(process-kill, network-fault, resource-exhaustion — not just
+concurrency).</li>
+<li><strong>RD2-30 [P2, parallelizable]</strong> Author
+<code>tests/stress/test_scheduler_hooks_sse_stress_chaos.py</code>
+covering the Go-side <code>internal/service/sse_broker.go</code> +
+<code>internal/api/hooks.go</code> +
+<code>internal/api/scheduler_api.go</code> triangle.</li>
+<li><strong>RD2-31 [P2]</strong> Extend
+<code>qBitTorrent-go/tests/integration/jackett_db_test.go</code> with
+real process-kill / resource-exhaustion fault injection (currently
+concurrency-only).</li>
+<li><strong>RD2-32 [P3]</strong> Author DDoS-class coverage (RD2-07) for
+the exposed download-proxy/merge endpoints.</li>
+</ol>
+<p><strong>Verification:</strong> each new chaos test is negation-proven
+(fails without the fault-tolerance code, passes with it), captured
+evidence per §11.4.5/§11.4.69/§11.4.107.</p>
+<h3
+id="ungrouped-remaining-items-lower-priority-independent-of-the-6-root-causes">Ungrouped
+remaining items (lower priority, independent of the 6 root causes)</h3>
+<ol start="24" type="1">
+<li><strong>RD2-33 [P2]</strong> <code>#legacy-untriaged</code> — triage
+all 14 sites individually (GA-17); for each, determine the real reason,
+either fix/un-skip or replace the placeholder with a real ticket.</li>
+<li><strong>RD2-34 [P1]</strong>
+<code>submodules/helixqa/banks/*.yaml</code> — parametrize the 20
+hardcoded <code>/Volumes/T7/Projects/Boba/...</code> paths with
+<code>$PROJECT_ROOT</code> (GA-23) — lands in the submodule per §11.4.28
+decoupling, not boba’s own tree.</li>
+<li><strong>RD2-35 [P2]</strong> Fix
+<code>docker-compose.quality.yml</code>’s 8/8 missing container-hygiene
+fields (RD2-02).</li>
+<li><strong>RD2-36 [P2]</strong> Fix
+<code>guard-forbidden-commands.sh</code>’s substring-match
+false-positive class (RD2-01) — word-boundary/token-aware matching, not
+another EXCLUDE_PATHS band-aid; also add the newly-discovered
+<code>docs/incidents/2026-08-07-const033-poweroff-signal-triage.md</code>
+carrier to <code>EXCLUDE_PATHS</code> as an immediate stopgap (GA-24’s
+residual).</li>
+<li><strong>RD2-37 [P2]</strong> Correct
+<code>docs/TOKENS_AND_KEYS.md</code>’s 3 fictional env vars + add the
+missing <code>OMDB_API_KEY</code> row (RD2-05).</li>
+<li><strong>RD2-38 [P2]</strong> Replace
+<code>.trivyignore.yaml</code>’s placeholder CVE IDs; author or
+de-reference the promised <code>test_scan_config.py</code>
+expiry-enforcement test (RD2-06).</li>
+<li><strong>RD2-39 [P3]</strong> Bump <code>submodules/jackett</code>
+one commit (RD2-09).</li>
+<li><strong>GA-19/RW-09 [OPERATOR-DECISION]</strong> Is
+<code>--profile go</code> parity still a release goal? Gates
+RW-10..13.</li>
+<li><strong>RW-05 [OPERATOR-DECISION]</strong> LAN-exposure threat model
+— bind the tunnel <code>127.0.0.1</code> or keep <code>0.0.0.0</code>
+with the now-complete auth coverage (post Root Cause 3)?</li>
+</ol>
+<hr />
+<h2 id="definition-of-done-for-this-round-2-plan">Definition of done for
+this Round-2 plan</h2>
+<p>Every RD2-NN item above reaches DONE with <strong>live-captured
+evidence pasted in the same session as the change</strong> (no
+self-certification words without it, per this project’s own Anti-Bluff
+Verification mandate), every fix that closes a defect ships a permanent
+regression guard (§11.4.135) and, where user-facing, a HelixQA Challenge
+entry, RD2-00’s source is identified and resolved, OPERATOR-DECISION
+items are resolved, <code>docs/GOVERNANCE_AUDIT_2026-08-07.md</code> and
+<code>docs/REMAINING_WORK_PLAN.md</code> are marked
+superseded-by-this-document (§11.4.90 Obsolete, reason
+<code>superseded-by-later-mandate</code>, never deleted), the full
+<code>docs/CONTINUATION.md</code> / <code>docs/Issues.md</code> /
+<code>docs/Fixed.md</code> / <code>docs/workable_items.db</code> chain
+is back in sync, and a full §11.4.40 retest (pre-build + post-build +
+live 4-phase cycle + meta-test sweep + Challenge bank + HelixQA
+autonomous session) passes before any release tag.</p>

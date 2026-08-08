@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.10" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Issues</title>
   <style>
@@ -156,8 +156,12 @@
       text-decoration: none;
     }
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -192,10 +196,10 @@ RuTracker automated login blocked by CAPTCHA</h2>
 <strong>Operator-Block-Details:</strong> WHAT — RuTracker login with
 stored creds returns no session cookie (CAPTCHA wall). WHY — automated
 user/pass login is CAPTCHA-gated; self-resolution exhausted (creds
-correct + wired, login attempted, <code>auth=True</code>). UNBLOCK —
+correct + wired, login attempted, <code>auth=True</code>). UNBLOCK — [A]
 operator completes the CAPTCHA flow at
-<code>/api/v1/auth/rutracker/captcha</code> + <code>/login</code>, or
-pastes a fresh <code>bb_session</code> cookie via
+<code>/api/v1/auth/rutracker/captcha</code> + <code>/login</code>. [B]
+operator pastes a fresh <code>bb_session</code> cookie via
 <code>/auth/rutracker/cookie-login</code>. WHO — operator.</p>
 <p><strong>Evidence:</strong> live search per-tracker stat
 <code>rutracker status=error auth=True error="login returned no session cookie — likely CAPTCHA"</code>.</p>

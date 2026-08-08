@@ -1,11 +1,31 @@
 <h1 id="testing-guide">Testing Guide</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T00:00:00Z</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-08T00:00:00Z</p>
 <p>This is the <strong>authoritative test-type catalogue</strong> for
 qBittorrent-Fixed. Every testable module in the repo must have coverage
 in every applicable row below. The catalogue is derived from Part C of
 the completion-initiative plan
 (<code>docs/superpowers/plans/2026-04-19-completion-initiative.md</code>).</p>
+<h2 id="bootstrap-one-time-virtualenv-setup">Bootstrap (one-time
+virtualenv setup)</h2>
+<p>Test dependencies are <strong>not</strong> installed system-wide.
+Create and populate a local <code>.venv/</code> (gitignored — see
+<code>.gitignore</code>) before running anything below:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> venv .venv</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/pip</span> install <span class="at">--upgrade</span> pip</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/pip</span> install <span class="at">-r</span> tests/requirements.txt</span></code></pre></div>
+<p>Verified working combination (2026-08-08): Python 3.14.6
+(<code>/usr/bin/python3.14</code>) + pytest 9.1.1 + pytest-asyncio 1.4.0
++ fastapi 0.141.1 + pydantic 2.13.4 + every package listed in
+<code>tests/requirements.txt</code>, all installed fresh into the same
+virtualenv (no cross-ABI mixing). Re-run the <code>pip install</code>
+line whenever <code>tests/requirements.txt</code> changes — it is
+idempotent.</p>
+<p>Once bootstrapped, invoke pytest via
+<code>.venv/bin/python -m pytest ...</code> (or activate the venv first
+with <code>source .venv/bin/activate</code> and drop the
+<code>.venv/bin/</code> prefix from every command in this guide).</p>
 <h2 id="test-types">Test types</h2>
 <table>
 <colgroup>
@@ -350,10 +370,10 @@ make the test pass. No refactors yet.</p></li>
 to prove nothing else regressed.</p></li>
 <li><p><strong>Rebuild-reboot</strong> — if the change touched container
 code, follow the CLAUDE.md REBUILD AND REBOOT constraint:</p>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec qbittorrent-proxy find / <span class="at">-name</span> __pycache__ <span class="at">-type</span> d <span class="at">-exec</span> rm <span class="at">-rf</span> {} + <span class="kw">||</span> <span class="fu">true</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span> <span class="at">-p</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./stop.sh</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec qbittorrent-proxy find / <span class="at">-name</span> __pycache__ <span class="at">-type</span> d <span class="at">-exec</span> rm <span class="at">-rf</span> {} + <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span> <span class="at">-p</span></span></code></pre></div>
 <p>Curl-check the served content matches the committed code.</p></li>
 <li><p><strong>Commit</strong> — one behaviour per commit. Commit
 message follows <code>&lt;type&gt;(phase-N): &lt;subject&gt;</code> when
