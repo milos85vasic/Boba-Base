@@ -22,6 +22,16 @@ For deeper reference (technology stack, per-test-file mapping, full gotchas), se
   `docs/MULTITRACK.md` for the full rationale. Execution is single-track until the operator asks
   for parallel dispatch.
 
+- **QA discovery-channel ledger (§11.4.238)**: automated HelixQA coverage MUST be the discovery
+  layer; manual QA / operator reports / agent-found defects are confirmation-only, and any defect
+  found out-of-band is itself a coverage-escape release blocker, not merely a bug to fix. Every
+  such finding gets a coverage-escape-audit entry (why the automated regime missed it) + a new or
+  strengthened automated check with its own RED-capturing-the-escape evidence. See
+  `docs/QA_DISCOVERY_LEDGER.md` for the schema, the real entries recorded so far, and the tracked
+  discovery-channel split. `scripts/pre_build_verification.sh` invariant 17 is the closed-loop
+  example: it now runs both `workable-items validate` AND `workable-items diff` because a real
+  DB↔Markdown divergence (BOB-008) was found by an agent, not by this gate, before the fix.
+
 - **TDD is MANDATORY for all bug fixes and features**:
   - Write failing test first (RED)
   - Watch it fail

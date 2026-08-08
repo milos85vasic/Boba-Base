@@ -284,6 +284,20 @@ if [[ -n "${WORKABLE_BINARY}" && -x "${WORKABLE_BINARY}" ]] && [[ -f "${WORKABLE
     else
         fail "workable-items validate: DB invariant check FAILED"
     fi
+    # §11.4.238 QA-discovery-ledger (docs/QA_DISCOVERY_LEDGER.md, BOB-008 entry):
+    # a DB write landed with no matching docs/Issues.md/Fixed.md update, and
+    # nothing in this gate would have caught it — validate() only checks
+    # internal DB invariants, never DB-vs-Markdown divergence. Extended here
+    # so this gate is the automated check that closes that coverage escape.
+    ISSUES_MD="${PROJECT_ROOT}/docs/Issues.md"
+    FIXED_MD="${PROJECT_ROOT}/docs/Fixed.md"
+    if [[ -f "${ISSUES_MD}" && -f "${FIXED_MD}" ]]; then
+        if "${WORKABLE_BINARY}" diff --db "${WORKABLE_DB}" --issues "${ISSUES_MD}" --fixed "${FIXED_MD}"; then
+            pass "workable-items diff: DB and Markdown are in sync"
+        else
+            fail "workable-items diff: DB and Markdown have DIVERGED (run 'workable-items sync md-to-db' or 'db-to-md' to reconcile)"
+        fi
+    fi
 else
     echo "  SKIP: workable-items binary or DB not present — skipping invariant 17"
 fi

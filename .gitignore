@@ -199,6 +199,11 @@ config/boba.db-wal
 .codegraph/*.db-shm
 .codegraph/cache/
 
+# docs/workable_items.db itself IS tracked (§11.4.95 — it's authoritative
+# source data, not a build artifact); its transient WAL-mode sidecars are not.
+docs/*.db-wal
+docs/*.db-shm
+
 # CodeGraph third-party exclusion (§11.4.79): the Jackett submodule is
 # third-party (Jackett/Jackett, C#/.NET) and MUST NOT enter the index.
 # CodeGraph reads .gitignore directly to decide what to index; this entry is

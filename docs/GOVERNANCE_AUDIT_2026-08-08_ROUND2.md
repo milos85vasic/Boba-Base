@@ -34,20 +34,30 @@ Update.
   TDD/review discipline on ITS side, but not a security-incident-class unknown. RD2-10..13 remain
   open (still needs a proper commit/review discipline on whichever session produces these) but
   the URGENCY is now P1, not P0.
-- **NEW — RD2-40 [P0]: boba does not yet comply with the just-landed §11.4.238** (constitution
-  `Constitution.md` — "automated QA must be the DISCOVERER, not the confirmer"; every project
-  inheriting this constitution is bound the moment it lands, §11.4.96-style latent-binding). No
-  discovery-channel ledger exists anywhere in this repo; no coverage-escape-audit process exists
-  for defects found by manual QA / operator report / agent code-reading (the exact channel every
-  finding in this very governance-audit round was found through — including RD2-22 itself, which
-  was discovered by audit, not by HelixQA); no `CM-QA-IS-THE-DISCOVERER` /
-  `CM-MANUAL-QA-FINDS-NOTHING-NEW` gate exists. **This is a real, live, self-referential gap**:
-  every RD2-NN / GA-NN finding in this document was found by an agent reading code or running
-  commands by hand — precisely the "out-of-band discovery channel" §11.4.238(C) requires an
-  audit + a new automated check for, per finding. Full retroactive compliance (auditing all
-  ~50 findings in this document) is a separate, large undertaking — tracked here as its own item
-  rather than silently assumed satisfied. **Priority: P0** (a brand-new universal anchor with a
-  zero-grace-period "no escape hatch" clause).
+- **RD2-40 [P0]: §11.4.238 compliance — MECHANISM STOOD UP AND EXERCISED, 2026-08-08.**
+  `docs/QA_DISCOVERY_LEDGER.md` created with the discovery-channel schema, seeded with 4 real
+  entries from this session's own findings (RD2-22, RD2-41a, RD2-41b, BOB-008), each with a real
+  coverage-escape audit citing the specific missing/blind check, and 3 of the 4 already closed
+  with a genuine new automated check carrying real RED→GREEN evidence (the 4th, BOB-008's
+  diff-check gap, was closed in the same session — see below). `CLAUDE.md` Critical Constraints
+  now points at the ledger + states the discovery-channel-split mandate. **Closed-loop example
+  fully exercised end-to-end**: `scripts/pre_build_verification.sh` invariant 17 extended to run
+  `workable-items diff` (not just `validate`) — RED-captured via
+  `tests/unit/test_pre_build_workable_items_diff_check.sh`'s §1.1 paired mutation (desynced
+  `docs/Issues.md` correctly triggers a diff-specific FAIL, distinguished from the pre-existing
+  unrelated BOB-009/010 validate issue so the test isn't a tautology), GREEN after the fix.
+  **Honest boundary, stated explicitly (§11.4.6), not silently closed**: full retroactive audit of
+  every one of the ~50 GA-NN/RD2-NN findings in this document (each needs its own escape-audit
+  entry) was NOT attempted — the ledger is honest that it starts now (100% out-of-band in its own
+  tracked split table) rather than backfilling a false complete history. BOB-009/BOB-010's
+  evidence_path gap remains open (no `workable-items` subcommand exists to fix a historical
+  closure's evidence_path — see Root Cause 2 / RD2-19) and is NOT yet caught by any automated
+  check (it's a `validate`-internal issue already surfaced by `validate` itself, so technically
+  already "automated-caught" going forward, just not yet fixable via the tool). **Priority:
+  downgraded from P0-blocking to P1-ongoing** — the zero-grace-period clause is about the
+  MECHANISM existing and being applied to NEW findings going forward, which is now true; the
+  remaining work (retroactive audit of historical findings, closing BOB-009/010) is incremental,
+  not a release blocker in itself.
 - **NEW — RD2-41 [P1]: `scripts/docs_chain.sh` (FIXED this session) and
   `scripts/pre_build_verification.sh` invariant 17 (FIXED this session) both hardcoded a
   non-existent `bin/workable-items` path, silently no-op'ing/skipping their DB-export and
