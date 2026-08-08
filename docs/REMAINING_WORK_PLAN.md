@@ -1,10 +1,16 @@
 # Boba — Remaining-Work Plan (subagent-driven, path to zero-issues)
 
-**Revision:** 1
-**Last modified:** 2026-06-14T18:55:00Z
+**Revision:** 2
+**Last modified:** 2026-08-07T19:10:54Z
 **Status:** active
 **Baseline:** HEAD `7de2802` on `main` (all 4 mirrors synced). Default Python/FastAPI path is the shipped product and is essentially debt-free + fully tested; the items below are the complete, evidence-backed set of what remains for "nothing unfinished, zero issues."
 **Method:** assembled from 4 parallel READ-ONLY audits (code-debt, test-health, operational/UX, security/compliance) + the §11.4.85 plugin-parser sweep, 2026-06-14. Every item cites real evidence (file:line / captured probe). No guessing (§11.4.6).
+
+**2026-08-07 re-verification note:** `docs/GOVERNANCE_AUDIT_2026-08-07.md` independently
+re-verified every RW item against the live tree (HEAD `0d05ec1`, ~7 weeks after this plan was
+written) and corrected several closure claims — see that document (GA-11..13, GA-19..20) for
+full evidence. Corrections folded into the entries below rather than duplicated in a second
+tracker (§11.4.186 anti-divergence).
 
 ---
 
@@ -32,6 +38,13 @@ The merge service exposes mutating endpoints; the operator runs it on a LAN via 
 - **Fix direction (OPERATOR-DECISION on default):** Option A — keep open-by-default (documented §11.4.122 no-auth-preservation) but make it LOUD: log a startup WARNING when `BOBA_API_TOKEN` is unset AND the bind is non-loopback. Option B — default-closed for non-loopback clients (derive client IP; require token unless request is from 127.0.0.1). Apply `require_api_token` consistently to schedules + theme mutations regardless.
 - **Acceptance:** with `BOBA_API_TOKEN` set, all mutating routes (download/upload/file/schedules/hooks/theme) return 401 unauth + 200 with token; startup warning emitted when open + LAN-bound (captured log).
 - **Discipline:** §11.4.66 (decision) + §11.4.1/§11.4.135. **Priority: P0.**
+- **STATUS (2026-08-07): PARTIAL, not DONE.** Download/upload/file/magnet (routes.py) and
+  POST/DELETE schedules + hooks now correctly gate on `require_api_token`, and the startup
+  WARNING is implemented (`api/__init__.py:84-90`). But **`PATCH /api/v1/schedules/{id}`
+  (`scheduler.py:108`) and `PUT /api/v1/theme` (`routes.py:82`) remain unauthenticated** —
+  confirmed by omission from `tests/security/test_hooks_schedules_auth.py:194-198`'s own
+  `_MUTATING` enumeration, which never included them. See `docs/GOVERNANCE_AUDIT_2026-08-07.md`
+  GA-11 for the remediation task.
 
 ### RW-03 — [MED-HIGH] Block SSRF in server-side URL fetch
 - **Evidence:** `download_torrent_file` non-tracker branch + the `/download` flow do `aiohttp...get(<user download_urls entry>)` with no host validation (`routes.py:1170-1187`). A caller can make the proxy fetch `http://169.254.169.254/…`, `http://localhost:7185/…`, or LAN hosts and receive the body.
@@ -59,12 +72,19 @@ The merge service exposes mutating endpoints; the operator runs it on a LAN via 
 - **Fix:** `./install-plugin.sh` (copies plugins→engines), clear `__pycache__`, `podman restart qbittorrent-proxy`; re-establish tunnel (self-healer handles it). Verify §11.4.108 runtime-signature: the installed engine file contains `{0,512}` and a live large-result rutracker search returns < 2s parse.
 - **Acceptance:** `grep '0,512' config/qBittorrent/nova3/engines/rutracker.py` present on the container; captured timing of a large rutracker result page < 2s.
 - **Discipline:** §11.4.108. **Priority: P1.**
+- **STATUS (2026-08-07): UNVERIFIABLE, not DONE.** Source fix confirmed present
+  (`plugins/rutracker.py:140`). No live container stack was running on the audit host — the
+  deployed-artifact/runtime layers remain unconfirmed. See GA-12.
 
 ### RW-07 — [MED] nnmclub `/auth/nnmclub/status` SOURCE→ARTIFACT drift
 - **Evidence:** route exists in `download-proxy/src/api/auth.py` (BOB-006) but returns 404 on the running container; `tests/e2e/test_live_stack_evidence.py:265` skips because of it.
 - **Fix:** redeploy the proxy so source == artifact; confirm the route returns 200 live; the e2e test then asserts for real (un-skips).
 - **Acceptance:** `curl :7187/api/v1/auth/nnmclub/status` → 200; the e2e no longer skips. (Likely resolved together with RW-06's restart — verify.)
 - **Discipline:** §11.4.108/§11.4.139. **Priority: P1.**
+- **STATUS (2026-08-07): PARTIAL/UNVERIFIABLE, not DONE.** Route exists in source
+  (`download-proxy/src/api/auth.py:350`) but `tests/e2e/test_live_stack_evidence.py:265`
+  still contains the SKIP-on-404 fallback — it was never removed, so the acceptance
+  criterion is unmet regardless of live container state. See GA-13.
 
 ### RW-08 — [MED] Search latency + `/search/sync` reset over tunnel
 - **Evidence:** broad `ubuntu` search = ~67s in-container; over the tunnel `/search/sync` resets (`ConnectionResetError`) at ~13–40s. SSE path (`/search` + `/search/stream/{id}`) survives via 15s keepalives; the dashboard uses it. Scripted/curl callers of `/search/sync` hang.
@@ -77,6 +97,14 @@ The merge service exposes mutating endpoints; the operator runs it on a LAN via 
 ## 3. PHASE 3 — Go backend parity (only if the Go profile is to become viable)
 
 `docs/migration/PARITY_GAPS.md` (Rev 1): 6 ported / 4 partial / **8 missing** of 18 features. The Go backend is opt-in (`--profile go`) and NOT running; the Python path is complete. Switching profiles today regresses. **OPERATOR-DECISION (RW-09): is Go parity a goal for this release, or is the Go backend a future blueprint?** If yes, file each gap as a ticket and execute; if no, mark them deferred-by-design and move on.
+
+**STATUS (2026-08-07): still unresolved.** `docs/migration/PARITY_GAPS.md` and
+`docs/features/Status.md:52,194` are unrevised since 2026-04-27. Confirmed still fully
+absent: scheduler ticker/driver loop (RW-10 — "highest-impact silent functional hole"),
+enricher equivalent (RW-11), plugin fan-out (RW-12). RW-13 has moved to PARTIAL (Jackett
+autoconfig is now its own canonical Go service) but BEP48/scrape validation + a CAPTCHA REST
+endpoint are still missing. See GA-19 — this decision blocks real scope commitment and
+should be made before any RW-10..13 work starts.
 
 - **RW-10** [Go] Scheduler driver loop — MISSING (verified): `scheduler_api.go` stores List/Create/Delete but has no ticker → Go-path schedules never fire. (Highest-impact silent functional hole on the Go path.)
 - **RW-11** [Go] Metadata enricher (no Go equiv of `enricher.py`) — search loses posters/year/type.
@@ -94,6 +122,22 @@ The merge service exposes mutating endpoints; the operator runs it on a LAN via 
 - **RW-16** boba-jackett (Go) autoconfig path + the encrypted SQLite DB ops.
 - **RW-17** [verify, from test-health audit] confirm the full coverage map + that every CM-* gate referenced in CLAUDE.md is actually enforced by a pre-build script (not documented-only); file any documented-but-unimplemented gate as a task. *(This section to be refined with the test-health audit's coverage % + gate-enforcement findings when they land.)*
 - **Acceptance per task:** new `tests/stress/test_*_stress_chaos.py`, negation-proven, captured evidence, both deterministic + randomized. **Priority: P2.**
+- **STATUS (2026-08-07):** RW-14 and RW-15 are **still NOT-DONE** — commit `a410b91`
+  ("close Go + extension coverage gaps RW-14/RW-16") actually added Go
+  `internal/jackett`/`internal/logging` unit tests and an extension parser test, NOT
+  §11.4.85-conformant stress/chaos coverage for the tracker-fetch/cookie-auth path or the
+  scheduler+hooks+SSE-broker surface; no matching test files exist. **The commit's original
+  RW-14/RW-15 closure claim was inaccurate** (§11.4.6 — recorded here rather than left
+  standing). RW-16 is PARTIAL: `qBitTorrent-go/tests/integration/jackett_db_test.go:440-500`
+  has a genuine 50-goroutine concurrent-write test, but it predates this plan
+  (commit `8936545`, 2026-04-27) and has no chaos-style fault injection. RW-17 sample audit
+  (7 CM-* gates checked): only 2 (`CM-REPORTING-DIRECTIVES`, `CM-TRACK-BRANCH-LABEL`) have
+  real implementing scripts; 5 (`CM-STATUS-CUSTODY`, `CM-GUARD-ASSERTS-REAL-CONDITION`,
+  `CM-EXHAUSTIVE-REVIEW-ALL-SCENARIOS`, `CM-DEAD-CODE-INVESTIGATE-BEFORE-REMOVE`,
+  `CM-SUMMARY-CLARITY-DESCRIPTIONS`) are documented-only — consistent with the constitution's
+  own §11.4.227 admission that ~58% of named gates are unimplemented at the constitution-submodule
+  layer; not a boba-specific defect to fix locally. See GA-20 in
+  `docs/GOVERNANCE_AUDIT_2026-08-07.md` for the remediation task.
 
 ---
 

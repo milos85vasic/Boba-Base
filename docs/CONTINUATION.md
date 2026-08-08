@@ -377,17 +377,22 @@ e3b7acb test: wave 3 — rutor/tokyotoshokan/snowfl/torrentdownload/linuxtracker
 ## Quick-Start
 
 ```bash
+# One-time venv bootstrap (gitignored .venv/ — see docs/TESTING.md "Bootstrap")
+python3 -m venv .venv
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -r tests/requirements.txt
+
 # Pre-build gate
 bash scripts/pre_build_verification.sh
 
 # Unit tests
-python3 -m pytest tests/unit/ -q --import-mode=importlib
+.venv/bin/python -m pytest tests/unit/ -q --import-mode=importlib
 
 # Coverage
-python3 -m pytest tests/unit/ --cov=download-proxy/src --cov=plugins --cov-report=term --import-mode=importlib
+.venv/bin/python -m pytest tests/unit/ --cov=download-proxy/src --cov=plugins --cov-report=term --import-mode=importlib
 
 # Lint + typecheck
-ruff check . && mypy download-proxy/src/
+.venv/bin/ruff check . && .venv/bin/mypy download-proxy/src/
 
 # Frontend
 cd frontend && npx vitest run

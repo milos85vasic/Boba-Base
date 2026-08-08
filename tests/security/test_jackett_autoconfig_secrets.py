@@ -37,12 +37,6 @@ sys.modules["merge_service.jackett_autoconfig"] = _ac_mod
 _ac_spec.loader.exec_module(_ac_mod)
 
 
-def test_endpoint_response_contains_no_sentinel_credentials():
-    pytest.skip(
-        "endpoint moved to boba-jackett:7189 — see qBitTorrent-go/tests/security/credential_leak_test.go"
-    )
-
-
 @pytest.mark.asyncio
 async def test_traceback_from_forced_failure_excludes_credentials():
     log_stream = io.StringIO()

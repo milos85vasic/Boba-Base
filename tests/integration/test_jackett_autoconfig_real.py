@@ -20,7 +20,6 @@ import pytest
 import requests
 
 JACKETT_URL = os.getenv("JACKETT_URL", "http://localhost:9117")
-MERGE_BASE = os.getenv("MERGE_SERVICE_URL", "http://localhost:7187")
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 _MS_PATH = os.path.join(_REPO_ROOT, "download-proxy", "src", "merge_service")
@@ -55,34 +54,6 @@ def jackett_ready():
     if not key:
         pytest.skip("Jackett API key not yet generated")
     return key
-
-
-@pytest.fixture(scope="module")
-def merge_ready():
-    try:
-        r = requests.get(f"{MERGE_BASE}/health", timeout=3)
-        if not r.ok:
-            pytest.skip(f"merge service unhealthy ({r.status_code})")  # allow-skip: integration data-dependent
-    except requests.RequestException:
-        pytest.skip("merge service unreachable")  # allow-skip: integration data-dependent
-
-
-def test_autoconfig_endpoint_returns_live_result(merge_ready, jackett_ready):
-    pytest.skip(
-        "endpoint moved to boba-jackett:7189 — see qBitTorrent-go/tests/integration/jackett_management_test.go"
-    )
-
-
-def test_autoconfig_no_credential_leakage_in_response(merge_ready, jackett_ready):
-    pytest.skip(
-        "endpoint moved to boba-jackett:7189 — see qBitTorrent-go/tests/security/credential_leak_test.go"
-    )
-
-
-def test_jackett_has_at_least_the_indexers_we_configured(merge_ready, jackett_ready):
-    pytest.skip(
-        "endpoint moved to boba-jackett:7189 — see qBitTorrent-go/tests/integration/jackett_management_test.go"
-    )
 
 
 def test_module_orchestrator_is_idempotent_on_second_invocation(jackett_ready):

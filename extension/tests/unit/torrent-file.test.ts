@@ -538,13 +538,15 @@ describe("parseTorrentFromUrl", () => {
     const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        headers: { get: () => "application/x-bittorrent" },
-        arrayBuffer: async () => ab,
-      })),
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          headers: { get: () => "application/x-bittorrent" },
+          arrayBuffer: () => Promise.resolve(ab),
+        }),
+      ),
     );
     const parsed = await parseTorrentFromUrl("https://tracker.example/x.torrent");
     // User-observable outcome: the parsed name + size come from the REAL parser,
@@ -557,13 +559,15 @@ describe("parseTorrentFromUrl", () => {
   it("throws ParseError with the HTTP status on a non-ok response", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({
-        ok: false,
-        status: 404,
-        statusText: "Not Found",
-        headers: { get: () => null },
-        arrayBuffer: async () => new ArrayBuffer(0),
-      })),
+      vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          status: 404,
+          statusText: "Not Found",
+          headers: { get: () => null },
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+        }),
+      ),
     );
     // RED-on-regression: if the `!response.ok` guard were dropped, an empty
     // body would reach the parser and throw a DIFFERENT (decode) error, so the
@@ -576,9 +580,7 @@ describe("parseTorrentFromUrl", () => {
   it("wraps a network/transport failure as a ParseError (not a raw fetch error)", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => {
-        throw new Error("ECONNREFUSED");
-      }),
+      vi.fn(() => Promise.reject(new Error("ECONNREFUSED"))),
     );
     // RED-on-regression: without the catch-and-rewrap, the raw Error("ECONNREFUSED")
     // would surface instead of a ParseError and `toBeInstanceOf(ParseError)` fails.
@@ -592,13 +594,15 @@ describe("parseTorrentFromUrl", () => {
     const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({
-        ok: true,
-        status: 200,
-        statusText: "OK",
-        headers: { get: () => "text/html" }, // unexpected — must warn, not fail
-        arrayBuffer: async () => ab,
-      })),
+      vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          headers: { get: () => "text/html" }, // unexpected — must warn, not fail
+          arrayBuffer: () => Promise.resolve(ab),
+        }),
+      ),
     );
     const parsed = await parseTorrentFromUrl("https://tracker.example/x.torrent");
     // RED-on-regression: if the content-type check rejected instead of warning,

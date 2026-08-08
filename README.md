@@ -109,6 +109,31 @@ Then visit:
 
 Everything the platform offers, indexed:
 
+### Tracked-Items + Status Documents
+
+The mandated entry point (§11.4.57 / §11.4.212) for every tracker and status document in this
+repository — `Last modified` and `Revision` are sourced verbatim from each document's own
+revision header (§11.4.44); a `—` means the document currently carries no revision header or has
+no HTML/PDF export yet (never fabricated).
+
+| Document | Last modified | Revision | Markdown | HTML | PDF |
+|---|---|---|---|---|---|
+| Issues | 2026-06-09T20:00:00Z | 5 | [Markdown](docs/Issues.md) | [HTML](docs/Issues.html) | [PDF](docs/Issues.pdf) |
+| Issues_Summary | — | — | [Markdown](docs/Issues_Summary.md) | [HTML](docs/Issues_Summary.html) | [PDF](docs/Issues_Summary.pdf) |
+| Fixed | 2026-06-09T21:00:00Z | 13 | [Markdown](docs/Fixed.md) | [HTML](docs/Fixed.html) | [PDF](docs/Fixed.pdf) |
+| Fixed_Summary | — | — | [Markdown](docs/Fixed_Summary.md) | [HTML](docs/Fixed_Summary.html) | [PDF](docs/Fixed_Summary.pdf) |
+| CONTINUATION | 2026-06-16T23:55:00Z | 19 | [Markdown](docs/CONTINUATION.md) | [HTML](docs/CONTINUATION.html) | [PDF](docs/CONTINUATION.pdf) |
+| PORTING-FROM-LAVA | 2026-07-01T16:18:43Z | 1 | [Markdown](docs/PORTING-FROM-LAVA.md) | — (not yet exported) | — (not yet exported) |
+| REMAINING_WORK_PLAN | 2026-08-07T19:10:54Z | 2 | [Markdown](docs/REMAINING_WORK_PLAN.md) | [HTML](docs/REMAINING_WORK_PLAN.html) | [PDF](docs/REMAINING_WORK_PLAN.pdf) |
+| GOVERNANCE_AUDIT_2026-08-07 | 2026-08-07T19:10:54Z | 1 | [Markdown](docs/GOVERNANCE_AUDIT_2026-08-07.md) | — (not yet exported) | — (not yet exported) |
+| browser_extension/Status | 2026-06-13T13:10:00Z | 15 | [Markdown](docs/browser_extension/Status.md) | [HTML](docs/browser_extension/Status.html) | [PDF](docs/browser_extension/Status.pdf) |
+| browser_extension/Status_Summary | 2026-06-10T20:05:00Z | 3 | [Markdown](docs/browser_extension/Status_Summary.md) | [HTML](docs/browser_extension/Status_Summary.html) | [PDF](docs/browser_extension/Status_Summary.pdf) |
+| browser_extension/RELEASE_READINESS | 2026-06-13T13:10:00Z | 4 | [Markdown](docs/browser_extension/RELEASE_READINESS.md) | [HTML](docs/browser_extension/RELEASE_READINESS.html) | [PDF](docs/browser_extension/RELEASE_READINESS.pdf) |
+| COMPLETION_STATUS | 2026-06-06T00:00:00Z | 1 | [Markdown](docs/COMPLETION_STATUS.md) | [HTML](docs/COMPLETION_STATUS.html) | [PDF](docs/COMPLETION_STATUS.pdf) |
+| RELEASE_READINESS_20260616 | 2026-06-16T10:30:00Z | 1 | [Markdown](docs/RELEASE_READINESS_20260616.md) | [HTML](docs/RELEASE_READINESS_20260616.html) | [PDF](docs/RELEASE_READINESS_20260616.pdf) |
+| features/Status | 2026-06-16T23:30:00Z | 7 | [Markdown](docs/features/Status.md) | [HTML](docs/features/Status.html) | [PDF](docs/features/Status.pdf) |
+| features/Status_Summary | 2026-06-16T23:30:00Z | 7 | [Markdown](docs/features/Status_Summary.md) | [HTML](docs/features/Status_Summary.html) | [PDF](docs/features/Status_Summary.pdf) |
+
 ### Getting started & operation
 
 - [`docs/USER_MANUAL.md`](docs/USER_MANUAL.md) — end-user walkthrough

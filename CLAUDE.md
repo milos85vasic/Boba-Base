@@ -32,22 +32,39 @@ For deeper reference (technology stack, per-test-file mapping, full gotchas), se
   - See `CONSTITUTION.md` § XII for the full rule. Apply universally — every submodule and sub-project inherits.
 
 - **Pick the right restart level** (verified 2026-04-19 against the real
-  `docker-compose.yml` mount strategy):
+  `docker-compose.yml` mount strategy; wrapper subcommands added
+  2026-08-08 per Hard Stop #3 — container orchestration is owned
+  exclusively by the project's own binary/orchestrator, `start.sh` —
+  see `docs/GOVERNANCE_AUDIT_2026-08-07.md` GA-27). Operators MUST use
+  the `start.sh` subcommand for each level — never type raw
+  `podman`/`docker` commands directly:
   - **Python source in `download-proxy/src/` (including `merge_service/*.py`)**
-    — bind-mounted via `./download-proxy:/config/download-proxy`. Just
-    `podman exec qbittorrent-proxy find /config/download-proxy -name __pycache__ -type d -exec rm -rf {} +`
-    then `podman restart qbittorrent-proxy`.
+    — bind-mounted via `./download-proxy:/config/download-proxy`. Run
+    `./start.sh --reload-python`.
+    *(Under the hood: clears `__pycache__` inside the `qbittorrent-proxy`
+    container via `podman|docker exec qbittorrent-proxy find
+    /config/download-proxy -name __pycache__ -type d -exec rm -rf {} +`,
+    then `podman|docker restart qbittorrent-proxy` — auto-detecting the
+    runtime exactly like the rest of `start.sh`.)*
   - **Plugin files in `plugins/`** — also bind-mounted through
-    `./config:/config`. After editing, `./install-plugin.sh` copies
-    them into `config/qBittorrent/nova3/engines/` (that path IS the
-    host side of the mount) and `podman restart qbittorrent-proxy`
-    picks them up. A direct edit to `config/qBittorrent/nova3/engines/X.py`
-    works for a one-shot try but will be clobbered on the next install
-    — source of truth is `plugins/X.py`.
+    `./config:/config`. After editing, run `./install-plugin.sh` FIRST
+    (copies `plugins/X.py` into `config/qBittorrent/nova3/engines/` —
+    that path IS the host side of the mount), THEN
+    `./start.sh --reload-plugins` to pick them up. A direct edit to
+    `config/qBittorrent/nova3/engines/X.py` works for a one-shot try but
+    will be clobbered on the next install — source of truth is
+    `plugins/X.py`.
+    *(Under the hood: `--reload-plugins` only restarts the container —
+    `podman|docker restart qbittorrent-proxy` — it does not copy files;
+    `./install-plugin.sh` must run first.)*
   - **`docker-compose.yml`, `start-proxy.sh`, env vars, base image** —
-    `podman compose down && podman compose up -d` (full recreate). A
-    `podman build` is only needed when `python:3.12-alpine` itself
-    needs to change.
+    run `./start.sh --recreate` (full recreate). A rebuild of the
+    `python:3.12-alpine`-based image is only needed when the base image
+    itself needs to change.
+    *(Under the hood: `<compose> down && <compose> up -d`, using
+    whatever compose invocation `start.sh` already uses for the initial
+    `up` — `boba-ctl` by default, or raw `podman-compose`/`docker
+    compose` with `--no-boba-ctl`.)*
   - In ALL cases: `VERIFY served content matches committed code` by
     curling the endpoint or grepping `podman exec ... cat /config/...`
     — this is the cache-bust guard.

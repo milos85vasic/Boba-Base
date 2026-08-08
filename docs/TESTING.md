@@ -1,12 +1,33 @@
 # Testing Guide
 
-**Revision:** 1
-**Last modified:** 2026-06-06T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-08-08T00:00:00Z
 
 This is the **authoritative test-type catalogue** for qBittorrent-Fixed.
 Every testable module in the repo must have coverage in every applicable
 row below. The catalogue is derived from Part C of the
 completion-initiative plan (`docs/superpowers/plans/2026-04-19-completion-initiative.md`).
+
+## Bootstrap (one-time virtualenv setup)
+
+Test dependencies are **not** installed system-wide. Create and populate a
+local `.venv/` (gitignored — see `.gitignore`) before running anything below:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -r tests/requirements.txt
+```
+
+Verified working combination (2026-08-08): Python 3.14.6 (`/usr/bin/python3.14`)
++ pytest 9.1.1 + pytest-asyncio 1.4.0 + fastapi 0.141.1 + pydantic 2.13.4 +
+every package listed in `tests/requirements.txt`, all installed fresh into the
+same virtualenv (no cross-ABI mixing). Re-run the `pip install` line whenever
+`tests/requirements.txt` changes — it is idempotent.
+
+Once bootstrapped, invoke pytest via `.venv/bin/python -m pytest ...` (or
+activate the venv first with `source .venv/bin/activate` and drop the
+`.venv/bin/` prefix from every command in this guide).
 
 ## Test types
 

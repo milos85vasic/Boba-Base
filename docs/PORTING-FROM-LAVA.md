@@ -1,5 +1,9 @@
 # Porting Lava autonomous-QA solutions → Boba-Base (submodules-driven)
 
+**Revision:** 1
+**Last modified:** 2026-07-01T16:18:43Z
+**Status:** active
+
 Maps the Lava deep-research playbook (`Lava:docs/autonomous-qa/PORTING-PLAYBOOK.md`) onto **Boba-Base's actual stack** (Go `qBitTorrent-go` + Python `download-proxy`/`merge_service` + `plugins` + `frontend`/`extension` + Jackett), respecting Boba-Base's **TDD + anti-bluff (CONST-XII)** mandate. Both repos already share `submodules/{containers, jackett, challenges, helixqa}` + `constitution`, so the reusable pieces land **in the shared submodule** (consumed by both), and only thin glue stays per-repo.
 
 ## Applicability triage (honest — not a blind copy)

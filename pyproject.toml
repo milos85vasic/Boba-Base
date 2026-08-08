@@ -80,6 +80,13 @@ output = "coverage.xml"
 [tool.ruff]
 target-version = "py312"
 line-length = 120
+# These are independently-governed git submodules (see .gitmodules) with
+# their own engineering standards — not this project's own source. Linting
+# them inflates boba's own violation count with debt that isn't boba's to
+# fix. `.worktrees` is a scratch dir for parallel git worktrees (already
+# gitignored, excluded here for defense-in-depth); `.venv` is the local
+# Python virtualenv.
+extend-exclude = ["submodules", "constitution", ".worktrees", ".venv"]
 
 [tool.ruff.lint]
 # ASYNC (flake8-async) rules catch blocking I/O inside async funcs — key

@@ -60,6 +60,9 @@ EXCLUDE_PATHS=(
   "/docs/superpowers/plans/"
   "anthropic-quickstarts/"
   "tests/hooks/"
+  # This doc documents/enforces the forbidden verbs (guard-forbidden-commands
+  # hook reference) — it quotes them, it does not invoke them. GA-24.
+  "/constitution/docs/scripts/guard-forbidden-commands.md"
 )
 
 # Forbidden grep -E patterns. Real, tight regexes — not bare words.

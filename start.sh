@@ -684,6 +684,84 @@ build_frontend() {
     cd "$SCRIPT_DIR"
 }
 
+# Maintenance subcommand — restart level 1 (see CLAUDE.md "Pick the right
+# restart level"). download-proxy/src/ (including merge_service/*.py) is
+# bind-mounted into the qbittorrent-proxy container at
+# /config/download-proxy — a source edit is already live on disk inside
+# the container, but a stale __pycache__ can shadow it, so the cache MUST
+# be cleared before the restart picks up the change. Requires the
+# detected CLI (podman/docker) — boba-ctl has no exec/restart verb, so
+# this always talks to the runtime directly, exactly like
+# wait_for_container()/ensure_webui_password() already do elsewhere in
+# this script.
+reload_python() {
+    if [[ -z "$CONTAINER_RUNTIME" ]]; then
+        print_error "No container runtime (podman/docker) detected on PATH — cannot reload Python source."
+        print_error "Install podman or docker, or clear __pycache__ + restart qbittorrent-proxy manually."
+        exit 1
+    fi
+
+    print_info "Clearing __pycache__ inside qbittorrent-proxy (download-proxy/src/ is bind-mounted)..."
+    if ! $CONTAINER_RUNTIME exec qbittorrent-proxy find /config/download-proxy -name __pycache__ -type d -exec rm -rf {} +; then
+        print_error "Failed to clear __pycache__ inside qbittorrent-proxy"
+        exit 1
+    fi
+    print_success "__pycache__ cleared"
+
+    print_info "Restarting qbittorrent-proxy container..."
+    if ! $CONTAINER_RUNTIME restart qbittorrent-proxy; then
+        print_error "Failed to restart qbittorrent-proxy container"
+        exit 1
+    fi
+    print_success "qbittorrent-proxy restarted — Python source changes under download-proxy/src/ are now live"
+}
+
+# Maintenance subcommand — restart level 2 (see CLAUDE.md "Pick the right
+# restart level"). plugins/*.py is bind-mounted through ./config:/config,
+# but the plugin loader reads from config/qBittorrent/nova3/engines/, so
+# an edited plugins/X.py is NOT live until ./install-plugin.sh has copied
+# it there — this subcommand only performs the restart step. The operator
+# MUST run ./install-plugin.sh first; restarting alone will just reload
+# whatever is already installed.
+reload_plugins() {
+    if [[ -z "$CONTAINER_RUNTIME" ]]; then
+        print_error "No container runtime (podman/docker) detected on PATH — cannot reload plugins."
+        print_error "Install podman or docker, or restart qbittorrent-proxy manually."
+        exit 1
+    fi
+
+    print_warning "This only restarts qbittorrent-proxy — it does NOT copy plugin files."
+    print_warning "Run ./install-plugin.sh FIRST so plugins/X.py lands in config/qBittorrent/nova3/engines/, THEN run this."
+
+    print_info "Restarting qbittorrent-proxy container to pick up installed plugins..."
+    if ! $CONTAINER_RUNTIME restart qbittorrent-proxy; then
+        print_error "Failed to restart qbittorrent-proxy container"
+        exit 1
+    fi
+    print_success "qbittorrent-proxy restarted"
+}
+
+# Maintenance subcommand — restart level 3 (see CLAUDE.md "Pick the right
+# restart level"). Full recreate, required after docker-compose.yml,
+# start-proxy.sh, env var, or base image changes. Reuses $COMPOSE_CMD —
+# the same boba-ctl/podman-compose/docker-compose invocation
+# start_container()/stop_container() already use — so this stays routed
+# through the sanctioned orchestrator instead of a raw `compose` call.
+recreate_stack() {
+    print_info "Recreating the full stack ($COMPOSE_CMD down && $COMPOSE_CMD up -d)..."
+
+    if ! $COMPOSE_CMD down; then
+        print_warning "Stack may not have been running — continuing to bring it up"
+    fi
+
+    if ! $COMPOSE_CMD up -d; then
+        print_error "Failed to bring the stack back up"
+        exit 1
+    fi
+
+    print_success "Stack recreated successfully"
+}
+
 show_help() {
     cat << EOF
 Usage: $(basename "$0") [OPTIONS]
@@ -691,19 +769,25 @@ Usage: $(basename "$0") [OPTIONS]
 Start qBitTorrent container using Podman or Docker (auto-detected).
 
 OPTIONS:
-    -h, --help      Show this help message
-    -p, --pull      Pull latest image before starting
-    -v, --verbose   Enable verbose output
-    -s, --status    Show container status only
-    --no-plugins    Skip plugin installation
-    --no-build      Skip Angular frontend build
-    --no-boba-ctl   Use raw podman-compose/docker compose instead of boba-ctl CLI
+    -h, --help          Show this help message
+    -p, --pull          Pull latest image before starting
+    -v, --verbose       Enable verbose output
+    -s, --status        Show container status only
+    --no-plugins        Skip plugin installation
+    --no-build          Skip Angular frontend build
+    --no-boba-ctl       Use raw podman-compose/docker compose instead of boba-ctl CLI
+    --reload-python     Clear __pycache__ + restart qbittorrent-proxy (download-proxy/src/ edits)
+    --reload-plugins    Restart qbittorrent-proxy to pick up plugins (run ./install-plugin.sh FIRST)
+    --recreate          Full recreate: compose down && compose up -d (compose/env/base-image changes)
 
 EXAMPLES:
     $(basename "$0")                  Start container (default: boba-ctl)
     $(basename "$0") -p               Pull latest image and start
     $(basename "$0") --verbose        Start with verbose output
     $(basename "$0") --no-boba-ctl    Start using raw compose
+    $(basename "$0") --reload-python  Reload edited download-proxy/src/ Python source
+    $(basename "$0") --reload-plugins Reload after ./install-plugin.sh copied plugins/*.py
+    $(basename "$0") --recreate       Full recreate after compose/env/base-image changes
 
 EOF
     exit 0
@@ -715,6 +799,9 @@ main() {
     local status_only=false
     local install_plugins=true
     local build_frontend_flag=true
+    local reload_python_flag=false
+    local reload_plugins_flag=false
+    local recreate_flag=false
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -745,6 +832,18 @@ main() {
                 BOBA_CTL_MODE=false
                 shift
                 ;;
+            --reload-python)
+                reload_python_flag=true
+                shift
+                ;;
+            --reload-plugins)
+                reload_plugins_flag=true
+                shift
+                ;;
+            --recreate)
+                recreate_flag=true
+                shift
+                ;;
             *)
                 print_error "Unknown option: $1"
                 show_help
@@ -763,6 +862,21 @@ main() {
 
     if [[ "$status_only" == true ]]; then
         $COMPOSE_CMD ps
+        exit 0
+    fi
+
+    if [[ "$reload_python_flag" == true ]]; then
+        reload_python
+        exit 0
+    fi
+
+    if [[ "$reload_plugins_flag" == true ]]; then
+        reload_plugins
+        exit 0
+    fi
+
+    if [[ "$recreate_flag" == true ]]; then
+        recreate_stack
         exit 0
     fi
 

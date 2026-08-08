@@ -28,18 +28,6 @@ def stack_ready():
     pytest.skip("merge service not healthy within 30s")  # allow-skip: E2E data-dependent — stack may not be up
 
 
-def test_autoconfig_endpoint_returns_200_or_404(stack_ready):
-    pytest.skip(
-        "endpoint moved to boba-jackett:7189 — see qBitTorrent-go/tests/e2e/jackett_management_test.go"
-    )
-
-
-def test_autoconfig_payload_structure_when_present(stack_ready):
-    pytest.skip(
-        "endpoint moved to boba-jackett:7189 — see qBitTorrent-go/tests/e2e/jackett_management_test.go"
-    )
-
-
 def test_search_endpoint_does_not_5xx(stack_ready):
     """Smoke: search through merge service must not 5xx — not asserting
     result content because tracker availability is non-deterministic."""
