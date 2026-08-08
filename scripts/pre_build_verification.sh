@@ -249,9 +249,36 @@ fi
 
 # --- Invariant 17: CM-WORKABLE-ITEMS-VALIDATE (§11.4.93/§11.4.95) ---
 echo "[17/18] CM-WORKABLE-ITEMS-VALIDATE: workable-items validate (§11.4.93/§11.4.95)"
-WORKABLE_BINARY="${PROJECT_ROOT}/bin/workable-items"
+# Binary resolution chain (matches constitution/scripts/reporting/report_item.sh
+# and scripts/docs_chain.sh): env override -> committed constitution copy ->
+# on-demand `go build`. The naive "bin/workable-items" path never existed in
+# this checkout (bin/ is a gitignored local build-output dir nothing ever
+# populated) — this invariant silently SKIPPED on every pre-build run until
+# this fix (2026-08-08); see tests/unit/test_docs_chain_binary_resolution.sh
+# for the sibling regression guard on docs_chain.sh's identical bug.
+WORKABLE_BINARY="${WORKABLE_ITEMS_BIN:-}"
+if [[ -n "${WORKABLE_BINARY}" ]]; then
+    case "${WORKABLE_BINARY}" in
+        /*) : ;;
+        *) WORKABLE_BINARY="${PROJECT_ROOT}/${WORKABLE_BINARY}" ;;
+    esac
+fi
+if [[ -z "${WORKABLE_BINARY}" || ! -x "${WORKABLE_BINARY}" ]]; then
+    WI_SRC="${PROJECT_ROOT}/constitution/scripts/workable-items"
+    for cand in "${WI_SRC}/bin/workable-items" "${WI_SRC}/workable-items" "${PROJECT_ROOT}/bin/workable-items"; do
+        if [[ -x "${cand}" ]]; then WORKABLE_BINARY="${cand}"; break; fi
+    done
+fi
+if [[ -z "${WORKABLE_BINARY}" || ! -x "${WORKABLE_BINARY}" ]]; then
+    if command -v go >/dev/null 2>&1; then
+        WI_BUILD="$(mktemp -d)/workable-items"
+        if ( cd "${PROJECT_ROOT}/constitution/scripts/workable-items" && go build -o "${WI_BUILD}" ./cmd/workable-items ) >/dev/null 2>&1; then
+            WORKABLE_BINARY="${WI_BUILD}"
+        fi
+    fi
+fi
 WORKABLE_DB="${PROJECT_ROOT}/docs/workable_items.db"
-if [[ -x "${WORKABLE_BINARY}" ]] && [[ -f "${WORKABLE_DB}" ]]; then
+if [[ -n "${WORKABLE_BINARY}" && -x "${WORKABLE_BINARY}" ]] && [[ -f "${WORKABLE_DB}" ]]; then
     if "${WORKABLE_BINARY}" validate --db "${WORKABLE_DB}"; then
         pass "workable-items validate: DB invariant check passed"
     else

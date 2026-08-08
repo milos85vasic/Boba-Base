@@ -36,11 +36,36 @@ ERRORS=0
 # ---------------------------------------------------------------------------
 echo "[docs-chain] Step 1/3: workable-items export"
 
-WORKABLE_BIN="${PROJECT_ROOT}/bin/workable-items"
+# Binary resolution chain (matches constitution/scripts/reporting/report_item.sh):
+# env override -> committed constitution copy -> on-demand `go build`. The
+# naive "bin/workable-items" path never existed in this checkout (bin/ is a
+# gitignored local build-output dir nothing ever populated) — see
+# tests/unit/test_docs_chain_binary_resolution.sh for the regression guard.
+WORKABLE_BIN="${WORKABLE_ITEMS_BIN:-}"
+if [[ -n "${WORKABLE_BIN}" ]]; then
+    case "${WORKABLE_BIN}" in
+        /*) : ;;
+        *) WORKABLE_BIN="${PROJECT_ROOT}/${WORKABLE_BIN}" ;;
+    esac
+fi
+if [[ -z "${WORKABLE_BIN}" || ! -x "${WORKABLE_BIN}" ]]; then
+    WI_SRC="${PROJECT_ROOT}/constitution/scripts/workable-items"
+    for cand in "${WI_SRC}/bin/workable-items" "${WI_SRC}/workable-items" "${PROJECT_ROOT}/bin/workable-items"; do
+        if [[ -x "${cand}" ]]; then WORKABLE_BIN="${cand}"; break; fi
+    done
+fi
+if [[ -z "${WORKABLE_BIN}" || ! -x "${WORKABLE_BIN}" ]]; then
+    if command -v go >/dev/null 2>&1; then
+        WI_BUILD="$(mktemp -d)/workable-items"
+        if ( cd "${PROJECT_ROOT}/constitution/scripts/workable-items" && go build -o "${WI_BUILD}" ./cmd/workable-items ) >/dev/null 2>&1; then
+            WORKABLE_BIN="${WI_BUILD}"
+        fi
+    fi
+fi
 WORKABLE_DB="${PROJECT_ROOT}/docs/workable_items.db"
 
-if [[ ! -x "${WORKABLE_BIN}" ]]; then
-    echo "  ERROR: workable-items binary not found at ${WORKABLE_BIN}" >&2
+if [[ -z "${WORKABLE_BIN}" || ! -x "${WORKABLE_BIN}" ]]; then
+    echo "  ERROR: workable-items binary not found (set WORKABLE_ITEMS_BIN, or ensure constitution/scripts/workable-items is present, or install go)" >&2
     ERRORS=$((ERRORS + 1))
 elif [[ ! -f "${WORKABLE_DB}" ]]; then
     echo "  ERROR: workable-items DB not found at ${WORKABLE_DB}" >&2
