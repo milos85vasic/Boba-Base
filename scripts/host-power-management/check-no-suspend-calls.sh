@@ -63,6 +63,17 @@ EXCLUDE_PATHS=(
   # This doc documents/enforces the forbidden verbs (guard-forbidden-commands
   # hook reference) — it quotes them, it does not invoke them. GA-24.
   "/constitution/docs/scripts/guard-forbidden-commands.md"
+  # CONST-033 incident/triage reports are prose forensics: by construction they
+  # QUOTE the forbidden verbs they are triaging, and they paste this scanner's
+  # own FAIL transcript as captured evidence. A Markdown incident report cannot
+  # invoke a power-state transition — it is a §11.4.201(7)(a) CARRIER, not the
+  # thing. Without this entry every future CONST-033 incident write-up
+  # re-breaks the gate (a §11.4.201(1) false-positive refusal = FAIL-bluff).
+  # Justification per CLAUDE.md "non-host-context" rule. Verified 2026-08-08:
+  # zero real forbidden invocations exist in executable code (control-needle
+  # grep over *.sh/*.py/*.go/*.ts/*.yml — only hits are the guard hook's own
+  # test fixtures under tests/hooks/, already allowlisted above).
+  "/docs/incidents/"
 )
 
 # Forbidden grep -E patterns. Real, tight regexes — not bare words.
