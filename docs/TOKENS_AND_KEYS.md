@@ -1,7 +1,7 @@
 # Tokens, API Keys & Environment Variables
 
-**Revision:** 1
-**Last modified:** 2026-06-06T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-08-09T00:00:00Z
 
 Single source of truth for every credential, token, and API key the
 platform consumes. **Mandatory** rows fail the service at boot if
@@ -93,14 +93,29 @@ can use an API key for rate-limit uplift:
 
 The merge service decorates results with poster/year/genre when these
 keys are present. Unset = no enrichment, service runs normally.
+`MetadataEnricher.resolve()` tries every source in order until one
+returns a hit (`download-proxy/src/merge_service/enricher.py`):
+TMDB → OMDb → TVMaze → AniList → OpenLibrary → MusicBrainz.
 
 | Variable | Required | Register | Purpose |
 |---|---|---|---|
-| `TMDB_API_KEY` | Optional | [https://www.themoviedb.org/signup](https://www.themoviedb.org/signup) → Settings → API → Request API Key (v3 auth) | Movie / TV posters + metadata |
-| `TVDB_API_KEY` | Optional | [https://thetvdb.com/api-information](https://thetvdb.com/api-information) → Subscribe | TV series metadata |
-| `MUSICBRAINZ_USER_AGENT` | Optional (default `qbittorrent-fixed/0.1 (milos85vasic@)`) | [https://musicbrainz.org/doc/MusicBrainz_API](https://musicbrainz.org/doc/MusicBrainz_API) — free, requires UA only | Music album lookup |
-| `ANIDB_CLIENT` | Optional | [https://anidb.net/software/add](https://anidb.net/software/add) (register a client) | Anime metadata |
-| `OPENLIBRARY_USER_AGENT` | Optional | [https://openlibrary.org/dev/docs/api/](https://openlibrary.org/dev/docs/api/) — free, UA only | eBook / audiobook metadata |
+| `TMDB_API_KEY` | Optional | [https://www.themoviedb.org/signup](https://www.themoviedb.org/signup) → Settings → API → Request API Key (v3 auth) | Movie / TV posters + metadata (`enricher.py:73,163,172`) |
+| `OMDB_API_KEY` | Optional | [http://www.omdbapi.com/apikey.aspx](http://www.omdbapi.com/apikey.aspx) | Movie metadata via OMDb, tried after TMDB (`enricher.py:72,102,133-135`) |
+| `ANILIST_CLIENT_ID` | Optional | [https://anilist.co/settings/developer](https://anilist.co/settings/developer) | Anime metadata via the AniList GraphQL API (`enricher.py:74,225-228`) |
+
+The **TVMaze** (TV shows), **MusicBrainz** (music), and **OpenLibrary**
+(books) lookups (`enricher.py:_lookup_tvmaze`, `_lookup_musicbrainz`,
+`_lookup_openlibrary`) always run automatically as fallback sources —
+they read **no** environment variable, require **no** API key, and
+send no configurable User-Agent header. There is no `TVDB_API_KEY`,
+`MUSICBRAINZ_USER_AGENT`, `ANIDB_CLIENT`, or `OPENLIBRARY_USER_AGENT`
+env var anywhere in the codebase; a prior revision of this table
+documented those four as configuration knobs that do not exist in
+code (RD2-05 / RD2-37 — see
+[`GOVERNANCE_AUDIT_2026-08-08_ROUND2.md`](GOVERNANCE_AUDIT_2026-08-08_ROUND2.md)).
+There is no AniDB integration — anime metadata comes from AniList,
+gated by `ANILIST_CLIENT_ID` above. There is no TVDB integration —
+TV-show fallback is TVMaze, which is keyless.
 
 ---
 

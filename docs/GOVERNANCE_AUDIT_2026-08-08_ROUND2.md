@@ -1,7 +1,7 @@
 # Governance & Constitution Compliance Audit — Round 2 — 2026-08-08
 
-**Revision:** 3
-**Last modified:** 2026-08-08T17:27:57Z
+**Revision:** 4
+**Last modified:** 2026-08-09T00:00:00Z
 **Status:** active
 **Scope:** Live re-verification of every item in `docs/GOVERNANCE_AUDIT_2026-08-07.md` (GA-01..27)
 and `docs/REMAINING_WORK_PLAN.md` (RW-01..21) against the current tree, PLUS a fresh gap scan of
@@ -384,6 +384,16 @@ have zero audit trail
 - **Fix:** remove the 3 fictional vars from the doc (or implement the described behaviour if it's
   actually wanted — operator decision), add the missing `OMDB_API_KEY` row.
 - **Priority: P2.**
+- **Closed (2026-08-09, RD2-37):** `docs/TOKENS_AND_KEYS.md` § 4 table corrected. Removed
+  `TVDB_API_KEY`, `MUSICBRAINZ_USER_AGENT`, `OPENLIBRARY_USER_AGENT` (confirmed zero hits:
+  `grep -rn 'TVDB\|MUSICBRAINZ_USER_AGENT\|OPENLIBRARY_USER_AGENT' download-proxy/ qBitTorrent-go/
+  .env.example` returns nothing outside this doc; `enricher.py:_lookup_tvmaze/_lookup_musicbrainz/
+  _lookup_openlibrary` read no env var at all). Corrected `ANIDB_CLIENT` (no AniDB integration
+  exists) to the real `ANILIST_CLIENT_ID` (`enricher.py:74,225-228`, `.env.example:236`). Added
+  the missing `OMDB_API_KEY` row (`enricher.py:72,102,133-135`). Note: this evidence block itself
+  names 4 never-read vars, not 3 — the "3" in the Fix line above undercounted; all 4 were
+  corrected/removed for accuracy rather than leaving one fictional entry standing to match the
+  stated count. Revision bumped to 2.
 
 ### RD2-06 — `.trivyignore.yaml` contains placeholder, non-real CVE IDs
 
@@ -398,6 +408,19 @@ have zero audit trail
   real), then either author the promised `test_scan_config.py` expiry-enforcement test or correct
   the header comment to stop referencing a nonexistent test.
 - **Priority: P2.**
+- **Closed (2026-08-09, RD2-38):** deleted both placeholder entries — no real CVE recoverable
+  (`git log --follow -- .trivyignore.yaml` shows one commit `e3bebb6`, never touched again, no
+  linked issue; a live `trivy image python:3.12-alpine` scan run in this session found **zero**
+  musl-libc or busybox findings, only 5 unrelated `pip` CVEs — confirming the placeholders never
+  mapped to a real, currently-detectable finding). `.trivyignore.yaml` now `ignores: []`. Authored
+  `tests/unit/test_scan_config.py` (the exact promised filename) with a genuine RED→GREEN TDD
+  cycle: run against the pre-fix file it FAILED 2/4 (missing-expiry + placeholder-CVE-id checks);
+  after the fix all 4 PASS; a temporary backdated entry (`expires: 2020-01-01`) was then injected
+  to prove the expiry check independently FAILs, then removed and reconfirmed GREEN (4/4). Also
+  corrected the two other dangling promises of a differently-named nonexistent test
+  (`.trivyignore`'s header comment, `docs/SECURITY.md` § Waiver policy which had promised
+  `tests/unit/test_scan_waivers_have_expiry.py`) to point at the real, now-existing
+  `tests/unit/test_scan_config.py`. `docs/SECURITY.md` revision bumped to 2.
 
 ### RD2-07 — DDoS-class testing is fully absent from the mandated test-type matrix
 
@@ -595,10 +618,11 @@ passes with it), captured evidence per §11.4.5/§11.4.69/§11.4.107.
     (RD2-01) — word-boundary/token-aware matching, not another EXCLUDE_PATHS band-aid; also add
     the newly-discovered `docs/incidents/2026-08-07-const033-poweroff-signal-triage.md` carrier to
     `EXCLUDE_PATHS` as an immediate stopgap (GA-24's residual).
-28. **RD2-37 [P2]** Correct `docs/TOKENS_AND_KEYS.md`'s 3 fictional env vars + add the missing
-    `OMDB_API_KEY` row (RD2-05).
-29. **RD2-38 [P2]** Replace `.trivyignore.yaml`'s placeholder CVE IDs; author or de-reference the
-    promised `test_scan_config.py` expiry-enforcement test (RD2-06).
+28. **RD2-37 [P2] — CLOSED 2026-08-09.** Correct `docs/TOKENS_AND_KEYS.md`'s fictional env vars +
+    add the missing `OMDB_API_KEY` row (RD2-05). See RD2-05's Closed note above.
+29. **RD2-38 [P2] — CLOSED 2026-08-09.** Replace `.trivyignore.yaml`'s placeholder CVE IDs; author
+    or de-reference the promised `test_scan_config.py` expiry-enforcement test (RD2-06). See
+    RD2-06's Closed note above.
 30. **RD2-39 [P3]** Bump `submodules/jackett` one commit (RD2-09).
 31. **GA-19/RW-09 [OPERATOR-DECISION]** Is `--profile go` parity still a release goal? Gates
     RW-10..13.

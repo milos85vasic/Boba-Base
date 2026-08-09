@@ -1,7 +1,7 @@
 # Security
 
-**Revision:** 1
-**Last modified:** 2026-06-06T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-08-09T00:00:00Z
 
 This document defines the threat model, credential-handling rules, and
 scanner stack for qBittorrent-Fixed. It complements the constitution
@@ -129,9 +129,10 @@ Any `.snyk` ignore, `.trivyignore` entry, or semgrep inline-disable
 2. Reason.
 3. Expiry date (`# expires: YYYY-MM-DD`).
 
-Phase 2 introduces `tests/unit/test_scan_waivers_have_expiry.py` which
-will fail on anything older than its expiry or missing the reason
-annotation.
+`tests/unit/test_scan_config.py` enforces this against
+`.trivyignore.yaml`: it fails the build on any entry that is missing
+an `expires` date, carries a malformed date, has expired, or uses a
+template-placeholder CVE id instead of a real one (RD2-06 / RD2-38).
 
 ## Triage SLOs
 

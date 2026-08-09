@@ -1,4 +1,10 @@
 # Trivy ignore list for qBittorrent-Fixed.
 # Format: one CVE/ID per line, optional `# reason` comment, optional
-# expiry `# expires: YYYY-MM-DD` (enforced by tests/unit/test_scan_config.py
-# once Phase 2 lands — do not forget to renew).
+# expiry `# expires: YYYY-MM-DD`.
+#
+# The actual, enforced ignore list Trivy + the scanner-config test suite
+# read is `.trivyignore.yaml` (structured YAML) at the repo root — this
+# plain-text file is kept only as the legacy documented format pointer.
+# `tests/unit/test_scan_config.py` enforces the expiry policy against
+# `.trivyignore.yaml`: every entry needs a real CVE id, a reason, and an
+# `expires` date that is not in the past — do not forget to renew.

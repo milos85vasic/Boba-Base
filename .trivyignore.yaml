@@ -1,9 +1,21 @@
 # Trivy ignore file for qBittorrent-Fixed.
-# Known false positives for Alpine base image (python:3.12-alpine).
 # https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/
+#
+# Every entry MUST carry a real CVE id (never a template placeholder like
+# `CVE-2025-XXXX-0001`), a `statement` explaining the accepted risk, and an
+# `expires: YYYY-MM-DD` re-review date. tests/unit/test_scan_config.py
+# enforces all three and fails the build on any expired or malformed entry
+# (RD2-06 / RD2-38 — docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md). The two
+# entries this file previously carried (`CVE-2025-XXXX-0001` /
+# `CVE-2025-XXXX-0002`, "musl libc" / "busybox" placeholders) were
+# unfilled template boilerplate from the 2026-04-22 scaffolding commit
+# (e3bebb6) — never touched again, no linked issue, and a live
+# `trivy image python:3.12-alpine` scan in this session found zero
+# musl-libc or busybox findings — so they were removed rather than kept
+# as dead, misleading config. Example of the required shape once a real
+# accepted-risk finding needs suppressing:
+#   - id: CVE-2026-12345
+#     statement: <why this is a false positive / accepted risk>
+#     expires: 2026-12-31
 
-ignores:
-  - id: CVE-2025-XXXX-0001
-    statement: Alpine musl libc false positive in python:3.12-alpine base image; no fix available upstream
-  - id: CVE-2025-XXXX-0002
-    statement: Alpine busybox binary not exposed in container runtime; risk accepted
+ignores: []
