@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 1
-**Last modified:** 2026-08-08T21:02:58Z
+**Revision:** 2
+**Last modified:** 2026-08-09T12:45:00Z
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -117,14 +117,93 @@ honest about starting now, not claiming a false complete history.
   issue so the test does not tautologically reuse an unrelated failure — then GREEN after the
   fix, with a companion assertion that the real synced tree reports no false divergence).
 
+### RD2-42 — `podman ps` reports a container "Up ... (healthy)" while its process is genuinely dead
+
+- **id:** RD2-42 (governance-audit item)
+- **date:** 2026-08-09
+- **channel:** `incidental-discovery` — surfaced while attempting the RD2-22 live curl-verify:
+  `curl http://localhost:7187/health` returned `HTTP=000` (connection refused), while
+  `podman ps` simultaneously reported `qbittorrent-proxy: Up 15 hours (healthy)`.
+  `podman exec qbittorrent-proxy ...` returned `OCI runtime error: crun: ... is not running` and
+  `podman inspect ... .NetworkSettings.Ports` was empty `{}` — the container's actual `crun`
+  process was dead (no restart count, no OOMKilled flag recorded — podman's own state was simply
+  stale/desynced from reality), most likely fallout from the same host session-kill mechanism
+  already tracked in `docs/incidents/` reaching into the rootless-podman container process tree.
+- **escape-audit:** **no automated check exists at all** for "is `podman ps`'s reported state
+  consistent with the container's real `crun`/process state" — this is exactly the
+  §11.4.196(F)/§11.4.201(6) "configured ≠ in use" false-null class applied to container
+  orchestration: a healthy-looking `podman ps` line is not proof the service is reachable.
+  Genuinely uncovered — no pre-build/pre-test gate probes the live stack's actual reachability
+  before a test run assumes it.
+- **new-check:** not yet authored (tracked, not yet closed). Candidate: a
+  `tests/fixtures/services.py`-level or pre-build-gate-level real-reachability probe
+  (`curl`/socket-connect to each mapped port, not `podman ps` text) run before any live-stack-
+  dependent test session, with an honest recreate-and-retry path — mirroring what this session did
+  manually (`./start.sh --recreate`, confirmed `HTTP=200` after ~90s).
+- **resolution applied this session:** `./start.sh --recreate` (the project's sanctioned
+  orchestrator, never raw `podman restart`) — confirmed `curl :7187/health` → `200` after the
+  stack's normal ~90s startup window.
+
+### RD2-43 — bare `python3 -m pytest` silently fails ALL collection via a stale `~/.local` `rpds` build
+
+- **id:** RD2-43 (governance-audit item)
+- **date:** 2026-08-09
+- **channel:** `incidental-discovery` — surfaced when relaunching the interrupted `tests/contract/
+  + tests/unit/` regression sweep with a bare `python3 -m pytest` invocation: immediate
+  `ModuleNotFoundError: No module named 'rpds.rpds'` at collection time (inside the `schemathesis`
+  pytest-plugin's import chain), aborting the ENTIRE sweep before a single test ran.
+- **escape-audit:** host-level Python version drift — the system `python3` resolves to Python
+  3.14.6, but `~/.local/lib/python3/site-packages/rpds/rpds.cpython-313-x86_64-linux-gnu.so` is a
+  native extension built for the 3.13 ABI (real ABI mismatch, confirmed via
+  `ls .../rpds/*.so` + `python3 --version`). The project's own `.venv` (Python 3.14.6, `.venv/bin/
+  python3 -c "import rpds"` succeeds) is the correct, working interpreter — no automated check
+  enforces "tests are always run via `.venv/bin/python3`, never a bare `python3`" anywhere in this
+  repo's own tooling (no `Makefile`/wrapper script that fails closed on the wrong interpreter).
+  Genuinely uncovered; this is an environment-fragility class distinct from the source-level bugs
+  this ledger otherwise tracks, but it silently produces a 100%-collection-failure that could be
+  misread as "every test in the suite is broken" by anyone (human or agent) who doesn't already
+  know to check the interpreter.
+- **new-check:** not yet authored (tracked, not yet closed). Candidate: a thin
+  `scripts/run_tests.sh` wrapper (or a `pyproject.toml`/CI-adjacent guard) that verifies
+  `sys.prefix` resolves inside `.venv/` before invoking pytest, failing closed with an actionable
+  message rather than a confusing plugin-internals traceback.
+- **resolution applied this session:** relaunched the sweep via `.venv/bin/python3 -m pytest` —
+  confirmed genuinely running (real per-test PASS lines, not a collection error).
+
+### RD2-44 — `test_get_existing_search_returns_200`'s 120s poll window had near-zero real margin
+
+- **id:** RD2-44 (governance-audit item, same root-cause FAMILY as the already-fixed
+  `tests/e2e/test_full_pipeline.py` timeouts, but a genuinely separate finding/fix — that fix did
+  not touch this file)
+- **date:** 2026-08-09
+- **channel:** `incidental-discovery` — surfaced re-running `tests/integration/test_merge_api.py`
+  (RD2-26a's own deliverable) against the actually-live stack for the first time since its
+  original mocked-service replacement; it had only ever been run with the stack unreachable
+  (28 passed / 20 skipped) until this session.
+- **escape-audit:** RD2-26a's own author (a parallel subagent, same session) had no way to
+  discover this — the file was authored and its author's own live-verification attempt happened
+  while the stack was down, so it never actually exercised this code path against a live,
+  contended host before committing. No automated check re-runs the live-service test suite on a
+  schedule independent of whether an agent happens to have the stack up at authoring time —
+  genuinely uncovered.
+- **new-check:** the test itself IS the check; it was simply mistimed. Live-measured real search
+  completion (42 trackers, real network calls, under real concurrent 4-subagent host load):
+  ~118s once, ~298s under heavier concurrent load — both within a few seconds of, or past, the old
+  120s ceiling. Widened to 300s in `tests/integration/test_merge_api.py`, matching the
+  `test_full_pipeline.py` pattern's order of magnitude. RED-adjacent evidence: the original
+  120s-deadline run genuinely failed (`assert 'running' != 'running'`) against the live stack;
+  post-fix re-run: `1 passed in 297.72s`.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
 |---|---|---|---|
-| 2026-08-07 → 2026-08-08 (ledger start) | 0 | 4 (all `agent-code-reading`) | 100% |
+| 2026-08-07 → 2026-08-09 (ledger current) | 0 | 7 (`agent-code-reading` x4, `incidental-discovery` x3) | 100% |
 
 **Honest note:** 100% out-of-band is the true, unflattering starting number — every entry above
-was found by an agent reading code or running commands by hand, none by HelixQA. This is exactly
-the state §11.4.238 exists to change; the target is this percentage trending toward zero as the
-`new-check` column above closes each specific gap and as future work is driven through the
-HelixQA banks (`challenges/helixqa-banks/`) rather than ad-hoc investigation.
+was found by an agent reading code, running commands by hand, or hitting a real failure while
+doing unrelated live-verification work; none by a standing HelixQA run. This is exactly the state
+§11.4.238 exists to change; the target is this percentage trending toward zero as the `new-check`
+column above closes each specific gap (RD2-42/RD2-43 are still open — no automated check authored
+yet, tracked honestly as such) and as future work is driven through the HelixQA banks
+(`challenges/helixqa-banks/`) rather than ad-hoc investigation.
