@@ -222,7 +222,15 @@ class TestSearchByIdEndpoint:
         # service is not the same defect as the search never completing —
         # mirrors tests/integration/conftest.py::_wait_for_idle's own
         # catch-and-retry pattern for polling this exact live service).
-        deadline = time.monotonic() + 120
+        #
+        # 300s (was 120s): live-measured on 2026-08-09 under real multi-agent
+        # host contention (RD2-26a follow-up) — a real search against this
+        # exact endpoint (42 trackers, real network calls) took ~118s
+        # start-to-completed_at, i.e. within a few seconds of the old 120s
+        # ceiling with zero margin. Mirrors the same host-contention timing
+        # fix already applied to tests/e2e/test_full_pipeline.py (300s->540s,
+        # 420s->570s) — this is the same root cause, not a functional bug.
+        deadline = time.monotonic() + 300
         status = None
         data = None
         last_poll_exc: Exception | None = None
