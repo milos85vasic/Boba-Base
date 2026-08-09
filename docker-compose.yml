@@ -151,6 +151,12 @@ services:
       - ENABLE_DEAD_TRACKERS=${ENABLE_DEAD_TRACKERS:-0}
       - JACKETT_API_KEY=${JACKETT_API_KEY:-}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:7187,http://127.0.0.1:7187,http://localhost:4200,http://127.0.0.1:4200}
+      # RD2-22 (docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md): optional shared-secret
+      # gate for the mutating download/hooks/schedules/theme routes
+      # (api/routes.py require_api_token). Unset/empty -> those routes stay
+      # OPEN (§11.4.122 backward-compat default, unchanged). Set it here (or in
+      # .env) to require Authorization: Bearer <token> / X-Boba-Token: <token>.
+      - BOBA_API_TOKEN=${BOBA_API_TOKEN:-}
       # Configurable outbound proxy for tracker-bound egress (config/proxy.py:
       # apply_proxy_env maps BOBA_UPSTREAM_PROXY → HTTP(S)_PROXY/NO_PROXY for the
       # urllib plugin subprocesses + trust_env aiohttp tracker sessions).
