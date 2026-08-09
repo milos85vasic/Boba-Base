@@ -42,7 +42,11 @@ _PLUGIN_DEPS = ("helpers", "novaprinter", "nova2")
 def _import_plugin(name: str):
     path = os.path.join(_PLUGINS_DIR, f"{name}.py")
     if not os.path.isfile(path):
-        pytest.skip(f"Plugin file not found: {path}")  # SKIP-OK: #legacy-untriaged
+        # SKIP-OK: intentional — defensive guard for a canonical plugin file that
+        # doesn't exist yet; verified all 17 CANONICAL_PLUGINS files are present
+        # as of this triage (2026-08-09), so this branch is currently dead code,
+        # not an active defect.
+        pytest.skip(f"Plugin file not found: {path}")
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
     saved_path = sys.path[:]

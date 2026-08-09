@@ -125,7 +125,7 @@ def test_deadline_hit_is_surfaced_on_slow_trackers(linux_search: dict) -> None:
         )
 
 
-@pytest.mark.skipif(  # SKIP-OK: #legacy-untriaged
+@pytest.mark.skipif(  # SKIP-OK: intentional feature-flag gate — see reason= below, not a defect
     os.getenv("ENABLE_DEAD_TRACKERS", "0") == "1" or Path(".env").read_text().find("ENABLE_DEAD_TRACKERS=1") != -1,
     reason="Dead trackers are intentionally enabled via ENABLE_DEAD_TRACKERS=1",
 )

@@ -6,7 +6,7 @@ Before Phase 0.3, dozens of integration tests looked like::
 
     def test_something():
         if not requests.get("http://localhost:7187/").ok:
-            pytest.skip("merge service unavailable")  # SKIP-OK: #legacy-untriaged
+            pytest.skip("merge service unavailable")
         ...
 
 That pattern hides breakage: CI showed "331 passed" while 71 tests were

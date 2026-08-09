@@ -48,7 +48,9 @@ def _extract_internal_links(content: str, file_path: str) -> list[tuple[str, str
 )
 def test_internal_markdown_links_resolve(md_file):
     if not os.path.isdir(DOCS_DIR):
-        pytest.skip("docs/ directory not found")  # SKIP-OK: #legacy-untriaged
+        # SKIP-OK: intentional — defensive guard; docs/ is always present in
+        # this repo (verified), this branch is currently dead code, not a defect.
+        pytest.skip("docs/ directory not found")
 
     with open(md_file, encoding="utf-8") as fh:
         content = fh.read()

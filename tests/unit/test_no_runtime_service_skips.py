@@ -1,13 +1,13 @@
 """Meta-test: enforce fixture-based service-availability gating.
 
 Phase 0.3 of the completion-initiative plan converted the old
-``if probe_health() else pytest.skip(...)`` pattern into fixture-based  # SKIP-OK: #legacy-untriaged
+``if probe_health() else pytest.skip(...)`` pattern into fixture-based
 gating using ``merge_service_live`` / ``qbittorrent_live`` /
 ``webui_bridge_live`` / ``all_services_live`` from
 ``tests/fixtures/services.py``.
 
 To prevent regression, this test scans every ``tests/**/*.py`` file and
-fails if any ``pytest.skip(...)`` call mentions ``service``, ``available``,  # SKIP-OK: #legacy-untriaged
+fails if any ``pytest.skip(...)`` call mentions ``service``, ``available``,
 or ``unreachable`` (case-insensitive). Two allow-listed escape hatches:
 
 *   ``tests/fixtures/services.py`` itself — the docstring mentions the old
@@ -33,7 +33,7 @@ ALLOW_LISTED_FILES = {
     THIS_FILE,
 }
 
-# Regex capturing ``pytest.skip(...)`` call including its argument list.  # SKIP-OK: #legacy-untriaged
+# Regex capturing ``pytest.skip(...)`` call including its argument list.
 SKIP_CALL = re.compile(r"pytest\.skip\s*\(\s*(?P<arg>[^)]*)\)", re.IGNORECASE)
 
 # Forbidden substrings inside the skip reason.
@@ -81,7 +81,7 @@ def test_meta_allows_explicit_escape_hatch(tmp_path: pytest.TempPathFactory) -> 
     """Sanity check: a skip annotated with '# allow-skip:' must NOT trigger."""
     # We can't write into the real tests tree, so we simulate by exercising
     # the regex directly.
-    line = 'pytest.skip("service not available")  # allow-skip: legitimate reason'  # SKIP-OK: #legacy-untriaged
+    line = 'pytest.skip("service not available")  # allow-skip: legitimate reason'
     assert ALLOW_MARKER in line
     match = SKIP_CALL.search(line)
     assert match is not None
@@ -91,7 +91,7 @@ def test_meta_allows_explicit_escape_hatch(tmp_path: pytest.TempPathFactory) -> 
 
 def test_meta_flags_service_wording() -> None:
     """Sanity check: a skip whose reason mentions 'service' triggers."""
-    line = 'pytest.skip("Merge service not available")'  # SKIP-OK: #legacy-untriaged
+    line = 'pytest.skip("Merge service not available")'
     assert ALLOW_MARKER not in line
     match = SKIP_CALL.search(line)
     assert match is not None
