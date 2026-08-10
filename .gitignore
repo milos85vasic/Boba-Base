@@ -243,3 +243,8 @@ qa-results/docs_chain/
 
 # Playwright MCP browser-session artifacts (snapshots/screenshots) — never tracked
 .playwright-mcp/
+
+# Session-scratch working directory (subagent design docs, fixtures, logs;
+# regeneratable — §11.4.30/§11.4.11 sibling convention to .evidence/ + qa-results/
+# + artifacts/; investigation by Agent Q 2026-08-10, task #26)
+scratchpad/
