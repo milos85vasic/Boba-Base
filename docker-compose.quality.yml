@@ -49,6 +49,13 @@ services:
       retries: 30
       start_period: 120s
     restart: unless-stopped
+    # Container hygiene (CONST-033 corollary, boba-jackett pattern): dies before
+    # the user session under host pressure. Sized generously — bundled JVM +
+    # embedded Elasticsearch + compute engine is the heaviest service in this
+    # stack (SonarQube's own docs recommend >=2 GiB, often 4 GiB in practice).
+    mem_limit: 4g
+    pids_limit: 1024
+    oom_score_adj: 500
 
   sonar-db:
     image: postgres:16-alpine
@@ -66,6 +73,12 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+    # Container hygiene (CONST-033 corollary, boba-jackett pattern): a single
+    # SonarQube-only postgres instance, moderate connection pool — well below
+    # the JVM sonarqube service, above the lightweight one-shot scanner CLIs.
+    mem_limit: 1g
+    pids_limit: 256
+    oom_score_adj: 500
 
   # One-shot scanners. Run via `./scripts/scan.sh <name>`.
   # The `run-once` profile keeps them out of `up -d` by default.
@@ -73,6 +86,11 @@ services:
     image: snyk/snyk:python
     container_name: qbit-snyk
     profiles: [run-once, snyk]
+    # Container hygiene (CONST-033 corollary, boba-jackett pattern): one-shot
+    # scanner over a Python dependency tree — bounded, no long-lived process.
+    mem_limit: 1g
+    pids_limit: 256
+    oom_score_adj: 500
     environment:
       SNYK_TOKEN: ${SNYK_TOKEN:-}
     working_dir: /project
@@ -94,6 +112,12 @@ services:
     image: returntocorp/semgrep:latest
     container_name: qbit-semgrep
     profiles: [run-once, semgrep]
+    # Container hygiene (CONST-033 corollary, boba-jackett pattern): one-shot
+    # rule-based static analysis over the whole tree — the heaviest of the
+    # scanner CLIs (full-repo AST matching across many `--config=auto` rules).
+    mem_limit: 2g
+    pids_limit: 512
+    oom_score_adj: 500
     working_dir: /src
     volumes:
       - ./:/src:ro
@@ -106,6 +130,11 @@ services:
     image: aquasec/trivy:latest
     container_name: qbit-trivy
     profiles: [run-once, trivy]
+    # Container hygiene (CONST-033 corollary, boba-jackett pattern): one-shot
+    # filesystem vuln/secret/misconfig scan, bounded by the repo tree size.
+    mem_limit: 1g
+    pids_limit: 256
+    oom_score_adj: 500
     working_dir: /src
     volumes:
       - ./:/src:ro
@@ -123,6 +152,11 @@ services:
     image: zricethezav/gitleaks:latest
     container_name: qbit-gitleaks
     profiles: [run-once, gitleaks]
+    # Container hygiene (CONST-033 corollary, boba-jackett pattern): one-shot
+    # regex-based secret scan — the lightest scanner CLI in this stack.
+    mem_limit: 512m
+    pids_limit: 128
+    oom_score_adj: 500
     working_dir: /src
     volumes:
       - ./:/src:ro
@@ -150,6 +184,11 @@ services:
       - --storage.tsdb.retention.time=7d
       - --web.listen-address=:9090
     restart: unless-stopped
+    # Container hygiene (CONST-033 corollary, boba-jackett pattern): long-running
+    # TSDB with a 7d retention window — moderate, bounded working set.
+    mem_limit: 1g
+    pids_limit: 256
+    oom_score_adj: 500
 
   grafana:
     image: grafana/grafana-oss:latest
@@ -167,6 +206,11 @@ services:
       - ./observability/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./observability/datasources:/etc/grafana/provisioning/datasources:ro
     restart: unless-stopped
+    # Container hygiene (CONST-033 corollary, boba-jackett pattern): long-running
+    # dashboard/web UI — lighter than prometheus, no local TSDB of its own.
+    mem_limit: 512m
+    pids_limit: 256
+    oom_score_adj: 500
 
 volumes:
   sonarqube_data:

@@ -86,10 +86,12 @@ while IFS= read -r -d '' file; do
 done < <(find "$PROJECT_ROOT" -type f \( -name "*.py" -o -name "*.ts" -o -name "*.js" -o -name "*.go" -o -name "*.sh" \) \
     ! -path "*/.venv/*" ! -path "*/venv/*" ! -path "*/site-packages/*" \
     ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/submodules/*" \
+    ! -path "*/constitution/*" \
     ! -path "*/out/*" ! -path "*/build/*" ! -path "*/dist/*" \
     ! -path "*/__pycache__/*" ! -path "*/mutants/*" \
     ! -path "*/.mypy_cache/*" ! -path "*/.pytest_cache/*" ! -path "*/.ruff_cache/*" \
-    ! -path "*/tests/*" ! -path "*/challenges/*" -print0 2>/dev/null)
+    ! -path "*/tests/*" ! -path "*/challenges/*" \
+    ! -path "*/scratchpad/*" ! -path "*/qa-results/*" -print0 2>/dev/null)
 
 if [[ "$marker_errors" -eq 0 ]]; then
     pass "no mutation markers found"

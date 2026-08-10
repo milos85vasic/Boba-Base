@@ -32,6 +32,21 @@ status code, the response body, and the captured log record — never "no error"
 
 §11.4.10: the token is a SYNTHETIC per-run uuid value, never a real secret,
 never logged.
+
+RD2-23 (§11.4.135 permanent regression guard): ``TestMutatingRoutesTokenGate``
+below (parametrized over ``_MUTATING``, which includes
+``PATCH /api/v1/schedules/{id}`` and ``PUT /api/v1/theme`` since RD2-22) IS
+the standing regression guard for the RD2-22 fix -- no separate/duplicate
+guard test was authored. Polarity-switch proof (§11.4.115), captured in this
+session: with ``Depends(require_api_token)`` commented out of
+``scheduler.py::update_schedule`` and ``routes.py::put_theme`` (reverting
+RD2-22 to its pre-fix state), ``test_no_token_is_401_when_token_set`` and
+``test_wrong_token_is_401_when_token_set`` for BOTH of those two
+parametrize ids go RED (4 failures, each "expected 401 ... got 200" -- the
+right reason, auth bypassed, not a script-bug crash). Restoring
+``Depends(require_api_token)`` returns the full 31/31 suite to GREEN with
+zero diff against the fixed source. This proves the guard would catch a
+reversion of the RD2-22 fix.
 """
 
 import logging

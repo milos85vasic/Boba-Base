@@ -1,0 +1,413 @@
+<h1 id="qa-discovery-channel-ledger">QA Discovery-Channel Ledger</h1>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-08-10T17:30:55Z <strong>Status:</strong> active
+<strong>Constitution:</strong> §11.4.238 (automated QA must be the
+DISCOVERER, not the confirmer — every defect found outside the automated
+HelixQA regime is itself a coverage-escape release blocker, not merely a
+bug to fix).</p>
+<h2 id="purpose">Purpose</h2>
+<p>Every defect this project closes MUST record <strong>which channel
+found it</strong>: <code>automated-helixqa</code> (the standing HelixQA
+regime caught it) or an <strong>out-of-band channel</strong> —
+<code>manual-qa</code>, <code>operator-report</code>,
+<code>agent-code-reading</code>, or <code>incidental-discovery</code>.
+Per §11.4.238(C), every out-of-band entry MUST carry a
+<strong>coverage-escape audit</strong>: why the automated regime missed
+it (cited to the specific missing/blind check, never “we didn’t think of
+it”), and the new or strengthened automated check — with its own
+§11.4.115 RED capturing the escaped defect — that closes the gap.</p>
+<p>Per §11.4.238(E), this project tracks the discovery-channel split
+over time and drives the out-of-band share toward zero. <strong>Honest
+boundary (§11.4.6):</strong> this ledger starts wherever this project’s
+actual history is — see the retroactive seed entries below, all found
+via <code>agent-code-reading</code> during the 2026-08-07/2026-08-08
+governance audits, exactly the channel this anchor targets. Full
+retroactive audit of every historical closure in
+<code>docs/Fixed.md</code> (~62 items) is NOT attempted here — that is
+out of proportion for a ledger just being stood up, and would itself be
+a §11.4.6 fabrication if backfilled without real investigation per
+entry. The ledger is honest about starting now, not claiming a false
+complete history.</p>
+<h2 id="schema-per-entry">Schema (per entry)</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>id</code></td>
+<td>The workable item id (<code>BOB-NNN</code>) if one exists, else a
+short slug</td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td>ISO date the defect was found</td>
+</tr>
+<tr>
+<td><code>channel</code></td>
+<td><code>automated-helixqa</code> | <code>manual-qa</code> |
+<code>operator-report</code> | <code>agent-code-reading</code> |
+<code>incidental-discovery</code></td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td>One line: what was wrong</td>
+</tr>
+<tr>
+<td><code>escape-audit</code></td>
+<td>(out-of-band only) which check was missing/blind, cited by
+name/path</td>
+</tr>
+<tr>
+<td><code>new-check</code></td>
+<td>(out-of-band only) the new/strengthened check that now catches this
+class, with its RED-capture evidence</td>
+</tr>
+</tbody>
+</table>
+<h2 id="entries">Entries</h2>
+<h3
+id="rd2-22-patch-schedulesid-and-put-theme-unauthenticated-with-a-token-set">RD2-22
+— <code>PATCH /schedules/{id}</code> and <code>PUT /theme</code>
+unauthenticated with a token set</h3>
+<ul>
+<li><strong>id:</strong> RD2-22 (governance-audit item, not yet a
+<code>BOB-NNN</code>)</li>
+<li><strong>date:</strong> 2026-08-07 (found by the 2026-08-07
+governance audit), confirmed still open + fixed 2026-08-08</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — found by
+direct source inspection (comparing sibling routes’
+<code>Depends(require_api_token)</code> presence), not by any test or
+HelixQA run.</li>
+<li><strong>escape-audit:</strong>
+<code>tests/security/test_hooks_schedules_auth.py</code>’s
+<code>_MUTATING</code> enumeration (the ONLY automated check covering
+this auth surface) was scoped to exactly 4 routes
+(<code>POST/DELETE hooks</code>, <code>POST/DELETE schedules</code>)
+when the original RW-02 fix landed — it was never extended when
+<code>PATCH /schedules/{id}</code> and <code>PUT /theme</code> were
+added as separate routes. The check existed, ran green, and was simply
+never told about two of the six routes it should have covered — a scope
+gap, not a broken check (per the ledger’s <code>channel</code> split,
+this is the “genuinely uncovered” class, not “existed-but-missed”).</li>
+<li><strong>new-check:</strong> <code>_MUTATING</code> extended to all 6
+routes (<code>tests/security/test_hooks_schedules_auth.py</code>),
+RED-captured (confirmed 4/4 new-route assertions failed with
+<code>expected 401, got 200</code> before the fix), now GREEN (31/31).
+See <code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code> RD2-22 for
+the full before/after evidence.</li>
+</ul>
+<h3
+id="rd2-41a-scriptsdocs_chain.sh-step-13-silently-no-opd-on-every-run">RD2-41a
+— <code>scripts/docs_chain.sh</code> Step 1/3 silently no-op’d on every
+run</h3>
+<ul>
+<li><strong>id:</strong> RD2-41 (governance-audit item)</li>
+<li><strong>date:</strong> 2026-08-08</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — found by
+directly invoking <code>docs_chain.sh</code> and reading its own printed
+error line, then tracing the hardcoded path in source.</li>
+<li><strong>escape-audit:</strong> <strong>no automated check existed at
+all</strong> for “does <code>docs_chain.sh</code>’s Step 1 actually run
+the real DB export” — the script printed an <code>ERROR:</code> line on
+every failure but nothing consumed/asserted on that exit status anywhere
+in the test suite or pre-build gate; a human had to actually run it and
+read the output. Genuinely uncovered, not a broken check.</li>
+<li><strong>new-check:</strong>
+<code>tests/unit/test_docs_chain_binary_resolution.sh</code> —
+real-invocation test asserting Step 1 resolves a real binary and reaches
+the real <code>validate</code> call. RED-captured (confirmed failing
+against the pre-fix script:
+<code>FAIL: Step 1/3 still reports 'binary not found'</code>), now
+GREEN.</li>
+</ul>
+<h3
+id="rd2-41b-scriptspre_build_verification.sh-invariant-17-silently-skipped-on-every-run">RD2-41b
+— <code>scripts/pre_build_verification.sh</code> invariant 17 silently
+SKIPPED on every run</h3>
+<ul>
+<li><strong>id:</strong> RD2-41 (governance-audit item, same root cause
+as RD2-41a)</li>
+<li><strong>date:</strong> 2026-08-08</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — found
+while fixing RD2-41a, by checking for the identical bug pattern in this
+sibling script per the project’s own extend-to-all-cases
+discipline.</li>
+<li><strong>escape-audit:</strong> this is the sharpest instance in this
+ledger of “the checker itself was blind”: invariant 17 IS the pre-build
+gate’s own workable-items DB-integrity check, and it was silently
+SKIPPING (not failing — the script’s own <code>else</code> branch treats
+a missing binary as an honest skip, not a failure) on every single
+pre-build run since the path was wrong. A gate whose own
+precondition-check is broken cannot report the truth about the thing it
+gates — an <code>existed-but-missed</code> class defect (the check
+existed, ran, and was blind), the more dangerous of the two classes per
+this ledger’s schema.</li>
+<li><strong>new-check:</strong>
+<code>tests/unit/test_pre_build_workable_items_invariant.sh</code> —
+real-invocation test asserting invariant 17 reaches a real PASS/FAIL
+verdict instead of silently skipping. RED-captured (confirmed failing
+against the pre-fix script via <code>git stash</code>/restore), now
+GREEN. <strong>Residual, still-open finding from this same
+investigation</strong> (tracked as RD2-41’s own note in
+<code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code>, not yet
+closed): a SEPARATE, earlier mutation-marker carrier false-positive in
+the same script aborts the ENTIRE pre-build gate before invariant 17 is
+ever reached in a full run — meaning this fix, while correct, is not yet
+provably exercised end-to-end in production; the ledger records this
+honestly rather than claiming full closure.</li>
+</ul>
+<h3
+id="bob-008-dbmd-body-drift-missing-enumerated-unblock-choices">BOB-008
+— DB↔︎MD body drift + missing enumerated unblock choices</h3>
+<ul>
+<li><strong>id:</strong> BOB-008</li>
+<li><strong>date:</strong> 2026-08-08</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — found by
+running <code>workable-items diff</code>/<code>validate</code> during a
+routine sync check, not by any standing automated gate (no CI job runs
+<code>workable-items diff</code> on a schedule).</li>
+<li><strong>escape-audit:</strong> no automated check runs
+<code>workable-items diff</code>/<code>validate</code> as a standing,
+scheduled, or write-seam-triggered gate — §11.4.106(F)’s commit-seam
+sync hook (which would have caught the DB write in commit
+<code>54e313f</code> landing with no matching
+<code>docs/Issues.md</code> update) does not exist in this repo.
+Genuinely uncovered.</li>
+<li><strong>new-check:</strong> <strong>closed 2026-08-08.</strong>
+<code>scripts/pre_build_verification.sh</code> invariant 17 extended to
+run <code>workable-items diff</code> (DB-vs-Markdown divergence)
+alongside <code>validate</code> (internal DB invariants) — it now
+catches BOTH the §11.4.148(D3) enumerated-choices class AND the DB↔︎MD
+body-drift class. RED-captured via
+<code>tests/unit/test_pre_build_workable_items_diff_check.sh</code>’s
+§1.1 paired mutation (a deliberately desynced
+<code>docs/Issues.md</code> — confirmed FAIL with the diff check absent,
+confirmed correct divergence-specific FAIL, distinguished from the
+separate pre-existing BOB-009/010 <code>validate</code> issue so the
+test does not tautologically reuse an unrelated failure — then GREEN
+after the fix, with a companion assertion that the real synced tree
+reports no false divergence).</li>
+</ul>
+<h3
+id="rd2-42-podman-ps-reports-a-container-up-healthy-while-its-process-is-genuinely-dead">RD2-42
+— <code>podman ps</code> reports a container “Up … (healthy)” while its
+process is genuinely dead</h3>
+<ul>
+<li><strong>id:</strong> RD2-42 (governance-audit item)</li>
+<li><strong>date:</strong> 2026-08-09</li>
+<li><strong>channel:</strong> <code>incidental-discovery</code> —
+surfaced while attempting the RD2-22 live curl-verify:
+<code>curl http://localhost:7187/health</code> returned
+<code>HTTP=000</code> (connection refused), while <code>podman ps</code>
+simultaneously reported
+<code>qbittorrent-proxy: Up 15 hours (healthy)</code>.
+<code>podman exec qbittorrent-proxy ...</code> returned
+<code>OCI runtime error: crun: ... is not running</code> and
+<code>podman inspect ... .NetworkSettings.Ports</code> was empty
+<code>{}</code> — the container’s actual <code>crun</code> process was
+dead (no restart count, no OOMKilled flag recorded — podman’s own state
+was simply stale/desynced from reality), most likely fallout from the
+same host session-kill mechanism already tracked in
+<code>docs/incidents/</code> reaching into the rootless-podman container
+process tree.</li>
+<li><strong>escape-audit:</strong> <strong>no automated check exists at
+all</strong> for “is <code>podman ps</code>’s reported state consistent
+with the container’s real <code>crun</code>/process state” — this is
+exactly the §11.4.196(F)/§11.4.201(6) “configured ≠ in use” false-null
+class applied to container orchestration: a healthy-looking
+<code>podman ps</code> line is not proof the service is reachable.
+Genuinely uncovered — no pre-build/pre-test gate probes the live stack’s
+actual reachability before a test run assumes it.</li>
+<li><strong>new-check:</strong> not yet authored (tracked, not yet
+closed). Candidate: a <code>tests/fixtures/services.py</code>-level or
+pre-build-gate-level real-reachability probe
+(<code>curl</code>/socket-connect to each mapped port, not
+<code>podman ps</code> text) run before any live-stack- dependent test
+session, with an honest recreate-and-retry path — mirroring what this
+session did manually (<code>./start.sh --recreate</code>, confirmed
+<code>HTTP=200</code> after ~90s).</li>
+<li><strong>resolution applied this session:</strong>
+<code>./start.sh --recreate</code> (the project’s sanctioned
+orchestrator, never raw <code>podman restart</code>) — confirmed
+<code>curl :7187/health</code> → <code>200</code> after the stack’s
+normal ~90s startup window.</li>
+</ul>
+<h3
+id="rd2-43-bare-python3--m-pytest-silently-fails-all-collection-via-a-stale-.local-rpds-build">RD2-43
+— bare <code>python3 -m pytest</code> silently fails ALL collection via
+a stale <code>~/.local</code> <code>rpds</code> build</h3>
+<ul>
+<li><strong>id:</strong> RD2-43 (governance-audit item)</li>
+<li><strong>date:</strong> 2026-08-09</li>
+<li><strong>channel:</strong> <code>incidental-discovery</code> —
+surfaced when relaunching the interrupted `tests/contract/
+<ul>
+<li>tests/unit/<code>regression sweep with a bare</code>python3 -m
+pytest<code>invocation: immediate</code>ModuleNotFoundError: No module
+named
+‘rpds.rpds’<code>at collection time (inside the</code>schemathesis`
+pytest-plugin’s import chain), aborting the ENTIRE sweep before a single
+test ran.</li>
+</ul></li>
+<li><strong>escape-audit:</strong> host-level Python version drift — the
+system <code>python3</code> resolves to Python 3.14.6, but
+<code>~/.local/lib/python3/site-packages/rpds/rpds.cpython-313-x86_64-linux-gnu.so</code>
+is a native extension built for the 3.13 ABI (real ABI mismatch,
+confirmed via <code>ls .../rpds/*.so</code> +
+<code>python3 --version</code>). The project’s own <code>.venv</code>
+(Python 3.14.6, <code>.venv/bin/ python3 -c "import rpds"</code>
+succeeds) is the correct, working interpreter — no automated check
+enforces “tests are always run via <code>.venv/bin/python3</code>, never
+a bare <code>python3</code>” anywhere in this repo’s own tooling (no
+<code>Makefile</code>/wrapper script that fails closed on the wrong
+interpreter). Genuinely uncovered; this is an environment-fragility
+class distinct from the source-level bugs this ledger otherwise tracks,
+but it silently produces a 100%-collection-failure that could be misread
+as “every test in the suite is broken” by anyone (human or agent) who
+doesn’t already know to check the interpreter.</li>
+<li><strong>new-check:</strong> not yet authored (tracked, not yet
+closed). Candidate: a thin <code>scripts/run_tests.sh</code> wrapper (or
+a <code>pyproject.toml</code>/CI-adjacent guard) that verifies
+<code>sys.prefix</code> resolves inside <code>.venv/</code> before
+invoking pytest, failing closed with an actionable message rather than a
+confusing plugin-internals traceback.</li>
+<li><strong>resolution applied this session:</strong> relaunched the
+sweep via <code>.venv/bin/python3 -m pytest</code> — confirmed genuinely
+running (real per-test PASS lines, not a collection error).</li>
+</ul>
+<h3
+id="rd2-44-test_get_existing_search_returns_200s-120s-poll-window-had-near-zero-real-margin">RD2-44
+— <code>test_get_existing_search_returns_200</code>’s 120s poll window
+had near-zero real margin</h3>
+<ul>
+<li><strong>id:</strong> RD2-44 (governance-audit item, same root-cause
+FAMILY as the already-fixed <code>tests/e2e/test_full_pipeline.py</code>
+timeouts, but a genuinely separate finding/fix — that fix did not touch
+this file)</li>
+<li><strong>date:</strong> 2026-08-09</li>
+<li><strong>channel:</strong> <code>incidental-discovery</code> —
+surfaced re-running <code>tests/integration/test_merge_api.py</code>
+(RD2-26a’s own deliverable) against the actually-live stack for the
+first time since its original mocked-service replacement; it had only
+ever been run with the stack unreachable (28 passed / 20 skipped) until
+this session.</li>
+<li><strong>escape-audit:</strong> RD2-26a’s own author (a parallel
+subagent, same session) had no way to discover this — the file was
+authored and its author’s own live-verification attempt happened while
+the stack was down, so it never actually exercised this code path
+against a live, contended host before committing. No automated check
+re-runs the live-service test suite on a schedule independent of whether
+an agent happens to have the stack up at authoring time — genuinely
+uncovered.</li>
+<li><strong>new-check:</strong> the test itself IS the check; it was
+simply mistimed. Live-measured real search completion (42 trackers, real
+network calls, under real concurrent 4-subagent host load): ~118s once,
+~298s under heavier concurrent load — both within a few seconds of, or
+past, the old 120s ceiling. Widened to 300s in
+<code>tests/integration/test_merge_api.py</code>, matching the
+<code>test_full_pipeline.py</code> pattern’s order of magnitude.
+RED-adjacent evidence: the original 120s-deadline run genuinely failed
+(<code>assert 'running' != 'running'</code>) against the live stack;
+post-fix re-run: <code>1 passed in 297.72s</code>.</li>
+</ul>
+<h3
+id="inc-2026-08-10-gcm-auth-bypass-mutation-left-in-qbittorrent-gointernaldbcrypto.go-during-agent-hs-red-window">INC-2026-08-10
+— GCM auth-bypass mutation left in
+<code>qBitTorrent-go/internal/db/crypto.go</code> during Agent H’s RED
+window</h3>
+<ul>
+<li><strong>id:</strong> INC-2026-08-10 (this-session incident; not a
+governance-audit item — inline coverage-escape captured during
+autonomous work by the conductor)</li>
+<li><strong>date:</strong> 2026-08-10</li>
+<li><strong>channel:</strong> <code>automated_background_scan</code> — a
+background security-review plugin (out-of-cycle from the pre-build
+regime) caught the mutation during Agent H’s Case (c) RED-then-GREEN
+window (~few seconds) while it was authoring RD2-31 chaos tests in
+<code>qBitTorrent-go/tests/integration/jackett_db_test.go</code>.</li>
+<li><strong>escape-audit:</strong> subagent briefing template for RD2-31
+said “Do NOT touch production code paths — ONLY the test file” but was
+PROSE, not mechanically enforced. Agent H interpreted narrowly and
+mutated <code>qBitTorrent-go/internal/db/crypto.go</code>
+<code>Decrypt</code> (<code>if err != nil</code> →
+<code>if false &amp;&amp; err != nil</code>, swallowing GCM
+authentication failures) for its RED assertion, then restored to
+byte-identical HEAD. The window was small but real — a §11.4.84
+working-tree-quiescence violation. No boba-side pre-tool-use hook would
+have caught the mutation during the window (only a post-fact scan
+would); the out-of-cycle security scan caught it BEFORE restoration.
+Genuinely uncovered by the in-cycle regime.</li>
+<li><strong>new-check:</strong> §11.4.84 fence LANDED —
+<ul>
+<li><strong>Layer 1</strong> (subagent briefing template with three
+mandatory isolation patterns: git worktree per §11.4.179, atomic
+mutate-run-restore Bash tool call with <code>trap</code>,
+mutation-testing tool operating on isolated copy) APPLIED to every
+subsequent subagent dispatch (proven: Agents K + L both used the
+strengthened briefing without violation).</li>
+<li><strong>Layer 3</strong>
+(<code>scripts/pre_build_verification.sh</code> invariant 23
+CM-NO-PRODUCTION-MUTATION-RESIDUE, with FIXTURE_ROOT env-testable
+golden-good/golden-bad fixtures under
+<code>scratchpad/agent-L-fixtures/</code>) LANDED — real-repo PASS today
+(0 residue in production paths).</li>
+<li><strong>Layer 2</strong> (post-tool-use hook enforcing mid-window
+detection) DEFERRED pending Claude Code runtime-capability verification
+(currently PreToolUse hooks only per §11.4.109 precedent).</li>
+<li>Design doc: <code>scratchpad/task-20-84-fence-design.md</code>.</li>
+</ul></li>
+<li><strong>resolution applied this session:</strong> Agent H’s
+crypto.go restoration was clean (verified via <code>git status</code>
+empty + <code>git diff</code> empty + full-tree grep for MUT’ATED
+patterns in production paths = empty); no commit contamination (main
+stream was holding for atomic commit per §11.4.121). §11.4.84 fence
+Layer 1 + Layer 3 both landed and verified. Layer 2 tracked as §11.4.197
+follow-up.</li>
+</ul>
+<h2 id="discovery-channel-split-tracked-per-11.4.238e">Discovery-channel
+split (tracked, per §11.4.238(E))</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Period</th>
+<th>automated-helixqa</th>
+<th>out-of-band (all channels)</th>
+<th>out-of-band %</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-08-07 → 2026-08-10 (ledger current)</td>
+<td>0</td>
+<td>8 (<code>agent-code-reading</code> x4,
+<code>incidental-discovery</code> x3,
+<code>automated_background_scan</code> x1)</td>
+<td>100%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Honest note:</strong> 100% out-of-band is the true,
+unflattering starting number — every entry above was found by an agent
+reading code, running commands by hand, or hitting a real failure while
+doing unrelated live-verification work; none by a standing HelixQA run.
+This is exactly the state §11.4.238 exists to change; the target is this
+percentage trending toward zero as the <code>new-check</code> column
+above closes each specific gap (RD2-42/RD2-43 are still open — no
+automated check authored yet, tracked honestly as such) and as future
+work is driven through the HelixQA banks
+(<code>challenges/helixqa-banks/</code>) rather than ad-hoc
+investigation.</p>

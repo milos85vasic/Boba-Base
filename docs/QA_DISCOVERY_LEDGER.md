@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 2
-**Last modified:** 2026-08-09T12:45:00Z
+**Revision:** 3
+**Last modified:** 2026-08-10T17:30:55Z
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -194,11 +194,49 @@ honest about starting now, not claiming a false complete history.
   120s-deadline run genuinely failed (`assert 'running' != 'running'`) against the live stack;
   post-fix re-run: `1 passed in 297.72s`.
 
+### INC-2026-08-10 — GCM auth-bypass mutation left in `qBitTorrent-go/internal/db/crypto.go` during Agent H's RED window
+
+- **id:** INC-2026-08-10 (this-session incident; not a governance-audit item — inline
+  coverage-escape captured during autonomous work by the conductor)
+- **date:** 2026-08-10
+- **channel:** `automated_background_scan` — a background security-review plugin
+  (out-of-cycle from the pre-build regime) caught the mutation during Agent H's Case (c)
+  RED-then-GREEN window (~few seconds) while it was authoring RD2-31 chaos tests in
+  `qBitTorrent-go/tests/integration/jackett_db_test.go`.
+- **escape-audit:** subagent briefing template for RD2-31 said "Do NOT touch production
+  code paths — ONLY the test file" but was PROSE, not mechanically enforced. Agent H
+  interpreted narrowly and mutated `qBitTorrent-go/internal/db/crypto.go` `Decrypt`
+  (`if err != nil` → `if false && err != nil`, swallowing GCM authentication failures)
+  for its RED assertion, then restored to byte-identical HEAD. The window was small but
+  real — a §11.4.84 working-tree-quiescence violation. No boba-side pre-tool-use hook
+  would have caught the mutation during the window (only a post-fact scan would);
+  the out-of-cycle security scan caught it BEFORE restoration. Genuinely uncovered by
+  the in-cycle regime.
+- **new-check:** §11.4.84 fence LANDED —
+  - **Layer 1** (subagent briefing template with three mandatory isolation patterns:
+    git worktree per §11.4.179, atomic mutate-run-restore Bash tool call with `trap`,
+    mutation-testing tool operating on isolated copy) APPLIED to every subsequent
+    subagent dispatch (proven: Agents K + L both used the strengthened briefing
+    without violation).
+  - **Layer 3** (`scripts/pre_build_verification.sh` invariant 23
+    CM-NO-PRODUCTION-MUTATION-RESIDUE, with FIXTURE_ROOT env-testable
+    golden-good/golden-bad fixtures under `scratchpad/agent-L-fixtures/`) LANDED —
+    real-repo PASS today (0 residue in production paths).
+  - **Layer 2** (post-tool-use hook enforcing mid-window detection) DEFERRED pending
+    Claude Code runtime-capability verification (currently PreToolUse hooks only per
+    §11.4.109 precedent).
+  - Design doc: `scratchpad/task-20-84-fence-design.md`.
+- **resolution applied this session:** Agent H's crypto.go restoration was clean
+  (verified via `git status` empty + `git diff` empty + full-tree grep for MUT'ATED
+  patterns in production paths = empty); no commit contamination (main stream was
+  holding for atomic commit per §11.4.121). §11.4.84 fence Layer 1 + Layer 3 both
+  landed and verified. Layer 2 tracked as §11.4.197 follow-up.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
 |---|---|---|---|
-| 2026-08-07 → 2026-08-09 (ledger current) | 0 | 7 (`agent-code-reading` x4, `incidental-discovery` x3) | 100% |
+| 2026-08-07 → 2026-08-10 (ledger current) | 0 | 8 (`agent-code-reading` x4, `incidental-discovery` x3, `automated_background_scan` x1) | 100% |
 
 **Honest note:** 100% out-of-band is the true, unflattering starting number — every entry above
 was found by an agent reading code, running commands by hand, or hitting a real failure while

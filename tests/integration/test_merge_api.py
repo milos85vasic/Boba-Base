@@ -78,7 +78,7 @@ def merge_url(request: pytest.FixtureRequest) -> str:
     try:
         return request.getfixturevalue("merge_service_live")
     except Exception as exc:  # pragma: no cover - environment-dependent
-        pytest.skip(f"merge-search live service unavailable in this environment: {exc}")
+        pytest.skip(f"merge-search live service unavailable in this environment: {exc}")  # allow-skip: wraps the sanctioned merge_service_live fixture (§11.4.3 topology-dispatch), NOT a raw availability probe
 
 
 @pytest.fixture(scope="module")
@@ -87,7 +87,7 @@ def qbit_url(request: pytest.FixtureRequest) -> str:
     try:
         return request.getfixturevalue("qbittorrent_live")
     except Exception as exc:  # pragma: no cover - environment-dependent
-        pytest.skip(f"qBittorrent live proxy unavailable in this environment: {exc}")
+        pytest.skip(f"qBittorrent live proxy unavailable in this environment: {exc}")  # allow-skip: wraps the sanctioned qbittorrent_live fixture (§11.4.3 topology-dispatch), NOT a raw availability probe
 
 
 @pytest.fixture(scope="module")

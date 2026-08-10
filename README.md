@@ -133,6 +133,7 @@ no HTML/PDF export yet (never fabricated).
 | RELEASE_READINESS_20260616 | 2026-06-16T10:30:00Z | 1 | [Markdown](docs/RELEASE_READINESS_20260616.md) | [HTML](docs/RELEASE_READINESS_20260616.html) | [PDF](docs/RELEASE_READINESS_20260616.pdf) |
 | features/Status | 2026-06-16T23:30:00Z | 7 | [Markdown](docs/features/Status.md) | [HTML](docs/features/Status.html) | [PDF](docs/features/Status.pdf) |
 | features/Status_Summary | 2026-06-16T23:30:00Z | 7 | [Markdown](docs/features/Status_Summary.md) | [HTML](docs/features/Status_Summary.html) | [PDF](docs/features/Status_Summary.pdf) |
+| QA_DISCOVERY_LEDGER | 2026-08-09T12:45:00Z | 2 | [Markdown](docs/QA_DISCOVERY_LEDGER.md) | [HTML](docs/QA_DISCOVERY_LEDGER.html) | [PDF](docs/QA_DISCOVERY_LEDGER.pdf) |
 
 ### Getting started & operation
 

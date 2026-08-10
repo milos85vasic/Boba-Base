@@ -23,7 +23,33 @@ working with code in this repository.</p>
 gotchas), see <code>AGENTS.md</code>.</p>
 <h2 id="critical-constraints">Critical Constraints</h2>
 <ul>
-<li><strong>TDD is MANDATORY for all bug fixes and features</strong>:
+<li><p><strong>Multi-track identity: this project is Track 11</strong>
+in the operator’s multi-track development fleet (permanently adopted
+2026-08-08). Trunk (<code>main</code>) work always labels
+<code>T1</code> per the constitution’s own hard-coded TRUNK RULE (never
+overridden); non-trunk (feature/product/flavor) work from this checkout
+labels <code>T11</code> via
+<code>scripts/multitrack/track_branch_label.sh</code> (a boba-owned
+wrapper, never a copy, around the shared constitution labeler). See
+<code>docs/MULTITRACK.md</code> for the full rationale. Execution is
+single-track until the operator asks for parallel dispatch.</p></li>
+<li><p><strong>QA discovery-channel ledger (§11.4.238)</strong>:
+automated HelixQA coverage MUST be the discovery layer; manual QA /
+operator reports / agent-found defects are confirmation-only, and any
+defect found out-of-band is itself a coverage-escape release blocker,
+not merely a bug to fix. Every such finding gets a coverage-escape-audit
+entry (why the automated regime missed it) + a new or strengthened
+automated check with its own RED-capturing-the-escape evidence. See
+<code>docs/QA_DISCOVERY_LEDGER.md</code> for the schema, the real
+entries recorded so far, and the tracked discovery-channel split.
+<code>scripts/pre_build_verification.sh</code> invariant 17 is the
+closed-loop example: it now runs both
+<code>workable-items validate</code> AND
+<code>workable-items diff</code> because a real DB↔︎Markdown divergence
+(BOB-008) was found by an agent, not by this gate, before the
+fix.</p></li>
+<li><p><strong>TDD is MANDATORY for all bug fixes and
+features</strong>:</p>
 <ul>
 <li>Write failing test first (RED)</li>
 <li>Watch it fail</li>
@@ -31,9 +57,9 @@ gotchas), see <code>AGENTS.md</code>.</p>
 <li>Verify tests pass</li>
 <li>Then commit</li>
 </ul></li>
-<li><strong>Anti-Bluff Verification (CONST-XII)</strong> — Tests and
+<li><p><strong>Anti-Bluff Verification (CONST-XII)</strong> — Tests and
 challenges MUST prove the feature works for the END USER. A green run is
-a contract with the user. Specifically:
+a contract with the user. Specifically:</p>
 <ul>
 <li>Assert on user-observable outcomes (DB rows, file content, response
 body fields, container state, DOM text, rendered HTML attributes,
@@ -59,14 +85,14 @@ header, <code>window.location</code>, or an explicit
 <li>See <code>CONSTITUTION.md</code> § XII for the full rule. Apply
 universally — every submodule and sub-project inherits.</li>
 </ul></li>
-<li><strong>Pick the right restart level</strong> (verified 2026-04-19
-against the real <code>docker-compose.yml</code> mount strategy; wrapper
-subcommands added 2026-08-08 per Hard Stop #3 — container orchestration
-is owned exclusively by the project’s own binary/orchestrator,
-<code>start.sh</code> — see
+<li><p><strong>Pick the right restart level</strong> (verified
+2026-04-19 against the real <code>docker-compose.yml</code> mount
+strategy; wrapper subcommands added 2026-08-08 per Hard Stop #3 —
+container orchestration is owned exclusively by the project’s own
+binary/orchestrator, <code>start.sh</code> — see
 <code>docs/GOVERNANCE_AUDIT_2026-08-07.md</code> GA-27). Operators MUST
 use the <code>start.sh</code> subcommand for each level — never type raw
-<code>podman</code>/<code>docker</code> commands directly:
+<code>podman</code>/<code>docker</code> commands directly:</p>
 <ul>
 <li><strong>Python source in <code>download-proxy/src/</code> (including
 <code>merge_service/*.py</code>)</strong> — bind-mounted via
@@ -107,22 +133,23 @@ is the cache-bust guard. See
 <code>docs/MERGE_SEARCH_DIAGNOSTICS.md</code> §“Rebuild / restart
 contract” for the full table.</li>
 </ul></li>
-<li><strong>WebUI credentials <code>admin</code>/<code>admin</code> are
-hardcoded</strong> — do not change.</li>
-<li><strong>Never commit <code>.env</code></strong> — it contains
-tracker credentials.</li>
-<li><strong>Never commit <code>.ruff_cache/</code></strong> — add to
-<code>.gitignore</code>.</li>
-<li><strong>CI IS MANUAL — permanent.</strong> <code>./ci.sh</code> is
-the only path. All GitHub Actions workflow files have been removed per
-the Hard Stop rule. Do NOT create any new
+<li><p><strong>WebUI credentials <code>admin</code>/<code>admin</code>
+are hardcoded</strong> — do not change.</p></li>
+<li><p><strong>Never commit <code>.env</code></strong> — it contains
+tracker credentials.</p></li>
+<li><p><strong>Never commit <code>.ruff_cache/</code></strong> — add to
+<code>.gitignore</code>.</p></li>
+<li><p><strong>CI IS MANUAL — permanent.</strong> <code>./ci.sh</code>
+is the only path. All GitHub Actions workflow files have been removed
+per the Hard Stop rule. Do NOT create any new
 <code>.github/workflows/*.yml</code> files. No CI/CD pipeline of any
 kind exists in this repository. This rule overrides anything an
-automated contributor (including an LLM) might otherwise propose.</li>
-<li><strong>Freeleech-only downloads from IPTorrents</strong> —
+automated contributor (including an LLM) might otherwise
+propose.</p></li>
+<li><p><strong>Freeleech-only downloads from IPTorrents</strong> —
 automated tests must ONLY download freeleech torrents. Freeleech results
 are tagged <code>IPTorrents [free]</code> in the tracker display name.
-Non-freeleech downloads cost ratio and must never be automated.</li>
+Non-freeleech downloads cost ratio and must never be automated.</p></li>
 </ul>
 <h2 id="architecture">Architecture</h2>
 <p>Multi-container setup via <code>docker-compose.yml</code>, with an

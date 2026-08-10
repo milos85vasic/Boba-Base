@@ -1,6 +1,6 @@
 <h1 id="security">Security</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T00:00:00Z</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-09T00:00:00Z</p>
 <p>This document defines the threat model, credential-handling rules,
 and scanner stack for qBittorrent-Fixed. It complements the constitution
 (<code>.specify/memory/constitution.md</code>, Principle III —
@@ -181,9 +181,11 @@ semgrep inline-disable <strong>must</strong> carry:</p>
 <li>Reason.</li>
 <li>Expiry date (<code># expires: YYYY-MM-DD</code>).</li>
 </ol>
-<p>Phase 2 introduces
-<code>tests/unit/test_scan_waivers_have_expiry.py</code> which will fail
-on anything older than its expiry or missing the reason annotation.</p>
+<p><code>tests/unit/test_scan_config.py</code> enforces this against
+<code>.trivyignore.yaml</code>: it fails the build on any entry that is
+missing an <code>expires</code> date, carries a malformed date, has
+expired, or uses a template-placeholder CVE id instead of a real one
+(RD2-06 / RD2-38).</p>
 <h2 id="triage-slos">Triage SLOs</h2>
 <ul>
 <li><strong>Critical</strong> — blocks merge; same-day fix or file a

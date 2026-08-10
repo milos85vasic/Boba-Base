@@ -1,7 +1,7 @@
 <h1 id="tokens-api-keys-environment-variables">Tokens, API Keys &amp;
 Environment Variables</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T00:00:00Z</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-09T00:00:00Z</p>
 <p>Single source of truth for every credential, token, and API key the
 platform consumes. <strong>Mandatory</strong> rows fail the service at
 boot if unset; <strong>Optional</strong> rows gate specific features and
@@ -233,7 +233,11 @@ href="https://github.com/Jackett/Jackett#installation">https://github.com/Jacket
 <h2 id="metadata-enrichment-apis-optional">4. Metadata enrichment APIs
 (optional)</h2>
 <p>The merge service decorates results with poster/year/genre when these
-keys are present. Unset = no enrichment, service runs normally.</p>
+keys are present. Unset = no enrichment, service runs normally.
+<code>MetadataEnricher.resolve()</code> tries every source in order
+until one returns a hit
+(<code>download-proxy/src/merge_service/enricher.py</code>): TMDB → OMDb
+→ TVMaze → AniList → OpenLibrary → MusicBrainz.</p>
 <table>
 <colgroup>
 <col style="width: 25%" />
@@ -256,43 +260,43 @@ keys are present. Unset = no enrichment, service runs normally.</p>
 <td><a
 href="https://www.themoviedb.org/signup">https://www.themoviedb.org/signup</a>
 → Settings → API → Request API Key (v3 auth)</td>
-<td>Movie / TV posters + metadata</td>
+<td>Movie / TV posters + metadata
+(<code>enricher.py:73,163,172</code>)</td>
 </tr>
 <tr>
-<td><code>TVDB_API_KEY</code></td>
+<td><code>OMDB_API_KEY</code></td>
 <td>Optional</td>
 <td><a
-href="https://thetvdb.com/api-information">https://thetvdb.com/api-information</a>
-→ Subscribe</td>
-<td>TV series metadata</td>
+href="http://www.omdbapi.com/apikey.aspx">http://www.omdbapi.com/apikey.aspx</a></td>
+<td>Movie metadata via OMDb, tried after TMDB
+(<code>enricher.py:72,102,133-135</code>)</td>
 </tr>
 <tr>
-<td><code>MUSICBRAINZ_USER_AGENT</code></td>
-<td>Optional (default
-<code>qbittorrent-fixed/0.1 (milos85vasic@)</code>)</td>
-<td><a
-href="https://musicbrainz.org/doc/MusicBrainz_API">https://musicbrainz.org/doc/MusicBrainz_API</a>
-— free, requires UA only</td>
-<td>Music album lookup</td>
-</tr>
-<tr>
-<td><code>ANIDB_CLIENT</code></td>
+<td><code>ANILIST_CLIENT_ID</code></td>
 <td>Optional</td>
 <td><a
-href="https://anidb.net/software/add">https://anidb.net/software/add</a>
-(register a client)</td>
-<td>Anime metadata</td>
-</tr>
-<tr>
-<td><code>OPENLIBRARY_USER_AGENT</code></td>
-<td>Optional</td>
-<td><a
-href="https://openlibrary.org/dev/docs/api/">https://openlibrary.org/dev/docs/api/</a>
-— free, UA only</td>
-<td>eBook / audiobook metadata</td>
+href="https://anilist.co/settings/developer">https://anilist.co/settings/developer</a></td>
+<td>Anime metadata via the AniList GraphQL API
+(<code>enricher.py:74,225-228</code>)</td>
 </tr>
 </tbody>
 </table>
+<p>The <strong>TVMaze</strong> (TV shows), <strong>MusicBrainz</strong>
+(music), and <strong>OpenLibrary</strong> (books) lookups
+(<code>enricher.py:_lookup_tvmaze</code>,
+<code>_lookup_musicbrainz</code>, <code>_lookup_openlibrary</code>)
+always run automatically as fallback sources — they read
+<strong>no</strong> environment variable, require <strong>no</strong>
+API key, and send no configurable User-Agent header. There is no
+<code>TVDB_API_KEY</code>, <code>MUSICBRAINZ_USER_AGENT</code>,
+<code>ANIDB_CLIENT</code>, or <code>OPENLIBRARY_USER_AGENT</code> env
+var anywhere in the codebase; a prior revision of this table documented
+those four as configuration knobs that do not exist in code (RD2-05 /
+RD2-37 — see <a
+href="GOVERNANCE_AUDIT_2026-08-08_ROUND2.md"><code>GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code></a>).
+There is no AniDB integration — anime metadata comes from AniList, gated
+by <code>ANILIST_CLIENT_ID</code> above. There is no TVDB integration —
+TV-show fallback is TVMaze, which is keyless.</p>
 <hr />
 <h2 id="security-scanner-tokens-opt-in-ci-local-scans">5. Security
 scanner tokens (opt-in CI / local scans)</h2>

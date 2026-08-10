@@ -1,7 +1,7 @@
 # Governance & Constitution Compliance Audit — Round 2 — 2026-08-08
 
-**Revision:** 4
-**Last modified:** 2026-08-09T00:00:00Z
+**Revision:** 6
+**Last modified:** 2026-08-09T12:54:30Z
 **Status:** active
 **Scope:** Live re-verification of every item in `docs/GOVERNANCE_AUDIT_2026-08-07.md` (GA-01..27)
 and `docs/REMAINING_WORK_PLAN.md` (RW-01..21) against the current tree, PLUS a fresh gap scan of
@@ -15,14 +15,46 @@ since, two of them more bare `Auto-commit` commits (`9c8f684`, `743097a`) produc
 very investigation**. Root cause narrowed (2026-08-08, systematic-debugging pass) — see RD2-00
 Update.
 
-**Rev-3 addendum (2026-08-08T17:27:57Z) — status of in-flight remediation + one new finding:**
-- **RD2-22 (P0 auth gap): source fix DONE, live-verification still owed.** TDD RED→GREEN complete
-  (`tests/security/test_hooks_schedules_auth.py` 31/31; `tests/unit -k "theme or scheduler"`
-  176/176). A root-cause function-ordering bug (`require_api_token` referenced before definition)
-  was found and fixed during GREEN. Full `tests/contract/+tests/unit/` regression sweep was
-  interrupted mid-run by the RD2-00-class session kill (see RD2-00 Update 2, below) and has not
-  yet completed; live curl-verify on a running container (401 unauth / 200 with-token) is still
-  outstanding. **Not yet closeable — do not mark RD2-22 done until both finish.**
+**Rev-6 addendum (2026-08-09T12:54:30Z) — RD2-22 + RD2-23 CLOSED, live-verified:**
+- **RD2-22 (P0 auth gap) — CLOSED.** Live curl-verify completed on the running `qbittorrent-proxy`
+  container for both routes, in both states (default-open per §11.4.122, and hardened once
+  `BOBA_API_TOKEN` is configured):
+  - **Default (env unset, no auth header):** `PATCH /api/v1/schedules/{id}` → `HTTP 404`
+    (`{"detail":"Schedule not found"}` — reached the handler, never 401/500); `PUT /api/v1/theme`
+    → `HTTP 200` (theme persisted and echoed back). Confirms the §11.4.122 no-auth default is
+    preserved.
+  - **Hardened (`.env` backed up to `.env.rd2-23-backup`, `BOBA_API_TOKEN` set,
+    `./start.sh --recreate`, container healthy ~65s later):** `PATCH .../schedules/{id}` — no
+    token → `401`; wrong `Authorization: Bearer` token → `401`; correct token → `404` (auth
+    passed, schedule genuinely absent). `PUT /theme` — no token → `401`; wrong token → `401`;
+    correct token via `X-Boba-Token` → `200`
+    (`{"paletteId":"nord","mode":"light","updatedAt":"2026-08-09T12:51:11.665275+00:00"}`). All 6
+    assertions matched expectations exactly; one transient client-side timeout (`curl` exit 28,
+    host under concurrent-agent load — `podman stats` showed the container briefly at 104% CPU,
+    `uptime` load average 14+) was retried successfully, not a defect.
+  - **Restoration verified:** `.env` restored from the backup (`diff` before restore showed only
+    the `BOBA_API_TOKEN` line differed), `./start.sh --recreate` re-run, container healthy, then
+    re-confirmed default-open: `PUT /theme` (no token) → `200`, `PATCH /schedules/{id}` (no token)
+    → `404` — the default no-auth contract is back in effect, `BOBA_API_TOKEN` back to its
+    original commented-out line.
+  - Full `tests/contract/+tests/unit/` regression sweep from the prior session remains a
+    background concern tracked separately (RD2-00-class interruption); the RD2-22 fix itself is
+    now source+test+artifact+runtime verified per §11.4.108 and is CLOSED.
+- **RD2-23 (P1, §11.4.135 regression guard + HelixQA Challenge) — CLOSED.** Regression guard:
+  `tests/security/test_hooks_schedules_auth.py`'s existing `TestMutatingRoutesTokenGate` (already
+  parametrized over both routes since the RD2-22 GREEN commit) IS the standing guard — no
+  duplicate test authored. §11.4.115 polarity-switch proof captured this session: with
+  `Depends(require_api_token)` commented out of `scheduler.py::update_schedule` and
+  `routes.py::put_theme`, `python -m pytest tests/security/test_hooks_schedules_auth.py -k "PATCH
+  or PUT"` → **4 failed, 4 passed** (`test_no_token_is_401_when_token_set` and
+  `test_wrong_token_is_401_when_token_set` RED for both routes, each "expected 401 ... got 200" —
+  the right reason, auth bypassed). Restoring the `Depends(...)` calls returned the full suite to
+  **31 passed** with zero source diff against the fixed code. HelixQA Challenge bank: added
+  `BOBA-PRX-009` (`PATCH /api/v1/schedules/{id}`) and `BOBA-PRX-010` (`PUT /api/v1/theme`) to
+  `submodules/helixqa/banks/boba-download-proxy.yaml`, following the existing `BOBA-PRX-NNN`
+  schema, each exercising both the default-open and hardened states plus wrong-token rejection
+  against the real running stack (not mocked); the exact curl commands in the bank's `steps[]`
+  were the same commands live-verified above.
 - **RD2-00 Update 2 (2026-08-08, confirmed): root cause is a second live session, not a rogue
   process.** A parallel Claude session (Opus 5, same +0500 host) independently landed
   `constitution` commit `177f2b0` (new anchor §11.4.238) while this session was mid-edit on the
@@ -233,11 +265,9 @@ fine, the *governance* is not, and both need separate remediation) · **PARTIAL*
   unchanged.
 - **GA-16 (`tests/contract/test_tracker_stats_contract.py` mocks SearchOrchestrator) — NOT-DONE.**
   Same pattern, unchanged.
-- **GA-17 (`#legacy-untriaged` tags never triaged) — NOT-DONE, and WORSE than first measured: 14
-  live sites** (vs. the original audit's "~10"): `test_public_trackers_return_results.py:128`,
-  `test_iptorrents.py:160`, `test_no_runtime_service_skips.py:4,10,36,84,94` (5 sites in one
-  file), `test_openapi_frozen.py:15,23`, `test_plugin_smoke.py:45`, `test_fixtures/services.py:9`,
-  `test_mkdocs_builds.py:22,36`, `test_no_broken_links.py:51`.
+- **GA-17 (`#legacy-untriaged` tags never triaged) — CLOSED 2026-08-09 (RD2-33).** All 14 sites
+  individually triaged with git-history evidence; see RD2-33's Closed note under "Ungrouped
+  remaining items" for the full per-site table.
 - **GA-18 (7 dead jackett-autoconfig test bodies) — DONE-BUT-PROCESS-VIOLATION.** All correctly
   removed (one file deleted entirely, three others' skip-only bodies stripped, replacement
   coverage pointers to the Go package preserved) — but landed anonymously inside `54e313f`
@@ -334,6 +364,19 @@ container-hygiene corollary
   than the scanner CLIs).
 - **Priority: P1** (mitigated only by this file being profile-gated, not started by default —
   still a real host-safety gap the moment an operator runs the quality stack).
+- **Closed (2026-08-09, RD2-35):** all 8 services (`sonarqube`, `sonar-db`, `snyk`, `semgrep`,
+  `trivy`, `gitleaks`, `prometheus`, `grafana`) now carry `mem_limit`/`pids_limit`/
+  `oom_score_adj: 500`, following the `boba-jackett` reference pattern in `docker-compose.yml`.
+  Sized per-service by real workload (not one cargo-culted value): `sonarqube` 4g/1024 (bundled
+  JVM + embedded Elasticsearch + compute engine, the heaviest service — SonarQube's own docs
+  recommend >=2 GiB); `sonar-db` 1g/256 (single-tenant postgres); `semgrep` 2g/512 (full-repo AST
+  matching across many rules — the heaviest one-shot scanner); `snyk`/`trivy`/`prometheus` 1g/256
+  each; `gitleaks` 512m/128 (lightest — regex-only secret scan); `grafana` 512m/256 (dashboard UI,
+  no local TSDB). `docker-compose.yml` (the live product stack) was NOT touched. Verified valid
+  with `podman-compose -f docker-compose.quality.yml config` (with every profile enabled) — all 8
+  services resolve cleanly with the three fields present; `docker-compose.yml`'s own boba-jackett
+  service, network topology, and running containers were unaffected (no live-stack coordination
+  needed, per this file's `profiles:`-gated, not-started-by-default design).
 
 ### RD2-03 — `docs/workable_items.db`: machine-caught SSoT integrity violations + 90% of closures
 have zero audit trail
@@ -607,13 +650,57 @@ passes with it), captured evidence per §11.4.5/§11.4.69/§11.4.107.
 
 ### Ungrouped remaining items (lower priority, independent of the 6 root causes)
 
-24. **RD2-33 [P2]** `#legacy-untriaged` — triage all 14 sites individually (GA-17); for each,
-    determine the real reason, either fix/un-skip or replace the placeholder with a real ticket.
+24. **RD2-33 [P2] — CLOSED 2026-08-09.** `#legacy-untriaged` — triage all 14 sites individually
+    (GA-17); for each, determine the real reason, either fix/un-skip or replace the placeholder
+    with a real ticket.
+    - **Closed note:** all 14 sites individually read with `git log --follow -p` / `git blame`
+      evidence. Root cause traced to one bulk-tagging commit (`edd50f8`, "fix: revive anilibra
+      tracker, rewrite for new API" — an otherwise-unrelated commit) that mechanically appended
+      `# SKIP-OK: #legacy-untriaged` to every line containing the substring `pytest.skip`,
+      including docstring prose and comments — a live instance of the §11.4.201(7)(a)
+      carrier-false-positive class. Full per-site table:
+
+      | # | Site (file:line) | Real reason (evidence) | Resolution |
+      |---|---|---|---|
+      | 1 | `tests/e2e/test_public_trackers_return_results.py:128` | Real `@pytest.mark.skipif`, already self-documented via `reason="Dead trackers are intentionally enabled via ENABLE_DEAD_TRACKERS=1"` — an intentional feature-flag gate, not a defect (`git blame` confirms the skipif predates the marker; `edd50f8` only appended the marker). | Documented — placeholder replaced with `# SKIP-OK: intentional feature-flag gate — see reason= below, not a defect`. |
+      | 2 | `tests/integration/test_iptorrents.py:160` | Real `pytest.skip`, self-documented message `"IPTorrents results not in top-N for 'linux'"` — live-network tracker ranking is non-deterministic; not a defect (`edd50f8` diff confirms marker was appended to a pre-existing skip). | Documented — placeholder replaced with `# SKIP-OK: intentional — live network ranking is non-deterministic, not a defect`. |
+      | 3 | `tests/unit/test_no_runtime_service_skips.py:4` | **Not a skip at all.** Docstring prose describing the *old* deprecated pattern this file's fixtures replace (`edd50f8` diff proves: the marker was appended mid-sentence inside the docstring, a mechanical substring-match error). | Fixed — stray marker removed (the underlying "issue" was the mis-tag itself). |
+      | 4 | `tests/unit/test_no_runtime_service_skips.py:10` | **Not a skip at all.** Docstring prose describing this meta-test's own detection regex; same `edd50f8` mechanical mis-tag. | Fixed — stray marker removed. |
+      | 5 | `tests/unit/test_no_runtime_service_skips.py:36` | **Not a skip at all.** A `#`-comment describing the `SKIP_CALL` regex definition, not an executed skip; same `edd50f8` mechanical mis-tag. | Fixed — stray marker removed. |
+      | 6 | `tests/unit/test_no_runtime_service_skips.py:84` | **Not a skip at all.** A Python string-literal fixture (`line = 'pytest.skip(...)  # allow-skip: ...'`) used as test DATA for the meta-test's own regex-matching sanity check — not a real, executing `pytest.skip` call; same `edd50f8` mechanical mis-tag. | Fixed — stray marker removed. |
+      | 7 | `tests/unit/test_no_runtime_service_skips.py:94` | **Not a skip at all.** Same class as #6 — a string-literal regex-test fixture, not an executing skip; same `edd50f8` mechanical mis-tag. | Fixed — stray marker removed. |
+      | 8 | `tests/unit/test_openapi_frozen.py:15` | Real `@pytest.mark.skipif`, self-documented via `reason="Frozen OpenAPI spec not found — run scripts/freeze-openapi.sh first"`; verified `docs/api/openapi.json` currently exists so this branch is presently dead (never fires) but is a legitimate generated-artifact guard. | Documented — placeholder replaced with an honest `SKIP-OK: intentional` marker. |
+      | 9 | `tests/unit/test_openapi_frozen.py:23` | Real `pytest.skip("Cannot import FastAPI app (missing deps)")` around a `try: from api import app`. Live-verified in this session: **fails** under bare system `python3` (`ModuleNotFoundError: pydantic_core._pydantic_core`), **succeeds** under the project's own `.venv/bin/python3` — a genuine, currently-reproducible missing-dependency guard, not a defect. | Documented — placeholder replaced with a comment citing the verified fail/pass split. |
+      | 10 | `tests/unit/test_plugin_smoke.py:45` | Real `pytest.skip(f"Plugin file not found: {path}")` inside `_import_plugin`. Verified this session: all 17 `CANONICAL_PLUGINS` files currently exist under `plugins/` — this branch is presently dead code, a legitimate defensive guard for a future missing plugin file. | Documented — placeholder replaced with a comment citing the verified all-17-present state. |
+      | 11 | `tests/fixtures/services.py:9` | **Not a skip at all.** Inside a module docstring's code-block example (` ``` `-fenced) illustrating the *old*, now-replaced `if not requests.get(...).ok: pytest.skip(...)` anti-pattern this file's fixtures exist to fix; same `edd50f8` mechanical mis-tag. | Fixed — stray marker removed. |
+      | 12 | `tests/docs/test_mkdocs_builds.py:22` | Real `@pytest.mark.skipif(not _mkdocs_available(), ...)` — `_mkdocs_available()` does a real `subprocess.run(["mkdocs", "--version"])` invocation (§11.4.201(11) artifact-usability check, not presence-only). Verified `mkdocs` is installed on this host (`mkdocs, version 1.6.1`) so this branch is presently dead; legitimate tool-availability guard. | Documented — placeholder replaced with an honest `SKIP-OK: intentional` marker. |
+      | 13 | `tests/docs/test_mkdocs_builds.py:36` | Same function/guard as #12 (second test in the same file). | Documented — same replacement. |
+      | 14 | `tests/docs/test_no_broken_links.py:51` | Real `pytest.skip("docs/ directory not found")`. Verified `docs/` exists in this repo — this branch is presently dead code, a legitimate defensive guard. | Documented — placeholder replaced with a comment citing the verified-present state. |
+
+      **Summary: 6/14 were mis-tagged carriers (not real skips) — fixed by removing the stray
+      marker; 8/14 were genuine, already-self-documented, intentional/environment-conditional
+      skips (none were undocumented defects requiring a new tracked ticket) — the misleading
+      "never triaged" placeholder was replaced with an honest, specific `SKIP-OK:` comment citing
+      the real reason, per this project's "skips are loud" convention. No mechanical gate in this
+      repo currently enforces the `SKIP-OK:` format (confirmed: `grep -rln "SKIP-OK"
+      scripts/ constitution/scripts/` finds no such gate outside Go test fixture files) — the
+      convention is documentation discipline only, not a build blocker. Zero
+      `#legacy-untriaged` occurrences remain in code (`grep -rn '#legacy-untriaged' . --include
+      '*.py' --include '*.go' --include '*.sh'` → 0 hits). Verified: all 8 touched Python test
+      files `py_compile` clean; `test_openapi_frozen.py`, `test_mkdocs_builds.py`,
+      `test_no_broken_links.py` (all sites in these 3 files) plus 2 of 3 tests in
+      `test_no_runtime_service_skips.py` PASS live under `.venv/bin/python3 -m pytest
+      --import-mode=importlib` (278 passed total in that run). The one pre-existing FAIL in that
+      run (`test_no_runtime_service_skips.py::test_no_runtime_service_skips`, flagging
+      `tests/integration/test_merge_api.py:81,90`) is unrelated to this triage — confirmed via
+      `git show HEAD:tests/integration/test_merge_api.py` that the flagged pattern already
+      existed in the committed HEAD before this session touched anything, and that file was not
+      one of the 14 `#legacy-untriaged` sites.
 25. **RD2-34 [P1]** `submodules/helixqa/banks/*.yaml` — parametrize the 20 hardcoded
     `/Volumes/T7/Projects/Boba/...` paths with `$PROJECT_ROOT` (GA-23) — lands in the submodule
     per §11.4.28 decoupling, not boba's own tree.
-26. **RD2-35 [P2]** Fix `docker-compose.quality.yml`'s 8/8 missing container-hygiene fields
-    (RD2-02).
+26. **RD2-35 [P2] — CLOSED 2026-08-09.** Fix `docker-compose.quality.yml`'s 8/8 missing
+    container-hygiene fields (RD2-02). See RD2-02's Closed note above.
 27. **RD2-36 [P2]** Fix `guard-forbidden-commands.sh`'s substring-match false-positive class
     (RD2-01) — word-boundary/token-aware matching, not another EXCLUDE_PATHS band-aid; also add
     the newly-discovered `docs/incidents/2026-08-07-const033-poweroff-signal-triage.md` carrier to
