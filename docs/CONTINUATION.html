@@ -1,24 +1,198 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 20 <strong>Last modified:</strong>
-2026-08-08T17:36:59Z <strong>Session:</strong> 2026-08-08 (Session 15 —
-full constitution/governance re-audit (Round 2), one P0 security fix
-landed (source+tests done, live verify owed), a host-level root-cause
-found (session-killing <code>KillUserProcesses</code>), Track 11
-multi-track identity adopted, new constitution anchor §11.4.238 landed
-via a live cross-session collision, workable-items DB reconciled.)
-<strong>Last commit:</strong> <code>50c7a66</code> (chore(constitution):
-bump submodule pointer to 177f2b0, §11.4.238) <strong>Branch:</strong>
-<code>main</code> <strong>Working tree:</strong> docs_chain regeneration
-in flight (HTML/PDF exports); <code>docs/Issues.md</code> /
-<code>docs/workable_items.db</code> reconciled and committed-pending;
-<code>scripts/multitrack/</code> + <code>docs/MULTITRACK.md</code>
-untracked (new, not yet committed).</p>
+<p><strong>Revision:</strong> 21 <strong>Last modified:</strong>
+2026-08-10T21:30:34Z <strong>Session:</strong> 2026-08-10/11 (Session 16
+— HUGE session: pre_build brought to 25/25 GREEN with six new invariants
+(INV0/19/20/21/22/23), §11.4.238 QA-discovery gates wired, §11.4.84
+subagent-mutation fence Layers 1+3 landed, <code>workable-items</code>
+<code>diff</code> false-positive fixed + new
+<code>correct-history- evidence</code> subcommand, 39 BOB backfills
+closing a §11.4.197 mass violation, three stress+chaos suites landed
+GREEN, HelixQA banks parametrized for RD2-34, QA_DISCOVERY_LEDGER at Rev
+3 with a new automated-background-scan channel. Definitive host-kill
+root cause identified — ALT Linux <code>KillUserProcesses=true</code>
+compile-time default; mitigation config staged at
+<code>scratchpad/20-kill-exclude-milosvasic.conf</code> but STILL
+BLOCKED on operator sudo.) <strong>Last commit (boba main):</strong>
+<code>1d0268f</code> (chore(hygiene): gitignore scratchpad/ + update
+helixqa submodule URL to renamed upstream). Prior big session-16 commit:
+<code>4b7b21d</code> (session-16: pre_build 25/25 GREEN — §11.4.238
+gates + §11.4.84 fence + backfills + stress+chaos + BOB-009/010 fix).
+<strong>Branch:</strong> <code>main</code> <strong>Working
+tree:</strong> CLEAN (post-session-16 commits landed + pushed). Only
+in-flight edit: this CONTINUATION.md revision itself.</p>
 <blockquote>
 <p>Send <code>continue</code> to pick up exactly where we left off. This
 file is the single source of truth for session handoff (§12.10 /
 §11.4.131).</p>
 </blockquote>
+<hr />
+<h2
+id="current-state-session-16-2026-08-1011-pre_build-2525-green-11.4.23811.4.84-hardening-39-bob-backfills-stresschaos-bob-009010-fix">CURRENT
+STATE — Session 16 (2026-08-10/11): pre_build 25/25 GREEN +
+§11.4.238/§11.4.84 hardening + 39 BOB backfills + stress+chaos +
+BOB-009/010 fix</h2>
+<p><strong>Operator asked for the §11.4.238 QA-discovery regime to
+actually bind (per its zero-grace-period “no escape hatch” clause) and
+for the §11.4.197 mass-violation from Session 15’s audit backlog to be
+closed.</strong> Delivered as one big commit (<code>4b7b21d</code>, 37
+files) + a hygiene follow-up (<code>1d0268f</code>), both pushed to all
+upstreams on boba <code>main</code>. Constitution + HelixQA submodule
+pointers advanced + pushed. This session survived multiple kill events
+(below) — the constitution submodule and HelixQA submodule work landed
+BEFORE the boba-side work, so no in-flight cross-repo saga was left
+half-applied (§11.4.191 preserved).</p>
+<h3 id="what-landed-session-16-all-published">What landed (Session 16 —
+all published)</h3>
+<p><strong>boba main-repo (<code>4b7b21d</code> +
+<code>1d0268f</code>):</strong> - <strong>Pre-build 25/25 GREEN</strong>
+— six NEW invariants in <code>scripts/pre_build_verification.sh</code> +
+<code>scripts/pre_code_review.sh</code>: <strong>INV0</strong>
+<code>CM-PREFLIGHT-INTERPRETER</code> (catches bare
+<code>python3 -m   pytest</code> vs <code>.venv/bin/python</code> ABI
+drift at collection time — RD2-41b/RD2-43); <strong>INV19-21</strong>
+§11.4.238 (ledger fresh + counts aligned, every out-of-band entry
+carries <code>escape-audit:</code> + <code>new-check:</code>,
+propagation literal in the §11.4.157 mirror set — INV21 wrong-seam bug
+corrected to check
+<code>constitution/{CLAUDE,AGENTS,QWEN,GEMINI}.md</code>, not project
+root); <strong>INV22</strong>
+<code>CM-DOCS-CHAIN-STEP1-REAL-INVOCATION</code> (§11.4.238 RD2-41a
+retroactive catcher, anchored <code>^\s*ERROR:</code> grep,
+structure-not-substring per §11.4.201(7)(a)); <strong>INV23</strong>
+<code>CM-NO-PRODUCTION-MUTATION-RESIDUE</code> (§11.4.84 layer 3,
+string-concat de-mutation so scanner doesn’t self-match,
+<code>FIXTURE_ROOT</code> env override for golden-good/golden-bad).
+<code>pre_code_review.sh</code>: mutation-marker carrier false-positive
+fixed 36→0 hits. - <strong>§11.4.84 subagent-mutation fence</strong>
+(crypto.go RED-window incident from Session 15/16): <strong>Layer
+1</strong> — subagent briefing template with 3 mandatory isolation
+patterns (git worktree / atomic mutate-run-restore / mutation tool);
+<strong>Layer 3</strong> — INV23 above. <strong>Layer 2</strong>
+(post-tool-use hook) DEFERRED pending runtime capability check; design
+at <code>scratchpad/task-20-84-fence-design.md</code>. -
+<strong>§11.4.238 QA discovery ledger</strong>
+(<code>docs/QA_DISCOVERY_LEDGER.md</code> Rev 3): NEW
+<strong>INC-2026-08-10</strong> entry — crypto.go GCM auth-bypass
+mutation left in production file during Agent H’s RED window, caught by
+background security-review plugin (a new discovery channel:
+<code>automated_background_scan</code>). Full escape-audit + new-check
+documented. Table split 7 → 8 out-of-band. - <strong>workable_items.db
+reconciled + expanded</strong> (63 → 102 items): <strong>39 BOB
+backfills</strong> for ~40 RD2-<em>/GA-</em>/RW-* audit-doc items that
+had no tracker rows (Session 15’s §11.4.197 mass violation — CLOSED).
+BOB-064..067 for Lava P1..P4 (RD2-15 reservation); BOB-068..102 for
+remaining audit items. <strong>BOB-009 + BOB-010</strong>
+<code>evidence_path</code> corrections via a NEW
+<code>workable-items correct-history-evidence</code> subcommand
+(constitution submodule) — no more raw SQL, no more falsely-implied
+reopen. <code>workable-items diff</code> false-positive fixed (bare
+<code>--db</code> invocations were flagging every row as
+absent-from-MD). <code>validate: OK — 102 items</code>. -
+<strong>Stress+chaos tests (§11.4.85)</strong>: NEW
+<code>tests/stress/test_tracker_fetch_stress_chaos.py</code> (9/9 GREEN,
+27.5s, 9 JSON evidence files under
+<code>qa-results/stress_chaos/</code>); NEW
+<code>qBitTorrent-go/tests/integration/scheduler_hooks_sse_stress_chaos_test.go</code>
+(6/6 GREEN + -race clean, 5.6s); +702 lines in
+<code>qBitTorrent-go/tests/integration/jackett_db_test.go</code> — 5 new
+chaos cases (byte-corruption, concurrent-writer, WAL-sidecar,
+master-key-rotation, mid-tx SIGKILL), 5.8s -race clean. -
+<strong>Hygiene follow-up</strong> (<code>1d0268f</code>):
+<code>.gitignore</code> <code>scratchpad/</code> (24 files/176K session
+artifacts, §11.4.10 scan clean); <code>.gitmodules</code>
+<code>helixqa</code> URL updated <code>HelixQA.git</code> →
+<code>qa.git</code> following upstream repo rename (GitHub warned “This
+repository moved”), <code>git submodule sync</code> propagated.</p>
+<p><strong>constitution submodule</strong> (pushed to all 8 remotes):
+<code>4a2adac</code> (fix workable-items <code>diff</code>
+false-positive + new <code>correct-history-evidence</code> subcommand +
+sudo/su quote-aware guard) + <code>03f0b0c</code> (merge remote
+<code>6f960ca</code> design-toolkit pointer bump per §11.4.188).</p>
+<p><strong>HelixQA submodule</strong> (<code>4289cf4</code>, pushed):
+banks(boba) — added BOBA-PRX-009/010 RD2-22 Challenges + parametrized
+<code>/Volumes/T7</code> hardcoded paths (RD2-34 closed).</p>
+<h3
+id="session-kill-root-cause-definitively-identified-mitigation-staged-blocked-on-sudo">Session-kill
+root cause — DEFINITIVELY IDENTIFIED, mitigation staged, BLOCKED on
+sudo</h3>
+<ul>
+<li><strong>Root cause</strong> (per Session 15’s live
+<code>busctl</code> finding): ALT Linux ships systemd-logind with the
+<strong>compile-time default
+<code>KillUserProcesses=true</code></strong> — every GDM/GNOME session
+close SIGKILLs the entire <code>user@1000.service</code> slice (tmux,
+Claude Code, everything) regardless of <code>Linger=yes</code>.
+Confirmed multiple hits again this session.</li>
+<li><strong>Mitigation staged</strong>:
+<code>scratchpad/20-kill-exclude-milosvasic.conf</code> (a
+<code>logind.conf.d</code> drop-in for
+<code>KillExcludeUsers=milosvasic</code> — narrower than blanket
+<code>KillUserProcesses=no</code>). §11.4.6 HONEST GAP: the file was
+described in the session hand-off brief but is NOT visible in the
+scratchpad listing at write time — either it was staged elsewhere, wiped
+by a kill event, or the brief refers to a design not yet materialized on
+disk; next session MUST re-verify + author the drop-in fresh if
+absent.</li>
+<li><strong>Blocked on</strong>: <code>sudo cp</code> of the drop-in
+into <code>/etc/systemd/logind.conf.d/</code> +
+<code>systemctl restart systemd-logind</code>. Per repo CLAUDE.md §
+“Host Power Management — Hard Ban” AND the constitution’s §11.4.109
+PreToolUse guard, the agent’s sudo is CORRECTLY refused; the operator
+must run the copy + restart themselves (the
+<code>!</code>-prefix-in-permissions path is the sanctioned
+operator-executed channel). Until then, every session remains at risk of
+the same abrupt kill.</li>
+</ul>
+<h3 id="pending-operator-11.4.66-decisions">Pending operator §11.4.66
+decisions</h3>
+<ol type="1">
+<li><strong>Apply the <code>KillUserProcesses</code> fix</strong>
+(narrower <code>KillExcludeUsers=milosvasic</code> vs blanket
+<code>KillUserProcesses=no</code>) — see above. HIGHEST priority: every
+future session is at risk until this lands.</li>
+<li><strong>§11.4.84 Layer 2 post-tool-use hook</strong> — runtime
+capability check owed; design at
+<code>scratchpad/task-20-84-fence-design.md</code>.</li>
+<li><strong>RD2-22 live-verify still owed</strong> (source fix done
+Session 15; the full <code>tests/contract/+tests/unit/</code> regression
+sweep was killed mid-run by the logind issue and still needs to complete
++ a live curl-verify 401/200 on a running container + the §11.4.135
+regression guard + HelixQA Challenge entry).</li>
+<li><strong>§11.4.234 dedicated commit/push wrapper</strong> (task #25)
+— deferred with operator go-ahead; direct commits used this
+session.</li>
+</ol>
+<h3 id="in-flight-work-carried-forward">In-flight work carried
+forward</h3>
+<ul>
+<li><strong>pytest sweep v5</strong> — the RD2-22 regression sweep still
+owed (pending item 3 above).</li>
+<li><strong>Task #27 (suite-scope repro)</strong> — still needs a
+scope-widened reproduction pass. Details in the operator brief that
+opened this session; re-derive from <code>docs/workable_items.db</code>
++ Session-15 audit if the working note is not in scratchpad.</li>
+</ul>
+<h3 id="what-to-do-first-on-next-session-pickup">What to do FIRST on
+next-session pickup</h3>
+<ol type="1">
+<li><strong>Land the logind fix</strong> (mitigation config →
+<code>/etc/systemd/logind.conf.d/</code> +
+<code>systemctl restart systemd-logind</code>). Verify with
+<code>busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager KillUserProcesses</code>
+(should now show <code>false</code> OR the user should now appear in
+<code>KillExcludeUsers</code>). Every subsequent step depends on the
+session no longer being at risk of a mid-work kill.</li>
+<li><strong>Complete RD2-22 live-verify</strong> — resume the killed
+regression sweep, curl-verify 401/200, land the §11.4.135 guard +
+HelixQA Challenge entry.</li>
+<li><strong>Resume
+<code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code></strong>
+remaining root-cause-grouped items in priority order; the RD2-40
+§11.4.238 compliance item is now MECHANICALLY ENFORCED as of this
+session (INV19-22), but the ledger’s ongoing curation is the standing
+work.</li>
+</ol>
 <hr />
 <h2
 id="current-state-session-15-2026-08-08-governance-re-audit-p0-security-fix-host-root-cause-multi-track-kickoff">CURRENT
