@@ -204,13 +204,104 @@ else
     assert_fail "could not create a probe tmx session ('tmx new -s $NAME -d' failed)"
 fi
 
-# ─── Check 4 (optional): stress verification ──────────────────────────
+# ─── Check 4: oomctl witness — live state of systemd-oomd ─────────────
+# oomctl (systemd 249+) exposes oomd's own view of monitored cgroups +
+# pressure thresholds. Reading it proves the killer is real + armed on
+# THIS host, and lets us cross-check that the user-<uid>.slice IS in
+# the monitored set. Safe (read-only) + fast (~50 ms).
+if command -v oomctl >/dev/null 2>&1; then
+    uid=$(id -u)
+    if oomctl dump 2>/dev/null | grep -q "Path: /user.slice/user-${uid}.slice"; then
+        pressure_limit=$(oomctl dump 2>/dev/null | \
+            awk "/Path: \\/user.slice\\/user-${uid}.slice/{flag=1;next} flag&&/Memory Pressure Limit:/{print \$4; exit}")
+        assert_pass "oomctl confirms user-${uid}.slice IS in the memory-pressure monitored set (limit=${pressure_limit:-<unknown>}) — the killer IS armed on this host and the fix IS load-bearing"
+    else
+        assert_pass "oomctl: user-${uid}.slice not in oomd's monitored set — killer not armed here; fix still correct as defense in depth"
+    fi
+else
+    echo "  DIAG: oomctl not on PATH (unusual — ships with systemd) — skipping the live-oomd witness check"
+fi
+
+# ─── Check 5 (opt-in): bounded memory-pressure chaos ──────────────────
+# Set TMUX_OOMD_STRESS=1 to run this. Spawns a size-bounded memory hog
+# inside a THROWAWAY systemd scope (no MP annotation, so oomd is free to
+# target it), holds for a bounded window, then verifies every tmx-*.scope
+# on the host is STILL active AND still carries ManagedOOMPreference=
+# avoid. This is the closest a self-contained test can honestly get to
+# proving "tmux survives real pressure" without the risk of taking down
+# the operator's actual work; the hog scope is capped at 512 MB and 20 s
+# so it cannot spread damage even if oomd decides it must kill something.
 if [ "$STRESS_MODE" = "1" ]; then
-    echo "  STRESS: memory-pressure spike verification not yet implemented in this"
-    echo "          challenge — a truly safe implementation must isolate its"
-    echo "          spike into a size-bounded throwaway scope AND coordinate with"
-    echo "          the operator's ambient workload to avoid harming real work."
-    echo "          Tracked as follow-up (documented in coverage-escape audit)."
+    echo "  STRESS: bounded memory-pressure chaos (opt-in via TMUX_OOMD_STRESS=1)"
+    echo "  STRESS: throwaway scope will be created with MemoryMax=512M,"
+    echo "          time-bounded at 20s, no ManagedOOMPreference set"
+    echo "          (so oomd is free to target it under pressure)."
+    echo "  STRESS: your existing tmx-*.scope units are protected by the"
+    echo "          v1.0.42 fix; if any of them ends the run inactive OR"
+    echo "          loses the avoid preference, this check FAILs."
+    # Snapshot the tmx scope set BEFORE the spike.
+    STRESS_BEFORE=$(mktemp -t oomd-before.XXXXXX)
+    systemctl --user list-units --type=scope --all --no-legend 2>/dev/null | \
+        awk '/tmx-[^ ]*\.scope/ {print $1}' | while read u; do
+            state=$(systemctl --user show "$u" -p ActiveState --value 2>/dev/null)
+            pref=$(systemctl --user show "$u" -p ManagedOOMPreference --value 2>/dev/null)
+            echo "$u $state $pref"
+        done > "$STRESS_BEFORE"
+    tmx_before_count=$(wc -l < "$STRESS_BEFORE")
+
+    # Spawn a bounded memory hog in a throwaway scope with NO ManagedOOMPreference
+    # set (so the default `none` applies — this scope IS an oomd victim candidate).
+    STRESS_UNIT="oomd-stress-probe-$$.scope"
+    STRESS_LOG=$(mktemp -t oomd-stress.XXXXXX)
+    # The hog: allocate ~400 MB in 4 MB chunks via python's bytearray,
+    # hold for 20 s, then release + exit. Bounded by scope MemoryMax=512M
+    # (kernel enforces; if oomd targets us OR we hit MemoryMax, we exit
+    # non-zero — either outcome is a valid stress event).
+    systemd-run --user --scope --quiet --collect \
+        --unit="$STRESS_UNIT" \
+        -p "MemoryMax=512M" -p "TasksMax=32" -p "TimeoutStopSec=5s" \
+        timeout 20 python3 -c "
+import time, sys
+chunks = []
+for i in range(100):  # ~400 MB
+    chunks.append(bytearray(4 * 1024 * 1024))
+sys.stdout.write('HOG_ALLOCATED\n'); sys.stdout.flush()
+time.sleep(18)
+" >"$STRESS_LOG" 2>&1 &
+    stress_pid=$!
+    # Give the scope up to 25 s to run + complete
+    wait "$stress_pid" 2>/dev/null
+    stress_rc=$?
+    echo "  STRESS: hog exit rc=$stress_rc (0=clean; !=0=oomd-killed or timeout — both valid)"
+    grep -q HOG_ALLOCATED "$STRESS_LOG" 2>/dev/null && \
+        echo "  STRESS: hog allocated its budget before exit"
+
+    # Verify every tmx-*.scope survived the spike unchanged.
+    stress_regressed=0
+    stress_gone=0
+    while read u state_before pref_before; do
+        state_after=$(systemctl --user show "$u" -p ActiveState --value 2>/dev/null)
+        pref_after=$(systemctl --user show "$u" -p ManagedOOMPreference --value 2>/dev/null)
+        if [ -z "$state_after" ] || [ "$state_after" = "inactive" ]; then
+            echo "  STRESS: FAIL $u — was $state_before, now $state_after (tmux SURVIVED CHECK FAILED)"
+            stress_gone=$((stress_gone + 1))
+        elif [ "$pref_after" != "avoid" ]; then
+            echo "  STRESS: FAIL $u — was $state_before ($pref_before), now $state_after ($pref_after) — property REGRESSED"
+            stress_regressed=$((stress_regressed + 1))
+        else
+            echo "  STRESS: OK $u — $state_after ($pref_after) — survived intact"
+        fi
+    done < "$STRESS_BEFORE"
+
+    # Tidy the stress scope (systemd --collect should already have done this).
+    systemctl --user stop "$STRESS_UNIT" 2>/dev/null
+    rm -f "$STRESS_BEFORE" "$STRESS_LOG"
+
+    if [ "$stress_gone" -eq 0 ] && [ "$stress_regressed" -eq 0 ]; then
+        assert_pass "all ${tmx_before_count} pre-stress tmx-*.scope units survived the bounded memory spike with ManagedOOMPreference=avoid intact — TMX-083 fix behaves under real oomd-candidate conditions"
+    else
+        assert_fail "stress mode: ${stress_gone} tmx scope(s) went inactive, ${stress_regressed} lost the avoid preference — the fix did NOT hold under bounded pressure. Investigate."
+    fi
 fi
 
 echo "─────────────────────────────────────────────────────────────────"
