@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 3
-**Last modified:** 2026-08-10T17:30:55Z
+**Revision:** 4
+**Last modified:** 2026-08-12T22:00:00Z
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -232,11 +232,48 @@ honest about starting now, not claiming a false complete history.
   holding for atomic commit per §11.4.121). §11.4.84 fence Layer 1 + Layer 3 both
   landed and verified. Layer 2 tracked as §11.4.197 follow-up.
 
+### TMUX-OOMD-2026-08-12 — tmux sessions SIGKILLd by systemd-oomd under user-slice pressure, despite `MemoryMax=infinity`
+
+- **id:** TMUX-OOMD-2026-08-12 (not yet a `BOB-NNN` — cross-project
+  escape traced through the upstream `vasic-digital/tmux` fix TMX-083,
+  v1.0.42)
+- **date:** 2026-08-12
+- **channel:** `operator-report` — the operator noticed sessions dying
+  "as soon as we continue work with this project". No automated gate
+  in this project or its upstream had exercised this failure class.
+- **escape-audit:** neither the tmx project's own test suite (which
+  covers cgroup `Max=` / `TasksMax=` / `CPUQuota` properties but not
+  `ManagedOOMPreference`) nor the boba project's HelixQA + Challenges
+  regime (host-safety mandates cover CONST-033 host power classes but
+  do not probe `systemd-oomd`'s effect on tmux scopes) had a check
+  for "does the tmux scope survive a user-slice memory-pressure spike
+  under systemd-oomd?". The §11.4.201(6) FALSE-NULL class applied to
+  the test surface: the suite scanned the wrong axis and returned a
+  confident zero on a real defect. Genuinely uncovered — no automated
+  check existed on either side. Predecessor sighting `RD2-42`
+  (2026-08-09, `incidental-discovery`) had already noted the same
+  host session-kill mechanism reaching into rootless-podman container
+  process trees; this operator report is the tmux-facing symptom of
+  the same killer.
+- **new-check:** `challenges/scripts/tmux_survives_oomd_pressure_
+  challenge.sh` (boba side; auto-wired into `run_all_challenges.sh`)
+  + upstream `scripts/tests/59_oomd_preference_avoid.sh` (tmx side).
+  Both are §11.4.115 RED-capable via `RED_MODE=1`. Live-verified on
+  the operator's host 2026-08-12: pre-fix `RED_MODE=1` PASS
+  (`ManagedOOMPreference=none` — defect reproduced), post-fix
+  `RED_MODE=0` PASS (`ManagedOOMPreference=avoid` — regression guard
+  confirmed). Perfect §11.4.115 polarity flip. Full audit at
+  `docs/qa/coverage-escape-tmux-oomd-20260812/audit.md`. Root cause
+  fixed upstream in `vasic-digital/tmux` v1.0.42 (TMX-083, commits
+  `6f9eaeb` + merge `92ef3a0`), pushed ff-only to both remotes per
+  §11.4.113.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
 |---|---|---|---|
 | 2026-08-07 → 2026-08-10 (ledger current) | 0 | 8 (`agent-code-reading` x4, `incidental-discovery` x3, `automated_background_scan` x1) | 100% |
+| 2026-08-11 → 2026-08-12 (this update) | 0 | 1 (`operator-report` x1) | 100% |
 
 **Honest note:** 100% out-of-band is the true, unflattering starting number — every entry above
 was found by an agent reading code, running commands by hand, or hitting a real failure while
