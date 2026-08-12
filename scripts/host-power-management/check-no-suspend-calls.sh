@@ -112,6 +112,26 @@ VIOLATIONS=$(awk -v root="$ROOT" -v EXCLUDE_PATHS_PIPED="$(IFS='|'; echo "${EXCL
     for (i=1;i<=excount;i++) {
       if (ex[i] != "" && index($0, ex[i]) > 0) { skip = 1; break }
     }
+    # STRUCTURAL carrier filter (§11.4.201(7)(a) — match the THING, not a
+    # token that MENTIONS it). grep emits "path:lineno:content"; strip that
+    # prefix and skip when the matched line is a WHOLE-LINE COMMENT (shell/
+    # python/yaml "#") or a Markdown heading. A line whose first non-blank
+    # character is "#" cannot invoke anything under any shell — it is inert
+    # by language semantics, so skipping it removes ZERO detection power
+    # while killing the recurrence class that a per-file allowlist cannot:
+    # governance prose, incident write-ups, and INHERITED submodule comments
+    # (e.g. constitution/scripts/hooks/*.sh documenting the verbs it blocks)
+    # that this project does not control and cannot pre-enumerate.
+    # Proven 2026-08-12 by the paired §1.1 golden-bad fixture: a real
+    # invocation on a NON-comment line still FAILs the scanner.
+    # Known narrow limit (stated, not hidden): a trailing comment on a line
+    # that also contains real code is still scanned — deliberate, so
+    # `systemctl poweroff  # cleanup` is never silently excused.
+    if (!skip) {
+      content = $0
+      sub(/^[^:]*:[0-9]+:/, "", content)
+      if (content ~ /^[[:space:]]*#/) skip = 1
+    }
     if (!skip) print
   }
 ' "$TMP")
