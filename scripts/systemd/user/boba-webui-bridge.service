@@ -1,0 +1,54 @@
+# boba-webui-bridge.service — the boba webui-bridge host process
+# (Go binary at qBitTorrent-go/bin/webui-bridge), port 7188.
+#
+# Purpose (from CLAUDE.md port map):
+#   Port 7188 is served by webui-bridge — a host process that fronts
+#   qBittorrent for private tracker downloads (adds the tracker cookies
+#   the containerised nova3 subprocesses cannot see). The Go binary
+#   supersedes the older python webui-bridge.py; both read the tracker
+#   credentials from ~/.env (never committed to git per §11.4.10).
+#
+# Why systemd:
+#   Before this unit, CLAUDE.md documented port 7188 as "manual start" —
+#   a persistent gap in the reboot-survivability contract. This service
+#   closes it: linger=yes + WantedBy=boba.target means the bridge starts
+#   at host boot without any operator action, exactly like the compose
+#   stack. No sudo required.
+#
+# Design:
+#   Type=simple — the Go binary runs forever as a Gin HTTP server; systemd
+#     directly supervises the process (no oneshot wrapper needed here,
+#     unlike boba-stack.service which delegates to ./start.sh per Hard
+#     Stop #3).
+#   EnvironmentFile=-%h/.qbit.env AND -/path/to/repo/.env — dash prefix
+#     means "optional; do not fail if absent" so the unit still starts on
+#     a fresh checkout that has not yet run ./setup.sh. Systemd's
+#     EnvironmentFile parses `KEY=VALUE` lines directly (same format .env
+#     already uses).
+#   Restart=on-failure — a transient network / qBittorrent restart bounce
+#     should self-heal within 5 s.
+#   PartOf=boba.target — stopping the umbrella stops this too.
+
+[Unit]
+Description=Boba webui-bridge — Go-based host process fronting qBittorrent for private trackers (port 7188)
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/CLAUDE.md
+After=network-online.target boba-stack.service
+Wants=network-online.target
+PartOf=boba.target
+
+[Service]
+Type=simple
+WorkingDirectory=/run/media/milosvasic/DATA4TB/Projects/boba
+EnvironmentFile=-%h/.qbit.env
+EnvironmentFile=-/run/media/milosvasic/DATA4TB/Projects/boba/.env
+ExecStart=/run/media/milosvasic/DATA4TB/Projects/boba/qBitTorrent-go/bin/webui-bridge
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+# §CONST-033 corollary: same bias as boba-stack.service — user session
+# gets protected first, this bridge process is a preferred OOM victim.
+OOMScoreAdjust=200
+
+[Install]
+WantedBy=boba.target

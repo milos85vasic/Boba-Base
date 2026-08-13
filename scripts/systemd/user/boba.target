@@ -25,6 +25,7 @@ After=default.target
 # When a new unit is added, extend this list AND its [Install]
 # WantedBy=boba.target so `boba-svc enable` wires it up on install.
 Wants=boba-stack.service
+Wants=boba-webui-bridge.service
 
 [Install]
 WantedBy=default.target

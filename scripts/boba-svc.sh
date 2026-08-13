@@ -58,15 +58,17 @@ UNIT_DST="$HOME/.config/systemd/user"
 UNITS=(
     "boba.target"
     "boba-stack.service"
+    "boba-webui-bridge.service"
 )
 
 # Health probe targets — { NAME PORT PATH EXPECTED_CODES }.
 # EXPECTED_CODES is a `|` pipe-separated list of acceptable HTTP codes.
 HEALTH_PROBES=(
-    "qBittorrent 7185 /             200|401"
-    "Jackett     9117 /UI/Dashboard 200|302"
-    "MergeSvc    7187 /health       200"
-    "BobaJackett 7189 /healthz      200"
+    "qBittorrent 7185 /              200|401"
+    "Jackett     9117 /UI/Dashboard  200|302"
+    "MergeSvc    7187 /health        200"
+    "BobaJackett 7189 /healthz       200"
+    "WebUIBridge 7188 /bridge/health 200"
 )
 
 # ─── log helpers ────────────────────────────────────────────────────
