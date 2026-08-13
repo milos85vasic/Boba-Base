@@ -1,0 +1,56 @@
+# boba-stack.service — boba container stack (qBittorrent + Jackett +
+# qbittorrent-proxy + boba-jackett), started via the project's own
+# ./start.sh entrypoint per Hard Stop #3 (CLAUDE.md — container
+# orchestration is owned exclusively by ./start.sh).
+#
+# Rationale: systemd handles the OUTERMOST lifecycle (auto-start at
+# boot / user login, restart on host reboot, journalctl integration).
+# ./start.sh handles the INNER orchestration (boba-ctl / podman-compose
+# → containers). The two layers do not compete: systemd invokes
+# start.sh; start.sh invokes boba-ctl; boba-ctl invokes the compose
+# runtime. This preserves the "single container-orchestration owner"
+# invariant.
+#
+# Design notes:
+# - Type=oneshot + RemainAfterExit=yes — start.sh is not a daemon; it
+#   starts containers and exits. Podman itself is the long-running
+#   supervisor. systemd holds the "started" state until stop is issued.
+# - --no-build — Angular is rebuilt out-of-band (or by an operator-run
+#   `./start.sh` invocation). Skipping the build shaves ~10 s off boot.
+# - TimeoutStartSec=300 — a first-boot image pull can take a minute or
+#   two; give it headroom without failing prematurely.
+# - Restart=on-failure — if start.sh itself exits with a non-zero code
+#   (e.g. compose command errored) systemd retries after 30 s. Compose
+#   itself has restart: unless-stopped on the containers for their own
+#   crash recovery.
+# - EnvironmentFile — optional; if ~/.qbit.env exists it seeds the
+#   tracker credential env before start.sh runs. NOT tracked in git per
+#   §11.4.10.
+
+[Unit]
+Description=Boba stack — containers via ./start.sh
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/CLAUDE.md
+After=network-online.target
+Wants=network-online.target
+PartOf=boba.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/run/media/milosvasic/DATA4TB/Projects/boba
+EnvironmentFile=-%h/.qbit.env
+ExecStart=/usr/bin/bash -lc "./start.sh --no-build"
+ExecStop=/usr/bin/bash -lc "./stop.sh"
+TimeoutStartSec=300
+TimeoutStopSec=120
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+# §CONST-033 host safety corollary: keep the OOM-selector's aim on this
+# unit's own descendants (containers have oom_score_adj=500 baked into
+# docker-compose.yml, biasing kernel OOM AWAY from user session).
+OOMScoreAdjust=200
+
+[Install]
+WantedBy=boba.target

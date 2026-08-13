@@ -1,0 +1,30 @@
+# boba.target — umbrella user-level target for the boba stack.
+#
+# Design: matches the existing helix.target pattern on this host. Every
+# boba-* .service and container-boba-* .service declares
+# WantedBy=boba.target, so `systemctl --user start boba.target` brings
+# up every registered piece in dependency order, and `systemctl --user
+# enable boba.target` makes them auto-start on user login (or on host
+# boot when linger is enabled — `loginctl show-user <u> -p Linger`).
+#
+# NO SUDO ever needed. This is a --user unit that lives under
+# ~/.config/systemd/user/. Installation + management is done via
+# scripts/boba-svc.sh; source-of-truth lives here in the repo.
+#
+# The single container-orchestration owner remains ./start.sh
+# (project Hard Stop #3 — CLAUDE.md). boba-stack.service is a thin
+# systemd wrapper around start.sh; it does NOT bypass boba-ctl or
+# podman-compose.
+
+[Unit]
+Description=Boba (qBittorrent + Jackett + Merge Search) stack umbrella
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/README.md
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/CLAUDE.md
+After=default.target
+# Pull every registered boba-*.service in when the target starts.
+# When a new unit is added, extend this list AND its [Install]
+# WantedBy=boba.target so `boba-svc enable` wires it up on install.
+Wants=boba-stack.service
+
+[Install]
+WantedBy=default.target
