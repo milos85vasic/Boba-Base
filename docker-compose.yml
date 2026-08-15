@@ -82,6 +82,16 @@ services:
       - KINOZAL_PASSWORD=${KINOZAL_PASSWORD}
       - NNMCLUB_COOKIES=${NNMCLUB_COOKIES}
       - RUTRACKER_COOKIES=${RUTRACKER_COOKIES}
+      - IPTORRENTS_COOKIES=${IPTORRENTS_COOKIES:-}
+      # RUTOR_COOKIES / KINOZAL_COOKIES — populated by
+      # scripts/load-tracker-cookies.sh from ~/Downloads/cookies_<t>.txt
+      # (operator mandate 2026-08-15). RuTor is public but the cookie
+      # jar carries cf_clearance which helps with Cloudflare challenges;
+      # Kinozal is auth-required and the cookie is the session token.
+      # Empty-defaults keep `compose up` working on hosts where these
+      # aren't set (§11.4.6 honest fallback).
+      - RUTOR_COOKIES=${RUTOR_COOKIES:-}
+      - KINOZAL_COOKIES=${KINOZAL_COOKIES:-}
       - NNMCLUB_USERNAME=${NNMCLUB_USERNAME}
       - NNMCLUB_PASSWORD=${NNMCLUB_PASSWORD}
       - IPTORRENTS_USERNAME=${IPTORRENTS_USERNAME}
@@ -142,6 +152,16 @@ services:
       - KINOZAL_PASSWORD=${KINOZAL_PASSWORD}
       - NNMCLUB_COOKIES=${NNMCLUB_COOKIES}
       - RUTRACKER_COOKIES=${RUTRACKER_COOKIES}
+      - IPTORRENTS_COOKIES=${IPTORRENTS_COOKIES:-}
+      # RUTOR_COOKIES / KINOZAL_COOKIES — populated by
+      # scripts/load-tracker-cookies.sh from ~/Downloads/cookies_<t>.txt
+      # (operator mandate 2026-08-15). RuTor is public but the cookie
+      # jar carries cf_clearance which helps with Cloudflare challenges;
+      # Kinozal is auth-required and the cookie is the session token.
+      # Empty-defaults keep `compose up` working on hosts where these
+      # aren't set (§11.4.6 honest fallback).
+      - RUTOR_COOKIES=${RUTOR_COOKIES:-}
+      - KINOZAL_COOKIES=${KINOZAL_COOKIES:-}
       - NNMCLUB_USERNAME=${NNMCLUB_USERNAME:-}
       - NNMCLUB_PASSWORD=${NNMCLUB_PASSWORD:-}
       - IPTORRENTS_USERNAME=${IPTORRENTS_USERNAME}

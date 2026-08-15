@@ -156,6 +156,14 @@ fi
 
 # ─── stage 6: start the stack ──────────────────────────────────────
 if [ "${BOBA_INSTALL_SKIP_START:-0}" != "1" ]; then
+    # Cookie autoload (operator mandate 2026-08-15): pick up any freshly-
+    # exported ~/Downloads/cookies_<tracker>.txt files into .env before the
+    # containers come up. Loader failure never blocks install (§11.4.234
+    # always-unblocked) — a warning surfaces, install continues.
+    if [ -x scripts/load-tracker-cookies.sh ]; then
+        _step "stage 6/7 — refresh per-tracker cookies from \${TRACKER_COOKIE_DIR:-\$HOME/Downloads}"
+        bash scripts/load-tracker-cookies.sh 2>&1 | sed 's/^/    /' || _warn "cookie loader had non-zero exit (continuing)"
+    fi
     _step "stage 6/7 — start the stack via systemd (single command: systemctl --user start boba.target)"
     bash scripts/boba-svc.sh up 2>&1 | sed 's/^/    /' || _fail "stack start failed"
 else

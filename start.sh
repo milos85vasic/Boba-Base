@@ -855,6 +855,18 @@ main() {
         set -x
     fi
 
+    # Cookie autoload (operator mandate 2026-08-15): refresh per-tracker
+    # cookies from ${TRACKER_COOKIE_DIR:-$HOME/Downloads}/cookies_<tracker>.txt
+    # into .env BEFORE load_environment so freshly-exported browser cookies
+    # propagate to containers on the next `compose up`. Loader failure never
+    # blocks the boot (§11.4.234 always-unblocked) — a warning surfaces and
+    # start.sh continues with whatever cookies .env already holds.
+    if [[ -x "$SCRIPT_DIR/scripts/load-tracker-cookies.sh" ]]; then
+        print_info "Refreshing per-tracker cookies from \${TRACKER_COOKIE_DIR:-\$HOME/Downloads}..."
+        bash "$SCRIPT_DIR/scripts/load-tracker-cookies.sh" || \
+            print_warning "cookie loader had non-zero exit — continuing with existing .env"
+    fi
+
     load_environment
     ensure_boba_master_key
     detect_container_runtime

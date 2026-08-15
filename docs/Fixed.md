@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 14
-**Last modified:** 2026-08-15T00:00:00Z
+**Revision:** 15
+**Last modified:** 2026-08-15T12:15:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -9,6 +9,14 @@
 > Task → `Completed`. Each carries captured-evidence (anti-bluff §11.4).
 
 ---
+
+## BOB-067 — Lava P4: Jackett cookie-login hardening + behaviorally-equivalent HelixQA fake
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Closed:** 2026-08-15 · **Evidence:** `challenges/scripts/jackett_cookie_login_hardening_challenge.sh` + `challenges/scripts/helixqa_jackett_fake_behavioral_equivalence_challenge.sh`
+
+Ported Lava P4 (`../lava/lava-api-go/internal/jackett/client.go` — cookie-jar HTTP client, `CheckRedirect: ErrUseLastResponse`, dashboard `login()`, `doManaged` login-on-302 retry, wrong-password safety net) — the CORE hardening already lived in `qBitTorrent-go/internal/jackett/client.go` (`NewClientWithPassword` + `WarmUp` + `login` + `doManaged`, alongside the fake in `cookie_login_test.go`). BOB-067 adds the CHALLENGE-layer autonomous ratchets so the regime is the DISCOVERER (§11.4.238) if the hardening ever regresses. **Root cause (Lava P4):** Jackett's MANAGEMENT API (`/api/v2.0/indexers`, per-indexer `/config`) authenticates via a DASHBOARD SESSION COOKIE — not the apikey. Apikey-only management gets HTTP 302 → `/UI/Login`; the apikey ONLY authorizes Torznab `/results` + `/caps`. `scripts/extract-jackett-key.py` reads `ServerConfig.json` from disk and makes NO HTTP calls — cookie-login hardening does NOT apply to it (§11.4.6 category boundary), it lives in the Go client that consumes the extracted key. **Fix (already shipped):** cookie jar attached, `CheckRedirect` returns `ErrUseLastResponse` (302 surfaces instead of being followed into an HTML login page and misdecoded as JSON), `login()` POSTs `password=<admin>` to `/UI/Dashboard` and captures `Set-Cookie: Jackett=…` into the jar (a no-cookie safety net rejects a 200 login without a `Set-Cookie` as a wrong-password failure exactly as real Jackett behaves), `doManaged()` wraps every management call with a 302→login→retry-once path so a session missing/expired recovers transparently. **Anti-bluff ratchets (this ticket):** `challenges/scripts/jackett_cookie_login_hardening_challenge.sh` runs the three load-bearing Go tests with `go test -v -count=1` and requires 3/3 `--- PASS:` lines (§11.4.201 false-null guard on a too-narrow `-run` filter). `challenges/scripts/helixqa_jackett_fake_behavioral_equivalence_challenge.sh` (a) runs `TestFakeJackettRefusesManagementWithoutCookie` (the golden-bad detector — a bluff-fake that returned 200 on apikey-only management would be caught by this test, §11.4.107(10)) and (b) when a live Jackett is reachable at `http://localhost:9117` (`$JACKETT_LIVE_URL` override), diffs the fake's contract against the real product on B1 (apikey-only→302) + B2 (login→302+`Set-Cookie: Jackett=`). **Live equivalence PROVEN 2026-08-15** against localhost:9117 — captured verbatim: real Jackett `HTTP/1.1 302 Location: .../UI/Login?ReturnUrl=...` on apikey-only management, `HTTP/1.1 302 Set-Cookie: Jackett=CfDJ8...` on empty-password `POST /UI/Dashboard`. Fake's cookie name matches (`Jackett`), fake's status codes match. **§1.1 paired-mutation rehearsal (2026-08-15):** replaced `if !isRedirect(resp.StatusCode) { return resp, nil }` in `doManaged` with a bare `return resp, nil // MUTATION` — `TestManagementCookieLogin_ConfigurableAdminPassword` failed with `decode: EOF`, challenge exited rc=1 (guard IS load-bearing, not a bluff-gate). Reversed, re-ran GREEN. §11.4.115 RED/GREEN polarity in both challenges — RED_MODE=1 recognizes pre-port state (cookie-jar missing / bluff-fake), RED_MODE=0 is the shipped guard. User guides: `docs/scripts/jackett-cookie-login-hardening.md` + `docs/scripts/helixqa-jackett-fake.md`. Closes RD2-15/GA-05 (P4 leg of the four Lava-porting items BOB-064..067).
 
 ## BOB-064 — Lava P1: Durable remote execution (systemd-linger helper)
 

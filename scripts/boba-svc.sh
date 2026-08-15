@@ -135,7 +135,23 @@ _cmd_uninstall() {
     _info "daemon-reload complete"
 }
 
-_cmd_up()      { _require_linux; systemctl --user start   boba.target; _info "boba.target started"; }
+# §11.4.234 always-unblocked: refresh cookies from ~/Downloads/cookies_*.txt
+# before containers come up so a browser re-export is picked up automatically.
+# Loader failure is a WARNING, never a block — the containers still boot with
+# whatever cookies .env already holds.
+_refresh_cookies_from_downloads() {
+    local loader="$SCRIPT_DIR/load-tracker-cookies.sh"
+    if [ -x "$loader" ]; then
+        _info "refreshing per-tracker cookies from \${TRACKER_COOKIE_DIR:-\$HOME/Downloads}..."
+        if ! bash "$loader" 2>&1 | sed 's/^/    /' >&2; then
+            _warn "cookie loader had non-zero exit — continuing with existing .env (§11.4.234 always-unblocked)"
+        fi
+    else
+        _warn "cookie loader not found at $loader — skipping cookie refresh"
+    fi
+}
+
+_cmd_up()      { _require_linux; _refresh_cookies_from_downloads; systemctl --user start   boba.target; _info "boba.target started"; }
 _cmd_down()    { _require_linux; systemctl --user stop    boba.target; _info "boba.target stopped"; }
 _cmd_enable()  { _require_linux; systemctl --user enable  boba.target; _info "boba.target enabled (auto-start on login/boot)"; _cmd_linger_status; }
 _cmd_disable() { _require_linux; systemctl --user disable boba.target; _info "boba.target disabled"; }
@@ -166,6 +182,7 @@ _cmd_restart() {
         fi
         sleep 3
     done
+    _refresh_cookies_from_downloads
     _info "starting boba.target..."
     systemctl --user start boba.target
     _info "restart complete"

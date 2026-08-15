@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 5
-**Last modified:** 2026-06-09T20:00:00Z
+**Revision:** 6
+**Last modified:** 2026-08-15T12:15:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -40,14 +40,6 @@ error="login returned no session cookie — likely CAPTCHA"`.
 **Severity:** High
 
 [Backfill from RD2-15/GA-05, audit doc 2026-08-08] Lava-porting finding P3 (Configurable outbound proxy in the services, Lava PLAYBOOK section 3). download-proxy (Python): httpx/requests honor HTTP_PROXY/HTTPS_PROXY/ALL_PROXY/NO_PROXY env natively — add an explicit BOBA_UPSTREAM_PROXY config that sets these for tracker-bound clients, with loopback bypass (NO_PROXY=127.0.0.1,localhost,jackett). qBitTorrent-go: set http.Transport.Proxy (socks5 native, remote DNS) from a BOBA_UPSTREAM_PROXY env — mirror Lava internal/httpx/proxy.go. Jackett: has a built-in proxy setting (configure via its API/ServerConfig). Deploy gotcha (port): the env must be FORWARDED into the containers (docker-compose.yml env / the boba-ctl deploy) — Lava bug was a missing allow-list entry. Verify on distroless via podman inspect, not exec printenv. TDD: a test with a local proxy asserts the service tracker request traverses it; falsifiability: disable the wiring so the test fails. Source: docs/PORTING-FROM-LAVA.md. Per audit RD2-15 [P0]: Create tracked workable items (BOB-064..067) for the four Lava-porting findings, citing implementing commits as evidence, closed as Implemented.
-
-## BOB-067 — Lava P4: Jackett cookie-login hardening + behaviorally-equivalent HelixQA fake
-
-**Status:** Queued
-**Type:** Task
-**Severity:** High
-
-[Backfill from RD2-15/GA-05, audit doc 2026-08-08] Lava-porting finding P4 (Jackett cookie-login hardening, Lava PLAYBOOK section 8). Add to Boba-Base existing cookie infra: Jackett management API (/api/v2.0/indexers, indexer /config) needs a dashboard session cookie (empty-password POST /UI/Dashboard) — the apikey only authorizes Torznab /results and /caps. If boba-jackett/extract-jackett-key.py only uses the apikey, ListIndexers/config silently 302 to /UI/Login. Critical for anti-bluff: the test fake MUST 302-without-cookie like real Jackett (behavioral equivalence) or the gap stays hidden. TDD: fake 302s management without the cookie; assert discovery succeeds via the cookie path; falsifiability: remove cookie login so 302 failure surfaces. Home: jackett integration + helixqa fakes. Source: docs/PORTING-FROM-LAVA.md. Per audit RD2-15 [P0]: Create tracked workable items (BOB-064..067) for the four Lava-porting findings, citing implementing commits as evidence, closed as Implemented.
 
 ## BOB-068 — RD2-00: unattributed, unreviewed Auto-commit mechanism pushing to main
 

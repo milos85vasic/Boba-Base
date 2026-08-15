@@ -126,26 +126,44 @@ fi
 rm -f /tmp/bob067_fake.$$.log
 
 # ─── LIVE Jackett cross-check (behavioral-equivalence proof) ─────────
+# curl -w '%{http_code}' prints '000' on connection failure AND exits non-zero;
+# we do NOT chain '|| echo 000' (that would double up to '000000' — see the
+# §11.4.201(6)/§11.4.201(12) false-null footgun classes). Instead we compare
+# against '000' explicitly for the not-reachable case.
 LIVE_URL="${JACKETT_LIVE_URL:-$JACKETT_LIVE_URL_DEFAULT}"
-LIVE_STATUS="$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 --connect-timeout 1 "$LIVE_URL/UI/Login" 2>/dev/null || echo 000)"
+LIVE_STATUS="$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 --connect-timeout 1 "$LIVE_URL/UI/Login" 2>/dev/null)"
+LIVE_STATUS="${LIVE_STATUS:-000}"
 if [ "$LIVE_STATUS" = "000" ]; then
-    echo "  [live-check] SKIP: no Jackett reachable at $LIVE_URL — fake equivalence rests on cookie_login_test.go's assertions + Lava/Boba porting evidence, [UNCONFIRMED-AGAINST-LIVE-JACKETT]"
+    echo "  [live-check] SKIP: no Jackett reachable at $LIVE_URL (got status $LIVE_STATUS) — fake equivalence rests on the cookie_login_test.go assertions + the Lava/Boba porting evidence captured 2026-08-15 in docs/scripts/helixqa-jackett-fake.md, [UNCONFIRMED-AGAINST-LIVE-JACKETT]"
 else
-    # Real Jackett B1: apikey-only management → 302 with Location to /UI/Login
-    B1_STATUS="$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$LIVE_URL/api/v2.0/indexers?apikey=bogus-key&configured=false" 2>/dev/null || echo 000)"
-    if [ "$B1_STATUS" != "302" ]; then
+    live_probe_skip=""
+    # Real Jackett B1: apikey-only management → 302 → /UI/Login
+    B1_STATUS="$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$LIVE_URL/api/v2.0/indexers?apikey=bogus-key&configured=false" 2>/dev/null)"
+    B1_STATUS="${B1_STATUS:-000}"
+    if [ "$B1_STATUS" = "000" ]; then
+        live_probe_skip="B1 connection failed mid-check (live Jackett went away between probes)"
+    elif [ "$B1_STATUS" != "302" ]; then
         fail "GREEN [live-check] real Jackett B1 (apikey-only management) returned $B1_STATUS, expected 302 — either the live product changed behavior or the URL points at a non-Jackett; investigate before trusting the fake"
     fi
-    # Real Jackett B2: POST /UI/Dashboard with empty password → 302 + Set-Cookie: Jackett=
-    B2_HEADERS="$(curl -s -D- -o /dev/null --max-time 3 -X POST -d 'password=' "$LIVE_URL/UI/Dashboard" 2>/dev/null || echo '')"
-    B2_STATUS="$(printf '%s\n' "$B2_HEADERS" | awk 'NR==1{print $2}')"
-    if [ "$B2_STATUS" != "302" ]; then
-        fail "GREEN [live-check] real Jackett B2 (empty-password login) returned $B2_STATUS, expected 302"
+
+    # Real Jackett B2: POST /UI/Dashboard empty-password → 302 + Set-Cookie: Jackett=
+    if [ -z "$live_probe_skip" ]; then
+        B2_HEADERS="$(curl -s -D- -o /dev/null --max-time 3 -X POST -d 'password=' "$LIVE_URL/UI/Dashboard" 2>/dev/null || true)"
+        B2_STATUS="$(printf '%s\n' "$B2_HEADERS" | awk 'NR==1{print $2}')"
+        if [ -z "$B2_STATUS" ]; then
+            live_probe_skip="B2 connection failed mid-check (live Jackett went away between probes)"
+        elif [ "$B2_STATUS" != "302" ]; then
+            fail "GREEN [live-check] real Jackett B2 (empty-password login) returned $B2_STATUS, expected 302"
+        elif ! printf '%s\n' "$B2_HEADERS" | grep -qi '^Set-Cookie: Jackett='; then
+            fail "GREEN [live-check] real Jackett B2 did NOT emit Set-Cookie: Jackett=… on login — the fake's cookie name would diverge from live"
+        fi
     fi
-    if ! printf '%s\n' "$B2_HEADERS" | grep -qi '^Set-Cookie: Jackett='; then
-        fail "GREEN [live-check] real Jackett B2 did NOT emit Set-Cookie: Jackett=… on login — the fake's cookie name would diverge from live"
+
+    if [ -n "$live_probe_skip" ]; then
+        echo "  [live-check] SKIP: $live_probe_skip — the reachability probe succeeded but a follow-up probe did not; treating as transient, honest [UNCONFIRMED-AGAINST-LIVE-JACKETT] rather than a spurious FAIL"
+    else
+        echo "  [live-check] PASS: live Jackett at $LIVE_URL matches fake on B1 (apikey-only→302) + B2 (login→302+Set-Cookie: Jackett=)"
     fi
-    echo "  [live-check] PASS: live Jackett at $LIVE_URL matches fake on B1 (apikey-only→302) + B2 (login→302+Set-Cookie: Jackett=)"
 fi
 
 pass "BOB-067 fake behavioral equivalence verified — self-validation (fake refuses management without cookie) + cookie-gate structure present + live-Jackett cross-check on B1/B2 where reachable"

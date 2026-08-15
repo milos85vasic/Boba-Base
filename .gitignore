@@ -248,3 +248,12 @@ qa-results/docs_chain/
 # regeneratable — §11.4.30/§11.4.11 sibling convention to .evidence/ + qa-results/
 # + artifacts/; investigation by Agent Q 2026-08-10, task #26)
 scratchpad/
+
+# §11.4.10 CRITICAL (operator mandate 2026-08-15) — cookies txt files
+# MUST NEVER be git-versioned. Convention: ~/Downloads/cookies_<TRACKER>.txt
+# is the DEFAULT external source; the file itself should live OUTSIDE the repo,
+# but this pattern also guards against accidental drops of the file INTO the tree.
+cookies_*.txt
+**/cookies_*.txt
+.cookies/
+tracker-cookies/
