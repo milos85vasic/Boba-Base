@@ -33,6 +33,10 @@ docs/build-stats.ndjson
 # Source code that has "credentials" in its name (not secret material) — allow explicitly.
 !qBitTorrent-go/internal/db/repos/credentials.go
 !qBitTorrent-go/internal/db/repos/credentials_test.go
+# Documentation + challenges that describe credential handling (no secret
+# material, plain markdown / bash) — allow explicitly.
+!docs/guides/tracker-credentials.md
+!challenges/scripts/credentials_wired_challenge.sh
 !qBitTorrent-go/internal/jackettapi/credentials.go
 !qBitTorrent-go/internal/jackettapi/credentials_test.go
 # Angular frontend credentials management UI (source, no secrets).

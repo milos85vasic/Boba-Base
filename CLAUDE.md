@@ -221,6 +221,8 @@ Priority: shell env → `./.env` → `~/.qbit.env` → container env.
 
 Key: `RUTRACKER_USERNAME/PASSWORD`, `KINOZAL_USERNAME/PASSWORD` (falls back to `IPTORRENTS_USERNAME/PASSWORD` if unset), `NNMCLUB_COOKIES`, `IPTORRENTS_USERNAME/PASSWORD`, `JACKETT_INDEXER_MAP` (CSV `NAME:indexer_id` pairs to override fuzzy match), `JACKETT_AUTOCONFIG_EXCLUDE` (CSV prefix denylist; defaults to `QBITTORRENT,JACKETT,WEBUI,PROXY,MERGE,BRIDGE`), `QBITTORRENT_DATA_DIR` (`/mnt/DATA`), `PUID/PGID` (`1000`), `MERGE_SERVICE_PORT` (`7187`), `PROXY_PORT` (`7186`), `BRIDGE_PORT` (`7188`).
 
+**Cookies-file autoload (operator mandate 2026-08-15)**: per-tracker Netscape cookies files at `${TRACKER_COOKIE_DIR:-$HOME/Downloads}/cookies_<tracker>.txt` (lowercase; today: `rutracker`, `nnmclub`, `rutor`, `kinozal`) are auto-loaded into `.env` as `<TRACKER>_COOKIES=...` by `scripts/load-tracker-cookies.sh` before every `boba-svc up`, `boba-svc restart`, `install.sh` Stage 6, and `start.sh` boot. Refreshing a session = *re-export from browser → restart*. Every write is atomic + `chmod 600` + §11.4.10.A leak-audited; cookie values NEVER enter logs. Full doc: [`docs/guides/tracker-credentials.md`](docs/guides/tracker-credentials.md).
+
 > **RuTor is a PUBLIC tracker with no login endpoint** — it needs no authentication. Any `RUTOR_USERNAME`/`RUTOR_PASSWORD` that may live in `.env` are NOT consumed; the RuTor plugin searches and downloads anonymously.
 
 **boba-jackett (port 7189) — system-DB env vars**:

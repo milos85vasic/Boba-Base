@@ -75,6 +75,24 @@ Then visit:
 
 **⚠ Configure any credentials you need in `.env` before running `./start.sh`.** The single source of truth is **[`docs/TOKENS_AND_KEYS.md`](docs/TOKENS_AND_KEYS.md)** — which variable is mandatory, which is optional, and **where to register** for each one.
 
+### Tracker credentials — env vars AND cookies files (auto-loaded)
+
+Boba supports **two mechanisms** for tracker auth, and both are respected together:
+
+1. **Env vars in `.env`** — `<TRACKER>_USERNAME` / `<TRACKER>_PASSWORD` / `<TRACKER>_COOKIES`.
+2. **Cookies files in `~/Downloads/`** — canonical naming `cookies_<tracker>.txt` (lowercase), Netscape TSV format exported from a logged-in browser session.
+
+The loader `scripts/load-tracker-cookies.sh` auto-invokes before every
+`boba-svc up`, `boba-svc restart`, `install.sh` Stage 6, and `start.sh` boot —
+so refreshing a session is a one-step *browser re-export → restart*. Source
+directory defaults to `$HOME/Downloads`, overridable via
+`TRACKER_COOKIE_DIR` or `--dir <path>`.
+
+See the **[Tracker Credentials Manual](docs/guides/tracker-credentials.md)**
+for the per-tracker matrix, browser-export step-by-step, precedence rules,
+and the security posture (§11.4.10.A leak audit, cookie-value-never-logged).
+Common questions: **[FAQ](docs/FAQ.md)**.
+
 ### At a glance
 
 | Category | Mandatory | Optional | Documentation |
