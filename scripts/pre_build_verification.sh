@@ -31,7 +31,11 @@
 #  16. CM-MARKDOWN-EXPORT-SYNC: every in-scope governance/tracker Markdown doc
 #      has fresh .html AND .pdf siblings (mtime >= .md mtime) (§11.4.65)
 #  17. CM-WORKABLE-ITEMS-VALIDATE: workable-items validate passes (§11.4.93/§11.4.95)
-#  18. CM-DOCS-CHAIN-VALIDATE: docs_chain.sh --check-only passes (§11.4.106)
+#  18. CM-WORKABLE-ITEMS-EXPORT-VALIDATE: workable-items-export.sh --check-only
+#      passes (§11.4.93/§11.4.65). Previously named CM-DOCS-CHAIN-VALIDATE against
+#      the misnomered `docs_chain.sh` — renamed 2026-08-15 (BOB-104) when the
+#      REAL Docs Chain engine landed at constitution/submodules/docs_chain/.
+#      The real-engine sync/verify is invariant 24 (CM-DOCS-CHAIN-ENGINE-VERIFY).
 #  19. CM-QA-DISCOVERY-LEDGER-FRESH: docs/QA_DISCOVERY_LEDGER.md revision header
 #      present AND `## Entries` count == `Discovery-channel split` table total (§11.4.238)
 #  20. CM-QA-IS-THE-DISCOVERER: every out-of-band ledger entry carries both
@@ -41,14 +45,16 @@
 #      constitution/{CLAUDE,AGENTS,QWEN,GEMINI}.md each carries the literal
 #      (§11.4.35 — the mirror set is the constitution submodule's own files,
 #      NOT the boba project-root CLAUDE.md/AGENTS.md)
-#  22. CM-DOCS-CHAIN-STEP1-REAL-INVOCATION: `scripts/docs_chain.sh --check-only`
-#      runs to exit-0 AND its combined stdout+stderr contains NEITHER
-#      "binary not found" NOR "ERROR:" — retroactive catcher for the §11.4.238
-#      RD2-41a escape where Step 1/3 silently no-op'd because a hardcoded binary
-#      path did not exist. Distinct from invariant 18 (which only reads exit
-#      code): a `--check-only` run can trivially exit 0 while printing an
-#      ERROR: line the caller never inspected — precisely the RD2-41a shape.
-#      Extended-to-all-cases (§11.4.146) sibling of tests/unit/test_docs_chain_binary_resolution.sh.
+#  22. CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION: `scripts/workable-items-export.sh
+#      --check-only` runs to exit-0 AND its combined stdout+stderr contains
+#      NEITHER "binary not found" NOR "ERROR:" — retroactive catcher for the
+#      §11.4.238 RD2-41a escape where Step 1/3 silently no-op'd because a
+#      hardcoded binary path did not exist. Distinct from invariant 18 (which
+#      only reads exit code): a `--check-only` run can trivially exit 0 while
+#      printing an ERROR: line the caller never inspected — precisely the
+#      RD2-41a shape. Extended-to-all-cases (§11.4.146) sibling of
+#      tests/unit/test_docs_chain_binary_resolution.sh (test file name kept
+#      for git-history preservation; script was renamed 2026-08-15 BOB-104).
 #  23. CM-NO-PRODUCTION-MUTATION-RESIDUE: no mutation-marker residue in
 #      production source paths (§11.4.84 working-tree-quiescence guarantee
 #      at the pre-build seam). Mutation-marker-specific patterns detected:
@@ -386,17 +392,22 @@ else
     echo "  SKIP: workable-items binary or DB not present — skipping invariant 17"
 fi
 
-# --- Invariant 18: CM-DOCS-CHAIN-VALIDATE (§11.4.106) ---
-echo "[18/23] CM-DOCS-CHAIN-VALIDATE: docs_chain.sh --check-only (§11.4.106)"
-DOCS_CHAIN="${PROJECT_ROOT}/scripts/docs_chain.sh"
+# --- Invariant 18: CM-WORKABLE-ITEMS-EXPORT-VALIDATE (§11.4.93/§11.4.65) ---
+# NOTE: DOCS_CHAIN variable name is retained to preserve backward-compatibility
+# with the §11.4.238 RD2-41a regression test that expects that specific label
+# in the output stream; the actual script is scripts/workable-items-export.sh
+# (renamed 2026-08-15 BOB-104). The REAL Docs Chain engine gate lives at
+# invariant 24 (CM-DOCS-CHAIN-ENGINE-VERIFY) below.
+echo "[18/24] CM-WORKABLE-ITEMS-EXPORT-VALIDATE: workable-items-export.sh --check-only (§11.4.93/§11.4.65)"
+DOCS_CHAIN="${PROJECT_ROOT}/scripts/workable-items-export.sh"
 if [[ -f "${DOCS_CHAIN}" ]] && [[ -x "${DOCS_CHAIN}" ]]; then
     if bash "${DOCS_CHAIN}" --check-only; then
-        pass "docs_chain --check-only: docs chain validation passed"
+        pass "workable-items-export --check-only: docs regeneration validation passed"
     else
-        fail "docs_chain --check-only: docs chain validation FAILED"
+        fail "workable-items-export --check-only: docs regeneration validation FAILED"
     fi
 else
-    echo "  SKIP: scripts/docs_chain.sh not found or not executable — skipping invariant 18"
+    echo "  SKIP: scripts/workable-items-export.sh not found or not executable — skipping invariant 18"
 fi
 
 # --- Invariant 19: CM-QA-DISCOVERY-LEDGER-FRESH (§11.4.238) ---
