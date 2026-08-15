@@ -293,15 +293,23 @@ fi
 echo "=========================================="
 
 if [ "$RED_MODE" = "1" ]; then
-  # Under RED mode we EXPECT the presence-detectors to FAIL (i.e. our pass
-  # count reflects DETECTED-ABSENCES). If NO detector "failed" (i.e. every
-  # presence-assertion was still met under RED negation), the polarity switch
-  # itself is broken.
-  if [ $pass -lt 3 ]; then
-    echo "RED-MODE VERIFY: fewer than 3 detectors reproduced the defect — polarity switch broken"
+  # Under RED (§11.4.115 polarity flip) each presence-assertion is negated:
+  # a code-PRESENT result becomes a FAIL, because the "pre-fix defect state"
+  # this mode simulates would have it ABSENT. On a repo where the fix has
+  # landed (as here), we EXPECT many FAILs under RED — that IS the signal
+  # the detectors + the polarity switch work end-to-end (they would have
+  # caught the defect had the code been un-wired).
+  #
+  # Anomaly: fail == 0 under RED means EVERY presence-detector passed under
+  # negation — either the polarity switch itself is broken (detectors ignore
+  # RED_MODE) OR the tree has been reverted to the pre-fix state (which
+  # would be a real regression). Either interpretation is a §11.4/§11.4.1
+  # bluff at the detector layer and MUST surface.
+  if [ $fail -lt 3 ]; then
+    echo "RED-MODE VERIFY: fewer than 3 detectors negated — polarity switch broken OR tree reverted"
     exit 1
   fi
-  echo "RED-MODE VERIFY: detectors correctly reproduce the pre-fix absent state"
+  echo "RED-MODE VERIFY: $fail presence-detectors correctly negated under RED — polarity switch works, RED→GREEN flip proven"
   exit 0
 fi
 
