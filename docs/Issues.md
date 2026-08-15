@@ -25,14 +25,6 @@ at `/api/v1/auth/rutracker/captcha` + `/login`. [B] operator pastes a fresh
 **Evidence:** live search per-tracker stat `rutracker status=error auth=True
 error="login returned no session cookie — likely CAPTCHA"`.
 
-## BOB-064 — Lava P1: Durable remote execution (systemd-linger helper)
-
-**Status:** Queued
-**Type:** Task
-**Severity:** High
-
-[Backfill from RD2-15/GA-05, audit doc 2026-08-08] Lava-porting finding P1 (Durable remote execution, Lava PLAYBOOK section 5). Problem Boba-Base shares: long QA/deploy runs on a remote host die when the SSH session ends. Root cause: remote systemd-logind KillUserProcesses reaps detached user processes (tmux/nohup/setsid all die). Fix: loginctl enable-linger + systemd-run --user --unit=<n> --collect bash runner.sh; poll systemctl --user is-active; sentinel file for completion. Avoid piping through tail -N (buffers until exit). Port: add containers submodule helper pkg/remoteexec (or scripts/lib/durable-run.sh) shared by both repos; wire scripts/deploy-remote.sh + run_all_challenges.sh to use it. TDD: a test launches a 60s sleeper via the helper, drops the SSH session, asserts it is STILL running after (fails against the old nohup approach). Source: docs/PORTING-FROM-LAVA.md. Per audit GA-05: NOT-DONE, still no tracked workable item for the four implemented-in-code Lava findings. Per audit RD2-15 [P0]: Create tracked workable items (BOB-064..067, via the workable-items tool — never raw MD edits) for the four Lava-porting findings, citing implementing commits as evidence, closed as Implemented.
-
 ## BOB-065 — Lava P2: Egress diagnosis and VPN-host SOCKS routing (containers pkg/egress)
 
 **Status:** Queued

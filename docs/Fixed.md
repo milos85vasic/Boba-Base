@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 13
-**Last modified:** 2026-06-09T21:00:00Z
+**Revision:** 14
+**Last modified:** 2026-08-15T00:00:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -9,6 +9,14 @@
 > Task → `Completed`. Each carries captured-evidence (anti-bluff §11.4).
 
 ---
+
+## BOB-064 — Lava P1: Durable remote execution (systemd-linger helper)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Closed:** 2026-08-15 · **Evidence:** `challenges/scripts/durable_run_helper_challenge.sh`
+
+Ported Lava P1 durable-remote-execution helper (`../lava/submodules/containers/scripts/lib/durable-run.sh`) to `scripts/lib/durable-run.sh`. Delivers the `durable_launch` / `durable_launch_cmd` / `durable_is_active` / `durable_main_pid` / `durable_wait_sentinel` / `durable_fetch_log` / `durable_stop` API backed by `loginctl enable-linger` + `systemd-run --user --unit=<n> --collect bash <runner>`, so long QA/deploy runs SURVIVE the SSH/login session (root cause: remote systemd-logind `KillUserProcesses` reaps tmux/nohup/setsid alike — all live in the login `session-<n>.scope` cgroup and die with it). Anti-bluff regression guard `challenges/scripts/durable_run_helper_challenge.sh` with §11.4.115 RED/GREEN polarity: launches a real sleeper, reads `MainPID` from `systemctl --user show`, reads `/proc/<pid>/cgroup`, asserts it is an independently-managed `.service` cgroup DIFFERENT from the launcher's session scope (a "process alive" check is a §11.4.201(6) false-null — a process alive INSIDE the session scope still dies with it), waits on sentinel, asserts both log markers landed. Captured evidence — job cgroup `/user.slice/user-1000.slice/user@1000.service/app.slice/boba-durable-guard-*.service` vs launcher `.../tmx-boba-*.scope` (distinct — §11.4.108 runtime-signature satisfied). RED polarity flips to FAIL post-fix (§11.4.146 same-test-confirms-fix). §11.4.161 rootless + §11.4.234 always-unblocked — no sudo, no interactive prompts; first-boot `sudo loginctl enable-linger $USER` printed as a `NOTE:` reminder. User guide: `docs/scripts/durable-run.md`. Closes RD2-15/GA-05 (P1 leg of the four Lava-porting items BOB-064..067).
 
 ## BOB-001 — start.sh BSD-sed incompatibility aborted the boot
 
