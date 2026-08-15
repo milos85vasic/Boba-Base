@@ -9,8 +9,10 @@
 # never existed in this checkout — so every pre-build run printed
 # "SKIP: workable-items binary or DB not present — skipping invariant 17"
 # and the DB-integrity check was never actually performed by the gate that
-# is supposed to enforce it. Sibling bug to scripts/docs_chain.sh's Step 1
-# (see tests/unit/test_docs_chain_binary_resolution.sh); same fix pattern
+# is supposed to enforce it. Sibling bug to scripts/workable-items-export.sh
+# (renamed 2026-08-15 BOB-104 from scripts/docs_chain.sh — misnomer retired)
+# Step 1 (see tests/unit/test_docs_chain_binary_resolution.sh, itself kept
+# under the historical basename); same fix pattern
 # (env/config -> committed constitution copy -> on-demand `go build`,
 # matching constitution/scripts/reporting/report_item.sh).
 #

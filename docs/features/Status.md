@@ -561,7 +561,8 @@ Bridges qBittorrent WebUI with private-tracker auth. NOT a container.
 | `scripts/audit-plugins.sh` — plugin discrepancy audit | implemented | host | none dedicated | not-validated | N/A (host script — no UI; test-covered/operational) |
 | `scripts/build-releases.sh` — build extension/Go release artifacts | implemented | host | none dedicated | not-validated | N/A (host script — no UI; test-covered/operational) |
 | `scripts/codegraph_validate.sh` — CodeGraph index validation (§11.4.78) | implemented | host | self | tested-green-in-suite | N/A (host script — no UI; test-covered/operational) |
-| `scripts/docs_chain.sh` — docs_chain engine wrapper (§11.4.106) | implemented | host | self | tested-green-in-suite | N/A (host script — no UI; test-covered/operational) |
+| `scripts/workable-items-export.sh` — docs regeneration wrapper (§11.4.93/§11.4.65; renamed 2026-08-15 BOB-104 from `docs_chain.sh` — that name was a misnomer) | implemented | host | self | tested-green-in-suite | N/A (host script — no UI; test-covered/operational) |
+| `constitution/submodules/docs_chain/docs_chain` — real §11.4.106 Docs Chain engine (Go binary, pinned to `helixcode-v1.1.0`) | implemented | host | self | tested-green-in-suite | N/A (host binary — verify/sync/doctor operational) |
 | `scripts/ensure-macos-tunnel.sh` — `0.0.0.0` SSH tunnel | implemented | host | none dedicated (log `qa-results/tunnel-keepalive.log`) | not-validated; LAN threat-model RW-05 | N/A (host script — no UI; test-covered/operational) |
 | `scripts/tunnel-keepalive.sh` — tunnel self-heal | implemented | host | none dedicated | not-validated | N/A (host script — no UI; test-covered/operational) |
 | `scripts/freeze-openapi.sh` — freeze boba-jackett OpenAPI snapshot | implemented | host | contract `tests/contract/openapi_test.go` | tested-green-in-suite | N/A (host script — no UI; test-covered/operational) |

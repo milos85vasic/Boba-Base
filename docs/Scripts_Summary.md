@@ -16,8 +16,9 @@ Build, validation, and utility scripts for the Boba project.
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/pre_build_verification.sh` | Pre-build gate: 18 invariants (constitution, infrastructure, exports, workable-items, docs chain) |
-| `scripts/docs_chain.sh` | 3-step pipeline: workable-items export → domain summaries → HTML/PDF/DOCX |
+| `scripts/pre_build_verification.sh` | Pre-build gate: 24 invariants (constitution, infrastructure, exports, workable-items, docs chain engine) |
+| `scripts/workable-items-export.sh` | 3-step pipeline: workable-items DB export → domain summaries → HTML/PDF/DOCX (renamed 2026-08-15 BOB-104 from `docs_chain.sh` — that name was a misnomer; the REAL Docs Chain §11.4.106 engine lives at `constitution/submodules/docs_chain/`) |
+| `constitution/submodules/docs_chain/docs_chain` | Real §11.4.106 Docs Chain engine (Go binary) — `verify` / `sync` / `doctor` / `graph` / `watch` against `.docs_chain/contexts/*.yaml` |
 | `scripts/boba-ctl.sh` | boba-ctl CLI wrapper (Go binary orchestrator) |
 | `scripts/generate_markdown_exports.sh` | Universal Markdown → HTML/PDF/DOCX export (§11.4.65) |
 | `scripts/run-tests.sh` | Test suite runner (hermetic/live/all) |

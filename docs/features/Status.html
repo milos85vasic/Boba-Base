@@ -4027,13 +4027,24 @@ validation (§11.4.78)</td>
 <td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
 <tr>
-<td><code>scripts/docs_chain.sh</code> — docs_chain engine wrapper
-(§11.4.106)</td>
+<td><code>scripts/workable-items-export.sh</code> — docs regeneration
+wrapper (§11.4.93/§11.4.65; renamed 2026-08-15 BOB-104 from
+<code>docs_chain.sh</code> — that name was a misnomer)</td>
 <td>implemented</td>
 <td>host</td>
 <td>self</td>
 <td>tested-green-in-suite</td>
 <td>N/A (host script — no UI; test-covered/operational)</td>
+</tr>
+<tr>
+<td><code>constitution/submodules/docs_chain/docs_chain</code> — real
+§11.4.106 Docs Chain engine (Go binary, pinned to
+<code>helixcode-v1.1.0</code>)</td>
+<td>implemented</td>
+<td>host</td>
+<td>self</td>
+<td>tested-green-in-suite</td>
+<td>N/A (host binary — verify/sync/doctor operational)</td>
 </tr>
 <tr>
 <td><code>scripts/ensure-macos-tunnel.sh</code> — <code>0.0.0.0</code>

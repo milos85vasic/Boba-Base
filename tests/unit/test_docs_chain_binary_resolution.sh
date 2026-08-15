@@ -22,7 +22,10 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${HERE}/../.." && pwd)"
-SCRIPT="${PROJECT_ROOT}/scripts/docs_chain.sh"
+# RENAMED 2026-08-15 (BOB-104): scripts/docs_chain.sh -> scripts/workable-items-export.sh
+# (misnomer retired when the REAL Docs Chain engine landed at constitution/submodules/docs_chain/).
+# This test file's basename is preserved for git-history + forensic anchor traceability.
+SCRIPT="${PROJECT_ROOT}/scripts/workable-items-export.sh"
 
 PASS_COUNT=0
 FAIL_COUNT=0

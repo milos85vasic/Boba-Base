@@ -198,7 +198,8 @@ entry only summarizes what changed THIS session.
   UNBLOCK clause needed enumerated `[A]`/`[B]` choices, not free prose). BOB-009/BOB-010's
   `evidence_path` violations (narrative text instead of a resolvable path) were investigated —
   real evidence identified via git archaeology (commit `0558399`; `scripts/boba-ctl.sh` +
-  `scripts/docs_chain.sh` still exist and back the claims) — but the `workable-items` tool has
+  `scripts/docs_chain.sh` (renamed 2026-08-15 BOB-104 to `scripts/workable-items-export.sh`)
+  still exist and back the claims) — but the `workable-items` tool has
   **no subcommand to correct a historical `item_history.evidence_path`** on an already-Completed
   item; raw SQL was correctly avoided (violates the tool-only-mutation discipline) and a
   reopen-then-close cycle was correctly avoided (would falsely imply the underlying work was

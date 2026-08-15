@@ -73,6 +73,15 @@
 #      INV23_FIXTURE_ROOT env override targets the scan at a fixture dir for
 #      golden-good/golden-bad §11.4.107(10) self-validation (paired §1.1
 #      mutation at scratchpad/agent-L-fixtures/).
+#  24. CM-DOCS-CHAIN-ENGINE-VERIFY: the REAL Docs Chain engine (constitution/
+#      submodules/docs_chain/) runs `verify --all` against .docs_chain/contexts/*
+#      exit 0 in-sync (§11.4.106). If the engine binary is not built OR pandoc/
+#      weasyprint absent, SKIP-with-reason per §11.4.3 (never fake PASS).
+#      Distinct from invariant 18 (workable-items-export.sh — the .md source
+#      regenerator): invariant 24 asserts that the derived .html/.pdf/.docx
+#      siblings hash-match their .md sources per §11.4.106's content-hash
+#      change detection. Added 2026-08-15 (BOB-104) alongside docs_chain
+#      submodule incorporation.
 #  (opt). Optional: challenges/scripts/run_all_challenges.sh (if FULL_VALIDATION=1)
 #
 # Constitution: §1.1 (paired mutation), §11.4 (anti-bluff covenant), §11.4.84 (working-tree quiescence), §11.4.107(10) (self-validated golden-good/golden-bad), §11.4.125 (code-review gate), §11.4.109 (anti-forgetting enforcement), §11.4.65 (universal Markdown export), §11.4.201(1) (false-positive-refusal is a FAIL-bluff), §11.4.238 (automated QA is the discoverer), §11.4.227(B) (propagation gates count block-starts)
@@ -539,36 +548,36 @@ else
     pass "§11.4.238 propagates (Constitution block-start ×1, §11.4.157 mirror-set literal present ×4)"
 fi
 
-# --- Invariant 22: CM-DOCS-CHAIN-STEP1-REAL-INVOCATION (§11.4.238 RD2-41a retroactive catcher) ---
+# --- Invariant 22: CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION (§11.4.238 RD2-41a retroactive catcher) ---
 # Distinct from invariant 18 (exit code only): asserts the combined stdout+stderr
-# of `docs_chain.sh --check-only` contains NEITHER "binary not found" NOR
-# "ERROR:" — the exact escape shape from RD2-41a where Step 1/3 silently
-# no-op'd because a hardcoded binary path (bin/workable-items) did not exist
-# and no downstream check inspected the printed error line. Sibling of
-# tests/unit/test_docs_chain_binary_resolution.sh at the pre-build seam.
-echo "[22/23] CM-DOCS-CHAIN-STEP1-REAL-INVOCATION: docs_chain step 1 really invoked (§11.4.238 RD2-41a)"
+# of `workable-items-export.sh --check-only` contains NEITHER "binary not
+# found" NOR "ERROR:" — the exact escape shape from RD2-41a where Step 1/3
+# silently no-op'd because a hardcoded binary path (bin/workable-items) did
+# not exist and no downstream check inspected the printed error line. Sibling
+# of tests/unit/test_docs_chain_binary_resolution.sh at the pre-build seam.
+echo "[22/24] CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION: export step 1 really invoked (§11.4.238 RD2-41a)"
 if [[ ! -f "${DOCS_CHAIN}" || ! -x "${DOCS_CHAIN}" ]]; then
-    echo "  SKIP: scripts/docs_chain.sh not found or not executable — skipping invariant 22"
+    echo "  SKIP: scripts/workable-items-export.sh not found or not executable — skipping invariant 22"
 else
     DC_LOG="$(mktemp)"
     DC_EXIT=0
     bash "${DOCS_CHAIN}" --check-only >"${DC_LOG}" 2>&1 || DC_EXIT=$?
     # match structure not substring (§11.4.201(7)(a)): only real error lines,
     # never carrier prose from the log — anchor to start-of-line for the
-    # "  ERROR:" self-diagnostic printed by docs_chain.sh's own ERRORS branch.
+    # "  ERROR:" self-diagnostic printed by workable-items-export.sh's own ERRORS branch.
     if [[ "${DC_EXIT}" -ne 0 ]]; then
-        fail "CM-DOCS-CHAIN-STEP1-REAL-INVOCATION: --check-only exit=${DC_EXIT} (expected 0)"
+        fail "CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION: --check-only exit=${DC_EXIT} (expected 0)"
         echo "        --- last 30 lines ---"
         tail -n 30 "${DC_LOG}" | sed 's/^/        /'
         echo "        --- end ---"
     elif grep -qE '^[[:space:]]*ERROR:' "${DC_LOG}"; then
-        fail "CM-DOCS-CHAIN-STEP1-REAL-INVOCATION: --check-only printed ERROR: line despite exit 0 (RD2-41a shape)"
+        fail "CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION: --check-only printed ERROR: line despite exit 0 (RD2-41a shape)"
         grep -nE '^[[:space:]]*ERROR:' "${DC_LOG}" | sed 's/^/        /'
     elif grep -qF 'binary not found' "${DC_LOG}"; then
-        fail "CM-DOCS-CHAIN-STEP1-REAL-INVOCATION: 'binary not found' in output — Step 1 silently no-op'd (RD2-41a)"
+        fail "CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION: 'binary not found' in output — Step 1 silently no-op'd (RD2-41a)"
         grep -nF 'binary not found' "${DC_LOG}" | sed 's/^/        /'
     else
-        pass "docs_chain step 1 really invoked (exit 0, no 'binary not found' / 'ERROR:' lines)"
+        pass "workable-items-export step 1 really invoked (exit 0, no 'binary not found' / 'ERROR:' lines)"
     fi
     rm -f "${DC_LOG}"
 fi
@@ -602,7 +611,7 @@ fi
 # golden-bad fixtures at scratchpad/agent-L-fixtures/ can self-validate
 # the analyzer per §11.4.107(10). NEVER used to bypass real scans in a
 # normal build.
-echo "[23/23] CM-NO-PRODUCTION-MUTATION-RESIDUE: no mutation-marker residue in production sources (§11.4.84)"
+echo "[23/24] CM-NO-PRODUCTION-MUTATION-RESIDUE: no mutation-marker residue in production sources (§11.4.84)"
 
 # Build patterns via concatenation so this script does not self-match.
 _M_MARK="MUT""ATED"
@@ -678,6 +687,40 @@ else
         done <"${INV23_HITS_LOG}"
     fi
     rm -f "${INV23_HITS_LOG}"
+fi
+
+# --- Invariant 24: CM-DOCS-CHAIN-ENGINE-VERIFY (§11.4.106 real engine) ---
+# Assert the REAL Docs Chain engine (constitution/submodules/docs_chain/)
+# reports every context in-sync — the derived .html/.pdf/.docx siblings
+# hash-match their .md sources under content-hash change detection.
+# Distinct from invariant 18 (workable-items-export.sh, which regenerates
+# the .md SOURCES): invariant 24 gates the .md->export propagation the
+# real engine mechanically enforces. SKIP-with-reason (§11.4.3) if the
+# engine binary is not built OR transform tools absent (never fake PASS).
+echo "[24/24] CM-DOCS-CHAIN-ENGINE-VERIFY: docs_chain engine verify --all (§11.4.106)"
+DC_ENGINE="${PROJECT_ROOT}/constitution/submodules/docs_chain/docs_chain"
+DC_CONTEXTS="${PROJECT_ROOT}/.docs_chain/contexts"
+if [[ ! -x "${DC_ENGINE}" ]]; then
+    echo "  SKIP: docs_chain engine binary not built at ${DC_ENGINE#${PROJECT_ROOT}/} — run: (cd constitution/submodules/docs_chain && go build -o docs_chain ./cmd/docs_chain)"
+elif [[ ! -d "${DC_CONTEXTS}" ]]; then
+    echo "  SKIP: no .docs_chain/contexts/ dir at project root — nothing for the engine to verify"
+else
+    DCE_LOG="$(mktemp)"
+    DCE_EXIT=0
+    "${DC_ENGINE}" verify --all --root "${PROJECT_ROOT}" >"${DCE_LOG}" 2>&1 || DCE_EXIT=$?
+    if [[ "${DCE_EXIT}" -eq 0 ]]; then
+        pass "docs_chain engine: verify --all in-sync ($(wc -l <"${DCE_LOG}" | tr -d ' ') contexts checked)"
+    elif [[ "${DCE_EXIT}" -eq 1 ]] && grep -qE '(ToolAbsentError|tool absent|pandoc|weasyprint)' "${DCE_LOG}"; then
+        echo "  SKIP: docs_chain engine reports ToolAbsentError (pandoc/weasyprint) — §11.4.3 honest-skip"
+        sed 's/^/        /' "${DCE_LOG}"
+    else
+        fail "CM-DOCS-CHAIN-ENGINE-VERIFY: docs_chain verify --all FAILED (exit ${DCE_EXIT}) — derived docs drift from .md sources"
+        echo "        --- verify output ---"
+        sed 's/^/        /' "${DCE_LOG}"
+        echo "        --- end ---"
+        echo "        Remediation: cd \${PROJECT_ROOT} && ./constitution/submodules/docs_chain/docs_chain sync --all"
+    fi
+    rm -f "${DCE_LOG}"
 fi
 
 # --- Optional: Run challenge aggregator when FULL_VALIDATION=1 ---
