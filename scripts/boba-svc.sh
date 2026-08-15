@@ -143,8 +143,20 @@ _cmd_reload()  { _require_linux; systemctl --user daemon-reload; _info "daemon-r
 
 _cmd_restart() {
     _require_linux
-    _info "stopping boba.target..."
-    systemctl --user stop boba.target
+    _info "daemon-reload (in case unit files changed since last session)..."
+    systemctl --user daemon-reload || true
+    _info "stopping boba.target (tolerating 'Unit not loaded' — nothing to stop is not an error)..."
+    # §11.4.234 always-unblocked: a not-loaded / already-stopped state is
+    # a legitimate outcome, not a failure. Set +e for this one step so
+    # `set -euo pipefail` at the top of the script does not abort restart
+    # before the up phase runs.
+    set +e
+    systemctl --user stop boba.target 2>/dev/null
+    stop_rc=$?
+    set -e
+    if [ "$stop_rc" -ne 0 ]; then
+        _warn "systemctl stop returned $stop_rc (probably not loaded / already stopped) — continuing to start phase"
+    fi
     # Wait for the stack.service to be fully down (up to 60s).
     for i in $(seq 1 20); do
         local state

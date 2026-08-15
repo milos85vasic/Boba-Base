@@ -146,6 +146,12 @@ services:
       - NNMCLUB_PASSWORD=${NNMCLUB_PASSWORD:-}
       - IPTORRENTS_USERNAME=${IPTORRENTS_USERNAME}
       - IPTORRENTS_PASSWORD=${IPTORRENTS_PASSWORD}
+      # RuTor is public per CLAUDE.md (no login endpoint), but propagate
+      # the vars for parity with the other trackers and for future-proof
+      # readiness if RuTor ever ships an auth path. Empty-default keeps
+      # `compose up` working on hosts where these are unset.
+      - RUTOR_USERNAME=${RUTOR_USERNAME:-}
+      - RUTOR_PASSWORD=${RUTOR_PASSWORD:-}
       - MAX_CONCURRENT_TRACKERS=10
       - PUBLIC_TRACKER_DEADLINE_SECONDS=15
       - ENABLE_DEAD_TRACKERS=${ENABLE_DEAD_TRACKERS:-0}
