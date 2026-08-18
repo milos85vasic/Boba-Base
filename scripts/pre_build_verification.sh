@@ -94,6 +94,15 @@
 #      evidence log written to docs/qa/pre_build_resource_pressure/ (gitignored
 #      per the repo-wide `*.log` pattern — local-only, never repo bloat);
 #      timeout (124) or the challenge missing -> SKIP-with-reason (§11.4.3).
+#  26. CM-BADGE-FRESHNESS-CHECK: runs scripts/compute-badges.sh --check
+#      (§11.4.259, BOB-118) under a 180s timeout as a PROACTIVE,
+#      NON-BLOCKING check that README.md's machine-derived "python tests"
+#      / "frontend tests" badges still match a live re-computation. This
+#      invariant NEVER contributes to FAIL_COUNT (§11.4.234 always-
+#      unblocked) — a stale badge is a documentation-freshness drift, not
+#      a build defect. Disposition: exit 0 -> PASS; exit 2 (stale) -> WARN
+#      with the diagnostic printed + remediation command; timeout (124) or
+#      the script missing -> SKIP-with-reason (§11.4.3).
 #  (opt). Optional: challenges/scripts/run_all_challenges.sh (if FULL_VALIDATION=1)
 #
 # Constitution: §1.1 (paired mutation), §11.4 (anti-bluff covenant), §11.4.84 (working-tree quiescence), §11.4.107(10) (self-validated golden-good/golden-bad), §11.4.125 (code-review gate), §11.4.109 (anti-forgetting enforcement), §11.4.65 (universal Markdown export), §11.4.201(1) (false-positive-refusal is a FAIL-bluff), §11.4.238 (automated QA is the discoverer), §11.4.227(B) (propagation gates count block-starts), §12.12 (thread/process-headroom awareness), §11.4.234 (always-unblocked mechanism)
@@ -774,6 +783,44 @@ else
         echo "        --- end ---"
     fi
     rm -f "${RPS_LOG}"
+fi
+
+# --- Invariant 26: CM-BADGE-FRESHNESS-CHECK (§11.4.259, BOB-118) ---
+# Proactive, NON-BLOCKING check that README.md's machine-derived badges
+# (python tests / frontend tests) still match a live re-computation. This
+# invariant NEVER increments FAIL_COUNT: a stale badge is not a build
+# defect, it is a documentation-freshness drift, and per §11.4.234 the
+# pre-build gate must always stay unblocked -- the operator needs a loud
+# WARNING here, not a blocked build. Bounded to 180s so a wedged pytest
+# collection or vitest invocation can never stall the pre-build sweep
+# itself (§11.4.89).
+echo "[26/26] CM-BADGE-FRESHNESS-CHECK: README badges match live counts (§11.4.259, BOB-118)"
+BADGE_SCRIPT="${PROJECT_ROOT}/scripts/compute-badges.sh"
+if [[ ! -x "${BADGE_SCRIPT}" ]]; then
+    echo "  SKIP: scripts/compute-badges.sh not found or not executable — skipping invariant 26"
+else
+    BADGE_LOG="$(mktemp)"
+    BADGE_EXIT=0
+    if command -v timeout >/dev/null 2>&1; then
+        timeout 180s "${BADGE_SCRIPT}" --check >"${BADGE_LOG}" 2>&1 || BADGE_EXIT=$?
+    else
+        "${BADGE_SCRIPT}" --check >"${BADGE_LOG}" 2>&1 || BADGE_EXIT=$?
+    fi
+    if [[ "${BADGE_EXIT}" -eq 0 ]]; then
+        pass "badge-freshness-check: README badges match live counts"
+    elif [[ "${BADGE_EXIT}" -eq 124 ]]; then
+        echo "  SKIP: badge-freshness-check timed out after 180s (§11.4.3 honest-skip — non-blocking, never a FAIL)"
+    else
+        # WARN, never FAIL (§11.4.234 always-unblocked). Loud + actionable
+        # so a drift is caught within one pre-build cycle, never allowed to
+        # age for months the way BOB-118's 585-vs-5248 drift did.
+        echo "  WARN: badge-freshness-check found stale badges (exit ${BADGE_EXIT})"
+        echo "        --- diagnostic ---"
+        sed 's/^/        /' "${BADGE_LOG}"
+        echo "        --- end ---"
+        echo "        Remediation: ./scripts/compute-badges.sh"
+    fi
+    rm -f "${BADGE_LOG}"
 fi
 
 # --- Optional: Run challenge aggregator when FULL_VALIDATION=1 ---
