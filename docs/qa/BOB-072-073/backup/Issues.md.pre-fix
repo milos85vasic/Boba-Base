@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 7
-**Last modified:** 2026-08-18T13:46:30Z
+**Revision:** 6
+**Last modified:** 2026-08-15T12:15:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -35,7 +35,7 @@ error="login returned no session cookie — likely CAPTCHA"`.
 
 ## BOB-066 — Lava P3: BOBA_UPSTREAM_PROXY in download-proxy + qBitTorrent-go + Jackett + compose env-forward
 
-**Status:** In progress
+**Status:** Queued
 **Type:** Task
 **Severity:** High
 
@@ -72,6 +72,22 @@ error="login returned no session cookie — likely CAPTCHA"`.
 **Severity:** Medium
 
 [Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-01, P2] During this investigation the command echo === systemd system-level (may need no sudo for list) === was BLOCKED by the PreToolUse hook with BLOCKED — §6.U no-sudo, because the guard does a substring match for sudo against the ENTIRE command line, including inside an unrelated echo string (need no sudo for list). Exact §11.4.201 carrier-false-positive class GA-24 already documented for a different file — now independently reproduced live, proving structural pattern in guard matching approach not a one-off content gap. Fix: guard needs word-boundary / shell-token-aware matching (or restrict sudo/su check to actual command-invocation position) rather than an unanchored substring grep across the whole line, mirroring fix direction scoped for GA-24 (EXCLUDE_PATHS is band-aid per-file; root cause is matching strategy itself). Priority: P2 (annoying, self-correcting via retry, but real false-positive class that will keep recurring). Composes with RD2-36 (canonical remediation).
+
+## BOB-072 — RD2-03: workable_items.db machine-caught SSoT integrity violations + 90% of closures have zero audit trail
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+
+[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-03, P1] constitution/scripts/workable-items/bin/workable-items validate --db docs/workable_items.db exits 1 with 2 real violations: BOB-009 and BOB-010 both have a closure evidence_path that does not resolve (narrative or multi-value text in a single-path field). Beyond the tool own catch, a direct SQL sweep shows 56 of 62 closed items (90%) have zero rows in item_history and all 62 closed items have empty closure_criteria and commit_ref columns — the constitution names this DB the authoritative SSoT for closure audit trails (§11.4.93/§11.4.148(D4)/§11.4.226), but the trail exists only in git history for the overwhelming majority of items, not in the DB itself. Fix: (1) fix BOB-009/BOB-010 evidence_path values via the workable-items tool proper update path (never raw SQL); (2) for the 56 audit-trail-empty closures, backfill item_history rows from git log where recoverable, and explicitly mark genuinely-unrecoverable ones (§11.4.6 — UNKNOWN rather than fabricated); (3) wire the docs_chain sync (see RD2-04) so future closures never land without a trail. Priority: P1. Composes with RD2-19.
+
+## BOB-073 — RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008 body differs)
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+
+[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-04, P1] workable-items diff --db docs/workable_items.db --issues docs/Issues.md --fixed docs/Fixed.md reports: ~ BOB-008 body differs (md=703 bytes db=576 bytes). Root cause: 54e313f rewrote the DB (file grew 135168->229376 bytes, two new BOB-008 item_history rows dated 2026-08-08) but did NOT touch docs/Issues.md/Fixed.md in the same commit — a live §11.4.106(F) write-seam violation (mandated commit-time doc/DB sync hook did not fire, or does not exist). Fix: reconcile BOB-008 body between DB and MD via the workable-items tool (sync or md-to-db/db-to-md as appropriate — determine which side is authoritative for this specific drift), then verify/wire the commit-seam sync hook per §11.4.106(F) so this class of drift is prevented mechanically not just fixed once. Priority: P1 (composes directly with RD2-00 — this drift is a direct symptom of the unattributed-commit problem). Composes with RD2-17 (canonical remediation) and RD2-20.
 
 ## BOB-074 — RD2-07: DDoS-class testing fully absent from the mandated test-type matrix
 

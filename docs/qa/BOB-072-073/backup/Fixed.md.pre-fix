@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 16
-**Last modified:** 2026-08-18T13:46:30Z
+**Revision:** 15
+**Last modified:** 2026-08-15T12:15:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -736,31 +736,4 @@ kickass/bitsearch/torrentgalaxy while-True search loops could run forever; searc
 **Created-By:** Claude
 
 test_plugin_pirateiro.py injected sys.modules['pirateiro'] at module scope with no teardown; pirateiro was the one root not covered by conftest _isolate_download_proxy_modules, so it leaked into later tests. Fixed by caching+re-registering+purging the stub per unit test; added a standing isolation guard. RED 1-fail -> GREEN, full suite 4122 passed x2 seeds.
-
-## BOB-103 — Incorporate Docs Chain submodule per §11.4.106/§11.4.28(C)
-
-**Status:** Completed (→ Fixed.md)
-**Type:** Task
-**Evidence:** challenges/scripts/docs_chain_verify_challenge.sh
-**Severity:** Medium
-
-Land docs_chain (git@github.com:vasic-digital/docs_chain.git) as depth-1 reusable-engine submodule at constitution/submodules/docs_chain/ pinned to helixcode-v1.1.0. Build engine binary. Wire pre-build gate invariant 24 CM-DOCS-CHAIN-ENGINE-VERIFY into scripts/pre_build_verification.sh (real docs_chain verify --all against .docs_chain/contexts). Add challenges/scripts/docs_chain_verify_challenge.sh with §11.4.115 RED_MODE polarity. Retire scripts/docs_chain.sh misnomer wrapper by renaming to scripts/workable-items-export.sh (git mv, history preserved) and updating active callers (pre_build_verification.sh + 2 test files + 3 current-state docs). Constitution commit 47d41f8 pushed to all 6 mirrors. Boba-side commit follows this workable-item creation. [Reconciled 2026-08-18 via BOB-072/073 SSoT-integrity remediation: original item's Fixed-location DB row was deleted by a Fixed.md md-to-db reparse before this restoration ran (BOB-103 had never been written into docs/Fixed.md text) — original item_history rows (id=66 Opened 2026-08-15, id=67 Completed 2026-08-15, evidence challenges/scripts/docs_chain_verify_challenge.sh) survive untouched and remain the authoritative closure record; this add+close pair is a mechanical items-row restoration, not a re-performance of the original 2026-08-15 work.]
-
-## BOB-072 — RD2-03: workable_items.db machine-caught SSoT integrity violations + 90% of closures have zero audit trail
-
-**Status:** Fixed (→ Fixed.md)
-**Type:** Bug
-**Evidence:** challenges/scripts/workable_items_integrity_challenge.sh
-**Severity:** High
-
-RD2-03: workable_items.db machine-caught SSoT integrity violations + 90% of closures have zero audit trail
-
-## BOB-073 — RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008 body differs)
-
-**Status:** Fixed (→ Fixed.md)
-**Type:** Bug
-**Evidence:** challenges/scripts/workable_items_integrity_challenge.sh
-**Severity:** High
-
-RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008 body differs)
 
