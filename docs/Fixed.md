@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 18
-**Last modified:** 2026-08-18T19:17:52Z
+**Revision:** 19
+**Last modified:** 2026-08-18T19:45:36Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -782,4 +782,13 @@ RD2-08: docs/features/Status.md and docs/codegraph/Status.md are stale
 **Created-By:** Claude
 
 workable-items export (constitution/scripts/workable-items/workable-items export --db docs/workable_items.db --out-dir docs) regenerates docs/Issues.md and docs/Fixed.md from the tool's own internal revision counter, which does not track manually-bumped §11.4.44 revision headers landed by a prior commit outside the tool's own write path. Discovered during BOB-069 (.superpowers/sdd/task-bob069-report.md, Concerns section): an export invocation reverted docs/Issues.md Revision 7->6 and docs/Fixed.md Revision 16->15, both regressions relative to the already-committed HEAD values bumped manually in commit 82d9842. Worked around manually by re-bumping both headers forward (Issues.md->8, Fixed.md->17) per §11.4.44 (monotonic revision is non-negotiable) rather than shipping the regression. Recommendation: fix upstream in constitution/scripts/workable-items so 'export' reads the CURRENT on-disk **Revision:** header (or the DB's own last-known value, whichever is higher) before regenerating, instead of relying solely on an internal counter that can trail a manually-edited file.
+
+## BOB-115 — Fix workable-items validate over-scoping to Updated-events (BOB-010 id=64 pattern)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/task-54/RED-GREEN-transcript.md
+**Severity:** High
+
+unresolvableClosureEvidence() (constitution/scripts/workable-items/cmd/workable-items/sync.go) checked evidence-path resolvability for EVERY item_history row belonging to a terminally-closed item, regardless of the row's event_type. BOB-010's real closure (history id=4, event=Completed) recorded a resolvable evidence_path; a LATER Updated event (history id=64, on=2026-08-10) recorded evidence_path=scripts/docs_chain.sh, a path that stopped resolving after that script was git-mv'd to scripts/workable-items-export.sh (commits 0558399/d9d512d). validate flagged the Updated row as an unresolvable closure claim, mechanically blocking every subsequent commit via commit-push-all.sh (BOBA_SYNC_SKIP_CI=1 was required to land 1f42357). Fix: added AND h.event_type IN (Fixed, Implemented, Completed, Obsolete) to the query, reusing the SAME closed set correct_evidence.go's closureEvents / assign.go's hasClosureEvidence already recognise. Regression guard: TestClosureEvidence_UpdatedEventOnClosedItem_UnresolvablePath_NoViolation, RED-then-GREEN + paired mutation proof captured at docs/qa/task-54/RED-GREEN-transcript.md.
 

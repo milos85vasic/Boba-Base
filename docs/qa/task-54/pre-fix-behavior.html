@@ -1,0 +1,14 @@
+<h1 id="bob-115-evidence-pre-fix-red-transcript">BOB-115 Evidence —
+Pre-Fix RED Transcript</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T19:37:41Z <strong>Item:</strong> BOB-115 — Fix workable-items
+validate over-scoping to Updated-events (BOB-010 id=64 pattern)
+<strong>Constitution:</strong> §11.4.5 / §11.4.69 / §11.4.115 /
+§11.4.226 (closure-evidence-at-closure + RED→GREEN + §1.1 mutation)</p>
+<p><code>workable-items validate</code> against the real, unmodified
+live DB — the BOB-010 id=64 false blocker, captured BEFORE the fix
+landed.</p>
+<pre class="text"><code>validate: 1 violation(s):
+  - BOB-010: closure evidence_path does not resolve (well-formed path, but nothing exists there) — history id=64, event=Updated, on=2026-08-10: &quot;scripts/docs_chain.sh&quot; (§11.4.5/§11.4.69/§11.4.123/§11.4.226 — a closure&#39;s captured proof must be producible on demand)
+VALIDATE_EXIT=1
+</code></pre>
