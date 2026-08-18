@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 6
-**Last modified:** 2026-08-18T17:15:00Z
+**Revision:** 7
+**Last modified:** 2026-08-18T21:25:00Z
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -446,6 +446,15 @@ honest about starting now, not claiming a false complete history.
   therefore **NOT live** as of this entry; the last VALIDATED sync remains the 2026-06-06 baseline
   (7 PASS / 0 FAIL, pre-`frontend`/`extension` tree shape).
 
+### FORCED-LOGOUT-2026-08-18-2ND — user@1000.service SIGKILLed at 20:50:59, cascade kill of user session, operator perceived as forced logout
+
+- **id:** BOB-076 (this-session incident; followups tracked as Task #77 [wire challenge] / Task #78 [host_no_auto_poweroff_challenge perf regression] / Task #79 [SIGKILL-source attribution long-run]).
+- **date:** 2026-08-18 — the 2nd forced-logout on this project (1st was 2026-07-07, produced §12.12 anchor); operator sent a CRITICAL mid-turn message reporting they had been "fully logged out from host milosvasic account" after returning from lid-closed state to find themselves at the GDM greeter.
+- **channel:** `operator-report` — the incident was discovered by the operator observing the physical state (logged out at the GDM greeter after lid re-open at 20:51:06). No standing check monitored the resource-pressure signatures that preceded it (§12.12 EAGAIN cascade at 20:45:48, 15 GB pathological ugrep from Task #52 subagent, HTTP flood at 20:49:00, multi-fleet concurrent container pressure). systemd itself logged the `user@1000.service: Main process exited, code=killed, status=9/KILL` but no gate consulted that log to escalate before session termination. Full evidence: `docs/qa/BOB-076/{journalctl_20-40_to_20-52.log, oomctl_snapshot.log, psi_readings.log, ps_LRSS_snapshot.log, challenge_pass.log, challenge_polarity_forced_fail.log, const033_challenge_pass.log, lid_and_session_events.log}` and `docs/incidents/2026-08-18-perceived-forced-logout-2nd.md`.
+- **escape-audit:** **root cause CONFIRMED as UNCONFIRMED** (§11.4.6 honest — the exact mechanism that delivered SIGKILL to `user@1000.service` is not attributable from the systemd journal; kernel OOM never fired, systemd-oomd never triggered, CONST-033 forbidden mechanisms never invoked, HandleLidSwitch was `ignore`). **Contributing factors CONFIRMED**: (i) §12.12 thread-exhaustion EAGAIN cascade at 20:45:48 — jackett SocketException (11) `Resource temporarily unavailable` to `iptorrents`+`kinozal`+`rutracker` simultaneously, exactly 5 minutes before the SIGKILL; (ii) 15 GB pathological ugrep from Task #52 subagent (`ugrep -o` with `.\{0,120\}` variable-length context + 3-way alternation against 14K-line CLAUDE.md) — reaped post-relogin, freed 16 GB immediately (PSI Avg10 1.77 → 0.08); (iii) multi-fleet concurrent pressure (boba stack + sibling "shlomi" claude session's helix-* stack + lava-postgres + 6+ MCP servers + Yandex + JetBrains + ollama on one user.slice). NO automated check existed anywhere in this repo that (a) monitored `user@1000.service` health, (b) detected the leading §12.12 EAGAIN-cascade signature before the crisis window, (c) capped subagent `grep -o` variable-length-context patterns against multi-MB files. Also FOUND during triage: `no_suspend_calls_challenge.sh` was pre-existing FAIL from false-positive on `scratchpad/` + `.superpowers/sdd/` files that CARRIER the rule text (§11.4.201(1) false-positive-refusal class) — a separate coverage escape of its own, fixed same commit.
+- **new-check:** `challenges/scripts/resource_pressure_signature_challenge.sh` (NEW, committed as `1f42357`) — 5-signature proactive detector: SIG-1 process >5 GB RSS (forensic FACT: 15 GB ugrep), SIG-2 thread util >70% of ulimit -u (§12.12 crisis: 95%), SIG-3 EAGAIN cascade in container logs last 15min (this incident: 4 trackers @ 20:45), SIG-4 user.slice PSI full avg60 >50 (half the systemd-oomd 90% trigger), SIG-5 pathological-regex cmdline (ugrep -o + `.\{N,M\}` + `\|` alternation) — with §11.4.115 polarity verified: `PASS` on clean state, `FAIL` when SIG-1/SIG-2/SIG-5 thresholds crossed. Live evidence + polarity transcripts in `docs/qa/BOB-076/challenge_{pass,polarity_forced_fail}.log`. Not yet wired into pre_build_verification.sh nor a systemd-user timer — **Task #77** owns that wiring (challenge exists as a runnable artifact, not a scheduled invariant, until #77 lands). Also **corrective action for CONST-033 challenge false-positive**: `scripts/host-power-management/check-no-suspend-calls.sh` extended `EXCLUDE_PATHS` to skip `scratchpad/` + `.superpowers/sdd/` — challenge returns to PASS.
+- **Honest boundary (§11.4.6):** the SIGKILL source is **not** claimed identified — the journal shows the receipt of SIGKILL but the sender is not attributed, filed as `PENDING_FORENSICS` (Task #79). Killing the pathological ugrep is a bandage that fixes ONE known contributor class, not proof it was THE cause. The new challenge captures signatures the incident had, not a proof the next incident will be prevented — that requires the pre-build integration + systemd-user timer of #77 firing, catching an SIG-* over threshold, and escalating before user@1000 dies.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
@@ -454,7 +463,8 @@ honest about starting now, not claiming a false complete history.
 | 2026-08-11 → 2026-08-12 (incremental, this period only) | 0 | 1 (`operator-report` x1) | 100% |
 | 2026-08-18 (incremental, BOB-069 backfill — 4 new `### ` entries; the BOB-073 recurrence is an addendum to the existing BOB-008 heading, not a new `### `) | 0 | 4 (`agent-code-reading` x4: RD2-00/BOB-068, BOB-072, META-11.4.227B, SCRATCH-LOSS) | 100% |
 | 2026-08-18 (incremental, BOB-069-review fix — 1 new `### ` entry: the missing CodeGraph 1.5.0 nested-`.gitignore` escape identified in the independent review of BOB-069) | 0 | 1 (`agent-code-reading` x1: CODEGRAPH-1.5.0-GITIGNORE) | 100% |
-| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **14** | **100%** |
+| 2026-08-18 (incremental, BOB-076 forced-logout incident — 1 new `### ` entry: 2nd occurrence of user@1000 SIGKILL on this project after physical operator return, discovered by `operator-report`) | 0 | 1 (`operator-report` x1: FORCED-LOGOUT-2026-08-18-2ND) | 100% |
+| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **15** | **100%** |
 
 **Pre-existing check-vs-table mismatch, found and fixed during this backfill (§11.4.6, not
 silently patched around):** `scripts/pre_build_verification.sh` invariant 19
