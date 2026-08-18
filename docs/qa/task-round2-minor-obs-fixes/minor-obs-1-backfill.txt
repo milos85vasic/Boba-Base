@@ -1,0 +1,22 @@
+# MINOR-obs-1 backfill — ce1946f DB delta capture
+
+Command:
+  bash scripts/capture-workable-items-db-delta.sh ce1946f
+
+Output:
+  [capture-workable-items-db-delta] wrote docs/qa/db-deltas/ce1946f7842a95c2cdf298d415e2851f9c491e5a.diff
+
+Verification: the produced delta shows exactly what commit ce1946f7842a95c2cdf298d415e2851f9c491e5a's
+own message claims (BOB-115 add via `workable-items add` + close via `workable-items close`):
+  - item_history: +2 rows (id=91 Opened BOB-115, id=92 Fixed BOB-115)
+  - items: +1 row (BOB-115, Type=Bug, Status=Fixed (-> Fixed.md), Evidence=docs/qa/task-54/RED-GREEN-transcript.md)
+  - doc_segments: +1 row (Fixed segment for BOB-115)
+  - Every other table (meta, logic_groups, test_diary, obsolete_details,
+    operator_block_details, firebase_metadata) byte-for-byte unchanged.
+  - sqlite_sequence bumped consistently with the two new item_history rows
+    and the one new doc_segments row.
+
+No undisclosed scope beyond the commit message (unlike the 3520621 backfill
+that surfaced BOB-104's undisclosed update) -- ce1946f's blob delta is
+exactly what its commit message describes. Evidence file committed at
+docs/qa/db-deltas/ce1946f7842a95c2cdf298d415e2851f9c491e5a.diff.
