@@ -1,7 +1,58 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 21
-**Last modified:** 2026-08-10T21:30:34Z
+**Revision:** 22
+**Last modified:** 2026-08-18T21:55:00Z
+
+## SESSION 2026-08-15 → 2026-08-18 (Session 4db6eadb-03e7)
+
+**Working state at last write:** 3 boba remotes IN SYNC at `9c282ff`. resource-pressure-signature-check systemd-user timer LIVE (next fire 22:42 CEST). 3 subagents in flight: Task #78 (IMPORTANT-1 real per-signature RED fixtures), Task #79 (IMPORTANT-2 SQLite differential-dump discipline), Task #80 (docs_chain codegraph-status sync/verify contradiction).
+
+### Major deliverables this session (in commit order)
+
+- **Amendment round v68 landed** (Constitution + 4 mirrors + docs_chain + boba pointer, 22 new anchors §11.4.239-262 + 5 extensions + §11.4.140/141 collision resolution → §11.4.255/256 re-mint)
+- **Tag `helixconstitution-v68`** published on 4 platform releases (GitHub × 2 + GitLab × 2) + 8 constitution git remotes
+- **BOB-064**: durable-run.sh helper (commit 20571a0)
+- **BOB-066**: audit L1/L2/L4 wired (commit b9c2c50)
+- **BOB-067**: Jackett cookie-login + HelixQA fake (commits 6231200 + 6dfc756)
+- **Loader auto-discovery** + Jackett submodule bump v0.24.2353 → v0.24.2406
+- **All 5 tracker credentials wired** (RUTRACKER, NNMCLUB, RUTOR, KINOZAL, IPTORRENTS) with §11.4.10.A pre-store leak audits
+- **cookies_<tracker>.txt convention** at ~/Downloads with atomic auto-load into .env chmod 600
+- **systemd integration** surviving reboot (boba.target + boba-stack.service + boba-webui-bridge.service, linger=yes)
+- **Production install.sh** authored + LAN access verified on 192.168.1.90:{7185,7186,7187,7188,7189,9117}
+- **BOB-112 boba-jackett /healthz DDoS mitigation**: sync.RWMutex TTL cache, live wrk **97.1% → 0.0% timeout** (400/412 → 0/812,149 requests) — commit e2a2e3e
+- **BOB-113**: install-dev-tools.sh (wrk/hey/siege) — commit c7dfdde
+- **Task #66 commit-push-all.sh --scope flag** (BOB-068 sweep-pattern interim fix) — commit 0972cbc
+- **BOB-108**: workable-items export Revision-counter regression fix — constitution 4a17867 + boba 855ce65 + 3520621
+- **CodeGraph 1.5.0 nested-.gitignore regression**: upstream issue #1567 + draft PR #1568 at colbymchenry/codegraph
+- **Task #72 docs_chain unpushable-gitlink**: cherry-pick + push resolution (docs_chain 8ccf505 + constitution 774ac57 + boba a4c6c7a + 41da88a)
+
+### CRITICAL 2nd forced-logout incident (2026-08-18 20:50:59)
+
+- CONST-033 triage clean: no kernel OOM, no systemd-oomd trigger, no lid-suspend, no forbidden mechanism
+- §12.12 EAGAIN cascade signature at 20:45:48 confirmed (jackett SocketException (11) to iptorrents+kinozal+rutracker simultaneously)
+- 15 GB pathological ugrep reaped post-relogin: `ugrep -o` with `.\{0,120\}` variable-length context + 3-way alternation on 14K-line CLAUDE.md — freed 16 GB instantly, PSI Avg10 1.77 → 0.08
+- §11.4.6 UNCONFIRMED: exact SIGKILL source unattributable from systemd journal — PENDING_FORENSICS (task #79)
+- **Fix commit `1f42357`**: CONST-033 challenge false-positive fix + NEW `resource_pressure_signature_challenge.sh` (5 signatures, §11.4.115 polarity) + `docs/incidents/2026-08-18-perceived-forced-logout-2nd.md` + 8 evidence artifacts
+- **§11.4.238 ledger entry `98412bf`** — FORCED-LOGOUT-2026-08-18-2ND (Rev 6→7, count 14→15)
+- **Task #77 wire commit `ecb3bfe`**: pre_build invariant 25 `CM-RESOURCE-PRESSURE-SIGNATURE-CHECK` + hourly systemd-user timer INSTALLED + ARMED (next fire 22:42 CEST)
+- **Persistent memory playbook** at ~/.claude-claude4/.../memory/forced_logout_incidents.md
+- **Task #41 BOB-068 investigation `a7e55f9`**: verdict = NO DAEMON. Root cause = shared-checkout race on default `git add -A` + shared `docs/workable_items.db`. §11.4.179 clone-isolation (Task #67 proposal) confirmed correct architectural fix.
+
+### §11.4.209 review verdict: NO-GO with 3 IMPORTANT + 6 MINOR + 2 NIT
+
+- **IMPORTANT-1** (BOB-076 polarity claim threshold-only, not real-signature): fix subagent in flight (task #78)
+- **IMPORTANT-2** (3520621 DB commit missing differential SQLite dump): fix subagent in flight (task #79)
+- **IMPORTANT-3** (HTTPS git URL in install-dev-tools.sh): FIXED inline commit `9c282ff` (both real invocation + advisory message → git@)
+- MINOR findings tracked as followups
+- §11.4.209 Fable-`xhigh` re-review OWED (this review ran on opus fallback per Agent-tool `effort=?` §11.4.231(F)(b) honest boundary)
+
+### To resume
+
+- 3 subagents in flight: notifications will arrive
+- New commits will push automatically (their briefs specify commit + push)
+- Task tracker #40, #42 remain deferred (need operator design decisions)
+- Constitution submodule pointer: `constitution` at `4a17867` (BOB-108 fix) → boba `9c282ff` → docs_chain `8ccf505`
+- Everything else in Session 15 CONTINUATION section below remains valid history
 **Session:** 2026-08-10/11 (Session 16 — HUGE session: pre_build brought to 25/25 GREEN with six new
 invariants (INV0/19/20/21/22/23), §11.4.238 QA-discovery gates wired, §11.4.84 subagent-mutation
 fence Layers 1+3 landed, `workable-items` `diff` false-positive fixed + new `correct-history-
