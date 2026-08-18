@@ -1,0 +1,13 @@
+NEXT                            LEFT LAST                            PASSED UNIT                                                                                    ACTIVATES
+Tue 2026-08-18 21:39:22 CEST      1s Tue 2026-08-18 21:39:12 CEST    8s ago df3cccebc1667b52a500c9150184adc272e53376fcfb502fe8dfc5a03ba6478f-359b7acdcf0355a1.timer df3cccebc1667b52a500c9150184adc272e53376fcfb502fe8dfc5a03ba6478f-359b7acdcf0355a1.service
+Tue 2026-08-18 21:39:22 CEST      1s Tue 2026-08-18 21:39:12 CEST    8s ago a91ba43aff157e66fd31294357b81823a2858a72a690fb25191fa37b4547f8c8-42f265332bed8851.timer a91ba43aff157e66fd31294357b81823a2858a72a690fb25191fa37b4547f8c8-42f265332bed8851.service
+Tue 2026-08-18 21:39:22 CEST      2s Tue 2026-08-18 21:39:07 CEST   12s ago d00ce00c0524b16109611aa4d4a0d64ee8163d790436393ad95aa7ae4a601d18-55897450a6b77d66.timer d00ce00c0524b16109611aa4d4a0d64ee8163d790436393ad95aa7ae4a601d18-55897450a6b77d66.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago 47fd5260a5802efa93a337bb2fdd6caf7a428db4d061d43f2d31a97df2978b8b-5cb9426433009c68.timer 47fd5260a5802efa93a337bb2fdd6caf7a428db4d061d43f2d31a97df2978b8b-5cb9426433009c68.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago d1384db91252dfe8fc89e042117e474e25c2c7e0a26fa2d794a90636a5a40c88-68cf7a841c5974fb.timer d1384db91252dfe8fc89e042117e474e25c2c7e0a26fa2d794a90636a5a40c88-68cf7a841c5974fb.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago 6058f72c3f28ddd643d10d83cbee8b31fda2d0f8cc46540a074fede98bbf3bbd-2c03536cb091a52d.timer 6058f72c3f28ddd643d10d83cbee8b31fda2d0f8cc46540a074fede98bbf3bbd-2c03536cb091a52d.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago 106040a360afddb95637738078f3e83a4e26fe6aafc926622de4f33ca3e458bc-54a439e4b8c5e652.timer 106040a360afddb95637738078f3e83a4e26fe6aafc926622de4f33ca3e458bc-54a439e4b8c5e652.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago 2e89e38caaf71693bb76d996e55d621869e19126c462eb2fa6ed10e0a106b73e-2fef4decb44e3df6.timer 2e89e38caaf71693bb76d996e55d621869e19126c462eb2fa6ed10e0a106b73e-2fef4decb44e3df6.service
+Tue 2026-08-18 22:39:40 CEST 1h 0min Tue 2026-08-18 21:35:24 CEST         - boba-resource-pressure-check.timer                                                      boba-resource-pressure-check.service
+Wed 2026-08-19 20:56:16 CEST     23h Tue 2026-08-18 20:56:16 CEST 43min ago systemd-tmpfiles-clean.timer                                                            systemd-tmpfiles-clean.service
+
+10 timers listed.

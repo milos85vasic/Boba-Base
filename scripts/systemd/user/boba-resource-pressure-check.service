@@ -1,0 +1,48 @@
+# boba-resource-pressure-check.service — hourly proactive host-pressure
+# probe (task #77 / BOB-076 2nd forced-logout incident, 2026-08-18).
+#
+# Purpose:
+#   Runs challenges/scripts/resource_pressure_signature_challenge.sh — the
+#   5-signature detector of forced-logout-precursor conditions (runaway
+#   RSS, thread-ceiling utilization, container EAGAIN cascades, user.slice
+#   memory PSI, pathological-regex processes). The 2026-08-18 incident's
+#   own triage found a §12.12 EAGAIN cascade ~5 minutes BEFORE the
+#   user@1000.service SIGKILL — a leading indicator an hourly standing
+#   check would have caught well before the kill.
+#
+# Design:
+#   Type=oneshot — runs to completion once per activation, never a daemon.
+#   ExecStart runs the challenge script DIRECTLY (no wrapper) so its own
+#   exit code is preserved verbatim in `systemctl --user status` /
+#   `journalctl --user -u boba-resource-pressure-check.service`:
+#     exit 0 -> unit shows "inactive (dead)" with a clean journal (PASS)
+#     exit 1 -> unit shows "failed" — this IS the desired loud signal per
+#               the challenge's own header ("fail-loud BEFORE
+#               user@1000.service gets SIGKILLed, not after"); the full
+#               diagnostic (which signature tripped + corrective action)
+#               lands in the journal for `journalctl --user -u
+#               boba-resource-pressure-check.service -n 50` to surface.
+#   No Restart= directive — a oneshot's "failed" status is itself the
+#   alert; the TIMER (not this service) governs re-firing cadence, so
+#   auto-restarting the service would duplicate/race the timer's own
+#   OnUnitActiveSec schedule.
+#   Deliberately NOT PartOf=/Wants=boba.target — host resource pressure
+#   must be monitored regardless of whether the qBittorrent/Jackett stack
+#   is up or down; this unit's lifecycle is fully independent of it.
+#   §CONST-033 corollary (same bias as the other boba-* units): this is a
+#   monitoring probe, not user-session-critical work, so it is a
+#   preferred OOM victim ahead of the operator's interactive session.
+
+[Unit]
+Description=Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/incidents/2026-08-18-perceived-forced-logout-2nd.md
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+
+[Service]
+Type=oneshot
+WorkingDirectory=/run/media/milosvasic/DATA4TB/Projects/boba
+ExecStart=/usr/bin/env bash /run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=60
+OOMScoreAdjust=300

@@ -82,9 +82,21 @@
 #      siblings hash-match their .md sources per §11.4.106's content-hash
 #      change detection. Added 2026-08-15 (BOB-104) alongside docs_chain
 #      submodule incorporation.
+#  25. CM-RESOURCE-PRESSURE-SIGNATURE-CHECK: runs
+#      challenges/scripts/resource_pressure_signature_challenge.sh (task #77,
+#      BOB-076 2nd forced-logout incident 2026-08-18) under a 60s timeout as
+#      a PROACTIVE, NON-BLOCKING host-pressure probe. This invariant NEVER
+#      contributes to FAIL_COUNT — a tripped signature is real host-pressure
+#      evidence outside this project's control, and per §11.4.234 the
+#      pre-build gate must never itself become the reason a build cannot
+#      proceed. Disposition: exit 0 -> PASS; exit non-zero (signature over
+#      threshold) -> WARN with the full diagnostic printed + a timestamped
+#      evidence log written to docs/qa/pre_build_resource_pressure/ (gitignored
+#      per the repo-wide `*.log` pattern — local-only, never repo bloat);
+#      timeout (124) or the challenge missing -> SKIP-with-reason (§11.4.3).
 #  (opt). Optional: challenges/scripts/run_all_challenges.sh (if FULL_VALIDATION=1)
 #
-# Constitution: §1.1 (paired mutation), §11.4 (anti-bluff covenant), §11.4.84 (working-tree quiescence), §11.4.107(10) (self-validated golden-good/golden-bad), §11.4.125 (code-review gate), §11.4.109 (anti-forgetting enforcement), §11.4.65 (universal Markdown export), §11.4.201(1) (false-positive-refusal is a FAIL-bluff), §11.4.238 (automated QA is the discoverer), §11.4.227(B) (propagation gates count block-starts)
+# Constitution: §1.1 (paired mutation), §11.4 (anti-bluff covenant), §11.4.84 (working-tree quiescence), §11.4.107(10) (self-validated golden-good/golden-bad), §11.4.125 (code-review gate), §11.4.109 (anti-forgetting enforcement), §11.4.65 (universal Markdown export), §11.4.201(1) (false-positive-refusal is a FAIL-bluff), §11.4.238 (automated QA is the discoverer), §11.4.227(B) (propagation gates count block-starts), §12.12 (thread/process-headroom awareness), §11.4.234 (always-unblocked mechanism)
 
 set -euo pipefail
 
@@ -721,6 +733,47 @@ else
         echo "        Remediation: cd \${PROJECT_ROOT} && ./constitution/submodules/docs_chain/docs_chain sync --all"
     fi
     rm -f "${DCE_LOG}"
+fi
+
+# --- Invariant 25: CM-RESOURCE-PRESSURE-SIGNATURE-CHECK (§12.12/§11.4.201, task #77 / BOB-076) ---
+# Proactive, NON-BLOCKING probe for the 5 forced-logout-precursor signatures
+# identified in the 2026-08-18 2nd forced-logout incident triage. This
+# invariant NEVER increments FAIL_COUNT: a tripped signature is real host
+# resource pressure outside this project's own control, and per §11.4.234
+# the pre-build gate must always stay unblocked -- the operator needs a
+# loud WARNING here, not a blocked build. Bounded to 60s so a wedged probe
+# can never stall the pre-build sweep itself (§11.4.89).
+echo "[25/25] CM-RESOURCE-PRESSURE-SIGNATURE-CHECK: proactive host-pressure probe (§12.12, task #77/BOB-076)"
+RPS_CHALLENGE="${PROJECT_ROOT}/challenges/scripts/resource_pressure_signature_challenge.sh"
+if [[ ! -f "${RPS_CHALLENGE}" ]]; then
+    echo "  SKIP: resource_pressure_signature_challenge.sh not found — skipping invariant 25"
+else
+    RPS_LOG="$(mktemp)"
+    RPS_EXIT=0
+    if command -v timeout >/dev/null 2>&1; then
+        timeout 60s bash "${RPS_CHALLENGE}" >"${RPS_LOG}" 2>&1 || RPS_EXIT=$?
+    else
+        bash "${RPS_CHALLENGE}" >"${RPS_LOG}" 2>&1 || RPS_EXIT=$?
+    fi
+    if [[ "${RPS_EXIT}" -eq 0 ]]; then
+        pass "resource-pressure-signature-check: clean (all 5 signatures below threshold)"
+    elif [[ "${RPS_EXIT}" -eq 124 ]]; then
+        echo "  SKIP: resource-pressure-signature-check timed out after 60s (§11.4.3 honest-skip — non-blocking, never a FAIL)"
+    else
+        # WARN, never FAIL (§11.4.234 always-unblocked). Capture evidence
+        # per §11.4.5/§11.4.69 so the operator has the exact trip in hand
+        # before the next forced-logout-class incident.
+        RPS_EVIDENCE_DIR="${PROJECT_ROOT}/docs/qa/pre_build_resource_pressure"
+        mkdir -p "${RPS_EVIDENCE_DIR}"
+        RPS_TS="$(date -u +%Y%m%dT%H%M%SZ)"
+        RPS_EVIDENCE="${RPS_EVIDENCE_DIR}/${RPS_TS}.log"
+        cp "${RPS_LOG}" "${RPS_EVIDENCE}"
+        echo "  WARN: resource-pressure-signature-check tripped (exit ${RPS_EXIT}) — evidence: ${RPS_EVIDENCE#${PROJECT_ROOT}/}"
+        echo "        --- diagnostic (also saved above) ---"
+        sed 's/^/        /' "${RPS_LOG}"
+        echo "        --- end ---"
+    fi
+    rm -f "${RPS_LOG}"
 fi
 
 # --- Optional: Run challenge aggregator when FULL_VALIDATION=1 ---

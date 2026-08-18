@@ -1,0 +1,105 @@
+=== install-resource-pressure-timer.sh — 2026-08-18T19:39:20Z ===
+mode=symlink repo_root=/run/media/milosvasic/DATA4TB/Projects/boba
+[0;32m[install-resource-pressure-timer][0m installed boba-resource-pressure-check.service (symlink -> /run/media/milosvasic/DATA4TB/Projects/boba/scripts/systemd/user/boba-resource-pressure-check.service)
+[0;32m[install-resource-pressure-timer][0m installed boba-resource-pressure-check.timer (symlink -> /run/media/milosvasic/DATA4TB/Projects/boba/scripts/systemd/user/boba-resource-pressure-check.timer)
+[0;32m[install-resource-pressure-timer][0m daemon-reload complete
+[0;32m[install-resource-pressure-timer][0m boba-resource-pressure-check.timer enabled + started
+NEXT                            LEFT LAST                            PASSED UNIT                                                                                    ACTIVATES
+Tue 2026-08-18 21:39:22 CEST      1s Tue 2026-08-18 21:39:12 CEST    8s ago df3cccebc1667b52a500c9150184adc272e53376fcfb502fe8dfc5a03ba6478f-359b7acdcf0355a1.timer df3cccebc1667b52a500c9150184adc272e53376fcfb502fe8dfc5a03ba6478f-359b7acdcf0355a1.service
+Tue 2026-08-18 21:39:22 CEST      1s Tue 2026-08-18 21:39:12 CEST    8s ago a91ba43aff157e66fd31294357b81823a2858a72a690fb25191fa37b4547f8c8-42f265332bed8851.timer a91ba43aff157e66fd31294357b81823a2858a72a690fb25191fa37b4547f8c8-42f265332bed8851.service
+Tue 2026-08-18 21:39:22 CEST      2s Tue 2026-08-18 21:39:07 CEST   12s ago d00ce00c0524b16109611aa4d4a0d64ee8163d790436393ad95aa7ae4a601d18-55897450a6b77d66.timer d00ce00c0524b16109611aa4d4a0d64ee8163d790436393ad95aa7ae4a601d18-55897450a6b77d66.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago 47fd5260a5802efa93a337bb2fdd6caf7a428db4d061d43f2d31a97df2978b8b-5cb9426433009c68.timer 47fd5260a5802efa93a337bb2fdd6caf7a428db4d061d43f2d31a97df2978b8b-5cb9426433009c68.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago d1384db91252dfe8fc89e042117e474e25c2c7e0a26fa2d794a90636a5a40c88-68cf7a841c5974fb.timer d1384db91252dfe8fc89e042117e474e25c2c7e0a26fa2d794a90636a5a40c88-68cf7a841c5974fb.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago 6058f72c3f28ddd643d10d83cbee8b31fda2d0f8cc46540a074fede98bbf3bbd-2c03536cb091a52d.timer 6058f72c3f28ddd643d10d83cbee8b31fda2d0f8cc46540a074fede98bbf3bbd-2c03536cb091a52d.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago 106040a360afddb95637738078f3e83a4e26fe6aafc926622de4f33ca3e458bc-54a439e4b8c5e652.timer 106040a360afddb95637738078f3e83a4e26fe6aafc926622de4f33ca3e458bc-54a439e4b8c5e652.service
+Tue 2026-08-18 21:39:37 CEST     17s Tue 2026-08-18 21:39:07 CEST   13s ago 2e89e38caaf71693bb76d996e55d621869e19126c462eb2fa6ed10e0a106b73e-2fef4decb44e3df6.timer 2e89e38caaf71693bb76d996e55d621869e19126c462eb2fa6ed10e0a106b73e-2fef4decb44e3df6.service
+Tue 2026-08-18 22:39:40 CEST 1h 0min Tue 2026-08-18 21:35:24 CEST         - boba-resource-pressure-check.timer                                                      boba-resource-pressure-check.service
+Wed 2026-08-19 20:56:16 CEST     23h Tue 2026-08-18 20:56:16 CEST 43min ago systemd-tmpfiles-clean.timer                                                            systemd-tmpfiles-clean.service
+
+10 timers listed.
+[0;32m[install-resource-pressure-timer][0m VERIFIED: boba-resource-pressure-check.timer is scheduled (present in list-timers)
+=== systemctl --user start --wait boba-resource-pressure-check.service exit=0 ===
+
+--- systemctl --user status boba-resource-pressure-check.service --no-pager -l ---
+○ boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
+     Loaded: loaded (/home/milosvasic/.config/systemd/user/boba-resource-pressure-check.service; linked; preset: disabled)
+     Active: inactive (dead) since Tue 2026-08-18 21:39:22 CEST; 7ms ago
+ Invocation: 9be7affb059a471ba47b09b5e7a42c6a
+TriggeredBy: ● boba-resource-pressure-check.timer
+       Docs: file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/incidents/2026-08-18-perceived-forced-logout-2nd.md
+             file:///run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+    Process: 1936311 ExecStart=/usr/bin/env bash /run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh (code=exited, status=0/SUCCESS)
+   Main PID: 1936311 (code=exited, status=0/SUCCESS)
+   Mem peak: 27.5M
+        CPU: 2.378s
+
+Aug 18 21:39:21 nezha env[1936311]: OK: EAGAIN hits within safe zone
+Aug 18 21:39:21 nezha env[1936311]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+Aug 18 21:39:21 nezha env[1936311]:   full avg60=0.00 threshold=50
+Aug 18 21:39:21 nezha env[1936311]: OK: PSI within safe zone
+Aug 18 21:39:21 nezha env[1936311]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+Aug 18 21:39:22 nezha env[1936311]: OK: no pathological-regex processes detected
+Aug 18 21:39:22 nezha env[1936311]: === summary ===
+Aug 18 21:39:22 nezha env[1936311]: PASS: no resource-pressure signatures over threshold
+Aug 18 21:39:22 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+Aug 18 21:39:22 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 2.378s CPU time, 27.5M memory peak.
+
+--- journalctl --user -u boba-resource-pressure-check.service -n 50 --no-pager ---
+Aug 18 21:36:36 nezha env[1924593]:   threads=1245  soft_limit=65536  utilization=1%
+Aug 18 21:36:36 nezha env[1924593]: OK: thread utilization 1% within safe zone
+Aug 18 21:36:36 nezha env[1924593]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+Aug 18 21:36:37 nezha env[1924593]:   total EAGAIN-class hits last 15min: 0
+Aug 18 21:36:37 nezha env[1924593]: OK: EAGAIN hits within safe zone
+Aug 18 21:36:37 nezha env[1924593]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+Aug 18 21:36:37 nezha env[1924593]:   full avg60=0.00 threshold=50
+Aug 18 21:36:37 nezha env[1924593]: OK: PSI within safe zone
+Aug 18 21:36:37 nezha env[1924593]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+Aug 18 21:36:38 nezha env[1924593]: OK: no pathological-regex processes detected
+Aug 18 21:36:38 nezha env[1924593]: === summary ===
+Aug 18 21:36:38 nezha env[1924593]: PASS: no resource-pressure signatures over threshold
+Aug 18 21:36:38 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+Aug 18 21:36:38 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 2.772s CPU time, 25.2M memory peak.
+Aug 18 21:38:30 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+Aug 18 21:38:30 nezha env[1931924]: === SIG-1: runaway process >5 GB RSS ===
+Aug 18 21:38:31 nezha env[1931924]: OK: no process >5 GB RSS
+Aug 18 21:38:31 nezha env[1931924]: === SIG-2: thread count >70% of soft ulimit -u ===
+Aug 18 21:38:31 nezha env[1931924]:   threads=1245  soft_limit=65536  utilization=1%
+Aug 18 21:38:31 nezha env[1931924]: OK: thread utilization 1% within safe zone
+Aug 18 21:38:31 nezha env[1931924]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+Aug 18 21:38:32 nezha env[1931924]:   total EAGAIN-class hits last 15min: 0
+Aug 18 21:38:32 nezha env[1931924]: OK: EAGAIN hits within safe zone
+Aug 18 21:38:32 nezha env[1931924]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+Aug 18 21:38:32 nezha env[1931924]:   full avg60=0.00 threshold=50
+Aug 18 21:38:32 nezha env[1931924]: OK: PSI within safe zone
+Aug 18 21:38:32 nezha env[1931924]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+Aug 18 21:38:33 nezha env[1931924]: OK: no pathological-regex processes detected
+Aug 18 21:38:33 nezha env[1931924]: === summary ===
+Aug 18 21:38:33 nezha env[1931924]: PASS: no resource-pressure signatures over threshold
+Aug 18 21:38:33 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+Aug 18 21:38:33 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 2.921s CPU time, 24.8M memory peak.
+Aug 18 21:39:20 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+Aug 18 21:39:20 nezha env[1936311]: === SIG-1: runaway process >5 GB RSS ===
+Aug 18 21:39:20 nezha env[1936311]: OK: no process >5 GB RSS
+Aug 18 21:39:20 nezha env[1936311]: === SIG-2: thread count >70% of soft ulimit -u ===
+Aug 18 21:39:20 nezha env[1936311]:   threads=1260  soft_limit=65536  utilization=1%
+Aug 18 21:39:20 nezha env[1936311]: OK: thread utilization 1% within safe zone
+Aug 18 21:39:20 nezha env[1936311]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+Aug 18 21:39:21 nezha env[1936311]:   total EAGAIN-class hits last 15min: 0
+Aug 18 21:39:21 nezha env[1936311]: OK: EAGAIN hits within safe zone
+Aug 18 21:39:21 nezha env[1936311]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+Aug 18 21:39:21 nezha env[1936311]:   full avg60=0.00 threshold=50
+Aug 18 21:39:21 nezha env[1936311]: OK: PSI within safe zone
+Aug 18 21:39:21 nezha env[1936311]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+Aug 18 21:39:22 nezha env[1936311]: OK: no pathological-regex processes detected
+Aug 18 21:39:22 nezha env[1936311]: === summary ===
+Aug 18 21:39:22 nezha env[1936311]: PASS: no resource-pressure signatures over threshold
+Aug 18 21:39:22 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+Aug 18 21:39:22 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 2.378s CPU time, 27.5M memory peak.
+[0;32m[install-resource-pressure-timer][0m VERIFIED: boba-resource-pressure-check.service wiring confirmed (unit resolves, systemd invoked ExecStart)
+[0;32m[install-resource-pressure-timer][0m first fire: challenge reported CLEAN (Result=success — no signature over threshold)
+
+[0;32m[install-resource-pressure-timer][0m install + verification complete. Evidence: docs/qa/task-77/
+[0;32m[install-resource-pressure-timer][0m next fire: hourly (OnUnitActiveSec=1hour, +/-5min jitter). Missed fires (e.g. after logout) run on next login (Persistent=true).
+[0;32m[install-resource-pressure-timer][0m manual re-fire any time: systemctl --user start boba-resource-pressure-check.service
+[0;32m[install-resource-pressure-timer][0m watch it live: journalctl --user -u boba-resource-pressure-check.service -f
+[0;32m[install-resource-pressure-timer][0m uninstall: bash scripts/install-resource-pressure-timer.sh --uninstall

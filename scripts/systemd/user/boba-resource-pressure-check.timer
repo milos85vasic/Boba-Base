@@ -1,0 +1,38 @@
+# boba-resource-pressure-check.timer — hourly cadence for the proactive
+# host-pressure probe (task #77 / BOB-076).
+#
+# Schedule:
+#   OnBootSec=5min          — first fire 5 minutes after user-session boot
+#                             (gives the boba stack + other login services
+#                             time to settle before the first probe).
+#   OnUnitActiveSec=1hour   — thereafter, once per hour measured from the
+#                             END of the previous activation (so a slow
+#                             run never causes back-to-back re-fires).
+#   RandomizedDelaySec=5min — ±5 min jitter so this timer does not land on
+#                             exactly the same wall-clock second as any
+#                             other hourly cron/timer on the host, every
+#                             single hour (thundering-herd avoidance,
+#                             §12.6/§12.12 host-safety courtesy).
+#   Persistent=true         — if the user session was logged out / host
+#                             asleep at a scheduled fire time, systemd runs
+#                             the missed activation as soon as the timer
+#                             unit is next started (login) instead of
+#                             silently skipping it — closes the exact gap
+#                             a suspended/logged-out host would otherwise
+#                             leave (this project's own forced-logout
+#                             incidents are precisely why a monitoring gap
+#                             here would be self-defeating).
+
+[Unit]
+Description=Hourly timer for boba-resource-pressure-check.service (task #77/BOB-076)
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/scripts/install-resource-pressure-timer.md
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1hour
+RandomizedDelaySec=5min
+Persistent=true
+Unit=boba-resource-pressure-check.service
+
+[Install]
+WantedBy=timers.target
