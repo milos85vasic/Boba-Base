@@ -1,0 +1,28 @@
+§1.1 mutation: comment out the single 'acquire_lock' call site so the
+mutex is defined but never engaged (mutation.diff in this directory).
+Fixed script otherwise byte-identical.
+
+20-trial sweep across staggers {0, 0.02x3, 0.05x2, 0.08x2, 0.15x2,
+0.25, 0.4, 0.5, 0.8, 1.2, 1.5, 2.0}s, STUB_DOCS_CHAIN_SLEEP=1:
+  2/20 trials CORRUPTED (idx=5 stagger=0.02s, idx=7 stagger=0.02s)
+  18/20 CLEAN
+
+Corruption reproduces with the lock stripped (instance_A.log /
+instance_B.log / diff_original_vs_final.diff in this directory are
+from idx=5) — proving the lock is load-bearing: the same script,
+same test harness, with ONLY the lock invocation removed, corrupts
+docs/codegraph/Status.md under concurrent execution exactly as the
+pre-fix script did (final Last-modified stuck at the 100-days-ago
+backdated value).
+
+Note (§11.4.6 honesty): this specific race is inherently timing-
+sensitive (OS-scheduler dependent) in both the pre-fix script (3/5
+hit rate observed in before_fix/reliability_sweep_summary.txt) and
+this lock-stripped mutation (2/20 observed here, plus 3/10 and 3/5
+in earlier exploratory sweeps against the unmodified pre-fix script
+using a slightly different harness — see before_fix/). The exact
+hit rate varies run-to-run with host scheduling load; what does NOT
+vary is the polarity: with the lock ENGAGED (after_fix/,
+mkdir_fallback/) 0/26 trials across two harnesses corrupted the
+file, and with the lock REMOVED (before_fix/, this directory)
+corruption reproducibly recurs.

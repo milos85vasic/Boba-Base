@@ -1,0 +1,16 @@
+Long STUB_DOCS_CHAIN_SLEEP=8s to widen the backdated window. Polled
+docs/codegraph/Status.md until the backdated (2026-05 prefix) value
+was observed on disk, THEN sent SIGTERM to the running instance.
+
+File content immediately before SIGTERM (confirmed backdated):
+  Last modified: 2026-05-10T14:54:12Z
+
+File content immediately after SIGTERM + wait (trap fired):
+  Last modified: 2026-08-17T14:54:04Z  (matches true original)
+
+victim exit code: 0 (bash reports the trap-forced 'exit ${rc}' status;
+$? at trap-entry, right after the 8s sleep in the stub engine,
+reflected the last successfully-completed command).
+
+No .lockpid / *.lock.d artifact left behind after the signal — the
+lock was released AFTER the restore ran, per the required ordering.

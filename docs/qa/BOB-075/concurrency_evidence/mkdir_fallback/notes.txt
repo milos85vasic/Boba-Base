@@ -1,0 +1,3 @@
+PATH restricted to a fakebin dir with NO flock binary present, forcing
+the mkdir-based portable fallback lock. RCA=0 RCB=1, final state clean
+(matches original), no stray lock artifacts left behind.

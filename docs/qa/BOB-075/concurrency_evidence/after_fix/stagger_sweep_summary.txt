@@ -1,0 +1,11 @@
+6 stagger trials (0s, 0.05s, 0.1s, 0.3s, 0.6s, 1.0s), fixed script, flock available:
+AFTER-FIX stagger=0s   RCA=1 RCB=0 -> CLEAN
+AFTER-FIX stagger=0.05s RCA=0 RCB=1 -> CLEAN
+AFTER-FIX stagger=0.1s RCA=0 RCB=1 -> CLEAN
+AFTER-FIX stagger=0.3s RCA=0 RCB=1 -> CLEAN
+AFTER-FIX stagger=0.6s RCA=0 RCB=1 -> CLEAN
+AFTER-FIX stagger=1.0s RCA=0 RCB=1 -> CLEAN
+
+6/6 CLEAN. In every trial exactly one instance exits 0 (completes the
+full baseline+RED+GREEN cycle) and the other exits 1 immediately with
+the actionable lock-held message, before ever touching the file.

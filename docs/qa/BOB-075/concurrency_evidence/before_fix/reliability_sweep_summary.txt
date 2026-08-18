@@ -1,0 +1,30 @@
+Reliability sweep: 5 repeated trials, stagger=0.3s, unmodified (pre-fix) script, STUB_DOCS_CHAIN_SLEEP=2
+trial=1 -> CLEAN  (RCA=0 RCB=1)
+trial=2 -> CORRUPTED (RCA=1 RCB=1)
+trial=3 -> CLEAN  (RCA=0 RCB=1)
+trial=4 -> CORRUPTED (RCA=1 RCB=1)
+trial=5 -> CORRUPTED (RCA=1 RCB=1)
+
+3/5 trials corrupted docs/codegraph/Status.md (final Last-modified stuck
+at the 100-days-ago backdated value instead of the true original).
+
+---
+
+Earlier exploratory sweep (before the reliability sweep above): 10 distinct
+staggers, 1 trial each, same unmodified script + STUB_DOCS_CHAIN_SLEEP=2:
+
+stagger=0s    RCA=1 RCB=1 -> CORRUPTED
+stagger=0.05s RCA=1 RCB=1 -> CORRUPTED
+stagger=0.1s  RCA=0 RCB=0 -> CLEAN
+stagger=0.3s  RCA=1 RCB=1 -> CORRUPTED
+stagger=0.6s  RCA=0 RCB=1 -> CLEAN
+stagger=1.0s  RCA=0 RCB=1 -> CLEAN
+stagger=1.5s  RCA=0 RCB=1 -> CLEAN
+stagger=1.9s  RCA=0 RCB=1 -> CLEAN
+stagger=2.1s  RCA=0 RCB=1 -> CLEAN
+stagger=2.5s  RCA=1 RCB=0 -> CLEAN
+
+3/10 corrupted (staggers 0s, 0.05s, 0.3s) — the trial at stagger=0.3s from
+this exploratory sweep is the one saved as instance_A.log / instance_B.log /
+final_codegraph_status_CORRUPTED.md / diff_original_vs_final.diff in this
+directory.
