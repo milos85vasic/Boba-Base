@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 20
-**Last modified:** 2026-08-18T20:55:14Z
+**Revision:** 21
+**Last modified:** 2026-08-18T21:41:11Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -802,4 +802,24 @@ unresolvableClosureEvidence() (constitution/scripts/workable-items/cmd/workable-
 **Assigned-To:** Claude
 
 On 2026-08-18 the operator reported being fully logged out from host milosvasic account after returning from lid-closed state, finding themselves at the GDM greeter -- the 2nd such incident on this project (1st was 2026-07-07, which produced the §12.12 anchor). Root-cause investigation (docs/incidents/2026-08-18-perceived-forced-logout-2nd.md) traced it to a resource-pressure cascade: a §12.12 EAGAIN/SocketException(11) cascade across Jackett trackers at 20:45:48, a pathological 15 GB ugrep from a Task#52 subagent, an HTTP flood at 20:49:00, and multi-fleet concurrent container pressure, culminating in systemd logging user@1000.service Main process exited, code=killed, status=9/KILL at 20:50:59 -- no standing check consulted that signal before session termination, and CONST-033 triage confirmed no actual host suspend/poweroff occurred (this is a resource-exhaustion user-session OOM-kill, not a CONST-033 violation). Comprehensive fixes landed this session: new 5-signature proactive detector challenges/scripts/resource_pressure_signature_challenge.sh (commit 1f42357); five REAL per-signature §11.4.115(F) RED fixtures under challenges/fixtures/resource_pressure/ replacing an initially-overstated threshold-mutation polarity claim, verified via verify_resource_pressure_polarity.sh with RED confirmed 5/5 FAIL 0 SKIP 0 (commit efbb8a6); wiring into scripts/pre_build_verification.sh invariant 25 (CM-RESOURCE-PRESSURE-SIGNATURE-CHECK) plus an hourly systemd --user timer boba-resource-pressure-check.timer, now LIVE and armed (commit ecb3bfe); a §11.4.238 QA-discovery-ledger entry FORCED-LOGOUT-2026-08-18-2ND documenting the coverage escape (commit 98412bf); a fix for a CONST-033 challenge false-positive caused by scratchpad/.superpowers path scanning (part of commit 1f42357); 8 machine-evidence artifacts under docs/qa/BOB-076/ (journalctl, oomctl, cgtop, PSI readings, ps LRSS snapshot, challenge pass/forced-fail logs, lid+session events); and a persistent-memory incident playbook at ~/.claude-claude4/.../memory/forced_logout_incidents.md. NOTE ON ID COLLISION (documented honestly per §11.4.6/§11.4.54): all of the commits above and the docs/qa/ evidence directory used the label BOB-076 for this incident, but BOB-076 was ALREADY a distinct, legitimately-minted workable item (RD2-09: submodules/jackett fork 1 commit behind upstream, Type=Task, Status=Queued, minted 2026-08-15 -- three days before this incident) at the time those commits landed. §11.4.54 forbids ID reuse, so this item is filed under a fresh monotonic ID instead of overwriting BOB-076; the real BOB-076 (jackett submodule bump) is untouched and unrelated to this incident -- it was independently already resolved via commit 99a486e. See docs/incidents/2026-08-18-perceived-forced-logout-2nd.md for full forensic detail and docs/QA_DISCOVERY_LEDGER.md entry FORCED-LOGOUT-2026-08-18-2ND for the coverage-escape audit.
+
+## BOB-112 — boba-jackett /healthz amplifies under cold-start concurrent burst via uncached Jackett.GetCatalog() call
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-112/summary.md
+**Severity:** High
+**Created-By:** Claude
+
+qBitTorrent-go/internal/jackettapi/health.go:60-63 -- HandleHealth makes a synchronous, uncached call to Jackett.GetCatalog() on every single hit to /healthz, with no cache, no distinct timeout, and no circuit breaker. Measured evidence (docs/testing/ddos_resilience.md Findings, 2026-08-18, RED_MODE=0, three independent live runs): up to 98/150 (65%) of health-check requests timed out at 3s under a modest cold-start concurrent burst (10-50 concurrency), recovering to <50ms/request once the burst subsided. This is a genuine self-inflicted DDoS amplification vector: an attacker or a mis-configured monitoring probe hitting /healthz too aggressively can make the Jackett-management API's own health surface appear down without ever touching Jackett itself. Recommended fixes: cache the Jackett liveness signal with a short TTL refreshed by a background ticker; add a tight timeout/circuit-breaker around the GetCatalog call so /healthz itself never blocks past ~250-500ms regardless of Jackett's state. Discovered + scaffolded by BOB-074 (commit ae2b5cb, challenges/scripts/ddos_resilience_challenge.sh); tracked as SDD session task #64 in .superpowers/sdd/progress.md prior to this DB filing -- this item is the canonical, tracked workable-items record for that reference (§11.4.93 SSoT, §11.4.214 recurrence-links-not-mints: no prior BOB-NNN existed for this defect, verified by title/description search before minting).
+
+## BOB-119 — docs/MERGE_SEARCH_DIAGNOSTICS.md states ENABLE_DEAD_TRACKERS default=1; actual code + compose default=0 (contradicts sibling doc)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/MERGE_SEARCH_DIAGNOSTICS.md
+**Severity:** Medium
+**Created-By:** AI
+
+docs/MERGE_SEARCH_DIAGNOSTICS.md line ~128 states 'Default: 1 (all trackers exposed; dead ones filtered by DEAD_PUBLIC_TRACKERS)' for ENABLE_DEAD_TRACKERS. This is factually wrong: download-proxy/src/merge_service/search.py:1032 reads os.getenv('ENABLE_DEAD_TRACKERS', '0') (default string '0') and docker-compose.yml:177 sets ENABLE_DEAD_TRACKERS=\0 (also default 0). The sibling doc docs/DEAD_TRACKERS_EXPLAINED.md correctly states 'With ENABLE_DEAD_TRACKERS=0 (default): 24 public trackers active, 14 excluded' — confirmed against the current DEAD_PUBLIC_TRACKERS frozenset (14 entries, names match exactly). MERGE_SEARCH_DIAGNOSTICS.md's stated default is the one document that disagrees with the source of truth, and could mislead an operator into believing dead trackers are shown to end users by default when they are actually filtered out by default. Found during a §11.4.6 bluff audit (docs/qa/task-bluff-audit/). Fix direction: correct 'Default: 1' to 'Default: 0' in MERGE_SEARCH_DIAGNOSTICS.md to match search.py/docker-compose.yml.
 

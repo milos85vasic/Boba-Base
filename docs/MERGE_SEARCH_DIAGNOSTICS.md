@@ -123,15 +123,20 @@ latency grows with `deadline × ceil(trackers / max_concurrent)`.
 
 ### `ENABLE_DEAD_TRACKERS`
 
-Default: `1` (all trackers exposed; dead ones filtered by
-`DEAD_PUBLIC_TRACKERS`).
+Default: `0` (dead trackers HIDDEN by default; only 24 known-live
+public trackers active — the 14 known-dead ones filtered by
+`DEAD_PUBLIC_TRACKERS`). Corrected by BOB-119 bluff-audit finding
+2026-08-18: prior text said default=1 but `search.py:1032`
+(`os.getenv("ENABLE_DEAD_TRACKERS", "0")`) + `docker-compose.yml:177`
+(`${ENABLE_DEAD_TRACKERS:-0}`) both default to `0`; sibling doc
+`docs/DEAD_TRACKERS_EXPLAINED.md` already stated 0 correctly.
 
 Public trackers that are empirically known-dead as of 2026-04-23 live
 in `DEAD_PUBLIC_TRACKERS` in `search.py` and are excluded from the
-fan-out. Set `ENABLE_DEAD_TRACKERS=0` to hide them. Set
-`ENABLE_DEAD_TRACKERS=1` (default) to include them for testing
+fan-out. Set `ENABLE_DEAD_TRACKERS=1` to include them for testing
 whether an upstream has recovered, or when operating through a
-proxy/VPN that bypasses geoblocks.
+proxy/VPN that bypasses geoblocks. The default `ENABLE_DEAD_TRACKERS=0`
+keeps them hidden.
 
 The known-dead list:
 
