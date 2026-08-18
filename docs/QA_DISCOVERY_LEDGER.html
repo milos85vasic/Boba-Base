@@ -711,10 +711,15 @@ id="forced-logout-2026-08-18-2nd-user1000.service-sigkilled-at-205059-cascade-ki
 — user@1000.service SIGKILLed at 20:50:59, cascade kill of user session,
 operator perceived as forced logout</h3>
 <ul>
-<li><strong>id:</strong> BOB-076 (this-session incident; followups
-tracked as Task #77 [wire challenge] / Task #78
-[host_no_auto_poweroff_challenge perf regression] / Task #79
-[SIGKILL-source attribution long-run]).</li>
+<li><strong>id:</strong> BOB-116 (this-session incident; corrected
+2026-08-18 from an informal “BOB-076” session-commit label that collided
+with a distinct, pre-existing, unrelated DB item — BOB-076 is Type=Task,
+the RD2-09 jackett fork bump, minted 2026-08-15 by commit
+<code>99a486e</code> — per §11.4.54 no-ID-reuse; see the NOTE at the top
+of <code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>
+and closure commit <code>2861920</code>. followups tracked as Task #77
+[wire challenge] / Task #78 [host_no_auto_poweroff_challenge perf
+regression] / Task #79 [SIGKILL-source attribution long-run]).</li>
 <li><strong>date:</strong> 2026-08-18 — the 2nd forced-logout on this
 project (1st was 2026-07-07, produced §12.12 anchor); operator sent a
 CRITICAL mid-turn message reporting they had been “fully logged out from
@@ -730,7 +735,8 @@ container pressure). systemd itself logged the
 <code>user@1000.service: Main process exited, code=killed, status=9/KILL</code>
 but no gate consulted that log to escalate before session termination.
 Full evidence:
-<code>docs/qa/BOB-076/{journalctl_20-40_to_20-52.log, oomctl_snapshot.log, psi_readings.log, ps_LRSS_snapshot.log, challenge_pass.log, challenge_polarity_forced_fail.log, const033_challenge_pass.log, lid_and_session_events.log}</code>
+<code>docs/qa/BOB-116/{journalctl_20-40_to_20-52.log, oomctl_snapshot.log, psi_readings.log, ps_LRSS_snapshot.log, challenge_pass.log, challenge_polarity_forced_fail.log, const033_challenge_pass.log, lid_and_session_events.log}</code>
+(initially referenced as BOB-076 informal label, corrected 2026-08-18)
 and
 <code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>.</li>
 <li><strong>escape-audit:</strong> <strong>root cause CONFIRMED as
@@ -771,7 +777,8 @@ cascade in container logs last 15min (this incident: 4 trackers @
 <code>.\{N,M\}</code> + <code>\|</code> alternation) — <code>PASS</code>
 on clean state, <code>FAIL</code> when thresholds crossed. Live evidence
 in
-<code>docs/qa/BOB-076/challenge_{pass,polarity_forced_fail}.log</code>.
+<code>docs/qa/BOB-116/challenge_{pass,polarity_forced_fail}.log</code>
+(initially referenced as BOB-076 informal label, corrected 2026-08-18).
 Not yet wired into pre_build_verification.sh nor a systemd-user timer —
 <strong>Task #77</strong> owns that wiring (challenge exists as a
 runnable artifact, not a scheduled invariant, until #77 lands). Also
@@ -979,7 +986,8 @@ CODEGRAPH-1.5.0-GITIGNORE)</td>
 <td>100%</td>
 </tr>
 <tr>
-<td>2026-08-18 (incremental, BOB-076 forced-logout incident — 1 new
+<td>2026-08-18 (incremental, BOB-116 forced-logout incident (initially
+referenced as BOB-076 informal label, corrected 2026-08-18) — 1 new
 <code>###</code> entry: 2nd occurrence of user@1000 SIGKILL on this
 project after physical operator return, discovered by
 <code>operator-report</code>)</td>

@@ -1,0 +1,412 @@
+<h1
+id="incident-2026-08-18-2nd-perceived-forced-logout-of-milosvasic-user-session">Incident
+2026-08-18 — 2nd perceived forced-logout of milosvasic user session</h1>
+<blockquote>
+<p><strong>Note on tracking ID</strong>: This incident is tracked as
+workable-item BOB-116 in the SSoT DB. The label “BOB-076” appears in
+some session commit messages as an informal label that collided with an
+existing distinct DB item (Type=Task, RD2-09 jackett fork bump, minted
+2026-08-15 by commit <code>99a486e</code>). BOB-076 the tracker item is
+unchanged and unrelated. Cross-reference: closure commit
+<code>2861920</code>.</p>
+</blockquote>
+<p><strong>Reporter:</strong> operator (mid-turn CRITICAL, 2026-08-18)
+<strong>Session-under-investigation:</strong>
+4db6eadb-03e7-466b-9cb4-34b2b2bd30f3 (boba SDD orchestration)
+<strong>Investigator:</strong> boba autonomous loop,
+systematic-debugging Phase 1 <strong>Class:</strong> perceived host
+power event (CONST-033 Operational Note class) <strong>Terminal
+state:</strong> partial root cause with §11.4.6 UNCONFIRMED boundary;
+preventive gates landed</p>
+<h2 id="operator-statement-verbatim">Operator statement (verbatim)</h2>
+<blockquote>
+<p>CRITICAL: We had again been fully logged out from host milosvasic
+account which runs this CLI agent instance and this session! There MUST
+BE something in this project that causes sudden processes killing by
+fully signing out tyhe logged in user. Most likely caused by sudden
+complete lack of system resources!</p>
+</blockquote>
+<h2 id="const-033-triage-mandatory-per-claude.md">CONST-033 triage
+(mandatory per CLAUDE.md)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Uptime discontinuity</td>
+<td><strong>No</strong> — kernel uptime 10:00 since 11:08 (host never
+rebooted)</td>
+<td><code>uptime</code>, <code>who -b</code></td>
+</tr>
+<tr>
+<td>systemd-suspend markers</td>
+<td><strong>None</strong> in 24h kernel journal</td>
+<td><code>journalctl -k \| grep suspend</code></td>
+</tr>
+<tr>
+<td>Kernel OOM-killer</td>
+<td><strong>None</strong> in 24h kernel journal</td>
+<td><code>journalctl -k \| grep oom-kill</code>,
+<code>dmesg -T</code></td>
+</tr>
+<tr>
+<td>systemd-oomd trigger</td>
+<td><strong>Not triggered</strong> — pressure never crossed 90%
+threshold</td>
+<td><code>oomctl</code></td>
+</tr>
+<tr>
+<td>HandleLidSwitch</td>
+<td><code>ignore</code> (CONST-033 compliant)</td>
+<td><code>/etc/systemd/logind.conf</code></td>
+</tr>
+<tr>
+<td>Kernel pids/thread limits</td>
+<td>Not breached (soft=65536, current=1218 = 2%)</td>
+<td><code>/proc/sys/kernel/threads-max</code>,
+<code>ulimit -u</code></td>
+</tr>
+<tr>
+<td>no_suspend_calls_challenge.sh</td>
+<td>Was FAIL (false-positive on scratchpad/ + .superpowers/sdd/) — FIXED
+this incident</td>
+<td>scanner run</td>
+</tr>
+<tr>
+<td>host_no_auto_poweroff_challenge.sh</td>
+<td>Timed out at 120s (separate perf finding — filed)</td>
+<td>scanner run</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verdict:</strong> NO forbidden CONST-033 host-power path was
+invoked. The forced-logout was NOT a suspend/hibernate/poweroff
+event.</p>
+<h2 id="timeline-2026-08-18-europebelgrade">Timeline (2026-08-18,
+Europe/Belgrade)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Time</th>
+<th>Event</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>11:08:27</td>
+<td>Host boot</td>
+<td><code>systemd[1]: Started user@1000.service</code></td>
+</tr>
+<tr>
+<td>11:08:40</td>
+<td><strong>Lid CLOSED</strong> (operator working with lid closed)</td>
+<td><code>systemd-logind: Lid closed</code></td>
+</tr>
+<tr>
+<td>~14:00 → 20:45</td>
+<td>~6.5 hours of orchestration work: 22-anchor constitution amendment
+round + tag v68 + full stack rebuild + install + boot + BOB-112 +
+BOB-113 + parallel SDD batch of 4 subagents</td>
+<td>git log, session journal</td>
+</tr>
+<tr>
+<td>20:44:23</td>
+<td><code>tmx-shlomi2-4199.scope</code> consumed 3min 1s CPU + 122.8MB
+peak (concurrent “shlomi” claude session, sibling project)</td>
+<td>systemd scope accounting</td>
+</tr>
+<tr>
+<td>20:45:48</td>
+<td><strong>§12.12 SIGNATURE</strong>: Jackett SocketException (11)
+<code>Resource temporarily unavailable</code> cascade to
+<code>iptorrents</code>, <code>kinozal</code>, <code>rutracker</code>,
+<code>iptorrents</code> simultaneously</td>
+<td>jackett journal</td>
+</tr>
+<tr>
+<td>20:46:49</td>
+<td>libpod scope consumed 2min 19s CPU + 256.5MB peak</td>
+<td>systemd scope</td>
+</tr>
+<tr>
+<td>20:49:00</td>
+<td><strong>HTTP FLOOD</strong>: qbittorrent-proxy received 100+
+<code>/health</code> requests in ONE SECOND (likely BOB-074 DDoS
+challenge or unbounded subagent probe)</td>
+<td>qbittorrent-proxy journal</td>
+</tr>
+<tr>
+<td>20:50:54</td>
+<td>helix-server (shlomi project) fatal on port 8080 in-use</td>
+<td>helix-server journal</td>
+</tr>
+<tr>
+<td><strong>20:50:59</strong></td>
+<td>**user@1000.service Main process SIGKILLed status=9/KILL. Cascade
+SIGKILL of all user processes: gnome-shell, Xwayland, gvfsd, ssh, bash,
+dbus-daemon, gnome-keyring-d, wireplumber, gsd-<em>, ibus-</em>,
+at-spi*, …**</td>
+<td>systemd[1] journal</td>
+</tr>
+<tr>
+<td>20:50:59</td>
+<td>systemd-logind removed sessions 1, 4</td>
+<td>logind journal</td>
+</tr>
+<tr>
+<td>20:51:00</td>
+<td>GDM greeter session 16/17 spawned</td>
+<td>logind journal</td>
+</tr>
+<tr>
+<td><strong>20:51:06</strong></td>
+<td><strong>LID OPENED</strong> (operator physically returns to laptop
+after 9h42m lid-closed)</td>
+<td>systemd-logind</td>
+</tr>
+<tr>
+<td>20:51:16</td>
+<td>New user session 18 (operator logs back in on tty2)</td>
+<td>logind journal</td>
+</tr>
+<tr>
+<td>20:51:22</td>
+<td>LID CLOSED again</td>
+<td>systemd-logind</td>
+</tr>
+<tr>
+<td>~21:07</td>
+<td>Operator dispatches CRITICAL message to boba claude session
+(session-continuation summary was pre-emptively compacted)</td>
+<td>this incident</td>
+</tr>
+<tr>
+<td><strong>21:09</strong></td>
+<td>Investigation reaps live 15 GB pathological ugrep from Task #52
+subagent</td>
+<td><code>ps</code>, <code>kill</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-killed-user1000.service">What killed
+<code>user@1000.service</code>?</h2>
+<p><strong>§11.4.6 HONEST BOUNDARY: The mechanism that delivered SIGKILL
+to <code>user@1000.service</code> at 20:50:59 is UNCONFIRMED.</strong>
+The systemd PID 1 journal shows the receipt of SIGKILL but not the
+source. No <code>kill</code> audit event was recorded that attributes
+it. Candidates ruled out by evidence:</p>
+<ul>
+<li><strong>Kernel OOM-killer</strong>: dmesg + kernel journal both
+clean, no <code>oom-kill</code> marker</li>
+<li><strong>systemd-oomd</strong>: current PSI never crossed the 90%
+threshold (Avg60 at incident-time was 0.35, threshold is 90)</li>
+<li><strong>Lid-close suspend</strong>:
+<code>HandleLidSwitch=ignore</code> + lid was already closed hours
+before, opened AFTER the kill</li>
+<li><strong>Session TimeoutStopSec</strong>: user@1000.service
+TasksMax=infinity, MemoryMax=infinity — no stop-timeout to expire</li>
+<li><strong>Manual <code>systemctl stop user@1000</code></strong>: no
+such event in journal, no shell in history that ran it</li>
+<li><strong>Operator physical logout</strong>: operator was AWAY from
+laptop (lid closed until 20:51:06 = 7s AFTER the kill)</li>
+</ul>
+<p><strong>Candidates still open (need deeper forensics + reproduction —
+filed as followups)</strong>:</p>
+<ol type="1">
+<li><strong>systemd-oomd stealth kill</strong> — Fedora 34+ systemd-oomd
+MAY sample instantaneous PSI spikes not reflected in the 60s average,
+and MAY kill user@1000 without a “Killed unit” log message if configured
+with <code>ManagedOOMPreference=avoid</code> or similar edge cases.
+Needs <code>systemd-cgtop --recursive</code> capture at incident
+time.</li>
+<li><strong>XDG/GDM watchdog</strong> — a GDM/GNOME session watchdog
+observing shell freezes may nuke the session slice on unresponsiveness.
+Needs <code>journalctl _COMM=gdm-*</code> review at future
+incident.</li>
+<li><strong>Third-party monitor / IDE plugin</strong> — the operator has
+JetBrains Toolbox + Yandex browser + multiple MCP servers running. One
+could have escalated. Needs pgrep audit.</li>
+<li><strong>Rustling shim in another project</strong> — the sibling
+“shlomi” claude session (<code>--name shlomi</code>) was actively
+running podman-compose services + tmx scripts. A kill signal may have
+been sent from that session’s scope. Needs cross-session audit.</li>
+</ol>
+<h2 id="contributing-factors-confirmed">Contributing factors
+CONFIRMED</h2>
+<p>Even though the SIGKILL source is UNCONFIRMED, the incident had these
+<strong>CONFIRMED aggravating conditions</strong>:</p>
+<ol type="1">
+<li><strong>Multiple concurrent container fleets on user.slice</strong>:
+<ul>
+<li>boba stack: 6 containers (qbittorrent, jackett, qbittorrent-proxy,
+webui-bridge, boba-jackett, gluetun-proxy)</li>
+<li>“shlomi” (sibling project) helix-* stack: helix-server,
+helix-postgres, lava-postgres, etc.</li>
+<li>MCP servers: convex, firebase, cds-mcp, chrome-devtools, lumen,
+codegraph</li>
+<li>Native processes: gnome-shell, Yandex browser, JetBrains,
+ollama</li>
+</ul></li>
+<li><strong>§12.12 thread-exhaustion signature</strong> at 20:45:48 (5
+minutes before kill): jackett threw EAGAIN/SocketException 11 for
+outbound HTTP simultaneously across 3-4 trackers. Not the direct cause
+but proof pressure was mounting.</li>
+<li><strong>Pathological subagent grep pattern</strong> discovered
+post-relogin: a Task #52 subagent dispatched at 21:07 spawned
+<code>ugrep -o</code> with <code>.\{0,120\}</code> variable-length
+context + 3-way alternation against ~14,000-line <code>CLAUDE.md</code>.
+Consumed <strong>15 GB RSS</strong> before I reaped it. Identical class
+could have run during Aug 15 amendment round or any of the pre-logout
+hours.</li>
+<li><strong>First-incident anchor already exists</strong>: §12.12
+(<code>RLIMIT_NPROC</code> awareness for parallel subagent/multi-process
+work) was added 2026-07-07 from a similar forensic incident. This is the
+2nd incident of this class.</li>
+<li><strong>CONST-033 challenge FAILING</strong> entering the
+investigation — the scanner was mis-flagging session-scratch +
+review-diff files (§11.4.201(1) false-positive-refusal class). Fixed
+this incident.</li>
+</ol>
+<h2 id="root-cause-statement">§11.4.6 root-cause statement</h2>
+<p>The forced logout at <strong>20:50:59 was NOT caused by any forbidden
+CONST-033 mechanism</strong>. It WAS coincident with cumulative resource
+pressure (thread exhaustion signature at 20:45, HTTP flood at 20:49,
+high concurrent container/MCP fleet count). The exact mechanism that
+delivered SIGKILL to <code>user@1000.service</code> remains
+<strong>UNCONFIRMED</strong> — insufficient forensic evidence in the
+journal to attribute source. Filed as
+<code>PENDING_FORENSICS</code>.</p>
+<h2 id="actions-taken-this-incident">Actions taken (this incident)</h2>
+<ol type="1">
+<li><strong>Reaped pathological ugrep</strong> (PID 1740824, 15 GB RSS)
+— freed 16 GB immediately; user.slice went from 38.37 → 22.31 GB; PSI
+Avg10 from 1.77 → 0.08.</li>
+<li><strong>Fixed CONST-033 challenge</strong>: extended EXCLUDE_PATHS
+in <code>scripts/host-power-management/check-no-suspend-calls.sh</code>
+to skip <code>scratchpad/</code> + <code>.superpowers/sdd/</code> —
+restored PASS state.</li>
+<li><strong>Authored
+<code>resource_pressure_signature_challenge.sh</code></strong>:
+proactive detector of 5 signatures (runaway process &gt;5 GB RSS, thread
+util &gt;70%, EAGAIN cascade last 15min, PSI full avg60 &gt;50,
+pathological-regex pattern in live cmdlines). PASS on clean state; FAIL
+when thresholds crossed. Documents the 20:45-20:50 forensic evidence
+anchors for each threshold. <strong>Correction (§11.4.209 independent
+review, task-review-457cca4-a7e55f9-report.md, IMPORTANT-1):</strong>
+the original “§11.4.115 polarity verified” claim here was overstated —
+the only forced-fail evidence captured at the time
+(<code>docs/qa/BOB-116/challenge_polarity_forced_fail.log</code>,
+initially referenced as BOB-076 informal label, corrected 2026-08-18)
+ran the challenge with <code>SIG1_MAX_PROC_RSS_GB=0</code>, i.e. a
+mutated THRESHOLD that trips on every process. That proves the
+comparison operator works, not that the detector catches the ACTUAL
+pathological state — exactly the class §11.4.115(F) rejects (“a guard
+never observed FAILing on the genuinely-broken artifact is unvalidated
+instrumentation and mints no verdicts”). Fixed forward (§11.4.113, no
+history rewrite): five REAL per-signature RED fixtures now live under
+<code>challenges/fixtures/resource_pressure/</code> — a genuine &gt;5.5
+GB page-resident process (SIG-1), a genuine
+&gt;70%-of-(subshell-lowered)-ulimit thread-utilization ratio measured
+against the REAL live thread count (SIG-2), a real ephemeral podman
+container emitting a real 4-hit EAGAIN cascade read back via the real
+<code>podman logs</code> path (SIG-3), a genuinely-high (avg60=65.00)
+PSI reading injected via a new <code>PSI_FILE</code> override point
+exercising the detector’s real parse+compare code (SIG-4, host-safety
+reasons for data-injection over real pressure documented in that
+fixture’s header), and a live process whose real
+<code>/proc/&lt;pid&gt;/cmdline</code> genuinely matches the detector’s
+own pathological regex, verified byte-for-byte against that regex
+extracted from the challenge script itself (SIG-5). All five fixtures
+were run against the UN-MUTATED challenge with its DEFAULT thresholds
+via
+<code>bash challenges/scripts/verify_resource_pressure_polarity.sh</code>,
+which reported <code>RED confirmed: 5 / 5</code> with zero FAIL/SKIP.
+Evidence:
+<code>docs/qa/task-78/{sig1..sig5}_real_fixture_output.txt</code> +
+<code>docs/qa/task-78/verify_resource_pressure_polarity_output.txt</code>.</li>
+<li><strong>This incident document</strong> — captured for the next
+investigator.</li>
+<li><strong>Filed followups</strong>:
+<ul>
+<li>Task #77: run <code>resource_pressure_signature_challenge.sh</code>
+as pre-build invariant + wire hourly cron via systemd-user timer</li>
+<li>Task #78: <code>host_no_auto_poweroff_challenge.sh</code>
+performance regression (2min timeout)</li>
+<li>Task #79: attribute-the-SIGKILL: extend logind + systemd audit to
+capture kill origin (long-run investigation)</li>
+</ul></li>
+</ol>
+<h2 id="non-actions-11.4.6-discipline">Non-actions (§11.4.6
+discipline)</h2>
+<ul>
+<li><strong>DID NOT invoke any
+<code>systemctl suspend/hibernate/poweroff/reboot</code></strong> —
+CONST-033 hard ban preserved</li>
+<li><strong>DID NOT kill in-flight subagent processes</strong> — they
+are performing bounded legitimate work per §12.6 + §12.12; killing them
+would waste captured progress AND remove diagnostic evidence</li>
+<li><strong>DID NOT force-push or rewrite history</strong> — §11.4.113
+preserved</li>
+<li><strong>DID NOT claim the root cause is confirmed</strong> — the
+SIGKILL source is genuinely unattributable from the captured journal,
+and inventing a cause would be a §11.4.6 violation of PASS-bluff
+severity at the incident-forensics layer</li>
+</ul>
+<h2 id="machine-evidence">Machine evidence</h2>
+<ul>
+<li>Live captures: <code>docs/qa/BOB-116/</code> (initially referenced
+as BOB-076 informal label, corrected 2026-08-18 —
+<code>journalctl_20-45_to_20-52.log</code>,
+<code>oomctl_snapshot.log</code>, <code>cgtop_snapshot.log</code>,
+<code>psi_readings.log</code>, <code>ps_LRSS_snapshot.log</code>,
+<code>challenge_pass.log</code>,
+<code>challenge_polarity_forced_fail.log</code>)</li>
+<li>Reaped-ugrep evidence: PID 1740824, RSS 17,083,664 KB (~16.3 GB),
+CMD verified before kill, SIGTERM ignored, SIGKILL succeeded</li>
+<li>Post-reap PSI drop: <code>some avg10=0.08 avg60=0.24</code> (from
+<code>1.77 / 0.37</code>)</li>
+<li>Post-reap memory drop: user.slice 38.37 → 22.31 GB (delta ~16 GB
+matches ugrep RSS)</li>
+</ul>
+<h2 id="anchor-composition">Anchor-composition</h2>
+<ul>
+<li>§11.4.4 test-interrupt-on-discovery (STOP on defect)</li>
+<li>§11.4.6 no-guessing (root cause honestly UNCONFIRMED)</li>
+<li>§11.4.102 systematic-debugging (Iron Law: root-cause first)</li>
+<li>§11.4.107(10) self-validated analyzer (golden-good + golden-bad
+polarity)</li>
+<li>§11.4.115 RED/GREEN polarity on the new challenge</li>
+<li>§11.4.135 permanent regression guard added</li>
+<li>§11.4.201 guard-honesty (no false-null, control-needle proven)</li>
+<li>§11.4.238 QA-discovery-channel: operator manual report → coverage
+escape → new automated check</li>
+<li>§11.4.239 critical-invariant DoD (availability failure path)</li>
+<li>§11.4.252 fail-closed on dangerous combination (multiple concurrent
+resource-heavy fleets)</li>
+<li>§12.6 host memory ceiling</li>
+<li>§12.11 dynamic resource utilization</li>
+<li>§12.12 thread-limit awareness (this incident is the 2nd
+occurrence)</li>
+<li>CONST-033 forbidden-host-power-management (verified
+un-triggered)</li>
+<li>CONST-033 Operational Note (triage protocol followed to letter)</li>
+</ul>
+<p>Non-compliance is a release blocker. The next occurrence of this
+incident class MUST trigger a full-context §12.12 recheck + escalation
+to operator per §11.4.66.</p>

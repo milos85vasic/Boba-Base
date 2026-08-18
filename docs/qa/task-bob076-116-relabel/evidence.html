@@ -1,0 +1,171 @@
+<h1
+id="evidence-bob-076bob-116-label-collision-cleanup-2026-08-18">Evidence
+— BOB-076/BOB-116 label-collision cleanup (2026-08-18)</h1>
+<p><strong>Scope:</strong> rename <code>docs/qa/BOB-076/</code> →
+<code>docs/qa/BOB-116/</code> (filesystem, not a git operation — see
+finding below) + update forward references in
+<code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>,
+<code>docs/QA_DISCOVERY_LEDGER.md</code>,
+<code>docs/CONTINUATION.md</code>, and the
+<code>forced_logout_incidents.md</code> memory playbook. Commit-message
+history is NOT rewritten (§11.4.113).</p>
+<h2 id="directory-rename">1. Directory rename</h2>
+<p><code>docs/qa/BOB-076/</code> contained 8 evidence artifacts, all
+<code>*.log</code>:</p>
+<pre><code>challenge_pass.log
+challenge_polarity_forced_fail.log
+const033_challenge_pass.log
+journalctl_20-40_to_20-52.log
+lid_and_session_events.log
+oomctl_snapshot.log
+psi_readings.log
+ps_LRSS_snapshot.log</code></pre>
+<p><strong>Finding: none of these 8 files were ever tracked by
+git.</strong> <code>git ls-files docs/qa/BOB-076/</code> returned empty
+before the rename, and <code>git check-ignore -v</code> confirmed every
+one matches the blanket <code>*.log</code> rule at
+<code>.gitignore:64</code>. This means <code>git mv</code> fails
+(“source directory is empty”) — the rename had to be a plain filesystem
+<code>mv</code>, and <code>git status</code> shows nothing for either
+the old or new path, before or after. Verified move (identical byte
+sizes, same 8 filenames, directory now empty at the old path):</p>
+<pre><code>$ mv docs/qa/BOB-076 docs/qa/BOB-116
+$ ls docs/qa/BOB-116/ | wc -l
+8
+$ ls docs/qa/BOB-076
+ls: cannot access &#39;docs/qa/BOB-076&#39;: No such file or directory
+$ git status --porcelain docs/qa/BOB-116/ docs/qa/BOB-076/
+(empty)</code></pre>
+<p><strong>Concern (out of scope, flagged honestly per
+§11.4.6):</strong> this is itself a coverage-escape-shaped gap —
+<code>.gitignore</code>’s header comment at line 2 states “Curated QA
+evidence lives under docs/qa/ (§11.4.83)”, implying that tree is meant
+to be tracked, but the blanket <code>*.log</code> pattern silently
+defeats that for any <code>.log</code>-named evidence file anywhere
+under <code>docs/qa/</code>, including this entire incident’s
+raw-capture evidence set. This is independently already-documented
+(stale label) in
+<code>docs/scripts/install-resource-pressure-timer.md:115</code>
+(“<code>docs/qa/BOB-076/*.log</code> is gitignored despite living under
+the [curated evidence directory]”) — i.e. Task #77’s own doc already
+flagged the same gap under the old label. Not fixed here: changing
+<code>.gitignore</code> scope is a separate, cross-cutting decision
+outside this task’s declared file scope.</p>
+<h2 id="forward-reference-updates-grep-beforeafter-per-file">2.
+Forward-reference updates (grep before/after, per file)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>BOB-076 mentions before</th>
+<th>BOB-076 mentions after</th>
+<th>All post-edit mentions inside annotation context?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code></td>
+<td>2 (both bare/stale)</td>
+<td>4</td>
+<td>yes — 2 in the new top-of-doc NOTE, 2 inline annotated
+<code>(initially referenced as BOB-076 informal label, corrected 2026-08-18)</code></td>
+</tr>
+<tr>
+<td><code>docs/QA_DISCOVERY_LEDGER.md</code></td>
+<td>4 (all bare/stale)</td>
+<td>4</td>
+<td>yes — <code>id:</code> field now reads BOB-116 with an explanatory
+clause; the other 3 are annotated inline</td>
+</tr>
+<tr>
+<td><code>docs/CONTINUATION.md</code></td>
+<td>1 (bare)</td>
+<td>1</td>
+<td>yes — annotated inline, IMPORTANT-1 now keyed to BOB-116</td>
+</tr>
+<tr>
+<td><code>forced_logout_incidents.md</code> (memory, outside repo)</td>
+<td>1 (bare)</td>
+<td>2</td>
+<td>yes — one annotated evidence-path line + one new explicit correction
+line</td>
+</tr>
+</tbody>
+</table>
+<p>Revision headers bumped where present:
+<code>docs/CONTINUATION.md</code> Revision 23→24 (§11.4.44),
+<code>Last modified</code> set to the real command-derived UTC timestamp
+(<code>date -u +%Y-%m-%dT%H:%M:%SZ</code> =
+<code>2026-08-18T21:10:20Z</code>), never guessed.
+<code>docs/QA_DISCOVERY_LEDGER.md</code> has no §11.4.44 header (not in
+that doc’s scope) — left as-is.</p>
+<h2 id="whole-docs-scan-context-not-all-in-this-tasks-scope">3.
+Whole-<code>docs/</code> scan (context, not all in this task’s
+scope)</h2>
+<p><code>grep -rln "BOB-076" docs/</code> before this task’s edits
+returned files this task does NOT own, all of which carry LEGITIMATE,
+correct BOB-076 references (the real, distinct, unrelated Type=Task DB
+item — RD2-09 jackett fork bump, commit <code>99a486e</code>) or belong
+to other subagents’ historical evidence and are explicitly out of scope
+per this task’s constraints:</p>
+<ul>
+<li><code>docs/Issues.md</code>, <code>docs/Issues_Summary.md</code>,
+<code>docs/Fixed.md</code>, <code>docs/Fixed_Summary.md</code> (+ their
+<code>.html</code> twins), <code>docs/features/Status.md</code> — the
+real BOB-076 tracker entry. <strong>Not touched</strong> (explicit
+constraint).</li>
+<li><code>docs/qa/task-close-bob076/*</code>,
+<code>docs/qa/task-77/*</code>, <code>docs/qa/task-44/*</code>,
+<code>docs/qa/BOB-072-073/backup/Issues.md.pre-fix</code>,
+<code>docs/qa/task-review-457cca4-a7e55f9-nit-fixes/verdict.md</code>,
+<code>docs/qa/db-deltas/286192008b35dab7b00c59635ba424ed4b72674b.diff</code>,
+<code>docs/qa/task-rebuild-verify/summary.md</code>,
+<code>docs/qa/task-stress-chaos-session/6_systemd_timer_stress.txt</code>
+— historical or concurrently-in-flight evidence belonging to other
+subagents/tasks. <strong>Not touched</strong> (explicit constraint — “do
+not touch other subagents’ scopes”).</li>
+<li><code>docs/scripts/install-resource-pressure-timer.md</code> (+
+<code>.html</code>) — 2 residual stale BOB-076 mentions (line 6
+<code>task #77 (BOB-076 2nd forced-logout incident follow-up)</code>,
+line 115 the gitignore-gap note quoted above). <strong>Not in this
+task’s declared file scope — left as an honest residual for a future,
+separately-scoped follow-up.</strong></li>
+<li><code>docs/QA_DISCOVERY_LEDGER.html</code>,
+<code>docs/CONTINUATION.html</code>,
+<code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.html</code>,
+and the corresponding <code>.pdf</code> exports — stale generated
+exports of the <code>.md</code> sources this task DID edit. Regenerating
+them is a docs-chain (§11.4.106) export-pipeline action, not a plain
+edit, and was not run here to avoid colliding with any concurrent
+export/build activity from other in-flight subagents. <strong>Honest
+gap, not fixed here.</strong></li>
+</ul>
+<h2 id="literal-acceptance-command-result-context">4. Literal
+acceptance-command result (context)</h2>
+<p>The task’s literal verification command was:</p>
+<pre><code>grep -rn &quot;BOB-076&quot; docs/ | grep -v &quot;old label\|informal label&quot;</code></pre>
+<p>Run as specified, this is <strong>not</strong> empty (64 lines) — for
+two independent, expected reasons, neither of which represents an
+un-annotated stray reference introduced or left by this task:</p>
+<ol type="1">
+<li><strong>Legitimate out-of-scope files</strong> (§3 above) genuinely
+and correctly mention the real, distinct BOB-076 tracker item, or belong
+to other subagents’ historical evidence this task must not touch.</li>
+<li><strong>The mandated NOTE text is multi-line-wrapped</strong>: the
+exact NOTE block this task specifies to paste verbatim wraps the words
+“informal” and “label” across two separate lines
+(<code>...as an informal</code> / <code>label that collided...</code>),
+so a single-line <code>grep -v "informal label"</code> does not suppress
+those two lines even though they are the mandated, correct annotation
+text, used verbatim as instructed.</li>
+</ol>
+<p>Scoped to only the files this task edited, every post-edit
+<code>BOB-076</code> occurrence sits inside an explicit “informal label”
+/ “initially referenced as” annotation — verified individually per file
+in §2 above.</p>

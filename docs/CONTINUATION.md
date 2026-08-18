@@ -1,7 +1,7 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 23
-**Last modified:** 2026-08-18T22:15:00Z
+**Revision:** 24
+**Last modified:** 2026-08-18T21:10:20Z
 
 ## TERMINAL STATE (this write) — §11.4.126 endless-loop terminal condition MET
 
@@ -51,7 +51,7 @@
 
 ### §11.4.209 review verdict: NO-GO with 3 IMPORTANT + 6 MINOR + 2 NIT
 
-- **IMPORTANT-1** (BOB-076 polarity claim threshold-only, not real-signature): fix subagent in flight (task #78)
+- **IMPORTANT-1** (BOB-116 polarity claim threshold-only, not real-signature — initially referenced as BOB-076 informal label, corrected 2026-08-18; BOB-076 is a distinct unrelated Type=Task DB item, see `docs/incidents/2026-08-18-perceived-forced-logout-2nd.md`): fix subagent in flight (task #78)
 - **IMPORTANT-2** (3520621 DB commit missing differential SQLite dump): fix subagent in flight (task #79)
 - **IMPORTANT-3** (HTTPS git URL in install-dev-tools.sh): FIXED inline commit `9c282ff` (both real invocation + advisory message → git@)
 - MINOR findings tracked as followups
