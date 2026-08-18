@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 5
-**Last modified:** 2026-08-18T16:45:00Z
+**Revision:** 6
+**Last modified:** 2026-08-18T17:15:00Z
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -405,6 +405,47 @@ honest about starting now, not claiming a false complete history.
   evidence actually supports, not the dispatching brief's hypothesis, per this ledger's own
   anti-fabrication discipline (§11.4.6/§11.4.238's "no fabricated entries" instruction).
 
+### CODEGRAPH-1.5.0-GITIGNORE-2026-08-18 — CodeGraph 1.5.0 re-index walked into nested-`.gitignore`-excluded `node_modules` trees (63x file-count blowup)
+
+- **id:** none yet (this-session incident; followup tracked as `BOB-104`)
+- **date:** 2026-08-18 — discovered by BOB-075 subagent `a70f216f` (per
+  `.superpowers/sdd/progress.md:78`, dispatched as Task #47) while attempting a mechanical
+  `docs/codegraph/Status.md` regen; landed in commit `e6162f7`
+  (`fix(docs,BOB-075): refresh docs/features/Status.md + docs/codegraph/Status.md staleness`).
+- **channel:** `agent-code-reading` — the subagent ran `codegraph init . --force` for real on this
+  host (the doc's own documented Option-A mechanical-regen mechanism), observed the run walk
+  **32,260 files / 514,456 nodes / 724,013 edges** (1.8 GB DB, still growing) before deliberately
+  aborting it — a **~63× blowup** versus the 2026-06-06 baseline of 509 files / 8,906 nodes for the
+  same repository shape — then root-caused it by direct inspection, not by any standing test or
+  HelixQA run. Full evidence + before/after headers: `docs/codegraph/Status.md` Revision 2 (lines
+  87-124) and `docs/qa/BOB-075/{before_state,after_state}.txt`.
+- **escape-audit:** root cause CONFIRMED (not guessed, §11.4.6) via `git check-ignore -v`: nested
+  `frontend/.gitignore:10` (`/node_modules`) and `extension/.gitignore:2` (`node_modules/`) both
+  correctly exclude their respective `node_modules/` trees for git itself
+  (`git ls-files frontend/node_modules extension/node_modules` → 0 rows both), yet `codegraph init`
+  on CodeGraph **1.5.0** walked into both trees anyway (365 MB + 236 MB combined) — a CodeGraph
+  1.5.0 regression in honoring **nested** (non-root) `.gitignore` files, not honoring the same
+  exclusion path git itself respects. `frontend/` and `extension/` were added to this project after
+  the 2026-06-06 CodeGraph setup and had never been exercised against this exclusion path before —
+  **genuinely uncovered**: no automated check exists anywhere in this repo that re-indexing honors
+  nested `.gitignore` scope, and the tool's own documented "zero-config, exclusion driven by
+  `.gitignore`" claim (the 2026-06-06 Status.md entry) was never re-verified after `frontend/`/
+  `extension/` were added or after the tool moved from the documented `0.9.9` to the actually-
+  installed `1.5.0`.
+- **new-check:** not yet authored. Followup filed: **BOB-104** — author a challenge
+  (`challenges/scripts/codegraph_gitignore_honor_challenge.sh` or equivalent) with §11.4.115
+  `RED_MODE` polarity: `RED_MODE=1` reproduces the blowup against the live nested-`.gitignore` tree,
+  `RED_MODE=0` asserts a resync stays within the documented baseline order of magnitude. Corrective
+  action for the underlying tool defect itself: file upstream at
+  `github.com/vasic-digital/codegraph` (tracked as this ledger entry's `new-check` follow-through,
+  same scope as `BOB-104`).
+- **Honest boundary (§11.4.6):** the run was aborted (SIGKILL) per §12.6/§12.11 host-resource
+  discipline before it could complete or corrupt state — no partial index was left claiming to be
+  valid (`codegraph status` confirmed "index truncated" post-kill, and the truncated
+  `.codegraph/codegraph.db*` is gitignored, never tracked). This project's CodeGraph index is
+  therefore **NOT live** as of this entry; the last VALIDATED sync remains the 2026-06-06 baseline
+  (7 PASS / 0 FAIL, pre-`frontend`/`extension` tree shape).
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
@@ -412,7 +453,8 @@ honest about starting now, not claiming a false complete history.
 | 2026-08-07 → 2026-08-10 (incremental, this period only) | 0 | 8 (`agent-code-reading` x4, `incidental-discovery` x3, `automated_background_scan` x1) | 100% |
 | 2026-08-11 → 2026-08-12 (incremental, this period only) | 0 | 1 (`operator-report` x1) | 100% |
 | 2026-08-18 (incremental, BOB-069 backfill — 4 new `### ` entries; the BOB-073 recurrence is an addendum to the existing BOB-008 heading, not a new `### `) | 0 | 4 (`agent-code-reading` x4: RD2-00/BOB-068, BOB-072, META-11.4.227B, SCRATCH-LOSS) | 100% |
-| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **13** | **100%** |
+| 2026-08-18 (incremental, BOB-069-review fix — 1 new `### ` entry: the missing CodeGraph 1.5.0 nested-`.gitignore` escape identified in the independent review of BOB-069) | 0 | 1 (`agent-code-reading` x1: CODEGRAPH-1.5.0-GITIGNORE) | 100% |
+| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **14** | **100%** |
 
 **Pre-existing check-vs-table mismatch, found and fixed during this backfill (§11.4.6, not
 silently patched around):** `scripts/pre_build_verification.sh` invariant 19
