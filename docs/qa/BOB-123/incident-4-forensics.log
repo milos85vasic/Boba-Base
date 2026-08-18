@@ -1,0 +1,120 @@
+# BOB-123 incident-4 forensics — captured 2026-08-19
+
+## 1. host uptime — NOT rebooted
+ 01:01:10 up 13:52,  1 user,  load average: 0.20, 0.70, 1.06
+
+## 2. last logins showing the milosvasic gap
+milosvas tty2         local            Wed Aug 19 00:50   still logged in   
+milosvas tty2         local            Tue Aug 18 23:49 - 00:50  (01:01)    
+milosvas tty2         local            Tue Aug 18 20:51 - 23:49  (02:57)    
+milosvas pts/3        fe80::a0a1:39ff: Tue Aug 18 11:38 - 13:38  (01:59)    
+milosvas pts/1        fe80::a0a1:39ff: Tue Aug 18 11:36 - 13:38  (02:02)    
+
+## 3. loginctl show-user milosvasic (linger status)
+State=active
+Sessions=33 32
+IdleHint=yes
+Linger=yes
+
+## 4. journalctl full window 00:35-00:38 — PAM close + SIGKILL cascade
+Aug 19 00:37:11 nezha gdm-password][3115126]: pam_tcb(gdm-password:session): Session closed for milosvasic
+Aug 19 00:37:11 nezha audit[3115126]: AUDIT1106 pid=3115126 uid=0 auid=1000 ses=25 msg='op=PAM:session_close grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 00:37:11 nezha audit[3115126]: AUDIT1104 pid=3115126 uid=0 auid=1000 ses=25 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 00:37:11 nezha kernel: audit: type=1106 audit(1787092631.568:11511): pid=3115126 uid=0 auid=1000 ses=25 msg='op=PAM:session_close grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Main process exited, code=killed, status=9/KILL
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116869 (gvfs-goa-volume) with signal SIGKILL.
+Aug 19 00:37:11 nezha kernel: audit: type=1104 audit(1787092631.568:11513): pid=3115126 uid=0 auid=1000 ses=25 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116391 (gsd-media-keys) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116403 (gsd-smartcard) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116284 (xdg-permission-) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116382 (gsd-datetime) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3131278 (tmux: client) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116669 (xdg-document-po) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116383 (gsd-housekeepin) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116472 (gsd-wwan) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd-logind[1302]: Removed session 26.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116509 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116371 (ibus-daemon) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3117045 (ibus-engine-sim) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116479 (ibus-extension-) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116475 (ibus-dconf) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116388 (gsd-keyboard) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116378 (gsd-a11y-settin) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116667 (wireplumber) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3115689 (gnome-shell) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3117375 (mutter-x11-fram) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3117020 (Xwayland) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3115708 (gvfsd) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116682 (gvfs-udisks2-vo) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3122887 (ssh) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116402 (gsd-sharing) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116379 (gsd-color) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116397 (gsd-screensaver) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116392 (gsd-power) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3117416 (ibus-x11) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116989 (gvfs-gphoto2-vo) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116108 (dbus-daemon) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116112 (at-spi2-registr) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116090 (at-spi-bus-laun) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116468 (gsd-usb-protect) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3125057 (gvfsd-metadata) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116467 (gsd-sound) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116666 (pipewire) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3115586 (dbus-daemon) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3115696 (gnome-keyring-d) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116283 (gnome-shell-cal) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116354 (gjs) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116652 (gjs) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3119520 (kgx) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116456 (goa-daemon) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116484 (ibus-portal) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116395 (gsd-rfkill) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116913 (gvfs-mtp-volume) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116877 (gvfs-afc-volume) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116665 (localsearch-3) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3115948 (nats-server) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3116162 (postgres) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3118932 (postgres) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3118947 (postgres) with signal SIGKILL.
+Aug 19 00:37:11 nezha systemd[1]: user@1000.service: Killing process 3118948 (postgres) with signal SIGKILL.
+
+## 5. NO kernel OOM
+
+## 6. NO systemd-oomd trigger
+Dry Run: no
+Swap Used Limit: 90.00%
+Default Memory Pressure Limit: 90.00%
+Default Memory Pressure Duration: 1min
+System Context:
+	Memory: Used: 9.9G, Total: 62.5G
+	Swap: Used: 2.9M, Total: 47.2G
+Swap Monitored CGroups:
+	Path: /user.slice/user-0.slice
+		Swap Usage: 0B
+	Path: /user.slice/user-1000.slice
+		Swap Usage: 0B
+Memory Pressure Monitored CGroups:
+	Path: /user.slice/user-0.slice
+		Memory Pressure Limit: 90.00%
+		Memory Pressure Duration: 1min
+		Pressure: Avg10: 0.00, Avg60: 0.00, Avg300: 0.00, Total: 5ms
+		Current Memory Usage: 46M
+		Memory Min: 0B
+		Memory Low: 0B
+
+## 7. logind config summary
+[Login]
+HandleSuspendKey=ignore
+HandleHibernateKey=ignore
+HandleLidSwitch=ignore
+HandleLidSwitchExternalPower=ignore
+HandleLidSwitchDocked=ignore
+[Login]
+IdleAction=ignore
+HandleLidSwitch=ignore
+HandleLidSwitchExternalPower=ignore
+
+## 8. §11.4.6 UNCONFIRMED verdict
+Direct SIGKILL initiator NOT self-attributed in journal.
+No 'loginctl terminate', no 'systemctl stop user@1000', no explicit kill visible.
+Linger=yes yet user@1000 killed on session teardown — contradiction requires kernel audit to resolve.
