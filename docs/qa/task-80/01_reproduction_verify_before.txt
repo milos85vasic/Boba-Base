@@ -1,0 +1,5 @@
+$ cd /run/media/milosvasic/DATA4TB/Projects/boba
+$ ./constitution/submodules/docs_chain/docs_chain verify --all --root .
+codegraph-status         STALE: [status_docx]
+features-status          in-sync
+EXIT=1

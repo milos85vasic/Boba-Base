@@ -1,0 +1,54 @@
+Fixed engine binary rebuilt (constitution/submodules/docs_chain @ 8e0abe0),
+then applied to boba's actual corrupted state.
+
+$ cd /run/media/milosvasic/DATA4TB/Projects/boba
+$ rm -f docs/codegraph/Status.docx
+$ ./constitution/submodules/docs_chain/docs_chain sync --all --root .
+codegraph-status         applied: committed [status_docx]
+features-status          in-sync (no changes)
+evidence: qa-results/docs_chain/20260818T201006Z
+EXIT=0
+
+$ ./constitution/submodules/docs_chain/docs_chain verify --all --root .
+codegraph-status         in-sync
+features-status          in-sync
+EXIT=0
+
+Regenerated docs/codegraph/Status.docx confirmed correct:
+$ sha256sum docs/codegraph/Status.docx
+4b55b2e85fecd417b62f4618b243a90de139c7e52c365c33f9291eff88cd4f4d  docs/codegraph/Status.docx
+(matches a from-scratch `pandoc --from=markdown --to=docx --metadata
+title=Status -o out.docx Status.md` run with SOURCE_DATE_EPOCH=946684800 —
+byte-identical, confirming the regenerated file IS a real, correct
+docs_chain render, not a placeholder.)
+
+$ .docs_chain/state.json (contexts.codegraph-status) now reads:
+{
+  "status_docx": "4b55b2e85fecd417b62f4618b243a90de139c7e52c365c33f9291eff88cd4f4d",
+  "status_html": "265700401b00cb18993bf851fedae67f4b85ea70377343b29361e3f08ac6f49a",
+  "status_md":   "7b5bd5b725345fa12356a561ff9f3ebe6ad64ee4f39411bcb82f5a14e2c1bc59",
+  "status_pdf":  "ecaa5323da4e482e7215681c779adb832650a6a2d9caaee684e1f848729cb170"
+}
+(status_docx hash now byte-matches the live on-disk file — baseline and
+reality agree.)
+
+=== Pre-build invariant CM-DOCS-CHAIN-ENGINE-VERIFY (scripts/pre_build_verification.sh, invariant 24/24) reproduced directly ===
+$ PROJECT_ROOT="$(pwd)"
+$ DC_ENGINE="${PROJECT_ROOT}/constitution/submodules/docs_chain/docs_chain"
+$ "${DC_ENGINE}" verify --all --root "${PROJECT_ROOT}"
+codegraph-status         in-sync
+features-status          in-sync
+exit=0
+-> invariant 24 PASSes: "docs_chain engine: verify --all in-sync (2 contexts checked)"
+
+=== Standing Challenge (Layer 4, §11.4.4(b)) — full RED-polarity + green-flip proof ===
+$ GOMAXPROCS=2 nice -n 19 bash challenges/scripts/docs_chain_verify_challenge.sh
+[1/3] Baseline: docs_chain verify --all (EXPECT in-sync)
+  PASS: baseline in-sync (2 contexts checked)
+[2/3] RED polarity: corrupt docs/features/Status.html by 1 byte (EXPECT verify exit 1)
+  PASS: RED detected (exit 1, STALE reported)
+[3/3] Restore + re-verify (EXPECT in-sync)
+  PASS: green flip back to in-sync (exit 0)
+
+PASS: docs_chain engine gate — baseline in-sync + RED polarity + green flip verified
+EXIT=0

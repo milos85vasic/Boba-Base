@@ -1,0 +1,41 @@
+RED-first regression guard added in constitution/submodules/docs_chain:
+internal/runner/sync_derived_self_drift_test.go
+(TestSync_DerivedNodeSelfDrift_SelfHealsAndStaysVerifyClean)
+
+=== RED (pre-fix, reproduces the defect on the real engine) ===
+$ cd constitution/submodules/docs_chain
+$ GOMAXPROCS=2 nice -n 19 go test ./internal/runner/... -run TestSync_DerivedNodeSelfDrift -v -count=1
+=== RUN   TestSync_DerivedNodeSelfDrift_SelfHealsAndStaysVerifyClean
+    sync_derived_self_drift_test.go:100: EVIDENCE step1: real sync produced leaf="PFX:SEED", baseline committed
+    sync_derived_self_drift_test.go:127: SILENT-CORRUPTION BUG: after the out-of-band write, sync (status=in-sync) left leaf="FOREIGN-CONTENT-NOT-FROM-TRANSFORM" on disk instead of self-healing it back to the real transform output "PFX:SEED". The source ("SEED") never changed, so a correct engine MUST regenerate the derived artifact from it rather than adopt the foreign bytes as the new baseline.
+--- FAIL: TestSync_DerivedNodeSelfDrift_SelfHealsAndStaysVerifyClean (0.00s)
+FAIL
+FAIL	digital.vasic.docs_chain/internal/runner	0.009s
+FAIL
+
+=== GREEN (post-fix, internal/graph/recompute.go two-part fix applied) ===
+$ GOMAXPROCS=2 nice -n 19 go test ./internal/runner/... -run TestSync_DerivedNodeSelfDrift -v -count=1
+=== RUN   TestSync_DerivedNodeSelfDrift_SelfHealsAndStaysVerifyClean
+    sync_derived_self_drift_test.go:100: EVIDENCE step1: real sync produced leaf="PFX:SEED", baseline committed
+    sync_derived_self_drift_test.go:133: EVIDENCE step3: sync self-healed the drifted leaf back to "PFX:SEED" (status=committed)
+    sync_derived_self_drift_test.go:153: EVIDENCE step4: verify agrees with sync — zero staleness (stale=[])
+--- PASS: TestSync_DerivedNodeSelfDrift_SelfHealsAndStaysVerifyClean (0.02s)
+PASS
+ok  	digital.vasic.docs_chain/internal/runner	0.022s
+
+=== Full suite, post-fix — no regressions across all 8 packages ===
+$ GOMAXPROCS=2 nice -n 19 go test -race -count=1 ./...
+ok  	digital.vasic.docs_chain/cmd/docs_chain	10.408s
+ok  	digital.vasic.docs_chain/internal/adapter	2.304s
+ok  	digital.vasic.docs_chain/internal/config	1.015s
+ok  	digital.vasic.docs_chain/internal/graph	1.009s
+ok  	digital.vasic.docs_chain/internal/hash	1.008s
+ok  	digital.vasic.docs_chain/internal/orchestrator	1.075s
+ok  	digital.vasic.docs_chain/internal/runner	1.784s
+ok  	digital.vasic.docs_chain/internal/state	1.010s
+
+$ gofmt -l internal/graph/recompute.go internal/runner/sync_derived_self_drift_test.go
+(empty — clean)
+
+$ go vet ./...
+(empty — clean)

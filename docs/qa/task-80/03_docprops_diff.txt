@@ -1,0 +1,33 @@
+Root-cause evidence: the drifted on-disk docs/codegraph/Status.docx's
+docProps/core.xml versus a REAL docs_chain-produced docx (same source
+markdown, same pandoc 3.10, run via docs_chain's PandocMarkdownToDOCX
+builtin which pins SOURCE_DATE_EPOCH=946684800 and --metadata title=Status).
+
+=== docProps/core.xml — drifted on-disk file (BEFORE remediation) ===
+<?xml version="1.0" encoding="UTF-8"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title></dc:title><dc:creator></dc:creator><cp:keywords></cp:keywords><dcterms:created xsi:type="dcterms:W3CDTF">2026-08-18T14:53:05Z</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">2026-08-18T14:53:05Z</dcterms:modified></cp:coreProperties>
+
+=== docProps/core.xml — real docs_chain-produced render (control) ===
+<?xml version="1.0" encoding="UTF-8"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Status</dc:title><dc:creator></dc:creator><cp:keywords></cp:keywords><dcterms:created xsi:type="dcterms:W3CDTF">2000-01-01T00:00:00Z</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">2000-01-01T00:00:00Z</dcterms:modified></cp:coreProperties>
+
+DIFFERENCES:
+  - <dc:title>: empty vs "Status"           -> the drifted file was NEVER
+    passed `--metadata title=...` (docs_chain ALWAYS passes it).
+  - <dcterms:created>/<dcterms:modified>: real wall-clock 2026-08-18T14:53:05Z
+    vs the pinned epoch 2000-01-01T00:00:00Z -> the drifted file was NEVER
+    produced with SOURCE_DATE_EPOCH set (docs_chain ALWAYS sets it, see
+    constitution/submodules/docs_chain/internal/adapter/derived.go
+    runProducer()).
+
+CONCLUSION: the on-disk docs/codegraph/Status.docx was NOT produced by any
+docs_chain invocation. It was written by a foreign tool — traced to
+scripts/generate_markdown_exports.sh's DOCX step, which runs a bare
+`pandoc -f markdown -t docx -o "$docx" "$md"` gated only by mtime
+(`$md -nt $docx`), independently of docs_chain and its content-hash
+tracking.
+
+Confirmed reproducible: 3 consecutive `pandoc --from=markdown --to=docx
+--metadata title=Status -o out.docx Status.md` runs with
+SOURCE_DATE_EPOCH=946684800 exported produced BYTE-IDENTICAL output
+(sha256 4b55b2e85fecd417b62f4618b243a90de139c7e52c365c33f9291eff88cd4f4d
+all three times) — pandoc IS deterministic under the pinned epoch; the
+drift is a MISSING-flags problem, not a pandoc non-determinism problem.

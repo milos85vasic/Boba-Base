@@ -1,0 +1,30 @@
+Commit / pointer cascade for task #80 (docs_chain sync/verify disagreement fix)
+
+1. docs_chain (constitution/submodules/docs_chain)
+   commit: 8e0abe02713ae0135a697c988932f6896f48fcf8
+   branch: main
+   pushed to: git@github.com:vasic-digital/docs_chain.git (origin, single
+     configured push URL — fast-forward dd96b2e..8e0abe0, confirmed)
+
+2. constitution (constitution/)
+   commit: dd3b8884ea235753cc370256bfc5a9ad0e4eb2e3
+   branch: main
+   pushed to (origin multi-push fan-out):
+     - git@github.com:HelixDevelopment/constitution.git   OK (3c91355..dd3b888)
+     - git@gitflic.ru:helixdevelopment/helixconstitution.git  OK (3c91355..dd3b888)
+     - git@gitlab.com:helixdevelopment1/helixconstitution.git OK (3c91355..dd3b888)
+     - git@gitverse.ru:helixdevelopment/constitution.git  FAILED — pre-existing,
+       unrelated permission error ("Push to create is not enabled for
+       organizations"; the same remote also failed at `git fetch` moments
+       earlier with "Cannot find repository") — NOT caused by this session.
+
+3. boba (project root)
+   commit: 70771079009c65b1f41dcae2b677a99f8977da95
+   branch: main
+   pushed to: git@github.com:milos85vasic/Boba-Base.git (origin — fast-forward
+     1d8ecb3..7077107, confirmed)
+
+Every commit staged EXACTLY ONE file (the relevant submodule gitlink, or the
+two docs_chain source files) — never `git add -A` — per §11.4.84
+working-tree-quiescence discipline, given heavy concurrent unrelated churn
+present in the boba working tree throughout this session.

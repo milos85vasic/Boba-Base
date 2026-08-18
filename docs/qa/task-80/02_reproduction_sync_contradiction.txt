@@ -1,0 +1,17 @@
+Pre-fix binary, run immediately after the verify above (no source edits made
+in between) — proves sync and verify disagree about the SAME state:
+
+$ ./constitution/submodules/docs_chain/docs_chain sync --all --root .
+codegraph-status         in-sync (no changes)
+features-status          in-sync (no changes)
+evidence: qa-results/docs_chain/20260818T195709Z
+EXIT=0
+
+$ ./constitution/submodules/docs_chain/docs_chain verify --all --root .
+codegraph-status         STALE: [status_docx]
+features-status          in-sync
+EXIT=1
+
+CONTRADICTION CONFIRMED: `sync` claims codegraph-status needed no changes
+and is in-sync, while `verify` — run immediately after, no intervening
+edits — reports the very same context STALE for status_docx.
