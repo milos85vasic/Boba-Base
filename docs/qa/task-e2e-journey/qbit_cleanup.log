@@ -1,0 +1,6 @@
+=== Pausing torrent immediately to stop further download ===
+PAUSE_HTTP:200
+=== Deleting torrent + downloaded data (cleanup) ===
+DELETE_HTTP:200
+=== Verify removal ===
+[]

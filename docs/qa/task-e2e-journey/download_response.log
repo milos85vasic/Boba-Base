@@ -1,0 +1,4 @@
+=== POST :7187/api/v1/download (correct port — merge service) ===
+{"download_id":"ccaf4eb1-bb41-4aa5-92cf-c36a7bfb51a0","status":"initiated","urls_count":1,"added_count":1,"results":[{"url":"https://iptorrents.com/download.php/7646525/The Bourne Legacy 2012 1080p BluRay HDR10 DTS-HD MA 5 1 x265-GeneMige.torrent","status":"added","method":"proxy"}]}
+HTTP_STATUS:200
+TIME:0.370269

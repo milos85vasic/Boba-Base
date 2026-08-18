@@ -219,6 +219,15 @@ here.
 - [`docs/incidents/`](docs/incidents/) — host-safety + CONST-033 forensic investigations, including the latest [2026-08-18 2nd perceived forced-logout](docs/incidents/2026-08-18-perceived-forced-logout-2nd.md) triage (root cause: partial, §11.4.6 `UNCONFIRMED:` boundary honestly stated; preventive gate: the resource-pressure signature challenge above)
 - [`docs/qa/`](docs/qa/) — per-item captured machine evidence (§11.4.5 / §11.4.69 / §11.4.83), one directory per workable item / task run — e.g. [`docs/qa/BOB-116/`](docs/qa/BOB-116/)
 
+### Manual QA
+
+Per §11.4.185, automated gates are necessary but not sufficient — every release deliverable
+requires a final human confirmation pass. Per-session manual-QA checklists live under
+[`docs/manual-qa/`](docs/manual-qa/), one file per session, in the §11.4.153 per-feature
+Status/video-confirmation format.
+
+- [`docs/manual-qa/2026-08-18-session-manual-qa-checklist.md`](docs/manual-qa/2026-08-18-session-manual-qa-checklist.md) — 12-feature checklist covering the boba-stack reachability, cross-tracker search/dedup, download flow, BOB-112 `/healthz` DDoS mitigation, constitution v68 landing, resource-pressure timer, CONST-033 challenge, and pre-build gate for the `457cca4`→`63f3f88` session range
+
 ### Testing
 
 - [`docs/TESTING.md`](docs/TESTING.md) — catalogue of every test type (30 rows)
