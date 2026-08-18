@@ -74,6 +74,16 @@ EXCLUDE_PATHS=(
   # grep over *.sh/*.py/*.go/*.ts/*.yml — only hits are the guard hook's own
   # test fixtures under tests/hooks/, already allowlisted above).
   "/docs/incidents/"
+  # SDD review diffs are captured evidence of what a reviewer read — they
+  # QUOTE the constitution's rule text, they do not invoke anything (a
+  # unified diff can never fork/exec, §11.4.201(7)(a) CARRIER).
+  "/.superpowers/sdd/"
+  # Session-scratch working files (agent transcripts, false-positive-audit
+  # fixtures, verification transcripts). These files are the audit trail
+  # that PROVES the guard hook fired on golden-bad inputs — they quote what
+  # was blocked, they don't invoke anything. Verified 2026-08-18: scratchpad
+  # is gitignored per §11.4.11 + §11.4.30, hosts session-local artefacts only.
+  "/scratchpad/"
 )
 
 # Forbidden grep -E patterns. Real, tight regexes — not bare words.

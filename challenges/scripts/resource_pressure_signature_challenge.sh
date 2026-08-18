@@ -1,0 +1,205 @@
+#!/bin/bash
+# resource_pressure_signature_challenge.sh — proactive host resource-pressure guard
+#
+# Purpose: detect known signatures that PRECEDE forced-logout incidents so we
+# fail-loud BEFORE user@1000.service gets SIGKILLed, not after.
+#
+# Origin: 2026-08-18 forced-logout incident (2nd occurrence on this project).
+# CONST-033 triage confirmed:
+#   - No kernel OOM-kill markers (dmesg clean)
+#   - No systemd-oomd trigger (pressure never crossed 90% threshold)
+#   - No lid-suspend event (HandleLidSwitch=ignore, CONST-033 compliant)
+#   - user@1000.service Main process SIGKILLed status=9 by unattributed source
+#
+# Five signatures the triage identified, EACH proactively falsifiable:
+#
+#   SIG-1: Runaway process >5 GB RSS in current user.slice (e.g. ugrep -o with
+#          variable-length alternation on a 10K-line file → 15 GB observed)
+#   SIG-2: Thread count >70% of ulimit -u soft limit (§12.12 forensic FACT)
+#   SIG-3: Recent EAGAIN cascade in podman container logs (errno 11 =
+#          system-wide thread ceiling, precedes SIGKILL by ~5 min)
+#   SIG-4: user.slice PSI full avg60 >50 (sustained memory pressure — half the
+#          systemd-oomd 90% trigger threshold, the leading indicator)
+#   SIG-5: pgrep -f pathological patterns in currently-running ps output
+#          (regex "-o" with "\.\\{" bounded quantifier alternation on a source
+#          file matches the reaped 20:50:59 forensic instance)
+#
+# Every hit is REPORTED with §11.4.6 honest boundary — a signature triggered
+# does NOT prove logout is imminent, but it does prove the pressure the actual
+# incident had. §1.1 paired mutation: strip a signature detector, verify the
+# recorded trigger pattern (encoded golden-bad in the sibling fixture) makes
+# the challenge PASS silently → proves the detector is load-bearing.
+#
+# Usage:
+#   bash challenges/scripts/resource_pressure_signature_challenge.sh
+#
+# Exit:
+#   0 = clean (all 5 signatures below their thresholds)
+#   1 = one or more signatures over threshold
+#   2 = invocation error / instrument unavailable (§11.4.3 SKIP-with-reason)
+#
+# Anti-bluff (§11.4.107(10)):
+#   Every threshold value is documented + traceable to captured evidence.
+#   Never a hardcoded value without a cited source (§11.4.6).
+
+set -uo pipefail
+
+# --- Configuration (thresholds tuned to the 2026-08-18 forensic instance) ---
+# Rationale for each threshold cites its evidence anchor.
+SIG1_MAX_PROC_RSS_GB="${SIG1_MAX_PROC_RSS_GB:-5}"     # forensic FACT: 15 GB ugrep
+SIG2_THREAD_PCT="${SIG2_THREAD_PCT:-70}"              # §12.12: 3900/4096 = 95% was crisis
+SIG3_EAGAIN_LOOKBACK_MIN="${SIG3_EAGAIN_LOOKBACK_MIN:-15}"  # ~5 min crisis window observed
+SIG3_EAGAIN_THRESHOLD="${SIG3_EAGAIN_THRESHOLD:-3}"  # 4 trackers hit EAGAIN simultaneously
+SIG4_PSI_AVG60_LIMIT="${SIG4_PSI_AVG60_LIMIT:-50}"    # half the systemd-oomd 90% threshold
+SIG5_PATHOLOGICAL_PATTERN_REGEX='\bugrep .*-o .*\.\\\{[0-9]+,[0-9]+\\\}.*\\\|'
+
+# --- Preflight ---
+USER="${USER:-$(id -un)}"
+FAILURES=0
+FAIL_MESSAGES=()
+
+log_fail() {
+  FAILURES=$((FAILURES + 1))
+  FAIL_MESSAGES+=("$1")
+}
+
+# --- SIG-1: runaway process >N GB RSS ---
+echo "=== SIG-1: runaway process >${SIG1_MAX_PROC_RSS_GB} GB RSS ==="
+# ps prints RSS in KB. Threshold in GB.
+THRESHOLD_KB=$((SIG1_MAX_PROC_RSS_GB * 1024 * 1024))
+LARGE_PROCS=$(ps -o pid,user,rss,comm --no-headers -u "$USER" 2>/dev/null | \
+  awk -v t="$THRESHOLD_KB" '$3 > t')
+if [ -n "$LARGE_PROCS" ]; then
+  echo "OVER THRESHOLD:"
+  echo "$LARGE_PROCS"
+  # Exception: known legitimate large services documented per §11.4.35
+  # Filter these OUT before failing. Currently empty; extend per host.
+  LEGIT_EXCLUSIONS="ollama|firefox|yandex_browser|chrome"
+  UNCLASSIFIED=$(echo "$LARGE_PROCS" | grep -vE "$LEGIT_EXCLUSIONS" || true)
+  if [ -n "$UNCLASSIFIED" ]; then
+    log_fail "SIG-1: unclassified process(es) over ${SIG1_MAX_PROC_RSS_GB} GB RSS"
+    echo "UNCLASSIFIED (not in legitimate-large exclusion set):"
+    echo "$UNCLASSIFIED"
+  else
+    echo "(all over-threshold procs matched legitimate-large exclusion — accepted)"
+  fi
+else
+  echo "OK: no process >${SIG1_MAX_PROC_RSS_GB} GB RSS"
+fi
+echo
+
+# --- SIG-2: thread count vs soft ulimit ---
+echo "=== SIG-2: thread count >${SIG2_THREAD_PCT}% of soft ulimit -u ==="
+THREADS=$(ps -L --no-headers -u "$USER" 2>/dev/null | wc -l)
+SOFT_LIMIT=$(ulimit -Su 2>/dev/null || ulimit -u 2>/dev/null)
+if [ -n "$SOFT_LIMIT" ] && [ "$SOFT_LIMIT" != "unlimited" ] && [ "$SOFT_LIMIT" -gt 0 ]; then
+  PCT=$((THREADS * 100 / SOFT_LIMIT))
+  echo "  threads=$THREADS  soft_limit=$SOFT_LIMIT  utilization=${PCT}%"
+  if [ "$PCT" -gt "$SIG2_THREAD_PCT" ]; then
+    log_fail "SIG-2: thread utilization ${PCT}% exceeds ${SIG2_THREAD_PCT}% threshold"
+  else
+    echo "OK: thread utilization ${PCT}% within safe zone"
+  fi
+else
+  echo "SKIP (§11.4.3 SKIP-with-reason): ulimit soft-limit unresolvable"
+fi
+echo
+
+# --- SIG-3: recent EAGAIN cascade in container logs ---
+echo "=== SIG-3: EAGAIN cascade in last ${SIG3_EAGAIN_LOOKBACK_MIN} minutes ==="
+if command -v podman >/dev/null 2>&1; then
+  # Collect container logs from last N minutes filtered for EAGAIN class errors
+  EAGAIN_COUNT=0
+  CONTAINERS=$(podman ps --format '{{.Names}}' 2>/dev/null | head -20)
+  if [ -n "$CONTAINERS" ]; then
+    for cname in $CONTAINERS; do
+      HITS=$(podman logs --since "${SIG3_EAGAIN_LOOKBACK_MIN}m" "$cname" 2>&1 | \
+        grep -iE "resource temporarily unavailable|EAGAIN|SocketException \(11\)|failed to create new (os )?thread|failed to spawn" | \
+        wc -l)
+      EAGAIN_COUNT=$((EAGAIN_COUNT + HITS))
+      if [ "$HITS" -gt 0 ]; then
+        echo "  container '$cname': $HITS EAGAIN hits"
+      fi
+    done
+  fi
+  echo "  total EAGAIN-class hits last ${SIG3_EAGAIN_LOOKBACK_MIN}min: $EAGAIN_COUNT"
+  if [ "$EAGAIN_COUNT" -gt "$SIG3_EAGAIN_THRESHOLD" ]; then
+    log_fail "SIG-3: $EAGAIN_COUNT EAGAIN hits exceed ${SIG3_EAGAIN_THRESHOLD} threshold — thread ceiling being hit"
+  else
+    echo "OK: EAGAIN hits within safe zone"
+  fi
+else
+  echo "SKIP (§11.4.3): podman unavailable"
+fi
+echo
+
+# --- SIG-4: user.slice PSI full avg60 ---
+echo "=== SIG-4: user.slice memory PSI full avg60 > ${SIG4_PSI_AVG60_LIMIT} ==="
+PSI_FILE="/sys/fs/cgroup/user.slice/user-1000.slice/memory.pressure"
+if [ -r "$PSI_FILE" ]; then
+  # Extract "full avg60=X.YZ" and compare to threshold
+  FULL_AVG60=$(awk '/^full/ { for(i=1;i<=NF;i++) if($i ~ /^avg60=/) {gsub("avg60=","",$i); print $i} }' "$PSI_FILE")
+  echo "  full avg60=$FULL_AVG60 threshold=${SIG4_PSI_AVG60_LIMIT}"
+  if [ -n "$FULL_AVG60" ]; then
+    # bc-less compare using awk
+    OVER=$(awk -v a="$FULL_AVG60" -v b="$SIG4_PSI_AVG60_LIMIT" 'BEGIN { print (a > b) ? 1 : 0 }')
+    if [ "$OVER" = "1" ]; then
+      log_fail "SIG-4: PSI full avg60=$FULL_AVG60 exceeds ${SIG4_PSI_AVG60_LIMIT} — sustained memory pressure"
+    else
+      echo "OK: PSI within safe zone"
+    fi
+  fi
+else
+  echo "SKIP (§11.4.3): $PSI_FILE not readable"
+fi
+echo
+
+# --- SIG-5: pathological regex in current process cmdlines ---
+echo "=== SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ==="
+# Scan currently-running process cmdlines for the class that triggered
+# incident 2. Read /proc/*/cmdline to avoid shell-expansion of the pattern.
+PATHOLOGICAL_HITS=0
+PATHOLOGICAL_LIST=""
+for pdir in /proc/[0-9]*; do
+  cmdfile="$pdir/cmdline"
+  [ -r "$cmdfile" ] || continue
+  # Convert NUL-delimited cmdline to space-delimited
+  CMDLINE=$(tr '\0' ' ' < "$cmdfile" 2>/dev/null)
+  # Skip the challenge's own process to avoid self-match (§11.4.196(D))
+  PID=${pdir#/proc/}
+  [ "$PID" = "$$" ] && continue
+  [ "$PID" = "$PPID" ] && continue
+  # Match the pathological class
+  if echo "$CMDLINE" | grep -qE "$SIG5_PATHOLOGICAL_PATTERN_REGEX"; then
+    PATHOLOGICAL_HITS=$((PATHOLOGICAL_HITS + 1))
+    RSS_KB=$(awk '/^VmRSS:/ {print $2}' "$pdir/status" 2>/dev/null)
+    PATHOLOGICAL_LIST="${PATHOLOGICAL_LIST}\n  PID=$PID RSS=${RSS_KB}KB CMD=$(echo "$CMDLINE" | head -c 200)"
+  fi
+done
+if [ "$PATHOLOGICAL_HITS" -gt 0 ]; then
+  log_fail "SIG-5: $PATHOLOGICAL_HITS process(es) running pathological regex"
+  printf "$PATHOLOGICAL_LIST\n"
+else
+  echo "OK: no pathological-regex processes detected"
+fi
+echo
+
+# --- Verdict ---
+echo "=== summary ==="
+if [ "$FAILURES" -eq 0 ]; then
+  echo "PASS: no resource-pressure signatures over threshold"
+  exit 0
+else
+  echo "FAIL: $FAILURES signature(s) tripped"
+  for m in "${FAIL_MESSAGES[@]}"; do
+    echo "  - $m"
+  done
+  echo
+  echo "Take corrective action per docs/incidents/2026-08-18-perceived-forced-logout-2nd.md:"
+  echo "  - SIG-1: identify + kill runaway process"
+  echo "  - SIG-2: reduce parallel subagent fan-out"
+  echo "  - SIG-3: examine container that emits EAGAIN, throttle its outbound"
+  echo "  - SIG-4: reduce memory-consuming workload"
+  echo "  - SIG-5: kill the pathological regex process immediately"
+  exit 1
+fi
