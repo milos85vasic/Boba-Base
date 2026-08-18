@@ -1,7 +1,7 @@
 # DDoS Resilience Testing
 
-**Revision:** 1
-**Last modified:** 2026-08-18T14:54:02Z
+**Revision:** 2
+**Last modified:** 2026-08-18T19:25:00Z
 
 Documents `challenges/scripts/ddos_resilience_challenge.sh` — the DDoS-class
 testing scaffold added by **BOB-074** to close a gap in boba's §11.4.27
@@ -162,7 +162,24 @@ this task's file scope):
   **not verified** during this task to cover request-rate, only
   bandwidth — do not assume this closes the gap without checking).
 
-### 2. `boba-jackett`'s `/healthz` amplifies under a cold-start burst
+### 2. `boba-jackett`'s `/healthz` amplifies under a cold-start burst — FIXED + live-verified (BOB-112, task #74)
+
+**Status update (2026-08-18, task #74):** the 30s TTL cache recommended in
+fix option 1 below was implemented as commit `91b52db` and then
+**live-verified with real `wrk` load-test evidence** — the followup this
+finding originally filed. See `docs/qa/BOB-112/summary.md` for the full
+before/after numbers: a §1.1 mutation reproducing this exact pre-fix code
+measured **97.1% client-side timeouts** (400/412 requests) at 4 threads ×
+100 connections × 30s against `:7189/healthz`; the real committed fix
+measured **0.0% timeouts** across 812,149 requests in the same window
+(27,049 req/s, p99 19.89ms) and collapsed upstream `Jackett.GetCatalog()`
+calls from one-per-request down to 2 calls in the entire 30s run. This
+challenge script now also ships a standing `--healthz` mode (see "Running
+manually" below) that re-runs a bounded version of this same check on every
+future invocation, so a regression that re-introduces the uncached call
+path trips a real `FAIL`, not just a filed finding.
+
+The pre-fix root cause is preserved below for historical/forensic context.
 
 **Root cause:** `qBitTorrent-go/internal/jackettapi/health.go:60-63` —
 
@@ -271,6 +288,15 @@ RED_MODE=1 bash challenges/scripts/ddos_resilience_challenge.sh
 # genuinely broken (golden-bad) backend from a genuinely healthy
 # (golden-good) one, using throwaway local fixtures only.
 bash challenges/scripts/ddos_resilience_challenge.sh --self-validate
+
+# --healthz — BOB-112 regression guard (added task #74): a bounded 2-thread
+# x 20-connection x 5s wrk load (falls back to a curl-loop probe if wrk is
+# not installed) against boba-jackett's :7189/healthz, asserting the
+# client-observed timeout rate + throughput + server-side cache-refresh
+# count all stay within thresholds calibrated against the real RED/GREEN
+# evidence in docs/qa/BOB-112/summary.md. FAILs if the TTL cache is ever
+# removed or bypassed again.
+bash challenges/scripts/ddos_resilience_challenge.sh --healthz
 ```
 
 Exit codes: `0` = all `PASS` (honest `SKIP`s allowed), `1` = one or more
@@ -285,11 +311,15 @@ write from this task risked a race with theirs. Registered into the DB
 (§11.4.93/§11.4.202) by the orchestrating session once the parallel batch
 completed — see the BOB-NNN id on each item below:
 
-1. **Bug** (filed as **BOB-112**): `boba-jackett`'s `/healthz`
-   synchronously calls `Jackett.GetCatalog()` uncached on every hit
+1. **Bug** (filed as **BOB-112**, **FIXED + live-verified 2026-08-18 —
+   task #74**): `boba-jackett`'s `/healthz` synchronously called
+   `Jackett.GetCatalog()` uncached on every hit
    (`qBitTorrent-go/internal/jackettapi/health.go:60-63`), causing up to
    65% request timeout rates under a modest cold-start concurrent burst
-   (measured evidence above). Recommended fixes listed above.
+   (measured evidence above). Fixed by commit `91b52db` (30s TTL cache);
+   see `docs/qa/BOB-112/summary.md` for the real `wrk` before/after
+   evidence (97.1% → 0.0% timeouts) and the standing `--healthz` regression
+   guard this challenge now ships.
 2. **Task** (filed as **BOB-111**): configure real rate limiting for
    boba's three public HTTP endpoints (`:7185`, `:7187`, `:7189`) — none
    exists today. Candidate approaches documented above.
@@ -306,6 +336,9 @@ completed — see the BOB-NNN id on each item below:
    (filed as **BOB-109** scaling / **BOB-110** UX): scaling-class and
    UX-class test coverage are both fully absent from boba's mandated
    test-type matrix — filed as separate followups there.
-6. **Task** (filed as **BOB-113**): `wrk` is not installed on the
-   development host (only `ab` is) — add it to dev tooling for future
-   DDoS/load challenges.
+6. **Task** (filed as **BOB-113**, **CLOSED 2026-08-18 — task #75/#74**):
+   `wrk` was not installed on the development host (only `ab` was) —
+   `scripts/install-dev-tools.sh` (commit `c7dfdde`) added a dev-tooling
+   installer; it was run live during task #74 (`wrk 4.2.0 [epoll]` and
+   `hey` confirmed `ALREADY-PRESENT`/installed, `ab`/`curl-loader` detected,
+   `siege` an honest documented `SKIP`).

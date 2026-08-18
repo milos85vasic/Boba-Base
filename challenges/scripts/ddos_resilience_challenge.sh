@@ -282,6 +282,122 @@ PYEOF
   exit 1
 fi
 
+# --- §11.4.115 RED/GREEN regression guard: BOB-112 /healthz TTL cache ------
+# Added by task #74 (live wrk verification of BOB-112's health.go TTL
+# cache). Runs a bounded `wrk` load against boba-jackett's :7189/healthz on
+# EVERY future invocation of this challenge and asserts both:
+#   (a) the client-observed timeout rate stays low, and
+#   (b) the server-side upstream Jackett.GetCatalog() call count (read from
+#       `podman/docker logs boba-jackett`'s "cache refresh" lines) stays
+#       bounded — proving the cache is actually collapsing the load, not
+#       merely that the endpoint happened to be fast this particular run.
+# Thresholds are calibrated against real captured evidence, not guessed
+# (§11.4.6) — see docs/qa/BOB-112/summary.md for the full RED/GREEN numbers:
+# RED (cache bypassed via a §1.1 mutation): 97.1% timeouts, 13.71 req/s.
+# GREEN (real committed code): 0.0% timeouts, 27,049.00 req/s. The
+# thresholds below sit far inside that gap so this guard trips only on a
+# genuine regression, never on ordinary host-load noise.
+if [ "$MODE" = "--healthz" ]; then
+  echo "=== ddos_resilience_challenge: --healthz (BOB-112 cache regression guard) ==="
+  HEALTHZ_URL="http://127.0.0.1:7189/healthz"
+  HEALTHZ_WRK_THREADS=2
+  HEALTHZ_WRK_CONNS=20
+  HEALTHZ_WRK_DURATION="5s"
+  HEALTHZ_WRK_TIMEOUT_S=3
+  # GREEN observed 0%, RED observed 97.1% — 20% is a wide, conservative
+  # trip-wire far above ordinary jitter and far below the RED baseline.
+  HEALTHZ_MAX_TIMEOUT_PCT=20
+  # GREEN observed ~27k req/s, RED observed ~14 req/s — 500 is >35x the RED
+  # baseline and <2% of the GREEN baseline, so it only fires on genuine
+  # regression, never on host contention alone.
+  HEALTHZ_MIN_REQS_PER_SEC=500
+  # TTL=30s > the 5s test window, so a healthy cache produces 0-1 refreshes
+  # from a warm/cold start; allow slack for cold-start double-checked-lock
+  # races.
+  HEALTHZ_MAX_CACHE_REFRESH_DELTA=3
+
+  reachable_code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "$HEALTHZ_URL" 2>/dev/null)
+  if [ -z "$reachable_code" ] || [ "$reachable_code" = "000" ]; then
+    echo "SKIP: boba-jackett unreachable at $HEALTHZ_URL (reason=services_not_running — start the stack via ./start.sh)"
+    exit 0
+  fi
+
+  if ! command -v wrk >/dev/null 2>&1; then
+    echo "SKIP-with-fallback: wrk not installed (reason=tooling_absent — run 'bash scripts/install-dev-tools.sh', see docs/scripts/install-dev-tools.md). Falling back to the bounded curl-loop probe already used above so this mode still produces a real signal on hosts without wrk."
+    fb_file="$(mktemp)"
+    run_curl_status_probe "$HEALTHZ_URL" 100 "$HEALTHZ_WRK_CONNS" "$fb_file"
+    fb_n=$(wc -l < "$fb_file" 2>/dev/null | tr -d '[:space:]')
+    fb_timeouts=$(tally_rc "$fb_file" 28)
+    rm -f "$fb_file"
+    fb_pct=0
+    [ -n "$fb_n" ] && [ "$fb_n" -gt 0 ] 2>/dev/null && fb_pct=$(awk -v t="$fb_timeouts" -v n="$fb_n" 'BEGIN{printf "%.1f", (t/n)*100}')
+    echo "curl-loop fallback: ${fb_timeouts:-0}/${fb_n:-0} timeouts (${fb_pct}%)"
+    if awk -v p="$fb_pct" -v m="$HEALTHZ_MAX_TIMEOUT_PCT" 'BEGIN{exit !(p>m)}'; then
+      echo "FAIL: --healthz curl-loop fallback — ${fb_pct}% timeout rate exceeds ${HEALTHZ_MAX_TIMEOUT_PCT}% threshold"
+      exit 1
+    fi
+    echo "PASS: --healthz curl-loop fallback — ${fb_pct}% timeout rate within ${HEALTHZ_MAX_TIMEOUT_PCT}% threshold (wrk unavailable, degraded check — install wrk for the full-fidelity check)"
+    exit 0
+  fi
+
+  # Server-side cache-behavior check (best-effort; honestly skipped if no
+  # container runtime CLI is reachable — never faked, §11.4.6).
+  LOG_CLI=""
+  command -v podman >/dev/null 2>&1 && LOG_CLI="podman"
+  [ -z "$LOG_CLI" ] && command -v docker >/dev/null 2>&1 && LOG_CLI="docker"
+  have_container=0
+  if [ -n "$LOG_CLI" ] && "$LOG_CLI" ps --format '{{.Names}}' 2>/dev/null | grep -qx boba-jackett; then
+    have_container=1
+  fi
+  refresh_before=0
+  [ "$have_container" -eq 1 ] && refresh_before=$("$LOG_CLI" logs boba-jackett 2>&1 | grep -c "cache refresh")
+
+  wrk_out="$(wrk -t"$HEALTHZ_WRK_THREADS" -c"$HEALTHZ_WRK_CONNS" -d"$HEALTHZ_WRK_DURATION" --timeout "${HEALTHZ_WRK_TIMEOUT_S}s" --latency "$HEALTHZ_URL" 2>&1)"
+  echo "$wrk_out"
+
+  total_reqs=$(echo "$wrk_out" | grep -oE '[0-9]+ requests in' | grep -oE '^[0-9]+')
+  reqs_per_sec=$(echo "$wrk_out" | grep -E '^Requests/sec:' | awk '{print $2}')
+  timeout_n=$(echo "$wrk_out" | grep -E '^  Socket errors:' | grep -oE 'timeout [0-9]+' | grep -oE '[0-9]+$')
+  [ -z "$timeout_n" ] && timeout_n=0
+  [ -z "$total_reqs" ] && total_reqs=0
+  timeout_pct=0
+  [ "$total_reqs" -gt 0 ] 2>/dev/null && timeout_pct=$(awk -v t="$timeout_n" -v n="$total_reqs" 'BEGIN{printf "%.1f", (t/n)*100}')
+
+  refresh_delta=0
+  cache_check_note="cache-behavior check SKIPPED (no accessible container runtime CLI/container found — timeout-rate + throughput checks below still apply)"
+  if [ "$have_container" -eq 1 ]; then
+    refresh_after=$("$LOG_CLI" logs boba-jackett 2>&1 | grep -c "cache refresh")
+    refresh_delta=$((refresh_after - refresh_before))
+    cache_check_note="server-side cache refresh delta during this run: $refresh_delta (bound: <= $HEALTHZ_MAX_CACHE_REFRESH_DELTA)"
+  fi
+
+  echo ""
+  echo "--- --healthz verdict inputs ---"
+  echo "  total_requests=$total_reqs  timeouts=$timeout_n  timeout_pct=${timeout_pct}%  reqs_per_sec=${reqs_per_sec:-0}"
+  echo "  $cache_check_note"
+
+  bad=0
+  if awk -v p="$timeout_pct" -v m="$HEALTHZ_MAX_TIMEOUT_PCT" 'BEGIN{exit !(p>m)}'; then
+    echo "  [FAIL] timeout rate ${timeout_pct}% exceeds ${HEALTHZ_MAX_TIMEOUT_PCT}% threshold — BOB-112 cache regression suspected"
+    bad=1
+  fi
+  if [ -n "${reqs_per_sec:-}" ] && awk -v r="$reqs_per_sec" -v m="$HEALTHZ_MIN_REQS_PER_SEC" 'BEGIN{exit !(r<m)}'; then
+    echo "  [FAIL] throughput ${reqs_per_sec} req/s below ${HEALTHZ_MIN_REQS_PER_SEC} req/s floor — BOB-112 cache regression suspected"
+    bad=1
+  fi
+  if [ "$have_container" -eq 1 ] && [ "$refresh_delta" -gt "$HEALTHZ_MAX_CACHE_REFRESH_DELTA" ] 2>/dev/null; then
+    echo "  [FAIL] $refresh_delta cache refreshes during a ${HEALTHZ_WRK_DURATION} window exceeds bound $HEALTHZ_MAX_CACHE_REFRESH_DELTA — cache does not appear to be collapsing upstream calls"
+    bad=1
+  fi
+
+  if [ "$bad" -eq 0 ]; then
+    echo "PASS: --healthz — BOB-112 /healthz TTL cache still effective (see docs/qa/BOB-112/summary.md for the full RED/GREEN evidence this guard is calibrated against)"
+    exit 0
+  fi
+  echo "FAIL: --healthz — BOB-112 cache regression guard tripped"
+  exit 1
+fi
+
 # --- Live run ----------------------------------------------------------------
 echo "=== ddos_resilience_challenge (BOB-074) ==="
 echo "RED_MODE=$RED_MODE  (0=GREEN guard, 1=reproduce pre-fix defect state)"
