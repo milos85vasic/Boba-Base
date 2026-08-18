@@ -24,6 +24,24 @@
 #
 # ─── USAGE ────────────────────────────────────────────────────────────
 #   bash scripts/commit-push-all.sh "commit message"
+#   bash scripts/commit-push-all.sh --scope <path> [--scope <path>]... "commit message"
+#
+# ─── task #66 / BOB-068 SWEEP-PATTERN REMEDY ──────────────────────────
+# Without --scope, stage 5 runs an unconditional `git add -A`, which
+# sweeps ANY other in-flight change in the working tree (e.g. a
+# concurrent parallel-subagent's not-yet-committed file) into THIS
+# commit — a real §11.4.84 quiescence violation, observed 5x in one
+# session (BOB-068). `--scope <path>` (repeatable) opts a caller into a
+# SCOPED commit instead: only the declared paths are `git add`-ed, and
+# a safety check (§11.4.201-style real-condition assertion) verifies
+# the resulting staged set contains ONLY paths under the declared
+# scope before allowing the commit — if anything else is staged (e.g.
+# a stray `git add -A` from an earlier/concurrent run left residue),
+# the commit is REJECTED with the exact unexpected paths named, never
+# silently swept in. This is the interim tooling fix; the full
+# architectural remedy is §11.4.179 isolated-git-streams (task #67
+# proposal). Existing callers WITHOUT --scope are unaffected — the
+# `git add -A` sweep remains the default for backwards compatibility.
 #
 # Environment knobs:
 #   BOBA_SYNC_SKIP_CI=1      Skip the long pre_build_verification.sh gate
@@ -35,16 +53,53 @@
 #
 # ─── EXIT ─────────────────────────────────────────────────────────────
 #   0 = commit + push completed (or nothing to commit)
-#   1 = validation failure (cheap check or long gate) — remediation
-#       printed to stderr
-#   2 = invocation error (missing message)
+#   1 = validation failure (cheap check, long gate, or --scope safety
+#       check) — remediation printed to stderr
+#   2 = invocation error (missing message / malformed --scope)
 #   3 = another commit-push-all.sh is already running (flock)
 
 set -euo pipefail
 
 # ─── args ─────────────────────────────────────────────────────────────
+SCOPES=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --scope)
+            if [ $# -lt 2 ] || [ -z "${2:-}" ]; then
+                echo "ERROR: --scope requires a non-empty path argument" >&2
+                exit 2
+            fi
+            SCOPES+=("$2")
+            shift 2
+            ;;
+        --scope=*)
+            v="${1#--scope=}"
+            if [ -z "$v" ]; then
+                echo "ERROR: --scope= requires a non-empty path" >&2
+                exit 2
+            fi
+            SCOPES+=("$v")
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            echo "ERROR: unknown flag: $1" >&2
+            echo "Usage: $0 [--scope <path>]... \"commit message\"" >&2
+            exit 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 \"commit message\"" >&2
+    echo "Usage: $0 [--scope <path>]... \"commit message\"" >&2
+    echo "  --scope <path>          Repeatable. Only stage these path(s) —" >&2
+    echo "                          NEVER 'git add -A'. See task #66." >&2
     echo "  Optional: BOBA_SYNC_SKIP_CI=1 to defer the long pre-build gate." >&2
     exit 2
 fi
@@ -141,12 +196,70 @@ echo "[commit-push-all] stage 4/6 — git status pre-commit"
 git status --short | head -40
 
 # ─── stage 5: commit ──────────────────────────────────────────────────
-echo "[commit-push-all] stage 5/6 — commit"
-git add -A
-if git diff --cached --quiet; then
-    echo "[commit-push-all] nothing to commit — skipping to push stage"
+# §11.4.201-style real-condition assertion for the --scope safety layer:
+# a path is "in scope" iff it EQUALS a declared scope entry, or sits
+# UNDER one (declared entry is a directory prefix). Never a substring
+# match (§11.4.201(7)(a) — match structure, not substring).
+_scope_contains() {
+    # $1 = staged path, remaining args = declared scope entries
+    local path="$1"; shift
+    local s
+    for s in "$@"; do
+        s="${s%/}"        # normalize a trailing slash on a directory scope
+        s="${s#./}"       # normalize a leading ./
+        if [ "$path" = "$s" ] || [ "${path#"$s"/}" != "$path" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+if [ "${#SCOPES[@]}" -gt 0 ]; then
+    echo "[commit-push-all] stage 5/6 — SCOPED commit (--scope mode, ${#SCOPES[@]} path(s) declared)"
+    for s in "${SCOPES[@]}"; do
+        echo "                             scope: $s"
+    done
+    git add -- "${SCOPES[@]}"
+
+    # ── §11.4.201 safety check: staged set MUST be a subset of the
+    #    declared scope. If anything else is staged — e.g. residue from
+    #    a stray `git add -A` in-flight elsewhere — REJECT (BOB-068).
+    STAGED_FILES="$(git diff --cached --name-only)"
+    UNEXPECTED=()
+    while IFS= read -r f; do
+        [ -z "$f" ] && continue
+        if ! _scope_contains "$f" "${SCOPES[@]}"; then
+            UNEXPECTED+=("$f")
+        fi
+    done <<<"$STAGED_FILES"
+
+    if [ "${#UNEXPECTED[@]}" -gt 0 ]; then
+        echo "ERROR: --scope safety check FAILED — staged file(s) OUTSIDE the declared scope:" >&2
+        for f in "${UNEXPECTED[@]}"; do
+            echo "  - $f" >&2
+        done
+        echo "       Declared scope: ${SCOPES[*]}" >&2
+        echo "       This is the exact BOB-068 sweep pattern --scope exists to prevent —" >&2
+        echo "       a concurrent process (or a stray earlier 'git add -A') left" >&2
+        echo "       unrelated work staged. NOT committing." >&2
+        echo "       Remediation: inspect + unstage the file(s) above yourself" >&2
+        echo "       ('git restore --staged <file>'), then re-run this command." >&2
+        exit 1
+    fi
+    echo "[commit-push-all] stage 5/6 — --scope safety check OK (staged set == declared scope)"
+
+    if git diff --cached --quiet; then
+        echo "[commit-push-all] nothing to commit — skipping to push stage"
+    else
+        git commit -m "${MSG}${SKIP_TAG}"
+    fi
 else
-    git commit -m "${MSG}${SKIP_TAG}"
+    git add -A
+    if git diff --cached --quiet; then
+        echo "[commit-push-all] nothing to commit — skipping to push stage"
+    else
+        git commit -m "${MSG}${SKIP_TAG}"
+    fi
 fi
 
 # ─── stage 6: push to ALL upstreams (§2.1) ────────────────────────────
