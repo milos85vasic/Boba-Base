@@ -1,0 +1,40 @@
+=== SIG-1 real-RSS fixture: host has 51 GB MemAvailable, allocating 5.5 GB (real, page-touched) ===
+SIG1_FIXTURE_READY pid=2214426 bytes=5905580032
+Verified via ps: PID=2214426 RSS=5793032 KB
+
+=== Running the REAL (un-mutated) challenge against this live pathological state ===
+=== SIG-1: runaway process >5 GB RSS ===
+OVER THRESHOLD:
+2214426 milosva+ 5793032 python3
+UNCLASSIFIED (not in legitimate-large exclusion set):
+2214426 milosva+ 5793032 python3
+
+=== SIG-2: thread count >70% of soft ulimit -u ===
+  threads=1289  soft_limit=65536  utilization=1%
+OK: thread utilization 1% within safe zone
+
+=== SIG-3: EAGAIN cascade in last 15 minutes ===
+  total EAGAIN-class hits last 15min: 0
+  correlation: SIG-2-not-currently-elevated (current SIG-2 utilization=1%)
+OK: EAGAIN hits within safe zone
+
+=== SIG-4: user.slice memory PSI full avg60 > 50 ===
+  full avg60=0.00 threshold=50
+OK: PSI within safe zone
+
+=== SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+OK: no pathological-regex processes detected
+
+=== summary ===
+FAIL: 1 signature(s) tripped
+  - SIG-1: unclassified process(es) over 5 GB RSS
+
+Take corrective action per docs/incidents/2026-08-18-perceived-forced-logout-2nd.md:
+  - SIG-1: identify + kill runaway process
+  - SIG-2: reduce parallel subagent fan-out
+  - SIG-3: examine container that emits EAGAIN, throttle its outbound
+  - SIG-4: reduce memory-consuming workload
+  - SIG-5: kill the pathological regex process immediately
+
+Challenge exit code: 1
+RED CONFIRMED: challenge correctly FAILed on a genuine >5.5GB RSS process, naming SIG-1

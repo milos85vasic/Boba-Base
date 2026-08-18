@@ -63,6 +63,49 @@ SIG1_MAX_PROC_RSS_GB="${SIG1_MAX_PROC_RSS_GB:-5}"     # forensic FACT: 15 GB ugr
 SIG2_THREAD_PCT="${SIG2_THREAD_PCT:-70}"              # §12.12: 3900/4096 = 95% was crisis
 SIG3_EAGAIN_LOOKBACK_MIN="${SIG3_EAGAIN_LOOKBACK_MIN:-15}"  # ~5 min crisis window observed
 SIG3_EAGAIN_THRESHOLD="${SIG3_EAGAIN_THRESHOLD:-3}"  # 4 trackers hit EAGAIN simultaneously
+# §11.4.209 review MINOR-4: SIG-3 in isolation is a proxy-for-a-proxy — the
+# §12.12 real signature is EAGAIN AS A SYMPTOM OF thread-ceiling pressure,
+# not EAGAIN alone (transient socket unavailability / upstream slow-start /
+# disk-pressure retries also emit errno-11 with zero thread-ceiling
+# involvement). The fix is CORRELATION-AS-CONTEXT, never
+# correlation-as-suppression: SIG-3's own EAGAIN_COUNT vs
+# SIG3_EAGAIN_THRESHOLD comparison (below, unchanged) remains the ONLY FAIL
+# condition. A first draft of this fix RAISED the required hit-count when
+# SIG-2 read LOW, and was caught regressing SIG-3's own §11.4.115(F) RED
+# fixture (sig3_real_eagain_fixture.sh) in testing BEFORE landing: SIG-2 and
+# SIG-3 measure DIFFERENT TIME WINDOWS — SIG-2 is a POINT-IN-TIME read of
+# "right now", SIG-3 is a SIG3_EAGAIN_LOOKBACK_MIN-minute LOOKBACK over past
+# container logs — so a genuine EAGAIN cascade from several minutes ago
+# legitimately co-occurs with a LOW *current* SIG-2 reading once the
+# thread-ceiling pressure has subsided; raising the bar in that case would
+# have suppressed the exact real-incident class SIG-3 exists to catch (a
+# §11.4.101 conservative-safe-default violation — see
+# docs/qa/task-review-457cca4-a7e55f9-minor-fixes/minor-4.log for the
+# caught-and-reverted transcript). The CORRECT fix keeps the original
+# sensitivity and instead attaches a CONFIDENCE label to the failure
+# message so an operator can immediately see whether SIG-3 correlates with
+# CURRENT thread pressure (elevated SIG-2 = the real §12.12 pattern) or not
+# (low current SIG-2 = still a genuine cascade, but possibly from an
+# already-subsided or non-thread-ceiling episode) — never suppressing
+# detection either way.
+SIG2_LOW_UTIL_PCT="${SIG2_LOW_UTIL_PCT:-30}"          # below this, current-moment correlation with thread-ceiling is unlikely
+
+# §11.4.209 review MINOR-4 correlation function, extracted so it is
+# independently sourceable/testable (see
+# docs/qa/task-review-457cca4-a7e55f9-minor-fixes/minor-4.log for the
+# golden-good/golden-bad paired-mutation evidence). NEVER changes whether
+# SIG-3 fails — only the CONFIDENCE label attached to that verdict.
+#   $1 = SIG-2 thread-utilization pct as a bare integer, or "" if SIG-2
+#        itself could not resolve (unlimited ulimit / SKIP).
+# Prints "elevated-current-SIG-2" or "SIG-2-not-currently-elevated".
+_sig3_confidence_label() {
+  local pct="$1"
+  if [ -n "$pct" ] && [ "$pct" -lt "$SIG2_LOW_UTIL_PCT" ] 2>/dev/null; then
+    echo "SIG-2-not-currently-elevated"
+  else
+    echo "elevated-current-SIG-2-or-unresolved"
+  fi
+}
 SIG4_PSI_AVG60_LIMIT="${SIG4_PSI_AVG60_LIMIT:-50}"    # half the systemd-oomd 90% threshold
 SIG5_PATHOLOGICAL_PATTERN_REGEX='\bugrep .*-o .*\.\\\{[0-9]+,[0-9]+\\\}.*\\\|'
 
@@ -85,9 +128,16 @@ LARGE_PROCS=$(ps -o pid,user,rss,comm --no-headers -u "$USER" 2>/dev/null | \
 if [ -n "$LARGE_PROCS" ]; then
   echo "OVER THRESHOLD:"
   echo "$LARGE_PROCS"
-  # Exception: known legitimate large services documented per §11.4.35
-  # Filter these OUT before failing. Currently empty; extend per host.
-  LEGIT_EXCLUSIONS="ollama|firefox|yandex_browser|chrome"
+  # Exception: known legitimate large services. §11.4.209 review MINOR-3:
+  # this list was a hardcoded project literal (a §11.4.28 decoupling
+  # violation for a challenge shipped to be inherited universally per
+  # §11.4.17) despite the prior comment already claiming §11.4.35
+  # consumer-DATA status. It is now genuinely consumer-owned: an operator
+  # extends it via SIG1_LEGIT_EXCLUSIONS (an ERE alternation, same syntax
+  # as before) WITHOUT editing this shipped script. The literal below is
+  # kept ONLY as this project's own default value — never hardcoded for a
+  # consumer that overrides the env var.
+  LEGIT_EXCLUSIONS="${SIG1_LEGIT_EXCLUSIONS:-ollama|firefox|yandex_browser|chrome}"
   UNCLASSIFIED=$(echo "$LARGE_PROCS" | grep -vE "$LEGIT_EXCLUSIONS" || true)
   if [ -n "$UNCLASSIFIED" ]; then
     log_fail "SIG-1: unclassified process(es) over ${SIG1_MAX_PROC_RSS_GB} GB RSS"
@@ -105,8 +155,14 @@ echo
 echo "=== SIG-2: thread count >${SIG2_THREAD_PCT}% of soft ulimit -u ==="
 THREADS=$(ps -L --no-headers -u "$USER" 2>/dev/null | wc -l)
 SOFT_LIMIT=$(ulimit -Su 2>/dev/null || ulimit -u 2>/dev/null)
+# §11.4.209 review MINOR-4: captured so SIG-3 below can correlate its
+# EAGAIN-cascade verdict against real SIG-2 state instead of treating
+# EAGAIN as a standalone signal (a proxy-for-a-proxy — see the
+# _sig3_effective_threshold() rationale above). Empty = SIG-2 unresolved.
+SIG2_PCT_VALUE=""
 if [ -n "$SOFT_LIMIT" ] && [ "$SOFT_LIMIT" != "unlimited" ] && [ "$SOFT_LIMIT" -gt 0 ]; then
   PCT=$((THREADS * 100 / SOFT_LIMIT))
+  SIG2_PCT_VALUE="$PCT"
   echo "  threads=$THREADS  soft_limit=$SOFT_LIMIT  utilization=${PCT}%"
   if [ "$PCT" -gt "$SIG2_THREAD_PCT" ]; then
     log_fail "SIG-2: thread utilization ${PCT}% exceeds ${SIG2_THREAD_PCT}% threshold"
@@ -136,8 +192,17 @@ if command -v podman >/dev/null 2>&1; then
     done
   fi
   echo "  total EAGAIN-class hits last ${SIG3_EAGAIN_LOOKBACK_MIN}min: $EAGAIN_COUNT"
+  # §11.4.209 review MINOR-4: the FAIL condition itself is UNCHANGED
+  # (SIG3_EAGAIN_THRESHOLD, sensitive by design) — only the message now
+  # carries a SIG-2 confidence label so an operator can tell a
+  # currently-thread-pressured cascade from a historical/already-subsided
+  # one at a glance, without losing detection of either (see the
+  # correlation-as-context rationale above SIG3_EAGAIN_THRESHOLD's
+  # definition).
+  SIG3_CONFIDENCE=$(_sig3_confidence_label "$SIG2_PCT_VALUE")
+  echo "  correlation: ${SIG3_CONFIDENCE} (current SIG-2 utilization=${SIG2_PCT_VALUE:-unresolved}%)"
   if [ "$EAGAIN_COUNT" -gt "$SIG3_EAGAIN_THRESHOLD" ]; then
-    log_fail "SIG-3: $EAGAIN_COUNT EAGAIN hits exceed ${SIG3_EAGAIN_THRESHOLD} threshold — thread ceiling being hit"
+    log_fail "SIG-3: $EAGAIN_COUNT EAGAIN hits exceed ${SIG3_EAGAIN_THRESHOLD} threshold [${SIG3_CONFIDENCE}, SIG-2=${SIG2_PCT_VALUE:-unresolved}%] — thread ceiling being hit"
   else
     echo "OK: EAGAIN hits within safe zone"
   fi
@@ -190,6 +255,32 @@ for pdir in /proc/[0-9]*; do
   PID=${pdir#/proc/}
   [ "$PID" = "$$" ] && continue
   [ "$PID" = "$PPID" ] && continue
+  # §11.4.209 review MINOR-2: $$/$PPID alone only protects THIS run's own
+  # PID + parent — it does NOT protect against a CONCURRENT second
+  # invocation of this same challenge, whose own `grep -qE
+  # "$SIG5_PATHOLOGICAL_PATTERN_REGEX"` child (or an unrelated `grep`/`awk`/
+  # `ps` invocation whose cmdline happens to embed the pattern's literal
+  # text, e.g. a reviewer grepping this file's source for the pattern
+  # string) could appear in THIS instance's /proc snapshot and be
+  # misclassified as a pathological ugrep — a §11.4.201(1) false-positive
+  # REFUSAL. Requiring comm=="ugrep" outright was considered and REJECTED:
+  # the RED fixture (sig5_real_pathological_regex_fixture.sh) deliberately
+  # disguises only argv[0] via `exec -a ugrep bash ...` — its real comm is
+  # "bash" by kernel design (comm reflects the executed binary, not a
+  # disguised argv[0]) — so an exact comm=="ugrep" gate would silently
+  # BREAK that fixture's detection and regress the freshly-landed
+  # §11.4.115(F) RED evidence. Instead: exclude the SPECIFIC helper-tool
+  # comms this script itself spawns as children throughout SIG-1..SIG-5
+  # (grep/awk/ps) — those are exactly the process classes a concurrent
+  # instance's own internals, or an unrelated source-grep, would present
+  # as, and NONE of them is a legitimate SIG-5 target (the real forensic
+  # incident's comm was "ugrep"; the fixture's disguised comm is "bash";
+  # neither is ever "grep"/"awk"/"ps"). Detection power is unchanged for
+  # both the real-incident class and the fixture's disguised-argv class.
+  COMM=$(tr -d '\n' < "$pdir/comm" 2>/dev/null)
+  case "$COMM" in
+    grep|awk|ps) continue ;;
+  esac
   # Match the pathological class
   if echo "$CMDLINE" | grep -qE "$SIG5_PATHOLOGICAL_PATTERN_REGEX"; then
     PATHOLOGICAL_HITS=$((PATHOLOGICAL_HITS + 1))

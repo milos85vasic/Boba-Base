@@ -84,6 +84,12 @@ EXCLUDE_PATHS=(
   # was blocked, they don't invoke anything. Verified 2026-08-18: scratchpad
   # is gitignored per §11.4.11 + §11.4.30, hosts session-local artefacts only.
   "/scratchpad/"
+  # §11.4.209 review MINOR-1/task-minor-batch evidence directory: the fixture
+  # transcripts captured there necessarily QUOTE a real forbidden-verb
+  # invocation as the RED half of a before/after demonstration (a unified
+  # log, not an invocation — same §11.4.201(7)(a) CARRIER class as the
+  # /docs/incidents/ and /.superpowers/sdd/ entries above).
+  "/docs/qa/task-review-457cca4-a7e55f9-minor-fixes/"
 )
 
 # Forbidden grep -E patterns. Real, tight regexes — not bare words.
@@ -119,8 +125,22 @@ VIOLATIONS=$(awk -v root="$ROOT" -v EXCLUDE_PATHS_PIPED="$(IFS='|'; echo "${EXCL
   }
   {
     skip = 0
+    # §11.4.209 review MINOR-1 fix: the exclusion check MUST anchor to the
+    # PATH half of the grep output line ("path:lineno:content"), never the
+    # full line. Matching index($0, ex[i]) against the WHOLE line let a
+    # real source file OUTSIDE any excluded directory (e.g. scripts/foo.py)
+    # evade detection whenever its matched CONTENT half merely mentioned an
+    # excluded substring (e.g. a trailing comment "# decoy: /scratchpad/x"
+    # on the same line as a genuine forbidden invocation) — a §11.4.201(7)(a)
+    # carrier-match, not a real path exclusion. grep -n emits "path:N:content"
+    # where N is the (all-digit) line number, so stripping from the FIRST
+    # ":<digits>:" occurrence recovers the path robustly (safer than a bare
+    # first-colon split, which would mis-split a path that itself contains a
+    # colon). Proven pre/post-fix: docs/qa/task-review-457cca4-a7e55f9-minor-fixes/minor-1.log.
+    path_part = $0
+    sub(/:[0-9]+:.*/, "", path_part)
     for (i=1;i<=excount;i++) {
-      if (ex[i] != "" && index($0, ex[i]) > 0) { skip = 1; break }
+      if (ex[i] != "" && index(path_part, ex[i]) > 0) { skip = 1; break }
     }
     # STRUCTURAL carrier filter (§11.4.201(7)(a) — match the THING, not a
     # token that MENTIONS it). grep emits "path:lineno:content"; strip that

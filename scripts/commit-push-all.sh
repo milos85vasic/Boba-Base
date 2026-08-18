@@ -25,6 +25,7 @@
 # ─── USAGE ────────────────────────────────────────────────────────────
 #   bash scripts/commit-push-all.sh "commit message"
 #   bash scripts/commit-push-all.sh --scope <path> [--scope <path>]... "commit message"
+#   bash scripts/commit-push-all.sh --scope <path> --scope-allow-partial "commit message"
 #
 # ─── task #66 / BOB-068 SWEEP-PATTERN REMEDY ──────────────────────────
 # Without --scope, stage 5 runs an unconditional `git add -A`, which
@@ -42,6 +43,19 @@
 # architectural remedy is §11.4.179 isolated-git-streams (task #67
 # proposal). Existing callers WITHOUT --scope are unaffected — the
 # `git add -A` sweep remains the default for backwards compatibility.
+#
+# ─── §11.4.209 review MINOR-5 remedy — reverse-BOB-068 check ──────────
+# The safety check above catches EXTRA files staged outside the
+# declared scope. It did NOT catch the mirror-image hole: the declared
+# scope's OWN dirty state being silently left OUT of what got staged
+# (e.g. --scope docs/qa/task-99/ declared, but a file under that same
+# directory stays untracked/unstaged — a partial, operator-intent-
+# truncating commit). Stage 5 now also runs a WARN-only (never FAIL —
+# legitimate reasons exist to leave part of a scope unstaged) check
+# after staging: any dirty file inside the declared scope that is NOT
+# fully staged is named on stderr. `--scope-allow-partial` silences
+# this WARN for a caller that has already reviewed and accepts the
+# partial state.
 #
 # Environment knobs:
 #   BOBA_SYNC_SKIP_CI=1      Skip the long pre_build_verification.sh gate
@@ -77,6 +91,7 @@ set -euo pipefail
 
 # ─── args ─────────────────────────────────────────────────────────────
 SCOPES=()
+SCOPE_ALLOW_PARTIAL=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --scope)
@@ -96,13 +111,24 @@ while [ $# -gt 0 ]; do
             SCOPES+=("$v")
             shift
             ;;
+        --scope-allow-partial)
+            # §11.4.209 review MINOR-5: silences the reverse-BOB-068 WARN
+            # (declared scope has dirty file(s) that were NOT staged) for a
+            # caller that has already reviewed the partial state and
+            # confirms it is intentional (e.g. a WIP file under the same
+            # directory that isn't ready yet). Never affects the existing
+            # --scope safety check (unexpected files OUTSIDE scope still
+            # REJECT unconditionally).
+            SCOPE_ALLOW_PARTIAL=1
+            shift
+            ;;
         --)
             shift
             break
             ;;
         -*)
             echo "ERROR: unknown flag: $1" >&2
-            echo "Usage: $0 [--scope <path>]... \"commit message\"" >&2
+            echo "Usage: $0 [--scope <path>]... [--scope-allow-partial] \"commit message\"" >&2
             exit 2
             ;;
         *)
@@ -112,9 +138,12 @@ while [ $# -gt 0 ]; do
 done
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 [--scope <path>]... \"commit message\"" >&2
+    echo "Usage: $0 [--scope <path>]... [--scope-allow-partial] \"commit message\"" >&2
     echo "  --scope <path>          Repeatable. Only stage these path(s) —" >&2
     echo "                          NEVER 'git add -A'. See task #66." >&2
+    echo "  --scope-allow-partial   Silence the WARN when part of a declared" >&2
+    echo "                          --scope is left dirty/unstaged (reverse-" >&2
+    echo "                          BOB-068 check, §11.4.209 review MINOR-5)." >&2
     echo "  Optional: BOBA_SYNC_SKIP_CI=1 to defer the long pre-build gate." >&2
     exit 2
 fi
@@ -267,6 +296,30 @@ if [ "${#SCOPES[@]}" -gt 0 ]; then
         exit 1
     fi
     echo "[commit-push-all] stage 5/6 — --scope safety check OK (staged set == declared scope)"
+
+    # ── §11.4.209 review MINOR-5: reverse-BOB-068 check — the mirror image
+    #    of the check above. That check catches EXTRA files staged outside
+    #    the declared scope; this one catches the declared scope's OWN
+    #    dirty state being SILENTLY left OUT of what actually got staged
+    #    (e.g. a caller declares --scope docs/qa/task-99/ but a file under
+    #    that same directory stays untracked/unstaged — the operator's
+    #    intent silently truncated, the same category of scope-safety hole
+    #    as BOB-068, just in the opposite direction). WARN, never FAIL —
+    #    legitimate reasons exist to leave part of a declared scope
+    #    unstaged (a WIP file not yet ready); --scope-allow-partial
+    #    silences this WARN for a caller that has already reviewed and
+    #    accepts the partial state.
+    if [ "$SCOPE_ALLOW_PARTIAL" != "1" ]; then
+        MISSING_FROM_SCOPE="$(git status --porcelain -- "${SCOPES[@]}" 2>/dev/null | grep -vE '^[AMDR]' | grep -v '^$' || true)"
+        if [ -n "$MISSING_FROM_SCOPE" ]; then
+            echo "WARN: declared scope has dirty file(s) NOT staged for this commit (reverse-BOB-068):" >&2
+            echo "$MISSING_FROM_SCOPE" | sed 's/^/  /' >&2
+            echo "       Declared scope: ${SCOPES[*]}" >&2
+            echo "       If intentional (e.g. a WIP file not ready yet), re-run with" >&2
+            echo "       --scope-allow-partial to silence this warning." >&2
+            echo "       If NOT intentional, stage it explicitly or add it to --scope." >&2
+        fi
+    fi
 
     if git diff --cached --quiet; then
         echo "[commit-push-all] nothing to commit — skipping to push stage"
