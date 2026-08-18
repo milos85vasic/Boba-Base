@@ -196,7 +196,7 @@ install_wrk() {
     local build_dir
     build_dir="$(mktemp -d)"
     trap 'rm -rf "$build_dir"' RETURN
-    if ! git clone --depth 1 https://github.com/wg/wrk.git "$build_dir/wrk" >/tmp/install-dev-tools-wrk-build.log 2>&1; then
+    if ! git clone --depth 1 git@github.com:wg/wrk.git "$build_dir/wrk" >/tmp/install-dev-tools-wrk-build.log 2>&1; then
       record wrk FAILED "git clone github.com/wg/wrk failed — see /tmp/install-dev-tools-wrk-build.log"
       return 0
     fi
@@ -223,7 +223,7 @@ install_wrk() {
     return 0
   fi
 
-  record wrk SKIP "no non-sudo install path (need git+make+cc for the source build, or Homebrew, or --allow-sudo on Debian/Ubuntu — ALT/Fedora/RHEL repos do not carry a wrk package). Manual: git clone https://github.com/wg/wrk.git && cd wrk && make && cp wrk $PREFIX/"
+  record wrk SKIP "no non-sudo install path (need git+make+cc for the source build, or Homebrew, or --allow-sudo on Debian/Ubuntu — ALT/Fedora/RHEL repos do not carry a wrk package). Manual: git clone git@github.com:wg/wrk.git && cd wrk && make && cp wrk $PREFIX/"
 }
 
 # --- hey -----------------------------------------------------------------
