@@ -1,0 +1,37 @@
+=== SIG-2 real-thread fixture: baseline=1318 threads (system-wide, milosvasic), lowering ulimit -Su to 1830 (subshell-only) ===
+  target utilization at baseline = 72% (threshold is 70%)
+Subshell soft limit now: 1830
+
+=== Running the REAL (un-mutated) challenge under the lowered soft limit ===
+=== SIG-1: runaway process >5 GB RSS ===
+OK: no process >5 GB RSS
+
+=== SIG-2: thread count >70% of soft ulimit -u ===
+  threads=1318  soft_limit=1830  utilization=72%
+
+=== SIG-3: EAGAIN cascade in last 15 minutes ===
+  total EAGAIN-class hits last 15min: 0
+  correlation: elevated-current-SIG-2-or-unresolved (current SIG-2 utilization=72%)
+OK: EAGAIN hits within safe zone
+
+=== SIG-4: user.slice memory PSI full avg60 > 50 ===
+  full avg60=0.00 threshold=50
+OK: PSI within safe zone
+
+=== SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+OK: no pathological-regex processes detected
+
+=== summary ===
+FAIL: 1 signature(s) tripped
+  - SIG-2: thread utilization 72% exceeds 70% threshold
+
+Take corrective action per docs/incidents/2026-08-18-perceived-forced-logout-2nd.md:
+  - SIG-1: identify + kill runaway process
+  - SIG-2: reduce parallel subagent fan-out
+  - SIG-3: examine container that emits EAGAIN, throttle its outbound
+  - SIG-4: reduce memory-consuming workload
+  - SIG-5: kill the pathological regex process immediately
+
+Challenge exit code: 1
+RED CONFIRMED: challenge correctly FAILed on genuine thread-utilization >70%, naming SIG-2
+=== fixture subshell exited with 0 — host-wide ulimit is unaffected (subshell-scoped, self-reverted) ===

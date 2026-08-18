@@ -1,0 +1,38 @@
+Extracted detector regex (single source of truth): \bugrep .*-o .*\.\\\{[0-9]+,[0-9]+\\\}.*\\\|
+=== SIG-5 real-pathological-regex fixture: spawning argv-disguised process ===
+Verified via /proc/2669316/cmdline: ugrep /run/media/milosvasic/DATA4TB/Projects/boba/challenges/fixtures/resource_pressure/sig5_sleeper_helper.sh -o .\{0,120\}decoy\|pathological 
+
+=== Running the REAL (un-mutated) challenge against this live disguised process ===
+=== SIG-1: runaway process >5 GB RSS ===
+OK: no process >5 GB RSS
+
+=== SIG-2: thread count >70% of soft ulimit -u ===
+  threads=1294  soft_limit=65536  utilization=1%
+OK: thread utilization 1% within safe zone
+
+=== SIG-3: EAGAIN cascade in last 15 minutes ===
+  total EAGAIN-class hits last 15min: 0
+  correlation: SIG-2-not-currently-elevated (current SIG-2 utilization=1%)
+OK: EAGAIN hits within safe zone
+
+=== SIG-4: user.slice memory PSI full avg60 > 50 ===
+  full avg60=0.00 threshold=50
+OK: PSI within safe zone
+
+=== SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+
+  PID=2669316 RSS=14632KB CMD=ugrep /run/media/milosvasic/DATA4TB/Projects/boba/challenges/fixtures/resource_pressure/sig5_sleeper_helper.sh -o .\{0,120\}decoy\|pathological 
+
+=== summary ===
+FAIL: 1 signature(s) tripped
+  - SIG-5: 1 process(es) running pathological regex
+
+Take corrective action per docs/incidents/2026-08-18-perceived-forced-logout-2nd.md:
+  - SIG-1: identify + kill runaway process
+  - SIG-2: reduce parallel subagent fan-out
+  - SIG-3: examine container that emits EAGAIN, throttle its outbound
+  - SIG-4: reduce memory-consuming workload
+  - SIG-5: kill the pathological regex process immediately
+
+Challenge exit code: 1
+RED CONFIRMED: challenge correctly FAILed on a live process whose real cmdline matches the pathological pattern, naming SIG-5
