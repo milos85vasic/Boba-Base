@@ -156,25 +156,26 @@ work items**, not silently fixed inside this task's scope
    scale-out of the merge-search fanout, DB growth under
    `challenges/helixqa-banks/boba-services.yaml`'s tracker set, or the
    `qbittorrent-proxy-go --profile go` swap) from "stress" (does it survive
-   a burst). **Followup: file a Task workable item — "Scaling-class test
-   coverage absent from boba's mandated test-type matrix" — scoped to at
-   least one scaling dimension (e.g. tracker-count scale-out in merge
-   search) with a real, measured baseline.**
+   a burst). **Followup filed as workable item BOB-109** — "Scaling-class
+   test coverage absent from boba's mandated test-type matrix" — scoped to
+   at least one scaling dimension (e.g. tracker-count scale-out in merge
+   search) with a real, measured baseline.
 2. **UX-class testing has no distinct representation.** UI functional
    coverage exists (Vitest + Playwright) but nothing is framed around
    usability/accessibility/UX outcomes (e.g. WCAG checks, keyboard-nav
-   coverage, screen-reader labeling). **Followup: file a Task workable item
-   — "UX-class test coverage (accessibility/usability) absent" — scoped to
-   an axe-core or equivalent accessibility pass over the Angular frontend.**
+   coverage, screen-reader labeling). **Followup filed as workable item
+   BOB-110** — "UX-class test coverage (accessibility/usability) absent"
+   — scoped to an axe-core or equivalent accessibility pass over the
+   Angular frontend.
 3. **DDoS-class testing was fully absent; now scaffolded, not fully closed.**
    See `docs/testing/ddos_resilience.md` "Followups" for the two concrete
    items this scaffold surfaced:
    - No rate limiting exists anywhere in boba's stack (verified 2026-08-18:
      no `slowapi`/`limiter`/`throttle` in the Python service, no
      rate-limit middleware in either Go service, no nginx/reverse-proxy
-     layer). **Followup: configure a real rate limit for the three public
-     endpoints** (candidate approaches documented in
-     `docs/testing/ddos_resilience.md`).
+     layer). **Followup filed as workable item BOB-111** — configure a
+     real rate limit for the three public endpoints (candidate approaches
+     documented in `docs/testing/ddos_resilience.md`).
    - `boba-jackett`'s `/healthz`
      (`qBitTorrent-go/internal/jackettapi/health.go:60-63`) makes a
      synchronous, uncached `Jackett.GetCatalog()` call on every hit — under
@@ -184,12 +185,12 @@ work items**, not silently fixed inside this task's scope
      self-inflicted amplification vector: an attacker (or even a
      mis-configured monitoring probe hitting `/healthz` too aggressively)
      could make the Jackett-management API's own health surface appear
-     down without ever touching Jackett itself. **Followup: file a Bug
-     workable item citing this exact reproduction + recommended fixes
-     (cache the Jackett liveness signal with a short TTL refreshed by a
-     background ticker; add a tight timeout/circuit-breaker around the
+     down without ever touching Jackett itself. **Followup filed as Bug
+     workable item BOB-112** citing this exact reproduction + recommended
+     fixes (cache the Jackett liveness signal with a short TTL refreshed by
+     a background ticker; add a tight timeout/circuit-breaker around the
      `GetCatalog` call so `/healthz` itself never blocks past ~250-500ms
-     regardless of Jackett's state).** See `docs/testing/ddos_resilience.md`
+     regardless of Jackett's state). See `docs/testing/ddos_resilience.md`
      "Findings" for the full evidence.
    - The real fanout path (`POST /api/v1/search`, up to 43 real trackers)
      is deliberately **never** driven by the new challenge — see
@@ -202,9 +203,16 @@ work items**, not silently fixed inside this task's scope
    *presence* of test types, not *coverage percentage* within them. Not
    remeasured here; out of this task's scope.
 
-These followups are **documented here and in the DDoS doc rather than
-inserted into `docs/workable_items.db` directly** — this task ran in
-parallel with other subagents also touching shared project state, and a
-concurrent SQLite write from this task risked a race with theirs. The
-orchestrating session should register the followups above as tracked
-workable items (§11.4.93/§11.4.202) once the parallel batch completes.
+These followups were originally **documented here and in the DDoS doc
+rather than inserted into `docs/workable_items.db` directly** — this task
+ran in parallel with other subagents also touching shared project state,
+and a concurrent SQLite write from this task risked a race with theirs.
+The orchestrating session registered the followups above as tracked
+workable items (§11.4.93/§11.4.202) once the parallel batch completed:
+scaling → **BOB-109**, UX → **BOB-110**, rate limiting → **BOB-111**,
+`/healthz` amplification Bug → **BOB-112**, `wrk` dev-tooling gap →
+**BOB-113**, and the rate-limit detector's missing self-validation
+golden-bad fixture (see `docs/testing/ddos_resilience.md` "Findings" item
+2) → **BOB-114**. The sandboxed/mocked-tracker `POST /api/v1/search`
+fanout extension (this section's item 3, third bullet) remains an open
+scoping note, not filed as a separate BOB-NNN this round.

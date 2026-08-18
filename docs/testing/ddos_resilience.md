@@ -278,27 +278,34 @@ real `FAIL`, `2` = invocation error (curl itself is missing).
 
 ## Followups filed
 
-Documented here rather than inserted into `docs/workable_items.db` directly
-— this task ran in parallel with other subagents also touching shared
-project state, and a concurrent SQLite write from this task risked a race
-with theirs. The orchestrating session should register these as tracked
-workable items (§11.4.93/§11.4.202) once the parallel batch completes:
+Originally documented here rather than inserted into
+`docs/workable_items.db` directly — this task ran in parallel with other
+subagents also touching shared project state, and a concurrent SQLite
+write from this task risked a race with theirs. Registered into the DB
+(§11.4.93/§11.4.202) by the orchestrating session once the parallel batch
+completed — see the BOB-NNN id on each item below:
 
-1. **Bug:** `boba-jackett`'s `/healthz` synchronously calls
-   `Jackett.GetCatalog()` uncached on every hit
+1. **Bug** (filed as **BOB-112**): `boba-jackett`'s `/healthz`
+   synchronously calls `Jackett.GetCatalog()` uncached on every hit
    (`qBitTorrent-go/internal/jackettapi/health.go:60-63`), causing up to
    65% request timeout rates under a modest cold-start concurrent burst
    (measured evidence above). Recommended fixes listed above.
-2. **Task:** configure real rate limiting for boba's three public HTTP
-   endpoints (`:7185`, `:7187`, `:7189`) — none exists today. Candidate
-   approaches documented above.
-3. **Task:** extend `ddos_resilience_challenge.sh` (or add a sibling
+2. **Task** (filed as **BOB-111**): configure real rate limiting for
+   boba's three public HTTP endpoints (`:7185`, `:7187`, `:7189`) — none
+   exists today. Candidate approaches documented above.
+3. **Task** (NOT filed as a separate BOB-NNN this round — remains an open
+   scoping note here, distinct from the orchestrating session's filed
+   batch): extend `ddos_resilience_challenge.sh` (or add a sibling
    challenge) to exercise the real `POST /api/v1/search` fanout path via a
    sandboxed/mocked-tracker setup, without ever touching real third-party
    tracker sites.
-4. **Task:** add a golden-bad synthetic fixture to `--self-validate` that
-   validates the rate-limiting detector itself (currently only the
-   crash-resistance detector is self-validated).
-5. **Task (test-type matrix, see `docs/testing/test_type_matrix.md`):**
-   scaling-class and UX-class test coverage are both fully absent from
-   boba's mandated test-type matrix — filed as separate followups there.
+4. **Task** (filed as **BOB-114**): add a golden-bad synthetic fixture to
+   `--self-validate` that validates the rate-limiting detector itself
+   (currently only the crash-resistance detector is self-validated).
+5. **Task (test-type matrix, see `docs/testing/test_type_matrix.md`)**
+   (filed as **BOB-109** scaling / **BOB-110** UX): scaling-class and
+   UX-class test coverage are both fully absent from boba's mandated
+   test-type matrix — filed as separate followups there.
+6. **Task** (filed as **BOB-113**): `wrk` is not installed on the
+   development host (only `ab` is) — add it to dev tooling for future
+   DDoS/load challenges.
