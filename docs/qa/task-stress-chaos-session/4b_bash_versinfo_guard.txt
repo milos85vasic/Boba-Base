@@ -1,0 +1,26 @@
+=== Test 4b (corrected): BASH_VERSINFO<4 guard boolean-logic verification ===
+FINDING (honest, §11.4.6): BASH_VERSINFO is a bash READONLY builtin array —
+it cannot be reassigned even in a subshell ('readonly variable' error above).
+This is actually a POSITIVE property: the guard reads the interpreter's real,
+unspoofable version — no caller can fake a passing/failing value.  It also means
+the guard's low-version branch can only be exercised by genuinely running under
+bash <4, which is not installed on this host (only bash 5.2.37 available;
+verified: /usr/bin/bash
+/usr/bin/bash5
+/usr/bin/bash5bug
+/usr/bin/bashbug.
+
+-- Verifying the boolean EXPRESSION (not the unspoofable variable) using an
+   isomorphic substitute array VERSINFO_SIM, to prove the comparison logic
+   ('-lt 4' / '-z' short-circuit) is correct for both branches:
+
+  input=[3 2 57] -> GUARD FIRES (exit 2 path)
+  input=[4 0 0] -> guard does not fire (proceeds)
+  input=[5 2 37] -> guard does not fire (proceeds)
+  input=[<empty>] -> GUARD FIRES (exit 2 path)
+
+Expected: 3.2.57 -> FIRES; 4.0.0 -> does not fire; 5.2.37 -> does not fire; empty -> FIRES
+
+-- Negative control — real host (bash 5.2.37) MUST NOT trigger the guard:
+real invocation exit_code=0 (expect 0 = guard did not fire on real >=4 bash)
+=== install-dev-tools (check mode) ===

@@ -1,0 +1,12 @@
+=== Test 5a: idempotency — 3 sequential runs on same HEAD (81e42d4f8184e0c51ebf0a3188fe655cc8af4afe) ===
+--- run 1 ---
+[capture-workable-items-db-delta] wrote docs/qa/db-deltas/81e42d4f8184e0c51ebf0a3188fe655cc8af4afe.diff
+exit_code=0
+--- run 2 ---
+[capture-workable-items-db-delta] delta already exists for 81e42d4f8184e0c51ebf0a3188fe655cc8af4afe — skipping (idempotent).
+[capture-workable-items-db-delta] use --force to regenerate: docs/qa/db-deltas/81e42d4f8184e0c51ebf0a3188fe655cc8af4afe.diff
+exit_code=0
+--- run 3 ---
+[capture-workable-items-db-delta] delta already exists for 81e42d4f8184e0c51ebf0a3188fe655cc8af4afe — skipping (idempotent).
+[capture-workable-items-db-delta] use --force to regenerate: docs/qa/db-deltas/81e42d4f8184e0c51ebf0a3188fe655cc8af4afe.diff
+exit_code=0

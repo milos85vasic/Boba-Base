@@ -1,0 +1,122 @@
+=== Test 6: systemd-user timer stress — 3 manual service invocations back-to-back ===
+
+NEXT                          LEFT LAST                            PASSED UNIT                               ACTIVATES
+Tue 2026-08-18 23:43:13 CEST 45min Tue 2026-08-18 22:42:40 CEST 15min ago boba-resource-pressure-check.timer boba-resource-pressure-check.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.
+
+--- invocation 1 ---
+start exit_code=0
+unit status after invocation 1:
+○ boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
+     Loaded: loaded (/home/milosvasic/.config/systemd/user/boba-resource-pressure-check.service; linked; preset: disabled)
+     Active: inactive (dead) since Tue 2026-08-18 22:57:50 CEST; 1s ago
+ Invocation: 8142294af495473098758e0c369b1c4f
+TriggeredBy: ● boba-resource-pressure-check.timer
+       Docs: file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/incidents/2026-08-18-perceived-forced-logout-2nd.md
+             file:///run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+    Process: 2543206 ExecStart=/usr/bin/env bash /run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh (code=exited, status=0/SUCCESS)
+   Main PID: 2543206 (code=exited, status=0/SUCCESS)
+   Mem peak: 26.3M
+        CPU: 3.254s
+
+Aug 18 22:57:49 nezha env[2543206]: OK: EAGAIN hits within safe zone
+Aug 18 22:57:49 nezha env[2543206]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+Aug 18 22:57:49 nezha env[2543206]:   full avg60=0.00 threshold=50
+
+timer armed check after invocation 1:
+NEXT                            LEFT LAST                            PASSED UNIT                               ACTIVATES
+Wed 2026-08-19 00:01:38 CEST 1h 3min Tue 2026-08-18 22:42:40 CEST 15min ago boba-resource-pressure-check.timer boba-resource-pressure-check.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.
+
+orphan .service instance check:
+  UNIT                                 LOAD   ACTIVE   SUB     DESCRIPTION
+  boba-resource-pressure-check.service loaded inactive dead    Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
+  boba-resource-pressure-check.timer   loaded active   waiting Hourly timer for boba-resource-pressure-check.service (task #77/BOB-076)
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+2 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.
+
+--- invocation 2 ---
+start exit_code=0
+unit status after invocation 2:
+○ boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
+     Loaded: loaded (/home/milosvasic/.config/systemd/user/boba-resource-pressure-check.service; linked; preset: disabled)
+     Active: inactive (dead) since Tue 2026-08-18 22:57:54 CEST; 1s ago
+ Invocation: e19566f27f6545288e7350738216cc23
+TriggeredBy: ● boba-resource-pressure-check.timer
+       Docs: file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/incidents/2026-08-18-perceived-forced-logout-2nd.md
+             file:///run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+    Process: 2548445 ExecStart=/usr/bin/env bash /run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh (code=exited, status=0/SUCCESS)
+   Main PID: 2548445 (code=exited, status=0/SUCCESS)
+   Mem peak: 24.9M
+        CPU: 3.288s
+
+Aug 18 22:57:53 nezha env[2548445]: OK: EAGAIN hits within safe zone
+Aug 18 22:57:53 nezha env[2548445]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+Aug 18 22:57:53 nezha env[2548445]:   full avg60=0.00 threshold=50
+
+timer armed check after invocation 2:
+NEXT                            LEFT LAST                            PASSED UNIT                               ACTIVATES
+Tue 2026-08-18 23:58:58 CEST 1h 1min Tue 2026-08-18 22:42:40 CEST 15min ago boba-resource-pressure-check.timer boba-resource-pressure-check.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.
+
+orphan .service instance check:
+  UNIT                                 LOAD   ACTIVE   SUB     DESCRIPTION
+  boba-resource-pressure-check.service loaded inactive dead    Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
+  boba-resource-pressure-check.timer   loaded active   waiting Hourly timer for boba-resource-pressure-check.service (task #77/BOB-076)
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+2 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.
+
+--- invocation 3 ---
+start exit_code=0
+unit status after invocation 3:
+○ boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
+     Loaded: loaded (/home/milosvasic/.config/systemd/user/boba-resource-pressure-check.service; linked; preset: disabled)
+     Active: inactive (dead) since Tue 2026-08-18 22:57:58 CEST; 1s ago
+ Invocation: 078ce24982bc435bb6f5356c5bf20278
+TriggeredBy: ● boba-resource-pressure-check.timer
+       Docs: file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/incidents/2026-08-18-perceived-forced-logout-2nd.md
+             file:///run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+    Process: 2553691 ExecStart=/usr/bin/env bash /run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh (code=exited, status=0/SUCCESS)
+   Main PID: 2553691 (code=exited, status=0/SUCCESS)
+   Mem peak: 24.3M
+        CPU: 3.270s
+
+Aug 18 22:57:57 nezha env[2553691]: OK: EAGAIN hits within safe zone
+Aug 18 22:57:57 nezha env[2553691]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+Aug 18 22:57:57 nezha env[2553691]:   full avg60=0.00 threshold=50
+
+timer armed check after invocation 3:
+NEXT                            LEFT LAST                            PASSED UNIT                               ACTIVATES
+Wed 2026-08-19 00:00:27 CEST 1h 2min Tue 2026-08-18 22:42:40 CEST 15min ago boba-resource-pressure-check.timer boba-resource-pressure-check.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.
+
+orphan .service instance check:
+  UNIT                                 LOAD   ACTIVE   SUB     DESCRIPTION
+  boba-resource-pressure-check.service loaded inactive dead    Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
+  boba-resource-pressure-check.timer   loaded active   waiting Hourly timer for boba-resource-pressure-check.service (task #77/BOB-076)
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+2 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.
+

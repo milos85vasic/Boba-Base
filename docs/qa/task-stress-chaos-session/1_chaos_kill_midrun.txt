@@ -1,0 +1,26 @@
+=== Test 1.3: chaos — kill mid-run via 'timeout 3s' ===
+Note: the script has no lockfile of its own (it is a stateless read-only detector,
+unlike commit/push wrappers per §11.4.180/§11.4.234) — verified by inspecting the
+source for any flock/mkdir-lock/PID-file pattern:
+  (no match — confirmed: script is lock-free by design)
+
+-- pre-kill: baseline process/podman state --
+process count before: 456  podman containers before: 19
+
+-- chaos: timeout 3s bash resource_pressure_signature_challenge.sh (repeated 5x) --
+chaos attempt 1 exit_code=124 (124=killed by timeout mid-run, 0/1=completed within budget)
+chaos attempt 2 exit_code=124 (124=killed by timeout mid-run, 0/1=completed within budget)
+chaos attempt 3 exit_code=124 (124=killed by timeout mid-run, 0/1=completed within budget)
+chaos attempt 4 exit_code=124 (124=killed by timeout mid-run, 0/1=completed within budget)
+chaos attempt 5 exit_code=124 (124=killed by timeout mid-run, 0/1=completed within budget)
+
+-- post-kill: orphan process check (grep for any child the script spawns: ps/awk/podman/grep) --
+OK: no orphan resource_pressure_signature_challenge.sh processes
+
+-- post-kill: no orphan podman fixture containers (this challenge itself launches none, only reads podman logs) --
+podman containers after: 19 (before was 19)
+OK: container count unchanged — no orphan containers left by chaos kills
+
+-- post-kill: no leftover lockfile (script has none, confirmed above; verify no stray tmp files it might create) --
+  (script writes NOTHING to disk — pure stdout/stderr detector, verified: no mktemp/tee/redirect-to-file in source)
+  (no match — confirmed: script writes no files)

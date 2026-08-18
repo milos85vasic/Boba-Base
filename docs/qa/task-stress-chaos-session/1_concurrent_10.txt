@@ -1,0 +1,25 @@
+=== Test 1.2: 10 concurrent invocations — verify no deadlock, all PASS ===
+0 > /tmp/rpsc_concurrent_4.rc
+0 > /tmp/rpsc_concurrent_3.rc
+0 > /tmp/rpsc_concurrent_7.rc
+0 > /tmp/rpsc_concurrent_10.rc
+0 > /tmp/rpsc_concurrent_8.rc
+0 > /tmp/rpsc_concurrent_1.rc
+0 > /tmp/rpsc_concurrent_6.rc
+0 > /tmp/rpsc_concurrent_2.rc
+0 > /tmp/rpsc_concurrent_9.rc
+0 > /tmp/rpsc_concurrent_5.rc
+elapsed_sec: 13
+
+concurrent run 1: PASS
+concurrent run 2: PASS
+concurrent run 3: PASS
+concurrent run 4: PASS
+concurrent run 5: PASS
+concurrent run 6: PASS
+concurrent run 7: PASS
+concurrent run 8: PASS
+concurrent run 9: PASS
+concurrent run 10: PASS
+
+PASS=10 FAIL=0 TOTAL=10

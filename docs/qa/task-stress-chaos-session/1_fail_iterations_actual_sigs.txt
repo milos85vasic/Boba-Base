@@ -1,0 +1,27 @@
+--- run 42 actual FAIL messages ---
+FAIL: 1 signature(s) tripped
+  - SIG-1: unclassified process(es) over 5 GB RSS
+--- run 44 actual FAIL messages ---
+FAIL: 1 signature(s) tripped
+  - SIG-3: 4 EAGAIN hits exceed 3 threshold [SIG-2-not-currently-elevated, SIG-2=1%] — thread ceiling being hit
+--- run 48 actual FAIL messages ---
+FAIL: 1 signature(s) tripped
+  - SIG-5: 1 process(es) running pathological regex
+--- run 50 actual FAIL messages ---
+FAIL: 1 signature(s) tripped
+  - SIG-1: unclassified process(es) over 5 GB RSS
+--- run 52 actual FAIL messages ---
+FAIL: 1 signature(s) tripped
+  - SIG-3: 4 EAGAIN hits exceed 3 threshold [SIG-2-not-currently-elevated, SIG-2=1%] — thread ceiling being hit
+--- run 56 actual FAIL messages ---
+FAIL: 1 signature(s) tripped
+  - SIG-5: 1 process(es) running pathological regex
+--- run 58 actual FAIL messages ---
+FAIL: 1 signature(s) tripped
+  - SIG-1: unclassified process(es) over 5 GB RSS
+--- run 60 actual FAIL messages ---
+FAIL: 1 signature(s) tripped
+  - SIG-3: 4 EAGAIN hits exceed 3 threshold [SIG-2-not-currently-elevated, SIG-2=1%] — thread ceiling being hit
+--- run 64 actual FAIL messages ---
+FAIL: 1 signature(s) tripped
+  - SIG-5: 1 process(es) running pathological regex

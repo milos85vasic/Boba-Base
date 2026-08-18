@@ -1,0 +1,73 @@
+=== Test 3: ddos_resilience_challenge.sh --healthz — 3 sequential runs ===
+############### run 1 ###############
+cache-refresh-count BEFORE run 1: 22
+=== ddos_resilience_challenge: --healthz (BOB-112 cache regression guard) ===
+Running 5s test @ http://127.0.0.1:7189/healthz
+  2 threads and 20 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.10ms    4.67ms  73.28ms   98.85%
+    Req/Sec    17.18k     2.87k   20.24k    84.00%
+  Latency Distribution
+     50%  512.00us
+     75%    0.90ms
+     90%    1.42ms
+     99%   14.43ms
+  170939 requests in 5.00s, 30.65MB read
+Requests/sec:  34169.18
+Transfer/sec:      6.13MB
+
+--- --healthz verdict inputs ---
+  total_requests=170939  timeouts=0  timeout_pct=0.0%  reqs_per_sec=34169.18
+  server-side cache refresh delta during this run: 1 (bound: <= 3)
+PASS: --healthz — BOB-112 /healthz TTL cache still effective (see docs/qa/BOB-112/summary.md for the full RED/GREEN evidence this guard is calibrated against)
+exit_code=0
+cache-refresh-count AFTER run 1: 23  (delta this run: 1)
+
+############### run 2 ###############
+cache-refresh-count BEFORE run 2: 23
+=== ddos_resilience_challenge: --healthz (BOB-112 cache regression guard) ===
+Running 5s test @ http://127.0.0.1:7189/healthz
+  2 threads and 20 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   601.16us  503.00us   6.36ms   80.69%
+    Req/Sec    18.90k     2.19k   37.94k    92.08%
+  Latency Distribution
+     50%  469.00us
+     75%  816.00us
+     90%    1.25ms
+     99%    2.37ms
+  189900 requests in 5.10s, 34.05MB read
+Requests/sec:  37236.64
+Transfer/sec:      6.68MB
+
+--- --healthz verdict inputs ---
+  total_requests=189900  timeouts=0  timeout_pct=0.0%  reqs_per_sec=37236.64
+  server-side cache refresh delta during this run: 0 (bound: <= 3)
+PASS: --healthz — BOB-112 /healthz TTL cache still effective (see docs/qa/BOB-112/summary.md for the full RED/GREEN evidence this guard is calibrated against)
+exit_code=0
+cache-refresh-count AFTER run 2: 23  (delta this run: 0)
+
+############### run 3 ###############
+cache-refresh-count BEFORE run 3: 23
+=== ddos_resilience_challenge: --healthz (BOB-112 cache regression guard) ===
+Running 5s test @ http://127.0.0.1:7189/healthz
+  2 threads and 20 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   595.39us  495.08us   6.81ms   80.18%
+    Req/Sec    19.05k   755.44    20.43k    75.00%
+  Latency Distribution
+     50%  469.00us
+     75%  807.00us
+     90%    1.24ms
+     99%    2.33ms
+  189511 requests in 5.00s, 33.98MB read
+Requests/sec:  37898.12
+Transfer/sec:      6.79MB
+
+--- --healthz verdict inputs ---
+  total_requests=189511  timeouts=0  timeout_pct=0.0%  reqs_per_sec=37898.12
+  server-side cache refresh delta during this run: 0 (bound: <= 3)
+PASS: --healthz — BOB-112 /healthz TTL cache still effective (see docs/qa/BOB-112/summary.md for the full RED/GREEN evidence this guard is calibrated against)
+exit_code=0
+cache-refresh-count AFTER run 3: 23  (delta this run: 0)
+

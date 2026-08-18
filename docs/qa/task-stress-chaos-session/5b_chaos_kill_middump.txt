@@ -1,0 +1,28 @@
+=== Test 5b: chaos — kill mid-dump, verify atomic mv prevents partial file ===
+target commit: 3520621866e071a6d10ec06e5b432188fdac7129
+
+-- baseline: full clean run with --force, capture file hash+size+mtime --
+baseline exit=0
+[capture-workable-items-db-delta] wrote docs/qa/db-deltas/3520621866e071a6d10ec06e5b432188fdac7129.diff
+baseline file sha256=11d85204701f85f709a8eabd1f0ded23a2bd3ee10a2de53cecfff75b25e50eee size=40223
+
+-- chaos: timeout 0.02s bash scripts/capture-workable-items-db-delta.sh 3520621866e071a6d10ec06e5b432188fdac7129 --force (repeated 5x to increase odds of catching mid-run) --
+chaos attempt 1 exit_code=124 (124=timeout killed it, 0=completed too fast to catch)
+chaos attempt 2 exit_code=124 (124=timeout killed it, 0=completed too fast to catch)
+chaos attempt 3 exit_code=124 (124=timeout killed it, 0=completed too fast to catch)
+chaos attempt 4 exit_code=124 (124=timeout killed it, 0=completed too fast to catch)
+chaos attempt 5 exit_code=124 (124=timeout killed it, 0=completed too fast to catch)
+
+-- post-chaos verification: destination file must be either (a) unchanged from baseline
+   [kill happened before mv, old complete file survives] or (b) a fresh, COMPLETE,
+   well-formed file [kill happened after mv completed] — NEVER a truncated/partial file --
+post-chaos file sha256=11d85204701f85f709a8eabd1f0ded23a2bd3ee10a2de53cecfff75b25e50eee size=40223
+well-formed check (must end with a complete dump, not truncated mid-line):
+ CREATE VIEW test_diary_summary AS
+ SELECT
+     d.atm_id                                                   AS atm_id,
+
+-- orphan process check --
+OK: no orphan capture-workable-items-db-delta or sqlite3 dump processes
+
+VERDICT: no partial/truncated file observed at destination path across 5 kill attempts

@@ -1,0 +1,24 @@
+=== Test 4a (corrected): invoke via absolute bash path with PATH='' inherited by the script ===
+command: PATH="" /usr/bin/bash scripts/install-dev-tools.sh --check
+scripts/install-dev-tools.sh: line 151: mkdir: No such file or directory
+scripts/install-dev-tools.sh: line 154: uname: No such file or directory
+=== install-dev-tools (check mode) ===
+OS:  | prefix: /home/milosvasic/bin | allow-sudo: 0
+detected: brew=0 apt=0 dnf=0 go=0 git=0 make=0 cc=0
+
+--- tools this script can install (subject to --tool filter) ---
+  [wrk] SKIP — no non-sudo install path available on this host (git/make/cc missing, and no --allow-sudo Debian/Ubuntu apt package)
+  [hey] SKIP — no non-sudo install path (no Go toolchain, no Homebrew, no --allow-sudo)
+  [siege] SKIP — no non-sudo install path implemented (Homebrew absent; --allow-sudo not passed; from-source build intentionally out of scope, see docs/scripts/install-dev-tools.md). Manual (this host, ALT Linux): sudo apt-get install -y siege
+
+--- tools this script only detects (never installs) ---
+  [ab] NOT-INSTALLED — part of apache2-utils (Debian/Ubuntu) or httpd-tools (RHEL/Fedora); already present on this host if you're seeing this
+  [curl-loader] NOT-INSTALLED — not packaged in ALT's repos (verified 2026-08-18); no non-sudo install path implemented
+
+==========================================
+Summary (check):
+  wrk: SKIP: no non-sudo install path available on this host (git/make/cc missing, and no --allow-sudo Debian/Ubuntu apt package)
+  hey: SKIP: no non-sudo install path (no Go toolchain, no Homebrew, no --allow-sudo)
+  siege: SKIP: no non-sudo install path implemented (Homebrew absent; --allow-sudo not passed; from-source build intentionally out of scope, see docs/scripts/install-dev-tools.md). Manual (this host, ALT Linux): sudo apt-get install -y siege
+==========================================
+exit_code=0
