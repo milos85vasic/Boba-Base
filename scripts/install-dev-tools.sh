@@ -52,6 +52,25 @@
 # already has its own ab-presence detection + fallback wiring (BOB-074) —
 # this script does not duplicate or modify that.
 #
+# Runtime requirement — bash >= 4.0 (§11.4.35 consumer-DATA declaration):
+# the per-tool status table below is implemented with an associative array
+# (`declare -A RESULT`), a bash-4.0+ feature. macOS ships bash 3.2 by
+# default (Apple stopped bundling newer bash for licensing reasons), so a
+# bare `bash scripts/install-dev-tools.sh` on an unmodified macOS host
+# fails immediately with a cryptic `declare: -A: invalid option` instead of
+# doing anything useful. The version floor is a property of THIS script's
+# own status-table implementation choice, not a universal constraint on
+# install-dev-tools' scope (the script otherwise supports macOS throughout
+# via the Homebrew install paths above) — an early, self-checked guard
+# below converts that cryptic failure into an actionable one, naming the
+# fix: `brew install bash` then re-run via `$(brew --prefix bash)/bin/bash
+# scripts/install-dev-tools.sh` (Homebrew's bash lands outside the system
+# PATH precedence, so it must be invoked explicitly). Not independently
+# verified on a real macOS host in this session (none available) — the
+# guard's own logic (`BASH_VERSINFO[0] < 4`) was verified interactively on
+# this host by simulating the value; see
+# docs/qa/task-review-457cca4-a7e55f9-nit-fixes/minor-6-bash-version-guard.md.
+#
 # Usage:
 #   scripts/install-dev-tools.sh [--check] [--allow-sudo] [--prefix DIR]
 #                                 [--tool wrk|hey|siege|all] [--force]
@@ -87,6 +106,19 @@
 #          and genuinely FAILED (e.g. compile error) — never used for an
 #          honest SKIP; 2 = invocation error (bad flag).
 set -uo pipefail
+
+# §11.4.201 guard-asserts-real-condition: fail fast + loud, BEFORE any
+# other work, when the interpreter cannot support the associative-array
+# status table this script relies on (see the "Runtime requirement" note
+# in the file header above). Checked against the real, authoritative
+# BASH_VERSINFO array — never inferred from OS family, since a Homebrew
+# or otherwise-upgraded bash on macOS is a legitimate PASS.
+if [ -z "${BASH_VERSINFO:-}" ] || [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+  echo "install-dev-tools: bash >= 4.0 required (associative arrays); got ${BASH_VERSION:-an interpreter that is not bash at all}." >&2
+  echo "  macOS ships bash 3.2 by default. Fix: brew install bash, then re-run with:" >&2
+  echo "    \$(brew --prefix bash)/bin/bash $0 $*" >&2
+  exit 2
+fi
 
 PREFIX="${HOME}/bin"
 MODE="install"
