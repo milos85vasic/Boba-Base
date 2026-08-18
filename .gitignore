@@ -62,6 +62,8 @@ RUTRACKER_*
 
 # Log files
 *.log
+# Task #82: whitelist docs/qa/**/*.log evidence files (independent stress+chaos + BOB-076→116 relabel subagents both discovered this dropping-evidence bug)
+!docs/qa/**/*.log
 logs/
 
 # Temporary files

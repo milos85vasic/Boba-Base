@@ -237,7 +237,15 @@ fi
 
 # ─── stage 4: show working-tree status ────────────────────────────────
 echo "[commit-push-all] stage 4/6 — git status pre-commit"
-git status --short | head -40
+# NOTE: `| head -40` closes its stdin after N lines, causing git status to
+# receive SIGPIPE. Under `set -o pipefail` (upstream in this script), that
+# manifests as exit 141 whenever the working tree has >40 changed entries
+# (routine in shared-checkout parallel-subagent sessions). Task #81 fix:
+# swallow the SIGPIPE from git itself — `head` still limits output, and the
+# net "no failure of THIS pipeline should abort the wrapper" property holds.
+# Discovered independently by task-a61bd42d (stress+chaos) + task-ac26f7c7
+# (BOB-076→116 relabel), both reproduced 3× against a heavily-dirty tree.
+{ git status --short || true; } | head -40 || true
 
 # ─── stage 5: commit ──────────────────────────────────────────────────
 # Captured BEFORE either commit branch runs so stage 5.5 (below) can
