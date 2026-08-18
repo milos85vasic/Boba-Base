@@ -1,0 +1,25 @@
+=== BEFORE: ls-remote docs_chain ===
+ssh: ControlSocket /home/milosvasic/.ssh/cm/git@github.com:22 already exists, disabling multiplexing
+9510e01471fbab12a75ce7d0da4e66b8ce90b81d	HEAD
+9510e01471fbab12a75ce7d0da4e66b8ce90b81d	refs/heads/main
+3650f11bf465f530b61e57af08a2312dc3861899	refs/tags/helix_translate-2.3.0
+0c72cddc6f1f8fb630f265ab13ac5d6c85d68110	refs/tags/helix_translate-2.3.0^{}
+03797e0f3b972876e4827e461d0a1e386fdde4a4	refs/tags/helix_translate-2.3.1
+0c72cddc6f1f8fb630f265ab13ac5d6c85d68110	refs/tags/helix_translate-2.3.1^{}
+4da7a507197c08804fc6d42e8795c0ffdc659085	refs/tags/helixcode-v1.1.0
+1bf67f979397b9881eb0310b5488979dc7accdfe	refs/tags/helixcode-v1.1.0^{}
+
+=== BEFORE: local HEAD (beade06, unpushed) ===
+beade06 chore(gitignore): exclude compiled /docs_chain binary (build artifact)
+1bf67f9 Merge remote-tracking branch 'github/main'
+2c26443 Add Helix Constitution inheritance pointer (§11.4.28 governance inheritance)
+=== AFTER: ls-remote across fleet ===
+github main = 774ac57c595e6ee9f37ca323d17b2365e1066c82
+gitflic main = 774ac57c595e6ee9f37ca323d17b2365e1066c82
+gitlab main = 774ac57c595e6ee9f37ca323d17b2365e1066c82
+gitverse main = 774ac57c595e6ee9f37ca323d17b2365e1066c82
+vasic_digital_github main = 774ac57c595e6ee9f37ca323d17b2365e1066c82
+vasic_digital_gitlab main = 774ac57c595e6ee9f37ca323d17b2365e1066c82
+
+=== AFTER: docs_chain origin main ===
+8ccf505f48315c575ccd8b98c1c0dadd6fdb5296	refs/heads/main
