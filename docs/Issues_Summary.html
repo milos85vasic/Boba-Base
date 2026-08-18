@@ -1,3 +1,181 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Issues_Summary</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
 <h1 id="issues_summary">Issues_Summary</h1>
 <p>Open workable items (current_location = Issues), regenerated from the
 SQLite single-source-of-truth (§11.4.12).</p>
@@ -19,12 +197,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>6</td>
+<td>7</td>
 </tr>
 <tr>
 <td>Task</td>
 <td>In progress</td>
-<td>1</td>
+<td>2</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -34,12 +212,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>28</td>
+<td>32</td>
 </tr>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>39</strong></td>
+<td><strong>45</strong></td>
 </tr>
 </tbody>
 </table>
@@ -346,7 +524,7 @@ RW-10..13) — OPERATOR-DECISION</td>
 <tr>
 <td>BOB-104</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
 <td>Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md, BOB-075
 agent-code-reading finding, commit e6162f7): CodeGraph 1.5.0 (up from
@@ -361,7 +539,27 @@ that subcommand exists, else a real re-index + file-count assertion)
 with §11.4.115 RED_MODE polarity: RED_MODE=1 reproduces the blowup
 against the live nested-.gitignore tree, RED_MODE=0 asserts the resync
 stays within the documented baseline order of magnitude. Full evidence:
-docs/codegraph/Status.md lines 91-118.</td>
+docs/codegraph/Status.md lines 91-118. UPSTREAM FILED 2026-08-18: real
+upstream repo is github.com/colbymchenry/codegraph (npm package <span
+class="citation"
+data-cites="colbymchenry/codegraph">@colbymchenry/codegraph</span>,
+confirmed via package.json + gh repo view; NOT vasic-digital/codegraph,
+correcting this ledger’s original assumption). Issue:
+https://github.com/colbymchenry/codegraph/issues/1567 (full reproduction
+evidence: git check-ignore -v re-verified first-hand; two bounded
+synthetic repro attempts up to 63 nested .gitignore files / 960 files
+against the actual installed v1.5.0 binary did NOT reproduce the blowup
+in isolation – honest negative result, root cause not pinned to a
+specific line in either scanning implementation). Draft PR (diagnostic
+only, not a behavioral fix):
+https://github.com/colbymchenry/codegraph/pull/1568 – adds a logDebug()
+call so a future report can confirm which of the two independent
+gitignore-respecting code paths (git-ls-files-based vs filesystem-walk
+fallback) actually ran. Both PRs/issue filed via SSH (Hard Stop #2) from
+a fork at github.com/milos85vasic/codegraph. Status: In-progress pending
+upstream maintainer triage/merge – boba-side closure of this item still
+needs the RED/GREEN challenge script (§11.4.115) authored per the
+original scope, independent of upstream’s response.</td>
 </tr>
 <tr>
 <td>BOB-105</td>
@@ -441,5 +639,113 @@ input, respawn the producer’ message rather than silently letting a
 downstream agent proceed on absent evidence and fabricate content
 unsupported by its named sources.</td>
 </tr>
+<tr>
+<td>BOB-109</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>docs/testing/test_type_matrix.md’s §11.4.27 test-type audit found
+zero scaling-class coverage anywhere in the tree (no scaling-tagged
+directory, test file, or HelixQA bank distinguishes
+growing-dataset/tracker-count/concurrent-user scale-out from
+stress-under-burst). Scope at least one scaling dimension,
+e.g. tracker-count scale-out in merge search against
+challenges/helixqa-banks/boba-services.yaml’s tracker set, or the
+qbittorrent-proxy-go –profile go swap, with a real measured
+baseline.</td>
+</tr>
+<tr>
+<td>BOB-110</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>docs/testing/test_type_matrix.md’s §11.4.27 test-type audit found UI
+functional coverage (Vitest + Playwright) but nothing framed around
+usability/accessibility/UX outcomes specifically. Scope an axe-core or
+equivalent accessibility pass over the Angular frontend, covering WCAG
+checks, keyboard-nav coverage, and screen-reader labeling.</td>
+</tr>
+<tr>
+<td>BOB-111</td>
+<td>Task</td>
+<td>Queued</td>
+<td>High</td>
+<td>Source inspection across the whole stack (2026-08-18) verified no
+rate-limit mechanism exists for :7185 (qBittorrent WebUI proxy), :7187
+(merge search service), or :7189 (boba-jackett) – no
+slowapi/limiter/throttle import in download-proxy/src/, no rate-limit
+middleware in qBitTorrent-go/internal/middleware/ (only cors.go +
+logging.go) or internal/jackettapi/ (only auth/cors middleware tests, no
+rate middleware), and no nginx/reverse-proxy service in
+docker-compose.yml. Candidate remediations documented in
+docs/testing/ddos_resilience.md: nginx-in-container reverse proxy with
+limit_req_zone (most portable, adds a container); a FastAPI slowapi
+dependency for the merge-search service; a Gin rate-limit middleware for
+boba-jackett following the existing internal/middleware/ pattern.
+qBittorrent’s own WebUI bandwidth-shaping settings were NOT verified to
+cover request-rate (only bandwidth) – do not assume they close this gap
+without checking.</td>
+</tr>
+<tr>
+<td>BOB-112</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>High</td>
+<td>qBitTorrent-go/internal/jackettapi/health.go:60-63 – HandleHealth
+makes a synchronous, uncached call to Jackett.GetCatalog() on every
+single hit to /healthz, with no cache, no distinct timeout, and no
+circuit breaker. Measured evidence (docs/testing/ddos_resilience.md
+Findings, 2026-08-18, RED_MODE=0, three independent live runs): up to
+98/150 (65%) of health-check requests timed out at 3s under a modest
+cold-start concurrent burst (10-50 concurrency), recovering to
+&lt;50ms/request once the burst subsided. This is a genuine
+self-inflicted DDoS amplification vector: an attacker or a
+mis-configured monitoring probe hitting /healthz too aggressively can
+make the Jackett-management API’s own health surface appear down without
+ever touching Jackett itself. Recommended fixes: cache the Jackett
+liveness signal with a short TTL refreshed by a background ticker; add a
+tight timeout/circuit-breaker around the GetCatalog call so /healthz
+itself never blocks past ~250-500ms regardless of Jackett’s state.
+Discovered + scaffolded by BOB-074 (commit ae2b5cb,
+challenges/scripts/ddos_resilience_challenge.sh); tracked as SDD session
+task #64 in .superpowers/sdd/progress.md prior to this DB filing – this
+item is the canonical, tracked workable-items record for that reference
+(§11.4.93 SSoT, §11.4.214 recurrence-links-not-mints: no prior BOB-NNN
+existed for this defect, verified by title/description search before
+minting).</td>
+</tr>
+<tr>
+<td>BOB-113</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Low</td>
+<td>wrk is not installed on the development host; ApacheBench (ab) is,
+and was used as the primary DDoS-resilience-challenge load tool per the
+task brief’s ‘wrk or ab’ fallback path, with a curl-parallel-loop as the
+actual per-status-code assertion mechanism (more precise than ab’s
+aggregate summary) and ab’s own output pasted as supplementary real-tool
+evidence. Install wrk (e.g. via the project’s setup.sh or a documented
+apt/build-from-source recipe) so future load/DDoS challenges have a
+modern HTTP benchmarking tool with latency-percentile histograms
+available out of the box, matching the brief’s stated primary
+preference.</td>
+</tr>
+<tr>
+<td>BOB-114</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>challenges/scripts/ddos_resilience_challenge.sh’s –self-validate
+mode currently only ships a golden-bad fixture for the crash-resistance
+detector (per §11.4.107(10)/§11.4.201). The rate-limiting detector has
+no matching golden-bad fixture proving it would actually FAIL a
+synthetic no-rate-limit-enforced artifact, so an unvalidated rate-limit
+detector could silently pass a broken/absent rate-limit deployment. Add
+a synthetic fixture (e.g. a stub server that never returns 429/503 under
+burst) and assert the detector correctly reports the absence, closing
+the self-validation gap for this detector class.</td>
+</tr>
 </tbody>
 </table>
+</body>
+</html>

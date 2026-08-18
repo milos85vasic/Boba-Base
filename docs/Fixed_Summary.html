@@ -1,3 +1,181 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Fixed_Summary</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
 <h1 id="fixed_summary">Fixed_Summary</h1>
 <p>Closed workable items (current_location = Fixed), regenerated from
 the SQLite single-source-of-truth (§11.4.53).</p>
@@ -14,7 +192,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>17</td>
+<td>20</td>
 </tr>
 <tr>
 <td>Feature</td>
@@ -39,7 +217,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>68</strong></td>
+<td><strong>71</strong></td>
 </tr>
 </tbody>
 </table>
@@ -469,5 +647,109 @@ remain the authoritative closure record; this add+close pair is a
 mechanical items-row restoration, not a re-performance of the original
 2026-08-15 work.]</td>
 </tr>
+<tr>
+<td>69</td>
+<td>Medium</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-108 — workable-items export
+(constitution/scripts/workable-items/workable-items export –db
+docs/workable_items.db –out-dir docs) regenerates docs/Issues.md and
+docs/Fixed.md from the tool’s own internal revision counter, which does
+not track manually-bumped §11.4.44 revision headers landed by a prior
+commit outside the tool’s own write path. Discovered during BOB-069
+(.superpowers/sdd/task-bob069-report.md, Concerns section): an export
+invocation reverted docs/Issues.md Revision 7-&gt;6 and docs/Fixed.md
+Revision 16-&gt;15, both regressions relative to the already-committed
+HEAD values bumped manually in commit 82d9842. Worked around manually by
+re-bumping both headers forward (Issues.md-&gt;8, Fixed.md-&gt;17) per
+§11.4.44 (monotonic revision is non-negotiable) rather than shipping the
+regression. Recommendation: fix upstream in
+constitution/scripts/workable-items so ‘export’ reads the CURRENT
+on-disk <strong>Revision:</strong> header (or the DB’s own last-known
+value, whichever is higher) before regenerating, instead of relying
+solely on an internal counter that can trail a manually-edited
+file.</td>
+</tr>
+<tr>
+<td>70</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-115 — unresolvableClosureEvidence()
+(constitution/scripts/workable-items/cmd/workable-items/sync.go) checked
+evidence-path resolvability for EVERY item_history row belonging to a
+terminally-closed item, regardless of the row’s event_type. BOB-010’s
+real closure (history id=4, event=Completed) recorded a resolvable
+evidence_path; a LATER Updated event (history id=64, on=2026-08-10)
+recorded evidence_path=scripts/docs_chain.sh, a path that stopped
+resolving after that script was git-mv’d to
+scripts/workable-items-export.sh (commits 0558399/d9d512d). validate
+flagged the Updated row as an unresolvable closure claim, mechanically
+blocking every subsequent commit via commit-push-all.sh
+(BOBA_SYNC_SKIP_CI=1 was required to land 1f42357). Fix: added AND
+h.event_type IN (Fixed, Implemented, Completed, Obsolete) to the query,
+reusing the SAME closed set correct_evidence.go’s closureEvents /
+assign.go’s hasClosureEvidence already recognise. Regression guard:
+TestClosureEvidence_UpdatedEventOnClosedItem_UnresolvablePath_NoViolation,
+RED-then-GREEN + paired mutation proof captured at
+docs/qa/task-54/RED-GREEN-transcript.md.</td>
+</tr>
+<tr>
+<td>71</td>
+<td>Critical</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-116 — On 2026-08-18 the operator reported being fully logged out
+from host milosvasic account after returning from lid-closed state,
+finding themselves at the GDM greeter – the 2nd such incident on this
+project (1st was 2026-07-07, which produced the §12.12 anchor).
+Root-cause investigation
+(docs/incidents/2026-08-18-perceived-forced-logout-2nd.md) traced it to
+a resource-pressure cascade: a §12.12 EAGAIN/SocketException(11) cascade
+across Jackett trackers at 20:45:48, a pathological 15 GB ugrep from a
+Task#52 subagent, an HTTP flood at 20:49:00, and multi-fleet concurrent
+container pressure, culminating in systemd logging user@1000.service
+Main process exited, code=killed, status=9/KILL at 20:50:59 – no
+standing check consulted that signal before session termination, and
+CONST-033 triage confirmed no actual host suspend/poweroff occurred
+(this is a resource-exhaustion user-session OOM-kill, not a CONST-033
+violation). Comprehensive fixes landed this session: new 5-signature
+proactive detector
+challenges/scripts/resource_pressure_signature_challenge.sh (commit
+1f42357); five REAL per-signature §11.4.115(F) RED fixtures under
+challenges/fixtures/resource_pressure/ replacing an initially-overstated
+threshold-mutation polarity claim, verified via
+verify_resource_pressure_polarity.sh with RED confirmed 5/5 FAIL 0 SKIP
+0 (commit efbb8a6); wiring into scripts/pre_build_verification.sh
+invariant 25 (CM-RESOURCE-PRESSURE-SIGNATURE-CHECK) plus an hourly
+systemd –user timer boba-resource-pressure-check.timer, now LIVE and
+armed (commit ecb3bfe); a §11.4.238 QA-discovery-ledger entry
+FORCED-LOGOUT-2026-08-18-2ND documenting the coverage escape (commit
+98412bf); a fix for a CONST-033 challenge false-positive caused by
+scratchpad/.superpowers path scanning (part of commit 1f42357); 8
+machine-evidence artifacts under docs/qa/BOB-076/ (journalctl, oomctl,
+cgtop, PSI readings, ps LRSS snapshot, challenge pass/forced-fail logs,
+lid+session events); and a persistent-memory incident playbook at
+~/.claude-claude4/…/memory/forced_logout_incidents.md. NOTE ON ID
+COLLISION (documented honestly per §11.4.6/§11.4.54): all of the commits
+above and the docs/qa/ evidence directory used the label BOB-076 for
+this incident, but BOB-076 was ALREADY a distinct, legitimately-minted
+workable item (RD2-09: submodules/jackett fork 1 commit behind upstream,
+Type=Task, Status=Queued, minted 2026-08-15 – three days before this
+incident) at the time those commits landed. §11.4.54 forbids ID reuse,
+so this item is filed under a fresh monotonic ID instead of overwriting
+BOB-076; the real BOB-076 (jackett submodule bump) is untouched and
+unrelated to this incident – it was independently already resolved via
+commit 99a486e. See
+docs/incidents/2026-08-18-perceived-forced-logout-2nd.md for full
+forensic detail and docs/QA_DISCOVERY_LEDGER.md entry
+FORCED-LOGOUT-2026-08-18-2ND for the coverage-escape audit.</td>
+</tr>
 </tbody>
 </table>
+</body>
+</html>

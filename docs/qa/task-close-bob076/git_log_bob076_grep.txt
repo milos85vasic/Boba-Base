@@ -1,0 +1,6 @@
+efbb8a6 fix(host-safety,BOB-076,task-78): real per-signature §11.4.115(F) RED fixtures replace threshold-mutation polarity claim
+1c411fe docs(§12.10): CONTINUATION.md snapshot at 9c282ff — Session 4db6eadb-03e7 state
+ecb3bfe feat(host-safety,task-77/BOB-076): wire resource-pressure-signature-challenge into pre-build invariant 25 + hourly systemd --user timer
+98412bf docs(qa,§11.4.238,BOB-076): backfill discovery-ledger entry for 2nd forced-logout incident
+1f42357 fix(host-safety,BOB-076): 2nd forced-logout root-cause + preventive resource-pressure guard
+99a486e chore(jackett,BOB-076): bump submodules/jackett v0.24.2353 -> v0.24.2406 + LSIO container v0.24.2406-ls2
