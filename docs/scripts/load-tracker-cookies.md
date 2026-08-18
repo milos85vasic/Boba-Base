@@ -1,9 +1,9 @@
 # `scripts/load-tracker-cookies.sh` — Tracker Cookies Autoload
 
-**Revision:** 1
-**Last modified:** 2026-08-15T14:15:00Z
+**Revision:** 2
+**Last modified:** 2026-08-18T00:00:00Z
 **Purpose:** External operator guide for the per-tracker cookies autoload primitive.
-**Last verified:** 2026-08-15
+**Last verified:** 2026-08-18
 
 ---
 
@@ -53,7 +53,8 @@ next restart.
 
 - `bash` 4+, `coreutils`, `git` (for the leak audit)
 - `scripts/extract-tracker-cookies.sh` (delegated primitive for
-  `rutracker` / `nnmclub`; inline extraction is used for the other trackers)
+  `rutracker` / `nnmclub` / `iptorrents`; inline extraction is used for the
+  other trackers)
 - The `cookies_<tracker>.txt` file(s) exported from a logged-in browser session
   in Netscape TSV format (Firefox: `Cookie Quick Manager` add-on → *Export
   cookies to file*. Chrome: `Get cookies.txt` extension).
@@ -75,6 +76,18 @@ $ bash scripts/load-tracker-cookies.sh --dry-run
 [load-tracker-cookies] kinozal: 5 cookie(s) for own domain — names: eb3299ed2c_blockTimer eb3299ed2c_delayCount pass u_eb3299ed2c uid
 [load-tracker-cookies] kinozal: WOULD LOAD (5 cookie(s)) into /run/media/milosvasic/DATA4TB/Projects/boba/.env as KINOZAL_COOKIES — DRY-RUN (no write)
 [load-tracker-cookies] summary: loaded=4 unchanged=0 absent=0 blocked=0 parse_err=0 (dir=/home/milosvasic/Downloads)
+```
+
+`iptorrents` support was added 2026-08-18 (Task #39), routed through the same
+`extract-tracker-cookies.sh` extractor as `rutracker`/`nnmclub` (required
+session-cookie canary: `pass=`). Verified output against a real, already-
+partially-loaded host (2026-08-18):
+
+```
+$ bash scripts/load-tracker-cookies.sh --dry-run
+[extract] iptorrents: 2 cookie(s) for own domain — names: pass uid
+[load-tracker-cookies] iptorrents: WOULD LOAD (2 cookie(s)) into /run/media/milosvasic/DATA4TB/Projects/boba/.env as IPTORRENTS_COOKIES — DRY-RUN (no write)
+[load-tracker-cookies] summary: loaded=1 unchanged=4 absent=0 blocked=0 parse_err=0 (dir=/home/milosvasic/Downloads)
 ```
 
 ### Example 2 — real write
@@ -129,7 +142,7 @@ $ TRACKER_COOKIE_DIR=/media/usb/browser-export bash scripts/load-tracker-cookies
 |---|---|
 | `--dry-run` | Report what WOULD change; touch nothing. Safe to run any time. |
 | `--dir <path>` | Override the cookie source dir (default `$TRACKER_COOKIE_DIR` else `$HOME/Downloads`). |
-| `--only <tracker>` | Process a single tracker (`rutracker` \| `nnmclub` \| `rutor` \| `kinozal`). May be repeated. |
+| `--only <tracker>` | Process a single tracker (`rutracker` \| `nnmclub` \| `rutor` \| `kinozal` \| `iptorrents`). May be repeated. |
 | `--verbose` / `-v` | Extra progress (per-file mtime, per-cookie count). Cookie **values** are still never printed. |
 | `-h` / `--help` | Print help. |
 
@@ -175,12 +188,15 @@ $ TRACKER_COOKIE_DIR=/media/usb/browser-export bash scripts/load-tracker-cookies
 
 ## Internal behaviour
 
-1. **Extractor delegation.** For `rutracker` and `nnmclub` (the trackers the
-   audited primitive teaches), calls
+1. **Extractor delegation.** For `rutracker`, `nnmclub`, and `iptorrents` (the
+   private-login trackers the audited primitive teaches, each with a
+   load-bearing required session cookie), calls
    `scripts/extract-tracker-cookies.sh <file> <tracker>` and captures the header
    from stdout, summary from stderr. For `rutor` and `kinozal`, the same
    awk shape is inlined (`domain-lowercased`, `leading-dot stripped`,
-   `case-insensitive substring on the tracker name`, dedup-by-name).
+   `case-insensitive substring on the tracker name`, dedup-by-name) — no
+   required-cookie validation for those two (rutor is public/no-login,
+   kinozal's inline path predates the extractor's kinozal support).
 2. **Idempotency.** Reads the current `.env` value for `<TRACKER>_COOKIES` via
    `_read_env_var`, strips surrounding quotes, byte-compares. Match → SKIP.
 3. **§11.4.10.A audit.** For every cookie value ≥ 8 chars (and not one of the
@@ -215,8 +231,8 @@ $ TRACKER_COOKIE_DIR=/media/usb/browser-export bash scripts/load-tracker-cookies
 - **§11.4.10.A pre-store leak audit** — mandatory before every write; blocks
   the store on any hit; operator is instructed to rotate and re-export.
 - **§11.4.6 no-guessing** — the loader knows only the closed
-  `{rutracker,nnmclub,rutor,kinozal}` tracker set; unknown trackers are surfaced
-  as `--only ignored`, never guessed.
+  `{rutracker,nnmclub,rutor,kinozal,iptorrents}` tracker set; unknown trackers
+  are surfaced as `--only ignored`, never guessed.
 - **§11.4.234 always-unblocked** — loader failure never blocks `boba-svc up` /
   `install.sh` / `start.sh`; a warning surfaces and the boot proceeds with
   whatever cookies `.env` already holds.

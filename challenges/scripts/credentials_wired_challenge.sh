@@ -81,8 +81,10 @@ REQUIRED_VARS=(
 # present but never fails when empty. RUTOR is a public tracker (no session
 # required) but the cookie jar carries cf_clearance which helps with
 # Cloudflare challenges. KINOZAL cookies are the authenticated session token
-# and are the alternative to KINOZAL_USERNAME/PASSWORD form auth.
-OPTIONAL_COOKIE_VARS=(RUTRACKER_COOKIES RUTOR_COOKIES KINOZAL_COOKIES)
+# and are the alternative to KINOZAL_USERNAME/PASSWORD form auth. IPTORRENTS
+# cookies (uid=/pass=) are the alternative to IPTORRENTS_USERNAME/PASSWORD
+# form auth, populated from cookies_iptorrents.txt by the same loader.
+OPTIONAL_COOKIE_VARS=(RUTRACKER_COOKIES RUTOR_COOKIES KINOZAL_COOKIES IPTORRENTS_COOKIES)
 
 # ─── Check 1: .env mode is 0600 ────────────────────────────────────
 mode="$(stat -c '%a' .env)"
@@ -169,6 +171,15 @@ for cv in "${OPTIONAL_COOKIE_VARS[@]}"; do
                 else
                     assert_fail "$cv is set but lacks uid= / pass= — Kinozal plugin will refuse auth"
                 fi ;;
+            IPTORRENTS_COOKIES)
+                # IPTorrents session cookie is `uid=<n>; pass=<hash>` (same
+                # two-cookie shape as Kinozal) per its own login form —
+                # extract-tracker-cookies.sh requires `pass=` as the canary.
+                if printf '%s' "$vraw" | grep -qE 'uid=|pass='; then
+                    assert_pass "$cv contains uid= or pass= (IPTorrents session cookie present)"
+                else
+                    assert_fail "$cv is set but lacks uid= / pass= — IPTorrents plugin will refuse auth"
+                fi ;;
         esac
     fi
 done
@@ -235,7 +246,7 @@ fi
 # WOULD LOAD, UNCHANGED, or has a per-tracker cookie-count line).
 COOKIE_DIR="${TRACKER_COOKIE_DIR:-$HOME/Downloads}"
 if [ -d "$COOKIE_DIR" ] && [ -x "$LOADER" ]; then
-    for t in rutracker nnmclub rutor kinozal; do
+    for t in rutracker nnmclub rutor kinozal iptorrents; do
         f="$COOKIE_DIR/cookies_${t}.txt"
         if [ -f "$f" ]; then
             if printf '%s' "$dr_out" | grep -qE "\[load-tracker-cookies\] $t: "; then

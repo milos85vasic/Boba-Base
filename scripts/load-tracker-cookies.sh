@@ -14,7 +14,8 @@
 # ─── PURPOSE ───────────────────────────────────────────────────────
 # One primitive, one convention:
 #   ${TRACKER_COOKIE_DIR:-$HOME/Downloads}/cookies_<tracker>.txt
-#     (tracker = lowercase; today: rutracker | nnmclub | rutor | kinozal)
+#     (tracker = lowercase; today: rutracker | nnmclub | rutor | kinozal |
+#      iptorrents)
 # For every file present, this script:
 #   1. Delegates parsing to scripts/extract-tracker-cookies.sh (the audited
 #      single-tracker extraction primitive that already strips leading
@@ -58,8 +59,8 @@
 #   Netscape TSV cookies.txt files at
 #     <dir>/cookies_<tracker>.txt
 #   for tracker in the closed tracker→domain map below (rutracker,
-#   nnmclub, rutor, kinozal). Any other file in <dir> is IGNORED —
-#   only files matching the convention are read.
+#   nnmclub, rutor, kinozal, iptorrents). Any other file in <dir> is
+#   IGNORED — only files matching the convention are read.
 #
 # ─── OUTPUTS ───────────────────────────────────────────────────────
 #   Mutates .env with 0..N `<TRACKER>_COOKIES='<cookie header>'` lines
@@ -109,7 +110,7 @@ ENV_FILE="${BOBA_ENV_FILE:-$REPO_ROOT/.env}"
 # THIS map and by teaching scripts/extract-tracker-cookies.sh the same
 # tracker's domain/session-cookie in its own `case` — never guess a
 # tracker here that the extractor doesn't know (§11.4.6 no-guessing).
-TRACKERS=(rutracker nnmclub rutor kinozal)
+TRACKERS=(rutracker nnmclub rutor kinozal iptorrents)
 
 # ─── flag parsing ─────────────────────────────────────────────────
 DRY_RUN=0
@@ -282,13 +283,14 @@ for tracker in "${EFFECTIVE[@]}"; do
     # stderr. NEVER redirect the summary elsewhere — the operator
     # needs to see it.
     #
-    # The extractor is per-tracker; it knows only nnmclub/rutracker.
-    # For trackers it does not know (rutor, kinozal), do a domain-
-    # scoped inline extraction using the same discipline — never a
-    # value log.
+    # The extractor is per-tracker; it knows nnmclub/rutracker/
+    # iptorrents (all three are private trackers with a load-bearing
+    # required session cookie the extractor validates). For trackers
+    # it does not know (rutor, kinozal), do a domain-scoped inline
+    # extraction using the same discipline — never a value log.
     header=""
     ex_rc=0
-    if [[ "$tracker" == "nnmclub" || "$tracker" == "rutracker" ]]; then
+    if [[ "$tracker" == "nnmclub" || "$tracker" == "rutracker" || "$tracker" == "iptorrents" ]]; then
         set +e
         header="$("$EXTRACTOR" "$file" "$tracker" 2>&2)"
         ex_rc=$?

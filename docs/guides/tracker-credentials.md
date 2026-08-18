@@ -1,7 +1,7 @@
 # Tracker Credentials — Env Vars vs Cookies Files
 
-**Revision:** 1
-**Last modified:** 2026-08-15T14:15:00Z
+**Revision:** 2
+**Last modified:** 2026-08-18T00:00:00Z
 **Audience:** Operators configuring tracker access on a fresh boba host or
 refreshing an expired session.
 **Authority:** Operator mandate 2026-08-15 (canonical file naming +
@@ -34,7 +34,7 @@ value-never-logged discipline. See its
 | **NNM-Club** | Cookie-only (form auth flaky) | `NNMCLUB_USERNAME` `NNMCLUB_PASSWORD` `NNMCLUB_COOKIES` | `~/Downloads/cookies_nnmclub.txt` | `phpbb2mysql_4_sid=` | Cookie is the **only** reliable auth. Plugin refuses if cookie lacks `phpbb2mysql_4_sid=`. |
 | **RuTor** | Public (no login) | `RUTOR_USERNAME` `RUTOR_PASSWORD` (present for parity, unused) | `~/Downloads/cookies_rutor.txt` (optional) | *n/a* | Cookie jar helps ONLY with `cf_clearance` (Cloudflare challenges). Empty is fine. |
 | **Kinozal** | Login form → session cookie | `KINOZAL_USERNAME` `KINOZAL_PASSWORD` | `~/Downloads/cookies_kinozal.txt` (optional) | `uid=` + `pass=` | Form auth works; cookies-file is a fallback when the form flow rate-limits. |
-| **IPTorrents** | Login form → session cookie | `IPTORRENTS_USERNAME` `IPTORRENTS_PASSWORD` | *n/a* (not covered by loader yet) | `uid=` + `pass=` | Freeleech-only per `CLAUDE.md`. Form auth only for now — add to the loader if you want cookies-file autoload here too. |
+| **IPTorrents** | Login form → session cookie | `IPTORRENTS_USERNAME` `IPTORRENTS_PASSWORD` `IPTORRENTS_COOKIES` | `~/Downloads/cookies_iptorrents.txt` | `pass=` (required canary; `uid=` is a low-entropy identifier, present alongside it) | Freeleech-only per `CLAUDE.md`. Cookies-file autoload added 2026-08-18 — routed through `extract-tracker-cookies.sh` (same login-required validation as RuTracker/NNM-Club). |
 | **Jackett-fronted trackers** | API-key | `JACKETT_API_KEY` (extracted by autoconfig) | *n/a* | *n/a* | Managed by `boba-jackett` — see `docs/JACKETT_INTEGRATION.md`. |
 
 **Rule of thumb:** if a tracker needs a session token AND your browser can log
@@ -53,8 +53,8 @@ simpler.
 2. Log into the tracker's website in a normal browser window (solve any
    CAPTCHA, tick *Remember me*, verify you land on your profile).
 3. Click the add-on icon → **Manage all cookies** → search the tracker's
-   domain (`rutracker.org`, `nnmclub.to`, `rutor.is`, `kinozal.guru`) →
-   **Export → Netscape HTTP Cookie File**.
+   domain (`rutracker.org`, `nnmclub.to`, `rutor.is`, `kinozal.guru`,
+   `iptorrents.com`) → **Export → Netscape HTTP Cookie File**.
 4. Save as **exactly** `cookies_<tracker>.txt` in your host's `~/Downloads/`
    folder — the loader's convention is:
 
@@ -63,7 +63,7 @@ simpler.
    ```
 
    with `<tracker>` **lowercase** (`rutracker`, `nnmclub`, `rutor`,
-   `kinozal`).
+   `kinozal`, `iptorrents`).
 5. Trigger a reload:
 
    ```bash
@@ -98,7 +98,7 @@ The definitive test:
 bash challenges/scripts/credentials_wired_challenge.sh
 ```
 
-Expected shape (verified 2026-08-15):
+Expected shape (verified 2026-08-18):
 
 ```
 PASS: .env mode = 0600
@@ -109,15 +109,17 @@ PASS: NNMCLUB_COOKIES contains phpbb2mysql_4_sid= (session cookie present)
 PASS: RUTRACKER_COOKIES contains bb_session= (RuTracker session cookie present)
 PASS: RUTOR_COOKIES shape OK (public tracker; cf_clearance helps Cloudflare)
 PASS: KINOZAL_COOKIES contains uid= or pass= (Kinozal session cookie present)
+PASS: IPTORRENTS_COOKIES contains uid= or pass= (IPTorrents session cookie present)
 PASS: all 11 credential vars propagated to qbittorrent-proxy container env (non-empty)
 PASS: scripts/load-tracker-cookies.sh exists + executable + bash -n clean
 PASS: scripts/load-tracker-cookies.sh --dry-run exit 0
 PASS: scripts/load-tracker-cookies.sh --dry-run emits the standard summary line
-PASS: cookies_rutracker.txt present in /home/milosvasic/Downloads AND recognised by loader
-PASS: cookies_nnmclub.txt   present in /home/milosvasic/Downloads AND recognised by loader
-PASS: cookies_rutor.txt     present in /home/milosvasic/Downloads AND recognised by loader
-PASS: cookies_kinozal.txt   present in /home/milosvasic/Downloads AND recognised by loader
-Total: PASS=16 FAIL=0
+PASS: cookies_rutracker.txt  present in /home/milosvasic/Downloads AND recognised by loader
+PASS: cookies_nnmclub.txt    present in /home/milosvasic/Downloads AND recognised by loader
+PASS: cookies_rutor.txt      present in /home/milosvasic/Downloads AND recognised by loader
+PASS: cookies_kinozal.txt    present in /home/milosvasic/Downloads AND recognised by loader
+PASS: cookies_iptorrents.txt present in /home/milosvasic/Downloads AND recognised by loader
+Total: PASS=18 FAIL=0
 ```
 
 Any FAIL names the offending file / var / substring.

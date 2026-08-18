@@ -11,24 +11,29 @@
 # header string to stdout for the caller to redirect into a chmod-600 .env;
 # it logs only cookie NAMES + counts to stderr (never values).
 #
-# Usage:  extract-tracker-cookies.sh <cookies.txt> <nnmclub|rutracker>
+# Usage:  extract-tracker-cookies.sh <cookies.txt> <nnmclub|rutracker|iptorrents>
 #   NNMCLUB_COOKIES="$(extract-tracker-cookies.sh ~/Downloads/nnmclub.txt nnmclub)"
 # Inputs: a Netscape cookies.txt (tab-separated: domain flag path secure expiry name value).
 # Output: stdout = "name=value; ..." for the tracker domain; stderr = names+count.
 # Exit:   0 ok (required session cookie present); 2 = required session cookie absent.
 set -euo pipefail
 
-FILE="${1:?usage: extract-tracker-cookies.sh <cookies.txt> <nnmclub|rutracker>}"
-TRACKER="${2:?usage: extract-tracker-cookies.sh <cookies.txt> <nnmclub|rutracker>}"
+FILE="${1:?usage: extract-tracker-cookies.sh <cookies.txt> <nnmclub|rutracker|iptorrents>}"
+TRACKER="${2:?usage: extract-tracker-cookies.sh <cookies.txt> <nnmclub|rutracker|iptorrents>}"
 [[ -f "$FILE" ]] || { echo "[extract] no such file: $FILE" >&2; exit 1; }
 
 # Per-tracker CANONICAL own-domain + the session cookie that proves login.
 # Canonical domain only (matches the proxy's base_url default) so a mirror's
 # (.net/.me) divergent session value can't be sent to the canonical host.
 case "$TRACKER" in
-  nnmclub)   DOMAIN_RE='nnmclub\.to$';   REQUIRED='phpbb2mysql_4_sid' ;;
-  rutracker) DOMAIN_RE='rutracker\.org$'; REQUIRED='bb_session' ;;
-  *) echo "[extract] unknown tracker: $TRACKER (want nnmclub|rutracker)" >&2; exit 1 ;;
+  nnmclub)     DOMAIN_RE='nnmclub\.to$';    REQUIRED='phpbb2mysql_4_sid' ;;
+  rutracker)   DOMAIN_RE='rutracker\.org$'; REQUIRED='bb_session' ;;
+  # IPTorrents auths via a two-cookie pair (uid=<numeric id>; pass=<32-char
+  # hash>) — `pass` is the actual secret token (analogous to bb_session /
+  # phpbb2mysql_4_sid), so it is the required canary; `uid` alone is a
+  # low-entropy identifier and proves nothing about login state.
+  iptorrents)  DOMAIN_RE='iptorrents\.com$'; REQUIRED='pass' ;;
+  *) echo "[extract] unknown tracker: $TRACKER (want nnmclub|rutracker|iptorrents)" >&2; exit 1 ;;
 esac
 
 # Build the header string from ONLY rows whose cookie-domain (field 1, leading
