@@ -235,3 +235,47 @@ Fetching upstream
 [commit-push-all] stage 5/6 — SCOPED commit (--scope mode, 2 path(s) declared)
                              scope: constitution
                              scope: docs/qa/task-44
+[commit-push-all] stage 5/6 — --scope safety check OK (staged set == declared scope)
+[main 55475a7] chore(constitution): bump pointer to include docs_chain .gitignore fix (Task #44)
+ 5 files changed, 297 insertions(+), 1 deletion(-)
+ create mode 100644 docs/qa/task-44/before_after.txt
+ create mode 100644 docs/qa/task-44/boba_commit_push.txt
+ create mode 100644 docs/qa/task-44/constitution_push.txt
+ create mode 100644 docs/qa/task-44/docs_chain_push.txt
+[commit-push-all] stage 6/6 — push to all upstreams
+[commit-push-all] pushing to github...
+To github.com:milos85vasic/Boba-Base.git
+   ecb3bfe..55475a7  main -> main
+[commit-push-all] pushing to origin...
+Everything up-to-date
+Everything up-to-date
+[commit-push-all] pushing to upstream...
+Everything up-to-date
+
+[commit-push-all] === Push Summary ===
+  Branch:  main
+  Commit:  55475a7
+  Message: chore(constitution): bump pointer to include docs_chain .gitignore fix (Task #44)
+
+Bumps constitution submodule pointer to f234202, which bumps
+constitution/submodules/docs_chain to dd96b2e: the compiled /docs_chain
+binary (previously tracked despite the 8ccf505 .gitignore rule, since
+git does not retroactively untrack an already-tracked path) is now
+untracked via `git rm --cached`, and a defensive *.exe entry was added.
+
+Skip note (§11.4.234(D) recorded deferral, BOBA_SYNC_SKIP_CI=1): stage
+3's pre_build_verification.sh reports 2 pre-existing FAILs unrelated to
+this scoped change — CM-MARKDOWN-EXPORT-SYNC (24 stale exports under
+docs/incidents/, docs/scripts/, docs/FAQ, docs/testing/, docs/proposals/)
+and CM-DOCS-CHAIN-ENGINE-VERIFY (codegraph-status STALE: [status_docx]).
+Neither touches constitution/ or docs/qa/task-44/; both predate this
+commit (confirmed via `git status` showing them already dirty before
+this scoped commit ran) and are outside this task's declared scope
+(other subagents' in-flight work per the parallel-track discipline).
+Deferred, not silently dropped — tracked for follow-up by whichever
+work stream owns those paths.
+
+Classification: universal (§11.4.17) — pointer bump only. [skip-ci]
+  Push:    3 remote(s), 0 failed
+  NOTE:    long gate was SKIPPED — re-run 'bash scripts/commit-push-all.sh "catch-up long gate"' when ready
+[commit-push-all] done.
