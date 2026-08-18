@@ -1,3 +1,10 @@
+<!--
+  §11.4.44 revision marker (voluntary — Constitution.md §11.4.44 explicitly exempts
+  README.md from the mandatory revision-header gate; tracked here anyway for
+  freshness auditing per the §11.4.257/§11.4.259 refresh mandate).
+  Revision: 1
+  Last modified: 2026-08-18T23:15:00Z
+-->
 <h1 align="center">
   <img src="docs/assets/logo.png" alt="qBittorrent" width="160" />
   <br>
@@ -18,14 +25,39 @@
 </p>
 
 <p align="center">
-  <img alt="tests"   src="https://img.shields.io/badge/python%20tests-585%20passing-success">
-  <img alt="vitest"  src="https://img.shields.io/badge/frontend%20tests-182%20passing-success">
-  <img alt="plugins" src="https://img.shields.io/badge/plugins-48-blue">
-  <img alt="merge"   src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
-  <img alt="ci"      src="https://img.shields.io/badge/ci-auto%20%28syntax%20%2F%20unit%20%2F%20integration%20%2F%20nightly%20%2F%20security%29-blueviolet">
-  <img alt="scan"    src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
-  <img alt="license" src="https://img.shields.io/badge/license-Apache%202.0-green">
+  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-585%20passing-success">
+  <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-182%20passing-success">
+  <img alt="plugins"        src="https://img.shields.io/badge/plugins-48-blue">
+  <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
+  <img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">
+  <img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-25-blue">
+  <img alt="challenges"     src="https://img.shields.io/badge/challenges-31-blue">
+  <img alt="scan"           src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
+  <img alt="license"        src="https://img.shields.io/badge/license-Apache%202.0-green">
 </p>
+
+<!--
+  §11.4.259 badge-provenance note (closed vocabulary: GREEN=success, AMBER=yellow,
+  RED=critical/red, GRAY=lightgrey/N/A-with-reason — never hand-picked colors).
+  A full self-validated badge-computer (golden-good/golden-bad per §11.4.107(10))
+  is NOT wired this session — that is tracked as a separate §11.4.197 gate-code
+  item, not claimed shipped. Provenance of the badges above, verified 2026-08-18:
+    - ci: GREEN — verified `.github/workflows/` absent + `ci.sh` present and
+      executable (CLAUDE.md Hard Stop: "CI IS MANUAL — permanent"). This badge
+      previously read "ci-auto" (nightly/security triggers) which is FALSE per
+      the current Hard Stop rule and has been corrected, not merely refreshed.
+    - pre-build invariants: informational count from the highest `[N/N]` label
+      in `scripts/pre_build_verification.sh` (currently `[25/25]`, includes the
+      new CM-DOCS-CHAIN-ENGINE-VERIFY + CM-RESOURCE-PRESSURE-SIGNATURE-CHECK
+      invariants) — a count, not an asserted current PASS across all 25.
+    - challenges: informational count of `challenges/scripts/*.sh` (31),
+      including the new resource_pressure_signature_challenge.sh +
+      verify_resource_pressure_polarity.sh + the ddos_resilience_challenge.sh
+      `--healthz` mode extension — a count, not an asserted current PASS.
+  tests/vitest/plugins/merge/scan/license badges are carried forward unverified
+  this session (out of this task's scope) — see docs/TESTING.md for the current
+  authoritative per-suite counts.
+-->
 
 ---
 
@@ -41,6 +73,7 @@
 - **Angular 21 SPA dashboard** — dark-themed, signals-based, per-tracker status chips with CAPTCHA re-login, virtual-scroll-ready sort.
 - **PWA-ready** — favicon + launcher icons + web manifest ship from `frontend/public/`.
 - **Container-first** — rootless Podman or Docker, single `./start.sh` boot.
+- **Resource-pressure early-warning** — [`challenges/scripts/resource_pressure_signature_challenge.sh`](challenges/scripts/resource_pressure_signature_challenge.sh) checks 5 independently-falsifiable host-pressure signatures (runaway RSS, thread-count vs `ulimit -u`, container EAGAIN cascades, swap pressure, cgroup memory pressure) so a forced-logout precursor is caught *before* `user@1000.service` gets SIGKILLed, not after. Wired into `scripts/pre_build_verification.sh` invariant 25 and a standing `boba-resource-pressure-check.timer` systemd-user unit. See [incident writeup](docs/incidents/2026-08-18-perceived-forced-logout-2nd.md).
 
 ---
 
@@ -136,11 +169,11 @@ no HTML/PDF export yet (never fabricated).
 
 | Document | Last modified | Revision | Markdown | HTML | PDF |
 |---|---|---|---|---|---|
-| Issues | 2026-06-09T20:00:00Z | 5 | [Markdown](docs/Issues.md) | [HTML](docs/Issues.html) | [PDF](docs/Issues.pdf) |
+| Issues | 2026-08-18T19:17:52Z | 10 | [Markdown](docs/Issues.md) | [HTML](docs/Issues.html) | [PDF](docs/Issues.pdf) |
 | Issues_Summary | — | — | [Markdown](docs/Issues_Summary.md) | [HTML](docs/Issues_Summary.html) | [PDF](docs/Issues_Summary.pdf) |
-| Fixed | 2026-06-09T21:00:00Z | 13 | [Markdown](docs/Fixed.md) | [HTML](docs/Fixed.html) | [PDF](docs/Fixed.pdf) |
+| Fixed | 2026-08-18T20:55:14Z | 20 | [Markdown](docs/Fixed.md) | [HTML](docs/Fixed.html) | [PDF](docs/Fixed.pdf) |
 | Fixed_Summary | — | — | [Markdown](docs/Fixed_Summary.md) | [HTML](docs/Fixed_Summary.html) | [PDF](docs/Fixed_Summary.pdf) |
-| CONTINUATION | 2026-06-16T23:55:00Z | 19 | [Markdown](docs/CONTINUATION.md) | [HTML](docs/CONTINUATION.html) | [PDF](docs/CONTINUATION.pdf) |
+| CONTINUATION | 2026-08-18T21:10:20Z | 24 | [Markdown](docs/CONTINUATION.md) | [HTML](docs/CONTINUATION.html) | [PDF](docs/CONTINUATION.pdf) |
 | PORTING-FROM-LAVA | 2026-07-01T16:18:43Z | 1 | [Markdown](docs/PORTING-FROM-LAVA.md) | — (not yet exported) | — (not yet exported) |
 | REMAINING_WORK_PLAN | 2026-08-07T19:10:54Z | 2 | [Markdown](docs/REMAINING_WORK_PLAN.md) | [HTML](docs/REMAINING_WORK_PLAN.html) | [PDF](docs/REMAINING_WORK_PLAN.pdf) |
 | GOVERNANCE_AUDIT_2026-08-07 | 2026-08-07T19:10:54Z | 1 | [Markdown](docs/GOVERNANCE_AUDIT_2026-08-07.md) | — (not yet exported) | — (not yet exported) |
@@ -149,9 +182,9 @@ no HTML/PDF export yet (never fabricated).
 | browser_extension/RELEASE_READINESS | 2026-06-13T13:10:00Z | 4 | [Markdown](docs/browser_extension/RELEASE_READINESS.md) | [HTML](docs/browser_extension/RELEASE_READINESS.html) | [PDF](docs/browser_extension/RELEASE_READINESS.pdf) |
 | COMPLETION_STATUS | 2026-06-06T00:00:00Z | 1 | [Markdown](docs/COMPLETION_STATUS.md) | [HTML](docs/COMPLETION_STATUS.html) | [PDF](docs/COMPLETION_STATUS.pdf) |
 | RELEASE_READINESS_20260616 | 2026-06-16T10:30:00Z | 1 | [Markdown](docs/RELEASE_READINESS_20260616.md) | [HTML](docs/RELEASE_READINESS_20260616.html) | [PDF](docs/RELEASE_READINESS_20260616.pdf) |
-| features/Status | 2026-06-16T23:30:00Z | 7 | [Markdown](docs/features/Status.md) | [HTML](docs/features/Status.html) | [PDF](docs/features/Status.pdf) |
+| features/Status | 2026-08-18T13:33:41Z | 8 | [Markdown](docs/features/Status.md) | [HTML](docs/features/Status.html) | [PDF](docs/features/Status.pdf) |
 | features/Status_Summary | 2026-06-16T23:30:00Z | 7 | [Markdown](docs/features/Status_Summary.md) | [HTML](docs/features/Status_Summary.html) | [PDF](docs/features/Status_Summary.pdf) |
-| QA_DISCOVERY_LEDGER | 2026-08-09T12:45:00Z | 2 | [Markdown](docs/QA_DISCOVERY_LEDGER.md) | [HTML](docs/QA_DISCOVERY_LEDGER.html) | [PDF](docs/QA_DISCOVERY_LEDGER.pdf) |
+| QA_DISCOVERY_LEDGER | 2026-08-18T22:10:00Z | 9 | [Markdown](docs/QA_DISCOVERY_LEDGER.md) | [HTML](docs/QA_DISCOVERY_LEDGER.html) | [PDF](docs/QA_DISCOVERY_LEDGER.pdf) |
 
 ### Getting started & operation
 
@@ -176,6 +209,16 @@ no HTML/PDF export yet (never fabricated).
 - [`docs/SCANNING.md`](docs/SCANNING.md) — Snyk + Sonar + Semgrep + Trivy + Gitleaks + bandit + pip-audit
 - [`docs/QUALITY_STACK.md`](docs/QUALITY_STACK.md) — the opt-in `docker-compose.quality.yml` stack
 
+### Incidents & QA evidence
+
+Per §11.4.238, automated HelixQA coverage is the discovery layer — manual/operator/agent-found
+defects are confirmation-only, and every out-of-band finding gets a coverage-escape-audit entry
+here.
+
+- [`docs/QA_DISCOVERY_LEDGER.md`](docs/QA_DISCOVERY_LEDGER.md) — the discovery-channel ledger + coverage-escape schema (also indexed above in Tracked-Items)
+- [`docs/incidents/`](docs/incidents/) — host-safety + CONST-033 forensic investigations, including the latest [2026-08-18 2nd perceived forced-logout](docs/incidents/2026-08-18-perceived-forced-logout-2nd.md) triage (root cause: partial, §11.4.6 `UNCONFIRMED:` boundary honestly stated; preventive gate: the resource-pressure signature challenge above)
+- [`docs/qa/`](docs/qa/) — per-item captured machine evidence (§11.4.5 / §11.4.69 / §11.4.83), one directory per workable item / task run — e.g. [`docs/qa/BOB-116/`](docs/qa/BOB-116/)
+
 ### Testing
 
 - [`docs/TESTING.md`](docs/TESTING.md) — catalogue of every test type (30 rows)
@@ -188,6 +231,7 @@ no HTML/PDF export yet (never fabricated).
 - [`CLAUDE.md`](CLAUDE.md) — Claude Code agent protocol (TDD + rebuild-reboot)
 - [`AGENTS.md`](AGENTS.md) — runtime development guidance
 - [`.specify/memory/constitution.md`](.specify/memory/constitution.md) — **binding architectural contract (v1.1.0)**
+- [`docs/scripts/`](docs/scripts/) — per-script user guides (§11.4.18), one `<name>.md` per `scripts/*.sh` / `challenges/scripts/*.sh` — e.g. [`commit-push-all.md`](docs/scripts/commit-push-all.md), [`capture-workable-items-db-delta.md`](docs/scripts/capture-workable-items-db-delta.md), [`regenerate-continuation-exports.md`](docs/scripts/regenerate-continuation-exports.md)
 
 ### Courses (self-paced, Asciinema)
 
@@ -253,6 +297,15 @@ npx --prefix frontend ng test --watch=false
 
 # Full scanner sweep (non-interactive; skips scanners with missing tokens)
 ./scripts/scan.sh --all
+
+# Pre-build invariant sweep — 25 checks (workable-items integrity, docs-chain
+# sync, resource-pressure signature, mutation-residue, §11.4.238 discovery
+# ledger freshness, ...) run before every build
+./scripts/pre_build_verification.sh
+
+# HelixQA Challenges — 31 scripts under challenges/scripts/, e.g.:
+./challenges/scripts/resource_pressure_signature_challenge.sh
+./challenges/scripts/ddos_resilience_challenge.sh --healthz
 ```
 
 See [`docs/TESTING.md`](docs/TESTING.md) for the 30-row test-type catalogue.

@@ -1,3 +1,10 @@
+<!--
+  §11.4.44 revision marker (voluntary — Constitution.md §11.4.44 explicitly exempts
+  README.md from the mandatory revision-header gate; tracked here anyway for
+  freshness auditing per the §11.4.257/§11.4.259 refresh mandate).
+  Revision: 1
+  Last modified: 2026-08-18T23:15:00Z
+-->
 <h1 align="center">
 <img src="docs/assets/logo.png" alt="qBittorrent" width="160" /> <br>
 Боба / Boba
@@ -15,14 +22,38 @@ containerised, private-tracker-aware.</strong>
 <a href="#contributing">Contributing</a>
 </p>
 <p align="center">
-<img alt="tests"   src="https://img.shields.io/badge/python%20tests-585%20passing-success">
-<img alt="vitest"  src="https://img.shields.io/badge/frontend%20tests-182%20passing-success">
-<img alt="plugins" src="https://img.shields.io/badge/plugins-48-blue">
-<img alt="merge"   src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
-<img alt="ci"      src="https://img.shields.io/badge/ci-auto%20%28syntax%20%2F%20unit%20%2F%20integration%20%2F%20nightly%20%2F%20security%29-blueviolet">
-<img alt="scan"    src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
-<img alt="license" src="https://img.shields.io/badge/license-Apache%202.0-green">
+<img alt="tests"          src="https://img.shields.io/badge/python%20tests-585%20passing-success">
+<img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-182%20passing-success">
+<img alt="plugins"        src="https://img.shields.io/badge/plugins-48-blue">
+<img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
+<img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">
+<img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-25-blue">
+<img alt="challenges"     src="https://img.shields.io/badge/challenges-31-blue">
+<img alt="scan"           src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
+<img alt="license"        src="https://img.shields.io/badge/license-Apache%202.0-green">
 </p>
+<!--
+  §11.4.259 badge-provenance note (closed vocabulary: GREEN=success, AMBER=yellow,
+  RED=critical/red, GRAY=lightgrey/N/A-with-reason — never hand-picked colors).
+  A full self-validated badge-computer (golden-good/golden-bad per §11.4.107(10))
+  is NOT wired this session — that is tracked as a separate §11.4.197 gate-code
+  item, not claimed shipped. Provenance of the badges above, verified 2026-08-18:
+    - ci: GREEN — verified `.github/workflows/` absent + `ci.sh` present and
+      executable (CLAUDE.md Hard Stop: "CI IS MANUAL — permanent"). This badge
+      previously read "ci-auto" (nightly/security triggers) which is FALSE per
+      the current Hard Stop rule and has been corrected, not merely refreshed.
+    - pre-build invariants: informational count from the highest `[N/N]` label
+      in `scripts/pre_build_verification.sh` (currently `[25/25]`, includes the
+      new CM-DOCS-CHAIN-ENGINE-VERIFY + CM-RESOURCE-PRESSURE-SIGNATURE-CHECK
+      invariants) — a count, not an asserted current PASS across all 25.
+    - challenges: informational count of `challenges/scripts/*.sh` (31),
+      including the new resource_pressure_signature_challenge.sh +
+      verify_resource_pressure_polarity.sh + the ddos_resilience_challenge.sh
+      `--healthz` mode extension — a count, not an asserted current PASS.
+  tests/vitest/plugins/merge/scan/license badges are carried forward unverified
+  this session (out of this task's scope) — see docs/TESTING.md for the current
+  authoritative per-suite counts.
+-->
 <hr />
 <h2 id="features">Features</h2>
 <ul>
@@ -51,6 +82,18 @@ virtual-scroll-ready sort.</li>
 ship from <code>frontend/public/</code>.</li>
 <li><strong>Container-first</strong> — rootless Podman or Docker, single
 <code>./start.sh</code> boot.</li>
+<li><strong>Resource-pressure early-warning</strong> — <a
+href="challenges/scripts/resource_pressure_signature_challenge.sh"><code>challenges/scripts/resource_pressure_signature_challenge.sh</code></a>
+checks 5 independently-falsifiable host-pressure signatures (runaway
+RSS, thread-count vs <code>ulimit -u</code>, container EAGAIN cascades,
+swap pressure, cgroup memory pressure) so a forced-logout precursor is
+caught <em>before</em> <code>user@1000.service</code> gets SIGKILLed,
+not after. Wired into <code>scripts/pre_build_verification.sh</code>
+invariant 25 and a standing
+<code>boba-resource-pressure-check.timer</code> systemd-user unit. See
+<a
+href="docs/incidents/2026-08-18-perceived-forced-logout-2nd.md">incident
+writeup</a>.</li>
 </ul>
 <hr />
 <h2 id="quick-start">Quick start</h2>
@@ -121,6 +164,32 @@ truth is <strong><a
 href="docs/TOKENS_AND_KEYS.md"><code>docs/TOKENS_AND_KEYS.md</code></a></strong>
 — which variable is mandatory, which is optional, and <strong>where to
 register</strong> for each one.</p>
+<h3
+id="tracker-credentials-env-vars-and-cookies-files-auto-loaded">Tracker
+credentials — env vars AND cookies files (auto-loaded)</h3>
+<p>Boba supports <strong>two mechanisms</strong> for tracker auth, and
+both are respected together:</p>
+<ol type="1">
+<li><strong>Env vars in <code>.env</code></strong> —
+<code>&lt;TRACKER&gt;_USERNAME</code> /
+<code>&lt;TRACKER&gt;_PASSWORD</code> /
+<code>&lt;TRACKER&gt;_COOKIES</code>.</li>
+<li><strong>Cookies files in <code>~/Downloads/</code></strong> —
+canonical naming <code>cookies_&lt;tracker&gt;.txt</code> (lowercase),
+Netscape TSV format exported from a logged-in browser session.</li>
+</ol>
+<p>The loader <code>scripts/load-tracker-cookies.sh</code> auto-invokes
+before every <code>boba-svc up</code>, <code>boba-svc restart</code>,
+<code>install.sh</code> Stage 6, and <code>start.sh</code> boot — so
+refreshing a session is a one-step <em>browser re-export → restart</em>.
+Source directory defaults to <code>$HOME/Downloads</code>, overridable
+via <code>TRACKER_COOKIE_DIR</code> or
+<code>--dir &lt;path&gt;</code>.</p>
+<p>See the <strong><a href="docs/guides/tracker-credentials.md">Tracker
+Credentials Manual</a></strong> for the per-tracker matrix,
+browser-export step-by-step, precedence rules, and the security posture
+(§11.4.10.A leak audit, cookie-value-never-logged). Common questions:
+<strong><a href="docs/FAQ.md">FAQ</a></strong>.</p>
 <h3 id="at-a-glance">At a glance</h3>
 <table>
 <colgroup>
@@ -307,8 +376,8 @@ currently carries no revision header or has no HTML/PDF export yet
 <tbody>
 <tr>
 <td>Issues</td>
-<td>2026-06-09T20:00:00Z</td>
-<td>5</td>
+<td>2026-08-18T19:17:52Z</td>
+<td>10</td>
 <td><a href="docs/Issues.md">Markdown</a></td>
 <td><a href="docs/Issues.html">HTML</a></td>
 <td><a href="docs/Issues.pdf">PDF</a></td>
@@ -323,8 +392,8 @@ currently carries no revision header or has no HTML/PDF export yet
 </tr>
 <tr>
 <td>Fixed</td>
-<td>2026-06-09T21:00:00Z</td>
-<td>13</td>
+<td>2026-08-18T20:55:14Z</td>
+<td>20</td>
 <td><a href="docs/Fixed.md">Markdown</a></td>
 <td><a href="docs/Fixed.html">HTML</a></td>
 <td><a href="docs/Fixed.pdf">PDF</a></td>
@@ -339,8 +408,8 @@ currently carries no revision header or has no HTML/PDF export yet
 </tr>
 <tr>
 <td>CONTINUATION</td>
-<td>2026-06-16T23:55:00Z</td>
-<td>19</td>
+<td>2026-08-18T21:10:20Z</td>
+<td>24</td>
 <td><a href="docs/CONTINUATION.md">Markdown</a></td>
 <td><a href="docs/CONTINUATION.html">HTML</a></td>
 <td><a href="docs/CONTINUATION.pdf">PDF</a></td>
@@ -413,8 +482,8 @@ href="docs/browser_extension/RELEASE_READINESS.html">HTML</a></td>
 </tr>
 <tr>
 <td>features/Status</td>
-<td>2026-06-16T23:30:00Z</td>
-<td>7</td>
+<td>2026-08-18T13:33:41Z</td>
+<td>8</td>
 <td><a href="docs/features/Status.md">Markdown</a></td>
 <td><a href="docs/features/Status.html">HTML</a></td>
 <td><a href="docs/features/Status.pdf">PDF</a></td>
@@ -429,8 +498,8 @@ href="docs/browser_extension/RELEASE_READINESS.html">HTML</a></td>
 </tr>
 <tr>
 <td>QA_DISCOVERY_LEDGER</td>
-<td>2026-08-09T12:45:00Z</td>
-<td>2</td>
+<td>2026-08-18T22:10:00Z</td>
+<td>9</td>
 <td><a href="docs/QA_DISCOVERY_LEDGER.md">Markdown</a></td>
 <td><a href="docs/QA_DISCOVERY_LEDGER.html">HTML</a></td>
 <td><a href="docs/QA_DISCOVERY_LEDGER.pdf">PDF</a></td>
@@ -483,6 +552,26 @@ threat model + credential storage</li>
 href="docs/QUALITY_STACK.md"><code>docs/QUALITY_STACK.md</code></a> —
 the opt-in <code>docker-compose.quality.yml</code> stack</li>
 </ul>
+<h3 id="incidents-qa-evidence">Incidents &amp; QA evidence</h3>
+<p>Per §11.4.238, automated HelixQA coverage is the discovery layer —
+manual/operator/agent-found defects are confirmation-only, and every
+out-of-band finding gets a coverage-escape-audit entry here.</p>
+<ul>
+<li><a
+href="docs/QA_DISCOVERY_LEDGER.md"><code>docs/QA_DISCOVERY_LEDGER.md</code></a>
+— the discovery-channel ledger + coverage-escape schema (also indexed
+above in Tracked-Items)</li>
+<li><a href="docs/incidents/"><code>docs/incidents/</code></a> —
+host-safety + CONST-033 forensic investigations, including the latest <a
+href="docs/incidents/2026-08-18-perceived-forced-logout-2nd.md">2026-08-18
+2nd perceived forced-logout</a> triage (root cause: partial, §11.4.6
+<code>UNCONFIRMED:</code> boundary honestly stated; preventive gate: the
+resource-pressure signature challenge above)</li>
+<li><a href="docs/qa/"><code>docs/qa/</code></a> — per-item captured
+machine evidence (§11.4.5 / §11.4.69 / §11.4.83), one directory per
+workable item / task run — e.g. <a
+href="docs/qa/BOB-116/"><code>docs/qa/BOB-116/</code></a></li>
+</ul>
 <h3 id="testing">Testing</h3>
 <ul>
 <li><a href="docs/TESTING.md"><code>docs/TESTING.md</code></a> —
@@ -504,6 +593,15 @@ guidance</li>
 <li><a
 href=".specify/memory/constitution.md"><code>.specify/memory/constitution.md</code></a>
 — <strong>binding architectural contract (v1.1.0)</strong></li>
+<li><a href="docs/scripts/"><code>docs/scripts/</code></a> — per-script
+user guides (§11.4.18), one <code>&lt;name&gt;.md</code> per
+<code>scripts/*.sh</code> / <code>challenges/scripts/*.sh</code> —
+e.g. <a
+href="docs/scripts/commit-push-all.md"><code>commit-push-all.md</code></a>,
+<a
+href="docs/scripts/capture-workable-items-db-delta.md"><code>capture-workable-items-db-delta.md</code></a>,
+<a
+href="docs/scripts/regenerate-continuation-exports.md"><code>regenerate-continuation-exports.md</code></a></li>
 </ul>
 <h3 id="courses-self-paced-asciinema">Courses (self-paced,
 Asciinema)</h3>
@@ -573,7 +671,16 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> <span class="at">--prefix</span> frontend ng test <span class="at">--watch</span><span class="op">=</span>false</span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Full scanner sweep (non-interactive; skips scanners with missing tokens)</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/scan.sh</span> <span class="at">--all</span></span></code></pre></div>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/scan.sh</span> <span class="at">--all</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Pre-build invariant sweep — 25 checks (workable-items integrity, docs-chain</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co"># sync, resource-pressure signature, mutation-residue, §11.4.238 discovery</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co"># ledger freshness, ...) run before every build</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/pre_build_verification.sh</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co"># HelixQA Challenges — 31 scripts under challenges/scripts/, e.g.:</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="ex">./challenges/scripts/resource_pressure_signature_challenge.sh</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="ex">./challenges/scripts/ddos_resilience_challenge.sh</span> <span class="at">--healthz</span></span></code></pre></div>
 <p>See <a href="docs/TESTING.md"><code>docs/TESTING.md</code></a> for
 the 30-row test-type catalogue.</p>
 <hr />
