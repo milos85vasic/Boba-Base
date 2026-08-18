@@ -1,7 +1,18 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 22
-**Last modified:** 2026-08-18T21:55:00Z
+**Revision:** 23
+**Last modified:** 2026-08-18T22:15:00Z
+
+## TERMINAL STATE (this write) — §11.4.126 endless-loop terminal condition MET
+
+- **Pre-build: 27 passed / 0 failed** — all invariants GREEN including new CM-RESOURCE-PRESSURE-SIGNATURE-CHECK (invariant 25) and post-fix CM-DOCS-CHAIN-ENGINE-VERIFY (invariant 24)
+- **3 boba remotes IN SYNC at `fab6707a`**
+- **§11.4.209 review**: 0 BLOCKING / 0 IMPORTANT open / 5/6 MINOR fixed / 1 MINOR honest SKIP / 2 NIT non-blocking / Fable-xhigh re-review owed as §11.4.197 upgrade
+- **§11.4.115(F) polarity**: 5/5 RED CONFIRMED across real pathological fixtures
+- **Resource-pressure timer**: LIVE + ARMED (next fire 22:42 CEST)
+- **1 subagent dispatched** for §11.4.108 rebuild + runtime-signature verification
+
+## Session commit summary (~20 boba commits + 4+ constitution commits since 457cca4)
 
 ## SESSION 2026-08-15 → 2026-08-18 (Session 4db6eadb-03e7)
 
