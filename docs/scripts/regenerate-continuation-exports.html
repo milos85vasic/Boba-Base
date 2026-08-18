@@ -1,0 +1,150 @@
+<h1
+id="scriptsregenerate-continuation-exports.sh-surgical-continuation.md-export-regen">scripts/regenerate-continuation-exports.sh
+— surgical CONTINUATION.md export regen</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T22:47:00Z <strong>Status:</strong> active</p>
+<h2 id="overview">Overview</h2>
+<p><code>scripts/regenerate-continuation-exports.sh</code> regenerates
+<code>docs/CONTINUATION.html</code> and
+<code>docs/CONTINUATION.pdf</code> from
+<code>docs/CONTINUATION.md</code> via a direct <code>pandoc</code> (+
+<code>weasyprint</code>) invocation. It exists to close a specific,
+narrow gap: <code>docs/CONTINUATION.md</code> is edited frequently (per
+§12.10, every non-trivial state change), but nothing automatically
+regenerates its <code>.html</code>/<code>.pdf</code> siblings on every
+edit, so they drift stale and trip pre-build invariant 16
+(<code>CM-MARKDOWN-EXPORT-SYNC</code>, §11.4.65) in
+<code>scripts/pre_build_verification.sh</code>.</p>
+<h2
+id="why-this-script-exists-instead-of-just-running-the-generic-sweep">Why
+this script exists instead of just running the generic sweep</h2>
+<p><code>scripts/generate_markdown_exports.sh</code> is the project’s
+generic §11.4.65 exporter — it walks every <code>*.md</code> under the
+project root, <code>docs/</code>, and <code>scripts/</code> and
+regenerates any <code>.html</code>/<code>.pdf</code>/<code>.docx</code>
+sibling older than its source. <code>docs/CONTINUATION.md</code>
+<strong>is</strong> technically inside that script’s scope (it lives
+under <code>docs/</code>), so in principle running the generic sweep
+would also fix CONTINUATION’s stale exports.</p>
+<p>It is deliberately <strong>not</strong> invoked here. Task #80
+(docs_chain sync/verify fix) found that
+<code>scripts/generate_markdown_exports.sh</code>‘s mtime-gated pandoc
+pass is docs_chain-unaware: it regenerates the <code>.docx</code>
+sibling for <em>any</em> markdown file whose <code>.md</code> is newer
+than its <code>.docx</code>, including files that are actually authored
+sources inside a registered <a
+href="https://github.com/vasic-digital/docs_chain">Docs Chain</a>
+context (see <code>.docs_chain/contexts/codegraph-status.yaml</code> and
+<code>.docs_chain/contexts/features-status.yaml</code>). Docs Chain owns
+the <code>sync</code>/<code>verify</code> lifecycle for those files’
+derived exports; letting the generic sweep race it corrupts the
+docs_chain-managed baseline (the exact regression task #80 fixed).</p>
+<p><code>docs/CONTINUATION.md</code> is <strong>not</strong> a
+registered docs_chain context — a <code>docs_chain sync --all</code> run
+touches nothing for it (confirmed: it reports only the
+<code>codegraph-status</code> and <code>features-status</code> contexts,
+both unrelated). So neither mechanism owns CONTINUATION’s exports out of
+the box. Rather than run the generic, project-wide sweep just to fix two
+files — and risk re-triggering the class of docs_chain-baseline
+corruption task #80 already had to remediate once — this script does a
+<strong>surgical, single-target</strong> regeneration: it reads and
+writes nothing except <code>docs/CONTINUATION.{html,pdf}</code>, using
+the identical pandoc/weasyprint invocation shape
+<code>generate_markdown_exports.sh</code> uses, so the rendered output
+stays visually/structurally consistent with every other exported doc in
+the project.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code></li>
+<li><code>pandoc</code> (hard dependency — the script exits non-zero if
+absent, since a missing exporter for a
+<code>CM-MARKDOWN-EXPORT-SYNC</code>-gated file is a real blocker, not a
+soft skip)</li>
+<li><code>weasyprint</code> with a working
+<code>python3 -c "from weasyprint import HTML"</code> import (optional —
+the PDF step is skipped with an honest §11.4.3 reason if absent; the
+HTML step still runs)</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/regenerate-continuation-exports.sh</span></code></pre></div>
+<p>No arguments, no flags. It always regenerates both exports
+unconditionally on each invocation (it is a deliberately-invoked
+single-target regen, not a sweep with its own mtime gate — a caller
+wanting mtime-gated behavior should compare
+<code>docs/CONTINUATION.md</code>’s mtime against the exports before
+calling, e.g. as part of a pre-commit hook).</p>
+<h3 id="example-run">Example run</h3>
+<pre><code>$ bash scripts/regenerate-continuation-exports.sh
+[regen] docs/CONTINUATION.md -&gt; docs/CONTINUATION.html
+[regen] wrote /path/to/boba/docs/CONTINUATION.html
+[regen] docs/CONTINUATION.html -&gt; docs/CONTINUATION.pdf
+[regen] wrote /path/to/boba/docs/CONTINUATION.pdf
+[regen] done.</code></pre>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong><code>docs/CONTINUATION.md</code> missing</strong> — hard
+failure (exit 1). The script never creates or edits
+<code>docs/CONTINUATION.md</code>; it is authoritative per §12.10 and is
+the input, never the output, of this script.</li>
+<li><strong><code>pandoc</code> missing</strong> — hard failure (exit
+1). Since the whole point of the script is to satisfy a pre-build gate
+that requires the HTML export to exist and be fresh, silently skipping
+here would just relocate the original bluff rather than fix it.</li>
+<li><strong><code>weasyprint</code> missing (or its Python import
+broken)</strong> — the HTML step still runs; the PDF step is skipped
+with a printed <code>SKIP:</code> reason on stderr (§11.4.3).
+<code>CM-MARKDOWN-EXPORT-SYNC</code> will still FAIL on the missing
+<code>.pdf</code> in that environment — this is an honest reflection of
+what actually regenerated, not a workaround for the gate.</li>
+<li><strong><code>docs/CONTINUATION.docx</code></strong> — out of scope
+for this script. The <code>.docx</code> sibling is a WARNING-only
+concern under <code>CM-MARKDOWN-EXPORT-SYNC</code> (missing/stale
+<code>.docx</code> never fails the gate, per BOB-011), so this script
+does not touch it. If a <code>.docx</code> refresh is ever wanted, run
+the generic <code>scripts/generate_markdown_exports.sh</code> sweep
+deliberately, accepting the docs_chain-interaction risk documented
+above.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li>Resolve <code>PROJECT_ROOT</code> from the script’s own
+location.</li>
+<li>Verify <code>docs/CONTINUATION.md</code> exists; fail loudly if
+not.</li>
+<li>Verify <code>pandoc</code> is on <code>PATH</code>; fail loudly if
+not.</li>
+<li><code>pandoc -f markdown -t html5 -o docs/CONTINUATION.html docs/CONTINUATION.md --metadata title="CONTINUATION"</code></li>
+<li>If <code>weasyprint</code> (and its Python bindings) are available:
+<code>weasyprint docs/CONTINUATION.html docs/CONTINUATION.pdf</code>
+Otherwise, print an honest skip reason and stop (exit 0 — the HTML
+export still landed).</li>
+</ol>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>scripts/generate_markdown_exports.sh</code> — the generic
+§11.4.65 exporter this script deliberately does not invoke (see
+above).</li>
+<li><code>scripts/pre_build_verification.sh</code> — invariant 16
+(<code>CM-MARKDOWN-EXPORT-SYNC</code>) is the gate this script exists to
+satisfy for <code>docs/CONTINUATION.md</code>.</li>
+<li><code>constitution/scripts/render/render-governance-twins.sh</code>
+— a sibling single-purpose pandoc/weasyprint exporter (for the five
+governance twins:
+<code>Constitution.md</code>/<code>CLAUDE.md</code>/<code>AGENTS.md</code>/<code>GEMINI.md</code>/<code>QWEN.md</code>),
+following the same “don’t run the generic sweep against a
+specially-owned doc set” pattern for a different reason (deterministic
+<code>SOURCE_DATE_EPOCH</code>-pinned rendering against a historical
+byte-identical baseline). CONTINUATION.md has no such baseline-pinning
+requirement, so this script does not pin
+<code>SOURCE_DATE_EPOCH</code>.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-08-18 — real invocation captured: <code>pandoc 3.10</code>
+produced <code>docs/CONTINUATION.html</code> (61,660 bytes),
+<code>weasyprint</code> produced <code>docs/CONTINUATION.pdf</code>
+(100,613 bytes), and a full
+<code>scripts/pre_build_verification.sh</code> re-run afterward reported
+<code>=== Result: 27 passed, 0 failed ===</code> with invariant 16
+(<code>CM-MARKDOWN-EXPORT-SYNC</code>) reading
+<code>PASS [17]: CM-MARKDOWN-EXPORT-SYNC: all in-scope docs have fresh .html/.pdf siblings</code>.</p>

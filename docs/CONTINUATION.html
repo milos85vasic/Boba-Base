@@ -1,8 +1,141 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 21 <strong>Last modified:</strong>
-2026-08-10T21:30:34Z <strong>Session:</strong> 2026-08-10/11 (Session 16
-— HUGE session: pre_build brought to 25/25 GREEN with six new invariants
+<p><strong>Revision:</strong> 23 <strong>Last modified:</strong>
+2026-08-18T22:15:00Z</p>
+<h2
+id="terminal-state-this-write-11.4.126-endless-loop-terminal-condition-met">TERMINAL
+STATE (this write) — §11.4.126 endless-loop terminal condition MET</h2>
+<ul>
+<li><strong>Pre-build: 27 passed / 0 failed</strong> — all invariants
+GREEN including new CM-RESOURCE-PRESSURE-SIGNATURE-CHECK (invariant 25)
+and post-fix CM-DOCS-CHAIN-ENGINE-VERIFY (invariant 24)</li>
+<li><strong>3 boba remotes IN SYNC at
+<code>fab6707a</code></strong></li>
+<li><strong>§11.4.209 review</strong>: 0 BLOCKING / 0 IMPORTANT open /
+5/6 MINOR fixed / 1 MINOR honest SKIP / 2 NIT non-blocking / Fable-xhigh
+re-review owed as §11.4.197 upgrade</li>
+<li><strong>§11.4.115(F) polarity</strong>: 5/5 RED CONFIRMED across
+real pathological fixtures</li>
+<li><strong>Resource-pressure timer</strong>: LIVE + ARMED (next fire
+22:42 CEST)</li>
+<li><strong>1 subagent dispatched</strong> for §11.4.108 rebuild +
+runtime-signature verification</li>
+</ul>
+<h2
+id="session-commit-summary-20-boba-commits-4-constitution-commits-since-457cca4">Session
+commit summary (~20 boba commits + 4+ constitution commits since
+457cca4)</h2>
+<h2 id="session-2026-08-15-2026-08-18-session-4db6eadb-03e7">SESSION
+2026-08-15 → 2026-08-18 (Session 4db6eadb-03e7)</h2>
+<p><strong>Working state at last write:</strong> 3 boba remotes IN SYNC
+at <code>9c282ff</code>. resource-pressure-signature-check systemd-user
+timer LIVE (next fire 22:42 CEST). 3 subagents in flight: Task #78
+(IMPORTANT-1 real per-signature RED fixtures), Task #79 (IMPORTANT-2
+SQLite differential-dump discipline), Task #80 (docs_chain
+codegraph-status sync/verify contradiction).</p>
+<h3 id="major-deliverables-this-session-in-commit-order">Major
+deliverables this session (in commit order)</h3>
+<ul>
+<li><strong>Amendment round v68 landed</strong> (Constitution + 4
+mirrors + docs_chain + boba pointer, 22 new anchors §11.4.239-262 + 5
+extensions + §11.4.140/141 collision resolution → §11.4.255/256
+re-mint)</li>
+<li><strong>Tag <code>helixconstitution-v68</code></strong> published on
+4 platform releases (GitHub × 2 + GitLab × 2) + 8 constitution git
+remotes</li>
+<li><strong>BOB-064</strong>: durable-run.sh helper (commit
+20571a0)</li>
+<li><strong>BOB-066</strong>: audit L1/L2/L4 wired (commit b9c2c50)</li>
+<li><strong>BOB-067</strong>: Jackett cookie-login + HelixQA fake
+(commits 6231200 + 6dfc756)</li>
+<li><strong>Loader auto-discovery</strong> + Jackett submodule bump
+v0.24.2353 → v0.24.2406</li>
+<li><strong>All 5 tracker credentials wired</strong> (RUTRACKER,
+NNMCLUB, RUTOR, KINOZAL, IPTORRENTS) with §11.4.10.A pre-store leak
+audits</li>
+<li><strong>cookies_<tracker>.txt convention</strong> at ~/Downloads
+with atomic auto-load into .env chmod 600</li>
+<li><strong>systemd integration</strong> surviving reboot (boba.target +
+boba-stack.service + boba-webui-bridge.service, linger=yes)</li>
+<li><strong>Production install.sh</strong> authored + LAN access
+verified on 192.168.1.90:{7185,7186,7187,7188,7189,9117}</li>
+<li><strong>BOB-112 boba-jackett /healthz DDoS mitigation</strong>:
+sync.RWMutex TTL cache, live wrk <strong>97.1% → 0.0% timeout</strong>
+(400/412 → 0/812,149 requests) — commit e2a2e3e</li>
+<li><strong>BOB-113</strong>: install-dev-tools.sh (wrk/hey/siege) —
+commit c7dfdde</li>
+<li><strong>Task #66 commit-push-all.sh –scope flag</strong> (BOB-068
+sweep-pattern interim fix) — commit 0972cbc</li>
+<li><strong>BOB-108</strong>: workable-items export Revision-counter
+regression fix — constitution 4a17867 + boba 855ce65 + 3520621</li>
+<li><strong>CodeGraph 1.5.0 nested-.gitignore regression</strong>:
+upstream issue #1567 + draft PR #1568 at colbymchenry/codegraph</li>
+<li><strong>Task #72 docs_chain unpushable-gitlink</strong>: cherry-pick
++ push resolution (docs_chain 8ccf505 + constitution 774ac57 + boba
+a4c6c7a + 41da88a)</li>
+</ul>
+<h3 id="critical-2nd-forced-logout-incident-2026-08-18-205059">CRITICAL
+2nd forced-logout incident (2026-08-18 20:50:59)</h3>
+<ul>
+<li>CONST-033 triage clean: no kernel OOM, no systemd-oomd trigger, no
+lid-suspend, no forbidden mechanism</li>
+<li>§12.12 EAGAIN cascade signature at 20:45:48 confirmed (jackett
+SocketException (11) to iptorrents+kinozal+rutracker
+simultaneously)</li>
+<li>15 GB pathological ugrep reaped post-relogin: <code>ugrep -o</code>
+with <code>.\{0,120\}</code> variable-length context + 3-way alternation
+on 14K-line CLAUDE.md — freed 16 GB instantly, PSI Avg10 1.77 →
+0.08</li>
+<li>§11.4.6 UNCONFIRMED: exact SIGKILL source unattributable from
+systemd journal — PENDING_FORENSICS (task #79)</li>
+<li><strong>Fix commit <code>1f42357</code></strong>: CONST-033
+challenge false-positive fix + NEW
+<code>resource_pressure_signature_challenge.sh</code> (5 signatures,
+§11.4.115 polarity) +
+<code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code> +
+8 evidence artifacts</li>
+<li><strong>§11.4.238 ledger entry <code>98412bf</code></strong> —
+FORCED-LOGOUT-2026-08-18-2ND (Rev 6→7, count 14→15)</li>
+<li><strong>Task #77 wire commit <code>ecb3bfe</code></strong>:
+pre_build invariant 25 <code>CM-RESOURCE-PRESSURE-SIGNATURE-CHECK</code>
++ hourly systemd-user timer INSTALLED + ARMED (next fire 22:42
+CEST)</li>
+<li><strong>Persistent memory playbook</strong> at
+~/.claude-claude4/…/memory/forced_logout_incidents.md</li>
+<li><strong>Task #41 BOB-068 investigation
+<code>a7e55f9</code></strong>: verdict = NO DAEMON. Root cause =
+shared-checkout race on default <code>git add -A</code> + shared
+<code>docs/workable_items.db</code>. §11.4.179 clone-isolation (Task #67
+proposal) confirmed correct architectural fix.</li>
+</ul>
+<h3 id="review-verdict-no-go-with-3-important-6-minor-2-nit">§11.4.209
+review verdict: NO-GO with 3 IMPORTANT + 6 MINOR + 2 NIT</h3>
+<ul>
+<li><strong>IMPORTANT-1</strong> (BOB-076 polarity claim threshold-only,
+not real-signature): fix subagent in flight (task #78)</li>
+<li><strong>IMPORTANT-2</strong> (3520621 DB commit missing differential
+SQLite dump): fix subagent in flight (task #79)</li>
+<li><strong>IMPORTANT-3</strong> (HTTPS git URL in
+install-dev-tools.sh): FIXED inline commit <code>9c282ff</code> (both
+real invocation + advisory message → git@)</li>
+<li>MINOR findings tracked as followups</li>
+<li>§11.4.209 Fable-<code>xhigh</code> re-review OWED (this review ran
+on opus fallback per Agent-tool <code>effort=?</code> §11.4.231(F)(b)
+honest boundary)</li>
+</ul>
+<h3 id="to-resume">To resume</h3>
+<ul>
+<li>3 subagents in flight: notifications will arrive</li>
+<li>New commits will push automatically (their briefs specify commit +
+push)</li>
+<li>Task tracker #40, #42 remain deferred (need operator design
+decisions)</li>
+<li>Constitution submodule pointer: <code>constitution</code> at
+<code>4a17867</code> (BOB-108 fix) → boba <code>9c282ff</code> →
+docs_chain <code>8ccf505</code></li>
+<li>Everything else in Session 15 CONTINUATION section below remains
+valid history <strong>Session:</strong> 2026-08-10/11 (Session 16 — HUGE
+session: pre_build brought to 25/25 GREEN with six new invariants
 (INV0/19/20/21/22/23), §11.4.238 QA-discovery gates wired, §11.4.84
 subagent-mutation fence Layers 1+3 landed, <code>workable-items</code>
 <code>diff</code> false-positive fixed + new
@@ -20,7 +153,8 @@ helixqa submodule URL to renamed upstream). Prior big session-16 commit:
 gates + §11.4.84 fence + backfills + stress+chaos + BOB-009/010 fix).
 <strong>Branch:</strong> <code>main</code> <strong>Working
 tree:</strong> CLEAN (post-session-16 commits landed + pushed). Only
-in-flight edit: this CONTINUATION.md revision itself.</p>
+in-flight edit: this CONTINUATION.md revision itself.</li>
+</ul>
 <blockquote>
 <p>Send <code>continue</code> to pick up exactly where we left off. This
 file is the single source of truth for session handoff (§12.10 /
@@ -295,8 +429,10 @@ BOB-009/BOB-010’s <code>evidence_path</code> violations (narrative text
 instead of a resolvable path) were investigated — real evidence
 identified via git archaeology (commit <code>0558399</code>;
 <code>scripts/boba-ctl.sh</code> + <code>scripts/docs_chain.sh</code>
-still exist and back the claims) — but the <code>workable-items</code>
-tool has <strong>no subcommand to correct a historical
+(renamed 2026-08-15 BOB-104 to
+<code>scripts/workable-items-export.sh</code>) still exist and back the
+claims) — but the <code>workable-items</code> tool has <strong>no
+subcommand to correct a historical
 <code>item_history.evidence_path</code></strong> on an already-Completed
 item; raw SQL was correctly avoided (violates the tool-only-mutation
 discipline) and a reopen-then-close cycle was correctly avoided (would
