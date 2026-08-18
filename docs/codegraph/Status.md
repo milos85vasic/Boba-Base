@@ -1,7 +1,7 @@
 # CodeGraph Status — Boba
 
-**Revision:** 1
-**Last modified:** 2026-06-06T14:40:00Z
+**Revision:** 2
+**Last modified:** 2026-08-18T13:33:41Z
 **Authority:** Constitution §11.4.78 / §11.4.79 / §11.4.80
 **Scope:** Append-only ledger of CodeGraph install / update / sync / validate
 events for the Boba project. Newest entries appended at the bottom by
@@ -75,3 +75,55 @@ PASS: secrets EXCLUDED (§11.4.10) — 0 secret/config-credential paths in index
 CodeGraph validate: 7 PASS / 0 FAIL
 VERDICT: PASS
 ```
+
+## 2026-08-18T13:33:41Z — BOB-075 staleness remediation: re-index attempted, real blocker found + honestly reported (§11.4.6 / GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-08)
+
+**Staleness confirmed (not a false positive):** this ledger's only prior entry
+was 2026-06-06 — 73 days before this pass, with zero sync events recorded in
+between despite §11.4.80's "regular update automation" mandate. The tracked
+`codegraph` CLI itself had moved from the documented `0.9.9` to **`1.5.0`**
+(`codegraph --version`) with no re-verification against the new version.
+
+**Attempted mechanical regen (Option A):** ran `codegraph init . --force` on
+this host to produce a real, current re-index (the same command the 2026-06-06
+entry used). Real observed outcome, NOT simulated:
+
+- The run walked **32,260 files / 514,456 nodes / 724,013 edges** (DB size
+  1.8 GB) before being deliberately aborted — a **~63× blowup** versus the
+  2026-06-06 baseline of 509 files / 8,906 nodes for what is still
+  fundamentally the same repository shape (Python/Go/TS backend + plugins).
+- Root cause, CONFIRMED (not guessed, §11.4.6): `git check-ignore -v` proves
+  `frontend/node_modules/**` and `extension/node_modules/**` ARE correctly
+  excluded by nested `frontend/.gitignore:10` (`/node_modules`) and
+  `extension/.gitignore:2` (`node_modules/`) for git itself
+  (`git ls-files frontend/node_modules extension/node_modules` → 0 rows
+  both) — yet `codegraph init` on **1.5.0** walked into both trees anyway
+  (365 MB + 236 MB, tens of thousands of files). This is consistent with a
+  CodeGraph 1.5.0 regression in honoring **nested** (non-root) `.gitignore`
+  files — the doc's own "zero-config, exclusion driven by `.gitignore`"
+  claim (2026-06-06 entry) held for the flat 509-file tree that existed
+  then; `frontend/` and `extension/` (with their own `node_modules`) were
+  added to this project AFTER that entry and were never exercised against
+  this exclusion path before now.
+- **Decision:** aborted the run (host-resource discipline, §12.6/§12.11 — an
+  18-core-minute, still-growing 1.8 GB index for a bounded docs-staleness
+  task is disproportionate) and removed the resulting truncated
+  `.codegraph/codegraph.db*` (gitignored, never tracked; confirmed via
+  `codegraph status` reporting "index truncated" after the kill — no partial
+  state was left claiming to be a valid index).
+- **Honest current state:** this project's CodeGraph index is **NOT live on
+  this host** as of this entry. The last VALIDATED sync remains the
+  2026-06-06 entry above (7 PASS / 0 FAIL on the pre-`frontend`/`extension`
+  tree shape). A full resync needs the CodeGraph 1.5.0
+  nested-`.gitignore` gap investigated first (or an explicit
+  `frontend/node_modules`/`extension/node_modules` exclusion added at this
+  project's root `.gitignore`, since the root file IS honored) — **not
+  performed in this pass**; this task's DB-touch scope is limited to closing
+  BOB-075 itself (BOB-072/073 owns broader DB work), so no new tracked item
+  was minted here for the CodeGraph regression — flagging it in-repo per
+  §11.4.6 rather than silently deferring it.
+
+This entry itself is the mechanical regen this ledger's own header mandates
+(§11.4.44/§11.4.86): the Revision/Last-modified above are bumped to reflect
+this REAL attempted-and-honestly-reported sync event, not a cosmetic
+timestamp touch.

@@ -1,6 +1,187 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Status</h1>
+</header>
 <h1 id="codegraph-status-boba">CodeGraph Status — Boba</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T14:40:00Z <strong>Authority:</strong> Constitution §11.4.78 /
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-18T13:33:41Z <strong>Authority:</strong> Constitution §11.4.78 /
 §11.4.79 / §11.4.80 <strong>Scope:</strong> Append-only ledger of
 CodeGraph install / update / sync / validate events for the Boba
 project. Newest entries appended at the bottom by
@@ -92,3 +273,70 @@ PASS: secrets EXCLUDED (§11.4.10) — 0 secret/config-credential paths in index
 ----------------------------------------
 CodeGraph validate: 7 PASS / 0 FAIL
 VERDICT: PASS</code></pre>
+<h2
+id="t133341z-bob-075-staleness-remediation-re-index-attempted-real-blocker-found-honestly-reported-11.4.6-governance_audit_2026-08-08_round2.md-rd2-08">2026-08-18T13:33:41Z
+— BOB-075 staleness remediation: re-index attempted, real blocker found
++ honestly reported (§11.4.6 / GOVERNANCE_AUDIT_2026-08-08_ROUND2.md
+RD2-08)</h2>
+<p><strong>Staleness confirmed (not a false positive):</strong> this
+ledger’s only prior entry was 2026-06-06 — 73 days before this pass,
+with zero sync events recorded in between despite §11.4.80’s “regular
+update automation” mandate. The tracked <code>codegraph</code> CLI
+itself had moved from the documented <code>0.9.9</code> to
+<strong><code>1.5.0</code></strong> (<code>codegraph --version</code>)
+with no re-verification against the new version.</p>
+<p><strong>Attempted mechanical regen (Option A):</strong> ran
+<code>codegraph init . --force</code> on this host to produce a real,
+current re-index (the same command the 2026-06-06 entry used). Real
+observed outcome, NOT simulated:</p>
+<ul>
+<li>The run walked <strong>32,260 files / 514,456 nodes / 724,013
+edges</strong> (DB size 1.8 GB) before being deliberately aborted — a
+<strong>~63× blowup</strong> versus the 2026-06-06 baseline of 509 files
+/ 8,906 nodes for what is still fundamentally the same repository shape
+(Python/Go/TS backend + plugins).</li>
+<li>Root cause, CONFIRMED (not guessed, §11.4.6):
+<code>git check-ignore -v</code> proves
+<code>frontend/node_modules/**</code> and
+<code>extension/node_modules/**</code> ARE correctly excluded by nested
+<code>frontend/.gitignore:10</code> (<code>/node_modules</code>) and
+<code>extension/.gitignore:2</code> (<code>node_modules/</code>) for git
+itself
+(<code>git ls-files frontend/node_modules extension/node_modules</code>
+→ 0 rows both) — yet <code>codegraph init</code> on
+<strong>1.5.0</strong> walked into both trees anyway (365 MB + 236 MB,
+tens of thousands of files). This is consistent with a CodeGraph 1.5.0
+regression in honoring <strong>nested</strong> (non-root)
+<code>.gitignore</code> files — the doc’s own “zero-config, exclusion
+driven by <code>.gitignore</code>” claim (2026-06-06 entry) held for the
+flat 509-file tree that existed then; <code>frontend/</code> and
+<code>extension/</code> (with their own <code>node_modules</code>) were
+added to this project AFTER that entry and were never exercised against
+this exclusion path before now.</li>
+<li><strong>Decision:</strong> aborted the run (host-resource
+discipline, §12.6/§12.11 — an 18-core-minute, still-growing 1.8 GB index
+for a bounded docs-staleness task is disproportionate) and removed the
+resulting truncated <code>.codegraph/codegraph.db*</code> (gitignored,
+never tracked; confirmed via <code>codegraph status</code> reporting
+“index truncated” after the kill — no partial state was left claiming to
+be a valid index).</li>
+<li><strong>Honest current state:</strong> this project’s CodeGraph
+index is <strong>NOT live on this host</strong> as of this entry. The
+last VALIDATED sync remains the 2026-06-06 entry above (7 PASS / 0 FAIL
+on the pre-<code>frontend</code>/<code>extension</code> tree shape). A
+full resync needs the CodeGraph 1.5.0 nested-<code>.gitignore</code> gap
+investigated first (or an explicit
+<code>frontend/node_modules</code>/<code>extension/node_modules</code>
+exclusion added at this project’s root <code>.gitignore</code>, since
+the root file IS honored) — <strong>not performed in this pass</strong>;
+this task’s DB-touch scope is limited to closing BOB-075 itself
+(BOB-072/073 owns broader DB work), so no new tracked item was minted
+here for the CodeGraph regression — flagging it in-repo per §11.4.6
+rather than silently deferring it.</li>
+</ul>
+<p>This entry itself is the mechanical regen this ledger’s own header
+mandates (§11.4.44/§11.4.86): the Revision/Last-modified above are
+bumped to reflect this REAL attempted-and-honestly-reported sync event,
+not a cosmetic timestamp touch.</p>
+</body>
+</html>

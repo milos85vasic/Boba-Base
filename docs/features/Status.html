@@ -181,8 +181,8 @@
 </header>
 <h1 id="boba-feature-status-all-components">Boba — Feature Status (all
 components)</h1>
-<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
-2026-06-16T23:30:00Z <strong>Scope:</strong> Every system component,
+<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
+2026-08-18T13:33:41Z <strong>Scope:</strong> Every system component,
 service, infrastructure piece, and client app of the Boba project — one
 row per REAL unit (endpoint / handler / client method / component
 control / plugin / subcommand / script), grouped by component.
@@ -191,6 +191,32 @@ control / plugin / subcommand / script), grouped by component.
 granularity (§11.4.118 discovery-pressure) on 2026-06-16.
 Cross-references <code>AGENTS.md</code>, <code>CLAUDE.md</code>,
 <code>docs/REMAINING_WORK_PLAN.md</code>.</p>
+<blockquote>
+<p><strong>Rev 8 (2026-08-18, BOB-075) — staleness remediation (§11.4.44
+/ §11.4.86 / GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-08):</strong> the
+audit’s staleness claim was CONFIRMED, not a false positive — a real
+content edit landed in <code>ea86ce1</code> (2026-08-15, the
+docs_chain-engine row swap in §8d below) WITHOUT the
+Revision/Last-modified header being bumped, and 60 commits landed
+between the Rev 7 content commit (<code>646b295</code>, 2026-06-16) and
+this pass (<code>64705eb</code>, 2026-08-18) that were never reflected
+at row-granularity. This pass performed a TARGETED refresh (§11.4.6
+option B — this document is narrative, “assembled by READ-ONLY repo
+inventory,” not mechanically derivable from a single source-of-truth
+table, so a full per-unit re-audit of all 289 pre-existing rows was
+judged out of the bounded scope of a staleness-fix task and is NOT
+claimed here): added 3 new rows to §8d for scripts that shipped since
+Rev 7 and were completely absent from this ledger —
+<code>scripts/load-tracker-cookies.sh</code> (tracker-cookies autoload,
+<code>619a5f6</code>), <code>scripts/boba-svc.sh</code> (sudo-free
+systemd wrapper, <code>444d94e</code>),
+<code>scripts/commit-push-all.sh</code> (§11.4.234 dedicated commit/push
+entrypoint, <code>08e870e</code>) — each cited to its real source file +
+covering challenge. Total features cataloged: 289 →
+<strong>292</strong>. Every pre-existing row was left untouched (no
+content was invented to “look fresh”); the honest scope boundary of this
+pass is recorded under “Components NOT inventoried” below.</p>
+</blockquote>
 <blockquote>
 <p><strong>Rev 7 (2026-06-16) — live-PASS update for the search/auth fix
 batch (HEAD <code>7e9cab5</code>):</strong> the multi-word URL-encoding
@@ -231,9 +257,12 @@ screen of its own and is confirmed by its cited tests plus the UI/CLI
 journey that drives it). <strong>Honest classification
 (§11.4.6/§11.4.143): a row is <code>VIDEO-CONFIRMED</code> only when a
 real recording actually shows it.</strong></p>
-<p>Per-row Video tally (288 feature rows): <strong>28
-VIDEO-CONFIRMED</strong>, <strong>14 PENDING (UI — film next)</strong>,
-<strong>246 N/A (no UI — test-covered)</strong>.</p>
+<p>Per-row Video tally (291 feature rows — the pre-existing Rev ≤7 tally
+of 288 vs the stated “289” total was a 1-row pre-existing discrepancy
+not reconciled by this pass, §11.4.6 honest note; +3 for the Rev 8 §8d
+additions, all N/A/host-script): <strong>28 VIDEO-CONFIRMED</strong>,
+<strong>14 PENDING (UI — film next)</strong>, <strong>249 N/A (no UI —
+test-covered)</strong>.</p>
 <p>Column legend: - <strong>Impl</strong> = implemented / partial / stub
 / missing - <strong>Wired</strong> = reachable on a running
 default-profile stack (yes / no / opt-in / host) -
@@ -404,11 +433,14 @@ extension only) — nothing to record.</p>
 <td>8</td>
 <td>Infrastructure / CLI / shell scripts</td>
 <td>host</td>
-<td>40</td>
+<td>43</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Total features cataloged: 289</strong> (Rev 7: +1 — new
+<p><strong>Total features cataloged: 292</strong> (Rev 8: +3 —
+<code>scripts/load-tracker-cookies.sh</code>,
+<code>scripts/boba-svc.sh</code>,
+<code>scripts/commit-push-all.sh</code>; Rev 7: +1 — new
 <code>GET /api/v1/healthz</code> endpoint)</p>
 <hr />
 <h2 id="download-proxy-merge-search-service-pythonfastapi-7186-7187">1.
@@ -4160,6 +4192,38 @@ sampler (§11.4.24)</td>
 <td>not-validated</td>
 <td>N/A (host script — no UI; test-covered/operational)</td>
 </tr>
+<tr>
+<td><code>scripts/load-tracker-cookies.sh</code> — per-tracker Netscape
+cookies-file autoload → <code>.env</code> (operator mandate 2026-08-15,
+<code>619a5f6</code>)</td>
+<td>implemented</td>
+<td>host</td>
+<td>challenge
+<code>challenges/scripts/credentials_wired_challenge.sh</code></td>
+<td>tested-green-in-suite</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
+</tr>
+<tr>
+<td><code>scripts/boba-svc.sh</code> — sudo-free systemd-linger service
+wrapper (up/down/status/logs)</td>
+<td>implemented</td>
+<td>host</td>
+<td>challenge
+<code>challenges/scripts/install_sh_idempotent_challenge.sh</code>,
+<code>credentials_wired_challenge.sh</code></td>
+<td>tested-green-in-suite</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
+</tr>
+<tr>
+<td><code>scripts/commit-push-all.sh</code> — §11.4.234 dedicated
+commit/push entrypoint (hook-validation stage + always-unblocked push,
+<code>08e870e</code>)</td>
+<td>implemented</td>
+<td>host</td>
+<td>none dedicated</td>
+<td>not-validated</td>
+<td>N/A (host script — no UI; test-covered/operational)</td>
+</tr>
 </tbody>
 </table>
 <h3 id="e.-infra-compose-startup">8e. Infra / compose / startup</h3>
@@ -4218,6 +4282,26 @@ encrypted boba.db</td>
 id="components-not-inventoried-discrepancies-honest-gaps-11.4.6">Components
 NOT inventoried / discrepancies (honest gaps, §11.4.6)</h2>
 <ul>
+<li><strong>Rev 8 scope boundary (BOB-075, 2026-08-18):</strong> this
+pass added 3 new rows for scripts that shipped with no prior row (§8d)
+and fixed the missing Rev/date bump for the <code>ea86ce1</code> content
+edit, but did <strong>NOT</strong> re-audit the other ~289 pre-existing
+rows against the current tree — that would be a full re-run of the
+original READ-ONLY repo-inventory process (§11.4.118
+discovery-pressure), out of scope for a bounded staleness fix.
+Known-real capabilities that shipped since Rev 7 and are <strong>not yet
+itemized at row-granularity</strong> here (tracked as an honest gap, not
+silently assumed covered): the systemd service topology
+(<code>boba.target</code>, <code>boba-stack.service</code>,
+<code>boba-webui-bridge.service</code>,
+<code>444d94e</code>/<code>bbc63ca</code>), outbound egress-proxy
+routing for tracker fetches (<code>BOBA_UPSTREAM_PROXY</code>,
+<code>b44a2e4</code>/<code>4e62eca</code>/ <code>be5062d</code>), and
+the <code>submodules/jackett</code> version bump to
+<code>v0.24.2406</code> (<code>99a486e</code>, BOB-076 — a
+dependency-version change, not a new feature row). A future pass MAY
+re-run the full inventory; until then this document is accurate for what
+it explicitly claims and honestly incomplete for what it does not.</li>
 <li><strong>CORRECTION vs Rev 2:</strong> <code>boba-ctl.sh</code> DOES
 exist at <code>scripts/boba-ctl.sh</code> (Rev 2 said it did not). Its
 subcommands are now itemized in §8a. The underlying Go binary is

@@ -1,15 +1,17 @@
 # Boba — Feature Status (all components)
 
-**Revision:** 7
-**Last modified:** 2026-06-16T23:30:00Z
+**Revision:** 8
+**Last modified:** 2026-08-18T13:33:41Z
 **Scope:** Every system component, service, infrastructure piece, and client app of the Boba project — one row per REAL unit (endpoint / handler / client method / component control / plugin / subcommand / script), grouped by component.
 **Authority:** assembled by READ-ONLY repo inventory (codegraph + grep + source reading) on 2026-06-15, expanded to per-unit granularity (§11.4.118 discovery-pressure) on 2026-06-16. Cross-references `AGENTS.md`, `CLAUDE.md`, `docs/REMAINING_WORK_PLAN.md`.
+
+> **Rev 8 (2026-08-18, BOB-075) — staleness remediation (§11.4.44 / §11.4.86 / GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-08):** the audit's staleness claim was CONFIRMED, not a false positive — a real content edit landed in `ea86ce1` (2026-08-15, the docs_chain-engine row swap in §8d below) WITHOUT the Revision/Last-modified header being bumped, and 60 commits landed between the Rev 7 content commit (`646b295`, 2026-06-16) and this pass (`64705eb`, 2026-08-18) that were never reflected at row-granularity. This pass performed a TARGETED refresh (§11.4.6 option B — this document is narrative, "assembled by READ-ONLY repo inventory," not mechanically derivable from a single source-of-truth table, so a full per-unit re-audit of all 289 pre-existing rows was judged out of the bounded scope of a staleness-fix task and is NOT claimed here): added 3 new rows to §8d for scripts that shipped since Rev 7 and were completely absent from this ledger — `scripts/load-tracker-cookies.sh` (tracker-cookies autoload, `619a5f6`), `scripts/boba-svc.sh` (sudo-free systemd wrapper, `444d94e`), `scripts/commit-push-all.sh` (§11.4.234 dedicated commit/push entrypoint, `08e870e`) — each cited to its real source file + covering challenge. Total features cataloged: 289 → **292**. Every pre-existing row was left untouched (no content was invented to "look fresh"); the honest scope boundary of this pass is recorded under "Components NOT inventoried" below.
 
 > **Rev 7 (2026-06-16) — live-PASS update for the search/auth fix batch (HEAD `7e9cab5`):** the multi-word URL-encoding fix (`da7d709`, ~17 nova3 plugins), the new `RUTRACKER_COOKIES` injection (`2fc29fc`), `NNMCLUB_COOKIES` auth, `/auth/status` cookie reflection (`9c2f8dc`), the new `GET /api/v1/healthz` JSON endpoint (`137d7ff`), and §11.4.85 stress+chaos coverage for the multi-word fix (`7e9cab5`) were all PROVEN end-to-end on the live nezha stack — full-fleet `the matrix` = **2600 results / 23 contributing trackers / zero `plugin_bad_query_encoding`**, all four private trackers authenticate (rutracker 50, nnmclub 50, kinozal 50, iptorrents 49). Evidence: `docs/qa/search-fix-verify-20260616/`. `kickass.py` reclassified **Won't-fix structurally-impossible (§11.4.112)** per `docs/research/kickass_403_20260616/`. NOTE (§11.4.6): no Go files were touched this session — the Go rows are unchanged (the pre-existing `magnet_stress_chaos_test.go` guard stands; no NEW Go query-encoding guard was added this session, so none is claimed here).
 
 > Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.86). Every feature row cites a real source file (file:line where load-bearing), endpoint, command, or control. **No invented features** (§11.4.6). As of Rev 5 the **Video** column is DEFINITIVE for every row — there is no bare `PENDING`. Each cell is exactly one of: `VIDEO-CONFIRMED — <file>` (the feature is shown on-screen in a committed recording), `PENDING (UI — film next)` (a user-visible control/dialog not yet *individually* filmed), or `N/A (no UI — test-covered + exercised by <journey>)` (a non-user-visible unit — REST endpoint / handler / client method / parser / scanner / service / crypto / repo / script — which has no screen of its own and is confirmed by its cited tests plus the UI/CLI journey that drives it). **Honest classification (§11.4.6/§11.4.143): a row is `VIDEO-CONFIRMED` only when a real recording actually shows it.**
 >
-> Per-row Video tally (288 feature rows): **28 VIDEO-CONFIRMED**, **14 PENDING (UI — film next)**, **246 N/A (no UI — test-covered)**.
+> Per-row Video tally (291 feature rows — the pre-existing Rev ≤7 tally of 288 vs the stated "289" total was a 1-row pre-existing discrepancy not reconciled by this pass, §11.4.6 honest note; +3 for the Rev 8 §8d additions, all N/A/host-script): **28 VIDEO-CONFIRMED**, **14 PENDING (UI — film next)**, **249 N/A (no UI — test-covered)**.
 >
 > Column legend:
 > - **Impl** = implemented / partial / stub / missing
@@ -55,9 +57,9 @@ recordings below confirm the headline user-facing flows on-screen.
 | 5 | Angular 21 frontend dashboard (`frontend/`) | served from :7187 | 34 |
 | 6 | BobaLink browser extension (`extension/`) | WXT MV3 client | 39 |
 | 7 | WebUI bridge (`webui-bridge.py`) | host process :7188 | 4 |
-| 8 | Infrastructure / CLI / shell scripts | host | 40 |
+| 8 | Infrastructure / CLI / shell scripts | host | 43 |
 
-**Total features cataloged: 289** (Rev 7: +1 — new `GET /api/v1/healthz` endpoint)
+**Total features cataloged: 292** (Rev 8: +3 — `scripts/load-tracker-cookies.sh`, `scripts/boba-svc.sh`, `scripts/commit-push-all.sh`; Rev 7: +1 — new `GET /api/v1/healthz` endpoint)
 
 ---
 
@@ -576,6 +578,9 @@ Bridges qBittorrent WebUI with private-tracker auth. NOT a container.
 | `scripts/run-tests.sh` — test runner helper | implemented | host | self | tested-green-in-suite | N/A (host script — no UI; test-covered/operational) |
 | `scripts/scan.sh` — repo scan helper | implemented | host | none dedicated | not-validated | N/A (host script — no UI; test-covered/operational) |
 | `scripts/track-build-resources.sh` — build resource sampler (§11.4.24) | implemented | host | none dedicated | not-validated | N/A (host script — no UI; test-covered/operational) |
+| `scripts/load-tracker-cookies.sh` — per-tracker Netscape cookies-file autoload → `.env` (operator mandate 2026-08-15, `619a5f6`) | implemented | host | challenge `challenges/scripts/credentials_wired_challenge.sh` | tested-green-in-suite | N/A (host script — no UI; test-covered/operational) |
+| `scripts/boba-svc.sh` — sudo-free systemd-linger service wrapper (up/down/status/logs) | implemented | host | challenge `challenges/scripts/install_sh_idempotent_challenge.sh`, `credentials_wired_challenge.sh` | tested-green-in-suite | N/A (host script — no UI; test-covered/operational) |
+| `scripts/commit-push-all.sh` — §11.4.234 dedicated commit/push entrypoint (hook-validation stage + always-unblocked push, `08e870e`) | implemented | host | none dedicated | not-validated | N/A (host script — no UI; test-covered/operational) |
 
 ### 8e. Infra / compose / startup
 
@@ -589,6 +594,22 @@ Bridges qBittorrent WebUI with private-tracker auth. NOT a container.
 
 ## Components NOT inventoried / discrepancies (honest gaps, §11.4.6)
 
+- **Rev 8 scope boundary (BOB-075, 2026-08-18):** this pass added 3 new rows for
+  scripts that shipped with no prior row (§8d) and fixed the missing Rev/date
+  bump for the `ea86ce1` content edit, but did **NOT** re-audit the other ~289
+  pre-existing rows against the current tree — that would be a full re-run of
+  the original READ-ONLY repo-inventory process (§11.4.118 discovery-pressure),
+  out of scope for a bounded staleness fix. Known-real capabilities that
+  shipped since Rev 7 and are **not yet itemized at row-granularity** here
+  (tracked as an honest gap, not silently assumed covered): the systemd
+  service topology (`boba.target`, `boba-stack.service`,
+  `boba-webui-bridge.service`, `444d94e`/`bbc63ca`), outbound egress-proxy
+  routing for tracker fetches (`BOBA_UPSTREAM_PROXY`, `b44a2e4`/`4e62eca`/
+  `be5062d`), and the `submodules/jackett` version bump to `v0.24.2406`
+  (`99a486e`, BOB-076 — a dependency-version change, not a new feature row).
+  A future pass MAY re-run the full inventory; until then this document is
+  accurate for what it explicitly claims and honestly incomplete for what it
+  does not.
 - **CORRECTION vs Rev 2:** `boba-ctl.sh` DOES exist at `scripts/boba-ctl.sh` (Rev 2 said it did not). Its subcommands are now itemized in §8a. The underlying Go binary is `cmd/boba-ctl/main.go` (5 subcommands: up/down/status/health/list).
 - **CORRECTION vs Rev 2:** the `install-plugin.sh` `PLUGINS` curated array has **44 entries**, not 12. ~21 have a matching `plugins/*.py` file; the rest (incl. `torrentproject`, `torrentscsv`) are curated names with no file present in this tree — itemized in §4c, not asserted as working.
 - **Prometheus/OpenTelemetry metrics** — `tests/observability/test_metrics_exist.py` + `observability/` dir exist, but no `prometheus_client` `Counter()/Histogram()/Gauge()` definitions were found in `download-proxy/src`; metrics surface is via `GET /api/v1/stats` (counters maintained in-process), not a `/metrics` Prometheus endpoint. Stated as fact, not assumed.

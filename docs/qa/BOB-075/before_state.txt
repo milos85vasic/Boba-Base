@@ -1,0 +1,65 @@
+=== docs/features/Status.md BEFORE (git HEAD:64705eb) ===
+--- header (first 30 lines) ---
+# Boba — Feature Status (all components)
+
+**Revision:** 7
+**Last modified:** 2026-06-16T23:30:00Z
+**Scope:** Every system component, service, infrastructure piece, and client app of the Boba project — one row per REAL unit (endpoint / handler / client method / component control / plugin / subcommand / script), grouped by component.
+**Authority:** assembled by READ-ONLY repo inventory (codegraph + grep + source reading) on 2026-06-15, expanded to per-unit granularity (§11.4.118 discovery-pressure) on 2026-06-16. Cross-references `AGENTS.md`, `CLAUDE.md`, `docs/REMAINING_WORK_PLAN.md`.
+
+> **Rev 7 (2026-06-16) — live-PASS update for the search/auth fix batch (HEAD `7e9cab5`):** the multi-word URL-encoding fix (`da7d709`, ~17 nova3 plugins), the new `RUTRACKER_COOKIES` injection (`2fc29fc`), `NNMCLUB_COOKIES` auth, `/auth/status` cookie reflection (`9c2f8dc`), the new `GET /api/v1/healthz` JSON endpoint (`137d7ff`), and §11.4.85 stress+chaos coverage for the multi-word fix (`7e9cab5`) were all PROVEN end-to-end on the live nezha stack — full-fleet `the matrix` = **2600 results / 23 contributing trackers / zero `plugin_bad_query_encoding`**, all four private trackers authenticate (rutracker 50, nnmclub 50, kinozal 50, iptorrents 49). Evidence: `docs/qa/search-fix-verify-20260616/`. `kickass.py` reclassified **Won't-fix structurally-impossible (§11.4.112)** per `docs/research/kickass_403_20260616/`. NOTE (§11.4.6): no Go files were touched this session — the Go rows are unchanged (the pre-existing `magnet_stress_chaos_test.go` guard stands; no NEW Go query-encoding guard was added this session, so none is claimed here).
+
+> Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.86). Every feature row cites a real source file (file:line where load-bearing), endpoint, command, or control. **No invented features** (§11.4.6). As of Rev 5 the **Video** column is DEFINITIVE for every row — there is no bare `PENDING`. Each cell is exactly one of: `VIDEO-CONFIRMED — <file>` (the feature is shown on-screen in a committed recording), `PENDING (UI — film next)` (a user-visible control/dialog not yet *individually* filmed), or `N/A (no UI — test-covered + exercised by <journey>)` (a non-user-visible unit — REST endpoint / handler / client method / parser / scanner / service / crypto / repo / script — which has no screen of its own and is confirmed by its cited tests plus the UI/CLI journey that drives it). **Honest classification (§11.4.6/§11.4.143): a row is `VIDEO-CONFIRMED` only when a real recording actually shows it.**
+>
+> Per-row Video tally (288 feature rows): **28 VIDEO-CONFIRMED**, **14 PENDING (UI — film next)**, **246 N/A (no UI — test-covered)**.
+>
+> Column legend:
+> - **Impl** = implemented / partial / stub / missing
+> - **Wired** = reachable on a running default-profile stack (yes / no / opt-in / host)
+> - **Tests** = test types present + cite file (unit / integration / e2e / security / stress-chaos / property / contract); `none` if no covering test found
+> - **Validation** = honest validation posture (tested-green-in-suite / unit-only / live-evidence-captured / not-validated / operator-blocked)
+> - **Video** = DEFINITIVE video-recording status — one of `VIDEO-CONFIRMED — <file>` / `PENDING (UI — film next)` / `N/A (no UI — test-covered + exercised by <journey>)`
+
+---
+
+## Video-recording confirmations (§11.4.143 / §11.4.83)
+
+Real-use recordings (Claude-vision analyzed — the HelixAgent ensemble vision is a
+proven stub, see `docs/qa/recording-readiness-20260615/`) in
+`/Volumes/T7/Downloads/Recordings/` (project-prefix `boba-`). Per-row `Video`
+cells stay `PENDING` where a feature has not been *individually* filmed; the
+recordings below confirm the headline user-facing flows on-screen.
+
+
+=== docs/codegraph/Status.md BEFORE (git HEAD:64705eb) ===
+--- header (first 30 lines) ---
+# CodeGraph Status — Boba
+
+**Revision:** 1
+**Last modified:** 2026-06-06T14:40:00Z
+**Authority:** Constitution §11.4.78 / §11.4.79 / §11.4.80
+**Scope:** Append-only ledger of CodeGraph install / update / sync / validate
+events for the Boba project. Newest entries appended at the bottom by
+`constitution/scripts/codegraph_sync.sh`.
+
+---
+
+## 2026-06-06T14:30:00Z — initial setup + update + re-index (§11.4.78/§11.4.79/§11.4.80)
+
+- **Install / update:** host already had CodeGraph via the standalone installer
+  (`~/.codegraph/versions/v0.9.7`, shim at `~/.local/bin/codegraph`). The npm
+  package (`@colbymchenry/codegraph`, §11.4.78) latest was `0.9.9`.
+  `constitution/scripts/codegraph_update.sh` installed `0.9.9` via
+  `npm install -g` (no sudo; user-writable prefix `/opt/homebrew`) and the
+  §107 anti-bluff check caught that the stale `~/.local/bin` shim still won on
+  PATH. Removed the stale standalone shim → `codegraph` on PATH is now the
+  npm-managed `0.9.9` at `/opt/homebrew/bin/codegraph`.
+- **Config model:** CodeGraph 0.9.9 is **zero-config** — there is NO
+  `.codegraph/config.json` exclude list. Exclusion is driven by `.gitignore`
+  + built-in defaults (`node_modules`/`vendor`/`dist`/… + files > 1 MB).
+  Source: the installed package `README.md` "Configuration" section.
+- **Exclusions (§11.4.10 + §11.4.79):** secrets are already covered by root
+  `.gitignore` (`.env*`, `*secrets*`, `config/qBittorrent/`, `config/jackett/`,
+  `config/boba.db`). Added `submodules/jackett/` to root `.gitignore` to keep
+  the third-party Jackett (C#/.NET) submodule OUT of the index — inert for git
+  (jackett is a tracked gitlink) but honored by CodeGraph. Added
