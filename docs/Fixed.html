@@ -1,6 +1,6 @@
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
-2026-06-09T21:00:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 17 <strong>Last modified:</strong>
+2026-08-18T16:50:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -10,6 +10,118 @@ href="Issues.md"><code>Issues.md</code></a>.</p>
 captured-evidence (anti-bluff §11.4).</p>
 </blockquote>
 <hr />
+<h2
+id="bob-067-lava-p4-jackett-cookie-login-hardening-behaviorally-equivalent-helixqa-fake">BOB-067
+— Lava P4: Jackett cookie-login hardening + behaviorally-equivalent
+HelixQA fake</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closed:</strong> 2026-08-15 ·
+<strong>Evidence:</strong>
+<code>challenges/scripts/jackett_cookie_login_hardening_challenge.sh</code>
++
+<code>challenges/scripts/helixqa_jackett_fake_behavioral_equivalence_challenge.sh</code></p>
+<p>Ported Lava P4
+(<code>../lava/lava-api-go/internal/jackett/client.go</code> —
+cookie-jar HTTP client, <code>CheckRedirect: ErrUseLastResponse</code>,
+dashboard <code>login()</code>, <code>doManaged</code> login-on-302
+retry, wrong-password safety net) — the CORE hardening already lived in
+<code>qBitTorrent-go/internal/jackett/client.go</code>
+(<code>NewClientWithPassword</code> + <code>WarmUp</code> +
+<code>login</code> + <code>doManaged</code>, alongside the fake in
+<code>cookie_login_test.go</code>). BOB-067 adds the CHALLENGE-layer
+autonomous ratchets so the regime is the DISCOVERER (§11.4.238) if the
+hardening ever regresses. <strong>Root cause (Lava P4):</strong>
+Jackett’s MANAGEMENT API (<code>/api/v2.0/indexers</code>, per-indexer
+<code>/config</code>) authenticates via a DASHBOARD SESSION COOKIE — not
+the apikey. Apikey-only management gets HTTP 302 →
+<code>/UI/Login</code>; the apikey ONLY authorizes Torznab
+<code>/results</code> + <code>/caps</code>.
+<code>scripts/extract-jackett-key.py</code> reads
+<code>ServerConfig.json</code> from disk and makes NO HTTP calls —
+cookie-login hardening does NOT apply to it (§11.4.6 category boundary),
+it lives in the Go client that consumes the extracted key. <strong>Fix
+(already shipped):</strong> cookie jar attached,
+<code>CheckRedirect</code> returns <code>ErrUseLastResponse</code> (302
+surfaces instead of being followed into an HTML login page and
+misdecoded as JSON), <code>login()</code> POSTs
+<code>password=&lt;admin&gt;</code> to <code>/UI/Dashboard</code> and
+captures <code>Set-Cookie: Jackett=…</code> into the jar (a no-cookie
+safety net rejects a 200 login without a <code>Set-Cookie</code> as a
+wrong-password failure exactly as real Jackett behaves),
+<code>doManaged()</code> wraps every management call with a
+302→login→retry-once path so a session missing/expired recovers
+transparently. <strong>Anti-bluff ratchets (this ticket):</strong>
+<code>challenges/scripts/jackett_cookie_login_hardening_challenge.sh</code>
+runs the three load-bearing Go tests with
+<code>go test -v -count=1</code> and requires 3/3 <code>--- PASS:</code>
+lines (§11.4.201 false-null guard on a too-narrow <code>-run</code>
+filter).
+<code>challenges/scripts/helixqa_jackett_fake_behavioral_equivalence_challenge.sh</code>
+(a) runs <code>TestFakeJackettRefusesManagementWithoutCookie</code> (the
+golden-bad detector — a bluff-fake that returned 200 on apikey-only
+management would be caught by this test, §11.4.107(10)) and (b) when a
+live Jackett is reachable at <code>http://localhost:9117</code>
+(<code>$JACKETT_LIVE_URL</code> override), diffs the fake’s contract
+against the real product on B1 (apikey-only→302) + B2
+(login→302+<code>Set-Cookie: Jackett=</code>). <strong>Live equivalence
+PROVEN 2026-08-15</strong> against localhost:9117 — captured verbatim:
+real Jackett
+<code>HTTP/1.1 302 Location: .../UI/Login?ReturnUrl=...</code> on
+apikey-only management,
+<code>HTTP/1.1 302 Set-Cookie: Jackett=CfDJ8...</code> on empty-password
+<code>POST /UI/Dashboard</code>. Fake’s cookie name matches
+(<code>Jackett</code>), fake’s status codes match. <strong>§1.1
+paired-mutation rehearsal (2026-08-15):</strong> replaced
+<code>if !isRedirect(resp.StatusCode) { return resp, nil }</code> in
+<code>doManaged</code> with a bare
+<code>return resp, nil // MUTATION</code> —
+<code>TestManagementCookieLogin_ConfigurableAdminPassword</code> failed
+with <code>decode: EOF</code>, challenge exited rc=1 (guard IS
+load-bearing, not a bluff-gate). Reversed, re-ran GREEN. §11.4.115
+RED/GREEN polarity in both challenges — RED_MODE=1 recognizes pre-port
+state (cookie-jar missing / bluff-fake), RED_MODE=0 is the shipped
+guard. User guides:
+<code>docs/scripts/jackett-cookie-login-hardening.md</code> +
+<code>docs/scripts/helixqa-jackett-fake.md</code>. Closes RD2-15/GA-05
+(P4 leg of the four Lava-porting items BOB-064..067).</p>
+<h2
+id="bob-064-lava-p1-durable-remote-execution-systemd-linger-helper">BOB-064
+— Lava P1: Durable remote execution (systemd-linger helper)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closed:</strong> 2026-08-15 ·
+<strong>Evidence:</strong>
+<code>challenges/scripts/durable_run_helper_challenge.sh</code></p>
+<p>Ported Lava P1 durable-remote-execution helper
+(<code>../lava/submodules/containers/scripts/lib/durable-run.sh</code>)
+to <code>scripts/lib/durable-run.sh</code>. Delivers the
+<code>durable_launch</code> / <code>durable_launch_cmd</code> /
+<code>durable_is_active</code> / <code>durable_main_pid</code> /
+<code>durable_wait_sentinel</code> / <code>durable_fetch_log</code> /
+<code>durable_stop</code> API backed by
+<code>loginctl enable-linger</code> +
+<code>systemd-run --user --unit=&lt;n&gt; --collect bash &lt;runner&gt;</code>,
+so long QA/deploy runs SURVIVE the SSH/login session (root cause: remote
+systemd-logind <code>KillUserProcesses</code> reaps tmux/nohup/setsid
+alike — all live in the login <code>session-&lt;n&gt;.scope</code>
+cgroup and die with it). Anti-bluff regression guard
+<code>challenges/scripts/durable_run_helper_challenge.sh</code> with
+§11.4.115 RED/GREEN polarity: launches a real sleeper, reads
+<code>MainPID</code> from <code>systemctl --user show</code>, reads
+<code>/proc/&lt;pid&gt;/cgroup</code>, asserts it is an
+independently-managed <code>.service</code> cgroup DIFFERENT from the
+launcher’s session scope (a “process alive” check is a §11.4.201(6)
+false-null — a process alive INSIDE the session scope still dies with
+it), waits on sentinel, asserts both log markers landed. Captured
+evidence — job cgroup
+<code>/user.slice/user-1000.slice/user@1000.service/app.slice/boba-durable-guard-*.service</code>
+vs launcher <code>.../tmx-boba-*.scope</code> (distinct — §11.4.108
+runtime-signature satisfied). RED polarity flips to FAIL post-fix
+(§11.4.146 same-test-confirms-fix). §11.4.161 rootless + §11.4.234
+always-unblocked — no sudo, no interactive prompts; first-boot
+<code>sudo loginctl enable-linger $USER</code> printed as a
+<code>NOTE:</code> reminder. User guide:
+<code>docs/scripts/durable-run.md</code>. Closes RD2-15/GA-05 (P1 leg of
+the four Lava-porting items BOB-064..067).</p>
 <h2
 id="bob-001-start.sh-bsd-sed-incompatibility-aborted-the-boot">BOB-001 —
 start.sh BSD-sed incompatibility aborted the boot</h2>
@@ -747,3 +859,61 @@ conftest _isolate_download_proxy_modules, so it leaked into later tests.
 Fixed by caching+re-registering+purging the stub per unit test; added a
 standing isolation guard. RED 1-fail -&gt; GREEN, full suite 4122 passed
 x2 seeds.</p>
+<h2
+id="bob-103-incorporate-docs-chain-submodule-per-11.4.10611.4.28c">BOB-103
+— Incorporate Docs Chain submodule per §11.4.106/§11.4.28(C)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+challenges/scripts/docs_chain_verify_challenge.sh
+<strong>Severity:</strong> Medium</p>
+<p>Land docs_chain (git@github.com:vasic-digital/docs_chain.git) as
+depth-1 reusable-engine submodule at constitution/submodules/docs_chain/
+pinned to helixcode-v1.1.0. Build engine binary. Wire pre-build gate
+invariant 24 CM-DOCS-CHAIN-ENGINE-VERIFY into
+scripts/pre_build_verification.sh (real docs_chain verify –all against
+.docs_chain/contexts). Add
+challenges/scripts/docs_chain_verify_challenge.sh with §11.4.115
+RED_MODE polarity. Retire scripts/docs_chain.sh misnomer wrapper by
+renaming to scripts/workable-items-export.sh (git mv, history preserved)
+and updating active callers (pre_build_verification.sh + 2 test files +
+3 current-state docs). Constitution commit 47d41f8 pushed to all 6
+mirrors. Boba-side commit follows this workable-item creation.
+[Reconciled 2026-08-18 via BOB-072/073 SSoT-integrity remediation:
+original item’s Fixed-location DB row was deleted by a Fixed.md md-to-db
+reparse before this restoration ran (BOB-103 had never been written into
+docs/Fixed.md text) — original item_history rows (id=66 Opened
+2026-08-15, id=67 Completed 2026-08-15, evidence
+challenges/scripts/docs_chain_verify_challenge.sh) survive untouched and
+remain the authoritative closure record; this add+close pair is a
+mechanical items-row restoration, not a re-performance of the original
+2026-08-15 work.]</p>
+<h2
+id="bob-072-rd2-03-workable_items.db-machine-caught-ssot-integrity-violations-90-of-closures-have-zero-audit-trail">BOB-072
+— RD2-03: workable_items.db machine-caught SSoT integrity violations +
+90% of closures have zero audit trail</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+challenges/scripts/workable_items_integrity_challenge.sh
+<strong>Severity:</strong> High</p>
+<p>RD2-03: workable_items.db machine-caught SSoT integrity violations +
+90% of closures have zero audit trail</p>
+<h2
+id="bob-073-rd2-04-workable_items.db-and-issues.mdfixed.md-have-drifted-bob-008-body-differs">BOB-073
+— RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008
+body differs)</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+challenges/scripts/workable_items_integrity_challenge.sh
+<strong>Severity:</strong> High</p>
+<p>RD2-04: workable_items.db and Issues.md/Fixed.md have drifted
+(BOB-008 body differs)</p>
+<h2
+id="bob-075-rd2-08-docsfeaturesstatus.md-and-docscodegraphstatus.md-are-stale">BOB-075
+— RD2-08: docs/features/Status.md and docs/codegraph/Status.md are
+stale</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+challenges/scripts/status_docs_freshness_challenge.sh
+<strong>Severity:</strong> High</p>
+<p>RD2-08: docs/features/Status.md and docs/codegraph/Status.md are
+stale</p>

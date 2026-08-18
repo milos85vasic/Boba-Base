@@ -1,6 +1,6 @@
 <h1 id="qa-discovery-channel-ledger">QA Discovery-Channel Ledger</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-08-10T17:30:55Z <strong>Status:</strong> active
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-08-18T16:45:00Z <strong>Status:</strong> active
 <strong>Constitution:</strong> §11.4.238 (automated QA must be the
 DISCOVERER, not the confirmer — every defect found outside the automated
 HelixQA regime is itself a coverage-escape release blocker, not merely a
@@ -195,6 +195,37 @@ separate pre-existing BOB-009/010 <code>validate</code> issue so the
 test does not tautologically reuse an unrelated failure — then GREEN
 after the fix, with a companion assertion that the real synced tree
 reports no false divergence).</li>
+<li><strong>2026-08-18 update (BOB-073 / RD2-04, recurrence, honest
+residual finding):</strong> despite the 2026-08-08 invariant-17
+<code>diff</code> extension above,
+<code>workable-items diff --db docs/workable_items.db --issues docs/Issues.md --fixed docs/Fixed.md</code>
+found <strong>9 separate DB↔︎Markdown drifts</strong> (not just the
+original BOB-008 one) when an agent manually re-ran it during the
+BOB-072/BOB-073 fix session (commit <code>82d9842</code>) — evidence in
+<code>docs/qa/BOB-072-073/</code>. <strong>Channel for this recurrence:
+<code>agent-code-reading</code></strong> (an agent ran the tool by hand
+while fixing an unrelated sibling item, not a standing
+scheduled/blocking gate). <strong>Escape-audit:</strong> the
+invariant-17 <code>diff</code> check landing in source is necessary but
+not proven sufficient — this ledger does NOT have evidence that
+invariant 17 runs as a hard, blocking write-seam gate on every commit
+that touches <code>docs/workable_items.db</code> (per §11.4.106(F)’s
+commit-seam requirement); 9 drifts accumulating between 2026-08-08 and
+2026-08-18 is consistent with either (a) the check existing but only
+being invoked when an agent remembers to run
+<code>scripts/pre_build_verification.sh</code> by hand, or (b) some DB
+writes in that window landing via a path invariant 17 does not
+intercept. <strong>Recorded honestly as <code>UNKNOWN</code> which
+mechanism</strong> (§11.4.6) rather than guessed. All 9 reconciled +
+closed this session (see commit <code>82d9842</code> for the per-item
+DB-vs-MD authoritative-side decisions); <code>diff</code> now reports 0.
+<strong>New check (still owed, not yet authored):</strong> a real
+commit-time (pre-commit or <code>commit-push-all.sh</code> stage per
+§11.4.234) hook that runs <code>workable-items diff</code> and BLOCKS
+the commit on any divergence touching
+<code>docs/workable_items.db</code>, <code>docs/Issues.md</code>, or
+<code>docs/Fixed.md</code> — turning invariant 17 from a pre-build-time
+report into a write-seam gate.</li>
 </ul>
 <h3
 id="rd2-42-podman-ps-reports-a-container-up-healthy-while-its-process-is-genuinely-dead">RD2-42
@@ -372,6 +403,241 @@ stream was holding for atomic commit per §11.4.121). §11.4.84 fence
 Layer 1 + Layer 3 both landed and verified. Layer 2 tracked as §11.4.197
 follow-up.</li>
 </ul>
+<h3
+id="tmux-oomd-2026-08-12-tmux-sessions-sigkilld-by-systemd-oomd-under-user-slice-pressure-despite-memorymaxinfinity">TMUX-OOMD-2026-08-12
+— tmux sessions SIGKILLd by systemd-oomd under user-slice pressure,
+despite <code>MemoryMax=infinity</code></h3>
+<ul>
+<li><strong>id:</strong> TMUX-OOMD-2026-08-12 (not yet a
+<code>BOB-NNN</code> — cross-project escape traced through the upstream
+<code>vasic-digital/tmux</code> fix TMX-083, v1.0.42)</li>
+<li><strong>date:</strong> 2026-08-12</li>
+<li><strong>channel:</strong> <code>operator-report</code> — the
+operator noticed sessions dying “as soon as we continue work with this
+project”. No automated gate in this project or its upstream had
+exercised this failure class.</li>
+<li><strong>escape-audit:</strong> neither the tmx project’s own test
+suite (which covers cgroup <code>Max=</code> / <code>TasksMax=</code> /
+<code>CPUQuota</code> properties but not
+<code>ManagedOOMPreference</code>) nor the boba project’s HelixQA +
+Challenges regime (host-safety mandates cover CONST-033 host power
+classes but do not probe <code>systemd-oomd</code>’s effect on tmux
+scopes) had a check for “does the tmux scope survive a user-slice
+memory-pressure spike under systemd-oomd?”. The §11.4.201(6) FALSE-NULL
+class applied to the test surface: the suite scanned the wrong axis and
+returned a confident zero on a real defect. Genuinely uncovered — no
+automated check existed on either side. Predecessor sighting
+<code>RD2-42</code> (2026-08-09, <code>incidental-discovery</code>) had
+already noted the same host session-kill mechanism reaching into
+rootless-podman container process trees; this operator report is the
+tmux-facing symptom of the same killer.</li>
+<li><strong>new-check:</strong>
+<code>challenges/scripts/tmux_survives_oomd_pressure_ challenge.sh</code>
+(boba side; auto-wired into <code>run_all_challenges.sh</code>)
+<ul>
+<li>upstream <code>scripts/tests/59_oomd_preference_avoid.sh</code> (tmx
+side). Both are §11.4.115 RED-capable via <code>RED_MODE=1</code>.
+Live-verified on the operator’s host 2026-08-12: pre-fix
+<code>RED_MODE=1</code> PASS (<code>ManagedOOMPreference=none</code> —
+defect reproduced), post-fix <code>RED_MODE=0</code> PASS
+(<code>ManagedOOMPreference=avoid</code> — regression guard confirmed).
+Perfect §11.4.115 polarity flip. Full audit at
+<code>docs/qa/coverage-escape-tmux-oomd-20260812/audit.md</code>. Root
+cause fixed upstream in <code>vasic-digital/tmux</code> v1.0.42
+(TMX-083, commits <code>6f9eaeb</code> + merge <code>92ef3a0</code>),
+pushed ff-only to both remotes per §11.4.113.</li>
+</ul></li>
+</ul>
+<h3
+id="rd2-00-bob-068-unattributed-unreviewed-auto-commit-mechanism-pushing-to-main-mid-work">RD2-00
+/ BOB-068 — unattributed, unreviewed “Auto-commit” mechanism pushing to
+<code>main</code> mid-work</h3>
+<ul>
+<li><strong>id:</strong> BOB-068 (RD2-00) — status <code>Queued</code>,
+still OPEN (root cause narrowed, not eliminated)</li>
+<li><strong>date:</strong> first observed 2026-08-08; re-confirmed
+present in git history as of 2026-08-18 (20 bare
+<code>Auto-commit</code> commits total across this repo’s history —
+confirmed via
+<code>git log --oneline --all --grep="^Auto-commit$" | wc -l</code>,
+e.g. <code>54e313f</code>, <code>9c8f684</code>, <code>743097a</code>,
+<code>de9270b</code>, <code>1c36777</code>, <code>41179c2</code>,
+<code>7c529ca</code>).</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — found by
+re-running <code>git log</code> mid-investigation during the 2026-08-08
+governance audit and discovering two NEW <code>Auto-commit</code>
+commits (<code>9c8f684</code>, <code>743097a</code>) had landed on
+<code>main</code> <strong>while the audit was already in
+progress</strong>.</li>
+<li><strong>escape-audit:</strong> no automated check exists anywhere in
+this repo for “does a commit reaching <code>main</code> carry an ATM-NNN
+citation / TDD trail, or is it a bare/templated message from an
+unattributed source” — §11.4.84 working-tree-quiescence has no
+mechanical guard on this specific path (writes arriving via an ordinary
+<code>git pull --ff</code> from a second session/host with push access
+to the same remotes, per the RD2-00 root-cause pass in
+<code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code>:
+<code>git reflog</code> proved the two newest commits were never
+authored on the investigating host — they fast-forwarded in via
+<code>pull</code>, and their commit timezone (+0500) does not match the
+investigating host’s own (+0300 MSK)). Genuinely uncovered — no gate
+flags an unattributed/unticketed commit reaching <code>main</code>.</li>
+<li><strong>new-check:</strong> not yet authored (tracked, not yet
+closed — BOB-068 remains <code>Queued</code>). Followup filed:
+<strong>BOB-106</strong> — a §11.4.84 quiescence-check helper scanning
+the commit range since the last known-good release tag and FAILing on
+any bare/templated commit message (<code>^Auto-commit$</code>,
+<code>^sync:</code>, etc.) with no ATM-NNN reference, wired into
+<code>scripts/pre_build_verification.sh</code> or the §11.4.234
+<code>commit-push-all.sh</code> entrypoint.</li>
+<li><strong>resolution status:</strong> root cause NARROWED, not
+eliminated — <code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code>
+RD2-00 Update 2 confirms the mechanism is (most likely) the operator’s
+own second session/device bypassing per-commit TDD/review discipline on
+ITS side, not an unidentified external actor; this downgrades severity
+from P0 to P1 but does not close the item.</li>
+</ul>
+<h3
+id="bob-072-docsworkable_items.db-machine-caught-ssot-integrity-violations-90-of-closures-had-zero-audit-trail">BOB-072
+— <code>docs/workable_items.db</code> machine-caught SSoT integrity
+violations (90% of closures had zero audit trail)</h3>
+<ul>
+<li><strong>id:</strong> BOB-072 (RD2-03) — <strong>closed
+2026-08-18</strong>, commit <code>82d9842</code></li>
+<li><strong>date:</strong> found 2026-08-08 (governance audit); closed
+2026-08-18</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> at
+discovery (2026-08-08, an agent manually ran
+<code>constitution/scripts/workable-items/bin/workable-items validate --db docs/workable_items.db</code>
+during the audit — exit 1, 2 real violations: BOB-009/BOB-010 both had a
+<code>closure evidence_path</code> that does not resolve). Beyond the
+tool’s own catch, a direct SQL sweep at the time found 56 of 62 closed
+items (90%) with zero <code>item_history</code> rows.</li>
+<li><strong>escape-audit:</strong> at the time of the 2026-08-08
+discovery, invariant 17 of
+<code>scripts/pre_build_verification.sh</code> — the ONLY standing gate
+wired to run <code>workable-items validate</code> — was ITSELF silently
+SKIPPING on every run (the sibling coverage escape already ledgered
+above as <strong>RD2-41b</strong>, same date, same audit): a gate whose
+own precondition-check is broken cannot report the truth about the thing
+it gates. RD2-03’s violations therefore went unnoticed by the standing
+regime until RD2-41b’s own fix (same session) restored invariant 17 to a
+real PASS/FAIL verdict — the <code>existed-but-missed</code> class
+(§11.4.201(6) FALSE-NULL), not genuinely-uncovered.</li>
+<li><strong>new-check:</strong>
+<code>challenges/scripts/workable_items_integrity_challenge.sh</code>
+extended with §11.4.115 RED_MODE polarity (RED_MODE=1 reproduces on the
+pre-fix DB snapshot in <code>docs/qa/BOB-072-073/</code>, RED_MODE=0
+default GREEN guard — both <code>validate</code> and <code>diff</code>
+exit 0), 3/3 PASS live-verified this session. Combined with the
+already-landed RD2-41b fix, invariant 17 is now the mechanized regime
+for this defect class.</li>
+<li><strong>Note (discovery-method signal, not a channel
+reclassification):</strong> this session’s closing verification (commit
+<code>82d9842</code>) captured its before/after evidence via the ACTUAL
+tool (<code>workable-items validate</code>/<code>diff</code> exit
+codes), not raw SQL or narrative inspection — the correct, mechanizable
+shape §11.4.238 wants going forward, even though the ORIGINAL 2026-08-08
+discovery was still an agent running that tool by hand during an ad-hoc
+audit, not a standing/scheduled gate firing on its own. The channel is
+honestly recorded as <code>agent-code-reading</code>, not
+<code>automated-helixqa</code> — the tool was correct, its invocation
+was not yet automatic.</li>
+</ul>
+<h3
+id="meta-11.4.227b-2026-08-18-11.4.227b-anchor-block-integrity-verified-by-hand-not-by-a-mechanical-gate">META-11.4.227B-2026-08-18
+— §11.4.227(B) anchor-block-integrity verified BY HAND, not by a
+mechanical gate</h3>
+<ul>
+<li><strong>id:</strong> none yet (governance meta-finding, not a
+<code>BOB-NNN</code> — the underlying anchor corpus is
+constitution-submodule-owned; this ledger records the escape because it
+was found during boba-repo work this session)</li>
+<li><strong>date:</strong> 2026-08-18 (this session’s
+§11.4.140/§11.4.141 anchor-number-collision resolution, Phase 0 — boba
+commit <code>136a22c</code>, constitution commits
+<code>5ed8c80</code>..<code>e5f2891</code>)</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — the
+Phase 0 subagent manually computed md5 hashes of the moved anchor bodies
+and manually grepped <code>### §11.4.140</code> /
+<code>### §11.4.141</code> occurrence counts, pasting the results
+verbatim into the commit message (<code>git show --stat 136a22c</code>)
+to prove §11.4.227(B) block-integrity (exactly-once per anchor,
+byte-identical lockstep across mirrors).</li>
+<li><strong>escape-audit:</strong> §11.4.227(B) is fully specified in
+constitution prose (“propagation gates count BLOCK-STARTS never bare
+literals: exactly-once per anchor per file… lockstep content-hash
+equality across the mirror set… anchor-number collisions FAIL”) but its
+own gate (<code>CM-ANCHOR-BLOCK-INTEGRITY</code>) is explicitly
+documented, by the anchor’s own text, as “gate-code = separate work
+item, NOT claimed shipped.” The §11.4.140/§11.4.141 collision that
+§11.4.227 itself cites as its founding forensic example was STILL only
+caught/fixed by a human-in-the-loop agent running ad-hoc
+<code>md5sum</code>/<code>grep</code> commands, not by a runnable script
+— the textbook §11.4.227 finding (413 named <code>CM-*</code> gates, 58%
+unimplemented) recurring live, in this repo, this session.</li>
+<li><strong>new-check:</strong> OUT OF SCOPE for this ticket
+(constitution-submodule-owned mechanism; per this task’s own
+constraints, boba may not touch anything constitution-related). Followup
+filed: <strong>BOB-105</strong> — a boba-side, read-only challenge that
+greps every governance file this project’s constitution submodule
+checkout exposes for <code>### §11.4.NNN</code> heading occurrences and
+FAILs on &gt;1-per-anchor-per-file or on two DIFFERENT anchor bodies
+sharing one NNN, implementing (from the consumer side, read-only) the
+check <code>CM-ANCHOR-BLOCK-INTEGRITY</code> names but does not yet
+run.</li>
+</ul>
+<h3
+id="scratch-loss-2026-08-18-phase-1a-subagents-declared-source-material-inputs-absent-at-dispatch-time">SCRATCH-LOSS-2026-08-18
+— Phase 1a subagent’s declared source-material inputs absent at dispatch
+time</h3>
+<ul>
+<li><strong>id:</strong> none yet (this-session incident,
+constitution-curriculum work stream, not a <code>BOB-NNN</code>)</li>
+<li><strong>date:</strong> 2026-08-18</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — the
+Phase 1a subagent (<code>a1cc331d</code>) discovered, at task start,
+that 5 source files its own task brief named as required reads
+(<code>curriculum_amendment_plan_v1.md</code>,
+<code>ai_curriculum_modules_27_35_extracted.md</code>, and three
+<code>curriculum_analysis_modules_*.md</code> gap-analysis files) were
+NOT present in the session scratchpad. Self-documented in
+<code>.superpowers/sdd/task-phase1a-report.md:21</code>. Independently
+re-verified during this BOB-069 audit:
+<code>curriculum_amendment_plan_v1.md</code> is STILL absent from the
+live scratchpad directory as of this writing, while the other four
+listed inputs now exist (apparently re-created by a later pass).</li>
+<li><strong>escape-audit:</strong> root cause per the Phase 1a
+subagent’s own investigation: “the prior stub-expansion subagent
+(<code>ae59171f</code>) apparently hit its session rate limit before
+writing them” — a §11.4.147(e)-class API-quota-exhaustion crash landing
+mid-deliverable, with no mechanical dependency check verifying a
+declared upstream artifact actually exists before a downstream subagent
+is dispatched to consume it. No automated check exists in this project’s
+orchestration tooling that a task brief’s named “read this first” inputs
+are present at dispatch time — genuinely uncovered; discovered only
+because the downstream subagent noticed and self-reported rather than
+silently fabricating content against an absent source (which its own
+brief’s no-fabrication instruction — <code>[MATERIAL-THIN]</code>
+marking — correctly steered it away from).</li>
+<li><strong>new-check:</strong> not yet authored. Followup filed:
+<strong>BOB-107</strong> — a pre-dispatch precondition check in the
+orchestration layer verifying every file a task brief cites as a
+required input exists and is non-empty before the downstream agent is
+spawned, failing closed with an actionable “missing input, respawn the
+producer” message.</li>
+<li><strong>Honest boundary (§11.4.6), stated explicitly:</strong> the
+task brief that dispatched this BOB-069 audit described this finding as
+“scratchpad reset between sessions” — that specific mechanism (an
+OS-level <code>/tmp</code> wipe or session-boundary reset) is NOT what
+the cited evidence actually shows; the evidence instead shows a
+crashed/rate-limited PRODUCER subagent that never wrote its declared
+deliverable, discovered by an honest downstream subagent. This entry
+records the mechanism the evidence actually supports, not the
+dispatching brief’s hypothesis, per this ledger’s own anti-fabrication
+discipline (§11.4.6/§11.4.238’s “no fabricated entries”
+instruction).</li>
+</ul>
 <h2 id="discovery-channel-split-tracked-per-11.4.238e">Discovery-channel
 split (tracked, per §11.4.238(E))</h2>
 <table>
@@ -391,15 +657,61 @@ split (tracked, per §11.4.238(E))</h2>
 </thead>
 <tbody>
 <tr>
-<td>2026-08-07 → 2026-08-10 (ledger current)</td>
+<td>2026-08-07 → 2026-08-10 (incremental, this period only)</td>
 <td>0</td>
 <td>8 (<code>agent-code-reading</code> x4,
 <code>incidental-discovery</code> x3,
 <code>automated_background_scan</code> x1)</td>
 <td>100%</td>
 </tr>
+<tr>
+<td>2026-08-11 → 2026-08-12 (incremental, this period only)</td>
+<td>0</td>
+<td>1 (<code>operator-report</code> x1)</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>2026-08-18 (incremental, BOB-069 backfill — 4 new <code>###</code>
+entries; the BOB-073 recurrence is an addendum to the existing BOB-008
+heading, not a new <code>###</code>)</td>
+<td>0</td>
+<td>4 (<code>agent-code-reading</code> x4: RD2-00/BOB-068, BOB-072,
+META-11.4.227B, SCRATCH-LOSS)</td>
+<td>100%</td>
+</tr>
+<tr>
+<td><strong>Cumulative total (all <code>###</code> entries to date, this
+row is what <code>CM-QA-DISCOVERY-LEDGER-FRESH</code>
+checks)</strong></td>
+<td><strong>0</strong></td>
+<td><strong>13</strong></td>
+<td><strong>100%</strong></td>
+</tr>
 </tbody>
 </table>
+<p><strong>Pre-existing check-vs-table mismatch, found and fixed during
+this backfill (§11.4.6, not silently patched around):</strong>
+<code>scripts/pre_build_verification.sh</code> invariant 19
+(<code>CM-QA-DISCOVERY-LEDGER-FRESH</code>) computes its expected count
+from ONLY the LAST row of this table, comparing it against the TOTAL
+<code>###</code> heading count under <code>## Entries</code>. The three
+“incremental, this period only” rows above were never designed to
+satisfy that arithmetic on their own (each was authored to show only
+that update’s delta, not a running total) — re-running the exact
+invariant-19 awk logic against the pre-backfill file
+(<code>git show HEAD:docs/QA_DISCOVERY_LEDGER.md</code>) confirms this
+was <strong>already FAILing before this session’s edits</strong>
+(<code>entries=9 split-table-declared=1</code>, live-run of
+<code>scripts/pre_build_verification.sh</code> confirms
+<code>FAIL [5]</code>). The <strong>Cumulative total</strong> row above
+is added so the check’s actual last-row-only arithmetic now passes
+(<code>0+13=13</code> == the real <code>###</code> count below); the
+three incremental rows are kept as honest per-period trend history. This
+finding is itself a coverage escape of the same shape this ledger tracks
+(an <code>existed-but-missed</code> gate whose own arithmetic silently
+drifted from the document it gates) but is fixed in the same edit that
+found it since the fix is a one-line table-convention correction, not a
+new automated check.</p>
 <p><strong>Honest note:</strong> 100% out-of-band is the true,
 unflattering starting number — every entry above was found by an agent
 reading code, running commands by hand, or hitting a real failure while
@@ -411,3 +723,18 @@ automated check authored yet, tracked honestly as such) and as future
 work is driven through the HelixQA banks
 (<code>challenges/helixqa-banks/</code>) rather than ad-hoc
 investigation.</p>
+<p><strong>2026-08-18 backfill note (BOB-069):</strong> this round added
+four entries discovered during the SAME session that produced them (the
+constitution-curriculum amendment stream + the BOB-072/073/075 parallel
+fixes), plus one recurrence addendum to the pre-existing BOB-008 entry.
+All five remain <code>agent-code-reading</code> — none crossed a
+standing automated gate. BOB-072 is the closest this ledger has come to
+the ideal shape: its closing evidence was captured via the sanctioned
+tool (<code>workable-items validate</code>/<code>diff</code>) rather
+than raw inspection, even though the discovery itself predates any
+standing gate invoking that tool automatically. Four followup workable
+items were filed (<code>BOB-104</code>..<code>BOB-107</code>) for the
+specific new/strengthened automated checks each entry’s
+<code>new-check</code> field names as not-yet-authored; none of the four
+checks are claimed as shipped by this backfill (§11.4.6) — they are
+tracked, not implemented, here.</p>

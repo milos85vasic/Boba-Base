@@ -119,6 +119,9 @@ between despite §11.4.80's "regular update automation" mandate. The tracked
 (`codegraph --version`) with no re-verification against the new version.
 
 **Attempted mechanical regen (Option A):** ran `codegraph init . --force` on
-this host to produce a real, current re-index (the same command the 2026-06-06
-entry used). Real observed outcome, NOT simulated:
+this host to produce a real, current re-index (a functionally equivalent
+command to the 2026-06-06 entry's `codegraph index . --force` — per
+`codegraph --help`, `init` and `index` are functionally equivalent commands
+for this purpose, not literally the same command). Real observed outcome,
+NOT simulated:
 

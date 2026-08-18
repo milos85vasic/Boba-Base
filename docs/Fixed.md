@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 16
-**Last modified:** 2026-08-18T13:46:30Z
+**Revision:** 17
+**Last modified:** 2026-08-18T16:50:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -763,4 +763,13 @@ RD2-03: workable_items.db machine-caught SSoT integrity violations + 90% of clos
 **Severity:** High
 
 RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008 body differs)
+
+## BOB-075 — RD2-08: docs/features/Status.md and docs/codegraph/Status.md are stale
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** challenges/scripts/status_docs_freshness_challenge.sh
+**Severity:** High
+
+RD2-08: docs/features/Status.md and docs/codegraph/Status.md are stale
 

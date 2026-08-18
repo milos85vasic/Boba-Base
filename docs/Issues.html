@@ -1,6 +1,6 @@
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-06-09T20:00:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
+2026-08-18T16:50:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -25,29 +25,6 @@ operator pastes a fresh <code>bb_session</code> cookie via
 <code>/auth/rutracker/cookie-login</code>. WHO — operator.</p>
 <p><strong>Evidence:</strong> live search per-tracker stat
 <code>rutracker status=error auth=True error="login returned no session cookie — likely CAPTCHA"</code>.</p>
-<h2
-id="bob-064-lava-p1-durable-remote-execution-systemd-linger-helper">BOB-064
-— Lava P1: Durable remote execution (systemd-linger helper)</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> High</p>
-<p>[Backfill from RD2-15/GA-05, audit doc 2026-08-08] Lava-porting
-finding P1 (Durable remote execution, Lava PLAYBOOK section 5). Problem
-Boba-Base shares: long QA/deploy runs on a remote host die when the SSH
-session ends. Root cause: remote systemd-logind KillUserProcesses reaps
-detached user processes (tmux/nohup/setsid all die). Fix: loginctl
-enable-linger + systemd-run –user –unit=<n> –collect bash runner.sh;
-poll systemctl –user is-active; sentinel file for completion. Avoid
-piping through tail -N (buffers until exit). Port: add containers
-submodule helper pkg/remoteexec (or scripts/lib/durable-run.sh) shared
-by both repos; wire scripts/deploy-remote.sh + run_all_challenges.sh to
-use it. TDD: a test launches a 60s sleeper via the helper, drops the SSH
-session, asserts it is STILL running after (fails against the old nohup
-approach). Source: docs/PORTING-FROM-LAVA.md. Per audit GA-05: NOT-DONE,
-still no tracked workable item for the four implemented-in-code Lava
-findings. Per audit RD2-15 [P0]: Create tracked workable items
-(BOB-064..067, via the workable-items tool — never raw MD edits) for the
-four Lava-porting findings, citing implementing commits as evidence,
-closed as Implemented.</p>
 <h2
 id="bob-065-lava-p2-egress-diagnosis-and-vpn-host-socks-routing-containers-pkgegress">BOB-065
 — Lava P2: Egress diagnosis and VPN-host SOCKS routing (containers
@@ -78,7 +55,7 @@ as Implemented.</p>
 id="bob-066-lava-p3-boba_upstream_proxy-in-download-proxy-qbittorrent-go-jackett-compose-env-forward">BOB-066
 — Lava P3: BOBA_UPSTREAM_PROXY in download-proxy + qBitTorrent-go +
 Jackett + compose env-forward</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<p><strong>Status:</strong> In progress <strong>Type:</strong> Task
 <strong>Severity:</strong> High</p>
 <p>[Backfill from RD2-15/GA-05, audit doc 2026-08-08] Lava-porting
 finding P3 (Configurable outbound proxy in the services, Lava PLAYBOOK
@@ -98,27 +75,6 @@ test fails. Source: docs/PORTING-FROM-LAVA.md. Per audit RD2-15 [P0]:
 Create tracked workable items (BOB-064..067) for the four Lava-porting
 findings, citing implementing commits as evidence, closed as
 Implemented.</p>
-<h2
-id="bob-067-lava-p4-jackett-cookie-login-hardening-behaviorally-equivalent-helixqa-fake">BOB-067
-— Lava P4: Jackett cookie-login hardening + behaviorally-equivalent
-HelixQA fake</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> High</p>
-<p>[Backfill from RD2-15/GA-05, audit doc 2026-08-08] Lava-porting
-finding P4 (Jackett cookie-login hardening, Lava PLAYBOOK section 8).
-Add to Boba-Base existing cookie infra: Jackett management API
-(/api/v2.0/indexers, indexer /config) needs a dashboard session cookie
-(empty-password POST /UI/Dashboard) — the apikey only authorizes Torznab
-/results and /caps. If boba-jackett/extract-jackett-key.py only uses the
-apikey, ListIndexers/config silently 302 to /UI/Login. Critical for
-anti-bluff: the test fake MUST 302-without-cookie like real Jackett
-(behavioral equivalence) or the gap stays hidden. TDD: fake 302s
-management without the cookie; assert discovery succeeds via the cookie
-path; falsifiability: remove cookie login so 302 failure surfaces. Home:
-jackett integration + helixqa fakes. Source: docs/PORTING-FROM-LAVA.md.
-Per audit RD2-15 [P0]: Create tracked workable items (BOB-064..067) for
-the four Lava-porting findings, citing implementing commits as evidence,
-closed as Implemented.</p>
 <h2
 id="bob-068-rd2-00-unattributed-unreviewed-auto-commit-mechanism-pushing-to-main">BOB-068
 — RD2-00: unattributed, unreviewed Auto-commit mechanism pushing to
@@ -221,51 +177,6 @@ itself). Priority: P2 (annoying, self-correcting via retry, but real
 false-positive class that will keep recurring). Composes with RD2-36
 (canonical remediation).</p>
 <h2
-id="bob-072-rd2-03-workable_items.db-machine-caught-ssot-integrity-violations-90-of-closures-have-zero-audit-trail">BOB-072
-— RD2-03: workable_items.db machine-caught SSoT integrity violations +
-90% of closures have zero audit trail</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> High</p>
-<p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-03, P1]
-constitution/scripts/workable-items/bin/workable-items validate –db
-docs/workable_items.db exits 1 with 2 real violations: BOB-009 and
-BOB-010 both have a closure evidence_path that does not resolve
-(narrative or multi-value text in a single-path field). Beyond the tool
-own catch, a direct SQL sweep shows 56 of 62 closed items (90%) have
-zero rows in item_history and all 62 closed items have empty
-closure_criteria and commit_ref columns — the constitution names this DB
-the authoritative SSoT for closure audit trails
-(§11.4.93/§11.4.148(D4)/§11.4.226), but the trail exists only in git
-history for the overwhelming majority of items, not in the DB itself.
-Fix: (1) fix BOB-009/BOB-010 evidence_path values via the workable-items
-tool proper update path (never raw SQL); (2) for the 56
-audit-trail-empty closures, backfill item_history rows from git log
-where recoverable, and explicitly mark genuinely-unrecoverable ones
-(§11.4.6 — UNKNOWN rather than fabricated); (3) wire the docs_chain sync
-(see RD2-04) so future closures never land without a trail. Priority:
-P1. Composes with RD2-19.</p>
-<h2
-id="bob-073-rd2-04-workable_items.db-and-issues.mdfixed.md-have-drifted-bob-008-body-differs">BOB-073
-— RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008
-body differs)</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> High</p>
-<p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-04, P1]
-workable-items diff –db docs/workable_items.db –issues docs/Issues.md
-–fixed docs/Fixed.md reports: ~ BOB-008 body differs (md=703 bytes
-db=576 bytes). Root cause: 54e313f rewrote the DB (file grew
-135168-&gt;229376 bytes, two new BOB-008 item_history rows dated
-2026-08-08) but did NOT touch docs/Issues.md/Fixed.md in the same commit
-— a live §11.4.106(F) write-seam violation (mandated commit-time doc/DB
-sync hook did not fire, or does not exist). Fix: reconcile BOB-008 body
-between DB and MD via the workable-items tool (sync or md-to-db/db-to-md
-as appropriate — determine which side is authoritative for this specific
-drift), then verify/wire the commit-seam sync hook per §11.4.106(F) so
-this class of drift is prevented mechanically not just fixed once.
-Priority: P1 (composes directly with RD2-00 — this drift is a direct
-symptom of the unattributed-commit problem). Composes with RD2-17
-(canonical remediation) and RD2-20.</p>
-<h2
 id="bob-074-rd2-07-ddos-class-testing-fully-absent-from-the-mandated-test-type-matrix">BOB-074
 — RD2-07: DDoS-class testing fully absent from the mandated test-type
 matrix</h2>
@@ -284,20 +195,6 @@ rate-limit-enforcement, malformed-request-flood, and
 resource-exhaustion-under-attack coverage for the exposed
 download-proxy/merge-service endpoints. Priority: P2. Canonical
 implementation: RD2-32.</p>
-<h2
-id="bob-075-rd2-08-docsfeaturesstatus.md-and-docscodegraphstatus.md-are-stale">BOB-075
-— RD2-08: docs/features/Status.md and docs/codegraph/Status.md are
-stale</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> High</p>
-<p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-08, P1]
-docs/features/Status.md — Revision: 7, Last modified:
-2026-06-16T23:30:00Z — same ~2-month staleness class as CONTINUATION.md.
-docs/codegraph/Status.md — Revision: 1, 2026-06-06T14:40:00Z — even
-further behind. Fix: fold into the same remediation pass as GA-04/GA-08
-(RD2-16) since they share the exact root cause: the doc-sync mechanism
-was not invoked after the recent commit wave. Priority: P1 (same class
-as the already-P0-adjacent GA-04). Composes with RD2-16.</p>
 <h2
 id="bob-076-rd2-09-submodulesjackett-fork-1-commit-behind-upstream-informational">BOB-076
 — RD2-09: submodules/jackett fork 1 commit behind upstream
@@ -676,3 +573,105 @@ regression-test LAN unreachability) · [B] operator states KEEP 0.0.0.0
 OPERATOR-DECISION] LAN-exposure threat model — bind the tunnel 127.0.0.1
 or keep 0.0.0.0 with the now-complete auth coverage (post Root Cause 3)?
 Priority: OPERATOR-DECISION.</p>
+<h2
+id="bob-104-11.4.238-followup-codegraph-1.5.0-nested-.gitignore-regression-challenge">BOB-104
+— §11.4.238 followup: CodeGraph 1.5.0 nested-.gitignore regression
+challenge</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Severity:</strong> Medium <strong>Created-By:</strong>
+Claude</p>
+<p>Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md, BOB-075
+agent-code-reading finding, commit e6162f7): CodeGraph 1.5.0 (up from
+documented 0.9.9) walked into nested-.gitignore-excluded
+frontend/node_modules and extension/node_modules (32,260 files / 514,456
+nodes vs the 2026-06-06 baseline of 509 files / 8,906 nodes) instead of
+honoring frontend/.gitignore + extension/.gitignore per git check-ignore
+-v. Author a challenge
+(challenges/scripts/codegraph_gitignore_honor_challenge.sh or
+equivalent, e.g. wrapping ‘codegraph doctor –sniff-gitignore-honor’ if
+that subcommand exists, else a real re-index + file-count assertion)
+with §11.4.115 RED_MODE polarity: RED_MODE=1 reproduces the blowup
+against the live nested-.gitignore tree, RED_MODE=0 asserts the resync
+stays within the documented baseline order of magnitude. Full evidence:
+docs/codegraph/Status.md lines 91-118.</p>
+<h2
+id="bob-105-11.4.238-followup-mechanical-11.4.227b-anchor-block-integrity-check">BOB-105
+— §11.4.238 followup: mechanical §11.4.227(B) anchor-block-integrity
+check</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Severity:</strong> Medium <strong>Created-By:</strong>
+Claude</p>
+<p>Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md, meta-defect
+found during this session’s §11.4.140/141 collision resolution, boba
+commit 136a22c + constitution commits 5ed8c80..e5f2891): §11.4.227(B)
+anchor-block-integrity (exactly-once heading per anchor per governance
+file, byte-identical lockstep across mirrors, no anchor-number
+collision) is fully specified in constitution prose but its own named
+gate CM-ANCHOR-BLOCK-INTEGRITY is explicitly ‘gate-code = separate work
+item, NOT claimed shipped’ — the §11.4.140/§11.4.141 double-mandate
+collision this session’s Phase 0 resolved was verified entirely BY HAND
+(md5 of moved anchor bodies, manual grep counts pasted into a commit
+message), not by a runnable script. Propose + author a challenge (in
+this project’s challenges/scripts/, since this project cannot edit the
+constitution submodule’s own gate-code from this ticket) that greps
+every governance file
+(CLAUDE.md/AGENTS.md/QWEN.md/GEMINI.md/Constitution.md, wherever this
+project’s constitution submodule checkout exposes them) for ‘###
+§11.4.NNN’ heading occurrences and FAILs on &gt;1-per-file-per-anchor or
+on two DIFFERENT anchor bodies sharing one NNN, per §11.4.227(B). Do NOT
+touch constitution-owned files while implementing this — the check reads
+them read-only.</p>
+<h2
+id="bob-106-11.4.238-followup-11.4.84-quiescence-check-helper-for-the-unattributed-auto-commit-path">BOB-106
+— §11.4.238 followup: §11.4.84 quiescence-check helper for the
+unattributed auto-commit path</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Severity:</strong> Medium <strong>Created-By:</strong>
+Claude</p>
+<p>Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md RD2-00/BOB-068
+entry, docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-00): 20 bare
+‘Auto-commit’ commits exist in this repo’s git history (confirmed via
+git log –oneline –all –grep,
+e.g. 54e313f/9c8f684/743097a/de9270b/1c36777/41179c2/7c529ca) with no
+ATM-NNN reference and no TDD trail, landing via ordinary git pull
+fast-forward from a second session/host with push access to the same
+remotes (mismatched commit timezone vs the investigating host, per
+RD2-00 Update). §11.4.84 working-tree-quiescence has no mechanical guard
+on this path — no gate flags a commit reaching main with a
+bare/templated message and no ticket citation. Author a §11.4.84
+quiescence-check helper
+(e.g. challenges/scripts/no_unattributed_autocommit_challenge.sh) that
+scans the commit range since the last known-good release tag and FAILs
+on any commit message matching a closed bare/templated pattern
+(e.g. ^Auto-commit$, ^sync: ) with no ATM-NNN or task/PR reference,
+wired into scripts/pre_build_verification.sh or the §11.4.234
+commit-push-all.sh entrypoint. BOB-068 (RD2-00) remains the tracking
+item for identifying/stopping the source; this item is specifically the
+new automated CHECK.</p>
+<h2
+id="bob-107-11.4.238-followup-pre-dispatch-existence-check-for-subagent-task-brief-source-inputs">BOB-107
+— §11.4.238 followup: pre-dispatch existence check for subagent
+task-brief source inputs</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Severity:</strong> Medium <strong>Created-By:</strong>
+Claude</p>
+<p>Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md
+SCRATCH-LOSS-2026-08-18 entry, evidence:
+.superpowers/sdd/task-phase1a-report.md line 21): the Phase 1a subagent
+(a1cc331d) discovered at task start that 5 source files its brief named
+as required reads (curriculum_amendment_plan_v1.md,
+ai_curriculum_modules_27_35_extracted.md, and 3
+curriculum_analysis_modules_*.md gap analyses) were absent from the
+session scratchpad — root cause per that subagent’s own investigation:
+the prior producer subagent (ae59171f) hit its session rate limit (a
+§11.4.147(e) API-quota crash) before writing them.
+curriculum_amendment_plan_v1.md remains absent from the live scratchpad
+as of this session’s re-check. No mechanical check verifies a task
+brief’s declared input files exist and are non-empty before the
+downstream consumer subagent is dispatched. Author a pre-dispatch
+precondition helper (project-side orchestration tooling, e.g. a small
+script the conductor runs before Task/Agent dispatch when a brief names
+required input paths) that fails closed with an actionable ‘missing
+input, respawn the producer’ message rather than silently letting a
+downstream agent proceed on absent evidence and fabricate content
+unsupported by its named sources.</p>

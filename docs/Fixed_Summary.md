@@ -6,12 +6,12 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 15 |
+| Bug | Fixed (→ Fixed.md) | 17 |
 | Feature | Implemented (→ Fixed.md) | 17 |
-| Task | Completed (→ Fixed.md) | 9 |
+| Task | Completed (→ Fixed.md) | 13 |
 | Task | Fixed (→ Fixed.md) | 4 |
 | Task | Implemented (→ Fixed.md) | 17 |
-| **TOTAL** | | **62** |
+| **TOTAL** | | **68** |
 
 ## Items
 
@@ -79,3 +79,9 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | 60 | High | Fixed (→ Fixed.md) | Bug | — | BOB-061 — Unit suite hang + order-dependent test-pollution (non-deterministic failures) |
 | 61 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-062 — Unbounded plugin pagination loops + unbounded network I/O (hang risk) |
 | 62 | Low | Completed (→ Fixed.md) | Task | — | BOB-063 — pirateiro test-isolation: add to conftest isolation + standing regression guard |
+| 63 | — | Completed (→ Fixed.md) | Task | — | BOB-064 — Lava P1: Durable remote execution (systemd-linger helper) |
+| 64 | — | Completed (→ Fixed.md) | Task | — | BOB-067 — Lava P4: Jackett cookie-login hardening + behaviorally-equivalent HelixQA fake |
+| 65 | High | Fixed (→ Fixed.md) | Bug | — | BOB-072 — RD2-03: workable_items.db machine-caught SSoT integrity violations + 90% of closures have zero audit trail |
+| 66 | High | Fixed (→ Fixed.md) | Bug | — | BOB-073 — RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008 body differs) |
+| 67 | High | Completed (→ Fixed.md) | Task | — | BOB-075 — RD2-08: docs/features/Status.md and docs/codegraph/Status.md are stale |
+| 68 | Medium | Completed (→ Fixed.md) | Task | — | BOB-103 — Land docs_chain (git@github.com:vasic-digital/docs_chain.git) as depth-1 reusable-engine submodule at constitution/submodules/docs_chain/ pinned to helixcode-v1.1.0. Build engine binary. Wire pre-build gate invariant 24 CM-DOCS-CHAIN-ENGINE-VERIFY into scripts/pre_build_verification.sh (real docs_chain verify --all against .docs_chain/contexts). Add challenges/scripts/docs_chain_verify_challenge.sh with §11.4.115 RED_MODE polarity. Retire scripts/docs_chain.sh misnomer wrapper by renaming to scripts/workable-items-export.sh (git mv, history preserved) and updating active callers (pre_build_verification.sh + 2 test files + 3 current-state docs). Constitution commit 47d41f8 pushed to all 6 mirrors. Boba-side commit follows this workable-item creation. [Reconciled 2026-08-18 via BOB-072/073 SSoT-integrity remediation: original item's Fixed-location DB row was deleted by a Fixed.md md-to-db reparse before this restoration ran (BOB-103 had never been written into docs/Fixed.md text) — original item_history rows (id=66 Opened 2026-08-15, id=67 Completed 2026-08-15, evidence challenges/scripts/docs_chain_verify_challenge.sh) survive untouched and remain the authoritative closure record; this add+close pair is a mechanical items-row restoration, not a re-performance of the original 2026-08-15 work.] |
