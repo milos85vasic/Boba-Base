@@ -1,0 +1,292 @@
+=== boba-resource-pressure-check.timer + .service unit files ===
+--- .timer ---
+# boba-resource-pressure-check.timer — hourly cadence for the proactive
+# host-pressure probe (task #77 / BOB-076).
+#
+# Schedule:
+#   OnBootSec=5min          — first fire 5 minutes after user-session boot
+#                             (gives the boba stack + other login services
+#                             time to settle before the first probe).
+#   OnUnitActiveSec=1hour   — thereafter, once per hour measured from the
+#                             END of the previous activation (so a slow
+#                             run never causes back-to-back re-fires).
+#   RandomizedDelaySec=5min — ±5 min jitter so this timer does not land on
+#                             exactly the same wall-clock second as any
+#                             other hourly cron/timer on the host, every
+#                             single hour (thundering-herd avoidance,
+#                             §12.6/§12.12 host-safety courtesy).
+#   Persistent=true         — if the user session was logged out / host
+#                             asleep at a scheduled fire time, systemd runs
+#                             the missed activation as soon as the timer
+#                             unit is next started (login) instead of
+#                             silently skipping it — closes the exact gap
+#                             a suspended/logged-out host would otherwise
+#                             leave (this project's own forced-logout
+#                             incidents are precisely why a monitoring gap
+#                             here would be self-defeating).
+
+[Unit]
+Description=Hourly timer for boba-resource-pressure-check.service (task #77/BOB-076)
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/scripts/install-resource-pressure-timer.md
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1hour
+RandomizedDelaySec=5min
+Persistent=true
+Unit=boba-resource-pressure-check.service
+
+[Install]
+WantedBy=timers.target
+--- .service ---
+# boba-resource-pressure-check.service — hourly proactive host-pressure
+# probe (task #77 / BOB-076 2nd forced-logout incident, 2026-08-18).
+#
+# Purpose:
+#   Runs challenges/scripts/resource_pressure_signature_challenge.sh — the
+#   5-signature detector of forced-logout-precursor conditions (runaway
+#   RSS, thread-ceiling utilization, container EAGAIN cascades, user.slice
+#   memory PSI, pathological-regex processes). The 2026-08-18 incident's
+#   own triage found a §12.12 EAGAIN cascade ~5 minutes BEFORE the
+#   user@1000.service SIGKILL — a leading indicator an hourly standing
+#   check would have caught well before the kill.
+#
+# Design:
+#   Type=oneshot — runs to completion once per activation, never a daemon.
+#   ExecStart runs the challenge script DIRECTLY (no wrapper) so its own
+#   exit code is preserved verbatim in `systemctl --user status` /
+#   `journalctl --user -u boba-resource-pressure-check.service`:
+#     exit 0 -> unit shows "inactive (dead)" with a clean journal (PASS)
+#     exit 1 -> unit shows "failed" — this IS the desired loud signal per
+#               the challenge's own header ("fail-loud BEFORE
+#               user@1000.service gets SIGKILLed, not after"); the full
+#               diagnostic (which signature tripped + corrective action)
+#               lands in the journal for `journalctl --user -u
+#               boba-resource-pressure-check.service -n 50` to surface.
+#   No Restart= directive — a oneshot's "failed" status is itself the
+#   alert; the TIMER (not this service) governs re-firing cadence, so
+#   auto-restarting the service would duplicate/race the timer's own
+#   OnUnitActiveSec schedule.
+#   Deliberately NOT PartOf=/Wants=boba.target — host resource pressure
+#   must be monitored regardless of whether the qBittorrent/Jackett stack
+#   is up or down; this unit's lifecycle is fully independent of it.
+#   §CONST-033 corollary (same bias as the other boba-* units): this is a
+#   monitoring probe, not user-session-critical work, so it is a
+#   preferred OOM victim ahead of the operator's interactive session.
+
+[Unit]
+Description=Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/incidents/2026-08-18-perceived-forced-logout-2nd.md
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+
+[Service]
+Type=oneshot
+WorkingDirectory=/run/media/milosvasic/DATA4TB/Projects/boba
+ExecStart=/usr/bin/env bash /run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=60
+OOMScoreAdjust=300
+
+=== full fire history for 2026-08-18 (journalctl --user) ===
+2026-08-18T21:35:24+02:00 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+2026-08-18T21:35:24+02:00 nezha env[1917219]: === SIG-1: runaway process >5 GB RSS ===
+2026-08-18T21:35:24+02:00 nezha env[1917219]: OK: no process >5 GB RSS
+2026-08-18T21:35:24+02:00 nezha env[1917219]: === SIG-2: thread count >70% of soft ulimit -u ===
+2026-08-18T21:35:24+02:00 nezha env[1917219]:   threads=1251  soft_limit=65536  utilization=1%
+2026-08-18T21:35:24+02:00 nezha env[1917219]: OK: thread utilization 1% within safe zone
+2026-08-18T21:35:24+02:00 nezha env[1917219]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+2026-08-18T21:35:25+02:00 nezha env[1917219]:   total EAGAIN-class hits last 15min: 0
+2026-08-18T21:35:25+02:00 nezha env[1917219]: OK: EAGAIN hits within safe zone
+2026-08-18T21:35:25+02:00 nezha env[1917219]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+2026-08-18T21:35:25+02:00 nezha env[1917219]:   full avg60=0.00 threshold=50
+2026-08-18T21:35:25+02:00 nezha env[1917219]: OK: PSI within safe zone
+2026-08-18T21:35:25+02:00 nezha env[1917219]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+2026-08-18T21:35:26+02:00 nezha env[1917219]: OK: no pathological-regex processes detected
+2026-08-18T21:35:26+02:00 nezha env[1917219]: === summary ===
+2026-08-18T21:35:26+02:00 nezha env[1917219]: PASS: no resource-pressure signatures over threshold
+2026-08-18T21:35:26+02:00 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+2026-08-18T21:35:26+02:00 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 3.385s CPU time, 25.3M memory peak.
+2026-08-18T21:35:33+02:00 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+2026-08-18T21:35:33+02:00 nezha env[1919936]: === SIG-1: runaway process >5 GB RSS ===
+2026-08-18T21:35:33+02:00 nezha env[1919936]: OK: no process >5 GB RSS
+2026-08-18T21:35:33+02:00 nezha env[1919936]: === SIG-2: thread count >70% of soft ulimit -u ===
+2026-08-18T21:35:33+02:00 nezha env[1919936]:   threads=1246  soft_limit=65536  utilization=1%
+2026-08-18T21:35:33+02:00 nezha env[1919936]: OK: thread utilization 1% within safe zone
+2026-08-18T21:35:33+02:00 nezha env[1919936]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+2026-08-18T21:35:35+02:00 nezha env[1919936]:   total EAGAIN-class hits last 15min: 0
+2026-08-18T21:35:35+02:00 nezha env[1919936]: OK: EAGAIN hits within safe zone
+2026-08-18T21:35:35+02:00 nezha env[1919936]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+2026-08-18T21:35:35+02:00 nezha env[1919936]:   full avg60=0.00 threshold=50
+2026-08-18T21:35:35+02:00 nezha env[1919936]: OK: PSI within safe zone
+2026-08-18T21:35:35+02:00 nezha env[1919936]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+2026-08-18T21:35:36+02:00 nezha env[1919936]: OK: no pathological-regex processes detected
+2026-08-18T21:35:36+02:00 nezha env[1919936]: === summary ===
+2026-08-18T21:35:36+02:00 nezha env[1919936]: PASS: no resource-pressure signatures over threshold
+2026-08-18T21:35:36+02:00 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+2026-08-18T21:35:36+02:00 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 3.045s CPU time, 23.8M memory peak.
+2026-08-18T21:36:36+02:00 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+2026-08-18T21:36:36+02:00 nezha env[1924593]: === SIG-1: runaway process >5 GB RSS ===
+2026-08-18T21:36:36+02:00 nezha env[1924593]: OK: no process >5 GB RSS
+2026-08-18T21:36:36+02:00 nezha env[1924593]: === SIG-2: thread count >70% of soft ulimit -u ===
+2026-08-18T21:36:36+02:00 nezha env[1924593]:   threads=1245  soft_limit=65536  utilization=1%
+2026-08-18T21:36:36+02:00 nezha env[1924593]: OK: thread utilization 1% within safe zone
+2026-08-18T21:36:36+02:00 nezha env[1924593]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+2026-08-18T21:36:37+02:00 nezha env[1924593]:   total EAGAIN-class hits last 15min: 0
+2026-08-18T21:36:37+02:00 nezha env[1924593]: OK: EAGAIN hits within safe zone
+2026-08-18T21:36:37+02:00 nezha env[1924593]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+2026-08-18T21:36:37+02:00 nezha env[1924593]:   full avg60=0.00 threshold=50
+2026-08-18T21:36:37+02:00 nezha env[1924593]: OK: PSI within safe zone
+2026-08-18T21:36:37+02:00 nezha env[1924593]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+2026-08-18T21:36:38+02:00 nezha env[1924593]: OK: no pathological-regex processes detected
+2026-08-18T21:36:38+02:00 nezha env[1924593]: === summary ===
+2026-08-18T21:36:38+02:00 nezha env[1924593]: PASS: no resource-pressure signatures over threshold
+2026-08-18T21:36:38+02:00 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+2026-08-18T21:36:38+02:00 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 2.772s CPU time, 25.2M memory peak.
+2026-08-18T21:38:30+02:00 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+2026-08-18T21:38:30+02:00 nezha env[1931924]: === SIG-1: runaway process >5 GB RSS ===
+2026-08-18T21:38:31+02:00 nezha env[1931924]: OK: no process >5 GB RSS
+2026-08-18T21:38:31+02:00 nezha env[1931924]: === SIG-2: thread count >70% of soft ulimit -u ===
+2026-08-18T21:38:31+02:00 nezha env[1931924]:   threads=1245  soft_limit=65536  utilization=1%
+2026-08-18T21:38:31+02:00 nezha env[1931924]: OK: thread utilization 1% within safe zone
+2026-08-18T21:38:31+02:00 nezha env[1931924]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+2026-08-18T21:38:32+02:00 nezha env[1931924]:   total EAGAIN-class hits last 15min: 0
+2026-08-18T21:38:32+02:00 nezha env[1931924]: OK: EAGAIN hits within safe zone
+2026-08-18T21:38:32+02:00 nezha env[1931924]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+2026-08-18T21:38:32+02:00 nezha env[1931924]:   full avg60=0.00 threshold=50
+2026-08-18T21:38:32+02:00 nezha env[1931924]: OK: PSI within safe zone
+2026-08-18T21:38:32+02:00 nezha env[1931924]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+2026-08-18T21:38:33+02:00 nezha env[1931924]: OK: no pathological-regex processes detected
+2026-08-18T21:38:33+02:00 nezha env[1931924]: === summary ===
+2026-08-18T21:38:33+02:00 nezha env[1931924]: PASS: no resource-pressure signatures over threshold
+2026-08-18T21:38:33+02:00 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+2026-08-18T21:38:33+02:00 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 2.921s CPU time, 24.8M memory peak.
+2026-08-18T21:39:20+02:00 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+2026-08-18T21:39:20+02:00 nezha env[1936311]: === SIG-1: runaway process >5 GB RSS ===
+2026-08-18T21:39:20+02:00 nezha env[1936311]: OK: no process >5 GB RSS
+2026-08-18T21:39:20+02:00 nezha env[1936311]: === SIG-2: thread count >70% of soft ulimit -u ===
+2026-08-18T21:39:20+02:00 nezha env[1936311]:   threads=1260  soft_limit=65536  utilization=1%
+2026-08-18T21:39:20+02:00 nezha env[1936311]: OK: thread utilization 1% within safe zone
+2026-08-18T21:39:20+02:00 nezha env[1936311]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+2026-08-18T21:39:21+02:00 nezha env[1936311]:   total EAGAIN-class hits last 15min: 0
+2026-08-18T21:39:21+02:00 nezha env[1936311]: OK: EAGAIN hits within safe zone
+2026-08-18T21:39:21+02:00 nezha env[1936311]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+2026-08-18T21:39:21+02:00 nezha env[1936311]:   full avg60=0.00 threshold=50
+2026-08-18T21:39:21+02:00 nezha env[1936311]: OK: PSI within safe zone
+2026-08-18T21:39:21+02:00 nezha env[1936311]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+2026-08-18T21:39:22+02:00 nezha env[1936311]: OK: no pathological-regex processes detected
+2026-08-18T21:39:22+02:00 nezha env[1936311]: === summary ===
+2026-08-18T21:39:22+02:00 nezha env[1936311]: PASS: no resource-pressure signatures over threshold
+2026-08-18T21:39:22+02:00 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+2026-08-18T21:39:22+02:00 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 2.378s CPU time, 27.5M memory peak.
+2026-08-18T22:42:40+02:00 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+2026-08-18T22:42:40+02:00 nezha env[2285867]: === SIG-1: runaway process >5 GB RSS ===
+2026-08-18T22:42:40+02:00 nezha env[2285867]: OK: no process >5 GB RSS
+2026-08-18T22:42:40+02:00 nezha env[2285867]: === SIG-2: thread count >70% of soft ulimit -u ===
+2026-08-18T22:42:40+02:00 nezha env[2285867]:   threads=1303  soft_limit=65536  utilization=1%
+2026-08-18T22:42:40+02:00 nezha env[2285867]: OK: thread utilization 1% within safe zone
+2026-08-18T22:42:40+02:00 nezha env[2285867]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+2026-08-18T22:42:41+02:00 nezha env[2285867]:   total EAGAIN-class hits last 15min: 0
+2026-08-18T22:42:41+02:00 nezha env[2285867]:   correlation: SIG-2-not-currently-elevated (current SIG-2 utilization=1%)
+2026-08-18T22:42:41+02:00 nezha env[2285867]: OK: EAGAIN hits within safe zone
+2026-08-18T22:42:41+02:00 nezha env[2285867]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+2026-08-18T22:42:41+02:00 nezha env[2285867]:   full avg60=0.00 threshold=50
+2026-08-18T22:42:41+02:00 nezha env[2285867]: OK: PSI within safe zone
+2026-08-18T22:42:41+02:00 nezha env[2285867]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+2026-08-18T22:42:42+02:00 nezha env[2285867]: OK: no pathological-regex processes detected
+2026-08-18T22:42:42+02:00 nezha env[2285867]: === summary ===
+2026-08-18T22:42:42+02:00 nezha env[2285867]: PASS: no resource-pressure signatures over threshold
+2026-08-18T22:42:42+02:00 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+2026-08-18T22:42:42+02:00 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 2.839s CPU time, 23M memory peak.
+2026-08-18T22:57:48+02:00 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+2026-08-18T22:57:48+02:00 nezha env[2543206]: === SIG-1: runaway process >5 GB RSS ===
+2026-08-18T22:57:48+02:00 nezha env[2543206]: OK: no process >5 GB RSS
+2026-08-18T22:57:48+02:00 nezha env[2543206]: === SIG-2: thread count >70% of soft ulimit -u ===
+2026-08-18T22:57:48+02:00 nezha env[2543206]:   threads=1302  soft_limit=65536  utilization=1%
+2026-08-18T22:57:48+02:00 nezha env[2543206]: OK: thread utilization 1% within safe zone
+2026-08-18T22:57:48+02:00 nezha env[2543206]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+2026-08-18T22:57:49+02:00 nezha env[2543206]:   total EAGAIN-class hits last 15min: 0
+2026-08-18T22:57:49+02:00 nezha env[2543206]:   correlation: SIG-2-not-currently-elevated (current SIG-2 utilization=1%)
+2026-08-18T22:57:49+02:00 nezha env[2543206]: OK: EAGAIN hits within safe zone
+2026-08-18T22:57:49+02:00 nezha env[2543206]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+2026-08-18T22:57:49+02:00 nezha env[2543206]:   full avg60=0.00 threshold=50
+2026-08-18T22:57:49+02:00 nezha env[2543206]: OK: PSI within safe zone
+2026-08-18T22:57:49+02:00 nezha env[2543206]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+2026-08-18T22:57:50+02:00 nezha env[2543206]: OK: no pathological-regex processes detected
+2026-08-18T22:57:50+02:00 nezha env[2543206]: === summary ===
+2026-08-18T22:57:50+02:00 nezha env[2543206]: PASS: no resource-pressure signatures over threshold
+2026-08-18T22:57:50+02:00 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+2026-08-18T22:57:50+02:00 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 3.254s CPU time, 26.3M memory peak.
+2026-08-18T22:57:51+02:00 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+2026-08-18T22:57:52+02:00 nezha env[2548445]: === SIG-1: runaway process >5 GB RSS ===
+2026-08-18T22:57:52+02:00 nezha env[2548445]: OK: no process >5 GB RSS
+2026-08-18T22:57:52+02:00 nezha env[2548445]: === SIG-2: thread count >70% of soft ulimit -u ===
+2026-08-18T22:57:52+02:00 nezha env[2548445]:   threads=1288  soft_limit=65536  utilization=1%
+2026-08-18T22:57:52+02:00 nezha env[2548445]: OK: thread utilization 1% within safe zone
+2026-08-18T22:57:52+02:00 nezha env[2548445]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+2026-08-18T22:57:53+02:00 nezha env[2548445]:   total EAGAIN-class hits last 15min: 0
+2026-08-18T22:57:53+02:00 nezha env[2548445]:   correlation: SIG-2-not-currently-elevated (current SIG-2 utilization=1%)
+2026-08-18T22:57:53+02:00 nezha env[2548445]: OK: EAGAIN hits within safe zone
+2026-08-18T22:57:53+02:00 nezha env[2548445]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+2026-08-18T22:57:53+02:00 nezha env[2548445]:   full avg60=0.00 threshold=50
+2026-08-18T22:57:53+02:00 nezha env[2548445]: OK: PSI within safe zone
+2026-08-18T22:57:53+02:00 nezha env[2548445]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+2026-08-18T22:57:54+02:00 nezha env[2548445]: OK: no pathological-regex processes detected
+2026-08-18T22:57:54+02:00 nezha env[2548445]: === summary ===
+2026-08-18T22:57:54+02:00 nezha env[2548445]: PASS: no resource-pressure signatures over threshold
+2026-08-18T22:57:54+02:00 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+2026-08-18T22:57:54+02:00 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 3.288s CPU time, 24.9M memory peak.
+2026-08-18T22:57:55+02:00 nezha systemd[1665349]: Starting boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)...
+2026-08-18T22:57:55+02:00 nezha env[2553691]: === SIG-1: runaway process >5 GB RSS ===
+2026-08-18T22:57:55+02:00 nezha env[2553691]: OK: no process >5 GB RSS
+2026-08-18T22:57:55+02:00 nezha env[2553691]: === SIG-2: thread count >70% of soft ulimit -u ===
+2026-08-18T22:57:55+02:00 nezha env[2553691]:   threads=1293  soft_limit=65536  utilization=1%
+2026-08-18T22:57:55+02:00 nezha env[2553691]: OK: thread utilization 1% within safe zone
+2026-08-18T22:57:55+02:00 nezha env[2553691]: === SIG-3: EAGAIN cascade in last 15 minutes ===
+2026-08-18T22:57:57+02:00 nezha env[2553691]:   total EAGAIN-class hits last 15min: 0
+2026-08-18T22:57:57+02:00 nezha env[2553691]:   correlation: SIG-2-not-currently-elevated (current SIG-2 utilization=1%)
+2026-08-18T22:57:57+02:00 nezha env[2553691]: OK: EAGAIN hits within safe zone
+2026-08-18T22:57:57+02:00 nezha env[2553691]: === SIG-4: user.slice memory PSI full avg60 > 50 ===
+2026-08-18T22:57:57+02:00 nezha env[2553691]:   full avg60=0.00 threshold=50
+2026-08-18T22:57:57+02:00 nezha env[2553691]: OK: PSI within safe zone
+2026-08-18T22:57:57+02:00 nezha env[2553691]: === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+2026-08-18T22:57:58+02:00 nezha env[2553691]: OK: no pathological-regex processes detected
+2026-08-18T22:57:58+02:00 nezha env[2553691]: === summary ===
+2026-08-18T22:57:58+02:00 nezha env[2553691]: PASS: no resource-pressure signatures over threshold
+2026-08-18T22:57:58+02:00 nezha systemd[1665349]: Finished boba-resource-pressure-check.service - Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076).
+2026-08-18T22:57:58+02:00 nezha systemd[1665349]: boba-resource-pressure-check.service: Consumed 3.270s CPU time, 24.3M memory peak.
+
+=== systemctl --user list-timers (captured post-incident, 23:56 CEST) ===
+NEXT LEFT LAST                         PASSED UNIT                               ACTIVATES
+-       - Tue 2026-08-18 22:42:40 CEST      - boba-resource-pressure-check.timer boba-resource-pressure-check.service
+
+1 timers listed.
+Pass --all to see loaded but inactive timers, too.
+
+=== systemctl --user status (captured post-incident, 23:56 CEST) ===
+● boba-resource-pressure-check.timer - Hourly timer for boba-resource-pressure-check.service (task #77/BOB-076)
+     Loaded: loaded (/home/milosvasic/.config/systemd/user/boba-resource-pressure-check.timer; enabled; preset: disabled)
+     Active: active (elapsed) since Tue 2026-08-18 23:49:00 CEST; 9min ago
+ Invocation: 1810b27ff7f6497da114cf9d8e5726b5
+    Trigger: n/a
+   Triggers: ● boba-resource-pressure-check.service
+       Docs: file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/scripts/install-resource-pressure-timer.md
+
+Aug 18 23:49:00 nezha systemd[3115149]: Started boba-resource-pressure-check.timer - Hourly timer for boba-resource-pressure-check.service (task #77/BOB-076).
+
+=== systemd --user manager PID history (session boundary correlation) ===
+2026-08-18T20:50:59+02:00 nezha systemd-logind[1302]: Removed session 1.
+2026-08-18T20:50:59+02:00 nezha systemd-logind[1302]: Removed session 4.
+2026-08-18T20:51:16+02:00 nezha systemd-logind[1302]: New session '18' of user 'milosvasic' with class 'user' and type 'wayland'.
+2026-08-18T20:51:16+02:00 nezha systemd-logind[1302]: New session '19' of user 'milosvasic' with class 'manager' and type 'unspecified'.
+2026-08-18T20:51:22+02:00 nezha systemd-logind[1302]: Removed session 16.
+2026-08-18T20:51:32+02:00 nezha systemd-logind[1302]: Removed session 17.
+2026-08-18T21:01:01+02:00 nezha systemd-logind[1302]: Removed session 20.
+2026-08-18T22:01:01+02:00 nezha systemd-logind[1302]: Removed session 21.
+2026-08-18T23:01:01+02:00 nezha systemd-logind[1302]: Removed session 22.
+2026-08-18T23:45:49+02:00 nezha systemd-logind[1302]: Removed session 19.
+2026-08-18T23:45:50+02:00 nezha systemd-logind[1302]: Removed session 18.
+2026-08-18T23:49:00+02:00 nezha systemd-logind[1302]: New session '25' of user 'milosvasic' with class 'user' and type 'wayland'.
+2026-08-18T23:49:00+02:00 nezha systemd-logind[1302]: New session '26' of user 'milosvasic' with class 'manager' and type 'unspecified'.
+2026-08-18T23:49:06+02:00 nezha systemd-logind[1302]: Removed session 23.
+2026-08-18T23:49:16+02:00 nezha systemd-logind[1302]: Removed session 24.

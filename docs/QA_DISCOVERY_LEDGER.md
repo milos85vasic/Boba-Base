@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 9
-**Last modified:** 2026-08-18T22:10:00Z
+**Revision:** 10
+**Last modified:** 2026-08-18T23:59:00+02:00
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -466,6 +466,53 @@ honest about starting now, not claiming a false complete history.
 - **new-check:** two-part remedy, both landed this session (task #79): (1) `scripts/capture-workable-items-db-delta.sh` (NEW) — produces a differential SQLite dump (per-table row counts + full `meta` dump + unified `.dump` diff) between any commit touching `docs/workable_items.db` and its parent, written to `docs/qa/db-deltas/<full-sha>.diff`; §11.4.115 RED→GREEN polarity confirmed via a real §1.1 paired mutation (breaking the `sqlite3 ... .dump` call in a scratch copy of the script produces exit 127 and **zero files** at the real output path — the atomic temp-file-then-`mv` publish pattern was added specifically so a genuine capture failure can never leave a partial, misleadingly-"clean" file behind; the unmodified script then reproduces the full evidence cleanly). (2) `scripts/commit-push-all.sh` stage 5.5 (NEW) — automatically invokes the helper immediately after ANY future commit that touches `docs/workable_items.db` lands, and lands the resulting delta as an immediate scoped follow-up commit (`docs(qa,db-delta): capture differential dump for HEAD <sha>`) travelling to every upstream in the same run — so this specific gap cannot recur silently going forward. See `docs/scripts/capture-workable-items-db-delta.md` for the full mechanism.
 - **Honest boundary (§11.4.6):** this remedy makes future `docs/workable_items.db`-touching commits self-evidencing; it does NOT retroactively re-open or re-litigate `3520621` (no history rewrite, §11.4.113) and does NOT claim the BOB-104 under-disclosure was malicious or harmful — the backfilled evidence shows it was benign and fully audit-trailed. It IS, per this ledger's own purpose, a real coverage escape: a commit message described a narrower scope than what it actually committed, and no automated check existed to catch that gap before an independent review found it by hand.
 
+### FORCED-LOGOUT-2026-08-18-3RD — user@1000.service SIGKILLed at 23:45:49 (3rd occurrence), plus the preventive monitor's own architectural gap
+
+- **id:** BOB-120 (Type=Bug, Severity=Critical, Status=Queued — this document doc + evidence
+  capture do not close it; closure requires the actual out-of-user-scope watchdog fix, tracked
+  as a followup of task #77). Full writeup: `docs/incidents/2026-08-18-3rd-forced-logout.md`.
+- **date:** 2026-08-18, 23:45:49 — the 3rd occurrence of this incident class on this host
+  (1st: 2026-07-07, produced §12.12; 2nd: BOB-116, same day 20:50:59; 3rd: this entry, ~2h55m
+  after BOB-116, same session lineage).
+- **channel:** `agent-code-reading` / session-continuation-dispatch — this incident was
+  investigated proactively by an agent picking up a mid-turn task-continuation dispatch, not
+  by the operator manually re-reporting a fresh logout observation this time. The real
+  systemd journal, `podman ps`/`podman logs`, and the BOB-116 preventive timer's own fire
+  history were read directly (`docs/qa/BOB-120/{journalctl_23-42_to_23-46.log,
+  timer_fire_history.log, qbittorrent_proxy_socketserver_traces.log}`).
+- **escape-audit:** the SIGKILL-source question remains the SAME open escape as BOB-116
+  (Task #79, `PENDING_FORENSICS`, no automated check exists anywhere in this repo that
+  attributes a `user@1000.service` SIGKILL to its sender) — this incident adds a **second,
+  distinct** coverage escape: the exact preventive check BOB-116 built in response to the
+  2nd occurrence (`boba-resource-pressure-check.timer`, task #77) is **architecturally
+  incapable of catching a kill that lands inside its own hosting scope**, because the timer
+  is a `systemd --user` unit whose process tree is a child of `user@1000.service` itself.
+  When that service is SIGKILLed, the timer + its triggered probe die in the exact same
+  cascade — the monitor cannot outlive the thing it monitors, and by construction can never
+  observe or escalate on a kill that happens to land in the window between its own hourly
+  fires (up to ~1h05m per cycle, base 1h + up to 5m jitter). Captured fire history shows the
+  last completed run before this incident finished at 22:57:58 — 47m51s before the 23:45:49
+  kill — so the timer had not even reached its next scheduled activation; this was not a
+  missed fire, it was a structurally-unreachable one. This is a genuine, previously
+  undocumented limitation of the BOB-116 remediation, not a bug in the remediation's own
+  logic (the 5-signature detector itself is unchanged and still self-validated per
+  §11.4.107(10) from BOB-116/task #78).
+- **new-check:** **NOT YET LANDED** — this entry documents the finding + files BOB-120 as the
+  tracked follow-up; the actual fix (an out-of-user-scope watchdog: a root-level systemd
+  timer, or a `--user` unit escaped from the session-scope cgroup via delegation/isolation)
+  is deliberately left as open, Queued work rather than rushed into this incident-response
+  window. Closing BOB-120 on documentation alone, without the architectural fix landing, would
+  itself be a §11.4.238 coverage-escape bluff — the exact failure mode this anchor exists to
+  forbid.
+- **Honest boundary (§11.4.6):** the originally-circulated hypothesis for this incident ("the
+  timer's next expected fire was 23:42:38 and it silently missed it") does **not** survive
+  contact with the real captured `journalctl --user` fire history (last completed run
+  22:57:58, next due no earlier than 23:52:58) and is explicitly corrected in the incident
+  document rather than repeated as fact. The `qbittorrent-proxy` `ConnectionResetError`
+  cascade (every ~30s through 23:38–23:45, last line 5s before the kill) and the boba-stack
+  containers' near-instant re-creation (`CreatedAt`=23:45:52, 3s after the kill) are reported
+  as time-correlated observations, not established causes.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
@@ -476,7 +523,8 @@ honest about starting now, not claiming a false complete history.
 | 2026-08-18 (incremental, BOB-069-review fix — 1 new `### ` entry: the missing CodeGraph 1.5.0 nested-`.gitignore` escape identified in the independent review of BOB-069) | 0 | 1 (`agent-code-reading` x1: CODEGRAPH-1.5.0-GITIGNORE) | 100% |
 | 2026-08-18 (incremental, BOB-116 forced-logout incident (initially referenced as BOB-076 informal label, corrected 2026-08-18) — 1 new `### ` entry: 2nd occurrence of user@1000 SIGKILL on this project after physical operator return, discovered by `operator-report`) | 0 | 1 (`operator-report` x1: FORCED-LOGOUT-2026-08-18-2ND) | 100% |
 | 2026-08-18 (incremental, §11.4.209 review IMPORTANT-2 remedy — 1 new `### ` entry: `docs/workable_items.db` binary blob committed without differential evidence, discovered by `agent-code-reading`) | 0 | 1 (`agent-code-reading` x1: DB-BLOB-COMMITTED-WITHOUT-DELTA-3520621) | 100% |
-| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **16** | **100%** |
+| 2026-08-18 (incremental, BOB-120 forced-logout incident — 1 new `### ` entry: 3rd occurrence of user@1000 SIGKILL on this project, plus the discovery that the BOB-116/task-77 preventive monitor itself lives inside the killed scope and cannot catch a kill landing before its own next fire) | 0 | 1 (`agent-code-reading` x1: FORCED-LOGOUT-2026-08-18-3RD) | 100% |
+| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **17** | **100%** |
 
 **Pre-existing check-vs-table mismatch, found and fixed during this backfill (§11.4.6, not
 silently patched around):** `scripts/pre_build_verification.sh` invariant 19

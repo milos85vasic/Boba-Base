@@ -197,7 +197,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>8</td>
+<td>9</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -212,12 +212,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>32</td>
+<td>33</td>
 </tr>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>46</strong></td>
+<td><strong>48</strong></td>
 </tr>
 </tbody>
 </table>
@@ -772,6 +772,64 @@ direction: wire a real badge-computer (README already flags this as an
 owed §11.4.197 gate-code item) that regenerates the badge from a real
 collect/run count, and add the actual per-suite counts to
 docs/TESTING.md so the cited authoritative source is real.</td>
+</tr>
+<tr>
+<td>BOB-120</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Critical</td>
+<td>user@1000.service SIGKILLed at 23:45:49 (2h55m after BOB-116’s
+20:50:59 kill, same session lineage), cascade-killing
+gnome-shell/Xwayland/ssh/dbus/gnome-keyring/all MCP servers/all boba
+containers’ host processes (73 Killing-process lines captured). SIGKILL
+source UNCONFIRMED per §11.4.6 (kernel OOM clean, systemd-oomd no
+entries, no lid events, HandleLidSwitch=ignore unchanged) — same honest
+boundary as BOB-116. NEW architectural finding:
+boba-resource-pressure-check.timer (BOB-116/task-77’s preventive
+remediation) is a systemd –user unit hosted inside user@1000.service
+itself, so it dies in the SAME SIGKILL cascade it exists to detect
+precursors to; captured fire history shows last completed run finished
+22:57:58, next due no earlier than 23:52:58, so the timer was not
+overdue at the 23:45:49 kill — it structurally cannot outlive the scope
+it monitors, meaning no in-scope self-monitor can ever catch a kill that
+takes it down with it. Contributing observations: qbittorrent-proxy
+health-probe ConnectionResetError cascade every ~30s through 23:38-23:45
+(last line 23:45:44.737, 5s before kill, correlation only, not
+established causal); all four boba-stack containers
+(qbittorrent/jackett/boba-jackett/qbittorrent-proxy) recreated with
+CreatedAt=23:45:52, 3s after the kill, before any human session existed,
+confirming container supervision survives independently of
+user@1000.service. Fix direction: an out-of-user-scope watchdog
+(root-level systemd timer or a –user unit escaped from the session
+scope) is required to close this class of gap by construction. Evidence:
+docs/qa/BOB-120/{journalctl_23-42_to_23-46.log,timer_fire_history.log,qbittorrent_proxy_socketserver_traces.log}.
+Full writeup: docs/incidents/2026-08-18-3rd-forced-logout.md.
+Cross-refs: BOB-116
+(docs/incidents/2026-08-18-perceived-forced-logout-2nd.md), §12.12
+(RLIMIT_NPROC awareness anchor from the 2026-07-07 1st incident), task
+#77 (the timer this incident found the limitation of), task #79
+(SIGKILL-source attribution, still open after 3 incidents). Left Queued
+— closing requires the actual out-of-scope-watchdog architectural fix (a
+documentation-only close would be a §11.4.238 coverage-escape
+bluff).</td>
+</tr>
+<tr>
+<td>BOB-121</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Important</td>
+<td>Phase 1 design-only proposal: the BOB-116/task-77 resource-pressure
+preventive systemd –user timer runs inside user@1000.service, the exact
+pool it monitors, so it cannot fire when that pool dies (proven by
+incident #3, docs/qa/BOB-120/, 22:42+22:57 fires then blocked
+23:45:49-23:49:00). Recommends Option B (user crontab reusing
+pre-existing crond.service in system.slice, no new root service) kept
+alongside the existing timer, with Option A (new root-owned systemd
+unit) as escalation path if Phase 1.5 live cron/cgroup verification is
+adverse. Proposal:
+docs/proposals/external-watchdog-for-forced-logout-architectural-gap.md.
+Operator decision required per §11.4.66 before any implementation – NOT
+implemented in this task.</td>
 </tr>
 </tbody>
 </table>

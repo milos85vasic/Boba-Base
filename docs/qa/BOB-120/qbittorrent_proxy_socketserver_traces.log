@@ -1,0 +1,512 @@
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 38380)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+    self.handle_one_request()
+  File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+    self.raw_requestline = self.rfile.readline(65537)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+2026-08-18 21:43:44,734 - INFO - Saved 0 scheduled searches
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 50356)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+    self.handle_one_request()
+  File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+    self.raw_requestline = self.rfile.readline(65537)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 45630)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+    self.handle_one_request()
+  File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+    self.raw_requestline = self.rfile.readline(65537)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+2026-08-18 21:44:44,735 - INFO - Saved 0 scheduled searches
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 49168)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+    self.handle_one_request()
+  File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+    self.raw_requestline = self.rfile.readline(65537)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 55388)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+    self.handle_one_request()
+  File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+    self.raw_requestline = self.rfile.readline(65537)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+2026-08-18 21:45:44,736 - INFO - Saved 0 scheduled searches
+2026-08-18T23:35:21.552304000+02:00 ----------------------------------------
+2026-08-18T23:35:21.552641000+02:00 Exception occurred during processing of request from ('127.0.0.1', 45932)
+2026-08-18T23:35:21.552681000+02:00 Traceback (most recent call last):
+2026-08-18T23:35:21.552709000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:35:21.552738000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:35:21.552767000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:35:21.552794000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:35:21.552817000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:35:21.552842000+02:00     self.handle()
+2026-08-18T23:35:21.552865000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:35:21.552893000+02:00     self.handle_one_request()
+2026-08-18T23:35:21.552920000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:35:21.552950000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:35:21.552973000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:35:21.552997000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:35:21.553025000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:35:21.553067000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:35:21.553092000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:35:21.553122000+02:00 ----------------------------------------
+2026-08-18T23:35:33.612350000+02:00 INFO:     127.0.0.1:56656 - "GET /health HTTP/1.1" 200 OK
+2026-08-18T23:35:44.726861000+02:00 2026-08-18 21:35:44,726 - INFO - Saved 0 scheduled searches
+2026-08-18T23:35:46.419456000+02:00 INFO:     127.0.0.1:42540 - "GET /jackett HTTP/1.1" 200 OK
+2026-08-18T23:35:52.546513000+02:00 ----------------------------------------
+2026-08-18T23:35:52.546978000+02:00 Exception occurred during processing of request from ('127.0.0.1', 37392)
+2026-08-18T23:35:52.547030000+02:00 Traceback (most recent call last):
+2026-08-18T23:35:52.547094000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:35:52.547131000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:35:52.547170000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:35:52.547212000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:35:52.547244000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:35:52.547278000+02:00     self.handle()
+2026-08-18T23:35:52.547313000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:35:52.547346000+02:00     self.handle_one_request()
+2026-08-18T23:35:52.547382000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:35:52.547425000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:35:52.547462000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:35:52.547497000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:35:52.547546000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:35:52.547582000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:35:52.547615000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:35:52.547655000+02:00 ----------------------------------------
+2026-08-18T23:36:23.561740000+02:00 ----------------------------------------
+2026-08-18T23:36:23.561957000+02:00 Exception occurred during processing of request from ('127.0.0.1', 46232)
+2026-08-18T23:36:23.562002000+02:00 Traceback (most recent call last):
+2026-08-18T23:36:23.562056000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:36:23.562090000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:36:23.562119000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:36:23.562144000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:36:23.562166000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:36:23.562187000+02:00     self.handle()
+2026-08-18T23:36:23.562211000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:36:23.562237000+02:00     self.handle_one_request()
+2026-08-18T23:36:23.562261000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:36:23.562287000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:36:23.562308000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:36:23.562330000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:36:23.562357000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:36:23.562376000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:36:23.562394000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:36:23.562420000+02:00 ----------------------------------------
+2026-08-18T23:36:44.727801000+02:00 2026-08-18 21:36:44,727 - INFO - Saved 0 scheduled searches
+2026-08-18T23:36:54.541594000+02:00 ----------------------------------------
+2026-08-18T23:36:54.541993000+02:00 Exception occurred during processing of request from ('127.0.0.1', 43594)
+2026-08-18T23:36:54.542059000+02:00 Traceback (most recent call last):
+2026-08-18T23:36:54.542097000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:36:54.542131000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:36:54.542177000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:36:54.542211000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:36:54.542237000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:36:54.542274000+02:00     self.handle()
+2026-08-18T23:36:54.542302000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:36:54.542336000+02:00     self.handle_one_request()
+2026-08-18T23:36:54.542366000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:36:54.542399000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:36:54.542435000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:36:54.542471000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:36:54.542504000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:36:54.542542000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:36:54.542574000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:36:54.542605000+02:00 ----------------------------------------
+2026-08-18T23:37:25.575651000+02:00 ----------------------------------------
+2026-08-18T23:37:25.575927000+02:00 Exception occurred during processing of request from ('127.0.0.1', 47276)
+2026-08-18T23:37:25.575966000+02:00 Traceback (most recent call last):
+2026-08-18T23:37:25.575988000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:37:25.576020000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:37:25.576049000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:37:25.576076000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:37:25.576102000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:37:25.576127000+02:00     self.handle()
+2026-08-18T23:37:25.576148000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:37:25.576171000+02:00     self.handle_one_request()
+2026-08-18T23:37:25.576189000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:37:25.576211000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:37:25.576233000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:37:25.576259000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:37:25.576283000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:37:25.576304000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:37:25.576326000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:37:25.576348000+02:00 ----------------------------------------
+2026-08-18T23:37:44.730282000+02:00 2026-08-18 21:37:44,729 - INFO - Saved 0 scheduled searches
+2026-08-18T23:37:56.543543000+02:00 ----------------------------------------
+2026-08-18T23:37:56.543885000+02:00 Exception occurred during processing of request from ('127.0.0.1', 40140)
+2026-08-18T23:37:56.543935000+02:00 Traceback (most recent call last):
+2026-08-18T23:37:56.543974000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:37:56.544009000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:37:56.544040000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:37:56.544084000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:37:56.544118000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:37:56.544151000+02:00     self.handle()
+2026-08-18T23:37:56.544184000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:37:56.544216000+02:00     self.handle_one_request()
+2026-08-18T23:37:56.544245000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:37:56.544279000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:37:56.544315000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:37:56.544348000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:37:56.544383000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:37:56.544413000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:37:56.544446000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:37:56.544479000+02:00 ----------------------------------------
+2026-08-18T23:38:27.538982000+02:00 ----------------------------------------
+2026-08-18T23:38:27.539246000+02:00 Exception occurred during processing of request from ('127.0.0.1', 40588)
+2026-08-18T23:38:27.539279000+02:00 Traceback (most recent call last):
+2026-08-18T23:38:27.539515000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:38:27.539545000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:38:27.539567000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:38:27.539588000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:38:27.539609000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:38:27.539631000+02:00     self.handle()
+2026-08-18T23:38:27.539652000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:38:27.539677000+02:00     self.handle_one_request()
+2026-08-18T23:38:27.539695000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:38:27.539716000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:38:27.539737000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:38:27.539758000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:38:27.539778000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:38:27.539799000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:38:27.539822000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:38:27.539842000+02:00 ----------------------------------------
+2026-08-18T23:38:44.731280000+02:00 2026-08-18 21:38:44,730 - INFO - Saved 0 scheduled searches
+2026-08-18T23:38:58.550111000+02:00 ----------------------------------------
+2026-08-18T23:38:58.550314000+02:00 Exception occurred during processing of request from ('127.0.0.1', 60442)
+2026-08-18T23:38:58.550342000+02:00 Traceback (most recent call last):
+2026-08-18T23:38:58.550382000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:38:58.550406000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:38:58.550428000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:38:58.550450000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:38:58.550472000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:38:58.550492000+02:00     self.handle()
+2026-08-18T23:38:58.550513000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:38:58.550533000+02:00     self.handle_one_request()
+2026-08-18T23:38:58.550554000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:38:58.550576000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:38:58.550596000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:38:58.550616000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:38:58.550640000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:38:58.550660000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:38:58.550680000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:38:58.550701000+02:00 ----------------------------------------
+2026-08-18T23:39:28.980441000+02:00 ----------------------------------------
+2026-08-18T23:39:28.980878000+02:00 Exception occurred during processing of request from ('127.0.0.1', 59084)
+2026-08-18T23:39:28.980927000+02:00 Traceback (most recent call last):
+2026-08-18T23:39:28.980969000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:39:28.981006000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:39:28.981041000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:39:28.981083000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:39:28.981126000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:39:28.981163000+02:00     self.handle()
+2026-08-18T23:39:28.981197000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:39:28.981230000+02:00     self.handle_one_request()
+2026-08-18T23:39:28.981263000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:39:28.981298000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:39:28.981331000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:39:28.981361000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:39:28.981397000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:39:28.981430000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:39:28.981464000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:39:28.981497000+02:00 ----------------------------------------
+2026-08-18T23:39:44.731876000+02:00 2026-08-18 21:39:44,731 - INFO - Saved 0 scheduled searches
+2026-08-18T23:39:59.557378000+02:00 ----------------------------------------
+2026-08-18T23:39:59.557671000+02:00 Exception occurred during processing of request from ('127.0.0.1', 49886)
+2026-08-18T23:39:59.557704000+02:00 Traceback (most recent call last):
+2026-08-18T23:39:59.557731000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:39:59.557752000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:39:59.557773000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:39:59.557794000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:39:59.557814000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:39:59.557838000+02:00     self.handle()
+2026-08-18T23:39:59.557865000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:39:59.557885000+02:00     self.handle_one_request()
+2026-08-18T23:39:59.557906000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:39:59.557926000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:39:59.557946000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:39:59.557970000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:39:59.557992000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:39:59.558012000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:39:59.558032000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:39:59.558060000+02:00 ----------------------------------------
+2026-08-18T23:40:30.585460000+02:00 ----------------------------------------
+2026-08-18T23:40:30.585878000+02:00 Exception occurred during processing of request from ('127.0.0.1', 40674)
+2026-08-18T23:40:30.585926000+02:00 Traceback (most recent call last):
+2026-08-18T23:40:30.585983000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:40:30.586058000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:40:30.586090000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:40:30.586112000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:40:30.586131000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:40:30.586160000+02:00     self.handle()
+2026-08-18T23:40:30.586196000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:40:30.586229000+02:00     self.handle_one_request()
+2026-08-18T23:40:30.586263000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:40:30.586297000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:40:30.586322000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:40:30.586347000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:40:30.586370000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:40:30.586388000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:40:30.586409000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:40:30.586430000+02:00 ----------------------------------------
+2026-08-18T23:40:44.732771000+02:00 2026-08-18 21:40:44,732 - INFO - Saved 0 scheduled searches
+2026-08-18T23:41:01.538730000+02:00 ----------------------------------------
+2026-08-18T23:41:01.539173000+02:00 Exception occurred during processing of request from ('127.0.0.1', 53550)
+2026-08-18T23:41:01.539225000+02:00 Traceback (most recent call last):
+2026-08-18T23:41:01.539254000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:41:01.539278000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:41:01.539297000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:41:01.539320000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:41:01.539341000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:41:01.539364000+02:00     self.handle()
+2026-08-18T23:41:01.539385000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:41:01.539406000+02:00     self.handle_one_request()
+2026-08-18T23:41:01.539427000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:41:01.539448000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:41:01.539469000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:41:01.539491000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:41:01.539513000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:41:01.539533000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:41:01.539554000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:41:01.539574000+02:00 ----------------------------------------
+2026-08-18T23:41:32.542551000+02:00 ----------------------------------------
+2026-08-18T23:41:32.542997000+02:00 Exception occurred during processing of request from ('127.0.0.1', 54464)
+2026-08-18T23:41:32.543053000+02:00 Traceback (most recent call last):
+2026-08-18T23:41:32.543094000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:41:32.543125000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:41:32.543154000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:41:32.543187000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:41:32.543216000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:41:32.543252000+02:00     self.handle()
+2026-08-18T23:41:32.543286000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:41:32.543319000+02:00     self.handle_one_request()
+2026-08-18T23:41:32.543357000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:41:32.543388000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:41:32.543420000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:41:32.543452000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:41:32.543491000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:41:32.543524000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:41:32.543555000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:41:32.543584000+02:00 ----------------------------------------
+2026-08-18T23:41:44.733379000+02:00 2026-08-18 21:41:44,733 - INFO - Saved 0 scheduled searches
+2026-08-18T23:42:03.544657000+02:00 ----------------------------------------
+2026-08-18T23:42:03.545098000+02:00 Exception occurred during processing of request from ('127.0.0.1', 35888)
+2026-08-18T23:42:03.545147000+02:00 Traceback (most recent call last):
+2026-08-18T23:42:03.545182000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:42:03.545214000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:42:03.545243000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:42:03.545278000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:42:03.545305000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:42:03.545335000+02:00     self.handle()
+2026-08-18T23:42:03.545363000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:42:03.545391000+02:00     self.handle_one_request()
+2026-08-18T23:42:03.545419000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:42:03.545447000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:42:03.545475000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:42:03.545503000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:42:03.545533000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:42:03.545562000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:42:03.545590000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:42:03.545620000+02:00 ----------------------------------------
+2026-08-18T23:42:34.557095000+02:00 ----------------------------------------
+2026-08-18T23:42:34.557359000+02:00 Exception occurred during processing of request from ('127.0.0.1', 34732)
+2026-08-18T23:42:34.557390000+02:00 Traceback (most recent call last):
+2026-08-18T23:42:34.557415000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:42:34.557437000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:42:34.557460000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:42:34.557480000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:42:34.557502000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:42:34.557524000+02:00     self.handle()
+2026-08-18T23:42:34.557549000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:42:34.557570000+02:00     self.handle_one_request()
+2026-08-18T23:42:34.557590000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:42:34.557608000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:42:34.557628000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:42:34.557649000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:42:34.557670000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:42:34.557690000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:42:34.557711000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:42:34.557730000+02:00 ----------------------------------------
+2026-08-18T23:42:44.733944000+02:00 2026-08-18 21:42:44,733 - INFO - Saved 0 scheduled searches
+2026-08-18T23:43:05.546567000+02:00 ----------------------------------------
+2026-08-18T23:43:05.546953000+02:00 Exception occurred during processing of request from ('127.0.0.1', 41724)
+2026-08-18T23:43:05.547004000+02:00 Traceback (most recent call last):
+2026-08-18T23:43:05.547063000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:43:05.547099000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:43:05.547121000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:43:05.547144000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:43:05.547165000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:43:05.547187000+02:00     self.handle()
+2026-08-18T23:43:05.547209000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:43:05.547229000+02:00     self.handle_one_request()
+2026-08-18T23:43:05.547252000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:43:05.547273000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:43:05.547294000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:43:05.547315000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:43:05.547338000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:43:05.547362000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:43:05.547382000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:43:05.547402000+02:00 ----------------------------------------
+2026-08-18T23:43:36.556406000+02:00 ----------------------------------------
+2026-08-18T23:43:36.556681000+02:00 Exception occurred during processing of request from ('127.0.0.1', 38380)
+2026-08-18T23:43:36.556714000+02:00 Traceback (most recent call last):
+2026-08-18T23:43:36.556737000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:43:36.556771000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:43:36.556796000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:43:36.556815000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:43:36.556836000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:43:36.556860000+02:00     self.handle()
+2026-08-18T23:43:36.556882000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:43:36.556903000+02:00     self.handle_one_request()
+2026-08-18T23:43:36.556920000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:43:36.556941000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:43:36.556963000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:43:36.556984000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:43:36.557007000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:43:36.557028000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:43:36.557064000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:43:36.557083000+02:00 ----------------------------------------
+2026-08-18T23:43:44.734940000+02:00 2026-08-18 21:43:44,734 - INFO - Saved 0 scheduled searches
+2026-08-18T23:44:07.548418000+02:00 ----------------------------------------
+2026-08-18T23:44:07.548857000+02:00 Exception occurred during processing of request from ('127.0.0.1', 50356)
+2026-08-18T23:44:07.548912000+02:00 Traceback (most recent call last):
+2026-08-18T23:44:07.548965000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:44:07.549009000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:44:07.549049000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:44:07.549084000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:44:07.549117000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:44:07.549157000+02:00     self.handle()
+2026-08-18T23:44:07.549193000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:44:07.549237000+02:00     self.handle_one_request()
+2026-08-18T23:44:07.549271000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:44:07.549309000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:44:07.549350000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:44:07.549383000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:44:07.549425000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:44:07.549466000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:44:07.549499000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:44:07.549530000+02:00 ----------------------------------------
+2026-08-18T23:44:38.549698000+02:00 ----------------------------------------
+2026-08-18T23:44:38.550007000+02:00 Exception occurred during processing of request from ('127.0.0.1', 45630)
+2026-08-18T23:44:38.550033000+02:00 Traceback (most recent call last):
+2026-08-18T23:44:38.550066000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:44:38.550091000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:44:38.550115000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:44:38.550138000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:44:38.550160000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:44:38.550180000+02:00     self.handle()
+2026-08-18T23:44:38.550198000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:44:38.550221000+02:00     self.handle_one_request()
+2026-08-18T23:44:38.550242000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:44:38.550264000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:44:38.550285000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:44:38.550306000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:44:38.550327000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:44:38.550348000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:44:38.550365000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:44:38.550383000+02:00 ----------------------------------------
+2026-08-18T23:44:44.735662000+02:00 2026-08-18 21:44:44,735 - INFO - Saved 0 scheduled searches
+2026-08-18T23:45:09.555568000+02:00 ----------------------------------------
+2026-08-18T23:45:09.555898000+02:00 Exception occurred during processing of request from ('127.0.0.1', 49168)
+2026-08-18T23:45:09.555933000+02:00 Traceback (most recent call last):
+2026-08-18T23:45:09.555960000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:45:09.555980000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:45:09.556002000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:45:09.556020000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:45:09.556037000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:45:09.556076000+02:00     self.handle()
+2026-08-18T23:45:09.556099000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:45:09.556125000+02:00     self.handle_one_request()
+2026-08-18T23:45:09.556145000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:45:09.556171000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:45:09.556191000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:45:09.556208000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:45:09.556228000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:45:09.556248000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:45:09.556266000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:45:09.556283000+02:00 ----------------------------------------
+2026-08-18T23:45:40.563998000+02:00 ----------------------------------------
+2026-08-18T23:45:40.564421000+02:00 Exception occurred during processing of request from ('127.0.0.1', 55388)
+2026-08-18T23:45:40.564469000+02:00 Traceback (most recent call last):
+2026-08-18T23:45:40.564510000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 697, in process_request_thread
+2026-08-18T23:45:40.564541000+02:00     self.finish_request(request, client_address)
+2026-08-18T23:45:40.564565000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 362, in finish_request
+2026-08-18T23:45:40.564585000+02:00     self.RequestHandlerClass(request, client_address, self)
+2026-08-18T23:45:40.564610000+02:00   File "/usr/local/lib/python3.12/socketserver.py", line 766, in __init__
+2026-08-18T23:45:40.564634000+02:00     self.handle()
+2026-08-18T23:45:40.564655000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 442, in handle
+2026-08-18T23:45:40.564708000+02:00     self.handle_one_request()
+2026-08-18T23:45:40.564745000+02:00   File "/usr/local/lib/python3.12/http/server.py", line 408, in handle_one_request
+2026-08-18T23:45:40.564776000+02:00     self.raw_requestline = self.rfile.readline(65537)
+2026-08-18T23:45:40.564808000+02:00                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:45:40.564843000+02:00   File "/usr/local/lib/python3.12/socket.py", line 720, in readinto
+2026-08-18T23:45:40.564873000+02:00     return self._sock.recv_into(b)
+2026-08-18T23:45:40.564907000+02:00            ^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-18T23:45:40.564948000+02:00 ConnectionResetError: [Errno 104] Connection reset by peer
+2026-08-18T23:45:40.564980000+02:00 ----------------------------------------
+2026-08-18T23:45:44.737005000+02:00 2026-08-18 21:45:44,736 - INFO - Saved 0 scheduled searches

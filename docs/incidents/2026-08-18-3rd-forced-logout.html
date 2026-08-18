@@ -1,0 +1,417 @@
+<h1
+id="incident-2026-08-18-3rd-forced-logout-of-milosvasic-user-session">Incident
+2026-08-18 — 3rd forced-logout of milosvasic user session</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T23:59:00+02:00</p>
+<blockquote>
+<p><strong>Note on tracking ID</strong>: This incident is tracked as
+workable-item <strong>BOB-120</strong> in the SSoT DB. It is the 3rd
+occurrence of this incident class on this host, following the
+§12.12-anchor-producing incident of 2026-07-07 and BOB-116 (2026-08-18,
+~20:50:59).</p>
+</blockquote>
+<p><strong>Reporter:</strong> session-continuation task dispatch
+(2026-08-18, following the operator’s earlier CRITICAL reports of the
+same class this same day) <strong>Session-under-investigation:</strong>
+4db6eadb-03e7-466b-9cb4-34b2b2bd30f3 (boba SDD orchestration)
+<strong>Investigator:</strong> boba autonomous loop,
+systematic-debugging Phase 1 <strong>Class:</strong> perceived host
+power event (CONST-033 Operational Note class) — 3rd occurrence
+<strong>Terminal state:</strong> partial root cause with §11.4.6
+UNCONFIRMED boundary (same class as BOB-116); <strong>NEW architectural
+finding</strong>: the preventive resource-pressure monitor landed for
+BOB-116 (task #77) runs <em>inside</em> the very
+<code>user@1000.service</code> scope it exists to protect, so it dies
+together with everything else at the moment of the kill and cannot have
+fired in the minutes immediately preceding it.</p>
+<h2 id="timeline-2026-08-18-europebelgrade-cest-0200">Timeline
+(2026-08-18, Europe/Belgrade, CEST +02:00)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Time</th>
+<th>Event</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>11:08</td>
+<td>Host boot (host has <strong>not</strong> rebooted since —
+<code>uptime</code> shows 12:46h continuous at time of writing)</td>
+<td><code>uptime</code>, <code>who -b</code></td>
+</tr>
+<tr>
+<td>20:50:59</td>
+<td><strong>1st kill of the day</strong> —
+<code>user@1000.service</code> SIGKILLed (BOB-116, documented separately
+in
+<code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>)</td>
+<td>prior incident doc</td>
+</tr>
+<tr>
+<td>20:51:16</td>
+<td>New session (<code>session 18</code>) begins post-BOB-116</td>
+<td><code>journalctl</code></td>
+</tr>
+<tr>
+<td>22:42:40 → 22:42:42</td>
+<td><code>boba-resource-pressure-check.service</code> fires + completes
+(PASS, no signature tripped)</td>
+<td><code>journalctl --user -u boba-resource-pressure-check.service</code></td>
+</tr>
+<tr>
+<td>22:57:48 → 22:57:58</td>
+<td><code>boba-resource-pressure-check.service</code> fires <strong>3
+more times</strong> in rapid succession (22:57:48, 22:57:51, 22:57:55 —
+all under the same <code>systemd[1665349]</code> user-manager instance,
+i.e. no session restart occurred between these fires) — all
+complete</td>
+<td>same</td>
+</tr>
+<tr>
+<td>23:38–23:45</td>
+<td><code>qbittorrent-proxy</code> container’s health-probe socketserver
+logs a
+<code>ConnectionResetError: [Errno 104] Connection reset by peer</code>
+roughly every 30s, continuously, right up to the kill (last entry
+<strong>23:45:44.737</strong>, five seconds before the kill)</td>
+<td><code>docs/qa/BOB-120/qbittorrent_proxy_socketserver_traces.log</code></td>
+</tr>
+<tr>
+<td><strong>23:45:49</strong></td>
+<td><strong>2nd kill of the day / 3rd overall on this project —
+<code>user@1000.service</code> Main process exited, code=killed,
+status=9/KILL. Cascade SIGKILL of every user process</strong>
+(gnome-shell, Xwayland, mutter-x11-fram, gvfsd/gvfsd-recent, ssh,
+dbus-daemon, gnome-keyring-d, ibus-daemon/x11,
+at-spi-bus-launcher/at-spi2-registryd,
+gsd-media-keys/datetime/keyboard/a11y-settings/sharing/screensaver/printer,
+chrome_crashpad, Telegram, jackett, qbittorrent-nox, boba-jackett
+<code>python</code> PID 3111634, <code>conmon</code> PID 2319406, plus
+every MCP-server / node / npm / claude process in-session) — <strong>73
+<code>Killing process</code> lines total</strong> in the captured
+journal window</td>
+<td><code>docs/qa/BOB-120/journalctl_23-42_to_23-46.log</code></td>
+</tr>
+<tr>
+<td>23:45:49</td>
+<td><code>gdm-password</code> session closed for milosvasic;
+<code>systemd-logind</code> removed session 19</td>
+<td>same</td>
+</tr>
+<tr>
+<td>23:45:50</td>
+<td>GDM greeter session (23/24) spawned</td>
+<td>same</td>
+</tr>
+<tr>
+<td><strong>23:45:52</strong></td>
+<td><strong>All four boba-stack containers (<code>qbittorrent</code>,
+<code>jackett</code>, <code>boba-jackett</code>,
+<code>qbittorrent-proxy</code>) show a fresh <code>CreatedAt</code> of
+23:45:52</strong> — i.e. they were re-created <strong>3 seconds
+after</strong> the kill, before the operator’s session had even
+returned</td>
+<td><code>podman ps -a --format "{{.Names}}\t{{.CreatedAt}}\t{{.Status}}"</code>
+(captured live)</td>
+</tr>
+<tr>
+<td><strong>23:49:00</strong></td>
+<td>New GDM password session opened for milosvasic
+(<code>session 25</code>); new <code>systemd --user</code> manager
+instance (PID 3115149) starts</td>
+<td>same</td>
+</tr>
+<tr>
+<td>23:49:00</td>
+<td><code>boba-resource-pressure-check.timer</code> starts (re-enabled
+by the fresh user-manager boot) but shows <code>Trigger: n/a</code> and
+<code>systemctl --user list-timers</code> reports <code>NEXT: -</code>
+(no next-fire time computed) at time of writing, ~7 minutes into the new
+session</td>
+<td><code>docs/qa/BOB-120/timer_fire_history.log</code></td>
+</tr>
+<tr>
+<td>~23:52 onward</td>
+<td>Investigation + this incident document authored</td>
+<td>this session</td>
+</tr>
+</tbody>
+</table>
+<p><strong>3 subagents were mid-flight at kill time</strong>: the
+BOB-117 partial-fix recovery (its <code>ssh</code> push process, PID
+1839991, appears in the 73-line kill list above), a BOB-083-related
+retry stream, and this incident-write-up dispatch. The BOB-117 partial
+fix was successfully recovered post-restart and committed as
+<code>111e584 fix(rutracker,BOB-117): recover partial fix — §11.4.6 upstream_captcha reclassification (from stopped subagent ab2a34107)</code>
+— this was already the current HEAD commit at the start of this
+investigation, confirming the recovery held.</p>
+<h2 id="const-033-triage-mandatory-per-claude.md">CONST-033 triage
+(mandatory per CLAUDE.md)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Uptime discontinuity</td>
+<td><strong>No</strong> — kernel uptime 12:46h continuous since 11:08
+boot</td>
+<td><code>uptime</code>, <code>who -b</code></td>
+</tr>
+<tr>
+<td>systemd-suspend markers</td>
+<td><strong>None</strong> in journal for 2026-08-18</td>
+<td><code>journalctl -k --since "2026-08-18 00:00:00" \| grep -iE "will suspend\|systemd-suspend"</code>
+— zero matches</td>
+</tr>
+<tr>
+<td>Kernel OOM-killer</td>
+<td><strong>None</strong> in journal for 2026-08-18</td>
+<td><code>journalctl -k --since "2026-08-18 00:00:00" \| grep -iE "oom-kill\|killed process"</code>
+— zero matches</td>
+</tr>
+<tr>
+<td>systemd-oomd trigger</td>
+<td><strong>No entries</strong> for the incident window</td>
+<td><code>journalctl -u systemd-oomd --since "2026-08-18 23:30:00" --until "2026-08-18 23:50:00"</code>
+— empty</td>
+</tr>
+<tr>
+<td>Lid open/close events</td>
+<td><strong>None</strong> in the incident window (distinguishes this
+from BOB-116, where a lid re-open at 20:51:06 coincided with the
+operator’s return)</td>
+<td><code>journalctl --since "2026-08-18 23:00:00" --until "2026-08-18 23:50:00" \| grep -iE "lid (open\|clos)"</code>
+— zero matches</td>
+</tr>
+<tr>
+<td>HandleLidSwitch</td>
+<td><code>ignore</code> (CONST-033 compliant, unchanged)</td>
+<td><code>/etc/systemd/logind.conf</code></td>
+</tr>
+<tr>
+<td>CONST-033 challenges</td>
+<td>Not re-run this incident (already verified clean/hardened during
+BOB-116; no regression suspected — see
+<code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>)</td>
+<td>prior incident doc</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verdict:</strong> identical to BOB-116 — NO forbidden
+CONST-033 host-power path was invoked. The forced logout was NOT a
+suspend/hibernate/poweroff event. Host uptime is uninterrupted; this was
+a <code>user@1000.service</code> (user-session-scope) kill, not a host
+power-state transition.</p>
+<h2 id="what-killed-user1000.service">What killed
+<code>user@1000.service</code>?</h2>
+<p><strong>§11.4.6 HONEST BOUNDARY (carried forward from BOB-116,
+unchanged): the mechanism that delivered SIGKILL to
+<code>user@1000.service</code> at 23:45:49 is UNCONFIRMED.</strong> As
+with BOB-116, the systemd PID 1 journal shows the <em>receipt</em> of
+SIGKILL by the main process and the subsequent cascade kill of every
+child process in the scope, but no <code>kill</code>-audit event
+attributing the <em>sender</em>. The same candidates from BOB-116 remain
+ruled out by direct evidence this incident:</p>
+<ul>
+<li><strong>Kernel OOM-killer</strong>: journal clean, zero
+<code>oom-kill</code> markers.</li>
+<li><strong>systemd-oomd</strong>: zero log entries in the incident
+window (would have logged a “Killed unit” message if triggered).</li>
+<li><strong>Lid-close suspend</strong>: no lid events at all in this
+incident (unlike BOB-116) — <code>HandleLidSwitch=ignore</code> remains
+compliant regardless.</li>
+<li><strong>Manual <code>systemctl stop user@1000</code></strong>: no
+such event in the journal.</li>
+</ul>
+<p>The candidates BOB-116 left open (systemd-oomd stealth kill,
+GDM/GNOME watchdog, third-party monitor escalation, cross-session kill
+from a sibling project) remain open and are <strong>not</strong>
+independently re-investigated in this incident — that deep forensic work
+is explicitly out of scope for this document (BOB-116’s own followup,
+<code>PENDING_FORENSICS</code> Task #79 for SIGKILL-source attribution,
+still owns that work; this is the <em>3rd data point</em> feeding it,
+not a duplicate investigation).</p>
+<h2 id="contributing-factors-confirmed">Contributing factors
+CONFIRMED</h2>
+<ol type="1">
+<li><strong><code>qbittorrent-proxy</code> health-probe
+<code>ConnectionResetError</code> cascade</strong> — the socket-server
+handling the proxy’s health endpoint logged a
+<code>ConnectionResetError: [Errno 104] Connection reset by peer</code>
+roughly every 30 seconds continuously through the ~7-minute window
+captured (23:38–23:45), with the <em>last</em> log line at 23:45:44.737
+— <strong>5 seconds before the kill</strong>. This is corroborating
+evidence of the same class §12.12/BOB-116 documented (a probe-vs-process
+contention signature), but is explicitly <strong>not</strong>
+established as causal — it is a health-probe <em>client</em>
+disconnecting mid-request against a server that was itself about to lose
+its process tree, which is consistent with either direction of causality
+(the probe client dying because resources were already tight, or the
+probe traffic itself being unrelated background noise that happened to
+be running when the kill landed). Filed as an observed correlation, not
+a cause.</li>
+<li><strong>All four boba-stack containers were re-created (not merely
+restarted) 3 seconds after the kill</strong>, before any human session
+existed to have issued a <code>podman</code>/<code>start.sh</code>
+command. This means the containers’ own supervision (whatever
+launches/restarts them — outside the scope of this incident to trace
+exactly which unit did it) survived independently of
+<code>user@1000.service</code>’s death and self-healed within seconds.
+This is a <strong>positive</strong> finding (the boba stack
+self-recovers fast) but is also new information: it confirms the
+containers do <strong>not</strong> live inside the killed scope in a way
+that requires a human relogin to restart them — whatever killed
+<code>user@1000.service</code> did not also permanently take down the
+product’s own containers.</li>
+<li><strong>This is the SAME incident class recurring a 3rd time on this
+host</strong> (2026-07-07 → §12.12 anchor; 2026-08-18 20:50:59 →
+BOB-116; 2026-08-18 23:45:49 → this incident, BOB-120), roughly 2h55m
+after the previous occurrence, on the same host, same session lineage.
+The recurrence rate (2 occurrences in under 3 hours) is itself evidence
+that whatever contributing pressure exists was not resolved by BOB-116’s
+remediation.</li>
+</ol>
+<h2
+id="architectural-finding-the-preventive-monitor-lives-inside-the-scope-it-protects">Architectural
+finding: the preventive monitor lives inside the scope it protects</h2>
+<p>BOB-116’s remediation (task #77) landed
+<code>boba-resource-pressure-check.timer</code> — an hourly
+<code>systemd --user</code> timer running
+<code>resource_pressure_signature_challenge.sh</code> to proactively
+detect the resource-pressure signatures (runaway RSS, thread-ceiling
+exhaustion, EAGAIN cascades, PSI pressure, pathological regex processes)
+BOB-116 found preceding the kill. This incident surfaces a real,
+previously-undocumented limitation of that design:</p>
+<ul>
+<li>The timer unit lives at
+<code>~/.config/systemd/user/boba-resource-pressure-check.timer</code>,
+loaded and run by the <strong>user’s own <code>systemd --user</code>
+manager instance</strong> — which is itself a child of
+<code>user@1000.service</code>. <strong>When
+<code>user@1000.service</code> dies, the timer, its triggered service,
+and any in-flight or about-to-fire probe die with it</strong>, in the
+same SIGKILL cascade that kills everything else in the scope (the
+process list above shows <code>systemd[1665349]</code>, the user-manager
+PID that was hosting the timer, as itself belonging to the killed
+session).</li>
+<li>Captured fire history
+(<code>docs/qa/BOB-120/timer_fire_history.log</code>) shows the
+<strong>last completed run before the kill finished at 22:57:58</strong>
+— 47 minutes and 51 seconds before the 23:45:49 kill. Under the timer’s
+own schedule (<code>OnUnitActiveSec=1hour</code>,
+<code>RandomizedDelaySec=5min</code>, measured from the <em>end</em> of
+the previous run), the next fire was due somewhere in the window
+<strong>23:52:58–24:02:58</strong> — i.e., the probe had <strong>not yet
+reached its next scheduled activation</strong> at the moment of the
+kill. This incident does <strong>not</strong> confirm the
+originally-hypothesized “the timer was overdue and silently missed its
+23:42:38 fire” framing — the real captured fire history shows the timer
+was simply not yet due, not that it missed a scheduled fire. That
+earlier hypothesis is corrected here per §11.4.6: it does not survive
+contact with the real <code>journalctl --user</code> data.</li>
+<li>The <strong>real, confirmed</strong> architectural gap is narrower
+but still genuine: because the monitor’s own liveness is coupled to the
+exact scope it is meant to protect, (a) it provides no coverage for the
+final stretch of any hour between its own fires — up to ~1h05m of blind
+window per cycle (1h base + up to 5m jitter) — and (b) a kill that
+happens to land inside that blind window, however it arises, takes the
+monitor down with it rather than being caught mid-flight, so there is
+<strong>no possibility of an in-scope self-monitor “seeing itself
+die.”</strong> An out-of-scope watchdog (a systemd unit or process
+living <em>outside</em> <code>user@1000.service</code> — e.g. a
+root-owned system-level timer, or a unit under <code>--user</code> with
+<code>Delegate=</code>/<code>RemainAfterExit=</code>-class isolation
+from the session scope) is required to close this class of gap entirely;
+the current design cannot, by construction, do so.</li>
+<li><strong>Post-incident observation</strong> (captured live,
+<code>docs/qa/BOB-120/timer_fire_history.log</code>): after the new
+session started at 23:49:00,
+<code>boba-resource-pressure-check.timer</code> shows
+<code>enabled</code> + <code>active</code> (started 23:49:00) but
+<code>systemctl --user list-timers</code> reports <code>NEXT: -</code>
+(no next-fire time computed) and <code>systemctl --user status</code>
+reports <code>Trigger: n/a</code>, both captured ~7 minutes into the new
+session. Whether this resolves on its own once
+<code>OnBootSec=5min</code> elapses, or is itself a latent gap in the
+unit’s post-restart re-arming, is <strong>not confirmed</strong> in this
+incident and is tracked as a followup rather than asserted as a finding
+— the honest state is “observed uncertain, not yet resolved to a fire or
+a genuine stuck-timer confirmation.”</li>
+</ul>
+<p>This finding is filed as <strong>BOB-120</strong> (Critical, Queued —
+not closed in this commit, since closing it requires the actual
+architectural fix: an out-of-user-scope watchdog, tracked separately as
+the referenced follow-up task).</p>
+<h2 id="actions-taken-this-incident">Actions taken (this incident)</h2>
+<ol type="1">
+<li><strong>BOB-117 partial fix recovery</strong> — already landed as
+commit <code>111e584</code> prior to this investigation starting
+(recovered from the stopped subagent <code>ab2a34107</code>); confirmed
+present at HEAD, not re-done here.</li>
+<li><strong>This incident document</strong> —
+<code>docs/incidents/2026-08-18-3rd-forced-logout.md</code>.</li>
+<li><strong>Evidence capture</strong> under
+<code>docs/qa/BOB-120/</code>:
+<ul>
+<li><code>journalctl_23-42_to_23-46.log</code> — full system journal for
+the incident window.</li>
+<li><code>timer_fire_history.log</code> — the preventive timer’s unit
+files, full 2026-08-18 fire history, and post-incident
+<code>list-timers</code>/<code>status</code> snapshots.</li>
+<li><code>qbittorrent_proxy_socketserver_traces.log</code> — the
+health-probe <code>ConnectionResetError</code> cascade captured from
+<code>podman logs qbittorrent-proxy</code>.</li>
+</ul></li>
+<li><strong>Memory playbook updated</strong> —
+<code>forced_logout_incidents.md</code> gains this 3rd occurrence row
+and the “preventive-timer-inside-user-slice” architectural gap as a
+documented, named limitation (not a silent absorption).</li>
+<li><strong><code>docs/QA_DISCOVERY_LEDGER.md</code></strong> — new
+entry <code>FORCED-LOGOUT-2026-08-18-3RD</code> per §11.4.238, citing
+BOB-120 and the coverage-escape audit for why the automated regime
+(i.e., the very monitor built in response to BOB-116) still could not
+have caught this one.</li>
+<li><strong>BOB-120 filed</strong> in
+<code>docs/workable_items.db</code> — Type=Bug, Severity=Critical,
+Status=Queued (left open; closing requires the actual
+out-of-scope-watchdog architectural fix, not just this
+documentation).</li>
+</ol>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<ul>
+<li>The SIGKILL source remains UNCONFIRMED for all three incidents to
+date. This document does not claim to have identified it.</li>
+<li>The “preventive timer inside user.slice” finding is a genuine,
+previously-undocumented architectural limitation of the BOB-116
+remediation — it is not a bluff-cover for an unexplained kill; it is a
+real gap that would exist and matter even if the SIGKILL source were
+fully attributed tomorrow, because the monitor cannot outlive the scope
+it watches.</li>
+<li>The originally-circulated “next fire was due at 23:42:38 and was
+silently missed” hypothesis does <strong>not</strong> hold up against
+the real captured fire history (last completed run 22:57:58, next due no
+earlier than 23:52:58) and is explicitly corrected here rather than
+repeated as fact.</li>
+<li>Whether the qbittorrent-proxy <code>ConnectionResetError</code>
+cascade is causally related to the kill, or an independent symptom of
+the same underlying pressure, or unrelated noise, is
+<strong>not</strong> established — it is reported as a time-correlated
+observation only.</li>
+</ul>

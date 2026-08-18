@@ -1,6 +1,6 @@
 <h1 id="qa-discovery-channel-ledger">QA Discovery-Channel Ledger</h1>
-<p><strong>Revision:</strong> 9 <strong>Last modified:</strong>
-2026-08-18T22:10:00Z <strong>Status:</strong> active
+<p><strong>Revision:</strong> 10 <strong>Last modified:</strong>
+2026-08-18T23:59:00+02:00 <strong>Status:</strong> active
 <strong>Constitution:</strong> §11.4.238 (automated QA must be the
 DISCOVERER, not the confirmer — every defect found outside the automated
 HelixQA regime is itself a coverage-escape release blocker, not merely a
@@ -935,6 +935,73 @@ narrower scope than what it actually committed, and no automated check
 existed to catch that gap before an independent review found it by
 hand.</li>
 </ul>
+<h3
+id="forced-logout-2026-08-18-3rd-user1000.service-sigkilled-at-234549-3rd-occurrence-plus-the-preventive-monitors-own-architectural-gap">FORCED-LOGOUT-2026-08-18-3RD
+— user@1000.service SIGKILLed at 23:45:49 (3rd occurrence), plus the
+preventive monitor’s own architectural gap</h3>
+<ul>
+<li><strong>id:</strong> BOB-120 (Type=Bug, Severity=Critical,
+Status=Queued — this document doc + evidence capture do not close it;
+closure requires the actual out-of-user-scope watchdog fix, tracked as a
+followup of task #77). Full writeup:
+<code>docs/incidents/2026-08-18-3rd-forced-logout.md</code>.</li>
+<li><strong>date:</strong> 2026-08-18, 23:45:49 — the 3rd occurrence of
+this incident class on this host (1st: 2026-07-07, produced §12.12; 2nd:
+BOB-116, same day 20:50:59; 3rd: this entry, ~2h55m after BOB-116, same
+session lineage).</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> /
+session-continuation-dispatch — this incident was investigated
+proactively by an agent picking up a mid-turn task-continuation
+dispatch, not by the operator manually re-reporting a fresh logout
+observation this time. The real systemd journal,
+<code>podman ps</code>/<code>podman logs</code>, and the BOB-116
+preventive timer’s own fire history were read directly
+(<code>docs/qa/BOB-120/{journalctl_23-42_to_23-46.log, timer_fire_history.log, qbittorrent_proxy_socketserver_traces.log}</code>).</li>
+<li><strong>escape-audit:</strong> the SIGKILL-source question remains
+the SAME open escape as BOB-116 (Task #79,
+<code>PENDING_FORENSICS</code>, no automated check exists anywhere in
+this repo that attributes a <code>user@1000.service</code> SIGKILL to
+its sender) — this incident adds a <strong>second, distinct</strong>
+coverage escape: the exact preventive check BOB-116 built in response to
+the 2nd occurrence (<code>boba-resource-pressure-check.timer</code>,
+task #77) is <strong>architecturally incapable of catching a kill that
+lands inside its own hosting scope</strong>, because the timer is a
+<code>systemd --user</code> unit whose process tree is a child of
+<code>user@1000.service</code> itself. When that service is SIGKILLed,
+the timer + its triggered probe die in the exact same cascade — the
+monitor cannot outlive the thing it monitors, and by construction can
+never observe or escalate on a kill that happens to land in the window
+between its own hourly fires (up to ~1h05m per cycle, base 1h + up to 5m
+jitter). Captured fire history shows the last completed run before this
+incident finished at 22:57:58 — 47m51s before the 23:45:49 kill — so the
+timer had not even reached its next scheduled activation; this was not a
+missed fire, it was a structurally-unreachable one. This is a genuine,
+previously undocumented limitation of the BOB-116 remediation, not a bug
+in the remediation’s own logic (the 5-signature detector itself is
+unchanged and still self-validated per §11.4.107(10) from BOB-116/task
+#78).</li>
+<li><strong>new-check:</strong> <strong>NOT YET LANDED</strong> — this
+entry documents the finding + files BOB-120 as the tracked follow-up;
+the actual fix (an out-of-user-scope watchdog: a root-level systemd
+timer, or a <code>--user</code> unit escaped from the session-scope
+cgroup via delegation/isolation) is deliberately left as open, Queued
+work rather than rushed into this incident-response window. Closing
+BOB-120 on documentation alone, without the architectural fix landing,
+would itself be a §11.4.238 coverage-escape bluff — the exact failure
+mode this anchor exists to forbid.</li>
+<li><strong>Honest boundary (§11.4.6):</strong> the
+originally-circulated hypothesis for this incident (“the timer’s next
+expected fire was 23:42:38 and it silently missed it”) does
+<strong>not</strong> survive contact with the real captured
+<code>journalctl --user</code> fire history (last completed run
+22:57:58, next due no earlier than 23:52:58) and is explicitly corrected
+in the incident document rather than repeated as fact. The
+<code>qbittorrent-proxy</code> <code>ConnectionResetError</code> cascade
+(every ~30s through 23:38–23:45, last line 5s before the kill) and the
+boba-stack containers’ near-instant re-creation
+(<code>CreatedAt</code>=23:45:52, 3s after the kill) are reported as
+time-correlated observations, not established causes.</li>
+</ul>
 <h2 id="discovery-channel-split-tracked-per-11.4.238e">Discovery-channel
 split (tracked, per §11.4.238(E))</h2>
 <table>
@@ -1007,11 +1074,22 @@ DB-BLOB-COMMITTED-WITHOUT-DELTA-3520621)</td>
 <td>100%</td>
 </tr>
 <tr>
+<td>2026-08-18 (incremental, BOB-120 forced-logout incident — 1 new
+<code>###</code> entry: 3rd occurrence of user@1000 SIGKILL on this
+project, plus the discovery that the BOB-116/task-77 preventive monitor
+itself lives inside the killed scope and cannot catch a kill landing
+before its own next fire)</td>
+<td>0</td>
+<td>1 (<code>agent-code-reading</code> x1:
+FORCED-LOGOUT-2026-08-18-3RD)</td>
+<td>100%</td>
+</tr>
+<tr>
 <td><strong>Cumulative total (all <code>###</code> entries to date, this
 row is what <code>CM-QA-DISCOVERY-LEDGER-FRESH</code>
 checks)</strong></td>
 <td><strong>0</strong></td>
-<td><strong>16</strong></td>
+<td><strong>17</strong></td>
 <td><strong>100%</strong></td>
 </tr>
 </tbody>
