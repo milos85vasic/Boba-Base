@@ -991,7 +991,11 @@ class TestSearchRutrackerDeep:
 
     @pytest.mark.asyncio
     async def test_rutracker_no_session_cookie(self, search_mod):
-        """Lines 1183-1191: no bb_ session cookie detected."""
+        """BOB-117 + §11.4.6: a no-Set-Cookie 200 on the password-login POST is
+        rutracker's CAPTCHA anti-abuse gate (the SAME function's own comment
+        states this as FACT), not a hedged 'likely CAPTCHA wall or credential
+        failure' auth_failure guess — mirrors the nnmclub fix
+        (docs/qa/nnmclub-login-diagnosis-20260616.md)."""
         orch = search_mod.SearchOrchestrator()
         with patch.dict(os.environ, {"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"}, clear=False):
             login_resp = AsyncMock()
@@ -1007,7 +1011,9 @@ class TestSearchRutrackerDeep:
                 result = await orch._search_rutracker("query", "all")
                 assert result == []
                 diag = orch._last_public_tracker_diag.get("rutracker", {})
-                assert diag.get("error_type") == "auth_failure"
+                assert diag.get("error_type") == "upstream_captcha"
+                assert "likely" not in diag.get("error", "").lower()
+                assert "captcha" in diag.get("error", "").lower()
 
 
 # --------------------------------------------------------------------------

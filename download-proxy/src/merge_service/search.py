@@ -1313,20 +1313,29 @@ class SearchOrchestrator:
                     "cookies": cookie_dict,
                     "base_url": base_url,
                 }
-                # rutracker sometimes serves a CAPTCHA page when logins
-                # spike (we see this as "0 results for 'linux' this run,
-                # 50 for 'ubuntu' the next"). When the cookie jar comes
-                # back with no `bb_*` session or the search response is
-                # too short to contain real results, signal that via the
-                # tracker-diag side-channel so the orchestrator can tag
-                # `TrackerSearchStat` with a real ``auth_failure`` /
-                # ``upstream_captcha`` label instead of a generic empty
-                # chip. Returning [] keeps the semantics stable for
-                # callers that treat rutracker failures as non-fatal.
+                # BOB-117 / §11.4.6 FACT (mirrors the nnmclub fix at
+                # docs/qa/nnmclub-login-diagnosis-20260616.md): this same
+                # function's module-level comment above (see "rutracker
+                # gates login.php behind a CAPTCHA when logins spike ...
+                # the CAPTCHA is the real blocker") already establishes,
+                # as FACT, WHY a password POST can come back with no
+                # `bb_*` session cookie — rutracker's anti-abuse CAPTCHA
+                # wall silently swallows the credentials before ever
+                # setting a session. This is NOT "likely a credential
+                # failure" and reporting it that way is a §11.4.6
+                # forbidden-vocabulary guess. Fix: browser-obtained
+                # cookies (RUTRACKER_COOKIES, handled above) bypass the
+                # login round-trip entirely — mirroring the
+                # NNMCLUB_COOKIES remedy.
                 if not cookie_dict or not any(k.startswith("bb_") for k in cookie_dict):
                     self._last_public_tracker_diag["rutracker"] = {
-                        "error_type": "auth_failure",
-                        "error": "rutracker login returned no session cookie — likely CAPTCHA wall or credential failure",
+                        "error_type": "upstream_captcha",
+                        "error": (
+                            "rutracker login.php returned no session cookie — this is "
+                            "the rutracker anti-abuse CAPTCHA wall (gates login.php when "
+                            "logins spike), not a credential failure. Set RUTRACKER_COOKIES "
+                            "from a logged-in browser session to bypass the login round-trip."
+                        ),
                         "stderr_tail": "",
                         "deadline_hit": False,
                         "deadline_seconds": 0.0,
