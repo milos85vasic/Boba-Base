@@ -51,6 +51,21 @@
 #   BOBA_SYNC_SKIP_LONG=1    Alias of BOBA_SYNC_SKIP_CI (mirrors Lava's
 #                            LAVA_SYNC_SKIP_CI naming in §11.4.234).
 #
+# ─── §11.4.209 review IMPORTANT-2 remedy — DB delta capture (stage 5.5) ─
+# If the commit just landed touches docs/workable_items.db (the §11.4.95
+# tracked SSoT database), a message-level claim about its content (e.g.
+# "meta table unchanged") is an opaque ARTIFACT-class fact per §11.4.226
+# evidence-class-at-closure — never sufficient on its own, and the exact
+# gap the same session's Task #41/BOB-068 investigation showed is
+# concrete (shared-checkout races on this file). Stage 5.5 invokes
+# scripts/capture-workable-items-db-delta.sh AFTER the commit lands but
+# BEFORE push, and — when it produces a NEW evidence file — lands that
+# file as an immediate scoped follow-up commit so both travel to every
+# upstream together in this same run. Capture failure (e.g. sqlite3
+# absent) is a non-blocking WARN per the §11.4.234(D) always-unblocked
+# invariant — this is evidence capture, not a correctness gate, and it
+# must never make the commit/push mechanism unusable. See task #79.
+#
 # ─── EXIT ─────────────────────────────────────────────────────────────
 #   0 = commit + push completed (or nothing to commit)
 #   1 = validation failure (cheap check, long gate, or --scope safety
@@ -196,6 +211,11 @@ echo "[commit-push-all] stage 4/6 — git status pre-commit"
 git status --short | head -40
 
 # ─── stage 5: commit ──────────────────────────────────────────────────
+# Captured BEFORE either commit branch runs so stage 5.5 (below) can
+# tell whether a NEW commit actually landed, and if so, whether ITS
+# diff touches docs/workable_items.db.
+PRE_COMMIT_HEAD="$(git rev-parse HEAD 2>/dev/null || echo "")"
+
 # §11.4.201-style real-condition assertion for the --scope safety layer:
 # a path is "in scope" iff it EQUALS a declared scope entry, or sits
 # UNDER one (declared entry is a directory prefix). Never a substring
@@ -259,6 +279,36 @@ else
         echo "[commit-push-all] nothing to commit — skipping to push stage"
     else
         git commit -m "${MSG}${SKIP_TAG}"
+    fi
+fi
+
+# ─── stage 5.5: differential SQLite dump for docs/workable_items.db ───
+# (§11.4.226 evidence-class-at-closure / §11.4.209 review IMPORTANT-2
+# remedy, task #79 — see the header comment above for the full mandate)
+POST_COMMIT_HEAD="$(git rev-parse HEAD 2>/dev/null || echo "")"
+if [ -n "$POST_COMMIT_HEAD" ] && [ "$POST_COMMIT_HEAD" != "$PRE_COMMIT_HEAD" ] \
+    && [ -n "$PRE_COMMIT_HEAD" ] \
+    && git diff --name-only "$PRE_COMMIT_HEAD" "$POST_COMMIT_HEAD" 2>/dev/null | grep -qx 'docs/workable_items.db'; then
+    echo "[commit-push-all] stage 5.5/6 — docs/workable_items.db touched by $(git rev-parse --short "$POST_COMMIT_HEAD") — capturing differential dump"
+    if [ -x scripts/capture-workable-items-db-delta.sh ]; then
+        if bash scripts/capture-workable-items-db-delta.sh "$POST_COMMIT_HEAD"; then
+            DELTA_FILE="docs/qa/db-deltas/${POST_COMMIT_HEAD}.diff"
+            if [ -f "$DELTA_FILE" ]; then
+                git add -- "$DELTA_FILE"
+                if git diff --cached --quiet -- "$DELTA_FILE"; then
+                    echo "[commit-push-all] stage 5.5/6 — delta already tracked identically, nothing new to commit"
+                else
+                    git commit -m "docs(qa,db-delta): capture differential dump for HEAD $(git rev-parse --short "$POST_COMMIT_HEAD")"
+                    echo "[commit-push-all] stage 5.5/6 — delta commit created: $(git rev-parse --short HEAD)"
+                fi
+            else
+                echo "[commit-push-all] stage 5.5/6 — helper exited 0 but produced no delta file (honest §11.4.3 skip — e.g. sqlite3 absent); nothing to commit"
+            fi
+        else
+            echo "WARN: capture-workable-items-db-delta.sh failed (exit $?) — commit/push proceeds per §11.4.234(D) always-unblocked; DB delta evidence NOT captured for $(git rev-parse --short "$POST_COMMIT_HEAD"), tracked as a follow-up" >&2
+        fi
+    else
+        echo "WARN: scripts/capture-workable-items-db-delta.sh missing or not executable — DB delta evidence NOT captured" >&2
     fi
 fi
 

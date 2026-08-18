@@ -1,0 +1,188 @@
+<h1
+id="scriptscapture-workable-items-db-delta.sh-differential-sqlite-dump-evidence-for-the-workable-items-ssot">scripts/capture-workable-items-db-delta.sh
+— differential SQLite dump evidence for the workable-items SSoT</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T20:15:00Z <strong>Status:</strong> active
+<strong>Item:</strong> task #79 (§11.4.209 review IMPORTANT-2
+remedy)</p>
+<h2 id="overview">Overview</h2>
+<p><code>scripts/capture-workable-items-db-delta.sh</code> produces a
+<strong>differential SQLite dump</strong> of
+<code>docs/workable_items.db</code> — the §11.4.93/§11.4.95
+workable-items single-source-of-truth database — between a given commit
+and its first parent. The output is a human-readable, git- trackable
+evidence file under
+<code>docs/qa/db-deltas/&lt;full-commit-sha&gt;.diff</code>
+recording:</p>
+<ul>
+<li>per-table row counts, before and after, with a <code>same</code> /
+<code>CHANGED</code> marker per table;</li>
+<li>the full content of the <code>meta</code> table on both sides;</li>
+<li>a unified diff of the complete logical <code>.dump</code> of the
+database on both sides — the actual
+<code>INSERT</code>/<code>UPDATE</code>-equivalent row-level changes,
+not just “the bytes differ”.</li>
+</ul>
+<h2 id="why-this-exists-the-11.4.209-review-important-2-finding">Why
+this exists — the §11.4.209 review IMPORTANT-2 finding</h2>
+<p>Commit <code>3520621</code> closed BOB-108 and committed
+<code>docs/workable_items.db</code> alongside the doc regeneration it
+authorized. The commit message honestly stated <em>“meta table content
+is unchanged”</em> — but that is a claim about <strong>one table
+only</strong>, and no differential evidence accompanied it. Per
+§11.4.226 (evidence-class-at-closure), a committed binary blob is an
+opaque <strong>artifact-class</strong> fact until something opens it and
+shows what changed — a message-level prose claim never rises above that
+class on its own.</p>
+<p>The risk was not hypothetical: the <strong>same session’s</strong>
+Task #41 investigation
+(<code>docs/incidents/2026-08-18-auto-committer-BOB-068-investigation.md</code>)
+independently confirmed that <code>commit-push-all.sh</code>’s default
+(unscoped) mode stages the <strong>entire shared working tree
+at-instant</strong>, including whatever a concurrent subagent’s own
+<code>workable-items</code> invocation had put into
+<code>docs/workable_items.db</code> moments earlier — exactly the kind
+of race that would let an undisclosed mutation ride along inside a
+binary blob nobody inspected.</p>
+<p>This script closes that gap going forward, and was used to backfill
+retroactive evidence for <code>3520621</code> itself (see
+<code>docs/qa/db-deltas/3520621866e071a6d10ec06e5b432188fdac7129.diff</code>).</p>
+<p><strong>Backfill result for 3520621</strong> — the differential dump
+proves the binary blob change was NOT pure housekeeping as narrowly
+implied by the commit message: two rows in <code>items</code> actually
+changed (<code>BOB-108</code> Queued→Fixed, the intended mutation; and
+<code>BOB-104</code> Queued→In progress with an expanded body — an
+existing item’s status update that the commit message never mentioned),
+plus two new, correctly attributed audit rows in
+<code>item_history</code> (ids 89–90, <code>By='AI'</code>,
+timestamped). Every other table (<code>meta</code>,
+<code>logic_groups</code>, <code>test_diary</code>,
+<code>test_diary_summary</code>, <code>obsolete_details</code>,
+<code>operator_block_details</code>, <code>firebase_metadata</code>) is
+byte-for-byte unchanged. <strong>Verdict: no corruption, no data loss,
+every row-level change is legitimately audit-trailed in
+<code>item_history</code> and consistently reflected in
+<code>docs/Issues.md</code>/<code>docs/Fixed.md</code></strong> — but
+the commit message’s own scope description was incomplete (it silently
+absorbed the BOB-104 update without naming it), which is itself the
+class of finding §11.4.238 requires a discovery-ledger entry for. See
+<code>docs/QA_DISCOVERY_LEDGER.md</code> entry
+<code>DB-BLOB-COMMITTED-WITHOUT-DELTA-3520621</code>.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Capture the delta for the current HEAD commit</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/capture-workable-items-db-delta.sh</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Capture the delta for a specific commit (any commit-ish git accepts)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/capture-workable-items-db-delta.sh</span> 3520621</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Force-regenerate a delta that already exists at that commit sha</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/capture-workable-items-db-delta.sh</span> 3520621 <span class="at">--force</span></span></code></pre></div>
+<p>Output always lands at
+<code>docs/qa/db-deltas/&lt;full-commit-sha&gt;.diff</code> — named
+after the <em>resolved</em> full SHA, regardless of how the commit was
+specified on the command line, so the path is stable and collision-
+free.</p>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Delta captured, OR honestly SKIPPED with a printed reason
+(§11.4.3)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Invocation error (bad arguments / unresolvable commit-ish)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>-h</code>/<code>--help</code> requested</td>
+</tr>
+</tbody>
+</table>
+<h3 id="idempotence">Idempotence</h3>
+<p>If <code>docs/qa/db-deltas/&lt;sha&gt;.diff</code> already exists,
+the script prints a skip notice and exits 0 without touching the file —
+pass <code>--force</code> to regenerate. This makes it safe to call
+unconditionally from an automated wrapper (see below) without
+accumulating duplicate work or clobbering a prior evidence file on every
+re-run.</p>
+<h3 id="honest-skip-conditions-11.4.3">Honest skip conditions
+(§11.4.3)</h3>
+<ul>
+<li><code>sqlite3</code> not found on <code>PATH</code> — the script
+refuses to fabricate a delta and prints an honest skip reason instead.
+This is a <strong>hard dependency</strong>, not an optional enhancement:
+without it, no differential evidence can honestly be produced.</li>
+<li><code>docs/workable_items.db</code> does not exist at the target
+commit — skip (nothing to diff).</li>
+<li>The target commit is the repository root (no parent) or its parent
+never tracked the DB — the delta is generated as a full dump of the
+AFTER side only, clearly labeled as having no BEFORE side.</li>
+</ul>
+<h2 id="atomic-evidence-file-publication">Atomic evidence-file
+publication</h2>
+<p>The full capture (row counts + meta dump + unified <code>.dump</code>
+diff) is built into a temp file first and only <code>mv</code>-ed into
+place at the real output path once the ENTIRE capture succeeds. A
+mid-capture failure (e.g. a broken <code>sqlite3</code> invocation)
+therefore <strong>never</strong> leaves a partial, truncated file
+sitting at the real evidence path — that would read as “clean, nothing
+after this line” instead of the genuine failure it is, precisely the
+false-negative-null class §11.4.201(6) forbids. This was verified with a
+real §1.1 paired mutation: breaking the <code>sqlite3 ... .dump</code>
+call inside a scratch copy of the script produces exit 127 and
+<strong>zero files</strong> at the real output path; the unmodified
+script then reproduces the full evidence file cleanly (§11.4.115
+RED→GREEN polarity confirmed in the same session, task #79).</p>
+<h2 id="wiring-scriptscommit-push-all.sh-stage-5.5">Wiring —
+<code>scripts/commit-push-all.sh</code> stage 5.5</h2>
+<p><code>scripts/commit-push-all.sh</code> invokes this helper
+automatically as its <strong>stage 5.5</strong>, immediately after a
+commit lands in stage 5 and before the push stage (stage 6). It only
+fires when:</p>
+<ol type="1">
+<li>Stage 5 actually created a NEW commit (HEAD moved), AND</li>
+<li>That new commit’s diff against its parent touches
+<code>docs/workable_items.db</code>.</li>
+</ol>
+<p>When it fires, the helper is invoked for the just-created
+<code>HEAD</code>. If it produces a new
+(not-already-tracked-identically) delta file, that file is staged and
+landed as an <strong>immediate, narrowly-scoped follow-up
+commit</strong> —
+<code>docs(qa,db-delta): capture differential dump for HEAD &lt;short-sha&gt;</code>
+— so both commits travel to every configured upstream together in the
+same <code>commit-push-all.sh</code> invocation (stage 6 still pushes
+whatever <code>HEAD</code> is at that point).</p>
+<p>Capture failure at this stage (e.g. <code>sqlite3</code> genuinely
+absent on the host) is a <strong>non-blocking WARN</strong>, never a
+hard failure of the commit/push mechanism — per §11.4.234(D)’s
+always-unblocked invariant, an evidence-capture helper must never be
+able to make the dedicated commit/push entrypoint unusable. The gap is
+printed loudly to stderr so it is never silently lost.</p>
+<h2 id="related-documents">Related documents</h2>
+<ul>
+<li><code>scripts/commit-push-all.sh</code> (the wrapper this helper is
+wired into)</li>
+<li><code>docs/scripts/commit-push-all.md</code> (the wrapper’s own
+doc)</li>
+<li><code>docs/QA_DISCOVERY_LEDGER.md</code> — entry
+<code>DB-BLOB-COMMITTED-WITHOUT-DELTA-3520621</code></li>
+<li><code>.superpowers/sdd/task-review-457cca4-a7e55f9-report.md</code>
+— the §11.4.209 review finding (IMPORTANT-2) this script remedies</li>
+<li><code>docs/incidents/2026-08-18-auto-committer-BOB-068-investigation.md</code>
+— Task #41’s independent confirmation of the shared-checkout race that
+makes this evidence class load-bearing</li>
+</ul>
