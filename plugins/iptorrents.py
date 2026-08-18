@@ -106,7 +106,19 @@ class iptorrents(object):
         ct = info.get("Content-Type", "")
         if "charset=" in ct:
             _, charset = ct.split("charset=")
-        data = res.read().decode(charset, "replace")
+        raw = res.read()
+        # IPTorrents always sends gzip-encoded bodies (content-encoding: gzip)
+        # regardless of whether a matching Accept-Encoding was requested.
+        # Without this, the "decoded" text is still compressed binary and
+        # every downstream regex (table/row/seed/leech) silently fails to
+        # match, producing zero or garbage results (BOB-083).
+        if raw[:2] == b"\x1f\x8b":
+            with (
+                io.BytesIO(raw) as compressed_stream,
+                gzip.GzipFile(fileobj=compressed_stream) as gzipper,
+            ):
+                raw = gzipper.read()
+        data = raw.decode(charset, "replace")
         data = htmlentitydecode(data)
         return data
 
@@ -114,17 +126,26 @@ class iptorrents(object):
         data = self._get_link(link + "&p=" + str(page))
         if not data:
             return
-        _tor_table = re.search(r"<form>(<table id=torrents.+?)</form>", data)
+        # IPTorrents now renders the results table as `<table id="torrents" ...>`
+        # (quoted attribute) directly inside `<form>...`. The previous regex
+        # required the unquoted `<table id=torrents` form and never matched
+        # current markup, so search_parse() silently returned zero results.
+        _tor_table = re.search(r'<form>(<table id="torrents".+?)</form>', data, re.S)
         if not _tor_table:
             return
         tor_table = _tor_table.groups()[0]
 
+        # Current row markup no longer carries a `/details/...` desc-link
+        # prefix, nor `t_seeders`/`t_leechers` CSS classes on the seed/leech
+        # cells -- those classes were removed entirely. The trailing three
+        # bare `<td>N` cells before `</tr>` are, in column order per the
+        # table's own <thead>, Snatches, Seeders, Leechers -- captured here
+        # by position rather than by (now-absent) class name (BOB-083).
         row_pattern = re.compile(
-            r'<a class=" hv" href="(?P<desc_link>/details.+?)">(?P<name>.+?)</a>'
-            r'.*?href="(?P<link>/download.+?)"'
-            r".*?(?P<size>\d+?\.*?\d*?\s*(?:K|M|G)?B)"
-            r'.*?t_seeders">(?P<seeds>\d+)'
-            r'.*?t_leechers">(?P<leech>\d+?)</t',
+            r'<a class=" hv" href="(?P<desc_link>/t/\d+)">(?P<name>.+?)</a>'
+            r'.*?<td><a href="(?P<link>/download\.php/[^"]+)"'
+            r'.*?<td>(?P<size>[^<]+)<td>'
+            r'.*?<td>\d+<td>(?P<seeds>\d+)<td>(?P<leech>\d+)</tr>',
             re.S,
         )
 
@@ -154,6 +175,11 @@ class iptorrents(object):
                 self.search_parse(link, int(cur) + 1)
 
     def search_freeleech(self, what, cat="all"):
+        # `what` MUST be URL-encoded: a literal space (or other reserved
+        # character) in the raw query string trips Python 3.14's stricter
+        # http.client path validation ("URL can't contain control
+        # characters") and the search request never leaves this process.
+        what = quote(what)
         if cat == "all":
             url = f"{self.url}/t?q={what}&o=seeders&free=on"
         else:
@@ -179,6 +205,7 @@ class iptorrents(object):
         print(path + " " + info)
 
     def search(self, what, cat="all"):
+        what = quote(what)
         if cat == "all":
             url = f"{self.url}/t?q={what}&o=seeders"
         else:

@@ -1,0 +1,170 @@
+<h1
+id="bob-122-reported-as-bob-083-iptorrents-seedleech-parsing-evidence">BOB-122
+(reported as “BOB-083”) — IPTorrents seed/leech parsing evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T00:20:00Z</p>
+<h2 id="summary">Summary</h2>
+<p>Discovered via a §11.4.143 real-user-journey subagent
+(task-afe78327): IPTorrents search results showed seed/leech as
+<code>0/0</code> despite qBittorrent’s own swarm info reporting real
+non-zero values for the same torrent. The dispatcher’s task brief
+referenced this as <strong>BOB-083</strong>, but the
+<code>docs/workable_items.db</code> tracker — both the git-committed
+<code>HEAD</code> copy and the live working copy — shows
+<code>BOB-083</code> is an unrelated, pre-existing <code>Task</code>
+(“RD2-16: Regenerate browser_extension/features/codegraph Status.md…”),
+and no IPTorrents item was ever actually filed under any id. This is
+filed at the next genuinely-free id, <strong>BOB-122</strong> (DB max
+was 121 at investigation time), per §11.4.54 (ids are never
+reused/renumbered).</p>
+<h2 id="root-cause-two-independent-parsers-two-independent-bugs">Root
+cause — TWO independent parsers, TWO independent bugs</h2>
+<p>IPTorrents changed its results-table markup at some point after both
+of these parsers were written. Neither had been updated to match.</p>
+<h3 id="pluginsiptorrents.py-native-qbittorrent-nova3-search-plugin">1.
+<code>plugins/iptorrents.py</code> (native qBittorrent nova3 search
+plugin)</h3>
+<p>Four defects, all confirmed empirically against the live site
+(<code>https://iptorrents.com</code>, fetched 2026-08-19):</p>
+<ol type="1">
+<li><strong><code>_get_link()</code> never decompressed gzip.</strong>
+IPTorrents always sends <code>content-encoding: gzip</code> regardless
+of the client’s <code>Accept-Encoding</code>.
+<code>download_torrent()</code> already handled this;
+<code>_get_link()</code> (used by <code>search_parse()</code>) did not —
+so every “decoded” HTML string was actually still-compressed binary, and
+every downstream regex silently failed to match.</li>
+<li><strong>Table regex required unquoted
+<code>&lt;table id=torrents&gt;</code>.</strong> The live site now emits
+the quoted form <code>&lt;table id="torrents"&gt;</code>.</li>
+<li><strong>Row regex required <code>/details.php?id=...</code> desc
+links and <code>t_seeders="</code>/<code>t_leechers="</code> CSS
+classes.</strong> The site now uses <code>/t/&lt;id&gt;</code> links,
+and the seed/leech/snatch cells carry <strong>no CSS class at
+all</strong> — they are three bare positional <code>&lt;td&gt;N</code>
+cells (Snatches, Seeders, Leechers, in that order per the table’s own
+<code>&lt;thead&gt;</code>) immediately before
+<code>&lt;/tr&gt;</code>.</li>
+<li><strong>The search query was never URL-encoded.</strong> A literal
+space in a multi-word query (e.g. <code>"The Bourne Legacy"</code>)
+raises
+<code>http.client.InvalidURL: URL can't contain control characters</code>
+under Python 3.14’s stricter path validation — this is the EXACT
+exception the previous (killed) subagent hit and left as its last
+captured state.</li>
+</ol>
+<h3
+id="download-proxysrcmerge_servicesearch.py_parse_iptorrents_html">2.
+<code>download-proxy/src/merge_service/search.py::_parse_iptorrents_html()</code></h3>
+<p>This is the parser that reproduces the <strong>exact reported
+symptom</strong> (“rows appear, seed/leech literally <code>0/0</code>”)
+— unlike bug #1 above, which (pre-fix) produced <strong>zero rows at
+all</strong>, not <code>0/0</code> per row.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>td_values <span class="op">=</span> re.findall(<span class="vs">r&quot;&lt;td</span><span class="pp">[^&gt;]</span><span class="op">*</span><span class="vs">&gt;</span><span class="kw">(</span><span class="fu">?P&lt;val&gt;</span><span class="dv">\d</span><span class="op">+</span><span class="kw">)</span><span class="vs">&lt;/td&gt;&quot;</span>, row_text)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>seeds <span class="op">=</span> <span class="bu">int</span>(td_values[<span class="dv">0</span>]) <span class="cf">if</span> <span class="bu">len</span>(td_values) <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="dv">0</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>leechers <span class="op">=</span> <span class="bu">int</span>(td_values[<span class="dv">1</span>]) <span class="cf">if</span> <span class="bu">len</span>(td_values) <span class="op">&gt;</span> <span class="dv">1</span> <span class="cf">else</span> <span class="dv">0</span></span></code></pre></div>
+<p>IPTorrents renders its result rows with old-school
+<strong>unclosed</strong> <code>&lt;td&gt;</code> tags — there is no
+<code>&lt;/td&gt;</code> anywhere in the real response body. The regex
+above requires a closing <code>&lt;/td&gt;</code>, so
+<code>td_values</code> is <strong>always empty</strong> on real markup,
+and <code>seeds</code>/<code>leechers</code> silently default to
+<code>0</code> — while
+<code>name_match</code>/<code>dl_match</code>/<code>size_match</code>
+all succeed independently, so the row DOES appear in results, with
+<code>0/0</code>.</p>
+<p>The existing integration-test fixture for this function
+(<code>tests/integration/test_iptorrents.py::test_parse_iptorrents_html_freeleech</code>)
+used a synthetic, neatly-closed
+<code>&lt;td&gt;50&lt;/td&gt;&lt;td&gt;10&lt;/td&gt;</code> shape that
+does <strong>not</strong> match real markup — a classic bluff-test: it
+agreed with the buggy code instead of catching the defect. Fixed to
+mirror the real (unclosed-tag, 3-trailing-column) shape.</p>
+<h2 id="fix">Fix</h2>
+<ul>
+<li><code>plugins/iptorrents.py</code>: gzip-decompress in
+<code>_get_link()</code>; quoted-table regex; <code>/t/\d+</code>
+desc-link regex with positional (not class-based)
+Snatches/Seeders/Leechers extraction; <code>quote()</code> the search
+query in both <code>search()</code> and
+<code>search_freeleech()</code>.</li>
+<li><code>download-proxy/src/merge_service/search.py</code>: replace the
+closing-<code>&lt;/td&gt;</code>-dependent <code>findall</code> with a
+trailing-anchored
+<code>&lt;td&gt;(snatches)&lt;td&gt;(seeds)&lt;td&gt;(leech)\s*$</code>
+match on the unclosed markup.</li>
+</ul>
+<h2 id="evidence-in-this-directory">Evidence in this directory</h2>
+<ul>
+<li><code>iptorrents_real_table_excerpt.html</code> — the real
+<code>&lt;table id="torrents"&gt;</code> markup captured live from
+<code>https://iptorrents.com</code> on 2026-08-19 (gzip-decompressed;
+account username redacted; <strong>no cookies/passwords present</strong>
+— response bodies never contain the request’s auth headers; leak-audited
+per §11.4.10.A before being written here).</li>
+<li><code>live_search_freeleech_output.log</code> — real terminal output
+of <code>plugins/iptorrents.py</code>’s fixed
+<code>search_freeleech("The Bourne Legacy")</code> run against the live
+tracker (same multi-word query that crashed the pre-fix code with
+<code>InvalidURL</code>), showing 24 real results with correct,
+non-zero, varying seed/leech pairs (<code>92|2</code>,
+<code>50|0</code>, <code>35|3</code>, <code>23|0</code>, …) in the exact
+pipe-delimited <code>prettyPrinter</code> format qBittorrent
+consumes.</li>
+</ul>
+<h2 id="mutation-evidence-both-fixes">§1.1 mutation evidence (both
+fixes)</h2>
+<p><strong><code>plugins/iptorrents.py</code></strong> (34 unit tests in
+<code>tests/unit/test_plugin_iptorrents.py</code>): reverting the fix
+via <code>git stash</code> and re-running the suite against the
+<strong>new</strong>, real-markup fixtures fails <strong>10 of
+34</strong> tests (table/row/seed-leech/gzip/URL-encoding regressions
+all reproduce). Restoring the fix returns the suite to 34/34 green.</p>
+<p><strong><code>download-proxy/src/merge_service/search.py</code></strong>:
+calling <code>_parse_iptorrents_html()</code> directly (bypassing the
+container-dependent integration harness) against the SAME real captured
+page:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th></th>
+<th>seeds/leech on 23 real rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pre-fix (reverted)</td>
+<td><strong>all 23 rows show <code>0/0</code></strong> — the exact
+reported symptom</td>
+</tr>
+<tr>
+<td>post-fix (restored)</td>
+<td>all 23 rows show their real non-zero swarm values</td>
+</tr>
+</tbody>
+</table>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<ul>
+<li>The merge-service integration test class
+(<code>TestIPTorrentsFreeleechDetection</code>) could not be run through
+<code>pytest</code> in this session because
+<code>tests/integration/conftest.py</code> has a session-scoped fixture
+that polls the merge service’s <code>/api/v1/stats</code> endpoint for
+<code>active_searches == 0</code> and the <code>qbittorrent-proxy</code>
+container was not running in this sandbox — an honest §11.4.3 SKIP
+(infrastructure precondition, not a code defect). The fixed function was
+independently verified via direct invocation (see the
+<code>_parse_iptorrents_html</code> before/after run above) — real,
+non-mocked, live-captured HTML, same code path, same assertions, without
+going through the container-gated pytest harness.</li>
+<li>Pagination
+(<code>&lt;a&gt;Page &lt;b&gt;N&lt;/b&gt; of &lt;b&gt;M&lt;/b&gt;</code>
+in <code>plugins/iptorrents.py</code>) was investigated and found
+<strong>not</strong> broken — its markup is unchanged on the live site;
+verified against a real 999-result / 20-page search.</li>
+</ul>

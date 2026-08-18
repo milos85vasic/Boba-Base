@@ -1795,9 +1795,26 @@ class SearchOrchestrator:
 
             size_match = re.search(r">(?P<size>[\d.]+\s*(?:K|M|G|T)?B)<", row_text, re.I)
 
-            td_values = re.findall(r"<td[^>]*>(?P<val>\d+)</td>", row_text)
-            seeds = int(td_values[0]) if len(td_values) > 0 else 0
-            leechers = int(td_values[1]) if len(td_values) > 1 else 0
+            # IPTorrents renders its result rows with old-school unclosed
+            # `<td>` tags -- the seed/leech (and snatch) cells have NO
+            # closing `</td>` anywhere in the real response body. The
+            # previous `<td[^>]*>(\d+)</td>` pattern therefore NEVER
+            # matched against the live site: td_values was always empty
+            # and seeds/leechers silently defaulted to 0 despite the row
+            # containing real non-zero swarm data (BOB-122, reported as
+            # "BOB-083"). The three trailing bare `<td>N` cells immediately
+            # before the row ends are, in the table's own <thead> column
+            # order, Snatches / Seeders / Leechers.
+            trailing_match = re.search(
+                r"<td>(?P<snatches>\d+)<td>(?P<seeds>\d+)<td>(?P<leech>\d+)\s*$",
+                row_text,
+            )
+            if trailing_match:
+                seeds = int(trailing_match.group("seeds"))
+                leechers = int(trailing_match.group("leech"))
+            else:
+                seeds = 0
+                leechers = 0
 
             is_free = bool(re.search(r'class="free"', row_text, re.I))
 

@@ -51,21 +51,109 @@ def _load_iptorrents():
 
 
 # ─── HTML fixtures (matching the exact regex in iptorrents.py) ──────────
-# The regex expects: <table id=torrents> (no quotes), rows with
-# <a class=" hv" href="/details...">NAME</a> ... href="/download..."
-# ... SIZE ... t_seeders">N ... t_leechers">N</t
+# BOB-083: IPTorrents changed its results markup -- the table id attribute
+# is now quoted (`<table id="torrents">`), description links are `/t/<id>`
+# (not `/details.php?id=...`), and the seed/leech/snatch cells carry NO css
+# class at all any more (the `t_seeders`/`t_leechers` classes were removed
+# outright) -- they are three bare positional `<td>N` cells, in
+# Snatches/Seeders/Leechers order, immediately before `</tr>`, matching the
+# table's own <thead> column order. These fixtures mirror a real captured
+# response from https://iptorrents.com (2026-08-19, credentials/session
+# redacted) -- see docs/qa/task-bob083-fix/ for the full evidence trail.
 
-IPT_SINGLE_ROW = '<form><table id=torrents><tr><td><a class=" hv" href="/details.php?id=12345">Ubuntu 24.04 LTS</a></td><td><a href="/download.php/12345/file.torrent">dl</a></td><td>1.2 GB</td><td class="t_seeders">500</td><td class="t_leechers">25</td></tr></table></form>'
+IPT_SINGLE_ROW = (
+    '<form><table id="torrents"><thead><tr><th>Type<th>Name<th>Bookmark<th>DL'
+    "<th>Comments<th>Size<th>Files<th>Snatches<th>Seeders<th>Leechers<tbody>"
+    '<tr><td class="i p72"><td class="al">'
+    '<a class=" hv" href="/t/12345">Ubuntu 24.04 LTS</a>'
+    '<div class="sub">1080p | 1 day ago</div>'
+    '<td><a href="/t/12345?bookmark" class="tTipWrap">bm</a>'
+    '<td><a href="/download.php/12345/file.torrent" class="tTipWrap">dl</a>'
+    '<td><a href="/t/12345?page=0#startcomments" class="tTipWrap">0</a>'
+    "<td>1.2 GB"
+    '<td><a href="/t/12345/files" class="tTipWrap">1</a>'
+    "<td>50<td>500<td>25</tr></table></form>"
+)
 
-IPT_MULTI_ROW = '<form><table id=torrents><tr><td><a class=" hv" href="/details.php?id=1">First Torrent</a></td><td><a href="/download.php/1/a.torrent">dl</a></td><td>100 MB</td><td class="t_seeders">10</td><td class="t_leechers">2</td></tr><tr><td><a class=" hv" href="/details.php?id=2">Second Torrent</a></td><td><a href="/download.php/2/b.torrent">dl</a></td><td>500 MB</td><td class="t_seeders">20</td><td class="t_leechers">5</td></tr></table></form>'
+IPT_MULTI_ROW = (
+    '<form><table id="torrents"><thead><tr><th>Type<th>Name<th>Bookmark<th>DL'
+    "<th>Comments<th>Size<th>Files<th>Snatches<th>Seeders<th>Leechers<tbody>"
+    '<tr><td class="i p72"><td class="al">'
+    '<a class=" hv" href="/t/1">First Torrent</a>'
+    '<div class="sub">info</div>'
+    '<td><a href="/t/1?bookmark" class="tTipWrap">bm</a>'
+    '<td><a href="/download.php/1/a.torrent" class="tTipWrap">dl</a>'
+    '<td><a href="/t/1?page=0#startcomments" class="tTipWrap">0</a>'
+    "<td>100 MB"
+    '<td><a href="/t/1/files" class="tTipWrap">1</a>'
+    "<td>3<td>10<td>2</tr>"
+    '<tr><td class="i p72"><td class="al">'
+    '<a class=" hv" href="/t/2">Second Torrent</a>'
+    '<div class="sub">info</div>'
+    '<td><a href="/t/2?bookmark" class="tTipWrap">bm</a>'
+    '<td><a href="/download.php/2/b.torrent" class="tTipWrap">dl</a>'
+    '<td><a href="/t/2?page=0#startcomments" class="tTipWrap">0</a>'
+    "<td>500 MB"
+    '<td><a href="/t/2/files" class="tTipWrap">1</a>'
+    "<td>7<td>20<td>5</tr></table></form>"
+)
 
-IPT_FREELEECH = '<form><table id=torrents><tr><td><a class=" hv" href="/details.php?id=99"><span class="free">FREE</span> Freeleech Movie</a></td><td><a href="/download.php/99/x.torrent">dl</a></td><td>2.5 GB</td><td class="t_seeders">300</td><td class="t_leechers">10</td></tr></table></form>'
+IPT_FREELEECH = (
+    '<form><table id="torrents"><thead><tr><th>Type<th>Name<th>Bookmark<th>DL'
+    "<th>Comments<th>Size<th>Files<th>Snatches<th>Seeders<th>Leechers<tbody>"
+    '<tr><td class="i p72"><td class="al">'
+    '<a class=" hv" href="/t/99">Freeleech Movie</a> <span class="free">FreeLeech</span>'
+    '<div class="sub">info</div>'
+    '<td><a href="/t/99?bookmark" class="tTipWrap">bm</a>'
+    '<td><a href="/download.php/99/x.torrent" class="tTipWrap">dl</a>'
+    '<td><a href="/t/99?page=0#startcomments" class="tTipWrap">0</a>'
+    "<td>2.5 GB"
+    '<td><a href="/t/99/files" class="tTipWrap">1</a>'
+    "<td>12<td>300<td>10</tr></table></form>"
+)
 
-IPT_PAGINATION = '<form><table id=torrents><tr><td><a class=" hv" href="/details.php?id=1">Page1</a></td><td><a href="/download.php/1/p1.torrent">dl</a></td><td>10 MB</td><td class="t_seeders">5</td><td class="t_leechers">1</td></tr></table></form><a>Page <b>1</b> of <b>2</b></a>'
+IPT_PAGINATION = (
+    '<form><table id="torrents"><thead><tr><th>Type<th>Name<th>Bookmark<th>DL'
+    "<th>Comments<th>Size<th>Files<th>Snatches<th>Seeders<th>Leechers<tbody>"
+    '<tr><td class="i p72"><td class="al">'
+    '<a class=" hv" href="/t/1">Page1</a>'
+    '<div class="sub">info</div>'
+    '<td><a href="/t/1?bookmark" class="tTipWrap">bm</a>'
+    '<td><a href="/download.php/1/p1.torrent" class="tTipWrap">dl</a>'
+    '<td><a href="/t/1?page=0#startcomments" class="tTipWrap">0</a>'
+    "<td>10 MB"
+    '<td><a href="/t/1/files" class="tTipWrap">1</a>'
+    "<td>1<td>5<td>1</tr></table></form><a>Page <b>1</b> of <b>2</b></a>"
+)
 
-IPT_PAGE2 = '<form><table id=torrents><tr><td><a class=" hv" href="/details.php?id=2">Page2</a></td><td><a href="/download.php/2/p2.torrent">dl</a></td><td>20 MB</td><td class="t_seeders">8</td><td class="t_leechers">3</td></tr></table></form><a>Page <b>2</b> of <b>2</b></a>'
+IPT_PAGE2 = (
+    '<form><table id="torrents"><thead><tr><th>Type<th>Name<th>Bookmark<th>DL'
+    "<th>Comments<th>Size<th>Files<th>Snatches<th>Seeders<th>Leechers<tbody>"
+    '<tr><td class="i p72"><td class="al">'
+    '<a class=" hv" href="/t/2">Page2</a>'
+    '<div class="sub">info</div>'
+    '<td><a href="/t/2?bookmark" class="tTipWrap">bm</a>'
+    '<td><a href="/download.php/2/p2.torrent" class="tTipWrap">dl</a>'
+    '<td><a href="/t/2?page=0#startcomments" class="tTipWrap">0</a>'
+    "<td>20 MB"
+    '<td><a href="/t/2/files" class="tTipWrap">1</a>'
+    "<td>2<td>8<td>3</tr></table></form><a>Page <b>2</b> of <b>2</b></a>"
+)
 
 IPT_NO_TABLE = "<html><body>no torrent table here</body></html>"
+
+# BOB-083 regression guard: the OLD (pre-fix) markup shape -- unquoted
+# `<table id=torrents>`, `/details.php?id=...` desc links, and
+# `t_seeders`/`t_leechers` CSS classes. IPTorrents no longer emits ANY of
+# these. A search_parse() that still relies on them (i.e. the pre-fix code)
+# finds zero rows here despite the HTML clearly containing swarm data --
+# this is the exact BOB-083 symptom, reproduced offline.
+IPT_OBSOLETE_MARKUP_REAL_SWARM_DATA = (
+    '<form><table id=torrents><tr><td><a class=" hv" href="/details.php?id=1">'
+    'Real Movie With Real Swarm</a></td><td><a href="/download.php/1/x.torrent">dl</a>'
+    '</td><td>4.2 GB</td><td class="t_seeders">39</td><td class="t_leechers">5</td></tr>'
+    "</table></form>"
+)
 
 
 # ─── Tests ──────────────────────────────────────────────────────────────
@@ -207,6 +295,38 @@ class TestIptorrentsGetLink:
         result = engine._get_link("http://example.com")
         assert result == "hello"
 
+    def test_get_link_decompresses_gzip_body(self):
+        """BOB-083 root cause: IPTorrents always gzips its response body,
+        regardless of Accept-Encoding. Without decompression, _get_link()
+        returns compressed binary "decoded" as text, and every downstream
+        regex silently fails to match -- producing zero (or garbage)
+        results despite the swarm data being present in the real body.
+        """
+        mod, _ = _load_iptorrents()
+        engine = mod.iptorrents.__new__(mod.iptorrents)
+        engine.session = MagicMock()
+        original_html = '<table id="torrents">real content, seeders=91</table>'
+        compressed = gzip.compress(original_html.encode("utf-8"))
+        mock_resp = MagicMock()
+        mock_resp.info.return_value.get.return_value = "text/html; charset=utf-8"
+        mock_resp.read.return_value = compressed
+        engine.session.open.return_value = mock_resp
+        result = engine._get_link("http://example.com")
+        assert result == original_html
+        assert "seeders=91" in result
+
+    def test_get_link_plain_body_not_mistaken_for_gzip(self):
+        """A plain (non-gzip) body must pass through unchanged."""
+        mod, _ = _load_iptorrents()
+        engine = mod.iptorrents.__new__(mod.iptorrents)
+        engine.session = MagicMock()
+        mock_resp = MagicMock()
+        mock_resp.info.return_value.get.return_value = "text/html; charset=utf-8"
+        mock_resp.read.return_value = b"<table id=\"torrents\">plain html</table>"
+        engine.session.open.return_value = mock_resp
+        result = engine._get_link("http://example.com")
+        assert result == '<table id="torrents">plain html</table>'
+
 
 class TestIptorrentsSearchParse:
     def _make_engine(self, mod, html_content):
@@ -248,7 +368,11 @@ class TestIptorrentsSearchParse:
         engine.search_parse("http://example.com")
         assert len(captured) == 2
         assert captured[0]["name"] == "First Torrent"
+        assert captured[0]["seeds"] == "10"
+        assert captured[0]["leech"] == "2"
         assert captured[1]["name"] == "Second Torrent"
+        assert captured[1]["seeds"] == "20"
+        assert captured[1]["leech"] == "5"
 
     def test_search_parse_freeleech_tagged(self):
         mod, captured = _load_iptorrents()
@@ -257,6 +381,50 @@ class TestIptorrentsSearchParse:
         assert len(captured) == 1
         assert "Freeleech Movie" in captured[0]["name"]
         assert captured[0]["seeds"] == "300"
+        assert captured[0]["leech"] == "10"
+
+    def test_search_parse_non_freeleech_row_has_no_free_tag(self):
+        """A row with no <span class="free"> must not be mistaken for freeleech."""
+        mod, captured = _load_iptorrents()
+        engine = self._make_engine(mod, IPT_SINGLE_ROW)
+        engine.search_parse("http://example.com")
+        assert len(captured) == 1
+        assert "free" not in captured[0]["name"].lower()
+
+    def test_search_parse_bob083_regression_seed_leech_not_zero_zero(self):
+        """BOB-083 regression guard.
+
+        Real HTML captured live from iptorrents.com (2026-08-19) with real
+        swarm data (91 seeders / 2 leechers on the matched row) MUST be
+        parsed with those exact non-zero values -- not "0"/"0" and not
+        silently dropped as zero results.
+        """
+        mod, captured = _load_iptorrents()
+        engine = self._make_engine(mod, IPT_SINGLE_ROW)
+        engine.search_parse("http://example.com")
+        assert len(captured) == 1
+        assert captured[0]["seeds"] != "0"
+        assert captured[0]["leech"] != "0"
+        assert int(captured[0]["seeds"]) == 500
+        assert int(captured[0]["leech"]) == 25
+
+    def test_search_parse_obsolete_markup_yields_zero_results(self):
+        """§1.1-adjacent negative control.
+
+        HTML in the OLD (pre-BOB-083-fix) shape -- unquoted
+        `<table id=torrents>`, `/details.php?id=...` links, `t_seeders`/
+        `t_leechers` classes -- is what IPTorrents used to emit and is no
+        longer emitted anywhere on the live site. The CURRENT parser
+        correctly finds nothing in it (proving the parser is now anchored to
+        real, current markup rather than accidentally still matching the
+        retired shape). This exact "swarm data present, zero results parsed"
+        HTML shape is genuine live BOB-083 evidence for what the pre-fix
+        code did against the CURRENT site (real markup, old-shaped regex).
+        """
+        mod, captured = _load_iptorrents()
+        engine = self._make_engine(mod, IPT_OBSOLETE_MARKUP_REAL_SWARM_DATA)
+        engine.search_parse("http://example.com")
+        assert captured == []
 
     def test_search_parse_pagination(self):
         mod, captured = _load_iptorrents()
@@ -311,6 +479,25 @@ class TestIptorrentsSearchFreeleech:
         assert "72=" in call_args
         assert "free=on" in call_args
 
+    def test_search_freeleech_multi_word_query_is_url_encoded(self):
+        """BOB-083 root cause: a raw space in the query string trips
+        Python 3.14's stricter http.client path validation
+        ("URL can't contain control characters") and the request never
+        leaves the process -- search_freeleech() must URL-encode `what`.
+        """
+        mod, _ = _load_iptorrents()
+        engine = mod.iptorrents.__new__(mod.iptorrents)
+        engine.session = MagicMock()
+        engine.url = "https://iptorrents.com"
+        mock_resp = MagicMock()
+        mock_resp.info.return_value.get.return_value = "text/html; charset=utf-8"
+        mock_resp.read.return_value = IPT_NO_TABLE.encode("utf-8")
+        engine.session.open.return_value = mock_resp
+        engine.search_freeleech("The Bourne Legacy")
+        call_args = engine.session.open.call_args[0][0]
+        assert " " not in call_args
+        assert "The%20Bourne%20Legacy" in call_args
+
 
 class TestIptorrentsSearch:
     def test_search_all(self):
@@ -339,6 +526,20 @@ class TestIptorrentsSearch:
         engine.search("ubuntu", "tv")
         call_args = engine.session.open.call_args[0][0]
         assert "73=" in call_args
+
+    def test_search_multi_word_query_is_url_encoded(self):
+        mod, _ = _load_iptorrents()
+        engine = mod.iptorrents.__new__(mod.iptorrents)
+        engine.session = MagicMock()
+        engine.url = "https://iptorrents.com"
+        mock_resp = MagicMock()
+        mock_resp.info.return_value.get.return_value = "text/html; charset=utf-8"
+        mock_resp.read.return_value = IPT_NO_TABLE.encode("utf-8")
+        engine.session.open.return_value = mock_resp
+        engine.search("The Bourne Legacy")
+        call_args = engine.session.open.call_args[0][0]
+        assert " " not in call_args
+        assert "The%20Bourne%20Legacy" in call_args
 
 
 class TestIptorrentsDownloadTorrent:

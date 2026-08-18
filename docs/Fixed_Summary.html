@@ -192,7 +192,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>22</td>
+<td>23</td>
 </tr>
 <tr>
 <td>Feature</td>
@@ -217,7 +217,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>73</strong></td>
+<td><strong>74</strong></td>
 </tr>
 </tbody>
 </table>
@@ -800,6 +800,17 @@ users by default when they are actually filtered out by default. Found
 during a §11.4.6 bluff audit (docs/qa/task-bluff-audit/). Fix direction:
 correct ‘Default: 1’ to ‘Default: 0’ in MERGE_SEARCH_DIAGNOSTICS.md to
 match search.py/docker-compose.yml.</td>
+</tr>
+<tr>
+<td>74</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-122 — IPTorrents changed its results-table markup since these
+two parsers were written: (1) plugins/iptorrents.py (native qBittorrent
+nova3 search plugin) never decompressed the gzip-encoded response body
+in _get_link() (download_torrent() already did), used an unquoted </td>
 </tr>
 </tbody>
 </table>

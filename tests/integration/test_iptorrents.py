@@ -173,19 +173,23 @@ class TestIPTorrentsFreeleechDetection:
         from merge_service.search import SearchOrchestrator
 
         orch = SearchOrchestrator()
+        # BOB-122 (reported as "BOB-083"): IPTorrents renders its result
+        # rows with old-school UNCLOSED `<td>` tags -- there is no `</td>`
+        # anywhere in a real response body, and the trailing three bare
+        # `<td>N` cells are Snatches/Seeders/Leechers, in that column
+        # order, per the table's own <thead>. This fixture mirrors that
+        # real (unclosed-tag, 3-trailing-column) shape rather than a
+        # neatly-closed synthetic one, so it actually exercises the parser
+        # against the markup the live site produces.
         html = """<form><table id="torrents"><tr>
 <td><a class=" hv" href="/t/123">Ubuntu 22.04 LTS</a>
-<span class="free">Free!</span></td>
-<td><a href="/download.php/123/ubuntu.torrent?torrent_key=abc">DL</a></td>
-<td>4.5 GB</td>
-<td>50</td>
-<td>10</td></tr>
+<span class="free">Free!</span>
+<td><a href="/download.php/123/ubuntu.torrent?torrent_key=abc">DL</a>
+<td>4.5 GB<td>12<td>50<td>10</tr>
 <tr>
-<td><a class=" hv" href="/t/456">Ubuntu 20.04 LTS</a></td>
-<td><a href="/download.php/456/ubuntu20.torrent?torrent_key=def">DL</a></td>
-<td>3.2 GB</td>
-<td>30</td>
-<td>5</td></tr>
+<td><a class=" hv" href="/t/456">Ubuntu 20.04 LTS</a>
+<td><a href="/download.php/456/ubuntu20.torrent?torrent_key=def">DL</a>
+<td>3.2 GB<td>8<td>30<td>5</tr>
 </table></form>"""
         results = orch._parse_iptorrents_html(html, "https://iptorrents.com")
         assert len(results) == 2, f"Expected 2 results, got {len(results)}"
@@ -196,6 +200,13 @@ class TestIPTorrentsFreeleechDetection:
         assert len(non_free) == 1, f"Expected 1 non-free, got {len(non_free)}"
         assert free_results[0].name == "Ubuntu 22.04 LTS [free]"
         assert free_results[0].tracker == "iptorrents"
+
+        # BOB-122 regression guard: seed/leech must reflect the real
+        # trailing values, never silently default to 0/0.
+        assert free_results[0].seeds == 50
+        assert free_results[0].leechers == 10
+        assert non_free[0].seeds == 30
+        assert non_free[0].leechers == 5
 
     def test_freeleech_tracker_display_tag(self):
         sys.path.insert(

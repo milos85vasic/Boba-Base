@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 21
-**Last modified:** 2026-08-18T21:41:11Z
+**Revision:** 22
+**Last modified:** 2026-08-18T22:14:38Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -822,4 +822,15 @@ qBitTorrent-go/internal/jackettapi/health.go:60-63 -- HandleHealth makes a synch
 **Created-By:** AI
 
 docs/MERGE_SEARCH_DIAGNOSTICS.md line ~128 states 'Default: 1 (all trackers exposed; dead ones filtered by DEAD_PUBLIC_TRACKERS)' for ENABLE_DEAD_TRACKERS. This is factually wrong: download-proxy/src/merge_service/search.py:1032 reads os.getenv('ENABLE_DEAD_TRACKERS', '0') (default string '0') and docker-compose.yml:177 sets ENABLE_DEAD_TRACKERS=\0 (also default 0). The sibling doc docs/DEAD_TRACKERS_EXPLAINED.md correctly states 'With ENABLE_DEAD_TRACKERS=0 (default): 24 public trackers active, 14 excluded' — confirmed against the current DEAD_PUBLIC_TRACKERS frozenset (14 entries, names match exactly). MERGE_SEARCH_DIAGNOSTICS.md's stated default is the one document that disagrees with the source of truth, and could mislead an operator into believing dead trackers are shown to end users by default when they are actually filtered out by default. Found during a §11.4.6 bluff audit (docs/qa/task-bluff-audit/). Fix direction: correct 'Default: 1' to 'Default: 0' in MERGE_SEARCH_DIAGNOSTICS.md to match search.py/docker-compose.yml.
+
+## BOB-122 — IPTorrents seed/leech parsing reports 0/0 despite real swarm data — outdated markup selectors in plugins/iptorrents.py AND download-proxy/src/merge_service/search.py
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/task-bob083-fix/README.md
+**Severity:** High
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+IPTorrents changed its results-table markup since these two parsers were written: (1) plugins/iptorrents.py (native qBittorrent nova3 search plugin) never decompressed the gzip-encoded response body in _get_link() (download_torrent() already did), used an unquoted <table id=torrents> regex against markup that now emits quoted <table id="torrents">, expected /details.php?id=... desc links against markup that now emits /t/<id>, expected t_seeders=/t_leechers= CSS classes that IPTorrents removed entirely (seed/leech/snatch cells are now three bare positional <td>N cells before </tr>, in Snatches/Seeders/Leechers order per the table's own <thead>), and never URL-encoded the search query (a literal space in a multi-word query now raises http.client.InvalidURL under Python 3.14's stricter path validation). (2) download-proxy/src/merge_service/search.py::_parse_iptorrents_html() required a closing </td> tag on the seed/leech <td> cells (re.findall(r'<td[^>]*>(\d+)</td>')) but IPTorrents' HTML never closes these <td> tags — so td_values is always empty and seeds/leechers both silently default to 0, reproducing the EXACT reported symptom (rows appear with correct name/size but seed/leech literally 0/0 while qBittorrent's own swarm info shows real non-zero values for the same torrent). Root cause confirmed empirically by fetching https://iptorrents.com/t?... live and inspecting the real gzip-decompressed HTML (2026-08-19); all four defects fixed with new unit tests (34 total, all pass) and a §1.1 mutation proving the tests are load-bearing (revert -> 10 tests fail). Evidence under docs/qa/task-bob083-fix/. NOTE: the discovering agent (task-afe78327, §11.4.143 real-user-journey) referenced this as 'BOB-083', but BOB-083 in the workable-items DB is an unrelated pre-existing Task (RD2-16 codegraph Status.md regen) — no IPTorrents item was ever actually filed under that id (confirmed against both the git-committed HEAD DB and the live working copy). This item is filed at the next genuinely-free id (BOB-122, DB max was 121) per §11.4.54 (ids are never reused/renumbered).
 
