@@ -1,0 +1,73 @@
+# Differential SQLite Dump — docs/workable_items.db
+# §11.4.226 evidence-class-at-closure / §11.4.95 SSoT / §11.4.115(F) machine-written evidence
+# §11.4.209 review IMPORTANT-2 remedy — task tracker #79
+#
+# Commit:    ce1946f7842a95c2cdf298d415e2851f9c491e5a
+# Parent:    610994611461adfb6aafe1d90a287346d7b8dd7b
+# Generated: 2026-08-18T21:08:42Z
+# Tool:      sqlite3 3.50.6
+#
+## Row counts (table: before -> after)
+doc_segments                    116 -> 117         [CHANGED]
+firebase_metadata                 0 -> 0           [same]
+item_history                     90 -> 92          [CHANGED]
+items                           114 -> 115         [CHANGED]
+logic_groups                      0 -> 0           [same]
+meta                              4 -> 4           [same]
+obsolete_details                  0 -> 0           [same]
+operator_block_details            4 -> 4           [same]
+sqlite_sequence                   2 -> 2           [same]
+test_diary                        0 -> 0           [same]
+#
+## meta table (full content)
+### before
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-18 13:41:42
+last_sync_timestamp|2026-08-18 13:41:42|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+### after
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-18 13:41:42
+last_sync_timestamp|2026-08-18 13:41:42|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+#
+## Full logical .dump unified diff (before -> after)
+#
+--- /tmp/.private/milosvasic/tmp.uGaPU8AbBL/before.sql	2026-08-18 23:08:42.634398601 +0200
++++ /tmp/.private/milosvasic/tmp.uGaPU8AbBL/after.sql	2026-08-18 23:08:42.639398581 +0200
+@@ -114,6 +114,8 @@
+ INSERT INTO item_history VALUES(88,'BOB-114','Opened','User','2026-08-18',NULL,NULL,'2026-08-18 17:50:09');
+ INSERT INTO item_history VALUES(89,'BOB-104','Updated','AI','2026-08-18',NULL,NULL,'2026-08-18 19:16:36');
+ INSERT INTO item_history VALUES(90,'BOB-108','Fixed','AI','2026-08-18',NULL,'docs/qa/2026-08-18-task68-bob108-export-revision-fix/evidence.md','2026-08-18 19:17:47');
++INSERT INTO item_history VALUES(91,'BOB-115','Opened','User','2026-08-18',NULL,NULL,'2026-08-18 19:45:30');
++INSERT INTO item_history VALUES(92,'BOB-115','Fixed','AI','2026-08-18',NULL,'docs/qa/task-54/RED-GREEN-transcript.md','2026-08-18 19:45:30');
+ CREATE TABLE operator_block_details (
+     atm_id                       TEXT PRIMARY KEY,
+     what                         TEXT NOT NULL,
+@@ -342,6 +344,7 @@
+ INSERT INTO items VALUES('BOB-113','Task','Queued','Low','BOB-074 followup: add wrk to dev tooling for DDoS/load challenges','wrk is not installed on the development host; ApacheBench (ab) is, and was used as the primary DDoS-resilience-challenge load tool per the task brief''s ''wrk or ab'' fallback path, with a curl-parallel-loop as the actual per-status-code assertion mechanism (more precise than ab''s aggregate summary) and ab''s own output pasted as supplementary real-tool evidence. Install wrk (e.g. via the project''s setup.sh or a documented apt/build-from-source recipe) so future load/DDoS challenges have a modern HTTP benchmarking tool with latency-percentile histograms available out of the box, matching the brief''s stated primary preference.',NULL,NULL,NULL,'Claude','','Issues',unistr('## BOB-113 — BOB-074 followup: add wrk to dev tooling for DDoS/load challenges\u000a\u000a**Status:** Queued\u000a**Type:** Task\u000a**Severity:** Low\u000a**Created-By:** Claude\u000a\u000awrk is not installed on the development host; ApacheBench (ab) is, and was used as the primary DDoS-resilience-challenge load tool per the task brief''s ''wrk or ab'' fallback path, with a curl-parallel-loop as the actual per-status-code assertion mechanism (more precise than ab''s aggregate summary) and ab''s own output pasted as supplementary real-tool evidence. Install wrk (e.g. via the project''s setup.sh or a documented apt/build-from-source recipe) so future load/DDoS challenges have a modern HTTP benchmarking tool with latency-percentile histograms available out of the box, matching the brief''s stated primary preference.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-18 17:50:09','2026-08-18 17:50:09',NULL,NULL,NULL,NULL,NULL);
+ INSERT INTO items VALUES('BOB-114','Task','Queued','Medium','BOB-074 followup: self-validation golden-bad fixture for the rate-limit detector','challenges/scripts/ddos_resilience_challenge.sh''s --self-validate mode currently only ships a golden-bad fixture for the crash-resistance detector (per §11.4.107(10)/§11.4.201). The rate-limiting detector has no matching golden-bad fixture proving it would actually FAIL a synthetic no-rate-limit-enforced artifact, so an unvalidated rate-limit detector could silently pass a broken/absent rate-limit deployment. Add a synthetic fixture (e.g. a stub server that never returns 429/503 under burst) and assert the detector correctly reports the absence, closing the self-validation gap for this detector class.',NULL,NULL,NULL,'Claude','','Issues',unistr('## BOB-114 — BOB-074 followup: self-validation golden-bad fixture for the rate-limit detector\u000a\u000a**Status:** Queued\u000a**Type:** Task\u000a**Severity:** Medium\u000a**Created-By:** Claude\u000a\u000achallenges/scripts/ddos_resilience_challenge.sh''s --self-validate mode currently only ships a golden-bad fixture for the crash-resistance detector (per §11.4.107(10)/§11.4.201). The rate-limiting detector has no matching golden-bad fixture proving it would actually FAIL a synthetic no-rate-limit-enforced artifact, so an unvalidated rate-limit detector could silently pass a broken/absent rate-limit deployment. Add a synthetic fixture (e.g. a stub server that never returns 429/503 under burst) and assert the detector correctly reports the absence, closing the self-validation gap for this detector class.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-18 17:50:09','2026-08-18 17:50:09',NULL,NULL,NULL,NULL,NULL);
+ INSERT INTO items VALUES('BOB-108','Bug','Fixed (→ Fixed.md)','Medium','constitution scripts/workable-items export reverts docs/Issues.md + docs/Fixed.md revision counters','workable-items export (constitution/scripts/workable-items/workable-items export --db docs/workable_items.db --out-dir docs) regenerates docs/Issues.md and docs/Fixed.md from the tool''s own internal revision counter, which does not track manually-bumped §11.4.44 revision headers landed by a prior commit outside the tool''s own write path. Discovered during BOB-069 (.superpowers/sdd/task-bob069-report.md, Concerns section): an export invocation reverted docs/Issues.md Revision 7->6 and docs/Fixed.md Revision 16->15, both regressions relative to the already-committed HEAD values bumped manually in commit 82d9842. Worked around manually by re-bumping both headers forward (Issues.md->8, Fixed.md->17) per §11.4.44 (monotonic revision is non-negotiable) rather than shipping the regression. Recommendation: fix upstream in constitution/scripts/workable-items so ''export'' reads the CURRENT on-disk **Revision:** header (or the DB''s own last-known value, whichever is higher) before regenerating, instead of relying solely on an internal counter that can trail a manually-edited file.',NULL,NULL,NULL,'Claude','','Fixed',unistr('## BOB-108 — constitution scripts/workable-items export reverts docs/Issues.md + docs/Fixed.md revision counters\u000a\u000a**Status:** Fixed (→ Fixed.md)\u000a**Type:** Bug\u000a**Evidence:** docs/qa/2026-08-18-task68-bob108-export-revision-fix/evidence.md\u000a**Severity:** Medium\u000a**Created-By:** Claude\u000a\u000aworkable-items export (constitution/scripts/workable-items/workable-items export --db docs/workable_items.db --out-dir docs) regenerates docs/Issues.md and docs/Fixed.md from the tool''s own internal revision counter, which does not track manually-bumped §11.4.44 revision headers landed by a prior commit outside the tool''s own write path. Discovered during BOB-069 (.superpowers/sdd/task-bob069-report.md, Concerns section): an export invocation reverted docs/Issues.md Revision 7->6 and docs/Fixed.md Revision 16->15, both regressions relative to the already-committed HEAD values bumped manually in commit 82d9842. Worked around manually by re-bumping both headers forward (Issues.md->8, Fixed.md->17) per §11.4.44 (monotonic revision is non-negotiable) rather than shipping the regression. Recommendation: fix upstream in constitution/scripts/workable-items so ''export'' reads the CURRENT on-disk **Revision:** header (or the DB''s own last-known value, whichever is higher) before regenerating, instead of relying solely on an internal counter that can trail a manually-edited file.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-18 19:17:47','2026-08-18 19:17:47',NULL,NULL,NULL,NULL,NULL);
++INSERT INTO items VALUES('BOB-115','Bug','Fixed (→ Fixed.md)','High','Fix workable-items validate over-scoping to Updated-events (BOB-010 id=64 pattern)','unresolvableClosureEvidence() (constitution/scripts/workable-items/cmd/workable-items/sync.go) checked evidence-path resolvability for EVERY item_history row belonging to a terminally-closed item, regardless of the row''s event_type. BOB-010''s real closure (history id=4, event=Completed) recorded a resolvable evidence_path; a LATER Updated event (history id=64, on=2026-08-10) recorded evidence_path=scripts/docs_chain.sh, a path that stopped resolving after that script was git-mv''d to scripts/workable-items-export.sh (commits 0558399/d9d512d). validate flagged the Updated row as an unresolvable closure claim, mechanically blocking every subsequent commit via commit-push-all.sh (BOBA_SYNC_SKIP_CI=1 was required to land 1f42357). Fix: added AND h.event_type IN (Fixed, Implemented, Completed, Obsolete) to the query, reusing the SAME closed set correct_evidence.go''s closureEvents / assign.go''s hasClosureEvidence already recognise. Regression guard: TestClosureEvidence_UpdatedEventOnClosedItem_UnresolvablePath_NoViolation, RED-then-GREEN + paired mutation proof captured at docs/qa/task-54/RED-GREEN-transcript.md.',NULL,NULL,NULL,'','','Fixed',unistr('## BOB-115 — Fix workable-items validate over-scoping to Updated-events (BOB-010 id=64 pattern)\u000a\u000a**Status:** Fixed (→ Fixed.md)\u000a**Type:** Bug\u000a**Evidence:** docs/qa/task-54/RED-GREEN-transcript.md\u000a**Severity:** High\u000a\u000aunresolvableClosureEvidence() (constitution/scripts/workable-items/cmd/workable-items/sync.go) checked evidence-path resolvability for EVERY item_history row belonging to a terminally-closed item, regardless of the row''s event_type. BOB-010''s real closure (history id=4, event=Completed) recorded a resolvable evidence_path; a LATER Updated event (history id=64, on=2026-08-10) recorded evidence_path=scripts/docs_chain.sh, a path that stopped resolving after that script was git-mv''d to scripts/workable-items-export.sh (commits 0558399/d9d512d). validate flagged the Updated row as an unresolvable closure claim, mechanically blocking every subsequent commit via commit-push-all.sh (BOBA_SYNC_SKIP_CI=1 was required to land 1f42357). Fix: added AND h.event_type IN (Fixed, Implemented, Completed, Obsolete) to the query, reusing the SAME closed set correct_evidence.go''s closureEvents / assign.go''s hasClosureEvidence already recognise. Regression guard: TestClosureEvidence_UpdatedEventOnClosedItem_UnresolvablePath_NoViolation, RED-then-GREEN + paired mutation proof captured at docs/qa/task-54/RED-GREEN-transcript.md.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-18 19:45:30','2026-08-18 19:45:30',NULL,NULL,NULL,NULL,NULL);
+ CREATE TABLE IF NOT EXISTS "doc_segments" (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+     document    TEXT NOT NULL CHECK (document IN ('Issues', 'Fixed')),
+@@ -468,6 +471,7 @@
+ INSERT INTO doc_segments VALUES(405,'Issues',48,'item','BOB-113','section',NULL);
+ INSERT INTO doc_segments VALUES(406,'Issues',49,'item','BOB-114','section',NULL);
+ INSERT INTO doc_segments VALUES(407,'Fixed',69,'item','BOB-108','section',NULL);
++INSERT INTO doc_segments VALUES(409,'Fixed',70,'item','BOB-115','section',NULL);
+ CREATE TABLE IF NOT EXISTS "obsolete_details" (
+     atm_id                  TEXT PRIMARY KEY,
+     since                   TEXT NOT NULL,
+@@ -482,8 +486,8 @@
+     superseding_item        TEXT NOT NULL,
+     triple_check_evidence   TEXT NOT NULL
+ );
+-INSERT INTO sqlite_sequence VALUES('item_history',90);
+-INSERT INTO sqlite_sequence VALUES('doc_segments',407);
++INSERT INTO sqlite_sequence VALUES('item_history',92);
++INSERT INTO sqlite_sequence VALUES('doc_segments',409);
+ CREATE VIEW test_diary_summary AS
+ SELECT
+     d.atm_id                                                   AS atm_id,

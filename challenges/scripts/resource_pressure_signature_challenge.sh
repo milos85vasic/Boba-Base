@@ -277,9 +277,19 @@ for pdir in /proc/[0-9]*; do
   # incident's comm was "ugrep"; the fixture's disguised comm is "bash";
   # neither is ever "grep"/"awk"/"ps"). Detection power is unchanged for
   # both the real-incident class and the fixture's disguised-argv class.
+  #
+  # §11.4.209 Round-2 review MINOR-obs-2: the original three-way exclusion
+  # (grep/awk/ps) left every OTHER grep-family alternative a reviewer or
+  # SDD conductor might legitimately invoke against this file (ripgrep,
+  # the silver/platinum searchers, ack, sed, fzf, find+xargs pipelines)
+  # as a residual false-positive carrier class -- none of those comms is
+  # ever a legitimate SIG-5 target either (the real incident's comm is
+  # always "ugrep", the fixture's disguised comm is always "bash"), so
+  # widening the exclusion set costs zero detection power while closing
+  # the observed gap.
   COMM=$(tr -d '\n' < "$pdir/comm" 2>/dev/null)
   case "$COMM" in
-    grep|awk|ps) continue ;;
+    grep|awk|ps|rg|ripgrep|pt|ag|ack|ack-grep|sed|fzf|find|xargs) continue ;;
   esac
   # Match the pathological class
   if echo "$CMDLINE" | grep -qE "$SIG5_PATHOLOGICAL_PATTERN_REGEX"; then
