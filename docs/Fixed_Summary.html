@@ -653,24 +653,32 @@ mechanical items-row restoration, not a re-performance of the original
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
 <td>—</td>
-<td>BOB-108 — workable-items export
-(constitution/scripts/workable-items/workable-items export –db
-docs/workable_items.db –out-dir docs) regenerates docs/Issues.md and
-docs/Fixed.md from the tool’s own internal revision counter, which does
-not track manually-bumped §11.4.44 revision headers landed by a prior
-commit outside the tool’s own write path. Discovered during BOB-069
-(.superpowers/sdd/task-bob069-report.md, Concerns section): an export
-invocation reverted docs/Issues.md Revision 7-&gt;6 and docs/Fixed.md
-Revision 16-&gt;15, both regressions relative to the already-committed
-HEAD values bumped manually in commit 82d9842. Worked around manually by
-re-bumping both headers forward (Issues.md-&gt;8, Fixed.md-&gt;17) per
-§11.4.44 (monotonic revision is non-negotiable) rather than shipping the
-regression. Recommendation: fix upstream in
-constitution/scripts/workable-items so ‘export’ reads the CURRENT
-on-disk <strong>Revision:</strong> header (or the DB’s own last-known
-value, whichever is higher) before regenerating, instead of relying
-solely on an internal counter that can trail a manually-edited
-file.</td>
+<td>BOB-108 — ORIGINAL DEFECT (task #68 fix, commit 3520621):
+workable-items export regenerated docs/Issues.md and docs/Fixed.md from
+the tool’s own internal revision counter, which did not track
+manually-bumped §11.4.44 revision headers already committed on disk.
+Fixed by wiring reconcileRevisionHeader (export_revision.go) into
+export.go’s exportCmd. SIBLING DEFECT DISCOVERED (task #86, filed by
+task-incident-3-writeup subagent aebfe202 during BOB-120 filing,
+2026-08-18/19): the task #68 fix covered ONLY the ‘export’ subcommand –
+the sibling ‘sync db-to-md’ subcommand (syncDBToMD in sync.go), a
+documented first-class entry point (README.md Phase 4), shared the
+identical renderDocument-replays-the-DB’s-stale-header mechanism but had
+NO reconciliation call at all. Live-reproduced 2026-08-19: docs/Fixed.md
+Revision 22-&gt;15 via ‘workable-items sync db-to-md –out-fixed
+docs/Fixed.md’ (matching the operator-reported 21-&gt;15). Root-caused +
+fixed by wiring the SAME reconcileRevisionHeader call into BOTH
+syncDBToMD write paths (–out-issues and –out-fixed). RED-first Go tests
+added (sync_revision_test.go, 3 tests):
+TestSyncDBToMD_NeverRegressesRevisionBelowCommittedFile,
+TestSyncDBToMD_FixedRevisionNeverRegresses (the exact 22-&gt;15 live
+case, replayed), TestSyncDBToMD_IdempotentOnRepeatedInvocation. All RED
+pre-fix (verified against pristine git HEAD), all GREEN post-fix. Live
+idempotency verified: two consecutive real ‘sync db-to-md’ invocations
+against docs/Fixed.md produced byte-identical output (md5 4fba107a).
+bin/workable-items + bin/workable-items-linux rebuilt from the fixed
+source. Evidence:
+docs/qa/task-86-fix/{red_repro_sync_db_to_md.txt,green_after_fix.txt,unit_tests_go_test.txt}.</td>
 </tr>
 <tr>
 <td>70</td>

@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 22
-**Last modified:** 2026-08-18T22:14:38Z
+**Revision:** 23
+**Last modified:** 2026-08-18T22:24:54Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -773,16 +773,6 @@ RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008 body diff
 
 RD2-08: docs/features/Status.md and docs/codegraph/Status.md are stale
 
-## BOB-108 — constitution scripts/workable-items export reverts docs/Issues.md + docs/Fixed.md revision counters
-
-**Status:** Fixed (→ Fixed.md)
-**Type:** Bug
-**Evidence:** docs/qa/2026-08-18-task68-bob108-export-revision-fix/evidence.md
-**Severity:** Medium
-**Created-By:** Claude
-
-workable-items export (constitution/scripts/workable-items/workable-items export --db docs/workable_items.db --out-dir docs) regenerates docs/Issues.md and docs/Fixed.md from the tool's own internal revision counter, which does not track manually-bumped §11.4.44 revision headers landed by a prior commit outside the tool's own write path. Discovered during BOB-069 (.superpowers/sdd/task-bob069-report.md, Concerns section): an export invocation reverted docs/Issues.md Revision 7->6 and docs/Fixed.md Revision 16->15, both regressions relative to the already-committed HEAD values bumped manually in commit 82d9842. Worked around manually by re-bumping both headers forward (Issues.md->8, Fixed.md->17) per §11.4.44 (monotonic revision is non-negotiable) rather than shipping the regression. Recommendation: fix upstream in constitution/scripts/workable-items so 'export' reads the CURRENT on-disk **Revision:** header (or the DB's own last-known value, whichever is higher) before regenerating, instead of relying solely on an internal counter that can trail a manually-edited file.
-
 ## BOB-115 — Fix workable-items validate over-scoping to Updated-events (BOB-010 id=64 pattern)
 
 **Status:** Fixed (→ Fixed.md)
@@ -833,4 +823,13 @@ docs/MERGE_SEARCH_DIAGNOSTICS.md line ~128 states 'Default: 1 (all trackers expo
 **Assigned-To:** Claude
 
 IPTorrents changed its results-table markup since these two parsers were written: (1) plugins/iptorrents.py (native qBittorrent nova3 search plugin) never decompressed the gzip-encoded response body in _get_link() (download_torrent() already did), used an unquoted <table id=torrents> regex against markup that now emits quoted <table id="torrents">, expected /details.php?id=... desc links against markup that now emits /t/<id>, expected t_seeders=/t_leechers= CSS classes that IPTorrents removed entirely (seed/leech/snatch cells are now three bare positional <td>N cells before </tr>, in Snatches/Seeders/Leechers order per the table's own <thead>), and never URL-encoded the search query (a literal space in a multi-word query now raises http.client.InvalidURL under Python 3.14's stricter path validation). (2) download-proxy/src/merge_service/search.py::_parse_iptorrents_html() required a closing </td> tag on the seed/leech <td> cells (re.findall(r'<td[^>]*>(\d+)</td>')) but IPTorrents' HTML never closes these <td> tags — so td_values is always empty and seeds/leechers both silently default to 0, reproducing the EXACT reported symptom (rows appear with correct name/size but seed/leech literally 0/0 while qBittorrent's own swarm info shows real non-zero values for the same torrent). Root cause confirmed empirically by fetching https://iptorrents.com/t?... live and inspecting the real gzip-decompressed HTML (2026-08-19); all four defects fixed with new unit tests (34 total, all pass) and a §1.1 mutation proving the tests are load-bearing (revert -> 10 tests fail). Evidence under docs/qa/task-bob083-fix/. NOTE: the discovering agent (task-afe78327, §11.4.143 real-user-journey) referenced this as 'BOB-083', but BOB-083 in the workable-items DB is an unrelated pre-existing Task (RD2-16 codegraph Status.md regen) — no IPTorrents item was ever actually filed under that id (confirmed against both the git-committed HEAD DB and the live working copy). This item is filed at the next genuinely-free id (BOB-122, DB max was 121) per §11.4.54 (ids are never reused/renumbered).
+
+## BOB-108 — constitution scripts/workable-items export reverts docs/Issues.md + docs/Fixed.md revision counters
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** Claude
+
+ORIGINAL DEFECT (task #68 fix, commit 3520621): workable-items export regenerated docs/Issues.md and docs/Fixed.md from the tool's own internal revision counter, which did not track manually-bumped §11.4.44 revision headers already committed on disk. Fixed by wiring reconcileRevisionHeader (export_revision.go) into export.go's exportCmd. SIBLING DEFECT DISCOVERED (task #86, filed by task-incident-3-writeup subagent aebfe202 during BOB-120 filing, 2026-08-18/19): the task #68 fix covered ONLY the 'export' subcommand -- the sibling 'sync db-to-md' subcommand (syncDBToMD in sync.go), a documented first-class entry point (README.md Phase 4), shared the identical renderDocument-replays-the-DB's-stale-header mechanism but had NO reconciliation call at all. Live-reproduced 2026-08-19: docs/Fixed.md Revision 22->15 via 'workable-items sync db-to-md --out-fixed docs/Fixed.md' (matching the operator-reported 21->15). Root-caused + fixed by wiring the SAME reconcileRevisionHeader call into BOTH syncDBToMD write paths (--out-issues and --out-fixed). RED-first Go tests added (sync_revision_test.go, 3 tests): TestSyncDBToMD_NeverRegressesRevisionBelowCommittedFile, TestSyncDBToMD_FixedRevisionNeverRegresses (the exact 22->15 live case, replayed), TestSyncDBToMD_IdempotentOnRepeatedInvocation. All RED pre-fix (verified against pristine git HEAD), all GREEN post-fix. Live idempotency verified: two consecutive real 'sync db-to-md' invocations against docs/Fixed.md produced byte-identical output (md5 4fba107a). bin/workable-items + bin/workable-items-linux rebuilt from the fixed source. Evidence: docs/qa/task-86-fix/{red_repro_sync_db_to_md.txt,green_after_fix.txt,unit_tests_go_test.txt}.
 

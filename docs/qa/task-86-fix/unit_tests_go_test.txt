@@ -1,0 +1,25 @@
+# Task #86 — go test evidence, package constitution/scripts/workable-items
+#
+# RED (pre-fix, reverted source via `git show HEAD:.../sync.go`):
+#   --- FAIL: TestSyncDBToMD_NeverRegressesRevisionBelowCommittedFile (0.01s)
+#   --- FAIL: TestSyncDBToMD_FixedRevisionNeverRegresses (0.01s)
+#   --- PASS: TestSyncDBToMD_IdempotentOnRepeatedInvocation (0.01s)
+#
+# GREEN (post-fix):
+$ go test ./cmd/workable-items/... -run TestSyncDBToMD -v
+=== RUN   TestSyncDBToMD_NeverRegressesRevisionBelowCommittedFile
+--- PASS: TestSyncDBToMD_NeverRegressesRevisionBelowCommittedFile (0.01s)
+=== RUN   TestSyncDBToMD_FixedRevisionNeverRegresses
+--- PASS: TestSyncDBToMD_FixedRevisionNeverRegresses (0.01s)
+=== RUN   TestSyncDBToMD_IdempotentOnRepeatedInvocation
+--- PASS: TestSyncDBToMD_IdempotentOnRepeatedInvocation (0.00s)
+PASS
+ok  	github.com/HelixDevelopment/HelixConstitution/scripts/workable-items/cmd/workable-items	0.032s
+
+# Full package suite post-fix (go test ./...): only ONE pre-existing,
+# UNRELATED failure remains — TestDiffCmd_NoPathsSkipsMarkdownComparison
+# (a §11.4.115 polarity-switch test for a DIFFERENT, already-tracked defect
+# in diffCmd's no-paths handling). Confirmed via `git show HEAD:.../sync.go`
+# temporary-restore that this same test fails IDENTICALLY on the pristine,
+# unmodified HEAD tree — i.e. it is NOT caused by this fix and is out of
+# task #86's scope (honestly noted, not silently fixed nor silently ignored).

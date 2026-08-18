@@ -1,0 +1,28 @@
+# Task #86 — RED reproduction: `workable-items sync db-to-md` regresses
+# docs/Fixed.md's §11.4.44 Revision header, bypassing the BOB-108 fix
+# (which patched ONLY the `export` subcommand).
+#
+# Captured 2026-08-19, real repo tree, real binary, real DB. File restored
+# to committed state immediately after capture (see final `git diff --stat`
+# showing empty output).
+
+$ grep -n "Revision" docs/Fixed.md | head -1
+3:**Revision:** 22
+
+$ ./constitution/scripts/workable-items/bin/workable-items sync db-to-md --db docs/workable_items.db --out-fixed docs/Fixed.md
+wrote docs/Fixed.md (50829 bytes)
+
+$ grep -n "Revision" docs/Fixed.md | head -1
+3:**Revision:** 15
+
+# REGRESSION CONFIRMED: 22 -> 15 (matches the 21->15 reported by
+# task-incident-3-writeup-report.md's Concerns section verbatim — the DB's
+# frozen doc_segments raw-segment header for "Fixed" still carries the
+# pre-BOB-108-era value of 15).
+#
+# Root cause: constitution/scripts/workable-items/cmd/workable-items/sync.go
+# syncDBToMD() wrote renderDocument(db, "Fixed") straight to disk via plain
+# os.WriteFile — NO call to reconcileRevisionHeader anywhere in the function,
+# unlike export.go's exportCmd() which BOB-108 patched. `sync db-to-md` is a
+# documented first-class entry point (constitution/scripts/workable-items/
+# README.md "Phase 4"), independently reachable by any script/agent.

@@ -1,0 +1,29 @@
+# Task #86 — GREEN verification after wiring reconcileRevisionHeader into
+# syncDBToMD (both --out-issues and --out-fixed write paths). Real binary
+# (rebuilt from the fixed source), real DB, real repo tree. File restored to
+# committed state immediately after capture.
+
+$ grep -n "Revision" docs/Fixed.md | head -1
+3:**Revision:** 22
+
+$ ./constitution/scripts/workable-items/bin/workable-items sync db-to-md --db docs/workable_items.db --out-fixed docs/Fixed.md
+wrote docs/Fixed.md (50829 bytes)
+
+$ grep -n "Revision" docs/Fixed.md | head -1
+3:**Revision:** 22
+(unchanged — content genuinely unchanged since last commit, so the
+ reconciled header is restored VERBATIM, never regressed, never
+ gratuitously bumped)
+
+# IDEMPOTENCY CHECK — run the SAME command a second time:
+$ ./constitution/scripts/workable-items/bin/workable-items sync db-to-md --db docs/workable_items.db --out-fixed docs/Fixed.md
+wrote docs/Fixed.md (50829 bytes)
+
+$ grep -n "Revision" docs/Fixed.md | head -1
+3:**Revision:** 22
+
+$ md5sum docs/Fixed.md   # first run
+4fba107a93a0f9185123964814be6f29  docs/Fixed.md
+$ md5sum docs/Fixed.md   # second run
+4fba107a93a0f9185123964814be6f29  docs/Fixed.md
+# IDENTICAL — sync db-to-md is idempotent under the fix.
