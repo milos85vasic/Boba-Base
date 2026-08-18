@@ -6,12 +6,12 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 17 |
+| Bug | Fixed (→ Fixed.md) | 18 |
 | Feature | Implemented (→ Fixed.md) | 17 |
 | Task | Completed (→ Fixed.md) | 13 |
 | Task | Fixed (→ Fixed.md) | 4 |
 | Task | Implemented (→ Fixed.md) | 17 |
-| **TOTAL** | | **68** |
+| **TOTAL** | | **69** |
 
 ## Items
 
@@ -85,3 +85,4 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | 66 | High | Fixed (→ Fixed.md) | Bug | — | BOB-073 — RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008 body differs) |
 | 67 | High | Completed (→ Fixed.md) | Task | — | BOB-075 — RD2-08: docs/features/Status.md and docs/codegraph/Status.md are stale |
 | 68 | Medium | Completed (→ Fixed.md) | Task | — | BOB-103 — Land docs_chain (git@github.com:vasic-digital/docs_chain.git) as depth-1 reusable-engine submodule at constitution/submodules/docs_chain/ pinned to helixcode-v1.1.0. Build engine binary. Wire pre-build gate invariant 24 CM-DOCS-CHAIN-ENGINE-VERIFY into scripts/pre_build_verification.sh (real docs_chain verify --all against .docs_chain/contexts). Add challenges/scripts/docs_chain_verify_challenge.sh with §11.4.115 RED_MODE polarity. Retire scripts/docs_chain.sh misnomer wrapper by renaming to scripts/workable-items-export.sh (git mv, history preserved) and updating active callers (pre_build_verification.sh + 2 test files + 3 current-state docs). Constitution commit 47d41f8 pushed to all 6 mirrors. Boba-side commit follows this workable-item creation. [Reconciled 2026-08-18 via BOB-072/073 SSoT-integrity remediation: original item's Fixed-location DB row was deleted by a Fixed.md md-to-db reparse before this restoration ran (BOB-103 had never been written into docs/Fixed.md text) — original item_history rows (id=66 Opened 2026-08-15, id=67 Completed 2026-08-15, evidence challenges/scripts/docs_chain_verify_challenge.sh) survive untouched and remain the authoritative closure record; this add+close pair is a mechanical items-row restoration, not a re-performance of the original 2026-08-15 work.] |
+| 69 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-108 — workable-items export (constitution/scripts/workable-items/workable-items export --db docs/workable_items.db --out-dir docs) regenerates docs/Issues.md and docs/Fixed.md from the tool's own internal revision counter, which does not track manually-bumped §11.4.44 revision headers landed by a prior commit outside the tool's own write path. Discovered during BOB-069 (.superpowers/sdd/task-bob069-report.md, Concerns section): an export invocation reverted docs/Issues.md Revision 7->6 and docs/Fixed.md Revision 16->15, both regressions relative to the already-committed HEAD values bumped manually in commit 82d9842. Worked around manually by re-bumping both headers forward (Issues.md->8, Fixed.md->17) per §11.4.44 (monotonic revision is non-negotiable) rather than shipping the regression. Recommendation: fix upstream in constitution/scripts/workable-items so 'export' reads the CURRENT on-disk **Revision:** header (or the DB's own last-known value, whichever is higher) before regenerating, instead of relying solely on an internal counter that can trail a manually-edited file. |

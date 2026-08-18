@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 17
-**Last modified:** 2026-08-18T16:50:00Z
+**Revision:** 18
+**Last modified:** 2026-08-18T19:17:52Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -772,4 +772,14 @@ RD2-04: workable_items.db and Issues.md/Fixed.md have drifted (BOB-008 body diff
 **Severity:** High
 
 RD2-08: docs/features/Status.md and docs/codegraph/Status.md are stale
+
+## BOB-108 — constitution scripts/workable-items export reverts docs/Issues.md + docs/Fixed.md revision counters
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/2026-08-18-task68-bob108-export-revision-fix/evidence.md
+**Severity:** Medium
+**Created-By:** Claude
+
+workable-items export (constitution/scripts/workable-items/workable-items export --db docs/workable_items.db --out-dir docs) regenerates docs/Issues.md and docs/Fixed.md from the tool's own internal revision counter, which does not track manually-bumped §11.4.44 revision headers landed by a prior commit outside the tool's own write path. Discovered during BOB-069 (.superpowers/sdd/task-bob069-report.md, Concerns section): an export invocation reverted docs/Issues.md Revision 7->6 and docs/Fixed.md Revision 16->15, both regressions relative to the already-committed HEAD values bumped manually in commit 82d9842. Worked around manually by re-bumping both headers forward (Issues.md->8, Fixed.md->17) per §11.4.44 (monotonic revision is non-negotiable) rather than shipping the regression. Recommendation: fix upstream in constitution/scripts/workable-items so 'export' reads the CURRENT on-disk **Revision:** header (or the DB's own last-known value, whichever is higher) before regenerating, instead of relying solely on an internal counter that can trail a manually-edited file.
 
