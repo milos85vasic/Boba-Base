@@ -1,0 +1,35 @@
+=== SIG-4 seeded-PSI fixture: injecting a genuinely-high (full avg60=65.00 > 50 threshold) real-format PSI reading via PSI_FILE override ===
+some avg10=12.34 avg60=45.67 avg300=8.90 total=123456789
+full avg10=20.11 avg60=65.00 avg300=15.22 total=98765432
+
+=== Running the REAL (un-mutated) challenge — default threshold, default parsing logic — against this seeded input ===
+=== SIG-1: runaway process >5 GB RSS ===
+OK: no process >5 GB RSS
+
+=== SIG-2: thread count >70% of soft ulimit -u ===
+  threads=1315  soft_limit=65536  utilization=2%
+OK: thread utilization 2% within safe zone
+
+=== SIG-3: EAGAIN cascade in last 15 minutes ===
+  total EAGAIN-class hits last 15min: 0
+OK: EAGAIN hits within safe zone
+
+=== SIG-4: user.slice memory PSI full avg60 > 50 ===
+  full avg60=65.00 threshold=50
+
+=== SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+OK: no pathological-regex processes detected
+
+=== summary ===
+FAIL: 1 signature(s) tripped
+  - SIG-4: PSI full avg60=65.00 exceeds 50 — sustained memory pressure
+
+Take corrective action per docs/incidents/2026-08-18-perceived-forced-logout-2nd.md:
+  - SIG-1: identify + kill runaway process
+  - SIG-2: reduce parallel subagent fan-out
+  - SIG-3: examine container that emits EAGAIN, throttle its outbound
+  - SIG-4: reduce memory-consuming workload
+  - SIG-5: kill the pathological regex process immediately
+
+Challenge exit code: 1
+RED CONFIRMED: challenge correctly FAILed on a genuinely-high (avg60=65.00) PSI reading, naming SIG-4

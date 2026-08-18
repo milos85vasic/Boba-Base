@@ -26,9 +26,22 @@
 #
 # Every hit is REPORTED with §11.4.6 honest boundary — a signature triggered
 # does NOT prove logout is imminent, but it does prove the pressure the actual
-# incident had. §1.1 paired mutation: strip a signature detector, verify the
-# recorded trigger pattern (encoded golden-bad in the sibling fixture) makes
-# the challenge PASS silently → proves the detector is load-bearing.
+# incident had.
+#
+# §11.4.115(F) polarity: run `bash challenges/scripts/verify_resource_pressure_polarity.sh`
+# — it drives all 5 per-signature RED fixtures under
+# challenges/fixtures/resource_pressure/, each producing (or, for SIG-4,
+# safely dependency-injecting — see that fixture's header) the GENUINE
+# pathological artifact each detector is supposed to catch, then asserts
+# this UN-MUTATED script exits 1 naming the corresponding SIG-N. This
+# replaces an earlier polarity claim that only forced SIG1_MAX_PROC_RSS_GB
+# to a degenerate 0 (docs/qa/BOB-076/challenge_polarity_forced_fail.log) —
+# that evidence proved the comparison operator works, not that the
+# detector catches the actual pathological state (§11.4.209 review
+# IMPORTANT-1, task-review-457cca4-a7e55f9-report.md). §1.1 paired
+# mutation: strip a signature detector, re-run
+# verify_resource_pressure_polarity.sh, confirm the corresponding fixture's
+# RED flips to "RED NOT REPRODUCED" → proves the detector is load-bearing.
 #
 # Usage:
 #   bash challenges/scripts/resource_pressure_signature_challenge.sh
@@ -135,7 +148,15 @@ echo
 
 # --- SIG-4: user.slice PSI full avg60 ---
 echo "=== SIG-4: user.slice memory PSI full avg60 > ${SIG4_PSI_AVG60_LIMIT} ==="
-PSI_FILE="/sys/fs/cgroup/user.slice/user-1000.slice/memory.pressure"
+# PSI_FILE is overridable (§11.4.35 consumer-owned data injection point) so
+# the REAL parsing+threshold-comparison code path below can be exercised
+# against a genuinely-high, realistically-shaped PSI reading captured/seeded
+# in a fixture file (see challenges/fixtures/resource_pressure/
+# sig4_seeded_psi_fixture.sh) — WITHOUT inducing real sustained host-wide
+# memory pressure to test it, which would itself risk the exact
+# §12.6/§12.11/§12.12 host-safety violation this detector exists to catch.
+# Default path unchanged from the original hardcoded value.
+PSI_FILE="${PSI_FILE:-/sys/fs/cgroup/user.slice/user-1000.slice/memory.pressure}"
 if [ -r "$PSI_FILE" ]; then
   # Extract "full avg60=X.YZ" and compare to threshold
   FULL_AVG60=$(awk '/^full/ { for(i=1;i<=NF;i++) if($i ~ /^avg60=/) {gsub("avg60=","",$i); print $i} }' "$PSI_FILE")
