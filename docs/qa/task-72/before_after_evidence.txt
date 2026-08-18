@@ -23,3 +23,23 @@ vasic_digital_gitlab main = 774ac57c595e6ee9f37ca323d17b2365e1066c82
 
 === AFTER: docs_chain origin main ===
 8ccf505f48315c575ccd8b98c1c0dadd6fdb5296	refs/heads/main
+
+=== FRESH-CLONE REPRODUCTION TEST (Phase 4 verification) ===
+Command: git clone git@github.com:milos85vasic/Boba-Base.git /tmp/task-72-fresh-clone-test
+         && cd /tmp/task-72-fresh-clone-test
+         && git submodule update --init --recursive -- constitution
+Result: EXIT 0. constitution checked out at 774ac57c595e6ee9f37ca323d17b2365e1066c82.
+        constitution/submodules/docs_chain checked out at 8ccf505f48315c575ccd8b98c1c0dadd6fdb5296.
+        All 7 nested constitution submodules resolved cleanly.
+
+=== RELEASE-TAG AUDIT ===
+helixconstitution-v68 tag -> commit 34731bfbe1af4cc1a6768643f61f792953326ca4
+  docs_chain pointer at that tag: 9510e01471fbab12a75ce7d0da4e66b8ce90b81d (PUSHED, resolvable)
+  -> the v68 tag was NEVER orphaned. Only the later untagged commits
+     53853dd..4a17867 (post-v68, pre-fix HEAD) carried the broken
+     beade06 gitlink. No release tag needs re-cutting.
+
+=== boba pointer bump ===
+boba commit a4c6c7a1f82ef098efafbf31a5c405d07ff5b582
+  constitution gitlink -> 774ac57c595e6ee9f37ca323d17b2365e1066c82
+  pushed to git@github.com:milos85vasic/Boba-Base.git (github/origin/upstream, same remote)
