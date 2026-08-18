@@ -1,0 +1,23 @@
+=== ENABLE_DEAD_TRACKERS actual default ===
+docker-compose.yml:177:      - ENABLE_DEAD_TRACKERS=${ENABLE_DEAD_TRACKERS:-0}
+download-proxy/src/merge_service/search.py:500:# `ENABLE_DEAD_TRACKERS=1` to force them back in — e.g. to test whether
+download-proxy/src/merge_service/search.py:1032:        include_dead = os.getenv("ENABLE_DEAD_TRACKERS", "0") == "1"
+
+=== DEAD_PUBLIC_TRACKERS frozenset (14 entries) ===
+DEAD_PUBLIC_TRACKERS = frozenset(
+    {
+        "ali213",
+        "audiobookbay",
+        "bitru",
+        "bt4g",
+        "btsow",
+        "extratorrent",
+        "eztv",
+        "one337x",
+        "pctorrent",
+        "solidtorrents",
+        "therarbg",
+        "torrentfunk",
+        "xfsub",
+        "yihua",
+    }

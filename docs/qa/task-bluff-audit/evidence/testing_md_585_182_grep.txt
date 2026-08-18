@@ -1,0 +1,2 @@
+$ grep -in "585\|182 " docs/TESTING.md ; echo "exit=$?"
+exit=1

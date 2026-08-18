@@ -1,0 +1,88 @@
+test.sh:163:            print_fail "Volume mapping might be incorrect"
+plugins/socks.py:406:        # The relay is most likely on the same host as the SOCKS proxy,
+plugins/socks.py:606:        # Well it's not an IP number, so it's probably a DNS name.
+plugins/socks.py:745:                # It's likely that the HTTP proxy server does not support the
+plugins/socks.py:767:            # Probably IPv6, not supported -- raise an error, and hope
+docs/AGENT_GUARDRAILS.md:40:- "LIKELY", "probably", "maybe", "seems", "appears" are FORBIDDEN (§11.4.6)
+plugins/nnmclub.py:358:        # make first request (maybe it enough)
+plugins/nnmclub.py:402:            reason = f"{url} is not response! Maybe it is blocked."
+docs/MERGE_SEARCH_DIAGNOSTICS.md:88:| `upstream_http_403`      | Remote tracker returned 403 Forbidden                      | Likely geoblock or CDN WAF. Try VPN. |
+docs/MERGE_SEARCH_DIAGNOSTICS.md:214:If it's consistently `upstream_http_403`, the geoblock probably caught
+docs/MERGE_SEARCH_DIAGNOSTICS.md:230:probably in `DEAD_PUBLIC_TRACKERS`. Move it out, or set
+CONSTITUTION.md:180:- This rule overrides anything an automated contributor might propose.
+CONSTITUTION.md:432:transitions. If a future incident appears to involve container runtime
+docs/OUT_OF_SANDBOX.md:109:but the container-internal check apparently times out). Fixing this
+docs/RELEASE_READINESS_20260616.md:66:| **RW-07** nnmclub `/auth/.../status` drift | **OPEN/UNVERIFIED** | Plan says route 404s on the container; not re-probed this session (tunnel intermittently down per `qa-results/tunnel-keepalive-testsession.log`). Likely resolved with the RW-06 restart — needs a live 200 probe to confirm. |
+docs/RELEASE_READINESS_20260616.md:85:| **RW-21** contract tests green under 3.12 | **LIKELY GREEN** | Contract tests are part of the 4209-green Python suite (run under the repo `.venv`, py3.13). New magnet/download endpoints are in the frozen `docs/api/openapi.json` per the plan; confirm under the intended interpreter. INFO. |
+docs/PLUGIN_TROUBLESHOOTING.md:228:- The torrent might have been removed
+docs/PLUGIN_TROUBLESHOOTING.md:234:- Your session might have expired
+plugins/rutor.py:337:            reason = f"{url} is not responding! Maybe it is blocked."
+CLAUDE.md:100:  might otherwise propose.
+docs/SESSION_REPORT_2026-04-19.md:96:   in isolation. Root cause is likely test pollution from leftover
+plugins/kinozal.py:292:        # make first request (maybe it enough)
+plugins/kinozal.py:342:            reason = f"{url} is not response! Maybe it is blocked."
+docs/REMAINING_WORK_PLAN.md:82:- **Acceptance:** `curl :7187/api/v1/auth/nnmclub/status` → 200; the e2e no longer skips. (Likely resolved together with RW-06's restart — verify.)
+plugins/torlock.py:86:                        # Date seems like it can be Today, Yesterday, or M/D/YYYY (Timezone unknown)
+plugins/torrentgalaxy.py:110:            # Always set a sleep(3) after each request to the search engine website, otherwise you might get banned by the search engine.
+plugins/community/torlock.py:85:                        # Date seems like it can be Today, Yesterday, or M/D/YYYY (Timezone unknown)
+docs/Issues.md:26:error="login returned no session cookie — likely CAPTCHA"`.
+docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md:65:  is (most likely) the operator's own second session/device, still bypassing per-commit
+docs/issues/fixed/BUGFIXES.md:742:`python@3.14` (a likely-incompatible combo; podman-compose support for 3.14 is not established). Native
+docs/QA_DISCOVERY_LEDGER.md:149:  stale/desynced from reality), most likely fallout from the same host session-kill mechanism
+docs/QA_DISCOVERY_LEDGER.md:315:  RD2-00 Update 2 confirms the mechanism is (most likely) the operator's own second
+docs/QA_DISCOVERY_LEDGER.md:385:  directory as of this writing, while the other four listed inputs now exist (apparently
+docs/QA_DISCOVERY_LEDGER.md:388:  stub-expansion subagent (`ae59171f`) apparently hit its session rate limit before writing them" —
+docs/CONTINUATION.md:257:  it is very likely this same second session/device, not an unknown external actor.
+docs/superpowers/plans/2026-04-26-jackett-autoconfig-clean-rebuild.md:1315:    # likely to fuzzy-match an indexer Jackett ships with — "1337x" is
+docs/incidents/2026-04-27-perceived-host-suspension-investigation.md:14:The most likely actual experience: **GUI screen lock / display blank** (an
+docs/incidents/2026-04-27-perceived-host-suspension-investigation.md:105:- Most likely owner: a foreign project's container (the host runs many: 364
+docs/incidents/2026-04-27-perceived-host-suspension-investigation.md:126:## Root cause: most likely
+docs/incidents/2026-08-07-const033-poweroff-signal-triage.md:42:triage from "likely false positive" to "confirm what actually happened."
+docs/incidents/2026-08-18-perceived-forced-logout-2nd.md:20:> in user. Most likely caused by sudden complete lack of system resources!
+docs/incidents/2026-08-18-perceived-forced-logout-2nd.md:47:| 20:49:00 | **HTTP FLOOD**: qbittorrent-proxy received 100+ `/health` requests in ONE SECOND (likely BOB-074 DDoS challenge or unbounded subagent probe) | qbittorrent-proxy journal |
+docs/browser_extension/_analysis/01-guides-and-plan.md:495:3. **Jest vs Vitest (MED).** Reference mandates Jest+Playwright; Boba's existing `frontend/` is Angular 21 + **Vitest**. Standardize the extension on Vitest to match Boba, or keep Jest? Playwright E2E likely stays.
+docs/browser_extension/_analysis/03-diagrams.md:200:- (mmd-only extra, likely typo) content → content (uses)
+docs/browser_extension/_analysis/03-diagrams.md:405:1. **CI/CD contradiction:** #11 build pipeline mandates GitHub Actions (`on: push`, `on: release`, `on: schedule`) and "Auto-deploy" to stores. Boba root CLAUDE.md/Constitution Hard-Stop #1 forbids ALL CI/CD pipelines and `.github/workflows/*`. The plan MUST reconcile — likely the extension deploy pipeline runs as a manual script (`./ci.sh`-style), not GitHub Actions.
+docs/browser_extension/_analysis/06-tests.md:37:1. **Two test runners mixed.** `crypto.test.ts` imports from **`vitest`** (`import { describe, it, expect, beforeAll } from 'vitest'`); every other unit test uses **Jest** globals. `jest.config.ts` `testMatch` would pick up `crypto.test.ts` but the `vitest` import would fail under Jest. The reference is internally inconsistent — the Boba implementation MUST standardize on ONE runner (likely Vitest, since the Boba `frontend/` already uses Vitest).
+docs/browser_extension/_analysis/06-tests.md:40:4. **`playwright.config.ts` references missing files.** `globalSetup: "./tests/e2e/global-setup.ts"` and `globalTeardown: "./tests/e2e/global-teardown.ts"` are referenced but DO NOT EXIST in `tests/e2e/`. Also `webServer.url: "http://localhost:3000"` is referenced but the build produces a static extension (no dev server on :3000) — likely dead config.
+docs/qa/nnmclub-login-diagnosis-20260616.md:105:"nnmclub login returned no session cookie — likely credential failure"
+docs/qa/nnmclub-login-diagnosis-20260616.md:107:The word **"likely"** is a §11.4.6 no-guessing violation, and the guess is wrong:
+docs/qa/nnmclub-login-diagnosis-20260616.md:144:1. Fix the §11.4.6 "likely credential failure" diag string (section 4) → state the
+docs/qa/nnmclub-login-diagnosis-20260616.md:153:  `auth_failure`) and the message contains "Turnstile", not "likely". Fails pre-fix.
+docs/qa/coverage-escape-tmux-oomd-20260812/audit.md:48:actual `crun` process was dead, "most likely fallout from the same
+docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim07.md:1433:      // Likely passkey pattern
+docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim07.md:1812:   * Check if data appears to be a valid torrent file (without full parsing)
+docs/research/browser_extension/Browser Torrent Extension Guide/docs/developer-guide.md:1329:2. If the key is missing, the browser was likely restarted without password protection.
+docs/research/browser_extension/Browser Torrent Extension Guide/src/src/shared/crypto.ts:242: * Check if a string appears to be encrypted data (has the bundle structure).
+docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim08.md:694:    // The node itself might be a matching element
+docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim08.md:1539:      // Force a full scan when approaching bottom (new content likely loaded)
+tests/integration/test_bridge_header_rewrite.py:150:            f"Referer rewrite likely not deployed; restart webui-bridge.py"
+tests/integration/test_merge_api.py:221:        # (a single slow/failed poll against a real, possibly shared, live
+tests/stress/test_tracker_fetch_stress_chaos.py:642:    # failure is overwhelmingly likely (binomial-tail).
+download-proxy/README.md:122:  module that might be executed standalone for testing.
+docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim09.md:350:Claim: Boba likely uses JWT-based authentication with the Go/Gin backend [^507^]
+docs/proposals/subagent-worktree-isolation.md:357:  such as running untrusted code a subagent might generate) — tracked here as an
+qBitTorrent-go/internal/logging/redactor.go:29:// might be substrings of them. Otherwise the shorter secret will be
+tests/integration/test_auth_and_links.py:138:        # Proxy might return various status codes
+tests/fixtures/services.py:159:    (maybe started manually) and do nothing. Otherwise, start
+qBitTorrent-go/tests/integration/jackett_db_test.go:972:		// end, so the pool might still be open — but the row lives in the
+qBitTorrent-go/tests/e2e/jackett_management_test.go:436:		t.Skipf("POST indexer iptorrents: %d body=%s (likely catalog ID changed)",
+download-proxy/src/merge_service/search.py:330:        summary = "plugin parse failed (upstream HTML likely changed)"
+download-proxy/src/merge_service/search.py:1329:                        "error": "rutracker login returned no session cookie — likely CAPTCHA wall or credential failure",
+download-proxy/src/merge_service/search.py:1640:                        # credentials. This is NOT "likely a credential failure" —
+tests/stress/test_button_endpoints_stress_chaos.py:41:    possibly xt-less magnet, no hang / no raise.
+download-proxy/src/merge_service/deduplicator.py:63:        # Sort by seed count (higher seeds = more likely to be canonical),
+tests/stress/test_search_stress.py:190:        # Start many searches that might be aborted
+scripts/boba-svc.sh:174:        _warn "systemctl stop returned $stop_rc (probably not loaded / already stopped) — continuing to start phase"
+challenges/scripts/resource_pressure_signature_challenge.sh:88:# (low current SIG-2 = still a genuine cascade, but possibly from an
+challenges/scripts/resource_pressure_signature_challenge.sh:283:  # SDD conductor might legitimately invoke against this file (ripgrep,
+tests/stress/test_plugin_parsers_stress_chaos.py:602:    rows missing fields → no crash, a defined (possibly empty) row set."""
+qBitTorrent-go/internal/jackettapi/indexers.go:237:// not surfaced — the operator might be testing an indexer that hasn't
+challenges/scripts/tmux_survives_oomd_pressure_challenge.sh:40:# process was dead ... most likely fallout from the same host session-
+extension/src/background/index.ts:544: *  - a **content script** runs on an arbitrary, possibly hostile page, and its
+extension/src/background/index.ts:583: * arbitrary, possibly hostile page, so its `result` is untrusted. A malformed
+extension/src/background/index.ts:618:      // Trust boundary: `result` arrives from a content script on a possibly
+extension/src/shared/crypto.ts:242: * Check if a string appears to be encrypted data (has the bundle structure).
+extension/tests/security/sender-trust.test.ts:19: *      arbitrary, possibly hostile page → `sender.tab` is set), and the
+extension/tests/security/message-router-robustness.test.ts:7: * EVERY message from a content script (running on an arbitrary, possibly
+extension/tests/unit/scanner-base.test.ts:167:      // Force Date.now far into the future for any code path that might read it.

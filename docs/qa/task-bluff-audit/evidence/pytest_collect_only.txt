@@ -1,0 +1,7 @@
+$ cd /run/media/milosvasic/DATA4TB/Projects/boba
+$ timeout 90 nice -n 19 ionice -c 3 .venv/bin/python -m pytest tests/ --collect-only -q 2>&1 | tail -5
+  /run/media/milosvasic/DATA4TB/Projects/boba/.venv/lib64/python3/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5236 tests collected in 2.06s

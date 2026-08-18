@@ -197,7 +197,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>7</td>
+<td>10</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -217,7 +217,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>45</strong></td>
+<td><strong>48</strong></td>
 </tr>
 </tbody>
 </table>
@@ -744,6 +744,84 @@ detector could silently pass a broken/absent rate-limit deployment. Add
 a synthetic fixture (e.g. a stub server that never returns 429/503 under
 burst) and assert the detector correctly reports the absence, closing
 the self-validation gap for this detector class.</td>
+</tr>
+<tr>
+<td>BOB-117</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>High</td>
+<td>search.py:1329 (_search_rutracker password-login path) still
+classifies a no-session-cookie login result as error_type=auth_failure
+with message ‘rutracker login returned no session cookie — likely
+CAPTCHA wall or credential failure’. The adjacent code comment (lines
+1244-1248, same function) already states as FACT that ‘rutracker gates
+login.php behind a CAPTCHA when logins spike… the CAPTCHA is the real
+blocker’ — yet the error classification still hedges with forbidden
+§11.4.6 vocabulary (likely) and reports the WRONG error_type
+(auth_failure instead of upstream_captcha), unlike the exact same class
+of bug already fixed for nnmclub per
+docs/qa/nnmclub-login-diagnosis-20260616.md (which replaced ‘likely
+credential failure’ with a FACT-based upstream_captcha classification +
+explanatory comment explicitly citing ‘This is NOT likely a credential
+failure’). The rutracker code path could disambiguate the same way
+nnmclub’s fix does (or by reading the login response body for a captcha
+marker, mirroring the existing pattern used ~20 lines later in the SAME
+function for the search response) but currently discards that
+opportunity and ships a guess. Found during a §11.4.6 bluff audit
+(docs/qa/task-bluff-audit/). Fix direction: apply the same
+upstream_captcha reclassification + FACT-based message used for nnmclub,
+or add a captcha-marker check on the login response before falling back
+to a hedged message.</td>
+</tr>
+<tr>
+<td>BOB-118</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>High</td>
+<td>README.md line 28 ships a green/success-colored shields.io badge
+‘python tests-585 passing’, and line 333 repeats ‘585+ tests’. A real,
+non-destructive verification this session (timeout 90 nice -n 19 ionice
+-c 3 .venv/bin/python -m pytest tests/ –collect-only -q) collected 5235
+tests, not 585 — roughly 9x higher, so the badge is either wildly stale
+or was never machine-derived (violates §11.4.259
+CM-BADGE-MACHINE-DERIVED-SOURCE + §11.4.6 no-guessing). The README’s own
+§11.4.259 provenance footnote (lines 40-57) explicitly discloses that
+the tests/vitest/plugins/merge/scan/license badges were ‘carried forward
+unverified this session (out of this task’s scope)’ and directs readers
+to docs/TESTING.md ‘for the current authoritative per-suite counts’ —
+but docs/TESTING.md contains NO occurrence of ‘585’ or ‘182’ anywhere,
+so the cited authoritative source cannot actually corroborate the badge.
+The frontend vitest badge (182 passing) is also suspect: a source-level
+grep of it()/test() calls in frontend/src/**/*.spec.ts counts ~371,
+roughly 2x the claimed 182 (lower-confidence proxy than the pytest
+collect-only count, but consistent with the same staleness pattern).
+Found during a §11.4.6 bluff audit (docs/qa/task-bluff-audit/). Fix
+direction: wire a real badge-computer (README already flags this as an
+owed §11.4.197 gate-code item) that regenerates the badge from a real
+collect/run count, and add the actual per-suite counts to
+docs/TESTING.md so the cited authoritative source is real.</td>
+</tr>
+<tr>
+<td>BOB-119</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>docs/MERGE_SEARCH_DIAGNOSTICS.md line ~128 states ‘Default: 1 (all
+trackers exposed; dead ones filtered by DEAD_PUBLIC_TRACKERS)’ for
+ENABLE_DEAD_TRACKERS. This is factually wrong:
+download-proxy/src/merge_service/search.py:1032 reads
+os.getenv(‘ENABLE_DEAD_TRACKERS’, ‘0’) (default string ‘0’) and
+docker-compose.yml:177 sets ENABLE_DEAD_TRACKERS=\0 (also default 0).
+The sibling doc docs/DEAD_TRACKERS_EXPLAINED.md correctly states ‘With
+ENABLE_DEAD_TRACKERS=0 (default): 24 public trackers active, 14
+excluded’ — confirmed against the current DEAD_PUBLIC_TRACKERS frozenset
+(14 entries, names match exactly). MERGE_SEARCH_DIAGNOSTICS.md’s stated
+default is the one document that disagrees with the source of truth, and
+could mislead an operator into believing dead trackers are shown to end
+users by default when they are actually filtered out by default. Found
+during a §11.4.6 bluff audit (docs/qa/task-bluff-audit/). Fix direction:
+correct ‘Default: 1’ to ‘Default: 0’ in MERGE_SEARCH_DIAGNOSTICS.md to
+match search.py/docker-compose.yml.</td>
 </tr>
 </tbody>
 </table>

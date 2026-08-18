@@ -1,0 +1,56 @@
+challenges/scripts/install_sh_idempotent_challenge.sh:13:# SKIPs (§11.4.3):
+challenges/scripts/install_sh_idempotent_challenge.sh:57:if BOBA_INSTALL_SKIP_PULL=1 BOBA_INSTALL_SKIP_BUILD=1 timeout 240 \
+challenges/scripts/install_sh_idempotent_challenge.sh:76:if BOBA_INSTALL_SKIP_PULL=1 BOBA_INSTALL_SKIP_BUILD=1 timeout 240 \
+challenges/scripts/upstream_proxy_wired_challenge.sh:33:# §11.4.6: no field is fabricated — a genuinely-un-wired layer SKIPs, never
+challenges/scripts/upstream_proxy_wired_challenge.sh:37:# L3 honest SKIP → challenge exits 0 (all present layers verified, gap is
+challenges/scripts/upstream_proxy_wired_challenge.sh:57:    SKIP) skip=$((skip + 1)); echo "  [SKIP] $msg" ;;
+challenges/scripts/upstream_proxy_wired_challenge.sh:271:# for jackett is the L3 responsibility (already SKIP'd above).
+challenges/scripts/upstream_proxy_wired_challenge.sh:275:  verdict SKIP "L4 'jackett' env-forward absent (see L3 SKIP; tracked)"
+challenges/scripts/upstream_proxy_wired_challenge.sh:281:  # tracker-bound. SKIP is honest per §11.4.6.
+challenges/scripts/upstream_proxy_wired_challenge.sh:288:echo "Summary: PASS=$pass  FAIL=$fail  SKIP=$skip"
+challenges/scripts/upstream_proxy_wired_challenge.sh:320:echo "PASS: upstream_proxy_wired_challenge — every wired layer verified; residual gaps honestly SKIP'd"
+challenges/scripts/durable_run_helper_challenge.sh:35:# user manager, non-systemd host), the GREEN half honestly SKIPs with
+challenges/scripts/durable_run_helper_challenge.sh:81:# Honest SKIP when no user systemd manager available
+challenges/scripts/iptorrents_cookie_flow_challenge.sh:10:# If IPTORRENTS_COOKIES is unset → SKIP per CONST-11.
+challenges/scripts/iptorrents_cookie_flow_challenge.sh:12:# Pass: PASS message + exit 0 OR SKIP message + exit 0
+challenges/scripts/resource_pressure_signature_challenge.sh:99:#        itself could not resolve (unlimited ulimit / SKIP).
+challenges/scripts/run_all_challenges.sh:14:#   0 = all PASS / SKIP
+challenges/scripts/tracker_auth_live_challenge.sh:28:#     SKIP  (operator-blocked) if authenticated==false AND error matches an
+challenges/scripts/tracker_auth_live_challenge.sh:38:#   SKIP (exit 77) if the merge service is unreachable OR every credentialed
+challenges/scripts/tracker_auth_live_challenge.sh:39:#                  sub-check honestly SKIPs (no genuine FAIL).
+challenges/scripts/tracker_auth_live_challenge.sh:44:#   - Backend down (§11.4.3): honest SKIP (exit 77) with the EXACT curl blocker
+challenges/scripts/tracker_auth_live_challenge.sh:46:#   - A tracker honest-SKIP carries its REAL error string — we do not pretend an
+challenges/scripts/tracker_auth_live_challenge.sh:157:  write_evidence "SKIP" "$TMP_FRAG"
+challenges/scripts/tracker_auth_live_challenge.sh:190:  write_evidence "SKIP" "$TMP_FRAG"
+challenges/scripts/tracker_auth_live_challenge.sh:221:  write_evidence "SKIP" "$TMP_FRAG"
+challenges/scripts/tracker_auth_live_challenge.sh:238:# Honest transient-blocker pattern → operator-blocked SKIP (NOT a creds FAIL).
+challenges/scripts/tracker_auth_live_challenge.sh:327:    # Some passed, none failed → remaining honestly SKIPped. Mixed but no genuine
+challenges/scripts/tracker_auth_live_challenge.sh:328:    # FAIL: surface as SKIP (release gate blocks while operator-blocked exists).
+challenges/scripts/tracker_auth_live_challenge.sh:329:    verdict = "SKIP"
+challenges/scripts/tracker_auth_live_challenge.sh:331:    verdict = "SKIP"   # every credentialed sub-check honestly SKIPped
+challenges/scripts/tracker_auth_live_challenge.sh:347:    print("  SKIP " + line, file=sys.stderr)
+challenges/scripts/tracker_auth_live_challenge.sh:374:  SKIP)
+challenges/scripts/tracker_auth_live_challenge.sh:376:    echo "      credentialed sub-checks honestly SKIPped (operator-blocked transient)."
+challenges/scripts/verify_resource_pressure_polarity.sh:30:#   2 = one or more fixtures had to SKIP (§11.4.3) — reported honestly, not
+challenges/scripts/verify_resource_pressure_polarity.sh:31:#       counted as a pass; the run still exits non-zero so a SKIP can never
+challenges/scripts/verify_resource_pressure_polarity.sh:34:# Anti-bluff (§11.4.6): a SKIPped signature is NEVER reported as verified.
+challenges/scripts/verify_resource_pressure_polarity.sh:59:SKIP_COUNT=0
+challenges/scripts/verify_resource_pressure_polarity.sh:78:    RESULT_TEXTS+=("SKIP (missing fixture)")
+challenges/scripts/verify_resource_pressure_polarity.sh:79:    SKIP_COUNT=$((SKIP_COUNT + 1))
+challenges/scripts/verify_resource_pressure_polarity.sh:96:      RESULT_TEXTS+=("SKIP (§11.4.3 — see $OUT_FILE)")
+challenges/scripts/verify_resource_pressure_polarity.sh:97:      SKIP_COUNT=$((SKIP_COUNT + 1))
+challenges/scripts/verify_resource_pressure_polarity.sh:120:elif [ "$SKIP_COUNT" -gt 0 ]; then
+challenges/scripts/verify_resource_pressure_polarity.sh:121:  echo "VERDICT: PARTIAL — $SKIP_COUNT signature(s) honestly SKIPPED (§11.4.3), NOT claimed verified"
+challenges/scripts/ddos_resilience_challenge.sh:29:#                             that same absence as an honest §11.4.3 SKIP
+challenges/scripts/ddos_resilience_challenge.sh:66:#   0 = all PASS (SKIPs allowed — honest gaps, not failures)
+challenges/scripts/ddos_resilience_challenge.sh:117:    SKIP) skip=$((skip + 1)); echo "  [SKIP] $msg" ;;
+challenges/scripts/ddos_resilience_challenge.sh:367:  cache_check_note="cache-behavior check SKIPPED (no accessible container runtime CLI/container found — timeout-rate + throughput checks below still apply)"
+challenges/scripts/ddos_resilience_challenge.sh:420:    notes+=("$name: SKIP'd — stack not running at probe time")
+challenges/scripts/ddos_resilience_challenge.sh:481:      notes+=("$name: rate limiting SKIP'd — extension_absent, followup filed")
+challenges/scripts/ddos_resilience_challenge.sh:528:echo "Summary: PASS=$pass  FAIL=$fail  SKIP=$skip"
+challenges/scripts/tmux_survives_oomd_pressure_challenge.sh:8:#    against exists — a host with oomd disabled would trivially SKIP
+challenges/scripts/tmux_survives_oomd_pressure_challenge.sh:70:#   ambient-condition-specific and honestly SKIPs.
+challenges/scripts/credentials_wired_challenge.sh:32:#   - No `.env` at all → SKIP (fresh checkout; run scripts/install.sh)
+challenges/scripts/credentials_wired_challenge.sh:33:#   - Container `qbittorrent-proxy` not running → SKIP the container-
+challenges/scripts/credentials_wired_challenge.sh:213:    echo "  NOTE: qbittorrent-proxy container not running — SKIP container-side propagation check"
+challenges/scripts/credentials_wired_challenge.sh:226:# known tracker whose file exists (or ABSENT/SKIP report — either is
