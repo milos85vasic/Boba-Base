@@ -1,0 +1,37 @@
+=== push to gitflic ===
+remote: Updating references: 100% (1/1)           remote: Updating references: 100% (1/1)        
+To gitflic.ru:helixdevelopment/helixconstitution.git
+   497c0b1..f234202  main -> main
+exit=0
+=== push to github ===
+remote: This repository moved. Please use the new location:        
+remote:   git@github.com:HelixDevelopment/constitution.git        
+To github.com:HelixDevelopment/HelixConstitution.git
+   497c0b1..f234202  main -> main
+exit=0
+=== push to gitlab ===
+To gitlab.com:helixdevelopment1/helixconstitution.git
+   497c0b1..f234202  main -> main
+exit=0
+=== push to gitverse ===
+remote: . Processing 1 references        
+remote: Processed 1 references in total        
+To gitverse.ru:helixdevelopment/HelixConstitution.git
+   497c0b1..f234202  main -> main
+exit=0
+=== push to origin ===
+Everything up-to-date
+To github.com:vasic-digital/HelixConstitution.git
+   497c0b1..f234202  main -> main
+To gitlab.com:vasic-digital/HelixConstitution.git
+   497c0b1..f234202  main -> main
+exit=0
+=== push to upstream ===
+Everything up-to-date
+exit=0
+=== push to vasic_digital_github ===
+Everything up-to-date
+exit=0
+=== push to vasic_digital_gitlab ===
+Everything up-to-date
+exit=0

@@ -1,0 +1,237 @@
+[commit-push-all] stage 1/6 — fetch all remotes
+Fetching origin
+Fetching github
+Fetching upstream
+[commit-push-all] stage 2/6 — cheap validation
+[commit-push-all] NOTE: submodule(s) with local changes (not blocking):
+  - constitution
+[commit-push-all] stage 2/6 — OK (cheap validation clean)
+[commit-push-all] stage 3/6 — long gate (pre_build_verification.sh)
+[pre-code-review] Running code-review gate...
+=== Code-Review Gate ===
+
+[1/4] ruff check on all Python files
+SIM118 Use `key in dict` instead of `key in dict.keys()`
+   --> tests/integration/test_merge_api.py:117:61
+    |
+115 |         timeout=30,
+116 |     )
+117 |     has_session_cookie = any(name.startswith("QBT_SID") for name in session.cookies.keys())
+    |                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+118 |     body_ok = resp.text.strip() == "Ok."
+119 |     if resp.status_code not in (200, 204) or not (has_session_cookie or body_ok):
+    |
+help: Remove `.keys()`
+
+RUF019 [*] Unnecessary key check before dictionary access
+   --> tests/integration/test_merge_api.py:161:16
+    |
+159 |         data = resp.json()
+160 |         assert data["query"] == "debian"
+161 |         assert "search_id" in data and data["search_id"]
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+162 |         assert isinstance(data["results"], list)
+163 |         assert isinstance(data["trackers_searched"], list)
+    |
+help: Replace with `dict.get`
+
+S103 `os.chmod` setting a permissive mask `0o755` on file or directory
+   --> tests/integration/test_merge_api.py:280:29
+    |
+278 |         with open(host_path, "w") as f:
+279 |             f.write("#!/bin/sh\nexit 0\n")
+280 |         os.chmod(host_path, 0o755)
+    |                             ^^^^^
+281 |         container_path = f"/config/download-proxy/hooks/{name}"
+282 |         try:
+    |
+
+UP037 [*] Remove quotes from type annotation
+   --> tests/stress/test_tracker_fetch_stress_chaos.py:170:35
+    |
+168 |         return self._body
+169 |
+170 |     async def __aenter__(self) -> "_FakeResponse":
+    |                                   ^^^^^^^^^^^^^^^
+171 |         return self
+    |
+help: Remove quotes
+
+UP037 [*] Remove quotes from type annotation
+   --> tests/stress/test_tracker_fetch_stress_chaos.py:207:35
+    |
+205 |         return _CM()
+206 |
+207 |     async def __aenter__(self) -> "_FakeSession":
+    |                                   ^^^^^^^^^^^^^^
+208 |         return self
+    |
+help: Remove quotes
+
+B023 Function definition does not bind loop variable `i`
+   --> tests/stress/test_tracker_fetch_stress_chaos.py:505:65
+    |
+503 |             # bails out quickly on rejection cases.
+504 |             return await orch.fetch_torrent(
+505 |                 "rutracker", f"https://rutracker.example/other/{i}"
+    |                                                                 ^
+506 |             )
+    |
+
+S311 Standard pseudo-random generators are not suitable for cryptographic purposes
+   --> tests/stress/test_tracker_fetch_stress_chaos.py:551:11
+    |
+550 |     # Deterministic RNG so the failure count is reproducible per §11.4.50.
+551 |     rng = random.Random(20260810)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^
+552 |     drop_rate = 0.20
+553 |     call_state = {"n": 0, "dropped": 0}
+    |
+
+Found 7 errors.
+[*] 3 fixable with the `--fix` option (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+    WARNING: ruff found pre-existing issues (non-blocking)
+[2/4] mypy on download-proxy/src/
+Traceback (most recent call last):
+  File "/home/milosvasic/.local/bin/mypy", line 3, in <module>
+    from mypy.__main__ import console_entry
+  File "/home/milosvasic/.local/lib/python3/site-packages/mypy/__main__.py", line 9, in <module>
+    from mypy.main import main, process_options
+  File "/home/milosvasic/.local/lib/python3/site-packages/mypy/main.py", line 25, in <module>
+    from mypy import build, defaults, state, util
+  File "/home/milosvasic/.local/lib/python3/site-packages/mypy/build.py", line 45, in <module>
+    from librt.base64 import b64encode
+ModuleNotFoundError: No module named 'librt.base64'
+    WARNING: mypy found pre-existing issues (non-blocking)
+[3/4] bash -n syntax check on scripts/*.sh
+  PASS [1]: all scripts/*.sh pass syntax check
+[4/4] mutation marker check
+  PASS [2]: no mutation markers found
+
+=== Result: 2 passed, 0 failed ===
+[pre-code-review] PASSED
+
+=== Constitution Inheritance Verification Gate ===
+
+[PREFLIGHT] interpreter capability (§11.4.238 RD2-41b/RD2-43)
+  PASS [1]: PREFLIGHT interpreter: /run/media/milosvasic/DATA4TB/Projects/boba/.venv/bin/python can import pytest+rpds+jsonschema
+[1/23] constitution/ directory exists
+  PASS [2]: constitution/ exists
+[2/23] constitution/Constitution.md §11.4 anchor
+  PASS [3]: Constitution.md contains §11.4 anchor
+[3/23] constitution/CLAUDE.md anti-bluff covenant anchor
+  PASS [4]: CLAUDE.md contains anti-bluff covenant anchor
+[4/23] constitution/AGENTS.md anti-bluff covenant anchor
+  PASS [5]: AGENTS.md contains anti-bluff covenant anchor
+[5/23] Parent CLAUDE.md inheritance pointer
+  PASS [6]: CLAUDE.md references constitution submodule
+[6/23] Parent AGENTS.md inheritance pointer
+  PASS [7]: AGENTS.md references constitution submodule
+[7/23] Parent CONSTITUTION.md inheritance pointer
+  PASS [8]: CONSTITUTION.md references Helix Universal Constitution
+[8/23] Parent CLAUDE.md §11.4 propagation anchor
+  PASS [9]: CLAUDE.md contains §11.4 propagation anchor
+[9/23] Parent AGENTS.md §11.4 propagation anchor
+  PASS [10]: AGENTS.md contains §11.4 propagation anchor
+[10/23] Parent CONSTITUTION.md §11.4 propagation anchor
+  PASS [11]: CONSTITUTION.md contains §11.4 propagation anchor
+[11/23] .claude/settings.json with PreToolUse guard hook
+  PASS [12]: .claude/settings.json has PreToolUse hook configured
+[12/23] docs/AGENT_GUARDRAILS.md SUBAGENT CONSTITUTIONAL PREAMBLE
+  PASS [13]: AGENT_GUARDRAILS.md contains SUBAGENT CONSTITUTIONAL PREAMBLE
+[13/23] docs/AGENT_GUARDRAILS.md ORCHESTRATOR PRE-ACTION CHECKLIST
+  PASS [14]: AGENT_GUARDRAILS.md contains ORCHESTRATOR PRE-ACTION CHECKLIST
+[14/23] constitution/scripts/hooks/guard-forbidden-commands.sh
+  PASS [15]: Guard hook script exists and is executable
+[15/23] tests/hooks/test_guard_forbidden_commands.sh
+  PASS [16]: Hermetic hook test exists
+[16/23] CM-MARKDOWN-EXPORT-SYNC: all-Markdown export freshness (§11.4.65)
+  WARN: 1 missing .docx sibling(s) (gitignored per BOB-011)
+        - docs/scripts/install-resource-pressure-timer.docx missing (gitignored per BOB-011)
+  FAIL [1]: CM-MARKDOWN-EXPORT-SYNC: 24 export(s) missing/stale
+      - docs/incidents/2026-08-18-perceived-forced-logout-2nd.html missing
+      - docs/incidents/2026-08-18-perceived-forced-logout-2nd.pdf missing
+      - docs/incidents/2026-08-18-auto-committer-BOB-068-investigation.html missing
+      - docs/incidents/2026-08-18-auto-committer-BOB-068-investigation.pdf missing
+      - docs/scripts/durable-run.html missing
+      - docs/scripts/durable-run.pdf missing
+      - docs/scripts/jackett-cookie-login-hardening.html missing
+      - docs/scripts/jackett-cookie-login-hardening.pdf missing
+      - docs/scripts/helixqa-jackett-fake.html missing
+      - docs/scripts/helixqa-jackett-fake.pdf missing
+      - docs/scripts/load-tracker-cookies.html missing
+      - docs/scripts/load-tracker-cookies.pdf missing
+      - docs/scripts/commit-push-all.html missing
+      - docs/scripts/commit-push-all.pdf missing
+      - docs/scripts/install-resource-pressure-timer.html missing
+      - docs/scripts/install-resource-pressure-timer.pdf missing
+      - docs/FAQ.html missing
+      - docs/FAQ.pdf missing
+      - docs/testing/test_type_matrix.html missing
+      - docs/testing/test_type_matrix.pdf missing
+      - docs/testing/ddos_resilience.html missing
+      - docs/testing/ddos_resilience.pdf missing
+      - docs/proposals/subagent-worktree-isolation.html missing
+      - docs/proposals/subagent-worktree-isolation.pdf missing
+[17/23] CM-WORKABLE-ITEMS-VALIDATE: workable-items validate (§11.4.93/§11.4.95)
+validate: OK — 115 items, all invariants satisfied
+  PASS [17]: workable-items validate: DB invariant check passed
+diff: DB and Markdown are in sync
+  PASS [18]: workable-items diff: DB and Markdown are in sync
+[18/24] CM-WORKABLE-ITEMS-EXPORT-VALIDATE: workable-items-export.sh --check-only (§11.4.93/§11.4.65)
+[docs-chain] Step 1/3: workable-items export
+  (check-only) Running workable-items validate...
+validate: OK — 115 items, all invariants satisfied
+  (check-only) All export files present.
+[docs-chain] Step 2/3: domain summary pages
+  (check-only) All domain summary pages already present.
+[docs-chain] Step 3/3: markdown HTML/PDF/DOCX export
+  (check-only) Would run: generate_markdown_exports.sh
+
+[docs-chain] Complete.
+  PASS [19]: workable-items-export --check-only: docs regeneration validation passed
+[19/23] CM-QA-DISCOVERY-LEDGER-FRESH: ledger fresh + counts aligned (§11.4.238)
+  PASS [20]: QA discovery ledger fresh (entries=15 == declared=15)
+[20/23] CM-QA-IS-THE-DISCOVERER: every out-of-band entry carries required fields (§11.4.238(C))
+  PASS [21]: every out-of-band ledger entry carries **escape-audit:** and **new-check:**
+[21/23] CM-COVENANT-114-238-PROPAGATION: §11.4.238 propagates (§11.4.227(B))
+  PASS [22]: §11.4.238 propagates (Constitution block-start ×1, §11.4.157 mirror-set literal present ×4)
+[22/24] CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION: export step 1 really invoked (§11.4.238 RD2-41a)
+  PASS [23]: workable-items-export step 1 really invoked (exit 0, no 'binary not found' / 'ERROR:' lines)
+[23/24] CM-NO-PRODUCTION-MUTATION-RESIDUE: no mutation-marker residue in production sources (§11.4.84)
+  PASS [24]: no mutation-marker residue in production sources
+[24/24] CM-DOCS-CHAIN-ENGINE-VERIFY: docs_chain engine verify --all (§11.4.106)
+  FAIL [2]: CM-DOCS-CHAIN-ENGINE-VERIFY: docs_chain verify --all FAILED (exit 1) — derived docs drift from .md sources
+        --- verify output ---
+        codegraph-status         STALE: [status_docx]
+        features-status          in-sync
+        --- end ---
+        Remediation: cd ${PROJECT_ROOT} && ./constitution/submodules/docs_chain/docs_chain sync --all
+[25/25] CM-RESOURCE-PRESSURE-SIGNATURE-CHECK: proactive host-pressure probe (§12.12, task #77/BOB-076)
+  PASS [25]: resource-pressure-signature-check: clean (all 5 signatures below threshold)
+
+=== Result: 25 passed, 2 failed ===
+ERROR: scripts/pre_build_verification.sh exit=1
+       Fix the failing invariant, OR skip THIS run with
+       BOBA_SYNC_SKIP_CI=1 bash scripts/commit-push-all.sh "..."
+       (the skip is recorded in the commit message for follow-up).
+[commit-push-all] stage 1/6 — fetch all remotes
+Fetching origin
+Fetching github
+Fetching upstream
+[commit-push-all] stage 2/6 — cheap validation
+[commit-push-all] NOTE: submodule(s) with local changes (not blocking):
+  - constitution
+[commit-push-all] stage 2/6 — OK (cheap validation clean)
+[commit-push-all] stage 3/6 — long gate (pre_build_verification.sh)
+[commit-push-all] stage 3/6 — SKIPPED via BOBA_SYNC_SKIP_CI=1
+                             (recorded as [skip-ci] in commit message)
+[commit-push-all] stage 4/6 — git status pre-commit
+ M constitution
+ ? submodules/challenges
+ m submodules/helixqa
+?? docs/qa/task-44/
+?? docs/qa/task-54/
+[commit-push-all] stage 5/6 — SCOPED commit (--scope mode, 2 path(s) declared)
+                             scope: constitution
+                             scope: docs/qa/task-44

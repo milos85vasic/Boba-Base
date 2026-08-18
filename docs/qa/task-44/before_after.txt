@@ -1,0 +1,20 @@
+=== BEFORE: git ls-files (binary tracked?) ===
+docs_chain
+=== git status (MUST NOT list docs_chain as untracked/modified) ===
+On branch main
+Your branch is ahead of 'origin/main' by 1 commit.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+=== git status --ignored (docs_chain must appear here) ===
+On branch main
+Your branch is ahead of 'origin/main' by 1 commit.
+  (use "git push" to publish your local commits)
+
+Ignored files:
+  (use "git add -f <file>..." to include in what will be committed)
+	docs_chain
+
+nothing to commit, working tree clean
+=== AFTER: git ls-files (binary must NOT appear) ===
+grep_exit=1
