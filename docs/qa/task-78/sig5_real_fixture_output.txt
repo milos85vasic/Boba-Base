@@ -1,17 +1,18 @@
 Extracted detector regex (single source of truth): \bugrep .*-o .*\.\\\{[0-9]+,[0-9]+\\\}.*\\\|
 === SIG-5 real-pathological-regex fixture: spawning argv-disguised process ===
-Verified via /proc/2123551/cmdline: ugrep /run/media/milosvasic/DATA4TB/Projects/boba/challenges/fixtures/resource_pressure/sig5_sleeper_helper.sh -o .\{0,120\}decoy\|pathological 
+Verified via /proc/2955435/cmdline: ugrep /run/media/milosvasic/DATA4TB/Projects/boba/challenges/fixtures/resource_pressure/sig5_sleeper_helper.sh -o .\{0,120\}decoy\|pathological 
 
 === Running the REAL (un-mutated) challenge against this live disguised process ===
 === SIG-1: runaway process >5 GB RSS ===
 OK: no process >5 GB RSS
 
 === SIG-2: thread count >70% of soft ulimit -u ===
-  threads=1317  soft_limit=65536  utilization=2%
-OK: thread utilization 2% within safe zone
+  threads=1297  soft_limit=65536  utilization=1%
+OK: thread utilization 1% within safe zone
 
 === SIG-3: EAGAIN cascade in last 15 minutes ===
   total EAGAIN-class hits last 15min: 0
+  correlation: SIG-2-not-currently-elevated (current SIG-2 utilization=1%)
 OK: EAGAIN hits within safe zone
 
 === SIG-4: user.slice memory PSI full avg60 > 50 ===
@@ -20,7 +21,7 @@ OK: PSI within safe zone
 
 === SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
 
-  PID=2123551 RSS=14432KB CMD=ugrep /run/media/milosvasic/DATA4TB/Projects/boba/challenges/fixtures/resource_pressure/sig5_sleeper_helper.sh -o .\{0,120\}decoy\|pathological 
+  PID=2955435 RSS=14572KB CMD=ugrep /run/media/milosvasic/DATA4TB/Projects/boba/challenges/fixtures/resource_pressure/sig5_sleeper_helper.sh -o .\{0,120\}decoy\|pathological 
 
 === summary ===
 FAIL: 1 signature(s) tripped

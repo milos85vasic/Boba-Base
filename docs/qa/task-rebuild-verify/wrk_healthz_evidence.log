@@ -1,0 +1,18 @@
+=== wrk brief verification against FRESH boba-jackett container (2026-08-18T20:47:33Z) ===
+$ wrk -t2 -c50 -d5s --timeout 3s --latency http://localhost:7189/healthz
+Running 5s test @ http://localhost:7189/healthz
+  2 threads and 50 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.08ms    0.96ms  15.49ms   79.98%
+    Req/Sec    27.16k     2.08k   29.81k    85.00%
+  Latency Distribution
+     50%  844.00us
+     75%    1.49ms
+     90%    2.31ms
+     99%    4.42ms
+  270085 requests in 5.00s, 48.17MB read
+Requests/sec:  54008.16
+Transfer/sec:      9.63MB
+=== boba-jackett container logs — cache refresh evidence ===
+2026/08/18 20:46:54 boba-jackett: /healthz Jackett cache refresh #1 (hits=0 misses=1 ratio=0.0% ok=true)
+2026/08/18 20:47:25 boba-jackett: /healthz Jackett cache refresh #2 (hits=1 misses=2 ratio=33.3% ok=true)

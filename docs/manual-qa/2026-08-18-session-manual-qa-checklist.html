@@ -1,0 +1,718 @@
+<h1 id="session-manual-qa-checklist-2026-08-18">Session Manual QA
+Checklist — 2026-08-18</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T21:40:00Z <strong>Authority:</strong> §11.4.185
+(manual-QA-final human sufficiency gate) + §11.4.153 (per-feature
+Status/video-confirmation format). Automated gates are NECESSARY but NOT
+SUFFICIENT — this checklist is the human confirmation step the
+constitution requires before this session’s deliverables can be
+considered fully done. <strong>Scope:</strong> deliverables
+shipped/verified in the boba-stack session spanning commits
+<code>457cca4</code> (constitution v68 pointer/loader fix) through
+<code>63f3f88</code> (HEAD at authoring time). See
+<code>docs/CONTINUATION.md</code> Rev 24 for the full session narrative
+this checklist confirms. <strong>Per §11.4.238:</strong> every item
+below was already exercised by an automated check or a live
+captured-evidence probe in this session (cited per feature). This
+checklist’s job is CONFIRMATION, not discovery — if the operator finds
+something NEW and unreported here, that is itself a coverage-escape and
+should be filed as its own workable item with a
+<code>docs/QA_DISCOVERY_LEDGER.md</code> entry (out of this document’s
+scope — see that file directly).</p>
+<hr />
+<h2 id="executive-summary">Executive summary</h2>
+<p><strong>Sign off if all 12 features below PASS.</strong></p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Feature</th>
+<th>Automated evidence already captured</th>
+<th>Manual confirmation needed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Boba stack container reachability</td>
+<td><code>docker ps</code> / <code>podman ps</code> health checks</td>
+<td>Yes — visual confirm of all 4 UIs/APIs</td>
+</tr>
+<tr>
+<td>2</td>
+<td>qBittorrent WebUI (7185)</td>
+<td>HTTP 200 curl</td>
+<td>Yes — log in, see torrent list</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Merge Search Dashboard (7187)</td>
+<td>HTTP 200 curl + dashboard HTML captured</td>
+<td>Yes — visually confirm layout renders</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Jackett management page (7187/jackett)</td>
+<td>HTTP 200 curl</td>
+<td>Yes — visually confirm credentials UI</td>
+</tr>
+<tr>
+<td>5</td>
+<td>boba-jackett API (7189)</td>
+<td><code>/healthz</code> 200 curl (API-only, no standalone UI)</td>
+<td>Yes — confirm health JSON in browser</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Search functionality (cross-tracker + dedup)</td>
+<td>Live captured run, 42 trackers / 1640 raw / 468 merged (uncommitted
+evidence, this session)</td>
+<td>Yes — run one search yourself</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Download flow (proxy + cookies, freeleech-only)</td>
+<td>Live captured run: add → verify → stop → delete (uncommitted
+evidence, this session)</td>
+<td>Yes — run one freeleech download + verify cleanup</td>
+</tr>
+<tr>
+<td>8</td>
+<td>BOB-112 <code>/healthz</code> TTL cache (DDoS mitigation)</td>
+<td>Live <code>wrk</code> load test: 97.1%→0.0% timeout rate
+(<code>e2a2e3e</code>)</td>
+<td>Yes — hit <code>/healthz</code> rapidly, confirm no hang</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Constitution v68 amendment landing</td>
+<td>Submodule pointer bump (<code>c4e2d93</code>, <code>f8aa956</code>)
++ <code>constitution/CLAUDE.md</code> Revision-68 header</td>
+<td>Yes — spot-check one new anchor’s text</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Resource-pressure timer (armed)</td>
+<td><code>systemctl --user list-timers</code> shows next fire in ~35
+min</td>
+<td>Yes — confirm timer + last-run log</td>
+</tr>
+<tr>
+<td>11</td>
+<td>CONST-033 challenge (host cannot suspend)</td>
+<td>Re-run this session: 4/4 PASS</td>
+<td>Yes — re-run + eyeball output</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Pre-build gate (27/27 GREEN)</td>
+<td>Re-run this session: <code>27 passed, 0 failed</code> at HEAD
+<code>63f3f88</code></td>
+<td>Yes — re-run yourself</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Video-confirmation note (§11.4.153):</strong> none of the 12
+items below have a fresh screen recording tied specifically to this
+session’s changes. Recording infrastructure exists for this project
+(<code>/Volumes/T7/Downloads/Recordings/</code>, see
+<code>docs/features/Status.md</code> “Video-recording confirmations”)
+but was not exercised for this batch — every “Video-confirmation status”
+cell below is honestly <code>PENDING (not recorded this session)</code>.
+If the operator wants durable video evidence, the fastest path is
+<code>asciinema rec</code> for the CLI/curl-driven items (6, 7, 8, 10,
+11, 12) and a screen capture for the browser-driven items (2, 3, 4,
+5).</p>
+<hr />
+<h2 id="feature-01-boba-stack-container-reachability">FEATURE-01 — Boba
+stack container reachability</h2>
+<ul>
+<li><strong>Component:</strong> docker-compose stack (qbittorrent,
+jackett, boba-jackett, qbittorrent-proxy)</li>
+<li><strong>Category:</strong> Infrastructure / smoke test</li>
+<li><strong>Implementation reference:</strong>
+<code>docker-compose.yml</code> (service definitions); orchestrated via
+<code>./start.sh</code> (see <code>CLAUDE.md</code> “Pick the right
+restart level”); systemd wrapper <code>scripts/boba-svc.sh</code>
+(commit <code>444d94e</code>) for boot-persistent operation.</li>
+<li><strong>Wiring status:</strong> DEPLOYED — confirmed live this
+session: <code>qbittorrent</code> (healthy, up 39 min),
+<code>jackett</code> (healthy, up 39 min), <code>boba-jackett</code>
+(healthy, up 38 min), <code>qbittorrent-proxy</code> (healthy, up 38
+min, host-network mode bundling ports 7186/7187/7188).</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Run <code>podman ps</code> (or <code>docker ps</code> on a
+docker-only host) and confirm all 4 boba containers show <code>Up</code>
+with <code>(healthy)</code> where a healthcheck is defined.</li>
+<li>Alternatively run <code>./scripts/boba-svc.sh health</code>
+(systemd-wrapped path) or <code>./start.sh -s</code> (direct compose
+path) and read the per-endpoint probe output.</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> all 4 containers
+<code>Up (healthy)</code>; no <code>Restarting</code> /
+<code>Exited</code> / <code>unhealthy</code> states.</li>
+<li><strong>Video-confirmation status:</strong> PENDING (not recorded
+this session).</li>
+</ul>
+<hr />
+<h2 id="feature-02-qbittorrent-webui-httplocalhost7185">FEATURE-02 —
+qBittorrent WebUI (http://localhost:7185)</h2>
+<ul>
+<li><strong>Component:</strong> qbittorrent container, WebUI</li>
+<li><strong>Category:</strong> UI / end-user surface</li>
+<li><strong>Implementation reference:</strong>
+<code>docker-compose.yml</code> <code>qbittorrent</code> service;
+credentials are hardcoded <code>admin</code>/<code>admin</code> per
+<code>CLAUDE.md</code> (do not change).</li>
+<li><strong>Wiring status:</strong> DEPLOYED —
+<code>curl -o /dev/null -w '%{http_code}' http://localhost:7185/</code>
+returned <code>200</code> this session.</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Open <code>http://localhost:7185</code> in a browser (or via the
+proxy at <code>http://localhost:7186</code> for the auth-injected
+path).</li>
+<li>Log in with <code>admin</code> / <code>admin</code>.</li>
+<li>Confirm the torrent list view loads (may be empty — that is
+fine).</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> WebUI loads, login succeeds,
+torrent list panel renders without a blank/error page.</li>
+<li><strong>Video-confirmation status:</strong> PENDING (not recorded
+this session). Historical confirmation exists from a prior session — see
+<code>docs/features/Status.md</code> “Video-recording confirmations”
+table, <code>boba-web-dashboard-tour.mp4</code> (qBit-Connected header
+indicator) — but that recording predates this session’s changes and does
+not stand in for a fresh confirmation.</li>
+</ul>
+<hr />
+<h2 id="feature-03-merge-search-dashboard-httplocalhost7187">FEATURE-03
+— Merge Search Dashboard (http://localhost:7187)</h2>
+<ul>
+<li><strong>Component:</strong> qbittorrent-proxy (Python/FastAPI)
+merge-search dashboard</li>
+<li><strong>Category:</strong> UI / end-user surface</li>
+<li><strong>Implementation reference:</strong>
+<code>download-proxy/src/api/__init__.py</code> (FastAPI app);
+<code>docs/qa/task-e2e-journey/dashboard_response.html</code> (captured
+this session, HTTP 200, 2505 bytes) — <strong>note: this evidence
+directory is uncommitted at the time this checklist was
+authored</strong> (produced by a concurrent in-session task; it will
+land in a future commit — do not cite a commit SHA for it until it is
+committed).</li>
+<li><strong>Wiring status:</strong> DEPLOYED — <code>curl</code> returns
+<code>200</code> with a full
+<code>&lt;title&gt;Боба Dashboard&lt;/title&gt;</code> HTML page.</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Open <code>http://localhost:7187</code> in a browser.</li>
+<li>Confirm the “Боба Dashboard” page renders (header, search box,
+tracker list).</li>
+<li>Toggle the theme switch (if present) and confirm the page re-renders
+without breaking.</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> dashboard loads with a visible
+search UI and tracker/result panels; no blank page or client-side JS
+error in the console.</li>
+<li><strong>Video-confirmation status:</strong> PENDING (not recorded
+this session).</li>
+</ul>
+<hr />
+<h2
+id="feature-04-jackett-management-page-httplocalhost7187jackett">FEATURE-04
+— Jackett management page (http://localhost:7187/jackett)</h2>
+<ul>
+<li><strong>Component:</strong> Angular dashboard <code>/jackett</code>
+route, backed by boba-jackett (7189)</li>
+<li><strong>Category:</strong> UI / end-user surface</li>
+<li><strong>Implementation reference:</strong>
+<code>docs/JACKETT_INTEGRATION.md</code> § “Auto-Configuration”;
+boba-jackett owns credentials/overrides in <code>config/boba.db</code>
+per <code>docs/BOBA_DATABASE.md</code>.</li>
+<li><strong>Wiring status:</strong> DEPLOYED —
+<code>curl -o /dev/null -w '%{http_code}' http://localhost:7187/jackett</code>
+returned <code>200</code> this session.</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Open <code>http://localhost:7187/jackett</code> in a browser.</li>
+<li>Confirm the credentials/overrides management UI renders
+(Add-credential dialog, indexer override list).</li>
+<li>Do NOT save new credentials during this pass unless you intend to
+(this page writes to <code>config/boba.db</code>).</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> page loads with the Jackett
+credentials management UI, no error banner.</li>
+<li><strong>Video-confirmation status:</strong> PENDING (not recorded
+this session). A prior-session recording
+(<code>boba-web-jackett-add-credential.png</code>, per
+<code>docs/features/Status.md</code>) exists but predates this session’s
+changes.</li>
+</ul>
+<hr />
+<h2 id="feature-05-boba-jackett-api-health-httplocalhost7189">FEATURE-05
+— boba-jackett API health (http://localhost:7189)</h2>
+<ul>
+<li><strong>Component:</strong> boba-jackett (Go/Gin), port 7189</li>
+<li><strong>Category:</strong> API / infrastructure (no standalone
+browser UI of its own — the root path <code>/</code> correctly 404s; its
+management surface is served through the Angular dashboard at
+<code>:7187/jackett</code>, FEATURE-04 above)</li>
+<li><strong>Implementation reference:</strong>
+<code>qBitTorrent-go/internal/jackettapi/health.go</code> (see also
+FEATURE-08 below for the specific <code>/healthz</code> TTL-cache fix);
+this file currently has an <strong>uncommitted, in-progress
+edit</strong> in the working tree at the time this checklist was
+authored — the evidence below reflects the last-committed state
+(<code>91b52db</code> / <code>e2a2e3e</code>), not whatever is
+mid-edit.</li>
+<li><strong>Wiring status:</strong> DEPLOYED —
+<code>curl -o /dev/null -w '%{http_code}' http://localhost:7189/healthz</code>
+returned <code>200</code> this session.
+<code>curl http://localhost:7189/</code> correctly returns
+<code>404</code> (no root route is expected/registered — this is NOT a
+defect).</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Open <code>http://localhost:7189/healthz</code> directly in a
+browser or via <code>curl</code>.</li>
+<li>Confirm a JSON body is returned
+(e.g. <code>{"status":"healthy", ...}</code>).</li>
+<li>Confirm <code>http://localhost:7189/</code> returns a plain 404
+(expected — do not file a bug for this).</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> <code>/healthz</code> returns 200
+with a status JSON body within well under 1 second.</li>
+<li><strong>Video-confirmation status:</strong> N/A — no UI to record;
+confirmed by curl/browser JSON view.</li>
+</ul>
+<hr />
+<h2
+id="feature-06-search-functionality-cross-tracker-search-with-dedup">FEATURE-06
+— Search functionality: cross-tracker search with dedup</h2>
+<ul>
+<li><strong>Component:</strong> Merge search service
+(<code>/api/v1/search/sync</code>), 42 registered trackers</li>
+<li><strong>Category:</strong> Core functionality</li>
+<li><strong>Implementation reference:</strong>
+<code>download-proxy/src/merge_service/search.py</code> (orchestration)
++ <code>download-proxy/src/merge_service/deduplicator.py</code> (dedup).
+Session evidence:
+<code>docs/qa/task-e2e-journey/search_response.json</code> +
+<code>search_response_raw.log</code> + <code>summary.md</code> (captured
+live this session, 358 KB raw response, 42 trackers queried, 1640 raw
+results merged to 468 unique) — <strong>uncommitted at the time this
+checklist was authored</strong> (concurrent in-session task; will land
+in a future commit).</li>
+<li><strong>Wiring status:</strong> DEPLOYED — proven end-to-end this
+session via real HTTP against the live stack (no mocks, no deep-link
+shortcuts, per §11.4.143).</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Open <code>http://localhost:7187</code>.</li>
+<li>Enter a search term (e.g. <code>"Ubuntu"</code> or
+<code>"1080p"</code>) and submit.</li>
+<li>Confirm results appear from multiple trackers (check the per-result
+tracker label / the dashboard’s tracker-count indicator).</li>
+<li>Confirm no obvious duplicate rows for what is clearly the same
+release across trackers (a small number of near-duplicates from
+genuinely different releases is expected and NOT a dedup failure).</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> results render within a few
+seconds, spanning more than one tracker, with the merged/deduplicated
+count visibly lower than the raw per-tracker sum.</li>
+<li><strong>Video-confirmation status:</strong> PENDING (not recorded
+this session). Prior-session recording
+<code>boba-web-search-flow.mp4</code> exists (per
+<code>docs/features/Status.md</code>, confirms “829 results (288
+merged)”) but predates this session.</li>
+</ul>
+<hr />
+<h2
+id="feature-07-download-flow-proxy-fetch-with-cookies-freeleech-only">FEATURE-07
+— Download flow: proxy fetch with cookies (freeleech-only)</h2>
+<ul>
+<li><strong>Component:</strong> Download proxy
+(<code>/api/v1/download</code>) → qBittorrent Web API passthrough</li>
+<li><strong>Category:</strong> Core functionality</li>
+<li><strong>Implementation reference:</strong> tracker-credential wiring
+<code>b1af169</code>; cookies-file autoload convention
+<code>619a5f6</code>; loader closed-set fix <code>457cca4</code>.
+Session evidence:
+<code>docs/qa/task-e2e-journey/download_response.log</code> +
+<code>qbit_torrent_info_pretty.json</code> +
+<code>qbit_cleanup.log</code> (captured live this session: add → verify
+registered/downloading → stop → delete with
+<code>deleteFiles=true</code> → re-verify removed) — <strong>uncommitted
+at the time this checklist was authored</strong>.</li>
+<li><strong>Wiring status:</strong> DEPLOYED — proven end-to-end this
+session; the torrent added was confirmed <code>freeleech: true</code> /
+tagged <code>[free]</code> <strong>before</strong> selection, per the
+project’s freeleech-only constraint (<code>CLAUDE.md</code>).</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Search for content on a tracker known to have freeleech-tagged
+results (e.g. IPTorrents — look for the <code>IPTorrents [free]</code>
+tag in the tracker display name).</li>
+<li>Click download/add on a <strong>freeleech-tagged</strong> result
+ONLY. Do not add a non-freeleech IPTorrents result — this costs ratio on
+a live account.</li>
+<li>Confirm the torrent appears in the qBittorrent WebUI (7185) torrent
+list, actively connecting to peers.</li>
+<li>Stop and delete the torrent (with “delete files” checked) to avoid
+consuming bandwidth/disk unnecessarily during this QA pass.</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> the torrent registers in
+qBittorrent within seconds of clicking download; stop+delete removes it
+cleanly (re-querying the torrent list shows it gone).</li>
+<li><strong>Honest note:</strong> this feature genuinely requires live,
+working tracker credentials
+(<code>IPTORRENTS_USERNAME</code>/<code>PASSWORD</code> or equivalent
+per <code>.env</code>) to test the private-tracker path. If credentials
+have expired/rotated since this session, this step will fail for a
+credential reason unrelated to the download-flow code itself — check
+<code>docs/guides/tracker-credentials.md</code> before filing a
+bug.</li>
+<li><strong>Video-confirmation status:</strong> PENDING (not recorded
+this session).</li>
+</ul>
+<hr />
+<h2
+id="feature-08-bob-112-healthz-ttl-cache-ddos-amplification-mitigation">FEATURE-08
+— BOB-112: <code>/healthz</code> TTL cache (DDoS-amplification
+mitigation)</h2>
+<ul>
+<li><strong>Component:</strong> boba-jackett,
+<code>internal/jackettapi/health.go</code></li>
+<li><strong>Category:</strong> Bug fix / resilience (§11.4.85 stress
+test)</li>
+<li><strong>Implementation reference:</strong> fix commit
+<code>91b52db</code> (TTL cache around
+<code>Jackett.GetCatalog()</code>); load-test proof commit
+<code>e2a2e3e</code> (live <code>wrk</code> 4-thread/100-connection/ 30s
+run: baseline with cache bypassed = 400/412 requests timed out (97.1%);
+post-fix = 0/812,149 timed out (0.0%), 27,049 req/s, p99 latency
+19.89ms).</li>
+<li><strong>Wiring status:</strong> DEPLOYED per the committed code and
+load-test evidence above. <strong>Honest status-custody note
+(§11.4.6):</strong> the workable-items DB record for
+<code>BOB-112</code> still shows <code>Status: Queued</code> at the time
+of writing, even though the fix and its live proof are committed — this
+looks like a status-write gap (the DB row was never flipped to a
+terminal status after the fix landed), not a code defect. Worth a
+separate, small follow-up to correct the DB status; it does not block
+this manual-QA pass, which is about the runtime behavior.</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Run <code>curl http://localhost:7189/healthz</code> a handful of
+times in quick succession (a simple
+<code>for i in $(seq 1 20); do curl -sS -o /dev/null -w '%{time_total}\n' http://localhost:7189/healthz; done</code>
+one-liner is enough — no need to reproduce the full <code>wrk</code>
+load test).</li>
+<li>Confirm every response returns quickly (well under 1 second) and
+with HTTP 200.</li>
+<li>Optional deeper check: run
+<code>challenges/scripts/ddos_resilience_challenge.sh --healthz</code>
+if you want the full regression-guard re-run (this is what
+<code>e2a2e3e</code>’s evidence was captured with).</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> rapid repeated hits to
+<code>/healthz</code> never hang or time out; latency stays low and flat
+regardless of request rate.</li>
+<li><strong>Video-confirmation status:</strong> N/A — no UI; confirmed
+by curl timing output / challenge script console output.</li>
+</ul>
+<hr />
+<h2
+id="feature-09-constitution-v68-amendment-landing-docs-regenerated">FEATURE-09
+— Constitution v68 amendment landing (docs regenerated)</h2>
+<ul>
+<li><strong>Component:</strong> <code>constitution/</code> submodule +
+boba’s submodule pointer</li>
+<li><strong>Category:</strong> Governance / documentation sync</li>
+<li><strong>Implementation reference:</strong> boba pointer-bump commits
+<code>f8aa956</code> (22-anchor amendment round §11.4.239-262 + 5
+extensions) and <code>c4e2d93</code> (bump to
+<code>helixconstitution-v68</code> tag, <code>34731bf</code> — CHANGELOG
+for v68). Confirmed this session:
+<code>git submodule status constitution</code> resolves to
+<code>fab23f0</code> (<code>helixconstitution-v68-15-gfab23f0</code>,
+i.e. 15 commits past the v68 tag — the tag itself plus later same-day
+housekeeping commits); <code>constitution/CLAUDE.md</code> header reads
+<code>Revision | 68</code>.</li>
+<li><strong>Wiring status:</strong> DEPLOYED — the new anchors
+(§11.4.239 through §11.4.262, plus the §11.4.140/141
+anchor-number-collision re-mint to §11.4.255/256) are present in
+<code>constitution/CLAUDE.md</code> at the time of writing.</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Run <code>git submodule status constitution</code> from the boba
+repo root and confirm the pinned SHA matches (or descends from)
+<code>34731bf</code> / the <code>helixconstitution-v68</code> tag.</li>
+<li>Open <code>constitution/CLAUDE.md</code> and spot-check ONE new
+anchor, e.g. search for <code>§11.4.238</code> (the “automated QA must
+be the discoverer” anchor) and confirm the full anchor text is present
+and readable (not a stub/truncation).</li>
+<li>Confirm boba’s own <code>CLAUDE.md</code> (repo root) still opens
+with the <code>## INHERITED FROM constitution/CLAUDE.md</code> pointer
+block, so the inheritance chain is intact.</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> submodule pointer matches; the
+spot-checked anchor’s full text is present and legible; boba’s own
+<code>CLAUDE.md</code> inheritance pointer is unbroken.</li>
+<li><strong>Video-confirmation status:</strong> N/A — text/documentation
+artifact, no UI.</li>
+</ul>
+<hr />
+<h2 id="feature-10-resource-pressure-timer-armed-running">FEATURE-10 —
+Resource-pressure timer (armed + running)</h2>
+<ul>
+<li><strong>Component:</strong>
+<code>boba-resource-pressure-check.timer</code> / <code>.service</code>
+(systemd –user unit)</li>
+<li><strong>Category:</strong> Host-safety / preventive monitoring
+(CONST-033 family)</li>
+<li><strong>Implementation reference:</strong> wiring commit
+<code>ecb3bfe</code> (pre-build invariant 25 + hourly systemd –user
+timer); root-cause + guard commit <code>1f42357</code>; stress+chaos
+coverage <code>2b544f7</code>.</li>
+<li><strong>Wiring status:</strong> DEPLOYED —
+<code>systemctl --user list-timers</code> shows
+<code>boba-resource-pressure-check.timer</code> with a next-fire time
+roughly 35 minutes out and a last-run roughly 42 minutes ago at the time
+of writing; a fresh log line exists under
+<code>docs/qa/pre_build_resource_pressure/</code> (permission
+<code>600</code>, as expected for a host-evidence file).</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Run
+<code>systemctl --user list-timers | grep boba-resource-pressure-check</code>
+and confirm a <code>NEXT</code> time is scheduled (not
+blank/inactive).</li>
+<li>Run
+<code>systemctl --user status boba-resource-pressure-check.service</code>
+and confirm the last run exited <code>0</code> (success).</li>
+<li>Run the underlying check directly:
+<code>bash challenges/scripts/resource_pressure_signature_challenge.sh</code>
+and confirm it prints
+<code>PASS: no resource-pressure signatures over threshold</code> at the
+end.</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> timer is enabled and scheduled;
+last service run succeeded; manual re-invocation of the underlying
+challenge script reports clean (all 5 signatures below threshold) on a
+healthy host.</li>
+<li><strong>Video-confirmation status:</strong> N/A — host-safety
+daemon, no UI; confirmed by <code>systemctl</code>/script console
+output.</li>
+</ul>
+<hr />
+<h2
+id="feature-11-const-033-challenge-host-cannot-be-suspended">FEATURE-11
+— CONST-033 challenge (host cannot be suspended)</h2>
+<ul>
+<li><strong>Component:</strong>
+<code>challenges/scripts/host_no_auto_suspend_challenge.sh</code></li>
+<li><strong>Category:</strong> Host-safety gate (CONST-033 hard
+ban)</li>
+<li><strong>Implementation reference:</strong>
+<code>challenges/scripts/host_no_auto_suspend_challenge.sh</code>
+(defense in depth: target masking + <code>sleep.conf</code> override +
+logind <code>IdleAction</code> override, fix applied historically at
+<code>2026-04-26T18:58:55+02:00</code>).</li>
+<li><strong>Wiring status:</strong> VERIFIED THIS SESSION — re-ran live:
+<code>sleep.target</code> / <code>suspend.target</code> /
+<code>hibernate.target</code> / <code>hybrid-sleep.target</code> all
+<code>masked</code>; <code>AllowSuspend=no</code> present;
+<code>logind IdleAction=ignore</code>; zero “will suspend” journal
+broadcasts since the fix was applied. Result: <strong>4/4
+PASS</strong>.</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>Run
+<code>bash challenges/scripts/host_no_auto_suspend_challenge.sh</code>
+and confirm the final line reads
+<code>=== summary: 4 pass, 0 fail ===</code>.</li>
+<li>If it reports any FAIL, do NOT attempt to fix by actually
+suspending/testing suspend behavior live (§CONST-033 hard ban) —
+escalate per the incident-triage protocol in
+<code>constitution/Constitution.md</code> § “CONST-033 Operational Note”
+instead.</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> <code>4/4 PASS</code>, exactly as
+re-confirmed this session.</li>
+<li><strong>Video-confirmation status:</strong> N/A — shell script
+assertion, no UI; console output is the evidence.</li>
+</ul>
+<hr />
+<h2 id="feature-12-pre-build-gate-2727-green">FEATURE-12 — Pre-build
+gate (27/27 GREEN)</h2>
+<ul>
+<li><strong>Component:</strong>
+<code>scripts/pre_build_verification.sh</code> (25 named invariants,
+some emitting more than one <code>PASS</code> line each — 27 total
+pass-lines this session, 0 fails)</li>
+<li><strong>Category:</strong> Release-gate / governance</li>
+<li><strong>Implementation reference:</strong>
+<code>scripts/pre_build_verification.sh</code> — Invariant 25 is the
+newest (<code>CM-RESOURCE-PRESSURE-SIGNATURE-CHECK</code>, wired by
+<code>ecb3bfe</code>); Invariant 24
+(<code>CM-DOCS-CHAIN-ENGINE-VERIFY</code>) and Invariant 23
+(<code>CM-NO-PRODUCTION-MUTATION-RESIDUE</code>) are the
+next-newest.</li>
+<li><strong>Wiring status:</strong> VERIFIED THIS SESSION — re-ran live
+at HEAD <code>63f3f88</code>:
+<code>=== Result: 27 passed, 0 failed ===</code>. This matches
+<code>docs/CONTINUATION.md</code> Rev 24’s terminal claim exactly.</li>
+<li><strong>Manual test steps:</strong>
+<ol type="1">
+<li>From the repo root, run
+<code>bash scripts/pre_build_verification.sh</code> (a full run takes
+roughly 2-3 minutes on this host; it is safe to run repeatedly — every
+check is read-only or self-cleaning).</li>
+<li>Confirm the final line reads
+<code>=== Result: N passed, 0 failed ===</code> with <code>0</code>
+failed. <code>N</code> may drift upward over time as more invariants
+land — treat any non-zero <code>failed</code> count as a release
+blocker.</li>
+<li>If any invariant fails, DO NOT tag/release — file the failure as its
+own workable item citing the exact invariant name printed
+(e.g. <code>CM-DOCS-CHAIN-ENGINE-VERIFY</code>).</li>
+</ol></li>
+<li><strong>Expected outcome:</strong> <code>0 failed</code>, matching
+(or exceeding, if more invariants have since landed) the
+<code>27 passed</code> baseline confirmed this session.</li>
+<li><strong>Video-confirmation status:</strong> N/A — CLI script, no UI;
+console output is the evidence.</li>
+</ul>
+<hr />
+<h2 id="recovery-steps-for-common-issues">Recovery steps for common
+issues</h2>
+<p><strong>A container is down / shows <code>Exited</code> or
+<code>Restarting</code>:</strong> 1. Check logs first:
+<code>podman logs --tail 100 &lt;container-name&gt;</code> (or
+<code>docker logs</code>). 2. Use the project’s own orchestrator —
+<strong>never</strong> raw
+<code>podman start</code>/<code>docker start</code> directly on a single
+container per <code>CLAUDE.md</code>’s restart-level discipline: -
+Python source change → <code>./start.sh --reload-python</code> - Plugin
+file change → <code>./install-plugin.sh</code> then
+<code>./start.sh --reload-plugins</code> -
+<code>docker-compose.yml</code> / env / base-image change →
+<code>./start.sh --recreate</code> - No known cause / general “just
+bring it back up” → <code>./start.sh</code> (idempotent, brings up
+whatever is down) or, on a systemd-managed host,
+<code>./scripts/boba-svc.sh restart</code>. 3. After any restart,
+re-verify: <code>curl</code> each of the 4 ports (7185/7187/7189, plus
+9117 for Jackett itself) and confirm HTTP 200/301 as appropriate, or
+re-run <code>./scripts/boba-svc.sh health</code>.</p>
+<p><strong>A service reports <code>unhealthy</code> in
+<code>podman ps</code> / <code>docker ps</code>:</strong> 1.
+<code>podman inspect &lt;container&gt; --format '{{json .State.Health}}'</code>
+to see the failing healthcheck command and its last output. 2.
+Cross-check the healthcheck command directly (e.g. for
+<code>boba-jackett</code>:
+<code>wget -qO- http://localhost:7189/healthz</code> from inside the
+container’s network namespace, or
+<code>curl http://localhost:7189/healthz</code> from the host if the
+port is published). 3. If the healthcheck itself times out repeatedly,
+treat this as a resource-pressure signal — run
+<code>bash challenges/scripts/resource_pressure_signature_challenge.sh</code>
+(FEATURE-10 above) before assuming it is a code defect in the unhealthy
+service.</p>
+<p><strong>Search returns zero results across ALL trackers (not just
+one):</strong> 1. Confirm Jackett itself is reachable:
+<code>curl http://localhost:9117/</code>. 2. Check
+<code>JACKETT_API_KEY</code> is set in <code>.env</code> (auto-extracted
+at container startup per <code>docker-compose.yml</code>) — a
+missing/stale key breaks every tracker at once. 3. If only SOME trackers
+return zero, that is expected/tracker-specific (rate limits, expired
+cookies, geo-blocks) — see <code>docs/QA_DISCOVERY_LEDGER.md</code> and
+<code>docs/research/</code> for known per-tracker issues before filing a
+new bug.</p>
+<p><strong>Download flow fails at the credential/login step:</strong> 1.
+See <code>docs/guides/tracker-credentials.md</code> — cookies expire
+periodically and require a <code>browser export → restart</code> refresh
+per the “Cookies-file autoload” convention. 2. Re-run
+<code>scripts/load-tracker-cookies.sh</code> (auto-invoked by
+<code>boba-svc up</code>/<code>restart</code>/<code>start.sh</code>
+boot, but safe to invoke manually) then restart the affected
+container.</p>
+<p><strong><code>pre_build_verification.sh</code> fails on Invariant 24
+(<code>CM-DOCS-CHAIN-ENGINE-VERIFY</code>):</strong> - This has been a
+recurring source of transient FAILs this session (see commits
+<code>7077107</code>, <code>a4173c8</code>-adjacent history,
+<code>81e42d4</code>). Re-run once after confirming
+<code>docs_chain</code> submodule is at the pointer boba expects
+(<code>git submodule status docs_chain</code>) before filing a new bug —
+a stale docs_chain checkout is the most common cause.</p>
+<hr />
+<h2 id="filing-a-defect-from-this-checklist">Filing a defect from this
+checklist</h2>
+<p>If any PASS above is negative: <strong>file
+<code>BOB-&lt;NNN&gt;</code> and refer back to session
+commits.</strong></p>
+<ol type="1">
+<li>Use the project’s workable-items tooling
+(<code>cmd/workable-items</code> / the DB at
+<code>docs/workable_items.db</code>) to mint a new <code>BOB-NNN</code>,
+or hand the details to whichever agent is driving the next session — do
+not hand-edit <code>docs/Issues.md</code> directly (it is generated from
+the DB per §11.4.93).</li>
+<li>Cite the specific FEATURE-NN block above, the exact manual test step
+that failed, and the commit SHA(s) listed in that block’s
+“Implementation reference” as the starting point for root-cause
+investigation (§11.4.114 last-known-good-tag regression isolation).</li>
+<li>Per §11.4.238, also add an entry to
+<code>docs/QA_DISCOVERY_LEDGER.md</code> recording this as a
+<code>manual-qa</code> discovery-channel find — this checklist finding
+something IS itself information the automated regime should be
+strengthened to catch next time; the ledger entry is where that
+strengthening gets tracked (that file is out of this checklist’s edit
+scope — do not edit it from here, file the entry through the normal
+workable-item + ledger-update flow).</li>
+<li>Do NOT mark the corresponding item “PASS” in any session summary
+until the filed <code>BOB-NNN</code> is itself closed with real captured
+evidence (§11.4.6 — no self-certification without pasted command
+output).</li>
+</ol>
+<hr />
+<h2 id="anti-bluff-disclosures-11.4.6">Anti-bluff disclosures
+(§11.4.6)</h2>
+<ul>
+<li>Every commit SHA cited above was verified to exist in this
+repository (<code>git cat-file -e</code>) at the time this checklist was
+authored — none were fabricated or assumed.</li>
+<li>FEATURE-06 and FEATURE-07’s cited evidence
+(<code>docs/qa/task-e2e-journey/</code>) was
+<strong>uncommitted</strong> at authoring time — it was produced by a
+concurrent in-session task and is cited as live evidence of behavior,
+not as a committed artifact; do not search git history for a commit SHA
+for it until it lands.</li>
+<li>FEATURE-08’s DB-status discrepancy (BOB-112 shows
+<code>Queued</code> despite a committed, load-tested fix) is disclosed
+honestly above rather than silently glossed over or silently “fixed” by
+this checklist (which has no mandate to edit the workable-items
+DB).</li>
+<li>FEATURE-05 notes
+<code>qBitTorrent-go/internal/jackettapi/health.go</code> has an
+uncommitted, in-progress edit in the working tree at authoring time
+(visible in <code>git status</code>); this checklist’s evidence reflects
+the last-COMMITTED state of that file, and the operator should be aware
+a newer, in-flight change may supersede it by the time this checklist is
+actually run.</li>
+<li>No video-confirmation exists for any of this session’s specific
+changes (§11.4.153) — this is stated as an honest gap, not concealed.
+Prior-session recordings are referenced only where directly relevant,
+with an explicit note that they predate this session’s changes.</li>
+<li>This checklist’s author (a subagent) did not have tracker
+credentials to actually exercise FEATURE-07 independently beyond reading
+the concurrent task’s captured output; the operator is the first
+fully-independent human confirmation of that flow.</li>
+</ul>

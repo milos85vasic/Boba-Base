@@ -1,0 +1,20 @@
+[1/1] Baseline: docs_chain in-sync + both Status docs within 60d SLA (EXPECT PASS)
+  PASS: docs_chain verify --all — 2 context(s) in-sync
+  PASS: docs/features/Status.md Last-modified=2026-08-17T14:50:32Z is 1d old (<= SLA 60d)
+  PASS: docs/codegraph/Status.md Last-modified=2026-08-17T14:50:32Z is 1d old (<= SLA 60d)
+  BASELINE PASS
+
+[RED] Backdating Status.md's Last-modified by 100d (EXPECT FAIL)
+  PASS: RED detected (exit 1, docs/codegraph/Status.md named as stale)
+           PASS: docs_chain verify --all — 2 context(s) in-sync
+           PASS: docs/features/Status.md Last-modified=2026-08-17T14:50:32Z is 1d old (<= SLA 60d)
+           FAIL: docs/codegraph/Status.md Last-modified=2026-05-10T14:50:34Z is 100d old (SLA 60d)
+
+[GREEN] Restoring original header (EXPECT PASS)
+  PASS: docs_chain verify --all — 2 context(s) in-sync
+  PASS: docs/features/Status.md Last-modified=2026-08-17T14:50:32Z is 1d old (<= SLA 60d)
+  PASS: docs/codegraph/Status.md Last-modified=2026-08-17T14:50:32Z is 1d old (<= SLA 60d)
+  PASS: green flip back confirmed
+  (restored original Last-modified: 2026-08-17T14:50:32Z)
+
+PASS: status-docs freshness gate — baseline PASS + RED polarity + green flip verified

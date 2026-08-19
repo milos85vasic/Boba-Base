@@ -1,0 +1,1 @@
+FAIL: another instance of status_docs_freshness_challenge.sh is already running (pid=936732) — refusing to run concurrently (this script backdates + restores docs/codegraph/Status.md in place, and concurrent invocations are known to corrupt it, §11.4.84/BOB-075). Wait for the other instance to finish, then retry.

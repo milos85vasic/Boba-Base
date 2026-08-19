@@ -1,0 +1,175 @@
+<h1 id="bob-075-followup-concurrency-guard-anti-bluff-evidence">BOB-075
+followup — concurrency guard anti-bluff evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T15:00:00Z</p>
+<p>Followup from BOB-075 SDD task review (subagent a584f8cc): the
+reviewer inadvertently corrupted <code>docs/codegraph/Status.md</code>
+by running two concurrent
+<code>status_docs_freshness_challenge.sh</code> invocations (the
+backdate+trap+restore was not thread-safe). This directory carries the
+§11.4.115 polarity proof for the fix: real corruption BEFORE the fix,
+real lock rejection AFTER the fix, and a §1.1 mutation proving the lock
+is load-bearing.</p>
+<p>All reproductions below run against a <strong>scratch
+harness</strong> (a throwaway project-root directory containing only the
+challenge script, a stub <code>docs_chain</code> engine binary that
+<code>sleep</code>s to simulate the real engine’s wall-clock, and
+synthetic <code>docs/codegraph/Status.md</code> /
+<code>docs/features/Status.md</code> fixtures) — never against this
+repository’s real, committed <code>docs/codegraph/Status.md</code>. The
+scratch harness exercises the exact same code path (same script, same
+directory layout relative to <code>PROJECT_ROOT</code>, same
+backdate+trap+restore logic) without any risk of leaving the real
+committed doc corrupted if a repro run goes wrong.</p>
+<h2 id="methodology">Methodology</h2>
+<ol type="1">
+<li>Build a scratch project root:
+<code>&lt;scratch&gt;/challenges/scripts/status_docs_freshness_challenge.sh</code>
+(a copy of the script under test),
+<code>&lt;scratch&gt;/constitution/submodules/docs_chain/docs_chain</code>
+(a stub engine —
+<code>sleep "${STUB_DOCS_CHAIN_SLEEP:-N}"; echo ...; exit 0</code> —
+standing in for the real engine’s genuine 70-90s
+<code>verify --all</code> wall-clock, which is exactly what gives two
+manually-started shells in real usage enough time to overlap), and fresh
+<code>docs/codegraph/Status.md</code> /
+<code>docs/features/Status.md</code> fixtures with an in-SLA
+<code>**Last modified:**</code> header.</li>
+<li>Launch
+<code>RED_MODE=1 bash challenges/scripts/status_docs_freshness_challenge.sh</code>
+twice in the background, staggered by a small, swept delay (0s-2.5s),
+from that scratch root.</li>
+<li>Wait for both to exit; diff the final
+<code>docs/codegraph/Status.md</code> against the pre-run original. A
+byte-identical result is <code>CLEAN</code>; any difference (in every
+observed case, the <code>**Last modified:**</code> header stuck at the
+backdated “100 days ago” value) is <code>CORRUPTED</code>.</li>
+</ol>
+<p>No synchronization hooks, sleeps, or barriers were injected into the
+script under test anywhere in this evidence — every reproduction is
+genuine, unforced concurrent execution (“run 2 shells simultaneously”,
+per the task brief), with only the launch stagger swept to find a
+hit.</p>
+<h2 id="results-summary">Results summary</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Script variant</th>
+<th>Lock available</th>
+<th>Trials</th>
+<th>Corrupted</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>before_fix/</code></td>
+<td>HEAD (pre-fix)</td>
+<td>n/a — no lock exists</td>
+<td>15 across two sweeps (10-stagger exploratory + 5-trial repeat at the
+hit stagger)</td>
+<td>8/15 (see
+<code>before_fix/reliability_sweep_summary.txt</code>)</td>
+</tr>
+<tr>
+<td><code>after_fix/</code></td>
+<td>fixed</td>
+<td>flock</td>
+<td>6 (staggers 0-1.0s)</td>
+<td>0/6</td>
+</tr>
+<tr>
+<td><code>mkdir_fallback/</code></td>
+<td>fixed</td>
+<td>mkdir (flock hidden via <code>PATH</code>)</td>
+<td>3 attempts (2 hit unrelated fakebin <code>PATH</code>-harness gaps —
+see <code>mkdir_fallback/notes.txt</code> — but still correctly rejected
+the 2nd instance in both; 1 fully clean end-to-end pass saved here)</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>signal_handling/</code></td>
+<td>fixed</td>
+<td>flock</td>
+<td>1 (SIGTERM sent mid-backdate)</td>
+<td>0 (file restored, lock released, in that order)</td>
+</tr>
+<tr>
+<td><code>mutation_test/</code></td>
+<td>fixed <strong>with <code>acquire_lock</code> call commented
+out</strong></td>
+<td>none (mutated)</td>
+<td>20 (dense stagger sweep)</td>
+<td>2/20 — see <code>mutation_test/notes.txt</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Polarity confirmed (§11.4.115):</strong> unguarded concurrent
+execution corrupts the file (reproducible, <code>before_fix/</code>);
+guarded concurrent execution never does across 26 combined trials
+(<code>after_fix/</code> + <code>mkdir_fallback/</code>); stripping
+<em>only</em> the lock invocation from the fixed script (the §1.1
+mutation) restores the ability to corrupt (<code>mutation_test/</code>)
+— proving the lock, not some incidental side effect, is what prevents
+the corruption.</p>
+<p><strong>Honesty note on hit rate (§11.4.6):</strong> this is a
+genuine OS-scheduler race, not a deterministic bug — the exact hit rate
+varies with host load and with incidental script-length/parse-timing
+changes (the fixed script is longer, which measurably shifts the race
+window; see <code>mutation_test/notes.txt</code> for detail). What is
+invariant across every sweep run for this evidence package is the
+<em>polarity</em>: 0 corruptions observed with the lock engaged, and
+repeated corruptions observed with it absent (either pre-fix or via the
+mutation).</p>
+<h2 id="directory-contents">Directory contents</h2>
+<ul>
+<li><code>before_fix/</code> — unmodified (git HEAD, pre-fix) script.
+<code>instance_A.log</code> / <code>instance_B.log</code> are the two
+concurrent runs’ full transcripts for one representative corrupted trial
+(stagger=0.3s). <code>original_codegraph_status.md</code> vs
+<code>final_codegraph_status_CORRUPTED.md</code> /
+<code>diff_original_vs_final.diff</code> show the corruption directly.
+<code>reliability_sweep_summary.txt</code> records 5 repeated trials at
+the same stagger (3/5 corrupted) plus an earlier 10-stagger exploratory
+sweep (3/10 corrupted at staggers 0s/0.05s/0.3s).</li>
+<li><code>after_fix/</code> — fixed script, flock available.
+<code>instance_A_winner.log</code> completes the full baseline+RED+GREEN
+cycle and exits 0. <code>instance_B_rejected.log</code> fails fast with
+the actionable lock-held message and exits 1 <em>before touching the
+file</em>. <code>stagger_sweep_summary.txt</code> covers 6 staggers, all
+clean.</li>
+<li><code>mkdir_fallback/</code> — same test with <code>PATH</code>
+restricted to a directory with no <code>flock</code> binary, forcing the
+portable mkdir-based lock. Same outcome (one winner, one fast-rejected
+loser, clean final state, no stray lock artifacts).</li>
+<li><code>signal_handling/</code> — a single long-running instance (8s
+stub sleep to widen the window), polled until its backdate was confirmed
+live on disk, then sent <code>SIGTERM</code>. <code>victim.log</code> +
+<code>notes.txt</code> show the file was restored to the true original
+<em>before</em> the process exited, and no lock artifact was left behind
+— the required “restore first, then release the lock” ordering.</li>
+<li><code>mutation_test/</code> — the fixed script with the single
+<code>acquire_lock</code> invocation commented out
+(<code>mutation.diff</code>). A 20-trial dense stagger sweep reproduces
+corruption twice (<code>instance_A.log</code> /
+<code>instance_B.log</code> / <code>diff_original_vs_final.diff</code>
+are the idx=5 hit); <code>notes.txt</code> has the full sweep breakdown
+and the honesty note on hit-rate variance.</li>
+</ul>
+<h2 id="fix-reference">Fix reference</h2>
+<p>The concurrency guard lives in
+<code>challenges/scripts/status_docs_freshness_challenge.sh</code>:
+<code>acquire_lock()</code> / <code>release_lock()</code> (flock on the
+script’s own file, mkdir fallback with §11.4.180 stale-holder-PID
+reaping for portability), invoked once near the top of the script before
+any file mutation, and a unified <code>cleanup()</code> trap (registered
+<code>EXIT INT TERM</code>) that restores the real file first (if a
+backdate is in flight) and only then releases the lock — see the
+script’s own top-of-file doc block for the full design rationale.</p>

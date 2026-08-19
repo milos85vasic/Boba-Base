@@ -1,0 +1,141 @@
+<h1
+id="task-68-bob-108-workable-items-export-revision-regression-fix-captured-evidence">Task
+#68 / BOB-108 — workable-items <code>export</code> Revision-regression
+fix: captured evidence</h1>
+<p><strong>§11.4.5 / §11.4.44 / §11.4.115 anti-bluff captured-evidence
+artefact.</strong> All commands below were run for real, in this
+session, against the real repository tree (no mocks). Every result
+pasted here was produced by an actual invocation of the fixed binary or
+<code>go test</code>, in the same session as the fix commit.</p>
+<h2 id="fix-commit">Fix commit</h2>
+<ul>
+<li>Constitution submodule commit: <code>4a17867</code> —
+“fix(workable-items,export): stop <code>export</code> regressing
+§11.4.44 Revision counters below committed values”</li>
+<li>Pushed clean to all 8 named constitution remotes (origin, github,
+gitlab, gitflic, gitverse, vasic_digital_github, vasic_digital_gitlab,
+upstream) — verified by <code>git log --oneline -1</code> on every
+remote-tracking ref after a fresh <code>git fetch --all</code>, all
+report <code>4a17867</code>.</li>
+<li>Files:
+<code>constitution/scripts/workable-items/cmd/workable-items/export.go</code>
+(wired the fix), <code>export_revision.go</code> (new —
+<code>reconcileRevisionHeader</code>),
+<code>export_revision_test.go</code> (new — the RED-first regression
+tests).</li>
+</ul>
+<h2 id="bug-reproduction-pre-fix-live-on-the-real-repo-tree">Bug
+reproduction (pre-fix, live, on the real repo tree)</h2>
+<p>Before any fix, docs/Issues.md and docs/Fixed.md were clean
+(<code>git status --porcelain</code> empty) at:</p>
+<pre><code>docs/Issues.md **Revision:** 8   **Last modified:** 2026-08-18T16:50:00Z
+docs/Fixed.md  **Revision:** 17  **Last modified:** 2026-08-18T16:50:00Z</code></pre>
+<p>Running the PRE-FIX binary:</p>
+<pre><code>$ /tmp/workable-items-test export --db docs/workable_items.db --out-dir docs/ --no-formats
+export: wrote docs/Issues.md
+export: wrote docs/Fixed.md
+export: wrote docs/Issues_Summary.md
+export: wrote docs/Fixed_Summary.md</code></pre>
+<p>produced:</p>
+<pre><code>docs/Issues.md **Revision:** 6   **Last modified:** 2026-08-15T12:15:00Z   &lt;- REGRESSED (8 -&gt; 6)
+docs/Fixed.md  **Revision:** 15  **Last modified:** 2026-08-15T12:15:00Z   &lt;- REGRESSED (17 -&gt; 15)</code></pre>
+<p>confirmed via <code>git diff --stat</code> (67 insertions in
+Issues.md, 4 in Fixed.md) and <code>head -6</code> on both files. This
+reproduction was immediately reverted with
+<code>git checkout -- docs/Issues.md docs/Fixed.md</code> — nothing from
+it was ever committed.</p>
+<h2
+id="red-before-fix-green-after-fix-unit-tests-real-sqlite-real-binary-dispatch">RED-before-fix
+/ GREEN-after-fix (unit tests, real SQLite, real binary dispatch)</h2>
+<p><code>export_revision_test.go</code>’s two tests were run against the
+export.go call sites temporarily disabled
+(<code>issuesText, err = issuesText, error(nil) // TEMP-RED-DISABLE</code>),
+reproducing the same class of defect purely inside the test:</p>
+<pre><code>$ go test ./cmd/workable-items/... -run &#39;TestExportCmd_NeverRegressesRevisionBelowCommittedFile|TestExportCmd_PreservesRevisionWhenContentUnchanged&#39; -v
+--- FAIL: TestExportCmd_NeverRegressesRevisionBelowCommittedFile (0.01s)
+    export_revision_test.go:89: export REGRESSED the committed §11.4.44 Revision (8 -&gt; 6) ...
+--- FAIL: TestExportCmd_PreservesRevisionWhenContentUnchanged (0.00s)
+    export_revision_test.go:140: no-op regeneration must reproduce the committed file byte-for-byte ...
+FAIL</code></pre>
+<p>With the fix restored (<code>reconcileRevisionHeader</code> wired
+back into export.go):</p>
+<pre><code>$ go test ./cmd/workable-items/... -run &#39;TestExportCmd_NeverRegressesRevisionBelowCommittedFile|TestExportCmd_PreservesRevisionWhenContentUnchanged&#39; -v
+--- PASS: TestExportCmd_NeverRegressesRevisionBelowCommittedFile (0.01s)
+--- PASS: TestExportCmd_PreservesRevisionWhenContentUnchanged (0.00s)
+PASS</code></pre>
+<h2 id="full-package-suite-no-new-regressions">Full package suite (no
+new regressions)</h2>
+<pre><code>$ go build ./...            # clean
+$ go test ./... 2&gt;&amp;1 | grep -- &quot;--- FAIL&quot;
+--- FAIL: TestDiffCmd_NoPathsSkipsMarkdownComparison (0.01s)</code></pre>
+<p>That single failure was confirmed PRE-EXISTING and unrelated:
+<code>git stash</code> of the fix commit +
+<code>go test -run TestDiffCmd_NoPathsSkipsMarkdownComparison</code> on
+the clean baseline (commit <code>d79755a</code>, before this fix)
+reproduces the identical failure verbatim. Zero new failures introduced
+by this fix.</p>
+<h2
+id="post-fix-live-verification-against-the-real-repo-tree-this-session">Post-fix
+live verification against the real repo tree (this session)</h2>
+<pre><code>$ head -4 docs/Issues.md; head -4 docs/Fixed.md      # pre-run, committed HEAD
+**Revision:** 8   **Last modified:** 2026-08-18T16:50:00Z
+**Revision:** 17  **Last modified:** 2026-08-18T16:50:00Z
+
+$ /tmp/workable-items-fixed export --db docs/workable_items.db --out-dir docs/ --no-formats
+export: wrote docs/Issues.md
+export: wrote docs/Fixed.md
+export: wrote docs/Issues_Summary.md
+export: wrote docs/Fixed_Summary.md
+
+$ head -4 docs/Issues.md; head -4 docs/Fixed.md      # run 1
+**Revision:** 9   **Last modified:** 2026-08-18T19:14:11Z    &lt;- earned bump (8 -&gt; 9), NOT the DB&#39;s stale 6
+**Revision:** 17  **Last modified:** 2026-08-18T16:50:00Z    &lt;- PRESERVED byte-identical, no content change
+
+$ /tmp/workable-items-fixed export --db docs/workable_items.db --out-dir docs/ --no-formats   # run 2 (idempotent)
+$ head -4 docs/Issues.md; head -4 docs/Fixed.md
+**Revision:** 9   **Last modified:** 2026-08-18T19:14:11Z    &lt;- UNCHANGED from run 1 (no double-bump)
+**Revision:** 17  **Last modified:** 2026-08-18T16:50:00Z    &lt;- still byte-identical
+
+$ git diff docs/Fixed.md   # empty — confirms the &quot;preserve if unchanged&quot; branch is byte-exact
+$ git diff docs/Issues.md  # +7 sections (BOB-108..BOB-114, already resident in the DB but not yet
+                            #  materialised into the committed file — a pre-existing, unrelated
+                            #  DB-ahead-of-docs desync this run correctly surfaced per §11.4.93)</code></pre>
+<p>Issues.md’s Revision correctly landed on 9
+(<code>max(existing=8, DB's stale=6) + 1</code>), never on the DB’s
+stale 6 — the exact defect this fix closes. Fixed.md, whose content
+genuinely did not change (nothing new closed), stayed perfectly
+byte-identical including its Revision and Last-modified — proving the
+“preserve, never gratuitously bump” half of the fix on real production
+data, not just the synthetic test fixtures.</p>
+<h2 id="monotonic-revision-audit-pre-fix-vs-post-fix">§11.4.44
+monotonic-Revision audit (pre-fix vs post-fix)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Committed (pre-fix)</th>
+<th>Pre-fix <code>export</code> result</th>
+<th>Post-fix <code>export</code> result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>docs/Issues.md</td>
+<td>Revision 8</td>
+<td><strong>Revision 6 (REGRESSION)</strong></td>
+<td>Revision 9 (earned bump)</td>
+</tr>
+<tr>
+<td>docs/Fixed.md</td>
+<td>Revision 17</td>
+<td><strong>Revision 15 (REGRESSION)</strong></td>
+<td>Revision 17 (preserved, no bump)</td>
+</tr>
+</tbody>
+</table>

@@ -1,0 +1,80 @@
+Aug 18 00:00:01 nezha systemd-logind[1302]: New session '10' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 00:00:04 nezha crond[333024]: pam_tcb(crond:session): Session closed for root
+Aug 18 00:01:01 nezha systemd-logind[1302]: New session '11' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 00:01:01 nezha crond[333958]: pam_tcb(crond:session): Session closed for root
+Aug 18 00:01:01 nezha systemd-logind[1302]: Removed session 11.
+Aug 18 00:33:22 nezha gdm-password][3986]: pam_tcb(gdm-password:session): Session closed for milosvasic
+Aug 18 00:33:22 nezha systemd-logind[1302]: Removed session 10.
+Aug 18 00:33:22 nezha systemd-logind[1302]: Removed session 4.
+Aug 18 00:33:30 nezha systemd-logind[1302]: Removed session 1.
+Aug 18 11:08:27 nezha systemd-logind[1302]: New session '1' of user 'milosvasic' with class 'manager' and type 'unspecified'.
+Aug 18 11:08:27 nezha systemd-logind[1302]: New session '2' of user 'gdm-greeter' with class 'greeter' and type 'wayland'.
+Aug 18 11:08:28 nezha systemd-logind[1302]: New session '3' of user 'gdm-greeter' with class 'manager-early' and type 'unspecified'.
+Aug 18 11:08:34 nezha systemd-logind[1302]: New session '4' of user 'milosvasic' with class 'user' and type 'wayland'.
+Aug 18 11:08:39 nezha gdm-launch-environment][1566]: pam_tcb(gdm-launch-environment:session): Session closed for gdm-greeter
+Aug 18 11:08:39 nezha systemd-logind[1302]: Removed session 2.
+Aug 18 11:08:40 nezha systemd-logind[1302]: Lid closed.
+Aug 18 11:08:49 nezha (sd-pam)[1632]: pam_tcb(systemd-user:session): Session closed for gdm-greeter
+Aug 18 11:08:49 nezha systemd-logind[1302]: Removed session 3.
+Aug 18 11:36:15 nezha systemd-logind[1302]: New session '5' of user 'milosvasic' with class 'user' and type 'tty'.
+Aug 18 11:38:57 nezha systemd-logind[1302]: New session '6' of user 'milosvasic' with class 'user' and type 'tty'.
+Aug 18 12:01:01 nezha systemd-logind[1302]: New session '7' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 12:01:01 nezha crond[97863]: pam_tcb(crond:session): Session closed for root
+Aug 18 12:01:01 nezha systemd-logind[1302]: Removed session 7.
+Aug 18 12:33:15 nezha su[165451]: pam_tcb(su:session): Session closed for root
+Aug 18 12:33:31 nezha su[165868]: pam_tcb(su:session): Session closed for root
+Aug 18 13:01:01 nezha systemd-logind[1302]: New session '8' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 13:01:01 nezha crond[211331]: pam_tcb(crond:session): Session closed for root
+Aug 18 13:01:01 nezha systemd-logind[1302]: Removed session 8.
+Aug 18 13:38:55 nezha sshd[42046]: pam_tcb(sshd:session): Session closed for milosvasic
+Aug 18 13:38:55 nezha sshd[51061]: pam_tcb(sshd:session): Session closed for milosvasic
+Aug 18 13:38:55 nezha systemd-logind[1302]: Removed session 6.
+Aug 18 13:38:55 nezha systemd-logind[1302]: Removed session 5.
+Aug 18 13:40:46 nezha su[298442]: pam_tcb(su:session): Session closed for root
+Aug 18 14:01:02 nezha systemd-logind[1302]: New session '9' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 14:01:02 nezha crond[338045]: pam_tcb(crond:session): Session closed for root
+Aug 18 14:01:02 nezha systemd-logind[1302]: Removed session 9.
+Aug 18 14:31:08 nezha sudo[404947]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:08 nezha sudo[404952]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:08 nezha sudo[404961]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:09 nezha sudo[405217]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:09 nezha sudo[405221]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:09 nezha sudo[405234]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:09 nezha sudo[405262]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:09 nezha sudo[405274]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:09 nezha sudo[405280]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:09 nezha sudo[405285]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:09 nezha sudo[405301]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:12 nezha sudo[405313]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:13 nezha sudo[405820]: pam_tcb(sudo:session): Session closed for root
+Aug 18 14:31:13 nezha sudo[405824]: pam_tcb(sudo:session): Session closed for root
+Aug 18 15:01:01 nezha systemd-logind[1302]: New session '10' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 15:01:01 nezha crond[494861]: pam_tcb(crond:session): Session closed for root
+Aug 18 15:01:01 nezha systemd-logind[1302]: Removed session 10.
+Aug 18 16:01:01 nezha systemd-logind[1302]: New session '11' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 16:01:01 nezha crond[728456]: pam_tcb(crond:session): Session closed for root
+Aug 18 16:01:01 nezha systemd-logind[1302]: Removed session 11.
+Aug 18 17:01:02 nezha systemd-logind[1302]: New session '12' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 17:01:02 nezha crond[1010170]: pam_tcb(crond:session): Session closed for root
+Aug 18 17:01:02 nezha systemd-logind[1302]: Removed session 12.
+Aug 18 18:01:01 nezha systemd-logind[1302]: New session '13' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 18:01:01 nezha crond[1291767]: pam_tcb(crond:session): Session closed for root
+Aug 18 18:01:01 nezha systemd-logind[1302]: Removed session 13.
+Aug 18 19:01:01 nezha systemd-logind[1302]: New session '14' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 19:01:01 nezha crond[1359644]: pam_tcb(crond:session): Session closed for root
+Aug 18 19:01:01 nezha systemd-logind[1302]: Removed session 14.
+Aug 18 20:01:01 nezha systemd-logind[1302]: New session '15' of user 'root' with class 'background-light' and type 'unspecified'.
+Aug 18 20:01:01 nezha crond[1534219]: pam_tcb(crond:session): Session closed for root
+Aug 18 20:01:01 nezha systemd-logind[1302]: Removed session 15.
+Aug 18 20:50:59 nezha gdm-password][3945]: pam_tcb(gdm-password:session): Session closed for milosvasic
+Aug 18 20:50:59 nezha systemd[1]: user@1000.service: Main process exited, code=killed, status=9/KILL
+Aug 18 20:50:59 nezha systemd-logind[1302]: Removed session 1.
+Aug 18 20:50:59 nezha systemd-logind[1302]: Removed session 4.
+Aug 18 20:51:00 nezha systemd-logind[1302]: New session '16' of user 'gdm-greeter' with class 'greeter' and type 'wayland'.
+Aug 18 20:51:00 nezha systemd-logind[1302]: New session '17' of user 'gdm-greeter' with class 'manager-early' and type 'unspecified'.
+Aug 18 20:51:06 nezha systemd-logind[1302]: Lid opened.
+Aug 18 20:51:16 nezha systemd-logind[1302]: New session '18' of user 'milosvasic' with class 'user' and type 'wayland'.
+Aug 18 20:51:16 nezha systemd-logind[1302]: New session '19' of user 'milosvasic' with class 'manager' and type 'unspecified'.
+Aug 18 20:51:22 nezha systemd-logind[1302]: Lid closed.
+Aug 18 20:51:22 nezha gdm-launch-environment][1664836]: pam_tcb(gdm-launch-environment:session): Session closed for gdm-greeter
+Aug 18 20:51:22 nezha systemd-logind[1302]: Removed session 16.

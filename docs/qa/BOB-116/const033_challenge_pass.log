@@ -1,0 +1,7 @@
+=== no_suspend_calls_challenge ===
+Scanner: /run/media/milosvasic/DATA4TB/Projects/boba/scripts/host-power-management/check-no-suspend-calls.sh
+Root:    /run/media/milosvasic/DATA4TB/Projects/boba
+
+OK: no forbidden host-power-management calls in /run/media/milosvasic/DATA4TB/Projects/boba
+
+=== summary: PASS ===

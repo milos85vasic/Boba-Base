@@ -1,0 +1,9 @@
+=== Artifact-layer proof: BOB-112 fix present in POST-RECREATE container binary (2026-08-18T20:48:24Z) ===
+Image: 962f4452c7250c38edb8e3f0151885f3aaae087e4e0733be8cc17728f1ec981a
+Container created: 2026-08-18 23:45:52.409936875 +0300 +0300
+
+$ podman exec boba-jackett strings /usr/local/bin/boba-jackett | grep -c 'healthz Jackett cache refresh'
+1
+
+Matched string (the BOB-112 fix's unique log.Printf format string, added in commit 91b52db, absent pre-fix):
+boba-jackett: /healthz Jackett cache refresh #%d (hits=%d misses=%d ratio=%.1f%% ok=%v)

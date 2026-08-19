@@ -7,11 +7,12 @@ full avg10=20.11 avg60=65.00 avg300=15.22 total=98765432
 OK: no process >5 GB RSS
 
 === SIG-2: thread count >70% of soft ulimit -u ===
-  threads=1315  soft_limit=65536  utilization=2%
-OK: thread utilization 2% within safe zone
+  threads=1288  soft_limit=65536  utilization=1%
+OK: thread utilization 1% within safe zone
 
 === SIG-3: EAGAIN cascade in last 15 minutes ===
   total EAGAIN-class hits last 15min: 0
+  correlation: SIG-2-not-currently-elevated (current SIG-2 utilization=1%)
 OK: EAGAIN hits within safe zone
 
 === SIG-4: user.slice memory PSI full avg60 > 50 ===

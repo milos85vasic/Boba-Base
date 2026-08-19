@@ -1,0 +1,63 @@
+=== PRE-RECREATE podman ps -a (2026-08-18T20:45:28Z) ===
+NAMES               STATUS                      IMAGE
+proxy-redis         Up 2 hours (healthy)        docker.io/library/redis:7-alpine
+proxy-postgres      Up 2 hours (healthy)        docker.io/library/postgres:16-alpine
+proxy-gluetun       Up 2 hours (healthy)        docker.io/qmcgaw/gluetun:latest
+proxy-compiler      Exited (0) 2 hours ago      localhost/helixproxy-control-plane:dev
+proxy-healthd       Up 2 hours                  localhost/helixproxy-control-plane:dev
+proxy-squid         Up 2 hours (healthy)        localhost/helixproxy-squid-dynamic:dev
+deploy_caddy_1      Created                     localhost/helixcode-caddy-brotli:2
+lava-postgres       Up 12 hours (healthy)       docker.io/library/postgres:16-alpine
+lava-migrate        Exited (1) 2 hours ago      localhost/lava_lava-migrate:latest
+lava-api-go         Up 12 hours                 localhost/lava_lava-api-go:latest
+wonderful_dijkstra  Up 2 hours                  docker.io/library/node@sha256:76789712cd1ae89a1225eac9077010d68987a423588042dac30446f502f1858c
+helix-nats          Up 2 hours                  docker.io/library/nats:2.10-alpine
+helix-redis         Up 2 hours                  docker.io/library/redis:7-alpine
+helixcode-caddy     Up 2 hours                  localhost/helixcode-caddy-brotli:2
+helix-postgres      Up 2 hours                  docker.io/library/postgres:16-alpine
+qbittorrent         Up 2 hours (healthy)        lscr.io/linuxserver/qbittorrent:latest
+jackett             Up About an hour (healthy)  lscr.io/linuxserver/jackett:latest
+qbittorrent-proxy   Up 2 hours (healthy)        docker.io/library/python:3.12-alpine
+boba-jackett        Up About an hour (healthy)  localhost/boba_boba-jackett:latest
+=== POST-RECREATE podman ps -a (2026-08-18T20:46:44Z) ===
+NAMES               STATUS                    IMAGE
+proxy-redis         Up 2 hours (healthy)      docker.io/library/redis:7-alpine
+proxy-postgres      Up 2 hours (healthy)      docker.io/library/postgres:16-alpine
+proxy-gluetun       Up 2 hours (healthy)      docker.io/qmcgaw/gluetun:latest
+proxy-compiler      Exited (0) 2 hours ago    localhost/helixproxy-control-plane:dev
+proxy-healthd       Up 2 hours                localhost/helixproxy-control-plane:dev
+proxy-squid         Up 2 hours (healthy)      localhost/helixproxy-squid-dynamic:dev
+deploy_caddy_1      Created                   localhost/helixcode-caddy-brotli:2
+lava-postgres       Up 12 hours (healthy)     docker.io/library/postgres:16-alpine
+lava-migrate        Exited (1) 2 hours ago    localhost/lava_lava-migrate:latest
+lava-api-go         Up 12 hours               localhost/lava_lava-api-go:latest
+wonderful_dijkstra  Up 2 hours                docker.io/library/node@sha256:76789712cd1ae89a1225eac9077010d68987a423588042dac30446f502f1858c
+helix-nats          Up 2 hours                docker.io/library/nats:2.10-alpine
+helix-redis         Up 2 hours                docker.io/library/redis:7-alpine
+helixcode-caddy     Up 2 hours                localhost/helixcode-caddy-brotli:2
+helix-postgres      Up 2 hours                docker.io/library/postgres:16-alpine
+qbittorrent         Up 52 seconds (healthy)   lscr.io/linuxserver/qbittorrent:latest
+jackett             Up 52 seconds (healthy)   lscr.io/linuxserver/jackett:latest
+boba-jackett        Up 21 seconds (starting)  localhost/boba_boba-jackett:latest
+qbittorrent-proxy   Up 21 seconds (starting)  docker.io/library/python:3.12-alpine
+=== FINAL podman ps -a (2026-08-18T20:47:09Z) ===
+NAMES               STATUS                       IMAGE
+proxy-redis         Up 2 hours (healthy)         docker.io/library/redis:7-alpine
+proxy-postgres      Up 2 hours (healthy)         docker.io/library/postgres:16-alpine
+proxy-gluetun       Up 2 hours (healthy)         docker.io/qmcgaw/gluetun:latest
+proxy-compiler      Exited (0) 2 hours ago       localhost/helixproxy-control-plane:dev
+proxy-healthd       Up 2 hours                   localhost/helixproxy-control-plane:dev
+proxy-squid         Up 2 hours (healthy)         localhost/helixproxy-squid-dynamic:dev
+deploy_caddy_1      Created                      localhost/helixcode-caddy-brotli:2
+lava-postgres       Up 12 hours (healthy)        docker.io/library/postgres:16-alpine
+lava-migrate        Exited (1) 2 hours ago       localhost/lava_lava-migrate:latest
+lava-api-go         Up 12 hours                  localhost/lava_lava-api-go:latest
+wonderful_dijkstra  Up 2 hours                   docker.io/library/node@sha256:76789712cd1ae89a1225eac9077010d68987a423588042dac30446f502f1858c
+helix-nats          Up 2 hours                   docker.io/library/nats:2.10-alpine
+helix-redis         Up 2 hours                   docker.io/library/redis:7-alpine
+helixcode-caddy     Up 2 hours                   localhost/helixcode-caddy-brotli:2
+helix-postgres      Up 2 hours                   docker.io/library/postgres:16-alpine
+qbittorrent         Up About a minute (healthy)  lscr.io/linuxserver/qbittorrent:latest
+jackett             Up About a minute (healthy)  lscr.io/linuxserver/jackett:latest
+boba-jackett        Up 46 seconds (healthy)      localhost/boba_boba-jackett:latest
+qbittorrent-proxy   Up 46 seconds (healthy)      docker.io/library/python:3.12-alpine

@@ -1,0 +1,156 @@
+================================================================
+=== boba_db_file_perms_challenge.sh (timeout 180s)
+================================================================
+    boba.db mode: 600  (expect 600)
+    .env mode: 600  (expect 600)
+PASS: boba_db_file_perms_challenge
+================================================================
+=== credential_leak_grep_challenge.sh (timeout 180s)
+================================================================
+--- output (last 30 lines) ---
+=== RUN   TestNoCredentialLeak
+--- PASS: TestNoCredentialLeak (0.07s)
+PASS
+ok  	github.com/milos85vasic/qBitTorrent-go/tests/security	1.087s
+--- end output ---
+PASS: credential_leak_grep_challenge
+================================================================
+=== credentials_wired_challenge.sh (timeout 180s)
+================================================================
+=== credentials_wired_challenge (RED_MODE=0) ===
+PASS: .env mode = 0600 (§11.4.10)
+PASS: .env matched by .gitignore
+PASS: .env is not tracked in git
+PASS: all 11 required credential var NAMES present in .env
+PASS: NNMCLUB_COOKIES contains phpbb2mysql_4_sid= (session cookie present)
+PASS: RUTRACKER_COOKIES contains bb_session= (RuTracker session cookie present)
+PASS: RUTOR_COOKIES shape OK (public tracker; cf_clearance helps Cloudflare)
+PASS: KINOZAL_COOKIES contains uid= or pass= (Kinozal session cookie present)
+PASS: IPTORRENTS_COOKIES contains uid= or pass= (IPTorrents session cookie present)
+PASS: all 11 credential vars propagated to qbittorrent-proxy container env (non-empty)
+PASS: scripts/load-tracker-cookies.sh exists + executable + bash -n clean (cookie autoload primitive per operator mandate 2026-08-15)
+PASS: scripts/load-tracker-cookies.sh --dry-run exit 0 (loader is invocable in read-only mode)
+PASS: scripts/load-tracker-cookies.sh --dry-run emits the standard summary line
+PASS: cookies_rutracker.txt present in /home/milosvasic/Downloads AND recognised by loader
+PASS: cookies_nnmclub.txt present in /home/milosvasic/Downloads AND recognised by loader
+PASS: cookies_rutor.txt present in /home/milosvasic/Downloads AND recognised by loader
+PASS: cookies_kinozal.txt present in /home/milosvasic/Downloads AND recognised by loader
+PASS: cookies_iptorrents.txt present in /home/milosvasic/Downloads AND recognised by loader
+─────────────────────────────────────────────────────────────────
+Total: PASS=18 FAIL=0
+================================================================
+=== cred_roundtrip_challenge.sh (timeout 180s)
+================================================================
+POST /credentials: status=200
+  body: {"name":"ROUNDTRIP","kind":"userpass","has_username":true,"has_password":true,"has_cookies":false,"created_at":"2026-08-18T18:48:59.180435566Z","updated_at":"2026-08-18T18:48:59.180435566Z"}
+GET /credentials body: [{"name":"ROUNDTRIP","kind":"userpass","has_username":true,"has_password":true,"has_cookies":false,"created_at":"2026-08-18T18:48:59.180435566Z","updated_at":"2026-08-18T18:48:59.180435566Z"}]
+  OK — GET response is metadata-only
+  OK — .env contains plaintext mirror lines
+  OK — boba.db has no plaintext (encrypted-at-rest)
+PASS: cred_roundtrip_challenge
+================================================================
+=== ddos_resilience_challenge.sh (timeout 180s)
+================================================================
+=== ddos_resilience_challenge (BOB-074) ===
+RED_MODE=0  (0=GREEN guard, 1=reproduce pre-fix defect state)
+stress tool: curl-parallel-loop (primary) + ab (supplementary evidence)
+tiers: 10 25 50  requests/tier: 50  per-request timeout: 3s
+
+--- merge_search: merge search :7187 (fanout endpoint's health surface — see scoping note) ---
+    reachable: HTTP 200
+    tier c=10 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=0.20s
+    tier c=25 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=0.18s
+    tier c=50 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=0.36s
+    --- ab evidence (heaviest tier, supplementary; -t deliberately omitted — combining -n with -t
+        makes ab treat -t as authoritative and run far past the requested -n, per ApacheBench's
+        own '-t implies -n 50000' semantics; observed 2373 completed requests in one early run
+        against merge_search's /health when -t was present) ---
+    ab: Complete requests:      50
+    ab: Failed requests:        0
+    ab: Requests per second:    1708.70 [#/sec] (mean)
+    ab: Time per request:       29.262 [ms] (mean)
+    ab: Time per request:       0.585 [ms] (mean, across all concurrent requests)
+  [PASS] merge_search: 0/150 requests returned 5xx or failed to connect across tiers 10 25 50
+  [SKIP] merge_search: no rate limiting configured (reason=extension_absent — no rate-limit middleware/proxy exists anywhere in boba's stack as of 2026-08-18; tracked as BOB-074 followup, see docs/testing/ddos_resilience.md)
+    qbittorrent stayed responsive (code=200 elapsed=0.020s) while merge_search was under load
+    boba_jackett stayed responsive (code=200 elapsed=0.169s) while merge_search was under load
+  [PASS] merge_search under load: sibling endpoints stayed responsive (cross-endpoint isolation held)
+
+--- qbittorrent: qBittorrent WebUI :7185 ---
+    reachable: HTTP 200
+    tier c=10 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=0.26s
+    tier c=25 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=0.27s
+    tier c=50 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=0.27s
+    --- ab evidence (heaviest tier, supplementary; -t deliberately omitted — combining -n with -t
+        makes ab treat -t as authoritative and run far past the requested -n, per ApacheBench's
+        own '-t implies -n 50000' semantics; observed 2373 completed requests in one early run
+        against merge_search's /health when -t was present) ---
+  [PASS] qbittorrent: 0/150 requests returned 5xx or failed to connect across tiers 10 25 50
+  [SKIP] qbittorrent: no rate limiting configured (reason=extension_absent — no rate-limit middleware/proxy exists anywhere in boba's stack as of 2026-08-18; tracked as BOB-074 followup, see docs/testing/ddos_resilience.md)
+    merge_search stayed responsive (code=200 elapsed=0.015s) while qbittorrent was under load
+    boba_jackett stayed responsive (code=200 elapsed=0.146s) while qbittorrent was under load
+  [PASS] qbittorrent under load: sibling endpoints stayed responsive (cross-endpoint isolation held)
+
+--- boba_jackett: Boba Jackett API :7189 ---
+    reachable: HTTP 200
+    tier c=10 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=1.85s
+    tier c=25 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=1.85s
+    tier c=50 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=2.50s
+    --- ab evidence (heaviest tier, supplementary; -t deliberately omitted — combining -n with -t
+        makes ab treat -t as authoritative and run far past the requested -n, per ApacheBench's
+        own '-t implies -n 50000' semantics; observed 2373 completed requests in one early run
+        against merge_search's /health when -t was present) ---
+    ab: Complete requests:      50
+    ab: Failed requests:        0
+    ab: Requests per second:    21.61 [#/sec] (mean)
+    ab: Time per request:       2313.470 [ms] (mean)
+    ab: Time per request:       46.269 [ms] (mean, across all concurrent requests)
+  [PASS] boba_jackett: 0/150 requests returned 5xx or failed to connect across tiers 10 25 50
+  [SKIP] boba_jackett: no rate limiting configured (reason=extension_absent — no rate-limit middleware/proxy exists anywhere in boba's stack as of 2026-08-18; tracked as BOB-074 followup, see docs/testing/ddos_resilience.md)
+    qbittorrent stayed responsive (code=200 elapsed=0.013s) while boba_jackett was under load
+    merge_search stayed responsive (code=200 elapsed=0.015s) while boba_jackett was under load
+  [PASS] boba_jackett under load: sibling endpoints stayed responsive (cross-endpoint isolation held)
+
+==========================================
+Summary: PASS=6  FAIL=0  SKIP=3
+Notes:
+  - merge_search: rate limiting SKIP'd — extension_absent, followup filed
+  - qbittorrent: rate limiting SKIP'd — extension_absent, followup filed
+  - boba_jackett: rate limiting SKIP'd — extension_absent, followup filed
+==========================================
+PASS: ddos_resilience_challenge — bounded DDoS-resilience checks complete; honest gaps tracked as followups
+================================================================
+=== docs_chain_verify_challenge.sh (timeout 180s)
+================================================================
+SKIP: docs_chain engine binary not built at /run/media/milosvasic/DATA4TB/Projects/boba/constitution/submodules/docs_chain/docs_chain
+      Remediation: (cd /run/media/milosvasic/DATA4TB/Projects/boba/constitution/submodules/docs_chain && go build -o docs_chain ./cmd/docs_chain)
+      §11.4.3 honest-skip: engine artifact absent, not a false PASS
+================================================================
+=== download_proxy_deep_challenge.sh (timeout 180s)
+================================================================
+=== download_proxy_deep_challenge ===
+Running test_download_proxy_deep.py...
+Result: 49 passed in 5.40s
+  OK — 49 tests passed, 0 failed
+PASS: download_proxy_deep_challenge
+================================================================
+=== durable_run_helper_challenge.sh (timeout 180s)
+================================================================
+Running as unit: boba-durable-guard-1644957-32157.service; invocation ID: 15fccd7bed8147098ce600ded7ac845c
+  evidence: job cgroup  = /user.slice/user-1000.slice/user@1000.service/app.slice/boba-durable-guard-1644957-32157.service
+  evidence: self cgroup = /user.slice/user-1000.slice/user@1000.service/app.slice/tmx-boba-5322.scope
+PASS: durable-run.sh helper — job survived launcher in own .service cgroup, ran to completion (BOB-064 fix intact)
+================================================================
+=== env_db_drift_challenge.sh (timeout 180s)
+================================================================
+DB names:
+  DRIFT_1
+  DRIFT_2
+.env names:
+  DRIFT_1
+  DRIFT_2
+PASS: env_db_drift_challenge
+================================================================
+=== envfile_bindmount_atomic_challenge.sh (timeout 180s)
+================================================================
+[1/5] Building boba-jackett image...

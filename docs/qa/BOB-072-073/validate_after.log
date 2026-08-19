@@ -1,0 +1,4 @@
+=== FINAL validate ===
+validate: 1 violation(s):
+  - BOB-010: closure evidence_path does not resolve (well-formed path, but nothing exists there) — history id=64, event=Updated, on=2026-08-10: "scripts/docs_chain.sh" (§11.4.5/§11.4.69/§11.4.123/§11.4.226 — a closure's captured proof must be producible on demand)
+VALIDATE_EXIT=1

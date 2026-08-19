@@ -1,0 +1,7 @@
+SERVICE        PORT   PATH            RESULT
+qBittorrent    7185   /               [0;32mOK[0m (HTTP 200)
+Jackett        9117   /UI/Dashboard   [0;32mOK[0m (HTTP 302)
+MergeSvc       7187   /health         [0;32mOK[0m (HTTP 200)
+BobaJackett    7189   /healthz        [0;32mOK[0m (HTTP 200)
+WebUIBridge    7188   /bridge/health  [0;32mOK[0m (HTTP 200)
+EXIT_CODE=0 WALL_CLOCK=1s

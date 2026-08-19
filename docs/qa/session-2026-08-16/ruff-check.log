@@ -1,0 +1,80 @@
+SIM118 Use `key in dict` instead of `key in dict.keys()`
+   --> tests/integration/test_merge_api.py:117:61
+    |
+115 |         timeout=30,
+116 |     )
+117 |     has_session_cookie = any(name.startswith("QBT_SID") for name in session.cookies.keys())
+    |                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+118 |     body_ok = resp.text.strip() == "Ok."
+119 |     if resp.status_code not in (200, 204) or not (has_session_cookie or body_ok):
+    |
+help: Remove `.keys()`
+
+RUF019 [*] Unnecessary key check before dictionary access
+   --> tests/integration/test_merge_api.py:161:16
+    |
+159 |         data = resp.json()
+160 |         assert data["query"] == "debian"
+161 |         assert "search_id" in data and data["search_id"]
+    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+162 |         assert isinstance(data["results"], list)
+163 |         assert isinstance(data["trackers_searched"], list)
+    |
+help: Replace with `dict.get`
+
+S103 `os.chmod` setting a permissive mask `0o755` on file or directory
+   --> tests/integration/test_merge_api.py:280:29
+    |
+278 |         with open(host_path, "w") as f:
+279 |             f.write("#!/bin/sh\nexit 0\n")
+280 |         os.chmod(host_path, 0o755)
+    |                             ^^^^^
+281 |         container_path = f"/config/download-proxy/hooks/{name}"
+282 |         try:
+    |
+
+UP037 [*] Remove quotes from type annotation
+   --> tests/stress/test_tracker_fetch_stress_chaos.py:170:35
+    |
+168 |         return self._body
+169 |
+170 |     async def __aenter__(self) -> "_FakeResponse":
+    |                                   ^^^^^^^^^^^^^^^
+171 |         return self
+    |
+help: Remove quotes
+
+UP037 [*] Remove quotes from type annotation
+   --> tests/stress/test_tracker_fetch_stress_chaos.py:207:35
+    |
+205 |         return _CM()
+206 |
+207 |     async def __aenter__(self) -> "_FakeSession":
+    |                                   ^^^^^^^^^^^^^^
+208 |         return self
+    |
+help: Remove quotes
+
+B023 Function definition does not bind loop variable `i`
+   --> tests/stress/test_tracker_fetch_stress_chaos.py:505:65
+    |
+503 |             # bails out quickly on rejection cases.
+504 |             return await orch.fetch_torrent(
+505 |                 "rutracker", f"https://rutracker.example/other/{i}"
+    |                                                                 ^
+506 |             )
+    |
+
+S311 Standard pseudo-random generators are not suitable for cryptographic purposes
+   --> tests/stress/test_tracker_fetch_stress_chaos.py:551:11
+    |
+550 |     # Deterministic RNG so the failure count is reproducible per §11.4.50.
+551 |     rng = random.Random(20260810)
+    |           ^^^^^^^^^^^^^^^^^^^^^^^
+552 |     drop_rate = 0.20
+553 |     call_state = {"n": 0, "dropped": 0}
+    |
+
+Found 7 errors.
+[*] 3 fixable with the `--fix` option (1 hidden fix can be enabled with the `--unsafe-fixes` option).
+EXIT_CODE=1 WALL_CLOCK=0s

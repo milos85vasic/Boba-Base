@@ -1,0 +1,15 @@
+validate: 14 violation(s):
+  - BOB-010: closure evidence_path does not resolve (well-formed path, but nothing exists there) — history id=4, event=Completed, on=2026-06-09: "scripts/docs_chain.sh" (§11.4.5/§11.4.69/§11.4.123/§11.4.226 — a closure's captured proof must be producible on demand)
+  - BOB-010: closure evidence_path does not resolve (well-formed path, but nothing exists there) — history id=64, event=Updated, on=2026-08-10: "scripts/docs_chain.sh" (§11.4.5/§11.4.69/§11.4.123/§11.4.226 — a closure's captured proof must be producible on demand)
+  - BOB-064 [Fixed/section]: items.status="Completed (→ Fixed.md)" but body_md **Status:** line derives "Queued" (§11.4.93/ATM-627 column↔body desync)
+  - BOB-066 [Issues/section]: items.status="In progress" but body_md **Status:** line derives "Queued" (§11.4.93/ATM-627 column↔body desync)
+  - BOB-067 [Fixed/section]: items.status="Completed (→ Fixed.md)" but body_md **Status:** line derives "Queued" (§11.4.93/ATM-627 column↔body desync)
+  - BOB-102 [Issues/section]: items.status="Completed (→ Fixed.md)" but body_md **Status:** line derives "Operator-blocked" (§11.4.93/ATM-627 column↔body desync)
+  - BOB-102: closure evidence_path does not resolve (narrative or multi-value text in a single-path field) — history id=56, event=Updated, on=2026-08-10: "OPERATOR must decide LAN-exposure posture: bind tunnel to 127.0.0.1 (loopback-only) OR keep 0.0.0.0 (LAN-reachable, rely …" (§11.4.5/§11.4.69/§11.4.123/§11.4.226 — a closure's captured proof must be producible on demand)
+  - BOB-102: closure evidence_path does not resolve (narrative or multi-value text in a single-path field) — history id=59, event=Updated, on=2026-08-10: "OPERATOR must decide LAN-exposure posture: bind tunnel to 127.0.0.1 (loopback-only) OR keep 0.0.0.0 (LAN-reachable, rely …" (§11.4.5/§11.4.69/§11.4.123/§11.4.226 — a closure's captured proof must be producible on demand)
+  - BOB-102: closure evidence_path does not resolve (narrative or multi-value text in a single-path field) — history id=62, event=Updated, on=2026-08-10: "OPERATOR must decide LAN-exposure posture: bind tunnel to 127.0.0.1 (loopback-only) OR keep 0.0.0.0 (LAN-reachable, rely …" (§11.4.5/§11.4.69/§11.4.123/§11.4.226 — a closure's captured proof must be producible on demand)
+  - Issues: DB not renderable by db-to-md (§11.4.93): segment references unknown item "BOB-064" [section]
+  - dangling item-segment (document=Issues, seq=2, atm_id=BOB-064, rep=section): no item at current_location=Issues (§11.4.135/ATM-627)
+  - dangling item-segment (document=Issues, seq=5, atm_id=BOB-067, rep=section): no item at current_location=Issues (§11.4.135/ATM-627)
+  - missing item-segment (atm_id=BOB-064, rep=section): item at current_location=Fixed has NO doc_segments row — db-to-md would silently drop it (§11.4.93/ATM-627)
+  - missing item-segment (atm_id=BOB-067, rep=section): item at current_location=Fixed has NO doc_segments row — db-to-md would silently drop it (§11.4.93/ATM-627)

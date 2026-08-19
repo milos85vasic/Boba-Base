@@ -1,0 +1,29 @@
+[0;34m[INFO][0m Refreshing per-tracker cookies from ${TRACKER_COOKIE_DIR:-$HOME/Downloads}...
+awk: warning: escape sequence `\.' treated as plain `.'
+[extract] rutracker: 4 cookie(s) for own domain — names: bb_guid bb_session bb_ssl cf_clearance 
+[load-tracker-cookies] rutracker: 4 cookie(s) — UNCHANGED (idempotent)
+awk: warning: escape sequence `\.' treated as plain `.'
+[extract] nnmclub: 9 cookie(s) for own domain — names: eb927f21fc_blockTimer eb927f21fc_delayCount phpbb2mysql_4_data phpbb2mysql_4_sid u_eb927f21fc uuid _ym_d _ym_isad _ym_uid 
+[load-tracker-cookies] nnmclub: 9 cookie(s) — UNCHANGED (idempotent)
+[load-tracker-cookies] rutor: 12 cookie(s) for own domain — names: domain_sid ec592524fc_blockTimer ec592524fc_delayCount _ohmybid_cmf redir_ipv6 _sltb _sltm u_ec592524fc _ym_d _ym_isad _ym_uid _ym_visorc 
+[load-tracker-cookies] rutor: 12 cookie(s) — UNCHANGED (idempotent)
+[load-tracker-cookies] kinozal: 5 cookie(s) for own domain — names: eb3299ed2c_blockTimer eb3299ed2c_delayCount pass u_eb3299ed2c uid 
+[load-tracker-cookies] kinozal: 5 cookie(s) — UNCHANGED (idempotent)
+awk: warning: escape sequence `\.' treated as plain `.'
+[extract] iptorrents: 2 cookie(s) for own domain — names: pass uid 
+[load-tracker-cookies] iptorrents: 2 cookie(s) — UNCHANGED (idempotent)
+[load-tracker-cookies] summary: loaded=0 unchanged=5 absent=0 blocked=0 parse_err=0 (dir=/home/milosvasic/Downloads)
+[0;34m[INFO][0m Loading environment from: /run/media/milosvasic/DATA4TB/Projects/boba/.env
+[0;34m[INFO][0m Data directory: /run/media/milosvasic/DATA4TB/Downloads
+[0;34m[INFO][0m Using Podman with podman-compose
+[0;34m[INFO][0m Using boba-ctl for container orchestration
+[0;34m[INFO][0m Recreating the full stack (/run/media/milosvasic/DATA4TB/Projects/boba/scripts/boba-ctl.sh down && /run/media/milosvasic/DATA4TB/Projects/boba/scripts/boba-ctl.sh up -d)...
+2026/08/18 23:45:34 [INFO]  boba-ctl: compose down: podman-compose -f /run/media/milosvasic/DATA4TB/Projects/boba/docker-compose.yml --project-name boba down
+2026/08/18 23:45:34 [DEBUG] boba-ctl: executing: podman-compose -f /run/media/milosvasic/DATA4TB/Projects/boba/docker-compose.yml --project-name boba down (dir: /run/media/milosvasic/DATA4TB/Projects/boba)
+2026/08/18 23:45:51 [DEBUG] boba-ctl: compose command completed successfully
+Services stopped
+2026/08/18 23:45:51 [INFO]  boba-ctl: compose up: podman-compose -f /run/media/milosvasic/DATA4TB/Projects/boba/docker-compose.yml --project-name boba up -d
+2026/08/18 23:45:51 [DEBUG] boba-ctl: executing: podman-compose -f /run/media/milosvasic/DATA4TB/Projects/boba/docker-compose.yml --project-name boba up -d (dir: /run/media/milosvasic/DATA4TB/Projects/boba)
+2026/08/18 23:46:24 [DEBUG] boba-ctl: compose command completed successfully
+Services started [runtime: podman]
+[0;32m[SUCCESS][0m Stack recreated successfully

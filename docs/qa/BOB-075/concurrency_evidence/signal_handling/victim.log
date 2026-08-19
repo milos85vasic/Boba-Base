@@ -1,0 +1,7 @@
+[1/1] Baseline: docs_chain in-sync + both Status docs within 60d SLA (EXPECT PASS)
+  PASS: docs_chain verify --all — 2 context(s) in-sync
+  PASS: docs/features/Status.md Last-modified=2026-08-17T14:54:04Z is 1d old (<= SLA 60d)
+  PASS: docs/codegraph/Status.md Last-modified=2026-08-17T14:54:04Z is 1d old (<= SLA 60d)
+  BASELINE PASS
+
+[RED] Backdating Status.md's Last-modified by 100d (EXPECT FAIL)

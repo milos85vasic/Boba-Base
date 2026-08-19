@@ -1,0 +1,103 @@
+<h1 id="minor-6-fix-evidence-install-dev-tools.sh-bash4.0-guard">MINOR-6
+fix evidence — <code>install-dev-tools.sh</code> bash&gt;=4.0 guard</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T00:00:00Z</p>
+<p>Source finding:
+<code>.superpowers/sdd/task-review-457cca4-a7e55f9-report.md</code>
+MINOR-6 (commit <code>c7dfdde</code>) — <code>declare -A RESULT</code>
+requires bash &gt;= 4.0; macOS ships bash 3.2 by default; no early
+runtime-version check existed, so a <code>--check</code> invocation on
+stock macOS would fail with a cryptic
+<code>declare: -A: invalid option</code> instead of an actionable
+message.</p>
+<h2 id="fix-applied">Fix applied</h2>
+<p><code>scripts/install-dev-tools.sh</code>:</p>
+<ol type="1">
+<li>Header comment gained a “Runtime requirement — bash &gt;= 4.0
+(§11.4.35 consumer-DATA declaration)” paragraph naming the exact cause
+(associative-array status table), the exact failure mode on macOS, and
+the exact remediation (<code>brew install bash</code> + explicit
+re-invocation via <code>$(brew --prefix bash)/bin/bash</code>).</li>
+<li>Immediately after <code>set -uo pipefail</code> (before any other
+statement, including the argument-parsing loop), a guard checks the
+REAL, authoritative <code>BASH_VERSINFO</code> array — never inferred
+from <code>uname -s</code> or OS family, since a Homebrew/upgraded bash
+on macOS is a legitimate PASS (§11.4.201 guard-asserts-real-condition:
+the condition is “can this interpreter run an associative array”, not
+“is this macOS”). On violation it prints the exact cause + the exact fix
+and exits 2 (the script’s own documented “invocation error” exit class —
+never conflated with the FAILED/exit-1 class reserved for genuine
+install errors).</li>
+</ol>
+<h2 id="anti-bluff-verification-golden-good-golden-bad">§11.4.6
+anti-bluff verification — golden-good / golden-bad</h2>
+<h3
+id="golden-good-real-host-bash-5.2.37---check-mode-unaffected">Golden-good
+(real host, bash 5.2.37, <code>--check</code> mode unaffected)</h3>
+<pre><code>$ bash --version | head -1
+GNU bash, version 5.2.37(1)-release (x86_64-alt-linux-gnu)
+
+$ bash scripts/install-dev-tools.sh --check --tool wrk &gt;/tmp/idt_check.log 2&gt;&amp;1
+$ echo &quot;real exit code (no pipe): $?&quot;
+real exit code (no pipe): 0
+
+$ tail -3 /tmp/idt_check.log
+Summary (check):
+  wrk: ALREADY-PRESENT: /home/milosvasic/bin/wrk (wrk 4.2.0 [epoll] Copyright (C) 2012 Will Glozer)
+==========================================</code></pre>
+<p><code>bash -n scripts/install-dev-tools.sh</code> — clean, before AND
+after the edit.</p>
+<h3
+id="golden-bad-guard-logic-proven-against-a-genuinely-bash-3.x-shaped-condition">Golden-bad
+(guard logic proven against a genuinely bash-3.x-shaped condition)</h3>
+<p>An actual bash 3.2 interpreter is not available on this host
+(verified: only bash 5.2.37 is installed; <code>apt-cache</code>/package
+search for a legacy bash package returns nothing on this ALT Linux host,
+and the real <code>BASH_VERSINFO</code> array is a bash-internal
+read-only value the running interpreter sets itself — it cannot be
+overridden from inside a running bash 5.2 process to fake a bash-3
+identity). Per §11.4.6 this limitation is stated honestly rather than
+silently assumed away.</p>
+<p>The guard’s LOGIC (not the shipped variable name — an isolated probe
+using a simulated array of the same shape, so the comparison itself is
+proven under the golden-bad condition) was extracted and run
+standalone:</p>
+<pre><code>$ cat /tmp/guard_probe.sh
+#!/usr/bin/env bash
+set -uo pipefail
+BASH_VERSINFO_SIM=(3 2 57 1 release x86_64-apple-darwin)
+if [ -z &quot;${BASH_VERSINFO_SIM:-}&quot; ] || [ &quot;${BASH_VERSINFO_SIM[0]}&quot; -lt 4 ]; then
+  echo &quot;install-dev-tools: bash &gt;= 4.0 required (associative arrays); got 3.2.57(1)-release (simulated).&quot; &gt;&amp;2
+  echo &quot;  macOS ships bash 3.2 by default. Fix: brew install bash, then re-run with:&quot; &gt;&amp;2
+  echo &quot;    \$(brew --prefix bash)/bin/bash $0 $*&quot; &gt;&amp;2
+  exit 2
+fi
+echo &quot;SHOULD NOT REACH HERE&quot;
+
+$ bash /tmp/guard_probe.sh --check
+install-dev-tools: bash &gt;= 4.0 required (associative arrays); got 3.2.57(1)-release (simulated).
+  macOS ships bash 3.2 by default. Fix: brew install bash, then re-run with:
+    $(brew --prefix bash)/bin/bash /tmp/guard_probe.sh --check
+$ echo &quot;exit=$?&quot;
+exit=2</code></pre>
+<p>The probe never reaches <code>"SHOULD NOT REACH HERE"</code> — the
+version-gate comparison (<code>[ "${ARR[0]}" -lt 4 ]</code>) correctly
+trips on <code>3</code> and the script exits 2 with the actionable
+message BEFORE any tool-install logic runs. This is the exact
+numeric-comparison pattern shipped in
+<code>scripts/install-dev-tools.sh</code>’s guard (only the array
+identifier differs: the real interpreter’s own
+<code>BASH_VERSINFO</code> vs. the probe’s
+<code>BASH_VERSINFO_SIM</code>, substituted only because the genuine
+array cannot be overridden from a running bash 5.2 process).</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p>This fix is verified by (a) the real host’s bash 5.2 golden-good path
+(unaffected — exit 0, unchanged behavior) and (b) an isolated golden-bad
+probe proving the exact numeric-comparison + exit-2 + actionable-message
+logic trips correctly on a bash-3-shaped version array. It has NOT been
+independently verified on a real, unmodified macOS host running a
+genuine bash 3.2 binary — no such host was available in this session.
+This is an honest §11.4.3 gap, not a silent claim of full cross-platform
+proof; the header comment added to the script states this limitation
+explicitly and names the exact remediation path for an operator who does
+hit it.</p>

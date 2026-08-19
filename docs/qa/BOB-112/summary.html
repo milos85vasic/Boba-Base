@@ -1,0 +1,172 @@
+<h1
+id="bob-112-live-wrk-load-test-verification-healthz-ttl-cache">BOB-112 —
+Live wrk Load-Test Verification: <code>/healthz</code> TTL Cache</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T19:20:00Z</p>
+<h2 id="what-this-closes">What this closes</h2>
+<p>BOB-112 (<code>qBitTorrent-go/internal/jackettapi/health.go</code>,
+commit <code>91b52db</code>) added a 30s TTL cache around
+<code>HandleHealth</code>’s Jackett liveness check to stop
+<code>/healthz</code> from making a synchronous, uncached
+<code>Jackett.GetCatalog()</code> call on every single request — a
+self-inflicted DDoS amplification vector discovered by
+<code>challenges/scripts/ddos_resilience_challenge.sh</code> (see
+<code>docs/testing/ddos_resilience.md</code> “Findings” #2). That
+commit’s own honest declaration was: <em>“Live wrk load-test tracked as
+followup”</em>. This document is that followup — real, captured,
+§11.4.6-compliant <code>wrk</code> evidence with §11.4.115 RED/GREEN
+polarity, run live against the rebuilt container on 2026-08-18.</p>
+<h2 id="method">Method</h2>
+<ol type="1">
+<li>Rebuilt + force-recreated the <code>boba-jackett</code> container
+from the committed <code>91b52db</code> source
+(<code>podman-compose build boba-jackett</code> +
+<code>podman-compose up -d --force-recreate boba-jackett</code>) — the
+running container had previously been serving an image built
+<strong>2026-08-08</strong>, ten days before the BOB-112 fix landed, so
+it was NOT exercising the fix without this rebuild. Confirmed via the
+new, fix-only log line
+<code>/healthz Jackett cache refresh #1 (hits=0 misses=1 ...)</code>.</li>
+<li><strong>Post-fix (GREEN) run</strong>:
+<code>wrk -t4 -c100 -d30s --timeout 3s --latency http://localhost:7189/healthz</code>
+against the rebuilt container running the real, committed BOB-112 code.
+Verbatim output: <code>docs/qa/BOB-112/wrk_evidence.log</code>.</li>
+<li><strong>§1.1 mutation (RED baseline)</strong>:
+<code>jackettOk()</code> in <code>health.go</code> was edited
+(uncommitted, in-place) to bypass the cache <em>and</em>
+<code>refreshJackettOk()</code>’s own double-checked-locking entirely,
+calling <code>d.Jackett.GetCatalog()</code> directly on every hit —
+reproducing the exact pre-BOB-112 code shown in
+<code>docs/testing/ddos_resilience.md</code> “Findings” #2
+(<code>if d.Jackett != nil { _, err := d.Jackett.GetCatalog(); ... }</code>).
+Container rebuilt + recreated with the mutated source, then the
+identical <code>wrk</code> load re-run. Verbatim output:
+<code>docs/qa/BOB-112/wrk_mutation_baseline.log</code>.</li>
+<li>Mutation reverted from a pre-edit backup;
+<code>git diff --stat</code> on <code>health.go</code> confirmed
+<strong>empty</strong> (byte-identical to HEAD) before rebuilding a
+third time. The rebuild’s image digest (<code>962f4452c725...</code>)
+matched the post-fix build from step 2 <strong>exactly</strong>,
+confirming a clean, complete revert — not merely “close enough”.
+Container force-recreated a final time back onto this image;
+<code>/healthz</code> verified <code>HTTP 200</code> afterward.</li>
+</ol>
+<p>Load parameters throughout: 4 threads x 100 connections x 30s
+wall-clock, localhost-only, bounded per §12.6/§12.11 (client-side
+<code>wrk</code> process on an 8-core/62GiB host with 51GiB free at test
+time — no host-safety incident).</p>
+<h2 id="results">Results</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Baseline (mutation, RED — cache bypassed)</th>
+<th>Post-fix (GREEN — real BOB-112 code)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total requests (30s)</td>
+<td>412</td>
+<td>812,149</td>
+</tr>
+<tr>
+<td>Timeouts (<code>wrk</code> socket-error <code>timeout</code>)</td>
+<td><strong>400 / 412 = 97.1%</strong></td>
+<td><strong>0 / 812,149 = 0.0%</strong> (no <code>Socket errors</code>
+line printed — wrk omits it when all three counters are 0)</td>
+</tr>
+<tr>
+<td>Requests/sec</td>
+<td>13.71</td>
+<td>27,049.00</td>
+</tr>
+<tr>
+<td>Avg latency</td>
+<td>1.87s</td>
+<td>4.79ms</td>
+</tr>
+<tr>
+<td>p50 latency</td>
+<td>1.97s</td>
+<td>3.40ms</td>
+</tr>
+<tr>
+<td>p90 latency</td>
+<td>2.37s</td>
+<td>9.34ms</td>
+</tr>
+<tr>
+<td>p99 latency</td>
+<td>2.67s</td>
+<td>19.89ms</td>
+</tr>
+<tr>
+<td>Server-side upstream <code>Jackett.GetCatalog()</code> calls (from
+<code>podman logs boba-jackett</code>)</td>
+<td>every one of the 412 requests (0 <code>cache refresh</code> log
+lines — the mutated path never reaches <code>refreshJackettOk()</code>,
+which is the only place that log line is emitted, confirming zero
+caching occurred)</td>
+<td>2 (<code>cache refresh #1</code> at boot, <code>#2</code> ~39s later
+once the 30s TTL first expired mid-run) across the entire
+812,149-request run</td>
+</tr>
+</tbody>
+</table>
+<h2 id="improvement">Improvement</h2>
+<ul>
+<li><strong>Timeout rate: 97.1% -&gt; 0.0%</strong> — the cache is
+load-bearing; without it, under this load, <code>/healthz</code> fails
+for the overwhelming majority of callers.</li>
+<li><strong>Throughput: 13.71 req/s -&gt; 27,049.00 req/s</strong>
+(~1,973x more requests served in the same 30s window).</li>
+<li><strong>Avg latency: 1.87s -&gt; 4.79ms</strong> (~390x
+faster).</li>
+<li><strong>p99 latency: 2.67s -&gt; 19.89ms</strong> — the mutation’s
+p99 sits right at the 3s client-side <code>--timeout</code> budget
+(consistent with <code>docs/testing/ ddos_resilience.md</code>’s “queued
+behind Jackett round-trips” description); the fix’s p99 stays two orders
+of magnitude below that budget.</li>
+<li><strong>Upstream Jackett load: ~412 calls/30s -&gt; 2
+calls/30s</strong> — the cache collapses what would have been one
+upstream call per request into effectively one call per TTL window,
+which is the mechanism behind every other number in this table.</li>
+</ul>
+<h2 id="anti-bluff-notes-11.4.6-11.4.115">Anti-bluff notes (§11.4.6 /
+§11.4.115)</h2>
+<ul>
+<li>Every number above is read directly from the two
+<code>wrk_*.log</code> files committed alongside this summary — nothing
+paraphrased or estimated.</li>
+<li>The RED/GREEN polarity holds by construction: the mutation
+reproduces the documented pre-fix defect (verified independently via the
+log-based “zero cache-refresh lines” check, not merely the timeout
+numbers), and the revert is verified byte-identical via both
+<code>git diff --stat</code> (empty) and matching container image digest
+before the final rebuild — not just “it looked the same”.</li>
+<li>The container the mutation ran against was confirmed to be genuinely
+running the mutated code (not a stale image) via its own fresh
+<code>StartedAt</code> timestamp and image digest after each
+<code>--force-recreate</code>.</li>
+<li><code>docs/qa/BOB-112/wrk_evidence.log</code> and
+<code>wrk_mutation_baseline.log</code> are the raw captured
+<code>wrk</code> stdout, unedited.</li>
+</ul>
+<h2 id="bob-113-side-effect">BOB-113 side effect</h2>
+<p>Running <code>bash scripts/install-dev-tools.sh</code> (a
+prerequisite for this task’s <code>wrk</code> load test) also produced
+the BOB-113 verification evidence — see
+<code>.superpowers/sdd/task-74-report.md</code> for the captured
+<code>wrk --version</code> output and install-script summary
+(<code>wrk</code>/<code>hey</code> <code>ALREADY-PRESENT</code>,
+<code>siege</code> honest <code>SKIP</code> with the documented manual
+sudo command, <code>ab</code>/<code>curl-loader</code> detection only).
+No separate doc was created for BOB-113 per the task brief’s “side
+effect” framing — the evidence is captured in the task report and in
+this session’s terminal history.</p>

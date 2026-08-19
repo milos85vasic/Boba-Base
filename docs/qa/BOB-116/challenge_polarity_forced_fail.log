@@ -1,0 +1,372 @@
+=== SIG-1: runaway process >0 GB RSS ===
+OVER THRESHOLD:
+1665349 milosva+ 16212 systemd
+1665351 milosva+  3264 (sd-pam)
+1665397 milosva+ 10880 gnome-keyring-d
+1665558 milosva+    56 catatonit
+1665737 milosva+  6504 dbus-daemon
+1665765 milosva+  7740 gdm-wayland-ses
+1665781 milosva+  7896 gnome-session-i
+1665834 milosva+ 110624 gnome-remote-de
+1665835 milosva+  7768 gnome-session-c
+1665839 milosva+ 11912 gnome-session-s
+1665848 milosva+ 293168 gnome-shell
+1665855 milosva+ 10756 gnome-keyring-d
+1665868 milosva+  9504 gvfsd
+1665875 milosva+ 27140 pasta.avx2
+1665907 milosva+  2904 conmon
+1665909 milosva+ 19692 nats-server
+1665934 milosva+  2864 conmon
+1665995 milosva+  6440 at-spi-bus-laun
+1666011 milosva+  4884 dbus-daemon
+1666035 milosva+ 24744 pasta.avx2
+1666042 milosva+  7532 at-spi2-registr
+1666059 milosva+  2812 conmon
+1666062 milosva+ 23496 caddy
+1666232 milosva+ 23472 pasta.avx2
+1666251 milosva+  2904 conmon
+1666446 milosva+  8108 xdg-permission-
+1666449 milosva+ 18644 gnome-shell-cal
+1666463 milosva+ 56208 evolution-sourc
+1666485 milosva+ 24196 pasta.avx2
+1666519 milosva+  3924 aardvark-dns
+1666531 milosva+ 24332 xdg-desktop-por
+1666535 milosva+ 33444 gjs
+1666579 milosva+ 13864 ibus-daemon
+1666580 milosva+ 10552 gsd-a11y-settin
+1666589 milosva+ 10160 gsd-color
+1666591 milosva+ 12132 gsd-datetime
+1666594 milosva+ 43244 goa-daemon
+1666595 milosva+ 11044 gsd-housekeepin
+1666599 milosva+  9044 gsd-keyboard
+1666603 milosva+ 13676 gsd-media-keys
+1666607 milosva+ 13076 gsd-power
+1666608 milosva+ 15348 gsd-print-notif
+1666611 milosva+  9272 gsd-rfkill
+1666612 milosva+  8744 gsd-screensaver
+1666618 milosva+ 12328 gsd-sharing
+1666634 milosva+  7920 gsd-disk-utilit
+1666635 milosva+ 10452 gsd-smartcard
+1666641 milosva+ 10720 gsd-sound
+1666644 milosva+  9632 gsd-usb-protect
+1666647 milosva+ 11292 gsd-wwan
+1666662 milosva+ 429264 Telegram
+1666674 milosva+  9112 xdg-document-po
+1666699 milosva+ 358912 jetbrains-toolb
+1666708 milosva+ 29668 drweb-gui-agent
+1666757 milosva+  9232 ibus-dconf
+1666761 milosva+ 31936 ibus-extension-
+1666807 milosva+ 10136 goa-identity-se
+1666828 milosva+  9172 ibus-portal
+1666907 milosva+ 32944 gjs
+1666928 milosva+ 53088 evolution-alarm
+1666933 milosva+ 98968 gnome-software
+1666934 milosva+ 82556 localsearch-3
+1666938 milosva+ 15748 pipewire
+1666948 milosva+ 27724 wireplumber
+1666949 milosva+ 14316 pipewire-pulse
+1667041 milosva+ 20788 evolution-calen
+1667043 milosva+ 14184 gvfs-udisks2-vo
+1667044 milosva+ 42520 xdg-desktop-por
+1667080 milosva+  8992 gvfs-goa-volume
+1667100 milosva+ 12680 gvfs-afc-volume
+1667130 milosva+ 26188 evolution-addre
+1667132 milosva+  8616 gvfs-mtp-volume
+1667150 milosva+  9320 gvfs-gphoto2-vo
+1667189 milosva+ 133752 Xwayland
+1667236 milosva+  9264 ibus-engine-sim
+1667406 milosva+ 14188 gsd-printer
+1667507 milosva+  5888 dconf-service
+1667807 milosva+ 12604 gsd-xsettings
+1667867 milosva+ 151132 mutter-x11-fram
+1667878 milosva+ 86052 ibus-x11
+1667985 milosva+ 23596 xdg-desktop-por
+1668710 milosva+  2816 conmon
+1668877 milosva+  2808 conmon
+1669101 milosva+ 113172 jetbrainsd
+1669175 milosva+ 19380 helix-server
+1669196 milosva+ 526648 yandex_browser
+1669203 milosva+  3988 cat
+1669204 milosva+  4100 cat
+1669206 milosva+ 18328 chrome_crashpad
+1669208 milosva+  3452 chrome_crashpad
+1669214 milosva+ 51080 yandex_browser
+1669215 milosva+ 51984 yandex_browser
+1669217 milosva+ 20104 yandex_browser
+1669255 milosva+ 109224 yandex_browser
+1669284 milosva+ 49804 yandex_browser
+1669402 milosva+  3016 conmon
+1669414 milosva+ 66572 gluetun-entrypo
+1669476 milosva+ 127352 yandex_browser
+1669499 milosva+ 107120 yandex_browser
+1669507 milosva+ 150568 yandex_browser
+1670007 milosva+  2912 conmon
+1670164 milosva+  5656 rootlessport
+1670171 milosva+  5544 exe
+1670180 milosva+  2808 conmon
+1670182 milosva+  3240 entrypoint.sh
+1670227 milosva+  1568 tail
+1670230 milosva+  1916 tail
+1670232 milosva+  1628 tail
+1670233 milosva+  1620 tail
+1670405 milosva+ 58752 yandex_browser
+1670669 milosva+  2976 conmon
+1670671 milosva+    92 s6-svscan
+1670729 milosva+    80 s6-supervise
+1670731 milosva+    60 s6-linux-init-s
+1670762 milosva+    80 s6-supervise
+1670763 milosva+    72 s6-supervise
+1670764 milosva+    80 s6-supervise
+1670765 milosva+    76 s6-supervise
+1670773 milosva+    68 s6-ipcserverd
+1670964 milosva+   988 busybox
+1671318 milosva+ 99700 yandex_browser
+1671444 milosva+ 192292 kgx
+1676060 milosva+  3064 conmon
+1676062 milosva+ 78040 python3
+1676356 milosva+ 14520 webui-bridge
+1676701 milosva+ 13208 bash
+1676756 milosva+  8500 gvfsd-metadata
+1681153 milosva+  8932 bash
+1681154 milosva+  9952 ssh
+1681907 milosva+  7268 gcr-ssh-agent
+1689934 milosva+ 91200 yandex_browser
+1696112 milosva+ 11760 tmux: client
+1701105 milosva+ 12600 grep
+1701320 milosva+  9904 tmux: server
+1701322 milosva+ 13456 bash
+1702743 milosva+ 44436 leafpad
+1707364 milosva+ 21436 helix-auth
+1715244 milosva+ 849128 claude
+1716099 milosva+ 162928 uv
+1716100 milosva+ 157760 npm exec convex
+1716101 milosva+ 169884 uv
+1716164 milosva+ 81892 python
+1716168 milosva+ 94420 python
+1716541 milosva+ 140304 node
+1716586 milosva+ 35148 lumen-linux-amd
+1716630 milosva+ 169848 npm exec fireba
+1716730 milosva+ 163148 npm exec @cap-j
+1716763 milosva+ 187820 node
+1716807 milosva+ 506464 node
+1716853 milosva+ 21160 hook-linux-amd6
+1716918 milosva+ 68812 node
+1716926 milosva+ 103840 MainThread
+1716947 milosva+ 88680 MainThread
+1716964 milosva+ 148548 npm exec chrome
+1717201 milosva+ 147100 chrome-devtools
+1717222 milosva+ 171516 node
+1729649 milosva+ 253536 yandex_browser
+1746865 milosva+ 127440 lumen-linux-amd
+1766502 milosva+ 238184 yandex_browser
+1766683 milosva+ 241668 yandex_browser
+1782871 milosva+ 119636 yandex_browser
+1787003 milosva+ 74672 yandex_browser
+1787038 milosva+ 259868 yandex_browser
+1787178 milosva+ 151484 yandex_browser
+1796042 milosva+  9804 conmon
+1796048 milosva+   100 s6-svscan
+1796182 milosva+    72 s6-supervise
+1796183 milosva+    60 s6-linux-init-s
+1796216 milosva+    76 s6-supervise
+1796217 milosva+    72 s6-supervise
+1796218 milosva+    76 s6-supervise
+1796219 milosva+    80 s6-supervise
+1796228 milosva+    64 s6-ipcserverd
+1796389 milosva+   968 busybox
+1801144 milosva+ 12784 ssh
+1801444 milosva+  9792 conmon
+1801446 milosva+ 24928 boba-jackett
+1817398 milosva+ 14164 bash
+1819632 milosva+ 12832 timeout
+1819633 milosva+ 14252 bash
+1819634 milosva+  8412 bash
+1819635 milosva+ 16424 ps
+1819636 milosva+ 14068 awk
+UNCLASSIFIED (not in legitimate-large exclusion set):
+1665349 milosva+ 16212 systemd
+1665351 milosva+  3264 (sd-pam)
+1665397 milosva+ 10880 gnome-keyring-d
+1665558 milosva+    56 catatonit
+1665737 milosva+  6504 dbus-daemon
+1665765 milosva+  7740 gdm-wayland-ses
+1665781 milosva+  7896 gnome-session-i
+1665834 milosva+ 110624 gnome-remote-de
+1665835 milosva+  7768 gnome-session-c
+1665839 milosva+ 11912 gnome-session-s
+1665848 milosva+ 293168 gnome-shell
+1665855 milosva+ 10756 gnome-keyring-d
+1665868 milosva+  9504 gvfsd
+1665875 milosva+ 27140 pasta.avx2
+1665907 milosva+  2904 conmon
+1665909 milosva+ 19692 nats-server
+1665934 milosva+  2864 conmon
+1665995 milosva+  6440 at-spi-bus-laun
+1666011 milosva+  4884 dbus-daemon
+1666035 milosva+ 24744 pasta.avx2
+1666042 milosva+  7532 at-spi2-registr
+1666059 milosva+  2812 conmon
+1666062 milosva+ 23496 caddy
+1666232 milosva+ 23472 pasta.avx2
+1666251 milosva+  2904 conmon
+1666446 milosva+  8108 xdg-permission-
+1666449 milosva+ 18644 gnome-shell-cal
+1666463 milosva+ 56208 evolution-sourc
+1666485 milosva+ 24196 pasta.avx2
+1666519 milosva+  3924 aardvark-dns
+1666531 milosva+ 24332 xdg-desktop-por
+1666535 milosva+ 33444 gjs
+1666579 milosva+ 13864 ibus-daemon
+1666580 milosva+ 10552 gsd-a11y-settin
+1666589 milosva+ 10160 gsd-color
+1666591 milosva+ 12132 gsd-datetime
+1666594 milosva+ 43244 goa-daemon
+1666595 milosva+ 11044 gsd-housekeepin
+1666599 milosva+  9044 gsd-keyboard
+1666603 milosva+ 13676 gsd-media-keys
+1666607 milosva+ 13076 gsd-power
+1666608 milosva+ 15348 gsd-print-notif
+1666611 milosva+  9272 gsd-rfkill
+1666612 milosva+  8744 gsd-screensaver
+1666618 milosva+ 12328 gsd-sharing
+1666634 milosva+  7920 gsd-disk-utilit
+1666635 milosva+ 10452 gsd-smartcard
+1666641 milosva+ 10720 gsd-sound
+1666644 milosva+  9632 gsd-usb-protect
+1666647 milosva+ 11292 gsd-wwan
+1666662 milosva+ 429264 Telegram
+1666674 milosva+  9112 xdg-document-po
+1666699 milosva+ 358912 jetbrains-toolb
+1666708 milosva+ 29668 drweb-gui-agent
+1666757 milosva+  9232 ibus-dconf
+1666761 milosva+ 31936 ibus-extension-
+1666807 milosva+ 10136 goa-identity-se
+1666828 milosva+  9172 ibus-portal
+1666907 milosva+ 32944 gjs
+1666928 milosva+ 53088 evolution-alarm
+1666933 milosva+ 98968 gnome-software
+1666934 milosva+ 82556 localsearch-3
+1666938 milosva+ 15748 pipewire
+1666948 milosva+ 27724 wireplumber
+1666949 milosva+ 14316 pipewire-pulse
+1667041 milosva+ 20788 evolution-calen
+1667043 milosva+ 14184 gvfs-udisks2-vo
+1667044 milosva+ 42520 xdg-desktop-por
+1667080 milosva+  8992 gvfs-goa-volume
+1667100 milosva+ 12680 gvfs-afc-volume
+1667130 milosva+ 26188 evolution-addre
+1667132 milosva+  8616 gvfs-mtp-volume
+1667150 milosva+  9320 gvfs-gphoto2-vo
+1667189 milosva+ 133752 Xwayland
+1667236 milosva+  9264 ibus-engine-sim
+1667406 milosva+ 14188 gsd-printer
+1667507 milosva+  5888 dconf-service
+1667807 milosva+ 12604 gsd-xsettings
+1667867 milosva+ 151132 mutter-x11-fram
+1667878 milosva+ 86052 ibus-x11
+1667985 milosva+ 23596 xdg-desktop-por
+1668710 milosva+  2816 conmon
+1668877 milosva+  2808 conmon
+1669101 milosva+ 113172 jetbrainsd
+1669175 milosva+ 19380 helix-server
+1669203 milosva+  3988 cat
+1669204 milosva+  4100 cat
+1669402 milosva+  3016 conmon
+1669414 milosva+ 66572 gluetun-entrypo
+1670007 milosva+  2912 conmon
+1670164 milosva+  5656 rootlessport
+1670171 milosva+  5544 exe
+1670180 milosva+  2808 conmon
+1670182 milosva+  3240 entrypoint.sh
+1670227 milosva+  1568 tail
+1670230 milosva+  1916 tail
+1670232 milosva+  1628 tail
+1670233 milosva+  1620 tail
+1670669 milosva+  2976 conmon
+1670671 milosva+    92 s6-svscan
+1670729 milosva+    80 s6-supervise
+1670731 milosva+    60 s6-linux-init-s
+1670762 milosva+    80 s6-supervise
+1670763 milosva+    72 s6-supervise
+1670764 milosva+    80 s6-supervise
+1670765 milosva+    76 s6-supervise
+1670773 milosva+    68 s6-ipcserverd
+1670964 milosva+   988 busybox
+1671444 milosva+ 192292 kgx
+1676060 milosva+  3064 conmon
+1676062 milosva+ 78040 python3
+1676356 milosva+ 14520 webui-bridge
+1676701 milosva+ 13208 bash
+1676756 milosva+  8500 gvfsd-metadata
+1681153 milosva+  8932 bash
+1681154 milosva+  9952 ssh
+1681907 milosva+  7268 gcr-ssh-agent
+1696112 milosva+ 11760 tmux: client
+1701105 milosva+ 12600 grep
+1701320 milosva+  9904 tmux: server
+1701322 milosva+ 13456 bash
+1702743 milosva+ 44436 leafpad
+1707364 milosva+ 21436 helix-auth
+1715244 milosva+ 849128 claude
+1716099 milosva+ 162928 uv
+1716100 milosva+ 157760 npm exec convex
+1716101 milosva+ 169884 uv
+1716164 milosva+ 81892 python
+1716168 milosva+ 94420 python
+1716541 milosva+ 140304 node
+1716586 milosva+ 35148 lumen-linux-amd
+1716630 milosva+ 169848 npm exec fireba
+1716730 milosva+ 163148 npm exec @cap-j
+1716763 milosva+ 187820 node
+1716807 milosva+ 506464 node
+1716853 milosva+ 21160 hook-linux-amd6
+1716918 milosva+ 68812 node
+1716926 milosva+ 103840 MainThread
+1716947 milosva+ 88680 MainThread
+1717222 milosva+ 171516 node
+1746865 milosva+ 127440 lumen-linux-amd
+1796042 milosva+  9804 conmon
+1796048 milosva+   100 s6-svscan
+1796182 milosva+    72 s6-supervise
+1796183 milosva+    60 s6-linux-init-s
+1796216 milosva+    76 s6-supervise
+1796217 milosva+    72 s6-supervise
+1796218 milosva+    76 s6-supervise
+1796219 milosva+    80 s6-supervise
+1796228 milosva+    64 s6-ipcserverd
+1796389 milosva+   968 busybox
+1801144 milosva+ 12784 ssh
+1801444 milosva+  9792 conmon
+1801446 milosva+ 24928 boba-jackett
+1817398 milosva+ 14164 bash
+1819632 milosva+ 12832 timeout
+1819633 milosva+ 14252 bash
+1819634 milosva+  8412 bash
+1819635 milosva+ 16424 ps
+1819636 milosva+ 14068 awk
+
+=== SIG-2: thread count >70% of soft ulimit -u ===
+  threads=1129  soft_limit=65536  utilization=1%
+OK: thread utilization 1% within safe zone
+
+=== SIG-3: EAGAIN cascade in last 15 minutes ===
+  total EAGAIN-class hits last 15min: 0
+OK: EAGAIN hits within safe zone
+
+=== SIG-4: user.slice memory PSI full avg60 > 50 ===
+  full avg60=0.00 threshold=50
+OK: PSI within safe zone
+
+=== SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+OK: no pathological-regex processes detected
+
+=== summary ===
+FAIL: 1 signature(s) tripped
+  - SIG-1: unclassified process(es) over 0 GB RSS
+
+Take corrective action per docs/incidents/2026-08-18-perceived-forced-logout-2nd.md:
+  - SIG-1: identify + kill runaway process
+  - SIG-2: reduce parallel subagent fan-out
+  - SIG-3: examine container that emits EAGAIN, throttle its outbound
+  - SIG-4: reduce memory-consuming workload
+  - SIG-5: kill the pathological regex process immediately

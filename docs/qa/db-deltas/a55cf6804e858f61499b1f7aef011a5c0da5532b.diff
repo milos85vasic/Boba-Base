@@ -1,0 +1,36 @@
+# Differential SQLite Dump — docs/workable_items.db
+# §11.4.226 evidence-class-at-closure / §11.4.95 SSoT / §11.4.115(F) machine-written evidence
+# §11.4.209 review IMPORTANT-2 remedy — task tracker #79
+#
+# Commit:    a55cf6804e858f61499b1f7aef011a5c0da5532b
+# Parent:    286192008b35dab7b00c59635ba424ed4b72674b
+# Generated: 2026-08-18T20:57:03Z
+# Tool:      sqlite3 3.50.6
+#
+## Row counts (table: before -> after)
+doc_segments                    118 -> 118         [same]
+firebase_metadata                 0 -> 0           [same]
+item_history                     94 -> 94          [same]
+items                           116 -> 116         [same]
+logic_groups                      0 -> 0           [same]
+meta                              4 -> 4           [same]
+obsolete_details                  0 -> 0           [same]
+operator_block_details            4 -> 4           [same]
+sqlite_sequence                   2 -> 2           [same]
+test_diary                        0 -> 0           [same]
+#
+## meta table (full content)
+### before
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-18 13:41:42
+last_sync_timestamp|2026-08-18 13:41:42|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+### after
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-18 13:41:42
+last_sync_timestamp|2026-08-18 13:41:42|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+#
+## Full logical .dump unified diff (before -> after)
+#
+(no logical content difference — the binary blob change was pure SQLite housekeeping: WAL/page-cache churn with zero row-level delta)

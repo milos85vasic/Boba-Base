@@ -1,0 +1,109 @@
+MINOR-5 — --scope safety check does not audit missing-from-scope files (reverse-BOB-068)
+======================================================================
+
+All three scenarios below ran the REAL, unmodified shipped
+scripts/commit-push-all.sh end-to-end inside an isolated scratch git
+sandbox with ZERO remotes configured (so stage 6's push loop is a safe
+no-op — real script logic exercised, zero risk to the actual boba repo
+or its upstreams).
+
+Real reproduction: the declared --scope is a DIRECTORY that CONTAINS a
+git SUBMODULE with uncommitted internal changes. 'git add <scope-dir>'
+(stage 5's own staging call) stages the PARENT repo's tracked files
+under that directory but does NOT reach INTO the submodule's own
+working tree — the submodule's dirty content is a SEPARATE git-status
+entity (the 'm'/'M' gitlink marker), genuinely left un-staged inside
+the declared scope. This is directly relevant to the real boba repo,
+which itself carries submodules/challenges + submodules/helixqa.
+
+--- SCENARIO A: partial scope (dirty submodule inside scope), NO --scope-allow-partial ---
+[commit-push-all] stage 1/6 — fetch all remotes
+[commit-push-all] stage 2/6 — cheap validation
+[commit-push-all] stage 2/6 — OK (cheap validation clean)
+[commit-push-all] stage 3/6 — long gate (pre_build_verification.sh)
+[commit-push-all] stage 3/6 — SKIPPED via BOBA_SYNC_SKIP_CI=1
+                             (recorded as [skip-ci] in commit message)
+[commit-push-all] stage 4/6 — git status pre-commit
+ m docs/qa/task-99/sub
+?? docs/qa/task-99/ready.md
+[commit-push-all] stage 5/6 — SCOPED commit (--scope mode, 1 path(s) declared)
+                             scope: docs/qa/task-99/
+[commit-push-all] stage 5/6 — --scope safety check OK (staged set == declared scope)
+WARN: declared scope has dirty file(s) NOT staged for this commit (reverse-BOB-068):
+   M docs/qa/task-99/sub
+       Declared scope: docs/qa/task-99/
+       If intentional (e.g. a WIP file not ready yet), re-run with
+       --scope-allow-partial to silence this warning.
+       If NOT intentional, stage it explicitly or add it to --scope.
+[main b8bf4e2] test commit A [skip-ci]
+ 1 file changed, 1 insertion(+)
+ create mode 100644 docs/qa/task-99/ready.md
+[commit-push-all] stage 6/6 — push to all upstreams
+
+[commit-push-all] === Push Summary ===
+  Branch:  main
+  Commit:  b8bf4e2
+  Message: test commit A [skip-ci]
+  Push:    0 remote(s), 0 failed
+  NOTE:    long gate was SKIPPED — re-run 'bash scripts/commit-push-all.sh "catch-up long gate"' when ready
+[commit-push-all] done.
+
+--- SCENARIO B: identical setup, WITH --scope-allow-partial (WARN silenced) ---
+[commit-push-all] stage 1/6 — fetch all remotes
+[commit-push-all] stage 2/6 — cheap validation
+[commit-push-all] stage 2/6 — OK (cheap validation clean)
+[commit-push-all] stage 3/6 — long gate (pre_build_verification.sh)
+[commit-push-all] stage 3/6 — SKIPPED via BOBA_SYNC_SKIP_CI=1
+                             (recorded as [skip-ci] in commit message)
+[commit-push-all] stage 4/6 — git status pre-commit
+ m docs/qa/task-99/sub
+?? docs/qa/task-99/ready2.md
+[commit-push-all] stage 5/6 — SCOPED commit (--scope mode, 1 path(s) declared)
+                             scope: docs/qa/task-99/
+[commit-push-all] stage 5/6 — --scope safety check OK (staged set == declared scope)
+[main 5960c7b] test commit B [skip-ci]
+ 1 file changed, 1 insertion(+)
+ create mode 100644 docs/qa/task-99/ready2.md
+[commit-push-all] stage 6/6 — push to all upstreams
+
+[commit-push-all] === Push Summary ===
+  Branch:  main
+  Commit:  5960c7b
+  Message: test commit B [skip-ci]
+  Push:    0 remote(s), 0 failed
+  NOTE:    long gate was SKIPPED — re-run 'bash scripts/commit-push-all.sh "catch-up long gate"' when ready
+[commit-push-all] done.
+
+--- SCENARIO C (golden-good): scope fully staged incl. the submodule pointer, no dirt left -> no WARN ---
+[commit-push-all] stage 1/6 — fetch all remotes
+[commit-push-all] stage 2/6 — cheap validation
+[commit-push-all] stage 2/6 — OK (cheap validation clean)
+[commit-push-all] stage 3/6 — long gate (pre_build_verification.sh)
+[commit-push-all] stage 3/6 — SKIPPED via BOBA_SYNC_SKIP_CI=1
+                             (recorded as [skip-ci] in commit message)
+[commit-push-all] stage 4/6 — git status pre-commit
+M  docs/qa/task-99/sub
+?? docs/qa/task-99/ready3.md
+[commit-push-all] stage 5/6 — SCOPED commit (--scope mode, 1 path(s) declared)
+                             scope: docs/qa/task-99/
+[commit-push-all] stage 5/6 — --scope safety check OK (staged set == declared scope)
+[main b615816] test commit C [skip-ci]
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+ create mode 100644 docs/qa/task-99/ready3.md
+[commit-push-all] stage 6/6 — push to all upstreams
+
+[commit-push-all] === Push Summary ===
+  Branch:  main
+  Commit:  b615816
+  Message: test commit C [skip-ci]
+  Push:    0 remote(s), 0 failed
+  NOTE:    long gate was SKIPPED — re-run 'bash scripts/commit-push-all.sh "catch-up long gate"' when ready
+[commit-push-all] done.
+
+======================================================================
+VERDICT: FIXED + CONFIRMED (golden-bad-caught / opt-out / golden-good all correct).
+  A: WARN correctly fires, naming the exact dirty entry, commit still
+     succeeds (non-blocking per §11.4.234(D) always-unblocked).
+  B: --scope-allow-partial correctly silences the WARN for an
+     operator who has reviewed + accepts the partial state.
+  C: a fully-staged scope produces NO false-positive WARN.

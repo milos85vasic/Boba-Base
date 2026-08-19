@@ -1,0 +1,44 @@
+MINOR-6 — SKIP-with-reason (§11.4.3): install-dev-tools.sh declare -A / bash-3.2 gap
+======================================================================
+
+Finding location: scripts/install-dev-tools.sh (declare -A RESULT,
+bash>=4.0-only, no early runtime-version check; macOS ships bash 3.2
+by default).
+
+This task's declared scope is exactly three items:
+  - challenges/scripts/resource_pressure_signature_challenge.sh
+  - scripts/commit-push-all.sh
+  - docs/qa/task-review-457cca4-a7e55f9-minor-fixes/ (this evidence dir)
+scripts/install-dev-tools.sh is NOT in that scope.
+
+Concurrency evidence (§11.4.6 — checked, not assumed) that this file is
+actively owned by a DIFFERENT, concurrently-running remediation stream
+in THIS SAME review-fix batch:
+  $ git log -1 --format='%h %ci %s' -- scripts/install-dev-tools.sh
+  9c282ff 2026-08-18 21:50:52 +0200 fix(scripts,§11.4.209-review-IMPORTANT-3): scripts/install-dev-tools.sh HTTPS → SSH per Hard Stop #2
+
+That commit is the SAME review's IMPORTANT-3 fix (HTTPS->SSH clone URL
+per Hard Stop #2), landed moments before this batch started — i.e. a
+sibling task/subagent is iterating on this exact file as part of the
+same §11.4.209 review remediation round. Editing it here — outside my
+declared scope, on a file with fresh concurrent activity — risks the
+exact §11.4.84/§11.4.191 shared-checkout collision class this review's
+own IMPORTANT-2 finding + Task #41's BOB-068 investigation (both cited
+in this same report) exist to prevent.
+
+§11.4.101 decision: this is NOT a case for autonomous action (the file
+is neither idle nor uncontested — the safe/reversible/bounded-blast-
+radius bar for an out-of-scope edit is not met here, unlike
+scripts/host-power-management/check-no-suspend-calls.sh for MINOR-1,
+which showed NO recent/concurrent activity when checked).
+
+SKIP-with-reason (§11.4.3): MINOR-6 is left UNFIXED by this task.
+Recommended follow-up: a small dedicated task scoped to
+scripts/install-dev-tools.sh specifically, applying the review's
+suggested fix verbatim —
+  if (( BASH_VERSINFO[0] < 4 )); then
+    echo "install-dev-tools: bash >= 4.0 required; got $BASH_VERSION (macOS default is 3.2 -- try 'brew install bash' then re-run with '$(brew --prefix bash)/bin/bash \$0')" >&2
+    exit 2
+  fi
+as the first executable line after 'set -euo pipefail', once the
+concurrent IMPORTANT-3 work on that file has landed and settled.

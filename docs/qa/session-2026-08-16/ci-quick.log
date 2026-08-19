@@ -1,0 +1,40 @@
+
+[0;36m========================================[0m
+[0;36m PHASE 1: Secret Leak Detection[0m
+[0;36m========================================[0m
+
+[0;36m>>> Check .env is not tracked[0m
+  [0;32mPASS[0m .env is not tracked
+
+[0;36m>>> Scan for hardcoded API keys/passwords in tracked files[0m
+/run/media/milosvasic/DATA4TB/Projects/boba/submodules/helixqa/tools/opensource/llama-index/llama-index-integrations/readers/llama-index-readers-box/tests/conftest.py:80:            client_secret="YOUR_BOX_CLIENT_SECRET",
+/run/media/milosvasic/DATA4TB/Projects/boba/submodules/helixqa/tools/opensource/llama-index/llama-index-integrations/readers/llama-index-readers-box/tests/conftest.py:102:            client_secret="YOUR_BOX_CLIENT_SECRET",
+/run/media/milosvasic/DATA4TB/Projects/boba/submodules/helixqa/tools/opensource/llama-index/llama-index-integrations/tools/llama-index-tools-box/tests/conftest.py:80:            client_secret="YOUR_BOX_CLIENT_SECRET",
+/run/media/milosvasic/DATA4TB/Projects/boba/submodules/helixqa/tools/opensource/llama-index/llama-index-integrations/tools/llama-index-tools-box/tests/conftest.py:102:            client_secret="YOUR_BOX_CLIENT_SECRET",
+/run/media/milosvasic/DATA4TB/Projects/boba/submodules/helixqa/tools/opensource/skyvern/skyvern/client/client.py:2549:                password="securepassword123",
+/run/media/milosvasic/DATA4TB/Projects/boba/submodules/helixqa/tools/opensource/skyvern/skyvern/client/client.py:2633:                password="securepassword123",
+/run/media/milosvasic/DATA4TB/Projects/boba/submodules/helixqa/tools/opensource/skyvern/skyvern/client/client.py:6757:                    password="securepassword123",
+/run/media/milosvasic/DATA4TB/Projects/boba/submodules/helixqa/tools/opensource/skyvern/skyvern/client/client.py:6849:                    password="securepassword123",
+  [0;31mFAIL[0m Potential hardcoded secrets found (see above)
+
+[0;36m>>> Verify .gitignore covers sensitive files[0m
+  [0;32mPASS[0m .env is gitignored
+  [0;32mPASS[0m .qbit.env is gitignored
+  [0;32mPASS[0m *.key is gitignored
+  [0;32mPASS[0m *.pem is gitignored
+
+[0;36m========================================[0m
+[0;36m PHASE 2: Syntax Validation[0m
+[0;36m========================================[0m
+
+[0;36m>>> Python syntax check (py_compile)[0m
+  [0;32mPASS[0m All 384 Python files compile
+
+[0;36m>>> Bash syntax check (bash -n)[0m
+  [0;32mPASS[0m All 13 shell scripts pass bash -n
+
+[0;36m========================================[0m
+[0;36m PHASE 3: Unit Tests[0m
+[0;36m========================================[0m
+
+[0;36m>>> pytest — unit tests[0m

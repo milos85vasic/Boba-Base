@@ -1,0 +1,8 @@
+=== RED_MODE=0 / default (GREEN guard against live tracker) ===
+[GREEN] validate + diff against the live docs/workable_items.db + docs/Issues.md + docs/Fixed.md
+[1/2] validate (EXPECT clean or the single tracked BOB-010/history-id=64 exemption)
+  validate: 1 violation — exactly the tracked BOB-010/history-id=64 exemption (acceptable)
+[2/2] diff (EXPECT zero drift, unconditionally)
+  diff: in sync
+PASS: workable_items.db SSoT integrity + Issues.md/Fixed.md drift both hold (BOB-072/BOB-073)
+GREEN_EXIT=0

@@ -1,0 +1,20 @@
+Dry Run: no
+Swap Used Limit: 90.00%
+Default Memory Pressure Limit: 90.00%
+Default Memory Pressure Duration: 1min
+System Context:
+	Memory: Used: 11.6G, Total: 62.5G
+	Swap: Used: 2.7M, Total: 47.2G
+Swap Monitored CGroups:
+	Path: /user.slice/user-1000.slice
+		Swap Usage: 0B
+Memory Pressure Monitored CGroups:
+	Path: /user.slice/user-1000.slice
+		Memory Pressure Limit: 90.00%
+		Memory Pressure Duration: 1min
+		Pressure: Avg10: 0.00, Avg60: 0.00, Avg300: 0.27, Total: 27s
+		Current Memory Usage: 26.4G
+		Memory Min: 0B
+		Memory Low: 0B
+		Pgscan: 135139262
+		Last Pgscan: 135139262

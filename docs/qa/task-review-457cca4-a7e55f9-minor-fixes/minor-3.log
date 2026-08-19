@@ -1,0 +1,27 @@
+MINOR-3 — SIG1_LEGIT_EXCLUSIONS hardcoded project literal (§11.4.28/§11.4.35 decoupling)
+======================================================================
+
+Fix: LEGIT_EXCLUSIONS="${SIG1_LEGIT_EXCLUSIONS:-ollama|firefox|yandex_browser|chrome}"
+     — the default is unchanged (backward-compatible), but a consumer
+     now extends/replaces it via an env var WITHOUT editing this
+     universally-inherited shipped script.
+
+--- golden-good: default behaviour unchanged (no env override set) ---
+resolved LEGIT_EXCLUSIONS = ollama|firefox|yandex_browser|chrome
+sample over-threshold line: 1234 user 6291456 qemu-system-x86_64
+-> UNCLASSIFIED (correctly fails, default list does not know qemu — matches original pre-fix behaviour)
+
+--- golden-bad-becomes-good: consumer overrides via SIG1_LEGIT_EXCLUSIONS, NO script edit ---
+consumer sets: SIG1_LEGIT_EXCLUSIONS=qemu-system|elasticsearch
+resolved LEGIT_EXCLUSIONS = qemu-system|elasticsearch
+-> excluded (CORRECT: consumer-owned exclusion took effect via env var, §11.4.35 data injection, zero script edits — closes the MINOR-3 decoupling gap)
+
+--- end-to-end smoke: real script run, override active, must not crash/regress ---
+exit: 0
+=== SIG-1: runaway process >5 GB RSS ===
+OK: no process >5 GB RSS
+
+
+VERDICT: FIXED. Default behaviour byte-identical to pre-fix (backward
+compatible); a consumer can now extend the exclusion set per host
+without editing the shipped, universally-inherited challenge script.

@@ -1,0 +1,150 @@
+<h1
+id="task-80-evidence-docs_chain-syncverify-disagreement-on-codegraph-status">Task
+#80 evidence — docs_chain sync/verify disagreement on
+codegraph-status</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T20:20:00Z</p>
+<h2 id="symptom">Symptom</h2>
+<p><code>docs_chain sync --all</code> reported
+<code>codegraph-status</code> IN-SYNC (no changes) while
+<code>docs_chain verify --all</code> reported
+<code>STALE: [status_docx]</code> for the SAME state, on every run,
+permanently.</p>
+<h2 id="root-cause">Root cause</h2>
+<p><code>docs/codegraph/Status.docx</code> (a git-ignored,
+locally-generated build derivative — see <code>.gitignore</code> line
+<code>*.docx</code>) had been overwritten out-of-band by a plain
+<code>pandoc -f markdown -t docx</code> invocation (traced to
+<code>scripts/generate_markdown_exports.sh</code>’s mtime-based,
+docs_chain-unaware DOCX export step — see “Concerns” below), while
+<code>docs/codegraph/Status.md</code> stayed untouched. Confirmed via
+<code>docProps/core.xml</code> inside the two docx zips:</p>
+<ul>
+<li>The drifted on-disk docx:
+<code>&lt;dc:title&gt;&lt;/dc:title&gt;</code> (empty) +
+<code>&lt;dcterms:created&gt;2026-08-18T14:53:05Z&lt;/dcterms:created&gt;</code>
+(real wall-clock time).</li>
+<li>A correct <code>docs_chain</code>-produced docx (via its
+<code>PandocMarkdownToDOCX</code> builtin):
+<code>&lt;dc:title&gt;Status&lt;/dc:title&gt;</code> +
+<code>&lt;dcterms:created&gt;2000-01-01T00:00:00Z&lt;/dcterms:created&gt;</code>
+(the pinned <code>SOURCE_DATE_EPOCH</code>).</li>
+</ul>
+<p>No <code>docs_chain</code> invocation could have produced the drifted
+bytes — proving the file was written by a foreign tool.</p>
+<h3
+id="engine-bug-constitutionsubmodulesdocs_chain-internalgraphrecompute.go">Engine
+bug (constitution/submodules/docs_chain,
+<code>internal/graph/recompute.go</code>)</h3>
+<p><code>graph.Recompute</code>’s Step 1 hashes EVERY node (source AND
+derived) against its stored baseline to build the dirty set — this
+correctly detected the docx’s self-drift. But Step 3’s topo-walk
+candidacy for a derive-from TARGET consulted ONLY whether its SOURCE was
+dirty, never whether the target’s OWN on-disk bytes had drifted from its
+own baseline — so the drifted docx was never regenerated.
+<code>orchestrator.Run</code> then called <code>g.CommitHashes</code>
+unconditionally (even on the in-sync fast path), which silently adopted
+the drifted on-disk hash as the new “correct” baseline. From that
+moment, <code>sync</code> reported “in-sync” forever (self-consistent
+with the now-corrupted baseline) while <code>verify</code> — which never
+consults the baseline and always freshly re-derives every target from
+its live sources — permanently reported it stale.</p>
+<h2 id="fix">Fix</h2>
+<p><code>constitution/submodules/docs_chain</code> commit
+<code>8e0abe0</code> (two parts, both required):</p>
+<ol type="1">
+<li>Recompute candidacy for a derive-from target now ALSO fires on the
+target’s own self-drift (<code>dirty[id]</code> from Step 1), not only a
+dirty source.</li>
+<li>The early-cutoff comparison for a newly-candidate target is now
+against its CURRENT on-disk hash (captured in Step 1), never the OLD
+stored baseline. For a normal source-triggered candidate the two are
+identical by construction (no behaviour change); for a self-drift
+candidate the old baseline still equals the CORRECT content, so
+comparing against it would wrongly early-cutoff-prune the healing
+write.</li>
+</ol>
+<p>RED-first regression guard:
+<code>internal/runner/sync_derived_self_drift_test.go</code> drives the
+exact sequence through the real runner (sync → out-of-band corruption →
+sync → verify). Confirmed FAIL pre-fix
+(<code>bash-style paste below</code>), PASS post-fix.
+<code>go test -race -count=1 ./...</code> green across all 8 packages,
+both before and after (the fix introduces zero regressions).</p>
+<h2 id="immediate-mitigation-this-project">Immediate mitigation (this
+project)</h2>
+<p>Deleted the drifted local <code>docs/codegraph/Status.docx</code>
+(safe — git-ignored build derivative, never committed) and re-ran
+<code>docs_chain sync --all</code> under the fixed engine, which
+regenerated it correctly. See <code>verify_before.txt</code>,
+<code>sync_output.txt</code>, <code>verify_after.txt</code>,
+<code>challenge_output.txt</code>, and <code>docprops_diff.txt</code> in
+this directory for the pasted terminal evidence.</p>
+<h2 id="pointer-cascade">Pointer cascade</h2>
+<ul>
+<li><code>constitution/submodules/docs_chain</code> →
+<code>8e0abe0</code> (fix landed, pushed to
+<code>github.com:vasic-digital/docs_chain.git</code>, and mirrored to
+<code>gitflic.ru</code>/<code>gitlab.com</code> via
+<code>origin</code>’s multi-push).</li>
+<li><code>constitution</code> (this project’s submodule) →
+<code>dd3b888</code> (bumps the docs_chain pointer, pushed to
+<code>github</code>/<code>gitflic</code>/<code>gitlab</code> —
+<code>gitverse</code> rejected the push with a PRE-EXISTING, unrelated
+permission error, see Concerns).</li>
+<li>boba <code>constitution</code> submodule pointer →
+<code>7077107</code> (this commit), pushed to
+<code>github.com:milos85vasic/Boba-Base.git</code>.</li>
+</ul>
+<h2 id="concerns-follow-ups-out-of-this-tasks-scope">Concerns /
+follow-ups (out of this task’s scope)</h2>
+<ol type="1">
+<li><strong>True root cause of the original corruption is
+<code>scripts/generate_markdown_exports.sh</code></strong> (explicitly
+out of scope — “Do NOT touch: … scripts/”). Its DOCX step runs a raw
+<code>pandoc -f markdown -t docx -o "$docx" "$md"</code> with NO
+<code>SOURCE_DATE_EPOCH</code> pinning and NO
+<code>--metadata title=...</code>, gated only by mtime
+(<code>$md -nt $docx</code>) — the exact §11.4.86 “mtime not
+content-hash” anti-pattern the constitution forbids. Per §11.4.106(A),
+any doc owned by a registered <code>docs_chain</code> context should be
+retired from this legacy script’s scope so it can never again clobber a
+docs_chain-owned derived export. Recommend a follow-up workable item to
+either (a) skip any <code>.md</code> file that has a matching
+<code>.docs_chain/contexts/*.yaml</code> node entry, or (b) retire the
+script’s DOCX/HTML/PDF steps entirely in favour of
+<code>docs_chain sync --all</code>.</li>
+<li>The <code>docs_chain</code> submodule’s <code>.gitignore</code>d
+<code>.docs_chain/state.json</code> already held the drifted hash as its
+“baseline” for <code>status_docx</code> BEFORE this session started —
+meaning some earlier <code>docs_chain sync</code> invocation (using a
+pre-fix, already-stale-relative-to-today binary) already absorbed the
+corruption into the baseline. The new engine fix prevents this class of
+corruption from happening AGAIN; it cannot retroactively detect
+corruption that was already fully “settled” into the baseline before the
+fix was deployed (there is no more hash mismatch to detect once both
+sides agree on the wrong content) — hence the explicit
+delete-and-regenerate mitigation step above was required.</li>
+<li><code>gitverse.ru:helixdevelopment/constitution.git</code> push (a
+<code>constitution</code> submodule remote) failed with
+<code>"Push to create is not enabled for organizations"</code>; the SAME
+remote also failed at <code>git fetch</code> moments earlier with
+<code>"Cannot find repository"</code>. This is a pre-existing, unrelated
+remote-configuration issue (confirmed not caused by this session’s
+changes) — flagging for operator awareness, not fixed here (out of
+scope).</li>
+<li>A large volume of concurrent, unrelated file churn (other subagents’
+in-flight work — <code>docs/qa/BOB-075/concurrency_evidence/**</code>,
+several <code>docs/incidents/*</code>, <code>docs/proposals/*</code>,
+various <code>docs/scripts/*.html</code> /<code>.pdf</code> exports,
+<code>submodules/challenges</code>, <code>submodules/helixqa</code>,
+<code>scripts/commit-push-all.sh</code>) was present in the boba working
+tree throughout this session (multi-track parallel development per
+§11.4.58/.103/.176/.187/.192). Per §11.4.84 working-tree-quiescence
+discipline, every commit in this session staged ONLY the single intended
+file (<code>constitution</code> in boba;
+<code>internal/graph/recompute.go</code> + the new test file in
+docs_chain; <code>submodules/docs_chain</code> in constitution) — never
+<code>git add -A</code> — so none of that concurrent work was touched or
+swept in.</li>
+</ol>

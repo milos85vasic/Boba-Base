@@ -1,0 +1,101 @@
+<h1 id="review-minor-1..6-batch-remediation">§11.4.209 review MINOR-1..6
+batch remediation</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T00:00:00Z</p>
+<p>Evidence for the 6 MINOR findings from
+<code>.superpowers/sdd/task-review-457cca4-a7e55f9-report.md</code>,
+fixed in the same batch task on top of task #78’s IMPORTANT-1
+landing.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Finding</th>
+<th>File</th>
+<th>Verdict</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MINOR-1</td>
+<td><code>scripts/host-power-management/check-no-suspend-calls.sh</code></td>
+<td>FIXED</td>
+<td><a href="minor-1.log">minor-1.log</a></td>
+</tr>
+<tr>
+<td>MINOR-2</td>
+<td><code>challenges/scripts/resource_pressure_signature_challenge.sh</code></td>
+<td>FIXED</td>
+<td><a href="minor-2.log">minor-2.log</a></td>
+</tr>
+<tr>
+<td>MINOR-3</td>
+<td><code>challenges/scripts/resource_pressure_signature_challenge.sh</code></td>
+<td>FIXED</td>
+<td><a href="minor-3.log">minor-3.log</a></td>
+</tr>
+<tr>
+<td>MINOR-4</td>
+<td><code>challenges/scripts/resource_pressure_signature_challenge.sh</code></td>
+<td>FIXED (design revised after a caught regression — see
+minor-4.log)</td>
+<td><a href="minor-4.log">minor-4.log</a></td>
+</tr>
+<tr>
+<td>MINOR-5</td>
+<td><code>scripts/commit-push-all.sh</code></td>
+<td>FIXED</td>
+<td><a href="minor-5.log">minor-5.log</a></td>
+</tr>
+<tr>
+<td>MINOR-6</td>
+<td><code>scripts/install-dev-tools.sh</code></td>
+<td>SKIPPED — out of declared scope, concurrently owned by another
+in-flight remediation stream (see minor-6.log)</td>
+<td><a href="minor-6.log">minor-6.log</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="notable-finding-during-remediation">Notable finding during
+remediation</h2>
+<p>MINOR-1’s fix required touching
+<code>scripts/host-power-management/check-no-suspend-calls.sh</code>,
+which was <strong>not</strong> in this task’s originally declared 3-item
+scope
+(<code>challenges/scripts/resource_pressure_signature_challenge.sh</code>
++ <code>scripts/commit-push-all.sh</code> + this evidence directory).
+Before editing it, <code>git log</code> / <code>git status</code> were
+checked and showed <strong>no</strong> recent or in-flight concurrent
+activity on that file — the safe/reversible/bounded-blast-radius bar per
+§11.4.101 was met, so the edit proceeded and the file was added to this
+batch’s <code>--scope</code> commit. MINOR-6’s fix location
+(<code>scripts/install-dev-tools.sh</code>), by contrast, showed a
+commit from the SAME review’s IMPORTANT-3 remediation landing moments
+earlier — a live sibling stream — so it was left untouched and honestly
+SKIPPED (§11.4.3) rather than risking a shared-checkout collision.</p>
+<h2
+id="regression-caught-and-fixed-during-minor-4s-own-remediation">Regression
+caught and fixed during MINOR-4’s own remediation</h2>
+<p>The first draft of the MINOR-4 fix (raising SIG-3’s required EAGAIN
+hit-count when SIG-2 reads low) was caught, via
+<code>verify_resource_pressure_polarity.sh</code>, regressing SIG-3’s
+own §11.4.115(F) RED fixture <em>before</em> it was ever committed. The
+design was revised to attach a confidence label to the verdict instead
+of changing the FAIL threshold — see <code>minor-4.log</code> for the
+full before/after transcript. This is the exact TDD/§11.4.4
+test-interrupt-on-discovery discipline this constitution mandates,
+applied in-session.</p>
+<h2 id="full-regression-proof-all-5-signature-detectors-post-fix">Full
+regression proof (all 5 signature detectors, post-fix)</h2>
+<p><code>minor-4.log</code> also contains the complete
+<code>verify_resource_pressure_polarity.sh</code> re-run: <strong>5/5
+signatures RED CONFIRMED</strong> against their real pathological
+artifacts after MINOR-2/3/4’s fixes landed — zero regression in
+detection power for any of the five
+<code>resource_pressure_signature_challenge.sh</code> detectors.</p>

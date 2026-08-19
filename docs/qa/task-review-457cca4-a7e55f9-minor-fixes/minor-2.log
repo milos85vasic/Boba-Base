@@ -1,0 +1,60 @@
+MINOR-2 — SIG-5 self-match protection incomplete against concurrent instances/carriers
+======================================================================
+
+Live-concurrency reproduction NOTE (§11.4.6 honest boundary): an attempt
+to spawn a real long-lived decoy 'grep -qE <pattern-shaped-arg>' process
+and locate it via 'pgrep -x grep' was confounded by this specific
+sandboxed tool-execution environment, which wraps every Bash tool call
+in its own '/bin/bash -c ...' harness and leaves multiple unrelated
+pre-existing comm=grep processes on the host (e.g. a libtinfo-warning
+filter) — pgrep -x grep repeatedly resolved to the WRONG pid, an
+instance of the exact §11.4.201(7)(a) carrier-ambiguity class this
+MINOR is about. Chasing a clean live reproduction inside this sandbox
+further was not a productive use of remaining budget; the fix is
+instead validated two ways below: (1) a deterministic logic-level test
+of the EXACT shipped comm-exclusion code (extracted verbatim from the
+file, never retyped), and (2) the full §11.4.115(F) polarity re-run
+(minor-4.log) proving SIG-5 detection is UNCHANGED for both the real-
+incident class (comm=ugrep) and the fixture's disguised-argv class
+(comm=bash) after this fix landed — i.e. no regression.
+
+--- (1) Deterministic logic-level test of the exact shipped exclusion ---
+Extracting the real case-statement from the shipped script (single
+source of truth, never hand-retyped):
+  case "$COMM" in
+    grep|awk|ps) continue ;;
+  esac
+
+Test harness (sources the extracted snippet against synthetic COMM values):
+  comm=grep       -> EXCLUDED (skipped from SIG-5 candidacy)
+  comm=awk        -> EXCLUDED (skipped from SIG-5 candidacy)
+  comm=ps         -> EXCLUDED (skipped from SIG-5 candidacy)
+  comm=bash       -> NOT excluded (still a SIG-5 candidate)
+  comm=ugrep      -> NOT excluded (still a SIG-5 candidate)
+  comm=sh         -> NOT excluded (still a SIG-5 candidate)
+  comm=python3    -> NOT excluded (still a SIG-5 candidate)
+
+Expected + verified: grep/awk/ps EXCLUDED (closes the concurrent-instance
+/ source-grep self-match vector — MINOR-2); bash NOT excluded (preserves
+the RED fixture's disguised-argv detection class); ugrep NOT excluded
+(preserves the real-incident detection class).
+
+--- (2) §1.1 paired mutation: strip the exclusion, confirm it is load-bearing ---
+Mutated case statement (exclusion effectively disabled):
+  case "$COMM" in
+    never-matches-anything) continue ;;
+  esac
+  MUTATED: comm=grep   -> excluded=0 (expect 0 — mutation removes the guard)
+  MUTATED: comm=awk    -> excluded=0 (expect 0 — mutation removes the guard)
+  MUTATED: comm=ps     -> excluded=0 (expect 0 — mutation removes the guard)
+
+======================================================================
+--- (3) Regression proof: full polarity re-run, SIG-5 real-incident +
+        fixture-disguise detection classes both still fire ---
+See minor-4.log for the full 5/5 RED CONFIRMED transcript from this
+same remediation round (includes: 'SIG-5  RED CONFIRMED').
+
+VERDICT: FIXED. Logic-level test (1) proves the shipped exclusion
+classifies exactly the intended process classes; the mutation test (2)
+proves the guard is load-bearing (mutated version excludes nothing);
+the polarity re-run (3) proves zero regression in real detection power.

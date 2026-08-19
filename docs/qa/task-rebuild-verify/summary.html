@@ -1,0 +1,235 @@
+<h1
+id="four-layer-verification-session-commits-457cca4..fab6707">§11.4.108
+Four-Layer Verification — Session Commits 457cca4..fab6707</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T20:50:00Z</p>
+<h2 id="scope">Scope</h2>
+<p>Verifies the ~28 commits landed in this session (<code>457cca4</code>
+-&gt; <code>fab6707</code>, 81 files changed) against the running boba
+stack, per §11.4.108 (SOURCE -&gt; ARTIFACT -&gt;
+RUNTIME-ON-CLEAN-TARGET -&gt; USER-VISIBLE).</p>
+<h2 id="phase-1-runtime-impact-categorization">Phase 1 — Runtime-impact
+categorization</h2>
+<p><code>git diff --name-only 457cca4..fab6707</code> enumerated. Every
+changed file classified:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Category</th>
+<th>Files</th>
+<th>Runtime impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>C — rebuild required</strong></td>
+<td><code>qBitTorrent-go/internal/jackettapi/health.go</code>,
+<code>health_test.go</code></td>
+<td>YES — boba-jackett is
+<code>build: context: ./qBitTorrent-go, dockerfile: Dockerfile.jackett</code>
+in <code>docker-compose.yml</code> (not a bind-mount)</td>
+</tr>
+<tr>
+<td><strong>B — host-level, non-container</strong></td>
+<td><code>scripts/install-resource-pressure-timer.sh</code> +
+<code>scripts/systemd/user/boba-resource-pressure-check.{service,timer}</code></td>
+<td>NO — systemd <code>--user</code> timer, entirely outside the
+docker-compose stack</td>
+</tr>
+<tr>
+<td><strong>A — no runtime impact</strong></td>
+<td>Everything else: <code>docs/**</code>, <code>challenges/**</code>,
+<code>scripts/commit-push-all.sh</code>,
+<code>scripts/install-dev-tools.sh</code>,
+<code>scripts/capture-workable-items-db-delta.sh</code>,
+<code>scripts/pre_build_verification.sh</code>,
+<code>scripts/host-power-management/check-no-suspend-calls.sh</code>,
+<code>constitution</code> (submodule pointer)</td>
+<td>NO — dev tooling / challenge scripts / docs / governance, none
+container-mounted or container-built</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verdict:</strong> exactly one runtime-affecting source pair
+(BOB-112’s TTL-cache fix in <code>health.go</code>). No
+<code>docker-compose.yml</code>, no <code>Dockerfile.jackett</code>, no
+<code>download-proxy/src/</code>, no <code>plugins/</code>, no
+<code>config/</code> changes this session.</p>
+<h2 id="phase-2-rebuild-reflash">Phase 2 — Rebuild + reflash</h2>
+<p><strong>Finding before acting:</strong> the <em>already-running</em>
+<code>boba-jackett</code> container’s image
+(<code>962f4452c725...</code>) was built at
+<code>2026-08-18T19:06:17Z</code> — <strong>after</strong>
+<code>health.go</code>’s last touching commit <code>91b52db</code>
+(<code>19:02:50Z</code>) — because a prior subagent in this same session
+(commit <code>e2a2e3e</code>, evidence at <code>docs/qa/BOB-112/</code>)
+had already rebuilt + RED/GREEN-mutation-verified this exact fix with
+live <code>wrk</code> load tests (97.1%-&gt;0.0% timeout rate, full
+methodology + numbers in <code>docs/qa/BOB-112/summary.md</code>).
+Confirmed no commit after <code>91b52db</code> touched
+<code>health.go</code>
+(<code>git log 91b52db..fab6707 -- health.go</code> -&gt; empty).</p>
+<p>This task’s job was therefore to <strong>redeploy on a genuinely
+clean target</strong> (§11.4.108 clause 4 — eliminate the
+stale-deployment/shadow layer by construction) and confirm the fix
+holds, rather than repeat the prior subagent’s RED/GREEN mutation
+study.</p>
+<p>Ran <code>./start.sh --recreate</code> (the CLAUDE.md-sanctioned
+Level-3 restart for “docker-compose.yml, start-proxy.sh, env var, base
+image” changes — the correct level given a rebuilt image needed a fresh
+container instance). Full transcript:
+<code>start_sh_recreate.log</code>.</p>
+<ul>
+<li>Tracker-cookie loader ran first (per operator mandate 2026-08-15):
+all 5 trackers (rutracker/nnmclub/rutor/kinozal/iptorrents) reported
+<code>UNCHANGED (idempotent)</code> — no drift, no re-extraction
+needed.</li>
+<li><code>boba-ctl</code> (Go orchestrator) executed
+<code>podman-compose ... down</code> then <code>... up -d</code> — exit
+0 both steps.</li>
+<li>Only boba’s own 4 services (<code>qbittorrent</code>,
+<code>jackett</code>, <code>qbittorrent-proxy</code>,
+<code>boba-jackett</code>) were touched. Confirmed via before/after
+<code>podman ps -a</code> (<code>container_status.log</code>) that the
+15 unrelated containers belonging to other projects on this host
+(<code>proxy-*</code>, <code>lava-*</code>, <code>helix-*</code>,
+<code>deploy_caddy_1</code>, <code>wonderful_dijkstra</code>) were
+<strong>not restarted, not recreated, not touched</strong> — their
+<code>Up 2 hours</code> / <code>Up 12 hours</code> uptimes are unchanged
+across the before/after snapshots.</li>
+<li>All 4 boba containers reached <code>healthy</code> within ~1 minute
+(<code>qbittorrent</code>/<code>jackett</code>: healthy at 52s;
+<code>boba-jackett</code>/<code>qbittorrent-proxy</code>: healthy at
+46s).</li>
+<li>Post-recreate cookie lengths (byte counts only, §11.4.10 — no values
+logged) are <strong>byte-identical</strong> to the pre-recreate baseline
+for all 5 trackers (<code>cookie_state_post_recreate.log</code>).</li>
+</ul>
+<h2 id="phase-3-runtime-verification">Phase 3 — Runtime
+verification</h2>
+<p>All 5 endpoints reachable post-recreate
+(<code>endpoint_health.log</code>, verbatim):</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET :7186/api/v2/app/version</code> (qBittorrent via
+proxy)</td>
+<td><code>200</code>, body <code>v5.2.3</code></td>
+</tr>
+<tr>
+<td><code>POST :7186/api/v2/auth/login</code> (admin/admin)</td>
+<td><code>204</code> (qBittorrent’s own success response)</td>
+</tr>
+<tr>
+<td><code>GET :7187/health</code> (merge service)</td>
+<td><code>200</code>,
+<code>{"status":"healthy","service":"merge-search","version":"1.0.0"}</code></td>
+</tr>
+<tr>
+<td><code>GET :7189/healthz</code> (boba-jackett, NEW TTL cache)</td>
+<td><code>200</code>,
+<code>{"status":"ok","db_ok":true,"jackett_ok":true,"version":"0.1.0","uptime_s":55}</code></td>
+</tr>
+<tr>
+<td><code>GET :9117/api/v2.0/server/config</code> (Jackett
+upstream)</td>
+<td><code>302</code> (redirect to admin auth — reachable, expected for
+an unauthenticated request)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bob-112-fix-live-verification-on-the-fresh-container">BOB-112
+fix — live verification on the fresh container</h3>
+<p><strong>Artifact layer</strong>
+(<code>artifact_layer_check.txt</code>): the BOB-112 fix’s unique
+<code>log.Printf</code> format string (added in <code>91b52db</code>,
+absent in every prior version of <code>health.go</code>) is present in
+the <strong>freshly-recreated</strong> container’s binary:</p>
+<pre><code>boba-jackett: /healthz Jackett cache refresh #%d (hits=%d misses=%d ratio=%.1f%% ok=%v)</code></pre>
+<p>Image digest <code>962f4452c725...</code> — identical to the digest
+the prior subagent’s RED/GREEN mutation study
+(<code>docs/qa/BOB-112/summary.md</code>) recorded as the confirmed
+post-fix, post-revert-verification build. No drift.</p>
+<p><strong>Runtime layer</strong>
+(<code>wrk_healthz_evidence.log</code>): brief
+<code>wrk -t2 -c50 -d5s --timeout 3s --latency http://localhost:7189/healthz</code>
+against the container that had been up for well under a minute
+(genuinely cold cache at test start):</p>
+<pre><code>270085 requests in 5.00s, 48.17MB read
+Requests/sec:  54008.16
+Latency: avg 1.08ms, p50 844us, p90 2.31ms, p99 4.42ms</code></pre>
+<p><strong>0 timeouts / 0 socket errors</strong> (wrk prints no “Socket
+errors” line when all three counters — connect/read/write/timeout — are
+zero) — well under the task’s &lt;5% threshold, and consistent with the
+prior subagent’s full 30sx100c study (0.0% timeouts, 27k req/s).</p>
+<p>Container logs (<code>podman logs boba-jackett</code>) show exactly 2
+upstream <code>Jackett.GetCatalog()</code> calls across the whole test
+window — one at boot (<code>cache refresh #1</code>, cold cache) and one
+~31s later once the 30s TTL first expired — confirming the cache, not
+luck, is what collapsed 270k <code>/healthz</code> hits into 2 real
+upstream calls.</p>
+<h2 id="honest-gaps-not-covered-by-this-task">Honest gaps / not covered
+by this task</h2>
+<ul>
+<li><strong>No image rebuild was forced.</strong>
+<code>./start.sh --recreate</code> is
+<code>compose down &amp;&amp; compose up -d</code> — it does not pass
+<code>--build</code>, so it reused the existing
+<code>boba_boba-jackett:latest</code> image rather than compiling a
+fresh one from current <code>HEAD</code> (<code>fab6707</code>). This is
+not a gap for BOB-112 specifically (proven byte-identical via the
+format-string + digest match above, and
+<code>git log 91b52db..fab6707 -- health.go</code> is empty so there is
+nothing newer to rebuild), but it means this task did not independently
+<em>reproduce</em> a build from source — it verified the artifact
+already known to be correct survives a clean container-level redeploy. A
+from-scratch <code>podman-compose build boba-jackett</code> was not run
+because it would have produced a byte-identical image to the one already
+running (no source delta since the prior subagent’s own build), and
+CLAUDE.md’s Critical Constraints table has no sanctioned
+<code>start.sh</code> subcommand for “force-rebuild a container’s Go
+source without a compose/Dockerfile/env change” (only
+<code>--reload-python</code>, <code>--reload-plugins</code>, and
+<code>--recreate</code> exist) — using a raw
+<code>podman-compose build</code> would have stepped outside the
+orchestrator-only mandate for a rebuild this task’s own evidence shows
+was unnecessary.</li>
+<li><strong>§11.4.185 manual QA (human confirmation) not
+performed</strong> — out of scope for this automated verification
+subagent; this report is the automated §11.4.108 evidence layer only,
+not the terminal human sufficiency gate.</li>
+<li><strong><code>qbittorrent-proxy</code> (Python/FastAPI merge
+service) source unchanged this session</strong> — verified reachable
+(<code>:7187/health</code> 200) but not independently re-tested beyond
+the health endpoint, since no commit touched
+<code>download-proxy/src/</code>.</li>
+<li>The host-level <code>boba-resource-pressure-check.timer</code>
+(BOB-076/task-77) was spot-checked
+(<code>systemctl --user list-timers</code>, active, fired ~5 min prior)
+for completeness but is <strong>not part of the boba container
+stack</strong> and its own evidence trail already lives at
+<code>docs/qa/task-77/</code>.</li>
+</ul>
+<h2 id="verdict">Verdict</h2>
+<p><strong>PASS</strong> — the one runtime-affecting change this session
+(BOB-112 TTL cache) is confirmed live on a genuinely fresh container
+instantiation via both artifact-layer (binary string + image digest
+match) and runtime-layer (0%-timeout <code>wrk</code> run + exact
+cache-refresh-count log evidence) proof. All 5 boba-stack endpoints
+reachable post-recreate. Zero unrelated host containers disturbed. All 5
+tracker cookies preserved byte-length-identical across the recreate.</p>

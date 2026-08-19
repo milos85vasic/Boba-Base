@@ -1,0 +1,252 @@
+<h1
+id="coverage-escape-audit-tmux-sessions-killed-by-systemd-oomd-under-user-slice-pressure">Coverage-Escape
+Audit — tmux sessions killed by systemd-oomd under user-slice
+pressure</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-12T22:00:00Z <strong>Status:</strong> closed (see “Resolution”
+below — upstream fix landed, boba-side coverage added)
+<strong>Constitution:</strong> §11.4.238 (automated QA must be the
+DISCOVERER, not the confirmer)</p>
+<hr />
+<h2 id="summary">1. Summary</h2>
+<p>While resuming Claude Code work on the boba project on 2026-08-12,
+the operator reported: <strong>“As soon as we continue work with this
+project, all tmx (tmux) sessions get killed or crash! On strong hardware
+and powerful workstations and current host both!”</strong></p>
+<p>Systematic-debugging (<code>superpowers:systematic-debugging</code>)
+traced the root cause to <code>systemd-oomd</code> selecting
+<code>tmx-&lt;NAME&gt;.scope</code> units as kill victims under
+<code>user-1000.slice</code> memory-pressure spikes, even though every
+scope had <code>MemoryMax=infinity</code> /
+<code>TasksMax=infinity</code> from the tmx v1.0.39 (TMX-079)
+elastic-scope fix. <code>systemd-oomd</code> operates orthogonally to
+cgroup <code>Max=</code> limits — it selects victims by PSI pressure and
+swap usage, not by scope memory ceiling. Under any real memory-pressure
+spike (heavy compose start + Angular + Gradle daemons +
+parallel-subagent fleet on a shared user-slice — exactly the
+Claude-Code-in-tmux workload the operator was running), oomd SIGKILL’d
+the whole tmx scope, taking tmux + every process in the session with it
+in one shot.</p>
+<p>The fix landed upstream: <strong>tmx v1.0.42 (TMX-083) — add
+<code>-p ManagedOOMPreference=avoid</code> to every
+<code>systemd-run --user --scope</code> invocation that creates a tmx
+scope</strong>. This tells oomd to deprioritize the scope as a victim
+(<code>avoid</code> = “target this only if no better candidate exists”,
+NOT <code>omit</code> — host safety is preserved).</p>
+<h2 id="discovery-channel">2. Discovery channel</h2>
+<p><strong><code>operator-report</code></strong> — the operator noticed
+sessions dying while attempting to resume Claude Code work. No automated
+gate this project or its upstream (tmx) ships had exercised this failure
+class.</p>
+<h2 id="predecessor-sighting-2026-08-09">3. Predecessor sighting
+(2026-08-09)</h2>
+<p><code>docs/QA_DISCOVERY_LEDGER.md</code> entry
+<strong>RD2-42</strong> (channel: <code>incidental-discovery</code>) had
+already sighted the same host session-kill mechanism from the
+<strong>container side</strong>: <code>podman ps</code> reported
+<code>qbittorrent-proxy: Up 15 hours (healthy)</code> while the
+container’s actual <code>crun</code> process was dead, “most likely
+fallout from the same host session-kill mechanism … reaching into the
+rootless-podman container process tree.” That was the same killer
+(systemd-oomd targeting user-slice cgroups under pressure), sighted from
+the container’s process tree instead of the tmux server’s. The
+2026-08-12 report is the tmux-facing symptom of the same mechanism —
+this audit therefore also updates the closure posture of the RD2-42
+sighting (the killer is now root-caused and defended against).</p>
+<h2 id="escape-audit-why-automated-qa-missed-it">4. Escape audit — why
+automated QA missed it</h2>
+<p>Both the tmx project’s own test suite AND the boba project’s HelixQA
++ Challenges regime were BLIND to this class:</p>
+<ul>
+<li><p><strong>tmx side (upstream, <code>~/tmux</code>)</strong>: the
+<code>scripts/tests/</code> suite covers cgroup properties from
+<code>Max=</code> / <code>TasksMax=</code> / <code>CPUQuota</code> —
+every test that reads a scope’s cgroup asks about
+<code>memory.max</code>, <code>pids.max</code>, <code>cpu.max</code> —
+none read the <code>ManagedOOMPreference</code> property (systemd 249+).
+<code>systemd-oomd</code> didn’t exist in the test vocabulary. This is
+exactly the §11.4.201(6) FALSE-NULL class: a measurement suite that
+scans the wrong axis returns a confident zero on a real defect.</p></li>
+<li><p><strong>boba side (this project)</strong>:
+<code>challenges/scripts/</code> covers host- safety mandates
+(<code>no_suspend_calls_challenge.sh</code>,
+<code>host_no_auto_poweroff_challenge.sh</code>,
+<code>host_no_auto_suspend_challenge.sh</code> — all guarding the
+CONST-033 host-power class), plus per-service integration (docs sync,
+egress, container health). None probed <code>systemd-oomd</code>’s
+effect on tmux scopes. The whole “does tmux survive when the shared
+user-slice hits memory pressure” question had no coverage.</p></li>
+<li><p><strong>HelixQA banks (both boba’s
+<code>challenges/helixqa-banks/</code> and the shared
+<code>submodules/helixqa/banks/</code>)</strong>: focus on API/service
+test cases — no bank covers the host’s systemd unit + oomd
+interaction.</p></li>
+</ul>
+<p>This is the “genuinely uncovered” class per the ledger’s schema (a
+class of defect with no automated check at all), not the “existed-
+but-missed” class (a check that was scoped too narrowly).</p>
+<h2 id="root-cause-investigation-phase-1">5. Root-cause investigation
+(Phase 1)</h2>
+<p>Complete <code>superpowers:systematic-debugging</code> output
+preserved in the 2026-08-12 session; the load-bearing evidence:</p>
+<ul>
+<li><strong>REFUTED at rest</strong> on the operator’s host
+(<code>nezha</code>):
+<ul>
+<li><code>uptime</code> = 2 days continuous (no CONST-033 host
+suspend/poweroff).</li>
+<li>Live <code>tmx-boba-6117.scope</code> =
+<code>MemoryMax=infinity</code>, <code>TasksMax=infinity</code>,
+<code>Delegate=yes</code> (v1.0.39 TMX-079 fix confirmed active).</li>
+<li>Recycler pgrep = zero hits (<code>TMX_RECYCLE_IDLE_SECS=0</code>
+default, v1.0.39 fix confirmed).</li>
+<li><code>cpu.stat nr_throttled=0</code> on
+<code>user@1000.service</code> + <code>user- 1000.slice</code>
+(§11.4.225 CPU-quota throttling refuted).</li>
+<li><code>journalctl -k --since '6 hours ago' | grep oom-kill</code> =
+empty (kernel OOM refuted).</li>
+<li><code>ulimit -u</code> = 65536 with 1386 live threads for the
+operator (98% RLIMIT_NPROC headroom — §12.12 refuted).</li>
+</ul></li>
+<li><strong>SURFACED</strong> by targeted probe:
+<ul>
+<li><code>systemd-oomd.service</code> <strong>active</strong> on host
+(running for 2 days).</li>
+<li><code>systemctl show user-1000.slice</code>:
+<code>ManagedOOMSwap=kill</code>,
+<code>ManagedOOMMemoryPressure=kill</code>. This is the armed
+mechanism.</li>
+<li><code>systemctl --user show tmx-boba-6117.scope -p ManagedOOMPreference</code>
+= <code>none</code> (default). Under user-1000.slice PSI pressure
+spikes, oomd was FREE to select the tmx scope as a victim and SIGKILL
+every process in it.</li>
+</ul></li>
+</ul>
+<h2 id="fix-upstream-tmx-v1.0.42-tmx-083">6. Fix (upstream tmx v1.0.42 /
+TMX-083)</h2>
+<ul>
+<li>Add <code>-p ManagedOOMPreference=avoid</code> to every
+<code>systemd-run --user --scope</code> invocation that creates a
+<code>tmx-&lt;NAME&gt;.scope</code>, and to the
+<code>systemctl --user set-property --runtime</code> call that
+configures the split-topology workload slice
+(<code>tmxw-&lt;NAME&gt;.slice</code>).</li>
+<li>Version-guarded (<code>sd_ver &gt;= 249</code>) — older hosts
+silently skip the property (§11.4.6 honest boundary).</li>
+<li>Landed in <code>scripts/tmx.template</code> (source) +
+<code>scripts/tmx</code> (live- generated). Both remotes updated (github
++ gitlab), ff-only, no force-push (§11.4.113).</li>
+<li>Upstream regression guard:
+<code>scripts/tests/59_oomd_preference_avoid. sh</code> with §11.4.115
+RED/GREEN polarity switch. §11.4.115 pre-fix and post-fix polarity flips
+proven in the tmx CHANGELOG.md v1.0.42 entry and Fixed.md §J1
+TMX-083.</li>
+</ul>
+<h2 id="new-check-this-audits-closure-artifact">7. New check (this
+audit’s closure artifact)</h2>
+<ul>
+<li><strong><code>challenges/scripts/tmux_survives_oomd_pressure_challenge.sh</code></strong>
+— the boba-side coverage-escape closure per §11.4.238(C).</li>
+<li>§11.4.115 RED-capable via <code>RED_MODE=1</code> (asserts the tmx
+fix is NOT present on scopes — PASSes on pre-fix, FAILs on post-fix).
+Default mode <code>RED_MODE=0</code> is the permanent GREEN regression
+guard.</li>
+<li>§11.4.3 honest SKIPs: non-Linux, systemd &lt; 249, systemd-oomd not
+active, tmx wrapper not on PATH.</li>
+<li>Auto-wired into
+<code>challenges/scripts/run_all_challenges.sh</code> (any
+<code>*_challenge.sh</code> in the directory is picked up
+automatically).</li>
+<li>Live evidence on the operator’s host (2026-08-12):
+<code>PASS=3 FAIL=0</code> after the tmx v1.0.42 upgrade + live-scope
+hardening.</li>
+</ul>
+<h2 id="verification-evidence">8. §11.4.115 verification evidence</h2>
+<p><strong>RED verification</strong> (pre-fix state): - Test 59 in the
+tmx repo <code>RED_MODE=1</code>: PASSed with
+<code>scope tmx-oomdprobe26129501786563936.scope has   ManagedOOMPreference=none (not avoid) — defect reproduced</code>.
+- Test 59 <code>RED_MODE=0</code>: FAILed with the same evidence
+(control needle proving the test is not a false-passer).</p>
+<p><strong>GREEN verification</strong> (post-fix state): - Test 59
+<code>RED_MODE=0</code>: PASSed with
+<code>scope tmx-... has   ManagedOOMPreference=avoid — TMX-083 regression guard confirmed</code>.
+- Test 59 <code>RED_MODE=1</code>: FAILed with
+<code>scope tmx-... has   ManagedOOMPreference=avoid on what should be pre-fix code — the   test cannot capture the pre-fix defect</code>.
+Perfect §11.4.115 polarity flip.</p>
+<p><strong>Boba-side challenge</strong> — the closure artifact this
+audit introduces: - Diagnostic captured 2026-08-12 on
+<code>nezha</code>:
+<code>DIAG: user-1000.slice ManagedOOMSwap=kill ManagedOOMMemoryPressure=kill   PASS: systemd-oomd is armed on user-1000.slice — the mechanism the fix defends against is real on this host   DIAG: tmx-boba-6117.scope ManagedOOMPreference=avoid  OK   DIAG: tmx-lava-0892.scope ManagedOOMPreference=avoid  OK   PASS: all 2 existing tmx-*.scope units carry ManagedOOMPreference=avoid — tmx v1.0.42 fix propagated   DIAG: tmx-oomdchal27259471786564849.scope ManagedOOMPreference=avoid   PASS: GREEN: fresh tmx scope carries ManagedOOMPreference=avoid — TMX-083 fix confirmed active in the wrapper   ─────────────────────────────────────────────────────────────────   Total: PASS=3 FAIL=0</code></p>
+<h2 id="live-scope-hardening-applied-2026-08-12">9. Live-scope hardening
+applied 2026-08-12</h2>
+<p>Because <code>tmx-boba-6117.scope</code> (this Claude Code session’s
+scope) was created BEFORE the tmx v1.0.42 upgrade, the property did NOT
+propagate to the live scope automatically — the v1.0.42 fix only takes
+effect on NEWLY-CREATED scopes. The operator’s current session was
+protected via
+<code>systemctl --user set-property --runtime tmx-boba-6117.scope ManagedOOMPreference=avoid</code>
+— a safe reversible change (§11.4.101) that changes only the oomd
+selection preference, does not kill anything, and is confirmed by the
+challenge running <code>PASS</code>. Sibling
+<code>tmx-lava-0892.scope</code> received the same treatment.</p>
+<h2 id="e-discovery-channel-accounting">10. §11.4.238(E)
+discovery-channel accounting</h2>
+<p>This audit contributes one entry to the ledger:</p>
+<ul>
+<li><strong>Period:</strong> 2026-08-12</li>
+<li><strong>Channel:</strong> <code>operator-report</code></li>
+<li><strong>Class:</strong> genuinely uncovered (no automated check
+existed).</li>
+<li><strong>Escape-audit:</strong> documented above §4.</li>
+<li><strong>New-check:</strong>
+<code>challenges/scripts/tmux_survives_oomd_pressure_ challenge.sh</code>
+— closes the gap in boba’s coverage. Upstream tmx gap closed by
+<code>scripts/tests/59_oomd_preference_avoid.sh</code> in
+vasic-digital/tmux v1.0.42.</li>
+</ul>
+<h2 id="follow-up-items-honest-tracking">11. Follow-up items (honest
+tracking)</h2>
+<ul>
+<li><strong><code>scripts/commit-push-all.sh</code> (§11.4.234) missing
+in boba.</strong> The boba tree does not yet ship the dedicated
+commit-and-push script mandated by universal Constitution §11.4.234.
+This session used the project’s existing sanctioned mechanism
+(auto-commit hook + standard
+<code>git commit</code>/<code>git push</code>) for the boba-side change;
+the §11.4.234 gap is a separate finding, tracked as follow-up.</li>
+<li><strong><code>Containers</code> submodule audit</strong> —
+separately tracked. Rootless podman containers get their own transient
+<code>libpod-*.scope</code> under <code>user@1000.service</code>.
+Whether that submodule should also apply
+<code>ManagedOOMPreference=avoid</code> to container scopes it manages
+is a distinct question (containers are the SAFETY VALVE for the host
+under real memory pressure — setting <code>avoid</code> there would
+potentially harm host safety). Audit result to be documented
+separately.</li>
+<li><strong>Stress mode</strong> in the challenge script is currently a
+placeholder. A truly safe implementation of chaos mode (intentional
+memory- pressure spike inside a size-bounded throwaway scope,
+coordinated with the operator’s ambient workload) is a follow-up.</li>
+<li><strong>HelixQA bank entry</strong> for the tmx-scope hardening is
+not authored in this session — the boba
+<code>challenges/helixqa-banks/</code> are symlinks to the shared
+<code>submodules/helixqa/banks/</code>, so a real bank entry needs a
+coordinated change in that submodule. Follow- up.</li>
+</ul>
+<h2 id="cross-references">12. Cross-references</h2>
+<ul>
+<li>Upstream fix: <code>vasic-digital/tmux</code> <code>Fixed.md</code>
+§J1 TMX-083; <code>CHANGELOG.md</code> v1.0.42;
+<code>scripts/tests/59_oomd_preference_avoid.sh</code>;
+<code>scripts/tmx.template</code> + <code>scripts/tmx</code> (three fix
+sites: shared systemd-run scope ~line 864, split systemd-run scope ~line
+847, split-topology workload slice <code>_slice_props</code> ~line
+823).</li>
+<li>Predecessor sighting: <code>docs/QA_DISCOVERY_LEDGER.md</code>
+RD2-42 (2026-08-09, containers-facing symptom).</li>
+<li>Constitution: §11.4.238 (this audit’s mandate), §11.4.115 (RED/GREEN
+polarity), §11.4.113 (no-force-push, honored), §11.4.108 (four-layer
+runtime-signature verification, honored), §11.4.201(6) (measurement
+false-null — the class this escape belongs to), §11.4.238(E)
+(discovery-channel accounting).</li>
+</ul>

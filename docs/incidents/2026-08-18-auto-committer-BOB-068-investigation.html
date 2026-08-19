@@ -1,0 +1,455 @@
+<h1
+id="incident-2026-08-18-bob-068-auto-committer-sweep-pattern-phase-1-investigation">Incident
+2026-08-18 — BOB-068 “auto-committer sweep pattern” Phase-1
+investigation</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T21:32:00Z <strong>Reporter:</strong> conductor (SDD task-41
+dispatch, 2026-08-18) <strong>Session-under-investigation:</strong>
+4db6eadb-03e7-466b-9cb4-34b2b2bd30f3 (boba SDD orchestration)
+<strong>Investigator:</strong> Phase-1 systematic-debugging subagent
+(sonnet), task-41 <strong>Class:</strong> parallel-subagent
+shared-checkout race (§11.4.84 working-tree quiescence / §9.2
+data-safety hazard class) <strong>Terminal state:</strong> ROOT CAUSE
+CONFIRMED — no daemon exists; race condition on shared checkout + shared
+SSoT file, verdict (b) per task brief <strong>Iron Law
+compliance:</strong> Phase 1 (root cause investigation) ONLY. No fix
+proposed or written in this document — see §7 for the disposition of the
+already-drafted remedy.</p>
+<h2 id="what-was-investigated">1. What was investigated</h2>
+<p>Multiple parallel-subagent reports this session (task #55, task #66,
+task #68, and the §11.4.179 proposal doc,
+<code>docs/proposals/subagent-worktree-isolation.md</code>) describe a
+recurring symptom: <strong>a subagent’s scoped, intentional commit lands
+folded together with — or entirely superseded by — a concurrent sibling
+subagent’s commit</strong>, because both subagents were writing into the
+<strong>same shared git checkout</strong> and the <strong>same shared
+<code>docs/workable_items.db</code> SSoT file</strong> at the same time.
+The task brief for this investigation named it “the BOB-068
+auto-committer sweep pattern” and asked two concrete questions: (1) does
+an actual auto-committer daemon exist anywhere on this host, and (2) if
+not, is this a race condition on <code>git add -A</code> (or equivalent)
+in a non-isolated shared checkout.</p>
+<p><strong>Terminology note (found during investigation, recorded
+honestly per §11.4.6):</strong> the label “BOB-068” is used for
+<strong>two distinct things</strong> in this session’s own documents.
+See §3 below — this is itself a finding, not an assumption this report
+makes.</p>
+<h2 id="evidence-gathered-is-there-an-auto-committer-daemon">2. Evidence
+gathered — is there an auto-committer daemon?</h2>
+<p>All checks below were run directly against the live host and the live
+<code>boba</code> git checkout during this investigation. Full commands
+and raw output are in the session transcript; the results are summarized
+here.</p>
+<h3
+id="systemd-timers-user-scope---sudo-access-is-hard-blocked-on-this-host-per">2.1
+systemd timers (user scope; <code>--sudo</code> access is hard-blocked
+on this host per</h3>
+<p>Hard Stop §6.U — see 2.6)</p>
+<pre><code>$ systemctl --user list-timers --all</code></pre>
+<p>9 timers listed. 8 are transient
+<code>podman healthcheck run &lt;container-id&gt;</code> units (this
+project’s OWN qbittorrent/jackett/boba-jackett container healthchecks,
+per <code>docker-compose.yml</code>) plus the standard
+<code>systemd-tmpfiles-clean.timer</code>. <strong>None invoke git, none
+reference a repository path, none contain “commit”/“push”/“sync” in
+their <code>ExecStart</code>.</strong> Inspected one representative unit
+directly:</p>
+<pre><code>$ systemctl --user cat a91ba43aff...-42f265332bed8851.service
+ExecStart=&quot;/usr/bin/podman&quot; &quot;healthcheck&quot; &quot;run&quot; &quot;a91ba43aff157e66fd31294357b81823a2858a72a690fb25191fa37b4547f8c8&quot;</code></pre>
+<p>Confirmed: container healthcheck, unrelated to git.</p>
+<h3 id="cron">2.2 cron</h3>
+<pre><code>$ crontab -l
+no crontab for milosvasic</code></pre>
+<p><code>/etc/crontab</code> and <code>/etc/cron.d/</code> are
+root-owned and unreadable without <code>sudo</code> (permission denied)
+— but per §2.6 below, <code>sudo</code>/<code>su</code> in any tool call
+is <strong>mechanically blocked</strong> on this host by the project’s
+own <code>guard-forbidden-commands.sh</code> PreToolUse hook, which is
+itself evidence the host enforces no-root-side-channels for agent-driven
+investigation. No user-level cron job exists; a root-level
+<code>/etc/cron.d</code> entry auto-committing to a project the
+interactive user owns would be an extreme outlier inconsistent with
+every other finding in this investigation (see §2.3–§2.5), and no other
+evidence anywhere in this investigation is consistent with one.</p>
+<h3 id="git-hooks">2.3 git hooks</h3>
+<pre><code>$ ls -la .git/hooks/
+total 52
+(only *.sample files — no non-sample hook present)
+
+$ git config --get core.hooksPath
+(empty — unset, default .git/hooks/ in effect)</code></pre>
+<p>No installed git hook of any kind (pre-commit, post-commit, pre-push,
+etc.) exists in this checkout. <code>core.hooksPath</code> is unset, so
+there is no redirected/external hook directory either.</p>
+<h3 id="editor-ide-auto-commit-settings">2.4 Editor / IDE auto-commit
+settings</h3>
+<pre><code>$ grep -iE &quot;git\.(autofetch|postCommit|autoStash|autoPush)|autoSave|commit&quot; ~/.config/Code/User/settings.json
+(no output — no matches)</code></pre>
+<p>No project-root <code>.vscode/settings.json</code> exists (only
+<code>frontend/.vscode/</code>, an Angular subproject IDE folder, out of
+scope for repo-root git automation and not consulted by git itself). No
+VSCode git-automation setting is configured globally either.</p>
+<h3 id="running-processes">2.5 Running processes</h3>
+<pre><code>$ pgrep -af &quot;commit|watch|sync|inotify&quot;</code></pre>
+<p>Matches, all confirmed unrelated to git-commit automation on manual
+inspection:</p>
+<ul>
+<li><code>kworker/R-sync_wq</code> — a Linux <strong>kernel</strong>
+worker thread for the <code>sync_wq</code> workqueue
+(page-cache/filesystem sync, not “git sync”).</li>
+<li><code>watchdogd</code> — the systemd hardware watchdog daemon (host
+liveness, unrelated).</li>
+<li>A CodeGraph indexer watchdog subprocess
+(<code>@colbymchenry/codegraph-linux-x64</code>) — its own inline
+source, printed verbatim in the process list, shows it exists solely to
+<code>SIGKILL</code> a wedged CodeGraph indexing process after a silence
+timeout; it never touches git.</li>
+<li>A <code>chrome-devtools-mcp</code> telemetry watchdog — unrelated to
+git or file commits.</li>
+<li>The two <code>pgrep</code>-invoking shell processes from this very
+investigation command.</li>
+</ul>
+<p><strong>No process anywhere on the host matches a
+git-commit-automation signature</strong> (no <code>gitwatch</code>, no
+<code>entr</code>-driven commit loop, no cron-spawned script, no daemon
+holding a <code>.git</code> lock open).</p>
+<h3
+id="historical-auto-commit-named-commits-checked-and-ruled-out-as-daemon-evidence">2.6
+Historical “Auto-commit”-named commits — checked and ruled out as daemon
+evidence</h3>
+<p>Two bare-message <code>Auto-commit</code> commits exist in this
+repo’s history (<code>54e313f</code>, 2026-08-08; <code>c10ad07</code>,
+2026-06-10 — plus the 18 more the
+<code>docs/QA_DISCOVERY_LEDGER.md</code> BOB-068/RD2-00 entry already
+enumerates: <code>9c8f684</code>, <code>743097a</code>,
+<code>de9270b</code>, <code>1c36777</code>, <code>41179c2</code>,
+<code>7c529ca</code>, etc.). These are <strong>not</strong> evidence of
+a daemon on <strong>this</strong> investigation’s scope:</p>
+<ul>
+<li>Both inspected commits (<code>54e313f</code>, <code>c10ad07</code>)
+carry the <strong>identical author/committer identity</strong>
+(<code>Милош Васић &lt;i@mvasic.ru&gt;</code> /
+<code>Milos Vasic &lt;i@mvasic.ru&gt;</code>) as every other commit in
+this repository — no bot account, no service identity, no distinguishing
+committer.</li>
+<li>The pre-existing <code>docs/QA_DISCOVERY_LEDGER.md</code> RD2-00
+entry (filed 2026-08-08, this project’s own prior root-cause pass — not
+authored by this investigation) already traced the
+<strong>newer</strong> wave of these commits via <code>git reflog</code>
+to an ordinary <strong><code>git pull --ff</code> fast-forward from a
+second live session/host</strong> with push access to the same remotes —
+evidenced by a commit timezone (<code>+0500</code>) that does not match
+the investigating host’s own (<code>+0300</code> at the time). That is a
+<strong>second human/agent session operating a different clone</strong>,
+not an automated daemon on this host.</li>
+<li>The <code>guard-forbidden-commands.sh</code> PreToolUse hook (§2.6
+above, and confirmed live during this very investigation when it
+correctly BLOCKED a <code>sudo</code>-containing command) demonstrates
+this host actively enforces mechanical guardrails against exactly the
+class of unattended privileged automation a “daemon” would require —
+consistent with none existing.</li>
+</ul>
+<p><strong>Conclusion of §2: no auto-committer daemon exists on this
+host, in this checkout, or in any configuration file, hook, timer, or
+process inspectable from this session.</strong> Verdict (a) from the
+task brief (“daemon exists at path X”) is <strong>refuted</strong> by
+direct evidence.</p>
+<h2
+id="two-different-things-both-called-bob-068-this-session-finding-not-an">3.
+Two different things both called “BOB-068” this session (finding, not
+an</h2>
+<p>assumption)</p>
+<p>The tracked workable item <strong><code>BOB-068</code></strong> in
+<code>docs/workable_items.db</code> / <code>docs/Issues.md</code> (line
+44) is titled <em>“RD2-00: unattributed, unreviewed Auto-commit
+mechanism pushing to main”</em> and its full description is specifically
+about the <strong>historical, cross-host
+bare-<code>Auto-commit</code>-message</strong> phenomenon investigated
+in §2.6 above — root-caused (in a prior, 2026-08-08 session, not this
+one) to a second live session/host fast-forward-pulling in commits,
+<strong>not</strong> a daemon, and <strong>still tracked as
+<code>Queued</code></strong> because the mechanical guard for it (filed
+as followup <code>BOB-106</code>) has not yet been authored.</p>
+<p>This session’s own newly-authored documents —
+<code>.superpowers/sdd/task-66-brief.md</code> (“BOB-068 pattern
+discovered 5x this session: commit-push-all.sh unconditionally does
+<code>git add -A</code> which sweeps in-flight parallel-subagent work
+into unrelated commits”), the commit message of <code>0972cbc</code>
+(“<code>commit-push-all.sh --scope</code> flag ends BOB-068 sweep
+pattern”), and
+<code>docs/proposals/subagent-worktree-isolation.md</code>’s own §1
+Problem Statement (“BOB-068 identified a real defect class: parallel SDD
+subagents dispatched against this project’s single shared checkout… can
+commit… directly onto <code>main</code> with no structural isolation”) —
+all <strong>reuse the <code>BOB-068</code> label</strong> to refer to a
+<strong>different, newly-observed defect class from THIS
+session</strong>: parallel SDD subagents racing on a shared checkout,
+not the historical cross-host pull phenomenon.</p>
+<p>This is a real labeling inconsistency in this session’s own
+tracker/doc trail (the tracked <code>BOB-068</code> item’s description
+does not match what three of this session’s own documents call “the
+BOB-068 pattern”), noted here for the record. <strong>This investigation
+proceeds on the defect class the task brief actually asked
+about</strong> — the shared- checkout sweep pattern — since that is what
+“5+ occurrences this session” and the cited Task #55/#66/#68 evidence
+are all describing. Reconciling the DB item’s title/ description with
+this session’s actual usage (or filing the sweep pattern under its own
+correctly-titled item) is an open item, tracked in §8, not fixed here
+(Phase 1 scope).</p>
+<h2
+id="evidence-gathered-is-this-a-race-condition-on-a-shared-non-isolated-checkout">4.
+Evidence gathered — is this a race condition on a shared, non-isolated
+checkout?</h2>
+<h3
+id="no-git-level-isolation-exists-between-subagents-dispatched-this-session">4.1
+No git-level isolation exists between subagents dispatched this
+session</h3>
+<pre><code>$ ls -la .git/worktrees/
+ls: cannot access &#39;.git/worktrees/&#39;: No such file or directory
+
+$ git worktree list
+/run/media/milosvasic/DATA4TB/Projects/boba  98412bf [main]</code></pre>
+<p>Exactly <strong>one</strong> working tree exists for the entire
+session: the single checkout at
+<code>/run/media/milosvasic/DATA4TB/Projects/boba</code>. No
+<code>git worktree add</code>, no <code>git clone --local</code>, and no
+container-per-subagent mechanism was used for any subagent dispatched
+this session. Every subagent operated directly inside this one shared
+<code>.git</code>, one shared index, one shared working tree — confirmed
+by direct inspection, not inferred.</p>
+<h3
+id="scriptscommit-push-all.shs-own-committed-comments-confirm-the-mechanism">4.2
+<code>scripts/commit-push-all.sh</code>’s own committed comments confirm
+the mechanism</h3>
+<pre><code>$ grep -n &quot;flock\|git add\|lock&quot; scripts/commit-push-all.sh
+...
+30: # Without --scope, stage 5 runs an unconditional `git add -A`, which
+...
+39: # a stray `git add -A` from an earlier/concurrent run left residue),
+...
+109:LOCK=&quot;$(git rev-parse --git-dir)/.commit_push_all.lock&quot;
+111:if command -v flock &gt;/dev/null 2&gt;&amp;1; then
+112:    flock -n 9 || {
+...
+222:    git add -- &quot;${SCOPES[@]}&quot;
+...
+257:    git add -A</code></pre>
+<p>The script has <strong>always</strong> (both before and after this
+session’s Task #66 interim fix) had an <code>flock</code>-protected
+critical section keyed on
+<code>$(git rev-parse --git-dir)/.commit_push_all.lock</code>. This
+<strong>serializes invocations of the script itself</strong> — two
+<code>commit-push-all.sh</code> processes cannot literally execute their
+commit logic concurrently. It does <strong>not</strong>, and
+structurally cannot, serialize or isolate the <strong>file-level
+edits</strong> subagents make to the shared working tree
+<em>between</em> script invocations. Whichever invocation acquires the
+lock first stages whatever the shared working tree looks like <strong>at
+that instant</strong> — before Task #66’s fix, unconditionally
+(<code>git add -A</code>, line 257); the flag added by Task #66 makes an
+explicit <code>--scope</code> list (line 222) the alternative, but the
+<strong>unscoped <code>git add -A</code> remains the default</strong>
+for backward compatibility (confirmed in the script’s own committed
+comment, line 30, and in <code>commit-push-all.sh</code>’s CLI: callers
+that do not pass <code>--scope</code> still get
+<code>git add -A</code>).</p>
+<h3
+id="direct-first-person-evidence-of-the-sweep-from-this-sessions-own-subagent">4.3
+Direct, first-person evidence of the sweep from this session’s own
+subagent</h3>
+<pre><code>reports</code></pre>
+<p><strong>Task #55’s report</strong>
+(<code>.superpowers/sdd/task-55-report.md</code>, “Concerns” §1, written
+by the affected subagent itself, not this investigation):</p>
+<blockquote>
+<p>A concurrent sibling subagent (working on task #68 /
+<code>BOB-108</code>…) was independently running
+<code>close</code>/<code>export</code> against the exact same shared
+<code>docs/workable_items.db</code> in this same non-isolated checkout
+at the same time. My scoped commit landed with “nothing to commit” on
+its second invocation because the sibling’s own
+<code>commit-push-all.sh</code> run had already committed and pushed the
+working-tree state (which by then included my <code>BOB-104</code>
+update) as part of commit <code>3520621</code>.</p>
+</blockquote>
+<p><strong>Task #68’s report</strong>
+(<code>.superpowers/sdd/task-68-report.md</code>, “Concerns”):</p>
+<blockquote>
+<p><code>docs/workable_items.db</code>’s tracked bytes grew by a few KB
+purely from SQLite’s own read-path/WAL housekeeping across the several
+<code>export</code>/<code>validate</code>/<code>close</code> invocations
+this session… Issues.md’s regeneration also materialised BOB-109 through
+BOB-114 (already resident in the DB, filed by other work this session,
+not yet synced into the file before this fix ran). This is the correct,
+intended §11.4.93 behaviour of <code>export</code>, not scope creep.</p>
+</blockquote>
+<p>Commit <code>3520621</code> (BOB-108 closure) itself confirms this in
+its own message: “a few bytes of SQLite housekeeping (WAL/page-cache
+churn from opening the file across export+validate+close invocations
+this session; meta table content is unchanged).”</p>
+<h3
+id="timing-evidence-commits-landing-seconds-apart-consistent-with-lock-">4.4
+Timing evidence — commits landing seconds apart, consistent with
+lock-</h3>
+<pre><code>serialized queuing of near-simultaneous subagent completions</code></pre>
+<pre><code>91b52db 2026-08-18T21:02:50+02:00  fix(boba-jackett,BOB-112): TTL cache /healthz ...
+0972cbc 2026-08-18T21:02:51+02:00  feat(scripts,#66): commit-push-all.sh --scope flag ...
+c7dfdde 2026-08-18T21:02:53+02:00  feat(dev-tools,BOB-113): install-dev-tools.sh ...
+eb22c50 2026-08-18T21:02:54+02:00  docs(qa,evidence): session-2026-08-16 test suite ...</code></pre>
+<p>Four commits from (per their subject lines) four
+<strong>different</strong> work items land within a 4-second window,
+each with author date == committer date (no rebase/backdating). This is
+the observable signature of the <code>flock</code> doing exactly what
+§4.2 describes: multiple subagents’ <code>commit-push-all.sh</code>
+invocations queued on the same lock and fired in rapid succession as
+each acquired and released it — each one’s
+<code>git add</code>/<code>git add -A</code> capturing a snapshot of the
+shared tree at that moment, which is why a file touched by more than one
+concurrently-running subagent (most concretely,
+<code>docs/workable_items.db</code> and its derived exports) shows up
+bundled into whichever commit happens to run first, as documented
+directly by the affected subagents in §4.3.</p>
+<h3
+id="the---scope-interim-fix-task-66-narrows-one-vector-but-does-not-and">4.5
+The <code>--scope</code> interim fix (Task #66) narrows one vector but
+does not — and</h3>
+<pre><code>structurally cannot — close the shared-SSoT-file vector</code></pre>
+<p>Task #66’s own report and brief are explicit that
+<code>--scope</code> is an <strong>opt-in, interim</strong> mitigation
+for the <code>git add -A</code> vector specifically (arbitrary unrelated
+dirty files being swept in). It does <strong>not</strong> address, and
+cannot address, the second vector directly demonstrated in §4.3:
+<code>docs/workable_items.db</code> (the §11.4.93/§11.4.95 single-
+source-of-truth database) and its derived exports
+(<code>docs/Issues.md</code>, <code>docs/Fixed.md</code>, etc.) are
+<strong>one physical file each</strong>, mutated in place by every
+subagent’s <code>workable-items</code> CLI invocations in the
+<strong>same shared checkout</strong>. Task #68’s own commit used
+<strong>precise, non-<code>-A</code> staging</strong> (“used precise
+<code>git add &lt;files&gt;</code>, never <code>git add -A</code>” —
+task-68-report.md, “Scope discipline”) and its commit
+<strong>still</strong> legitimately and correctly captured BOB-109
+through BOB-114 — entries filed by <em>other, concurrently-running
+subagents</em> — because the <code>export</code> tool, by design,
+regenerates the whole document from the DB’s <strong>current,
+shared</strong> state at the moment it runs. There is no
+git-staging-layer fix for this: the sweep, in this specific sub-case,
+happens at the <strong>data layer</strong> (one shared DB file with no
+per-subagent isolation), not at the git-staging layer
+<code>--scope</code> operates on.</p>
+<h2 id="verdict">5. Verdict</h2>
+<p><strong>(b) — No daemon. Confirmed race condition, with two distinct
+contributing mechanisms, both rooted in the SAME underlying
+architectural gap: subagents dispatched this session share ONE git
+checkout and ONE <code>docs/workable_items.db</code> SSoT file, with no
+filesystem- or git-level isolation between them.</strong></p>
+<ol type="1">
+<li><strong>Git-staging-layer vector:</strong>
+<code>commit-push-all.sh</code>’s default (still-unscoped)
+<code>git add -A</code> sweeps any file dirty in the shared tree at the
+moment a subagent’s invocation acquires the serializing
+<code>flock</code>, regardless of which subagent produced the dirty
+state. (Mitigated, not eliminated, by Task #66’s opt-in
+<code>--scope</code> flag — the unscoped default remains for backward
+compatibility.)</li>
+<li><strong>Shared-data-layer vector:</strong> even precise, scoped
+<code>git add</code> of exactly the intended files still captures
+<strong>whatever the shared <code>docs/workable_items.db</code> (and its
+derived exports) currently contain</strong>, because that file is the
+SAME physical file every concurrently-dispatched subagent’s
+<code>workable-items</code> CLI writes to. No git-staging discipline can
+separate “my mutation” from “a sibling’s concurrent mutation” when both
+land in one shared file before either subagent commits.</li>
+</ol>
+<p>Both vectors trace to the identical root: <strong>no per-subagent
+isolation (no git worktree, no clone, no container) exists for this
+session’s SDD subagent dispatch pattern</strong> — every subagent runs
+directly against the conductor’s own single checkout.</p>
+<h2 id="cross-check-against-the-already-drafted-11.4.179-proposal">6.
+Cross-check against the already-drafted §11.4.179 proposal</h2>
+<p><code>docs/proposals/subagent-worktree-isolation.md</code> (authored
+earlier this session, Task #67, independently of this investigation)
+reaches the <strong>same root-cause conclusion</strong> in its own §1
+Problem Statement, arrived at via a separate investigative pass:
+“parallel SDD subagents dispatched against this project’s single shared
+checkout… can commit… directly onto <code>main</code> with no structural
+isolation between concurrent subagents’ in-flight work.” That proposal
+additionally measured (§3–§5 of that document, real commands run on this
+host) that <code>git worktree add</code> does <strong>not</strong>
+satisfy §11.4.179’s corruption-isolation requirement (shared
+<code>.git</code> object store / shared lock namespace), while
+<code>git clone --local</code> (hardlinked objects, same filesystem)
+does, at near-identical cost (0.19s vs. 0.22s measured).</p>
+<p>This investigation’s independently-gathered evidence (§2–§4 above)
+<strong>confirms</strong> that proposal’s problem statement is accurate
+and that its proposed remedy — genuine per-subagent <code>.git</code>
+isolation via <code>git clone --local</code>, with reconciliation via a
+real <code>fetch → merge → resolve → push</code> at “reap” time
+(§11.4.113) rather than a shared, last-writer-wins working tree — is the
+correct architectural fix for <strong>both</strong> vectors identified
+in §5: per-subagent clones would give each subagent its own physical
+copy of <code>docs/workable_items.db</code>, so a genuine conflicting
+mutation between two subagents would surface as a <strong>real,
+reviewable merge conflict at reap time</strong> (per §11.4.211,
+Fable-<code>xhigh</code> conflict resolution) instead of a silent blend
+attributed to whichever subagent’s commit-script invocation happened to
+win the <code>flock</code> race.</p>
+<h2 id="disposition-phase-1-boundary-no-fix-written-here">7. Disposition
+(Phase 1 boundary — no fix written here)</h2>
+<p>Per the Iron Law and this task’s explicit scope, <strong>no fix is
+proposed or written in this document.</strong> The correct remedy has
+already been independently designed and measured (§6,
+<code>docs/proposals/subagent-worktree-isolation.md</code>, §11.4.179)
+and is <strong>confirmed correct by this investigation’s
+evidence</strong>. That proposal’s own §9 (“Explicit non-implementation
+notice”) and §10 (“Open items”) already state, honestly, that nothing
+has been implemented yet — this investigation does not change that; it
+adds independent confirmation that the proposal targets the right root
+cause.</p>
+<h2 id="open-items-tracked-not-silently-dropped-11.4.197">8. Open items
+(tracked, not silently dropped — §11.4.197)</h2>
+<ul>
+<li>Implement <code>multitrack_subagent_clone.sh</code>
+(spawn/reap/list) per
+<code>docs/proposals/subagent-worktree-isolation.md</code> §6 — the
+architectural fix for both vectors identified in §5. Not attempted here
+(out of this task’s Phase-1-only scope).</li>
+<li>Reconcile the <code>BOB-068</code> tracked-item title/description
+(historical cross-host <code>Auto-commit</code> phenomenon, §3) against
+this session’s informal reuse of the same label for the shared-checkout
+sweep pattern — either retitle/re-scope <code>BOB-068</code> to match
+its actual DB description and file the sweep pattern under its own
+correctly named item, or formally fold the sweep pattern into
+<code>BOB-068</code>’s tracked scope. Left unresolved by this
+investigation (documentation-consistency item, not a Phase-1 root-cause
+question).</li>
+<li><code>BOB-106</code> (mechanical guard for the <em>historical</em>
+cross-host unattributed-commit phenomenon, §2.6/§3) remains separately
+open and unaffected by this investigation.</li>
+<li>The pre-existing <code>BOB-010</code> evidence-path violation
+surfaced incidentally by <code>workable-items validate</code> during
+this session (noted in both task-55 and task-68 reports) is confirmed
+pre-existing and out of scope for this investigation.</li>
+</ul>
+<h2 id="evidence-index">9. Evidence index</h2>
+<ul>
+<li><code>.superpowers/sdd/task-55-report.md</code> — first-person
+account of the sweep from the affected subagent.</li>
+<li><code>.superpowers/sdd/task-66-brief.md</code> / commit
+<code>0972cbc</code> — the interim <code>--scope</code> remedy and its
+own before/after characterization.</li>
+<li><code>.superpowers/sdd/task-68-report.md</code> — first-person
+account showing precise (non-<code>-A</code>) staging still captures
+concurrent siblings’ data via the shared SSoT file.</li>
+<li><code>docs/proposals/subagent-worktree-isolation.md</code> — the
+independently-drafted architectural remedy, cross-checked and confirmed
+by this investigation.</li>
+<li><code>docs/QA_DISCOVERY_LEDGER.md</code> (RD2-00/BOB-068 entry) —
+the historical, distinct cross-host phenomenon (§3).</li>
+<li><code>scripts/commit-push-all.sh</code> (read-only inspection in
+this investigation; not modified) — the <code>flock</code> serialization
++ <code>git add -A</code> default confirmed at lines 109–257.</li>
+<li>Direct host commands run in this session (systemd timers, crontab,
+git hooks, git config, process list, git worktree list) — full output in
+the session transcript backing §2 and §4.1.</li>
+</ul>

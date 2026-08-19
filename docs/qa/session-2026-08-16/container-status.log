@@ -1,0 +1,11 @@
+NAMES              STATUS                 PORTS
+helix-redis        Up 10 hours            6379/tcp
+helix-nats         Up 10 hours            127.0.0.1:4222->4222/tcp, 127.0.0.1:8222->8222/tcp, 6222/tcp
+helix-postgres     Up 10 hours            127.0.0.1:5432->5432/tcp
+helixcode-caddy    Up 10 hours            0.0.0.0:52080->80/tcp, 0.0.0.0:52443->443/tcp, 0.0.0.0:52443->443/udp, 2019/tcp
+lava-postgres      Up 10 hours (healthy)  127.0.0.1:8432->5432/tcp
+lava-api-go        Up 10 hours            8443/tcp, 8443/udp
+qbittorrent        Up 10 hours (healthy)  6881/tcp, 8080/tcp, 6881/udp
+jackett            Up 10 hours (healthy)  9117/tcp
+boba-jackett       Up 10 hours (healthy)  7189/tcp
+qbittorrent-proxy  Up 10 hours (healthy)  

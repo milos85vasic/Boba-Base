@@ -1,0 +1,10 @@
+! BOB-064 [Fixed/section]: items.status="Completed (→ Fixed.md)" but body_md **Status:** line derives "Queued" (§11.4.93/ATM-627 column↔body desync)
+! BOB-066 [Issues/section]: items.status="In progress" but body_md **Status:** line derives "Queued" (§11.4.93/ATM-627 column↔body desync)
+! BOB-067 [Fixed/section]: items.status="Completed (→ Fixed.md)" but body_md **Status:** line derives "Queued" (§11.4.93/ATM-627 column↔body desync)
+! BOB-102 [Issues/section]: items.status="Completed (→ Fixed.md)" but body_md **Status:** line derives "Operator-blocked" (§11.4.93/ATM-627 column↔body desync)
+~ BOB-066 status: md="Queued" db="In progress"
+~ BOB-102 status: md="Operator-blocked" db="Completed (→ Fixed.md)"
+~ BOB-067 body differs (md=3680 bytes db=1152 bytes)
+~ BOB-064 body differs (md=1885 bytes db=1343 bytes)
+- BOB-103 present in DB, absent in Markdown
+diff: 9 difference(s)

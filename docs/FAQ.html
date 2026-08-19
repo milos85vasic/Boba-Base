@@ -1,0 +1,227 @@
+<h1 id="frequently-asked-questions">Frequently Asked Questions</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-15T14:15:00Z <strong>Audience:</strong> Operators.
+<strong>Purpose:</strong> Practical answers to the questions that come
+up most often when running boba day-to-day.</p>
+<hr />
+<h2 id="tracker-credentials-cookies">Tracker credentials &amp;
+cookies</h2>
+<h3 id="q1.-my-cookies-expired-how-do-i-refresh-them">Q1. My cookies
+expired — how do I refresh them?</h3>
+<p>Every tracker session expires eventually (RuTracker: ~90 days;
+NNM-Club: weeks; Kinozal: months). Refresh in three steps:</p>
+<ol type="1">
+<li><p><strong>Re-login in your browser</strong> to the tracker (solve
+any CAPTCHA, tick <em>Remember me</em>, land on your profile
+page).</p></li>
+<li><p><strong>Re-export the cookies</strong> to
+<code>~/Downloads/cookies_&lt;tracker&gt;.txt</code> — see the
+step-by-step in <a
+href="guides/tracker-credentials.md#step-by-step--export-cookies-from-your-browser"><code>docs/guides/tracker-credentials.md</code></a>.</p></li>
+<li><p><strong>Trigger the reload</strong>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh restart</span></code></pre></div>
+<p>The <code>boba-svc restart</code> hook auto-invokes the cookie
+loader; the containers pick up the fresh cookies on the next
+<code>up</code>. You can also invoke the loader directly
+(<code>bash scripts/load-tracker-cookies.sh</code>) without restarting,
+then <code>docker exec</code> /
+<code>podman restart qbittorrent-proxy</code> when convenient.</p></li>
+</ol>
+<h3 id="q2.-why-does-rutracker-keep-failing-auth">Q2. Why does RuTracker
+keep failing auth?</h3>
+<p>Almost always one of these three (in order of frequency):</p>
+<ol type="1">
+<li><p><strong>The session cookie expired.</strong> Re-export per Q1.
+<code>cookies_rutracker.txt</code> MUST contain a
+<code>bb_session=</code> line for <code>.rutracker.org</code>
+(case-insensitive). The challenge script’s Check 4a spells this out:</p>
+<pre><code>RUTRACKER_COOKIES contains bb_session= (RuTracker session cookie present)</code></pre>
+<p>No <code>bb_session</code> → not a logged-in export → RuTracker WILL
+refuse auth.</p></li>
+<li><p><strong>Cloudflare challenged and got no
+<code>cf_clearance</code>.</strong> RuTracker fronts with Cloudflare
+periodically; the loader captures the full jar including
+<code>cf_clearance</code>. If Cloudflare re-challenges you in the
+browser, re-export AFTER solving it.</p></li>
+<li><p><strong>RuTracker credentials env var is stale.</strong>
+<code>RUTRACKER_USERNAME</code> / <code>RUTRACKER_PASSWORD</code> in
+<code>.env</code> are the FALLBACK auth path when the cookie is absent.
+If your password changed on the site, update it in <code>.env</code>
+too.</p></li>
+</ol>
+<h3 id="q3.-how-does-the-system-find-my-cookies-file">Q3. How does the
+system find my cookies file?</h3>
+<p>The convention is fixed:</p>
+<pre><code>${TRACKER_COOKIE_DIR:-$HOME/Downloads}/cookies_&lt;tracker&gt;.txt</code></pre>
+<ul>
+<li><code>&lt;tracker&gt;</code> is <strong>lowercase</strong>:
+<code>rutracker</code>, <code>nnmclub</code>, <code>rutor</code>,
+<code>kinozal</code>.</li>
+<li>Default source dir is <code>$HOME/Downloads</code> on the host
+running the containers.</li>
+<li>The loader (<code>scripts/load-tracker-cookies.sh</code>) is
+auto-invoked before every <code>boba-svc up</code>,
+<code>boba-svc restart</code>, <code>install.sh</code> Stage 6, and
+<code>start.sh</code> boot — you never need to remember to run it
+manually.</li>
+<li>Nothing scans the file otherwise. If you name it
+<code>cookies_ru_tracker.txt</code> or
+<code>rutracker_cookies.txt</code>, the loader ignores it — the naming
+is exact.</li>
+</ul>
+<h3 id="q4.-can-i-put-cookies-files-somewhere-other-than-downloads">Q4.
+Can I put cookies files somewhere other than
+<code>~/Downloads</code>?</h3>
+<p>Yes, two equivalent ways:</p>
+<ul>
+<li><p><strong>Env var</strong> (persistent — export in your
+<code>~/.bashrc</code> / <code>~/.zshrc</code>):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">TRACKER_COOKIE_DIR</span><span class="op">=</span><span class="st">&quot;/mnt/usb/browser-export&quot;</span></span></code></pre></div></li>
+<li><p><strong>Flag</strong> (one-shot):</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/load-tracker-cookies.sh <span class="at">--dir</span> /mnt/usb/browser-export</span></code></pre></div></li>
+</ul>
+<p><code>--dir</code> wins if both are set. The wiring hooks pass no
+<code>--dir</code> flag, so they honour <code>TRACKER_COOKIE_DIR</code>
+— meaning an exported env var affects auto-load too.</p>
+<h3
+id="q5.-what-if-two-files-exist-for-the-same-tracker-e.g.-cookies_rutor.txt-and-cookies_rutor.txt.bak">Q5.
+What if two files exist for the same tracker
+(e.g. <code>cookies_rutor.txt</code> and
+<code>cookies_rutor.txt.bak</code>)?</h3>
+<p>The loader only reads the canonical name
+<code>cookies_&lt;tracker&gt;.txt</code>. Any suffix (<code>.bak</code>,
+<code>.old</code>, <code>.2</code>) is IGNORED — no ambiguity, no
+picking-the-wrong-file class of bug. Deleting or renaming
+<code>.bak</code> copies is optional; they’re just harmlessly
+ignored.</p>
+<h3 id="q6.-are-cookies-files-ever-committed-to-git">Q6. Are cookies
+files ever committed to git?</h3>
+<p><strong>No, three defences:</strong></p>
+<ol type="1">
+<li><code>~/Downloads</code> lives on the operator’s host filesystem,
+outside the repo entirely — <code>git status</code> in the boba repo
+never sees them.</li>
+<li>Even inside the repo, <code>.env</code> (where the parsed cookie
+header ends up) is <code>.gitignore</code>-matched (checked by
+<code>challenges/scripts/credentials_wired_challenge.sh</code> Check
+2).</li>
+<li>The loader runs a <strong>§11.4.10.A pre-store leak audit</strong>
+on every non-trivial cookie value — <code>git grep -F</code> on tracked
+files + <code>git log -S</code> on recent history. If a value ever
+appears in the repo, the store is BLOCKED and the operator is instructed
+to rotate the cookie in-browser (invalidate the session server-side),
+re-export, re-run.</li>
+</ol>
+<p>Cookie <strong>values</strong> additionally never enter any log line
+— the loader prints only tracker name, cookie count, cookie NAMES, and
+file mtime.</p>
+<h3 id="q7.-do-i-need-cookies-for-rutor-its-a-public-tracker.">Q7. Do I
+need cookies for RuTor? It’s a public tracker.</h3>
+<p>Not for the auth path (RuTor has no login endpoint). But an exported
+<code>cookies_rutor.txt</code> is still useful because the jar carries
+<code>cf_clearance</code> — Cloudflare’s proof-of-work challenge token —
+which lets scraped queries bypass rate limits and challenges. If RuTor
+searches start returning HTML challenge pages instead of results, export
+a fresh cookies file after solving the Cloudflare challenge in your
+browser.</p>
+<h3
+id="q8.-can-i-mix-cookies-file-usernamepassword-for-the-same-tracker">Q8.
+Can I mix cookies-file + username/password for the same tracker?</h3>
+<p>Yes. <code>.env</code> can hold both
+<code>&lt;TRACKER&gt;_USERNAME</code> /
+<code>&lt;TRACKER&gt;_PASSWORD</code> <strong>and</strong>
+<code>&lt;TRACKER&gt;_COOKIES</code> at the same time. The plugins
+prefer the cookie when it’s present + valid; the credentials are the
+fallback if the cookie fails mid-session. This is the recommended
+posture for RuTracker and Kinozal.</p>
+<h3 id="q9.-the-loader-shows-parse_err1-what-does-that-mean">Q9. The
+loader shows <code>parse_err=1</code> — what does that mean?</h3>
+<p>The cookie file exists but the delegated
+<code>scripts/extract-tracker-cookies.sh</code> couldn’t find the
+required session cookie for that tracker. Almost always the export was
+done while un-logged-in, or the operator exported the wrong site’s
+cookies (e.g. saved <code>cookies_rutracker.txt</code> from a session
+where they were only on <code>rutracker.net</code> mirror without
+logging in). Re-login → re-export.</p>
+<h3 id="q10.-the-loader-shows-blocked1-what-does-that-mean">Q10. The
+loader shows <code>blocked=1</code> — what does that mean?</h3>
+<p>The §11.4.10.A leak audit found the cookie value in tracked repo
+files or recent git history. The store is refused because writing it
+would silently re-leak an already-compromised secret. <strong>Rotate the
+cookie in your browser</strong> (log out + log back in, or hit any
+per-session “invalidate all sessions” control the tracker exposes),
+re-export <code>cookies_&lt;tracker&gt;.txt</code>, and re-run the
+loader. The output names the file(s) / commit(s) that hit — investigate
+those separately to figure out how the leak happened (usually an
+accidental commit long ago; the §11.4.10.A audit is the safety net).</p>
+<hr />
+<h2 id="startup-runtime">Startup &amp; runtime</h2>
+<h3 id="q11.-does-boba-svc-restart-really-refresh-cookies">Q11. Does
+<code>boba-svc restart</code> really refresh cookies?</h3>
+<p>Yes. Since 2026-08-15 both <code>_cmd_up</code> and
+<code>_cmd_restart</code> in <code>scripts/boba-svc.sh</code> invoke the
+cookie loader BEFORE <code>systemctl --user start boba.target</code>. If
+the loader fails, a WARNING surfaces (per §11.4.234 always-unblocked)
+and the target still starts — with the previous <code>.env</code> values
+intact.</p>
+<h3 id="q12.-start.sh-also-refreshes-cookies">Q12. <code>start.sh</code>
+also refreshes cookies?</h3>
+<p>Yes, at the top of <code>main()</code>, right after arg parsing and
+before <code>load_environment</code>. Same failure semantics:
+warning-not-blocking.</p>
+<h3 id="q13.-what-are-the-exit-codes-of-the-loader">Q13. What are the
+exit codes of the loader?</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>0</strong></td>
+<td>Success — every file loaded, unchanged, or absent.</td>
+</tr>
+<tr>
+<td><strong>1</strong></td>
+<td>§11.4.10.A leak audit failure — store blocked.</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>Parse error — a file failed the required-session-cookie check.</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>Invocation error — bad flag, missing arg, extractor absent.</td>
+</tr>
+</tbody>
+</table>
+<p>Wiring hooks tolerate ANY non-zero exit — the loader is advisory,
+never a boot gate.</p>
+<hr />
+<h2 id="related-documentation">Related documentation</h2>
+<ul>
+<li><strong><a
+href="guides/tracker-credentials.md"><code>docs/guides/tracker-credentials.md</code></a></strong>
+— the operator manual covering both env-var and cookies-file
+mechanisms.</li>
+<li><strong><a
+href="scripts/load-tracker-cookies.md"><code>docs/scripts/load-tracker-cookies.md</code></a></strong>
+— the full script-level reference for the loader.</li>
+<li><strong><a
+href="scripts/extract-tracker-cookies.md"><code>docs/scripts/extract-tracker-cookies.md</code></a></strong>
+— the single-tracker extraction primitive.</li>
+<li><strong><a
+href="TOKENS_AND_KEYS.md"><code>docs/TOKENS_AND_KEYS.md</code></a></strong>
+— the full env-var reference.</li>
+<li><strong><a href="../CLAUDE.md"><code>CLAUDE.md</code></a></strong> —
+project-wide policy anchors.</li>
+</ul>

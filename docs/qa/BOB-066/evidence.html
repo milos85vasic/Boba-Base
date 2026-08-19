@@ -1,0 +1,164 @@
+<h1 id="bob-066-evidence-cross-layer-boba_upstream_proxy-audit">BOB-066
+Evidence — Cross-Layer BOBA_UPSTREAM_PROXY Audit</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-15T12:15:00Z <strong>Item:</strong> BOB-066 — Lava P3:
+BOBA_UPSTREAM_PROXY in download-proxy + qBitTorrent-go + Jackett +
+compose env-forward <strong>Status:</strong> In progress
+(L1/L2/L4-partial WIRED; L3 residual gap) <strong>Verifier:</strong>
+<code>challenges/scripts/upstream_proxy_wired_challenge.sh</code>
+<strong>Run id:</strong> <code>20260815T115831Z</code></p>
+<h2 id="runtime-signature-three-mode-verifier-evidence">§11.4.108
+Runtime signature — three-mode verifier evidence</h2>
+<p>Anti-bluff coverage per §11.4.115 polarity switch + §11.4.107(10)
+self-validation. Each mode’s exit code is captured; every mode required
+to exit 0 for closure eligibility.</p>
+<h3
+id="mode-1---self-validate-analyzer-honesty-against-a-synthetic-golden-bad-tree">Mode
+1 — <code>--self-validate</code> (analyzer-honesty against a synthetic
+golden-BAD tree)</h3>
+<p>The verifier runs its OWN detector chain against a temp tree where
+every wire is DELIBERATELY ABSENT (stub <code>main.py</code> without
+<code>apply_proxy_env</code>, stub <code>search.py</code> with zero
+<code>trust_env</code>, stub <code>httpx/proxy.go</code> with no
+<code>Configure/NewTransport/Proxy</code>, empty
+<code>docker-compose.yml</code>). PASS = every detector correctly
+returned FAIL on the bad tree → the analyzer is not a bluff.</p>
+<pre><code>=== self-validate: run detectors against a synthetic golden-BAD tree ===
+PASS: self-validate — every detector correctly FAILED on the golden-BAD tree</code></pre>
+<p><strong>Exit: 0</strong> — analyzer honesty confirmed.</p>
+<h3 id="mode-2-green-red_mode0-default-real-tree">Mode 2 — GREEN
+(<code>RED_MODE=0</code>, default) — real tree</h3>
+<pre><code>=== BOB-066 four-layer cross-layer verifier ===
+RED_MODE=0  (0=GREEN guard, 1=reproduce pre-fix defect state)
+
+--- L1: download-proxy (Python) ---
+  [PASS] L1 config/proxy.py exports apply_proxy_env + aiohttp_session_kwargs
+  [PASS] L1 apply_proxy_env() invoked at boot in download-proxy/src/main.py
+  [PASS] L1 aiohttp ClientSession sites carry trust_env (9 uses of _tracker_session_kwargs)
+
+--- L2: qBitTorrent-go ---
+  [PASS] L2 internal/httpx/proxy.go exports Configure + NewTransport + Proxy honoring BOBA_UPSTREAM_PROXY
+  [PASS] L2 httpx.Configure(cfg.UpstreamProxy) called in cmd/qbittorrent-proxy/main.go
+  [PASS] L2 httpx.NewTransport() used in internal/api (torrent-download client)
+
+--- L3: Jackett ---
+  [SKIP] L3 Jackett proxy honor: reason=extension_absent (neither compose env-forward nor ServerConfig.ProxyUrl wired) — tracked as BOB-066 residual
+
+--- L4: docker-compose.yml env-forward ---
+  [PASS] L4 docker-compose.yml service &#39;download-proxy&#39; env-forwards proxy vars
+  [PASS] L4 docker-compose.yml service &#39;qbittorrent-proxy-go&#39; env-forwards proxy vars
+  [PASS] L4 docker-compose.yml service &#39;qbittorrent&#39; env-forwards proxy vars
+  [SKIP] L4 &#39;jackett&#39; env-forward absent (see L3 SKIP; tracked)
+  [SKIP] L4 &#39;boba-jackett&#39; env-forward absent (not tracker-bound: talks to Jackett loopback + local DB only)
+
+==========================================
+Summary: PASS=9  FAIL=0  SKIP=3
+Notes:
+  - L3 residual: Jackett has neither env-forward nor ServerConfig.ProxyUrl wired — see BOB-066 description
+==========================================
+PASS: upstream_proxy_wired_challenge — every wired layer verified; residual gaps honestly SKIP&#39;d</code></pre>
+<p><strong>Exit: 0</strong> — 9 PASS / 0 FAIL / 3 honest SKIP (§11.4.3 /
+§11.4.69 <code>extension_absent</code>).</p>
+<h3 id="mode-3-red-red_mode1-11.4.115-polarity-flip">Mode 3 — RED
+(<code>RED_MODE=1</code>) — §11.4.115 polarity flip</h3>
+<p>Under RED each presence-detector’s polarity flips: PRESENT code
+becomes FAIL (because the pre-fix defect state RED simulates would have
+it ABSENT). On a tree where the fix has landed, EXPECT many FAILs — that
+IS the signal the polarity switch + detectors work end-to-end (they
+would have caught the defect if the code were un-wired).
+<code>fail == 0</code> under RED would mean detectors ignore polarity OR
+the tree was reverted — both bluffs surfaced here.</p>
+<pre><code>==========================================
+Summary: PASS=0  FAIL=9  SKIP=3
+==========================================
+RED-MODE VERIFY: 9 presence-detectors correctly negated under RED — polarity switch works, RED→GREEN flip proven</code></pre>
+<p><strong>Exit: 0</strong> — 9 detectors correctly negated → RED→GREEN
+flip proven.</p>
+<h2 id="four-layer-audit-per-layer-runtime-signatures">§11.4.108
+four-layer audit — per-layer runtime signatures</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Sub-requirement</th>
+<th>Runtime signature</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>L1</strong></td>
+<td>Python download-proxy honors <code>BOBA_UPSTREAM_PROXY</code>
+(urllib subprocs + aiohttp)</td>
+<td><code>download-proxy/src/main.py:97</code> calls
+<code>apply_proxy_env()</code>; 9 <code>aiohttp.ClientSession</code>
+sites in <code>merge_service/search.py</code> carry
+<code>_tracker_session_kwargs()=trust_env</code>;
+<code>config/proxy.py</code> exports the API +
+<code>UPSTREAM_PROXY_ENV="BOBA_UPSTREAM_PROXY"</code> sentinel</td>
+<td><strong>WIRED</strong></td>
+</tr>
+<tr>
+<td><strong>L2</strong></td>
+<td>qBitTorrent-go <code>http.Transport.Proxy</code> honors
+<code>BOBA_UPSTREAM_PROXY</code> (or standard chain)</td>
+<td><code>internal/httpx/proxy.go</code> exports
+<code>Configure/NewTransport/Proxy</code>;
+<code>cmd/qbittorrent-proxy/main.go:29</code> calls
+<code>httpx.Configure(cfg.UpstreamProxy)</code> at boot;
+<code>internal/api/download.go:65</code> installs
+<code>httpx.NewTransport()</code> on the torrent-download client;
+socks5:// supported natively (remote DNS)</td>
+<td><strong>WIRED</strong></td>
+</tr>
+<tr>
+<td><strong>L3</strong></td>
+<td>Jackett — env-forward OR <code>ServerConfig.ProxyUrl</code></td>
+<td>Neither path present. <code>jackett</code> container has no proxy
+env-forward; no Go code touches
+<code>ProxyUrl</code>/<code>ProxyType</code>/<code>ServerConfig</code>
+in <code>qBitTorrent-go/internal/</code>.</td>
+<td><strong>RESIDUAL GAP</strong></td>
+</tr>
+<tr>
+<td><strong>L4</strong></td>
+<td><code>docker-compose.yml</code> env-forward for every
+tracker-touching service</td>
+<td><code>download-proxy</code>, <code>qbittorrent-proxy-go</code>,
+<code>qbittorrent</code> all env-forward
+<code>BOBA_UPSTREAM_PROXY</code> + <code>HTTP_PROXY</code> +
+<code>HTTPS_PROXY</code> + <code>NO_PROXY</code> (with default bypass
+hosts). <code>jackett</code> + <code>boba-jackett</code> do NOT
+(boba-jackett is loopback-only so not required).</td>
+<td><strong>3/5 WIRED</strong> (Jackett gap = L3)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="recommended-follow-up-for-l3">Recommended follow-up for L3</h2>
+<p>File a scoped ticket (e.g. <code>BOB-066b</code>) implementing ONE
+of: - <strong>(a)</strong> Add proxy env-forward to the
+<code>jackett</code> service block in <code>docker-compose.yml</code>
+(mirror the block at lines 15-20 of the <code>qbittorrent</code>
+service). Simplest fix. - <strong>(b)</strong> Add
+<code>qBitTorrent-go/internal/jackettconfig/proxy.go</code> that on
+Jackett-config load reads <code>BOBA_UPSTREAM_PROXY</code> and PATCHes
+Jackett’s <code>ServerConfig.json</code>
+<code>ProxyType</code>/<code>ProxyUrl</code> fields (Jackett will honor
+them for its own indexer HTTP egress). Requires a boba-jackett boot-time
+step + safe file-write discipline.</p>
+<h2 id="status-decision-11.4.6-11.4.108-11.4.226">Status decision
+(§11.4.6 / §11.4.108 / §11.4.226)</h2>
+<p>BOB-066 is NOT closed as Completed because L3 remains un-wired:
+closing with 3/4 sub-requirements met would be a §11.4.226
+evidence-class-at-closure violation (the reported defect layer includes
+L3, and a source-green closure of an un-wired layer is exactly the
+pattern the anchor forbids). Bumped Queued → In progress;
+<code>item_history</code> entry #65 records the audit with this evidence
+path; description carries the AUDIT NOTE 2026-08-15 block naming
+L1/L2/L4 wired + L3 residual + follow-up recommendation.</p>
