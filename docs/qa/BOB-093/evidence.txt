@@ -1,0 +1,54 @@
+BOB-093 evidence bundle
+Task: Live compose bring-up + verify rutracker ReDoS bounded-regex deployed to container
+Closes §11.4.108 SOURCE->ARTIFACT layer-3 gap from Task #86 landing.
+
+FIX UNDER VERIFICATION (commit 7de2802)
+---------------------------------------
+old (quadratic ReDoS-prone):
+  re_search_queries = re.compile(r'<a.+?href="tracker\.php\?(.*?start=\d+)"')
+new (bounded ReDoS-safe):
+  re_search_queries = re.compile(r'<a[^>]{0,512}?href="tracker\.php\?([^"]{0,256}?start=\d+)"')
+
+LIVE CONTAINER VERIFICATION
+---------------------------
+container:            qbittorrent-proxy (rootless podman)
+deployed plugin:      /config/qBittorrent/nova3/engines/rutracker.py
+deployed sha256:      76a6bd2e52e0ee72b7c713e94076214fcac70f5f787936e919e6ed29df0c6d88
+deployed line 140:    re_search_queries = re.compile(r'<a[^>]{0,512}?href="tracker\.php\?([^"]{0,256}?start=\d+)"')
+
+CHALLENGE RUNS
+--------------
+GREEN (live deployed): docs/qa/BOB-093/run_20260819T123026Z.txt + verdict_20260819T123026Z.json
+  bounded_hits=1 unsafe_hits=0 verdict=PASS
+SELF-VALIDATION (§11.4.107(10) golden-good/golden-bad inside every run):
+  golden_good bounded=1 unsafe=0
+  golden_bad  bounded=0 unsafe=1
+
+§11.4.115 RED POLARITY (locally-mutated deployed copy)
+------------------------------------------------------
+  fixture:      docs/qa/BOB-093/rutracker_RED_mutated_20260819T122753Z.py
+  bounded_hits: 0  unsafe_hits: 1
+  verdict:      the analyzer WOULD FAIL on a regression to the unsafe form
+  (mutation was applied to the extracted local copy, NOT the live container -
+   avoids container-restart risk; §11.4.199 same-pattern-detection sequence)
+
+§11.4.85 LIVE-FIRE SMOKE
+------------------------
+POST http://localhost:7187/api/v1/search/sync
+body: {"query":"debian","sources":["rutracker"],"limit":1}
+HTTP=200 body_size=28607 bytes
+first result: "debian 13 6 0 amd64 netinst iso" (755 MB, 9740 seeds, 64 leechers)
+proves deployed rutracker plugin functions end-to-end with the bounded regex.
+
+DELIVERABLE
+-----------
+challenges/scripts/rutracker_redos_regex_bounds_challenge.sh
+- §11.4.107(10) self-validated (golden-good + golden-bad in every run)
+- §11.4.115 polarity oracle (bounded vs unsafe assertions)
+- §11.4.144 honest container-absent SKIP (reason=hardware_not_present)
+- §11.4.69 machine-readable JSON verdict per run
+- §11.4.161 rootless podman (autodetected; falls back to docker)
+
+CROSS-REFS
+----------
+§11.4.85 §11.4.107(10) §11.4.108 §11.4.115 §11.4.144 §11.4.161 §11.4.226 §11.4.238
