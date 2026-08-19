@@ -1,0 +1,90 @@
+BOB-129 — AFTER evidence (captured 2026-08-19, post-fix, against a fresh
+qbittorrent-proxy container boot — the container had died from an unrelated
+podman conmon crash mid-investigation, recovered via the sanctioned
+`./start.sh --no-build` orchestrator wrapper, so this boot's Python source
+is 100% the fixed download-proxy/src/ bind-mount, no stale bytecode).
+
+=== 1. Fresh clean startup log (no slowapi errors at boot) ===
+
+2026-08-19 17:41:05,035 - INFO - ============================================================
+2026-08-19 17:41:05,035 - INFO - Боба Search Service Starting
+2026-08-19 17:41:05,035 - INFO - ============================================================
+2026-08-19 17:41:05,043 - INFO - Starting original download proxy...
+2026-08-19 17:41:05,043 - INFO - Original proxy thread started
+2026-08-19 17:41:05,045 - INFO - Starting FastAPI merge service...
+2026-08-19 17:41:05,045 - INFO - FastAPI thread started
+2026-08-19 17:41:05,437 - INFO - ============================================================
+2026-08-19 17:41:05,438 - INFO - Download Proxy Server Started
+2026-08-19 17:41:05,438 - INFO - Proxy Port: 7186
+2026-08-19 17:41:05,438 - INFO - qBittorrent backend: http://localhost:7185
+2026-08-19 17:41:05,439 - INFO - Supported trackers: ['rutracker', 'kinozal', 'nnmclub', 'iptorrents']
+2026-08-19 17:41:05,439 - INFO - Theme bridge -> http://localhost:7187
+2026-08-19 17:41:05,439 - INFO - ============================================================
+2026-08-19 17:41:07,231 - INFO - Rate limiting enabled: search=10/minute dashboard=60/minute sse=5/minute (key=remote-addr)
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+2026-08-19 17:41:08,316 - INFO - Starting Merge Service API...
+2026-08-19 17:41:08,494 - INFO - Loaded 0 scheduled searches
+2026-08-19 17:41:08,495 - INFO - Scheduler started
+2026-08-19 17:41:08,524 - INFO - Saved 0 scheduled searches
+2026-08-19 17:41:08,530 - INFO - Jackett autoconfig: discovered=5 configured_now=0 already=0 errors=1
+2026-08-19 17:41:08,530 - INFO - Merge Service API started
+2026-08-19 17:41:08,531 - WARNING - BOBA_API_TOKEN is not set — the mutating endpoints (/api/v1/download, /api/v1/hooks, /api/v1/schedules POST/DELETE) are UNAUTHENTICATED. Any host that can reach this service may use them. Set BOBA_API_TOKEN to protect them, especially if this service is exposed beyond localhost.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:7187 (Press CTRL+C to quit)
+
+=== 2. Real end-to-end HTTP proof against the previously-broken endpoint ===
+
+$ curl -s -D - -o /dev/null -X POST http://localhost:7187/api/v1/search \
+    -H "Content-Type: application/json" -d '{"query":"bob129-verify-probe-2"}'
+
+HTTP/1.1 200 OK
+date: Wed, 19 Aug 2026 17:41:34 GMT
+server: uvicorn
+content-length: 13662
+content-type: application/json
+x-ratelimit-limit: 10
+x-ratelimit-remaining: 8
+x-ratelimit-reset: 1787161346.710345
+retry-after: 52
+
+The `x-ratelimit-*` + `retry-after` headers being present PROVES
+`slowapi.extension.Limiter._inject_headers()` executed successfully against
+the FastAPI-injected `response: Response` object added by the BOB-129 fix —
+this is the exact code path that previously raised:
+
+    Exception: parameter `response` must be an instance of
+    starlette.responses.Response
+
+Body decoded (truncated): {"search_id":"...", "query":"bob129-verify-probe-2",
+"status":"running", "results":[], ...} — a genuine SearchResponse payload,
+not an error page.
+
+=== 3. GET / (dashboard, second affected endpoint) also verified ===
+
+$ curl -s -D - -o /dev/null http://localhost:7187/
+
+HTTP/1.1 200 OK
+...
+x-ratelimit-limit: 60
+x-ratelimit-remaining: 59
+x-ratelimit-reset: 1787161355.8499615
+retry-after: 60
+content-length: 2505
+...
+
+=== 4. Zero new slowapi errors in the fresh-boot log ===
+
+$ podman logs --since 5m qbittorrent-proxy 2>&1 | grep -c '_inject_headers\|must be an instance of starlette'
+0
+
+=== 5. Targeted unit test suite (source-level regression check) ===
+
+tests/unit/test_rate_limit.py + tests/unit/test_routes_coverage.py +
+tests/unit/test_tracker_stats_shape.py + tests/unit/test_api_init_coverage.py +
+tests/unit/api_layer/test_routes_coverage.py:
+
+  133 passed, 1 warning in 129.53s (0:02:09)
+
+tests/unit/merge_service/ + tests/unit/api_layer/ (broader regression sweep):
+  see summary.md for the full-suite result captured separately.
