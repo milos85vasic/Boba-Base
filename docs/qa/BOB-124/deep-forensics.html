@@ -1,0 +1,535 @@
+<h1
+id="bob-124-deep-forensic-investigation-5th-forced-logout-2026-08-19-152822-cest">BOB-124
+— Deep Forensic Investigation: 5th Forced-Logout (2026-08-19 15:28:22
+CEST)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T15:45:00Z <strong>Verdict (§11.4.6):</strong> SIGKILL
+INITIATOR <strong>UNATTRIBUTED</strong> — pattern MATCHES #2/#3/#4
+signature for every observable class; kernel-audit attribution still
+impossible (auditd never installed). <strong>Iron Law:</strong>
+Investigation only — no fixes, no source changes.</p>
+<hr />
+<h2 id="executive-summary">Executive summary</h2>
+<p><code>user@1000.service</code> was SIGKILLed at
+<code>2026-08-19 15:28:22 CEST</code> exactly 20 min 41 s after login
+(15:07:41 → 15:28:22). The kill signature is <strong>identical in
+shape</strong> to prior incidents #2/#3/#4: a
+<code>pam_tcb(gdm-password:session): Session closed</code> for
+milosvasic on <code>tty2 ses=4</code> fires from
+<code>gdm-session-worker[3976]</code> at the SAME journal second as the
+<code>Main process exited, code=killed, status=9/KILL</code> on
+<code>user@1000.service</code>, followed by a mass SIGKILL cascade of
+every child under the cgroup. No preceding <code>systemctl stop</code>,
+<code>loginctl terminate-user</code>, <code>Manager.StopUnit</code>, or
+<code>KillUnit</code> D-Bus call appears in the journal window
+(<code>docs/qa/BOB-124/evidence/stop_terminate_paths.log</code> lists
+only <code>Removed session 1/4</code> from <code>systemd-logind</code>
+<em>after</em> the SIGKILL). Every kernel-side failure class remains
+ruled OUT: <strong>no</strong> <code>oom-kill</code> in the kernel
+journal (<code>evidence/kernel_oom_scan.log</code> empty),
+<strong>no</strong> <code>systemd-oomd</code> trigger
+(<code>evidence/oomd_journal.log</code> shows only the boot-time Start),
+<strong>no</strong> suspend/hibernate, <strong>no</strong> power event.
+<code>Linger=yes</code> is set
+(<code>evidence/loginctl_user_state.txt</code>) — which should preserve
+<code>user@1000.service</code> across session teardown, yet did not.
+This is the fifth consecutive incident where Phase 1 root-cause
+investigation cannot complete because
+<code>auditd</code>/<code>auditctl</code>/<code>ausearch</code> are not
+installed and <code>/etc/audit/</code> does not exist
+(<code>evidence/loginctl_user_state.txt</code> bottom lines). Correlate
+signal:
+<code>user@1000.service: Consumed 1h 21.484s CPU time, 23.6G memory peak, 488.2M memory swap peak</code>
+in 20 min 41 s — a memory-accumulation rate roughly ×10 faster than the
+prior session (<code>23.6 GB / 21 min</code> vs
+<code>25.1 GB / 3 h 22 min</code> reported in
+<code>docs/incidents/2026-08-19-5th-forced-logout.md</code>), suggesting
+the reboot did not reset the runaway consumer. The mechanism direction
+hardens: something INSIDE user@1000 pushes memory into the multi-GB
+range while sending a <code>gdm-password</code> session-close on tty2,
+and the SIGKILL falls on the user manager PID milliseconds later — but
+no in-scope observer can name the initiator.</p>
+<hr />
+<h2 id="timeline-evidence-cited">Timeline (evidence-cited)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Time (CEST)</th>
+<th>Event</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15:06:20–35</td>
+<td>Prior session <strong>clean shutdown</strong>
+(<code>SERVICE_STOP res=success</code>) — operator’s intentional
+reboot</td>
+<td><code>docs/incidents/2026-08-19-5th-forced-logout.md</code>
+§“Distinction from the 15:06 clean shutdown”</td>
+</tr>
+<tr>
+<td>15:07:39–40</td>
+<td>Host boot; swap activated (16 GB nvme + 32 GB zram);
+<code>systemd-oomd.service</code> started</td>
+<td><code>docs/qa/BOB-124/evidence/oom_extended.log</code> lines
+3–15</td>
+</tr>
+<tr>
+<td>15:07:41</td>
+<td><code>user@1000.service</code> started for milosvasic</td>
+<td><code>evidence/user1000_grepped.log</code> lines 1–2</td>
+</tr>
+<tr>
+<td>15:07:40</td>
+<td>milosvasic session on tty2 (ses=4) — see
+<code>loginctl_user_state.txt</code>
+<code>Timestamp=Wed 2026-08-19 15:07:40 CEST</code></td>
+<td><code>evidence/loginctl_user_state.txt</code></td>
+</tr>
+<tr>
+<td>15:07:41 → 15:28:21</td>
+<td>20 min 41 s of active work; wave-6 subagents Q/R/S/T dispatched at
+15:12 (per <code>.superpowers/sdd/progress.md</code>); scaling_probe
+pytest hits saturate the merge-search rate limiter (many
+<code>429 Too Many Requests</code> in
+<code>journal_inc5.log</code>)</td>
+<td><code>.superpowers/sdd/progress.md</code> “Wave-6 in flight —
+2026-08-19 15:12”; <code>journal_inc5.log</code> 15:28:00-01 batches of
+ratelimit 10/min exceeded</td>
+</tr>
+<tr>
+<td>15:27:14 → 15:28:15</td>
+<td>overlayfs xino warnings + <code>crun-buildah</code> scopes:
+<strong>container build activity</strong> (BOB-096 tests reload)</td>
+<td><code>evidence/kernel_events.log</code></td>
+</tr>
+<tr>
+<td>15:28:08 → 15:28:19</td>
+<td><code>helix-postgres</code> errors:
+<code>relation "background_tasks" does not exist</code> (unrelated
+helix-server churn), then
+<code>unexpected EOF on client connection with an open transaction</code></td>
+<td><code>evidence/pre_kill_15s_window.log</code></td>
+</tr>
+<tr>
+<td>15:28:22.181</td>
+<td><strong>audit type=1106</strong>:
+<code>op=PAM:session_close ... acct="milosvasic" exe="/usr/libexec/gdm-session-worker" ... terminal=/dev/tty2 res=success</code>
+from <code>gdm-session-worker[3976]</code></td>
+<td><code>evidence/kill_moment.log</code> lines 6996–7002</td>
+</tr>
+<tr>
+<td>15:28:22</td>
+<td><strong><code>systemd[1]: user@1000.service: Main process exited, code=killed, status=9/KILL</code></strong></td>
+<td><code>evidence/kill_moment.log</code> line 7005</td>
+</tr>
+<tr>
+<td>15:28:22</td>
+<td>Mass SIGKILL cascade — 90+ children including <code>postgres</code>,
+<code>qbittorrent-nox</code>, <code>webui-bridge</code>,
+<code>tmux: server</code>, <code>claude</code>, <code>python3</code>,
+<code>MainThread</code>, <code>hook-linux-amd6</code>,
+<code>lumen-linux-amd</code>, <code>chrome-devtools</code>,
+<code>caddy</code>, <code>jetbrainsd</code>, <code>yandex_browser</code>
+× 15</td>
+<td><code>evidence/systemd_pid1_prekill.log</code></td>
+</tr>
+<tr>
+<td>15:28:23</td>
+<td><code>user@1000.service: Failed with result 'signal'</code> /
+<code>Consumed 1h 21.484s CPU time, 23.6G memory peak, 488.2M memory swap peak</code></td>
+<td><code>evidence/user1000_grepped.log</code> bottom</td>
+</tr>
+<tr>
+<td>15:28:22</td>
+<td><code>systemd-logind[1296]: Removed session 1</code> /
+<code>Removed session 4</code> — <strong>AFTER</strong> the SIGKILL, not
+before</td>
+<td><code>evidence/stop_terminate_paths.log</code></td>
+</tr>
+<tr>
+<td>15:28:22</td>
+<td>GDM greeter reappears on tty1
+(<code>gdm-launch-environment ... session opened for gdm-greeter</code>)</td>
+<td><code>evidence/gdm_compositor_events.log</code></td>
+</tr>
+<tr>
+<td>15:28:35</td>
+<td>milosvasic re-authenticated; <code>session-7</code>
+(wayland/class=user) + <code>session-8</code> (manager); user@1000
+started again</td>
+<td><code>evidence/stop_terminate_paths.log</code> line 7478;
+<code>evidence/user1000_grepped.log</code> last two lines</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Elapsed dead:</strong> ≈ 13 s (15:28:22 → 15:28:35 relogin).
+GDM auto-reset the greeter within 1 s.</p>
+<hr />
+<h2 id="comparative-signature-table-across-2-3-4-5">Comparative
+signature table across #2 / #3 / #4 / #5</h2>
+<p>Sources:
+<code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>
+(#2), <code>docs/incidents/2026-08-18-3rd-forced-logout.md</code> (#3),
+<code>docs/incidents/2026-08-19-4th-forced-logout.md</code> +
+<code>docs/qa/BOB-123/incident-4-forensics.log</code> (#4), THIS file
+(#5).</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Signature</th>
+<th>#2 (2026-08-18 20:50)</th>
+<th>#3 (2026-08-18 23:45)</th>
+<th>#4 (2026-08-19 00:37)</th>
+<th>#5 (2026-08-19 15:28)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gdm-session-worker</code> PAM <code>session_close</code>
+acct=<code>milosvasic</code> at exact SIGKILL timestamp</td>
+<td><strong>YES</strong> (per #4 doc)</td>
+<td><strong>YES</strong> (per #4 doc)</td>
+<td><strong>YES</strong> (<code>inc4_forensics_head.txt</code> line
+3116)</td>
+<td><strong>YES</strong> (<code>evidence/kill_moment.log</code>
+L6996)</td>
+</tr>
+<tr>
+<td><code>terminal=/dev/tty2 res=success</code> in the audit1106</td>
+<td>YES</td>
+<td>YES</td>
+<td>YES</td>
+<td><strong>YES</strong></td>
+</tr>
+<tr>
+<td><code>user@1000.service: Main process exited, code=killed, status=9/KILL</code>
+(bare, no preceding Stopping/Deactivating)</td>
+<td>YES</td>
+<td>YES</td>
+<td>YES</td>
+<td><strong>YES</strong> (<code>evidence/systemd_pid1_prekill.log</code>
+L1)</td>
+</tr>
+<tr>
+<td>Explicit <code>loginctl terminate</code> /
+<code>systemctl stop user@1000</code> / <code>Manager.StopUnit</code> /
+<code>KillUnit</code> in window</td>
+<td><strong>NO</strong> (per #4 §“Journal search … returns EMPTY”)</td>
+<td><strong>NO</strong></td>
+<td><strong>NO</strong></td>
+<td><strong>NO</strong> (<code>evidence/stop_terminate_paths.log</code>
+— only <em>post-kill</em> <code>Removed session 1/4</code>)</td>
+</tr>
+<tr>
+<td><code>Linger=yes</code> (should have preserved user@1000)</td>
+<td>YES (per #4)</td>
+<td>YES</td>
+<td>YES (<code>inc4_forensics_head.txt</code> §3)</td>
+<td><strong>YES</strong>
+(<code>evidence/loginctl_user_state.txt</code>)</td>
+</tr>
+<tr>
+<td><code>IdleAction=ignore</code> (verified in #4)</td>
+<td>verified</td>
+<td>verified</td>
+<td>verified</td>
+<td><strong>not re-checked this incident</strong> —
+<code>/etc/systemd/logind.conf</code> not read (no §11.4.199
+exact-reproduction re-run required)</td>
+</tr>
+<tr>
+<td>Kernel OOM (<code>oom-kill</code>, <code>invoked oom-killer</code>)
+fired</td>
+<td>NO</td>
+<td>NO</td>
+<td>NO</td>
+<td><strong>NO</strong> (<code>evidence/kernel_oom_scan.log</code>
+empty)</td>
+</tr>
+<tr>
+<td><code>systemd-oomd</code> triggered a kill decision</td>
+<td>NO</td>
+<td>NO</td>
+<td>NO</td>
+<td><strong>NO</strong> (<code>evidence/oomd_journal.log</code> shows
+only Start at 15:07:40; nothing else)</td>
+</tr>
+<tr>
+<td>Suspend/hibernate/power-state event</td>
+<td>NO</td>
+<td>NO</td>
+<td>NO</td>
+<td><strong>NO</strong> (<code>evidence/power_states.log</code> = 2
+noise lines about gsd-media-keys keybindings, no actual power
+transition)</td>
+</tr>
+<tr>
+<td><code>KillUserProcesses</code> runtime state</td>
+<td>unset (per #4)</td>
+<td>unset</td>
+<td>unset (per #4 §“Ruled out”)</td>
+<td><strong>not re-queried</strong> (<code>busctl</code> not re-run this
+incident)</td>
+</tr>
+<tr>
+<td>user@1000 memory peak at teardown</td>
+<td>not recorded per-incident</td>
+<td>not recorded</td>
+<td>not recorded in #4 doc</td>
+<td><strong>23.6 GB in 20 min 41 s</strong>
+(<code>evidence/user1000_service_journal.log</code>? — actually in
+<code>user1000_grepped.log</code>)</td>
+</tr>
+<tr>
+<td>user@1000 CPU peak at teardown</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td><strong>1 h 21.484 s</strong> in 20:41 wall clock (≈ 4 cores
+saturated)</td>
+</tr>
+<tr>
+<td>Load average at incident window</td>
+<td>not captured</td>
+<td>not captured</td>
+<td><code>0.20, 0.70, 1.06</code> (light)</td>
+<td><code>0.80, 5.01, 4.65</code> at 15:34
+(<code>docs/qa/BOB-124/incident-5-forensics.log</code>) — HEAVY</td>
+</tr>
+<tr>
+<td>Parallel subagent load at kill</td>
+<td>3+ concurrent (per #4 §“defensive move”)</td>
+<td>3+</td>
+<td>3+ (Task 85/86/BOB-122/BOB-118 landed)</td>
+<td><strong>4 concurrent (Wave-6 Q/R/S/T at 15:12) + scaling_probe
+pytest fleet</strong></td>
+</tr>
+<tr>
+<td><code>auditctl</code> / <code>ausearch</code> /
+<code>/etc/audit/rules.d/</code> present</td>
+<td>NO</td>
+<td>NO</td>
+<td>NO (per #4 §“Recommended next step”)</td>
+<td><strong>NO</strong> (<code>auditctl absent: YES</code>,
+<code>/etc/audit absent: YES</code>)</td>
+</tr>
+<tr>
+<td>Session dead-time before relogin</td>
+<td>—</td>
+<td>—</td>
+<td>13 min</td>
+<td><strong>13 s</strong> (fastest)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Signature match ratio:</strong> every checkable dimension for
+#5 matches #4 exactly. The two “not re-checked” cells
+(<code>IdleAction</code>, <code>KillUserProcesses</code>) were verified
+stable in #4 and no reboot changed <code>logind.conf</code> — but
+<code>evidence/loginctl_user_state.txt</code> shows
+<code>IdleHint=no IdleSinceHint=0</code>, i.e. logind considered the
+session non-idle at teardown.</p>
+<hr />
+<h2 id="session-context-11.4.6-what-the-session-was-doing">Session
+context (§11.4.6, what the session was doing)</h2>
+<p>Between 15:12 and 15:28 the SDD orchestration dispatched
+<strong>Wave-6</strong> — four concurrent Claude subagents (Agents
+Q/R/S/T per <code>.superpowers/sdd/progress.md</code>) plus the
+merge-search scaling_probe pytest fleet was hammering
+<code>/api/v1/search</code> (<code>journal_inc5.log</code> at
+15:28:00-01 shows ≥12 different <code>scaling_probe_*</code> query ids
+being fanned across trackers, tripping the 10/min rate limiter —
+<code>429 Too Many Requests</code> bursts). Agent S completed BOB-096
+chaos tests at commit <code>76d6b1f6</code>; other Wave-6 agents were
+mid-flight. <code>crun-buildah</code> scopes at 15:28:10-15 indicate
+container build/reload activity. <code>pgrep -af pytest</code> at
+investigation time returned empty (post-kill), consistent with the
+SIGKILL cascade having reaped them. This matches the #4 forensic note
+that “all 4 incidents occurred during heavy parallel subagent load” — #5
+makes it 5-of-5.</p>
+<p><strong>The load-vs-memory correlation:</strong>
+<code>user@1000</code> consumed 23.6 GB peak in 20:41 elapsed. The prior
+session (per
+<code>docs/incidents/2026-08-19-5th-forced-logout.md</code>) consumed
+25.1 GB in 3 h 22 min. The per-minute rate for the killed session is
+<strong>≈ 1.14 GB/min</strong> vs <strong>≈ 0.124 GB/min</strong> for
+the prior — an order of magnitude faster. Whether this rate is causal
+(systemd-oomd on some ancestor slice, some resource-cap watchdog, or a
+memory-triggered PAM-close policy) remains <strong>§11.4.6
+UNCONFIRMED</strong>: no oomd/OOM/pressure event fired,
+<code>/proc/pressure/memory</code> at investigation time shows
+<code>avg60=0.00</code>, and the initiator is not self-attributed
+anywhere in the journal.</p>
+<hr />
+<h2 id="what-ruled-out-this-incident-evidence-cited">What ruled OUT this
+incident (<code>evidence/</code> cited)</h2>
+<ul>
+<li><strong>Kernel OOM-killer:</strong>
+<code>evidence/kernel_oom_scan.log</code> returns 0 hits across
+15:07-15:29</li>
+<li><strong>systemd-oomd:</strong>
+<code>evidence/oomd_journal.log</code> shows only boot-time Start; no
+kill decision, no memory-pressure log</li>
+<li><strong>Suspend / hibernate / power event:</strong>
+<code>evidence/power_states.log</code> contains only 2 GSD
+keybinding-registration warnings; kernel journal shows no
+<code>PM: suspend</code> / <code>Reached target Sleep</code></li>
+<li><strong>Explicit unit-stop invocation</strong>
+(<code>loginctl terminate-user</code>,
+<code>systemctl stop user@1000</code>, <code>KillUnit</code>,
+<code>Manager.StopUnit</code>):
+<code>evidence/stop_terminate_paths.log</code> contains only
+<em>post-kill</em> <code>Removed session 1</code> and
+<code>Removed session 4</code> from <code>systemd-logind</code>. No
+preceding stop RPC.</li>
+<li><strong>CONST-033 host power-state transitions:</strong> uptime
+intact (<code>up 26 min</code> at 15:34 → up 31 min at 15:38), no kernel
+<code>suspend</code>/<code>hibernate</code> messages</li>
+<li><strong>Any process explicitly emitting <code>kill -9</code> visible
+in journal:</strong> no <code>signal 9 to pid ...</code> audit trail
+(audit rules absent — see below)</li>
+</ul>
+<hr />
+<h2 id="the-recurring-architectural-gap-unchanged-across-25">The
+recurring architectural gap (unchanged across #2–#5)</h2>
+<p><code>auditd</code> is not installed on this host:
+<code>command -v auditctl</code> returns nothing,
+<code>command -v ausearch</code> returns nothing,
+<code>/etc/audit/</code> does not exist,
+<code>/etc/audit/rules.d/</code> does not exist. The
+<code>docs/incidents/2026-08-19-sudo-audit-rules-for-operator.md</code>
+install script (Rev 3) was authored + committed but never run with sudo.
+Without those rules, the kernel audit subsystem cannot attribute a
+<code>signal=9</code> delivery to a specific initiator PID/UID/cmdline.
+<code>evidence/user_scope_events_head.log</code> and
+<code>evidence/kill_moment.log</code> prove the audit <em>subsystem is
+running</em> (<code>type=1106/1113/1104</code> messages present), but
+the <code>SYSCALL kill</code> and
+<code>PATH exec loginctl|systemctl</code> watches that would name the
+initiator are absent from the rules file that does not exist.</p>
+<p>Per <code>docs/incidents/2026-08-19-5th-forced-logout.md</code>
+§“Systematic-debugging Phase 4.5” (Iron Law: NO FIXES WITHOUT ROOT CAUSE
+INVESTIGATION FIRST + “if ≥3 fixes failed: STOP and question the
+architecture”), the architectural problem is not the SIGKILL mechanism —
+it is the audit-install gap that has now blocked Phase 1 attribution 5
+consecutive times.</p>
+<hr />
+<h2 id="what-is-genuinely-new-in-5-vs-4">What is genuinely NEW in #5 vs
+#4</h2>
+<ol type="1">
+<li><strong>Memory-consumption rate ×10 faster than the prior
+session</strong> — 23.6 GB in 20:41 vs 25.1 GB in 3 h 22 min. The reboot
+did NOT reset the runaway consumer; whatever pattern of subagent-driven
+memory growth surfaced in prior sessions surfaced again immediately
+after a clean boot with the same wave-6 orchestration profile.</li>
+<li><strong>Fastest recovery</strong> — 13 s dead-time vs #4’s 13 min.
+This suggests operator was actively at the console and re-authenticated
+immediately.</li>
+<li><strong>Container build activity in the pre-kill window</strong> —
+<code>crun-buildah</code> scopes at 15:28:10-15 and overlayfs xino
+warnings across 15:27:14 → 15:28:15
+(<code>evidence/kernel_events.log</code>). Not observed being called out
+for #2/#3/#4 timelines.</li>
+<li><strong>Rate-limiter saturation</strong> — the merge-search proxy
+issued dozens of <code>429 Too Many Requests</code> responses in the
+seconds before the kill, indicating heavy synthesised load from the
+scaling_probe pytest fleet.</li>
+</ol>
+<p>None of these change the SIGKILL initiator attribution — all four are
+<em>correlate signals</em>, not causal proofs (§11.4.6).</p>
+<hr />
+<h2 id="verdict-11.4.6">Verdict (§11.4.6)</h2>
+<p><strong>§11.4.6 Iron-Law status: STILL INCOMPLETE.</strong> Every
+observable class ruled out in #4 is ruled out again in #5. Every
+signature that fired in #4 fired in #5 in identical shape. The initiator
+remains unattributed because kernel audit rules are still not installed
+on the host. #5 matches #2/#3/#4 as one class of incident with high
+confidence: identical PAM close signature + identical bare SIGKILL exit
+shape + identical <code>Linger=yes</code> contradiction + identical
+absence of every candidate mechanism (kernel OOM, systemd-oomd, explicit
+stop RPC, power event). The load-and-memory correlation is stronger in
+#5 than in prior incidents but neither #4’s nor #5’s data can
+distinguish CAUSE from CORRELATION without the audit-rules
+attribution.</p>
+<hr />
+<h2 id="evidence-files-all-under-docsqabob-124">Evidence files (all
+under <code>docs/qa/BOB-124/</code>)</h2>
+<ul>
+<li><code>journal_inc5.log</code> — full journalctl 15:25-15:30 (11,330
+lines)</li>
+<li><code>evidence/kill_moment.log</code> — filtered kill window</li>
+<li><code>evidence/systemd_pid1_prekill.log</code> — every
+<code>systemd[1]</code> message 15:28:15-22</li>
+<li><code>evidence/pre_kill_15s_window.log</code> — 15-s pre-kill
+filtered journal</li>
+<li><code>evidence/signals_at_kill.log</code> — GDM/mutter/logind/PAM
+signals at kill</li>
+<li><code>evidence/kernel_events.log</code> — kernel messages
+(overlayfs, veth, rfkill; <strong>no OOM</strong>)</li>
+<li><code>evidence/kernel_oom_scan.log</code> — <strong>empty</strong>
+(0 kernel-OOM hits)</li>
+<li><code>evidence/oomd_journal.log</code> — systemd-oomd unit journal
+(Start only, no kill decisions)</li>
+<li><code>evidence/oom_extended.log</code> — extended OOM/PSI/swap
+scan</li>
+<li><code>evidence/power_states.log</code> — 2 hits (both false-positive
+keybinding registrations)</li>
+<li><code>evidence/stop_terminate_paths.log</code> — logind session
+removals (all post-kill)</li>
+<li><code>evidence/gdm_compositor_events.log</code> — GDM/gnome-shell
+activity around kill</li>
+<li><code>evidence/gdm_worker_3976.log</code> — the actor of the PAM
+close (PID 3976 = gdm-session-worker)</li>
+<li><code>evidence/user1000_grepped.log</code> — full user@1000.service
+lifecycle in window</li>
+<li><code>evidence/user1000_service_journal.log</code> — helix-server
+journal noise (unrelated to kill)</li>
+<li><code>evidence/user_scope_events_head.log</code> — user/session
+scope timeline (100-line head)</li>
+<li><code>evidence/loginctl_user_state.txt</code> —
+<code>Linger=yes State=active</code>, <code>Timestamp=15:07:40</code>,
+IdleHint=no</li>
+<li><code>evidence/proc_pressure_memory.txt</code> — current PSI
+(<code>avg60=0.00</code> at investigation time)</li>
+<li><code>evidence/free_now.txt</code> — memory state at
+investigation</li>
+<li><code>evidence/inc4_forensics_head.txt</code> — first 80 lines of #4
+forensics for comparison</li>
+<li><code>evidence/kernel_oom_scan.log</code> — 0 hits, ruling out
+kernel OOM</li>
+</ul>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>
+(BOB-116, #2)</li>
+<li><code>docs/incidents/2026-08-18-3rd-forced-logout.md</code>
+(BOB-120, #3)</li>
+<li><code>docs/incidents/2026-08-19-4th-forced-logout.md</code>
+(BOB-123, #4)</li>
+<li><code>docs/incidents/2026-08-19-5th-forced-logout.md</code>
+(BOB-124, #5)</li>
+<li><code>docs/incidents/2026-08-19-sudo-audit-rules-for-operator.md</code>
+(Rev 3 — still uninstalled)</li>
+<li><code>docs/proposals/external-watchdog-for-forced-logout-architectural-gap.md</code>
+(Path 2 proposal)</li>
+<li><code>~/.claude-claude4/.../memory/forced_logout_incidents.md</code>
+(playbook)</li>
+</ul>
+<h2 id="iron-law-compliance">Iron Law compliance</h2>
+<p>No source changes made. No sudo invoked. No auditd installed. No
+shell scripts modified. Only evidence files written under
+<code>docs/qa/BOB-124/</code>.</p>

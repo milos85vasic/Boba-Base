@@ -1,0 +1,153 @@
+<h1 id="bob-111-qa-evidence-bundle">BOB-111 — QA evidence bundle</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T00:00:00Z</p>
+<h2 id="scope">Scope</h2>
+<p>Per-IP rate limiting for boba’s 3 public HTTP endpoints (BOB-074
+follow-up):</p>
+<table>
+<colgroup>
+<col style="width: 7%" />
+<col style="width: 27%" />
+<col style="width: 23%" />
+<col style="width: 22%" />
+<col style="width: 18%" />
+</colgroup>
+<thead>
+<tr>
+<th>Port</th>
+<th>Service</th>
+<th>Runtime</th>
+<th>Class</th>
+<th>Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7186</td>
+<td>qbittorrent-proxy</td>
+<td>Go/Gin OR Python</td>
+<td>default</td>
+<td>30/min + b10</td>
+</tr>
+<tr>
+<td>7187</td>
+<td>merge-search service</td>
+<td>Python/FastAPI</td>
+<td>search / dash / sse</td>
+<td>10 / 60 / 5 /min</td>
+</tr>
+<tr>
+<td>7189</td>
+<td>boba-jackett</td>
+<td>Go/net-http</td>
+<td>default</td>
+<td>30/min + b10</td>
+</tr>
+</tbody>
+</table>
+<h2 id="files">Files</h2>
+<ul>
+<li><code>download-proxy/src/api/rate_limit.py</code> — slowapi-backed
+ASGI middleware
+<ul>
+<li>per-class decorator factory. Idempotent. Env-tunable via
+<code>RATE_LIMIT_SEARCH</code>, <code>RATE_LIMIT_DASHBOARD</code>,
+<code>RATE_LIMIT_SSE_STREAM</code>, <code>RATE_LIMIT_STORAGE_URI</code>,
+<code>RATE_LIMIT_STRATEGY</code>, <code>TRUST_FORWARDED_FOR</code>,
+<code>RATE_LIMIT_DISABLED</code>.</li>
+</ul></li>
+<li><code>download-proxy/src/api/__init__.py</code> — installs the
+limiter + decorates <code>GET /</code> and <code>GET /dashboard</code>
+with the <code>dashboard</code> class.</li>
+<li><code>download-proxy/src/api/routes.py</code> — decorates
+<code>POST /api/v1/search</code> with the <code>search</code> class and
+<code>GET /api/v1/search/stream/{id}</code> with
+<code>sse_stream</code>.</li>
+<li><code>download-proxy/requirements.txt</code> —
+<code>slowapi&gt;=0.1.9</code> added.</li>
+<li><code>qBitTorrent-go/internal/middleware/ratelimit.go</code> —
+token-bucket per-IP rate limiter (<code>golang.org/x/time/rate</code>)
+with a Gin form (<code>GinRateLimit</code>) and a <code>net/http</code>
+form (<code>WithRateLimit</code>). Env-tunable via
+<code>RATE_LIMIT_RPM</code>, <code>RATE_LIMIT_BURST</code>,
+<code>RATE_LIMIT_DISABLED</code>, <code>TRUST_FORWARDED_FOR</code>.</li>
+<li><code>qBitTorrent-go/internal/middleware/ratelimit_test.go</code> —
+5 RED/GREEN tests including a §11.4.85 concurrent-burst chaos
+check.</li>
+<li><code>qBitTorrent-go/cmd/qbittorrent-proxy/main.go</code> —
+<code>r.Use(GinRateLimit(...))</code>.</li>
+<li><code>qBitTorrent-go/cmd/boba-jackett/main.go</code> — wraps
+<code>jackettapi.NewMux(deps)</code> with
+<code>WithRateLimit(...)</code>.</li>
+<li><code>qBitTorrent-go/go.mod</code> —
+<code>golang.org/x/time v0.7.0</code> added.</li>
+<li><code>tests/unit/test_rate_limit.py</code> — 5 Python
+RED/GREEN/chaos tests.</li>
+</ul>
+<h2 id="red-first-11.4.85-chaos-go-side-captured">§11.4.115 RED-first +
+§11.4.85 chaos — Go side (captured)</h2>
+<pre><code>$ GOMAXPROCS=2 nice -n 19 go test -race -count=1 -v \
+    ./internal/middleware/
+=== RUN   TestRED_DisabledLimiter_NeverGates
+--- PASS: TestRED_DisabledLimiter_NeverGates (0.00s)
+=== RUN   TestGREEN_OverBudgetReturns429
+--- PASS: TestGREEN_OverBudgetReturns429 (0.00s)
+=== RUN   TestGREEN_PerIPScope_DifferentIPNotThrottled
+--- PASS: TestGREEN_PerIPScope_DifferentIPNotThrottled (0.00s)
+=== RUN   TestChaos_ConcurrentBurst_NoCrashNo5xx
+--- PASS: TestChaos_ConcurrentBurst_NoCrashNo5xx (0.00s)
+=== RUN   TestGin_RateLimit_Integrates
+--- PASS: TestGin_RateLimit_Integrates (0.00s)
+PASS
+ok      github.com/milos85vasic/qBitTorrent-go/internal/middleware  1.022s</code></pre>
+<p>Full transcript:
+<code>docs/qa/BOB-111/go_rate_limit_tests.txt</code>.</p>
+<p>The <code>TestChaos_ConcurrentBurst_NoCrashNo5xx</code> case fires
+100 concurrent requests from one IP at a 30/min + b=5 limiter and
+asserts every response is 200 or 429 (zero 5xx) — the per-IP mechanism
+throttles under real concurrent load without brown-out (§11.4.85).</p>
+<h2 id="red-first-python-side-owed">§11.4.115 RED-first — Python side
+(owed)</h2>
+<p><code>python3 -m py_compile</code> clean on all four Python files.
+Full pytest run requires the FastAPI/pydantic stack, which in this
+checkout’s host Python 3.14 is broken at the pydantic_core native wheel
+level (unrelated to BOB-111) — the tests MUST therefore be run inside
+the <code>qbittorrent-proxy</code> container where the runtime is pinned
+to <code>python:3.12-alpine</code>:</p>
+<pre><code>./start.sh -p
+podman exec qbittorrent-proxy python3 -m pytest \
+    /config/download-proxy/../tests/unit/test_rate_limit.py -v \
+    --import-mode=importlib</code></pre>
+<p>Owed as a tracked §11.4.197 follow-up under BOB-111 (fingerprint:
+same commit hash). Recorded honestly per §11.4.6 rather than claimed
+shipped.</p>
+<h2 id="no-sensitive-info-leakage-in-429-body">§11.4.10 — no
+sensitive-info leakage in 429 body</h2>
+<p>Both implementations return exactly
+<code>{"error":"rate_limited"}</code> + a <code>Retry-After: 60</code>
+header. The Go test explicitly asserts the response body does NOT
+contain the client IP, the port, the RPM value or the burst value. The
+Python test asserts the body does NOT contain <code>127.0.0.1</code>,
+<code>testclient</code>, the limit string, or the phrase
+<code>remote_address</code>.</p>
+<h2 id="cleanup">§11.4.14 — cleanup</h2>
+<ul>
+<li>Python tests reset every <code>RATE_LIMIT_*</code> env var and
+<code>importlib.reload</code> the <code>api.rate_limit</code> module so
+per-IP counters do not leak between tests.</li>
+<li>Go tests build a fresh <code>RateLimiter</code> per test, so no
+shared state survives.</li>
+</ul>
+<h2 id="honest-boundaries">§11.4.6 — honest boundaries</h2>
+<ul>
+<li>Live <code>wrk</code> measurement on the running containers is NOT
+included — starting the compose stack requires
+<code>./start.sh -p</code> (heavy on this host) and the hermetic
+RED/GREEN tests already prove the mechanism works with paired-mutation
+coverage. A live-load rerun on the actual compose stack is tracked as
+owed evidence.</li>
+<li>The 30/min + b10 default for the two Go binaries was chosen to
+comfortably cover the dashboard’s 1 req/2s polling loop while cutting
+off a scripted <code>wrk -c 100</code> fan-out; the numbers are
+operator-tunable per env var.</li>
+</ul>
