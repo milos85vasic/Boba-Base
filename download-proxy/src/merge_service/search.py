@@ -1800,18 +1800,21 @@ class SearchOrchestrator:
 
             size_match = re.search(r">(?P<size>[\d.]+\s*(?:K|M|G|T)?B)<", row_text, re.I)
 
-            # IPTorrents renders its result rows with old-school unclosed
-            # `<td>` tags -- the seed/leech (and snatch) cells have NO
-            # closing `</td>` anywhere in the real response body. The
-            # previous `<td[^>]*>(\d+)</td>` pattern therefore NEVER
+            # IPTorrents renders its live result rows with old-school
+            # unclosed `<td>` tags -- the seed/leech (and snatch) cells
+            # have NO closing `</td>` anywhere in the real response body.
+            # The previous `<td[^>]*>(\d+)</td>` pattern therefore NEVER
             # matched against the live site: td_values was always empty
             # and seeds/leechers silently defaulted to 0 despite the row
             # containing real non-zero swarm data (BOB-122, reported as
-            # "BOB-083"). The three trailing bare `<td>N` cells immediately
-            # before the row ends are, in the table's own <thead> column
-            # order, Snatches / Seeders / Leechers.
+            # "BOB-083"). Well-formed markup with closing `</td>` is
+            # ALSO accepted -- the closing token is optional so this
+            # parser is robust to either form (§11.4.194 all-scenario).
+            # The three trailing numeric cells immediately before the
+            # row ends are, in the table's own <thead> column order,
+            # Snatches / Seeders / Leechers.
             trailing_match = re.search(
-                r"<td>(?P<snatches>\d+)<td>(?P<seeds>\d+)<td>(?P<leech>\d+)\s*$",
+                r"<td>(?P<snatches>\d+)(?:</td>)?\s*<td>(?P<seeds>\d+)(?:</td>)?\s*<td>(?P<leech>\d+)(?:</td>)?\s*$",
                 row_text,
             )
             if trailing_match:

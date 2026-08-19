@@ -489,64 +489,61 @@ class TestNnmclubHtmlFixtures:
 # ==========================================================================
 
 
+# IPTorrents fixtures reflect the LIVE site markup empirically confirmed by
+# BOB-122 (2026-08-19): the results table's <thead> carries Snatches / Seeders
+# / Leechers as three trailing numeric columns and the row cells use
+# old-school unclosed `<td>` tags. Fixtures rewritten from an earlier
+# synthetic 2-numeric-cell shape (which was never a valid regression guard
+# for the real site) so they now honestly reproduce the BOB-122 defect
+# surface (§11.4.115 RED-first fixtures reflect real defect).
 IPTORRENTS_SINGLE_ROW = """
 <table id="torrents">
-<tr><th>Name</th><th>Size</th><th>Seeders</th><th>Leechers</th></tr>
+<tr><th>Name</th><th>Size</th><th>Snatches</th><th>Seeders</th><th>Leechers</th></tr>
 <tr>
 <td><a class=" hv" href="/t/700">Ubuntu 24.04 LTS Desktop</a></td>
 <td><a href="/download.php/700/ubuntu.torrent">dl</a></td>
 <td>4.7 GB</td>
-<td>320</td>
-<td>18</td>
-</tr>
+<td>50<td>320<td>18</tr>
 </table>
 """
 
 IPTORRENTS_MULTI_ROW = """
 <table id="torrents">
-<tr><th>Name</th><th>Size</th><th>Seeders</th><th>Leechers</th></tr>
+<tr><th>Name</th><th>Size</th><th>Snatches</th><th>Seeders</th><th>Leechers</th></tr>
 <tr>
 <td><a class=" hv" href="/t/701">Debian 12 Bookworm</a></td>
 <td><a href="/download.php/701/debian.torrent">dl</a></td>
 <td>640 MB</td>
-<td>180</td>
-<td>5</td>
-</tr>
+<td>22<td>180<td>5</tr>
 <tr>
 <td><a class=" hv" href="/t/702">Fedora 40 Workstation</a></td>
 <td><a href="/download.php/702/fedora.torrent">dl</a></td>
 <td>2.1 GB</td>
-<td>95</td>
-<td>8</td>
-</tr>
+<td>11<td>95<td>8</tr>
 </table>
 """
 
 IPTORRENTS_FREELEECH = """
 <table id="torrents">
-<tr><th>Name</th><th>Size</th><th>Seeders</th><th>Leechers</th></tr>
+<tr><th>Name</th><th>Size</th><th>Snatches</th><th>Seeders</th><th>Leechers</th></tr>
 <tr>
 <td><a class=" hv" href="/t/703">Free Torrent Download</a></td>
 <td><a href="/download.php/703/free.torrent">dl</a></td>
 <td>1.5 GB</td>
-<td>500</td>
-<td>25</td>
 <td class="free">free</td>
-</tr>
+<td>70<td>500<td>25</tr>
 </table>
 """
 
 IPTORRENTS_FREELEECH_ALREADY_TAGGED = """
 <table id="torrents">
-<tr><th>Name</th><th>Size</th><th>Seeders</th><th>Leechers</th></tr>
+<tr><th>Name</th><th>Size</th><th>Snatches</th><th>Seeders</th><th>Leechers</th></tr>
 <tr>
 <td><a class=" hv" href="/t/704">Already Tagged [free]</a></td>
 <td><a href="/download.php/704/already.torrent">dl</a></td>
 <td>800 MB</td>
-<td>42</td>
-<td>3</td>
 <td class="free">free</td>
-</tr>
+<td>4<td>42<td>3</tr>
 </table>
 """
 
@@ -556,14 +553,12 @@ IPTORRENTS_NO_TABLE = """
 
 IPTORRENTS_NO_SIZE = """
 <table id="torrents">
-<tr><th>Name</th></tr>
+<tr><th>Name</th><th>Size</th><th>Snatches</th><th>Seeders</th><th>Leechers</th></tr>
 <tr>
 <td><a class=" hv" href="/t/705">No Size Info</a></td>
 <td><a href="/download.php/705/nosize.torrent">dl</a></td>
 <td>unknown</td>
-<td>10</td>
-<td>1</td>
-</tr>
+<td>0<td>10<td>1</tr>
 </table>
 """
 
