@@ -336,9 +336,25 @@ class TestSPACatchAll:
         """Root route should serve dashboard."""
         from api import dashboard
 
+        # BOB-126-followup: `dashboard`/`dashboard_page` carry the BOB-111
+        # `@_dashboard_deco` (`limiter.limit(...)`) slowapi decorator when
+        # rate limiting is active. Calling the decorated wrapper with ZERO
+        # args (as this test intentionally does — it only cares that
+        # `_serve_index_html()` gets invoked and its return value passed
+        # through, `request` is unused by the handler body) makes slowapi's
+        # wrapper resolve `request` to `None` and raise its own
+        # ``Exception: parameter `request` must be an instance of
+        # starlette.requests.Request`` before the real body ever runs —
+        # orthogonal to what this test checks. Bypass the decorator via
+        # `__wrapped__` (proven pattern from BOB-122 d7da1af), falling back
+        # to the function itself when rate limiting was disabled at import
+        # time (`@_dashboard_deco` is then a no-op passthrough with no
+        # wrapper — hence no `__wrapped__` — at all).
+        dashboard_impl = getattr(dashboard, "__wrapped__", dashboard)
+
         with patch("api._serve_index_html") as mock_serve:
             mock_serve.return_value = {"message": "dashboard"}
-            result = await dashboard()
+            result = await dashboard_impl(MagicMock())
             assert result == mock_serve.return_value
 
     @pytest.mark.asyncio
@@ -346,9 +362,12 @@ class TestSPACatchAll:
         """Dashboard page route should serve index."""
         from api import dashboard_page
 
+        # See test_dashboard_root_route above for the full rationale.
+        dashboard_page_impl = getattr(dashboard_page, "__wrapped__", dashboard_page)
+
         with patch("api._serve_index_html") as mock_serve:
             mock_serve.return_value = {"message": "dashboard"}
-            result = await dashboard_page()
+            result = await dashboard_page_impl(MagicMock())
             assert result == mock_serve.return_value
 
     @pytest.mark.asyncio
