@@ -1,0 +1,180 @@
+<h1 id="bob-126-11.4.263-recommended-gate-implementation-plan">BOB-126
+§11.4.263 Recommended Gate Implementation Plan</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T17:40:00Z <strong>Origin:</strong> post-BOB-126 chain-close
+follow-up. §11.4.263 landed as universal constitution anchor but its
+recommended gates (<code>CM-KILLPG-PGID-GUARD</code>,
+<code>CM-TEST-MOCK-PID-EXPLICIT-INT</code>) were declared “gate-code =
+separate work item” per §11.4.6. This plan implements those gates +
+fixes one pre-existing test cleanup RuntimeWarning surfaced by the
+post-BOB-126 verification sweep.</p>
+<h2 id="context">Context</h2>
+<p>The BOB-126 root cause was <code>os.killpg(1, SIGKILL)</code> =
+<code>kill(-1, SIGKILL)</code> due to <code>MagicMock.__int__==1</code>
+default. §11.4.263 mandates:</p>
+<ul>
+<li><strong>(A)</strong> never signal <code>pgid ≤ 1</code></li>
+<li><strong>(B)</strong> validate
+<code>isinstance(pid, int) and pid &gt; 1</code> before every
+process-group signal call</li>
+<li><strong>(C)</strong> tests mocking subprocess/proc objects MUST set
+<code>mock.pid</code> explicitly as int</li>
+</ul>
+<p>The universal anchor is landed in constitution <code>502586c</code>.
+The MECHANICAL enforcement gates are recommended but not yet coded. This
+plan codes them for boba, following §11.4.4(b) four-layer coverage per
+gate.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ol type="1">
+<li><strong>§11.4.6 anti-bluff</strong>: every gate MUST be
+self-validating — a golden-good fixture PASSES, a golden-bad fixture
+FAILS. Both wired into a paired §1.1 mutation test.</li>
+<li><strong>§11.4.115 RED-first</strong>: for each gate, the paired
+mutation MUST be observed to make the gate FAIL before the gate is
+trusted.</li>
+<li><strong>§11.4.183 host-safety</strong>: no test that could kill the
+host. All process-group signal tests MUST mock <code>os.killpg</code>
+explicitly per §11.4.263(C).</li>
+<li><strong>§11.4.108 four-layer verification</strong>: SOURCE →
+ARTIFACT → RUNTIME-ON-CLEAN-TARGET → USER-VISIBLE. Each gate has runtime
+evidence captured.</li>
+<li>Bash gates live in <code>scripts/pre_build/</code> with the naming
+convention <code>check_cm_&lt;slug&gt;.sh</code>; they exit 0 on GREEN,
+non-zero on FAIL, and print a machine-parseable one-line status.</li>
+<li>Every new gate script MUST have companion doc in
+<code>docs/scripts/&lt;name&gt;.md</code> per §11.4.18.</li>
+<li>Tests live in <code>tests/pre_build/</code> mirroring the script
+name.</li>
+<li>Commits are scoped: one commit per task, small + descriptive, per
+Conventional Commits format.</li>
+</ol>
+<h2 id="task-1-implement-cm-killpg-pgid-guard-pre-build-gate">Task 1:
+Implement <code>CM-KILLPG-PGID-GUARD</code> pre-build gate</h2>
+<p><strong>Purpose</strong>: statically detect calls to
+<code>os.killpg(...)</code>, <code>os.kill(-pid, ...)</code>,
+<code>subprocess.killpg</code>, <code>Process.killpg</code>,
+<code>killpg(</code> in bash — that are NOT preceded by an
+<code>isinstance(pid, int) and pid &gt; 1</code> guard within 10 lines.
+Report each violation with file+line.</p>
+<p><strong>Deliverables</strong>:</p>
+<ul>
+<li><code>scripts/pre_build/check_cm_killpg_pgid_guard.sh</code> — the
+gate script
+<ul>
+<li>Scope: scan <code>download-proxy/src/</code>, <code>plugins/</code>,
+<code>scripts/</code> (excluding tests + submodules)</li>
+<li>Detection: grep for <code>os\.killpg\(</code>,
+<code>os\.kill\(\s*-</code> in Python; <code>killpg\s</code>,
+<code>kill\s+-\d</code> in bash</li>
+<li>For each hit: check the 10 preceding lines for
+<code>isinstance\(.*, int\)</code> and <code>&gt; 1</code> on a matching
+identifier</li>
+<li>GREEN if 0 unguarded hits; FAIL with per-hit report otherwise</li>
+</ul></li>
+<li><code>tests/pre_build/test_check_cm_killpg_pgid_guard.sh</code> —
+the meta-test (§1.1 mutation)
+<ul>
+<li>Golden-good fixture: a temp Python file with
+<code>os.killpg(pgid, SIGKILL)</code> preceded by
+<code>isinstance(_pid, int) and _pid &gt; 1</code> guard — gate MUST
+PASS</li>
+<li>Golden-bad fixture: a temp Python file with
+<code>os.killpg(1, SIGKILL)</code> with no guard — gate MUST FAIL</li>
+<li>Golden-bad fixture 2: a temp Python file with
+<code>os.killpg(pgid, SIGKILL)</code> with a guard that says
+<code>&gt; 0</code> (not <code>&gt; 1</code>) — gate MUST FAIL (pgid=1
+slips through)</li>
+</ul></li>
+<li><code>docs/scripts/check_cm_killpg_pgid_guard.md</code> — companion
+doc per §11.4.18</li>
+</ul>
+<p><strong>Acceptance criteria</strong>:</p>
+<ol type="1">
+<li>Gate PASSES against current boba tree (BOB-126 fix landed the guard
+in search.py:1200-1215)</li>
+<li>Meta-test PASSES with golden-good and both golden-bad fixtures
+behaving per spec</li>
+<li>Doc has: Purpose / Usage / Inputs / Outputs / Side-effects /
+Dependencies / Cross-references (§11.4.263)</li>
+</ol>
+<h2
+id="task-2-implement-cm-test-mock-pid-explicit-int-pre-build-gate">Task
+2: Implement <code>CM-TEST-MOCK-PID-EXPLICIT-INT</code> pre-build
+gate</h2>
+<p><strong>Purpose</strong>: statically detect test files that create
+<code>AsyncMock()</code> / <code>MagicMock()</code> for subprocess-like
+objects (identified by <code>.stdout</code>, <code>.stderr</code>,
+<code>.wait</code>, or <code>.pid</code> attribute references within 20
+lines) — but do NOT explicitly set <code>.pid = &lt;int&gt;</code> on
+that mock.</p>
+<p><strong>Deliverables</strong>:</p>
+<ul>
+<li><code>scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh</code>
+— the gate script
+<ul>
+<li>Scope: scan <code>tests/**/*.py</code></li>
+<li>Detection: for each <code>AsyncMock()</code> or
+<code>MagicMock()</code> assignment, look forward 20 lines for
+subprocess-like usage indicators (<code>.stdout.readline</code>,
+<code>.stderr.read</code>, <code>.wait</code>, <code>.returncode</code>,
+<code>.kill</code>)</li>
+<li>If subprocess-like AND no <code>&lt;var&gt;.pid = &lt;int&gt;</code>
+assignment found within 20 lines, flag as violation</li>
+<li>Special case: skip if <code>os.killpg</code> and
+<code>os.getpgid</code> are both patched within 30 lines (either
+belt-and-suspenders means the mock.pid can be MagicMock safely)</li>
+</ul></li>
+<li><code>tests/pre_build/test_check_cm_test_mock_pid_explicit_int.sh</code>
+— the meta-test
+<ul>
+<li>Golden-good fixture: <code>AsyncMock()</code> with
+<code>mock.pid = 12345</code> — gate MUST PASS</li>
+<li>Golden-good fixture 2: <code>AsyncMock()</code> with subprocess
+usage + BOTH <code>patch.object(os, 'killpg')</code> and
+<code>patch.object(os, 'getpgid')</code> — gate MUST PASS</li>
+<li>Golden-bad fixture: <code>AsyncMock()</code> with subprocess usage,
+no <code>mock.pid = int</code>, no killpg patch — gate MUST FAIL</li>
+</ul></li>
+<li><code>docs/scripts/check_cm_test_mock_pid_explicit_int.md</code> —
+companion doc</li>
+</ul>
+<p><strong>Acceptance criteria</strong>:</p>
+<ol type="1">
+<li>Gate PASSES against current boba tree (BOB-126 fix landed both
+<code>mock.pid = 12345</code> AND
+<code>patch.object(os, 'killpg')</code> in
+<code>test_deadline_hit_flag_true_when_readline_times_out</code>)</li>
+<li>Meta-test PASSES with all 3 fixtures behaving per spec</li>
+</ol>
+<h2
+id="task-3-fix-runtimewarning-coroutine-_bounded-was-never-awaited">Task
+3: Fix RuntimeWarning “coroutine ’_bounded’ was never awaited”</h2>
+<p><strong>Purpose</strong>: the post-BOB-126 verification sweep
+surfaced 2 test cases raising
+<code>RuntimeWarning: coroutine 'SearchOrchestrator._run_search.&lt;locals&gt;._bounded' was never awaited</code>
+in <code>tests/unit/merge_service/test_search_deep_coverage.py</code>
+(<code>TestRunSearchDiagClear::test_run_search_clears_stale_diag</code>,
+<code>TestRunSearchStatSeed::test_run_search_backfills_missing_stats</code>).
+This is a test-cleanup issue — the tests trigger
+<code>_run_search</code> but don’t await the inner <code>_bounded</code>
+coroutine before teardown.</p>
+<p><strong>Deliverables</strong>:</p>
+<ul>
+<li>Fix the 2 test cases so <code>_bounded</code> is either awaited to
+completion OR properly cancelled + awaited to consume the exception.
+Zero RuntimeWarnings.</li>
+<li>No functional change to production code.</li>
+</ul>
+<p><strong>Acceptance criteria</strong>:</p>
+<ol type="1">
+<li>The 2 specific tests still PASS</li>
+<li>No
+<code>RuntimeWarning: coroutine '_bounded' was never awaited</code>
+surfaces in the full merge_service unit sweep</li>
+<li>Test cleanup discipline preserved — no dangling tasks after
+teardown</li>
+</ol>
+<h2 id="sequencing">Sequencing</h2>
+<p>Tasks 1, 2, 3 are independent and can be dispatched in any order.
+Recommended: Task 1 first (highest-impact gate), then Task 2 (adjacent),
+then Task 3 (cleanup).</p>

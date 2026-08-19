@@ -1,0 +1,239 @@
+<h1
+id="scriptspre_buildcheck_cm_killpg_pgid_guard.sh-cm-killpg-pgid-guard-static-pre-build-gate">scripts/pre_build/check_cm_killpg_pgid_guard.sh
+— CM-KILLPG-PGID-GUARD static pre-build gate</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T00:00:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-126 follow-up (§11.4.238
+discovery-channel-escape closure — a new automated check for a defect
+class first found out-of-band)</p>
+<h2 id="purpose">Purpose</h2>
+<p><code>scripts/pre_build/check_cm_killpg_pgid_guard.sh</code>
+statically detects calls that send a signal to a <strong>negative
+pid</strong> or an entire <strong>process group</strong> (Python
+<code>os.killpg(pgid, sig)</code>, <code>os.kill(-pid, sig)</code>; bash
+<code>killpg</code>, an explicit <code>kill -SIG</code> invocation) that
+are <strong>not</strong> preceded, within the 10 lines above the call,
+by a guard proving the target identifier is a real, positive process
+id:</p>
+<pre><code>isinstance(&lt;ident&gt;, int) and &lt;ident&gt; &gt; 1</code></pre>
+<p>on the <strong>same</strong> identifier that reaches the dangerous
+call.</p>
+<h3 id="the-defect-class-this-closes-bob-126">The defect class this
+closes (BOB-126)</h3>
+<p><code>os.killpg(1, SIGKILL)</code> is, under glibc,
+<strong>identical</strong> to <code>kill(-1, SIGKILL)</code> — a
+broadcast kill of every process the caller’s UID owns. A test double
+whose <code>.pid</code> attribute is an unconfigured mock object
+(<code>MagicMock.__int__</code> defaults to <code>1</code>) silently
+reaches that call. This was the root cause traced across 7 forced
+logouts (BOB-116/120/123/124/125/126): a <code>pytest</code> run’s
+<code>kill(os.getpgid(proc.pid), SIGKILL)</code> resolved
+<code>proc.pid</code> to a <code>MagicMock</code>,
+<code>os.getpgid()</code> (or the mock itself) yielded <code>1</code>,
+and the kill call became a broadcast kill of the operator’s own
+session.</p>
+<p>The fix landed as a guard requiring the id to be a real
+<code>int</code> greater than <code>1</code> immediately before the
+dangerous call
+(<code>download-proxy/src/merge_service/search.py:1200-1240</code>, two
+identical guards on <code>_pid</code> and <code>_pgid</code>). This gate
+makes that shape a <strong>mechanically enforced invariant</strong>
+instead of tribal knowledge living only in a comment — per §11.4.226
+(evidence-class-at-closure), a source-only fix with no standing guard is
+exactly the class of closure that silently reopens the next time someone
+touches the cleanup path.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Default scope: download-proxy/src/, plugins/, scripts/ (relative to the</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># repo root this script resolves from its own location).</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_killpg_pgid_guard.sh</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Explicit-path mode — scan exactly the given file(s)/directory(ies)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># instead of the default scope (directories are still walked with the</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># same excludes). Used by the meta-test to run against hermetic fixtures.</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_killpg_pgid_guard.sh</span> /path/to/file.py</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_killpg_pgid_guard.sh</span> /path/to/fixture/dir</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Verbose (prints every hit that WAS correctly guarded, not just findings):</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_killpg_pgid_guard.sh</span> <span class="at">-v</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_killpg_pgid_guard.sh</span> <span class="at">--help</span></span></code></pre></div>
+<h2 id="inputs">Inputs</h2>
+<ul>
+<li><strong>Positional arguments</strong> (optional): zero or more
+file/directory paths.
+<ul>
+<li>Zero arguments → default scope: <code>download-proxy/src/</code>,
+<code>plugins/</code>, <code>scripts/</code> under the repository root,
+walked recursively.</li>
+<li>One or more arguments → scan exactly those paths instead (single
+files must end in <code>.py</code> or <code>.sh</code> to be considered;
+directories are walked with the same directory-name excludes as the
+default scope).</li>
+</ul></li>
+<li><strong><code>-v</code> / <code>--verbose</code></strong>: also
+print each hit that passed the guard check.</li>
+<li><strong><code>-h</code> / <code>--help</code></strong>: print the
+in-source documentation header and exit 0.</li>
+<li>No environment variables are read.</li>
+</ul>
+<h2 id="outputs">Outputs</h2>
+<ul>
+<li><strong>stdout</strong>: a run header (scope, window size, file
+count) and either
+<code>PASS: CM-KILLPG-PGID-GUARD clean across N file(s)</code> or (on
+<code>-v</code>) a
+<code>guarded: &lt;path&gt;:&lt;line&gt; [identifier=...]</code> line
+per correctly-guarded hit.</li>
+<li><strong>stderr</strong> (only on failure): a
+<code>=== FINDINGS ===</code> block, one
+<code>FAIL: &lt;path&gt;:&lt;line&gt;: unguarded &lt;call kind&gt; — &lt;trimmed source&gt; [identifier=&lt;ident-or-none&gt;]</code>
+line per unguarded hit, followed by a
+<code>FAIL: &lt;N&gt; unguarded killpg/kill-group hit(s) ...</code>
+summary line.</li>
+<li><strong>Exit codes</strong>:
+<ul>
+<li><code>0</code> — zero unguarded hits (or, in explicit-path mode,
+zero matching files — an empty scope is not itself a finding).</li>
+<li><code>1</code> — one or more unguarded hits; see stderr for the
+per-hit report.</li>
+<li><code>2</code> — usage/environment error (unknown flag, or an
+explicit PATH argument that does not exist). Distinct from finding-level
+FAIL, per §11.4.201(4) “conservative-safe default on an unresolvable
+signal”.</li>
+</ul></li>
+</ul>
+<h2 id="detection-patterns">Detection patterns</h2>
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Patterns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python (<code>*.py</code>)</td>
+<td><code>os\.killpg\(</code> · <code>os\.kill\(\s*-</code></td>
+</tr>
+<tr>
+<td>Bash (<code>*.sh</code>)</td>
+<td><code>killpg\s</code> · <code>kill\s+-[1-9][0-9]*\b</code></td>
+</tr>
+</tbody>
+</table>
+<p>Two deliberate scoping decisions, both evidence-based (§11.4.6), not
+guesses:</p>
+<ol type="1">
+<li><strong>Comment-only lines are never hit candidates.</strong> A line
+that is entirely a comment (starts with <code>#</code>, after optional
+leading whitespace) is skipped before pattern matching.
+<code>search.py</code> itself contains two comment lines that quote the
+dangerous call syntax while <em>documenting</em> the BOB-126 fix
+(<code># \</code>os.killpg(1, sig)` == `kill(-1, sig)` under glibc`) —
+those are text, not code, and flagging them would be a false-positive
+refusal on the very comment explaining the fix (§11.4.201).</li>
+<li><strong>The bash signal-kill pattern excludes signal
+<code>0</code></strong> (requires <code>[1-9][0-9]*</code>, not the
+brief’s literal <code>\d</code>). <code>kill -0 PID</code> delivers no
+signal at all (see <code>kill(2)</code>) — it is the standard POSIX
+liveness-probe idiom (“is this process still alive?”), used unguarded
+twice in this repo today
+(<code>scripts/system-slice-watchdog/user1000-watchdog.sh</code>,
+<code>scripts/tunnel-keepalive.sh</code>) and structurally incapable of
+ever becoming the BOB-126 broadcast-kill defect, since it never delivers
+a real signal regardless of what pid/pgid it targets. Including
+<code>-0</code> would make the gate FAIL against the real tree on two
+known-safe call sites — itself a §11.4.201 FAIL-bluff (a false-positive
+refusal is exactly as forbidden as a false-negative pass).</li>
+</ol>
+<h2 id="guard-recognition">Guard recognition</h2>
+<p>For each real (non-comment) hit, the target identifier is extracted
+from the call itself — the first argument to <code>killpg(</code>, the
+name after the leading <code>-</code> in <code>kill(-</code>, or the
+token following <code>killpg</code> / the signal-kill call in bash. The
+10 lines immediately preceding the hit are then checked for
+<strong>both</strong>, on the same identifier, anywhere in that window
+(same line or split across lines):</p>
+<ul>
+<li><code>isinstance(&lt;ident&gt;, int)</code></li>
+<li><code>&lt;ident&gt; &gt; 1</code> — the literal digit
+<code>1</code>; <code>&gt; 0</code>, <code>&gt; 10</code>,
+<code>&gt; 100</code> do <strong>not</strong> satisfy this (a pgid/pid
+of <code>1</code> is precisely the broadcast-kill value — the whole
+point of the guard is excluding it).</li>
+</ul>
+<p>When the call’s argument is not a simple identifier (e.g. a nested
+call expression such as <code>os.killpg(get_pgid(), sig)</code>), the
+identifier cannot be extracted and the check falls back to the looser,
+non-identifier-scoped form of the same two conditions (any
+<code>isinstance(..., int)</code> and any <code>&gt; 1</code> in the
+window) rather than silently passing.</p>
+<h2 id="self-exclusion-anti-carrier-guard">Self-exclusion (anti-carrier
+guard)</h2>
+<p>This gate’s own source necessarily quotes the very patterns it
+detects (the pattern strings themselves, the report label text, the doc
+comments describing the bash <code>kill -SIG</code> idiom). Its own file
+is therefore <strong>structurally excluded from its own scan</strong> —
+resolved by absolute path, not by careful wording — closing the
+§11.4.196(D)/§12.12 “instrument matches its own carrier text” footgun
+class. Verified in-session: without the exclusion, the gate’s own
+comments trigger <code>killpg\s</code> four times (the word “killpg”
+followed by a space occurs in prose describing the tool).</p>
+<h2 id="side-effects">Side-effects</h2>
+<p>None. The gate is read-only: it never modifies any scanned file. It
+creates one <code>mktemp</code> findings file for its own run and
+removes it on exit via <code>trap ... EXIT</code>.</p>
+<h2 id="dependencies">Dependencies</h2>
+<ul>
+<li><code>bash</code> (uses <code>[[ ]]</code>,
+<code>&lt;&lt;&lt;</code> here-strings, process substitution).</li>
+<li><code>grep -E</code>, <code>sed -E</code>, <code>find</code> — all
+standard on the project’s supported hosts; no GNU-specific extension is
+required beyond <code>\s</code>/<code>\d</code>-style shorthand support
+in <code>grep -E</code> (present on both GNU grep and the
+<code>ugrep</code>-as-<code>grep</code> compatibility layer this host
+ships).</li>
+<li>No Python, no network access, no repository write access.</li>
+</ul>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><strong>BOB-126</strong> — the forced-logout incident chain
+(BOB-116/120/123/124/125/126) this gate’s real-tree pattern was
+extracted from.</li>
+<li><strong>§11.4.238</strong> — QA-discovery-channel mandate: this gate
+is the “new or strengthened automated check” a coverage-escape audit
+requires for a defect first found out-of-band.</li>
+<li><strong>§11.4.226</strong> — evidence-class-at-closure: a standing
+guard, not merely a source-side comment, is what keeps a fix from
+silently reopening.</li>
+<li><strong>§11.4.115 / §11.4.135</strong> — RED-first meta-test
+discipline / permanent regression-guard suite:
+<code>tests/pre_build/test_check_cm_killpg_pgid_guard.sh</code> is this
+gate’s paired §1.1 mutation harness.</li>
+<li><strong>§11.4.196(D) / §12.12</strong> — the “instrument matches its
+own carrier text” footgun class this gate’s self-exclusion closes.</li>
+<li><strong>§11.4.201</strong> — every guard/gate asserts the real
+condition; a false-positive refusal is a FAIL-bluff exactly as forbidden
+as a false-negative pass (the rationale for excluding comment-only lines
+and the <code>kill -0</code> liveness-probe idiom).</li>
+<li><code>download-proxy/src/merge_service/search.py:1200-1240</code> —
+the real, currently-guarded call sites this gate verifies stay
+guarded.</li>
+</ul>
+<h2 id="companion-files">Companion files</h2>
+<ul>
+<li><code>scripts/pre_build/check_cm_killpg_pgid_guard.sh</code> — the
+gate itself.</li>
+<li><code>tests/pre_build/test_check_cm_killpg_pgid_guard.sh</code> —
+the §1.1 paired meta-test: one golden-good fixture (properly guarded),
+two golden-bad fixtures (no guard at all; guard present but checks
+<code>&gt; 0</code> instead of <code>&gt; 1</code>), plus a real-tree
+smoke run against the current checkout.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-08-19 —
+<code>bash tests/pre_build/test_check_cm_killpg_pgid_guard.sh</code> ran
+GREEN (4/4: golden-good rc=0, golden-bad-1 rc=1, golden-bad-2 rc=1,
+real-tree default scope rc=0); <code>shellcheck -x</code> clean on both
+scripts with zero findings.</p>
