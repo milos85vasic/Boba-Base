@@ -1,0 +1,20 @@
+{
+  "cached_path": {
+    "ok": 200,
+    "p50_ms": 55.295,
+    "throughput_req_per_s": 269.6,
+    "url": "http://localhost:7189/healthz",
+    "wall_s": 0.742
+  },
+  "captured_at": "2026-08-19T13:27:46Z",
+  "n_req": 200,
+  "speedup_ratio_p50": 17.79,
+  "throughput_ratio": 6.35,
+  "upstream_bypass_path": {
+    "ok": 200,
+    "p50_ms": 983.594,
+    "throughput_req_per_s": 42.44,
+    "url": "http://localhost:9117/UI/Dashboard",
+    "wall_s": 4.713
+  }
+}

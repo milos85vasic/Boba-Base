@@ -1,0 +1,27 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.6, pytest-9.1.1, pluggy-1.6.0 -- /run/media/milosvasic/DATA4TB/Projects/boba/.venv/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+Using --randomly-seed=2210295042
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /run/media/milosvasic/DATA4TB/Projects/boba
+configfile: pyproject.toml
+plugins: hypothesis-6.165.2, anyio-4.14.2, xdist-3.8.0, timeout-2.4.0, repeat-0.9.4, randomly-4.1.0, docker-3.2.5, cov-7.1.0, benchmark-5.2.3, base-url-2.1.0, asyncio-1.4.0, respx-0.23.1, playwright-0.8.0, schemathesis-4.24.3, locust-2.46.3
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 30 items
+
+tests/e2e/test_live_stack_evidence.py::test_nnmclub_status_endpoint SKIPPED [  3%]
+tests/e2e/test_live_stack_evidence.py::test_config_qbittorrent_url_derives_from_host_header SKIPPED [  6%]
+tests/e2e/test_live_stack_evidence.py::test_sse_stream_emits_lifecycle_events SKIPPED [ 10%]
+tests/e2e/test_live_stack_evidence.py::test_debian_search_completes_with_real_results SKIPPED [ 13%]
+tests/e2e/test_live_stack_evidence.py::test_auth_status_lists_all_configured_trackers SKIPPED [ 16%]
+tests/e2e/test_live_stack_evidence.py::test_debian_search_has_a_genuinely_successful_tracker SKIPPED [ 20%]
+tests/e2e/test_live_stack_evidence.py::test_iptorrents_is_authenticated_in_search SKIPPED [ 23%]
+tests/e2e/test_live_stack_evidence.py::test_health_reports_healthy SKIPPED [ 26%]
+tests/e2e/test_jackett_autoconfig_e2e.py::test_search_endpoint_does_not_5xx SKIPPED [ 30%]
+tests/e2e/test_theme_runtime.py::test_theme_switching_applies_tokens_and_persists ERROR [ 33%]
+tests/e2e/test_dashboard_issues.py::TestE2EIssue1DownloadMergedSources::test_merged_magnet_contains_all_trackers ERROR [ 36%]
+tests/e2e/test_dashboard_issues.py::TestE2EIssue1DownloadMergedSources::test_merged_result_has_multiple_download_urls 

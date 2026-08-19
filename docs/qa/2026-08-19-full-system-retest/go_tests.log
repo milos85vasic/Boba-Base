@@ -1,0 +1,17 @@
+?   	github.com/milos85vasic/qBitTorrent-go/cmd/boba-jackett	[no test files]
+?   	github.com/milos85vasic/qBitTorrent-go/cmd/qbittorrent-proxy	[no test files]
+?   	github.com/milos85vasic/qBitTorrent-go/cmd/webui-bridge	[no test files]
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/api	5.781s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/bootstrap	1.043s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/client	1.244s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/config	1.067s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/db	2.371s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/db/repos	4.069s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/envfile	1.092s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/httpx	1.052s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/jackett	3.484s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/jackettapi	6.625s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/logging	1.046s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/middleware	1.083s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/models	1.026s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/service	5.843s

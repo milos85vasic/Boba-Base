@@ -1,0 +1,47 @@
+{
+  "1": {
+    "accepted": 0,
+    "admission_ms_max": null,
+    "admission_ms_p50": null,
+    "aggregate_admission_req_per_s": 0.0,
+    "client_timeout": 0,
+    "n_parallel": 1,
+    "other": 0,
+    "rate_limited_429": 1,
+    "wall_s": 0.969
+  },
+  "2": {
+    "accepted": 0,
+    "admission_ms_max": null,
+    "admission_ms_p50": null,
+    "aggregate_admission_req_per_s": 0.0,
+    "client_timeout": 0,
+    "n_parallel": 2,
+    "other": 0,
+    "rate_limited_429": 2,
+    "wall_s": 2.084
+  },
+  "5": {
+    "accepted": 0,
+    "admission_ms_max": null,
+    "admission_ms_p50": null,
+    "aggregate_admission_req_per_s": 0.0,
+    "client_timeout": 0,
+    "n_parallel": 5,
+    "other": 0,
+    "rate_limited_429": 5,
+    "wall_s": 0.897
+  },
+  "8": {
+    "accepted": 0,
+    "admission_ms_max": null,
+    "admission_ms_p50": null,
+    "aggregate_admission_req_per_s": 0.0,
+    "client_timeout": 0,
+    "n_parallel": 8,
+    "other": 0,
+    "rate_limited_429": 8,
+    "wall_s": 4.273
+  },
+  "captured_at": "2026-08-19T13:28:01Z"
+}

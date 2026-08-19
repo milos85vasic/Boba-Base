@@ -1,0 +1,30 @@
+=== challenges/scripts/no_suspend_calls_challenge.sh ===
+EXCLUDE_PATHS at the top of this script.
+
+=== summary: FAIL ===
+EXIT_challenges/scripts/no_suspend_calls_challenge.sh=0
+=== challenges/scripts/cred_roundtrip_challenge.sh ===
+  OK — .env contains plaintext mirror lines
+  OK — boba.db has no plaintext (encrypted-at-rest)
+PASS: cred_roundtrip_challenge
+EXIT_challenges/scripts/cred_roundtrip_challenge.sh=0
+=== challenges/scripts/env_db_drift_challenge.sh ===
+FAIL: delete 4
+EXIT_challenges/scripts/env_db_drift_challenge.sh=0
+=== challenges/scripts/iptorrents_cookie_flow_challenge.sh ===
+SKIP: iptorrents_cookie_flow_challenge — IPTORRENTS_COOKIES unset (CONST-11)
+EXIT_challenges/scripts/iptorrents_cookie_flow_challenge.sh=0
+=== challenges/scripts/master_key_autogen_challenge.sh ===
+  Run 1: key generated, regex OK (64 chars)
+  Run 2: key unchanged (f1621d0e62a6187d08eb92fee1d1c4d310fd0513fc56020911323437987a7874 == f1621d0e62a6187d08eb92fee1d1c4d310fd0513fc56020911323437987a7874)
+PASS: master_key_autogen_challenge
+EXIT_challenges/scripts/master_key_autogen_challenge.sh=0
+=== challenges/scripts/run_all_challenges.sh ===
+  PASS: green flip back to in-sync (exit 0)
+
+PASS: docs_chain engine gate — baseline in-sync + RED polarity + green flip verified
+EXIT_challenges/scripts/run_all_challenges.sh=0
+=== challenges/scripts/envfile_bindmount_atomic_challenge.sh ===
+[1/5] Building boba-jackett image...
+EXIT_challenges/scripts/envfile_bindmount_atomic_challenge.sh=0
+=== challenges/scripts/nnmclub_native_plugin_clarification_challenge.sh ===

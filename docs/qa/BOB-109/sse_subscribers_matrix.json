@@ -1,0 +1,43 @@
+{
+  "1": {
+    "accepted": 1,
+    "accepted_throughput_conn_per_s": 0.27,
+    "n_subs": 1,
+    "other_errors": 0,
+    "rate_limited_429": 0,
+    "ttfe_ms_max": 3656.79,
+    "ttfe_ms_p50": 3656.79,
+    "wall_s": 3.658
+  },
+  "10": {
+    "accepted": 10,
+    "accepted_throughput_conn_per_s": 2.15,
+    "n_subs": 10,
+    "other_errors": 0,
+    "rate_limited_429": 0,
+    "ttfe_ms_max": 4648.53,
+    "ttfe_ms_p50": 4639.76,
+    "wall_s": 4.656
+  },
+  "3": {
+    "accepted": 3,
+    "accepted_throughput_conn_per_s": 1.48,
+    "n_subs": 3,
+    "other_errors": 0,
+    "rate_limited_429": 0,
+    "ttfe_ms_max": 2027.29,
+    "ttfe_ms_p50": 2024.96,
+    "wall_s": 2.029
+  },
+  "50": {
+    "accepted": 0,
+    "accepted_throughput_conn_per_s": 0.0,
+    "n_subs": 50,
+    "other_errors": 50,
+    "rate_limited_429": 0,
+    "ttfe_ms_max": null,
+    "ttfe_ms_p50": null,
+    "wall_s": 5.111
+  },
+  "captured_at": "2026-08-19T13:27:40Z"
+}
