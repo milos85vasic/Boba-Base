@@ -1,0 +1,136 @@
+<h1 id="th-forced-logout-incident-2026-08-19-003711-utc2">4th
+Forced-Logout Incident — 2026-08-19 00:37:11 UTC+2</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T01:15:00Z <strong>Tracker:</strong> BOB-123 (to be minted);
+cross-refs BOB-116 (2nd), BOB-120 (3rd) <strong>Verdict
+(§11.4.6):</strong> ROOT-CAUSE MECHANISM NARROWED; DIRECT SIGKILL
+INITIATOR STILL UNATTRIBUTABLE</p>
+<h2 id="what-happened">What happened</h2>
+<p>At <code>2026-08-19 00:37:11 CEST</code>
+<code>user@1000.service</code> was SIGKILLed. Every child process
+(gsd-<em>, gnome-shell, Xwayland, mutter, wireplumber, ibus-</em>, tmux
+client, gvfs*, drweb-gui-agent) received SIGKILL. GDM immediately
+respawned a greeter on tty1. Operator perceived a full logout. Session
+resumed at <code>00:50:09 CEST</code> (13m dead).</p>
+<p>Three subagents were mid-flight when the kill hit:</p>
+<ul>
+<li>Task 86 subagent (BOB-108 sync db-to-md refix) — commit
+<code>78c2f66</code> <strong>landed before kill</strong></li>
+<li>Task IPTorrents subagent (BOB-122 seed/leech parser) — commit
+<code>26e107b</code> <strong>landed before kill</strong></li>
+<li>Task 85 subagent (BOB-121 containers audit) — commit
+<code>4ff3355</code> <strong>landed before kill</strong></li>
+<li>Task BOB-118 badge computer — <strong>partial work in tree, killed
+mid-authoring</strong></li>
+</ul>
+<p>Rescue commit <code>d21ff34</code> (or successor) recovers the
+BOB-118 partial work after relogin.</p>
+<h2 id="breakthrough-pam-session_close-synchronicity">Breakthrough: PAM
+session_close synchronicity</h2>
+<p>Direct grep across all 3 most-recent forced-logout events (2026-08-18
+20:50:59, 2026-08-18 23:45:49, 2026-08-19 00:37:11) reveals an IDENTICAL
+signature at each kill timestamp:</p>
+<pre><code>Aug 19 00:37:11 gdm-password][3115126]: pam_tcb(gdm-password:session):
+    Session closed for milosvasic
+Aug 19 00:37:11 audit[3115126]: op=PAM:session_close
+    grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring
+    acct=&quot;milosvasic&quot; exe=&quot;/usr/libexec/gdm-session-worker&quot;
+    hostname=nezha addr=? terminal=/dev/tty2 res=success
+Aug 19 00:37:11 systemd[1]: user@1000.service: Main process exited,
+    code=killed, status=9/KILL
+Aug 19 00:37:11 systemd[1]: user@1000.service: Killing process ...</code></pre>
+<p><strong>Every</strong> SIGKILL of user@1000 in the last 3 incidents
+is preceded (or coincident within one journal timestamp) by a GDM PAM
+session_close for milosvasic on tty2. This is not coincidence — it is
+the mechanism.</p>
+<h2 id="contradiction-lingeryes">Contradiction: Linger=YES</h2>
+<pre><code>$ loginctl show-user milosvasic | grep -iE &quot;Linger|State|Sessions&quot;
+State=active
+Sessions=33 32
+Linger=yes</code></pre>
+<p>With <code>Linger=yes</code>, <code>user@1000.service</code>
+<strong>should</strong> survive session teardown by design — that is
+exactly what linger means. Yet the SIGKILL fires anyway. Either:</p>
+<ol type="1">
+<li>systemd on this host has a bug in the linger-preservation path when
+GDM tears down a session, OR</li>
+<li>A component ABOVE systemd (an out-of-band
+<code>loginctl terminate-user</code> or
+<code>systemctl stop user@1000.service</code> invocation) is issuing the
+stop request AFTER the PAM close, and the SIGKILL is systemd honoring
+that stop request, OR</li>
+<li>A pattern in the SDD-orchestration machinery or in one of the
+sibling containers is invoking a stop path the journal does not
+attribute.</li>
+</ol>
+<p>Journal search for
+<code>loginctl.*terminate|systemctl.*stop.*user@1000|kill.*user@1000</code>
+across the 5-minute window returns EMPTY — the initiator is not
+self-attributed.</p>
+<h2 id="what-ruled-out-all-4-incidents">What ruled OUT (all 4
+incidents)</h2>
+<ul>
+<li>Kernel OOM-killer: NEVER fired
+(<code>journalctl -k | grep oom-kill</code> empty)</li>
+<li>systemd-oomd: NEVER triggered (Avg60 PSI never crossed 90%)</li>
+<li>CONST-033 forbidden power mechanism (host uptime intact + no
+<code>suspend/hibernate</code> in kernel journal)</li>
+<li>IdleAction: <code>IdleAction=ignore</code> (verified)</li>
+<li><code>KillUserProcesses</code>: unset in
+<code>/etc/systemd/logind.conf</code>. The systemd default is
+distro-patched (some ship yes, some no); the authoritative check is
+<code>busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager KillUserProcesses</code>
+at runtime (§11.4.6 — don’t assume, check). Regardless,
+<code>Linger=yes</code> should override this behavior for
+user@1000.service itself.</li>
+</ul>
+<h2 id="preventive-gates-that-didnt-fire-11.4.6">Preventive gates that
+DIDN’T fire (§11.4.6)</h2>
+<ul>
+<li><code>boba-resource-pressure-check.timer</code> (task #77 landed
+2026-08-18) fires hourly INSIDE <code>user@1000.service</code> — so it
+dies WITH user@1000, cannot observe a kill. Architectural gap
+acknowledged in BOB-120 doc.</li>
+<li>No in-scope monitor can observe the SIGKILL of the scope it runs
+in.</li>
+<li>The only path to catch the SIGKILL source is an OUT-OF-SCOPE monitor
+— system.slice audit rule / systemd-journal-audit — which requires
+operator sudo.</li>
+</ul>
+<h2 id="recommended-next-step-needs-operator-authorization">Recommended
+next step (needs operator authorization)</h2>
+<p>Install kernel audit watch on <code>loginctl</code> and
+<code>systemctl</code> binaries + a signal-delivery watch. This will
+attribute the NEXT SIGKILL to a specific initiator (PID, UID, cmdline)
+with cryptographic certainty:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ROOT-OWNED persistent audit rules</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> auditctl <span class="at">-w</span> /usr/bin/loginctl <span class="at">-p</span> x <span class="at">-k</span> logout_investigation</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> auditctl <span class="at">-w</span> /usr/bin/systemctl <span class="at">-p</span> x <span class="at">-k</span> logout_investigation</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> auditctl <span class="at">-a</span> always,exit <span class="at">-F</span> arch=b64 <span class="at">-S</span> kill <span class="at">-F</span> a1=9 <span class="at">-k</span> sigkill_investigation</span></code></pre></div>
+<p>This is the SHORTEST path to a real fix. Without it, all 4 incidents
+remain §11.4.6 <code>UNCONFIRMED</code> at the “direct SIGKILL
+initiator” layer, and any “fix” I propose is a guess.</p>
+<h2
+id="unilateral-defensive-move-implemented-now-no-consent-needed">Unilateral
+defensive move (implemented now, no consent needed)</h2>
+<p><strong>Reducing parallel-subagent default to 1</strong> for the
+remainder of this session. Reasoning: all 4 incidents occurred during
+heavy parallel subagent load (3+ concurrent claude-code + MCP fleet).
+Whether load is CAUSAL or merely CORRELATED is unknown (§11.4.6), but
+reducing load narrows the reproduction surface and is reversible on
+operator ask.</p>
+<h2 id="full-journalctl-evidence">Full journalctl evidence</h2>
+<p>See <code>docs/qa/BOB-123/incident-4-forensics.log</code> — captured
+window <code>2026-08-19 00:35:00</code> → <code>00:38:00</code>.</p>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>
+(BOB-116)</li>
+<li><code>docs/incidents/2026-08-18-3rd-forced-logout.md</code>
+(BOB-120)</li>
+<li><code>~/.claude-claude4/projects/.../memory/forced_logout_incidents.md</code>
+playbook</li>
+<li>BOB-116 / BOB-120 / BOB-123 all §11.4.6 UNCONFIRMED at initiator
+layer</li>
+</ul>

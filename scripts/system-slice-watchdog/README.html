@@ -1,0 +1,195 @@
+<h1
+id="boba-user1000-out-of-scope-watchdog-bob-116-bob-120-bob-123">boba
+user@1000 out-of-scope watchdog (BOB-116 / BOB-120 / BOB-123)</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-19T02:30:00Z <strong>Class:</strong> operator-run system-slice
+service — captures forensics on user@1000 SIGKILL
+<strong>Anchors:</strong> §11.4.4 four-layer, §11.4.108
+runtime-signature, §11.4.115 RED-first, §11.4.6 anti-guessing, §11.4.10
+credentials, §11.4.128 recording, §11.4.201 guard-real-condition,
+§11.4.161 rootless (no; system-slice by intent), §6.U (operator runs
+<code>su</code>, agent never invokes it).</p>
+<h2 id="purpose">Purpose</h2>
+<p>4 forced-logout incidents (BOB-116 / BOB-120 / BOB-123 + the
+2026-07-07 one) share this mechanism: <code>user@1000.service</code> is
+SIGKILLed → cascade kill of every child process → GDM greeter respawns →
+operator perceives sudden logout.</p>
+<p>Every in-scope monitor (user systemd timer, user cron, rootless
+podman container) DIES IN THE SAME CASCADE and cannot preserve forensics
+— it is architecturally incapable of observing the kill of the scope it
+runs in.</p>
+<p><strong>This watchdog is the ONLY mechanism that can attribute the
+SIGKILL</strong> because it lives in <code>system.slice</code> (a peer
+of <code>user.slice</code>), so it survives the kill of
+<code>user@1000.service</code> and captures the surrounding journal +
+cgroup + audit + process-tree state DURABLY.</p>
+<h2 id="what-gets-installed">What gets installed</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Path</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/usr/local/bin/boba-user1000-watchdog</code></td>
+<td>The monitor script (bash)</td>
+</tr>
+<tr>
+<td><code>/etc/systemd/system/boba-user1000-watchdog.service</code></td>
+<td>Systemd unit — <code>Slice=system.slice</code>, runs as root,
+<code>Restart=always</code></td>
+</tr>
+<tr>
+<td><code>/var/log/boba-watchdog/YYYY-MM-DDTHH-MM-SSZ/</code></td>
+<td>Per-incident evidence dir, chmod 700</td>
+</tr>
+</tbody>
+</table>
+<h2 id="how-it-works">How it works</h2>
+<ol type="1">
+<li>On boot, systemd starts the service in <code>system.slice</code> as
+root.</li>
+<li>The script runs a pre-flight (§11.4.201): verifies uid=0 AND its own
+cgroup is (a) NOT under <code>/user.slice/</code> AND (b) POSITIVELY
+under <code>/system.slice/</code> (fail-closed rejection of
+cgroup-namespaced contexts where the negative check alone would pass
+while actually being inside user.slice). REFUSES to run in any other
+case.</li>
+<li>NOTE: because the preflight requires the system.slice cgroup, a
+manual root-terminal debug invocation
+(<code>su -c '/usr/local/bin/boba-user1000-watchdog'</code> from a tty)
+will refuse — for that, use
+<code>su -c 'systemd-run --slice=system.slice --pty /usr/local/bin/boba-user1000-watchdog'</code>
+which drops the shell into system.slice for the duration (this host has
+no <code>sudo</code>, only <code>su</code>).</li>
+<li>Enters a <code>journalctl -f -u user@1000.service</code> loop.</li>
+<li>On matching the prefix
+<code>&lt;TARGET_UNIT&gt;: Main process exited</code> AND either
+<code>status=9</code> OR <code>code=killed</code>, checks the
+<code>CAPTURE_COOLDOWN_SEC</code> dedup gate; if outside cooldown,
+triggers <code>capture_forensics</code> immediately.</li>
+<li>Captures: journal window (<code>PRE_KILL_WINDOW_SEC</code> before +
+<code>POST_KILL_WINDOW_SEC</code> after), cgroup state (memory + PSI +
+pids), full process tree, kernel audit log (if Path-1 audit rules
+installed), uptime + last, loginctl show-user.</li>
+<li>Rotates evidence dirs to keep the last <code>RETAIN_LAST_N</code>
+(default 20).</li>
+<li>Keeps tailing — captures every subsequent incident too.</li>
+</ol>
+<h2 id="tunables-environment">Tunables (environment)</h2>
+<ul>
+<li><code>BOBA_WATCHDOG_TARGET</code> — target unit to monitor (default
+<code>user@1000.service</code>; set to a scratch unit for a §11.4.108
+layer-4 install-time drill without touching production)</li>
+<li><code>BOBA_WATCHDOG_ROOT</code> — evidence root (default
+<code>/var/log/boba-watchdog</code>)</li>
+<li><code>BOBA_WATCHDOG_RETAIN</code> — retain last N incident dirs
+(default 20)</li>
+<li><code>BOBA_WATCHDOG_PRE_SEC</code> — pre-kill journal window
+(default 60)</li>
+<li><code>BOBA_WATCHDOG_POST_SEC</code> — post-kill journal window
+(default 15)</li>
+<li><code>BOBA_WATCHDOG_COOLDOWN_SEC</code> — dedup window for cascade
+triggers (default 60; I1 fix — cascade lines within 1s must not evict
+real incident dirs)</li>
+</ul>
+<p>Set via drop-in
+<code>/etc/systemd/system/boba-user1000-watchdog.service.d/env.conf</code>
+with <code>[Service]</code> +
+<code>Environment="BOBA_WATCHDOG_ROOT=/path"</code>.</p>
+<p>⚠️ <strong><code>BOBA_WATCHDOG_ROOT</code> misconfiguration is
+destructive</strong>: rotation <code>rm -rf</code> targets ANY dir under
+the configured root. Never point it at <code>/</code>,
+<code>/home</code>, etc.</p>
+<h2 id="install-uninstall">Install / uninstall</h2>
+<p>Per §6.U + §11.4.109, no agent tool invokes
+<code>su</code>/<code>sudo</code>. Install and uninstall scripts print
+<code>su -c '…'</code> commands you copy/paste at your terminal:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/system-slice-watchdog/install.sh    <span class="co"># prints commands to run</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/system-slice-watchdog/uninstall.sh  <span class="co"># prints commands to run</span></span></code></pre></div>
+<h2 id="anti-bluff-verification-11.4.108-11.4.115">Anti-bluff
+verification (§11.4.108 + §11.4.115)</h2>
+<p>Run the challenge WITHOUT root — verifies structural correctness:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/user1000-watchdog-challenge.sh              <span class="co"># GREEN mode</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">POLARITY_MODE</span><span class="op">=</span>red <span class="fu">bash</span> challenges/scripts/user1000-watchdog-challenge.sh  <span class="co"># golden-bad polarity</span></span></code></pre></div>
+<p>The challenge asserts:</p>
+<ol type="1">
+<li>All source files exist + parseable (<code>bash -n</code>, systemd
+unit shape)</li>
+<li>All installer scripts are executable</li>
+<li><strong>Load-bearing</strong>: service declares
+<code>Slice=system.slice</code> (not <code>user.slice</code>)</li>
+<li>Watchdog pre-flight refuses to run in user.slice</li>
+<li>Evidence root is durable (<code>/var/log</code>, not tmpfs)</li>
+<li>Journal trigger matches the exact BOB-116/BOB-120/BOB-123
+signature</li>
+<li>Rotation implemented (bounded disk)</li>
+<li>Resource limits set (<code>MemoryMax</code>, <code>CPUQuota</code>,
+<code>TasksMax</code>)</li>
+</ol>
+<h2 id="after-an-incident">After an incident</h2>
+<p>The forensics are in
+<code>/var/log/boba-watchdog/&lt;timestamp&gt;/</code>:</p>
+<pre><code>state.log         — uptime, last, loginctl, meminfo, PSI, cgroup snapshot
+journal-pre.log   — journal for PRE_KILL_WINDOW_SEC before kill
+journal-post.log  — journal captured POST_KILL_WINDOW_SEC after kill
+proctree.log      — full ps auxf + top-20-by-RSS
+audit.log        — kernel audit logs (requires Path-1 sudo audit rules)</code></pre>
+<h2 id="compose-with-path-1-kernel-audit-rules">Compose with Path 1
+(kernel audit rules)</h2>
+<p>For <strong>initiator attribution</strong> (PID + UID + cmdline of
+the SIGKILL sender), run the audit-rule install from
+<code>docs/incidents/2026-08-19-sudo-audit-rules-for-operator.md</code>
+BEFORE the next incident. The watchdog captures the audit log entries;
+without the rules, <code>audit.log</code> will say “(ausearch failed —
+audit rules may not be installed)”.</p>
+<h2 id="honest-boundaries-11.4.6">Honest boundaries (§11.4.6)</h2>
+<ul>
+<li>The watchdog DIAGNOSES; it does NOT prevent the kill.</li>
+<li><strong>M3 fix</strong>: “survives the kill” is DESIGN INTENT proven
+at §11.4.108 layer-1 (source declares system.slice) + layer-2
+(post-install
+<code>systemctl show boba-user1000-watchdog.service -p Slice</code>
+returns <code>system.slice</code>). Layers 3-4 (survives an actual kill
+event; captures durable evidence during real incident) are
+<strong>PENDING</strong> operator install + next incident. A
+cross-referable positive fact: GDM and auditd both survived all 4
+forced-logout incidents on this host and both live in system.slice —
+this is external evidence of the category-survival, not proof of THIS
+unit’s per-incident behavior.</li>
+<li>The watchdog CANNOT observe events pre-kill that happen outside
+<code>user@1000.service</code>’s journal — e.g. a mutter/gnome-shell
+segfault would be in the user’s journal which may already be flushed by
+the time the watchdog captures.</li>
+<li>The watchdog runs as root (needed to survive user@1000 kill + read
+all journals); it is bounded by <code>MemoryMax=200M</code> and
+<code>CPUQuota=15%</code> per §12.6.</li>
+<li><strong>I3 fix — credential leak honesty (§11.4.10)</strong>:
+evidence dirs contain <code>ps auxf</code> and <code>ps -eo cmd</code>
+output. Those capture <strong>full process cmdlines</strong>, which on
+this host CAN contain credentials (curl -u, env-prefixed invocations,
+some tracker plugins). Mitigations: (a) evidence dirs are
+<code>root:root 0700</code>, (b) the watchdog itself logs ONLY
+operational lines to journal (trigger lines, filenames, preflight
+status) — never evidence contents, and no secret is passed through
+<code>log()</code>, (c) never commit raw captures unredacted per
+§11.4.128(4). If you export a capture for sharing, redact cmdline fields
+first.</li>
+<li><strong>M4 fix — KillUserProcesses claim was speculative</strong>:
+prior text said “systemd’s baked-in default is yes”. Distro-patched
+behavior varies; the authoritative source is
+<code>busctl get-property org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager KillUserProcesses</code>
+at runtime — check it, don’t assume.</li>
+<li><strong>Restart-gap-of-blindness</strong>:
+<code>Restart=always RestartSec=5s</code> means there is a ~5 second
+window after any watchdog exit during which no capture will happen. If
+an incident hits inside that window, evidence will be sparse.</li>
+</ul>

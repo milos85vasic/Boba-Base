@@ -1,0 +1,169 @@
+<h1
+id="audit-rules-for-operator-attribute-next-sigkill-initiator-su-c-form">Audit
+Rules for Operator — Attribute Next SIGKILL Initiator (su-c form)</h1>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-08-19T02:30:00Z <strong>Class:</strong> operator-action-required —
+needs 5 minutes of your terminal time <strong>Purpose:</strong>
+Attribute the SIGKILL initiator that caused BOB-116/BOB-120/BOB-123</p>
+<p><strong>Note:</strong> this host has no <code>sudo</code>, only
+<code>su</code>. Commands below use <code>su -c '…'</code> which prompts
+you interactively for the root password. Per §6.U and §11.4.109
+anti-forgetting guardrails, no agent tool call may invoke
+<code>su</code>/<code>sudo</code> on your behalf — you run these
+commands yourself, at your terminal.</p>
+<h2 id="what-this-does">What this does</h2>
+<p>Installs 6 kernel-level audit rules (2 exec watches + 4 syscall rules
+— b64 and b32 for both <code>kill/tkill/pidfd_send_signal</code> sharing
+<code>a1=9</code> and <code>tgkill</code> with <code>a2=9</code>) that
+will attribute the NEXT SIGKILL to <code>user@1000.service</code>
+with:</p>
+<ul>
+<li>The exact PID that issued the SIGKILL</li>
+<li>The UID (0 = root, 1000 = you, ??? = other)</li>
+<li>The full cmdline of that process</li>
+<li>The kernel syscall number</li>
+</ul>
+<p>Without this attribution, the direct SIGKILL initiator remains
+§11.4.6 <code>UNCONFIRMED</code> across all 4 incidents.</p>
+<h2 id="please-run-at-your-terminal">Please run at your terminal</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># All-in-one — copy/paste this whole block; su prompts you ONCE</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-c</span> <span class="st">&#39;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="st">  # Rule 1: watch every execution of /usr/bin/loginctl (which can terminate users)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -w /usr/bin/loginctl -p x -k logout_investigation</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">  # Rule 2: watch every execution of /usr/bin/systemctl (which can stop user@1000)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -w /usr/bin/systemctl -p x -k logout_investigation</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="st">  # Rule 3-4: kill() + tkill() + pidfd_send_signal() carry signal in argument 1.</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="st">  # b64 + b32 to cover both process bit widths.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -a always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal \</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="st">    -F a1=9 -k sigkill_investigation</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -a always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal \</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="st">    -F a1=9 -k sigkill_investigation 2&gt;/dev/null || true</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="st">  # Rule 5-6: tgkill(tgid, tid, sig) — signal is in argument 2, NOT argument 1.</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="st">  # (Round-2 review N1 correction: previous combined rule matched tgkill only</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="st">  # when tid=9, which is meaningless — must be split off.)</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -a always,exit -F arch=b64 -S tgkill -F a2=9 -k sigkill_investigation</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -a always,exit -F arch=b32 -S tgkill -F a2=9 -k sigkill_investigation 2&gt;/dev/null || true</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="st">  # Verify</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="st">  echo &quot;--- installed rules ---&quot;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -l | grep -E &quot;logout_investigation|sigkill_investigation&quot;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span></code></pre></div>
+<h2 id="coverage-limitation-you-should-know-11.4.6">Coverage limitation
+you should know (§11.4.6)</h2>
+<p>These rules attribute:</p>
+<ul>
+<li>✅ <code>kill(pid, 9)</code> and its
+<code>tkill</code>/<code>tgkill</code>/<code>pidfd_send_signal</code>
+variants</li>
+<li>✅ Any process that execs <code>/usr/bin/loginctl</code> (auid +
+cmdline)</li>
+<li>✅ Any process that execs <code>/usr/bin/systemctl</code> (auid +
+cmdline)</li>
+</ul>
+<p>They do <strong>NOT</strong> attribute:</p>
+<ul>
+<li>❌ A direct D-Bus call to
+<code>org.freedesktop.login1.Manager.TerminateUser</code> /
+<code>KillUser</code> — a caller (systemd component, GDM, or any
+dbus-enabled app) can invoke these methods without ever exec’ing
+<code>loginctl</code>, and the audit exec watch is blind to it. To close
+this blind spot, add <code>busctl monitor org.freedesktop.login1</code>
+during observation windows, or (better) install the boba system.slice
+watchdog which captures the journal window +
+<code>journal-post.log</code> including logind’s method-call log
+lines.</li>
+<li>❌ signal(2)-style raise() calls a process makes to itself (not the
+class we’re hunting — the target is another process killing user@1000’s
+PID 1).</li>
+</ul>
+<p>So: audit rules + system.slice watchdog TOGETHER give the best
+coverage; either alone leaves a specific blind spot. Both are Path 1 +
+Path 2 of the three-path plan.</p>
+<p>Expected output of the verify step (up to 6 lines — b32 rules may be
+absent on kernels without 32-bit compat and their <code>|| true</code>
+suppresses errors):</p>
+<pre><code>-w /usr/bin/loginctl -p x -k logout_investigation
+-w /usr/bin/systemctl -p x -k logout_investigation
+-a always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal -F a1=0x9 -F key=sigkill_investigation
+-a always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal -F a1=0x9 -F key=sigkill_investigation
+-a always,exit -F arch=b64 -S tgkill -F a2=0x9 -F key=sigkill_investigation
+-a always,exit -F arch=b32 -S tgkill -F a2=0x9 -F key=sigkill_investigation</code></pre>
+<p>(auditctl -l normalizes <code>a1=9</code> → <code>a1=0x9</code>;
+syscall list order also normalizes.)</p>
+<h2 id="persistent-version-survives-reboot">Persistent version (survives
+reboot)</h2>
+<p>If you’d like these rules to survive host reboots, also do:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-c</span> <span class="st">&#39;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="st">  cat &gt; /etc/audit/rules.d/logout_investigation.rules &lt;&lt;EOF</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st">-w /usr/bin/loginctl -p x -k logout_investigation</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st">-w /usr/bin/systemctl -p x -k logout_investigation</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st">-a always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st">-a always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="st">-a always,exit -F arch=b64 -S tgkill -F a2=9 -k sigkill_investigation</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="st">-a always,exit -F arch=b32 -S tgkill -F a2=9 -k sigkill_investigation</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="st">EOF</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="st">  augenrules --load 2&gt;&amp;1 | head</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span></code></pre></div>
+<h2 id="after-the-next-incident">After the NEXT incident</h2>
+<p>Run this to see the SIGKILL initiator:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-c</span> <span class="st">&#39;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">  echo &quot;--- SIGKILL events ---&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">  ausearch -k sigkill_investigation --start today | tail -50</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">  echo</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">  echo &quot;--- loginctl/systemctl executions ---&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st">  ausearch -k logout_investigation --start today | tail -50</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span></code></pre></div>
+<p>The output will include (I4 fix — softened claim):</p>
+<ul>
+<li><code>pid=NNN</code> — the initiator PID (when it executed
+loginctl/systemctl OR called a covered syscall)</li>
+<li><code>uid=NNN</code> / <code>auid=NNN</code> — the initiator UID /
+audit-tracked UID</li>
+<li><code>exe="/path/to/binary"</code> — the initiator executable</li>
+<li><code>proctitle=...</code> — hex-encoded cmdline</li>
+</ul>
+<p><strong>§11.4.6 honesty:</strong> attribution is high-confidence when
+the initiator went through <code>kill()</code>-family or an exec-audited
+binary. It is <strong>NOT</strong> cryptographic certainty in the
+DBus-only case (see “Coverage limitation” above).</p>
+<h2 id="removing-the-rules-later">Removing the rules later</h2>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-c</span> <span class="st">&#39;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -d -w /usr/bin/loginctl -p x -k logout_investigation</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -d -w /usr/bin/systemctl -p x -k logout_investigation</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -d always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -d always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation 2&gt;/dev/null || true</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -d always,exit -F arch=b64 -S tgkill -F a2=9 -k sigkill_investigation</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="st">  auditctl -d always,exit -F arch=b32 -S tgkill -F a2=9 -k sigkill_investigation 2&gt;/dev/null || true</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="st">  # Persistent version cleanup:</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="st">  rm -f /etc/audit/rules.d/logout_investigation.rules</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="st">  augenrules --load</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span></code></pre></div>
+<h2 id="password-rotation-reminder-11.4.10">Password rotation reminder
+(§11.4.10)</h2>
+<p>You provided the root password in a mid-turn chat message. Per
+§11.4.10 that value is now in the session transcript. <strong>Please
+rotate the root password at your earliest convenience</strong> — my
+agent tooling refused to use it directly per §6.U guardrail (as it
+should), so it was never executed on your behalf; but the transcript
+retention is unavoidable from my side.</p>
+<h2 id="anti-bluff-note">Anti-bluff note</h2>
+<p>These rules DIAGNOSE, they DO NOT PREVENT. The kill still happens.
+The value is: on incident #5 (if any), we will have kernel-attributed
+evidence of who sent the signal — not a guess.</p>
+<p>This is Path 1 of your “all three in parallel” decision. Path 2
+(system.slice watchdog build) is underway. Path 3 (parallel-subagent cap
+= 1) is already in effect.</p>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>
+(BOB-116)</li>
+<li><code>docs/incidents/2026-08-18-3rd-forced-logout.md</code>
+(BOB-120)</li>
+<li><code>docs/incidents/2026-08-19-4th-forced-logout.md</code>
+(BOB-123)</li>
+<li><code>~/.claude-claude4/projects/.../memory/forced_logout_incidents.md</code>
+playbook</li>
+</ul>

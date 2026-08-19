@@ -1,0 +1,128 @@
+<h1
+id="scriptscompute-badges.sh-11.4.259-machine-derived-readme-badge-regenerator">scripts/compute-badges.sh
+— §11.4.259 machine-derived README badge regenerator</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T22:29:59Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-118 (§11.4.6 bluff audit — task-ad3205a9)</p>
+<h2 id="overview">Overview</h2>
+<p><code>scripts/compute-badges.sh</code> regenerates the “python tests”
+and “frontend tests” shields.io badges in <code>README.md</code>, plus
+the matching Contributing- section bullets and a corroborating
+<code>## Test counts</code> table in <code>docs/TESTING.md</code>, from
+REAL numbers produced by a live invocation of the tools that actually
+count those tests — never a hand-typed or carried-forward number. It is
+the fix for BOB-118 and the standing mechanism that keeps the same class
+of bug from recurring.</p>
+<h2 id="why-this-exists-bob-118">Why this exists — BOB-118</h2>
+<p><code>docs/qa/task-ad3205a9-*</code> (a §11.4.6 no-guessing bluff
+audit) found that README.md’s badge row read
+<code>python tests-585 passing</code> and
+<code>frontend tests-182 passing</code>, while a real
+<code>pytest --collect-only</code> over <code>tests/</code> collected
+<strong>5248</strong> tests — roughly 9x more than the badge claimed.
+The cited “authoritative source”, <code>docs/TESTING.md</code>,
+contained <strong>zero</strong> occurrences of either number anywhere in
+the file — the badge could not be corroborated by any tracked document.
+This is exactly the class of defect §11.4.259 exists to make
+structurally impossible: every README badge MUST be machine-derived,
+never hand-picked.</p>
+<h2 id="what-it-computes">What it computes</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Badge / bullet</th>
+<th>Real command</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python tests</code> badge (whole tree)</td>
+<td><code>pytest --collect-only -q tests/ --import-mode=importlib</code></td>
+<td>Parses pytest’s own <code>N tests collected</code> summary
+line.</td>
+</tr>
+<tr>
+<td>Contributing bullet “unit + e2e + contract”</td>
+<td>sum of
+<code>pytest --collect-only -q tests/{unit,e2e,contract}/</code></td>
+<td>Scoped to match the bullet’s own stated suite scope — never the
+whole-tree number under a narrower label.</td>
+</tr>
+<tr>
+<td><code>frontend tests</code> badge</td>
+<td><code>frontend/node_modules/.bin/vitest list --run</code></td>
+<td>Exact per-test-case count. Falls back to a labelled grep proxy over
+<code>it(</code>/<code>test(</code> declarations when
+<code>node_modules</code> is absent (never silently presented as
+exact).</td>
+</tr>
+<tr>
+<td><code>## Test counts</code> table in
+<code>docs/TESTING.md</code></td>
+<td>all of the above, plus <code>tests/integration/</code></td>
+<td>The corroborating source the badge audit found missing.</td>
+</tr>
+</tbody>
+</table>
+<p>Two badges (<code>challenges</code>,
+<code>pre-build invariants</code>) were verified fresh in a prior
+session and are cross-checked (not rewritten) by this script — see the
+counts printed to stdout on every run.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute + rewrite README.md and docs/</span><span class="al">TESTING</span><span class="co">.md in place</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/compute-badges.sh</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute only — print whether the badges are stale, write nothing.</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Exit 0 = in sync, exit 2 = stale (advisory; callers must not treat</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># this as fatal per §11.4.234 always-unblocked).</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/compute-badges.sh</span> <span class="at">--check</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Point at alternate files (used by the paired §1.1 mutation test)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/compute-badges.sh</span> <span class="at">--check</span> <span class="at">--readme</span> /tmp/fixture-README.md <span class="at">--testing-md</span> /tmp/fixture-TESTING.md</span></code></pre></div>
+<h2 id="wording-collected-not-passing">Wording: “collected” not
+“passing”</h2>
+<p>The regenerated badges say <strong>“N collected”</strong>, not “N
+passing”. Running the full 5248-test tree (many of which need live
+services, Docker/Podman, or hardware) end-to-end is outside what a
+badge-refresh script can honestly assert on every invocation.
+“Collected” is the claim this script can always verify in seconds with
+zero infrastructure dependencies: the test exists and pytest/vitest can
+find it. Asserting “passing” without having actually run every one of
+those tests in the same invocation would just be a differently-shaped
+version of the same bluff BOB-118 reports.</p>
+<h2 id="edge-cases-honest-failure-mode">Edge cases (honest failure
+mode)</h2>
+<p>If the python interpreter cannot be resolved (mirrors
+<code>ci.sh</code>’s fallback chain: <code>$PYTHON</code> →
+<code>.venv/bin/python</code> → <code>python3.13</code> →
+<code>python3.12</code> → <code>python3</code>) or
+<code>pytest --collect-only</code> produces no parseable summary line,
+the badge is emitted as <code>N/A (&lt;reason&gt;)</code> in
+shields.io’s <code>lightgrey</code> color — never a fabricated number
+(§11.4.6). Same discipline for the frontend count when neither
+<code>vitest</code> nor any <code>*.spec.ts</code> file can be
+found.</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>scripts/pre_build_verification.sh</code> invariant
+<code>CM-BADGE-FRESHNESS-CHECK</code> calls
+<code>compute-badges.sh --check</code> as a non-blocking WARN (never
+FAIL, per §11.4.234) so a drifted badge surfaces on every pre-build
+sweep instead of silently aging for months.</li>
+<li><code>docs/TESTING.md</code> — the corroborating authoritative
+source this script keeps in sync.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-08-18, this session: <code>--check</code> correctly reported the
+pre-fix README as stale (<code>5248</code> vs the stale
+<code>585</code>, <code>371</code> vs the stale <code>182</code>), then
+a clean run regenerated both files and a follow-up <code>--check</code>
+reported in-sync. See <code>docs/qa/task-bob118-fix/</code> for the
+captured before/after evidence.</p>
