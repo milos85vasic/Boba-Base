@@ -142,7 +142,8 @@ async def test_search_complete_sse_carries_status_and_errors(monkeypatch):
     if hasattr(_search_impl, "__wrapped__"):
         _search_impl = _search_impl.__wrapped__
 
-    resp = await _search_impl(SearchRequest(query="debian"), fake_req)
+    from starlette.responses import Response as _Response
+    resp = await _search_impl(SearchRequest(query="debian"), fake_req, _Response())
     assert resp.status == "running"
 
     # Let the fire-and-forget background task finish (it dispatches search_complete).
