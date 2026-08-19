@@ -1,0 +1,9 @@
+{
+  "churn_goroutines": 20,
+  "clients_after_flood": 0,
+  "feature_class": "sse_broker",
+  "panics": 0,
+  "publishers": 4,
+  "scenario": "unsubscribe_during_publish_flood",
+  "window_ms": 500
+}

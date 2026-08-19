@@ -23,9 +23,16 @@ func (b *SSEBroker) Subscribe() (chan string, func()) {
 	defer b.mu.Unlock()
 	ch := make(chan string, 10)
 	b.clients[ch] = true
+	// BOB-095 §11.4.85 / §11.4.253: unsubscribe MUST be idempotent — an HTTP
+	// handler's request-context cancel + a peer disconnect can both fire the
+	// callback, and a second `close(ch)` panics ("close of closed channel").
+	// Gate on registry membership so the second call is a safe no-op.
 	return ch, func() {
 		b.mu.Lock()
 		defer b.mu.Unlock()
+		if _, ok := b.clients[ch]; !ok {
+			return
+		}
 		delete(b.clients, ch)
 		close(ch)
 	}

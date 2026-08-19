@@ -1,0 +1,6 @@
+=== RUN   TestSSEBrokerStressChaos_BoundaryDoubleUnsubscribe
+    sse_broker_stress_chaos_test.go:249: second unsubscribe panicked: close of closed channel (expected safe no-op)
+--- FAIL: TestSSEBrokerStressChaos_BoundaryDoubleUnsubscribe (0.00s)
+FAIL
+FAIL	github.com/milos85vasic/qBitTorrent-go/internal/service	0.015s
+FAIL

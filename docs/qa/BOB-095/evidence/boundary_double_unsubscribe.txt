@@ -1,0 +1,1 @@
+PASS: second unsubscribe is a safe no-op — no panic, no client-map corruption

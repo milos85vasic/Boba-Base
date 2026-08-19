@@ -1,0 +1,9 @@
+{
+  "expected_total": 500,
+  "feature_class": "sse_broker",
+  "messages": 5,
+  "min_per_sub": 5,
+  "scenario": "concurrent_subscribers",
+  "subscribers": 100,
+  "total_received": 500
+}

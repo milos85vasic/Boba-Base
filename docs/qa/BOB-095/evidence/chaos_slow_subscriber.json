@@ -1,0 +1,8 @@
+{
+  "backpressure_kind": "drop-with-warn (default: clause in Publish)",
+  "events_published": 100,
+  "feature_class": "sse_broker",
+  "healthy_received": 10,
+  "publisher_wedged": false,
+  "scenario": "slow_subscriber_does_not_block"
+}

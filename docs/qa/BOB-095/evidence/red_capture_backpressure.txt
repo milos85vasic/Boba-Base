@@ -1,0 +1,20 @@
+testing.(*common).FailNow(0xc000160908)
+	/usr/lib/golang/src/testing/testing.go:1022 +0x7b
+testing.(*common).Fatalf(0xc000160908, {0xa94c99, 0x57}, {0x0, 0x0, 0x0})
+	/usr/lib/golang/src/testing/testing.go:1228 +0x99
+github.com/milos85vasic/qBitTorrent-go/internal/service.TestSSEBrokerStressChaos_SlowSubscriberDoesNotBlock(0xc000160908)
+	/run/media/milosvasic/DATA4TB/Projects/boba/qBitTorrent-go/internal/service/sse_broker_stress_chaos_test.go:293 +0x2b3
+testing.tRunner(0xc000160908, 0xa9b3a0)
+	/usr/lib/golang/src/testing/testing.go:2036 +0x21d
+created by testing.(*T).Run in goroutine 1
+	/usr/lib/golang/src/testing/testing.go:2101 +0xb13
+
+goroutine 22 [chan send]:
+github.com/milos85vasic/qBitTorrent-go/internal/service.(*SSEBroker).Publish(0xc00012e5c0, {0xa776c3, 0x6}, {0xc0000182aa, 0x6})
+	/run/media/milosvasic/DATA4TB/Projects/boba/qBitTorrent-go/internal/service/sse_broker.go:45 +0x25a
+github.com/milos85vasic/qBitTorrent-go/internal/service.TestSSEBrokerStressChaos_SlowSubscriberDoesNotBlock.func1()
+	/run/media/milosvasic/DATA4TB/Projects/boba/qBitTorrent-go/internal/service/sse_broker_stress_chaos_test.go:282 +0xa5
+created by github.com/milos85vasic/qBitTorrent-go/internal/service.TestSSEBrokerStressChaos_SlowSubscriberDoesNotBlock in goroutine 21
+	/run/media/milosvasic/DATA4TB/Projects/boba/qBitTorrent-go/internal/service/sse_broker_stress_chaos_test.go:280 +0x1eb
+FAIL	github.com/milos85vasic/qBitTorrent-go/internal/service	10.056s
+FAIL

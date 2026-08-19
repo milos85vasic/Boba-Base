@@ -1,0 +1,14 @@
+=== RUN   TestSSEBrokerStressChaos_SustainedSubscribeUnsubscribe
+--- PASS: TestSSEBrokerStressChaos_SustainedSubscribeUnsubscribe (0.11s)
+=== RUN   TestSSEBrokerStressChaos_ConcurrentSubscribers
+--- PASS: TestSSEBrokerStressChaos_ConcurrentSubscribers (0.00s)
+=== RUN   TestSSEBrokerStressChaos_BoundaryDoubleUnsubscribe
+--- PASS: TestSSEBrokerStressChaos_BoundaryDoubleUnsubscribe (0.00s)
+=== RUN   TestSSEBrokerStressChaos_SlowSubscriberDoesNotBlock
+--- PASS: TestSSEBrokerStressChaos_SlowSubscriberDoesNotBlock (0.05s)
+=== RUN   TestSSEBrokerStressChaos_UnsubscribeDuringPublish
+--- PASS: TestSSEBrokerStressChaos_UnsubscribeDuringPublish (0.50s)
+=== RUN   TestSSEBrokerStressChaos_ProducerFloodBoundedByBuffer
+--- PASS: TestSSEBrokerStressChaos_ProducerFloodBoundedByBuffer (0.07s)
+PASS
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/service	1.771s
