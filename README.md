@@ -180,6 +180,7 @@ no HTML/PDF export yet (never fabricated).
 | browser_extension/Status | 2026-06-13T13:10:00Z | 15 | [Markdown](docs/browser_extension/Status.md) | [HTML](docs/browser_extension/Status.html) | [PDF](docs/browser_extension/Status.pdf) |
 | browser_extension/Status_Summary | 2026-06-10T20:05:00Z | 3 | [Markdown](docs/browser_extension/Status_Summary.md) | [HTML](docs/browser_extension/Status_Summary.html) | [PDF](docs/browser_extension/Status_Summary.pdf) |
 | browser_extension/RELEASE_READINESS | 2026-06-13T13:10:00Z | 4 | [Markdown](docs/browser_extension/RELEASE_READINESS.md) | [HTML](docs/browser_extension/RELEASE_READINESS.html) | [PDF](docs/browser_extension/RELEASE_READINESS.pdf) |
+| codegraph/Status | 2026-08-18T13:33:41Z | 2 | [Markdown](docs/codegraph/Status.md) | [HTML](docs/codegraph/Status.html) | [PDF](docs/codegraph/Status.pdf) |
 | COMPLETION_STATUS | 2026-06-06T00:00:00Z | 1 | [Markdown](docs/COMPLETION_STATUS.md) | [HTML](docs/COMPLETION_STATUS.html) | [PDF](docs/COMPLETION_STATUS.pdf) |
 | RELEASE_READINESS_20260616 | 2026-06-16T10:30:00Z | 1 | [Markdown](docs/RELEASE_READINESS_20260616.md) | [HTML](docs/RELEASE_READINESS_20260616.html) | [PDF](docs/RELEASE_READINESS_20260616.pdf) |
 | features/Status | 2026-08-18T13:33:41Z | 8 | [Markdown](docs/features/Status.md) | [HTML](docs/features/Status.html) | [PDF](docs/features/Status.pdf) |

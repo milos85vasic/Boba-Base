@@ -244,29 +244,12 @@ def test_nnmclub_status_endpoint(live_url: str) -> None:
     """BOB-006 added GET /api/v1/auth/nnmclub/status returning a JSON body
     with an ``authenticated`` field.
 
-    NOTE: the endpoint exists in source (download-proxy/src/api/auth.py
-    @router.get("/nnmclub/status")) but the LIVE container may be running
-    stale code that predates it (a real §11.4.108 SOURCE->ARTIFACT gap). We
-    assert against the LIVE service: if it 404s, that is captured as a
-    deployment-drift finding and the test SKIPs (no fake-pass); when the
-    container is rebuilt the assertion fires for real."""
+    BOB-092 (2026-08-19): the earlier SKIP-on-404 fallback for a stale
+    container was removed after verifying the live endpoint returns 200
+    (see docs/qa/2026-08-19-bob-092/). Drift back to 404 now produces a
+    hard FAIL (§11.4.108 layer-3 runtime-signature) instead of a silent
+    SKIP that could hide a regression (§11.4.238 automated-QA-discovers)."""
     resp = requests.get(f"{live_url}/api/v1/auth/nnmclub/status", timeout=15)
-    if resp.status_code == 404:
-        _save_evidence(
-            "nnmclub_status_DEPLOYMENT_DRIFT.txt",
-            "GET /api/v1/auth/nnmclub/status -> 404 on the LIVE service.\n"
-            "Source HAS @router.get('/nnmclub/status') in "
-            "download-proxy/src/api/auth.py (BOB-006) but the running "
-            "container exposes only /auth/rutracker/* + /auth/status "
-            "(see /openapi.json). This is a real SOURCE->ARTIFACT drift "
-            "(§11.4.108): restart/redeploy qbittorrent-proxy to ship it.\n"
-            f"Response body: {resp.text[:300]}",
-        )
-        pytest.skip(  # SKIP-OK: endpoint in source but not in running container, §11.4.108 drift
-            "live /api/v1/auth/nnmclub/status -> 404: source has the route "
-            "but the running container is stale (SOURCE->ARTIFACT drift). "
-            "Evidence saved; redeploy to enable."
-        )
     body = resp.json()
     _save_evidence("nnmclub_status.json", body)
     assert resp.status_code == 200, f"unexpected status {resp.status_code}: {resp.text[:200]}"
