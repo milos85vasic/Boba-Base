@@ -80,6 +80,8 @@ async def test_stuck_subprocess_killed_and_abandoned() -> None:
     with (
         patch.dict(os.environ, {"PUBLIC_TRACKER_DEADLINE_SECONDS": "5"}, clear=False),
         patch("asyncio.create_subprocess_exec", return_value=proc),
+        patch.object(_search.os, "getpgid", return_value=12345),
+        patch.object(_search.os, "killpg"),
     ):
         results = await orch._search_public_tracker("slowplug", "q", "all")
 
@@ -145,6 +147,8 @@ async def test_cleanup_timeout_abandons_zombie() -> None:
     with (
         patch.dict(os.environ, {"PUBLIC_TRACKER_DEADLINE_SECONDS": "5"}, clear=False),
         patch("asyncio.create_subprocess_exec", return_value=proc),
+        patch.object(_search.os, "getpgid", return_value=1111),
+        patch.object(_search.os, "killpg"),
     ):
         # The total wall-clock must be bounded:
         #   deadline 5 s + cleanup timeout 5 s + stderr timeout 5 s
