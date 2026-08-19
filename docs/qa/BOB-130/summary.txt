@@ -1,0 +1,3 @@
+commit=091a208
+class 3/3 pass, full file 9/9 pass in 426.80s, no regressions in sibling classes
+final_timeout=240 (class-level, pyproject global --timeout=60 preserved)

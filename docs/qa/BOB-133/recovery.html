@@ -1,0 +1,12 @@
+<h1 id="bob-133-fleet-recovery-evidence">BOB-133 fleet recovery
+evidence</h1>
+<h2 id="recovery-command">Recovery command</h2>
+<pre><code>bash ./start.sh --recreate</code></pre>
+<h2 id="post-recovery-port-check">Post-recovery port check</h2>
+<pre><code>0.0.0.0:7186
+0.0.0.0:7187
+*:7185
+*:7189
+*:9117</code></pre>
+<h2 id="live-probe-evidence">Live probe evidence</h2>
+<p><code>HTTP 200 /api/v1/stats HTTP 200 POST /api/v1/search response body: {"search_id":"d78e9692-4134-42a6-9b90-2edc5bb219be","query":"bob133_recovery","status":"running","results":[],"total_results":0,"merged_results":0,"trackers_searched":["rutracker","kinozal","nnmclub","iptorrents","jackett","academictorrents","ali213","anilibra","audiobookbay","bitru","bitsearch","bt</code></p>

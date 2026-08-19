@@ -197,7 +197,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>9</td>
+<td>11</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -217,7 +217,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>48</strong></td>
+<td><strong>50</strong></td>
 </tr>
 </tbody>
 </table>
@@ -850,6 +850,38 @@ params) or a version pin (slowapi vs starlette compat) or a middleware
 refactor. §11.4.238 discovery-channel escape prevention: manual QA must
 NOT be the discoverer. §11.4.108 Layer 3 verification: needed on a clean
 deployment before any release.</td>
+</tr>
+<tr>
+<td>BOB-131</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>BOB-129 subagent found qbittorrent-proxy container DEAD
+mid-investigation (podman conmon crash). Recovery via ./start.sh
+–no-build worked. Pre-existing, unrelated to BOB-129 slowapi work but
+surfaced by it. Investigation needed: (a) how long was container dead
+before discovery? (b) what triggered the conmon crash? (c) is there a
+§11.4.144 always-follow / §11.4.128 always-record signal we should add
+to detect this class earlier? Post-recovery: container now unhealthy
+(see BOB-132). §11.4.238 discovery-channel escape: was originally found
+by a subagent investigating something else, not by dedicated container
+health monitoring.</td>
+</tr>
+<tr>
+<td>BOB-135</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Low</td>
+<td>Task #109 subagent found:
+tests/unit/test_merge_api_route_contracts.py::TestHooksEndpoint::test_list_hooks_after_create
+fails when run in bulk suite order with ‘ERROR api.hooks:hooks.py:102
+Failed to save hooks: [Errno 13] Permission denied: /config’. Passes in
+isolation (2.02s clean). Root cause: full-suite ordering pollution —
+some earlier test leaves state that makes hooks try to write to /config
+(which the test env doesn’t own). Pre-existing, unrelated to
+BOB-126/BOB-129 chain. Fix strategy: identify the polluting test, add
+teardown or use a proper tempdir fixture for hooks storage in the
+offending test.</td>
 </tr>
 </tbody>
 </table>

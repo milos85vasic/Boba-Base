@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 16
-**Last modified:** 2026-08-19T16:41:19Z
+**Revision:** 17
+**Last modified:** 2026-08-19T18:07:03Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -880,4 +880,31 @@ Seventh forced-logout SIGKILL cascade. Kernel audit trail: audit[399861] syscall
 **Severity:** Low
 
 Follow-up to BOB-126 systematic sweep. Task 8 audit surfaced 2 test cases in tests/unit/merge_service/test_public_tracker_subprocess_timeout.py that set explicit int mock.pid (12345, 1111) satisfying the production BOB-126 int-guard, but did NOT patch os.killpg/os.getpgid so the real syscalls fired against hardcoded non-owned PIDs. Low collision probability on typical host, but section 11.4.263(C) hygiene violation in the exact file authored to guard against host-wide kills. FIX at 8bedc5a: added patch.object(_search.os, getpgid) + patch.object(_search.os, killpg) to both tests matching sibling test_process_group_kill_called_on_deadline pattern. 6/6 tests still PASS. Report: .superpowers/sdd/task-8-syscall-audit.md. Recommended gate CM-TEST-KILLPG-PATCHED-WHEN-REAL-PID tracked as separate followup.
+
+## BOB-132 — qbittorrent-proxy post-recovery: unhealthy — connection refused to qbittorrent sidecar on localhost:7185
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-133/recovery.md
+**Severity:** High
+
+After BOB-131 recovery, qbittorrent-proxy container reports 'unhealthy' due to Connection refused reaching qbittorrent sidecar on localhost:7185. Separate from BOB-129 (slowapi) and BOB-131 (conmon crash). Networking issue: qbittorrent-proxy expects to reach qbittorrent WebUI on localhost:7185 (container-internal port), but connection refused. Investigation: (a) is qbittorrent listening on 7185 inside its container? podman exec qbittorrent ss -tlnp shows...? (b) is the docker-compose network topology correct post-recovery? (c) was this always broken or a regression? Not self-healing during BOB-129 subagent session. Blocks live tracker downloads which route through the proxy.
+
+## BOB-133 — CRITICAL: fleet-wide container dead-but-healthy — podman stale-cache masks service outage
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-133/recovery.md
+**Severity:** Critical
+
+All 7 boba service ports DEAD: 7185 (qbittorrent WebUI), 7186 (proxy), 7187 (merge_service), 7188 (webui-bridge), 7189 (boba-jackett), 9117 (jackett), 8080. Podman reports all containers 'running/healthy' but /proc/<pid> is absent for qbittorrent (pid 29972), jackett (pid 30021), boba-jackett (pid 31025). Stale-healthcheck class defect §11.4.180 masked service outage. §11.4.201(6) FALSE-NULL: 'healthy' status is not evidence of aliveness. Discovery-channel escape (§11.4.238): only surfaced via BOB-129 subagent's honest side-observation + orchestrator's live-port probe — should have been caught by continuous container aliveness monitoring. Blocks §11.4.185 manual QA (service isn't running for operator to test). Recovery: ./start.sh --recreate per CLAUDE.md Hard Stop #3 orchestrator-only contract.
+
+## BOB-130 — Badge-test timeout deterministic — synced_fixtures fixture 93s vs --timeout=60
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-130/summary.txt
+**Severity:** Low
+
+Task 7 audit surfaced 3 pytest-timeout kills on tests/unit/test_compute_badges_script.py::TestComputeBadgesCheckModePolarity as UNCONFIRMED artifact. Task #110 verification REFUTED that hypothesis. All 3 test phases (baseline, nice-19, nice-19+parallel) timed out identically at 182-183s wall-clock (6 passed, 3 errors — deterministic, load-independent). Root cause via standalone timing: the synced_fixtures fixture (function-scoped) shells out scripts/compute-badges.sh in full-regeneration mode (pytest --collect-only across 5356 tests + vitest list --run) which is CPU-bound at 93.14s (203% CPU). Project default --timeout=60 in pyproject.toml is exceeded every invocation. Fix options per subagent report: (a) @pytest.mark.timeout(240) on TestComputeBadgesCheckModePolarity, (b) cache synced_fixtures across the 3 consumer tests (currently function-scoped to work around a pinned-pytest fixture-finalizer bug). Full evidence: .superpowers/sdd/task7-badge-timeout-verification.md
 

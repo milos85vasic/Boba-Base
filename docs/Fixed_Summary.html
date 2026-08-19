@@ -192,7 +192,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>28</td>
+<td>31</td>
 </tr>
 <tr>
 <td>Feature</td>
@@ -217,7 +217,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>79</strong></td>
+<td><strong>82</strong></td>
 </tr>
 </tbody>
 </table>
@@ -905,6 +905,67 @@ patch.object(_search.os, killpg) to both tests matching sibling
 test_process_group_kill_called_on_deadline pattern. 6/6 tests still
 PASS. Report: .superpowers/sdd/task-8-syscall-audit.md. Recommended gate
 CM-TEST-KILLPG-PATCHED-WHEN-REAL-PID tracked as separate followup.</td>
+</tr>
+<tr>
+<td>80</td>
+<td>Low</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-130 — Task 7 audit surfaced 3 pytest-timeout kills on
+tests/unit/test_compute_badges_script.py::TestComputeBadgesCheckModePolarity
+as UNCONFIRMED artifact. Task #110 verification REFUTED that hypothesis.
+All 3 test phases (baseline, nice-19, nice-19+parallel) timed out
+identically at 182-183s wall-clock (6 passed, 3 errors — deterministic,
+load-independent). Root cause via standalone timing: the synced_fixtures
+fixture (function-scoped) shells out scripts/compute-badges.sh in
+full-regeneration mode (pytest –collect-only across 5356 tests + vitest
+list –run) which is CPU-bound at 93.14s (203% CPU). Project default
+–timeout=60 in pyproject.toml is exceeded every invocation. Fix options
+per subagent report: (a) <span class="citation"
+data-cites="pytest.mark.timeout">@pytest.mark.timeout</span>(240) on
+TestComputeBadgesCheckModePolarity, (b) cache synced_fixtures across the
+3 consumer tests (currently function-scoped to work around a
+pinned-pytest fixture-finalizer bug). Full evidence:
+.superpowers/sdd/task7-badge-timeout-verification.md</td>
+</tr>
+<tr>
+<td>81</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-132 — After BOB-131 recovery, qbittorrent-proxy container
+reports ‘unhealthy’ due to Connection refused reaching qbittorrent
+sidecar on localhost:7185. Separate from BOB-129 (slowapi) and BOB-131
+(conmon crash). Networking issue: qbittorrent-proxy expects to reach
+qbittorrent WebUI on localhost:7185 (container-internal port), but
+connection refused. Investigation: (a) is qbittorrent listening on 7185
+inside its container? podman exec qbittorrent ss -tlnp shows…? (b) is
+the docker-compose network topology correct post-recovery? (c) was this
+always broken or a regression? Not self-healing during BOB-129 subagent
+session. Blocks live tracker downloads which route through the
+proxy.</td>
+</tr>
+<tr>
+<td>82</td>
+<td>Critical</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-133 — All 7 boba service ports DEAD: 7185 (qbittorrent WebUI),
+7186 (proxy), 7187 (merge_service), 7188 (webui-bridge), 7189
+(boba-jackett), 9117 (jackett), 8080. Podman reports all containers
+‘running/healthy’ but /proc/<pid> is absent for qbittorrent (pid 29972),
+jackett (pid 30021), boba-jackett (pid 31025). Stale-healthcheck class
+defect §11.4.180 masked service outage. §11.4.201(6) FALSE-NULL:
+‘healthy’ status is not evidence of aliveness. Discovery-channel escape
+(§11.4.238): only surfaced via BOB-129 subagent’s honest
+side-observation + orchestrator’s live-port probe — should have been
+caught by continuous container aliveness monitoring. Blocks §11.4.185
+manual QA (service isn’t running for operator to test). Recovery:
+./start.sh –recreate per CLAUDE.md Hard Stop #3 orchestrator-only
+contract.</td>
 </tr>
 </tbody>
 </table>
