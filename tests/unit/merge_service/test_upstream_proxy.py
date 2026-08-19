@@ -108,6 +108,7 @@ def recording_proxy():
         yield f"http://127.0.0.1:{port}", _RecordingProxy
     finally:
         srv.shutdown()
+        srv.server_close()
 
 
 # --------------------------------------------------------------------------- #
@@ -212,6 +213,7 @@ async def test_aiohttp_loopback_stays_direct(monkeypatch, recording_proxy):
         assert rec.urls == [], f"loopback call must NOT traverse the proxy; saw {rec.urls!r}"
     finally:
         origin_srv.shutdown()
+        origin_srv.server_close()
 
 
 # --------------------------------------------------------------------------- #
