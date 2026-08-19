@@ -107,15 +107,21 @@ fi
 
 if grep -qE '^User=root' "$SERVICE_UNIT"; then
     pass "runs as User=root (needed to survive user@1000 kill)"
+else
+    # N5 fix: previously pass-only — deleting User=root left the check silent
+    fail "User=root NOT declared — watchdog can't survive user@1000 kill without root"
 fi
 
-# M5 fix: ExecStart path must match what install.sh installs to
+# M5 + N4 fix: ExecStart path must match what install.sh installs to.
+# N4 fix: extract the install dest from the ACTUAL 'install -m 0755' code line,
+# not from any commentary in install.sh (§11.4.201(7)(a) carrier class).
 exec_start_path=$(grep -E '^ExecStart=' "$SERVICE_UNIT" | head -1 | awk -F= '{print $2}' | awk '{print $1}')
-install_dest_path=$(grep -oE '/usr/local/bin/[a-zA-Z0-9_-]+' "$INSTALL_SH" | head -1)
+install_dest_path=$(grep -E '^\s*install -m 0755' "$INSTALL_SH" | \
+    grep -oE '/usr/local/bin/[a-zA-Z0-9_-]+' | head -1)
 if [[ -n "$exec_start_path" && -n "$install_dest_path" && "$exec_start_path" == "$install_dest_path" ]]; then
-    pass "ExecStart ($exec_start_path) matches install.sh dest ($install_dest_path)"
+    pass "ExecStart ($exec_start_path) matches install.sh 'install -m 0755' dest ($install_dest_path)"
 else
-    fail "PATH DRIFT: ExecStart=$exec_start_path but install.sh installs to $install_dest_path"
+    fail "PATH DRIFT: ExecStart=$exec_start_path but install.sh 'install -m 0755' installs to $install_dest_path"
 fi
 
 section "4. Watchdog pre-flight refuses to run in user.slice"
@@ -169,6 +175,9 @@ fi
 if echo "$watchdog_code_only" | grep -qE '"\$line"[[:space:]]+==.*"status=9"' && \
    echo "$watchdog_code_only" | grep -qE '"\$line"[[:space:]]+==.*"code=killed"'; then
     pass "trigger checks BOTH status=9 AND code=killed (in code, not comments)"
+else
+    # N5 fix: previously pass-only — deleting the conjunct left the check silent
+    fail "trigger CODE missing status=9 || code=killed conjunct — mutation slipped past"
 fi
 
 if echo "$watchdog_code_only" | grep -qE 'CAPTURE_COOLDOWN_SEC|LAST_CAPTURE_EPOCH'; then

@@ -4,17 +4,20 @@ Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/scripts/system-
 After=multi-user.target
 # Must NOT be in user.slice — that is the whole point (out-of-scope monitor).
 # system.slice is the default for units without Slice=, but declared for clarity.
+# N6 NIT fix: StartLimit* live in [Unit] canonically (systemd accepts them in
+# [Service] as a compat carve-out with a warning). 0/0 disables the limit — a
+# monitor should never stop starting, even after many rapid restarts.
+StartLimitIntervalSec=0
+StartLimitBurst=0
 
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/boba-user1000-watchdog
 # M7 fix: monitor MUST restart on ANY exit (clean or failure) so a bug or
 # journalctl-tail-exits-cleanly path doesn't silently stop watching.
+# StartLimit* live canonically in [Unit] above — moved there per N6 NIT.
 Restart=always
 RestartSec=5s
-# Log the restart-gap-of-blindness explicitly so operators know the window.
-StartLimitIntervalSec=0
-StartLimitBurst=0
 # Low priority — this is a monitor, not real work
 Nice=10
 IOSchedulingClass=idle

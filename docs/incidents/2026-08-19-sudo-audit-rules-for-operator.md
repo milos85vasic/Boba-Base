@@ -32,14 +32,17 @@ su -c '
   auditctl -w /usr/bin/loginctl -p x -k logout_investigation
   # Rule 2: watch every execution of /usr/bin/systemctl (which can stop user@1000)
   auditctl -w /usr/bin/systemctl -p x -k logout_investigation
-  # Rule 3-6: I4 fix — capture every SIGKILL-delivering syscall on both bit widths.
-  # systemd v246+ PREFERS pidfd_send_signal over kill(); a b64-kill-only rule
-  # can miss the actual kill delivery. Cover kill/tkill/tgkill/pidfd_send_signal
-  # on both b64 and b32 to be exhaustive.
-  auditctl -a always,exit -F arch=b64 -S kill,tkill,tgkill,pidfd_send_signal \
+  # Rule 3-4: kill() + tkill() + pidfd_send_signal() carry signal in argument 1.
+  # b64 + b32 to cover both process bit widths.
+  auditctl -a always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal \
     -F a1=9 -k sigkill_investigation
-  auditctl -a always,exit -F arch=b32 -S kill,tkill,tgkill,pidfd_send_signal \
+  auditctl -a always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal \
     -F a1=9 -k sigkill_investigation 2>/dev/null || true
+  # Rule 5-6: tgkill(tgid, tid, sig) — signal is in argument 2, NOT argument 1.
+  # (Round-2 review N1 correction: previous combined rule matched tgkill only
+  # when tid=9, which is meaningless — must be split off.)
+  auditctl -a always,exit -F arch=b64 -S tgkill -F a2=9 -k sigkill_investigation
+  auditctl -a always,exit -F arch=b32 -S tgkill -F a2=9 -k sigkill_investigation 2>/dev/null || true
   # Verify
   echo "--- installed rules ---"
   auditctl -l | grep -E "logout_investigation|sigkill_investigation"
@@ -70,13 +73,19 @@ So: audit rules + system.slice watchdog TOGETHER give the best coverage; either
 alone leaves a specific blind spot. Both are Path 1 + Path 2 of the three-path
 plan.
 
-Expected output of the verify step (3 lines):
+Expected output of the verify step (up to 6 lines — b32 rules may be absent on
+kernels without 32-bit compat and their `|| true` suppresses errors):
 
 ```
 -w /usr/bin/loginctl -p x -k logout_investigation
 -w /usr/bin/systemctl -p x -k logout_investigation
--a always,exit -F arch=b64 -S kill -F a1=9 -k sigkill_investigation
+-a always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal -F a1=0x9 -F key=sigkill_investigation
+-a always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal -F a1=0x9 -F key=sigkill_investigation
+-a always,exit -F arch=b64 -S tgkill -F a2=0x9 -F key=sigkill_investigation
+-a always,exit -F arch=b32 -S tgkill -F a2=0x9 -F key=sigkill_investigation
 ```
+
+(auditctl -l normalizes `a1=9` → `a1=0x9`; syscall list order also normalizes.)
 
 ## Persistent version (survives reboot)
 
@@ -87,7 +96,10 @@ su -c '
   cat > /etc/audit/rules.d/logout_investigation.rules <<EOF
 -w /usr/bin/loginctl -p x -k logout_investigation
 -w /usr/bin/systemctl -p x -k logout_investigation
--a always,exit -F arch=b64 -S kill -F a1=9 -k sigkill_investigation
+-a always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation
+-a always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation
+-a always,exit -F arch=b64 -S tgkill -F a2=9 -k sigkill_investigation
+-a always,exit -F arch=b32 -S tgkill -F a2=9 -k sigkill_investigation
 EOF
   augenrules --load 2>&1 | head
 '
@@ -125,7 +137,10 @@ certainty in the DBus-only case (see "Coverage limitation" above).
 su -c '
   auditctl -d -w /usr/bin/loginctl -p x -k logout_investigation
   auditctl -d -w /usr/bin/systemctl -p x -k logout_investigation
-  auditctl -d always,exit -F arch=b64 -S kill -F a1=9 -k sigkill_investigation
+  auditctl -d always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation
+  auditctl -d always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation 2>/dev/null || true
+  auditctl -d always,exit -F arch=b64 -S tgkill -F a2=9 -k sigkill_investigation
+  auditctl -d always,exit -F arch=b32 -S tgkill -F a2=9 -k sigkill_investigation 2>/dev/null || true
   # Persistent version cleanup:
   rm -f /etc/audit/rules.d/logout_investigation.rules
   augenrules --load

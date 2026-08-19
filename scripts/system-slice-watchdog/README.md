@@ -28,23 +28,31 @@ process-tree state DURABLY.
 | Path | Purpose |
 |---|---|
 | `/usr/local/bin/boba-user1000-watchdog` | The monitor script (bash) |
-| `/etc/systemd/system/boba-user1000-watchdog.service` | Systemd unit — `Slice=system.slice`, runs as root, restart on failure |
+| `/etc/systemd/system/boba-user1000-watchdog.service` | Systemd unit — `Slice=system.slice`, runs as root, `Restart=always` |
 | `/var/log/boba-watchdog/YYYY-MM-DDTHH-MM-SSZ/` | Per-incident evidence dir, chmod 700 |
 
 ## How it works
 
 1. On boot, systemd starts the service in `system.slice` as root.
 2. The script runs a pre-flight (§11.4.201): verifies uid=0 AND its own cgroup
-   is NOT under `/user.slice/` — if it is, REFUSES to run (would defeat the
-   purpose).
-3. Enters a `journalctl -f -u user@1000.service` loop.
-4. On matching the exact pattern from all 4 incidents (`Main process exited,
-   code=killed, status=9/KILL`) it triggers `capture_forensics` immediately.
-5. Captures: journal window (`PRE_KILL_WINDOW_SEC` before + `POST_KILL_WINDOW_SEC` after),
+   is (a) NOT under `/user.slice/` AND (b) POSITIVELY under `/system.slice/`
+   (fail-closed rejection of cgroup-namespaced contexts where the negative
+   check alone would pass while actually being inside user.slice). REFUSES to
+   run in any other case.
+3. NOTE: because the preflight requires the system.slice cgroup, a manual
+   root-terminal debug invocation (`sudo bash user1000-watchdog.sh` from a tty)
+   will refuse — for that, use `systemd-run --slice=system.slice --pty
+   /usr/local/bin/boba-user1000-watchdog` (drops the shell into system.slice
+   for the duration).
+4. Enters a `journalctl -f -u user@1000.service` loop.
+5. On matching the prefix `<TARGET_UNIT>: Main process exited` AND either
+   `status=9` OR `code=killed`, checks the `CAPTURE_COOLDOWN_SEC` dedup gate;
+   if outside cooldown, triggers `capture_forensics` immediately.
+6. Captures: journal window (`PRE_KILL_WINDOW_SEC` before + `POST_KILL_WINDOW_SEC` after),
    cgroup state (memory + PSI + pids), full process tree, kernel audit log
    (if Path-1 audit rules installed), uptime + last, loginctl show-user.
-6. Rotates evidence dirs to keep the last `RETAIN_LAST_N` (default 20).
-7. Keeps tailing — captures every subsequent incident too.
+7. Rotates evidence dirs to keep the last `RETAIN_LAST_N` (default 20).
+8. Keeps tailing — captures every subsequent incident too.
 
 ## Tunables (environment)
 
@@ -133,9 +141,10 @@ the rules, `audit.log` will say "(ausearch failed — audit rules may not be ins
   auxf` and `ps -eo cmd` output. Those capture **full process cmdlines**, which
   on this host CAN contain credentials (curl -u, env-prefixed invocations, some
   tracker plugins). Mitigations: (a) evidence dirs are `root:root 0700`, (b)
-  the watchdog itself does not log to journal, (c) never commit raw captures
-  unredacted per §11.4.128(4). If you export a capture for sharing, redact
-  cmdline fields first.
+  the watchdog itself logs ONLY operational lines to journal (trigger lines,
+  filenames, preflight status) — never evidence contents, and no secret is
+  passed through `log()`, (c) never commit raw captures unredacted per
+  §11.4.128(4). If you export a capture for sharing, redact cmdline fields first.
 - **M4 fix — KillUserProcesses claim was speculative**: prior text said
   "systemd's baked-in default is yes". Distro-patched behavior varies; the
   authoritative source is `busctl get-property org.freedesktop.login1
