@@ -1,0 +1,33 @@
+<h1 id="bob-036-bob-086-backfill-evidence">BOB-036 — BOB-086 backfill
+evidence</h1>
+<p><strong>Item id:</strong> BOB-036 <strong>Terminal status:</strong>
+Fixed (→ Fixed.md) <strong>Derived event_type:</strong> Fixed</p>
+<h2 id="closure-commit-git-history-derived">Closure commit
+(git-history-derived)</h2>
+<ul>
+<li><strong>Commit:</strong>
+e3b7acbd9c1a2fdddfe447b310e5897803b0acf0</li>
+<li><strong>Short:</strong> e3b7acb</li>
+<li><strong>Authored date (UTC):</strong> 2026-06-09</li>
+<li><strong>Subject:</strong> test: wave 3 —
+rutor/tokyotoshokan/snowfl/torrentdownload/linuxtracker + nyaa/kickass
+fixes</li>
+</ul>
+<h2 id="derivation-method">Derivation method</h2>
+<pre><code>git log --all --oneline -S &quot;BOB-036&quot; -- docs/Fixed.md | tail -1
+git log -1 --format=%cI &quot;e3b7acbd9c1a2fdddfe447b310e5897803b0acf0&quot;</code></pre>
+<p>The commit above is the OLDEST commit whose pickaxe on
+<code>docs/Fixed.md</code> first introduces the literal
+<code>BOB-036</code>, so it marks the moment the item transitioned into
+the closed archive. The commit’s own change may document the closure
+(renames, seed, sync, or explicit close).</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<ul>
+<li>Exact closure operator + timestamp are unrecoverable from
+pre-mandate history; <code>by='AI'</code> records the backfill agent,
+with <code>AI-inferred</code> documented in
+<code>item_history.reason</code>.</li>
+<li>This artefact fulfils the §11.4.146(D3) status-custody chain’s
+captured-evidence requirement for the backfilled row; it does NOT
+retroactively validate the ORIGINAL closure decision.</li>
+</ul>

@@ -1,0 +1,34 @@
+<h1 id="bob-012-bob-086-backfill-evidence">BOB-012 — BOB-086 backfill
+evidence</h1>
+<p><strong>Item id:</strong> BOB-012 <strong>Terminal status:</strong>
+Completed (→ Fixed.md) <strong>Derived event_type:</strong>
+Completed</p>
+<h2 id="closure-commit-git-history-derived">Closure commit
+(git-history-derived)</h2>
+<ul>
+<li><strong>Commit:</strong>
+1c959bac20d8ecf6927db02b8853d6afb68d2fcf</li>
+<li><strong>Short:</strong> 1c959ba</li>
+<li><strong>Authored date (UTC):</strong> 2026-06-08</li>
+<li><strong>Subject:</strong> feat: complete 6-task session — HelixQA
+banks, Challenges/Containers subdeps, workable-items SQLite, export-sync
+expansion, boba-ctl CLI</li>
+</ul>
+<h2 id="derivation-method">Derivation method</h2>
+<pre><code>git log --all --oneline -S &quot;BOB-012&quot; -- docs/Fixed.md | tail -1
+git log -1 --format=%cI &quot;1c959bac20d8ecf6927db02b8853d6afb68d2fcf&quot;</code></pre>
+<p>The commit above is the OLDEST commit whose pickaxe on
+<code>docs/Fixed.md</code> first introduces the literal
+<code>BOB-012</code>, so it marks the moment the item transitioned into
+the closed archive. The commit’s own change may document the closure
+(renames, seed, sync, or explicit close).</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<ul>
+<li>Exact closure operator + timestamp are unrecoverable from
+pre-mandate history; <code>by='AI'</code> records the backfill agent,
+with <code>AI-inferred</code> documented in
+<code>item_history.reason</code>.</li>
+<li>This artefact fulfils the §11.4.146(D3) status-custody chain’s
+captured-evidence requirement for the backfilled row; it does NOT
+retroactively validate the ORIGINAL closure decision.</li>
+</ul>
