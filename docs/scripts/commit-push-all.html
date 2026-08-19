@@ -1,0 +1,252 @@
+<h1
+id="scriptscommit-push-all.sh-11.4.234-dedicated-commitpush-entrypoint">scripts/commit-push-all.sh
+— §11.4.234 dedicated commit/push entrypoint</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T18:49:45Z <strong>Status:</strong> active
+<strong>Item:</strong> task #66 (BOB-068 sweep-pattern interim
+remedy)</p>
+<h2 id="overview">Overview</h2>
+<p><code>scripts/commit-push-all.sh</code> is boba’s single dedicated
+commit/push entrypoint per §11.4.234 — the always-unblocked mechanism
+through which routine work gets committed and pushed to every configured
+upstream. It runs, in order: fetch all remotes, cheap always-on
+validation, an optional/skippable long gate
+(<code>scripts/pre_build_verification.sh</code>), commit, push to all
+upstreams, and a closing summary.</p>
+<p>As of task #66 it supports two commit modes:</p>
+<ul>
+<li><strong>Default (unscoped) mode</strong> — <code>git add -A</code>.
+Stages and commits <em>everything</em> currently modified/untracked in
+the working tree. This is the original, backwards-compatible
+behavior.</li>
+<li><strong>Scoped mode</strong> (<code>--scope &lt;path&gt;</code>,
+repeatable) — stages <em>only</em> the declared path(s), and REJECTS the
+commit if anything outside the declared scope ends up staged.</li>
+</ul>
+<h2 id="why-scoped-mode-exists-the-bob-068-pattern">Why scoped mode
+exists — the BOB-068 pattern</h2>
+<p>Discovered 5 times in one session: because the default mode runs an
+<strong>unconditional <code>git add -A</code></strong>, invoking
+<code>commit-push-all.sh</code> while a parallel subagent has an
+in-flight, not-yet-committed file elsewhere in the same working tree
+sweeps that unrelated file into the commit — a real §11.4.84
+(working-tree quiescence) violation. Multiple subagents (BOB-064,
+BOB-067, BOB-069, BOB-075-fix, a13d1f01) reported either having their
+work swept, or having to work around the pattern by hand-crafting
+<code>git add</code> + <code>git commit</code> themselves (bypassing the
+dedicated entrypoint’s validation stages entirely — itself a §11.4.234
+regression). A reviewer flagged this as a Nit in the BOB-074 review.</p>
+<p><code>--scope</code> is the <strong>interim tooling fix</strong>: it
+lets a caller opt into a scoped <code>git add</code> instead of the
+sweep, backed by a safety check that catches the exact hazard
+<code>--scope</code> exists to prevent (a stray/ concurrent staged
+file). The full architectural remedy — §11.4.179-style
+isolated-per-stream git checkouts (each parallel subagent owning its own
+<code>.git</code>, so there is nothing to sweep) — is tracked as task
+#67 (proposal drafted, not yet built). <code>--scope</code> does not
+replace that remedy; it closes the gap while it’s designed.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code>, standard POSIX utilities (<code>awk</code>,
+<code>sed</code>, <code>grep</code>), <code>git</code>.</li>
+<li><code>flock</code> (optional — concurrent-run protection degrades to
+a WARN when absent, never blocks the mechanism per §11.4.234(B)).</li>
+<li>Invoked from anywhere inside the target git working tree; the script
+resolves <code>REPO_ROOT</code> via
+<code>git rev-parse --show-toplevel</code> and <code>cd</code>s there
+before doing any git work.</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<h3 id="default-unscoped-unchanged-backwards-compatible">Default
+(unscoped) — unchanged, backwards-compatible</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/commit-push-all.sh <span class="st">&quot;fix(proxy): retry on 429&quot;</span></span></code></pre></div>
+<p>Stages everything (<code>git add -A</code>), commits, pushes to every
+configured remote. This is the existing behavior every current caller
+already relies on — nothing about it changed.</p>
+<h3
+id="scoped-new-in-task-66-preferred-for-parallelsubagent-work">Scoped —
+new in task #66, preferred for parallel/subagent work</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/commit-push-all.sh <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--scope</span> scripts/commit-push-all.sh <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--scope</span> docs/scripts/commit-push-all.md <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--scope</span> challenges/scripts/commit_push_all_scope_challenge.sh <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;feat(scripts,#66): commit-push-all.sh --scope flag ends BOB-068 sweep pattern&quot;</span></span></code></pre></div>
+<p>Only the three declared paths are <code>git add</code>-ed. If
+<code>git status</code> reveals anything else already staged when the
+safety check runs (see below), the whole commit is
+<strong>rejected</strong> — nothing is committed, the unexpected file(s)
+are named on stderr, and the working tree is left exactly as it was (the
+declared-scope files remain staged; nothing is force-unstaged, so a
+concurrent process’s own staged work is not disturbed).</p>
+<p><code>--scope=&lt;path&gt;</code> (<code>=</code>-joined) is also
+accepted. <code>--scope</code> may be repeated any number of times for a
+multi-file commit.</p>
+<h2 id="safety-layer-the-reviewers-exact-concern">Safety layer (the
+reviewer’s exact concern)</h2>
+<p>Scoped mode does, in order:</p>
+<ol type="1">
+<li><code>git add -- &lt;scope-path-1&gt; &lt;scope-path-2&gt; ...</code>
+— stage <em>only</em> the declared paths. Never
+<code>git add -A</code>.</li>
+<li>Read the resulting staged set
+(<code>git diff --cached --name-only</code>).</li>
+<li>For every staged path, confirm it <strong>equals</strong> a declared
+scope entry or sits <strong>under</strong> one (a declared scope entry
+may be a directory prefix). This is a structural match, never a
+substring match (§11.4.201(7)(a)).</li>
+<li>If anything staged falls outside the declared scope — e.g. a
+concurrent subagent’s own <code>git add</code>, or residue from an
+earlier unscoped <code>git add -A</code> that never got committed — the
+commit is <strong>REJECTED</strong> (exit 1) with every unexpected path
+printed, plus a remediation pointer
+(<code>git restore --staged &lt;file&gt;</code>).</li>
+<li>Only if the staged set is an exact match for the declared scope does
+<code>git commit</code> run.</li>
+</ol>
+<p>This directly implements the reviewer’s request: verify
+<code>git status --short</code> shows <em>only</em> files in the
+declared scope before committing, and reject with an actionable message
+if extra files appear staged.</p>
+<h2 id="backwards-compatibility">Backwards compatibility</h2>
+<p>Existing callers that invoke
+<code>commit-push-all.sh "message"</code> with no <code>--scope</code>
+flag are <strong>completely unaffected</strong> — the default path is
+byte-for-byte the same <code>git add -A</code> → commit → push flow that
+existed before task #66. <code>--scope</code> is purely additive. The
+known BOB-068 hazard remains present in default mode (that’s the “known
+existing dependency” the task brief accepts) — new dispatches are the
+ones expected to move to <code>--scope</code>.</p>
+<h2 id="guidance-for-sdd-subagent-task-dispatches">Guidance for SDD /
+subagent task dispatches</h2>
+<p>Going forward, task briefs that dispatch parallel subagents with a
+declared, disjoint file scope (the normal SDD dispatch shape) SHOULD
+have their subagent’s final commit go through
+<code>commit-push-all.sh --scope &lt;declared-scope-paths&gt;</code>
+rather than the bare unscoped form — this is exactly the case
+<code>--scope</code> was built for, and it turns the brief’s own
+“disjoint scope” declaration into a <em>mechanically enforced</em>
+commit boundary instead of a convention the subagent has to remember and
+honor by hand. Unscoped <code>commit-push-all.sh "message"</code>
+remains correct for genuinely whole-tree changes (e.g. a doc-sync
+regeneration sweep) where “everything currently modified” really is the
+intended scope.</p>
+<h2 id="environment-knobs">Environment knobs</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BOBA_SYNC_SKIP_CI=1</code></td>
+<td>Skip the long <code>pre_build_verification.sh</code> gate for this
+run. Recorded as a <code>[skip-ci]</code> marker in the commit message
+(§11.4.234(D) — the skip is never silent).</td>
+</tr>
+<tr>
+<td><code>BOBA_SYNC_SKIP_LONG=1</code></td>
+<td>Alias of <code>BOBA_SYNC_SKIP_CI</code> (mirrors Lava’s
+<code>LAVA_SYNC_SKIP_CI</code> naming).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="exit-codes">Exit codes</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Commit + push completed (or nothing to commit).</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Validation failure — cheap check, long gate, <strong>or the
+<code>--scope</code> safety check</strong> — remediation printed to
+stderr.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Invocation error (missing commit message, malformed
+<code>--scope</code>, unknown flag).</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Another <code>commit-push-all.sh</code> invocation already holds the
+flock.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Scope path doesn’t exist.</strong>
+<code>git add -- &lt;path&gt;</code> fails immediately
+(<code>fatal: pathspec '...' did not match any files</code>); under
+<code>set -e</code> the script exits with git’s own error — no silent
+no-op.</li>
+<li><strong><code>--scope</code> with zero matching changes.</strong> If
+the declared path has no working-tree delta,
+<code>git diff --cached --quiet</code> is true after
+<code>git add</code>, and the script logs “nothing to commit” and
+proceeds straight to the push stage (same as default mode).</li>
+<li><strong>Directory scope.</strong> <code>--scope some/dir</code>
+stages the whole subtree under <code>some/dir</code>; the safety check’s
+prefix match (<code>some/dir/...</code>) accepts any staged path under
+it.</li>
+<li><strong>Mixing scoped and unscoped semantics.</strong> There is no
+flag to mix “some declared paths + also sweep everything else” — that
+would defeat the purpose. Use two separate invocations if genuinely
+needed.</li>
+</ul>
+<h2 id="anti-bluff-verification">Anti-bluff verification</h2>
+<p><code>challenges/scripts/commit_push_all_scope_challenge.sh</code>
+proves the safety layer is real (not decorative) via §11.4.115 RED/GREEN
+polarity, run entirely against a throwaway sandbox git repo (zero
+remotes — never touches the real boba repo or pushes anywhere):</p>
+<ul>
+<li><strong>Step A (always runs):</strong> a genuine single-scope commit
+succeeds cleanly and lands <em>exactly</em> the declared file.</li>
+<li><strong>Step B (<code>RED_MODE=1</code>, default):</strong>
+reproduces the BOB-068 hazard — an out-of-scope file is already staged
+(simulating a concurrent subagent) before <code>--scope</code> runs —
+and confirms <code>--scope</code> rejects, names the file, and leaves no
+new commit.</li>
+<li><strong><code>RED_MODE=0</code>:</strong> Step A only, for a fast
+regression-guard rerun.</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/commit_push_all_scope_challenge.sh          <span class="co"># full RED+GREEN polarity</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>0 <span class="fu">bash</span> challenges/scripts/commit_push_all_scope_challenge.sh  <span class="co"># GREEN-only regression guard</span></span></code></pre></div>
+<p>A §1.1 paired mutation (stripping the rejection block from a scratch
+copy of <code>commit-push-all.sh</code> and re-running Step B’s exact
+hazard scenario against it) was performed during task #66’s
+implementation and confirmed the mutated script silently commits the
+out-of-scope file — proving the check is load-bearing. See
+<code>.superpowers/sdd/task-66-report.md</code> for the pasted terminal
+evidence.</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>scripts/pre_build_verification.sh</code> — the long gate this
+entrypoint runs at stage 3.</li>
+<li><code>challenges/scripts/commit_push_all_scope_challenge.sh</code> —
+anti-bluff proof for <code>--scope</code>.</li>
+<li><code>docs/proposals/</code> — the §11.4.179 isolated-git-streams
+proposal (task #67), the architectural remedy <code>--scope</code> is an
+interim substitute for.</li>
+</ul>

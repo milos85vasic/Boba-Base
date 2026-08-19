@@ -1,0 +1,232 @@
+<h1
+id="scriptsinstall-resource-pressure-timer.sh-hourly-proactive-host-pressure-timer">scripts/install-resource-pressure-timer.sh
+— hourly proactive host-pressure timer</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T19:40:00Z <strong>Status:</strong> active
+<strong>Item:</strong> task #77 (BOB-076 2nd forced-logout incident
+follow-up)</p>
+<h2 id="overview">Overview</h2>
+<p><code>scripts/install-resource-pressure-timer.sh</code> installs and
+mechanically verifies a <code>systemd --user</code> timer that runs
+<code>challenges/scripts/resource_pressure_signature_challenge.sh</code>
+once an hour, independently of any build/commit activity. It is the
+standing between-builds sibling of
+<code>scripts/pre_build_verification.sh</code> invariant 25, which runs
+the same challenge but only when a build is actually invoked.</p>
+<h2 id="why-this-exists">Why this exists</h2>
+<p>Commit <code>1f42357</code> landed
+<code>challenges/scripts/resource_pressure_signature_challenge.sh</code>
+— a 5-signature detector of the conditions that preceded the project’s
+2nd forced-logout incident (2026-08-18, see
+<code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>).
+The incident’s own §12.12 triage found a container EAGAIN cascade
+roughly 5 minutes <em>before</em> <code>user@1000.service</code> was
+SIGKILLed — a leading indicator that a standing, regularly-scheduled
+check would have caught well before the kill, if one had existed. Wiring
+the challenge only into the pre-build gate (invariant 25) closes the “at
+build time” gap but leaves the “between builds” gap open — most of any
+given day has no build running. This script closes that second gap.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Linux host with a <code>systemd --user</code> session available
+(<code>systemctl --user status</code> must succeed). Confirmed via
+<code>_require_linux_systemd</code> at the top of every invocation — a
+non-Linux host or an unavailable user session is an honest, actionable
+<code>exit 1</code>, never a silent no-op.</li>
+<li><code>loginctl show-user "$(id -un)" -p Linger</code> =
+<code>yes</code> is recommended (not required by this script) so the
+timer also fires when the operator is logged out, matching the existing
+<code>boba-svc.sh</code> / <code>scripts/install.sh</code> guidance for
+the rest of the boba stack.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/install-resource-pressure-timer.sh              <span class="co"># symlink install (default)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/install-resource-pressure-timer.sh <span class="at">--copy</span>        <span class="co"># hard-copy install</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/install-resource-pressure-timer.sh <span class="at">--uninstall</span>   <span class="co"># stop + disable + remove</span></span></code></pre></div>
+<p>Symlink mode (default) means a future <code>git pull</code> that
+updates
+<code>scripts/systemd/user/boba-resource-pressure-check.{service,timer}</code>
+is picked up automatically after the next
+<code>systemctl --user daemon-reload</code> — no re-install needed.
+<code>--copy</code> hard-copies instead, matching
+<code>scripts/boba-svc.sh install --copy</code>’s convention for the
+rest of the stack’s units.</p>
+<p>The script is <strong>idempotent</strong> — re-running it re-symlinks
+(or re-copies), reloads, re-enables, and re-verifies; it never errors on
+an already-installed timer.</p>
+<h2 id="what-it-installs">What it installs</h2>
+<p>Two unit files, source-of-truth at
+<code>scripts/systemd/user/boba-resource-pressure-check.{service,timer}</code>
+(same directory convention as the existing <code>boba.target</code> /
+<code>boba-stack.service</code> / <code>boba-webui-bridge.service</code>
+units — see <code>scripts/boba-svc.sh</code>), installed into
+<code>~/.config/systemd/user/</code>:</p>
+<ul>
+<li><strong><code>boba-resource-pressure-check.service</code></strong> —
+<code>Type=oneshot</code>, runs
+<code>challenges/scripts/resource_pressure_signature_challenge.sh</code>
+directly. Deliberately <strong>not</strong>
+<code>PartOf=boba.target</code> — resource- pressure monitoring must run
+whether the qBittorrent/Jackett stack is up or down.</li>
+<li><strong><code>boba-resource-pressure-check.timer</code></strong> —
+<code>OnBootSec=5min</code>, <code>OnUnitActiveSec=1hour</code>,
+<code>RandomizedDelaySec=5min</code>, <code>Persistent=true</code> (a
+missed fire — e.g. host was suspended or the user was logged out — runs
+on next login instead of being silently skipped).</li>
+</ul>
+<h2 id="mechanical-verification-11.4.6-never-assume">Mechanical
+verification (§11.4.6 — never assume)</h2>
+<p>The install script does <strong>not</strong> consider itself done
+just because <code>enable</code> + <code>start</code> returned exit 0.
+It performs two independent, captured checks:</p>
+<ol type="1">
+<li><strong>The timer is actually scheduled.</strong>
+<code>systemctl --user list-timers --all</code> output is captured and
+grepped for <code>boba-resource-pressure-check.timer</code>. Absence is
+a hard <code>exit 1</code> naming the exact evidence file to
+inspect.</li>
+<li><strong>An immediate first fire actually executes.</strong>
+<code>systemctl --user start --wait boba-resource-pressure-check.service</code>
+is run synchronously (this executes the real challenge script once, on
+the spot), then <code>systemctl --user status</code> +
+<code>journalctl --user -u ... -n 50</code> are captured. The script
+then reads <code>systemctl --user show ... -p Result --value</code> and
+reports <strong>two separate, honest facts</strong> rather than
+conflating them:
+<ul>
+<li>Did the unit <em>resolve and execute at all</em> (the wiring)? This
+is verified via <code>systemctl --user cat</code> succeeding —
+independent of the challenge’s own exit code.</li>
+<li>Did the challenge itself find real host pressure <em>right now</em>
+(<code>Result=success</code> vs <code>Result=exit-code</code>)? This is
+real, separate information about host state, not an installation defect,
+and is surfaced as a <code>WARN</code> with the diagnostic path, never
+silently swallowed and never treated as an install failure.</li>
+</ul></li>
+</ol>
+<h2 id="evidence">Evidence</h2>
+<p>Every run writes to <code>docs/qa/task-77/</code> — deliberately
+<code>.txt</code>, not <code>.log</code>: the repo’s
+<code>.gitignore</code> has a blanket <code>*.log</code> rule (verified
+— <code>docs/qa/BOB-076/*.log</code> is gitignored despite living under
+the tracked <code>docs/qa/</code> tree), so a <code>.log</code>
+extension here would silently produce untracked evidence.
+<code>.txt</code> matches the existing
+<code>docs/qa/BOB-075/*.txt</code> precedent for evidence meant to be
+committed (§11.4.83). Contrast with invariant 25’s own evidence
+directory (<code>docs/qa/pre_build_resource_pressure/</code>), which
+deliberately DOES use <code>.log</code> because that evidence is a
+per-pre-build-run artifact meant to stay local-only, not a one-time
+install record:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>install_output.txt</code></td>
+<td>Full stdout+stderr of the entire install run (via
+<code>exec &gt; &gt;(tee -a ...) 2&gt;&amp;1</code>, flushed before exit
+— see “Implementation note” below).</td>
+</tr>
+<tr>
+<td><code>list_timers.txt</code></td>
+<td>Raw <code>systemctl --user list-timers --all</code> output at
+verification time.</td>
+</tr>
+<tr>
+<td><code>first_fire_status.txt</code></td>
+<td>The immediate first fire’s <code>systemctl --user status</code> +
+<code>journalctl</code> output.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="exit-codes">Exit codes</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Units installed, timer scheduled (verified), first fire executed
+(verified) — regardless of whether the challenge itself found
+pressure.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Installation-level failure: missing unit source,
+<code>list-timers</code> verification failed, or the service does not
+resolve via <code>systemctl --user cat</code> (daemon-reload /
+symlink-target problem). Also returned by <code>--uninstall</code>’s own
+platform guard.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Invocation error (unknown flag).</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="implementation-note-output-capture-without-dropped-stderr">Implementation
+note — output capture without dropped stderr</h2>
+<p>An early draft piped each
+<code>_info</code>/<code>_warn</code>/<code>_error</code> call
+individually through a <code>_tee()</code> helper
+(<code>msg | _tee</code>). This silently dropped every
+<code>_error</code> line from the evidence log, because
+<code>_error</code> writes to <code>stderr</code> and a bare pipe
+(<code>|</code>) only captures a command’s <code>stdout</code> — the
+error text still printed live to the terminal (bypassing the pipe
+entirely) but never reached <code>install_output.txt</code>. Caught
+during this task’s own review pass before landing; fixed by switching to
+a single
+<code>exec &gt; &gt;(tee -a "${INSTALL_LOG}") 2&gt;&amp;1</code>
+redirection for the whole script body, plus an <code>EXIT</code> trap
+that closes the script’s own stdout/stderr and <code>wait</code>s on the
+<code>tee</code> subprocess so the log can never be silently truncated
+by the script exiting before <code>tee</code> finishes flushing.</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>challenges/scripts/resource_pressure_signature_challenge.sh</code>
+— the 5-signature detector this timer runs.</li>
+<li><code>scripts/pre_build_verification.sh</code> invariant 25
+(<code>CM-RESOURCE-PRESSURE-SIGNATURE-CHECK</code>) — the build-time,
+non-blocking sibling coverage for the same challenge.</li>
+<li><code>scripts/boba-svc.sh</code> /
+<code>scripts/systemd/user/</code> — the existing
+<code>systemd --user</code> unit convention this script follows.</li>
+<li><code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>
+— the incident this whole mechanism exists to catch earlier next
+time.</li>
+</ul>
+<h2 id="uninstalling">Uninstalling</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/install-resource-pressure-timer.sh <span class="at">--uninstall</span></span></code></pre></div>
+<p>Stops the timer, disables it, removes both installed unit files from
+<code>~/.config/systemd/user/</code>, and reloads the user systemd
+manager. The in-repo unit sources under
+<code>scripts/systemd/user/</code> are left untouched. Note: because the
+default install mode places a <strong>direct symlink</strong> into
+<code>~/.config/systemd/user/</code> (not a copy), systemd treats it as
+a “linked” unit, and <code>systemctl --user disable</code> on a linked
+unit removes the link itself (not merely an <code>[Install]</code>
+<code>.wants/</code> symlink) — so the uninstall loop’s per-file
+existence check may legitimately find the timer’s symlink already gone
+by the time it runs. This is expected systemd behavior, not a bug
+(verified empirically during task #77’s own testing).</p>

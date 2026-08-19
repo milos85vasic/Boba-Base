@@ -1,0 +1,232 @@
+<h1
+id="scriptslibdurable-run.sh-durable-remote-execution-helper">scripts/lib/durable-run.sh
+— durable remote-execution helper</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-15T00:00:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-064 (Lava P1 port — durable remote execution
+via systemd-linger)</p>
+<h2 id="overview">Overview</h2>
+<p>Source library exposing a small API for launching long-running jobs
+on a remote (or local) host such that they <strong>survive the SSH /
+login session ending</strong>. Backed by
+<code>loginctl enable-linger</code> +
+<code>systemd-run --user --unit=&lt;name&gt; --collect</code>, following
+the pattern documented in <code>docs/PORTING-FROM-LAVA.md</code> §P1 and
+ported verbatim (with Boba-idiomatic docs + first-boot linger hint) from
+<code>../lava/submodules/containers/scripts/lib/durable-run.sh</code>.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code>, <code>systemctl</code> (<code>--user</code>),
+<code>systemd-run</code> (<code>--user</code>), <code>loginctl</code>,
+<code>awk</code>, <code>cat</code>, <code>mkdir</code>,
+<code>sleep</code> — all standard on any systemd Linux host.</li>
+<li>A running systemd <code>--user</code> manager (verify with
+<code>systemctl --user is-system-running</code>; state
+<code>running</code> or <code>degraded</code> is fine, anything else
+means no user manager).</li>
+<li><code>loginctl enable-linger</code> performed <strong>ONCE per user
+per host</strong> by an operator with root — see <a
+href="#first-boot--sudo-free-114234">First-boot</a>. Without linger the
+user manager is torn down at the last logout and the launched
+<code>.service</code> unit dies with it.</li>
+</ul>
+<p>The helper is <strong>rootless in normal operation</strong> — no
+<code>sudo</code>, no interactive prompt (§11.4.161 rootless + §11.4.234
+always-unblocked).</p>
+<h2 id="usage-examples">Usage examples</h2>
+<h3
+id="fire-and-forget-an-inline-command-poll-for-completion-fetch-log">Fire-and-forget
+an inline command, poll for completion, fetch log</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> scripts/lib/durable-run.sh</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">UNIT</span><span class="op">=</span><span class="st">&quot;boba-qa-nightly-</span><span class="va">$(</span><span class="fu">date</span> +%s<span class="va">)</span><span class="st">&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Launch a real long-running command — this returns as soon as the .service</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># is registered; the actual body runs under the user systemd manager.</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">durable_launch_cmd</span> <span class="st">&quot;</span><span class="va">$UNIT</span><span class="st">&quot;</span> <span class="dt">\</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;bash scripts/pre_build_verification.sh &amp;&amp; bash challenges/scripts/run_all_challenges.sh&#39;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Optional: drop the SSH session here. The unit keeps running.</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Later (same host, new session), block for completion (max 2h) and read rc:</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="va">rc</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$(</span><span class="ex">durable_wait_sentinel</span> <span class="st">&quot;</span><span class="va">$UNIT</span><span class="st">&quot;</span> 7200<span class="va">)</span><span class="st">&quot;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;job exit code: </span><span class="va">$rc</span><span class="st">&quot;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the captured stdout+stderr:</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ex">durable_fetch_log</span> <span class="st">&quot;</span><span class="va">$UNIT</span><span class="st">&quot;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Reap artifacts:</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="ex">durable_stop</span> <span class="st">&quot;</span><span class="va">$UNIT</span><span class="st">&quot;</span></span></code></pre></div>
+<h3
+id="launch-an-existing-runner-script-instead-of-an-inline-command">Launch
+an existing runner script instead of an inline command</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">durable_launch</span>  my-deploy  ./scripts/deploy-remote.sh</span></code></pre></div>
+<h3 id="check-status-mid-flight">Check status mid-flight</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="ex">durable_is_active</span> my-deploy<span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;still running as PID </span><span class="va">$(</span><span class="ex">durable_main_pid</span> my-deploy<span class="va">)</span><span class="st">&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div>
+<h2 id="api-reference">API reference</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Function</th>
+<th>Args</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>durable_launch</code></td>
+<td><code>&lt;unit&gt; &lt;script_path&gt;</code></td>
+<td>0 on registered, non-0 on systemd-run failure</td>
+</tr>
+<tr>
+<td><code>durable_launch_cmd</code></td>
+<td><code>&lt;unit&gt; &lt;command...&gt;</code></td>
+<td>0 on registered, non-0 on systemd-run failure</td>
+</tr>
+<tr>
+<td><code>durable_is_active</code></td>
+<td><code>&lt;unit&gt;</code></td>
+<td>exit 0 iff the unit is active</td>
+</tr>
+<tr>
+<td><code>durable_main_pid</code></td>
+<td><code>&lt;unit&gt;</code></td>
+<td>echoes MainPID (0 if none)</td>
+</tr>
+<tr>
+<td><code>durable_wait_sentinel</code></td>
+<td><code>&lt;unit&gt; [timeout_s]</code></td>
+<td>echoes captured exit code; returns 1 on timeout</td>
+</tr>
+<tr>
+<td><code>durable_fetch_log</code></td>
+<td><code>&lt;unit&gt;</code></td>
+<td>cats combined stdout+stderr from
+<code>$DURABLE_DIR/&lt;unit&gt;.log</code></td>
+</tr>
+<tr>
+<td><code>durable_stop</code></td>
+<td><code>&lt;unit&gt;</code></td>
+<td>stops the unit, reset-fails it, removes runner/log/sentinel</td>
+</tr>
+</tbody>
+</table>
+<p>All functions accept the unit name with or without the
+<code>.service</code> suffix.</p>
+<h2 id="environment">Environment</h2>
+<ul>
+<li><code>DURABLE_DIR</code> — where the runner script, combined log,
+and sentinel file live per unit. Defaults to
+<code>$XDG_CACHE_HOME/remoteexec</code> or
+<code>~/.cache/remoteexec</code>. Overridable per-invocation.</li>
+<li><code>XDG_RUNTIME_DIR</code> — auto-derived from <code>id -u</code>
+if unset (needed for <code>systemctl --user</code> to talk to the user
+manager over its bus socket).</li>
+</ul>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>No user systemd manager</strong> (containers without one,
+pid1-init hosts, some CI runners):
+<code>systemctl --user is-system-running</code> returns
+<code>offline</code> or an error. Callers MUST detect this and
+SKIP-with-reason (§11.4.3). The helper functions do NOT self-skip — they
+fail loudly, which is the correct behaviour when durability is
+expected.</li>
+<li><strong>Linger not enabled</strong>: the helper prints a one-line
+reminder on source, but does NOT self-escalate. The unit will still
+LAUNCH under the user manager; it will DIE with the last logout because
+the user manager itself exits.</li>
+<li><strong>Unit-name collision</strong>:
+<code>systemctl --user reset-failed</code> is called before every launch
+to clear a prior <code>failed</code> state; a still-active same-named
+unit will cause <code>systemd-run</code> to fail with a clear error —
+call <code>durable_stop</code> first or pick a unique name (recommend
+timestamp / <code>$$-$RANDOM</code> suffix).</li>
+<li><strong>The <code>tail -N</code> trap</strong>: never pipe the
+durable job’s stdout through <code>tail -N</code> — pipes buffer until
+the writer exits. Read <code>&lt;unit&gt;.log</code> directly (or
+<code>tail -f</code> on the file path) instead.</li>
+</ul>
+<h2 id="first-boot-sudo-free-11.4.234">First-boot / sudo-free
+(§11.4.234)</h2>
+<p><code>loginctl enable-linger</code> normally requires root. It is a
+<strong>one-time per user per host</strong> operation. On a fresh
+host:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> loginctl enable-linger <span class="st">&quot;</span><span class="va">$USER</span><span class="st">&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># verify:</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">loginctl</span> show-user <span class="st">&quot;</span><span class="va">$USER</span><span class="st">&quot;</span> <span class="at">-p</span> Linger <span class="at">--value</span>    <span class="co"># → &quot;yes&quot;</span></span></code></pre></div>
+<p>The helper prints a <code>NOTE:</code> to stderr on source when it
+detects <code>Linger=no</code>, so the operator sees the required action
+but the mechanism is never blocked (§11.4.234 always-unblocked).</p>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li><code>durable_launch_cmd</code> writes a wrapper
+<code>&lt;unit&gt;.runner.sh</code> under <code>$DURABLE_DIR</code> that
+redirects the body’s stdout+stderr into <code>&lt;unit&gt;.log</code>,
+captures the body’s exit code, and writes it to
+<code>&lt;unit&gt;.COMPLETE</code> (the sentinel) — ALWAYS, in both
+success and failure paths.</li>
+<li><code>loginctl enable-linger</code> is invoked (idempotent, no-op if
+already enabled or if the caller is non-root).</li>
+<li><code>systemctl --user reset-failed &lt;unit&gt;.service</code>
+clears any prior failed state so re-launches under the same name
+succeed.</li>
+<li><code>systemd-run --user --unit=&lt;name&gt; --collect bash &lt;runner&gt;</code>
+registers the transient user <code>.service</code> unit and returns
+immediately; the body executes asynchronously under the user
+manager.</li>
+<li>Consumers poll <code>durable_is_active</code> /
+<code>durable_wait_sentinel</code> / <code>durable_fetch_log</code> at
+their own cadence.</li>
+</ol>
+<h2 id="verification">Verification</h2>
+<p>Anti-bluff regression guard:
+<code>challenges/scripts/durable_run_helper_challenge.sh</code> (BOB-064
+§11.4.115 RED/GREEN polarity):</p>
+<ul>
+<li>Launches a real sleeper via <code>durable_launch_cmd</code>.</li>
+<li>Reads the unit’s MainPID from
+<code>systemctl --user show</code>.</li>
+<li>Reads <code>/proc/&lt;pid&gt;/cgroup</code> to prove the job runs in
+an independently-managed <code>.service</code> cgroup — DIFFERENT from
+the launching shell’s session scope. This is the runtime-signature
+(§11.4.108) that proves the fix is active: a session-scope cgroup would
+be reaped with the login session (the pre-fix failure mode).</li>
+<li>Waits on the sentinel, asserts exit code 0, asserts both log markers
+landed.</li>
+</ul>
+<p>The RED polarity (default <code>RED_MODE=1</code>) inverts the
+assertions so the same challenge PASSes on a broken tree and FAILs on a
+working one — proving the guard genuinely catches regressions per
+§11.4.115(F).</p>
+<p>Honest SKIP-with-reason (§11.4.3): when no systemd
+<code>--user</code> manager is running (container, CI, non-systemd
+host), the GREEN half exits 0 with a <code>SKIP:</code> prefix.
+Durability is impossible-by-topology there.</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>scripts/deploy-remote.sh</code> — remote deploy driver; a
+natural consumer of <code>durable_launch</code> when deploying to a host
+over SSH (wire on demand per §11.4.197 follow-up).</li>
+<li><code>challenges/scripts/run_all_challenges.sh</code> — challenge
+aggregator; can wrap its full sweep in <code>durable_launch_cmd</code>
+when the sweep runs on a remote host (wire on demand).</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-08-15 — helper ported from Lava, challenge GREEN under real
+systemd <code>--user</code> manager on a systemd-linger-enabled host;
+captured evidence:</p>
+<pre><code>  job cgroup  = /user.slice/user-1000.slice/user@1000.service/app.slice/boba-durable-guard-*.service
+  self cgroup = /user.slice/user-1000.slice/user@1000.service/app.slice/tmx-boba-*.scope
+PASS: durable-run.sh helper — job survived launcher in own .service cgroup, ran to completion (BOB-064 fix intact)</code></pre>

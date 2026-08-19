@@ -1,0 +1,119 @@
+<h1
+id="jackett_cookie_login_hardening_challenge.sh">jackett_cookie_login_hardening_challenge.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-15T12:00:00Z <strong>Status:</strong> active
+<strong>Maintainer:</strong> Track 11 — BOB-067 Lava-P4 port
+<strong>Scope:</strong> anti-bluff regression guard for the Jackett
+cookie-login hardening</p>
+<h2 id="overview">Overview</h2>
+<p>Autonomous CI-runnable proof that
+<code>qBitTorrent-go/internal/jackett/client.go</code> correctly handles
+the Jackett dashboard cookie-session login the MANAGEMENT API requires.
+Ported from Lava <code>docs/autonomous-qa/PORTING-PLAYBOOK.md</code> §8
+(P4) — the source-of-truth Go reference is
+<code>lava/lava-api-go/internal/jackett/client.go</code>. Boba’s
+implementation already carries the same discipline (cookie jar,
+<code>CheckRedirect: ErrUseLastResponse</code>, <code>login()</code>,
+<code>doManaged()</code> login-on-302-retry, wrong-password safety net);
+this challenge is the runtime-signature ratchet that keeps it that
+way.</p>
+<h2 id="root-cause-lava-p4">Root cause (Lava P4)</h2>
+<p>Jackett’s MANAGEMENT API (<code>GET /api/v2.0/indexers</code>,
+per-indexer <code>/config</code>) authenticates via a DASHBOARD SESSION
+COOKIE — not via the apikey. An apikey-only management request is
+answered with <strong>HTTP 302 → /UI/Login</strong>. The apikey ONLY
+authorizes the Torznab <code>/results</code> + <code>/caps</code> feeds.
+A client that follows redirects lands on the HTML login page (200) and
+fails to decode it as JSON, masking the real cause; a client that does
+not follow gets a bare 302 and reports “unreachable” / “http_302”.
+Either way the indexer catalog and per-indexer config path silently
+break — the exact bug the Lava porting document names.</p>
+<h2 id="fix-boba">Fix (Boba)</h2>
+<p><code>qBitTorrent-go/internal/jackett/client.go</code>:</p>
+<ul>
+<li><code>cookiejar.New(nil)</code> attached to the
+<code>*http.Client</code>.</li>
+<li><code>CheckRedirect</code> returns
+<code>http.ErrUseLastResponse</code> (no auto-follow).</li>
+<li><code>login()</code> POSTs <code>password=&lt;admin&gt;</code> to
+<code>/UI/Dashboard</code>; the <code>Set-Cookie</code> is captured into
+the jar. <code>net/http</code> stores response cookies BEFORE applying
+<code>CheckRedirect</code>, so this works whether the login answer is
+200 or 302.</li>
+<li>Wrong-password safety net: 401/403 → explicit error; 200 with NO
+cookie → also error (“real Jackett re-renders the login page with 200
+and no Set-Cookie on wrong password”).</li>
+<li><code>doManaged()</code> wraps every management call: first response
+302 → run <code>login()</code> → retry once with the (now-cached)
+session cookie.</li>
+<li><code>NewClientWithPassword()</code> injects the admin password at
+runtime (§6.R / §11.4.10 no-literal-credentials).</li>
+</ul>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>go</code> toolchain reachable on <code>PATH</code> (challenge
+SKIPs with reason if absent).</li>
+<li><code>qBitTorrent-go/</code> module tree present.</li>
+<li>Live Jackett at <code>http://localhost:9117</code> is OPTIONAL —
+only the sibling
+<code>helixqa_jackett_fake_behavioral_equivalence_challenge.sh</code>
+uses it.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># GREEN — shipped regression guard (default is RED_MODE=0 in this script)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>0 <span class="fu">bash</span> challenges/scripts/jackett_cookie_login_hardening_challenge.sh</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># RED — reproduces the pre-fix state (PASS if hardening ABSENT / broken)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>1 <span class="fu">bash</span> challenges/scripts/jackett_cookie_login_hardening_challenge.sh</span></code></pre></div>
+<h2 id="what-it-proves">What it proves</h2>
+<p>Runs three Go tests end-to-end via <code>go test -v -count=1</code>
+and asserts all three report <code>--- PASS:</code> (not just the
+top-level “ok” line, which a too-narrow <code>-run</code> filter would
+also print with zero tests):</p>
+<ol type="1">
+<li><code>TestFakeJackettRefusesManagementWithoutCookie</code> — the
+fake refuses apikey-only management with 302 → <code>/UI/Login</code>.
+If this fails, every test built on the fake is worthless (§11.4.107(10)
+golden-bad).</li>
+<li><code>TestManagementCookieLogin_DiscoveryViaCookiePath</code> — an
+apikey-only <code>GetCatalog()</code> transparently acquires the session
+cookie and returns the discovery JSON (drives <code>doManaged</code>’s
+302→login→retry path).</li>
+<li><code>TestManagementCookieLogin_ConfigurableAdminPassword</code> — a
+client built with the wrong admin password FAILs management instead of
+silently reporting success (verifies the no-cookie safety net).</li>
+</ol>
+<h2 id="falsifiability-rehearsal-paired-1.1-mutation">Falsifiability
+rehearsal (paired §1.1 mutation)</h2>
+<p>Verified 2026-08-15 by patching <code>doManaged</code> to
+short-circuit past the 302→login retry:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// MUTATION BOB-067: replace `if !isRedirect(resp.StatusCode) { return ... }`</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">// with a bare `return resp, nil` — the 302 flows out as a &quot;decode: EOF&quot; error.</span></span></code></pre></div>
+<p>Result:
+<code>TestManagementCookieLogin_ConfigurableAdminPassword</code> FAILed
+and the challenge exited with rc=1 — the guard IS load-bearing. Reversed
+the mutation and re-ran to GREEN.</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<ul>
+<li>The fake is an <code>httptest.Server</code> written in Go; it proves
+the CLIENT speaks the cookie-login protocol. It does NOT prove the
+client works against every real Jackett version — that is manual QA
+(§11.4.185) or a live docker-run challenge, tracked separately.</li>
+<li><code>scripts/extract-jackett-key.py</code> reads
+<code>ServerConfig.json</code> from disk and makes NO HTTP calls;
+cookie-login hardening is not applicable to it — it lives in the Go
+client that consumes the extracted key.</li>
+<li>Credentials in the fixtures are synthetic (<code>test-key</code>,
+<code>s3cr3t-dashboard-pw</code>) — no real Jackett apikey or admin
+password is ever handled or logged (§11.4.10).</li>
+</ul>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li>Companion: <code>docs/scripts/helixqa-jackett-fake.md</code>.</li>
+<li>Source of truth (Lava):
+<code>lava/lava-api-go/internal/jackett/client.go</code>.</li>
+<li>Port doc: <code>docs/PORTING-FROM-LAVA.md</code> (P4).</li>
+<li>Constitution: §11.4.115 / §11.4.108 / §11.4.146 / §11.4.201 /
+§11.4.238.</li>
+</ul>

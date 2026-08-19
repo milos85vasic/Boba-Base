@@ -1,0 +1,164 @@
+<h1
+id="helixqa_jackett_fake_behavioral_equivalence_challenge.sh">helixqa_jackett_fake_behavioral_equivalence_challenge.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-15T12:00:00Z <strong>Status:</strong> active
+<strong>Maintainer:</strong> Track 11 — BOB-067 Lava-P4 port
+<strong>Scope:</strong> anti-bluff regression guard for the
+behaviorally-equivalent Jackett fake used by the boba autonomous test
+regime</p>
+<h2 id="overview">Overview</h2>
+<p>The Lava-P4 porting directive is explicit: <em>“the test fake MUST
+302-without- cookie like real Jackett (behavioral equivalence) or the
+gap stays hidden.”</em> This challenge is the mechanized self-validation
+guard proving the fake never degrades into a bluff-fake (a fake that
+would 200 on apikey-only management and hide the exact defect the fake
+was built to catch).</p>
+<h2 id="fake-location">Fake location</h2>
+<p>The fake is embedded in
+<code>qBitTorrent-go/internal/jackett/cookie_login_test.go</code> as
+<code>newPasswordProtectedJackett()</code> (Go
+<code>httptest.Server</code>). Staying in <code>_test.go</code> keeps it
+out of every production import graph (§11.4.27 no-fakes-
+beyond-unit-tests) while remaining consumable by every test in the same
+package.</p>
+<h2 id="behavioral-contract-what-the-fake-must-reproduce">Behavioral
+contract (what the fake MUST reproduce)</h2>
+<p>Cross-checked LIVE against real Jackett at
+<code>http://localhost:9117</code> on 2026-08-15 (values captured
+verbatim from <code>curl -s -D-</code>):</p>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 55%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>Behavior</th>
+<th>Real Jackett (live)</th>
+<th>Fake</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/v2.0/indexers?apikey=&lt;bogus&gt;</code> (no
+cookie)</td>
+<td><code>HTTP/1.1 302</code> +
+<code>Location: .../UI/Login?ReturnUrl=%2Fapi%2Fv2.0%2Findexers...</code></td>
+<td><code>HTTP 302</code> + <code>Location: /UI/Login</code></td>
+</tr>
+<tr>
+<td><code>POST /UI/Dashboard  password=</code> (correct/empty)</td>
+<td><code>HTTP/1.1 302</code> +
+<code>Set-Cookie: Jackett=CfDJ8...</code> +
+<code>Location: Dashboard</code></td>
+<td><code>HTTP 302</code> +
+<code>Set-Cookie: Jackett=valid-session-token</code> +
+<code>Location: /</code></td>
+</tr>
+<tr>
+<td><code>POST /UI/Dashboard  password=&lt;wrong&gt;</code></td>
+<td><code>HTTP/1.1 200</code> re-renders login HTML, NO
+<code>Set-Cookie</code></td>
+<td><code>HTTP 200</code> + <code>&lt;html&gt;login&lt;/html&gt;</code>,
+NO <code>Set-Cookie</code></td>
+</tr>
+<tr>
+<td><code>GET /api/v2.0/indexers</code> WITH valid session cookie</td>
+<td><code>HTTP/1.1 200</code> JSON catalog</td>
+<td><code>HTTP 200</code> + fixture JSON
+<code>[{"id":"rutracker",...}]</code></td>
+</tr>
+</tbody>
+</table>
+<p>The cookie name <code>Jackett</code> matches real Jackett exactly
+(verified live).</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>go</code> toolchain on <code>PATH</code> (challenge SKIPs with
+reason if absent).</li>
+<li><code>qBitTorrent-go/internal/jackett/cookie_login_test.go</code>
+present.</li>
+<li>OPTIONAL: a live Jackett reachable at <code>$JACKETT_LIVE_URL</code>
+(default <code>http://localhost:9117</code>). If reachable, the
+challenge diffs the fake’s contract against the live product on B1
+(apikey-only→302) and B2 (login→302+<code>Set-Cookie: Jackett=</code>).
+If not reachable, that cross-check is honestly SKIPped with an explicit
+<code>[UNCONFIRMED-AGAINST-LIVE-JACKETT]</code> marker in the
+output.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># GREEN — shipped regression guard</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>0 <span class="fu">bash</span> challenges/scripts/helixqa_jackett_fake_behavioral_equivalence_challenge.sh</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># GREEN with an explicit live target</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">JACKETT_LIVE_URL</span><span class="op">=</span>http://jackett.internal:9117 <span class="dt">\</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">bash</span> challenges/scripts/helixqa_jackett_fake_behavioral_equivalence_challenge.sh</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># RED — reproduces the bluff-fake / absent-fake state (PASS if degraded)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>1 <span class="fu">bash</span> challenges/scripts/helixqa_jackett_fake_behavioral_equivalence_challenge.sh</span></code></pre></div>
+<h2 id="what-it-proves">What it proves</h2>
+<ol type="1">
+<li>Runs <code>TestFakeJackettRefusesManagementWithoutCookie</code>
+(already embedded next to the fake) — the load-bearing anti-bluff guard
+that a bare <code>GET /api/v2.0/indexers?apikey=...</code> (no cookie)
+returns 302, not 200.</li>
+<li>Asserts the pass line is present with <code>-v</code> output
+(§11.4.201 false-null guard: a mis-typed <code>-run</code> filter also
+returns exit 0 with no test).</li>
+<li>When a live Jackett is reachable, cross-checks the fake’s B1 + B2
+against the real product using raw <code>curl</code> (independent
+transport, no shared code path with the fake or the
+client-under-test).</li>
+</ol>
+<h2 id="falsifiability-rehearsal-paired-1.1-mutation">Falsifiability
+rehearsal (paired §1.1 mutation)</h2>
+<p>The sibling <code>jackett_cookie_login_hardening_challenge.sh</code>
+doc describes a <code>doManaged</code>-side mutation that made the
+challenge FAIL. Under this challenge, the analogous fake-side mutation
+is: remove the <code>hasValidSession(r)</code> gate from the management
+branch so the fake returns 200 on apikey-only management.
+<code>TestFakeJackettRefusesManagementWithoutCookie</code> catches that
+mutation directly and this challenge exits 1.</p>
+<h2 id="live-evidence-2026-08-15-localhost9117">Live evidence
+(2026-08-15, localhost:9117)</h2>
+<pre><code>$ curl -s -D- -o /dev/null --max-time 3 \
+    &#39;http://localhost:9117/api/v2.0/indexers?apikey=bogus-key&amp;configured=false&#39;
+HTTP/1.1 302 Found
+Location: http://localhost:9117/UI/Login?ReturnUrl=%2Fapi%2Fv2.0%2Findexers%3Fapikey%3Dbogus-key%26configured%3Dfalse
+
+$ curl -s -D- -o /dev/null --max-time 3 -X POST -d &#39;password=&#39; \
+    http://localhost:9117/UI/Dashboard
+HTTP/1.1 302 Found
+Location: Dashboard
+Set-Cookie: Jackett=CfDJ8J4t0dXrfJhAr2dBxs4c...; path=/; samesite=lax; httponly</code></pre>
+<p>The fake’s <code>Location</code>/<code>Set-Cookie</code> shape
+matches — behavioral equivalence is PROVEN LIVE, not asserted.</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<ul>
+<li>Live-check verifies B1 + B2. B3 (wrong-password → 200 no-cookie) is
+covered by the Go test
+<code>TestManagementCookieLogin_ConfigurableAdminPassword</code> rather
+than a live probe (a live probe with a wrong password would either lock
+the account or be blocked as brute-force). B4 (valid-cookie → 200 JSON)
+is covered by the Go tests that consume the fake.</li>
+<li>The fake reproduces the discriminating BEHAVIOR (cookie gate, status
+codes, <code>Set-Cookie</code> name); it does NOT reproduce Jackett’s
+full API surface — endpoints beyond <code>/UI/Dashboard</code>,
+<code>/UI/Login</code>, <code>/api/v2.0/indexers</code>,
+<code>/api/v2.0/indexers/*/config</code> return 404. Extending the fake
+is a follow-up when a new consumer is added.</li>
+</ul>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li>Sibling:
+<code>docs/scripts/jackett-cookie-login-hardening.md</code>.</li>
+<li>Fake source:
+<code>qBitTorrent-go/internal/jackett/cookie_login_test.go</code>.</li>
+<li>Client-under-test:
+<code>qBitTorrent-go/internal/jackett/client.go</code>.</li>
+<li>Port doc: <code>docs/PORTING-FROM-LAVA.md</code> (P4).</li>
+<li>Constitution: §11.4.107(10) / §11.4.115 / §11.4.201 /
+§11.4.238.</li>
+</ul>

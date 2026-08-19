@@ -1,0 +1,435 @@
+<h1 id="ddos-resilience-testing">DDoS Resilience Testing</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-18T19:25:00Z</p>
+<p>Documents
+<code>challenges/scripts/ddos_resilience_challenge.sh</code> — the
+DDoS-class testing scaffold added by <strong>BOB-074</strong> to close a
+gap in boba’s §11.4.27 mandated test-type matrix (see
+<code>docs/testing/test_type_matrix.md</code> for the full audit).
+§11.4.85 (stress + chaos mandate) and §11.4.27 (100% test-type coverage,
+DDoS is one of the enumerated types) are the governing anchors.</p>
+<h2 id="what-it-tests">What it tests</h2>
+<p>boba exposes three public, unauthenticated-by-default HTTP
+surfaces:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Port</th>
+<th>Probed path</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Merge search (FastAPI/uvicorn)</td>
+<td>7187</td>
+<td><code>GET /health</code></td>
+<td>Fans out to up to 43 trackers on <code>POST /api/v1/search</code> —
+the expensive, real DDoS target (see “Scoping decisions” below for why
+the fanout path itself is never driven)</td>
+</tr>
+<tr>
+<td>qBittorrent WebUI</td>
+<td>7185</td>
+<td><code>GET /</code></td>
+<td><code>network_mode: host</code>, directly reachable from the host
+network</td>
+</tr>
+<tr>
+<td>Boba Jackett API (Go/Gin)</td>
+<td>7189</td>
+<td><code>GET /healthz</code></td>
+<td>Owns Jackett credentials + indexer overrides, backed by encrypted
+SQLite</td>
+</tr>
+</tbody>
+</table>
+<p>For each reachable endpoint the challenge drives a bounded,
+localhost-only curl-parallel-loop (primary — tool-independent) plus
+<code>ab</code>/ApacheBench (supplementary evidence, when installed)
+across three concurrency tiers, and asserts:</p>
+<ol type="1">
+<li><strong>Crash resistance</strong> — zero 5xx responses and zero
+connection failures (including client-side timeouts under load — see
+“Terminology” below) across all three tiers.</li>
+<li><strong>Rate limiting</strong> — a 429 (or equivalent) appears once
+load is heavy enough. See “RED/GREEN polarity” below — this is currently
+an honest <code>SKIP</code> because <strong>no rate limiter exists
+anywhere in boba’s stack</strong>.</li>
+<li><strong>Cross-endpoint isolation</strong> — while one endpoint is
+under its heaviest tier, the other two stay responsive (2xx within a
+bounded timeout).</li>
+</ol>
+<h3 id="terminology-crash-includes-client-side-timeout">Terminology:
+“crash” includes client-side timeout</h3>
+<p>The task brief’s crash-resistance criterion is “return 5xx or
+connection-reset.” This challenge additionally counts a client-side
+<code>--max-time</code> timeout (curl exit code 28) as a
+crash-resistance failure. From the caller’s perspective, a backend that
+never answers within a reasonable window under load is exactly as
+unavailable as one that resets the connection — and (see “Findings”
+below) this distinction is what caught a real defect. The per-tier
+output breaks timeouts out separately (<code>timeout=N other=M</code>)
+so the two failure modes are never conflated when reading results.</p>
+<h2 id="bounded-chaos-knobs-12.6-12.11-host-safety">Bounded chaos knobs
+(§12.6 / §12.11 host-safety)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Knob</th>
+<th>Value</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Concurrency tiers</td>
+<td>10, 25, 50</td>
+<td>Modest ramp; <code>ab</code> refuses <code>-c</code> &gt;
+<code>-n</code>, so <code>REQUESTS_PER_TIER</code> must be ≥ the
+heaviest tier</td>
+</tr>
+<tr>
+<td>Requests per tier</td>
+<td>50</td>
+<td>Matches the heaviest concurrency tier (see above)</td>
+</tr>
+<tr>
+<td>Per-request timeout</td>
+<td>3s</td>
+<td>curl <code>--max-time</code>; also fed to <code>ab -s</code></td>
+</tr>
+<tr>
+<td>Per-tier wall-clock budget</td>
+<td>12s</td>
+<td>Hard early-stop — a genuinely slow backend gets a <strong>smaller
+sample</strong>, never a <strong>longer-running script</strong> (see
+<code>run_curl_status_probe</code>)</td>
+</tr>
+<tr>
+<td>Cross-endpoint probe timeout</td>
+<td>3s</td>
+<td></td>
+</tr>
+<tr>
+<td>Scope</td>
+<td><code>127.0.0.1</code> only, hardcoded</td>
+<td>No host override exists — this challenge cannot be pointed at
+anything but localhost</td>
+</tr>
+</tbody>
+</table>
+<p>Measured wall-clock for a full live run (2026-08-18, 8-core/62G dev
+host, stack already running): <strong>~17s</strong> when all three
+endpoints are warm, <strong>~55s</strong> in the run that caught the
+boba-jackett cold-start finding below. Both are comfortably inside
+<code>run_all_challenges.sh</code>’s 180s per-script timeout.</p>
+<p>The challenge never targets anything but <code>127.0.0.1</code>,
+never issues a destructive command, and its <code>--self-validate</code>
+mode exercises two THROWAWAY local <code>python3</code> HTTP servers —
+never the real boba stack.</p>
+<h2 id="redgreen-polarity-11.4.115">RED/GREEN polarity (§11.4.115)</h2>
+<p>The <strong>rate-limiting</strong> assertion is the one with real,
+meaningful polarity today (the crash-resistance and cross-endpoint
+checks are real pass/fail checks regardless of <code>RED_MODE</code> —
+see “Findings” for what they actually caught).</p>
+<ul>
+<li><strong><code>RED_MODE=1</code></strong> (reproduce the defect):
+asserts the <strong>absence</strong> of any 429 response under the
+heaviest tier. This currently <code>PASS</code>es for all three
+endpoints — proving the challenge correctly reproduces boba’s real,
+current, verified state: <strong>no rate-limit middleware, no
+<code>slowapi</code>-style Python limiter, no throttle in either Go
+service, and no nginx/reverse-proxy layer exists anywhere in the
+stack</strong> (grepped 2026-08-18 across
+<code>download-proxy/src/</code>, <code>qBitTorrent-go/internal/</code>,
+and <code>docker-compose.yml</code>).</li>
+<li><strong><code>RED_MODE=0</code></strong> (default, GREEN guard): the
+<strong>same</strong> absence-of-429 observation is honestly
+<code>SKIP</code>ped (reason <code>extension_absent</code>) rather than
+bluffed as a <code>PASS</code> or unfairly marked <code>FAIL</code> —
+§11.4.6 forbids inventing a threshold nothing in the codebase
+enforces.</li>
+</ul>
+<p><strong>Real polarity going forward:</strong> the day a rate limiter
+is configured for any of the three endpoints, <code>RED_MODE=0</code>
+starts asserting 429s actually appear under load (a genuine
+<code>PASS</code>/<code>FAIL</code> on whether the configured limit
+works), and <code>RED_MODE=1</code> starts <code>FAIL</code>ing
+(correctly signalling the defect this anchor targets has been fixed). If
+that rate limiter is later stripped again, <code>RED_MODE=1</code> goes
+back to <code>PASS</code> (defect reproduced) and
+<code>RED_MODE=0</code> would <code>FAIL</code> — “strip rate limiting →
+challenge FAILs” holds from the point a limiter first exists.</p>
+<h2 id="self-validation-11.4.10710-style">Self-validation
+(§11.4.107(10)-style)</h2>
+<p><code>bash challenges/scripts/ddos_resilience_challenge.sh --self-validate</code>
+spins up two throwaway local <code>python3</code>
+<code>ThreadingHTTPServer</code>s — one that always answers
+<code>200</code>, one that always answers <code>500</code> — and asserts
+the crash-resistance detector correctly <code>PASS</code>es the good
+fixture and <code>FAIL</code>s the bad one. This proves the detector is
+not a tautology (it can actually see a broken backend), not merely that
+it runs without crashing.</p>
+<p><strong>Scope limitation, stated honestly:</strong> this round only
+self-validates the crash-resistance detector (assertion 1). The
+rate-limiting detector (assertion 2) has no synthetic golden-bad fixture
+in this scaffold — a throwaway server that emits 429s past some
+threshold would be needed to validate it, and was left out of this round
+for time. Filed as a followup (see below).</p>
+<h2 id="scoping-decisions">Scoping decisions</h2>
+<p><strong>The real fanout path, <code>POST /api/v1/search</code>, is
+never driven by this challenge.</strong> Hammering it at any of the
+tested concurrency tiers would flood up to 43 <strong>real third-party
+tracker sites</strong> — risking IP bans on shared trackers, violating
+good-netizen practice, and doing real off-host damage that no
+localhost-only chaos budget can bound (§12.6/§12.11 explicitly scope
+host-safety to <em>this</em> host; they say nothing about the blast
+radius on someone else’s server, and common sense fills that gap).
+<code>GET /health</code> stands in as “is the merge-search process up
+and answering” — the crash-resistance signal §11.4.85 needs — without
+touching the expensive orchestration path.</p>
+<p><strong>Followup filed:</strong> a sandboxed/mocked-tracker variant
+of this challenge that exercises the real search-orchestration code path
+(dedup, enrichment, SSE streaming) under load without ever making a real
+outbound tracker request — e.g. by pointing <code>trackers=</code> at a
+disabled/nonexistent tracker name (confirmed during authoring:
+<code>POST /api/v1/search</code> returns <code>404 Not Found</code> for
+a GET probe since it’s POST-only, so this needs a real POST body to
+explore properly) or by standing up a local mock tracker HTTP server the
+merge-search’s tracker registry can be pointed at for the duration of a
+test run.</p>
+<h2 id="findings-2026-08-18-from-authoring-this-challenge">Findings
+(2026-08-18, from authoring this challenge)</h2>
+<p>Authoring this scaffold immediately surfaced two real gaps —
+consistent with §11.4.238’s mandate that automated QA be the discovery
+channel:</p>
+<h3 id="no-rate-limiting-anywhere-see-redgreen-polarity-above">1. No
+rate limiting anywhere (see “RED/GREEN polarity” above)</h3>
+<p>Verified by source inspection across the whole stack — no
+<code>slowapi</code>/<code>limiter</code>/<code>throttle</code> import
+in <code>download-proxy/src/</code>, no rate-limit middleware in
+<code>qBitTorrent-go/internal/middleware/</code> (only
+<code>cors.go</code> + <code>logging.go</code> exist there) or
+<code>internal/jackettapi/</code> (only
+<code>auth_middleware_test.go</code> +
+<code>cors_middleware_test.go</code> exist — no rate middleware), and no
+nginx/reverse-proxy service in <code>docker-compose.yml</code>.</p>
+<p><strong>Candidate remediation approaches</strong> (documented, not
+implemented — out of this task’s file scope):</p>
+<ul>
+<li>A lightweight nginx-in-container reverse proxy fronting
+<code>:7185</code>/<code>:7187</code>/ <code>:7189</code> with
+<code>limit_req_zone</code> — the most portable single fix, but adds a
+new container to the compose stack.</li>
+<li>A FastAPI dependency (e.g. <code>slowapi</code>) for the
+merge-search service specifically, since it already sits behind
+uvicorn.</li>
+<li>A Gin rate-limit middleware for <code>boba-jackett</code> (Go),
+following the existing <code>internal/middleware/</code> pattern
+(<code>cors.go</code>, <code>logging.go</code>).</li>
+<li>qBittorrent’s own WebUI has a documented failed-login ban list
+(bandwidth-shaping “Rate limiting” settings exist in the WebUI but were
+<strong>not verified</strong> during this task to cover request-rate,
+only bandwidth — do not assume this closes the gap without
+checking).</li>
+</ul>
+<h3
+id="boba-jacketts-healthz-amplifies-under-a-cold-start-burst-fixed-live-verified-bob-112-task-74">2.
+<code>boba-jackett</code>’s <code>/healthz</code> amplifies under a
+cold-start burst — FIXED + live-verified (BOB-112, task #74)</h3>
+<p><strong>Status update (2026-08-18, task #74):</strong> the 30s TTL
+cache recommended in fix option 1 below was implemented as commit
+<code>91b52db</code> and then <strong>live-verified with real
+<code>wrk</code> load-test evidence</strong> — the followup this finding
+originally filed. See <code>docs/qa/BOB-112/summary.md</code> for the
+full before/after numbers: a §1.1 mutation reproducing this exact
+pre-fix code measured <strong>97.1% client-side timeouts</strong>
+(400/412 requests) at 4 threads × 100 connections × 30s against
+<code>:7189/healthz</code>; the real committed fix measured <strong>0.0%
+timeouts</strong> across 812,149 requests in the same window (27,049
+req/s, p99 19.89ms) and collapsed upstream
+<code>Jackett.GetCatalog()</code> calls from one-per-request down to 2
+calls in the entire 30s run. This challenge script now also ships a
+standing <code>--healthz</code> mode (see “Running manually” below) that
+re-runs a bounded version of this same check on every future invocation,
+so a regression that re-introduces the uncached call path trips a real
+<code>FAIL</code>, not just a filed finding.</p>
+<p>The pre-fix root cause is preserved below for historical/forensic
+context.</p>
+<p><strong>Root cause:</strong>
+<code>qBitTorrent-go/internal/jackettapi/health.go:60-63</code> —</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> d<span class="op">.</span>Jackett <span class="op">!=</span> <span class="ot">nil</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    _<span class="op">,</span> err <span class="op">:=</span> d<span class="op">.</span>Jackett<span class="op">.</span>GetCatalog<span class="op">()</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    out<span class="op">.</span>JackettOk <span class="op">=</span> err <span class="op">==</span> <span class="ot">nil</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><code>HandleHealth</code> makes a <strong>synchronous,
+uncached</strong> call to Jackett’s catalog endpoint on <strong>every
+single hit</strong> to <code>/healthz</code>. There is no cache, no
+timeout distinct from the Jackett client’s own default, and no circuit
+breaker.</p>
+<p><strong>Observed evidence</strong> (three independent live runs,
+<code>RED_MODE=0</code>, 2026-08-18):</p>
+<pre><code>--- boba_jackett: Boba Jackett API :7189 ---
+    reachable: HTTP 200
+    tier c=10 n=50: 5xx=0 conn_fail=0  (timeout=0  other=0) 429=0  elapsed=12.40s
+    tier c=25 n=50: 5xx=0 conn_fail=48 (timeout=48 other=0) 429=0  elapsed=8.50s
+    tier c=50 n=50: 5xx=0 conn_fail=50 (timeout=50 other=0) 429=0  elapsed=7.17s
+  [FAIL] boba_jackett: 0 5xx + 98 connection failures out of 150 requests — endpoint degraded under bounded load</code></pre>
+<p>98/150 (65%) of health-check requests timed out at the 3-second
+budget during this run. <strong>Two subsequent runs against the same
+live process did not reproduce this</strong> — all three tiers completed
+in ~2s each with zero failures once the initial burst had passed:</p>
+<pre><code>    tier c=10 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=2.00s
+    tier c=25 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=1.76s
+    tier c=50 n=50: 5xx=0 conn_fail=0 (timeout=0 other=0) 429=0  elapsed=2.29s
+  [PASS] boba_jackett: 0/150 requests returned 5xx or failed to connect across tiers 10 25 50</code></pre>
+<p><strong>This is honestly reported as an intermittent,
+cold-state-dependent finding, not a deterministic one</strong> — per
+§11.4.7 (demotion requires same-conditions evidence), the recovery does
+NOT retract the finding; it narrows it. The trigger condition (a
+concurrent burst against a <code>/healthz</code> route that has not been
+recently exercised) is real and reproducible enough to have appeared in
+this task’s very first live run, but this scaffold does not currently
+force a guaranteed-cold state (that would require restarting the
+<code>boba-jackett</code> container as part of a routine test run — a
+more invasive chaos action deliberately left out of this scaffold
+pending further review; see followups).</p>
+<p><strong>Impact if left unfixed:</strong> an attacker (or even a
+mis-tuned external health-monitor hitting <code>/healthz</code> too
+aggressively) could make the Jackett management API’s own health surface
+appear down without ever touching Jackett itself — a genuine
+self-inflicted amplification vector, exactly the class of defect
+§11.4.85’s DDoS/chaos discipline exists to catch.</p>
+<p><strong>Recommended fixes</strong> (documented, not implemented —
+<code>qBitTorrent-go/ internal/jackettapi/health.go</code> is out of
+this task’s file scope):</p>
+<ol type="1">
+<li>Cache the Jackett liveness signal with a short TTL (e.g. 10-30s),
+refreshed by a background ticker rather than per-request.</li>
+<li>Add a tight timeout + circuit breaker around the
+<code>GetCatalog</code> call so <code>/healthz</code> itself never
+blocks past ~250-500ms regardless of Jackett’s real state.</li>
+<li>Make <code>jackett_ok</code> best-effort / asynchronously refreshed
+rather than synchronously computed on the request path.</li>
+</ol>
+<p><strong>Because the running boba-jackett process fully
+recovered</strong> (confirmed via <code>podman ps</code> — both
+<code>jackett</code> and <code>boba-jackett</code> containers stayed
+<code>Up (healthy)</code> throughout, and a post-test manual probe
+returned <code>HTTP 200</code> in 0.51s), this is a
+<strong>resilience/availability defect, not a crash</strong> — the
+process itself never died.</p>
+<h2 id="how-to-interpret-a-fail">How to interpret a
+<code>FAIL</code></h2>
+<ul>
+<li>If <strong>only</strong> the rate-limiting assertion is
+<code>SKIP</code> (not <code>FAIL</code>) for all three endpoints, that
+is the expected, honest, currently-committed state — it reflects the
+real absence of rate limiting, not a broken challenge.</li>
+<li>If <code>boba_jackett</code>’s crash-resistance assertion
+<code>FAIL</code>s occasionally, that is the tracked, real, cold-start
+amplification finding above — not the challenge itself being flaky.
+Re-run it; if it now <code>PASS</code>es, the endpoint had already been
+“warmed” by a prior probe (including this challenge’s own earlier tiers,
+or another test suite/health-checker hitting it recently).</li>
+<li>Any <code>FAIL</code> on <code>merge_search</code> or
+<code>qbittorrent</code>’s crash-resistance or cross-endpoint-isolation
+assertions is unexpected and should be investigated per §11.4.102
+(systematic debugging) before assuming it is environmental.</li>
+<li><code>SKIP</code> for “endpoint unreachable” (reason
+<code>services_not_running</code>) means the boba stack was not running
+when the challenge executed — start it via <code>./start.sh</code> and
+re-run.</li>
+</ul>
+<h2 id="running-manually">Running manually</h2>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Full live run against whatever boba services are currently reachable at</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 127.0.0.1:7185 / :7187 / :7189.</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># RED mode — reproduce the &quot;no rate limiting configured&quot; defect state</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># explicitly (should PASS today; will start FAILing once a rate limiter is</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># wired and later stripped).</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>1 <span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Self-validation — prove the crash-resistance detector distinguishes a</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># genuinely broken (golden-bad) backend from a genuinely healthy</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># (golden-good) one, using throwaway local fixtures only.</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh <span class="at">--self-validate</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co"># --healthz — BOB-112 regression guard (added task #74): a bounded 2-thread</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># x 20-connection x 5s wrk load (falls back to a curl-loop probe if wrk is</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># not installed) against boba-jackett&#39;s :7189/healthz, asserting the</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co"># client-observed timeout rate + throughput + server-side cache-refresh</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co"># count all stay within thresholds calibrated against the real RED/GREEN</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co"># evidence in docs/qa/BOB-112/summary.md. FAILs if the TTL cache is ever</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co"># removed or bypassed again.</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh <span class="at">--healthz</span></span></code></pre></div>
+<p>Exit codes: <code>0</code> = all <code>PASS</code> (honest
+<code>SKIP</code>s allowed), <code>1</code> = one or more real
+<code>FAIL</code>, <code>2</code> = invocation error (curl itself is
+missing).</p>
+<h2 id="followups-filed">Followups filed</h2>
+<p>Originally documented here rather than inserted into
+<code>docs/workable_items.db</code> directly — this task ran in parallel
+with other subagents also touching shared project state, and a
+concurrent SQLite write from this task risked a race with theirs.
+Registered into the DB (§11.4.93/§11.4.202) by the orchestrating session
+once the parallel batch completed — see the BOB-NNN id on each item
+below:</p>
+<ol type="1">
+<li><strong>Bug</strong> (filed as <strong>BOB-112</strong>,
+<strong>FIXED + live-verified 2026-08-18 — task #74</strong>):
+<code>boba-jackett</code>’s <code>/healthz</code> synchronously called
+<code>Jackett.GetCatalog()</code> uncached on every hit
+(<code>qBitTorrent-go/internal/jackettapi/health.go:60-63</code>),
+causing up to 65% request timeout rates under a modest cold-start
+concurrent burst (measured evidence above). Fixed by commit
+<code>91b52db</code> (30s TTL cache); see
+<code>docs/qa/BOB-112/summary.md</code> for the real <code>wrk</code>
+before/after evidence (97.1% → 0.0% timeouts) and the standing
+<code>--healthz</code> regression guard this challenge now ships.</li>
+<li><strong>Task</strong> (filed as <strong>BOB-111</strong>): configure
+real rate limiting for boba’s three public HTTP endpoints
+(<code>:7185</code>, <code>:7187</code>, <code>:7189</code>) — none
+exists today. Candidate approaches documented above.</li>
+<li><strong>Task</strong> (NOT filed as a separate BOB-NNN this round —
+remains an open scoping note here, distinct from the orchestrating
+session’s filed batch): extend <code>ddos_resilience_challenge.sh</code>
+(or add a sibling challenge) to exercise the real
+<code>POST /api/v1/search</code> fanout path via a
+sandboxed/mocked-tracker setup, without ever touching real third-party
+tracker sites.</li>
+<li><strong>Task</strong> (filed as <strong>BOB-114</strong>): add a
+golden-bad synthetic fixture to <code>--self-validate</code> that
+validates the rate-limiting detector itself (currently only the
+crash-resistance detector is self-validated).</li>
+<li><strong>Task (test-type matrix, see
+<code>docs/testing/test_type_matrix.md</code>)</strong> (filed as
+<strong>BOB-109</strong> scaling / <strong>BOB-110</strong> UX):
+scaling-class and UX-class test coverage are both fully absent from
+boba’s mandated test-type matrix — filed as separate followups
+there.</li>
+<li><strong>Task</strong> (filed as <strong>BOB-113</strong>,
+<strong>CLOSED 2026-08-18 — task #75/#74</strong>): <code>wrk</code> was
+not installed on the development host (only <code>ab</code> was) —
+<code>scripts/install-dev-tools.sh</code> (commit <code>c7dfdde</code>)
+added a dev-tooling installer; it was run live during task #74
+(<code>wrk 4.2.0 [epoll]</code> and <code>hey</code> confirmed
+<code>ALREADY-PRESENT</code>/installed,
+<code>ab</code>/<code>curl-loader</code> detected, <code>siege</code> an
+honest documented <code>SKIP</code>).</li>
+</ol>

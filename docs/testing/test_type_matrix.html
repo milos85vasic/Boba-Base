@@ -1,0 +1,610 @@
+<h1 id="test-type-matrix">Test-Type Matrix</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-18T14:54:02Z</p>
+<p>Audit of boba’s actual test-type coverage against the §11.4.27
+mandated list (unit / integration / e2e / full-automation / security /
+DDoS / scaling / chaos / stress / performance / benchmarking / UI / UX /
+Challenges / HelixQA). Produced as part of <strong>BOB-074</strong>
+(DDoS-class testing scaffold).</p>
+<p>This is a <strong>point-in-time audit</strong> (2026-08-18) of
+directory/file presence and counts, not a coverage-percentage
+measurement (§11.4.224’s code-coverage floor is a separate, unaddressed
+axis — see “Gaps” below).</p>
+<h2 id="method">Method</h2>
+<ul>
+<li><code>challenges/scripts/*.sh</code> — enumerated by filename +
+first-comment-line description.</li>
+<li><code>tests/</code> — enumerated by subdirectory (already
+type-organized) + file counts.</li>
+<li><code>download-proxy/tests/</code> — does <strong>not
+exist</strong>; per the project’s own documented gotcha (“Merge service
+tests live at <code>./tests/</code>, not
+<code>download-proxy/tests/</code>”), Python tests for the merge service
+live under the top-level <code>tests/</code> tree instead.</li>
+<li><code>qBitTorrent-go/*/test*.go</code> — enumerated by package +
+<code>tests/{integration, e2e,security,contract}</code> top-level
+suites.</li>
+<li><code>challenges/helixqa-banks/*.yaml</code> — enumerated by bank +
+test-case count.</li>
+</ul>
+<h2 id="coverage-summary">Coverage summary</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>§11.4.27 mandated type</th>
+<th>Status (pre-BOB-074)</th>
+<th>Status (post-BOB-074)</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>unit</td>
+<td>Present</td>
+<td>Present</td>
+<td><code>tests/unit/</code> (133 files),
+<code>qBitTorrent-go/internal/**/*_test.go</code> (40 files)</td>
+</tr>
+<tr>
+<td>integration</td>
+<td>Present</td>
+<td>Present</td>
+<td><code>tests/integration/</code> (23 files),
+<code>qBitTorrent-go/tests/integration/</code> (2 files)</td>
+</tr>
+<tr>
+<td>e2e</td>
+<td>Present</td>
+<td>Present</td>
+<td><code>tests/e2e/</code> (7 files),
+<code>qBitTorrent-go/tests/e2e/</code> (1 file),
+<code>frontend/e2e/</code> (3 Playwright specs)</td>
+</tr>
+<tr>
+<td>full-automation</td>
+<td>Present (cross-cutting)</td>
+<td>Present</td>
+<td>No dedicated directory — governed as a discipline across every suite
+(§11.4.98); not independently re-audited here</td>
+</tr>
+<tr>
+<td>security</td>
+<td>Present</td>
+<td>Present</td>
+<td><code>tests/security/</code> (12 files),
+<code>qBitTorrent-go/tests/security/</code> (1 file), plus
+credential-focused challenges
+(<code>credential_leak_grep_challenge.sh</code>,
+<code>cred_roundtrip_challenge.sh</code>,
+<code>master_key_autogen_challenge.sh</code>, …)</td>
+</tr>
+<tr>
+<td><strong>DDoS</strong></td>
+<td><strong>ABSENT</strong></td>
+<td><strong>Scaffolded</strong></td>
+<td><code>challenges/scripts/ddos_resilience_challenge.sh</code> (new,
+this commit) — see caveats below</td>
+</tr>
+<tr>
+<td><strong>scaling</strong></td>
+<td><strong>ABSENT</strong></td>
+<td><strong>ABSENT</strong></td>
+<td>No scaling-tagged directory, test file, or HelixQA bank anywhere in
+the tree. Followup filed.</td>
+</tr>
+<tr>
+<td>chaos</td>
+<td>Present (thin)</td>
+<td>Present</td>
+<td><code>tests/chaos/</code> (2 files),
+<code>tests/stress_chaos/</code> (2 files),
+<code>qBitTorrent-go/internal/api/magnet_stress_chaos_test.go</code>,
+<code>qBitTorrent-go/tests/integration/scheduler_hooks_sse_stress_chaos_test.go</code></td>
+</tr>
+<tr>
+<td>stress</td>
+<td>Present</td>
+<td>Present</td>
+<td><code>tests/stress/</code> (10 files),
+<code>tests/load/locustfile.py</code> (Locust load profile)</td>
+</tr>
+<tr>
+<td>performance</td>
+<td>Present (thin)</td>
+<td>Present</td>
+<td><code>tests/performance/test_concurrent_search.py</code> (1 file),
+<code>tests/benchmark/</code> (3 files)</td>
+</tr>
+<tr>
+<td>benchmarking</td>
+<td>Present</td>
+<td>Present</td>
+<td><code>tests/benchmark/</code> (3 files + <code>baselines/</code>),
+Go <code>*_bench_test.go</code> (<code>crypto_bench_test.go</code>,
+<code>autoconfig_bench_test.go</code>)</td>
+</tr>
+<tr>
+<td>UI</td>
+<td>Present</td>
+<td>Present</td>
+<td><code>frontend/src/**/*.spec.ts</code> (30 Vitest specs),
+<code>frontend/e2e/*.spec.ts</code> (3 Playwright specs)</td>
+</tr>
+<tr>
+<td><strong>UX</strong></td>
+<td><strong>ABSENT (distinct)</strong></td>
+<td><strong>ABSENT (distinct)</strong></td>
+<td>No test is framed around usability/accessibility/UX outcomes
+specifically; UI functional coverage exists (above) but nothing tags a
+UX dimension. Followup filed.</td>
+</tr>
+<tr>
+<td>Challenges</td>
+<td>Present</td>
+<td>Present</td>
+<td><code>challenges/scripts/*.sh</code> — 26 scripts pre-BOB-074, 27
+post (see enumeration below)</td>
+</tr>
+<tr>
+<td>HelixQA</td>
+<td>Present</td>
+<td>Present</td>
+<td><code>challenges/helixqa-banks/*.yaml</code> — 7 banks, 61 test
+cases total; <strong>none tag DDoS or scaling</strong> (followup)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Gap count identified: 3</strong> mandated types with zero
+representation at audit time — DDoS, scaling, UX. This task (BOB-074)
+scaffolds DDoS (partial close — see caveats). <strong>scaling and UX
+remain fully open.</strong></p>
+<h2 id="enumeration-challengesscripts.sh-27-scripts">Enumeration —
+<code>challenges/scripts/*.sh</code> (27 scripts)</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Script</th>
+<th>Primary type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boba_db_file_perms_challenge.sh</code></td>
+<td>Security (file-permission gate)</td>
+</tr>
+<tr>
+<td><code>credential_leak_grep_challenge.sh</code></td>
+<td>Security (leak gate)</td>
+</tr>
+<tr>
+<td><code>credentials_wired_challenge.sh</code></td>
+<td>Integration / anti-bluff wiring guard</td>
+</tr>
+<tr>
+<td><code>cred_roundtrip_challenge.sh</code></td>
+<td>Integration (round-trip gate)</td>
+</tr>
+<tr>
+<td><code>ddos_resilience_challenge.sh</code></td>
+<td><strong>DDoS</strong> (new, BOB-074)</td>
+</tr>
+<tr>
+<td><code>docs_chain_verify_challenge.sh</code></td>
+<td>Integration (docs/DB sync gate)</td>
+</tr>
+<tr>
+<td><code>download_proxy_deep_challenge.sh</code></td>
+<td>Unit/integration coverage gate</td>
+</tr>
+<tr>
+<td><code>durable_run_helper_challenge.sh</code></td>
+<td>Chaos/resilience regression guard</td>
+</tr>
+<tr>
+<td><code>env_db_drift_challenge.sh</code></td>
+<td>Integration (config drift gate)</td>
+</tr>
+<tr>
+<td><code>envfile_bindmount_atomic_challenge.sh</code></td>
+<td>Integration (atomicity)</td>
+</tr>
+<tr>
+<td><code>helixqa_jackett_fake_behavioral_equivalence_challenge.sh</code></td>
+<td>HelixQA equivalence guard</td>
+</tr>
+<tr>
+<td><code>host_no_auto_poweroff_challenge.sh</code></td>
+<td>Host-safety (CONST-033/034)</td>
+</tr>
+<tr>
+<td><code>host_no_auto_suspend_challenge.sh</code></td>
+<td>Host-safety (CONST-033)</td>
+</tr>
+<tr>
+<td><code>install_sh_idempotent_challenge.sh</code></td>
+<td>Integration (idempotency)</td>
+</tr>
+<tr>
+<td><code>iptorrents_cookie_flow_challenge.sh</code></td>
+<td>Integration/security (cred flow)</td>
+</tr>
+<tr>
+<td><code>jackett_autoconfig_clean_slate.sh</code></td>
+<td>Regression guard (CONST-032)</td>
+</tr>
+<tr>
+<td><code>jackett_cookie_login_hardening_challenge.sh</code></td>
+<td>Security hardening guard</td>
+</tr>
+<tr>
+<td><code>master_key_autogen_challenge.sh</code></td>
+<td>Security (key-gen gate)</td>
+</tr>
+<tr>
+<td><code>nnmclub_native_plugin_clarification_challenge.sh</code></td>
+<td>Integration clarification guard</td>
+</tr>
+<tr>
+<td><code>no_suspend_calls_challenge.sh</code></td>
+<td>Host-safety (source-tree gate)</td>
+</tr>
+<tr>
+<td><code>private_tracker_html_challenge.sh</code></td>
+<td>Unit (HTML-parsing coverage)</td>
+</tr>
+<tr>
+<td><code>run_all_challenges.sh</code></td>
+<td>Aggregator (not itself a test)</td>
+</tr>
+<tr>
+<td><code>search_deep_coverage_challenge.sh</code></td>
+<td>Unit coverage gate</td>
+</tr>
+<tr>
+<td><code>status_docs_freshness_challenge.sh</code></td>
+<td>Integration (doc-staleness gate)</td>
+</tr>
+<tr>
+<td><code>tmux_survives_oomd_pressure_challenge.sh</code></td>
+<td>Chaos (§11.4.238 coverage-escape guard)</td>
+</tr>
+<tr>
+<td><code>tracker_auth_live_challenge.sh</code></td>
+<td>Integration (live auth)</td>
+</tr>
+<tr>
+<td><code>upstream_proxy_wired_challenge.sh</code></td>
+<td>Integration (cross-layer wiring)</td>
+</tr>
+<tr>
+<td><code>workable_items_integrity_challenge.sh</code></td>
+<td>Integration (SSoT integrity)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="enumeration-tests-python-merge-search-shared">Enumeration —
+<code>tests/</code> (Python, merge-search + shared)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Subdirectory</th>
+<th>File count</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>unit/</code></td>
+<td>133</td>
+<td>unit</td>
+</tr>
+<tr>
+<td><code>integration/</code></td>
+<td>23</td>
+<td>integration</td>
+</tr>
+<tr>
+<td><code>e2e/</code></td>
+<td>7</td>
+<td>e2e</td>
+</tr>
+<tr>
+<td><code>security/</code></td>
+<td>12</td>
+<td>security</td>
+</tr>
+<tr>
+<td><code>stress/</code></td>
+<td>10</td>
+<td>stress</td>
+</tr>
+<tr>
+<td><code>stress_chaos/</code></td>
+<td>2</td>
+<td>stress + chaos (combined)</td>
+</tr>
+<tr>
+<td><code>chaos/</code></td>
+<td>2</td>
+<td>chaos</td>
+</tr>
+<tr>
+<td><code>concurrency/</code></td>
+<td>3</td>
+<td>concurrency (unmandated but useful — see note)</td>
+</tr>
+<tr>
+<td><code>performance/</code></td>
+<td>1</td>
+<td>performance</td>
+</tr>
+<tr>
+<td><code>benchmark/</code></td>
+<td>3 (+ <code>baselines/</code>)</td>
+<td>benchmarking</td>
+</tr>
+<tr>
+<td><code>load/</code></td>
+<td>1 (<code>locustfile.py</code>)</td>
+<td>stress/load</td>
+</tr>
+<tr>
+<td><code>property/</code></td>
+<td>2</td>
+<td>property-based (unmandated but useful)</td>
+</tr>
+<tr>
+<td><code>contract/</code></td>
+<td>4</td>
+<td>contract (unmandated but useful)</td>
+</tr>
+<tr>
+<td><code>observability/</code></td>
+<td>2</td>
+<td>observability (unmandated but useful)</td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>3</td>
+<td>doc-consistency (unmandated but useful)</td>
+</tr>
+<tr>
+<td><code>hooks/</code></td>
+<td>1 (<code>test_guard_forbidden_commands.sh</code>)</td>
+<td>integration (git-hook guard)</td>
+</tr>
+<tr>
+<td><code>fixtures/</code>, <code>memory/</code>,
+<code>test_torrents/</code></td>
+<td>—</td>
+<td>shared fixtures, not test files themselves</td>
+</tr>
+</tbody>
+</table>
+<p>Note: <code>concurrency/</code>, <code>property/</code>,
+<code>contract/</code>, <code>observability/</code>, and
+<code>docs/</code> are not literal §11.4.27 vocabulary items but are
+real, useful test disciplines this project has already adopted beyond
+the mandated floor.</p>
+<h2 id="enumeration-qbittorrent-go-go">Enumeration —
+<code>qBitTorrent-go</code> (Go)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Location</th>
+<th>File count</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>internal/**/*_test.go</code></td>
+<td>40</td>
+<td>unit</td>
+</tr>
+<tr>
+<td><code>tests/integration/*_test.go</code></td>
+<td>2</td>
+<td>integration (one is
+<code>scheduler_hooks_sse_stress_chaos_test.go</code> —
+chaos-tagged)</td>
+</tr>
+<tr>
+<td><code>tests/e2e/*_test.go</code></td>
+<td>1</td>
+<td>e2e</td>
+</tr>
+<tr>
+<td><code>tests/security/*_test.go</code></td>
+<td>1</td>
+<td>security</td>
+</tr>
+<tr>
+<td><code>tests/contract/*_test.go</code></td>
+<td>1</td>
+<td>contract</td>
+</tr>
+<tr>
+<td><code>internal/db/crypto_bench_test.go</code>,
+<code>internal/jackett/autoconfig_bench_test.go</code></td>
+<td>2</td>
+<td>benchmarking</td>
+</tr>
+<tr>
+<td><code>internal/api/magnet_stress_chaos_test.go</code></td>
+<td>1</td>
+<td>stress + chaos (combined)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="enumeration-challengeshelixqa-banks.yaml">Enumeration —
+<code>challenges/helixqa-banks/*.yaml</code></h2>
+<table>
+<thead>
+<tr>
+<th>Bank</th>
+<th>Test cases</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boba-boba-ctl.yaml</code></td>
+<td>7</td>
+</tr>
+<tr>
+<td><code>boba-bobalink.yaml</code></td>
+<td>12</td>
+</tr>
+<tr>
+<td><code>boba-docs-chain.yaml</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>boba-download-proxy.yaml</code></td>
+<td>10</td>
+</tr>
+<tr>
+<td><code>boba-frontend.yaml</code></td>
+<td>10</td>
+</tr>
+<tr>
+<td><code>boba-services.yaml</code></td>
+<td>14</td>
+</tr>
+<tr>
+<td><code>boba-tmux-session-hardening.yaml</code></td>
+<td>5</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>61</strong></td>
+</tr>
+</tbody>
+</table>
+<p>None of the 7 banks tag a DDoS or scaling scenario.</p>
+<h2 id="enumeration-frontend-angular-21-ui">Enumeration —
+<code>frontend/</code> (Angular 21, UI)</h2>
+<table>
+<thead>
+<tr>
+<th>Location</th>
+<th>File count</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/**/*.spec.ts</code></td>
+<td>30</td>
+<td>UI unit (Vitest)</td>
+</tr>
+<tr>
+<td><code>e2e/*.spec.ts</code></td>
+<td>3</td>
+<td>UI e2e (Playwright)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gaps-followups-filed">Gaps + followups filed</h2>
+<p>Per §11.4.6 (no invented thresholds/fixes) these are filed as
+<strong>followup work items</strong>, not silently fixed inside this
+task’s scope
+(<code>challenges/scripts/ddos_resilience_challenge.sh</code> +
+<code>docs/testing/ddos_resilience.md</code> + this file only):</p>
+<ol type="1">
+<li><strong>Scaling-class testing is fully absent.</strong> No test,
+script, or HelixQA bank distinguishes “scaling” (does the system handle
+a growing dataset / tracker count / concurrent-user count gracefully,
+e.g. horizontal scale-out of the merge-search fanout, DB growth under
+<code>challenges/helixqa-banks/boba-services.yaml</code>’s tracker set,
+or the <code>qbittorrent-proxy-go --profile go</code> swap) from
+“stress” (does it survive a burst). <strong>Followup filed as workable
+item BOB-109</strong> — “Scaling-class test coverage absent from boba’s
+mandated test-type matrix” — scoped to at least one scaling dimension
+(e.g. tracker-count scale-out in merge search) with a real, measured
+baseline.</li>
+<li><strong>UX-class testing has no distinct representation.</strong> UI
+functional coverage exists (Vitest + Playwright) but nothing is framed
+around usability/accessibility/UX outcomes (e.g. WCAG checks,
+keyboard-nav coverage, screen-reader labeling). <strong>Followup filed
+as workable item BOB-110</strong> — “UX-class test coverage
+(accessibility/usability) absent” — scoped to an axe-core or equivalent
+accessibility pass over the Angular frontend.</li>
+<li><strong>DDoS-class testing was fully absent; now scaffolded, not
+fully closed.</strong> See <code>docs/testing/ddos_resilience.md</code>
+“Followups” for the two concrete items this scaffold surfaced:
+<ul>
+<li>No rate limiting exists anywhere in boba’s stack (verified
+2026-08-18: no
+<code>slowapi</code>/<code>limiter</code>/<code>throttle</code> in the
+Python service, no rate-limit middleware in either Go service, no
+nginx/reverse-proxy layer). <strong>Followup filed as workable item
+BOB-111</strong> — configure a real rate limit for the three public
+endpoints (candidate approaches documented in
+<code>docs/testing/ddos_resilience.md</code>).</li>
+<li><code>boba-jackett</code>’s <code>/healthz</code>
+(<code>qBitTorrent-go/internal/jackettapi/health.go:60-63</code>) makes
+a synchronous, uncached <code>Jackett.GetCatalog()</code> call on every
+hit — under a cold-start concurrent burst this was measured to cause up
+to 98/150 (65%) of health-check requests to time out at 3s, recovering
+to &lt;50ms/request once the burst subsided. This is a genuine
+self-inflicted amplification vector: an attacker (or even a
+mis-configured monitoring probe hitting <code>/healthz</code> too
+aggressively) could make the Jackett-management API’s own health surface
+appear down without ever touching Jackett itself. <strong>Followup filed
+as Bug workable item BOB-112</strong> citing this exact reproduction +
+recommended fixes (cache the Jackett liveness signal with a short TTL
+refreshed by a background ticker; add a tight timeout/circuit-breaker
+around the <code>GetCatalog</code> call so <code>/healthz</code> itself
+never blocks past ~250-500ms regardless of Jackett’s state). See
+<code>docs/testing/ddos_resilience.md</code> “Findings” for the full
+evidence.</li>
+<li>The real fanout path (<code>POST /api/v1/search</code>, up to 43
+real trackers) is deliberately <strong>never</strong> driven by the new
+challenge — see <code>docs/testing/ddos_resilience.md</code> “Scoping
+decisions” for why, and the followup this leaves open (a
+sandboxed/mocked-tracker DDoS variant that exercises the orchestration
+code path without touching real third-party tracker sites).</li>
+</ul></li>
+<li><strong>§11.4.224 code-coverage floor</strong> (≥85%, ~100% target)
+is a distinct, unaddressed axis from this test-<em>type</em> audit —
+this document counts <em>presence</em> of test types, not <em>coverage
+percentage</em> within them. Not remeasured here; out of this task’s
+scope.</li>
+</ol>
+<p>These followups were originally <strong>documented here and in the
+DDoS doc rather than inserted into <code>docs/workable_items.db</code>
+directly</strong> — this task ran in parallel with other subagents also
+touching shared project state, and a concurrent SQLite write from this
+task risked a race with theirs. The orchestrating session registered the
+followups above as tracked workable items (§11.4.93/§11.4.202) once the
+parallel batch completed: scaling → <strong>BOB-109</strong>, UX →
+<strong>BOB-110</strong>, rate limiting → <strong>BOB-111</strong>,
+<code>/healthz</code> amplification Bug → <strong>BOB-112</strong>,
+<code>wrk</code> dev-tooling gap → <strong>BOB-113</strong>, and the
+rate-limit detector’s missing self-validation golden-bad fixture (see
+<code>docs/testing/ddos_resilience.md</code> “Findings” item 2) →
+<strong>BOB-114</strong>. The sandboxed/mocked-tracker
+<code>POST /api/v1/search</code> fanout extension (this section’s item
+3, third bullet) remains an open scoping note, not filed as a separate
+BOB-NNN this round.</p>

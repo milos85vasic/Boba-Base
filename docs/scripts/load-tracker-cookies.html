@@ -1,0 +1,327 @@
+<h1
+id="scriptsload-tracker-cookies.sh-tracker-cookies-autoload"><code>scripts/load-tracker-cookies.sh</code>
+— Tracker Cookies Autoload</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-18T00:00:00Z <strong>Purpose:</strong> External operator guide
+for the per-tracker cookies autoload primitive. <strong>Last
+verified:</strong> 2026-08-18</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p><code>scripts/load-tracker-cookies.sh</code> is boba’s <strong>single
+primitive</strong> for turning a per-tracker Netscape
+<code>cookies.txt</code> file exported from a browser into the
+<code>&lt;TRACKER&gt;_COOKIES=...</code> env var that the download-proxy
+container consumes for authenticated tracker access.</p>
+<p>It implements the operator mandate (2026-08-15):</p>
+<blockquote>
+<p>“System seeks for cookies txt files in naming convention
+<code>cookies_rutracker.txt</code> —
+<code>cookies_&lt;TRACKER&gt;.txt</code> and loads data from them for
+trackers which need them. Let’s use by default host machine home
+directory → Downloads folder. So we MUST support env. vars and use of
+cookies files.”</p>
+</blockquote>
+<p>The convention is fixed and boring on purpose:</p>
+<pre><code>${TRACKER_COOKIE_DIR:-$HOME/Downloads}/cookies_&lt;tracker&gt;.txt</code></pre>
+<p>For every file present it:</p>
+<ol type="1">
+<li>Parses the Netscape TSV, keeping only cookies whose domain belongs
+to that tracker (leading <code>.</code> stripped, case-insensitive
+substring match), deduplicates by cookie name.</li>
+<li>Runs the mandatory <strong>§11.4.10.A pre-store leak audit</strong>
+(<code>git grep -F</code> on tracked files + <code>git log -S</code>) —
+any cookie value already present in the working tree or recent history
+<strong>blocks the store</strong> and the operator is told to
+rotate.</li>
+<li>Writes the resulting
+<code>&lt;TRACKER_UPPER&gt;_COOKIES='&lt;name=value; ...&gt;'</code>
+line into <code>.env</code> <strong>atomically</strong> (temp +
+<code>chmod 600</code> + <code>mv</code>) — the same seam
+<code>boba-jackett</code> uses. <code>.env</code> stays
+<code>0600</code> and gitignored.</li>
+<li>Is <strong>idempotent</strong> — if the parsed value already matches
+what <code>.env</code> holds, it skips the write.</li>
+<li><strong>Never</strong> logs cookie values — only tracker name,
+count, cookie names, and file mtime.</li>
+</ol>
+<p>The loader is called automatically before every
+<code>boba-svc up</code>, <code>boba-svc restart</code>,
+<code>install.sh</code> Stage 6, and <code>start.sh</code> boot — so
+re-exporting a fresh cookie file in your browser is all the operator has
+to do; the containers pick it up on the next restart.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code> 4+, <code>coreutils</code>, <code>git</code> (for
+the leak audit)</li>
+<li><code>scripts/extract-tracker-cookies.sh</code> (delegated primitive
+for <code>rutracker</code> / <code>nnmclub</code> /
+<code>iptorrents</code>; inline extraction is used for the other
+trackers)</li>
+<li>The <code>cookies_&lt;tracker&gt;.txt</code> file(s) exported from a
+logged-in browser session in Netscape TSV format (Firefox:
+<code>Cookie Quick Manager</code> add-on → <em>Export cookies to
+file</em>. Chrome: <code>Get cookies.txt</code> extension).</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<h3 id="example-1-one-shot-dry-run-against-downloads">Example 1 —
+one-shot dry run against <code>~/Downloads</code></h3>
+<p>Verified output (2026-08-15, 4 cookie files present):</p>
+<pre><code>$ bash scripts/load-tracker-cookies.sh --dry-run
+[extract] rutracker: 4 cookie(s) for own domain — names: bb_guid bb_session bb_ssl cf_clearance
+[load-tracker-cookies] rutracker: WOULD LOAD (4 cookie(s)) into /run/media/milosvasic/DATA4TB/Projects/boba/.env as RUTRACKER_COOKIES — DRY-RUN (no write)
+[extract] nnmclub: 9 cookie(s) for own domain — names: eb927f21fc_blockTimer eb927f21fc_delayCount phpbb2mysql_4_data phpbb2mysql_4_sid u_eb927f21fc uuid _ym_d _ym_isad _ym_uid
+[load-tracker-cookies] nnmclub: WOULD LOAD (9 cookie(s)) into /run/media/milosvasic/DATA4TB/Projects/boba/.env as NNMCLUB_COOKIES — DRY-RUN (no write)
+[load-tracker-cookies] rutor: 12 cookie(s) for own domain — names: domain_sid ec592524fc_blockTimer ec592524fc_delayCount _ohmybid_cmf redir_ipv6 _sltb _sltm u_ec592524fc _ym_d _ym_isad _ym_uid _ym_visorc
+[load-tracker-cookies] rutor: WOULD LOAD (12 cookie(s)) into /run/media/milosvasic/DATA4TB/Projects/boba/.env as RUTOR_COOKIES — DRY-RUN (no write)
+[load-tracker-cookies] kinozal: 5 cookie(s) for own domain — names: eb3299ed2c_blockTimer eb3299ed2c_delayCount pass u_eb3299ed2c uid
+[load-tracker-cookies] kinozal: WOULD LOAD (5 cookie(s)) into /run/media/milosvasic/DATA4TB/Projects/boba/.env as KINOZAL_COOKIES — DRY-RUN (no write)
+[load-tracker-cookies] summary: loaded=4 unchanged=0 absent=0 blocked=0 parse_err=0 (dir=/home/milosvasic/Downloads)</code></pre>
+<p><code>iptorrents</code> support was added 2026-08-18 (Task #39),
+routed through the same <code>extract-tracker-cookies.sh</code>
+extractor as <code>rutracker</code>/<code>nnmclub</code> (required
+session-cookie canary: <code>pass=</code>). Verified output against a
+real, already- partially-loaded host (2026-08-18):</p>
+<pre><code>$ bash scripts/load-tracker-cookies.sh --dry-run
+[extract] iptorrents: 2 cookie(s) for own domain — names: pass uid
+[load-tracker-cookies] iptorrents: WOULD LOAD (2 cookie(s)) into /run/media/milosvasic/DATA4TB/Projects/boba/.env as IPTORRENTS_COOKIES — DRY-RUN (no write)
+[load-tracker-cookies] summary: loaded=1 unchanged=4 absent=0 blocked=0 parse_err=0 (dir=/home/milosvasic/Downloads)</code></pre>
+<h3 id="example-2-real-write">Example 2 — real write</h3>
+<pre><code>$ bash scripts/load-tracker-cookies.sh
+[load-tracker-cookies] rutracker: 4 cookie(s) — LOADED into .env as RUTRACKER_COOKIES
+[load-tracker-cookies] nnmclub:   9 cookie(s) — LOADED into .env as NNMCLUB_COOKIES
+[load-tracker-cookies] rutor:    12 cookie(s) — LOADED into .env as RUTOR_COOKIES
+[load-tracker-cookies] kinozal:   5 cookie(s) — LOADED into .env as KINOZAL_COOKIES
+[load-tracker-cookies] summary: loaded=4 unchanged=0 absent=0 blocked=0 parse_err=0</code></pre>
+<h3 id="example-3-idempotent-re-run-nothing-changed">Example 3 —
+idempotent re-run (nothing changed)</h3>
+<pre><code>$ bash scripts/load-tracker-cookies.sh
+[load-tracker-cookies] rutracker: 4 cookie(s) — UNCHANGED (idempotent)
+[load-tracker-cookies] nnmclub:   9 cookie(s) — UNCHANGED (idempotent)
+[load-tracker-cookies] rutor:    12 cookie(s) — UNCHANGED (idempotent)
+[load-tracker-cookies] kinozal:   5 cookie(s) — UNCHANGED (idempotent)
+[load-tracker-cookies] summary: loaded=0 unchanged=4 absent=0 blocked=0 parse_err=0</code></pre>
+<h3 id="example-4-a-single-tracker-only">Example 4 — a single tracker
+only</h3>
+<pre><code>$ bash scripts/load-tracker-cookies.sh --only rutor --verbose
+[load-tracker-cookies] rutor: /home/milosvasic/Downloads/cookies_rutor.txt (mtime: 2026-08-15 13:56:29)
+[load-tracker-cookies] rutor: 12 cookie(s) for own domain — names: domain_sid ec592524fc_blockTimer …
+[load-tracker-cookies] rutor: 12 cookie(s) — LOADED into .env as RUTOR_COOKIES
+[load-tracker-cookies] summary: loaded=1 unchanged=0 absent=0 blocked=0 parse_err=0</code></pre>
+<h3 id="example-5-custom-source-directory">Example 5 — custom source
+directory</h3>
+<pre><code>$ bash scripts/load-tracker-cookies.sh --dir /media/usb/browser-export</code></pre>
+<h3 id="example-6-env-var-equivalent">Example 6 — env-var
+equivalent</h3>
+<pre><code>$ TRACKER_COOKIE_DIR=/media/usb/browser-export bash scripts/load-tracker-cookies.sh</code></pre>
+<p><code>--dir</code> wins when both are set.</p>
+<h2 id="flags">Flags</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--dry-run</code></td>
+<td>Report what WOULD change; touch nothing. Safe to run any time.</td>
+</tr>
+<tr>
+<td><code>--dir &lt;path&gt;</code></td>
+<td>Override the cookie source dir (default
+<code>$TRACKER_COOKIE_DIR</code> else
+<code>$HOME/Downloads</code>).</td>
+</tr>
+<tr>
+<td><code>--only &lt;tracker&gt;</code></td>
+<td>Process a single tracker (<code>rutracker</code> |
+<code>nnmclub</code> | <code>rutor</code> | <code>kinozal</code> |
+<code>iptorrents</code>). May be repeated.</td>
+</tr>
+<tr>
+<td><code>--verbose</code> / <code>-v</code></td>
+<td>Extra progress (per-file mtime, per-cookie count). Cookie
+<strong>values</strong> are still never printed.</td>
+</tr>
+<tr>
+<td><code>-h</code> / <code>--help</code></td>
+<td>Print help.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="env-vars">Env vars</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Var</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TRACKER_COOKIE_DIR</code></td>
+<td>Overrides the default <code>$HOME/Downloads</code> source dir.
+<code>--dir</code> wins.</td>
+</tr>
+<tr>
+<td><code>BOBA_ENV_FILE</code></td>
+<td>Overrides the default <code>&lt;repo-root&gt;/.env</code> write
+target — used by tests.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="exit-codes">Exit codes</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>0</strong></td>
+<td>Success — every file loaded, unchanged, or absent (no file at all is
+a legitimate outcome).</td>
+</tr>
+<tr>
+<td><strong>1</strong></td>
+<td>§11.4.10.A leak audit failure — value already appears in tracked
+files or recent git history; <strong>store blocked</strong>, rotate the
+cookie in your browser and re-export.</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>Parse error — a cookie file failed the extractor’s
+required-session-cookie check (was not exported from a logged-in
+browser).</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>Invocation error — bad flag, missing arg, extractor not
+executable.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>No cookie files at all.</strong> Exit 0, four
+<code>SKIP</code> lines in the summary. This is the healthy state before
+the operator first exports cookies.</li>
+<li><strong>File exists but empty session cookie.</strong> The delegated
+<code>extract-tracker-cookies.sh</code> exits 2
+(<code>required session cookie not present</code>) → loader reports
+<code>PARSE — cookies_&lt;tracker&gt;.txt was not exported from a logged-in session</code>
+and continues. Re-log into the tracker in the browser and
+re-export.</li>
+<li><strong>File exists but no matching domain.</strong> Empty header
+emitted; safe (writes an empty <code>&lt;T&gt;_COOKIES=''</code>).
+Usually means the operator exported the wrong site’s cookies to a file
+named after the wrong tracker.</li>
+<li><strong>Leak audit hit.</strong> Exit 1, output names the
+file/commit + the cookie NAME (never the value). Rotate the cookie in
+the browser (invalidate the session server-side), re-export,
+re-run.</li>
+<li><strong>File is not Netscape TSV.</strong> Parser silently ignores
+non-conforming lines; the header will be empty and the audit trivially
+passes. Symptom is a zero-cookie summary — check the file format.</li>
+<li><strong><code>~/Downloads</code> does not exist.</strong> Exit 0
+with a <code>— nothing to do</code> line. Loader is safe to call in
+every environment.</li>
+<li><strong>Two files for one tracker (<code>cookies_rutor.txt</code> +
+<code>cookies_rutor.txt.bak</code>).</strong> Loader only reads the
+canonical <code>cookies_&lt;tracker&gt;.txt</code> — backup files
+ignored.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li><strong>Extractor delegation.</strong> For <code>rutracker</code>,
+<code>nnmclub</code>, and <code>iptorrents</code> (the private-login
+trackers the audited primitive teaches, each with a load-bearing
+required session cookie), calls
+<code>scripts/extract-tracker-cookies.sh &lt;file&gt; &lt;tracker&gt;</code>
+and captures the header from stdout, summary from stderr. For
+<code>rutor</code> and <code>kinozal</code>, the same awk shape is
+inlined (<code>domain-lowercased</code>,
+<code>leading-dot stripped</code>,
+<code>case-insensitive substring on the tracker name</code>,
+dedup-by-name) — no required-cookie validation for those two (rutor is
+public/no-login, kinozal’s inline path predates the extractor’s kinozal
+support).</li>
+<li><strong>Idempotency.</strong> Reads the current <code>.env</code>
+value for <code>&lt;TRACKER&gt;_COOKIES</code> via
+<code>_read_env_var</code>, strips surrounding quotes, byte-compares.
+Match → SKIP.</li>
+<li><strong>§11.4.10.A audit.</strong> For every cookie value ≥ 8 chars
+(and not one of the trivial
+<code>1</code>/<code>0</code>/<code>true</code>/<code>false</code>
+patterns), runs <code>git grep -F -l -- "$value"</code> (excluding
+<code>.env</code> + this loader itself) AND
+<code>git log -n 1000 -S"$value"</code>. Any hit blocks the store.</li>
+<li><strong>Atomic write.</strong>
+<code>mktemp .env.load-tracker-cookies.XXXXXX</code>,
+<code>chmod 600</code> BEFORE writing content, then reproduces every
+non-matching line from <code>.env</code>, appends the new
+<code>&lt;VAR&gt;='&lt;value&gt;'</code> line, <code>sync</code>,
+<code>mv -f</code>. <code>.env</code> mode enforced <code>0600</code>
+afterwards. Never leaves a half-written <code>.env</code>.</li>
+</ol>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><strong><code>scripts/extract-tracker-cookies.sh</code></strong> —
+the single-tracker extraction primitive this loader delegates to. (<a
+href="extract-tracker-cookies.md">Doc</a>)</li>
+<li><strong><code>scripts/nnmclub-cookie-refresh.sh</code></strong> —
+legacy NNM-Club-specific browser cookie refresher; superseded by this
+loader for the write step.</li>
+<li><strong><code>scripts/boba-svc.sh up</code></strong> /
+<strong><code>restart</code></strong> — auto-invoke this loader before
+starting containers.</li>
+<li><strong><code>scripts/install.sh</code></strong> — Stage 6
+auto-invokes this loader before <code>boba-svc up</code>.</li>
+<li><strong><code>start.sh</code></strong> — auto-invokes this loader
+before compose up.</li>
+<li><strong><code>challenges/scripts/credentials_wired_challenge.sh</code></strong>
+— RED/GREEN guard proving the loader is present + invocable + recognises
+every file that exists.</li>
+</ul>
+<h2 id="anti-bluff-11.4-discipline">Anti-bluff &amp; §11.4
+discipline</h2>
+<ul>
+<li><strong>§11.4.10 credentials handling</strong> — cookie
+<strong>values</strong> never enter logs; every status line prints only
+tracker, count, names, mtime. <code>.env</code> write is atomic and
+<code>0600</code>.</li>
+<li><strong>§11.4.10.A pre-store leak audit</strong> — mandatory before
+every write; blocks the store on any hit; operator is instructed to
+rotate and re-export.</li>
+<li><strong>§11.4.6 no-guessing</strong> — the loader knows only the
+closed <code>{rutracker,nnmclub,rutor,kinozal,iptorrents}</code> tracker
+set; unknown trackers are surfaced as <code>--only ignored</code>, never
+guessed.</li>
+<li><strong>§11.4.234 always-unblocked</strong> — loader failure never
+blocks <code>boba-svc up</code> / <code>install.sh</code> /
+<code>start.sh</code>; a warning surfaces and the boot proceeds with
+whatever cookies <code>.env</code> already holds.</li>
+<li><strong>§11.4.115 RED-then-GREEN</strong> — the extended
+<code>credentials_wired_challenge.sh</code> (checks 7/8/9) is the
+standing regression guard: strip the loader → the challenge FAILs;
+restore → PASSes.</li>
+</ul>
+<hr />
+<p><em>Companion of the <a
+href="../guides/tracker-credentials.md">Tracker Credentials Manual</a>
+and the <a href="../FAQ.md">FAQ</a>.</em></p>
