@@ -8,8 +8,13 @@ After=multi-user.target
 [Service]
 Type=simple
 ExecStart=/usr/local/bin/boba-user1000-watchdog
-Restart=on-failure
+# M7 fix: monitor MUST restart on ANY exit (clean or failure) so a bug or
+# journalctl-tail-exits-cleanly path doesn't silently stop watching.
+Restart=always
 RestartSec=5s
+# Log the restart-gap-of-blindness explicitly so operators know the window.
+StartLimitIntervalSec=0
+StartLimitBurst=0
 # Low priority — this is a monitor, not real work
 Nice=10
 IOSchedulingClass=idle

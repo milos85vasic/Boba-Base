@@ -32,13 +32,43 @@ su -c '
   auditctl -w /usr/bin/loginctl -p x -k logout_investigation
   # Rule 2: watch every execution of /usr/bin/systemctl (which can stop user@1000)
   auditctl -w /usr/bin/systemctl -p x -k logout_investigation
-  # Rule 3: capture every kill() syscall with signal=9 (SIGKILL)
-  auditctl -a always,exit -F arch=b64 -S kill -F a1=9 -k sigkill_investigation
+  # Rule 3-6: I4 fix — capture every SIGKILL-delivering syscall on both bit widths.
+  # systemd v246+ PREFERS pidfd_send_signal over kill(); a b64-kill-only rule
+  # can miss the actual kill delivery. Cover kill/tkill/tgkill/pidfd_send_signal
+  # on both b64 and b32 to be exhaustive.
+  auditctl -a always,exit -F arch=b64 -S kill,tkill,tgkill,pidfd_send_signal \
+    -F a1=9 -k sigkill_investigation
+  auditctl -a always,exit -F arch=b32 -S kill,tkill,tgkill,pidfd_send_signal \
+    -F a1=9 -k sigkill_investigation 2>/dev/null || true
   # Verify
   echo "--- installed rules ---"
   auditctl -l | grep -E "logout_investigation|sigkill_investigation"
 '
 ```
+
+## Coverage limitation you should know (§11.4.6)
+
+These rules attribute:
+
+- ✅ `kill(pid, 9)` and its `tkill`/`tgkill`/`pidfd_send_signal` variants
+- ✅ Any process that execs `/usr/bin/loginctl` (auid + cmdline)
+- ✅ Any process that execs `/usr/bin/systemctl` (auid + cmdline)
+
+They do **NOT** attribute:
+
+- ❌ A direct D-Bus call to `org.freedesktop.login1.Manager.TerminateUser` /
+  `KillUser` — a caller (systemd component, GDM, or any dbus-enabled app) can
+  invoke these methods without ever exec'ing `loginctl`, and the audit exec
+  watch is blind to it. To close this blind spot, add `busctl monitor
+  org.freedesktop.login1` during observation windows, or (better) install the
+  boba system.slice watchdog which captures the journal window +
+  `journal-post.log` including logind's method-call log lines.
+- ❌ signal(2)-style raise() calls a process makes to itself (not the class
+  we're hunting — the target is another process killing user@1000's PID 1).
+
+So: audit rules + system.slice watchdog TOGETHER give the best coverage; either
+alone leaves a specific blind spot. Both are Path 1 + Path 2 of the three-path
+plan.
 
 Expected output of the verify step (3 lines):
 
@@ -77,12 +107,17 @@ su -c '
 '
 ```
 
-The output will include:
+The output will include (I4 fix — softened claim):
 
-- `pid=NNN` — the initiator PID
-- `uid=NNN` — the initiator UID
+- `pid=NNN` — the initiator PID (when it executed loginctl/systemctl OR called a
+  covered syscall)
+- `uid=NNN` / `auid=NNN` — the initiator UID / audit-tracked UID
 - `exe="/path/to/binary"` — the initiator executable
 - `proctitle=...` — hex-encoded cmdline
+
+**§11.4.6 honesty:** attribution is high-confidence when the initiator went
+through `kill()`-family or an exec-audited binary. It is **NOT** cryptographic
+certainty in the DBus-only case (see "Coverage limitation" above).
 
 ## Removing the rules later
 

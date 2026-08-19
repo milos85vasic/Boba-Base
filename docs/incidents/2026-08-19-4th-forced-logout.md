@@ -78,7 +78,12 @@ self-attributed.
 - CONST-033 forbidden power mechanism (host uptime intact + no `suspend/hibernate`
   in kernel journal)
 - IdleAction: `IdleAction=ignore` (verified)
-- `KillUserProcesses`: default (unset) — systemd's baked-in default is `yes`
+- `KillUserProcesses`: unset in `/etc/systemd/logind.conf`. The systemd default
+  is distro-patched (some ship yes, some no); the authoritative check is
+  `busctl get-property org.freedesktop.login1 /org/freedesktop/login1
+  org.freedesktop.login1.Manager KillUserProcesses` at runtime (§11.4.6 —
+  don't assume, check). Regardless, `Linger=yes` should override this behavior
+  for user@1000.service itself.
 
 ## Preventive gates that DIDN'T fire (§11.4.6)
 

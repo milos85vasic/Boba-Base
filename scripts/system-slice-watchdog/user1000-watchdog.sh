@@ -25,12 +25,20 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-readonly WATCHDOG_VERSION="1.0.0"
-readonly TARGET_UNIT="user@1000.service"
+readonly WATCHDOG_VERSION="1.1.0"
+# TARGET_UNIT is env-tunable so a scratch unit can be used for install-time
+# drills (§11.4.108 layer-4 proof without touching user@1000 in production).
+# Default remains user@1000.service (the incident target).
+readonly TARGET_UNIT="${BOBA_WATCHDOG_TARGET:-user@1000.service}"
 readonly EVIDENCE_ROOT="${BOBA_WATCHDOG_ROOT:-/var/log/boba-watchdog}"
 readonly RETAIN_LAST_N="${BOBA_WATCHDOG_RETAIN:-20}"
 readonly PRE_KILL_WINDOW_SEC="${BOBA_WATCHDOG_PRE_SEC:-60}"
 readonly POST_KILL_WINDOW_SEC="${BOBA_WATCHDOG_POST_SEC:-15}"
+# I1 fix: cooldown between captures. Same-incident cascade can trigger many
+# lines within 1 second — without cooldown, retention rotates out the real
+# incident.  60s default: no realistic recurrence of the class in <60s.
+readonly CAPTURE_COOLDOWN_SEC="${BOBA_WATCHDOG_COOLDOWN_SEC:-60}"
+LAST_CAPTURE_EPOCH=0
 
 log() { printf '[watchdog %(%Y-%m-%dT%H:%M:%S%z)T] %s\n' -1 "$*"; }
 
@@ -49,7 +57,10 @@ preflight() {
         log "ERROR §11.4.201: systemctl not on PATH — cannot verify unit"
         return 1
     fi
-    # Assert we are in system.slice, NOT user.slice (the WHOLE POINT)
+    # M2 fix: POSITIVE check (fail-closed) — a cgroup-namespaced context
+    # (rootless container) has cgroup "/" or "0::/" and would pass a mere
+    # negative check while ACTUALLY being under user.slice from the host's view.
+    # Require explicit /system.slice/ in the path.
     local my_cgroup
     my_cgroup=$(awk -F: 'NR==1 {print $NF}' /proc/self/cgroup)
     if [[ "$my_cgroup" == *"/user.slice/"* ]]; then
@@ -57,8 +68,15 @@ preflight() {
         log "  with user@1000. MUST be installed via system.slice unit."
         return 1
     fi
+    if [[ "$my_cgroup" != *"/system.slice/"* ]]; then
+        log "ERROR §11.4.201: watchdog cgroup ($my_cgroup) is not under /system.slice/"
+        log "  Fail-closed: refusing to run without positive system.slice proof."
+        log "  Likely running in a cgroup-namespaced container which may still be"
+        log "  under user.slice from host's view — install as native system unit."
+        return 1
+    fi
     log "preflight OK: uid=0, cgroup=$my_cgroup, target=$TARGET_UNIT"
-    log "evidence_root=$EVIDENCE_ROOT retain_last=$RETAIN_LAST_N"
+    log "evidence_root=$EVIDENCE_ROOT retain_last=$RETAIN_LAST_N cooldown=${CAPTURE_COOLDOWN_SEC}s"
     return 0
 }
 
@@ -69,11 +87,15 @@ rotate_evidence() {
     # List newest-first; skip the first RETAIN_LAST_N; remove the rest
     count=$(find "$EVIDENCE_ROOT" -mindepth 1 -maxdepth 1 -type d | wc -l)
     if [[ "$count" -le "$RETAIN_LAST_N" ]]; then return 0; fi
-    find "$EVIDENCE_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
-      | sort -rn | tail -n +$((RETAIN_LAST_N + 1)) | awk '{print $2}' \
-      | while IFS= read -r old; do
-          log "rotating out: $old"
-          rm -rf -- "$old"
+    # M6 fix: null-delimit path names so spaces don't split. -printf '%T@\t%p\0'
+    # gives NUL-separated records; sort -z / read -d '' handle them safely.
+    find "$EVIDENCE_ROOT" -mindepth 1 -maxdepth 1 -type d -printf '%T@\t%p\0' \
+      | sort -zrn \
+      | tail -zn +$((RETAIN_LAST_N + 1)) \
+      | while IFS= read -r -d '' rec; do
+          local path="${rec#*$'\t'}"
+          log "rotating out: $path"
+          rm -rf -- "$path"
         done
 }
 
@@ -136,9 +158,18 @@ capture_forensics() {
         journalctl --since "$PRE_KILL_WINDOW_SEC seconds ago" \
                    --until "now" 2>&1 | tail -500 || true
         echo
-        echo "## journalctl user@1000.service specifically"
+        echo "## journalctl PID=1 (systemd manager) user@1000 mentions"
+        # M1 fix: PID=1 only sees systemd's own log lines. pam_tcb comes from
+        # gdm-session-worker, session_close from audit, logind from logind's PID.
+        # This filter previously produced a permanent §11.4.201(6) false-null.
+        # Do PID=1 for user@1000 explicitly; use ALL sources for the PAM/logind hits.
         journalctl _PID=1 --since "$PRE_KILL_WINDOW_SEC seconds ago" 2>&1 \
-          | grep -iE "user@1000|pam_tcb|session_close|logind" | tail -100 || true
+          | grep -iE "user@1000" | tail -50 || true
+        echo
+        echo "## journalctl (all sources) PAM close + logind + gdm-session-worker"
+        journalctl --since "$PRE_KILL_WINDOW_SEC seconds ago" 2>&1 \
+          | grep -iE "pam_tcb|session_close|logind|gdm-session-worker|Removed session" \
+          | tail -100 || true
     } > "$out_dir/journal-pre.log" 2>&1 &
     local journal_pid=$!
 
@@ -185,14 +216,28 @@ main() {
     chmod 700 "$EVIDENCE_ROOT"
     log "watchdog $WATCHDOG_VERSION started, tailing $TARGET_UNIT"
 
-    # Follow the target unit's journal in real time; on SIGKILL detection capture
-    # journalctl -o short-iso ensures parseable timestamps
+    # Follow the target unit's journal in real time.
+    # I1 fix: the trigger MUST be anchored on "<TARGET_UNIT>: Main process exited"
+    # specifically — journalctl -u user@1000.service also emits per-child scope
+    # lines like "app-foo.scope: Main process exited, code=killed, status=9/KILL"
+    # whenever any user-level app service dies. Matching bare "code=killed"
+    # false-positives on those and floods the retention window with noise,
+    # evicting real incident dirs (the artifact would defeat its own purpose).
+    # We match on the exact "<TARGET_UNIT>: Main process exited" prefix.
+    local -r trigger_prefix="$TARGET_UNIT: Main process exited"
     journalctl -f -o short-iso -u "$TARGET_UNIT" 2>&1 | \
     while IFS= read -r line; do
-        # The exact pattern we saw in ALL 4 incidents:
-        #   user@1000.service: Main process exited, code=killed, status=9/KILL
-        if [[ "$line" == *"Main process exited"*"status=9"* ]] || \
-           [[ "$line" == *"code=killed"* ]]; then
+        if [[ "$line" == *"$trigger_prefix"* ]] && \
+           [[ "$line" == *"status=9"* || "$line" == *"code=killed"* ]]; then
+            # I1 fix: cooldown to dedup rapid-fire triggers of the same incident
+            local now
+            now=$(date +%s)
+            if (( now - LAST_CAPTURE_EPOCH < CAPTURE_COOLDOWN_SEC )); then
+                log "COOLDOWN: ignoring trigger within ${CAPTURE_COOLDOWN_SEC}s of previous capture"
+                log "  (line: $line)"
+                continue
+            fi
+            LAST_CAPTURE_EPOCH="$now"
             log "TRIGGER: $line"
             capture_forensics "$(echo "$line" | awk '{print $1,$2}')" "$line" &
             # keep tailing — we want next incident too

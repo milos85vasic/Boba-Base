@@ -92,23 +92,30 @@ if grep -qE '^Slice=system\.slice' "$SERVICE_UNIT"; then
 elif grep -qE '^Slice=user' "$SERVICE_UNIT"; then
     fail "service Slice=user.slice — this WOULD die with user@1000 (defeats the purpose)"
 else
-    # No explicit Slice=... — systemd defaults to system.slice for system units
-    if [[ "$SERVICE_UNIT" == *"/etc/systemd/system/"* ]] || \
-       ! grep -qE 'WantedBy=.*user' "$SERVICE_UNIT"; then
-        pass "no explicit Slice, unit is system-level (default system.slice)"
-    else
-        fail "no explicit Slice + unit shape suggests user — ambiguous"
-    fi
+    # M5 fix: the previous "WantedBy=.*user" regex matched "multi-user.target" —
+    # unreachable fallback. Require explicit Slice=system.slice — no ambiguity.
+    fail "no explicit Slice=system.slice declaration — must be explicit for auditability"
 fi
 
-if grep -qE '^WantedBy=multi-user\.target' "$SERVICE_UNIT"; then
-    pass "WantedBy=multi-user.target (system-level, correct)"
+# M5 fix: require multi-user.target and NOT default.target (default is user-scope)
+if grep -qE '^WantedBy=multi-user\.target' "$SERVICE_UNIT" && \
+   ! grep -qE '^WantedBy=default\.target' "$SERVICE_UNIT"; then
+    pass "WantedBy=multi-user.target only (system-level, correct)"
 else
-    fail "WantedBy is not multi-user.target — may install as user unit"
+    fail "WantedBy must be multi-user.target only (default.target is user-scope)"
 fi
 
 if grep -qE '^User=root' "$SERVICE_UNIT"; then
     pass "runs as User=root (needed to survive user@1000 kill)"
+fi
+
+# M5 fix: ExecStart path must match what install.sh installs to
+exec_start_path=$(grep -E '^ExecStart=' "$SERVICE_UNIT" | head -1 | awk -F= '{print $2}' | awk '{print $1}')
+install_dest_path=$(grep -oE '/usr/local/bin/[a-zA-Z0-9_-]+' "$INSTALL_SH" | head -1)
+if [[ -n "$exec_start_path" && -n "$install_dest_path" && "$exec_start_path" == "$install_dest_path" ]]; then
+    pass "ExecStart ($exec_start_path) matches install.sh dest ($install_dest_path)"
+else
+    fail "PATH DRIFT: ExecStart=$exec_start_path but install.sh installs to $install_dest_path"
 fi
 
 section "4. Watchdog pre-flight refuses to run in user.slice"
@@ -137,17 +144,37 @@ else
 fi
 
 section "6. Journal-tail trigger matches the OBSERVED incident signature"
-# All 4 incidents had: "user@1000.service: Main process exited, code=killed, status=9/KILL"
-if grep -qE '"Main process exited".*"status=9"' "$WATCHDOG_SH"; then
-    pass "trigger matches 'Main process exited ... status=9' (all 4 incidents)"
-elif grep -qE 'Main process exited' "$WATCHDOG_SH"; then
-    pass "trigger matches 'Main process exited'"
+# I2 fix (§11.4.201(7)(a) + §11.4.194(6)(d)): match the CODE CONSTRUCT, not the
+# bare string. Comments in the watchdog contain the signature text as
+# documentation; the previous grep was carrier-satisfiable (delete the code,
+# keep the comment → passes). Now match the actual bash conditional structure.
+# Strip comments before grepping to ensure we only see executable code.
+watchdog_code_only=$(grep -vE '^\s*#' "$WATCHDOG_SH" 2>/dev/null || true)
+
+# The "Main process exited" literal now lives in the trigger_prefix VARIABLE
+# assignment (which IS code). Check that the assignment is present in code AND
+# the [[ ]] test uses that variable.
+if echo "$watchdog_code_only" | grep -qE 'trigger_prefix=.*TARGET_UNIT.*Main process exited'; then
+    pass "trigger_prefix CODE assignment includes 'Main process exited' (I2 fix — not comment)"
 else
-    fail "trigger pattern does NOT match observed BOB-116/BOB-120/BOB-123 signature"
+    fail "trigger_prefix assignment CODE not present (comment-only would be §11.4.201(7)(a) carrier)"
 fi
 
-if grep -qE 'code=killed' "$WATCHDOG_SH"; then
-    pass "trigger matches 'code=killed' (kernel-terminated case)"
+if echo "$watchdog_code_only" | grep -qE '\[\[[[:space:]]+"\$line"[[:space:]]+==.*trigger_prefix'; then
+    pass "trigger CODE uses trigger_prefix variable in [[ ]] construct"
+else
+    fail "trigger [[ ]] does NOT reference trigger_prefix — construct check bypassed"
+fi
+
+if echo "$watchdog_code_only" | grep -qE '"\$line"[[:space:]]+==.*"status=9"' && \
+   echo "$watchdog_code_only" | grep -qE '"\$line"[[:space:]]+==.*"code=killed"'; then
+    pass "trigger checks BOTH status=9 AND code=killed (in code, not comments)"
+fi
+
+if echo "$watchdog_code_only" | grep -qE 'CAPTURE_COOLDOWN_SEC|LAST_CAPTURE_EPOCH'; then
+    pass "cooldown implemented (I1 fix — same-incident dedup)"
+else
+    fail "no cooldown — cascade lines within 1s would evict real evidence dirs"
 fi
 
 section "7. Rotation: bounded evidence retention"
