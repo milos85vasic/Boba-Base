@@ -1,0 +1,53 @@
+<h1
+id="session-close-release-readiness-evidence-2026-08-19">Session-close
+release-readiness evidence — 2026-08-19</h1>
+<h2 id="uptime-host-stability">Uptime + host stability</h2>
+<p>20:24:40 up 5:17, 2 users, load average: 1.58, 2.10, 3.13</p>
+<h2 id="all-3-remotes">All 3 remotes</h2>
+<ul>
+<li>origin: 184c400ec6d2a49bbd326b08d6c92eefea42a76b</li>
+<li>github: 184c400ec6d2a49bbd326b08d6c92eefea42a76b</li>
+<li>upstream: 184c400ec6d2a49bbd326b08d6c92eefea42a76b</li>
+</ul>
+<h2 id="container-fleet">Container fleet</h2>
+<p>proxy-redis Up 4 hours (healthy) proxy-postgres Up 4 hours (healthy)
+proxy-gluetun Up 4 hours (healthy) proxy-healthd Up 4 hours proxy-squid
+Up 4 hours (healthy) qbittorrent Up 36 minutes (healthy) jackett Up 36
+minutes (healthy) boba-jackett Up 35 minutes (healthy) qbittorrent-proxy
+Up 35 minutes (healthy)</p>
+<h2 id="live-service-probes">Live service probes</h2>
+<ul>
+<li>merge_service /api/v1/stats: HTTP 200</li>
+<li>boba-jackett /healthz: HTTP 200</li>
+<li>qbittorrent WebUI: HTTP 200</li>
+<li>jackett: HTTP 301</li>
+</ul>
+<h2 id="bob-129-fix-live-verified-real-post-search">BOB-129 fix
+live-verified (real POST /search)</h2>
+<pre><code></code></pre>
+<h2 id="commits-landed-this-session-25-branch-base-12b439b-head">Commits
+landed this session (25-branch base 12b439b → HEAD)</h2>
+<p>47 commits since branch base</p>
+<h2 id="latest-10">Latest 10</h2>
+<p>184c400 docs(qa,db-delta): capture differential dump for HEAD d9955d6
+d9955d6 docs(db): BOB-127/128/129/130/131/132/133/135 registered/closed
++ regen exports 091a208 fix(BOB-130): raise timeout for
+TestComputeBadgesCheckModePolarity (93s CPU-bound fixture) 471bd03
+test(warnings): add error::ResourceWarning permanent filter (Task 7
+followup) 97a4dca fix(tests): BOB-129 fallout — pass Response as 3rd arg
+to _search_impl e141d5b test(BOB-129): capture before/after evidence for
+slowapi production fix 44f3bbe fix(BOB-129): apply slowapi Option A fix
+to production endpoints 101adbb docs(qa,db-delta): capture differential
+dump for HEAD 81c4c0a 81c4c0a docs(db): register BOB-129 CRITICAL —
+production slowapi/starlette defect (Task 105 escape) b8fdc9c
+fix(tests): narrow 2 remaining broad except Exception in conftest.py
+(Task #107)</p>
+<h2
+id="bob-129-fix-corrected-live-verify-post-with-proper-headers">BOB-129
+fix — corrected live-verify (POST with proper headers)</h2>
+<p>``` — HEADERS — HTTP/1.1 200 OK date: Wed, 19 Aug 2026 18:25:06 GMT
+server: uvicorn content-length: 13574 content-type: application/json
+x-ratelimit-limit: 10 x-ratelimit-remaining: 9 x-ratelimit-reset:
+1787163968.3163579 retry-after: 60</p>
+<p>— BODY —
+{“search_id”:“f7c86912-b236-4d1c-b3c7-2908172a02f8”,“query”:“session_close_probe”,“status”:“running”,“results”:[],“total_results”:0,“merged_results”:0,“trackers_searched”:[“rutracker”,“kinozal”,“nnmcl```</p>
