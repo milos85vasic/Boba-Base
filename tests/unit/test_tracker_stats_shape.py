@@ -62,6 +62,18 @@ def client(monkeypatch):
     monkeypatch.delenv("NNMCLUB_COOKIES", raising=False)
     monkeypatch.delenv("IPTORRENTS_USERNAME", raising=False)
     monkeypatch.delenv("IPTORRENTS_PASSWORD", raising=False)
+    # BOB-126-followup: the real `/api/v1/search` handler carries the
+    # BOB-111 `@_rl("search")` slowapi decorator, whose post-call header
+    # injection (`Limiter._inject_headers`) raises
+    # ``Exception: parameter `response` must be an instance of
+    # starlette.responses.Response`` because the handler's signature has
+    # no `response: Response` param for FastAPI to inject one into (a
+    # pre-existing slowapi/starlette compatibility defect, tracked
+    # separately — see docs/qa / Task 7 warnings audit). This file only
+    # pins the ``tracker_stats`` response SHAPE, nothing about rate
+    # limiting, so disable it before the app is (re)built — matching the
+    # proven bypass pattern from BOB-122 (d7da1af).
+    monkeypatch.setenv("RATE_LIMIT_DISABLED", "1")
 
     # Cleanly drop any cached api.* modules so we rebuild the app fresh.
     for k in [k for k in list(sys.modules) if k == "api" or k.startswith("api.")]:
