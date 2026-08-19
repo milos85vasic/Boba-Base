@@ -1,0 +1,40 @@
+# BOB-125/126 kernel audit rules — reboot-persistent version
+#
+# These rules capture SIGKILL syscalls (kill/tkill/pidfd_send_signal a1=9,
+# tgkill a2=9) with key `sigkill_investigation`, plus loginctl/systemctl
+# exec traces with key `logout_investigation`. They were the seam that
+# finally attributed the 7-forced-logout chain (BOB-116/120/123/124/125/126)
+# to a pytest process calling kill(-1, SIGKILL) via MagicMock.__int__==1
+# (see docs/incidents/2026-08-19-6th-forced-logout.md).
+#
+# The runtime version installed 2026-08-19 15:56 via `su -c 'auditctl ...'`
+# is boot-scoped and lost on reboot. This file is the persistent version:
+# drop it into /etc/audit/rules.d/ and the rules will reload on every boot.
+#
+# INSTALL (requires root):
+#   su -c 'install -m 0640 -o root -g root \
+#     /run/media/milosvasic/DATA4TB/Projects/boba/scripts/audit-rules/logout_investigation.rules \
+#     /etc/audit/rules.d/logout_investigation.rules && \
+#     /usr/sbin/augenrules --load'
+#
+# VERIFY (root):
+#   /usr/sbin/auditctl -l | grep -E "sigkill|logout"
+#
+# QUERY AFTER AN INCIDENT (root):
+#   /usr/sbin/ausearch -k sigkill_investigation --start '<HH:MM>'
+#   /usr/sbin/ausearch -k logout_investigation  --start '<HH:MM>'
+#
+# UNINSTALL (root):
+#   rm /etc/audit/rules.d/logout_investigation.rules && /usr/sbin/augenrules --load
+
+# loginctl / systemctl exec watches
+-w /usr/bin/loginctl  -p x -k logout_investigation
+-w /usr/bin/systemctl -p x -k logout_investigation
+
+# kill / tkill / pidfd_send_signal — signal is arg 2 (a1)
+-a always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation
+-a always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal -F a1=9 -k sigkill_investigation
+
+# tgkill — signal is arg 3 (a2) — avoid false positives on tid=9
+-a always,exit -F arch=b64 -S tgkill -F a2=9 -k sigkill_investigation
+-a always,exit -F arch=b32 -S tgkill -F a2=9 -k sigkill_investigation
