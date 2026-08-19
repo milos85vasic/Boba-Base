@@ -18,6 +18,31 @@
       },
       "registered_skills": [],
       "installed_at": "2026-04-13T18:57:22.870161+00:00"
+    },
+    "superspec": {
+      "version": "1.0.2",
+      "source": "local",
+      "manifest_hash": "sha256:6e23ee6c18f9e05d077293c7cd3ab8aaa982f1b7e35996267dc32b51e5fc8e54",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "claude": [
+          "speckit.superspec.status",
+          "speckit.superspec.brainstorm",
+          "speckit.superspec.tasks",
+          "speckit.superspec.execute",
+          "speckit.superspec.review"
+        ],
+        "opencode": [
+          "speckit.superspec.status",
+          "speckit.superspec.brainstorm",
+          "speckit.superspec.tasks",
+          "speckit.superspec.execute",
+          "speckit.superspec.review"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-08-19T22:19:15.301685+00:00"
     }
   }
 }

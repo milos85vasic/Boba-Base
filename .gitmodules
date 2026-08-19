@@ -13,3 +13,6 @@
 [submodule "submodules/containers"]
 	path = submodules/containers
 	url = git@github.com:vasic-digital/Containers.git
+[submodule "superspec"]
+	path = superspec
+	url = git@github.com:WangX0111/superspec.git
