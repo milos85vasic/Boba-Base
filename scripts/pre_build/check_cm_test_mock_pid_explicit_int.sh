@@ -336,7 +336,7 @@ process_file() {
     # (4) killpg-patch exemption.
     if real_killpg_patch_in_window "$file" "$lineno" "$KILLPG_WINDOW"; then
       if [[ $VERBOSE -eq 1 ]]; then
-        echo "  exempt (killpg patched nearby): $file:$lineno [identifier=$ident]"
+        echo "  exempt (killpg-patched nearby): $file:$lineno [identifier=$ident]"
       fi
       continue
     fi
