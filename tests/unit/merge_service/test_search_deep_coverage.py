@@ -1514,8 +1514,17 @@ class TestRunSearchStatSeed:
         search_id = meta.search_id
         tracker = search_mod.TrackerSource(name="piratebay", url="https://thepiratebay.org", enabled=True)
 
+        async def fake_gather(*coros, **kwargs):
+            # Close (never run) each `_bounded` coroutine instead of letting
+            # it go unawaited — closing an unstarted coroutine is a no-op
+            # on its body but marks it consumed, so gc.collect() in the
+            # conftest teardown does not emit a "never awaited" warning.
+            for coro in coros:
+                coro.close()
+            return []
+
         with patch.object(orch, "_get_enabled_trackers", return_value=[tracker]):
-            with patch("asyncio.gather", return_value=[]):
+            with patch("asyncio.gather", side_effect=fake_gather):
                 await orch._run_search(search_id, "test")
                 assert "piratebay" in meta.tracker_stats
                 stat = meta.tracker_stats["piratebay"]
@@ -1539,8 +1548,18 @@ class TestRunSearchDiagClear:
         orch._last_public_tracker_diag["piratebay"] = {"error_type": "stale"}
 
         tracker = search_mod.TrackerSource(name="rutor", url="https://rutor.info", enabled=True)
+
+        async def fake_gather(*coros, **kwargs):
+            # Close (never run) each `_bounded` coroutine instead of letting
+            # it go unawaited — closing an unstarted coroutine is a no-op
+            # on its body but marks it consumed, so gc.collect() in the
+            # conftest teardown does not emit a "never awaited" warning.
+            for coro in coros:
+                coro.close()
+            return []
+
         with patch.object(orch, "_get_enabled_trackers", return_value=[tracker]):
-            with patch("asyncio.gather", return_value=[]):
+            with patch("asyncio.gather", side_effect=fake_gather):
                 await orch._run_search(search_id, "test")
                 assert "rutor" not in orch._last_public_tracker_diag
 
