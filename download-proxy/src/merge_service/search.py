@@ -1200,8 +1200,17 @@ class SearchOrchestrator:
             if proc.returncode is None:
                 with contextlib.suppress(Exception):
                     proc.kill()
-                with contextlib.suppress(Exception):
-                    os.killpg(os.getpgid(proc.pid), _signal.SIGKILL)
+                # BOB-126 defense-in-depth: reject unsafe pids/pgids.
+                # `os.killpg(1, sig)` == `kill(-1, sig)` under glibc — the
+                # kill-every-UID-1000-process syscall that caused 7 forced
+                # logouts (BOB-116/120/123/124/125/126) when tests mocked
+                # `proc.pid` as a MagicMock (whose `__int__` defaults to 1).
+                _pid = proc.pid
+                if isinstance(_pid, int) and _pid > 1:
+                    with contextlib.suppress(Exception):
+                        _pgid = os.getpgid(_pid)
+                        if isinstance(_pgid, int) and _pgid > 1:
+                            os.killpg(_pgid, _signal.SIGKILL)
             try:
                 await asyncio.wait_for(proc.wait(), timeout=5.0)
             except TimeoutError:
@@ -1219,8 +1228,15 @@ class SearchOrchestrator:
             if proc and proc.returncode is None:
                 with contextlib.suppress(Exception):
                     proc.kill()
-                with contextlib.suppress(Exception):
-                    os.killpg(os.getpgid(proc.pid), _signal.SIGKILL)
+                # BOB-126 defense-in-depth: identical guard as above path —
+                # never let a MagicMock-derived pid slip through into
+                # os.killpg(1, ...) which becomes kill(-1, SIGKILL).
+                _pid = proc.pid
+                if isinstance(_pid, int) and _pid > 1:
+                    with contextlib.suppress(Exception):
+                        _pgid = os.getpgid(_pid)
+                        if isinstance(_pgid, int) and _pgid > 1:
+                            os.killpg(_pgid, _signal.SIGKILL)
                 with contextlib.suppress(Exception):
                     await asyncio.wait_for(proc.wait(), timeout=5.0)
 

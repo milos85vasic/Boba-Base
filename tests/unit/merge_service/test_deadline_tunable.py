@@ -103,6 +103,18 @@ def test_deadline_hit_flag_true_when_readline_times_out() -> None:
 
     `proc.stdout.readline` hangs; our parent's `asyncio.wait_for` fires
     and breaks out of the loop with `killed_by_deadline=True`.
+
+    BOB-126 fix: previously this test did NOT set ``mock.pid`` and did
+    NOT patch ``os.killpg``. The real deadline path called
+    ``os.killpg(os.getpgid(mock.pid), SIGKILL)``. Python's
+    ``MagicMock.__int__`` defaults to 1, so ``os.getpgid(mock) → 1``,
+    then ``os.killpg(1, SIGKILL)`` → ``kill(-1, SIGKILL)`` = kill every
+    UID-1000 process on the host. This test caused 7 forced logouts on
+    the operator's workstation (BOB-116/120/123/124/125/126) before the
+    kernel audit rules installed 2026-08-19 15:56 captured the syscall.
+    Both the test AND the production code are hardened now — this test
+    sets ``mock.pid = 12345`` (int) AND patches ``os.killpg`` /
+    ``os.getpgid`` as belt-and-suspenders.
     """
     orch = _search.SearchOrchestrator()
 
@@ -112,6 +124,7 @@ def test_deadline_hit_flag_true_when_readline_times_out() -> None:
     async def fake_subprocess(*args, **kwargs):
         mock = AsyncMock()
         mock.returncode = None
+        mock.pid = 12345  # BOB-126: MUST be an int, NEVER a MagicMock
         mock.stdout = MagicMock()
         mock.stdout.readline = AsyncMock(side_effect=_hang)
         mock.stderr = MagicMock()
@@ -124,6 +137,11 @@ def test_deadline_hit_flag_true_when_readline_times_out() -> None:
     with (
         patch.dict(os.environ, {"PUBLIC_TRACKER_DEADLINE_SECONDS": "5"}, clear=False),
         patch("asyncio.create_subprocess_exec", side_effect=fake_subprocess),
+        # BOB-126: patch killpg/getpgid so even if a future refactor
+        # regresses the pid guard in search.py, the test won't kill
+        # the host again.
+        patch.object(_search.os, "killpg") as mock_killpg,
+        patch.object(_search.os, "getpgid", return_value=54321),
     ):
         results = asyncio.run(orch._search_public_tracker("slowplug", "q", "all"))
 
@@ -132,3 +150,71 @@ def test_deadline_hit_flag_true_when_readline_times_out() -> None:
     assert diag["deadline_hit"] is True
     assert diag["error_type"] == "deadline_timeout"
     assert diag["deadline_seconds"] == 5.0
+    # BOB-126 assertion: killpg was called with pgid=54321 (from the
+    # patched getpgid), NOT with pgid=1 (which would be the disaster
+    # path). If somebody removes the int-guard in search.py and lets
+    # a MagicMock pid slip through, os.getpgid would resolve int(mock)=1
+    # → killpg(1, sig) → kill(-1, sig) → host-wide catastrophe.
+    if mock_killpg.called:
+        args, _ = mock_killpg.call_args
+        assert args[0] == 54321, (
+            f"killpg called with pgid={args[0]}; expected 54321 from the "
+            f"patched getpgid. If pgid is 1 or 0, that is the BOB-126 "
+            f"kill(-1, SIGKILL) disaster path."
+        )
+
+
+def test_bob126_regression_deadline_path_never_calls_killpg_with_pgid_le_1() -> None:
+    """BOB-126 §11.4.115 RED-first regression guard.
+
+    Explicit anti-bluff test asserting that even when a caller passes a
+    non-int (or MagicMock) proc.pid, the deadline cleanup path in
+    _search_public_tracker MUST NOT call os.killpg with pgid <= 1.
+    That call would translate to kill(-1 or -0, SIGKILL) via glibc and
+    signal every UID-owned process on the host.
+
+    Reverts of the search.py pid-guard MUST make this test fail.
+    """
+    orch = _search.SearchOrchestrator()
+
+    async def _hang():
+        await asyncio.sleep(999)
+
+    async def fake_subprocess(*args, **kwargs):
+        mock = AsyncMock()
+        mock.returncode = None
+        # DELIBERATELY leave mock.pid as an auto-generated MagicMock —
+        # this is the exact defect condition. If search.py's int-guard
+        # is removed, this test triggers the disaster syscall.
+        mock.stdout = MagicMock()
+        mock.stdout.readline = AsyncMock(side_effect=_hang)
+        mock.stderr = MagicMock()
+        mock.stderr.read = AsyncMock(return_value=b"")
+        mock.wait = AsyncMock(return_value=-9)
+        mock.kill = MagicMock()
+        return mock
+
+    with (
+        patch.dict(os.environ, {"PUBLIC_TRACKER_DEADLINE_SECONDS": "5"}, clear=False),
+        patch("asyncio.create_subprocess_exec", side_effect=fake_subprocess),
+        # These MUST BE PATCHED here — this test intentionally exercises
+        # the vulnerable code path. Without the patches, this test would
+        # replicate the BOB-126 host-wide SIGKILL cascade.
+        patch.object(_search.os, "killpg") as mock_killpg,
+    ):
+        asyncio.run(orch._search_public_tracker("slowplug", "q", "all"))
+
+    # PRIMARY ASSERTION: killpg must NEVER be called with pgid <= 1.
+    if mock_killpg.called:
+        for call in mock_killpg.call_args_list:
+            args, _ = call
+            pgid = args[0]
+            assert pgid > 1, (
+                f"os.killpg({pgid}, SIGKILL) is the BOB-126 disaster path. "
+                f"pgid <= 1 becomes kill(-pgid, SIGKILL) which under UID "
+                f"1000 kills every process the user owns, including the "
+                f"systemd --user manager. This assertion fails to prevent "
+                f"the 7-forced-logout chain from recurring. Fix: guard "
+                f"proc.pid + pgid with isinstance(_, int) and _ > 1 before "
+                f"calling killpg."
+            )
