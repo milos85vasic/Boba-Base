@@ -1,6 +1,6 @@
 # scripts/pre_build/check_cm_killpg_pgid_guard.sh — CM-KILLPG-PGID-GUARD static pre-build gate
 
-**Revision:** 1
+**Revision:** 2
 **Last modified:** 2026-08-19T00:00:00Z
 **Status:** active
 **Item:** BOB-126 follow-up (§11.4.238 discovery-channel-escape closure — a
@@ -124,7 +124,11 @@ guesses:
 For each real (non-comment) hit, the target identifier is extracted from
 the call itself — the first argument to `killpg(`, the name after the
 leading `-` in `kill(-`, or the token following `killpg` / the signal-kill
-call in bash. The 10 lines immediately preceding the hit are then checked
+call in bash. The identifier may be a **simple bare name** OR a
+**dotted-attribute chain** (e.g. `self._pgid`) — both are captured in
+full and matched literally (any `.` inside the identifier is
+regex-escaped before use, so it never behaves as an "any character"
+wildcard). The 10 lines immediately preceding the hit are then checked
 for **both**, on the same identifier, anywhere in that window (same line
 or split across lines):
 
@@ -133,11 +137,34 @@ or split across lines):
   satisfy this (a pgid/pid of `1` is precisely the broadcast-kill value —
   the whole point of the guard is excluding it).
 
-When the call's argument is not a simple identifier (e.g. a nested call
-expression such as `os.killpg(get_pgid(), sig)`), the identifier cannot be
-extracted and the check falls back to the looser, non-identifier-scoped
-form of the same two conditions (any `isinstance(..., int)` and any
-`> 1` in the window) rather than silently passing.
+### When no identifier can be extracted (literal/numeric targets)
+
+The fallback path fires exactly when the call's target does **not start
+with an identifier character** — a **literal or numeric target**, which
+is precisely the BOB-126 defect shape itself: `os.killpg(1, ...)` in
+Python, or `kill -9 -1` in bash. In that case no identifier can be
+extracted at all, and the hit is **ALWAYS treated as UNGUARDED** —
+there is **no** non-identifier-scoped fallback scan of the window.
+
+An earlier revision of this gate fell back, in that identifier-less case,
+to a looser check: *any* `isinstance(..., int)` **and** *any* `> 1`
+**anywhere** in the 10-line window, for *any unrelated variable*
+(including inside a comment). That was a false-negative PASS-bluff
+(§11.4.201): a literal broadcast-kill target sitting near ANY unrelated
+int-bounds guard for a totally different variable — a common surrounding
+idiom (retry-count / timeout bounds checks) — was misreported as
+"guarded." Refusing to guess when no identifier can be isolated is the
+conservative-safe default (§11.4.101/§11.4.201); the paired meta-test's
+`golden-bad-3` fixture reproduces this exact scenario as a permanent
+regression guard.
+
+Note that a **nested call expression**, e.g. `os.killpg(get_pgid(),
+sig)`, does **not** hit this identifier-less path: its target *does*
+start with an identifier character, so the function name `get_pgid` is
+captured and used (mis-scoped to that name, but non-empty) as the
+identifier — the identifier-scoped check above applies to it, not the
+always-unguarded fallback. Only a genuinely identifier-less
+(literal/numeric) target reaches the always-unguarded path.
 
 ## Self-exclusion (anti-carrier guard)
 
@@ -190,13 +217,22 @@ via `trap ... EXIT`.
 
 - `scripts/pre_build/check_cm_killpg_pgid_guard.sh` — the gate itself.
 - `tests/pre_build/test_check_cm_killpg_pgid_guard.sh` — the §1.1 paired
-  meta-test: one golden-good fixture (properly guarded), two golden-bad
-  fixtures (no guard at all; guard present but checks `> 0` instead of
-  `> 1`), plus a real-tree smoke run against the current checkout.
+  meta-test: five hermetic fixtures — `golden-good` (properly guarded,
+  bare identifier), `golden-good-2` (properly guarded, dotted-attribute
+  identifier `self._pgid`), `golden-bad-1` (brief-literal
+  `os.killpg(1, SIGKILL)`, no guard at all), `golden-bad-2` (guard
+  present but checks `> 0` instead of `> 1`), `golden-bad-3` (literal,
+  identifier-less target near an UNRELATED int-bounds guard for a
+  different variable — the Critical-1 false-negative regression case) —
+  plus a real-tree smoke run against the current checkout.
 
 ## Last verified
 
 2026-08-19 — `bash tests/pre_build/test_check_cm_killpg_pgid_guard.sh`
-ran GREEN (4/4: golden-good rc=0, golden-bad-1 rc=1, golden-bad-2 rc=1,
-real-tree default scope rc=0); `shellcheck -x` clean on both scripts with
-zero findings.
+ran GREEN (6/6: golden-good rc=0, golden-good-2 rc=0, golden-bad-1 rc=1,
+golden-bad-2 rc=1, golden-bad-3 rc=1, real-tree default scope rc=0);
+`shellcheck -x` clean on both scripts with zero findings. Independently
+re-reproduced the reviewer's two live false-negative repro cases
+(`os.killpg(1, signal.SIGKILL)` near an unrelated int guard; bash
+`kill -9 -1` near a comment quoting `isinstance(x, int) and x > 1`) and
+confirmed both now correctly FAIL (rc=1) against the fixed gate.

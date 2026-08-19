@@ -68,17 +68,36 @@
 #   For each real (non-comment) hit, the target identifier is extracted
 #   from the call itself (the first argument to killpg(, or the name
 #   after the leading `-` in kill(-, or the token following killpg /
-#   the signal-kill call in bash). The 10 lines immediately preceding
-#   the hit are then checked for BOTH:
+#   the signal-kill call in bash). The identifier may be a simple bare
+#   name OR a dotted-attribute chain (e.g. `self._pgid`) — both are
+#   captured in full and matched literally (any `.` in the captured
+#   identifier is regex-escaped before use, so it never behaves as an
+#   "any character" wildcard). The 10 lines immediately preceding the
+#   hit are then checked for BOTH, on that SAME identifier:
 #     - isinstance(<ident>, int)
 #     - <ident> > 1              (exactly `1`; `> 0`, `> 10`, ... do
 #                                  NOT count — a pgid/pid of 1 is
 #                                  precisely the broadcast-kill value)
 #   present anywhere in that window (same line or different lines).
-#   When the call's argument is not a simple identifier (e.g. a nested
-#   call expression) the identifier cannot be extracted; the check
-#   falls back to the looser, non-identifier-scoped form of the same
-#   two conditions rather than silently passing.
+#
+#   When the call's target does NOT start with an identifier character
+#   (a literal or numeric target — e.g. the BOB-126 defect shape itself,
+#   `os.killpg(1, ...)` / bash `kill -9 -1`), no identifier can be
+#   extracted at all, and the call is ALWAYS treated as UNGUARDED. There
+#   is NO non-identifier-scoped fallback scan. An earlier revision of
+#   this gate fell back, in that case, to an unscoped "any
+#   isinstance(..., int) plus any > 1 anywhere in the window" check —
+#   which is a false-negative PASS-bluff (§11.4.201): a literal
+#   broadcast-kill target sitting near ANY unrelated int-bounds guard
+#   for a completely different variable (even inside a comment) was
+#   misreported as guarded. Refusing to guess when no identifier can be
+#   isolated is the conservative-safe default (§11.4.101/§11.4.201).
+#   Note that a nested call expression such as `os.killpg(get_pgid(),
+#   sig)` does NOT hit this identifier-less path: its target starts
+#   with an identifier character, so the function name `get_pgid` is
+#   captured and used (mis-scoped, but non-empty) as the identifier —
+#   only a genuinely identifier-less (literal/numeric) target reaches
+#   the always-unguarded path.
 #
 # Verdict:
 #   GREEN (exit 0) — zero unguarded hits across every scanned file.
@@ -212,44 +231,66 @@ report_fail() {
 # extract_ident <kind> <line-content>
 #   kind: py_killpg | py_kill_neg | sh_killpg | sh_kill_sig
 #   Prints the extracted identifier, or nothing if it could not be
-#   isolated as a simple [A-Za-z_][A-Za-z0-9_]* token.
+#   isolated as a [A-Za-z_][A-Za-z0-9_.]* token (a bare name OR a
+#   dotted-attribute chain such as `self._pgid` — Important-2 fix: an
+#   earlier revision stopped at the first `.`, mis-extracting `self`
+#   as the identifier and falsely flagging correctly-guarded
+#   attribute-stored pid/pgid calls as unguarded). Nothing is printed
+#   for a literal/numeric target (e.g. `1`), since it does not start
+#   with an identifier character — that is intentional; see the
+#   "Guard recognition" header comment above for how the caller treats
+#   an empty extraction.
 extract_ident() {
   local kind="$1" content="$2"
   case "$kind" in
     py_killpg)
       printf '%s\n' "$content" | sed -nE \
-        's/.*os\.killpg\([[:space:]]*([A-Za-z_][A-Za-z0-9_]*).*/\1/p'
+        's/.*os\.killpg\([[:space:]]*([A-Za-z_][A-Za-z0-9_.]*).*/\1/p'
       ;;
     py_kill_neg)
       printf '%s\n' "$content" | sed -nE \
-        's/.*os\.kill\([[:space:]]*-[[:space:]]*([A-Za-z_][A-Za-z0-9_]*).*/\1/p'
+        's/.*os\.kill\([[:space:]]*-[[:space:]]*([A-Za-z_][A-Za-z0-9_.]*).*/\1/p'
       ;;
     sh_killpg)
       printf '%s\n' "$content" | sed -nE \
-        's/.*killpg[[:space:]]+\$?\{?([A-Za-z_][A-Za-z0-9_]*).*/\1/p'
+        's/.*killpg[[:space:]]+\$?\{?([A-Za-z_][A-Za-z0-9_.]*).*/\1/p'
       ;;
     sh_kill_sig)
       printf '%s\n' "$content" | sed -nE \
-        's/.*kill[[:space:]]+-[1-9][0-9]*[[:space:]]+-?\$?\{?"?([A-Za-z_][A-Za-z0-9_]*).*/\1/p'
+        's/.*kill[[:space:]]+-[1-9][0-9]*[[:space:]]+-?\$?\{?"?([A-Za-z_][A-Za-z0-9_.]*).*/\1/p'
       ;;
   esac
 }
 
 # is_guarded <window-text> <ident-or-empty>
 #   Returns 0 (guarded) iff the window contains BOTH
-#   isinstance(<ident-or-any>, int) AND <ident-or-any> > 1 (literal 1,
-#   never a longer number). Uses grep -q so it is safe as an `if`
-#   condition under `set -e`.
+#   isinstance(<ident>, int) AND <ident> > 1 (literal 1, never a longer
+#   number) on the SAME identifier. Uses grep -q so it is safe as an
+#   `if` condition under `set -e`.
+#
+#   CRITICAL (§11.4.201 false-negative fix): when no identifier could
+#   be extracted from the call (empty $2 — a literal/numeric target,
+#   e.g. `os.killpg(1, ...)`, which is the BOB-126 defect shape
+#   itself), this function returns 1 (unguarded) IMMEDIATELY. There is
+#   NO non-identifier-scoped fallback scan of the window. A prior
+#   revision fell back to an unscoped "any isinstance(..., int) + any
+#   > 1 anywhere in the window" match in this case, which reported a
+#   literal broadcast-kill target as "guarded" whenever ANY unrelated
+#   int-bounds guard for a totally different variable happened to sit
+#   in the preceding 10 lines (even inside a comment) — a
+#   false-negative PASS on the exact defect class this gate exists to
+#   catch. Refusing to guess on an identifier-less target is the
+#   conservative-safe default per §11.4.101/§11.4.201.
 is_guarded() {
   local window="$1" ident="$2"
-  local isinstance_re gt1_re
-  if [[ -n "$ident" ]]; then
-    isinstance_re="isinstance\\([[:space:]]*${ident}[[:space:]]*,[[:space:]]*int[[:space:]]*\\)"
-    gt1_re="${ident}[[:space:]]*>[[:space:]]*1([^0-9]|\$)"
-  else
-    isinstance_re="isinstance\\([^)]*,[[:space:]]*int[[:space:]]*\\)"
-    gt1_re=">[[:space:]]*1([^0-9]|\$)"
-  fi
+  [[ -n "$ident" ]] || return 1
+  local ident_re isinstance_re gt1_re
+  # Escape any literal `.` in a dotted-attribute identifier (e.g.
+  # `self._pgid`) so it matches itself, not "any character", inside
+  # the ERE patterns below.
+  ident_re="${ident//./\\.}"
+  isinstance_re="isinstance\\([[:space:]]*${ident_re}[[:space:]]*,[[:space:]]*int[[:space:]]*\\)"
+  gt1_re="${ident_re}[[:space:]]*>[[:space:]]*1([^0-9]|\$)"
   grep -qE "$isinstance_re" <<<"$window" && grep -qE "$gt1_re" <<<"$window"
 }
 
