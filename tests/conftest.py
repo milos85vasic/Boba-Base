@@ -128,7 +128,21 @@ def _cleanup_event_loop(request):
     # a new one.  We probe the policy's internal storage first; if that
     # fails we fall back to the public API.
     try:
-        policy = asyncio.get_event_loop_policy()
+        # asyncio.get_event_loop_policy() itself is deprecated (slated for
+        # removal in Python 3.16) and, under this project's default
+        # `error::DeprecationWarning` pytest filter (pyproject.toml), calling
+        # it raises DeprecationWarning-as-exception on EVERY test's teardown
+        # (this fixture is autouse). asyncio.events._get_event_loop_policy()
+        # is the exact same lazy-init implementation the public function
+        # delegates to (verified: `get_event_loop_policy` is a one-line
+        # `warnings._deprecated(...)` shim around it) with no deprecation
+        # shim of its own, so this preserves identical behaviour without
+        # tripping the filter. See tests/conftest.py Task-7 warnings audit
+        # (.superpowers/sdd/task-7-warnings-audit.md) for the root-cause
+        # trail: this DeprecationWarning was previously silently absorbed by
+        # a too-broad `except Exception: pass` immediately below (§11.4.201(1)
+        # false-positive guard-bug).
+        policy = asyncio.events._get_event_loop_policy()
         loop = None
         if hasattr(policy, "_local") and hasattr(policy._local, "_loop"):
             loop = policy._local._loop
@@ -152,8 +166,18 @@ def _cleanup_event_loop(request):
                     pass
                 loop.close()
     except RuntimeError:
-        pass
-    except Exception:
+        # The only legitimate exception this block can raise: no current
+        # event loop set for this thread (policy.get_event_loop() raises
+        # RuntimeError("There is no current event loop in thread ...")
+        # rather than auto-creating one on this Python version -- verified
+        # empirically, `.venv/bin/python -W error::DeprecationWarning -c
+        # "import asyncio.events as ev; ev._get_event_loop_policy()
+        # .get_event_loop()"` raises plain RuntimeError, not
+        # DeprecationWarning). A blanket `except Exception` here previously
+        # also silently swallowed any DeprecationWarning-as-exception raised
+        # by this block's own code (e.g. from a stray deprecated-API call),
+        # defeating the project's error::DeprecationWarning enforcement
+        # policy -- narrowed per Task-7 warnings audit recommendation #1.
         pass
 
     # Unset the thread-local loop so the next test starts fresh.
