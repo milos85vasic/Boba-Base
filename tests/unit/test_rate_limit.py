@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.testclient import TestClient
 
 # Make download-proxy/src importable without a full install.
@@ -32,11 +32,29 @@ if str(_DP_SRC) not in sys.path:
     sys.path.insert(0, str(_DP_SRC))
 
 
-def _fresh_app(*, disabled: bool = False, search_limit: str = "10/minute") -> FastAPI:
+def _fresh_app(
+    *,
+    disabled: bool = False,
+    search_limit: str = "10/minute",
+    key_func=None,
+) -> FastAPI:
     """Build a FastAPI app with the BOB-111 rate limiter installed.
 
     Uses a minimal app — we do NOT boot the full merge-service so unit tests
     stay hermetic + fast.
+
+    ``key_func``, when given, is passed straight through to
+    ``Limiter.limit(..., key_func=...)`` so the PER-ROUTE limit is keyed by
+    it. slowapi's ``Limiter.limit()`` resolves ``key_func or self._key_func``
+    and bakes the resolved callable into the route's ``Limit``/``LimitGroup``
+    objects AT DECORATION TIME (i.e. right here, inside this function) — a
+    monkeypatch of ``api.rate_limit._client_key`` (or of
+    ``app.state.limiter._key_func``) applied by the CALLER *after*
+    ``_fresh_app()`` returns has no effect on the already-decorated route,
+    because the route never re-reads the Limiter's key func at request time.
+    Passing the desired key func in HERE, before decoration happens, is the
+    only way to make a per-caller-identity simulation actually reach the
+    per-route check.
     """
     if disabled:
         os.environ["RATE_LIMIT_DISABLED"] = "1"
@@ -58,11 +76,23 @@ def _fresh_app(*, disabled: bool = False, search_limit: str = "10/minute") -> Fa
 
     def _decor():
         lim = rl.get_limiter()
-        return (lambda f: f) if lim is None else lim.limit(rl.limit_for("search"))
+        return (lambda f: f) if lim is None else lim.limit(rl.limit_for("search"), key_func=key_func)
 
     @app.post("/api/v1/search")
     @_decor()
-    async def search(request: Request):
+    async def search(request: Request, response: Response):
+        # BOB-126-followup: slowapi's post-call header injection
+        # (`Limiter._inject_headers`) requires the decorated endpoint to
+        # accept a real `starlette.responses.Response` via FastAPI's
+        # `response:` special parameter — without it slowapi's wrapper
+        # calls `kwargs.get("response")`, gets `None`, and raises
+        # ``Exception: parameter `response` must be an instance of
+        # starlette.responses.Response`` on every request that does NOT
+        # hit the rate limit (the 429 path never reaches this code —
+        # slowapi raises `RateLimitExceeded` before calling `func`).
+        # Declaring `response: Response` here mirrors the proven fix
+        # pattern from BOB-122 (d7da1af) applied to this test's own
+        # locally-defined FastAPI app.
         return {"ok": True}
 
     return app
@@ -127,23 +157,35 @@ def test_green_body_never_leaks_client_ip_or_limit_value():
     _reset_env()
 
 
-def test_green_different_ip_is_not_rate_limited(monkeypatch):
+def test_green_different_ip_is_not_rate_limited():
     """Per-IP scope: caller A being throttled does NOT throttle caller B."""
-    app = _fresh_app(disabled=False, search_limit="2/minute")
-    client = TestClient(app)
-
-    # Simulate distinct client IPs by patching the key function used by
-    # slowapi. In production this maps to the real remote_addr.
-    import api.rate_limit as rl
-
+    # Simulate distinct client IPs by supplying the key function used by
+    # slowapi's per-route Limit *at decoration time* (see the `key_func`
+    # docstring on `_fresh_app`) — in production this maps to the real
+    # remote_addr. A post-hoc monkeypatch of `api.rate_limit._client_key`
+    # or of `app.state.limiter._key_func` (the original approach here)
+    # has NO effect: slowapi's `Limiter.limit()` resolves and bakes the
+    # key func into the route's `Limit` object the moment the decorator
+    # is applied, so by the time the app object exists it is already too
+    # late to change which key the route checks against.
     current_ip = {"v": "10.0.0.1"}
-    monkeypatch.setattr(rl, "_client_key", lambda req: current_ip["v"])
 
-    # Re-install a Limiter that uses the patched key.
-    limiter = rl._build_limiter()
-    # Rebuild the app's limiter with the patched key.
-    app.state.limiter._key_func = lambda req: current_ip["v"]  # type: ignore[attr-defined]
-    _ = limiter  # keep reference
+    # NOTE: slowapi's `__evaluate_limits` introspects the key func's
+    # signature and only passes the `request` positional arg when a
+    # parameter is literally named `request` (`"request" in
+    # inspect.signature(lim.key_func).parameters.keys()`) — otherwise it
+    # calls `lim.key_func()` with ZERO arguments. The parameter MUST be
+    # named `request` (matching `api.rate_limit._client_key`'s own
+    # signature), not merely accept one positionally.
+    def _key_func(request):  # noqa: ARG001 - required by slowapi's signature probe
+        return current_ip["v"]
+
+    app = _fresh_app(
+        disabled=False,
+        search_limit="2/minute",
+        key_func=_key_func,
+    )
+    client = TestClient(app)
 
     # Caller A: exhaust the 2/minute budget.
     for _ in range(2):
