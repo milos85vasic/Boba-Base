@@ -1,0 +1,73 @@
+# Differential SQLite Dump — docs/workable_items.db
+# §11.4.226 evidence-class-at-closure / §11.4.95 SSoT / §11.4.115(F) machine-written evidence
+# §11.4.209 review IMPORTANT-2 remedy — task tracker #79
+#
+# Commit:    1b2f4319c85e713c9bcbe146c2bd171b085957b5
+# Parent:    8bedc5a3faf51368eb46150e4e6a0c935b8bc448
+# Generated: 2026-08-19T16:44:38Z
+# Tool:      sqlite3 3.50.6
+#
+## Row counts (table: before -> after)
+doc_segments                    127 -> 128         [CHANGED]
+firebase_metadata                 0 -> 0           [same]
+item_history                    169 -> 171         [CHANGED]
+items                           125 -> 126         [CHANGED]
+logic_groups                      0 -> 0           [same]
+meta                              4 -> 4           [same]
+obsolete_details                  0 -> 0           [same]
+operator_block_details            4 -> 4           [same]
+sqlite_sequence                   2 -> 2           [same]
+test_diary                        0 -> 0           [same]
+#
+## meta table (full content)
+### before
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-18 13:41:42
+last_sync_timestamp|2026-08-18 13:41:42|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+### after
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-18 13:41:42
+last_sync_timestamp|2026-08-18 13:41:42|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+#
+## Full logical .dump unified diff (before -> after)
+#
+--- /tmp/.private/milosvasic/tmp.9Zo9IyFEjK/before.sql	2026-08-19 18:44:39.186066221 +0200
++++ /tmp/.private/milosvasic/tmp.9Zo9IyFEjK/after.sql	2026-08-19 18:44:39.202066095 +0200
+@@ -193,6 +193,8 @@
+ INSERT INTO item_history VALUES(168,'BOB-124','Fixed','AI','2026-08-19',NULL,'docs/incidents/2026-08-19-5th-forced-logout.md','2026-08-19 15:22:11');
+ INSERT INTO item_history VALUES(169,'BOB-125','Fixed','AI','2026-08-19',NULL,'docs/incidents/2026-08-19-6th-forced-logout.md','2026-08-19 15:22:11');
+ INSERT INTO item_history VALUES(170,'BOB-126','Fixed','AI','2026-08-19',NULL,'docs/incidents/2026-08-19-6th-forced-logout.md','2026-08-19 15:22:11');
++INSERT INTO item_history VALUES(171,'BOB-127','Opened','User','2026-08-19',NULL,NULL,'2026-08-19 16:39:36');
++INSERT INTO item_history VALUES(172,'BOB-127','Fixed','AI','2026-08-19',NULL,'.superpowers/sdd/task-8-syscall-audit.md','2026-08-19 16:40:33');
+ CREATE TABLE operator_block_details (
+     atm_id                       TEXT PRIMARY KEY,
+     what                         TEXT NOT NULL,
+@@ -432,6 +434,7 @@
+ INSERT INTO items VALUES('BOB-124','Bug','Fixed (→ Fixed.md)','Critical','5th forced-logout 2026-08-19 15:28:22 — architectural install-gap: 4 authored preventive gates never installed by operator','5th consecutive forced-logout of user@1000.service on host milosvasic (2026-08-19 15:28:22, fresh boot 15:07 -> kill 15:28). Same PAM session_close synchronicity mechanism observed across incidents #2/#3/#4/#5, same Linger=yes contradiction, same UNCONFIRMED SIGKILL initiator. Per superpowers:systematic-debugging Phase 4.5: 5+ attempts against the same block = architectural problem. The block is not a missing detector — 4 preventive gates have been AUTHORED (BOB-116 5-signature detector, BOB-120 out-of-scope watchdog design, BOB-123 PAM monitor, kernel auditctl rulesets) but 0 are INSTALLED because Path 1 (auditctl) and Path 2 (system-slice systemd unit) both require operator sudo/su -c that has never actually been executed. Authoring a 6th detector is a §11.4.250 heuristic-tower defect. Closure requires an operator sudo install session verified by auditctl -l non-empty OR systemctl list-units --system boba-watch* non-empty. Evidence: docs/qa/BOB-124/incident-5-forensics.log. See project-memory playbook forced-logout-incidents for full mechanism + triage protocol.',NULL,NULL,NULL,'','','Fixed',unistr('## BOB-124 — 5th forced-logout 2026-08-19 15:28:22 — architectural install-gap: 4 authored preventive gates never installed by operator\u000a\u000a**Status:** Fixed (→ Fixed.md)\u000a**Type:** Bug\u000a**Evidence:** docs/incidents/2026-08-19-5th-forced-logout.md\u000a**Severity:** Critical\u000a\u000a5th consecutive forced-logout of user@1000.service on host milosvasic (2026-08-19 15:28:22, fresh boot 15:07 -> kill 15:28). Same PAM session_close synchronicity mechanism observed across incidents #2/#3/#4/#5, same Linger=yes contradiction, same UNCONFIRMED SIGKILL initiator. Per superpowers:systematic-debugging Phase 4.5: 5+ attempts against the same block = architectural problem. The block is not a missing detector — 4 preventive gates have been AUTHORED (BOB-116 5-signature detector, BOB-120 out-of-scope watchdog design, BOB-123 PAM monitor, kernel auditctl rulesets) but 0 are INSTALLED because Path 1 (auditctl) and Path 2 (system-slice systemd unit) both require operator sudo/su -c that has never actually been executed. Authoring a 6th detector is a §11.4.250 heuristic-tower defect. Closure requires an operator sudo install session verified by auditctl -l non-empty OR systemctl list-units --system boba-watch* non-empty. Evidence: docs/qa/BOB-124/incident-5-forensics.log. See project-memory playbook forced-logout-incidents for full mechanism + triage protocol.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-19 15:22:11','2026-08-19 15:22:11',NULL,NULL,NULL,NULL,NULL);
+ INSERT INTO items VALUES('BOB-125','Bug','Fixed (→ Fixed.md)','Critical','6th forced-logout 2026-08-19 16:04:54 — RESOLVED via BOB-126 (root cause was pytest kill(-1,9))','Sixth forced-logout SIGKILL cascade on user@1000, 2026-08-19 16:04:54 CEST. First incident with kernel audit rules LIVE (installed 15:56). Prior 6 investigations misattributed the mechanism to PAM/Linger contradiction. Real root cause found by BOB-126: pytest calling kill(-1, SIGKILL) via MagicMock.__int__==1 → os.killpg(1, 9). Fix chain: ad4b46a + 502586c + bf01cf3 + 1b06858 + d7da1af + e389c29 + 0027dba. See docs/incidents/2026-08-19-6th-forced-logout.md.',NULL,NULL,NULL,'AI','AI','Fixed',unistr('## BOB-125 — 6th forced-logout 2026-08-19 16:04:54 — RESOLVED via BOB-126 (root cause was pytest kill(-1,9))\u000a\u000a**Status:** Fixed (→ Fixed.md)\u000a**Type:** Bug\u000a**Evidence:** docs/incidents/2026-08-19-6th-forced-logout.md\u000a**Severity:** Critical\u000a**Created-By:** AI\u000a**Assigned-To:** AI\u000a\u000aSixth forced-logout SIGKILL cascade on user@1000, 2026-08-19 16:04:54 CEST. First incident with kernel audit rules LIVE (installed 15:56). Prior 6 investigations misattributed the mechanism to PAM/Linger contradiction. Real root cause found by BOB-126: pytest calling kill(-1, SIGKILL) via MagicMock.__int__==1 → os.killpg(1, 9). Fix chain: ad4b46a + 502586c + bf01cf3 + 1b06858 + d7da1af + e389c29 + 0027dba. See docs/incidents/2026-08-19-6th-forced-logout.md.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-19 15:22:11','2026-08-19 15:22:11',NULL,NULL,NULL,NULL,NULL);
+ INSERT INTO items VALUES('BOB-126','Bug','Fixed (→ Fixed.md)','Critical','7th forced-logout 2026-08-19 16:43:43 — REAL ROOT CAUSE: pytest kill(-1,9) via MagicMock.__int__==1; §11.4.263 anchor + boba defense-in-depth','Seventh forced-logout SIGKILL cascade. Kernel audit trail: audit[399861] syscall=62 a0=ffffffff a1=9 comm=pytest exe=/usr/bin/python3.14. Root cause: tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out created AsyncMock without setting mock.pid as int. _search_public_tracker called os.killpg(os.getpgid(proc.pid), SIGKILL). MagicMock.__int__ defaults to 1, so os.getpgid(1)==1 → os.killpg(1, SIGKILL) → glibc → kill(-1, SIGKILL) = SIGKILL every UID-1000 process. Bug existed since 2026-04-24. FIX 3-layer: (1) boba ad4b46a search.py int-guard + test hardening + §11.4.115 RED regression guard. (2) constitution 502586c universal §11.4.263 anchor covering Python/Go/Rust/Bash/C. (3) boba bf01cf3 pointer bump. Verified: 863/863 unit PASS + 14/14 Go race PASS + no 8th incident.',NULL,NULL,NULL,'AI','AI','Fixed',unistr('## BOB-126 — 7th forced-logout 2026-08-19 16:43:43 — REAL ROOT CAUSE: pytest kill(-1,9) via MagicMock.__int__==1; §11.4.263 anchor + boba defense-in-depth\u000a\u000a**Status:** Fixed (→ Fixed.md)\u000a**Type:** Bug\u000a**Evidence:** docs/incidents/2026-08-19-6th-forced-logout.md\u000a**Severity:** Critical\u000a**Created-By:** AI\u000a**Assigned-To:** AI\u000a\u000aSeventh forced-logout SIGKILL cascade. Kernel audit trail: audit[399861] syscall=62 a0=ffffffff a1=9 comm=pytest exe=/usr/bin/python3.14. Root cause: tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out created AsyncMock without setting mock.pid as int. _search_public_tracker called os.killpg(os.getpgid(proc.pid), SIGKILL). MagicMock.__int__ defaults to 1, so os.getpgid(1)==1 → os.killpg(1, SIGKILL) → glibc → kill(-1, SIGKILL) = SIGKILL every UID-1000 process. Bug existed since 2026-04-24. FIX 3-layer: (1) boba ad4b46a search.py int-guard + test hardening + §11.4.115 RED regression guard. (2) constitution 502586c universal §11.4.263 anchor covering Python/Go/Rust/Bash/C. (3) boba bf01cf3 pointer bump. Verified: 863/863 unit PASS + 14/14 Go race PASS + no 8th incident.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-19 15:22:11','2026-08-19 15:22:11',NULL,NULL,NULL,NULL,NULL);
++INSERT INTO items VALUES('BOB-127','Bug','Fixed (→ Fixed.md)','Low','Task 8 audit: 2 tests fired real killpg/getpgid on hardcoded PIDs (fixed 8bedc5a)','Follow-up to BOB-126 systematic sweep. Task 8 audit surfaced 2 test cases in tests/unit/merge_service/test_public_tracker_subprocess_timeout.py that set explicit int mock.pid (12345, 1111) satisfying the production BOB-126 int-guard, but did NOT patch os.killpg/os.getpgid so the real syscalls fired against hardcoded non-owned PIDs. Low collision probability on typical host, but section 11.4.263(C) hygiene violation in the exact file authored to guard against host-wide kills. FIX at 8bedc5a: added patch.object(_search.os, getpgid) + patch.object(_search.os, killpg) to both tests matching sibling test_process_group_kill_called_on_deadline pattern. 6/6 tests still PASS. Report: .superpowers/sdd/task-8-syscall-audit.md. Recommended gate CM-TEST-KILLPG-PATCHED-WHEN-REAL-PID tracked as separate followup.',NULL,NULL,NULL,'','','Fixed',unistr('## BOB-127 — Task 8 audit: 2 tests fired real killpg/getpgid on hardcoded PIDs (fixed 8bedc5a)\u000a\u000a**Status:** Fixed (→ Fixed.md)\u000a**Type:** Bug\u000a**Evidence:** .superpowers/sdd/task-8-syscall-audit.md\u000a**Severity:** Low\u000a\u000aFollow-up to BOB-126 systematic sweep. Task 8 audit surfaced 2 test cases in tests/unit/merge_service/test_public_tracker_subprocess_timeout.py that set explicit int mock.pid (12345, 1111) satisfying the production BOB-126 int-guard, but did NOT patch os.killpg/os.getpgid so the real syscalls fired against hardcoded non-owned PIDs. Low collision probability on typical host, but section 11.4.263(C) hygiene violation in the exact file authored to guard against host-wide kills. FIX at 8bedc5a: added patch.object(_search.os, getpgid) + patch.object(_search.os, killpg) to both tests matching sibling test_process_group_kill_called_on_deadline pattern. 6/6 tests still PASS. Report: .superpowers/sdd/task-8-syscall-audit.md. Recommended gate CM-TEST-KILLPG-PATCHED-WHEN-REAL-PID tracked as separate followup.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-19 16:40:33','2026-08-19 16:40:33',NULL,NULL,NULL,NULL,NULL);
+ CREATE TABLE IF NOT EXISTS "doc_segments" (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+     document    TEXT NOT NULL CHECK (document IN ('Issues', 'Fixed')),
+@@ -569,6 +572,7 @@
+ INSERT INTO doc_segments VALUES(425,'Fixed',76,'item','BOB-124','section',NULL);
+ INSERT INTO doc_segments VALUES(426,'Fixed',77,'item','BOB-125','section',NULL);
+ INSERT INTO doc_segments VALUES(427,'Fixed',78,'item','BOB-126','section',NULL);
++INSERT INTO doc_segments VALUES(429,'Fixed',80,'item','BOB-127','section',NULL);
+ CREATE TABLE IF NOT EXISTS "obsolete_details" (
+     atm_id                  TEXT PRIMARY KEY,
+     since                   TEXT NOT NULL,
+@@ -583,8 +587,8 @@
+     superseding_item        TEXT NOT NULL,
+     triple_check_evidence   TEXT NOT NULL
+ );
+-INSERT INTO sqlite_sequence VALUES('item_history',170);
+-INSERT INTO sqlite_sequence VALUES('doc_segments',427);
++INSERT INTO sqlite_sequence VALUES('item_history',172);
++INSERT INTO sqlite_sequence VALUES('doc_segments',429);
+ CREATE VIEW test_diary_summary AS
+ SELECT
+     d.atm_id                                                   AS atm_id,
