@@ -1,0 +1,330 @@
+<h1
+id="scriptspre_buildcheck_cm_test_mock_pid_explicit_int.sh-cm-test-mock-pid-explicit-int-static-pre-build-gate">scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh
+— CM-TEST-MOCK-PID-EXPLICIT-INT static pre-build gate</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T00:00:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-126 follow-up (§11.4.238
+discovery-channel-escape closure — a new automated check for a defect
+class first found out-of-band); sibling of
+<code>scripts/pre_build/check_cm_killpg_pgid_guard.sh</code>
+(CM-KILLPG-PGID-GUARD), which guards <strong>production</strong> code —
+this gate guards the <strong>test</strong> side of the same defect
+class.</p>
+<h2 id="purpose">Purpose</h2>
+<p><code>scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh</code>
+statically detects <strong>test files</strong> that construct an
+<code>AsyncMock()</code> / <code>MagicMock()</code> standing in for an
+<code>asyncio.subprocess.Process</code> (identified by nearby
+<code>.stdout.readline</code> / <code>.stderr.read</code> /
+<code>.wait</code> / <code>.kill</code> usage, combined with an explicit
+<code>.returncode = None</code> — see “Detection design” below) but
+never explicitly set <code>.pid = &lt;int&gt;</code> on it, and never
+neutralise the destructive call by patching <code>os.killpg</code>.</p>
+<h3 id="the-defect-class-this-closes-bob-126">The defect class this
+closes (BOB-126)</h3>
+<p>An unconfigured <code>unittest.mock</code> object auto-generates
+every magic method, including <code>__int__</code> /
+<code>__index__</code>, both <strong>defaulting to
+<code>1</code></strong>. A test double standing in for a real subprocess
+whose <code>.pid</code> attribute is left unconfigured therefore coerces
+to the integer <code>1</code> wherever production code reads
+<code>int(proc.pid)</code> — and
+<code>os.killpg(os.getpgid(1), SIGKILL)</code> is, under glibc,
+<strong>identical</strong> to <code>kill(-1, SIGKILL)</code>: a
+broadcast kill of every process the test-runner’s UID owns. This is the
+exact root cause traced across 7 forced logouts
+(BOB-116/120/123/124/125/126).</p>
+<p><code>download-proxy/src/merge_service/search.py</code> now carries a
+production-side guard
+(<code>isinstance(_pid, int) and _pid &gt; 1</code>), mechanically
+enforced by the sibling gate <code>check_cm_killpg_pgid_guard.sh</code>.
+This gate makes the <strong>test</strong> half of the same hardening —
+never relying on a mocked <code>.pid</code> that could coerce to
+<code>1</code> — a mechanically enforced invariant instead of tribal
+knowledge, per §11.4.226 (evidence-class-at-closure) and
+§11.4.240/§11.4.249 (a producer that also authors its own oracle is
+unverified — this gate is the structurally-separate, independent check
+on the TEST code).</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Default scope: tests/**/*.py (relative to the repo root this script</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># resolves from its own location), excluding __pycache__.</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Explicit-path mode — scan exactly the given file(s)/directory(ies)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># instead of the default scope. Used by the meta-test to run against</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># hermetic fixtures.</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh</span> /path/to/file.py</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh</span> /path/to/fixture/dir</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Verbose (prints every skip decision, not just findings):</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh</span> <span class="at">-v</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh</span> <span class="at">--help</span></span></code></pre></div>
+<h2 id="inputs">Inputs</h2>
+<ul>
+<li><strong>Positional arguments</strong> (optional): zero or more
+file/directory paths.
+<ul>
+<li>Zero arguments → default scope: <code>tests/</code> under the
+repository root, walked recursively for <code>*.py</code> files.</li>
+<li>One or more arguments → scan exactly those paths instead (single
+files must end in <code>.py</code> to be considered; directories are
+walked with the same <code>__pycache__</code> exclude as the default
+scope).</li>
+</ul></li>
+<li><strong><code>-v</code> / <code>--verbose</code></strong>: also
+print each skip decision (no-returncode-None, no-lifecycle-indicator,
+already-guarded, killpg-exempt).</li>
+<li><strong><code>-h</code> / <code>--help</code></strong>: print the
+in-source documentation header and exit 0.</li>
+<li>No environment variables are read.</li>
+</ul>
+<h2 id="outputs">Outputs</h2>
+<ul>
+<li><strong>stdout</strong>: a run header (scope, window sizes, file
+count) and either
+<code>PASS: CM-TEST-MOCK-PID-EXPLICIT-INT clean across N file(s)</code>
+or (on <code>-v</code>) per-candidate skip lines.</li>
+<li><strong>stderr</strong> (only on failure): a
+<code>=== FINDINGS ===</code> block, one
+<code>FAIL: &lt;path&gt;:&lt;line&gt;: unguarded subprocess-mock — &lt;trimmed source&gt; [identifier=&lt;ident&gt;] (no \</code><ident>.pid
+= <int>` and no `os.killpg` patch within 30
+lines)<code>line per unguarded hit, followed by a</code>FAIL: <N>
+unguarded test-subprocess-mock pid hit(s) …` summary line.</li>
+<li><strong>Exit codes</strong>:
+<ul>
+<li><code>0</code> — zero unguarded hits (or, in explicit-path mode,
+zero matching files — an empty scope is not itself a finding).</li>
+<li><code>1</code> — one or more unguarded hits; see stderr for the
+per-hit report.</li>
+<li><code>2</code> — usage/environment error (unknown flag, or an
+explicit PATH argument that does not exist).</li>
+</ul></li>
+</ul>
+<h2 id="detection-design">Detection design</h2>
+<h3 id="step-1-candidate-identification">Step 1 — candidate
+identification</h3>
+<p>A <strong>bare-variable assignment</strong>
+<code>&lt;ident&gt; = AsyncMock()</code> or
+<code>&lt;ident&gt; = MagicMock()</code> on its own line is a candidate
+— the process-standin object itself, <strong>not</strong> a nested
+<code>&lt;ident&gt;.stdout = MagicMock()</code> sub-stream assignment (a
+pipe object has no <code>.pid</code> semantics of its own, so flagging
+those would be a category error, not merely a false positive).</p>
+<h3 id="step-2-the-forward-window-20-lines">Step 2 — the forward window
+(20 lines)</h3>
+<p>Within the 20 lines immediately after the candidate assignment, the
+gate requires <strong>all</strong> of, scoped to the SAME
+identifier:</p>
+<ol type="1">
+<li>an explicit <code>&lt;ident&gt;.returncode = None</code> assignment
+(<strong>required precondition</strong> — see “Why
+<code>returncode = None</code> is required” below);</li>
+<li>at least one process-lifecycle/streaming indicator:
+<code>&lt;ident&gt;.stdout.readline</code>,
+<code>&lt;ident&gt;.stderr.read</code>, <code>&lt;ident&gt;.wait</code>,
+<code>&lt;ident&gt;.kill</code>;</li>
+<li><strong>absence</strong> of
+<code>&lt;ident&gt;.pid = &lt;int-literal&gt;</code> (a positive or
+negative integer literal — <code>mock.pid = 12345</code> is the
+sanctioned hardening).</li>
+</ol>
+<h3 id="step-3-the-killpg-patch-exemption-30-lines">Step 3 — the
+killpg-patch exemption (±30 lines)</h3>
+<p>A hit that fails step 2 is still <strong>skipped</strong> (not
+flagged) when a real (non-comment) <code>patch(...)</code> /
+<code>patch.object(...)</code> call naming the string literal
+<code>"killpg"</code> (or <code>'killpg'</code>) appears anywhere within
+30 lines before OR after the mock-assignment line.</p>
+<h3 id="why-returncode-none-is-required-evidence-not-a-guess-11.4.6">Why
+<code>returncode = None</code> is required (evidence, not a guess —
+§11.4.6)</h3>
+<p>Both call sites in <code>search.py</code> that can EVER reach
+<code>os.killpg</code> / <code>os.getpgid</code> are lexically gated
+behind the identical precondition:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> proc.returncode <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    ...</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    _pid <span class="op">=</span> proc.pid</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">isinstance</span>(_pid, <span class="bu">int</span>) <span class="kw">and</span> _pid <span class="op">&gt;</span> <span class="dv">1</span>:</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        ...</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        os.killpg(_pgid, _signal.SIGKILL)</span></code></pre></div>
+<p><code>proc.returncode is None</code> is the
+<code>asyncio.subprocess</code> convention for “process still running” —
+it is the <strong>only</strong> precondition under which the
+cleanup/kill branch is reachable at all, independent of the pid guard. A
+mock whose <code>.returncode</code> is left unset (an auto-generated
+<code>MagicMock</code> instance is not <code>is None</code>) or is
+explicitly set to a real exit code (<code>0</code>, a positive int, or a
+variable that defaults to one) can therefore <strong>never</strong>
+reach the kill branch — flagging such a mock for lacking
+<code>.pid = &lt;int&gt;</code> would be a false-positive refusal on
+code that is structurally incapable of the BOB-126 defect (a §11.4.201
+FAIL-bluff, forbidden exactly as a PASS-bluff is).</p>
+<p>This was proven by reading <code>search.py</code> directly and
+cross-checked against <strong>every</strong> existing
+<code>AsyncMock()</code>/<code>MagicMock()</code> subprocess-standin in
+<code>tests/**/*.py</code> as of this gate’s authoring date. Three
+pre-existing, genuinely safe helper factories set
+<code>.returncode</code> to a completed-process value and have no
+reachable kill path — they must not be flagged, and are not, under this
+rule:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Helper</th>
+<th><code>.returncode</code> shape</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit/merge_service/test_deadline_tunable.py:41</code></td>
+<td><code>_proc_mock()</code></td>
+<td><code>= returncode</code> (param, default <code>0</code>)</td>
+</tr>
+<tr>
+<td><code>tests/unit/merge_service/test_edge_case_challenges.py:137</code></td>
+<td><code>TestPublicTrackerResultParsing._proc_mock()</code></td>
+<td><code>= returncode</code> (param, default <code>0</code>)</td>
+</tr>
+<tr>
+<td><code>tests/unit/test_merge_trackers.py:~247</code></td>
+<td><code>_streaming_proc_mock()</code></td>
+<td><code>= 0</code> (hardcoded)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verified via paired mutation</strong> (§1.1): temporarily
+disabling the <code>returncode = None</code> requirement causes the gate
+to WRONGLY flag exactly these three known-safe sites on the real tree —
+proving the check is load-bearing, not decorative.</p>
+<h3
+id="why-killpg-alone-not-killpg-and-getpgid-is-a-sufficient-exemption">Why
+<code>killpg</code>-alone (not <code>killpg</code> AND
+<code>getpgid</code>) is a sufficient exemption</h3>
+<p><code>os.killpg</code> is the <strong>only</strong> destructive
+operation in the <code>search.py</code> cleanup path.
+<code>os.getpgid</code> is a read-only lookup that is itself gated
+behind the identical <code>isinstance(_pid, int) and _pid &gt; 1</code>
+guard before it can ever run with a test-supplied pid (verified by
+reading <code>search.py</code> directly) — so a real
+<code>os.killpg</code> patch alone makes the actual syscall unreachable
+regardless of what <code>.pid</code> coerces to. This resolves a real,
+evidence-confirmed case in the current tree:
+<code>tests/unit/merge_service/test_deadline_tunable.py:: test_bob126_regression_deadline_path_never_calls_killpg_with_pgid_le_1</code>
+patches <code>os.killpg</code> alone (deliberately, per its own
+docstring — “these MUST BE PATCHED here — this test intentionally
+exercises the vulnerable code path”), never <code>os.getpgid</code>, and
+is the RED-first regression guard for the production-side pid guard
+itself.</p>
+<p>A patch mentioned only inside a <strong>comment</strong> (documenting
+a nearby test’s patches, e.g. prose reading “patched getpgid”) is
+explicitly <strong>not</strong> counted as a real patch — matching a
+mention of the pattern as if it were the pattern is exactly the carrier
+footgun §11.4.196(D)/§12.12/§11.4.201(6)-(7) name; every candidate patch
+line is re-checked to exclude comment-only lines before it counts.</p>
+<h3 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h3>
+<p>A mock whose <code>.returncode</code> is assigned
+<strong>indirectly</strong> — e.g.
+<code>mock.returncode = returncode</code> where a FUTURE caller passes
+<code>returncode=None</code> — is invisible to this purely lexical
+check. This gate proves the <strong>literal shape currently on
+disk</strong> is safe, not every possible call-site permutation across
+function boundaries. The sibling production-side gate
+(<code>check_cm_killpg_pgid_guard.sh</code>) remains the primary,
+always-active defense regardless of what any test constructs.</p>
+<h2 id="self-exclusion">Self-exclusion</h2>
+<p>Unlike the sibling production gate, this gate scopes to
+<code>tests/**/*.py</code> and is itself a <code>.sh</code> file living
+outside <code>tests/</code> — it never scans itself, and its own paired
+meta-test (also a <code>.sh</code> file) is likewise outside the
+<code>*.py</code> scope. No structural self-exclusion is needed.</p>
+<h2 id="side-effects">Side-effects</h2>
+<p>None. The gate is read-only: it never modifies any scanned file. It
+creates one <code>mktemp</code> findings file for its own run and
+removes it on exit via <code>trap ... EXIT</code>.</p>
+<h2 id="dependencies">Dependencies</h2>
+<ul>
+<li><code>bash</code> (uses <code>[[ ]]</code> with a regex-variable
+<code>=~</code> match, <code>&lt;&lt;&lt;</code> here-strings, process
+substitution).</li>
+<li><code>grep -E</code>, <code>sed -E</code>, <code>sed -n</code>,
+<code>find</code>, <code>wc -l</code> — all standard on the project’s
+supported hosts.</li>
+<li>No Python, no network access, no repository write access.</li>
+</ul>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><strong>BOB-126</strong> — the forced-logout incident chain
+(BOB-116/120/123/124/125/126) this gate’s real-tree pattern was
+extracted from.</li>
+<li><strong><code>scripts/pre_build/check_cm_killpg_pgid_guard.sh</code></strong>
+(CM-KILLPG-PGID-GUARD) — the sibling production-side gate; together the
+two gates cover both halves of the codebase (production excluded from
+<code>check_cm_killpg_pgid_ guard.sh</code>’s scope, tests excluded from
+production’s).</li>
+<li><strong>§11.4.238</strong> — QA-discovery-channel mandate: this gate
+is the “new or strengthened automated check” a coverage-escape audit
+requires for a defect first found out-of-band.</li>
+<li><strong>§11.4.226</strong> — evidence-class-at-closure: a standing
+guard, not merely a source-side comment, is what keeps a fix from
+silently reopening.</li>
+<li><strong>§11.4.240 / §11.4.249</strong> — producer≠verifier /
+four-role separation: the test-authoring agent and this gate are
+structurally separate checks; a regression that quietly reintroduces an
+unguarded subprocess mock is caught by an INDEPENDENT mechanism, not by
+the same hand that wrote the test.</li>
+<li><strong>§11.4.115 / §11.4.135</strong> — RED-first meta-test
+discipline / permanent regression-guard suite:
+<code>tests/pre_build/test_check_cm_test_mock_pid_explicit_int.sh</code>
+is this gate’s paired §1.1 mutation harness.</li>
+<li><strong>§11.4.196(D) / §12.12 / §11.4.201(6)-(7)</strong> — the
+“instrument matches a MENTION of its own carrier text (a comment), not
+the real thing” footgun class the killpg-exemption’s comment-line
+exclusion closes.</li>
+<li><strong>§11.4.201</strong> — every guard/gate asserts the real
+condition; a false-positive refusal is a FAIL-bluff exactly as forbidden
+as a false-negative pass (the rationale for the
+<code>returncode = None</code> precondition and the killpg-alone
+exemption).</li>
+<li><code>download-proxy/src/merge_service/search.py:1190-1240</code> —
+the real production cleanup code whose exact control-flow shape
+(<code>if proc. returncode is None:</code> gating both the pid-guard and
+the kill call) this gate’s detection design is derived from.</li>
+<li><code>tests/unit/merge_service/test_deadline_tunable.py:: test_deadline_hit_flag_true_when_readline_times_out</code>
+— the fixed test this gate’s real-tree acceptance criterion cites (both
+<code>mock.pid = 12345</code> AND
+<code>patch.object(_search.os, "killpg")</code> present).</li>
+</ul>
+<h2 id="companion-files">Companion files</h2>
+<ul>
+<li><code>scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh</code>
+— the gate itself.</li>
+<li><code>tests/pre_build/test_check_cm_test_mock_pid_explicit_int.sh</code>
+— the §1.1 paired meta-test: <code>golden-good-1</code> (explicit
+<code>mock.pid = 12345</code>), <code>golden-good-2</code> (no pid, but
+<code>os.killpg</code> AND <code>os.getpgid</code> both real-patched),
+<code>golden-bad</code> (the raw pre-fix BOB-126 shape — no pid, no
+killpg patch), a real-tree smoke run against <code>tests/**/*.py</code>,
+and a no-op-stub negative control (CONST-XII anti-bluff — a gate that
+always exits 0 is caught wrongly-passing the golden-bad fixture).</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-08-19 —
+<code>bash tests/pre_build/test_check_cm_test_mock_pid_explicit_int.sh</code>
+ran GREEN (5/5: golden-good-1 rc=0, golden-good-2 rc=0, golden-bad rc=1,
+real-tree default scope rc=0, no-op-stub negative control confirmed);
+<code>shellcheck</code> clean on both scripts with zero findings.
+Paired-mutation sanity checks confirmed both the pid-guard recognition
+AND the <code>returncode = None</code> precondition are load-bearing:
+disabling the pid-guard match flips <code>golden-good-1</code> to a
+wrong FAIL; disabling the <code>returncode = None</code> precondition
+flips the real-tree run to a wrong FAIL on exactly the three known-safe
+helper factories documented above.</p>

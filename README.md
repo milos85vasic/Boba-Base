@@ -25,12 +25,12 @@
 </p>
 
 <p align="center">
-  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-5263%20collected-blue">
+  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-5355%20collected-blue">
   <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-371%20collected-blue">
   <img alt="plugins"        src="https://img.shields.io/badge/plugins-48-blue">
   <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
   <img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">
-  <img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-25-blue">
+  <img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-28-blue">
   <img alt="challenges"     src="https://img.shields.io/badge/challenges-31-blue">
   <img alt="scan"           src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
   <img alt="license"        src="https://img.shields.io/badge/license-Apache%202.0-green">
@@ -47,9 +47,15 @@
       previously read "ci-auto" (nightly/security triggers) which is FALSE per
       the current Hard Stop rule and has been corrected, not merely refreshed.
     - pre-build invariants: informational count from the highest `[N/N]` label
-      in `scripts/pre_build_verification.sh` (currently `[25/25]`, includes the
-      new CM-DOCS-CHAIN-ENGINE-VERIFY + CM-RESOURCE-PRESSURE-SIGNATURE-CHECK
-      invariants) — a count, not an asserted current PASS across all 25.
+      in `scripts/pre_build_verification.sh` (currently `[28/28]`, includes the
+      new CM-KILLPG-PGID-GUARD + CM-TEST-MOCK-PID-EXPLICIT-INT invariants
+      (§11.4.263, BOB-126)) — a count, not an asserted current PASS across
+      all 28. NOTE: `scripts/compute-badges.sh` computes this count correctly
+      but its README-rewrite `awk` filter only matches `alt="tests"` /
+      `alt="vitest"` — it does not actually rewrite this badge line despite
+      logging "(unchanged, cross-checked, matches existing badge)"; this line
+      was updated by hand from the script's own printed `PB_COUNT=28`. Tracked
+      as a pre-existing compute-badges.sh gap, out of this task's scope.
     - challenges: informational count of `challenges/scripts/*.sh` (31),
       including the new resource_pressure_signature_challenge.sh +
       verify_resource_pressure_polarity.sh + the ddos_resilience_challenge.sh
@@ -340,7 +346,7 @@ Each artefact ships with `SHA256SUMS` + `BUILD_INFO.json`.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) and the TDD protocol in [`CLAUDE.md`](CLAUDE.md). PRs must keep the following green:
 
-- Python unit + e2e + contract (`pytest` — 4442 tests collected, see docs/TESTING.md)
+- Python unit + e2e + contract (`pytest` — 4448 tests collected, see docs/TESTING.md)
 - Frontend Vitest (`ng test` — 371 tests collected, see docs/TESTING.md)
 - Ruff + bandit + shellcheck (via `scripts/scan.sh`)
 

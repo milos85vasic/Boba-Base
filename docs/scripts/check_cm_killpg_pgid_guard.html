@@ -1,7 +1,7 @@
 <h1
 id="scriptspre_buildcheck_cm_killpg_pgid_guard.sh-cm-killpg-pgid-guard-static-pre-build-gate">scripts/pre_build/check_cm_killpg_pgid_guard.sh
 — CM-KILLPG-PGID-GUARD static pre-build gate</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
 2026-08-19T00:00:00Z <strong>Status:</strong> active
 <strong>Item:</strong> BOB-126 follow-up (§11.4.238
 discovery-channel-escape closure — a new automated check for a defect
@@ -152,9 +152,13 @@ refusal is exactly as forbidden as a false-negative pass).</li>
 from the call itself — the first argument to <code>killpg(</code>, the
 name after the leading <code>-</code> in <code>kill(-</code>, or the
 token following <code>killpg</code> / the signal-kill call in bash. The
-10 lines immediately preceding the hit are then checked for
-<strong>both</strong>, on the same identifier, anywhere in that window
-(same line or split across lines):</p>
+identifier may be a <strong>simple bare name</strong> OR a
+<strong>dotted-attribute chain</strong> (e.g. <code>self._pgid</code>) —
+both are captured in full and matched literally (any <code>.</code>
+inside the identifier is regex-escaped before use, so it never behaves
+as an “any character” wildcard). The 10 lines immediately preceding the
+hit are then checked for <strong>both</strong>, on the same identifier,
+anywhere in that window (same line or split across lines):</p>
 <ul>
 <li><code>isinstance(&lt;ident&gt;, int)</code></li>
 <li><code>&lt;ident&gt; &gt; 1</code> — the literal digit
@@ -163,12 +167,36 @@ token following <code>killpg</code> / the signal-kill call in bash. The
 of <code>1</code> is precisely the broadcast-kill value — the whole
 point of the guard is excluding it).</li>
 </ul>
-<p>When the call’s argument is not a simple identifier (e.g. a nested
-call expression such as <code>os.killpg(get_pgid(), sig)</code>), the
-identifier cannot be extracted and the check falls back to the looser,
-non-identifier-scoped form of the same two conditions (any
-<code>isinstance(..., int)</code> and any <code>&gt; 1</code> in the
-window) rather than silently passing.</p>
+<h3 id="when-no-identifier-can-be-extracted-literalnumeric-targets">When
+no identifier can be extracted (literal/numeric targets)</h3>
+<p>The fallback path fires exactly when the call’s target does
+<strong>not start with an identifier character</strong> — a
+<strong>literal or numeric target</strong>, which is precisely the
+BOB-126 defect shape itself: <code>os.killpg(1, ...)</code> in Python,
+or <code>kill -9 -1</code> in bash. In that case no identifier can be
+extracted at all, and the hit is <strong>ALWAYS treated as
+UNGUARDED</strong> — there is <strong>no</strong> non-identifier-scoped
+fallback scan of the window.</p>
+<p>An earlier revision of this gate fell back, in that identifier-less
+case, to a looser check: <em>any</em> <code>isinstance(..., int)</code>
+<strong>and</strong> <em>any</em> <code>&gt; 1</code>
+<strong>anywhere</strong> in the 10-line window, for <em>any unrelated
+variable</em> (including inside a comment). That was a false-negative
+PASS-bluff (§11.4.201): a literal broadcast-kill target sitting near ANY
+unrelated int-bounds guard for a totally different variable — a common
+surrounding idiom (retry-count / timeout bounds checks) — was
+misreported as “guarded.” Refusing to guess when no identifier can be
+isolated is the conservative-safe default (§11.4.101/§11.4.201); the
+paired meta-test’s <code>golden-bad-3</code> fixture reproduces this
+exact scenario as a permanent regression guard.</p>
+<p>Note that a <strong>nested call expression</strong>,
+e.g. <code>os.killpg(get_pgid(), sig)</code>, does <strong>not</strong>
+hit this identifier-less path: its target <em>does</em> start with an
+identifier character, so the function name <code>get_pgid</code> is
+captured and used (mis-scoped to that name, but non-empty) as the
+identifier — the identifier-scoped check above applies to it, not the
+always-unguarded fallback. Only a genuinely identifier-less
+(literal/numeric) target reaches the always-unguarded path.</p>
 <h2 id="self-exclusion-anti-carrier-guard">Self-exclusion (anti-carrier
 guard)</h2>
 <p>This gate’s own source necessarily quotes the very patterns it
@@ -226,14 +254,25 @@ guarded.</li>
 <li><code>scripts/pre_build/check_cm_killpg_pgid_guard.sh</code> — the
 gate itself.</li>
 <li><code>tests/pre_build/test_check_cm_killpg_pgid_guard.sh</code> —
-the §1.1 paired meta-test: one golden-good fixture (properly guarded),
-two golden-bad fixtures (no guard at all; guard present but checks
-<code>&gt; 0</code> instead of <code>&gt; 1</code>), plus a real-tree
-smoke run against the current checkout.</li>
+the §1.1 paired meta-test: five hermetic fixtures —
+<code>golden-good</code> (properly guarded, bare identifier),
+<code>golden-good-2</code> (properly guarded, dotted-attribute
+identifier <code>self._pgid</code>), <code>golden-bad-1</code>
+(brief-literal <code>os.killpg(1, SIGKILL)</code>, no guard at all),
+<code>golden-bad-2</code> (guard present but checks <code>&gt; 0</code>
+instead of <code>&gt; 1</code>), <code>golden-bad-3</code> (literal,
+identifier-less target near an UNRELATED int-bounds guard for a
+different variable — the Critical-1 false-negative regression case) —
+plus a real-tree smoke run against the current checkout.</li>
 </ul>
 <h2 id="last-verified">Last verified</h2>
 <p>2026-08-19 —
 <code>bash tests/pre_build/test_check_cm_killpg_pgid_guard.sh</code> ran
-GREEN (4/4: golden-good rc=0, golden-bad-1 rc=1, golden-bad-2 rc=1,
-real-tree default scope rc=0); <code>shellcheck -x</code> clean on both
-scripts with zero findings.</p>
+GREEN (6/6: golden-good rc=0, golden-good-2 rc=0, golden-bad-1 rc=1,
+golden-bad-2 rc=1, golden-bad-3 rc=1, real-tree default scope rc=0);
+<code>shellcheck -x</code> clean on both scripts with zero findings.
+Independently re-reproduced the reviewer’s two live false-negative repro
+cases (<code>os.killpg(1, signal.SIGKILL)</code> near an unrelated int
+guard; bash <code>kill -9 -1</code> near a comment quoting
+<code>isinstance(x, int) and x &gt; 1</code>) and confirmed both now
+correctly FAIL (rc=1) against the fixed gate.</p>

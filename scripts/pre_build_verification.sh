@@ -103,9 +103,33 @@
 #      a build defect. Disposition: exit 0 -> PASS; exit 2 (stale) -> WARN
 #      with the diagnostic printed + remediation command; timeout (124) or
 #      the script missing -> SKIP-with-reason (§11.4.3).
+#  27. CM-KILLPG-PGID-GUARD: runs scripts/pre_build/check_cm_killpg_pgid_guard.sh
+#      (§11.4.263, BOB-126) — a static scan of production sources
+#      (download-proxy/src/, plugins/, scripts/) that refuses any
+#      os.killpg()/os.kill(-pid)/bash killpg/kill -SIG call whose target
+#      is not proven, within the 10 lines above the call, to be a real
+#      positive process id (isinstance(<ident>, int) and <ident> > 1 on
+#      the SAME identifier). This is the mechanical enforcement of the
+#      BOB-126 forensic root cause traced across 7 forced-logout
+#      incidents (BOB-116/120/123/124/125/126): os.killpg(1, SIGKILL) is,
+#      under glibc, IDENTICAL to kill(-1, SIGKILL) — a broadcast kill of
+#      every process the caller's UID owns. BLOCKING (contributes to
+#      FAIL_COUNT) — this is a real host-safety defect class, not a
+#      documentation-freshness or resource-pressure signal.
+#  28. CM-TEST-MOCK-PID-EXPLICIT-INT: runs
+#      scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh
+#      (§11.4.263, BOB-126) — the TEST-side sibling of invariant 27:
+#      statically scans tests/**/*.py for AsyncMock()/MagicMock()
+#      subprocess-standin doubles (identified by an explicit
+#      `.returncode = None` marker plus nearby .stdout.readline /
+#      .stderr.read / .wait / .kill usage) that never explicitly set
+#      `.pid = <int>` and never patch os.killpg — the exact shape whose
+#      auto-generated `__int__`/`__index__` (defaulting to 1) can drive
+#      the same broadcast-kill defect through a mocked test double.
+#      BLOCKING (contributes to FAIL_COUNT).
 #  (opt). Optional: challenges/scripts/run_all_challenges.sh (if FULL_VALIDATION=1)
 #
-# Constitution: §1.1 (paired mutation), §11.4 (anti-bluff covenant), §11.4.84 (working-tree quiescence), §11.4.107(10) (self-validated golden-good/golden-bad), §11.4.125 (code-review gate), §11.4.109 (anti-forgetting enforcement), §11.4.65 (universal Markdown export), §11.4.201(1) (false-positive-refusal is a FAIL-bluff), §11.4.238 (automated QA is the discoverer), §11.4.227(B) (propagation gates count block-starts), §12.12 (thread/process-headroom awareness), §11.4.234 (always-unblocked mechanism)
+# Constitution: §1.1 (paired mutation), §11.4 (anti-bluff covenant), §11.4.84 (working-tree quiescence), §11.4.107(10) (self-validated golden-good/golden-bad), §11.4.125 (code-review gate), §11.4.109 (anti-forgetting enforcement), §11.4.65 (universal Markdown export), §11.4.201(1) (false-positive-refusal is a FAIL-bluff), §11.4.238 (automated QA is the discoverer), §11.4.227(B) (propagation gates count block-starts), §12.12 (thread/process-headroom awareness), §11.4.234 (always-unblocked mechanism), §11.4.263 (process-group signal-safety mandate)
 
 set -euo pipefail
 
@@ -842,6 +866,59 @@ else
         echo "        Remediation: ./scripts/compute-badges.sh"
     fi
     rm -f "${BADGE_LOG}"
+fi
+
+# --- Invariant 27: CM-KILLPG-PGID-GUARD (§11.4.263, BOB-126) ---
+# Statically refuses any production os.killpg()/os.kill(-pid)/bash killpg/
+# kill -SIG call whose target is not proven, within the preceding 10
+# lines, to be isinstance(<ident>, int) and <ident> > 1 on the SAME
+# identifier — the exact broadcast-kill-of-UID shape traced across 7
+# forced-logout incidents (BOB-116/120/123/124/125/126). BLOCKING
+# (contributes to FAIL_COUNT): this closes a real host-safety defect
+# class, not a documentation-freshness or resource-pressure signal.
+echo "[27/28] CM-KILLPG-PGID-GUARD: no unguarded process-group kill calls (§11.4.263, BOB-126)"
+KILLPG_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_killpg_pgid_guard.sh"
+if [[ ! -x "${KILLPG_GATE}" ]]; then
+    fail "CM-KILLPG-PGID-GUARD: gate script missing or not executable at scripts/pre_build/check_cm_killpg_pgid_guard.sh"
+else
+    KILLPG_LOG="$(mktemp)"
+    KILLPG_EXIT=0
+    bash "${KILLPG_GATE}" >"${KILLPG_LOG}" 2>&1 || KILLPG_EXIT=$?
+    if [[ "${KILLPG_EXIT}" -eq 0 ]]; then
+        pass "CM-KILLPG-PGID-GUARD: $(tail -n1 "${KILLPG_LOG}")"
+    else
+        fail "CM-KILLPG-PGID-GUARD: unguarded killpg/kill-group call(s) detected (exit ${KILLPG_EXIT})"
+        echo "        --- gate output ---"
+        sed 's/^/        /' "${KILLPG_LOG}"
+        echo "        --- end ---"
+    fi
+    rm -f "${KILLPG_LOG}"
+fi
+
+# --- Invariant 28: CM-TEST-MOCK-PID-EXPLICIT-INT (§11.4.263, BOB-126) ---
+# TEST-side sibling of invariant 27: refuses any AsyncMock()/MagicMock()
+# subprocess-standin mock under tests/**/*.py that is never given an
+# explicit `.pid = <int>` and never patches os.killpg — the shape whose
+# auto-generated `__int__`/`__index__` (defaulting to 1) reaches the same
+# broadcast-kill defect through a mocked test double. BLOCKING
+# (contributes to FAIL_COUNT).
+echo "[28/28] CM-TEST-MOCK-PID-EXPLICIT-INT: no unguarded subprocess-mock pid in tests (§11.4.263, BOB-126)"
+MOCK_PID_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh"
+if [[ ! -x "${MOCK_PID_GATE}" ]]; then
+    fail "CM-TEST-MOCK-PID-EXPLICIT-INT: gate script missing or not executable at scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh"
+else
+    MOCK_PID_LOG="$(mktemp)"
+    MOCK_PID_EXIT=0
+    bash "${MOCK_PID_GATE}" >"${MOCK_PID_LOG}" 2>&1 || MOCK_PID_EXIT=$?
+    if [[ "${MOCK_PID_EXIT}" -eq 0 ]]; then
+        pass "CM-TEST-MOCK-PID-EXPLICIT-INT: $(tail -n1 "${MOCK_PID_LOG}")"
+    else
+        fail "CM-TEST-MOCK-PID-EXPLICIT-INT: unguarded subprocess-mock pid hit(s) detected (exit ${MOCK_PID_EXIT})"
+        echo "        --- gate output ---"
+        sed 's/^/        /' "${MOCK_PID_LOG}"
+        echo "        --- end ---"
+    fi
+    rm -f "${MOCK_PID_LOG}"
 fi
 
 # --- Optional: Run challenge aggregator when FULL_VALIDATION=1 ---
