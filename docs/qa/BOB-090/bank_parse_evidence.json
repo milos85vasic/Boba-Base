@@ -1,0 +1,74 @@
+{
+  "bank": "Boba start.sh restart-level subcommands",
+  "version": "1.0",
+  "metadata": {
+    "author": "vasic-digital",
+    "app": "Boba",
+    "version": "1.0.0",
+    "workable_item": "BOB-090",
+    "paired_pytest": "tests/integration/test_start_sh_reload_paths.py",
+    "paired_workable_item": "BOB-089"
+  },
+  "cases": [
+    {
+      "id": "BOBA-START-001",
+      "name": "start.sh --reload-python clears __pycache__ and restarts qbittorrent-proxy",
+      "priority": "critical",
+      "category": "functional",
+      "platforms": [
+        "cli"
+      ],
+      "steps": 7,
+      "tags": [
+        "boba",
+        "start-sh",
+        "reload-python",
+        "container",
+        "restart",
+        "container_orchestration",
+        "bob-089",
+        "bob-090"
+      ]
+    },
+    {
+      "id": "BOBA-START-002",
+      "name": "start.sh --reload-plugins restarts container without auto-copying plugin files",
+      "priority": "critical",
+      "category": "functional",
+      "platforms": [
+        "cli"
+      ],
+      "steps": 6,
+      "tags": [
+        "boba",
+        "start-sh",
+        "reload-plugins",
+        "container",
+        "restart",
+        "container_orchestration",
+        "bob-089",
+        "bob-090"
+      ]
+    },
+    {
+      "id": "BOBA-START-003",
+      "name": "start.sh --recreate destroys and recreates qbittorrent-proxy (container id CHANGES)",
+      "priority": "critical",
+      "category": "functional",
+      "platforms": [
+        "cli"
+      ],
+      "steps": 4,
+      "tags": [
+        "boba",
+        "start-sh",
+        "recreate",
+        "container",
+        "compose",
+        "container_orchestration",
+        "bob-089",
+        "bob-090"
+      ]
+    }
+  ]
+}
