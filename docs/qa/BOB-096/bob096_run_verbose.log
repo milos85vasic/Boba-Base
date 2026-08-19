@@ -1,0 +1,8 @@
+=== RUN   TestChaos_FileDescriptorExhaustion
+    jackett_db_test.go:1415: evidence: /tmp/.private/milosvasic/TestChaos_FileDescriptorExhaustion2245212033/001/TestChaos_FileDescriptorExhaustion.evidence.log
+--- PASS: TestChaos_FileDescriptorExhaustion (0.07s)
+=== RUN   TestChaos_ConcurrentContextCancelWrite
+    jackett_db_test.go:1547: evidence: /tmp/.private/milosvasic/TestChaos_ConcurrentContextCancelWrite760664311/001/TestChaos_ConcurrentContextCancelWrite.evidence.log
+--- PASS: TestChaos_ConcurrentContextCancelWrite (0.14s)
+PASS
+ok  	github.com/milos85vasic/qBitTorrent-go/tests/integration	1.231s

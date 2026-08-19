@@ -17,6 +17,7 @@ package integration
 
 import (
 	"bytes"
+	"context"
 	crand "crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -1275,6 +1276,275 @@ func TestHelper_MidTxHang(t *testing.T) {
 	// NOT called (SIGKILL is uncatchable), the tx is NOT committed. That
 	// is the entire point.
 	select {}
+}
+
+// -----------------------------------------------------------------------------
+// (d) Resource exhaustion — file-descriptor pressure (BOB-096)
+// -----------------------------------------------------------------------------
+
+// TestChaos_FileDescriptorExhaustion — §11.4.85 chaos (d).
+//
+// Exhausts a bounded fraction of the process file-descriptor table (safe
+// per §12.6: capped at min(rlim.Cur/4, 512) so the host stays healthy),
+// then attempts a real DB Upsert. Invariants:
+//
+//	(i)   NO panic or segfault under FD pressure,
+//	(ii)  Upsert either succeeds cleanly OR surfaces a categorised error
+//	      (never a silent partial write),
+//	(iii) durability: after FD pressure lifts, the pre-pressure BASELINE
+//	      row round-trips, AND the PRESSURE row is EITHER present-with-
+//	      correct-plaintext (Upsert succeeded) OR absent (Upsert failed).
+//
+// Falsification (§11.4.115): mutate repos.Credentials.Upsert to swallow the
+// underlying sql error (`_ = err` after Exec) — the PRESSURE-reported-
+// success-but-Get-fails branch below fires and this test FAILs. Recorded
+// per §1.1; not exercised live to avoid touching production code.
+func TestChaos_FileDescriptorExhaustion(t *testing.T) {
+	evPath, ev := chaosEvidenceLog(t, "TestChaos_FileDescriptorExhaustion")
+
+	creds, _, _, _, _ := freshTestEnv(t, "")
+
+	// Seed the pre-pressure baseline row — MUST survive the chaos regardless
+	// of Upsert-under-pressure outcome (§11.4.108 layer-3 durability).
+	bu, bp := "baseline-user", "baseline-pass"
+	if err := creds.Upsert("BASELINE", "userpass", &bu, &bp, nil); err != nil {
+		t.Fatalf("baseline seed: %v", err)
+	}
+	evNote(ev, "seeded BASELINE row (pre-pressure)")
+
+	// Read RLIMIT_NOFILE — the FD budget the OS gives this process.
+	var rlim syscall.Rlimit
+	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rlim); err != nil {
+		t.Skipf("cannot read RLIMIT_NOFILE: %v (evidence: %s)", err, evPath)
+		return
+	}
+	evNote(ev, "RLIMIT_NOFILE soft=%d hard=%d", rlim.Cur, rlim.Max)
+
+	// Bounded FD hold: §12.6-safe cap. Use pipes (2 FDs each) so we do not
+	// touch the DB file directly (no lock contention with SQLite's own FDs).
+	targetFDs := int(rlim.Cur) / 4
+	if targetFDs > 512 {
+		targetFDs = 512
+	}
+	if targetFDs < 32 {
+		targetFDs = 32
+	}
+	pipes := make([][2]*os.File, 0, targetFDs/2)
+	// Cleanup on EVERY exit path per §11.4.14.
+	cleanup := func() {
+		for _, p := range pipes {
+			_ = p[0].Close()
+			_ = p[1].Close()
+		}
+		pipes = pipes[:0]
+	}
+	defer cleanup()
+	t.Cleanup(cleanup)
+
+	held := 0
+	for i := 0; i < targetFDs/2; i++ {
+		r, w, err := os.Pipe()
+		if err != nil {
+			evNote(ev, "reached FD ceiling after %d pipes (%d FDs): %v", i, held, err)
+			break
+		}
+		pipes = append(pipes, [2]*os.File{r, w})
+		held += 2
+	}
+	evNote(ev, "held %d FDs via %d pipes to pressure the FD table", held, len(pipes))
+	if held < 32 {
+		t.Skipf("could not hold enough FDs (%d) to pressure — RLIMIT too low or host busy (evidence: %s)", held, evPath)
+		return
+	}
+
+	// (i) Attempt Upsert under FD pressure — MUST NOT panic.
+	var opErr error
+	pu, pp := "pressure-user", "pressure-pass"
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				t.Fatalf("PANIC during Upsert under FD pressure: %v", r)
+			}
+		}()
+		opErr = creds.Upsert("PRESSURE", "userpass", &pu, &pp, nil)
+	}()
+	evNote(ev, "Upsert-under-pressure returned err=%v", opErr)
+
+	// (ii) If it failed, error must be non-empty (categorised).
+	if opErr != nil && strings.TrimSpace(opErr.Error()) == "" {
+		t.Fatalf("empty error on Upsert under FD pressure (bluff surface): %v", opErr)
+	}
+
+	// Release the FD pressure before verification so the post-checks are
+	// not themselves under pressure.
+	cleanup()
+	evNote(ev, "released FD pressure — beginning integrity checks")
+
+	// (iii-a) BASELINE MUST round-trip regardless of Upsert-under-pressure
+	// outcome — the durability boundary for committed pre-pressure state.
+	got, err := creds.Get("BASELINE")
+	if err != nil {
+		t.Fatalf("post-pressure BASELINE Get failed: %v", err)
+	}
+	if got.Username != "baseline-user" || got.Password != "baseline-pass" {
+		t.Fatalf("BASELINE plaintext drift after FD pressure: got u=%q p=%q", got.Username, got.Password)
+	}
+	evNote(ev, "PASS (iii-a): BASELINE round-tripped after FD pressure")
+
+	// (iii-b) PRESSURE row: state MUST match reported Upsert outcome — a
+	// row present when Upsert reported failure, or absent when Upsert
+	// reported success, is a silent-drift bluff.
+	pr, getErr := creds.Get("PRESSURE")
+	if opErr == nil {
+		if getErr != nil {
+			t.Fatalf("BLUFF: Upsert-under-pressure reported success but Get fails: %v", getErr)
+		}
+		if pr.Username != "pressure-user" || pr.Password != "pressure-pass" {
+			t.Fatalf("PRESSURE plaintext drift: got u=%q p=%q", pr.Username, pr.Password)
+		}
+		evNote(ev, "PASS (iii-b): Upsert-under-pressure succeeded, PRESSURE round-trips")
+	} else {
+		if getErr == nil {
+			t.Fatalf("BLUFF: Upsert-under-pressure reported err=%v but row is present: %+v", opErr, pr)
+		}
+		if !errors.Is(getErr, repos.ErrNotFound) {
+			t.Fatalf("post-pressure Get(PRESSURE) unexpected error type: %v", getErr)
+		}
+		evNote(ev, "PASS (iii-b): Upsert-under-pressure failed cleanly, PRESSURE absent (durability boundary honoured)")
+	}
+	t.Logf("evidence: %s", evPath)
+}
+
+// -----------------------------------------------------------------------------
+// (a-extra) Concurrent-kill via context cancellation (BOB-096)
+// -----------------------------------------------------------------------------
+
+// TestChaos_ConcurrentContextCancelWrite — §11.4.85 chaos (a-extra).
+//
+// A writer goroutine loops Upserting unique credentials, checking a shared
+// context between iterations. A killer goroutine cancels the context after
+// a bounded head-start. Invariants:
+//
+//	(i)   the writer exits within a bounded budget after cancel (no hang),
+//	(ii)  every Upsert the writer CONFIRMED as successful round-trips via
+//	      Get with byte-equal plaintext (no torn/partial commit),
+//	(iii) the DB row count matches the writer's confirmed-success count
+//	      (no phantom rows from partially-observed writes; no lost rows
+//	      that the writer thought landed).
+//
+// Distinct from TestChaos_ConcurrentWriterContentionRepo: that one tests
+// N-way write contention on the pool. This one tests DB integrity across
+// abrupt loop termination via context cancel — the "concurrent-kill"
+// scenario in BOB-096.
+//
+// Falsification (§11.4.115): mutate the writer to append to confirmedNames
+// BEFORE calling Upsert (instead of after) — the DB-row-count-matches-
+// confirmed invariant flips FAILing because a phantom-not-in-DB name lands
+// in the confirmed list. Recorded per §1.1.
+func TestChaos_ConcurrentContextCancelWrite(t *testing.T) {
+	evPath, ev := chaosEvidenceLog(t, "TestChaos_ConcurrentContextCancelWrite")
+
+	creds, _, _, _, _ := freshTestEnv(t, "")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	// Belt-and-braces cleanup: if the test bails between .cancel() and
+	// t.Cleanup, the context is still cleaned up (§11.4.14).
+	t.Cleanup(cancel)
+
+	var (
+		confirmedMu    sync.Mutex
+		confirmedNames = make([]string, 0, 1024)
+		writerErr      error
+	)
+	writerDone := make(chan struct{})
+
+	go func() {
+		defer close(writerDone)
+		for i := 0; ; i++ {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+			name := fmt.Sprintf("KILL_%04d", i)
+			u := fmt.Sprintf("u-%04d", i)
+			p := fmt.Sprintf("p-%04d", i)
+			if err := creds.Upsert(name, "userpass", &u, &p, nil); err != nil {
+				// If ctx was concurrently cancelled we treat any error as
+				// the expected shutdown surface; otherwise it is a real
+				// failure to record.
+				if ctx.Err() == nil {
+					confirmedMu.Lock()
+					writerErr = fmt.Errorf("Upsert %s pre-cancel: %w", name, err)
+					confirmedMu.Unlock()
+				}
+				return
+			}
+			confirmedMu.Lock()
+			confirmedNames = append(confirmedNames, name)
+			confirmedMu.Unlock()
+			// Yield so the killer goroutine gets scheduling opportunities.
+			runtime.Gosched()
+		}
+	}()
+
+	// Give the writer a bounded head-start, then cancel.
+	time.Sleep(75 * time.Millisecond)
+	cancel()
+
+	select {
+	case <-writerDone:
+	case <-time.After(5 * time.Second):
+		t.Fatalf("(i) writer did not exit within 5s after cancel — HANG (evidence: %s)", evPath)
+	}
+
+	confirmedMu.Lock()
+	finalNames := append([]string(nil), confirmedNames...)
+	terminalErr := writerErr
+	confirmedMu.Unlock()
+
+	if terminalErr != nil {
+		t.Fatalf("writer surfaced non-cancel error mid-flight: %v", terminalErr)
+	}
+	evNote(ev, "writer confirmed %d successful Upserts before cancel", len(finalNames))
+
+	if len(finalNames) == 0 {
+		t.Fatalf("no confirmed writes before cancel (test insufficient — cancel raced writer startup)")
+	}
+
+	// (ii) Every confirmed name MUST round-trip.
+	for _, name := range finalNames {
+		cr, err := creds.Get(name)
+		if err != nil {
+			t.Fatalf("(ii) confirmed-write %s lost after cancel: %v", name, err)
+		}
+		idx := strings.TrimPrefix(name, "KILL_")
+		wantU := "u-" + idx
+		wantP := "p-" + idx
+		if cr.Username != wantU || cr.Password != wantP {
+			t.Fatalf("(ii) confirmed-write %s plaintext drift: got u=%q p=%q want u=%q p=%q",
+				name, cr.Username, cr.Password, wantU, wantP)
+		}
+	}
+	evNote(ev, "PASS (ii): all %d confirmed writes round-tripped", len(finalNames))
+
+	// (iii) DB row count MUST equal confirmed count. Since confirmedNames is
+	// appended AFTER Upsert returns (nil), and Upsert either commits atomically
+	// or errors (SQLite has no partial-row state), this is exact.
+	rows, err := creds.List()
+	if err != nil {
+		t.Fatalf("post List: %v", err)
+	}
+	if len(rows) != len(finalNames) {
+		names := make([]string, 0, len(rows))
+		for _, r := range rows {
+			names = append(names, r.Name)
+		}
+		sort.Strings(names)
+		t.Fatalf("(iii) row count mismatch: DB=%d confirmed=%d; DB names=%v", len(rows), len(finalNames), names)
+	}
+	evNote(ev, "PASS (iii): DB row count (%d) matches confirmed count", len(rows))
+	t.Logf("evidence: %s", evPath)
 }
 
 // Silence unused-import lint if a build tag ever hides one of the

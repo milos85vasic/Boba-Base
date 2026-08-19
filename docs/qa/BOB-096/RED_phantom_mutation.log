@@ -1,0 +1,6 @@
+=== RUN   TestChaos_ConcurrentContextCancelWrite
+    jackett_db_test.go:1523: (ii) confirmed-write KILL_PHANTOM lost after cancel: repos: credential not found
+--- FAIL: TestChaos_ConcurrentContextCancelWrite (0.16s)
+FAIL
+FAIL	github.com/milos85vasic/qBitTorrent-go/tests/integration	0.191s
+FAIL

@@ -1,0 +1,24 @@
+=== RUN   TestChaos_DBFileByteCorruption
+    jackett_db_test.go:809: evidence: /tmp/.private/milosvasic/TestChaos_DBFileByteCorruption2914330650/001/TestChaos_DBFileByteCorruption.evidence.log
+--- PASS: TestChaos_DBFileByteCorruption (0.03s)
+=== RUN   TestChaos_ConcurrentWriterContentionRepo
+    jackett_db_test.go:902: evidence: /tmp/.private/milosvasic/TestChaos_ConcurrentWriterContentionRepo4185408682/001/TestChaos_ConcurrentWriterContentionRepo.evidence.log
+--- PASS: TestChaos_ConcurrentWriterContentionRepo (0.09s)
+=== RUN   TestChaos_WALSidecarCorruptionRecovery
+    jackett_db_test.go:995: evidence: /tmp/.private/milosvasic/TestChaos_WALSidecarCorruptionRecovery1719059952/001/TestChaos_WALSidecarCorruptionRecovery.evidence.log
+--- PASS: TestChaos_WALSidecarCorruptionRecovery (0.03s)
+=== RUN   TestChaos_MasterKeyRotationMidflight
+    jackett_db_test.go:1081: evidence: /tmp/.private/milosvasic/TestChaos_MasterKeyRotationMidflight265727157/001/TestChaos_MasterKeyRotationMidflight.evidence.log
+--- PASS: TestChaos_MasterKeyRotationMidflight (0.03s)
+=== RUN   TestChaos_MidTransactionSIGKILLRecovery
+    jackett_db_test.go:1230: helper stdout: === RUN   TestHelper_MidTxHang
+    jackett_db_test.go:1231: evidence: /tmp/.private/milosvasic/TestChaos_MidTransactionSIGKILLRecovery2259406177/001/TestChaos_MidTransactionSIGKILLRecovery.evidence.log
+--- PASS: TestChaos_MidTransactionSIGKILLRecovery (0.08s)
+=== RUN   TestChaos_FileDescriptorExhaustion
+    jackett_db_test.go:1415: evidence: /tmp/.private/milosvasic/TestChaos_FileDescriptorExhaustion283454958/001/TestChaos_FileDescriptorExhaustion.evidence.log
+--- PASS: TestChaos_FileDescriptorExhaustion (0.07s)
+=== RUN   TestChaos_ConcurrentContextCancelWrite
+    jackett_db_test.go:1547: evidence: /tmp/.private/milosvasic/TestChaos_ConcurrentContextCancelWrite295612117/001/TestChaos_ConcurrentContextCancelWrite.evidence.log
+--- PASS: TestChaos_ConcurrentContextCancelWrite (0.14s)
+PASS
+ok  	github.com/milos85vasic/qBitTorrent-go/tests/integration	1.486s
