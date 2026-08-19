@@ -638,8 +638,24 @@ echo "[23/24] CM-NO-PRODUCTION-MUTATION-RESIDUE: no mutation-marker residue in p
 _M_MARK="MUT""ATED"
 _M_ALWAYS="alwa""ys pass"
 _M_IFFALSE="if fals""e && "
-# Combined ERE — anchored to the shapes we actually mean (not bare substrings):
-INV23_PATTERN="(//[[:space:]]*${_M_MARK})|(#[[:space:]]*${_M_MARK})|(//[[:space:]]*${_M_ALWAYS})|(#[[:space:]]*${_M_ALWAYS})|(${_M_IFFALSE})"
+# `guardrails:allow` per-line escape (§11.4.109-style sentinel): a line
+# carrying this token is an INTENTIONAL documented carrier (docstring,
+# comment, example, self-testing scan) and is dropped from hits — a
+# real mutation would never carry it, and its presence is audited by
+# git-blame + review. Built via concatenation for the same
+# self-match-avoidance reason.
+_G_ALLOW="guard""rails:allow"
+# Combined ERE — anchored to line-start (with optional indent) so a
+# TRAILING or QUOTED mention (`pattern = "# MUT'ATED"`, a docstring
+# quoting the marker shape, or a string literal holding the marker
+# text) NEVER false-positive-FAILs the gate. The §11.4.201(7)(a)
+# carrier-vs-thing distinction applied to this seam: real mutations
+# are STAND-ALONE indented comment lines beginning with `//` / `#`
+# immediately followed by the marker OR the `if fals'e &&`
+# short-circuit-swallow at statement start; every other occurrence is
+# a carrier (fixed BOB-070). Agent H's exact form is still caught
+# because the line BEGINS (after indent) with `if fals'e && `.
+INV23_PATTERN="(^[[:space:]]*(//|#)[[:space:]]*(${_M_MARK}|${_M_ALWAYS}))|(^[[:space:]]*${_M_IFFALSE})"
 
 if [[ -n "${INV23_FIXTURE_ROOT:-}" ]]; then
     INV23_ROOTS=("${INV23_FIXTURE_ROOT}")
@@ -690,13 +706,18 @@ else
     fi
 
     INV23_HITS_LOG="$(mktemp)"
+    INV23_RAW_LOG="$(mktemp)"
     while IFS= read -r -d '' _f; do
         # -E extended-regex, -n line number, -H filename even on single-file
-        grep -nHE "${INV23_PATTERN}" "${_f}" >>"${INV23_HITS_LOG}" 2>/dev/null || true
+        grep -nHE "${INV23_PATTERN}" "${_f}" >>"${INV23_RAW_LOG}" 2>/dev/null || true
     done < <(find "${INV23_ROOTS[@]}" -type f \
         \( -name '*.go' -o -name '*.py' -o -name '*.sh' \) \
         "${INV23_EXCLUDES[@]}" \
         -print0 2>/dev/null)
+    # §11.4.109-style per-line escape: drop hits on lines carrying the
+    # `guardrails:allow` sentinel (intentional documented carriers).
+    grep -vE "${_G_ALLOW}" "${INV23_RAW_LOG}" >"${INV23_HITS_LOG}" 2>/dev/null || true
+    rm -f "${INV23_RAW_LOG}"
     INV23_COUNT=$(wc -l <"${INV23_HITS_LOG}" | tr -d ' ')
     if [[ "${INV23_COUNT}" -eq 0 ]]; then
         pass "no mutation-marker residue in production sources"

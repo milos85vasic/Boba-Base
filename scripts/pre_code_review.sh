@@ -7,6 +7,11 @@
 #   3. bash -n syntax check on all scripts/*.sh
 #   4. No mutation markers in source files
 #      (same markers the pre-commit hook checks: MUT""ATED, // alwa""ys pass, # MUT""ATION)
+#      BOB-070 hardening: patterns are line-anchored to their comment
+#      shape and lines carrying `guardrails:allow` are skipped, so a
+#      docstring/comment/string-literal that MENTIONS the marker as
+#      documentation never false-positive-FAILs the gate
+#      (§11.4.84 + §11.4.201(7)(a) carrier-vs-thing).
 #
 # Constitution: x11.4.125
 
@@ -31,11 +36,20 @@ fail() {
 echo "=== Code-Review Gate ==="
 echo
 
-# Build mutation marker patterns indirectly to avoid self-match
-M1="MUT""ATED"
-M2="// alwa""ys pass"
-M3="# MUT""ATION"
+# Build mutation marker patterns indirectly to avoid self-match.
+# BOB-070: patterns are LINE-ANCHORED (with optional indent) to the
+# comment-line shape a real mutation takes — a trailing / quoted /
+# in-string mention (e.g. `pattern = "# MUTATION"`, docstring quoting
+# the marker as documentation) never false-positive-FAILs the gate
+# (§11.4.201(7)(a) carrier-vs-thing).
+M1="^[[:space:]]*(//|#)[[:space:]]*MUT""ATED"
+M2="^[[:space:]]*// alwa""ys pass"
+M3="^[[:space:]]*# MUT""ATION"
 MUTATION_PATTERNS=("$M1" "$M2" "$M3")
+# §11.4.109-style per-line escape sentinel — a line carrying this
+# token is an INTENTIONAL documented carrier (audited by git-blame +
+# review); a real mutation would never carry it.
+GUARDRAILS_ALLOW_MARKER="guard""rails:allow"
 
 RUFF_FAILED=0
 MYPY_FAILED=0
@@ -78,7 +92,11 @@ echo "[4/4] mutation marker check"
 marker_errors=0
 while IFS= read -r -d '' file; do
     for pattern in "${MUTATION_PATTERNS[@]}"; do
-        if grep -q "$pattern" "$file" 2>/dev/null; then
+        # -E extended-regex for the ^[[:space:]]* line anchor; the
+        # guardrails:allow post-filter drops intentional carriers.
+        if grep -nE "$pattern" "$file" 2>/dev/null \
+             | grep -vE "$GUARDRAILS_ALLOW_MARKER" \
+             | grep -q .; then
             echo "    MUTATION MARKER '$pattern' in $file"
             marker_errors=$((marker_errors + 1))
         fi
