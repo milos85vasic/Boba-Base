@@ -327,7 +327,12 @@ def _classify_plugin_stderr(stderr: str, *, killed_by_deadline: bool, had_result
         summary = "plugin needs a directory/file that is not present in the container"
     elif "indexerror" in lower or "list index out of range" in lower:
         error_type = "plugin_parse_failure"
-        summary = "plugin parse failed (upstream HTML likely changed)"
+        # §11.4.6 no-guessing: an IndexError means the plugin's regex/selector
+        # matched fewer elements than it indexed — either upstream HTML changed
+        # OR the plugin's selectors were wrong at author time. We do NOT know
+        # which from the exception alone. Report the FACT (parse failed with
+        # out-of-range access) and prescribe the check, without "likely".
+        summary = "plugin parse failed with out-of-range index (upstream HTML shape differs from plugin's expected structure — inspect plugin regex/selectors + fresh upstream sample)"
     elif "'nonetype' object is not iterable" in lower or "typeerror" in lower:
         error_type = "plugin_crashed"
         summary = "plugin crashed with a TypeError"
