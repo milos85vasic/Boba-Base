@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
-2026-08-15T12:15:00Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
+2026-08-19T17:19:35Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -1046,5 +1046,26 @@ adverse. Proposal:
 docs/proposals/external-watchdog-for-forced-logout-architectural-gap.md.
 Operator decision required per §11.4.66 before any implementation – NOT
 implemented in this task.</p>
+<h2
+id="bob-129-potential-production-slowapistarlette-defect-flagged-by-task-105-subagent">BOB-129
+— Potential production slowapi/starlette defect flagged by Task 105
+subagent</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Medium</p>
+<p>Task #105 subagent (fixing 9 slowapi test failures) reported honestly
+that the same slowapi/starlette incompatibility likely hits the
+production /search and /search/stream endpoints under real HTTP traffic
+— evidence: the FastAPI TestClient (which goes through the full ASGI
+middleware stack like real requests do) reproduces the same isinstance()
+failure pattern the 9 test failures exhibited. Not yet reproduced
+against the running boba stack because the qbittorrent-proxy container
+currently exposes no host ports (running on gluetun network stack).
+Recommended investigation: (1) confirm defect by triggering /search
+kickoff through gluetun network stack, (2) if reproduced, determine
+whether the fix belongs in production code (adding response: Response
+params) or a version pin (slowapi vs starlette compat) or a middleware
+refactor. §11.4.238 discovery-channel escape prevention: manual QA must
+NOT be the discoverer. §11.4.108 Layer 3 verification: needed on a clean
+deployment before any release.</p>
 </body>
 </html>
