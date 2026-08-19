@@ -385,7 +385,7 @@ process_file() {
 
     local trimmed
     trimmed="$(printf '%s' "$content" | sed -E 's/^[[:space:]]+//')"
-    report_fail "$file:$lineno: real-pid subprocess-mock with NO os.killpg patch — $trimmed [identifier=$ident] (has \`${ident}.pid = <int>\` but no \`os.killpg\`-targeting patch within $KILLPG_WINDOW lines; see test_process_group_kill_called_on_deadline in tests/unit/merge_service/test_public_tracker_subprocess_timeout.py for the sanctioned fix pattern)"
+    report_fail "$file:$lineno: real-pid subprocess-mock with NO os.killpg-targeting patch — $trimmed [identifier=$ident] (has \`${ident}.pid = <int>\` but no \`os.killpg\`-targeting patch within $KILLPG_WINDOW lines; see test_process_group_kill_called_on_deadline in tests/unit/merge_service/test_public_tracker_subprocess_timeout.py for the sanctioned fix pattern)"
   done <<<"$hits"
 }
 
