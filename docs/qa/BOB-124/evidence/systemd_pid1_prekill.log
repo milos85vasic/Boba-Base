@@ -1,0 +1,111 @@
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Main process exited, code=killed, status=9/KILL
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4864 (gvfs-goa-volume) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4842 (xdg-document-po) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4828 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4706 (ibus-extension-) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4947 (ibus-engine-sim) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4725 (wireplumber) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7579 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10104 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10105 (ssh) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10536 (dbus-launch) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10537 (dbus-daemon) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10540 (gnome-keyring-d) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4937 (Xwayland) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5122 (mutter-x11-fram) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5706 (gvfsd-recent) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5720 (gvfsd-dnssd) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5734 (python3) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4829 (gvfs-udisks2-vo) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5094 (gsd-xsettings) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5117 (ibus-x11) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4915 (gvfs-gphoto2-vo) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4689 (gjs) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4715 (ibus-portal) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4730 (goa-identity-se) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7572 (kgx) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 60716 (loupe) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4902 (gvfs-mtp-volume) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4886 (gvfs-afc-volume) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6512 (postgres) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6513 (postgres) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6515 (postgres) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 44540 (postgres) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 31094 (python3) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 58752 (python3) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79795 (python3) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 30272 (qbittorrent-nox) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 3320 (pasta.avx2) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 31716 (webui-bridge) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4874 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4988 (dconf-service) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 30019 (conmon) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 31023 (conmon) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 11059 (gcr-ssh-agent) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 11063 (ssh-agent) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6986 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6995 (chrome_crashpad) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6997 (chrome_crashpad) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7004 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7006 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7036 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7037 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7066 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7106 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7309 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7323 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7349 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7126 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 73509 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 69187 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7199 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 19820 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6367 (conmon) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79818 (go) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 16822 (tmux: server) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21105 (claude) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21824 (uv) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21838 (uv) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21843 (npm exec convex) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21985 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22099 (npm exec @cap-j) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22110 (npm exec fireba) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22168 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22251 (hook-linux-amd6) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22290 (MainThread) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22309 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22316 (MainThread) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22427 (chrome-devtools) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22443 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 43621 (python) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 43622 (tee) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 43623 (tail) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64353 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64356 (python) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64539 (tee) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64763 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 75311 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 75331 (sleep) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79452 (tail) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79772 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79808 (exe) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79477 (podman) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22302 (MainThread) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 80173 (hook-linux-amd6) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22015 (lumen-linux-amd) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22209 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21958 (python) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22363 (npm exec chrome) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21961 (python) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6081 (caddy) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6075 (pasta.avx2) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6079 (conmon) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5556 (jetbrainsd) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5177 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: session-4.scope: Deactivated successfully.
+Aug 19 15:28:22 nezha systemd[1]: Created slice user-60579.slice - User Slice of UID 60579.
+Aug 19 15:28:22 nezha systemd[1]: Starting user-runtime-dir@60579.service - User Runtime Directory /run/user/60579...
+Aug 19 15:28:22 nezha systemd[1]: Finished user-runtime-dir@60579.service - User Runtime Directory /run/user/60579.
+Aug 19 15:28:22 nezha systemd[1]: Starting user@60579.service - User Manager for UID 60579...
+Aug 19 15:28:22 nezha systemd[1]: Started user@60579.service - User Manager for UID 60579.
+Aug 19 15:28:22 nezha systemd[1]: Started session-5.scope - Session 5 of User gdm-greeter.

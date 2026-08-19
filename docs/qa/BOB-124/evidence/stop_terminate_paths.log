@@ -1,0 +1,8 @@
+7143:Aug 19 15:28:22 nezha systemd-logind[1296]: Removed session 1.
+7145:Aug 19 15:28:22 nezha systemd-logind[1296]: Removed session 4.
+7153:Aug 19 15:28:22 nezha systemd-logind[1296]: New session '5' of user 'gdm-greeter' with class 'greeter' and type 'wayland'.
+7162:Aug 19 15:28:22 nezha systemd-logind[1296]: New session '6' of user 'gdm-greeter' with class 'manager-early' and type 'unspecified'.
+7478:Aug 19 15:28:35 nezha systemd-logind[1296]: New session '7' of user 'milosvasic' with class 'user' and type 'wayland'.
+7489:Aug 19 15:28:35 nezha systemd-logind[1296]: New session '8' of user 'milosvasic' with class 'manager' and type 'unspecified'.
+8336:Aug 19 15:28:41 nezha systemd-logind[1296]: Removed session 5.
+9189:Aug 19 15:28:51 nezha systemd-logind[1296]: Removed session 6.

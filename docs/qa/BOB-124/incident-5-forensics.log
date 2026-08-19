@@ -1,0 +1,80 @@
+# BOB-124 — 5th forced-logout incident (2026-08-19 15:28:22)
+
+## uptime + last
+ 15:34:00 up 26 min,  1 user,  load average: 0.80, 5.01, 4.65
+         system boot  2026-08-19 15:07
+milosvas tty2         local            Wed Aug 19 15:28   still logged in   
+milosvas tty2         local            Wed Aug 19 15:07 - 15:28  (00:20)    
+milosvas tty2         local            Wed Aug 19 13:13 - down   (01:52)    
+milosvas tty2         local            Wed Aug 19 00:50 - down   (11:54)    
+milosvas tty2         local            Tue Aug 18 23:49 - 00:50  (01:01)    
+
+## journal at 15:28:22 exact window
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,035 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,081 - INFO - Tracker therarbg: 0 results for 'scaling_probe_5_4_1787145931'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: INFO:     127.0.0.1:38696 - "POST /api/v1/search HTTP/1.1" 429 Too Many Requests
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,160 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,255 - INFO - Tracker pirateiro: 0 results for 'scaling_probe_5_0_1787145930'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,271 - INFO - Tracker torrentgalaxy: 0 results for 'testquery'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,346 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,362 - INFO - Tracker therarbg: 0 results for 'scaling_probe_2_1_1787145947'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,383 - INFO - Tracker torrentfunk: 0 results for 'testquery'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,446 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,485 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,624 - INFO - Tracker torrentfunk: 0 results for 'scaling_probe_5_3_1787145930'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,628 - INFO - Tracker torrentgalaxy: 0 results for 'scaling_probe_2_0_1787145947'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,629 - INFO - Tracker pirateiro: 0 results for 'scaling_probe_5_1_1787145930'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,631 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,658 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: INFO:     127.0.0.1:38698 - "GET /api/v1/stats HTTP/1.1" 200 OK
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,680 - INFO - Tracker torlock: 0 results for 'scaling_probe_2_0_1787145947'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,680 - INFO - Tracker torrentkitty: 0 results for 'scaling_probe_5_0_1787145930'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,700 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,721 - INFO - Tracker torrentproject: 0 results for 'testquery'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,752 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,762 - INFO - Tracker yihua: 0 results for 'scaling_probe_5_0_1787145930'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,762 - INFO - Tracker torrentproject: 0 results for 'scaling_probe_2_0_1787145947'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,803 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,968 - INFO - Tracker torrentfunk: 0 results for 'scaling_probe_5_2_1787145930'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,969 - INFO - Tracker torrentfunk: 0 results for 'scaling_probe_1_0_1787145939'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,969 - INFO - Tracker torrentkitty: 0 results for 'scaling_probe_5_1_1787145930'
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,974 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:00 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:00,999 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,008 - INFO - Tracker pirateiro: 240 results for 'linux'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,012 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,030 - INFO - Tracker rockbox: 0 results for 'scaling_probe_5_1_1787145930'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,030 - INFO - Tracker rockbox: 0 results for 'scaling_probe_5_0_1787145930'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,030 - INFO - Tracker pirateiro: 0 results for 'scaling_probe_5_2_1787145930'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,042 - WARNING - ratelimit 10 per 1 minute (127.0.0.1) exceeded at endpoint: /api/v1/search
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,056 - WARNING - ratelimit 10 per 1 minute (127.0.0.1) exceeded at endpoint: /api/v1/search
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,057 - WARNING - ratelimit 10 per 1 minute (127.0.0.1) exceeded at endpoint: /api/v1/search
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,064 - WARNING - ratelimit 10 per 1 minute (127.0.0.1) exceeded at endpoint: /api/v1/search
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,068 - WARNING - ratelimit 10 per 1 minute (127.0.0.1) exceeded at endpoint: /api/v1/search
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,084 - INFO - Tracker pirateiro: 0 results for 'scaling_probe_1_0_1787145939'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,084 - INFO - Tracker torrentdownload: 0 results for 'testquery'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,085 - INFO - Tracker torrentscsv: 0 results for 'scaling_probe_5_2_1787145930'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,086 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,117 - INFO - Tracker torrentfunk: 0 results for 'scaling_probe_2_0_1787145947'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,126 - INFO - Tracker torrentscsv: 0 results for 'scaling_probe_5_0_1787145930'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,128 - INFO - Tracker torrentproject: 0 results for 'scaling_probe_5_0_1787145930'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: INFO:     127.0.0.1:38712 - "POST /api/v1/search HTTP/1.1" 429 Too Many Requests
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: INFO:     127.0.0.1:38700 - "POST /api/v1/search HTTP/1.1" 429 Too Many Requests
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: INFO:     127.0.0.1:38750 - "POST /api/v1/search HTTP/1.1" 429 Too Many Requests
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: INFO:     127.0.0.1:38726 - "POST /api/v1/search HTTP/1.1" 429 Too Many Requests
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: INFO:     127.0.0.1:38738 - "POST /api/v1/search HTTP/1.1" 429 Too Many Requests
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,312 - INFO - Tracker rockbox: 0 results for 'linux'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,312 - INFO - Tracker torrentfunk: 0 results for 'scaling_probe_5_4_1787145931'
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,314 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:01 nezha conmon[78356]: conmon de630d247e703c05f067 <nwarn>: Failed to open cgroups file: /sys/fs/cgroup/memory.events
+Aug 19 15:28:01 nezha qbittorrent-proxy[31092]: 2026-08-19 13:28:01,364 - INFO - Loaded configuration for qBittorrent at localhost:7185
+Aug 19 15:28:01 nezha conmon[78346]: conmon 07785fbfedddb0794554 <nwarn>: Failed to open cgroups file: /sys/fs/cgroup/memory.events
+Aug 19 15:28:01 nezha podman[78324]: 2026-08-19 15:28:01.367547492 +0200 CEST m=+0.191565009 container health_status de630d247e703c05f067a8c7eaf8f7e53181a282eb50ebfc131b65357dbf7946 (image=lscr.io/linuxserver/qbittorrent:latest, name=qbittorrent, pod_id=c55d69a45b7dc4d23a302372b5a1e3462609f79fb42bd248805b64008ae59028, health_status=healthy, health_failing_streak=0, health_log=, build_version=Linuxserver.io version:- 5.2.3_v2.0.13-ls469 Build-date:- 2026-07-19T09:01:18+00:00, org.opencontainers.image.description=The [Qbittorrent](https://www.qbittorrent.org/) is a bittorrent client programmed in C++ / Qt that uses libtorrent (sometimes called libtorrent-rasterbar) by Arvid Norberg., com.docker.compose.container-number=1, com.docker.compose.project.config_files=/run/media/milosvasic/DATA4TB/Projects/boba/docker-compose.yml, io.podman.compose.version=1.5.0, org.opencontainers.image.documentation=https://docs.linuxserver.io/images/docker-qbittorrent, org.opencontainers.image.revision=a8dcabe47f9c8d598d92576caa13692613bd5a5a, maintainer=thespad, com.docker.compose.project=boba, io.podman.compose.project=boba, org.opencontainers.image.created=2026-07-19T09:01:18+00:00, org.opencontainers.image.title=Qbittorrent, com.docker.compose.service=qbittorrent, org.opencontainers.image.authors=linuxserver.io, org.opencontainers.image.licenses=GPL-3.0-only, org.opencontainers.image.ref.name=a8dcabe47f9c8d598d92576caa13692613bd5a5a, PODMAN_SYSTEMD_UNIT=podman-compose@boba.service, com.docker.compose.project.working_dir=/run/media/milosvasic/DATA4TB/Projects/boba, org.opencontainers.image.source=https://github.com/linuxserver/docker-qbittorrent, org.opencontainers.image.version=5.2.3_v2.0.13-ls469, io.podman.compose.config-hash=49485b38fd6d0857bc9566ce6f458f9b03e7fb64c26b90f5cc0fb11e5017c48f, org.opencontainers.image.vendor=linuxserver.io, io.podman.compose.service=qbittorrent, org.opencontainers.image.url=https://github.com/linuxserver/docker-qbittorrent/packages)
+Aug 19 15:28:01 nezha podman[78323]: 2026-08-19 15:28:01.368961756 +0200 CEST m=+0.193100035 container health_status 07785fbfedddb079455407836717373a22e5dbc1f308087dc1c18a4b9a53aef3 (image=lscr.io/linuxserver/jackett:latest, name=jackett, pod_id=c55d69a45b7dc4d23a302372b5a1e3462609f79fb42bd248805b64008ae59028, health_status=healthy, health_failing_streak=0, health_log=, org.opencontainers.image.revision=128c3085576dfbec9c4678f9ffbce2cbc280cf5b, io.podman.compose.version=1.5.0, org.opencontainers.image.ref.name=128c3085576dfbec9c4678f9ffbce2cbc280cf5b, io.podman.compose.project=boba, com.docker.compose.service=jackett, maintainer=thelamer, org.opencontainers.image.licenses=GPL-3.0-only, io.podman.compose.service=jackett, com.docker.compose.project.config_files=/run/media/milosvasic/DATA4TB/Projects/boba/docker-compose.yml, org.opencontainers.image.created=2026-08-14T06:58:32+00:00, org.opencontainers.image.version=v0.24.2406-ls2, org.opencontainers.image.documentation=https://docs.linuxserver.io/images/docker-jackett, com.docker.compose.container-number=1, com.docker.compose.project.working_dir=/run/media/milosvasic/DATA4TB/Projects/boba, com.docker.compose.project=boba, org.opencontainers.image.authors=linuxserver.io, org.opencontainers.image.description=[Jackett](https://github.com/Jackett/Jackett) works as a proxy server: it translates queries from apps (Sonarr, SickRage, CouchPotato, Mylar, etc) into tracker-site-specific http queries, parses the html response, then sends results back to the requesting software. This allows for getting recent uploads (like RSS) and performing searches. Jackett is a single repository of maintained indexer scraping & translation logic - removing the burden from other apps., org.opencontainers.image.title=Jackett, io.podman.compose.config-hash=49485b38fd6d0857bc9566ce6f458f9b03e7fb64c26b90f5cc0fb11e5017c48f, org.opencontainers.image.source=https://github.com/linuxserver/docker-jackett, build_version=Linuxserver.io version:- v0.24.2406-ls2 Build-date:- 2026-08-14T06:58:32+00:00, PODMAN_SYSTEMD_UNIT=podman-compose@boba.service, org.opencontainers.image.url=https://github.com/linuxserver/docker-jackett/packages, org.opencontainers.image.vendor=linuxserver.io)
+
+## Linger status
+State=active
+Sessions=8 7
+Linger=yes
+
+## audit rules absent — reason attribution NOT AVAILABLE
+ls: cannot access '/etc/audit/rules.d/': No such file or directory

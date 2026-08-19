@@ -1,0 +1,278 @@
+Aug 19 15:28:08 nezha helix-postgres[3330]: 2026-08-19 13:28:08.838 UTC [1719] ERROR:  relation "background_tasks" does not exist at character 8
+Aug 19 15:28:08 nezha helix-postgres[3330]: 2026-08-19 13:28:08.838 UTC [1719] STATEMENT:  UPDATE background_tasks SET status = 'running', locked_at = NOW(), attempts = attempts + 1
+Aug 19 15:28:08 nezha helix-postgres[3330]:                          WHERE id = (
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  SELECT id FROM background_tasks
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  WHERE status = 'pending' AND next_run_at <= NOW()
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  ORDER BY priority DESC, next_run_at ASC
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  LIMIT 1
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  FOR UPDATE SKIP LOCKED
+Aug 19 15:28:08 nezha helix-postgres[3330]:                          ) RETURNING id, type, payload, priority, attempts
+Aug 19 15:28:08 nezha helix-postgres[3330]: 2026-08-19 13:28:08.839 UTC [1721] ERROR:  relation "background_tasks" does not exist at character 8
+Aug 19 15:28:08 nezha helix-postgres[3330]: 2026-08-19 13:28:08.839 UTC [1721] STATEMENT:  UPDATE background_tasks SET status = 'running', locked_at = NOW(), attempts = attempts + 1
+Aug 19 15:28:08 nezha helix-postgres[3330]:                          WHERE id = (
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  SELECT id FROM background_tasks
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  WHERE status = 'pending' AND next_run_at <= NOW()
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  ORDER BY priority DESC, next_run_at ASC
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  LIMIT 1
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  FOR UPDATE SKIP LOCKED
+Aug 19 15:28:08 nezha helix-postgres[3330]:                          ) RETURNING id, type, payload, priority, attempts
+Aug 19 15:28:08 nezha helix-postgres[3330]: 2026-08-19 13:28:08.839 UTC [1716] ERROR:  relation "background_tasks" does not exist at character 8
+Aug 19 15:28:08 nezha helix-postgres[3330]: 2026-08-19 13:28:08.839 UTC [1716] STATEMENT:  UPDATE background_tasks SET status = 'running', locked_at = NOW(), attempts = attempts + 1
+Aug 19 15:28:08 nezha helix-postgres[3330]:                          WHERE id = (
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  SELECT id FROM background_tasks
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  WHERE status = 'pending' AND next_run_at <= NOW()
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  ORDER BY priority DESC, next_run_at ASC
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  LIMIT 1
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  FOR UPDATE SKIP LOCKED
+Aug 19 15:28:08 nezha helix-postgres[3330]:                          ) RETURNING id, type, payload, priority, attempts
+Aug 19 15:28:08 nezha helix-postgres[3330]: 2026-08-19 13:28:08.840 UTC [1718] ERROR:  relation "background_tasks" does not exist at character 8
+Aug 19 15:28:08 nezha helix-postgres[3330]: 2026-08-19 13:28:08.840 UTC [1718] STATEMENT:  UPDATE background_tasks SET status = 'running', locked_at = NOW(), attempts = attempts + 1
+Aug 19 15:28:08 nezha helix-postgres[3330]:                          WHERE id = (
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  SELECT id FROM background_tasks
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  WHERE status = 'pending' AND next_run_at <= NOW()
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  ORDER BY priority DESC, next_run_at ASC
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  LIMIT 1
+Aug 19 15:28:08 nezha helix-postgres[3330]:                                  FOR UPDATE SKIP LOCKED
+Aug 19 15:28:08 nezha helix-postgres[3330]:                          ) RETURNING id, type, payload, priority, attempts
+Aug 19 15:28:10 nezha systemd[1537]: crun-buildah-buildah761007662.scope: Consumed 10.049s CPU time, 372.6M memory peak.
+Aug 19 15:28:14 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/Y6ZEION4F55I3TFN4SZ6FL4UQF' does not support file handles, falling back to xino=off.
+Aug 19 15:28:14 nezha helix-postgres[3330]: 2026-08-19 13:28:14.066 UTC [1722] ERROR:  relation "background_tasks" does not exist at character 8
+Aug 19 15:28:14 nezha helix-postgres[3330]: 2026-08-19 13:28:14.066 UTC [1722] STATEMENT:  UPDATE background_tasks SET status = 'running', locked_at = NOW(), attempts = attempts + 1
+Aug 19 15:28:14 nezha helix-postgres[3330]:                          WHERE id = (
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  SELECT id FROM background_tasks
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  WHERE status = 'pending' AND next_run_at <= NOW()
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  ORDER BY priority DESC, next_run_at ASC
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  LIMIT 1
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  FOR UPDATE SKIP LOCKED
+Aug 19 15:28:14 nezha helix-postgres[3330]:                          ) RETURNING id, type, payload, priority, attempts
+Aug 19 15:28:14 nezha helix-postgres[3330]: 2026-08-19 13:28:14.066 UTC [1723] ERROR:  relation "background_tasks" does not exist at character 8
+Aug 19 15:28:14 nezha helix-postgres[3330]: 2026-08-19 13:28:14.066 UTC [1723] STATEMENT:  UPDATE background_tasks SET status = 'running', locked_at = NOW(), attempts = attempts + 1
+Aug 19 15:28:14 nezha helix-postgres[3330]:                          WHERE id = (
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  SELECT id FROM background_tasks
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  WHERE status = 'pending' AND next_run_at <= NOW()
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  ORDER BY priority DESC, next_run_at ASC
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  LIMIT 1
+Aug 19 15:28:14 nezha helix-postgres[3330]:                                  FOR UPDATE SKIP LOCKED
+Aug 19 15:28:14 nezha helix-postgres[3330]:                          ) RETURNING id, type, payload, priority, attempts
+Aug 19 15:28:14 nezha helix-postgres[3330]: 2026-08-19 13:28:14.075 UTC [1724] LOG:  unexpected EOF on client connection with an open transaction
+Aug 19 15:28:14 nezha helix-postgres[3330]: 2026-08-19 13:28:14.076 UTC [1725] LOG:  unexpected EOF on client connection with an open transaction
+Aug 19 15:28:14 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/Y6ZEION4F55I3TFN4SZ6FL4UQF' does not support file handles, falling back to xino=off.
+Aug 19 15:28:14 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/D3AYM737P4W7Y7LFHQGNLZSOH2' does not support file handles, falling back to xino=off.
+Aug 19 15:28:14 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/5WFDKUV6MN2OFVGNWVFU7QLKZG' does not support file handles, falling back to xino=off.
+Aug 19 15:28:15 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/5VCTA27HEBRBNOWPI2B2BA7A6P' does not support file handles, falling back to xino=off.
+Aug 19 15:28:15 nezha systemd[1537]: Started crun-buildah-buildah695963748.scope - libcrun container.
+Aug 19 15:28:19 nezha helix-postgres[3330]: 2026-08-19 13:28:19.329 UTC [1729] LOG:  unexpected EOF on client connection with an open transaction
+Aug 19 15:28:19 nezha helix-postgres[3330]: 2026-08-19 13:28:19.331 UTC [1730] LOG:  unexpected EOF on client connection with an open transaction
+Aug 19 15:28:19 nezha helix-postgres[3330]: 2026-08-19 13:28:19.331 UTC [1732] LOG:  unexpected EOF on client connection with an open transaction
+Aug 19 15:28:19 nezha helix-postgres[3330]: 2026-08-19 13:28:19.336 UTC [1734] LOG:  unexpected EOF on client connection with an open transaction
+Aug 19 15:28:22 nezha gdm-password][3976]: pam_tcb(gdm-password:session): Session closed for milosvasic
+Aug 19 15:28:22 nezha audit[3976]: AUDIT1106 pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:session_close grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:22 nezha audit[3976]: AUDIT1113 pid=3976 uid=0 auid=1000 ses=4 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha audit[3976]: AUDIT1104 pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1106 audit(1787146102.181:314): pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:session_close grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1113 audit(1787146102.182:315): pid=3976 uid=0 auid=1000 ses=4 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1104 audit(1787146102.182:316): pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:22 nezha org.freedesktop.secrets[4351]: discover_other_daemon: 1
+Aug 19 15:28:22 nezha kernel: rfkill: input handler enabled
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Main process exited, code=killed, status=9/KILL
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4864 (gvfs-goa-volume) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4842 (xdg-document-po) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4828 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4706 (ibus-extension-) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4947 (ibus-engine-sim) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4725 (wireplumber) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7579 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10104 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10105 (ssh) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10536 (dbus-launch) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10537 (dbus-daemon) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10540 (gnome-keyring-d) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4937 (Xwayland) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5122 (mutter-x11-fram) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5706 (gvfsd-recent) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5720 (gvfsd-dnssd) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5734 (python3) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4829 (gvfs-udisks2-vo) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5094 (gsd-xsettings) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5117 (ibus-x11) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4915 (gvfs-gphoto2-vo) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4689 (gjs) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4715 (ibus-portal) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4730 (goa-identity-se) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7572 (kgx) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 60716 (loupe) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4902 (gvfs-mtp-volume) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4886 (gvfs-afc-volume) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6512 (postgres) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6513 (postgres) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6515 (postgres) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 44540 (postgres) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 31094 (python3) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 58752 (python3) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79795 (python3) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 30272 (qbittorrent-nox) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 3320 (pasta.avx2) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 31716 (webui-bridge) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4874 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4988 (dconf-service) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 30019 (conmon) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 31023 (conmon) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 11059 (gcr-ssh-agent) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 11063 (ssh-agent) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6986 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6995 (chrome_crashpad) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6997 (chrome_crashpad) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7004 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7006 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7036 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7037 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7066 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7106 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7309 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7323 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7349 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7126 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 73509 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 69187 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7199 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 19820 (yandex_browser) with signal SIGKILL.
+Aug 19 15:28:22 nezha polkitd[1345]: Unregistered Authentication Agent for unix-session:4 (system bus name :1.103, object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8) (disconnected from bus)
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6367 (conmon) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79818 (go) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 16822 (tmux: server) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21105 (claude) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21824 (uv) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21838 (uv) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21843 (npm exec convex) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21985 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22099 (npm exec @cap-j) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22110 (npm exec fireba) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22168 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22251 (hook-linux-amd6) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22290 (MainThread) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22309 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22316 (MainThread) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22427 (chrome-devtools) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22443 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 43621 (python) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 43622 (tee) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 43623 (tail) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64353 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64356 (python) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64539 (tee) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64763 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 75311 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 75331 (sleep) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79452 (tail) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79772 (bash) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79808 (exe) with signal SIGKILL.
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/ldac
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79477 (podman) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22302 (MainThread) with signal SIGKILL.
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aptx_hd
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 80173 (hook-linux-amd6) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22015 (lumen-linux-amd) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22209 (node) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21958 (python) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22363 (npm exec chrome) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21961 (python) with signal SIGKILL.
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_hd
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6081 (caddy) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6075 (pasta.avx2) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6079 (conmon) with signal SIGKILL.
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aptx
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5556 (jetbrainsd) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5177 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aac
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aac
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_g
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/opus_g
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/sbc
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/sbc
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_ll_1
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_ll_0
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_1
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_0
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/faststream
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/faststream_duplex
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_05
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/opus_05
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_05_duplex
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/opus_05_duplex
+Aug 19 15:28:22 nezha systemd[1]: session-4.scope: Deactivated successfully.
+Aug 19 15:28:22 nezha audit: ANOM_PROMISCUOUS dev=veth0 prom=0 old_prom=256 auid=4294967295 uid=0 gid=0 ses=4294967295
+Aug 19 15:28:22 nezha kernel: veth0: left allmulticast mode
+Aug 19 15:28:22 nezha kernel: veth0: left promiscuous mode
+Aug 19 15:28:22 nezha kernel: audit: type=1700 audit(1787146102.314:317): dev=veth0 prom=0 old_prom=256 auid=4294967295 uid=0 gid=0 ses=4294967295
+Aug 19 15:28:22 nezha kernel: podman1: port 1(veth0) entered disabled state
+Aug 19 15:28:22 nezha audit[80627]: AUDIT1100 pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1100 audit(1787146102.382:318): pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha audit[80627]: AUDIT1101 pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha audit[80627]: AUDIT1103 pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1101 audit(1787146102.383:319): pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1103 audit(1787146102.383:320): pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha systemd-logind[1296]: Removed session 1.
+Aug 19 15:28:22 nezha gdm-launch-environment][80627]: pam_tcb(gdm-launch-environment:session): Session opened for gdm-greeter by (uid=0)
+Aug 19 15:28:22 nezha systemd-logind[1296]: Removed session 4.
+Aug 19 15:28:22 nezha audit[80627]: SYSCALL arch=c000003e syscall=1 success=yes exit=5 a0=9 a1=7ffce933f4b0 a2=5 a3=0 items=0 ppid=1532 pid=80627 auid=60579 uid=0 gid=47 euid=0 suid=0 fsuid=0 egid=47 sgid=47 fsgid=47 tty=(none) ses=5 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+Aug 19 15:28:22 nezha audit: PROCTITLE proctitle=67646D2D73657373696F6E2D776F726B6572205B70616D2F67646D2D6C61756E63682D656E7669726F6E6D656E745D
+Aug 19 15:28:22 nezha kernel: audit: type=1006 audit(1787146102.493:321): pid=80627 uid=0 old-auid=4294967295 auid=60579 tty=(none) old-ses=4294967295 ses=5 res=1
+Aug 19 15:28:22 nezha kernel: audit: type=1300 audit(1787146102.493:321): arch=c000003e syscall=1 success=yes exit=5 a0=9 a1=7ffce933f4b0 a2=5 a3=0 items=0 ppid=1532 pid=80627 auid=60579 uid=0 gid=47 euid=0 suid=0 fsuid=0 egid=47 sgid=47 fsgid=47 tty=(none) ses=5 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+Aug 19 15:28:22 nezha kernel: audit: type=1327 audit(1787146102.493:321): proctitle=67646D2D73657373696F6E2D776F726B6572205B70616D2F67646D2D6C61756E63682D656E7669726F6E6D656E745D
+Aug 19 15:28:22 nezha systemd[1]: Created slice user-60579.slice - User Slice of UID 60579.
+Aug 19 15:28:22 nezha systemd[1]: Starting user-runtime-dir@60579.service - User Runtime Directory /run/user/60579...
+Aug 19 15:28:22 nezha systemd-logind[1296]: New session '5' of user 'gdm-greeter' with class 'greeter' and type 'wayland'.
+Aug 19 15:28:22 nezha systemd[1]: Finished user-runtime-dir@60579.service - User Runtime Directory /run/user/60579.
+Aug 19 15:28:22 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=user-runtime-dir@60579 comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha systemd[1]: Starting user@60579.service - User Manager for UID 60579...
+Aug 19 15:28:22 nezha audit[80675]: AUDIT1101 pid=80675 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tcb acct="gdm-greeter" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha audit[80675]: AUDIT1103 pid=80675 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=? acct="gdm-greeter" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=failed'
+Aug 19 15:28:22 nezha (systemd)[80675]: pam_tcb(systemd-user:session): Session opened for gdm-greeter by (uid=0)
+Aug 19 15:28:22 nezha audit[80675]: SYSCALL arch=c000003e syscall=1 success=yes exit=5 a0=8 a1=7ffcd80892b0 a2=5 a3=0 items=0 ppid=1 pid=80675 auid=60579 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=6 comm="(systemd)" exe="/usr/lib/systemd/systemd-executor" key=(null)
+Aug 19 15:28:22 nezha audit: PROCTITLE proctitle="(systemd)"
+Aug 19 15:28:22 nezha systemd-logind[1296]: New session '6' of user 'gdm-greeter' with class 'manager-early' and type 'unspecified'.
+Aug 19 15:28:22 nezha audit[80675]: AUDIT1105 pid=80675 uid=0 auid=60579 ses=6 msg='op=PAM:session_open grantors=pam_selinux,pam_selinux,pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_loginuid,pam_keyinit,pam_namespace acct="gdm-greeter" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha systemd[80675]: Queued start job for default target default.target.
+Aug 19 15:28:22 nezha systemd[80675]: Created slice app.slice - User Application Slice.
+Aug 19 15:28:22 nezha systemd[80675]: Started systemd-tmpfiles-clean.timer - Daily Cleanup of User's Temporary Directories.
+Aug 19 15:28:22 nezha systemd[80675]: Reached target paths.target - Paths.
+Aug 19 15:28:22 nezha systemd[80675]: Reached target timers.target - Timers.
+Aug 19 15:28:22 nezha systemd[80675]: Starting dbus.socket - D-Bus User Message Bus Socket...
+Aug 19 15:28:22 nezha systemd[80675]: Listening on pipewire-pulse.socket - PipeWire PulseAudio.
+Aug 19 15:28:22 nezha systemd[80675]: Listening on pipewire.socket - PipeWire Multimedia System Sockets.
+Aug 19 15:28:22 nezha systemd[80675]: Listening on systemd-ask-password.socket - Query the User Interactively for a Password.
+Aug 19 15:28:22 nezha systemd[80675]: Starting systemd-tmpfiles-setup.service - Create User Files and Directories...
+Aug 19 15:28:22 nezha systemd[80675]: Listening on dbus.socket - D-Bus User Message Bus Socket.
+Aug 19 15:28:22 nezha systemd[80675]: Reached target sockets.target - Sockets.
+Aug 19 15:28:22 nezha systemd[80675]: Finished systemd-tmpfiles-setup.service - Create User Files and Directories.
+Aug 19 15:28:22 nezha systemd[80675]: Reached target basic.target - Basic System.
+Aug 19 15:28:22 nezha systemd[80675]: Reached target default.target - Main User Target.
+Aug 19 15:28:22 nezha systemd[80675]: Startup finished in 118ms.
+Aug 19 15:28:22 nezha systemd[1]: Started user@60579.service - User Manager for UID 60579.
+Aug 19 15:28:22 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=user@60579 comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha systemd[1]: Started session-5.scope - Session 5 of User gdm-greeter.
+Aug 19 15:28:22 nezha audit[80627]: AUDIT1105 pid=80627 uid=0 auid=60579 ses=5 msg='op=PAM:session_open grantors=pam_succeed_if,pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha systemd[80675]: Created slice session.slice - User Core Session Slice.
+Aug 19 15:28:22 nezha systemd[80675]: Starting dbus.service - D-Bus User Message Bus...
+Aug 19 15:28:22 nezha systemd[80675]: Started dbus.service - D-Bus User Message Bus.
+Aug 19 15:28:22 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.freedesktop.systemd1'
+Aug 19 15:28:22 nezha gnome-session-i[80699]: Starting GNOME session target: gnome-session@gnome-login.target
+Aug 19 15:28:22 nezha systemd[80675]: Created slice app-gnome\x2dsession\x2dmanager.slice - Slice /app/gnome-session-manager.
+Aug 19 15:28:22 nezha systemd[80675]: Starting gnome-session-monitor.service - Monitor Session leader for GNOME Session...
+Aug 19 15:28:22 nezha systemd[80675]: spice-vdagent.service - Spice guest session agent skipped, unmet condition check ConditionPathExists=/run/spice-vdagentd/spice-vdagent-sock
+Aug 19 15:28:22 nezha systemd[80675]: Starting xdg-user-dirs.service - Well known user directories update...
+Aug 19 15:28:22 nezha systemd[80675]: Finished xdg-user-dirs.service - Well known user directories update.
+Aug 19 15:28:22 nezha systemd[80675]: Reached target graphical-session-pre.target - Session services which should run early before the graphical session is brought up.
+Aug 19 15:28:22 nezha systemd[80675]: Started gnome-session-monitor.service - Monitor Session leader for GNOME Session.
+Aug 19 15:28:22 nezha systemd[80675]: Reached target gnome-session-pre.target - Tasks to be run before GNOME Session starts.
+Aug 19 15:28:22 nezha systemd[80675]: Starting gnome-session-manager@gnome-login.service - GNOME Session Manager (session: gnome-login)...
+Aug 19 15:28:22 nezha systemd[80675]: Started gnome-session-manager@gnome-login.service - GNOME Session Manager (session: gnome-login).
+Aug 19 15:28:22 nezha systemd[80675]: Reached target gnome-session-manager.target - GNOME Session Manager is ready.
+Aug 19 15:28:22 nezha systemd[80675]: Starting org.gnome.Shell@gdm.service - GNOME Shell...
+Aug 19 15:28:22 nezha gnome-shell[80717]: Running GNOME Shell (using mutter 50.1) as a Wayland display server
+Aug 19 15:28:22 nezha rtkit-daemon[1293]: Supervising 0 threads of 0 processes of 0 users.
+Aug 19 15:28:22 nezha rtkit-daemon[1293]: Successfully made thread 80732 of process 80717 owned by '60579' high priority at nice level -15.
+Aug 19 15:28:22 nezha rtkit-daemon[1293]: Supervising 1 threads of 1 processes of 1 users.
+Aug 19 15:28:22 nezha gnome-shell[80717]: Thread 'KMS thread' will be using high priority scheduling
+Aug 19 15:28:22 nezha gnome-shell[80717]: Device '/dev/dri/card1' prefers shadow buffer

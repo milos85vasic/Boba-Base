@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 10
-**Last modified:** 2026-08-18T23:59:00+02:00
+**Revision:** 11
+**Last modified:** 2026-08-19T15:34:00+02:00
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -513,6 +513,49 @@ honest about starting now, not claiming a false complete history.
   containers' near-instant re-creation (`CreatedAt`=23:45:52, 3s after the kill) are reported
   as time-correlated observations, not established causes.
 
+### FORCED-LOGOUT-2026-08-19-5TH — 5th user@1000.service SIGKILL at 15:28:22, architectural install-gap: 4 authored preventive gates, 0 installed
+
+- **id:** BOB-124 (Type=Bug, Severity=Critical, Status=In progress — filed this session, evidence at
+  `docs/qa/BOB-124/incident-5-forensics.log`). Companion to BOB-116/BOB-120/BOB-123 (incidents #2/#3/#4);
+  full mechanism/triage lives in the `forced-logout-incidents` project-memory playbook.
+- **date:** 2026-08-19, 15:28:22 — the 5th forced-logout on this project (fresh host boot 15:07 → kill
+  15:28, exactly 21 minutes into a fresh session, first physical logout since incident #4's ~00:37
+  occurrence).
+- **channel:** `operator-report` at initial detection (operator physically observed the GDM greeter
+  after lid re-open), corroborated by `agent-code-reading` during triage (journal grep confirmed the
+  same PAM-session-close-synchronicity signature already documented across #2/#3/#4). No standing
+  automated check monitored either the SIGKILL delivery or the leading resource-pressure signatures
+  during this session. Evidence: `docs/qa/BOB-124/incident-5-forensics.log`.
+- **escape-audit:** **the coverage escape is now architectural, not per-check** — this is the 5th
+  consecutive incident of the same class and the underlying block is the same across all five: the
+  preventive gates authored in response to incidents #2/#3/#4 (BOB-116 5-signature detector,
+  BOB-120 out-of-scope watchdog design, BOB-123 PAM-session-close monitor, sundry `auditctl` kernel
+  rulesets) ALL require a `sudo`/`su -c` install step that has never actually been executed by the
+  operator. The gate text ships; the mechanism does not run. Per `superpowers:systematic-debugging`
+  skill Phase 4.5 (≥5 attempts against the same block = architectural problem, not hypothesis
+  failure) and per §11.4.250 (heuristic-tower signals a primitive defect), authoring a 6th
+  detector would raise the tower height without raising the ceiling — the coverage escape is the
+  install-gap, not any missing signature. The `boba-resource-pressure-check.timer` from BOB-116
+  DID install (it is a `--user` unit, no `sudo` needed) but is architecturally blind to a kill of
+  its own hosting scope (BOB-120 gap), so its `installed but blind` status does not close this
+  escape either. `existed-but-uninstalled` (a distinct §11.4.201(6) FALSE-NULL sub-class from
+  `existed-but-missed` — the check exists in text, but no live instance runs to observe the
+  defect at all).
+- **new-check:** **NOT AUTHORING A NEW CHECK.** Followup filed as BOB-124 itself: install one of
+  the already-authored preventive paths (Path 1 kernel `auditctl` rules OR Path 2 out-of-scope
+  systemd watchdog OR Path 4 dedicated `boba-watchdog` UID) via an operator `sudo` session, and
+  verify it is live via `auditctl -l` non-empty or `systemctl list-units --system 'boba-watch*'`
+  non-empty before this ledger entry may be closed. Closing this entry on a 5th authored-but-
+  uninstalled detector would itself be a §11.4.238 coverage-escape bluff (the exact failure mode
+  this anchor exists to forbid) AND a §11.4.250 heuristic-tower violation.
+- **Honest boundary (§11.4.6):** the SIGKILL initiator remains UNCONFIRMED across all 5 incidents
+  — the PAM session_close correlation is the mechanism, not the root initiator, and `Linger=yes`
+  should have prevented the kill by design (whether a systemd bug, an unattributed `loginctl
+  terminate-user` call, or an SDD/container-fleet component invoking a stop path at a different
+  identifier we have not yet grepped is still open). This entry does NOT claim a root cause; it
+  claims the coverage escape is the install-gap on the ALREADY-KNOWN preventive paths, which is
+  itself proven by 5 consecutive occurrences without a single mechanical detection.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
@@ -524,7 +567,8 @@ honest about starting now, not claiming a false complete history.
 | 2026-08-18 (incremental, BOB-116 forced-logout incident (initially referenced as BOB-076 informal label, corrected 2026-08-18) — 1 new `### ` entry: 2nd occurrence of user@1000 SIGKILL on this project after physical operator return, discovered by `operator-report`) | 0 | 1 (`operator-report` x1: FORCED-LOGOUT-2026-08-18-2ND) | 100% |
 | 2026-08-18 (incremental, §11.4.209 review IMPORTANT-2 remedy — 1 new `### ` entry: `docs/workable_items.db` binary blob committed without differential evidence, discovered by `agent-code-reading`) | 0 | 1 (`agent-code-reading` x1: DB-BLOB-COMMITTED-WITHOUT-DELTA-3520621) | 100% |
 | 2026-08-18 (incremental, BOB-120 forced-logout incident — 1 new `### ` entry: 3rd occurrence of user@1000 SIGKILL on this project, plus the discovery that the BOB-116/task-77 preventive monitor itself lives inside the killed scope and cannot catch a kill landing before its own next fire) | 0 | 1 (`agent-code-reading` x1: FORCED-LOGOUT-2026-08-18-3RD) | 100% |
-| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **17** | **100%** |
+| 2026-08-19 (incremental, BOB-124 forced-logout incident #5 — 1 new `### ` entry: 5th consecutive occurrence of user@1000 SIGKILL, escalating the coverage escape from "no preventive gate" to "4 authored preventive gates, 0 installed" — §11.4.250 heuristic-tower / architectural install-gap) | 0 | 1 (`operator-report` x1: FORCED-LOGOUT-2026-08-19-5TH) | 100% |
+| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **18** | **100%** |
 
 **Pre-existing check-vs-table mismatch, found and fixed during this backfill (§11.4.6, not
 silently patched around):** `scripts/pre_build_verification.sh` invariant 19

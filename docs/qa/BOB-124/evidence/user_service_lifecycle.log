@@ -1,0 +1,5 @@
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Main process exited, code=killed, status=9/KILL
+Aug 19 15:28:23 nezha systemd[1]: user@1000.service: Failed with result 'signal'.
+Aug 19 15:28:23 nezha systemd[1]: user@1000.service: Consumed 1h 21.484s CPU time, 23.6G memory peak, 488.2M memory swap peak.
+Aug 19 15:28:35 nezha systemd[1]: Starting user@1000.service - User Manager for UID 1000...
+Aug 19 15:28:36 nezha systemd[1]: Started user@1000.service - User Manager for UID 1000.

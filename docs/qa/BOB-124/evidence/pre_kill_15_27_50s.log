@@ -1,0 +1,95 @@
+Aug 19 15:27:58 nezha systemd[1537]: helix-server.service: Scheduled restart job, restart counter is at 231.
+Aug 19 15:27:58 nezha systemd[1537]: Started helix-server.service - Helix Seller Go Server.
+Aug 19 15:27:58 nezha helix-server[78161]: 2026/08/19 15:27:58 No .env file found
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+Aug 19 15:27:58 nezha helix-server[78161]:  - using env:        export GIN_MODE=release
+Aug 19 15:27:58 nezha helix-server[78161]:  - using code:        gin.SetMode(gin.ReleaseMode)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /health                   --> github.com/helix-seller/helix-seller/internal/handler.(*HealthHandler).Health-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /health/ready             --> github.com/helix-seller/helix-seller/internal/handler.(*HealthHandler).Readiness-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /health/live              --> github.com/helix-seller/helix-seller/internal/handler.(*HealthHandler).Liveness-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /metrics                  --> github.com/helix-seller/helix-seller/internal/handler.NewRouter.MetricsHandler.func1 (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /ws                       --> github.com/helix-seller/helix-seller/internal/websocket.(*WSHandler).HandleWebSocket-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/auth/register     --> github.com/helix-seller/helix-seller/internal/handler.(*AuthHandler).Register-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/auth/login        --> github.com/helix-seller/helix-seller/internal/handler.(*AuthHandler).Login-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/auth/refresh      --> github.com/helix-seller/helix-seller/internal/handler.(*AuthHandler).Refresh-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/auth/logout       --> github.com/helix-seller/helix-seller/internal/handler.(*AuthHandler).Logout-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/auth/mfa/setup    --> github.com/helix-seller/helix-seller/internal/handler.(*AuthHandler).SetupMFA-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/auth/mfa/verify   --> github.com/helix-seller/helix-seller/internal/handler.(*AuthHandler).VerifyMFA-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/users/me          --> github.com/helix-seller/helix-seller/internal/handler.(*UserHandler).GetUser-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] PUT    /api/v1/users/me          --> github.com/helix-seller/helix-seller/internal/handler.(*UserHandler).UpdateUser-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/api-keys          --> github.com/helix-seller/helix-seller/internal/handler.(*ApiKeyHandler).CreateApiKey-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/api-keys          --> github.com/helix-seller/helix-seller/internal/handler.(*ApiKeyHandler).ListApiKeys-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] DELETE /api/v1/api-keys/:keyId   --> github.com/helix-seller/helix-seller/internal/handler.(*ApiKeyHandler).RevokeApiKey-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants         --> github.com/helix-seller/helix-seller/internal/handler.(*MerchantHandler).ListMerchants-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants         --> github.com/helix-seller/helix-seller/internal/handler.(*MerchantHandler).CreateMerchant-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId --> github.com/helix-seller/helix-seller/internal/handler.(*MerchantHandler).GetMerchant-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] PUT    /api/v1/merchants/:merchantId --> github.com/helix-seller/helix-seller/internal/handler.(*MerchantHandler).UpdateMerchant-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/customers --> github.com/helix-seller/helix-seller/internal/handler.(*CustomerHandler).ListCustomers-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/customers --> github.com/helix-seller/helix-seller/internal/handler.(*CustomerHandler).CreateCustomer-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/customers/:customerId --> github.com/helix-seller/helix-seller/internal/handler.(*CustomerHandler).GetCustomer-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] PUT    /api/v1/merchants/:merchantId/customers/:customerId --> github.com/helix-seller/helix-seller/internal/handler.(*CustomerHandler).UpdateCustomer-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/transactions --> github.com/helix-seller/helix-seller/internal/handler.(*PaymentHandler).ListTransactions-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/transactions --> github.com/helix-seller/helix-seller/internal/handler.(*PaymentHandler).ProcessPayment-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/transactions/:transactionId --> github.com/helix-seller/helix-seller/internal/handler.(*PaymentHandler).GetTransaction-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/refunds --> github.com/helix-seller/helix-seller/internal/handler.(*PaymentHandler).CreateRefund-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/subscriptions --> github.com/helix-seller/helix-seller/internal/handler.(*SubscriptionHandler).ListSubscriptions-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/subscriptions --> github.com/helix-seller/helix-seller/internal/handler.(*SubscriptionHandler).CreateSubscription-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/subscriptions/:subscriptionId --> github.com/helix-seller/helix-seller/internal/handler.(*SubscriptionHandler).GetSubscription-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] PATCH  /api/v1/merchants/:merchantId/subscriptions/:subscriptionId --> github.com/helix-seller/helix-seller/internal/handler.(*SubscriptionHandler).UpdateSubscription-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] DELETE /api/v1/merchants/:merchantId/subscriptions/:subscriptionId --> github.com/helix-seller/helix-seller/internal/handler.(*SubscriptionHandler).CancelSubscription-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/invoices --> github.com/helix-seller/helix-seller/internal/handler.(*InvoiceHandler).ListInvoices-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/invoices --> github.com/helix-seller/helix-seller/internal/handler.(*InvoiceHandler).CreateInvoice-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/invoices/:invoiceId --> github.com/helix-seller/helix-seller/internal/handler.(*InvoiceHandler).GetInvoice-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/payouts --> github.com/helix-seller/helix-seller/internal/handler.(*PayoutHandler).ListPayouts-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/payouts/:payoutId --> github.com/helix-seller/helix-seller/internal/handler.(*PayoutHandler).GetPayout-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/payouts --> github.com/helix-seller/helix-seller/internal/handler.(*PayoutHandler).CreatePayout-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/disputes --> github.com/helix-seller/helix-seller/internal/handler.(*DisputeHandler).ListDisputes-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/disputes/:disputeId --> github.com/helix-seller/helix-seller/internal/handler.(*DisputeHandler).GetDispute-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/disputes --> github.com/helix-seller/helix-seller/internal/handler.(*DisputeHandler).CreateDispute-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/disputes/:disputeId/evidence --> github.com/helix-seller/helix-seller/internal/handler.(*DisputeHandler).AddEvidence-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/payment-methods --> github.com/helix-seller/helix-seller/internal/handler.(*PaymentMethodHandler).ListPaymentMethods-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/payment-methods --> github.com/helix-seller/helix-seller/internal/handler.(*PaymentMethodHandler).CreatePaymentMethod-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/payment-methods/:paymentMethodId --> github.com/helix-seller/helix-seller/internal/handler.(*PaymentMethodHandler).GetPaymentMethod-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] DELETE /api/v1/merchants/:merchantId/payment-methods/:paymentMethodId --> github.com/helix-seller/helix-seller/internal/handler.(*PaymentMethodHandler).DeletePaymentMethod-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/webhooks --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookHandler).ListWebhooks-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/webhooks --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookHandler).CreateWebhook-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/webhooks/:webhookId --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookHandler).GetWebhook-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] PUT    /api/v1/merchants/:merchantId/webhooks/:webhookId --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookHandler).UpdateWebhook-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] DELETE /api/v1/merchants/:merchantId/webhooks/:webhookId --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookHandler).DeleteWebhook-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/webhooks/deliveries --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookDeliveryHandler).ListDeliveries-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/webhooks/deliveries/:deliveryId --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookDeliveryHandler).GetDelivery-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/providers --> github.com/helix-seller/helix-seller/internal/handler.(*ProviderHandler).ListProviders-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/providers --> github.com/helix-seller/helix-seller/internal/handler.(*ProviderHandler).CreateProvider-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/providers/:providerId --> github.com/helix-seller/helix-seller/internal/handler.(*ProviderHandler).GetProvider-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] PUT    /api/v1/merchants/:merchantId/providers/:providerId --> github.com/helix-seller/helix-seller/internal/handler.(*ProviderHandler).UpdateProvider-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] DELETE /api/v1/merchants/:merchantId/providers/:providerId --> github.com/helix-seller/helix-seller/internal/handler.(*ProviderHandler).DeleteProvider-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/exchange-rates --> github.com/helix-seller/helix-seller/internal/handler.(*ExchangeRateHandler).GetExchangeRate-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/analytics/summary --> github.com/helix-seller/helix-seller/internal/handler.(*AnalyticsHandler).GetSummary-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/analytics/transactions --> github.com/helix-seller/helix-seller/internal/handler.(*AnalyticsHandler).GetTransactionAnalytics-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/analytics/export --> github.com/helix-seller/helix-seller/internal/handler.(*AnalyticsHandler).ExportTransactions-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/audit-logs --> github.com/helix-seller/helix-seller/internal/handler.(*AuditHandler).ListAuditLogs-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/products --> github.com/helix-seller/helix-seller/internal/handler.(*ProductHandler).ListProducts-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/merchants/:merchantId/products --> github.com/helix-seller/helix-seller/internal/handler.(*ProductHandler).CreateProduct-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/products/:productId --> github.com/helix-seller/helix-seller/internal/handler.(*ProductHandler).GetProduct-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] PUT    /api/v1/merchants/:merchantId/products/:productId --> github.com/helix-seller/helix-seller/internal/handler.(*ProductHandler).UpdateProduct-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] DELETE /api/v1/merchants/:merchantId/products/:productId --> github.com/helix-seller/helix-seller/internal/handler.(*ProductHandler).DeleteProduct-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/billing/fees --> github.com/helix-seller/helix-seller/internal/handler.(*BillingHandler).GetFees-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] GET    /api/v1/merchants/:merchantId/billing/invoices --> github.com/helix-seller/helix-seller/internal/handler.(*BillingHandler).GetBillingInvoices-fm (6 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/webhooks/stripe   --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookIngressHandler).HandleStripe-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/webhooks/paypal   --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookIngressHandler).HandlePayPal-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: [GIN-debug] POST   /api/v1/webhooks/square   --> github.com/helix-seller/helix-seller/internal/handler.(*WebhookIngressHandler).HandleSquare-fm (2 handlers)
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"info","time":"2026-08-19T15:27:58.432+0200","caller":"service/background.go:44","msg":"registered background task handler","type":"payout"}
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"info","time":"2026-08-19T15:27:58.432+0200","caller":"service/background.go:44","msg":"registered background task handler","type":"reconciliation"}
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"info","time":"2026-08-19T15:27:58.432+0200","caller":"service/background.go:44","msg":"registered background task handler","type":"invoice"}
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"info","time":"2026-08-19T15:27:58.432+0200","caller":"service/background.go:44","msg":"registered background task handler","type":"webhook_delivery"}
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"info","time":"2026-08-19T15:27:58.432+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":0}
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"info","time":"2026-08-19T15:27:58.432+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":3}
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"info","time":"2026-08-19T15:27:58.432+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":1}
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"info","time":"2026-08-19T15:27:58.432+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":2}
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"info","time":"2026-08-19T15:27:58.432+0200","caller":"server/main.go:194","msg":"Starting server","addr":"0.0.0.0:8080"}
+Aug 19 15:27:58 nezha helix-server[78161]: {"level":"fatal","time":"2026-08-19T15:27:58.435+0200","caller":"server/main.go:196","msg":"Failed to start server","error":"listen tcp 0.0.0.0:8080: bind: address already in use","stacktrace":"main.main.func1\n\t/run/media/milosvasic/DATA4TB/Projects/helix_seller/cmd/server/main.go:196"}
+Aug 19 15:27:58 nezha helix-postgres[3330]: 2026-08-19 13:27:58.442 UTC [1700] LOG:  unexpected EOF on client connection with an open transaction
+Aug 19 15:27:58 nezha systemd[1537]: helix-server.service: Main process exited, code=exited, status=1/FAILURE
+Aug 19 15:27:58 nezha systemd[1537]: helix-server.service: Failed with result 'exit-code'.
+Aug 19 15:27:59 nezha conmon[78209]: conmon 8480b9bd44f3842ad219 <nwarn>: Failed to open cgroups file: /sys/fs/cgroup/memory.events
+Aug 19 15:27:59 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/5WFDKUV6MN2OFVGNWVFU7QLKZG' does not support file handles, falling back to xino=off.

@@ -1,0 +1,1173 @@
+6996:Aug 19 15:28:22 nezha gdm-password][3976]: pam_tcb(gdm-password:session): Session closed for milosvasic
+6997:Aug 19 15:28:22 nezha audit[3976]: AUDIT1106 pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:session_close grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+6998:Aug 19 15:28:22 nezha audit[3976]: AUDIT1113 pid=3976 uid=0 auid=1000 ses=4 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=success'
+6999:Aug 19 15:28:22 nezha audit[3976]: AUDIT1104 pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+7000:Aug 19 15:28:22 nezha kernel: audit: type=1106 audit(1787146102.181:314): pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:session_close grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+7001:Aug 19 15:28:22 nezha kernel: audit: type=1113 audit(1787146102.182:315): pid=3976 uid=0 auid=1000 ses=4 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=success'
+7002:Aug 19 15:28:22 nezha kernel: audit: type=1104 audit(1787146102.182:316): pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+7003:Aug 19 15:28:22 nezha org.freedesktop.secrets[4351]: discover_other_daemon: 1
+7004:Aug 19 15:28:22 nezha kernel: rfkill: input handler enabled
+7005:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Main process exited, code=killed, status=9/KILL
+7006:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4864 (gvfs-goa-volume) with signal SIGKILL.
+7007:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4842 (xdg-document-po) with signal SIGKILL.
+7008:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4828 (xdg-desktop-por) with signal SIGKILL.
+7009:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4706 (ibus-extension-) with signal SIGKILL.
+7010:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4947 (ibus-engine-sim) with signal SIGKILL.
+7011:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4725 (wireplumber) with signal SIGKILL.
+7012:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7579 (bash) with signal SIGKILL.
+7013:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10104 (bash) with signal SIGKILL.
+7014:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10105 (ssh) with signal SIGKILL.
+7015:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10536 (dbus-launch) with signal SIGKILL.
+7016:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10537 (dbus-daemon) with signal SIGKILL.
+7017:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 10540 (gnome-keyring-d) with signal SIGKILL.
+7018:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4937 (Xwayland) with signal SIGKILL.
+7019:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5122 (mutter-x11-fram) with signal SIGKILL.
+7020:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5706 (gvfsd-recent) with signal SIGKILL.
+7021:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5720 (gvfsd-dnssd) with signal SIGKILL.
+7022:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5734 (python3) with signal SIGKILL.
+7023:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4829 (gvfs-udisks2-vo) with signal SIGKILL.
+7024:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5094 (gsd-xsettings) with signal SIGKILL.
+7025:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5117 (ibus-x11) with signal SIGKILL.
+7026:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4915 (gvfs-gphoto2-vo) with signal SIGKILL.
+7027:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4689 (gjs) with signal SIGKILL.
+7028:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4715 (ibus-portal) with signal SIGKILL.
+7029:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4730 (goa-identity-se) with signal SIGKILL.
+7030:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7572 (kgx) with signal SIGKILL.
+7031:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 60716 (loupe) with signal SIGKILL.
+7032:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4902 (gvfs-mtp-volume) with signal SIGKILL.
+7033:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4886 (gvfs-afc-volume) with signal SIGKILL.
+7034:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6512 (postgres) with signal SIGKILL.
+7035:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6513 (postgres) with signal SIGKILL.
+7036:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6515 (postgres) with signal SIGKILL.
+7037:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 44540 (postgres) with signal SIGKILL.
+7038:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 31094 (python3) with signal SIGKILL.
+7039:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 58752 (python3) with signal SIGKILL.
+7040:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79795 (python3) with signal SIGKILL.
+7041:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 30272 (qbittorrent-nox) with signal SIGKILL.
+7042:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 3320 (pasta.avx2) with signal SIGKILL.
+7043:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 31716 (webui-bridge) with signal SIGKILL.
+7044:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4874 (xdg-desktop-por) with signal SIGKILL.
+7045:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4988 (dconf-service) with signal SIGKILL.
+7046:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 30019 (conmon) with signal SIGKILL.
+7047:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 31023 (conmon) with signal SIGKILL.
+7048:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 11059 (gcr-ssh-agent) with signal SIGKILL.
+7049:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 11063 (ssh-agent) with signal SIGKILL.
+7050:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6986 (yandex_browser) with signal SIGKILL.
+7051:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6995 (chrome_crashpad) with signal SIGKILL.
+7052:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6997 (chrome_crashpad) with signal SIGKILL.
+7053:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7004 (yandex_browser) with signal SIGKILL.
+7054:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7006 (yandex_browser) with signal SIGKILL.
+7055:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7036 (yandex_browser) with signal SIGKILL.
+7056:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7037 (yandex_browser) with signal SIGKILL.
+7057:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7066 (yandex_browser) with signal SIGKILL.
+7058:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7106 (yandex_browser) with signal SIGKILL.
+7059:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7309 (yandex_browser) with signal SIGKILL.
+7060:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7323 (yandex_browser) with signal SIGKILL.
+7061:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7349 (yandex_browser) with signal SIGKILL.
+7062:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7126 (yandex_browser) with signal SIGKILL.
+7063:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 73509 (yandex_browser) with signal SIGKILL.
+7064:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 69187 (yandex_browser) with signal SIGKILL.
+7065:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 7199 (yandex_browser) with signal SIGKILL.
+7066:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 19820 (yandex_browser) with signal SIGKILL.
+7067:Aug 19 15:28:22 nezha polkitd[1345]: Unregistered Authentication Agent for unix-session:4 (system bus name :1.103, object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8) (disconnected from bus)
+7068:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6367 (conmon) with signal SIGKILL.
+7069:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79818 (go) with signal SIGKILL.
+7070:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 16822 (tmux: server) with signal SIGKILL.
+7071:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21105 (claude) with signal SIGKILL.
+7072:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21824 (uv) with signal SIGKILL.
+7073:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21838 (uv) with signal SIGKILL.
+7074:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21843 (npm exec convex) with signal SIGKILL.
+7075:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21985 (node) with signal SIGKILL.
+7076:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22099 (npm exec @cap-j) with signal SIGKILL.
+7077:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22110 (npm exec fireba) with signal SIGKILL.
+7078:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22168 (node) with signal SIGKILL.
+7079:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22251 (hook-linux-amd6) with signal SIGKILL.
+7080:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22290 (MainThread) with signal SIGKILL.
+7081:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22309 (node) with signal SIGKILL.
+7082:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22316 (MainThread) with signal SIGKILL.
+7083:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22427 (chrome-devtools) with signal SIGKILL.
+7084:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22443 (node) with signal SIGKILL.
+7085:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 43621 (python) with signal SIGKILL.
+7086:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 43622 (tee) with signal SIGKILL.
+7087:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 43623 (tail) with signal SIGKILL.
+7088:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64353 (bash) with signal SIGKILL.
+7089:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64356 (python) with signal SIGKILL.
+7090:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64539 (tee) with signal SIGKILL.
+7091:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 64763 (bash) with signal SIGKILL.
+7092:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 75311 (bash) with signal SIGKILL.
+7093:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 75331 (sleep) with signal SIGKILL.
+7094:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79452 (tail) with signal SIGKILL.
+7095:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79772 (bash) with signal SIGKILL.
+7096:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79808 (exe) with signal SIGKILL.
+7097:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/ldac
+7098:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 79477 (podman) with signal SIGKILL.
+7099:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22302 (MainThread) with signal SIGKILL.
+7100:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aptx_hd
+7101:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 80173 (hook-linux-amd6) with signal SIGKILL.
+7102:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22015 (lumen-linux-amd) with signal SIGKILL.
+7103:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22209 (node) with signal SIGKILL.
+7104:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21958 (python) with signal SIGKILL.
+7105:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 22363 (npm exec chrome) with signal SIGKILL.
+7106:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 21961 (python) with signal SIGKILL.
+7107:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_hd
+7108:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6081 (caddy) with signal SIGKILL.
+7109:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6075 (pasta.avx2) with signal SIGKILL.
+7110:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 6079 (conmon) with signal SIGKILL.
+7111:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aptx
+7112:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5556 (jetbrainsd) with signal SIGKILL.
+7113:Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5177 (xdg-desktop-por) with signal SIGKILL.
+7114:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx
+7115:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aac
+7116:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aac
+7117:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_g
+7118:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/opus_g
+7119:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/sbc
+7120:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/sbc
+7121:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_ll_1
+7122:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_ll_0
+7123:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_1
+7124:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_0
+7125:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/faststream
+7126:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/faststream_duplex
+7127:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_05
+7128:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/opus_05
+7129:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_05_duplex
+7130:Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSource/opus_05_duplex
+7131:Aug 19 15:28:22 nezha systemd[1]: session-4.scope: Deactivated successfully.
+7132:Aug 19 15:28:22 nezha audit: ANOM_PROMISCUOUS dev=veth0 prom=0 old_prom=256 auid=4294967295 uid=0 gid=0 ses=4294967295
+7133:Aug 19 15:28:22 nezha kernel: veth0: left allmulticast mode
+7134:Aug 19 15:28:22 nezha kernel: veth0: left promiscuous mode
+7135:Aug 19 15:28:22 nezha kernel: audit: type=1700 audit(1787146102.314:317): dev=veth0 prom=0 old_prom=256 auid=4294967295 uid=0 gid=0 ses=4294967295
+7136:Aug 19 15:28:22 nezha kernel: podman1: port 1(veth0) entered disabled state
+7137:Aug 19 15:28:22 nezha audit[80627]: AUDIT1100 pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7138:Aug 19 15:28:22 nezha kernel: audit: type=1100 audit(1787146102.382:318): pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7139:Aug 19 15:28:22 nezha audit[80627]: AUDIT1101 pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7140:Aug 19 15:28:22 nezha audit[80627]: AUDIT1103 pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7141:Aug 19 15:28:22 nezha kernel: audit: type=1101 audit(1787146102.383:319): pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7142:Aug 19 15:28:22 nezha kernel: audit: type=1103 audit(1787146102.383:320): pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7143:Aug 19 15:28:22 nezha systemd-logind[1296]: Removed session 1.
+7144:Aug 19 15:28:22 nezha gdm-launch-environment][80627]: pam_tcb(gdm-launch-environment:session): Session opened for gdm-greeter by (uid=0)
+7145:Aug 19 15:28:22 nezha systemd-logind[1296]: Removed session 4.
+7146:Aug 19 15:28:22 nezha audit[80627]: SYSCALL arch=c000003e syscall=1 success=yes exit=5 a0=9 a1=7ffce933f4b0 a2=5 a3=0 items=0 ppid=1532 pid=80627 auid=60579 uid=0 gid=47 euid=0 suid=0 fsuid=0 egid=47 sgid=47 fsgid=47 tty=(none) ses=5 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+7147:Aug 19 15:28:22 nezha audit: PROCTITLE proctitle=67646D2D73657373696F6E2D776F726B6572205B70616D2F67646D2D6C61756E63682D656E7669726F6E6D656E745D
+7148:Aug 19 15:28:22 nezha kernel: audit: type=1006 audit(1787146102.493:321): pid=80627 uid=0 old-auid=4294967295 auid=60579 tty=(none) old-ses=4294967295 ses=5 res=1
+7149:Aug 19 15:28:22 nezha kernel: audit: type=1300 audit(1787146102.493:321): arch=c000003e syscall=1 success=yes exit=5 a0=9 a1=7ffce933f4b0 a2=5 a3=0 items=0 ppid=1532 pid=80627 auid=60579 uid=0 gid=47 euid=0 suid=0 fsuid=0 egid=47 sgid=47 fsgid=47 tty=(none) ses=5 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+7150:Aug 19 15:28:22 nezha kernel: audit: type=1327 audit(1787146102.493:321): proctitle=67646D2D73657373696F6E2D776F726B6572205B70616D2F67646D2D6C61756E63682D656E7669726F6E6D656E745D
+7151:Aug 19 15:28:22 nezha systemd[1]: Created slice user-60579.slice - User Slice of UID 60579.
+7152:Aug 19 15:28:22 nezha systemd[1]: Starting user-runtime-dir@60579.service - User Runtime Directory /run/user/60579...
+7153:Aug 19 15:28:22 nezha systemd-logind[1296]: New session '5' of user 'gdm-greeter' with class 'greeter' and type 'wayland'.
+7154:Aug 19 15:28:22 nezha systemd[1]: Finished user-runtime-dir@60579.service - User Runtime Directory /run/user/60579.
+7155:Aug 19 15:28:22 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=user-runtime-dir@60579 comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7156:Aug 19 15:28:22 nezha systemd[1]: Starting user@60579.service - User Manager for UID 60579...
+7157:Aug 19 15:28:22 nezha audit[80675]: AUDIT1101 pid=80675 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tcb acct="gdm-greeter" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=success'
+7158:Aug 19 15:28:22 nezha audit[80675]: AUDIT1103 pid=80675 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=? acct="gdm-greeter" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=failed'
+7159:Aug 19 15:28:22 nezha (systemd)[80675]: pam_tcb(systemd-user:session): Session opened for gdm-greeter by (uid=0)
+7160:Aug 19 15:28:22 nezha audit[80675]: SYSCALL arch=c000003e syscall=1 success=yes exit=5 a0=8 a1=7ffcd80892b0 a2=5 a3=0 items=0 ppid=1 pid=80675 auid=60579 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=6 comm="(systemd)" exe="/usr/lib/systemd/systemd-executor" key=(null)
+7161:Aug 19 15:28:22 nezha audit: PROCTITLE proctitle="(systemd)"
+7162:Aug 19 15:28:22 nezha systemd-logind[1296]: New session '6' of user 'gdm-greeter' with class 'manager-early' and type 'unspecified'.
+7163:Aug 19 15:28:22 nezha audit[80675]: AUDIT1105 pid=80675 uid=0 auid=60579 ses=6 msg='op=PAM:session_open grantors=pam_selinux,pam_selinux,pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_loginuid,pam_keyinit,pam_namespace acct="gdm-greeter" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=success'
+7164:Aug 19 15:28:22 nezha systemd[80675]: Queued start job for default target default.target.
+7165:Aug 19 15:28:22 nezha systemd[80675]: Created slice app.slice - User Application Slice.
+7166:Aug 19 15:28:22 nezha systemd[80675]: Started systemd-tmpfiles-clean.timer - Daily Cleanup of User's Temporary Directories.
+7167:Aug 19 15:28:22 nezha systemd[80675]: Reached target paths.target - Paths.
+7168:Aug 19 15:28:22 nezha systemd[80675]: Reached target timers.target - Timers.
+7169:Aug 19 15:28:22 nezha systemd[80675]: Starting dbus.socket - D-Bus User Message Bus Socket...
+7170:Aug 19 15:28:22 nezha systemd[80675]: Listening on pipewire-pulse.socket - PipeWire PulseAudio.
+7171:Aug 19 15:28:22 nezha systemd[80675]: Listening on pipewire.socket - PipeWire Multimedia System Sockets.
+7172:Aug 19 15:28:22 nezha systemd[80675]: Listening on systemd-ask-password.socket - Query the User Interactively for a Password.
+7173:Aug 19 15:28:22 nezha systemd[80675]: Starting systemd-tmpfiles-setup.service - Create User Files and Directories...
+7174:Aug 19 15:28:22 nezha systemd[80675]: Listening on dbus.socket - D-Bus User Message Bus Socket.
+7175:Aug 19 15:28:22 nezha systemd[80675]: Reached target sockets.target - Sockets.
+7176:Aug 19 15:28:22 nezha systemd[80675]: Finished systemd-tmpfiles-setup.service - Create User Files and Directories.
+7177:Aug 19 15:28:22 nezha systemd[80675]: Reached target basic.target - Basic System.
+7178:Aug 19 15:28:22 nezha systemd[80675]: Reached target default.target - Main User Target.
+7179:Aug 19 15:28:22 nezha systemd[80675]: Startup finished in 118ms.
+7180:Aug 19 15:28:22 nezha systemd[1]: Started user@60579.service - User Manager for UID 60579.
+7181:Aug 19 15:28:22 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=user@60579 comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7182:Aug 19 15:28:22 nezha systemd[1]: Started session-5.scope - Session 5 of User gdm-greeter.
+7183:Aug 19 15:28:22 nezha audit[80627]: AUDIT1105 pid=80627 uid=0 auid=60579 ses=5 msg='op=PAM:session_open grantors=pam_succeed_if,pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7184:Aug 19 15:28:22 nezha systemd[80675]: Created slice session.slice - User Core Session Slice.
+7185:Aug 19 15:28:22 nezha systemd[80675]: Starting dbus.service - D-Bus User Message Bus...
+7186:Aug 19 15:28:22 nezha systemd[80675]: Started dbus.service - D-Bus User Message Bus.
+7187:Aug 19 15:28:22 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.freedesktop.systemd1'
+7188:Aug 19 15:28:22 nezha gnome-session-i[80699]: Starting GNOME session target: gnome-session@gnome-login.target
+7189:Aug 19 15:28:22 nezha systemd[80675]: Created slice app-gnome\x2dsession\x2dmanager.slice - Slice /app/gnome-session-manager.
+7190:Aug 19 15:28:22 nezha systemd[80675]: Starting gnome-session-monitor.service - Monitor Session leader for GNOME Session...
+7191:Aug 19 15:28:22 nezha systemd[80675]: spice-vdagent.service - Spice guest session agent skipped, unmet condition check ConditionPathExists=/run/spice-vdagentd/spice-vdagent-sock
+7192:Aug 19 15:28:22 nezha systemd[80675]: Starting xdg-user-dirs.service - Well known user directories update...
+7193:Aug 19 15:28:22 nezha systemd[80675]: Finished xdg-user-dirs.service - Well known user directories update.
+7194:Aug 19 15:28:22 nezha systemd[80675]: Reached target graphical-session-pre.target - Session services which should run early before the graphical session is brought up.
+7195:Aug 19 15:28:22 nezha systemd[80675]: Started gnome-session-monitor.service - Monitor Session leader for GNOME Session.
+7196:Aug 19 15:28:22 nezha systemd[80675]: Reached target gnome-session-pre.target - Tasks to be run before GNOME Session starts.
+7197:Aug 19 15:28:22 nezha systemd[80675]: Starting gnome-session-manager@gnome-login.service - GNOME Session Manager (session: gnome-login)...
+7198:Aug 19 15:28:22 nezha systemd[80675]: Started gnome-session-manager@gnome-login.service - GNOME Session Manager (session: gnome-login).
+7199:Aug 19 15:28:22 nezha systemd[80675]: Reached target gnome-session-manager.target - GNOME Session Manager is ready.
+7200:Aug 19 15:28:22 nezha systemd[80675]: Starting org.gnome.Shell@gdm.service - GNOME Shell...
+7201:Aug 19 15:28:22 nezha gnome-shell[80717]: Running GNOME Shell (using mutter 50.1) as a Wayland display server
+7202:Aug 19 15:28:22 nezha rtkit-daemon[1293]: Supervising 0 threads of 0 processes of 0 users.
+7203:Aug 19 15:28:22 nezha rtkit-daemon[1293]: Successfully made thread 80732 of process 80717 owned by '60579' high priority at nice level -15.
+7204:Aug 19 15:28:22 nezha rtkit-daemon[1293]: Supervising 1 threads of 1 processes of 1 users.
+7205:Aug 19 15:28:22 nezha gnome-shell[80717]: Thread 'KMS thread' will be using high priority scheduling
+7206:Aug 19 15:28:22 nezha gnome-shell[80717]: Device '/dev/dri/card1' prefers shadow buffer
+7207:Aug 19 15:28:23 nezha gnome-shell[80717]: Added device '/dev/dri/card1' (i915) using atomic mode setting.
+7208:Aug 19 15:28:23 nezha gnome-shell[80717]: Created gbm renderer for '/dev/dri/card1'
+7209:Aug 19 15:28:23 nezha gnome-shell[80717]: GPU /dev/dri/card1 selected primary from builtin panel presence
+7210:Aug 19 15:28:23 nezha gnome-shell[80717]: Obtained a high priority EGL context
+7211:Aug 19 15:28:23 nezha systemd[1]: user@1000.service: Failed with result 'signal'.
+7212:Aug 19 15:28:23 nezha audit[1]: SERVICE_STOP pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=user@1000 comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=failed'
+7213:Aug 19 15:28:23 nezha systemd[1]: user@1000.service: Consumed 1h 21.484s CPU time, 23.6G memory peak, 488.2M memory swap peak.
+7214:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.a11y.Bus' unit='at-spi-dbus-bus.service' requested by ':1.7' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7215:Aug 19 15:28:23 nezha systemd[80675]: Starting at-spi-dbus-bus.service - Accessibility services bus...
+7216:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.a11y.Bus'
+7217:Aug 19 15:28:23 nezha systemd[80675]: Started at-spi-dbus-bus.service - Accessibility services bus.
+7218:Aug 19 15:28:23 nezha gnome-shell[80717]: Using public X11 display :1024, (using unix:/tmp/.X11-unix/X1025 for managed services)
+7219:Aug 19 15:28:23 nezha gnome-shell[80717]: Using Wayland display name 'wayland-0'
+7220:Aug 19 15:28:23 nezha at-spi-bus-launcher[80759]: dbus-daemon[80759]: Activating service name='org.a11y.atspi.Registry' requested by ':1.0' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7221:Aug 19 15:28:23 nezha at-spi-bus-launcher[80759]: dbus-daemon[80759]: Successfully activated service 'org.a11y.atspi.Registry'
+7222:Aug 19 15:28:23 nezha at-spi-bus-launcher[80761]: SpiRegistry daemon is running with well-known name - org.a11y.atspi.Registry
+7223:Aug 19 15:28:23 nezha gnome-shell[80717]: Unset XDG_SESSION_ID, getCurrentSessionProxy() called outside a user session. Asking logind directly.
+7224:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.locale1' unit='dbus-org.freedesktop.locale1.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7225:Aug 19 15:28:23 nezha audit: BPF prog-id=49 op=LOAD
+7226:Aug 19 15:28:23 nezha audit: BPF prog-id=50 op=LOAD
+7227:Aug 19 15:28:23 nezha audit: BPF prog-id=51 op=LOAD
+7228:Aug 19 15:28:23 nezha systemd[1]: Starting systemd-localed.service - Locale Service...
+7229:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.gnome.Shell.Screencast' requested by ':1.6' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7230:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.PermissionStore' unit='xdg-permission-store.service' requested by ':1.6' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7231:Aug 19 15:28:23 nezha systemd[1]: Started systemd-localed.service - Locale Service.
+7232:Aug 19 15:28:23 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-localed comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7233:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Successfully activated service 'org.freedesktop.locale1'
+7234:Aug 19 15:28:23 nezha systemd[80675]: Starting xdg-permission-store.service - sandboxed app permission store...
+7235:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'
+7236:Aug 19 15:28:23 nezha systemd[80675]: Started xdg-permission-store.service - sandboxed app permission store.
+7237:Aug 19 15:28:23 nezha gnome-shell[80717]: Registering session with GDM
+7238:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.gnome.Shell.Notifications' requested by ':1.6' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7239:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension apps-menu@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/apps-menu@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/apps-menu@gnome-shell-extensions.gcampax.github.com will not be loaded
+7240:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension auto-move-windows@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/auto-move-windows@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/auto-move-windows@gnome-shell-extensions.gcampax.github.com will not be loaded
+7241:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension drive-menu@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/drive-menu@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/drive-menu@gnome-shell-extensions.gcampax.github.com will not be loaded
+7242:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension launch-new-instance@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/launch-new-instance@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/launch-new-instance@gnome-shell-extensions.gcampax.github.com will not be loaded
+7243:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension light-style@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/light-style@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/light-style@gnome-shell-extensions.gcampax.github.com will not be loaded
+7244:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension native-window-placement@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/native-window-placement@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/native-window-placement@gnome-shell-extensions.gcampax.github.com will not be loaded
+7245:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension places-menu@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/places-menu@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/places-menu@gnome-shell-extensions.gcampax.github.com will not be loaded
+7246:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension screenshot-window-sizer@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/screenshot-window-sizer@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/screenshot-window-sizer@gnome-shell-extensions.gcampax.github.com will not be loaded
+7247:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension status-icons@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/status-icons@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/status-icons@gnome-shell-extensions.gcampax.github.com will not be loaded
+7248:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension system-monitor@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/system-monitor@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/system-monitor@gnome-shell-extensions.gcampax.github.com will not be loaded
+7249:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension user-theme@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/user-theme@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/user-theme@gnome-shell-extensions.gcampax.github.com will not be loaded
+7250:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension window-list@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/window-list@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/window-list@gnome-shell-extensions.gcampax.github.com will not be loaded
+7251:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension windowsNavigator@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/windowsNavigator@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/windowsNavigator@gnome-shell-extensions.gcampax.github.com will not be loaded
+7252:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension workspace-indicator@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/workspace-indicator@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/workspace-indicator@gnome-shell-extensions.gcampax.github.com will not be loaded
+7253:Aug 19 15:28:23 nezha gnome-shell[80717]: Extension pipewire-settings@gaheldev.github.com already installed in /usr/share/gnome-shell/extensions/pipewire-settings@gaheldev.github.com. /usr/share/gnome-shell/extensions/pipewire-settings@gaheldev.github.com will not be loaded
+7254:Aug 19 15:28:23 nezha systemd[80675]: Started org.gnome.Shell@gdm.service - GNOME Shell.
+7255:Aug 19 15:28:23 nezha systemd[80675]: Reached target gnome-session-initialized.target - GNOME Session is initialized.
+7256:Aug 19 15:28:23 nezha systemd[80675]: Reached target gnome-session-basic-services.target - GNOME basic session services.
+7257:Aug 19 15:28:23 nezha systemd[80675]: Reached target gnome-session@gnome-login.target - GNOME Session (session: gnome-login).
+7258:Aug 19 15:28:23 nezha systemd[80675]: Starting gnome-session-signal-init.service - Signal initialization done to GNOME Session Manager...
+7259:Aug 19 15:28:23 nezha systemd[80675]: Starting org.freedesktop.IBus.session.GNOME.service - IBus Daemon for GNOME...
+7260:Aug 19 15:28:23 nezha systemd[80675]: Starting org.gnome.SettingsDaemon.A11ySettings.service - GNOME accessibility service...
+7261:Aug 19 15:28:23 nezha systemd[80675]: Starting org.gnome.SettingsDaemon.Keyboard.service - GNOME keyboard configuration service...
+7262:Aug 19 15:28:23 nezha systemd[80675]: Starting org.gnome.SettingsDaemon.MediaKeys.service - GNOME keyboard shortcuts service...
+7263:Aug 19 15:28:23 nezha systemd[80675]: Starting org.gnome.SettingsDaemon.Power.service - GNOME power management service...
+7264:Aug 19 15:28:23 nezha gnome-session-service[80711]: Entering running state
+7265:Aug 19 15:28:23 nezha systemd[80675]: Starting org.gnome.SettingsDaemon.Rfkill.service - GNOME RFKill support service...
+7266:Aug 19 15:28:23 nezha systemd[80675]: Starting org.gnome.SettingsDaemon.Sharing.service - GNOME file sharing service...
+7267:Aug 19 15:28:23 nezha systemd[80675]: Starting org.gnome.SettingsDaemon.Smartcard.service - GNOME smartcard service...
+7268:Aug 19 15:28:23 nezha systemd[80675]: Starting org.gnome.SettingsDaemon.UsbProtection.service - GNOME USB protection service...
+7269:Aug 19 15:28:23 nezha systemd[80675]: Finished gnome-session-signal-init.service - Signal initialization done to GNOME Session Manager.
+7270:Aug 19 15:28:23 nezha systemd[80675]: Started org.gnome.SettingsDaemon.A11ySettings.service - GNOME accessibility service.
+7271:Aug 19 15:28:23 nezha systemd[80675]: Reached target org.gnome.SettingsDaemon.A11ySettings.target - GNOME accessibility target.
+7272:Aug 19 15:28:23 nezha gsd-a11y-settings[80806]: Failed to stop orca.service: GDBus.Error:org.freedesktop.systemd1.NoSuchUnit: Unit orca.service not loaded.
+7273:Aug 19 15:28:23 nezha gsd-a11y-settings[80806]: Failed to disable orca.service: GDBus.Error:org.freedesktop.systemd1.NoSuchUnit: Unit orca.service does not exist
+7274:Aug 19 15:28:23 nezha systemd[80675]: Started org.gnome.SettingsDaemon.Keyboard.service - GNOME keyboard configuration service.
+7275:Aug 19 15:28:23 nezha systemd[80675]: Reached target org.gnome.SettingsDaemon.Keyboard.target - GNOME keyboard configuration target.
+7276:Aug 19 15:28:23 nezha systemd[80675]: Started org.gnome.SettingsDaemon.Rfkill.service - GNOME RFKill support service.
+7277:Aug 19 15:28:23 nezha systemd[80675]: Started org.gnome.SettingsDaemon.Smartcard.service - GNOME smartcard service.
+7278:Aug 19 15:28:23 nezha systemd[80675]: Reached target org.gnome.SettingsDaemon.Rfkill.target - GNOME RFKill support target.
+7279:Aug 19 15:28:23 nezha systemd[80675]: Reached target org.gnome.SettingsDaemon.Smartcard.target - GNOME smartcard target.
+7280:Aug 19 15:28:23 nezha systemd[80675]: Started org.gnome.SettingsDaemon.Sharing.service - GNOME file sharing service.
+7281:Aug 19 15:28:23 nezha systemd[80675]: Reached target org.gnome.SettingsDaemon.Sharing.target - GNOME file sharing target.
+7282:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.hostname1' unit='dbus-org.freedesktop.hostname1.service' requested by ':1.771' (uid=60579 pid=80820 comm="/usr/libexec/gsd-rfkill")
+7283:Aug 19 15:28:23 nezha audit: BPF prog-id=48 op=UNLOAD
+7284:Aug 19 15:28:23 nezha audit: BPF prog-id=47 op=UNLOAD
+7285:Aug 19 15:28:23 nezha audit: BPF prog-id=52 op=LOAD
+7286:Aug 19 15:28:23 nezha systemd[80675]: Started org.gnome.SettingsDaemon.Power.service - GNOME power management service.
+7287:Aug 19 15:28:23 nezha systemd[80675]: Reached target org.gnome.SettingsDaemon.Power.target - GNOME power management target.
+7288:Aug 19 15:28:23 nezha systemd[80675]: Started org.gnome.SettingsDaemon.UsbProtection.service - GNOME USB protection service.
+7289:Aug 19 15:28:23 nezha systemd[80675]: Reached target org.gnome.SettingsDaemon.UsbProtection.target - GNOME USB protection target.
+7290:Aug 19 15:28:23 nezha audit: BPF prog-id=53 op=LOAD
+7291:Aug 19 15:28:23 nezha audit: BPF prog-id=54 op=LOAD
+7292:Aug 19 15:28:23 nezha systemd[1]: Starting systemd-hostnamed.service - Hostname Service...
+7293:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.gnome.ScreenSaver' requested by ':1.19' (uid=60579 pid=80830 comm="/usr/libexec/gsd-usb-protection")
+7294:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.gnome.Shell.Notifications'
+7295:Aug 19 15:28:23 nezha systemd[80675]: Started org.gnome.SettingsDaemon.MediaKeys.service - GNOME keyboard shortcuts service.
+7296:Aug 19 15:28:23 nezha systemd[80675]: Reached target org.gnome.SettingsDaemon.MediaKeys.target - GNOME keyboard shortcuts target.
+7297:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.freedesktop.portal.IBus' requested by ':1.22' (uid=60579 pid=80805 comm="/usr/bin/ibus-daemon --panel disable")
+7298:Aug 19 15:28:23 nezha systemd[80675]: Started pipewire.service - PipeWire Multimedia Service.
+7299:Aug 19 15:28:23 nezha systemd[80675]: Started wireplumber.service - Multimedia Service Session Manager.
+7300:Aug 19 15:28:23 nezha systemd[80675]: Started pipewire-pulse.service - PipeWire PulseAudio.
+7301:Aug 19 15:28:23 nezha systemd[80675]: Started org.freedesktop.IBus.session.GNOME.service - IBus Daemon for GNOME.
+7302:Aug 19 15:28:23 nezha systemd[80675]: Reached target gnome-session.target - GNOME Session.
+7303:Aug 19 15:28:23 nezha systemd[80675]: Reached target graphical-session.target - Current graphical user session.
+7304:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.freedesktop.portal.IBus'
+7305:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 1 threads of 1 processes of 1 users.
+7306:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 1 threads of 1 processes of 1 users.
+7307:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 1 threads of 1 processes of 1 users.
+7308:Aug 19 15:28:23 nezha systemd[1]: Started systemd-hostnamed.service - Hostname Service.
+7309:Aug 19 15:28:23 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-hostnamed comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7310:Aug 19 15:28:23 nezha gnome-shell[80717]: Unset XDG_SESSION_ID, getCurrentSessionProxy() called outside a user session. Asking logind directly.
+7311:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.realmd' unit='realmd.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7312:Aug 19 15:28:23 nezha audit: BPF prog-id=55 op=LOAD
+7313:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Successfully activated service 'org.freedesktop.hostname1'
+7314:Aug 19 15:28:23 nezha systemd[1]: Starting realmd.service - Realm and Domain Configuration...
+7315:Aug 19 15:28:23 nezha kernel: rfkill: input handler disabled
+7316:Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.gnome.ScreenSaver'
+7317:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Successfully made thread 80886 of process 80886 owned by '60579' high priority at nice level -11.
+7318:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 2 threads of 2 processes of 1 users.
+7319:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 2 threads of 2 processes of 1 users.
+7320:Aug 19 15:28:23 nezha realmd[80918]: Loaded settings from: /usr/lib/realmd/realmd-defaults.conf /usr/lib/realmd/realmd-distro.conf /etc/realmd.conf
+7321:Aug 19 15:28:23 nezha realmd[80918]: holding daemon: startup
+7322:Aug 19 15:28:23 nezha realmd[80918]: starting service
+7323:Aug 19 15:28:23 nezha realmd[80918]: connected to bus
+7324:Aug 19 15:28:23 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=realmd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7325:Aug 19 15:28:23 nezha realmd[80918]: GLib-GIO: _g_io_module_get_default: Found default implementation local (GLocalVfs) for ‘gio-vfs’
+7326:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Successfully activated service 'org.freedesktop.realmd'
+7327:Aug 19 15:28:23 nezha realmd[80918]: released daemon: startup
+7328:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Successfully made thread 80903 of process 80886 owned by '60579' RT at priority 20.
+7329:Aug 19 15:28:23 nezha systemd[1]: Started realmd.service - Realm and Domain Configuration.
+7330:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 3 threads of 2 processes of 1 users.
+7331:Aug 19 15:28:23 nezha realmd[80918]: claimed name on bus: org.freedesktop.realmd
+7332:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 3 threads of 2 processes of 1 users.
+7333:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 3 threads of 2 processes of 1 users.
+7334:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 3 threads of 2 processes of 1 users.
+7335:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 3 threads of 2 processes of 1 users.
+7336:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 3 threads of 2 processes of 1 users.
+7337:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Successfully made thread 80877 of process 80877 owned by '60579' high priority at nice level -11.
+7338:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='net.reactivated.Fprint' unit='fprintd.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7339:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 4 threads of 3 processes of 1 users.
+7340:Aug 19 15:28:23 nezha gsd-usb-protection[80830]: Failed to fetch USBGuard parameters: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.usbguard1 was not provided by any .service files
+7341:Aug 19 15:28:23 nezha audit: BPF prog-id=56 op=LOAD
+7342:Aug 19 15:28:23 nezha systemd[1]: Starting fprintd.service - Fingerprint Authentication Daemon...
+7343:Aug 19 15:28:23 nezha gnome-shell[80717]: Will monitor session 5
+7344:Aug 19 15:28:23 nezha gsd-media-keys[80814]: Failed to grab accelerator for keybinding settings:hibernate
+7345:Aug 19 15:28:23 nezha gsd-media-keys[80814]: Failed to grab accelerator for keybinding settings:playback-repeat
+7346:Aug 19 15:28:23 nezha gnome-shell[80717]: Error looking up permission: GDBus.Error:org.freedesktop.portal.Error.NotFound: No entry for geolocation
+7347:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Successfully made thread 80872 of process 80872 owned by '60579' high priority at nice level -11.
+7348:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 5 threads of 4 processes of 1 users.
+7349:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Successfully made thread 80912 of process 80872 owned by '60579' RT at priority 20.
+7350:Aug 19 15:28:23 nezha rtkit-daemon[1293]: Supervising 6 threads of 4 processes of 1 users.
+7351:Aug 19 15:28:23 nezha polkitd[1345]: Registered Authentication Agent for unix-session:5 (system bus name :1.764 [/usr/bin/gnome-shell --mode=gdm], object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8)
+7352:Aug 19 15:28:23 nezha gnome-shell[80717]: Will monitor session 5
+7353:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.MalcontentTimer1' unit='malcontent-timerd.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7354:Aug 19 15:28:23 nezha audit: BPF prog-id=57 op=LOAD
+7355:Aug 19 15:28:23 nezha audit: BPF prog-id=58 op=LOAD
+7356:Aug 19 15:28:23 nezha audit: BPF prog-id=59 op=LOAD
+7357:Aug 19 15:28:23 nezha systemd[1]: Starting malcontent-timerd.service - Parental Controls Timer Daemon...
+7358:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Successfully activated service 'net.reactivated.Fprint'
+7359:Aug 19 15:28:23 nezha systemd[1]: Started fprintd.service - Fingerprint Authentication Daemon.
+7360:Aug 19 15:28:23 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=fprintd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7361:Aug 19 15:28:23 nezha NetworkManager[1380]: <info>  [1787146103.9792] agent-manager: agent[ff17646d759140e6,:1.764/org.gnome.Shell.NetworkAgent/60579]: agent registered
+7362:Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Successfully activated service 'org.freedesktop.MalcontentTimer1'
+7363:Aug 19 15:28:23 nezha systemd[1]: Started malcontent-timerd.service - Parental Controls Timer Daemon.
+7364:Aug 19 15:28:23 nezha malcontent-timerd[80975]: mct_time_span_new: assertion 'start_time_secs < end_time_secs' failed
+7365:Aug 19 15:28:23 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=malcontent-timerd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7366:Aug 19 15:28:23 nezha malcontent-timerd[80975]: mct_time_span_free: assertion 'self != NULL' failed
+7367:Aug 19 15:28:24 nezha gnome-shell[80717]: Failed to record usage: GDBus.Error:org.freedesktop.MalcontentTimer1.Child.Error.IdentifyingUser: Error identifying user: Invalid or unknown user
+7368:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 6 threads of 4 processes of 1 users.
+7369:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 6 threads of 4 processes of 1 users.
+7370:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 6 threads of 4 processes of 1 users.
+7371:Aug 19 15:28:24 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.GeoClue2' unit='geoclue.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7372:Aug 19 15:28:24 nezha systemd[1]: Starting geoclue.service - Location Lookup Service...
+7373:Aug 19 15:28:24 nezha gnome-shell[80717]: Type GITypeInfo of property NM.Object::client does not match return type GITypeInfo of getter get_client. Falling back to slow path
+7374:Aug 19 15:28:24 nezha gnome-shell[80717]: Failed to get PolKit permission: Polkit.Error: GDBus.Error:org.freedesktop.PolicyKit1.Error.Failed: Action org.freedesktop.bolt.enroll is not registered
+7375:Aug 19 15:28:24 nezha dbus-daemon[1289]: [system] Successfully activated service 'org.freedesktop.GeoClue2'
+7376:Aug 19 15:28:24 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=geoclue comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7377:Aug 19 15:28:24 nezha systemd[1]: Started geoclue.service - Location Lookup Service.
+7378:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='ca.desrt.dconf' unit='dconf.service' requested by ':1.6' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+7379:Aug 19 15:28:24 nezha systemd[80675]: Starting dconf.service - User preferences database...
+7380:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'ca.desrt.dconf'
+7381:Aug 19 15:28:24 nezha systemd[80675]: Started dconf.service - User preferences database.
+7382:Aug 19 15:28:24 nezha gnome-shell[80717]: Registering display with GDM
+7383:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Desktop' unit='xdg-desktop-portal.service' requested by ':1.33' (uid=60579 pid=80770 comm="/usr/bin/gjs -m /usr/share/gnome-shell/org.gnome.S")
+7384:Aug 19 15:28:24 nezha systemd[80675]: Starting xdg-desktop-portal.service - Portal service...
+7385:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Documents' unit='xdg-document-portal.service' requested by ':1.34' (uid=60579 pid=81033 comm="/usr/libexec/xdg-desktop-portal")
+7386:Aug 19 15:28:24 nezha systemd[80675]: Starting xdg-document-portal.service - flatpak document portal service...
+7387:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.freedesktop.portal.Documents'
+7388:Aug 19 15:28:24 nezha systemd[80675]: Started xdg-document-portal.service - flatpak document portal service.
+7389:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gnome' unit='xdg-desktop-portal-gnome.service' requested by ':1.34' (uid=60579 pid=81033 comm="/usr/libexec/xdg-desktop-portal")
+7390:Aug 19 15:28:24 nezha systemd[80675]: Starting xdg-desktop-portal-gnome.service - Portal service (GNOME implementation)...
+7391:Aug 19 15:28:24 nezha systemd[80675]: Reached target gnome-session-x11-services.target - GNOME session X11 services.
+7392:Aug 19 15:28:24 nezha systemd[80675]: Starting org.gnome.SettingsDaemon.XSettings.service - GNOME XSettings service...
+7393:Aug 19 15:28:24 nezha gnome-shell[81057]: The XKEYBOARD keymap compiler (xkbcomp) reports:
+7394:Aug 19 15:28:24 nezha gnome-shell[81057]: > Warning:          Unsupported maximum keycode 708, clipping.
+7395:Aug 19 15:28:24 nezha gnome-shell[81057]: >                   X11 cannot support keycodes above 255.
+7396:Aug 19 15:28:24 nezha gnome-shell[81057]: > Warning:          Virtual modifier Hyper multiply defined
+7397:Aug 19 15:28:24 nezha gnome-shell[81057]: >                   Using 0, ignoring 0
+7398:Aug 19 15:28:24 nezha gnome-shell[81057]: > Warning:          Virtual modifier ScrollLock multiply defined
+7399:Aug 19 15:28:24 nezha gnome-shell[81057]: >                   Using 0, ignoring 0
+7400:Aug 19 15:28:24 nezha gnome-shell[81057]: Errors from xkbcomp are not fatal to the X server
+7401:Aug 19 15:28:24 nezha systemd[80675]: Started org.gnome.SettingsDaemon.XSettings.service - GNOME XSettings service.
+7402:Aug 19 15:28:24 nezha systemd[80675]: Reached target gnome-session-x11-services-ready.target - GNOME session X11 services.
+7403:Aug 19 15:28:24 nezha systemd[80675]: org.gnome.SettingsDaemon.XSettings.target - GNOME XSettings target is inactive.
+7404:Aug 19 15:28:24 nezha gsd-xsettings[81058]: Failed to get current UI scaling factor: GDBus.Error:org.freedesktop.DBus.Error.NameHasNoOwner: Name "org.gnome.Mutter.X11" does not exist
+7405:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Successfully made thread 81072 of process 80877 owned by '60579' RT at priority 20.
+7406:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 7 threads of 4 processes of 1 users.
+7407:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.gnome.Settings.GlobalShortcutsProvider' requested by ':1.36' (uid=60579 pid=81049 comm="/usr/libexec/xdg-desktop-portal-gnome")
+7408:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.gnome.Settings.GlobalShortcutsProvider'
+7409:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/ldac
+7410:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/aptx_hd
+7411:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_hd
+7412:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/aptx
+7413:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx
+7414:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/aac
+7415:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aac
+7416:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/opus_g
+7417:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/opus_g
+7418:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/sbc
+7419:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/sbc
+7420:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_ll_1
+7421:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_ll_0
+7422:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_1
+7423:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_0
+7424:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/faststream
+7425:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/faststream_duplex
+7426:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/opus_05
+7427:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/opus_05
+7428:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/opus_05_duplex
+7429:Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSource/opus_05_duplex
+7430:Aug 19 15:28:24 nezha gsd-media-keys[80814]: Unable to get default sink
+7431:Aug 19 15:28:24 nezha wireplumber[80877]: [0:20:49.971082149] [80877]  INFO Camera camera_manager.cpp:340 libcamera v0.7.1
+7432:Aug 19 15:28:24 nezha wireplumber[80877]: [0:20:49.975374224] [81105]  INFO Camera camera_manager.cpp:223 Adding camera '\_SB_.PC00.XHCI.RHUB.HS07-7:1.0-04f2:b6f9' for pipeline handler uvcvideo
+7433:Aug 19 15:28:24 nezha wireplumber[80877]: [0:20:49.975597794] [81105]  INFO Camera camera_manager.cpp:223 Adding camera '\_SB_.PC00.XHCI.RHUB.HS07-7:1.2-04f2:b6f9' for pipeline handler uvcvideo
+7434:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.desktop.gnome'
+7435:Aug 19 15:28:24 nezha systemd[80675]: Started xdg-desktop-portal-gnome.service - Portal service (GNOME implementation).
+7436:Aug 19 15:28:24 nezha xdg-desktop-portal-gnome[81049]: Monitor 'Built-in display' has no configuration which is-current!
+7437:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 7 threads of 4 processes of 1 users.
+7438:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 7 threads of 4 processes of 1 users.
+7439:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 7 threads of 4 processes of 1 users.
+7440:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gtk' unit='xdg-desktop-portal-gtk.service' requested by ':1.34' (uid=60579 pid=81033 comm="/usr/libexec/xdg-desktop-portal")
+7441:Aug 19 15:28:24 nezha systemd[80675]: Starting xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation)...
+7442:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.desktop.gtk'
+7443:Aug 19 15:28:24 nezha systemd[80675]: Started xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation).
+7444:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 7 threads of 4 processes of 1 users.
+7445:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 7 threads of 4 processes of 1 users.
+7446:Aug 19 15:28:24 nezha rtkit-daemon[1293]: Supervising 7 threads of 4 processes of 1 users.
+7447:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.freedesktop.secrets' requested by ':1.34' (uid=60579 pid=81033 comm="/usr/libexec/xdg-desktop-portal")
+7448:Aug 19 15:28:24 nezha gnome-keyring-daemon[81118]: couldn't access control socket: /run/user/60579/keyring/control: No such file or directory
+7449:Aug 19 15:28:24 nezha gnome-keyring-daemon[81118]: couldn't access control socket: /run/user/60579/keyring/control: No such file or directory
+7450:Aug 19 15:28:24 nezha gnome-keyring-daemon[81118]: discover_other_daemon: 0
+7451:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.freedesktop.secrets'
+7452:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.freedesktop.portal.Desktop'
+7453:Aug 19 15:28:24 nezha systemd[80675]: Started xdg-desktop-portal.service - Portal service.
+7454:Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Successfully activated service 'org.gnome.Shell.Screencast'
+7455:Aug 19 15:28:29 nezha gdm-password][81128]: pam_succeed_if(gdm-password:auth): requirement "user ingroup nopasswdlogin" not met by user "milosvasic"
+7456:Aug 19 15:28:29 nezha gdm-fingerprint][81129]: pam_succeed_if(gdm-fingerprint:auth): requirement "user ingroup nopasswdlogin" not met by user "milosvasic"
+7457:Aug 19 15:28:29 nezha gdm-fingerprint][81129]: gkr-pam: no password is available for user
+7458:Aug 19 15:28:29 nezha audit[81129]: AUDIT1100 pid=81129 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=? acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=failed'
+7459:Aug 19 15:28:29 nezha audit[81129]: AUDIT1112 pid=81129 uid=0 auid=4294967295 ses=4294967295 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=failed'
+7460:Aug 19 15:28:29 nezha kernel: kauditd_printk_skb: 29 callbacks suppressed
+7461:Aug 19 15:28:29 nezha kernel: audit: type=1100 audit(1787146109.761:349): pid=81129 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=? acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=failed'
+7462:Aug 19 15:28:29 nezha kernel: audit: type=1112 audit(1787146109.761:350): pid=81129 uid=0 auid=4294967295 ses=4294967295 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=failed'
+7463:Aug 19 15:28:35 nezha gdm-password][81128]: pam_tcb(gdm-password:auth): Authentication passed for milosvasic from (uid=0)
+7464:Aug 19 15:28:35 nezha audit[81128]: AUDIT1100 pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_shells,pam_succeed_if,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7465:Aug 19 15:28:35 nezha gdm-password][81128]: gkr-pam: unable to locate daemon control file
+7466:Aug 19 15:28:35 nezha gdm-password][81128]: gkr-pam: stashed password to try later in open session
+7467:Aug 19 15:28:35 nezha kernel: audit: type=1100 audit(1787146115.852:351): pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_shells,pam_succeed_if,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7468:Aug 19 15:28:35 nezha audit[81128]: AUDIT1101 pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tcb acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7469:Aug 19 15:28:35 nezha audit[81128]: AUDIT1103 pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7470:Aug 19 15:28:35 nezha kernel: audit: type=1101 audit(1787146115.853:352): pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tcb acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7471:Aug 19 15:28:35 nezha kernel: audit: type=1103 audit(1787146115.853:353): pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+7472:Aug 19 15:28:35 nezha gdm-password][81128]: pam_tcb(gdm-password:session): Session opened for milosvasic by (uid=0)
+7473:Aug 19 15:28:35 nezha audit[81128]: SYSCALL arch=c000003e syscall=1 success=yes exit=4 a0=a a1=7fff70482680 a2=4 a3=0 items=0 ppid=1532 pid=81128 auid=1000 uid=0 gid=1000 euid=0 suid=0 fsuid=0 egid=1000 sgid=1000 fsgid=1000 tty=(none) ses=7 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+7474:Aug 19 15:28:35 nezha audit: PROCTITLE proctitle=67646D2D73657373696F6E2D776F726B6572205B70616D2F67646D2D70617373776F72645D
+7475:Aug 19 15:28:35 nezha kernel: audit: type=1006 audit(1787146115.855:354): pid=81128 uid=0 old-auid=4294967295 auid=1000 tty=(none) old-ses=4294967295 ses=7 res=1
+7476:Aug 19 15:28:35 nezha kernel: audit: type=1300 audit(1787146115.855:354): arch=c000003e syscall=1 success=yes exit=4 a0=a a1=7fff70482680 a2=4 a3=0 items=0 ppid=1532 pid=81128 auid=1000 uid=0 gid=1000 euid=0 suid=0 fsuid=0 egid=1000 sgid=1000 fsgid=1000 tty=(none) ses=7 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+7477:Aug 19 15:28:35 nezha kernel: audit: type=1327 audit(1787146115.855:354): proctitle=67646D2D73657373696F6E2D776F726B6572205B70616D2F67646D2D70617373776F72645D
+7478:Aug 19 15:28:35 nezha systemd-logind[1296]: New session '7' of user 'milosvasic' with class 'user' and type 'wayland'.
+7479:Aug 19 15:28:35 nezha systemd[1]: Starting user@1000.service - User Manager for UID 1000...
+7480:Aug 19 15:28:35 nezha audit[81142]: AUDIT1101 pid=81142 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tcb acct="milosvasic" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=success'
+7481:Aug 19 15:28:35 nezha audit[81142]: AUDIT1103 pid=81142 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=? acct="milosvasic" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=failed'
+7482:Aug 19 15:28:35 nezha (systemd)[81142]: pam_tcb(systemd-user:session): Session opened for milosvasic by (uid=0)
+7483:Aug 19 15:28:35 nezha kernel: audit: type=1101 audit(1787146115.882:355): pid=81142 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tcb acct="milosvasic" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=success'
+7484:Aug 19 15:28:35 nezha kernel: audit: type=1103 audit(1787146115.882:356): pid=81142 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=? acct="milosvasic" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=failed'
+7485:Aug 19 15:28:35 nezha audit[81142]: SYSCALL arch=c000003e syscall=1 success=yes exit=4 a0=8 a1=7ffc0923a6c0 a2=4 a3=0 items=0 ppid=1 pid=81142 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=8 comm="(systemd)" exe="/usr/lib/systemd/systemd-executor" key=(null)
+7486:Aug 19 15:28:35 nezha audit: PROCTITLE proctitle="(systemd)"
+7487:Aug 19 15:28:35 nezha kernel: audit: type=1006 audit(1787146115.884:357): pid=81142 uid=0 old-auid=4294967295 auid=1000 tty=(none) old-ses=4294967295 ses=8 res=1
+7488:Aug 19 15:28:35 nezha kernel: audit: type=1300 audit(1787146115.884:357): arch=c000003e syscall=1 success=yes exit=4 a0=8 a1=7ffc0923a6c0 a2=4 a3=0 items=0 ppid=1 pid=81142 auid=1000 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=8 comm="(systemd)" exe="/usr/lib/systemd/systemd-executor" key=(null)
+7489:Aug 19 15:28:35 nezha systemd-logind[1296]: New session '8' of user 'milosvasic' with class 'manager' and type 'unspecified'.
+7490:Aug 19 15:28:35 nezha audit[81142]: AUDIT1105 pid=81142 uid=0 auid=1000 ses=8 msg='op=PAM:session_open grantors=pam_selinux,pam_selinux,pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_loginuid,pam_keyinit,pam_namespace acct="milosvasic" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=success'
+7491:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Configuration file /home/milosvasic/.config/autostart/org.telegram.desktop.desktop is marked executable. Please remove executable permission bits. Proceeding anyway.
+7492:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Configuration file /home/milosvasic/.config/autostart/jetbrains-toolbox.desktop is marked executable. Please remove executable permission bits. Proceeding anyway.
+7493:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-xdg\x2duser\x2ddirs\x2dgtk@autostart.service': File exists
+7494:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-vmware\x2duser@autostart.service': File exists
+7495:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-print\x2dapplet@autostart.service': File exists
+7496:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-drweb\x2dgui@autostart.service': File exists
+7497:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-pipewire\x2dxrdp@autostart.service': File exists
+7498:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-org.gnome.SettingsDaemon.DiskUtilityNotify@autostart.service': File exists
+7499:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-wayvnc@autostart.service': File exists
+7500:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-vboxclient@autostart.service': File exists
+7501:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-gnome\x2dkeyring\x2dsecrets@autostart.service': File exists
+7502:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-jetbrains\x2dtoolbox@autostart.service': File exists
+7503:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-gnome\x2dkeyring\x2dpkcs11@autostart.service': File exists
+7504:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Exec binary '/usr/bin/teams' does not exist: No such file or directory
+7505:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: /home/milosvasic/.config/autostart/teams.desktop: not generating unit, executable specified in Exec= does not exist.
+7506:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-yandex\x2dbrowser_user_setup@autostart.service': File exists
+7507:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Failed to create unit file '/run/user/1000/systemd/generator.late/app-org.telegram.desktop@autostart.service': File exists
+7508:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: Exec binary 'yandex-disk-indicator' does not exist: No such file or directory
+7509:Aug 19 15:28:35 nezha systemd-xdg-autostart-generator[81150]: /home/milosvasic/.config/autostart/Yandex.Disk-indicator.desktop: not generating unit, executable specified in Exec= does not exist.
+7510:Aug 19 15:28:35 nezha systemd[81142]: Queued start job for default target default.target.
+7511:Aug 19 15:28:35 nezha systemd[81142]: Created slice app.slice - User Application Slice.
+7512:Aug 19 15:28:35 nezha systemd[81142]: Started boba-resource-pressure-check.timer - Hourly timer for boba-resource-pressure-check.service (task #77/BOB-076).
+7513:Aug 19 15:28:35 nezha systemd[81142]: Started systemd-tmpfiles-clean.timer - Daily Cleanup of User's Temporary Directories.
+7514:Aug 19 15:28:35 nezha systemd[81142]: Reached target paths.target - Paths.
+7515:Aug 19 15:28:35 nezha systemd[81142]: Reached target timers.target - Timers.
+7516:Aug 19 15:28:35 nezha systemd[81142]: Starting dbus.socket - D-Bus User Message Bus Socket...
+7517:Aug 19 15:28:35 nezha systemd[81142]: Listening on pipewire-pulse.socket - PipeWire PulseAudio.
+7518:Aug 19 15:28:35 nezha systemd[81142]: Listening on pipewire.socket - PipeWire Multimedia System Sockets.
+7519:Aug 19 15:28:35 nezha systemd[81142]: Listening on systemd-ask-password.socket - Query the User Interactively for a Password.
+7520:Aug 19 15:28:35 nezha systemd[81142]: Starting systemd-tmpfiles-setup.service - Create User Files and Directories...
+7521:Aug 19 15:28:35 nezha systemd[81142]: Listening on dbus.socket - D-Bus User Message Bus Socket.
+7522:Aug 19 15:28:35 nezha systemd[81142]: Reached target sockets.target - Sockets.
+7523:Aug 19 15:28:35 nezha systemd[81142]: Finished systemd-tmpfiles-setup.service - Create User Files and Directories.
+7524:Aug 19 15:28:35 nezha systemd[81142]: Reached target basic.target - Basic System.
+7525:Aug 19 15:28:36 nezha systemd[1]: Started user@1000.service - User Manager for UID 1000.
+7526:Aug 19 15:28:35 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=user@1000 comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7527:Aug 19 15:28:36 nezha systemd[81142]: Starting boba-stack.service - Boba stack — containers via ./start.sh...
+7528:Aug 19 15:28:36 nezha systemd[1]: Started session-7.scope - Session 7 of User milosvasic.
+7529:Aug 19 15:28:36 nezha systemd[81142]: Starting container-helix-nats.service - Podman container-helix-nats.service...
+7530:Aug 19 15:28:36 nezha systemd[81142]: Starting container-helix-postgres.service - Podman container-helix-postgres.service...
+7531:Aug 19 15:28:36 nezha systemd[81142]: Starting container-helix-redis.service - Podman container-helix-redis.service...
+7532:Aug 19 15:28:36 nezha systemd[81142]: Starting helix-proxy-stack.service - helix_proxy VPN-aware dynamic-routing proxy stack...
+7533:Aug 19 15:28:36 nezha systemd[81142]: Starting helixcode.service - HelixCode containerized code-server stack...
+7534:Aug 19 15:28:36 nezha systemd[81142]: Starting lava-api.service - Lava API (lava-api-go) container service...
+7535:Aug 19 15:28:36 nezha systemd[81142]: Starting podman-user-wait-network-online.service - Wait for system level network-online.target as user....
+7536:Aug 19 15:28:36 nezha start.sh[81169]: ========================================
+7537:Aug 19 15:28:36 nezha start.sh[81169]:   Lava Container Boot
+7538:Aug 19 15:28:36 nezha start.sh[81169]:   profile=api-go observability=false dev-docs=false
+7539:Aug 19 15:28:36 nezha start.sh[81169]:   BUILDAH_FORMAT=docker (forces image-level HEALTHCHECK persistence)
+7540:Aug 19 15:28:36 nezha start.sh[81169]: ========================================
+7541:Aug 19 15:28:36 nezha sh[81199]: active
+7542:Aug 19 15:28:36 nezha audit[81128]: AUDIT1105 pid=81128 uid=0 auid=1000 ses=7 msg='op=PAM:session_open grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+7543:Aug 19 15:28:36 nezha audit[81128]: AUDIT1112 pid=81128 uid=0 auid=1000 ses=7 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=success'
+7544:Aug 19 15:28:36 nezha gdm-password][81128]: gkr-pam: gnome-keyring-daemon started properly and unlocked keyring
+7545:Aug 19 15:28:36 nezha systemd[81142]: Finished podman-user-wait-network-online.service - Wait for system level network-online.target as user..
+7546:Aug 19 15:28:36 nezha start.sh[81169]: [lava-containers] compose up: profiles=[api-go]
+7547:Aug 19 15:28:36 nezha systemd[81142]: Starting helixcode-caddy.service - HelixCode Caddy edge (rootless podman, boot-persistent)...
+7549:Aug 19 15:28:36 nezha bash[81267]: awk: warning: escape sequence `\.' treated as plain `.'
+7550:Aug 19 15:28:36 nezha podman[81162]: time="2026-08-19T15:28:36+02:00" level=warning msg="Failed to join existing conmon namespace, creating a new rootless podman user namespace. If there are existing container running please stop them with \"/usr/bin/podman system migrate\" to reset the namespace"
+7551:Aug 19 15:28:36 nezha start.sh[81168]: [helixcode] starting HelixCode stack…
+7552:Aug 19 15:28:36 nezha stop[81165]: [2026-08-19 15:28:36] [info] ==========================================
+7553:Aug 19 15:28:36 nezha stop[81165]: [2026-08-19 15:28:36] [info] Stopping Proxy Service
+7554:Aug 19 15:28:36 nezha bash[81266]: [extract] rutracker: 4 cookie(s) for own domain — names: bb_guid bb_session bb_ssl cf_clearance
+7555:Aug 19 15:28:36 nezha stop[81165]: [2026-08-19 15:28:36] [info] ==========================================
+7556:Aug 19 15:28:36 nezha start.sh[81224]: >>>> Executing external compose provider "/bin/podman-compose". Please see podman-compose(1) for how to disable this message. <<<<
+7557:Aug 19 15:28:36 nezha stop[81165]: [INFO] Loaded environment from: /run/media/milosvasic/DATA4TB/Projects/helix_proxy/.env
+7558:Aug 19 15:28:36 nezha bash[81247]: [load-tracker-cookies] rutracker: 4 cookie(s) — UNCHANGED (idempotent)
+7559:Aug 19 15:28:36 nezha bash[81337]: awk: warning: escape sequence `\.' treated as plain `.'
+7560:Aug 19 15:28:36 nezha stop[81165]: [2026-08-19 16:28:36] [info] Stopping 12 managed container(s)...
+7561:Aug 19 15:28:36 nezha bash[81336]: [extract] nnmclub: 9 cookie(s) for own domain — names: eb927f21fc_blockTimer eb927f21fc_delayCount phpbb2mysql_4_data phpbb2mysql_4_sid u_eb927f21fc uuid _ym_d _ym_isad _ym_uid
+7562:Aug 19 15:28:36 nezha podman[81161]: time="2026-08-19T15:28:36+02:00" level=warning msg="Failed to join existing conmon namespace, creating a new rootless podman user namespace. If there are existing container running please stop them with \"/usr/bin/podman system migrate\" to reset the namespace"
+7563:Aug 19 15:28:36 nezha bash[81247]: [load-tracker-cookies] nnmclub: 9 cookie(s) — UNCHANGED (idempotent)
+7564:Aug 19 15:28:36 nezha bash[81247]: [load-tracker-cookies] rutor: 12 cookie(s) for own domain — names: domain_sid ec592524fc_blockTimer ec592524fc_delayCount _ohmybid_cmf redir_ipv6 _sltb _sltm u_ec592524fc _ym_d _ym_isad _ym_uid _ym_visorc
+7565:Aug 19 15:28:36 nezha bash[81247]: [load-tracker-cookies] rutor: 12 cookie(s) — UNCHANGED (idempotent)
+7566:Aug 19 15:28:36 nezha start.sh[81287]: runtime: podman compose  (TLS_MODE=self-signed)
+7567:Aug 19 15:28:36 nezha bash[81247]: [load-tracker-cookies] kinozal: 5 cookie(s) for own domain — names: eb3299ed2c_blockTimer eb3299ed2c_delayCount pass u_eb3299ed2c uid
+7568:Aug 19 15:28:36 nezha bash[81247]: [load-tracker-cookies] kinozal: 5 cookie(s) — UNCHANGED (idempotent)
+7569:Aug 19 15:28:36 nezha bash[81504]: awk: warning: escape sequence `\.' treated as plain `.'
+7570:Aug 19 15:28:36 nezha bash[81503]: [extract] iptorrents: 2 cookie(s) for own domain — names: pass uid
+7571:Aug 19 15:28:36 nezha start.sh[81457]: >>>> Executing external compose provider "/bin/podman-compose". Please see podman-compose(1) for how to disable this message. <<<<
+7572:Aug 19 15:28:36 nezha bash[81247]: [load-tracker-cookies] iptorrents: 2 cookie(s) — UNCHANGED (idempotent)
+7573:Aug 19 15:28:36 nezha bash[81247]: [load-tracker-cookies] summary: loaded=0 unchanged=5 absent=0 blocked=0 parse_err=0 (dir=/home/milosvasic/Downloads)
+7574:Aug 19 15:28:36 nezha bash[81160]: [INFO] Loading environment from: /run/media/milosvasic/DATA4TB/Projects/boba/.env
+7575:Aug 19 15:28:36 nezha bash[81160]: [INFO] Data directory: /run/media/milosvasic/DATA4TB/Downloads
+7576:Aug 19 15:28:36 nezha bash[81160]: [INFO] Using Podman with podman-compose
+7577:Aug 19 15:28:36 nezha bash[81160]: [INFO] Using boba-ctl for container orchestration
+7578:Aug 19 15:28:36 nezha bash[81160]: [INFO] Creating necessary directories...
+7579:Aug 19 15:28:36 nezha podman[81281]: 2026-08-19 15:28:36.19648549 +0200 CEST m=+0.137362333 container stop 9a8812f4f26572ff6cf161210ff3b144b7247cea00731374a1524495e6801550 (image=docker.io/library/postgres:16-alpine, name=helix-postgres, PODMAN_SYSTEMD_UNIT=container-helix-postgres.service)
+7580:Aug 19 15:28:36 nezha podman[81281]: 2026-08-19 15:28:36.196594942 +0200 CEST m=+0.137471783 container died 9a8812f4f26572ff6cf161210ff3b144b7247cea00731374a1524495e6801550 (image=docker.io/library/postgres:16-alpine, name=helix-postgres, PODMAN_SYSTEMD_UNIT=container-helix-postgres.service)
+7581:Aug 19 15:28:36 nezha podman[81281]: 2026-08-19 15:28:36.170102416 +0200 CEST m=+0.110979278 image pull e684c11a6c7c127c1b7602063cc6a13db0a12b62dfd770d83936c089751d498d docker.io/library/postgres:16-alpine
+7582:Aug 19 15:28:36 nezha podman[81351]: 2026-08-19 15:28:36.175203452 +0200 CEST m=+0.101694571 image pull 487efc0616382465781b8fdc3d6d1db449e6fd80ae23bf48432a2da6b6929908 docker.io/library/redis:7-alpine
+7583:Aug 19 15:28:36 nezha systemd[81142]: Created slice session.slice - User Core Session Slice.
+7584:Aug 19 15:28:36 nezha systemd[81142]: Starting dbus.service - D-Bus User Message Bus...
+7585:Aug 19 15:28:36 nezha podman[81366]: 2026-08-19 15:28:36.171364106 +0200 CEST m=+0.091103070 image pull 51d6b4dc8181fedb69e1905f385b1b463051c1babd2e9e83fe8ceb0e599921bb localhost/helixcode-caddy-brotli:2
+7586:Aug 19 15:28:36 nezha podman[81351]: 2026-08-19 15:28:36.251518973 +0200 CEST m=+0.178010084 container stop 17fee5d74eed67bbf11c1a20873838dd0411663c7d27708d53b5ebdac7b895d5 (image=docker.io/library/redis:7-alpine, name=helix-redis, PODMAN_SYSTEMD_UNIT=container-helix-redis.service)
+7587:Aug 19 15:28:36 nezha podman[81351]: 2026-08-19 15:28:36.251561745 +0200 CEST m=+0.178052850 container died 17fee5d74eed67bbf11c1a20873838dd0411663c7d27708d53b5ebdac7b895d5 (image=docker.io/library/redis:7-alpine, name=helix-redis, PODMAN_SYSTEMD_UNIT=container-helix-redis.service)
+7588:Aug 19 15:28:36 nezha systemd[81142]: Started dbus.service - D-Bus User Message Bus.
+7589:Aug 19 15:28:36 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.freedesktop.systemd1'
+7590:Aug 19 15:28:36 nezha podman[81409]: 2026-08-19 15:28:36.171538477 +0200 CEST m=+0.064682529 image pull 8b9f712ae2148dcbd9d7f3d16a942d515e290526e5d018500931eab62b18e045 docker.io/library/nats:2.10-alpine
+7591:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/ldac
+7592:Aug 19 15:28:36 nezha kernel: rfkill: input handler enabled
+7593:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSink/aptx_hd
+7594:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_hd
+7595:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSink/aptx
+7596:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx
+7597:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSink/aac
+7598:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aac
+7599:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSink/opus_g
+7600:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/opus_g
+7601:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSink/sbc
+7602:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/sbc
+7603:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_ll_1
+7604:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_ll_0
+7605:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_1
+7606:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_0
+7607:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/faststream
+7608:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/faststream_duplex
+7609:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSink/opus_05
+7610:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/opus_05
+7611:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSink/opus_05_duplex
+7612:Aug 19 15:28:36 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.789 path=/MediaEndpoint/A2DPSource/opus_05_duplex
+7613:Aug 19 15:28:36 nezha systemd[81142]: Reached target sound.target - Sound Card.
+7614:Aug 19 15:28:36 nezha systemd[80675]: Reached target sound.target - Sound Card.
+7615:Aug 19 15:28:36 nezha gsd-media-keys[80814]: Unable to get default source
+7616:Aug 19 15:28:36 nezha gsd-media-keys[80814]: Unable to get default sink
+7617:Aug 19 15:28:36 nezha gnome-session-i[81600]: Starting GNOME session target: gnome-session@gnome.target
+7618:Aug 19 15:28:36 nezha systemd[81142]: Created slice app-gnome\x2dsession\x2dmanager.slice - Slice /app/gnome-session-manager.
+7619:Aug 19 15:28:36 nezha systemd[81142]: Created slice background.slice - User Background Tasks Slice.
+7620:Aug 19 15:28:36 nezha systemd[81142]: Starting gcr-ssh-agent.socket - GCR ssh-agent wrapper...
+7621:Aug 19 15:28:36 nezha systemd[81142]: Starting gnome-remote-desktop.service - GNOME Remote Desktop...
+7622:Aug 19 15:28:36 nezha systemd[81142]: Starting gnome-session-monitor.service - Monitor Session leader for GNOME Session...
+7623:Aug 19 15:28:36 nezha systemd[81142]: Starting xdg-user-dirs.service - Well known user directories update...
+7624:Aug 19 15:28:36 nezha systemd[81142]: Finished xdg-user-dirs.service - Well known user directories update.
+7625:Aug 19 15:28:36 nezha systemd[81142]: Started gnome-session-monitor.service - Monitor Session leader for GNOME Session.
+7626:Aug 19 15:28:36 nezha systemd[81142]: Reached target graphical-session-pre.target - Session services which should run early before the graphical session is brought up.
+7627:Aug 19 15:28:36 nezha systemd[81142]: Reached target gnome-session-pre.target - Tasks to be run before GNOME Session starts.
+7628:Aug 19 15:28:36 nezha systemd[81142]: Starting gnome-session-manager@gnome.service - GNOME Session Manager (session: gnome)...
+7629:Aug 19 15:28:36 nezha systemd[81142]: Listening on gcr-ssh-agent.socket - GCR ssh-agent wrapper.
+7630:Aug 19 15:28:36 nezha podman[81366]: 2026-08-19 15:28:36.36879034 +0200 CEST m=+0.288529298 container stop 58342344ca07aa775ba2256422c9db492a1dcd5907b719c314091ad31837c133 (image=localhost/helixcode-caddy-brotli:2, name=helixcode-caddy, org.opencontainers.image.description=a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go, org.opencontainers.image.licenses=Apache-2.0, org.opencontainers.image.url=https://caddyserver.com, org.opencontainers.image.vendor=Light Code Labs, org.opencontainers.image.documentation=https://caddyserver.com/docs, org.opencontainers.image.source=https://github.com/caddyserver/caddy-docker, org.opencontainers.image.version=v2.11.4, org.opencontainers.image.title=Caddy, PODMAN_SYSTEMD_UNIT=helixcode-caddy.service, io.buildah.version=1.42.2)
+7631:Aug 19 15:28:36 nezha podman[81366]: 2026-08-19 15:28:36.368908047 +0200 CEST m=+0.288646994 container died 58342344ca07aa775ba2256422c9db492a1dcd5907b719c314091ad31837c133 (image=localhost/helixcode-caddy-brotli:2, name=helixcode-caddy, org.opencontainers.image.licenses=Apache-2.0, org.opencontainers.image.url=https://caddyserver.com, org.opencontainers.image.vendor=Light Code Labs, PODMAN_SYSTEMD_UNIT=helixcode-caddy.service, io.buildah.version=1.42.2, org.opencontainers.image.documentation=https://caddyserver.com/docs, org.opencontainers.image.title=Caddy, org.opencontainers.image.source=https://github.com/caddyserver/caddy-docker, org.opencontainers.image.version=v2.11.4, org.opencontainers.image.description=a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go)
+7632:Aug 19 15:28:36 nezha gnome-remote-desktop-daemon[81679]: [15:28:36:379] [81679:00013f0f] [ERROR][com.freerdp.crypto] - [x509_utils_from_pem]: BIO_new failed for certificate
+7633:Aug 19 15:28:36 nezha gnome-remote-desktop-daemon[81679]: RDP server certificate is invalid
+7634:Aug 19 15:28:36 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.freedesktop.secrets' requested by ':1.8' (uid=1000 pid=81679 comm="/usr/libexec/gnome-remote-desktop-daemon")
+7635:Aug 19 15:28:36 nezha gnome-session-service[81689]: Desktop file /home/milosvasic/.config/autostart/Yandex.Disk-indicator.desktop couldn't be parsed, or references a missing TryExec binary
+7636:Aug 19 15:28:36 nezha gnome-session-service[81689]: Desktop file /home/milosvasic/.config/autostart/teams.desktop couldn't be parsed, or references a missing TryExec binary
+7637:Aug 19 15:28:36 nezha gnome-session-service[81689]: App yandex-browser_user_setup.desktop sets X-GNOME-Autostart-Phase, but gnome-session no longer manages session services
+7638:Aug 19 15:28:36 nezha gnome-session-service[81689]: App gnome-keyring-pkcs11.desktop sets X-GNOME-Autostart-Phase, but gnome-session no longer manages session services
+7639:Aug 19 15:28:36 nezha gnome-session-service[81689]: App gnome-keyring-secrets.desktop sets X-GNOME-Autostart-Phase, but gnome-session no longer manages session services
+7640:Aug 19 15:28:36 nezha gnome-session-service[81689]: App at-spi-dbus-bus.desktop sets X-GNOME-Autostart-Phase, but gnome-session no longer manages session services
+7641:Aug 19 15:28:36 nezha gnome-session-service[81689]: App spice-vdagent.desktop sets X-GNOME-Autostart-Phase, but gnome-session no longer manages session services
+7642:Aug 19 15:28:36 nezha systemd[81142]: Started gnome-session-manager@gnome.service - GNOME Session Manager (session: gnome).
+7643:Aug 19 15:28:36 nezha systemd[81142]: Reached target gnome-session-manager.target - GNOME Session Manager is ready.
+7644:Aug 19 15:28:36 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.freedesktop.secrets'
+7645:Aug 19 15:28:36 nezha systemd[81142]: Starting org.gnome.Shell@user.service - GNOME Shell...
+7646:Aug 19 15:28:36 nezha gnome-keyring-daemon[81709]: discover_other_daemon: 1
+7647:Aug 19 15:28:36 nezha systemd[81142]: Started gnome-remote-desktop.service - GNOME Remote Desktop.
+7648:Aug 19 15:28:36 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gtk.vfs.Daemon' unit='gvfs-daemon.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+7649:Aug 19 15:28:36 nezha systemd[81142]: Starting gvfs-daemon.service - Virtual filesystem service...
+7650:Aug 19 15:28:36 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gtk.vfs.Daemon'
+7651:Aug 19 15:28:36 nezha systemd[81142]: Started gvfs-daemon.service - Virtual filesystem service.
+7652:Aug 19 15:28:36 nezha podman[81409]: 2026-08-19 15:28:36.435034406 +0200 CEST m=+0.328178441 container stop 7aeb258430c6b4c711fbb81178338ff8f61904286c125904c6cd849ac9e4cf64 (image=docker.io/library/nats:2.10-alpine, name=helix-nats, PODMAN_SYSTEMD_UNIT=container-helix-nats.service)
+7653:Aug 19 15:28:36 nezha podman[81409]: 2026-08-19 15:28:36.435102294 +0200 CEST m=+0.328246326 container died 7aeb258430c6b4c711fbb81178338ff8f61904286c125904c6cd849ac9e4cf64 (image=docker.io/library/nats:2.10-alpine, name=helix-nats, PODMAN_SYSTEMD_UNIT=container-helix-nats.service)
+7654:Aug 19 15:28:36 nezha gvfsd[81735]: fuse: failed to access mountpoint /run/user/1000/gvfs: Transport endpoint is not connected
+7655:Aug 19 15:28:36 nezha gnome-shell[81714]: Running GNOME Shell (using mutter 50.1) as a Wayland display server
+7656:Aug 19 15:28:36 nezha rtkit-daemon[1293]: Supervising 7 threads of 4 processes of 1 users.
+7657:Aug 19 15:28:36 nezha rtkit-daemon[1293]: Successfully made thread 81747 of process 81714 owned by '1000' high priority at nice level -15.
+7658:Aug 19 15:28:36 nezha rtkit-daemon[1293]: Supervising 8 threads of 5 processes of 2 users.
+7659:Aug 19 15:28:36 nezha gnome-shell[81714]: Thread 'KMS thread' will be using high priority scheduling
+7660:Aug 19 15:28:36 nezha gnome-shell[81714]: Device '/dev/dri/card1' prefers shadow buffer
+7661:Aug 19 15:28:36 nezha podman[81409]: 2026-08-19 15:28:36.524552371 +0200 CEST m=+0.417696407 container remove 7aeb258430c6b4c711fbb81178338ff8f61904286c125904c6cd849ac9e4cf64 (image=docker.io/library/nats:2.10-alpine, name=helix-nats, PODMAN_SYSTEMD_UNIT=container-helix-nats.service)
+7662:Aug 19 15:28:36 nezha podman[81281]: 2026-08-19 15:28:36.56821249 +0200 CEST m=+0.509089324 container remove 9a8812f4f26572ff6cf161210ff3b144b7247cea00731374a1524495e6801550 (image=docker.io/library/postgres:16-alpine, name=helix-postgres, PODMAN_SYSTEMD_UNIT=container-helix-postgres.service)
+7663:Aug 19 15:28:36 nezha podman[81409]: 2026-08-19 15:28:36.583576434 +0200 CEST m=+0.476720468 container create fc91728274d178688591b11879db57c5a7d277dde6e812ed7a028ba06d71b651 (image=docker.io/library/nats:2.10-alpine, name=helix-nats, PODMAN_SYSTEMD_UNIT=container-helix-nats.service)
+7664:Aug 19 15:28:36 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/OPA7APGN3SQV56BVVLB7OKYWKY' does not support file handles, falling back to xino=off.
+7665:Aug 19 15:28:36 nezha podman[81281]: 2026-08-19 15:28:36.594520413 +0200 CEST m=+0.535397245 volume create f7a909ef0a5ea61961a0163c23fb46210df17ad1a5b324330e8f3291e74b0c1f
+7666:Aug 19 15:28:36 nezha podman[81281]: 2026-08-19 15:28:36.611035658 +0200 CEST m=+0.551912489 container create 5a98a220396a68d98bc4a3c67fbd239f7cbb794d61b891042e23b802cbeb58c0 (image=docker.io/library/postgres:16-alpine, name=helix-postgres, PODMAN_SYSTEMD_UNIT=container-helix-postgres.service)
+7667:Aug 19 15:28:36 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/J2RHJJYJKF7Z6MNMHPKAW4PQAC' does not support file handles, falling back to xino=off.
+7668:Aug 19 15:28:36 nezha systemd[81142]: Created slice user.slice - Slice /user.
+7669:Aug 19 15:28:36 nezha systemd[81142]: Started libpod-5a98a220396a68d98bc4a3c67fbd239f7cbb794d61b891042e23b802cbeb58c0.scope - libcrun container.
+7670:Aug 19 15:28:36 nezha systemd[81142]: Started libpod-fc91728274d178688591b11879db57c5a7d277dde6e812ed7a028ba06d71b651.scope - libcrun container.
+7671:Aug 19 15:28:36 nezha bash[81160]: [SUCCESS] Directories created
+7672:Aug 19 15:28:36 nezha bash[81160]: [INFO] Ensuring WebUI credentials and port in: /run/media/milosvasic/DATA4TB/Projects/boba/config/qBittorrent/config/qBittorrent.conf
+7673:Aug 19 15:28:36 nezha bash[81160]: [INFO] Ensuring WebUI credentials and port in: /run/media/milosvasic/DATA4TB/Projects/boba/config/qBittorrent/qBittorrent.conf
+7674:Aug 19 15:28:36 nezha podman[81281]: 2026-08-19 15:28:36.693908496 +0200 CEST m=+0.634785360 container init 5a98a220396a68d98bc4a3c67fbd239f7cbb794d61b891042e23b802cbeb58c0 (image=docker.io/library/postgres:16-alpine, name=helix-postgres, PODMAN_SYSTEMD_UNIT=container-helix-postgres.service)
+7675:Aug 19 15:28:36 nezha podman[81281]: 2026-08-19 15:28:36.696097625 +0200 CEST m=+0.636974464 container start 5a98a220396a68d98bc4a3c67fbd239f7cbb794d61b891042e23b802cbeb58c0 (image=docker.io/library/postgres:16-alpine, name=helix-postgres, PODMAN_SYSTEMD_UNIT=container-helix-postgres.service)
+7676:Aug 19 15:28:36 nezha systemd[81142]: Started container-helix-postgres.service - Podman container-helix-postgres.service.
+7677:Aug 19 15:28:36 nezha podman[81366]: 2026-08-19 15:28:36.705007356 +0200 CEST m=+0.624746299 container remove 58342344ca07aa775ba2256422c9db492a1dcd5907b719c314091ad31837c133 (image=localhost/helixcode-caddy-brotli:2, name=helixcode-caddy, org.opencontainers.image.licenses=Apache-2.0, org.opencontainers.image.title=Caddy, org.opencontainers.image.vendor=Light Code Labs, PODMAN_SYSTEMD_UNIT=helixcode-caddy.service, io.buildah.version=1.42.2, org.opencontainers.image.source=https://github.com/caddyserver/caddy-docker, org.opencontainers.image.description=a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go, org.opencontainers.image.url=https://caddyserver.com, org.opencontainers.image.documentation=https://caddyserver.com/docs, org.opencontainers.image.version=v2.11.4)
+7678:Aug 19 15:28:36 nezha bash[81160]: [SUCCESS] qBittorrent configuration ready
+7679:Aug 19 15:28:36 nezha bash[81160]: [INFO] Creating data directories...
+7680:Aug 19 15:28:36 nezha bash[81160]: [SUCCESS] Data directories verified
+7681:Aug 19 15:28:36 nezha bash[81160]: [INFO] Installing search plugins...
+7682:Aug 19 15:28:36 nezha helix-postgres[81785]: The files belonging to this database system will be owned by user "postgres".
+7683:Aug 19 15:28:36 nezha helix-postgres[81785]: This user must also own the server process.
+7684:Aug 19 15:28:36 nezha helix-postgres[81785]: 
+7685:Aug 19 15:28:36 nezha helix-postgres[81785]: The database cluster will be initialized with locale "en_US.utf8".
+7686:Aug 19 15:28:36 nezha helix-postgres[81785]: The default database encoding has accordingly been set to "UTF8".
+7687:Aug 19 15:28:36 nezha helix-postgres[81785]: The default text search configuration will be set to "english".
+7688:Aug 19 15:28:36 nezha helix-postgres[81785]: 
+7689:Aug 19 15:28:36 nezha helix-postgres[81785]: Data page checksums are disabled.
+7690:Aug 19 15:28:36 nezha helix-postgres[81785]: 
+7691:Aug 19 15:28:36 nezha helix-postgres[81785]: fixing permissions on existing directory /var/lib/postgresql/data ... ok
+7692:Aug 19 15:28:36 nezha helix-postgres[81785]: creating subdirectories ... ok
+7693:Aug 19 15:28:36 nezha helix-postgres[81785]: selecting dynamic shared memory implementation ... posix
+7694:Aug 19 15:28:36 nezha podman[81366]: 2026-08-19 15:28:36.724386006 +0200 CEST m=+0.644124945 container create 4d5e55656b0886c52b65bea70d2e8e335652b44ef42ff58b75be62bb7a994126 (image=localhost/helixcode-caddy-brotli:2, name=helixcode-caddy, org.opencontainers.image.vendor=Light Code Labs, org.opencontainers.image.licenses=Apache-2.0, PODMAN_SYSTEMD_UNIT=helixcode-caddy.service, org.opencontainers.image.title=Caddy, org.opencontainers.image.description=a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go, org.opencontainers.image.version=v2.11.4, org.opencontainers.image.documentation=https://caddyserver.com/docs, org.opencontainers.image.url=https://caddyserver.com, io.buildah.version=1.42.2, org.opencontainers.image.source=https://github.com/caddyserver/caddy-docker)
+7695:Aug 19 15:28:36 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/X5XJTKOYR3NHKZVDL3MLKG5K5H' does not support file handles, falling back to xino=off.
+7696:Aug 19 15:28:36 nezha helix-postgres[81785]: selecting default max_connections ... 100
+7697:Aug 19 15:28:36 nezha podman[81281]: 5a98a220396a68d98bc4a3c67fbd239f7cbb794d61b891042e23b802cbeb58c0
+7698:Aug 19 15:28:36 nezha helix-postgres[81785]: selecting default shared_buffers ... 128MB
+7699:Aug 19 15:28:36 nezha gnome-shell[81714]: Added device '/dev/dri/card1' (i915) using atomic mode setting.
+7700:Aug 19 15:28:36 nezha gnome-shell[81714]: Created gbm renderer for '/dev/dri/card1'
+7701:Aug 19 15:28:36 nezha gnome-shell[81714]: GPU /dev/dri/card1 selected primary from builtin panel presence
+7702:Aug 19 15:28:36 nezha systemd[81142]: Started podman-pause-0cfcb322.scope.
+7703:Aug 19 15:28:36 nezha gnome-shell[81714]: Obtained a high priority EGL context
+7704:Aug 19 15:28:36 nezha podman[81409]: 2026-08-19 15:28:36.775733683 +0200 CEST m=+0.668877717 container init fc91728274d178688591b11879db57c5a7d277dde6e812ed7a028ba06d71b651 (image=docker.io/library/nats:2.10-alpine, name=helix-nats, PODMAN_SYSTEMD_UNIT=container-helix-nats.service)
+7705:Aug 19 15:28:36 nezha podman[81409]: 2026-08-19 15:28:36.778019052 +0200 CEST m=+0.671163096 container start fc91728274d178688591b11879db57c5a7d277dde6e812ed7a028ba06d71b651 (image=docker.io/library/nats:2.10-alpine, name=helix-nats, PODMAN_SYSTEMD_UNIT=container-helix-nats.service)
+7706:Aug 19 15:28:36 nezha systemd[81142]: Started container-helix-nats.service - Podman container-helix-nats.service.
+7707:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.783822 [INF] Starting nats-server
+7708:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.783898 [INF]   Version:  2.10.29
+7709:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.783900 [INF]   Git:      [f91ddd8]
+7710:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.783903 [INF]   Name:     NAXKLNU3ARARK22RODBIN7YJ2FZAA7HJLO4H2TTYD2EONUIMUBCSUOPZ
+7711:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.783906 [INF]   Node:     xYlT3Lgo
+7712:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.783908 [INF]   ID:       NAXKLNU3ARARK22RODBIN7YJ2FZAA7HJLO4H2TTYD2EONUIMUBCSUOPZ
+7713:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784099 [INF] Starting JetStream
+7714:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784270 [INF]     _ ___ _____ ___ _____ ___ ___   _   __  __
+7715:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784273 [INF]  _ | | __|_   _/ __|_   _| _ \ __| /_\ |  \/  |
+7716:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784274 [INF] | || | _|  | | \__ \ | | |   / _| / _ \| |\/| |
+7717:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784275 [INF]  \__/|___| |_| |___/ |_| |_|_\___/_/ \_\_|  |_|
+7718:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784276 [INF] 
+7719:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784277 [INF]          https://docs.nats.io/jetstream
+7720:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784279 [INF] 
+7721:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784280 [INF] ---------------- JETSTREAM ----------------
+7722:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784282 [INF]   Max Memory:      46.94 GB
+7723:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784284 [INF]   Max Storage:     101.76 GB
+7724:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784286 [INF]   Store Directory: "/data/jetstream"
+7725:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784287 [INF] -------------------------------------------
+7726:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784543 [INF]   Starting restore for stream '$G > EVENTS'
+7727:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784785 [INF]   Restored 6 messages for stream '$G > EVENTS' in 0s
+7728:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.784929 [INF] Listening for client connections on 0.0.0.0:4222
+7729:Aug 19 15:28:36 nezha helix-nats[81789]: [1] 2026/08/19 13:28:36.785043 [INF] Server is ready
+7730:Aug 19 15:28:36 nezha helix-postgres[81785]: selecting default time zone ... UTC
+7731:Aug 19 15:28:36 nezha helix-postgres[81785]: creating configuration files ... ok
+7732:Aug 19 15:28:36 nezha podman[81409]: fc91728274d178688591b11879db57c5a7d277dde6e812ed7a028ba06d71b651
+7733:Aug 19 15:28:36 nezha podman[81366]: 2026-08-19 15:28:36.812614814 +0200 CEST m=+0.732353767 container init 4d5e55656b0886c52b65bea70d2e8e335652b44ef42ff58b75be62bb7a994126 (image=localhost/helixcode-caddy-brotli:2, name=helixcode-caddy, io.buildah.version=1.42.2, PODMAN_SYSTEMD_UNIT=helixcode-caddy.service, org.opencontainers.image.description=a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go, org.opencontainers.image.url=https://caddyserver.com, org.opencontainers.image.vendor=Light Code Labs, org.opencontainers.image.licenses=Apache-2.0, org.opencontainers.image.source=https://github.com/caddyserver/caddy-docker, org.opencontainers.image.title=Caddy, org.opencontainers.image.version=v2.11.4, org.opencontainers.image.documentation=https://caddyserver.com/docs)
+7734:Aug 19 15:28:36 nezha podman[81366]: 2026-08-19 15:28:36.815340933 +0200 CEST m=+0.735079896 container start 4d5e55656b0886c52b65bea70d2e8e335652b44ef42ff58b75be62bb7a994126 (image=localhost/helixcode-caddy-brotli:2, name=helixcode-caddy, io.buildah.version=1.42.2, PODMAN_SYSTEMD_UNIT=helixcode-caddy.service, org.opencontainers.image.vendor=Light Code Labs, org.opencontainers.image.source=https://github.com/caddyserver/caddy-docker, org.opencontainers.image.title=Caddy, org.opencontainers.image.description=a powerful, enterprise-ready, open source web server with automatic HTTPS written in Go, org.opencontainers.image.version=v2.11.4, org.opencontainers.image.documentation=https://caddyserver.com/docs, org.opencontainers.image.url=https://caddyserver.com, org.opencontainers.image.licenses=Apache-2.0)
+7735:Aug 19 15:28:36 nezha systemd[81142]: Started podman-pause-fbe01566.scope.
+7736:Aug 19 15:28:36 nezha systemd[81142]: Started helixcode-caddy.service - HelixCode Caddy edge (rootless podman, boot-persistent).
+7737:Aug 19 15:28:36 nezha helixcode-caddy[81366]: 4d5e55656b0886c52b65bea70d2e8e335652b44ef42ff58b75be62bb7a994126
+7738:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.850276,"msg":"maxprocs: Leaving GOMAXPROCS=8: CPU quota undefined"}
+7739:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8502922,"msg":"GOMEMLIMIT is updated","GOMEMLIMIT":60480044236,"previous":9223372036854775807}
+7740:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8502958,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
+7741:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8502986,"msg":"adapted config to JSON","adapter":"caddyfile"}
+7742:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8510246,"logger":"admin","msg":"admin endpoint started","address":"localhost:2019","enforce_origin":false,"origins":["//localhost:2019","//[::1]:2019","//127.0.0.1:2019"]}
+7743:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8514283,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0x5918e7c8c00"}
+7744:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8517833,"logger":"http.auto_https","msg":"automatic HTTP->HTTPS redirects are disabled","server_name":"srv0"}
+7745:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"warn","ts":1787146116.8518236,"logger":"http.auto_https","msg":"server is listening only on the HTTP port, so no automatic HTTPS will be applied to this server","server_name":"srv1","http_port":80}
+7746:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8527117,"logger":"http","msg":"enabling HTTP/3 listener","addr":":443"}
+7747:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8528302,"msg":"failed to sufficiently increase receive buffer size (was: 208 kiB, wanted: 7168 kiB, got: 416 kiB). See https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes for details."}
+7748:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8529277,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+7749:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"warn","ts":1787146116.8529966,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":80"}
+7750:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"warn","ts":1787146116.8530254,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":80"}
+7751:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8530455,"logger":"http.log","msg":"server running","name":"srv1","protocols":["h1","h2","h3"]}
+7752:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.8532002,"msg":"autosaved config (load with --resume flag)","file":"/config/caddy/autosave.json"}
+7753:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.853232,"msg":"serving initial configuration"}
+7754:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.855773,"logger":"tls","msg":"storage cleaning happened too recently; skipping for now","storage":"FileStorage:/data/caddy","instance":"a1df944f-8bbe-4dfb-b347-c79dc22a6401","try_again":1787232516.855767,"try_again_in":86399.999999733}
+7755:Aug 19 15:28:36 nezha helixcode-caddy[81925]: {"level":"info","ts":1787146116.855864,"logger":"tls","msg":"finished cleaning storage units"}
+7756:Aug 19 15:28:36 nezha bash[81160]: [SUCCESS] Installed: anilibra.py
+7757:Aug 19 15:28:36 nezha helix-postgres[81785]: running bootstrap script ... ok
+7758:Aug 19 15:28:36 nezha start.sh[81224]: 
+7759:Aug 19 15:28:36 nezha start.sh[81984]: lava-postgres
+7760:Aug 19 15:28:36 nezha podman[81351]: 2026-08-19 15:28:36.976325875 +0200 CEST m=+0.902816991 container remove 17fee5d74eed67bbf11c1a20873838dd0411663c7d27708d53b5ebdac7b895d5 (image=docker.io/library/redis:7-alpine, name=helix-redis, PODMAN_SYSTEMD_UNIT=container-helix-redis.service)
+7761:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: bitsearch.py
+7762:Aug 19 15:28:37 nezha podman[81351]: 2026-08-19 15:28:37.04625581 +0200 CEST m=+0.972746921 volume create 05e8e91af369c0d9404cac0bc16fe6aba8473c9b25a8f56d1c5574639e68ca64
+7763:Aug 19 15:28:37 nezha podman[81351]: 2026-08-19 15:28:37.061131519 +0200 CEST m=+0.987622630 container create bbfdb05f87839ba23c16c7f5e1f9b4e9d4a30216fb787d512ae7c66a64dff143 (image=docker.io/library/redis:7-alpine, name=helix-redis, PODMAN_SYSTEMD_UNIT=container-helix-redis.service)
+7764:Aug 19 15:28:37 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/6VMWH7SDBIMTULBLFGGH4HASOX' does not support file handles, falling back to xino=off.
+7765:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: download_proxy.py
+7766:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.a11y.Bus' unit='at-spi-dbus-bus.service' requested by ':1.20' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+7767:Aug 19 15:28:37 nezha systemd[81142]: Starting at-spi-dbus-bus.service - Accessibility services bus...
+7768:Aug 19 15:28:37 nezha systemd[81142]: Started libpod-bbfdb05f87839ba23c16c7f5e1f9b4e9d4a30216fb787d512ae7c66a64dff143.scope - libcrun container.
+7769:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.a11y.Bus'
+7770:Aug 19 15:28:37 nezha systemd[81142]: Started at-spi-dbus-bus.service - Accessibility services bus.
+7771:Aug 19 15:28:37 nezha gnome-shell[81714]: Using public X11 display :0, (using unix:/tmp/.X11-unix/X1 for managed services)
+7772:Aug 19 15:28:37 nezha gnome-shell[81714]: Using Wayland display name 'wayland-0'
+7773:Aug 19 15:28:37 nezha podman[81351]: 2026-08-19 15:28:37.117223065 +0200 CEST m=+1.043714182 container init bbfdb05f87839ba23c16c7f5e1f9b4e9d4a30216fb787d512ae7c66a64dff143 (image=docker.io/library/redis:7-alpine, name=helix-redis, PODMAN_SYSTEMD_UNIT=container-helix-redis.service)
+7774:Aug 19 15:28:37 nezha podman[81351]: 2026-08-19 15:28:37.120197115 +0200 CEST m=+1.046688227 container start bbfdb05f87839ba23c16c7f5e1f9b4e9d4a30216fb787d512ae7c66a64dff143 (image=docker.io/library/redis:7-alpine, name=helix-redis, PODMAN_SYSTEMD_UNIT=container-helix-redis.service)
+7775:Aug 19 15:28:37 nezha systemd[81142]: Started container-helix-redis.service - Podman container-helix-redis.service.
+7776:Aug 19 15:28:37 nezha systemd[81142]: Started helix-server.service - Helix Seller Go Server.
+7777:Aug 19 15:28:37 nezha systemd[81142]: Reached target helix.target - Helix Seller — Full Platform Stack.
+7778:Aug 19 15:28:37 nezha helix-redis[82069]: 1:C 19 Aug 2026 13:28:37.127 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+7779:Aug 19 15:28:37 nezha helix-redis[82069]: 1:C 19 Aug 2026 13:28:37.127 * oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+7780:Aug 19 15:28:37 nezha helix-redis[82069]: 1:C 19 Aug 2026 13:28:37.127 * Redis version=7.4.9, bits=64, commit=00000000, modified=0, pid=1, just started
+7781:Aug 19 15:28:37 nezha helix-redis[82069]: 1:C 19 Aug 2026 13:28:37.127 # Warning: no config file specified, using the default config. In order to specify a config file use redis-server /path/to/redis.conf
+7782:Aug 19 15:28:37 nezha helix-redis[82069]: 1:M 19 Aug 2026 13:28:37.127 * monotonic clock: POSIX clock_gettime
+7783:Aug 19 15:28:37 nezha helix-redis[82069]: 1:M 19 Aug 2026 13:28:37.128 * Running mode=standalone, port=6379.
+7784:Aug 19 15:28:37 nezha helix-redis[82069]: 1:M 19 Aug 2026 13:28:37.129 * Server initialized
+7785:Aug 19 15:28:37 nezha helix-redis[82069]: 1:M 19 Aug 2026 13:28:37.129 * Ready to accept connections tcp
+7786:Aug 19 15:28:37 nezha helix-postgres[81785]: sh: locale: not found
+7787:Aug 19 15:28:37 nezha helix-postgres[81785]: 2026-08-19 13:28:37.129 UTC [30] WARNING:  no usable system locales were found
+7788:Aug 19 15:28:37 nezha podman[81351]: bbfdb05f87839ba23c16c7f5e1f9b4e9d4a30216fb787d512ae7c66a64dff143
+7789:Aug 19 15:28:37 nezha helix-server[82106]: 2026/08/19 15:28:37 No .env file found
+7790:Aug 19 15:28:37 nezha helix-server[82106]: {"level":"fatal","time":"2026-08-19T15:28:37.152+0200","caller":"server/main.go:41","msg":"Failed to connect to PostgreSQL","error":"unable to ping database: failed to connect to `user=helix database=helix_seller`: 127.0.0.1:5432 (127.0.0.1): failed to receive message: unexpected EOF","stacktrace":"main.main\n\t/run/media/milosvasic/DATA4TB/Projects/helix_seller/cmd/server/main.go:41\nruntime.main\n\t/usr/lib/golang/src/runtime/proc.go:290"}
+7791:Aug 19 15:28:37 nezha systemd[81142]: helix-server.service: Main process exited, code=exited, status=1/FAILURE
+7792:Aug 19 15:28:37 nezha systemd[81142]: helix-server.service: Failed with result 'exit-code'.
+7793:Aug 19 15:28:37 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/PWWF65R4QCG4X66FT62LIGOA27' does not support file handles, falling back to xino=off.
+7794:Aug 19 15:28:37 nezha at-spi-bus-launcher[82098]: dbus-daemon[82098]: Activating service name='org.a11y.atspi.Registry' requested by ':1.0' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+7795:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: env_loader.py
+7796:Aug 19 15:28:37 nezha at-spi-bus-launcher[82098]: dbus-daemon[82098]: Successfully activated service 'org.a11y.atspi.Registry'
+7797:Aug 19 15:28:37 nezha at-spi-bus-launcher[82135]: SpiRegistry daemon is running with well-known name - org.a11y.atspi.Registry
+7798:Aug 19 15:28:37 nezha systemd[81142]: Started rootless-netns-6c5953ae.scope.
+7799:Aug 19 15:28:37 nezha audit: ANOM_PROMISCUOUS dev=veth0 prom=256 old_prom=0 auid=1000 uid=1000 gid=1000 ses=8
+7800:Aug 19 15:28:37 nezha audit[82161]: SYSCALL arch=c000003e syscall=44 success=yes exit=132 a0=5 a1=7ffed37d20c0 a2=84 a3=0 items=0 ppid=82039 pid=82161 auid=1000 uid=1000 gid=1000 euid=1000 suid=1000 fsuid=1000 egid=1000 sgid=1000 fsgid=1000 tty=(none) ses=8 comm="netavark" exe="/usr/libexec/podman/netavark" key=(null)
+7801:Aug 19 15:28:37 nezha audit: PROCTITLE proctitle=2F7573722F6C6962657865632F706F646D616E2F6E6574617661726B002D2D636F6E666967002F72756E2F757365722F313030302F636F6E7461696E6572732F6E6574776F726B73002D2D726F6F746C6573733D74727565002D2D616172647661726B2D62696E6172793D2F7573722F6C6962657865632F706F646D616E2F61
+7802:Aug 19 15:28:37 nezha kernel: podman1: port 1(veth0) entered blocking state
+7803:Aug 19 15:28:37 nezha kernel: podman1: port 1(veth0) entered disabled state
+7804:Aug 19 15:28:37 nezha kernel: veth0: entered allmulticast mode
+7805:Aug 19 15:28:37 nezha kernel: veth0: entered promiscuous mode
+7806:Aug 19 15:28:37 nezha kernel: podman1: port 1(veth0) entered blocking state
+7807:Aug 19 15:28:37 nezha kernel: podman1: port 1(veth0) entered forwarding state
+7808:Aug 19 15:28:37 nezha audit[82165]: NETFILTER_CFG table=netavark:2 family=1 entries=29 op=nft_register_chain pid=82165 comm="nft"
+7809:Aug 19 15:28:37 nezha audit[82165]: SYSCALL arch=c000003e syscall=46 success=yes exit=4832 a0=3 a1=7ffe5ef3b320 a2=0 a3=0 items=0 ppid=82161 pid=82165 auid=1000 uid=1000 gid=1000 euid=1000 suid=1000 fsuid=1000 egid=1000 sgid=1000 fsgid=1000 tty=(none) ses=8 comm="nft" exe="/usr/sbin/nft" key=(null)
+7810:Aug 19 15:28:37 nezha audit: PROCTITLE proctitle=6E6674002D6A002D66002D
+7811:Aug 19 15:28:37 nezha systemd[81142]: Started run-p82168-i82468.scope - [systemd-run] /usr/libexec/podman/aardvark-dns --config /run/user/1000/containers/networks/aardvark-dns -p 53 run.
+7812:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: eztv.py
+7813:Aug 19 15:28:37 nezha systemd[81142]: Created slice user-libpod_pod_5b871383a43db9d86a705bd91386c8014dfac17a1e5351c459a989da21032ea4.slice - cgroup user-libpod_pod_5b871383a43db9d86a705bd91386c8014dfac17a1e5351c459a989da21032ea4.slice.
+7814:Aug 19 15:28:37 nezha systemd[81142]: Started libpod-bd5f4db976f3981a0836cd8a6776a745a2745511be72fb6cfbe3dbcada74d7c7.scope - libcrun container.
+7815:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: gamestorrents.py
+7816:Aug 19 15:28:37 nezha start.sh[81457]: 
+7817:Aug 19 15:28:37 nezha start.sh[81695]: [1/2] STEP 1/2: FROM docker.io/library/caddy:2-builder AS build
+7818:Aug 19 15:28:37 nezha podman[82039]: 2026-08-19 15:28:37.274473908 +0200 CEST m=+0.253518860 container init bd5f4db976f3981a0836cd8a6776a745a2745511be72fb6cfbe3dbcada74d7c7 (image=localhost/lava_lava-migrate:latest, name=lava-migrate, pod_id=5b871383a43db9d86a705bd91386c8014dfac17a1e5351c459a989da21032ea4, com.docker.compose.project.config_files=/run/media/milosvasic/DATA4TB/Projects/lava/docker-compose.yml, io.podman.compose.config-hash=fbdb9531a4f5740b7028f0665d15a8785683cd6691fe08ef724023cf278e58a4, io.podman.compose.project=lava, io.podman.compose.service=lava-migrate, com.docker.compose.project.working_dir=/run/media/milosvasic/DATA4TB/Projects/lava, io.podman.compose.version=1.5.0, com.docker.compose.project=lava, io.buildah.version=1.42.2, PODMAN_SYSTEMD_UNIT=podman-compose@lava.service, com.docker.compose.container-number=1, com.docker.compose.service=lava-migrate)
+7819:Aug 19 15:28:37 nezha podman[82039]: 2026-08-19 15:28:37.27749267 +0200 CEST m=+0.256537627 container start bd5f4db976f3981a0836cd8a6776a745a2745511be72fb6cfbe3dbcada74d7c7 (image=localhost/lava_lava-migrate:latest, name=lava-migrate, pod_id=5b871383a43db9d86a705bd91386c8014dfac17a1e5351c459a989da21032ea4, PODMAN_SYSTEMD_UNIT=podman-compose@lava.service, com.docker.compose.container-number=1, com.docker.compose.project.working_dir=/run/media/milosvasic/DATA4TB/Projects/lava, com.docker.compose.service=lava-migrate, com.docker.compose.project=lava, com.docker.compose.project.config_files=/run/media/milosvasic/DATA4TB/Projects/lava/docker-compose.yml, io.podman.compose.config-hash=fbdb9531a4f5740b7028f0665d15a8785683cd6691fe08ef724023cf278e58a4, io.podman.compose.version=1.5.0, io.buildah.version=1.42.2, io.podman.compose.project=lava, io.podman.compose.service=lava-migrate)
+7820:Aug 19 15:28:37 nezha start.sh[82039]: lava-migrate
+7821:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: glotorrents.py
+7822:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: helpers.py
+7823:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: iptorrents.py
+7824:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: kickass.py
+7825:Aug 19 15:28:37 nezha gnome-shell[81714]: Unset XDG_SESSION_ID, getCurrentSessionProxy() called outside a user session. Asking logind directly.
+7826:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: kinozal.py
+7827:Aug 19 15:28:37 nezha helix-postgres[81785]: performing post-bootstrap initialization ... ok
+7828:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.Shell.Screencast' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+7829:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: limetorrents.py
+7830:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.PermissionStore' unit='xdg-permission-store.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+7831:Aug 19 15:28:37 nezha systemd[81142]: Starting xdg-permission-store.service - sandboxed app permission store...
+7832:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.Shell.CalendarServer' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+7833:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gnome.evolution.dataserver.Sources5' unit='evolution-source-registry.service' requested by ':1.31' (uid=1000 pid=82408 comm="/usr/libexec/gnome-shell-calendar-server")
+7834:Aug 19 15:28:37 nezha systemd[81142]: Starting evolution-source-registry.service - Evolution source registry...
+7835:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'
+7836:Aug 19 15:28:37 nezha systemd[81142]: Started xdg-permission-store.service - sandboxed app permission store.
+7837:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: linuxtracker.py
+7838:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Desktop' unit='xdg-desktop-portal.service' requested by ':1.30' (uid=1000 pid=82378 comm="/usr/bin/gjs -m /usr/share/gnome-shell/org.gnome.S")
+7839:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.OnlineAccounts' requested by ':1.33' (uid=1000 pid=82428 comm="/usr/libexec/evolution-source-registry")
+7840:Aug 19 15:28:37 nezha systemd[81142]: Starting xdg-desktop-portal.service - Portal service...
+7841:Aug 19 15:28:37 nezha gnome-shell[81714]: Registering session with GDM
+7842:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.Shell.Notifications' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+7843:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gnome.evolution.dataserver.Sources5'
+7844:Aug 19 15:28:37 nezha systemd[81142]: Started evolution-source-registry.service - Evolution source registry.
+7845:Aug 19 15:28:37 nezha goa-daemon[82470]: goa-daemon version 3.58.1 starting
+7846:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Documents' unit='xdg-document-portal.service' requested by ':1.34' (uid=1000 pid=82471 comm="/usr/libexec/xdg-desktop-portal")
+7847:Aug 19 15:28:37 nezha systemd[81142]: Starting xdg-document-portal.service - flatpak document portal service...
+7848:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.Identity' requested by ':1.36' (uid=1000 pid=82470 comm="/usr/libexec/goa-daemon")
+7849:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gnome.evolution.dataserver.Calendar8' unit='evolution-calendar-factory.service' requested by ':1.31' (uid=1000 pid=82408 comm="/usr/libexec/gnome-shell-calendar-server")
+7850:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gnome.Shell.CalendarServer'
+7851:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.Shell@user.service - GNOME Shell.
+7852:Aug 19 15:28:37 nezha systemd[81142]: Reached target gnome-session-initialized.target - GNOME Session is initialized.
+7853:Aug 19 15:28:37 nezha systemd[81142]: Reached target gnome-session-basic-services.target - GNOME basic session services.
+7854:Aug 19 15:28:37 nezha systemd[81142]: Reached target gnome-session-services.target - GNOME session services.
+7855:Aug 19 15:28:37 nezha systemd[81142]: Reached target gnome-session@gnome.target - GNOME Session (session: gnome).
+7856:Aug 19 15:28:37 nezha systemd[81142]: Starting evolution-calendar-factory.service - Evolution calendar service...
+7857:Aug 19 15:28:37 nezha systemd[81142]: Starting gnome-session-signal-init.service - Signal initialization done to GNOME Session Manager...
+7858:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gnome.Identity'
+7859:Aug 19 15:28:37 nezha systemd[81142]: Starting org.freedesktop.IBus.session.GNOME.service - IBus Daemon for GNOME...
+7860:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.A11ySettings.service - GNOME accessibility service...
+7861:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gnome.OnlineAccounts'
+7862:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: megapeer.py
+7863:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Color.service - GNOME color management service...
+7864:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Datetime.service - GNOME date & time service...
+7865:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Housekeeping.service - GNOME maintenance of expirable data service...
+7866:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Keyboard.service - GNOME keyboard configuration service...
+7867:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.MediaKeys.service - GNOME keyboard shortcuts service...
+7868:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Power.service - GNOME power management service...
+7869:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.PrintNotifications.service - GNOME printer notifications service...
+7870:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Rfkill.service - GNOME RFKill support service...
+7871:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.ScreensaverProxy.service - GNOME FreeDesktop screensaver service...
+7872:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.freedesktop.portal.Documents'
+7873:Aug 19 15:28:37 nezha systemd[1]: run-user-1000-doc.mount: Deactivated successfully.
+7874:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Sharing.service - GNOME file sharing service...
+7875:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Smartcard.service - GNOME smartcard service...
+7876:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Sound.service - GNOME sound sample caching service...
+7877:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.UsbProtection.service - GNOME USB protection service...
+7878:Aug 19 15:28:37 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.Wwan.service - GNOME WWan support service...
+7879:Aug 19 15:28:37 nezha systemd[81142]: spice-vdagent.service - Spice guest session agent skipped, unmet condition check ConditionPathExists=/run/spice-vdagentd/spice-vdagent-sock
+7880:Aug 19 15:28:37 nezha systemd[81142]: Started xdg-document-portal.service - flatpak document portal service.
+7881:Aug 19 15:28:37 nezha vmware-user.desktop[82645]: vmware-user: could not open /proc/fs/vmblock/dev
+7882:Aug 19 15:28:37 nezha VBoxClient[82657]: VirtualBox kernel service is not running or called over SSH. Exiting.
+7883:Aug 19 15:28:37 nezha jetbrains-toolbox.desktop[82660]: OpenJDK 64-Bit Server VM warning: Option UseCompressedClassPointers was deprecated in version 25.0 and will likely be removed in a future release.
+7884:Aug 19 15:28:37 nezha gnome-session-service[81689]: Entering running state
+7885:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gnome.Shell.Notifications'
+7886:Aug 19 15:28:37 nezha bash[81160]: [SUCCESS] Installed: nnmclub.py
+7887:Aug 19 15:28:37 nezha systemd[81142]: Finished gnome-session-signal-init.service - Signal initialization done to GNOME Session Manager.
+7888:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gnome' unit='xdg-desktop-portal-gnome.service' requested by ':1.34' (uid=1000 pid=82471 comm="/usr/libexec/xdg-desktop-portal")
+7889:Aug 19 15:28:37 nezha rtkit-daemon[1293]: Supervising 8 threads of 5 processes of 2 users.
+7890:Aug 19 15:28:37 nezha rtkit-daemon[1293]: Supervising 8 threads of 5 processes of 2 users.
+7891:Aug 19 15:28:37 nezha stop[81165]: [2026-08-19 16:28:37] [info] ==========================================
+7892:Aug 19 15:28:37 nezha kernel: rfkill: input handler disabled
+7893:Aug 19 15:28:37 nezha gnome-session-service[81689]: Could not create transient scope for PID 82581: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Failed to set unit properties: No such process
+7894:Aug 19 15:28:37 nezha gnome-session-service[81689]: Could not create transient scope for PID 82639: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Failed to set unit properties: No such process
+7895:Aug 19 15:28:37 nezha gnome-session-service[81689]: Could not create transient scope for PID 82647: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Failed to set unit properties: No such process
+7896:Aug 19 15:28:37 nezha rtkit-daemon[1293]: Supervising 8 threads of 5 processes of 2 users.
+7897:Aug 19 15:28:37 nezha stop[81165]: [2026-08-19 16:28:37] [info] Proxy Service Stopped
+7898:Aug 19 15:28:37 nezha stop[81165]: [2026-08-19 16:28:37] [info] ==========================================
+7899:Aug 19 15:28:37 nezha stop[81165]: ==========================================
+7900:Aug 19 15:28:37 nezha stop[81165]: Proxy Service Status After Stop
+7901:Aug 19 15:28:37 nezha stop[81165]: ==========================================
+7902:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.A11ySettings.service - GNOME accessibility service.
+7903:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Datetime.service - GNOME date & time service.
+7904:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.ScreensaverProxy.service - GNOME FreeDesktop screensaver service.
+7905:Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.freedesktop.portal.IBus' requested by ':1.56' (uid=1000 pid=82525 comm="/usr/bin/ibus-daemon --panel disable")
+7906:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Rfkill.service - GNOME RFKill support service.
+7907:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Keyboard.service - GNOME keyboard configuration service.
+7908:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Color.service - GNOME color management service.
+7909:Aug 19 15:28:37 nezha jetbrains-toolbox.desktop[82660]: CreateCoredumpOnCrash specified, but core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
+7910:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Power.service - GNOME power management service.
+7911:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Smartcard.service - GNOME smartcard service.
+7912:Aug 19 15:28:37 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.timedate1' unit='dbus-org.freedesktop.timedate1.service' requested by ':1.868' (uid=1000 pid=82532 comm="/usr/libexec/gsd-datetime")
+7913:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Housekeeping.service - GNOME maintenance of expirable data service.
+7914:Aug 19 15:28:37 nezha systemd[81142]: Started org.freedesktop.IBus.session.GNOME.service - IBus Daemon for GNOME.
+7915:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.UsbProtection.service - GNOME USB protection service.
+7916:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.PrintNotifications.service - GNOME printer notifications service.
+7917:Aug 19 15:28:37 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Wwan.service - GNOME WWan support service.
+7918:Aug 19 15:28:37 nezha systemd[81142]: Started app-gnome-drweb\x2dgui-82693.scope - Application launched by gnome-session-service.
+7919:Aug 19 15:28:37 nezha audit: BPF prog-id=60 op=LOAD
+7920:Aug 19 15:28:37 nezha audit: BPF prog-id=61 op=LOAD
+7921:Aug 19 15:28:37 nezha audit: BPF prog-id=62 op=LOAD
+7922:Aug 19 15:28:38 nezha systemd[81142]: Started app-gnome-jetbrains\x2dtoolbox-82660.scope - Application launched by gnome-session-service.
+7923:Aug 19 15:28:38 nezha systemd[81142]: Started app-gnome-libcanberra\x2dlogin\x2dsound-82680.scope - Application launched by gnome-session-service.
+7924:Aug 19 15:28:38 nezha systemd[81142]: Started app-gnome-org.gnome.SettingsDaemon.DiskUtilityNotify-82560.scope - Application launched by gnome-session-service.
+7925:Aug 19 15:28:38 nezha systemd[1]: Starting systemd-timedated.service - Time & Date Service...
+7926:Aug 19 15:28:38 nezha systemd[81142]: Started app-gnome-org.telegram.desktop-82619.scope - Application launched by gnome-session-service.
+7927:Aug 19 15:28:38 nezha systemd[81142]: Started app-gnome-pipewire\x2dxrdp-82698.scope - Application launched by gnome-session-service.
+7928:Aug 19 15:28:38 nezha systemd[81142]: Started app-gnome-wayvnc-82572.scope - Application launched by gnome-session-service.
+7929:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.A11ySettings.target - GNOME accessibility target.
+7930:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Color.target - GNOME color management target.
+7931:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Datetime.target - GNOME date & time target.
+7932:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Housekeeping.target - GNOME maintenance of expirable data target.
+7933:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Keyboard.target - GNOME keyboard configuration target.
+7934:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Power.target - GNOME power management target.
+7935:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.PrintNotifications.target - GNOME printer notifications target.
+7936:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Rfkill.target - GNOME RFKill support target.
+7937:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.ScreensaverProxy.target - GNOME FreeDesktop screensaver target.
+7938:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Smartcard.target - GNOME smartcard target.
+7939:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.UsbProtection.target - GNOME USB protection target.
+7940:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Wwan.target - GNOME WWan support target.
+7941:Aug 19 15:28:38 nezha systemd[81142]: Started pipewire.service - PipeWire Multimedia Service.
+7942:Aug 19 15:28:38 nezha gsd-a11y-settings[82529]: Failed to stop orca.service: GDBus.Error:org.freedesktop.systemd1.NoSuchUnit: Unit orca.service not loaded.
+7943:Aug 19 15:28:38 nezha gsd-a11y-settings[82529]: Failed to disable orca.service: GDBus.Error:org.freedesktop.systemd1.NoSuchUnit: Unit orca.service does not exist
+7944:Aug 19 15:28:38 nezha systemd[81142]: Started wireplumber.service - Multimedia Service Session Manager.
+7945:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gnome.evolution.dataserver.Calendar8'
+7946:Aug 19 15:28:38 nezha systemd[81142]: Started evolution-calendar-factory.service - Evolution calendar service.
+7947:Aug 19 15:28:38 nezha gsd-keyboard[82546]: g_variant_unref: assertion 'value != NULL' failed
+7948:Aug 19 15:28:38 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Sound.service - GNOME sound sample caching service.
+7949:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Sound.target - GNOME sound sample caching target.
+7950:Aug 19 15:28:38 nezha systemd[81142]: Started org.gnome.SettingsDaemon.Sharing.service - GNOME file sharing service.
+7951:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.Sharing.target - GNOME file sharing target.
+7952:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.ScreenSaver' requested by ':1.51' (uid=1000 pid=82599 comm="/usr/libexec/gsd-usb-protection")
+7953:Aug 19 15:28:38 nezha systemd[81142]: Started org.gnome.SettingsDaemon.MediaKeys.service - GNOME keyboard shortcuts service.
+7954:Aug 19 15:28:38 nezha systemd[81142]: Reached target org.gnome.SettingsDaemon.MediaKeys.target - GNOME keyboard shortcuts target.
+7955:Aug 19 15:28:38 nezha systemd[81142]: Reached target gnome-session.target - GNOME Session.
+7956:Aug 19 15:28:38 nezha systemd[81142]: Reached target graphical-session.target - Current graphical user session.
+7957:Aug 19 15:28:38 nezha systemd[81142]: Starting evolution-alarm-notify.service - Event and Task Reminders...
+7958:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.freedesktop.portal.IBus'
+7959:Aug 19 15:28:38 nezha systemd[81142]: Starting gnome-software.service - GNOME Software...
+7960:Aug 19 15:28:38 nezha systemd[81142]: Starting localsearch-3.service - LocalSearch indexer...
+7961:Aug 19 15:28:38 nezha systemd[81142]: Starting xdg-desktop-portal-gnome.service - Portal service (GNOME implementation)...
+7962:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: nova2.py
+7963:Aug 19 15:28:38 nezha systemd[1]: Started systemd-timedated.service - Time & Date Service.
+7964:Aug 19 15:28:38 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-timedated comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+7965:Aug 19 15:28:38 nezha dbus-daemon[1289]: [system] Successfully activated service 'org.freedesktop.timedate1'
+7966:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gnome.evolution.dataserver.AddressBook10' unit='evolution-addressbook-factory.service' requested by ':1.41' (uid=1000 pid=82518 comm="/usr/libexec/evolution-calendar-factory")
+7967:Aug 19 15:28:38 nezha systemd[81142]: Starting evolution-addressbook-factory.service - Evolution address book service...
+7968:Aug 19 15:28:38 nezha systemd[81142]: Started pipewire-pulse.service - PipeWire PulseAudio.
+7969:Aug 19 15:28:38 nezha systemd[81142]: Started localsearch-3.service - LocalSearch indexer.
+7970:Aug 19 15:28:38 nezha gnome-shell[81714]: Will monitor session 7
+7971:Aug 19 15:28:38 nezha systemd[81142]: Started gnome-software.service - GNOME Software.
+7972:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 8 threads of 5 processes of 2 users.
+7973:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 8 threads of 5 processes of 2 users.
+7974:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 8 threads of 5 processes of 2 users.
+7975:Aug 19 15:28:38 nezha stop[81165]:   ✗ proxy-redis: stopped
+7976:Aug 19 15:28:38 nezha gnome-shell[81714]: Error looking up permission: GDBus.Error:org.freedesktop.portal.Error.NotFound: No entry for geolocation
+7977:Aug 19 15:28:38 nezha drweb-gui.desktop[82693]: Warning: Ignoring XDG_SESSION_TYPE=wayland on Gnome. Use QT_QPA_PLATFORM=wayland to run on Wayland anyway.
+7978:Aug 19 15:28:38 nezha gsd-media-keys[82548]: Failed to grab accelerator for keybinding settings:hibernate
+7979:Aug 19 15:28:38 nezha gsd-media-keys[82548]: Failed to grab accelerator for keybinding settings:playback-repeat
+7980:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: novaprinter.py
+7981:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gtk.vfs.UDisks2VolumeMonitor' unit='gvfs-udisks2-volume-monitor.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+7982:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gnome.ScreenSaver'
+7983:Aug 19 15:28:38 nezha systemd[81142]: Starting gvfs-udisks2-volume-monitor.service - Virtual filesystem service - disk device monitor...
+7984:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gnome.evolution.dataserver.AddressBook10'
+7985:Aug 19 15:28:38 nezha systemd[81142]: Started evolution-addressbook-factory.service - Evolution address book service.
+7986:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gtk.vfs.UDisks2VolumeMonitor'
+7987:Aug 19 15:28:38 nezha systemd[81142]: Started gvfs-udisks2-volume-monitor.service - Virtual filesystem service - disk device monitor.
+7988:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gtk.vfs.GoaVolumeMonitor' unit='gvfs-goa-volume-monitor.service' requested by ':1.63' (uid=1000 pid=82843 comm="/usr/libexec/localsearch-3")
+7989:Aug 19 15:28:38 nezha systemd[81142]: Starting gvfs-goa-volume-monitor.service - Virtual filesystem service - GNOME Online Accounts monitor...
+7990:Aug 19 15:28:38 nezha stop[81165]:   ✗ proxy-postgres: stopped
+7991:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: nyaa.py
+7992:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gtk.vfs.GoaVolumeMonitor'
+7993:Aug 19 15:28:38 nezha systemd[81142]: Started gvfs-goa-volume-monitor.service - Virtual filesystem service - GNOME Online Accounts monitor.
+7994:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gtk.vfs.AfcVolumeMonitor' unit='gvfs-afc-volume-monitor.service' requested by ':1.63' (uid=1000 pid=82843 comm="/usr/libexec/localsearch-3")
+7995:Aug 19 15:28:38 nezha systemd[81142]: Starting gvfs-afc-volume-monitor.service - Virtual filesystem service - Apple File Conduit monitor...
+7996:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gtk.vfs.AfcVolumeMonitor'
+7997:Aug 19 15:28:38 nezha systemd[81142]: Started gvfs-afc-volume-monitor.service - Virtual filesystem service - Apple File Conduit monitor.
+7998:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gtk.vfs.MTPVolumeMonitor' unit='gvfs-mtp-volume-monitor.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+7999:Aug 19 15:28:38 nezha systemd[81142]: Starting gvfs-mtp-volume-monitor.service - Virtual filesystem service - Media Transfer Protocol monitor...
+8000:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Successfully made thread 82862 of process 82862 owned by '1000' high priority at nice level -11.
+8001:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 9 threads of 6 processes of 2 users.
+8002:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gtk.vfs.MTPVolumeMonitor'
+8003:Aug 19 15:28:38 nezha systemd[81142]: Started gvfs-mtp-volume-monitor.service - Virtual filesystem service - Media Transfer Protocol monitor.
+8004:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gtk.vfs.GPhoto2VolumeMonitor' unit='gvfs-gphoto2-volume-monitor.service' requested by ':1.63' (uid=1000 pid=82843 comm="/usr/libexec/localsearch-3")
+8005:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Successfully made thread 82936 of process 82862 owned by '1000' RT at priority 20.
+8006:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 10 threads of 6 processes of 2 users.
+8007:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 10 threads of 6 processes of 2 users.
+8008:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 10 threads of 6 processes of 2 users.
+8009:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 10 threads of 6 processes of 2 users.
+8010:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 10 threads of 6 processes of 2 users.
+8011:Aug 19 15:28:38 nezha systemd[81142]: Starting gvfs-gphoto2-volume-monitor.service - Virtual filesystem service - digital camera monitor...
+8012:Aug 19 15:28:38 nezha stop[81165]:   ✗ proxy-gluetun: stopped
+8013:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Successfully made thread 82819 of process 82819 owned by '1000' high priority at nice level -11.
+8014:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 11 threads of 7 processes of 2 users.
+8015:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: piratebay.py
+8016:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Successfully made thread 82971 of process 82819 owned by '1000' RT at priority 20.
+8017:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 12 threads of 7 processes of 2 users.
+8018:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 12 threads of 7 processes of 2 users.
+8019:Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gtk.vfs.GPhoto2VolumeMonitor'
+8020:Aug 19 15:28:38 nezha systemd[81142]: Started gvfs-gphoto2-volume-monitor.service - Virtual filesystem service - digital camera monitor.
+8021:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 12 threads of 7 processes of 2 users.
+8022:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Successfully made thread 82821 of process 82821 owned by '1000' high priority at nice level -11.
+8023:Aug 19 15:28:38 nezha rtkit-daemon[1293]: Supervising 13 threads of 8 processes of 2 users.
+8024:Aug 19 15:28:38 nezha stop[81165]:   ✗ proxy-compiler: stopped
+8025:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: pirateiro.py
+8026:Aug 19 15:28:38 nezha gsd-usb-protection[82599]: Failed to fetch USBGuard parameters: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name org.usbguard1 was not provided by any .service files
+8027:Aug 19 15:28:38 nezha stop[81165]:   ✗ proxy-healthd: stopped
+8028:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: rockbox.py
+8029:Aug 19 15:28:38 nezha stop[81165]:   ✗ proxy-squid: stopped
+8030:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: rutor.py
+8031:Aug 19 15:28:38 nezha polkitd[1345]: Registered Authentication Agent for unix-session:7 (system bus name :1.818 [/usr/bin/gnome-shell --mode=user], object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8)
+8032:Aug 19 15:28:38 nezha gnome-shell[80717]: Gio.IOErrorEnum: GDBus.Error:org.freedesktop.MalcontentTimer1.Child.Error.IdentifyingUser: Error identifying user: Invalid or unknown user
+8038:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: rutracker.py
+8039:Aug 19 15:28:38 nezha stop[81165]:   ✗ proxy-api: stopped
+8040:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: snowfl.py
+8041:Aug 19 15:28:38 nezha stop[81165]:   ✗ proxy-vpn: stopped
+8042:Aug 19 15:28:38 nezha NetworkManager[1380]: <info>  [1787146118.9098] agent-manager: agent[2c83b32efd6bd5d2,:1.818/org.gnome.Shell.NetworkAgent/1000]: agent registered
+8043:Aug 19 15:28:38 nezha gnome-remote-desktop-daemon[81679]: RDP TLS certificate and key not yet configured properly
+8044:Aug 19 15:28:38 nezha gnome-remote-desktop-daemon[81679]: VNC server started
+8045:Aug 19 15:28:38 nezha bash[81160]: [SUCCESS] Installed: socks.py
+8046:Aug 19 15:28:38 nezha stop[81165]:   ✗ proxy-dante: stopped
+8047:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: solidtorrents.py
+8048:Aug 19 15:28:39 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/EAGUFLXGAH7LQ5V5J7UK3X47OO' does not support file handles, falling back to xino=off.
+8049:Aug 19 15:28:39 nezha start.sh[81695]: [1/2] STEP 2/2: RUN xcaddy build --with github.com/ueffel/caddy-brotli
+8050:Aug 19 15:28:39 nezha start.sh[81695]: --> Using cache 525346722392066f86a19f50765188da8fe9c64c9d74828e46b18f8e3a89accb
+8051:Aug 19 15:28:39 nezha start.sh[81695]: --> 525346722392
+8052:Aug 19 15:28:39 nezha stop[81165]:   ✗ proxy-admin: stopped
+8053:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.094 | INFO  | main                      | ToolboxEntry              | pid: 82660
+8054:Aug 19 15:28:39 nezha kernel: overlayfs: fs on '/home/milosvasic/.local/share/containers/storage/overlay/l/FUHHNW5MHNKQ2KYZSPSJKJZPWM' does not support file handles, falling back to xino=off.
+8055:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.101 | INFO  | main                      | ToolboxEntry              | cwd: /home/milosvasic
+8056:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: theme_injector.py
+8057:Aug 19 15:28:39 nezha start.sh[81695]: [2/2] STEP 1/2: FROM docker.io/library/caddy:2
+8058:Aug 19 15:28:39 nezha wayvnc.desktop[82572]: ERROR: ../src/main.c: 375: Virtual Pointer protocol not supported by compositor.
+8059:Aug 19 15:28:39 nezha wayvnc.desktop[82572]: ERROR: ../src/main.c: 376: wayvnc may still work if started with --disable-input.
+8060:Aug 19 15:28:39 nezha wayvnc.desktop[82572]: ERROR: ../src/main.c: 2272: Failed to initialise wayland
+8061:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: WARNING: A restricted method in java.lang.System has been called
+8062:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: WARNING: java.lang.System::load has been called by com.sun.jna.Native in an unnamed module (file:/home/milosvasic/Applications/JetBrains-Toolbox/bin/lib/libraries-jna.jar)
+8063:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+8064:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+8065:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: tokyotoshokan.py
+8066:Aug 19 15:28:39 nezha stop[81165]:   ✗ proxy-cache-invalidator: stopped
+8067:Aug 19 15:28:39 nezha gnome-shell[81714]: Type GITypeInfo of property NM.Object::client does not match return type GITypeInfo of getter get_client. Falling back to slow path
+8068:Aug 19 15:28:39 nezha systemd[81142]: Started evolution-alarm-notify.service - Event and Task Reminders.
+8069:Aug 19 15:28:39 nezha rtkit-daemon[1293]: Supervising 13 threads of 8 processes of 2 users.
+8070:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.282 | INFO  | main                      | Semaphore                 | HOME=/home/milosvasic
+8071:Aug 19 15:28:39 nezha rtkit-daemon[1293]: Supervising 13 threads of 8 processes of 2 users.
+8072:Aug 19 15:28:39 nezha rtkit-daemon[1293]: Supervising 13 threads of 8 processes of 2 users.
+8073:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.301 | INFO  | main                      | Semaphore                 | ipc_key=-852688639
+8074:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: torlock.py
+8075:Aug 19 15:28:39 nezha stop[81165]:   ✗ proxy-vpn-monitor: stopped
+8076:Aug 19 15:28:39 nezha stop[81165]: ==========================================
+8077:Aug 19 15:28:39 nezha systemd[81142]: Reached target gnome-session-x11-services.target - GNOME session X11 services.
+8078:Aug 19 15:28:39 nezha systemd[81142]: Starting org.gnome.SettingsDaemon.XSettings.service - GNOME XSettings service...
+8079:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.394 | INFO  | main                      | Semaphore                 | Semaphore 0 is initialized (non-zero otime) and the value is available; last seen value was 1
+8080:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.401 | INFO  | main                      | Semaphore                 | Semaphore 0 is initialized (non-zero otime) and the value is available; last seen value was 1
+8081:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.404 | INFO  | main                      | Semaphore                 | Acquired semaphore 0, will be a main instance
+8082:Aug 19 15:28:39 nezha systemd[81142]: Started org.gnome.SettingsDaemon.XSettings.service - GNOME XSettings service.
+8083:Aug 19 15:28:39 nezha systemd[81142]: Reached target gnome-session-x11-services-ready.target - GNOME session X11 services.
+8084:Aug 19 15:28:39 nezha systemd[81142]: org.gnome.SettingsDaemon.XSettings.target - GNOME XSettings target is inactive.
+8085:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.413 | INFO  | main                      | Semaphore                 | Semaphore 0 is initialized (non-zero otime) and the value is available; last seen value was 0
+8086:Aug 19 15:28:39 nezha start[83456]: [2026-08-19 15:28:39] [info] ==========================================
+8087:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.422 | INFO  | main                      | UnixApplicationStartLock  | Running as main instance
+8088:Aug 19 15:28:39 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='ca.desrt.dconf' unit='dconf.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+8089:Aug 19 15:28:39 nezha start[83456]: [2026-08-19 15:28:39] [info] Starting Proxy Service
+8090:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.426 | INFO  | main                      | ApplicationStartLock$Comp | application lock acquired: true
+8091:Aug 19 15:28:39 nezha systemd[81142]: Starting dconf.service - User preferences database...
+8092:Aug 19 15:28:39 nezha gsd-xsettings[83462]: Failed to get current UI scaling factor: GDBus.Error:org.freedesktop.DBus.Error.NameHasNoOwner: Name "org.gnome.Mutter.X11" does not exist
+8093:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.430 | INFO  | main                      | IpcInstanceFactory        | pid: 82660
+8094:Aug 19 15:28:39 nezha start[83456]: [2026-08-19 15:28:39] [info] ==========================================
+8095:Aug 19 15:28:39 nezha start[83456]: [INFO] Loaded environment from: /run/media/milosvasic/DATA4TB/Projects/helix_proxy/.env
+8096:Aug 19 15:28:39 nezha libcanberra-login-sound.desktop[82680]: Failed to play sound: File or data not found
+8097:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: torrentdownload.py
+8098:Aug 19 15:28:39 nezha start[83456]: [2026-08-19 16:28:39] [info] Container runtime: podman
+8099:Aug 19 15:28:39 nezha start[83456]: [2026-08-19 16:28:39] [info] Mode: VPN-aware dynamic-routing control-plane
+8100:Aug 19 15:28:39 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'ca.desrt.dconf'
+8101:Aug 19 15:28:39 nezha systemd[81142]: Started dconf.service - User preferences database.
+8102:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.455 | INFO  | main                      | MainInstanceImpl$Companio | /home/milosvasic/.cache/JetBrains/Toolbox/ipc: binding
+8103:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] ==========================================
+8104:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] Proxy Service Initialization
+8105:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] ==========================================
+8106:Aug 19 15:28:39 nezha start[83504]: [INFO] Loaded environment from: /run/media/milosvasic/DATA4TB/Projects/helix_proxy/.env
+8107:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] Checking dependencies...
+8108:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.500 | INFO  | main                      | MainInstanceImpl$Companio | /home/milosvasic/.cache/JetBrains/Toolbox/ipc: already in use (Address already in use)
+8109:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.500 | INFO  | main                      | IpcInstanceFactory        | checking if the main instance is alive
+8110:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] All dependencies satisfied
+8111:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] Container runtime: podman
+8112:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] Compose command: podman-compose
+8113:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.522 | INFO  | main                      | MainInstanceImpl$Companio | /home/milosvasic/.cache/JetBrains/Toolbox/ipc: binding
+8114:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] Validating environment...
+8115:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] Environment validation passed
+8116:Aug 19 15:28:39 nezha rtkit-daemon[1293]: Successfully made thread 83516 of process 82821 owned by '1000' RT at priority 20.
+8117:Aug 19 15:28:39 nezha rtkit-daemon[1293]: Supervising 14 threads of 8 processes of 2 users.
+8118:Aug 19 15:28:39 nezha gnome-shell[83530]: The XKEYBOARD keymap compiler (xkbcomp) reports:
+8119:Aug 19 15:28:39 nezha gnome-shell[83530]: > Warning:          Unsupported maximum keycode 708, clipping.
+8120:Aug 19 15:28:39 nezha gnome-shell[83530]: >                   X11 cannot support keycodes above 255.
+8121:Aug 19 15:28:39 nezha gnome-shell[83530]: > Warning:          Virtual modifier Hyper multiply defined
+8122:Aug 19 15:28:39 nezha gnome-shell[83530]: >                   Using 0, ignoring 0
+8123:Aug 19 15:28:39 nezha gnome-shell[83530]: > Warning:          Virtual modifier ScrollLock multiply defined
+8124:Aug 19 15:28:39 nezha gnome-shell[83530]: >                   Using 0, ignoring 0
+8125:Aug 19 15:28:39 nezha start[83504]: [2026-08-19 16:28:39] [info] Configuration check complete (no changes made)
+8126:Aug 19 15:28:39 nezha gnome-shell[83530]: Errors from xkbcomp are not fatal to the X server
+8127:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: torrentgalaxy.py
+8128:Aug 19 15:28:39 nezha gnome-shell[81714]: Failed to get PolKit permission: Polkit.Error: GDBus.Error:org.freedesktop.PolicyKit1.Error.Failed: Action org.freedesktop.bolt.enroll is not registered
+8129:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.533 | INFO  | main                      | MainInstanceImpl$Companio | /home/milosvasic/.cache/JetBrains/Toolbox/ipc: bound
+8130:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.542 | INFO  | main                      | IpcInstanceFactory        | Instance type: main
+8131:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.543 | INFO  | main                      | IpcInstanceFactory        | Acquired server channel
+8132:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.546 | INFO  | main                      | MainInstanceImpl          | Debugger can not be attached
+8133:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.547 | INFO  | main                      | ApplicationStartLock$Comp | instance type: MainInstance
+8134:Aug 19 15:28:39 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.Settings.GlobalShortcutsProvider' requested by ':1.65' (uid=1000 pid=82846 comm="/usr/libexec/xdg-desktop-portal-gnome")
+8135:Aug 19 15:28:39 nezha org.telegram.desktop.desktop[82619]: [W][15:28:39.578760] pw.conf      | [          conf.c: 1209 pw_conf_load_conf_for_context()] setting config.name to client-rt.conf is deprecated, using client.conf
+8136:Aug 19 15:28:39 nezha Telegram[82619]: pw.conf: setting config.name to client-rt.conf is deprecated, using client.conf
+8137:Aug 19 15:28:39 nezha rtkit-daemon[1293]: Supervising 14 threads of 8 processes of 2 users.
+8138:Aug 19 15:28:39 nezha rtkit-daemon[1293]: Supervising 14 threads of 8 processes of 2 users.
+8139:Aug 19 15:28:39 nezha rtkit-daemon[1293]: Supervising 14 threads of 8 processes of 2 users.
+8140:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: torrentkitty.py
+8141:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/ldac
+8142:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSink/aptx_hd
+8143:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/aptx_hd
+8144:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSink/aptx
+8145:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/aptx
+8146:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSink/aac
+8147:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/aac
+8148:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSink/opus_g
+8149:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/opus_g
+8150:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSink/sbc
+8151:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/sbc
+8152:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/aptx_ll_1
+8153:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/aptx_ll_0
+8154:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_1
+8155:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/aptx_ll_duplex_0
+8156:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/faststream
+8157:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/faststream_duplex
+8158:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSink/opus_05
+8159:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/opus_05
+8160:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSink/opus_05_duplex
+8161:Aug 19 15:28:39 nezha bluetoothd[1286]: Endpoint registered: sender=:1.928 path=/MediaEndpoint/A2DPSource/opus_05_duplex
+8162:Aug 19 15:28:39 nezha gsd-media-keys[82548]: Unable to get default sink
+8163:Aug 19 15:28:39 nezha wireplumber[82821]: [0:21:04.836669664] [82821]  INFO Camera camera_manager.cpp:340 libcamera v0.7.1
+8164:Aug 19 15:28:39 nezha wireplumber[82821]: [0:21:04.844314504] [83632]  INFO Camera camera_manager.cpp:223 Adding camera '\_SB_.PC00.XHCI.RHUB.HS07-7:1.0-04f2:b6f9' for pipeline handler uvcvideo
+8165:Aug 19 15:28:39 nezha wireplumber[82821]: [0:21:04.845030877] [83632]  INFO Camera camera_manager.cpp:223 Adding camera '\_SB_.PC00.XHCI.RHUB.HS07-7:1.2-04f2:b6f9' for pipeline handler uvcvideo
+8166:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: torrentproject.py
+8167:Aug 19 15:28:39 nezha jetbrains-toolbox.desktop[82660]: 15:28:39.721 | INFO  | main                      | ApplicationStartLock$Comp | Logging to /home/milosvasic/.local/share/JetBrains/Toolbox/logs/toolbox.{count}.log
+8168:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: torrentscsv.py
+8169:Aug 19 15:28:39 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.gnome.Settings.GlobalShortcutsProvider'
+8170:Aug 19 15:28:39 nezha bash[81160]: [SUCCESS] Installed: yourbittorrent.py
+8171:Aug 19 15:28:39 nezha org.telegram.desktop.desktop[82619]: qt.waylandcompositor.hardwareintegration: Failed to initialize EGL display. There is no EGL_WL_bind_wayland_display extension.
+8172:Aug 19 15:28:39 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Successfully activated service 'org.freedesktop.impl.portal.desktop.gnome'
+8173:Aug 19 15:28:39 nezha systemd[81142]: Started xdg-desktop-portal-gnome.service - Portal service (GNOME implementation).
+8191:Aug 19 15:28:40 nezha gnome-shell[81714]: GNOME Shell started at Wed Aug 19 2026 15:28:37 GMT+0200 (Central European Summer Time)
