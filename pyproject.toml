@@ -29,6 +29,7 @@ addopts = [
 ]
 filterwarnings = [
     "error::DeprecationWarning",
+    "error::ResourceWarning",
     "ignore::DeprecationWarning:pytest_asyncio.*",
     "ignore::DeprecationWarning:pkg_resources.*",
     # limits + slowapi (deps of BOB-111 rate limiting) still use
