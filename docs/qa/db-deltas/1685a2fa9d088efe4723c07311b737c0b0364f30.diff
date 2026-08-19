@@ -1,0 +1,54 @@
+# Differential SQLite Dump — docs/workable_items.db
+# §11.4.226 evidence-class-at-closure / §11.4.95 SSoT / §11.4.115(F) machine-written evidence
+# §11.4.209 review IMPORTANT-2 remedy — task tracker #79
+#
+# Commit:    1685a2fa9d088efe4723c07311b737c0b0364f30
+# Parent:    aba6265cff0af6d69d45941bedca23988350e37c
+# Generated: 2026-08-19T12:26:35Z
+# Tool:      sqlite3 3.50.6
+#
+## Row counts (table: before -> after)
+doc_segments                    124 -> 124         [same]
+firebase_metadata                 0 -> 0           [same]
+item_history                    162 -> 163         [CHANGED]
+items                           122 -> 122         [same]
+logic_groups                      0 -> 0           [same]
+meta                              4 -> 4           [same]
+obsolete_details                  0 -> 0           [same]
+operator_block_details            4 -> 4           [same]
+sqlite_sequence                   2 -> 2           [same]
+test_diary                        0 -> 0           [same]
+#
+## meta table (full content)
+### before
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-18 13:41:42
+last_sync_timestamp|2026-08-18 13:41:42|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+### after
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-18 13:41:42
+last_sync_timestamp|2026-08-18 13:41:42|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+#
+## Full logical .dump unified diff (before -> after)
+#
+--- /tmp/.private/milosvasic/tmp.BBRqAjYBdE/before.sql	2026-08-19 14:26:36.032144264 +0200
++++ /tmp/.private/milosvasic/tmp.BBRqAjYBdE/after.sql	2026-08-19 14:26:36.038144220 +0200
+@@ -186,6 +186,7 @@
+ INSERT INTO item_history VALUES(160,'BOB-057','Implemented','AI','2026-06-09','historical-backfill-BOB-086 (AI-inferred from git-history pickaxe on docs/Fixed.md; original closure committer/timestamp: git 3d1819c)','docs/qa/BOB-086/backfill_evidence/BOB-057.md','2026-08-19 12:09:04');
+ INSERT INTO item_history VALUES(161,'BOB-058','Implemented','AI','2026-06-09','historical-backfill-BOB-086 (AI-inferred from git-history pickaxe on docs/Fixed.md; original closure committer/timestamp: git 3d1819c)','docs/qa/BOB-086/backfill_evidence/BOB-058.md','2026-08-19 12:09:04');
+ INSERT INTO item_history VALUES(162,'BOB-059','Fixed','AI','2026-06-09','historical-backfill-BOB-086 (AI-inferred from git-history pickaxe on docs/Fixed.md; original closure committer/timestamp: git 3d1819c)','docs/qa/BOB-086/backfill_evidence/BOB-059.md','2026-08-19 12:09:04');
++INSERT INTO item_history VALUES(163,'BOB-071','Fixed','AI','2026-08-19','duplicate-of BOB-099 which fixed the carrier-vs-thing class','constitution/scripts/hooks/guard-forbidden-commands.sh','2026-08-19 12:23:00');
+ CREATE TABLE operator_block_details (
+     atm_id                       TEXT PRIMARY KEY,
+     what                         TEXT NOT NULL,
+@@ -570,7 +571,7 @@
+     superseding_item        TEXT NOT NULL,
+     triple_check_evidence   TEXT NOT NULL
+ );
+-INSERT INTO sqlite_sequence VALUES('item_history',162);
++INSERT INTO sqlite_sequence VALUES('item_history',163);
+ INSERT INTO sqlite_sequence VALUES('doc_segments',422);
+ CREATE VIEW test_diary_summary AS
+ SELECT
