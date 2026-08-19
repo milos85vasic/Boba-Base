@@ -25,23 +25,25 @@ def _write_script(source: str) -> str:
 
 
 def _run_and_signal(script_path: str, sig: int, startup: float = 0.5) -> subprocess.CompletedProcess:
-    proc = subprocess.Popen(
+    with subprocess.Popen(
         [sys.executable, script_path],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-    )
-    time.sleep(startup)
-    proc.send_signal(sig)
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait()
+    ) as proc:
+        time.sleep(startup)
+        proc.send_signal(sig)
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+        stdout_data = proc.stdout.read() if proc.stdout else b""
+        stderr_data = proc.stderr.read() if proc.stderr else b""
     return subprocess.CompletedProcess(
         args=proc.args,
         returncode=proc.returncode,
-        stdout=proc.stdout.read() if proc.stdout else b"",
-        stderr=proc.stderr.read() if proc.stderr else b"",
+        stdout=stdout_data,
+        stderr=stderr_data,
     )
 
 
