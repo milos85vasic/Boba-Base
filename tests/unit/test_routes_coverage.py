@@ -156,13 +156,28 @@ class TestSearchStream:
     async def test_search_not_found_stream(self):
         from api.routes import search_stream
 
+        # BOB-126-followup: `search_stream` carries the BOB-111 `@_rl("sse_stream")`
+        # slowapi decorator. Calling it directly (not through a real ASGI
+        # request/TestClient) means slowapi's wrapper sees a `MagicMock()`
+        # for `request` and raises its own ``Exception: parameter `request`
+        # must be an instance of starlette.requests.Request`` BEFORE the
+        # real handler body (and its 404-for-unknown-search-id logic) ever
+        # runs — masking the very behaviour this test exists to check. This
+        # test's purpose is entirely orthogonal to rate limiting, so bypass
+        # the decorator via `__wrapped__` (proven pattern from BOB-122
+        # d7da1af / tests/unit/merge_service/test_all_trackers_errored_sse_contract.py),
+        # falling back to the function itself when rate limiting was
+        # disabled at import time (in which case `@_rl` is a no-op and no
+        # wrapper — hence no `__wrapped__` — exists at all).
+        search_stream_impl = getattr(search_stream, "__wrapped__", search_stream)
+
         mock_orch = MagicMock()
         mock_orch._active_searches = {}
         mock_req = MagicMock()
 
         with patch("api.routes._get_orchestrator", return_value=mock_orch):
             with pytest.raises(Exception) as exc_info:
-                await search_stream("nonexistent", mock_req)
+                await search_stream_impl("nonexistent", mock_req)
             assert exc_info.value.status_code == 404
 
 
