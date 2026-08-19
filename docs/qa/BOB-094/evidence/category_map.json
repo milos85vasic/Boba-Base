@@ -1,0 +1,27 @@
+{
+  "section": "11.4.85",
+  "category": "meta/category-map",
+  "surface": "SearchOrchestrator.fetch_torrent (tracker-fetch pipeline)",
+  "stress_categories": [
+    "sustained-load",
+    "concurrent-contention",
+    "boundary-empty-url",
+    "boundary-max-length-url",
+    "boundary-off-by-one"
+  ],
+  "chaos_categories": [
+    "network-fault-drop",
+    "mid-flight-process-kill",
+    "input-corruption"
+  ],
+  "tests_present": [
+    "test_boundary_empty_url_returns_none_or_error",
+    "test_boundary_max_length_url_survives",
+    "test_boundary_off_by_one_content_type_edges",
+    "test_chaos_input_corruption_malformed_response_quarantined",
+    "test_chaos_midflight_kill_clean_degradation",
+    "test_chaos_network_drop_20pct_categorised_as_network",
+    "test_stress_concurrent_10_parallel_no_fd_leak",
+    "test_stress_sustained_100_sequential_fetches"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "section": "11.4.85",
+  "category": "stress/concurrent-contention",
+  "feature_class": "network",
+  "n_parallel": 10,
+  "wall_clock_s": 0.0083,
+  "bound_s": 10.0,
+  "fd_before": 12,
+  "fd_after": 12,
+  "fd_delta": 0,
+  "fd_tolerance": 5,
+  "fd_check": "measured",
+  "returned_bytes_all_equal_served": true
+}

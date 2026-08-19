@@ -1,0 +1,31 @@
+{
+  "section": "11.4.85",
+  "category": "boundary-off-by-one",
+  "feature_class": "network",
+  "cases": [
+    {
+      "content_type": "application/x-bittorrent",
+      "expected_none": false,
+      "got_none": false,
+      "bytes_ok": true
+    },
+    {
+      "content_type": "application/x-bittorrent; charset=binary",
+      "expected_none": false,
+      "got_none": false,
+      "bytes_ok": true
+    },
+    {
+      "content_type": "text/html",
+      "expected_none": true,
+      "got_none": true,
+      "bytes_ok": true
+    },
+    {
+      "content_type": "text/plain",
+      "expected_none": false,
+      "got_none": false,
+      "bytes_ok": true
+    }
+  ]
+}

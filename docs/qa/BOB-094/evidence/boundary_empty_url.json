@@ -1,0 +1,8 @@
+{
+  "section": "11.4.85",
+  "category": "boundary-empty-url",
+  "feature_class": "network",
+  "input_url": "",
+  "outcome": "returned",
+  "result": "b'd8:announce35:http://tracker.example.com/announce7:comment12:test torrent13:cr"
+}

@@ -1,0 +1,16 @@
+{
+  "section": "11.4.85",
+  "category": "chaos/input-corruption",
+  "feature_class": "upstream",
+  "n_iterations": 15,
+  "quarantined_count": 5,
+  "good_count": 10,
+  "malformed_variants_used": [
+    "<html><body>Cloudfla",
+    "{'error': 'not a tor",
+    "",
+    "garbagegarbagegarbag"
+  ],
+  "no_leak_of_malformed_bytes": true,
+  "process_alive_after": true
+}

@@ -1,0 +1,15 @@
+collected 2 items
+
+tests/stress/test_tracker_fetch_stress_chaos.py FF                       [100%]
+
+=================================== FAILURES ===================================
+E   AssertionError: iter 0: malformed body should be quarantined to None, got bytes len=46
+    assert b'<html><body>Cloudflare challenge</body></html>' is None
+/run/media/milosvasic/DATA4TB/Projects/boba/tests/stress/test_tracker_fetch_stress_chaos.py:870: AssertionError: iter 0: malformed body should be quarantined to None, got bytes len=46
+E   AssertionError: case 2: CT='text/html' expected=None got=b'<html>not a torrent</html>'
+    assert b'<html>not a torrent</html>' == None
+/run/media/milosvasic/DATA4TB/Projects/boba/tests/stress/test_tracker_fetch_stress_chaos.py:510: AssertionError: case 2: CT='text/html' expected=None got=b'<html>not a torrent</html>'
+=========================== short test summary info ============================
+FAILED tests/stress/test_tracker_fetch_stress_chaos.py::test_chaos_input_corruption_malformed_response_quarantined
+FAILED tests/stress/test_tracker_fetch_stress_chaos.py::test_boundary_off_by_one_content_type_edges
+============================== 2 failed in 1.20s ===============================

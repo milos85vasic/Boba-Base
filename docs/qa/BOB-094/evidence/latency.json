@@ -1,0 +1,14 @@
+{
+  "section": "11.4.85",
+  "category": "stress/sustained-load",
+  "feature_class": "network",
+  "n_iterations": 100,
+  "p50_ms": 0.2111,
+  "p95_ms": 0.3035,
+  "p99_ms": 1.138,
+  "min_ms": 0.1293,
+  "max_ms": 1.138,
+  "mean_ms": 0.2244,
+  "bytes_per_fetch": 197,
+  "returned_bytes_equal_served": true
+}

@@ -1,0 +1,6 @@
+============================= test session starts ==============================
+collected 9 items
+
+tests/stress/test_tracker_fetch_stress_chaos.py .........                [100%]
+
+============================== 9 passed in 23.84s ==============================

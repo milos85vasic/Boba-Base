@@ -1,0 +1,15 @@
+{
+  "section": "11.4.85",
+  "category": "chaos/network-fault",
+  "feature_class": "network",
+  "n_iterations": 50,
+  "drop_rate_target": 0.2,
+  "responder_calls_total": 61,
+  "responder_drops_injected": 12,
+  "caller_successes": 49,
+  "caller_network_failures": 1,
+  "caller_other_failures": 0,
+  "total_caller_failures": 1,
+  "no_uncategorised_failures": true,
+  "both_branches_exercised": true
+}

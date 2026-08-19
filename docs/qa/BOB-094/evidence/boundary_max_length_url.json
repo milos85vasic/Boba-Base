@@ -1,0 +1,8 @@
+{
+  "section": "11.4.85",
+  "category": "boundary-max-length-url",
+  "feature_class": "network",
+  "url_length": 2035,
+  "bytes_returned": 197,
+  "returned_equals_served": true
+}

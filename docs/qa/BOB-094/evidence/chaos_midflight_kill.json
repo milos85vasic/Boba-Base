@@ -1,0 +1,14 @@
+{
+  "section": "11.4.85",
+  "category": "chaos/process-death",
+  "feature_class": "upstream",
+  "server_endpoint": "http://127.0.0.1:41057",
+  "kill_delay_s": 0.2,
+  "test_bound_s": 15.0,
+  "wall_clock_s": 8.0262,
+  "outcome": "raised",
+  "error_class": "RetryError",
+  "result_is_none": true,
+  "process_still_alive_after": true,
+  "clean_degradation": true
+}
