@@ -1,25 +1,92 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 24 <strong>Last modified:</strong>
-2026-08-18T21:10:20Z</p>
+<p><strong>Revision:</strong> 25 <strong>Last modified:</strong>
+2026-08-19T14:00:00Z</p>
 <h2
-id="terminal-state-this-write-11.4.126-endless-loop-terminal-condition-met">TERMINAL
-STATE (this write) — §11.4.126 endless-loop terminal condition MET</h2>
+id="terminal-state-this-write-mid-session-3-subagents-in-flight">TERMINAL
+STATE (this write) — mid-session, 3 subagents in flight</h2>
 <ul>
-<li><strong>Pre-build: 27 passed / 0 failed</strong> — all invariants
-GREEN including new CM-RESOURCE-PRESSURE-SIGNATURE-CHECK (invariant 25)
-and post-fix CM-DOCS-CHAIN-ENGINE-VERIFY (invariant 24)</li>
-<li><strong>3 boba remotes IN SYNC at
-<code>fab6707a</code></strong></li>
-<li><strong>§11.4.209 review</strong>: 0 BLOCKING / 0 IMPORTANT open /
-5/6 MINOR fixed / 1 MINOR honest SKIP / 2 NIT non-blocking / Fable-xhigh
-re-review owed as §11.4.197 upgrade</li>
-<li><strong>§11.4.115(F) polarity</strong>: 5/5 RED CONFIRMED across
-real pathological fixtures</li>
-<li><strong>Resource-pressure timer</strong>: LIVE + ARMED (next fire
-22:42 CEST)</li>
-<li><strong>1 subagent dispatched</strong> for §11.4.108 rebuild +
-runtime-signature verification</li>
+<li><strong>Pre-build: 28 passed / 0 failed</strong> —
+CM-BADGE-FRESHNESS-CHECK now invariant 28 GREEN (BOB-118 landing) +
+CM-MARKDOWN-EXPORT-SYNC (12 stale exports regenerated)</li>
+<li><strong>3 boba remotes IN SYNC at HEAD</strong> (this session added
+12+ commits on top of the 2026-08-18 chain)</li>
+<li><strong>BOB-123 4th forced-logout (2026-08-19 00:37:11)</strong>:
+Phase-1 evidence-gathering instruments READY — sits ready to install via
+operator <code>su -c</code> at their terminal:
+<ul>
+<li><strong>Path 1</strong>:
+<code>docs/incidents/2026-08-19-sudo-audit-rules-for-operator.md</code>
+— 6 kernel audit rules (kill/tkill/pidfd_send_signal a1=9 + tgkill a2=9,
+b64+b32, persistent)</li>
+<li><strong>Path 2</strong>: <code>scripts/system-slice-watchdog/</code>
+— system.slice systemd unit that survives user@1000 SIGKILL + captures
+forensics durably. <code>bash install.sh</code> prints
+<code>su -c</code> block for operator.</li>
+<li><strong>Path 3</strong>: parallel-subagent cap = 1 for the crisis
+window, now relaxed to 3-4 post-operator STOP-lift</li>
+</ul></li>
+<li><strong>§11.4.209 Fable-xhigh review of watchdog</strong>: 3 rounds
+iterated to zero-finding GO
+<ul>
+<li>Round 1: 0 BLOCKING / 4 IMPORTANT / 7 MINOR / NIT — all fixed</li>
+<li>Round 2: 0 BLOCKING / 1 IMPORTANT / 4 MINOR / NIT — all fixed<br />
+</li>
+<li>Round 3: GO-WITH-MINOR residuals folded → GREEN 27/0 + POLARITY
+inner-RED exit=1 CONFIRMED</li>
+</ul></li>
+<li><strong>§11.4.6 UNCONFIRMED still standing</strong>: direct SIGKILL
+initiator across all 4 incidents. Phase 1 completes only when audit
+rules + watchdog install + incident #5 (if any) attributes it.</li>
+<li><strong>PAM/Linger contradiction breakthrough</strong>:
+<code>gdm-password: Session closed for milosvasic</code> on tty2 fires
+at EXACT same timestamp as user@1000 SIGKILL in ALL 3 latest incidents
+(#2/#3/#4), despite <code>Linger=yes</code> which should have prevented
+systemd from killing user@1000. Direct initiator unattributable from
+journal without kernel audit.</li>
+<li><strong>Root password rotation still owed</strong> per §11.4.10
+(value was in mid-turn transcript)</li>
+<li><strong>3 subagents CURRENTLY in flight</strong> for backlog
+progress:
+<ul>
+<li>BOB-099 substring-match false-positive fix (constitution submodule
+hook)</li>
+<li>BOB-105 anchor-block-integrity checker (boba-side,
+§11.4.227(B))</li>
+<li>Task #87 anti-bluff correction doc + Task #42 §9.2 cross-device
+fallback</li>
+</ul></li>
+</ul>
+<h2
+id="session-commit-summary-2026-08-19-landings-18-commits-all-pushed">Session
+commit summary — 2026-08-19 landings (18 commits, all pushed)</h2>
+<p>Rescue + forensics + watchdog + reviews + backlog: -
+<code>59edabd</code> BOB-118 badge computer partial-work rescue -
+<code>6c0b785</code> BOB-123 4th forced-logout PAM/Linger breakthrough
+doc - <code>d635885</code> watchdog v1.0.0 (system.slice systemd unit +
+install/uninstall + challenge + README) - <code>a9c2af9</code> Round-1
+§11.4.209 fixes (I1-I4, M1-M7, NIT) - <code>69de436</code> Round-2 fixes
+(N1-N6) - <code>8278a42</code> Round-3 residuals — zero-finding GO
+reached - <code>f517eaa</code> BOB-118 completion:
+<code>scripts/compute-badges.sh</code> + unit test + doc -
+<code>0fc524a</code> QA evidence bundles (BOB-066/072/073/075/112/116,
+task-78/80/85/e2e/rebuild/review + coverage-escape + session-2026-08-16)
+- <code>652a4b4</code> docs/scripts/ + docs/testing/ export twins -
+<code>bedbcdc</code> MERGE_SEARCH regen + task-78 sig fixture outputs +
+db-delta - <code>&lt;hash&gt;</code> badge refresh + 12 export twins
+(this commit) - <code>&lt;hash&gt;</code> BOB-117 followup: remove
+residual “likely” from plugin_parse_failure summary</p>
+<h2 id="sub-tasks-currently-in-flight-3-subagents">Sub-tasks CURRENTLY
+IN FLIGHT (3 subagents)</h2>
+<ul>
+<li>Agent A → BOB-099:
+<code>constitution/scripts/hooks/guard-forbidden-commands.sh</code>
+substring-match false-positive fix + RED-first test</li>
+<li>Agent B → BOB-105:
+<code>scripts/anchor_block_integrity_check.sh</code> + challenge + 4
+fixtures + companion doc (§11.4.227(B) mechanical gate)</li>
+<li>Agent C → Task #87 anti-bluff correction doc + Task #42 §9.2
+hardlink cross-device fallback</li>
 </ul>
 <h2
 id="session-commit-summary-20-boba-commits-4-constitution-commits-since-457cca4">Session

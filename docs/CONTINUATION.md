@@ -1,16 +1,49 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 24
-**Last modified:** 2026-08-18T21:10:20Z
+**Revision:** 25
+**Last modified:** 2026-08-19T14:00:00Z
 
-## TERMINAL STATE (this write) — §11.4.126 endless-loop terminal condition MET
+## TERMINAL STATE (this write) — mid-session, 3 subagents in flight
 
-- **Pre-build: 27 passed / 0 failed** — all invariants GREEN including new CM-RESOURCE-PRESSURE-SIGNATURE-CHECK (invariant 25) and post-fix CM-DOCS-CHAIN-ENGINE-VERIFY (invariant 24)
-- **3 boba remotes IN SYNC at `fab6707a`**
-- **§11.4.209 review**: 0 BLOCKING / 0 IMPORTANT open / 5/6 MINOR fixed / 1 MINOR honest SKIP / 2 NIT non-blocking / Fable-xhigh re-review owed as §11.4.197 upgrade
-- **§11.4.115(F) polarity**: 5/5 RED CONFIRMED across real pathological fixtures
-- **Resource-pressure timer**: LIVE + ARMED (next fire 22:42 CEST)
-- **1 subagent dispatched** for §11.4.108 rebuild + runtime-signature verification
+- **Pre-build: 28 passed / 0 failed** — CM-BADGE-FRESHNESS-CHECK now invariant 28 GREEN (BOB-118 landing) + CM-MARKDOWN-EXPORT-SYNC (12 stale exports regenerated)
+- **3 boba remotes IN SYNC at HEAD** (this session added 12+ commits on top of the 2026-08-18 chain)
+- **BOB-123 4th forced-logout (2026-08-19 00:37:11)**: Phase-1 evidence-gathering instruments READY — sits ready to install via operator `su -c` at their terminal:
+  - **Path 1**: `docs/incidents/2026-08-19-sudo-audit-rules-for-operator.md` — 6 kernel audit rules (kill/tkill/pidfd_send_signal a1=9 + tgkill a2=9, b64+b32, persistent)
+  - **Path 2**: `scripts/system-slice-watchdog/` — system.slice systemd unit that survives user@1000 SIGKILL + captures forensics durably. `bash install.sh` prints `su -c` block for operator.
+  - **Path 3**: parallel-subagent cap = 1 for the crisis window, now relaxed to 3-4 post-operator STOP-lift
+- **§11.4.209 Fable-xhigh review of watchdog**: 3 rounds iterated to zero-finding GO
+  - Round 1: 0 BLOCKING / 4 IMPORTANT / 7 MINOR / NIT — all fixed
+  - Round 2: 0 BLOCKING / 1 IMPORTANT / 4 MINOR / NIT — all fixed  
+  - Round 3: GO-WITH-MINOR residuals folded → GREEN 27/0 + POLARITY inner-RED exit=1 CONFIRMED
+- **§11.4.6 UNCONFIRMED still standing**: direct SIGKILL initiator across all 4 incidents. Phase 1 completes only when audit rules + watchdog install + incident #5 (if any) attributes it.
+- **PAM/Linger contradiction breakthrough**: `gdm-password: Session closed for milosvasic` on tty2 fires at EXACT same timestamp as user@1000 SIGKILL in ALL 3 latest incidents (#2/#3/#4), despite `Linger=yes` which should have prevented systemd from killing user@1000. Direct initiator unattributable from journal without kernel audit.
+- **Root password rotation still owed** per §11.4.10 (value was in mid-turn transcript)
+- **3 subagents CURRENTLY in flight** for backlog progress:
+  - BOB-099 substring-match false-positive fix (constitution submodule hook)
+  - BOB-105 anchor-block-integrity checker (boba-side, §11.4.227(B))
+  - Task #87 anti-bluff correction doc + Task #42 §9.2 cross-device fallback
+
+## Session commit summary — 2026-08-19 landings (18 commits, all pushed)
+
+Rescue + forensics + watchdog + reviews + backlog:
+- `59edabd` BOB-118 badge computer partial-work rescue
+- `6c0b785` BOB-123 4th forced-logout PAM/Linger breakthrough doc
+- `d635885` watchdog v1.0.0 (system.slice systemd unit + install/uninstall + challenge + README)
+- `a9c2af9` Round-1 §11.4.209 fixes (I1-I4, M1-M7, NIT)
+- `69de436` Round-2 fixes (N1-N6)
+- `8278a42` Round-3 residuals — zero-finding GO reached
+- `f517eaa` BOB-118 completion: `scripts/compute-badges.sh` + unit test + doc
+- `0fc524a` QA evidence bundles (BOB-066/072/073/075/112/116, task-78/80/85/e2e/rebuild/review + coverage-escape + session-2026-08-16)
+- `652a4b4` docs/scripts/ + docs/testing/ export twins
+- `bedbcdc` MERGE_SEARCH regen + task-78 sig fixture outputs + db-delta
+- `<hash>` badge refresh + 12 export twins (this commit)
+- `<hash>` BOB-117 followup: remove residual "likely" from plugin_parse_failure summary
+
+## Sub-tasks CURRENTLY IN FLIGHT (3 subagents)
+
+- Agent A → BOB-099: `constitution/scripts/hooks/guard-forbidden-commands.sh` substring-match false-positive fix + RED-first test
+- Agent B → BOB-105: `scripts/anchor_block_integrity_check.sh` + challenge + 4 fixtures + companion doc (§11.4.227(B) mechanical gate)
+- Agent C → Task #87 anti-bluff correction doc + Task #42 §9.2 hardlink cross-device fallback
 
 ## Session commit summary (~20 boba commits + 4+ constitution commits since 457cca4)
 
