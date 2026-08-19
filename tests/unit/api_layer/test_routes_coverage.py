@@ -46,6 +46,19 @@ def client_factory(tmp_path, monkeypatch):
     created = []
 
     def _build(orch):
+        # BOB-126-followup: the real `/api/v1/search` handler carries the
+        # BOB-111 `@_rl("search")` slowapi decorator, whose post-call
+        # header injection (`Limiter._inject_headers`) raises
+        # ``Exception: parameter `response` must be an instance of
+        # starlette.responses.Response`` because the handler's signature
+        # has no `response: Response` param for FastAPI to inject one into
+        # (a pre-existing slowapi/starlette compatibility defect, tracked
+        # separately — see docs/qa / Task 7 warnings audit). None of the
+        # tests in this file exercise rate-limiting behaviour (the 429s
+        # here come from `is_search_queue_full`/SSE-stream-cap, an
+        # unrelated mechanism), so disable it before the app is (re)built
+        # — matching the proven bypass pattern from BOB-122 (d7da1af).
+        monkeypatch.setenv("RATE_LIMIT_DISABLED", "1")
         _purge_api_module()
         import api
         import api.hooks
