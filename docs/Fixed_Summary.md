@@ -6,12 +6,12 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 27 |
+| Bug | Fixed (→ Fixed.md) | 28 |
 | Feature | Implemented (→ Fixed.md) | 17 |
 | Task | Completed (→ Fixed.md) | 13 |
 | Task | Fixed (→ Fixed.md) | 4 |
 | Task | Implemented (→ Fixed.md) | 17 |
-| **TOTAL** | | **78** |
+| **TOTAL** | | **79** |
 
 ## Items
 
@@ -95,3 +95,4 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | 76 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-124 — 5th consecutive forced-logout of user@1000.service on host milosvasic (2026-08-19 15:28:22, fresh boot 15:07 -> kill 15:28). Same PAM session_close synchronicity mechanism observed across incidents #2/#3/#4/#5, same Linger=yes contradiction, same UNCONFIRMED SIGKILL initiator. Per superpowers:systematic-debugging Phase 4.5: 5+ attempts against the same block = architectural problem. The block is not a missing detector — 4 preventive gates have been AUTHORED (BOB-116 5-signature detector, BOB-120 out-of-scope watchdog design, BOB-123 PAM monitor, kernel auditctl rulesets) but 0 are INSTALLED because Path 1 (auditctl) and Path 2 (system-slice systemd unit) both require operator sudo/su -c that has never actually been executed. Authoring a 6th detector is a §11.4.250 heuristic-tower defect. Closure requires an operator sudo install session verified by auditctl -l non-empty OR systemctl list-units --system boba-watch* non-empty. Evidence: docs/qa/BOB-124/incident-5-forensics.log. See project-memory playbook forced-logout-incidents for full mechanism + triage protocol. |
 | 77 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-125 — Sixth forced-logout SIGKILL cascade on user@1000, 2026-08-19 16:04:54 CEST. First incident with kernel audit rules LIVE (installed 15:56). Prior 6 investigations misattributed the mechanism to PAM/Linger contradiction. Real root cause found by BOB-126: pytest calling kill(-1, SIGKILL) via MagicMock.__int__==1 → os.killpg(1, 9). Fix chain: ad4b46a + 502586c + bf01cf3 + 1b06858 + d7da1af + e389c29 + 0027dba. See docs/incidents/2026-08-19-6th-forced-logout.md. |
 | 78 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-126 — Seventh forced-logout SIGKILL cascade. Kernel audit trail: audit[399861] syscall=62 a0=ffffffff a1=9 comm=pytest exe=/usr/bin/python3.14. Root cause: tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out created AsyncMock without setting mock.pid as int. _search_public_tracker called os.killpg(os.getpgid(proc.pid), SIGKILL). MagicMock.__int__ defaults to 1, so os.getpgid(1)==1 → os.killpg(1, SIGKILL) → glibc → kill(-1, SIGKILL) = SIGKILL every UID-1000 process. Bug existed since 2026-04-24. FIX 3-layer: (1) boba ad4b46a search.py int-guard + test hardening + §11.4.115 RED regression guard. (2) constitution 502586c universal §11.4.263 anchor covering Python/Go/Rust/Bash/C. (3) boba bf01cf3 pointer bump. Verified: 863/863 unit PASS + 14/14 Go race PASS + no 8th incident. |
+| 79 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-127 — Follow-up to BOB-126 systematic sweep. Task 8 audit surfaced 2 test cases in tests/unit/merge_service/test_public_tracker_subprocess_timeout.py that set explicit int mock.pid (12345, 1111) satisfying the production BOB-126 int-guard, but did NOT patch os.killpg/os.getpgid so the real syscalls fired against hardcoded non-owned PIDs. Low collision probability on typical host, but section 11.4.263(C) hygiene violation in the exact file authored to guard against host-wide kills. FIX at 8bedc5a: added patch.object(_search.os, getpgid) + patch.object(_search.os, killpg) to both tests matching sibling test_process_group_kill_called_on_deadline pattern. 6/6 tests still PASS. Report: .superpowers/sdd/task-8-syscall-audit.md. Recommended gate CM-TEST-KILLPG-PATCHED-WHEN-REAL-PID tracked as separate followup. |

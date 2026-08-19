@@ -192,7 +192,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>27</td>
+<td>28</td>
 </tr>
 <tr>
 <td>Feature</td>
@@ -217,7 +217,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>78</strong></td>
+<td><strong>79</strong></td>
 </tr>
 </tbody>
 </table>
@@ -885,6 +885,26 @@ ad4b46a search.py int-guard + test hardening + §11.4.115 RED regression
 guard. (2) constitution 502586c universal §11.4.263 anchor covering
 Python/Go/Rust/Bash/C. (3) boba bf01cf3 pointer bump. Verified: 863/863
 unit PASS + 14/14 Go race PASS + no 8th incident.</td>
+</tr>
+<tr>
+<td>79</td>
+<td>Low</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-127 — Follow-up to BOB-126 systematic sweep. Task 8 audit
+surfaced 2 test cases in
+tests/unit/merge_service/test_public_tracker_subprocess_timeout.py that
+set explicit int mock.pid (12345, 1111) satisfying the production
+BOB-126 int-guard, but did NOT patch os.killpg/os.getpgid so the real
+syscalls fired against hardcoded non-owned PIDs. Low collision
+probability on typical host, but section 11.4.263(C) hygiene violation
+in the exact file authored to guard against host-wide kills. FIX at
+8bedc5a: added patch.object(_search.os, getpgid) +
+patch.object(_search.os, killpg) to both tests matching sibling
+test_process_group_kill_called_on_deadline pattern. 6/6 tests still
+PASS. Report: .superpowers/sdd/task-8-syscall-audit.md. Recommended gate
+CM-TEST-KILLPG-PATCHED-WHEN-REAL-PID tracked as separate followup.</td>
 </tr>
 </tbody>
 </table>
