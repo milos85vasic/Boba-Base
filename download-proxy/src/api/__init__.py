@@ -11,7 +11,7 @@ _src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
 
-from fastapi import FastAPI, HTTPException, Request  # noqa: E402
+from fastapi import FastAPI, HTTPException, Request, Response  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import FileResponse, JSONResponse  # noqa: E402
 
@@ -361,18 +361,30 @@ def _serve_index_html():  # type: ignore[no-untyped-def]
 # BOB-111: dashboard endpoints get the `dashboard` rate class. slowapi requires
 # the decorated handler to accept `request: Request` so the key function can see
 # the caller IP — we already have `request: Request` on the sibling handlers.
+#
+# BOB-129: `_serve_index_html()` returns a plain `dict` fallback (not a
+# `starlette.responses.Response`) whenever the Angular dist is not present
+# at boot (`_angular_available` False). slowapi's `Limiter.limit()`
+# async_wrapper only injects rate-limit headers into the endpoint's OWN
+# return value when that value IS a `Response`; otherwise it falls back to
+# `kwargs.get("response")`, which is None without a declared `response:
+# Response` parameter, raising the same `_inject_headers` exception
+# confirmed live in production for `POST /api/v1/search` (see routes.py
+# `search()`). Both handlers declare `response: Response` so FastAPI's
+# injected Response object is available for slowapi to populate — same
+# root cause, same fix, applied here defensively for the dict-fallback path.
 _dashboard_deco = dashboard_limit_decorator(app) if _rate_limits_active else (lambda f: f)
 
 
 @app.get("/")
 @_dashboard_deco
-async def dashboard(request: Request):  # type: ignore[no-untyped-def]
+async def dashboard(request: Request, response: Response):  # type: ignore[no-untyped-def]
     return _serve_index_html()  # type: ignore[no-untyped-call]
 
 
 @app.get("/dashboard")
 @_dashboard_deco
-async def dashboard_page(request: Request):  # type: ignore[no-untyped-def]
+async def dashboard_page(request: Request, response: Response):  # type: ignore[no-untyped-def]
     return _serve_index_html()  # type: ignore[no-untyped-call]
 
 

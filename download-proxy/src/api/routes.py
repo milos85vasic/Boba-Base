@@ -15,7 +15,7 @@ import uuid
 from typing import Annotated, Any
 
 import aiohttp
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from filelock import FileLock
 from pydantic import BaseModel, Field
@@ -355,9 +355,25 @@ def _serialize_merged_rows(merged: list[Any]) -> list[SearchResultResponse]:
 
 @router.post("/search", response_model=SearchResponse)
 @_rl("search")
-async def search(body: SearchRequest, request: Request):  # type: ignore[no-untyped-def]
+async def search(body: SearchRequest, request: Request, response: Response):  # type: ignore[no-untyped-def]
     # BOB-111 slowapi compat: rate-limiter needs the FastAPI Request param
     # literally named `request`; body model renamed to `body` to free the name.
+    #
+    # BOB-129: slowapi's `Limiter.limit()` async_wrapper (extension.py:733-748)
+    # inspects the endpoint's OWN return value; when it is not a
+    # `starlette.responses.Response` subclass (this endpoint returns the
+    # `SearchResponse` Pydantic model, serialized by FastAPI AFTER the
+    # slowapi wrapper runs) it falls back to `kwargs.get("response")` to
+    # find where to inject the X-RateLimit-* headers. Without a `response:
+    # Response` parameter that lookup returns None and slowapi raises
+    # ``Exception: parameter `response` must be an instance of
+    # starlette.responses.Response`` on every real (rate-limiting-enabled)
+    # request — confirmed firing in the running qbittorrent-proxy container
+    # (Task #105 escape). Declaring `response: Response` here makes FastAPI
+    # inject its per-request Response object, which slowapi then populates
+    # and FastAPI reuses when serializing the SearchResponse body — the
+    # proven pattern from `tests/unit/test_rate_limit.py`'s locally-defined
+    # reproduction, now applied to the real production endpoint.
     """Kick off a search and return immediately.
 
     The endpoint returns ``status: "running"`` as soon as the search

@@ -350,11 +350,17 @@ class TestSPACatchAll:
         # to the function itself when rate limiting was disabled at import
         # time (`@_dashboard_deco` is then a no-op passthrough with no
         # wrapper — hence no `__wrapped__` — at all).
+        #
+        # BOB-129: `dashboard()` now also declares `response: Response`
+        # (production fix — see api/__init__.py) so slowapi can inject
+        # rate-limit headers when `_serve_index_html()` returns the plain
+        # dict fallback instead of a `starlette.responses.Response`. The
+        # bypassed raw function therefore takes two positional args now.
         dashboard_impl = getattr(dashboard, "__wrapped__", dashboard)
 
         with patch("api._serve_index_html") as mock_serve:
             mock_serve.return_value = {"message": "dashboard"}
-            result = await dashboard_impl(MagicMock())
+            result = await dashboard_impl(MagicMock(), MagicMock())
             assert result == mock_serve.return_value
 
     @pytest.mark.asyncio
@@ -362,12 +368,13 @@ class TestSPACatchAll:
         """Dashboard page route should serve index."""
         from api import dashboard_page
 
-        # See test_dashboard_root_route above for the full rationale.
+        # See test_dashboard_root_route above for the full rationale
+        # (incl. the BOB-129 `response: Response` production param).
         dashboard_page_impl = getattr(dashboard_page, "__wrapped__", dashboard_page)
 
         with patch("api._serve_index_html") as mock_serve:
             mock_serve.return_value = {"message": "dashboard"}
-            result = await dashboard_page_impl(MagicMock())
+            result = await dashboard_page_impl(MagicMock(), MagicMock())
             assert result == mock_serve.return_value
 
     @pytest.mark.asyncio
