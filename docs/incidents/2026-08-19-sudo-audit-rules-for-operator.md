@@ -1,7 +1,7 @@
 # Audit Rules for Operator — Attribute Next SIGKILL Initiator (su-c form)
 
-**Revision:** 2
-**Last modified:** 2026-08-19T01:45:00Z
+**Revision:** 3
+**Last modified:** 2026-08-19T02:30:00Z
 **Class:** operator-action-required — needs 5 minutes of your terminal time
 **Purpose:** Attribute the SIGKILL initiator that caused BOB-116/BOB-120/BOB-123
 
@@ -12,8 +12,10 @@ behalf — you run these commands yourself, at your terminal.
 
 ## What this does
 
-Installs 3 kernel-level audit rules that will attribute the NEXT SIGKILL to
-`user@1000.service` with:
+Installs 6 kernel-level audit rules (2 exec watches + 4 syscall rules — b64
+and b32 for both `kill/tkill/pidfd_send_signal` sharing `a1=9` and `tgkill`
+with `a2=9`) that will attribute the NEXT SIGKILL to `user@1000.service`
+with:
 
 - The exact PID that issued the SIGKILL
 - The UID (0 = root, 1000 = you, ??? = other)

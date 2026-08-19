@@ -1,7 +1,7 @@
 # boba user@1000 out-of-scope watchdog (BOB-116 / BOB-120 / BOB-123)
 
-**Revision:** 1
-**Last modified:** 2026-08-19T02:00:00Z
+**Revision:** 2
+**Last modified:** 2026-08-19T02:30:00Z
 **Class:** operator-run system-slice service — captures forensics on user@1000 SIGKILL
 **Anchors:** §11.4.4 four-layer, §11.4.108 runtime-signature, §11.4.115 RED-first,
 §11.4.6 anti-guessing, §11.4.10 credentials, §11.4.128 recording, §11.4.201
@@ -40,10 +40,11 @@ process-tree state DURABLY.
    check alone would pass while actually being inside user.slice). REFUSES to
    run in any other case.
 3. NOTE: because the preflight requires the system.slice cgroup, a manual
-   root-terminal debug invocation (`sudo bash user1000-watchdog.sh` from a tty)
-   will refuse — for that, use `systemd-run --slice=system.slice --pty
-   /usr/local/bin/boba-user1000-watchdog` (drops the shell into system.slice
-   for the duration).
+   root-terminal debug invocation (`su -c '/usr/local/bin/boba-user1000-watchdog'`
+   from a tty) will refuse — for that, use
+   `su -c 'systemd-run --slice=system.slice --pty /usr/local/bin/boba-user1000-watchdog'`
+   which drops the shell into system.slice for the duration (this host has no
+   `sudo`, only `su`).
 4. Enters a `journalctl -f -u user@1000.service` loop.
 5. On matching the prefix `<TARGET_UNIT>: Main process exited` AND either
    `status=9` OR `code=killed`, checks the `CAPTURE_COOLDOWN_SEC` dedup gate;
