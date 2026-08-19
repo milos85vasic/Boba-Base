@@ -1,0 +1,192 @@
+Aug 19 15:28:22 nezha gdm-password][3976]: pam_tcb(gdm-password:session): Session closed for milosvasic
+Aug 19 15:28:22 nezha audit[3976]: AUDIT1106 pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:session_close grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:22 nezha audit[3976]: AUDIT1113 pid=3976 uid=0 auid=1000 ses=4 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha audit[3976]: AUDIT1104 pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1106 audit(1787146102.181:314): pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:session_close grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1113 audit(1787146102.182:315): pid=3976 uid=0 auid=1000 ses=4 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1104 audit(1787146102.182:316): pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4828 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4937 (Xwayland) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5122 (mutter-x11-fram) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 4874 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Killing process 5177 (xdg-desktop-por) with signal SIGKILL.
+Aug 19 15:28:22 nezha audit[80627]: AUDIT1100 pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1100 audit(1787146102.382:318): pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha audit[80627]: AUDIT1101 pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha audit[80627]: AUDIT1103 pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1101 audit(1787146102.383:319): pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_succeed_if,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha kernel: audit: type=1103 audit(1787146102.383:320): pid=80627 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha systemd-logind[1296]: Removed session 1.
+Aug 19 15:28:22 nezha gdm-launch-environment][80627]: pam_tcb(gdm-launch-environment:session): Session opened for gdm-greeter by (uid=0)
+Aug 19 15:28:22 nezha systemd-logind[1296]: Removed session 4.
+Aug 19 15:28:22 nezha audit[80627]: SYSCALL arch=c000003e syscall=1 success=yes exit=5 a0=9 a1=7ffce933f4b0 a2=5 a3=0 items=0 ppid=1532 pid=80627 auid=60579 uid=0 gid=47 euid=0 suid=0 fsuid=0 egid=47 sgid=47 fsgid=47 tty=(none) ses=5 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+Aug 19 15:28:22 nezha kernel: audit: type=1300 audit(1787146102.493:321): arch=c000003e syscall=1 success=yes exit=5 a0=9 a1=7ffce933f4b0 a2=5 a3=0 items=0 ppid=1532 pid=80627 auid=60579 uid=0 gid=47 euid=0 suid=0 fsuid=0 egid=47 sgid=47 fsgid=47 tty=(none) ses=5 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+Aug 19 15:28:22 nezha systemd-logind[1296]: New session '5' of user 'gdm-greeter' with class 'greeter' and type 'wayland'.
+Aug 19 15:28:22 nezha audit[80675]: AUDIT1101 pid=80675 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tcb acct="gdm-greeter" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha audit[80675]: AUDIT1103 pid=80675 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=? acct="gdm-greeter" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=failed'
+Aug 19 15:28:22 nezha (systemd)[80675]: pam_tcb(systemd-user:session): Session opened for gdm-greeter by (uid=0)
+Aug 19 15:28:22 nezha systemd-logind[1296]: New session '6' of user 'gdm-greeter' with class 'manager-early' and type 'unspecified'.
+Aug 19 15:28:22 nezha audit[80675]: AUDIT1105 pid=80675 uid=0 auid=60579 ses=6 msg='op=PAM:session_open grantors=pam_selinux,pam_selinux,pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_loginuid,pam_keyinit,pam_namespace acct="gdm-greeter" exe="/usr/lib/systemd/systemd-executor" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha systemd[1]: Started session-5.scope - Session 5 of User gdm-greeter.
+Aug 19 15:28:22 nezha audit[80627]: AUDIT1105 pid=80627 uid=0 auid=60579 ses=5 msg='op=PAM:session_open grantors=pam_succeed_if,pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:22 nezha gnome-shell[80717]: Running GNOME Shell (using mutter 50.1) as a Wayland display server
+Aug 19 15:28:22 nezha gnome-shell[80717]: Thread 'KMS thread' will be using high priority scheduling
+Aug 19 15:28:22 nezha gnome-shell[80717]: Device '/dev/dri/card1' prefers shadow buffer
+Aug 19 15:28:23 nezha gnome-shell[80717]: Added device '/dev/dri/card1' (i915) using atomic mode setting.
+Aug 19 15:28:23 nezha gnome-shell[80717]: Created gbm renderer for '/dev/dri/card1'
+Aug 19 15:28:23 nezha gnome-shell[80717]: GPU /dev/dri/card1 selected primary from builtin panel presence
+Aug 19 15:28:23 nezha gnome-shell[80717]: Obtained a high priority EGL context
+Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.a11y.Bus' unit='at-spi-dbus-bus.service' requested by ':1.7' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:23 nezha gnome-shell[80717]: Using public X11 display :1024, (using unix:/tmp/.X11-unix/X1025 for managed services)
+Aug 19 15:28:23 nezha gnome-shell[80717]: Using Wayland display name 'wayland-0'
+Aug 19 15:28:23 nezha at-spi-bus-launcher[80759]: dbus-daemon[80759]: Activating service name='org.a11y.atspi.Registry' requested by ':1.0' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:23 nezha gnome-shell[80717]: Unset XDG_SESSION_ID, getCurrentSessionProxy() called outside a user session. Asking logind directly.
+Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.locale1' unit='dbus-org.freedesktop.locale1.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.gnome.Shell.Screencast' requested by ':1.6' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.PermissionStore' unit='xdg-permission-store.service' requested by ':1.6' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:23 nezha gnome-shell[80717]: Registering session with GDM
+Aug 19 15:28:23 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.gnome.Shell.Notifications' requested by ':1.6' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension apps-menu@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/apps-menu@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/apps-menu@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension auto-move-windows@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/auto-move-windows@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/auto-move-windows@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension drive-menu@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/drive-menu@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/drive-menu@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension launch-new-instance@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/launch-new-instance@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/launch-new-instance@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension light-style@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/light-style@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/light-style@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension native-window-placement@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/native-window-placement@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/native-window-placement@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension places-menu@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/places-menu@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/places-menu@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension screenshot-window-sizer@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/screenshot-window-sizer@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/screenshot-window-sizer@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension status-icons@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/status-icons@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/status-icons@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension system-monitor@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/system-monitor@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/system-monitor@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension user-theme@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/user-theme@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/user-theme@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension window-list@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/window-list@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/window-list@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension windowsNavigator@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/windowsNavigator@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/windowsNavigator@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension workspace-indicator@gnome-shell-extensions.gcampax.github.com already installed in /usr/share/gnome-shell/extensions/workspace-indicator@gnome-shell-extensions.gcampax.github.com. /usr/share/gnome-shell/extensions/workspace-indicator@gnome-shell-extensions.gcampax.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Extension pipewire-settings@gaheldev.github.com already installed in /usr/share/gnome-shell/extensions/pipewire-settings@gaheldev.github.com. /usr/share/gnome-shell/extensions/pipewire-settings@gaheldev.github.com will not be loaded
+Aug 19 15:28:23 nezha gnome-shell[80717]: Unset XDG_SESSION_ID, getCurrentSessionProxy() called outside a user session. Asking logind directly.
+Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.realmd' unit='realmd.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='net.reactivated.Fprint' unit='fprintd.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:23 nezha gnome-shell[80717]: Will monitor session 5
+Aug 19 15:28:23 nezha gnome-shell[80717]: Error looking up permission: GDBus.Error:org.freedesktop.portal.Error.NotFound: No entry for geolocation
+Aug 19 15:28:23 nezha polkitd[1345]: Registered Authentication Agent for unix-session:5 (system bus name :1.764 [/usr/bin/gnome-shell --mode=gdm], object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8)
+Aug 19 15:28:23 nezha gnome-shell[80717]: Will monitor session 5
+Aug 19 15:28:23 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.MalcontentTimer1' unit='malcontent-timerd.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:24 nezha gnome-shell[80717]: Failed to record usage: GDBus.Error:org.freedesktop.MalcontentTimer1.Child.Error.IdentifyingUser: Error identifying user: Invalid or unknown user
+Aug 19 15:28:24 nezha dbus-daemon[1289]: [system] Activating via systemd: service name='org.freedesktop.GeoClue2' unit='geoclue.service' requested by ':1.764' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:24 nezha gnome-shell[80717]: Type GITypeInfo of property NM.Object::client does not match return type GITypeInfo of getter get_client. Falling back to slow path
+Aug 19 15:28:24 nezha gnome-shell[80717]: Failed to get PolKit permission: Polkit.Error: GDBus.Error:org.freedesktop.PolicyKit1.Error.Failed: Action org.freedesktop.bolt.enroll is not registered
+Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='ca.desrt.dconf' unit='dconf.service' requested by ':1.6' (uid=60579 pid=80717 comm="/usr/bin/gnome-shell --mode=gdm")
+Aug 19 15:28:24 nezha gnome-shell[80717]: Registering display with GDM
+Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Desktop' unit='xdg-desktop-portal.service' requested by ':1.33' (uid=60579 pid=80770 comm="/usr/bin/gjs -m /usr/share/gnome-shell/org.gnome.S")
+Aug 19 15:28:24 nezha systemd[80675]: Starting xdg-desktop-portal.service - Portal service...
+Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Documents' unit='xdg-document-portal.service' requested by ':1.34' (uid=60579 pid=81033 comm="/usr/libexec/xdg-desktop-portal")
+Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gnome' unit='xdg-desktop-portal-gnome.service' requested by ':1.34' (uid=60579 pid=81033 comm="/usr/libexec/xdg-desktop-portal")
+Aug 19 15:28:24 nezha systemd[80675]: Starting xdg-desktop-portal-gnome.service - Portal service (GNOME implementation)...
+Aug 19 15:28:24 nezha gnome-shell[81057]: The XKEYBOARD keymap compiler (xkbcomp) reports:
+Aug 19 15:28:24 nezha gnome-shell[81057]: > Warning:          Unsupported maximum keycode 708, clipping.
+Aug 19 15:28:24 nezha gnome-shell[81057]: >                   X11 cannot support keycodes above 255.
+Aug 19 15:28:24 nezha gnome-shell[81057]: > Warning:          Virtual modifier Hyper multiply defined
+Aug 19 15:28:24 nezha gnome-shell[81057]: >                   Using 0, ignoring 0
+Aug 19 15:28:24 nezha gnome-shell[81057]: > Warning:          Virtual modifier ScrollLock multiply defined
+Aug 19 15:28:24 nezha gnome-shell[81057]: >                   Using 0, ignoring 0
+Aug 19 15:28:24 nezha gnome-shell[81057]: Errors from xkbcomp are not fatal to the X server
+Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.gnome.Settings.GlobalShortcutsProvider' requested by ':1.36' (uid=60579 pid=81049 comm="/usr/libexec/xdg-desktop-portal-gnome")
+Aug 19 15:28:24 nezha systemd[80675]: Started xdg-desktop-portal-gnome.service - Portal service (GNOME implementation).
+Aug 19 15:28:24 nezha xdg-desktop-portal-gnome[81049]: Monitor 'Built-in display' has no configuration which is-current!
+Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gtk' unit='xdg-desktop-portal-gtk.service' requested by ':1.34' (uid=60579 pid=81033 comm="/usr/libexec/xdg-desktop-portal")
+Aug 19 15:28:24 nezha systemd[80675]: Starting xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation)...
+Aug 19 15:28:24 nezha systemd[80675]: Started xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation).
+Aug 19 15:28:24 nezha dbus-daemon[80697]: [session uid=60579 pid=80697 pidfd=5] Activating service name='org.freedesktop.secrets' requested by ':1.34' (uid=60579 pid=81033 comm="/usr/libexec/xdg-desktop-portal")
+Aug 19 15:28:24 nezha systemd[80675]: Started xdg-desktop-portal.service - Portal service.
+Aug 19 15:28:29 nezha gdm-password][81128]: pam_succeed_if(gdm-password:auth): requirement "user ingroup nopasswdlogin" not met by user "milosvasic"
+Aug 19 15:28:29 nezha gdm-fingerprint][81129]: pam_succeed_if(gdm-fingerprint:auth): requirement "user ingroup nopasswdlogin" not met by user "milosvasic"
+Aug 19 15:28:29 nezha gdm-fingerprint][81129]: gkr-pam: no password is available for user
+Aug 19 15:28:29 nezha audit[81129]: AUDIT1100 pid=81129 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=? acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=failed'
+Aug 19 15:28:29 nezha audit[81129]: AUDIT1112 pid=81129 uid=0 auid=4294967295 ses=4294967295 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=failed'
+Aug 19 15:28:29 nezha kernel: audit: type=1100 audit(1787146109.761:349): pid=81129 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=? acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=failed'
+Aug 19 15:28:29 nezha kernel: audit: type=1112 audit(1787146109.761:350): pid=81129 uid=0 auid=4294967295 ses=4294967295 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=failed'
+Aug 19 15:28:35 nezha gdm-password][81128]: pam_tcb(gdm-password:auth): Authentication passed for milosvasic from (uid=0)
+Aug 19 15:28:35 nezha audit[81128]: AUDIT1100 pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_shells,pam_succeed_if,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:35 nezha gdm-password][81128]: gkr-pam: unable to locate daemon control file
+Aug 19 15:28:35 nezha gdm-password][81128]: gkr-pam: stashed password to try later in open session
+Aug 19 15:28:35 nezha kernel: audit: type=1100 audit(1787146115.852:351): pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:authentication grantors=pam_shells,pam_succeed_if,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:35 nezha audit[81128]: AUDIT1101 pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tcb acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:35 nezha audit[81128]: AUDIT1103 pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:35 nezha kernel: audit: type=1101 audit(1787146115.853:352): pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:accounting grantors=pam_tcb acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:35 nezha kernel: audit: type=1103 audit(1787146115.853:353): pid=81128 uid=0 auid=4294967295 ses=4294967295 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:35 nezha gdm-password][81128]: pam_tcb(gdm-password:session): Session opened for milosvasic by (uid=0)
+Aug 19 15:28:35 nezha audit[81128]: SYSCALL arch=c000003e syscall=1 success=yes exit=4 a0=a a1=7fff70482680 a2=4 a3=0 items=0 ppid=1532 pid=81128 auid=1000 uid=0 gid=1000 euid=0 suid=0 fsuid=0 egid=1000 sgid=1000 fsgid=1000 tty=(none) ses=7 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+Aug 19 15:28:35 nezha kernel: audit: type=1300 audit(1787146115.855:354): arch=c000003e syscall=1 success=yes exit=4 a0=a a1=7fff70482680 a2=4 a3=0 items=0 ppid=1532 pid=81128 auid=1000 uid=0 gid=1000 euid=0 suid=0 fsuid=0 egid=1000 sgid=1000 fsgid=1000 tty=(none) ses=7 comm="gdm-session-wor" exe="/usr/libexec/gdm-session-worker" key=(null)
+Aug 19 15:28:35 nezha systemd-logind[1296]: New session '7' of user 'milosvasic' with class 'user' and type 'wayland'.
+Aug 19 15:28:35 nezha systemd-logind[1296]: New session '8' of user 'milosvasic' with class 'manager' and type 'unspecified'.
+Aug 19 15:28:36 nezha audit[81128]: AUDIT1105 pid=81128 uid=0 auid=1000 ses=7 msg='op=PAM:session_open grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:36 nezha audit[81128]: AUDIT1112 pid=81128 uid=0 auid=1000 ses=7 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:36 nezha gdm-password][81128]: gkr-pam: gnome-keyring-daemon started properly and unlocked keyring
+Aug 19 15:28:36 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gtk.vfs.Daemon' unit='gvfs-daemon.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:36 nezha gnome-shell[81714]: Running GNOME Shell (using mutter 50.1) as a Wayland display server
+Aug 19 15:28:36 nezha gnome-shell[81714]: Thread 'KMS thread' will be using high priority scheduling
+Aug 19 15:28:36 nezha gnome-shell[81714]: Device '/dev/dri/card1' prefers shadow buffer
+Aug 19 15:28:36 nezha gnome-shell[81714]: Added device '/dev/dri/card1' (i915) using atomic mode setting.
+Aug 19 15:28:36 nezha gnome-shell[81714]: Created gbm renderer for '/dev/dri/card1'
+Aug 19 15:28:36 nezha gnome-shell[81714]: GPU /dev/dri/card1 selected primary from builtin panel presence
+Aug 19 15:28:36 nezha gnome-shell[81714]: Obtained a high priority EGL context
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.a11y.Bus' unit='at-spi-dbus-bus.service' requested by ':1.20' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:37 nezha gnome-shell[81714]: Using public X11 display :0, (using unix:/tmp/.X11-unix/X1 for managed services)
+Aug 19 15:28:37 nezha gnome-shell[81714]: Using Wayland display name 'wayland-0'
+Aug 19 15:28:37 nezha at-spi-bus-launcher[82098]: dbus-daemon[82098]: Activating service name='org.a11y.atspi.Registry' requested by ':1.0' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:37 nezha gnome-shell[81714]: Unset XDG_SESSION_ID, getCurrentSessionProxy() called outside a user session. Asking logind directly.
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.Shell.Screencast' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.PermissionStore' unit='xdg-permission-store.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.Shell.CalendarServer' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gnome.evolution.dataserver.Sources5' unit='evolution-source-registry.service' requested by ':1.31' (uid=1000 pid=82408 comm="/usr/libexec/gnome-shell-calendar-server")
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Desktop' unit='xdg-desktop-portal.service' requested by ':1.30' (uid=1000 pid=82378 comm="/usr/bin/gjs -m /usr/share/gnome-shell/org.gnome.S")
+Aug 19 15:28:37 nezha systemd[81142]: Starting xdg-desktop-portal.service - Portal service...
+Aug 19 15:28:37 nezha gnome-shell[81714]: Registering session with GDM
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.Shell.Notifications' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.freedesktop.portal.Documents' unit='xdg-document-portal.service' requested by ':1.34' (uid=1000 pid=82471 comm="/usr/libexec/xdg-desktop-portal")
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gnome.evolution.dataserver.Calendar8' unit='evolution-calendar-factory.service' requested by ':1.31' (uid=1000 pid=82408 comm="/usr/libexec/gnome-shell-calendar-server")
+Aug 19 15:28:37 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gnome' unit='xdg-desktop-portal-gnome.service' requested by ':1.34' (uid=1000 pid=82471 comm="/usr/libexec/xdg-desktop-portal")
+Aug 19 15:28:38 nezha systemd[81142]: Starting xdg-desktop-portal-gnome.service - Portal service (GNOME implementation)...
+Aug 19 15:28:38 nezha gnome-shell[81714]: Will monitor session 7
+Aug 19 15:28:38 nezha gnome-shell[81714]: Error looking up permission: GDBus.Error:org.freedesktop.portal.Error.NotFound: No entry for geolocation
+Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gtk.vfs.UDisks2VolumeMonitor' unit='gvfs-udisks2-volume-monitor.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:38 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.gtk.vfs.MTPVolumeMonitor' unit='gvfs-mtp-volume-monitor.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:38 nezha polkitd[1345]: Registered Authentication Agent for unix-session:7 (system bus name :1.818 [/usr/bin/gnome-shell --mode=user], object path /org/freedesktop/PolicyKit1/AuthenticationAgent, locale en_US.UTF-8)
+Aug 19 15:28:38 nezha gnome-shell[80717]: Gio.IOErrorEnum: GDBus.Error:org.freedesktop.MalcontentTimer1.Child.Error.IdentifyingUser: Error identifying user: Invalid or unknown user
+Aug 19 15:28:39 nezha gnome-shell[81714]: Type GITypeInfo of property NM.Object::client does not match return type GITypeInfo of getter get_client. Falling back to slow path
+Aug 19 15:28:39 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='ca.desrt.dconf' unit='dconf.service' requested by ':1.11' (uid=1000 pid=81714 comm="/usr/bin/gnome-shell --mode=user")
+Aug 19 15:28:39 nezha gnome-shell[83530]: The XKEYBOARD keymap compiler (xkbcomp) reports:
+Aug 19 15:28:39 nezha gnome-shell[83530]: > Warning:          Unsupported maximum keycode 708, clipping.
+Aug 19 15:28:39 nezha gnome-shell[83530]: >                   X11 cannot support keycodes above 255.
+Aug 19 15:28:39 nezha gnome-shell[83530]: > Warning:          Virtual modifier Hyper multiply defined
+Aug 19 15:28:39 nezha gnome-shell[83530]: >                   Using 0, ignoring 0
+Aug 19 15:28:39 nezha gnome-shell[83530]: > Warning:          Virtual modifier ScrollLock multiply defined
+Aug 19 15:28:39 nezha gnome-shell[83530]: >                   Using 0, ignoring 0
+Aug 19 15:28:39 nezha gnome-shell[83530]: Errors from xkbcomp are not fatal to the X server
+Aug 19 15:28:39 nezha gnome-shell[81714]: Failed to get PolKit permission: Polkit.Error: GDBus.Error:org.freedesktop.PolicyKit1.Error.Failed: Action org.freedesktop.bolt.enroll is not registered
+Aug 19 15:28:39 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating service name='org.gnome.Settings.GlobalShortcutsProvider' requested by ':1.65' (uid=1000 pid=82846 comm="/usr/libexec/xdg-desktop-portal-gnome")
+Aug 19 15:28:39 nezha systemd[81142]: Started xdg-desktop-portal-gnome.service - Portal service (GNOME implementation).
+Aug 19 15:28:40 nezha xdg-desktop-portal-gnome[82846]: Monitor 'Built-in display' has no configuration which is-current!
+Aug 19 15:28:40 nezha dbus-daemon[81557]: [session uid=1000 pid=81557 pidfd=5] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gtk' unit='xdg-desktop-portal-gtk.service' requested by ':1.34' (uid=1000 pid=82471 comm="/usr/libexec/xdg-desktop-portal")
+Aug 19 15:28:40 nezha systemd[81142]: Starting xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation)...
+Aug 19 15:28:40 nezha systemd[81142]: Started xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation).
+Aug 19 15:28:40 nezha systemd[81142]: Started xdg-desktop-portal.service - Portal service.
+Aug 19 15:28:40 nezha gnome-shell[81714]: GNOME Shell started at Wed Aug 19 2026 15:28:37 GMT+0200 (Central European Summer Time)
+Aug 19 15:28:40 nezha gnome-shell[81714]: Registering display with GDM
+Aug 19 15:28:40 nezha systemd[80675]: Stopping xdg-desktop-portal-gnome.service - Portal service (GNOME implementation)...
+Aug 19 15:28:40 nezha systemd[80675]: Stopping xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation)...
+Aug 19 15:28:40 nezha systemd[80675]: Stopping xdg-desktop-portal.service - Portal service...
+Aug 19 15:28:40 nezha systemd[80675]: Stopped xdg-desktop-portal-gtk.service - Portal service (GTK/GNOME implementation).
+Aug 19 15:28:40 nezha systemd[80675]: Stopped xdg-desktop-portal.service - Portal service.
+Aug 19 15:28:40 nezha systemd[80675]: Stopped xdg-desktop-portal-gnome.service - Portal service (GNOME implementation).
+Aug 19 15:28:40 nezha gnome-shell[80717]: Connection to xwayland lost
+Aug 19 15:28:40 nezha gnome-shell[80717]: Shutting down GNOME Shell
+Aug 19 15:28:40 nezha gnome-shell[80717]: Using public X11 display :1024, (using unix:/tmp/.X11-unix/X1025 for managed services)
+Aug 19 15:28:40 nezha gnome-shell[81714]: Error checking authorization for action id org.freedesktop.bolt.enroll: GDBus.Error:org.freedesktop.PolicyKit1.Error.Failed: Action org.freedesktop.bolt.enroll is not registered
+Aug 19 15:28:41 nezha gdm-launch-environment][80627]: pam_tcb(gdm-launch-environment:session): Session closed for gdm-greeter
+Aug 19 15:28:41 nezha audit[80627]: AUDIT1106 pid=80627 uid=0 auid=60579 ses=5 msg='op=PAM:session_close grantors=pam_succeed_if,pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:41 nezha audit[80627]: AUDIT1104 pid=80627 uid=0 auid=60579 ses=5 msg='op=PAM:setcred grantors=pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:41 nezha kernel: audit: type=1106 audit(1787146121.748:368): pid=80627 uid=0 auid=60579 ses=5 msg='op=PAM:session_close grantors=pam_succeed_if,pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:41 nezha kernel: audit: type=1104 audit(1787146121.748:369): pid=80627 uid=0 auid=60579 ses=5 msg='op=PAM:setcred grantors=pam_permit acct="gdm-greeter" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty1 res=success'
+Aug 19 15:28:41 nezha systemd-logind[1296]: Removed session 5.
+Aug 19 15:28:44 nezha systemd[81142]: Started app-gnome-yandex\x2dbrowser-85265.scope - Application launched by gnome-shell.
+Aug 19 15:28:51 nezha (sd-pam)[80677]: pam_tcb(systemd-user:session): Session closed for gdm-greeter
+Aug 19 15:28:51 nezha systemd-logind[1296]: Removed session 6.

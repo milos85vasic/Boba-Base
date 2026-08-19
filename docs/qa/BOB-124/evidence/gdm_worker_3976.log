@@ -1,0 +1,3 @@
+Aug 19 15:28:22 nezha audit[3976]: AUDIT1106 pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:session_close grantors=pam_tcb,pam_mktemp,pam_limits,pam_loginuid,pam_systemd,pam_namespace,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'
+Aug 19 15:28:22 nezha audit[3976]: AUDIT1113 pid=3976 uid=0 auid=1000 ses=4 msg='uid=1000 exe="/usr/libexec/gdm-session-worker" hostname=? addr=? terminal=? res=success'
+Aug 19 15:28:22 nezha audit[3976]: AUDIT1104 pid=3976 uid=0 auid=1000 ses=4 msg='op=PAM:setcred grantors=pam_shells,pam_tcb,pam_gnome_keyring acct="milosvasic" exe="/usr/libexec/gdm-session-worker" hostname=nezha addr=? terminal=/dev/tty2 res=success'

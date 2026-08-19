@@ -1,0 +1,50 @@
+Aug 19 15:07:39 nezha kernel: Spectre V1 : Mitigation: usercopy/swapgs barriers and __user pointer sanitization
+Aug 19 15:07:39 nezha systemd[1]: Listening on systemd-oomd.socket - Userspace Out-Of-Memory (OOM) Killer Socket.
+Aug 19 15:07:39 nezha systemd[1]: Starting systemd-zram-setup@zram0.service - Create swap on /dev/zram0...
+Aug 19 15:07:39 nezha systemd-makefs[922]: /dev/zram0 successfully formatted as swap (label "zram0", uuid b4e8f81d-8aec-4de8-9812-38a10f9c3e21)
+Aug 19 15:07:39 nezha systemd[1]: Finished systemd-zram-setup@zram0.service - Create swap on /dev/zram0.
+Aug 19 15:07:39 nezha systemd[1]: Activating swap dev-disk-by\x2duuid-6aa2d716\x2d533d\x2d4faa\x2d91a0\x2d84e4f57cde71.swap - /dev/disk/by-uuid/6aa2d716-533d-4faa-91a0-84e4f57cde71...
+Aug 19 15:07:39 nezha systemd[1]: Activating swap dev-zram0.swap - Compressed Swap on /dev/zram0...
+Aug 19 15:07:39 nezha kernel: Adding 16777212k swap on /dev/nvme1n1p2.  Priority:-2 extents:1 across:16777212k SS
+Aug 19 15:07:39 nezha systemd[1]: Activated swap dev-disk-by\x2duuid-6aa2d716\x2d533d\x2d4faa\x2d91a0\x2d84e4f57cde71.swap - /dev/disk/by-uuid/6aa2d716-533d-4faa-91a0-84e4f57cde71.
+Aug 19 15:07:40 nezha kernel: Adding 32812028k swap on /dev/zram0.  Priority:100 extents:1 across:32812028k SSDsc
+Aug 19 15:07:40 nezha systemd[1]: Activated swap dev-zram0.swap - Compressed Swap on /dev/zram0.
+Aug 19 15:07:40 nezha systemd[1]: Reached target swap.target - Swaps.
+Aug 19 15:07:40 nezha systemd[1]: Starting systemd-oomd.service - Userspace Out-Of-Memory (OOM) Killer...
+Aug 19 15:07:40 nezha systemd[1]: Started systemd-oomd.service - Userspace Out-Of-Memory (OOM) Killer.
+Aug 19 15:07:40 nezha audit[1]: SERVICE_START pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-oomd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+Aug 19 15:07:40 nezha kernel: audit: type=1130 audit(1787144860.167:37): pid=1 uid=0 auid=4294967295 ses=4294967295 msg='unit=systemd-oomd comm="systemd" exe="/usr/lib/systemd/systemd" hostname=? addr=? terminal=? res=success'
+Aug 19 15:07:44 nezha bluetoothd[1286]: Endpoint registered: sender=:1.71 path=/MediaEndpoint/A2DPSink/aptx_hd
+Aug 19 15:07:44 nezha bluetoothd[1286]: Endpoint registered: sender=:1.71 path=/MediaEndpoint/A2DPSink/aptx
+Aug 19 15:07:44 nezha bluetoothd[1286]: Endpoint registered: sender=:1.71 path=/MediaEndpoint/A2DPSink/aac
+Aug 19 15:07:44 nezha bluetoothd[1286]: Endpoint registered: sender=:1.71 path=/MediaEndpoint/A2DPSink/opus_g
+Aug 19 15:07:44 nezha bluetoothd[1286]: Endpoint registered: sender=:1.71 path=/MediaEndpoint/A2DPSink/sbc
+Aug 19 15:07:44 nezha bluetoothd[1286]: Endpoint registered: sender=:1.71 path=/MediaEndpoint/A2DPSink/opus_05
+Aug 19 15:07:44 nezha bluetoothd[1286]: Endpoint registered: sender=:1.71 path=/MediaEndpoint/A2DPSink/opus_05_duplex
+Aug 19 15:07:52 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.71 path=/MediaEndpoint/A2DPSink/aptx_hd
+Aug 19 15:07:52 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.71 path=/MediaEndpoint/A2DPSink/aptx
+Aug 19 15:07:52 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.71 path=/MediaEndpoint/A2DPSink/aac
+Aug 19 15:07:52 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.71 path=/MediaEndpoint/A2DPSink/opus_g
+Aug 19 15:07:52 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.71 path=/MediaEndpoint/A2DPSink/sbc
+Aug 19 15:07:52 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.71 path=/MediaEndpoint/A2DPSink/opus_05
+Aug 19 15:07:52 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.71 path=/MediaEndpoint/A2DPSink/opus_05_duplex
+Aug 19 15:07:55 nezha bluetoothd[1286]: Endpoint registered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aptx_hd
+Aug 19 15:07:55 nezha bluetoothd[1286]: Endpoint registered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aptx
+Aug 19 15:07:55 nezha bluetoothd[1286]: Endpoint registered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aac
+Aug 19 15:07:55 nezha bluetoothd[1286]: Endpoint registered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_g
+Aug 19 15:07:55 nezha bluetoothd[1286]: Endpoint registered: sender=:1.152 path=/MediaEndpoint/A2DPSink/sbc
+Aug 19 15:07:55 nezha bluetoothd[1286]: Endpoint registered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_05
+Aug 19 15:07:55 nezha bluetoothd[1286]: Endpoint registered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_05_duplex
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aptx_hd
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aptx
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/aac
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_g
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/sbc
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_05
+Aug 19 15:28:22 nezha bluetoothd[1286]: Endpoint unregistered: sender=:1.152 path=/MediaEndpoint/A2DPSink/opus_05_duplex
+Aug 19 15:28:23 nezha systemd[1]: user@1000.service: Consumed 1h 21.484s CPU time, 23.6G memory peak, 488.2M memory swap peak.
+Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/aptx_hd
+Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/aptx
+Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/aac
+Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/opus_g
+Aug 19 15:28:24 nezha bluetoothd[1286]: Endpoint registered: sender=:1.789 path=/MediaEndpoint/A2DPSink/sbc

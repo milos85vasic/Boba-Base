@@ -1,0 +1,50 @@
+Aug 19 15:00:01 nezha systemd[1540]: Started helix-server.service - Helix Seller Go Server.
+Aug 19 15:00:01 nezha helix-server[413245]: {"level":"info","time":"2026-08-19T15:00:01.398+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":1}
+Aug 19 15:00:01 nezha helix-server[413245]: {"level":"info","time":"2026-08-19T15:00:01.398+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":3}
+Aug 19 15:00:01 nezha helix-server[413245]: {"level":"info","time":"2026-08-19T15:00:01.398+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":2}
+Aug 19 15:00:01 nezha helix-server[413245]: {"level":"info","time":"2026-08-19T15:00:01.398+0200","caller":"server/main.go:194","msg":"Starting server","addr":"0.0.0.0:8080"}
+Aug 19 15:00:01 nezha systemd[1540]: helix-server.service: Main process exited, code=exited, status=1/FAILURE
+Aug 19 15:00:01 nezha systemd[1540]: helix-server.service: Failed with result 'exit-code'.
+Aug 19 15:00:06 nezha systemd[1540]: Started helix-server.service - Helix Seller Go Server.
+Aug 19 15:00:06 nezha helix-server[413351]: {"level":"info","time":"2026-08-19T15:00:06.673+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":3}
+Aug 19 15:00:06 nezha helix-server[413351]: {"level":"info","time":"2026-08-19T15:00:06.673+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":1}
+Aug 19 15:00:06 nezha helix-server[413351]: {"level":"info","time":"2026-08-19T15:00:06.673+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":2}
+Aug 19 15:00:06 nezha helix-server[413351]: {"level":"info","time":"2026-08-19T15:00:06.673+0200","caller":"server/main.go:194","msg":"Starting server","addr":"0.0.0.0:8080"}
+Aug 19 15:00:06 nezha helix-server[413351]: {"level":"info","time":"2026-08-19T15:00:06.673+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":0}
+Aug 19 15:00:06 nezha systemd[1540]: helix-server.service: Main process exited, code=exited, status=1/FAILURE
+Aug 19 15:00:06 nezha systemd[1540]: helix-server.service: Failed with result 'exit-code'.
+Aug 19 15:00:11 nezha systemd[1540]: Started helix-server.service - Helix Seller Go Server.
+Aug 19 15:00:11 nezha helix-server[413427]: {"level":"info","time":"2026-08-19T15:00:11.755+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":3}
+Aug 19 15:00:11 nezha helix-server[413427]: {"level":"info","time":"2026-08-19T15:00:11.755+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":2}
+Aug 19 15:00:11 nezha helix-server[413427]: {"level":"info","time":"2026-08-19T15:00:11.755+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":0}
+Aug 19 15:00:11 nezha helix-server[413427]: {"level":"info","time":"2026-08-19T15:00:11.755+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":1}
+Aug 19 15:00:11 nezha helix-server[413427]: {"level":"info","time":"2026-08-19T15:00:11.755+0200","caller":"server/main.go:194","msg":"Starting server","addr":"0.0.0.0:8080"}
+Aug 19 15:00:11 nezha systemd[1540]: helix-server.service: Main process exited, code=exited, status=1/FAILURE
+Aug 19 15:00:11 nezha systemd[1540]: helix-server.service: Failed with result 'exit-code'.
+Aug 19 15:00:16 nezha systemd[1540]: Started helix-server.service - Helix Seller Go Server.
+Aug 19 15:00:16 nezha helix-server[413535]: {"level":"info","time":"2026-08-19T15:00:16.896+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":2}
+Aug 19 15:00:16 nezha helix-server[413535]: {"level":"info","time":"2026-08-19T15:00:16.896+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":3}
+Aug 19 15:00:16 nezha helix-server[413535]: {"level":"info","time":"2026-08-19T15:00:16.896+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":0}
+Aug 19 15:00:16 nezha helix-server[413535]: {"level":"info","time":"2026-08-19T15:00:16.896+0200","caller":"server/main.go:194","msg":"Starting server","addr":"0.0.0.0:8080"}
+Aug 19 15:00:16 nezha helix-server[413535]: {"level":"info","time":"2026-08-19T15:00:16.896+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":1}
+Aug 19 15:00:16 nezha systemd[1540]: helix-server.service: Main process exited, code=exited, status=1/FAILURE
+Aug 19 15:00:16 nezha systemd[1540]: helix-server.service: Failed with result 'exit-code'.
+Aug 19 15:00:22 nezha systemd[1540]: Started helix-server.service - Helix Seller Go Server.
+Aug 19 15:00:22 nezha helix-server[413605]: {"level":"info","time":"2026-08-19T15:00:22.146+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":2}
+Aug 19 15:00:22 nezha helix-server[413605]: {"level":"info","time":"2026-08-19T15:00:22.146+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":3}
+Aug 19 15:00:22 nezha helix-server[413605]: {"level":"info","time":"2026-08-19T15:00:22.146+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":1}
+Aug 19 15:00:22 nezha helix-server[413605]: {"level":"info","time":"2026-08-19T15:00:22.146+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":0}
+Aug 19 15:00:22 nezha helix-server[413605]: {"level":"info","time":"2026-08-19T15:00:22.146+0200","caller":"server/main.go:194","msg":"Starting server","addr":"0.0.0.0:8080"}
+Aug 19 15:00:22 nezha systemd[1540]: helix-server.service: Main process exited, code=exited, status=1/FAILURE
+Aug 19 15:00:22 nezha systemd[1540]: helix-server.service: Failed with result 'exit-code'.
+Aug 19 15:00:27 nezha systemd[1540]: Started helix-server.service - Helix Seller Go Server.
+Aug 19 15:00:27 nezha helix-server[413698]: {"level":"info","time":"2026-08-19T15:00:27.393+0200","caller":"server/main.go:194","msg":"Starting server","addr":"0.0.0.0:8080"}
+Aug 19 15:00:27 nezha helix-server[413698]: {"level":"info","time":"2026-08-19T15:00:27.393+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":3}
+Aug 19 15:00:27 nezha helix-server[413698]: {"level":"info","time":"2026-08-19T15:00:27.393+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":0}
+Aug 19 15:00:27 nezha helix-server[413698]: {"level":"info","time":"2026-08-19T15:00:27.393+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":2}
+Aug 19 15:00:27 nezha systemd[1540]: helix-server.service: Main process exited, code=exited, status=1/FAILURE
+Aug 19 15:00:27 nezha systemd[1540]: helix-server.service: Failed with result 'exit-code'.
+Aug 19 15:00:32 nezha systemd[1540]: Started helix-server.service - Helix Seller Go Server.
+Aug 19 15:00:32 nezha helix-server[413821]: {"level":"info","time":"2026-08-19T15:00:32.635+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":2}
+Aug 19 15:00:32 nezha helix-server[413821]: {"level":"info","time":"2026-08-19T15:00:32.635+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":0}
+Aug 19 15:00:32 nezha helix-server[413821]: {"level":"info","time":"2026-08-19T15:00:32.635+0200","caller":"service/background.go:68","msg":"starting background worker","worker_id":1}
