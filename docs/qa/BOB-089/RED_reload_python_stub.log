@@ -1,0 +1,27 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.6, pytest-9.0.3, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+Using --randomly-seed=3899420736
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+hypothesis profile 'default'
+rootdir: /run/media/milosvasic/DATA4TB/Projects/boba
+configfile: pyproject.toml
+plugins: base-url-2.1.0, playwright-0.7.2, xdist-3.8.0, timeout-2.4.0, repeat-0.9.4, randomly-4.0.1, docker-3.2.5, benchmark-5.2.3, respx-0.23.1, cov-7.1.0, hypothesis-6.152.1, locust-2.43.4, asyncio-1.3.0, anyio-4.13.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 1 item
+
+tests/integration/test_start_sh_reload_paths.py::test_reload_python_clears_pycache_and_restarts FAILED [100%]
+
+=================================== FAILURES ===================================
+________________ test_reload_python_clears_pycache_and_restarts ________________
+tests/integration/test_start_sh_reload_paths.py:175: in test_reload_python_clears_pycache_and_restarts
+    assert post_check.returncode != 0, (
+E   AssertionError: __pycache__ still exists after --reload-python — cache-clear step did not run
+E   assert 0 != 0
+E    +  where 0 = CompletedProcess(args=['podman', 'exec', 'qbittorrent-proxy', 'test', '-d', '/config/download-proxy/__pycache__'], returncode=0, stdout=b'', stderr=b'').returncode
+=========================== short test summary info ============================
+FAILED tests/integration/test_start_sh_reload_paths.py::test_reload_python_clears_pycache_and_restarts
+============================== 1 failed in 13.21s ==============================
