@@ -63,9 +63,20 @@ class TestComputeBadgesNoFabrication:
         )
 
 
+@pytest.mark.timeout(240)
 class TestComputeBadgesCheckModePolarity:
     """The §1.1 paired mutation: golden-good (in-sync fixture) passes,
-    golden-bad (a real BOB-118-shaped drift) fails."""
+    golden-bad (a real BOB-118-shaped drift) fails.
+
+    Task #110 (BOB-130) verified: the function-scoped ``synced_fixtures``
+    fixture shells out ``scripts/compute-badges.sh`` full-regeneration
+    (~93s CPU-bound) once per test method in this class (3 methods), which
+    exceeds the project's ``--timeout=60`` default (pyproject.toml) even
+    though each individual invocation stays under its own 180s subprocess
+    timeout. 240s covers the 3x93s=~279s worst case with margin while
+    preserving the 60s default for every other test in the suite. See
+    .superpowers/sdd/task7-badge-timeout-verification.md.
+    """
 
     @pytest.fixture
     def synced_fixtures(self):
