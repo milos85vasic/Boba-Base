@@ -1,0 +1,35 @@
+[Unit]
+Description=Boba out-of-scope watchdog for user@1000.service (BOB-116/BOB-120/BOB-123)
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/scripts/system-slice-watchdog/README.md
+After=multi-user.target
+# Must NOT be in user.slice — that is the whole point (out-of-scope monitor).
+# system.slice is the default for units without Slice=, but declared for clarity.
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/boba-user1000-watchdog
+Restart=on-failure
+RestartSec=5s
+# Low priority — this is a monitor, not real work
+Nice=10
+IOSchedulingClass=idle
+# Bounded memory so a bug here can never bloat root
+MemoryMax=200M
+MemoryHigh=100M
+TasksMax=50
+# Prevent this monitor from EVER contributing to host pressure
+CPUQuota=15%
+# Log to journal under a distinct identifier for easy filtering
+SyslogIdentifier=boba-user1000-watchdog
+StandardOutput=journal
+StandardError=journal
+# NEVER inherit user@1000 environment
+User=root
+Group=root
+# Explicit slice — this is the whole point
+Slice=system.slice
+# Prefer OOM-kill this monitor over anything else if pressure hits
+OOMScoreAdjust=500
+
+[Install]
+WantedBy=multi-user.target
