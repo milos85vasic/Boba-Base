@@ -1,0 +1,128 @@
+<h1 id="bob-094-tracker-fetch-stress-chaos-automation-evidence">BOB-094
+— Tracker-fetch stress + chaos automation evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T00:00:00Z</p>
+<h2 id="scope">Scope</h2>
+<p><code>tests/stress/test_tracker_fetch_stress_chaos.py</code> —
+§11.4.85 stress + chaos coverage for
+<code>SearchOrchestrator.fetch_torrent</code> (the outbound HTTP +
+response classification path in
+<code>download-proxy/src/merge_service/search.py</code>).</p>
+<h2 id="scenarios-delivered-8-1-meta-9-tests-all-green">Scenarios
+delivered (8 + 1 meta = 9 tests, all GREEN)</h2>
+<h3 id="stress">STRESS</h3>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 31%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Test</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>test_stress_sustained_100_sequential_fetches</code></td>
+<td>sustained-load — p50/p95/p99 over 100 iters</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>test_stress_concurrent_10_parallel_no_fd_leak</code></td>
+<td>concurrent-contention — no deadlock, no fd leak</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>test_boundary_empty_url_returns_none_or_error</code></td>
+<td>boundary — empty URL</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>test_boundary_max_length_url_survives</code></td>
+<td>boundary — 2000-char URL</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>test_boundary_off_by_one_content_type_edges</code></td>
+<td>boundary — CT classifier edges</td>
+</tr>
+</tbody>
+</table>
+<h3 id="chaos">CHAOS</h3>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 31%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Test</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6</td>
+<td><code>test_chaos_network_drop_20pct_categorised_as_network</code></td>
+<td>network-fault — §11.4.69 <code>feature_class=network</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>test_chaos_midflight_kill_clean_degradation</code></td>
+<td>process-death — real HTTP server killed mid-fetch</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>test_chaos_input_corruption_malformed_response_quarantined</code></td>
+<td>input-corruption — malformed body quarantined</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>test_section_114_85_category_map</code></td>
+<td>meta — mechanical coverage-claim assertion</td>
+</tr>
+</tbody>
+</table>
+<h2 id="red-capture-production-mutation-driven">§11.4.115 RED capture
+(production-mutation-driven)</h2>
+<p><strong>Scenarios with captured RED:</strong>
+<code>test_chaos_input_corruption_malformed_response_quarantined</code>
+AND <code>test_boundary_off_by_one_content_type_edges</code>.</p>
+<p>Applied always-accept mutation to the CT/prefix classifier at
+<code>download-proxy/src/merge_service/search.py:1893-1898</code>
+(replaced the boolean guard with <code>if True:</code> so a malformed
+HTML body would be returned to the caller). Both tests FAILED with
+user-observable assertion errors proving the classifier bypass was
+detected — see
+<code>evidence/red_capture_against_mutated_classifier.txt</code>.</p>
+<p>Production tree restored (<code>git diff --stat</code> empty); re-ran
+the full suite — 9/9 GREEN — see
+<code>evidence/green_capture_after_restore.txt</code>.</p>
+<h2 id="evidence-artefacts">Evidence artefacts</h2>
+<p><code>evidence/*.json</code> — one per scenario, written by the tests
+themselves via the Python analogue of <code>ab_pass_with_evidence</code>
+(path exists + non-empty + parses). Each carries
+<code>section=11.4.85</code>, <code>feature_class</code> per §11.4.69
+taxonomy, and user-observable metrics (latency percentiles,
+byte-equality, FD deltas, error-category counts, quarantine counts).</p>
+<h2 id="discipline">Discipline</h2>
+<ul>
+<li>§11.4.161 rootless — no root, hermetic (in-process aiohttp stub +
+ephemeral loopback HTTP server for the mid-flight-kill scenario)</li>
+<li>§11.4.5 captured evidence — per-iteration latency histogram,
+categorised error counts, state deltas</li>
+<li>§11.4.14 chaos cleanup — <code>atexit</code> + <code>finally</code>
+teardown for the real HTTP server (no bound port left behind)</li>
+<li>§11.4.69 taxonomy — <code>feature_class</code> recorded per
+scenario</li>
+<li>§11.4.201 no false-null — FD-leak check honestly reports
+<code>unmeasurable_on_this_host</code> when
+<code>/proc/&lt;pid&gt;/fd</code> is unavailable</li>
+<li>§11.4.113 — no force-push in this delivery</li>
+</ul>

@@ -1,0 +1,168 @@
+<h1
+id="bob-096-chaos-coverage-for-qbittorrent-gotestsintegrationjackett_db_test.go">BOB-096
+— Chaos coverage for
+<code>qBitTorrent-go/tests/integration/jackett_db_test.go</code></h1>
+<p><strong>Ticket:</strong> BOB-096 <strong>Scope:</strong> extend the
+boba-jackett DB integration suite with <code>§11.4.85</code>-class
+process-death, resource-exhaustion, and concurrent-kill chaos scenarios.
+<strong>Date:</strong> 2026-08-19 <strong>Race detector:</strong> clean
+(<code>go test -race</code>, 3× deterministic re-run).</p>
+<h2 id="scenarios-added">Scenarios added</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 22%" />
+<col style="width: 34%" />
+<col style="width: 36%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Scenario</th>
+<th>Test function</th>
+<th>§11.4.85 class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Resource-exhaustion — file-descriptor pressure via
+<code>os.Pipe()</code> (bounded per §12.6)</td>
+<td><code>TestChaos_FileDescriptorExhaustion</code></td>
+<td>(d)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Concurrent-kill via <code>context.CancelFunc</code> from a second
+goroutine while the first is writing</td>
+<td><code>TestChaos_ConcurrentContextCancelWrite</code></td>
+<td>(a-extra)</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="scenarios-already-present-kept-referenced-for-completeness">Scenarios
+already present (kept, referenced for completeness)</h2>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 6%" />
+<col style="width: 22%" />
+<col style="width: 34%" />
+<col style="width: 36%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Scenario</th>
+<th>Test function</th>
+<th>§11.4.85 class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3</td>
+<td>Process-kill (SIGKILL of a helper subprocess mid-transaction)</td>
+<td><code>TestChaos_MidTransactionSIGKILLRecovery</code></td>
+<td>(a)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Byte-level DB file corruption</td>
+<td><code>TestChaos_DBFileByteCorruption</code></td>
+<td>(b)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Concurrent-writer contention (40 goroutines, direct repo layer)</td>
+<td><code>TestChaos_ConcurrentWriterContentionRepo</code></td>
+<td>(c)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>WAL sidecar corruption + reopen</td>
+<td><code>TestChaos_WALSidecarCorruptionRecovery</code></td>
+<td>(a-analogue)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Master-key rotation mid-flight (K1→K2 forward + K1 reverse)</td>
+<td><code>TestChaos_MasterKeyRotationMidflight</code></td>
+<td>(e-analogue)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="red-first-evidence-captured-live">§11.4.115 RED-first evidence —
+captured live</h2>
+<p>For <code>TestChaos_ConcurrentContextCancelWrite</code>, invariant
+(ii) (“every confirmed write round-trips”) was proven falsifiable by
+injecting a phantom name <code>KILL_PHANTOM</code> into
+<code>finalNames</code> with no corresponding DB row.</p>
+<ul>
+<li><code>RED_phantom_mutation.log</code> — captures the FAIL:
+<code>(ii) confirmed-write KILL_PHANTOM lost after cancel: repos: credential not found</code>
+→ <code>FAIL: TestChaos_ConcurrentContextCancelWrite</code></li>
+<li>Mutation reverted; <code>GREEN_after_restore.log</code> captures the
+immediate PASS under identical race conditions.</li>
+</ul>
+<p>Falsification narratives for the other invariants (i, iii on FD +
+cancel tests; all invariants on the pre-existing tests) are recorded in
+the per-test doc-comments per §1.1.</p>
+<h2 id="anti-bluff-assertions-11.4.5-11.4.107">Anti-bluff assertions
+(§11.4.5 / §11.4.107)</h2>
+<ul>
+<li>Byte-equal plaintext round-trip via
+<code>Credential.Username</code>/<code>Password</code>, not “no
+error”.</li>
+<li><code>sql.DB</code> row count vs writer-confirmed count exact
+equality.</li>
+<li>Categorised error on FD-pressure Upsert failure (non-empty
+<code>err.Error()</code>).</li>
+<li>Durability boundary: BASELINE / PRECOMMIT rows always survive;
+uncommitted rows never surface.</li>
+<li>Panic guard: every DB access under chaos wrapped in
+<code>recover()</code> → <code>t.Fatalf</code>.</li>
+</ul>
+<h2 id="cleanup-11.4.14">Cleanup (§11.4.14)</h2>
+<ul>
+<li><code>TestChaos_FileDescriptorExhaustion</code> closes every
+<code>os.Pipe()</code> pair via both <code>defer cleanup()</code> and
+<code>t.Cleanup(cleanup)</code> (belt-and-braces).</li>
+<li><code>TestChaos_ConcurrentContextCancelWrite</code> registers
+<code>t.Cleanup(cancel)</code> so the context is cancelled even on early
+test bailout.</li>
+<li><code>t.TempDir()</code> handles DB + evidence-log cleanup
+automatically.</li>
+</ul>
+<h2 id="host-safety-12.6-12.12-11.4.161">Host safety (§12.6, §12.12,
+§11.4.161)</h2>
+<ul>
+<li>FD pressure capped at <code>min(RLIMIT_NOFILE.soft / 4, 512)</code>
+— never destabilises the host FD table.</li>
+<li>No <code>sudo</code>, no rootful container, no host power-management
+calls.</li>
+<li><code>GOMAXPROCS=2 nice -n 19 ionice -c 3</code> throughout.</li>
+</ul>
+<h2 id="determinism-11.4.50">Determinism (§11.4.50)</h2>
+<p>Three consecutive <code>-race -count=3</code> runs — all GREEN
+(<code>race_detector_3x.log</code>).</p>
+<h2 id="run-log-files">Run log files</h2>
+<ul>
+<li><code>bob096_run_verbose.log</code> — verbose PASS output for the
+two new tests.</li>
+<li><code>full_chaos_suite.log</code> — full <code>TestChaos*</code>
+suite under <code>-race</code>.</li>
+<li><code>new_chaos_scenarios.log</code> — first run of the two
+additions.</li>
+<li><code>RED_phantom_mutation.log</code> — captured RED (invariant (ii)
+fails).</li>
+<li><code>GREEN_after_restore.log</code> — GREEN immediately after
+restoring source.</li>
+<li><code>race_detector_3x.log</code> — 3× deterministic race-clean
+run.</li>
+</ul>
+<h2 id="skipped-chaos-class-honest-tracked">Skipped chaos class (honest,
+tracked)</h2>
+<p><code>§11.4.85 (d) disk-full</code> remains deferred as a follow-up
+<code>§11.4.197</code> item — a filesystem-quota fixture belongs in a
+container-scoped harness rather than a host-shared test file. Recorded
+in the test-file doc-comment.</p>

@@ -1,0 +1,41 @@
+<h1 id="bob-089-qa-evidence">BOB-089 — QA evidence</h1>
+<p>RED-first regression suite for
+<code>start.sh --reload-python | --reload-plugins | --recreate</code>.</p>
+<ul>
+<li>Suite:
+<code>tests/integration/test_start_sh_reload_paths.py</code></li>
+<li>Contract per subcommand: see file docstring (mirrors CLAUDE.md “Pick
+the right restart level”).</li>
+<li>§11.4.115(F) — verdicts read from the target at run time (podman
+inspect + container marker files).</li>
+<li>§11.4.161 — rootless podman auto-detected same way
+<code>start.sh</code> does.</li>
+</ul>
+<h2 id="red-red_reload_python_stub.log">RED —
+<code>RED_reload_python_stub.log</code></h2>
+<p><code>reload_python()</code>’s <code>find … -exec rm -rf</code> line
+replaced with <code>echo "MUTATION-BOB089: cache clear skipped"</code>.
+The test FAILs with:</p>
+<pre><code>AssertionError: __pycache__ still exists after --reload-python — cache-clear step did not run</code></pre>
+<p>That is the exact contract-violation the mutation induces — the guard
+is not a tautology.</p>
+<h2 id="green-green_all_three.log">GREEN —
+<code>GREEN_all_three.log</code></h2>
+<p>Mutation reverted. All three tests PASS on the real running fleet
+(podman, qbittorrent-proxy healthy):</p>
+<pre><code>test_reload_plugins_restarts_without_copying_files PASSED
+test_recreate_stack_destroys_and_recreates_container PASSED
+test_reload_python_clears_pycache_and_restarts PASSED
+3 passed in 105.00s</code></pre>
+<p>Discriminators the tests observe:</p>
+<ul>
+<li><code>--reload-python</code> → marker <code>__pycache__</code>
+removed AND <code>StartedAt</code> bumped AND container id UNCHANGED
+(restart, not recreate).</li>
+<li><code>--reload-plugins</code> → <code>StartedAt</code> bumped AND id
+UNCHANGED AND <code>plugins/bob089_reload_plugins_marker.py</code> NOT
+auto-copied into <code>config/qBittorrent/nova3/engines/</code> (that’s
+<code>./install-plugin.sh</code>’s job).</li>
+<li><code>--recreate</code> → container id CHANGES (destroy + recreate,
+not a plain restart).</li>
+</ul>

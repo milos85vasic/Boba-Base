@@ -1,0 +1,109 @@
+<h1 id="bob-091-closure-evidence">BOB-091 — Closure Evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T12:45:17Z <strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Closure evidence class:</strong>
+source-verified + runtime-HTTP-probed</p>
+<h2 id="task">Task</h2>
+<p>Relocate mocked <code>SearchOrchestrator</code> tests to
+<code>tests/unit/</code> per §11.4.27 (no mocks/stubs outside unit
+tests), and author real-service replacements in the original
+locations.</p>
+<h2 id="investigation-11.4.6-verified-not-assumed">Investigation
+(§11.4.6 — verified, not assumed)</h2>
+<p>Ran the mandated audit:</p>
+<pre><code>grep -rn &quot;mock.*SearchOrchestrator\|SearchOrchestrator.*mock\|@patch.*SearchOrchestrator&quot; tests/</code></pre>
+<p>Result — 3 hits, all already under <code>tests/unit/</code>:</p>
+<table>
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>File</th>
+<th>Line</th>
+<th>Kind</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>tests/unit/test_merge_api_route_contracts.py</code></td>
+<td>4</td>
+<td>docstring naming the mock target of an in-file
+<code>@patch("api.routes._get_orchestrator")</code></td>
+<td>LEGAL (unit/)</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>tests/unit/test_api_init_coverage.py</code></td>
+<td>220</td>
+<td>actual
+<code>patch("merge_service.search.SearchOrchestrator")</code></td>
+<td>LEGAL (unit/)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>tests/unit/test_tracker_stats_shape.py</code></td>
+<td>18</td>
+<td>docstring pointer — the file monkeypatches
+<code>SearchOrchestrator._get_enabled_trackers</code> /
+<code>._search_tracker</code>, real replacement lives at
+<code>tests/contract/test_tracker_stats_contract.py</code></td>
+<td>LEGAL (unit/)</td>
+</tr>
+</tbody>
+</table>
+<p>Zero VIOLATIONS. The mocked tests already live in
+<code>tests/unit/</code> (the sole directory where §11.4.27 permits
+mocks). Prior GA-14 remediation
+(<code>docs/GOVERNANCE_AUDIT_2026-08-07.md</code> /
+<code>..._ROUND2.md</code>) relocated them from
+<code>tests/integration/</code> and <code>tests/contract/</code> and
+authored real-service replacements in the ORIGINAL paths — cited in-file
+in every docstring.</p>
+<h2 id="real-service-replacements-exist">Real-service replacements
+exist</h2>
+<ul>
+<li><code>tests/integration/test_merge_api.py</code> — real HTTP against
+a real merge service on port 7187, real <code>SearchOrchestrator</code>
+fan-out, real qBittorrent WebUI calls; NO <code>@patch</code> targets
+<code>SearchOrchestrator</code> /
+<code>api.routes._get_orchestrator</code>. Verified:
+<code>grep -c SearchOrchestrator tests/integration/test_merge_api.py</code>
+= 3 (all in docstring / real fan-out narrative, no mock patch).</li>
+<li><code>tests/contract/test_tracker_stats_contract.py</code> — real
+HTTP contract test, no mock of <code>SearchOrchestrator</code>.
+Verified:
+<code>grep -c SearchOrchestrator tests/contract/test_tracker_stats_contract.py</code>
+= 4 (docstring + real assertions, no <code>@patch</code>).</li>
+</ul>
+<h2 id="runtime-evidence-real-http-against-live-merge-service">Runtime
+evidence — real HTTP against live merge service</h2>
+<p>Real HTTP probe (§11.4.5 / §11.4.69
+<code>feature_class=merge_service_health</code>):</p>
+<pre><code>$ curl -sS -m 5 -o /dev/null -w &quot;HTTP:%{http_code}\n&quot; http://localhost:7187/health
+HTTP:200
+$ curl -sS -m 5 http://localhost:7187/health
+{&quot;status&quot;:&quot;healthy&quot;,&quot;service&quot;:&quot;merge-search&quot;,&quot;version&quot;:&quot;1.0.0&quot;}</code></pre>
+<p>Real HTTP 200 with JSON payload — the real-service replacement path
+(<code>tests/integration/test_merge_api.py</code>) exercises this same
+live service.</p>
+<h2 id="verdict">Verdict</h2>
+<p>BOB-091 satisfied by prior GA-14 remediation. No code change required
+this session. All three mocked-SearchOrchestrator tests reside in
+<code>tests/unit/</code> (legal); the real-service replacements exist at
+<code>tests/integration/test_merge_api.py</code> and
+<code>tests/contract/test_tracker_stats_contract.py</code> and drive
+real HTTP against the live merge service on port 7187.</p>
+<h2 id="regression-guard">§11.4.135 regression guard</h2>
+<p>Existing (compliance is checked by
+<code>scripts/pre_build_verification.sh</code> invariant checking
+§11.4.27 mock-scope). No new guard added — the existing invariant would
+FAIL if any mocked-SearchOrchestrator test were ever placed outside
+<code>tests/unit/</code>.</p>

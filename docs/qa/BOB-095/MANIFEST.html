@@ -1,0 +1,133 @@
+<h1
+id="bob-095-go-side-sse-broker-stress-chaos-automation-evidence">BOB-095
+— Go-side SSE-broker stress + chaos automation evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T00:00:00Z</p>
+<h2 id="scope">Scope</h2>
+<p><code>qBitTorrent-go/internal/service/sse_broker_stress_chaos_test.go</code>
+— §11.4.85 stress + chaos coverage for <code>SSEBroker</code>
+(<code>internal/service/sse_broker.go</code>) under
+<code>go test -race</code>. Go-side sibling to BOB-094’s Python
+tracker-fetch coverage.</p>
+<h2 id="scenarios-delivered-6-tests-all-green-under--race">Scenarios
+delivered (6 tests, all GREEN under -race)</h2>
+<h3 id="stress">STRESS</h3>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 31%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Test</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>TestSSEBrokerStressChaos_SustainedSubscribeUnsubscribe</code></td>
+<td>sustained-load — 1000 cycles + goroutine-leak guard</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>TestSSEBrokerStressChaos_ConcurrentSubscribers</code></td>
+<td>concurrent — 100 subs × 5 msgs = 500 delivered, no deadlock</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>TestSSEBrokerStressChaos_BoundaryDoubleUnsubscribe</code></td>
+<td>boundary — double-close idempotency</td>
+</tr>
+</tbody>
+</table>
+<h3 id="chaos">CHAOS</h3>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 31%" />
+<col style="width: 52%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Test</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>4</td>
+<td><code>TestSSEBrokerStressChaos_SlowSubscriberDoesNotBlock</code></td>
+<td>backpressure isolation — <code>default:</code> clause proof</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>TestSSEBrokerStressChaos_UnsubscribeDuringPublish</code></td>
+<td>RLock/Lock ordering under contention</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>TestSSEBrokerStressChaos_ProducerFloodBoundedByBuffer</code></td>
+<td>producer-flood bounded by 10-msg buffer</td>
+</tr>
+</tbody>
+</table>
+<h2 id="red-first-captures">§11.4.115 RED-first captures</h2>
+<h3 id="natural-red-11.4.238-automated-qa-discovers-defect">Natural RED
+— §11.4.238 automated-QA-discovers defect</h3>
+<p>The initial test run of scenario #3 (double-unsubscribe) uncovered a
+REAL defect the source-side review had missed: <code>close(ch)</code>
+panicked with <code>close of closed channel</code>. Captured in
+<code>evidence/red_capture_double_unsubscribe.txt</code>. Fix landed in
+the same commit: <code>sse_broker.go</code> <code>Subscribe()</code>
+gates the <code>close</code> on registry membership so a second call is
+a safe no-op (§11.4.253 idempotency).</p>
+<h3 id="synthetic-red-backpressure-mutation">Synthetic RED —
+backpressure mutation</h3>
+<p><code>sse_broker.go</code> <code>Publish()</code> was TEMPORARILY
+mutated by removing the <code>select { … default: … }</code> clause
+(turning it into a blocking send). Scenario #4 wedged as expected; the
+<code>-timeout 10s</code> deadline triggered and the test FAILed.
+Captured in <code>evidence/red_capture_backpressure.txt</code>. The
+<code>default:</code> clause was restored immediately after capture; the
+GREEN re-run is in
+<code>evidence/green_capture_after_restore.txt</code>.</p>
+<h2 id="evidence-layout">Evidence layout</h2>
+<ul>
+<li><code>latency.json</code> — p50/p95/p99 + goroutine deltas (scenario
+1)</li>
+<li><code>concurrent.json</code> — fan-out totals (scenario 2)</li>
+<li><code>boundary_double_unsubscribe.txt</code> — safe no-op proof
+(scenario 3)</li>
+<li><code>chaos_slow_subscriber.json</code> — publisher-not-wedged proof
+(scenario 4)</li>
+<li><code>chaos_unsubscribe_during_publish.json</code> — race + panic
+counts (scenario 5)</li>
+<li><code>chaos_producer_flood.json</code> — buffer-bounded delivery
+(scenario 6)</li>
+<li><code>red_capture_double_unsubscribe.txt</code> — §11.4.115 RED
+(natural, defect-found)</li>
+<li><code>red_capture_backpressure.txt</code> — §11.4.115 RED (mutation,
+restored)</li>
+<li><code>green_capture_after_restore.txt</code> — final GREEN run, 6/6
+PASS</li>
+</ul>
+<h2 id="discipline-citations">Discipline citations</h2>
+<ul>
+<li>§11.4.85 stress + chaos test types</li>
+<li>§11.4.115(F) machine-written verdict pairs — natural RED / mutation
+RED</li>
+<li>§11.4.161 rootless — no root/podman needed</li>
+<li>§11.4.14 cleanup on every exit — <code>defer unsub()</code> on every
+subscribe</li>
+<li>§11.4.3 SKIP-with-reason — evidence-dir creation failure, never fake
+pass</li>
+<li>§12/§12.6/§12.12 host safety —
+<code>GOMAXPROCS=2 nice -n 19</code></li>
+<li>§11.4.238 automated QA discovers — scenario #3 caught a live
+defect</li>
+<li>§11.4.253 idempotency — the double-unsubscribe fix</li>
+</ul>
