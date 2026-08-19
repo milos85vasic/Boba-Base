@@ -161,8 +161,28 @@ def _cleanup_event_loop(request):
                 loop.call_soon(loop.stop)
             else:
                 try:
+                    # asyncgen finalizer exceptions do NOT escape here:
+                    # BaseEventLoop.shutdown_asyncgens() gathers every
+                    # ag.aclose() with return_exceptions=True and routes
+                    # any Exception subclass to call_exception_handler()
+                    # internally (verified against the CPython 3.14
+                    # asyncio.base_events source + a live probe: a
+                    # deliberately-raising asyncgen finalizer produced
+                    # only a "Task exception was never retrieved" log,
+                    # nothing propagated through run_until_complete()).
+                    # The only exception genuinely reachable from THIS
+                    # call is RuntimeError("Event loop is closed") --
+                    # reproduced live via `loop.close();
+                    # loop.run_until_complete(loop.shutdown_asyncgens())`.
+                    # A blanket `except Exception` here previously also
+                    # silently swallowed a DeprecationWarning-as-exception
+                    # raised anywhere in this block, defeating the
+                    # project's error::DeprecationWarning policy --
+                    # narrowed per Task-107 followup to Task-7 audit
+                    # recommendation #1 (see line ~143 above for the
+                    # sibling narrowing + its evidence trail).
                     loop.run_until_complete(loop.shutdown_asyncgens())
-                except Exception:
+                except RuntimeError:
                     pass
                 loop.close()
     except RuntimeError:
@@ -182,8 +202,22 @@ def _cleanup_event_loop(request):
 
     # Unset the thread-local loop so the next test starts fresh.
     try:
+        # asyncio.set_event_loop(None) delegates to the current policy's
+        # set_event_loop(), whose only guard
+        # (`if loop is not None and not isinstance(loop, AbstractEventLoop):
+        # raise TypeError(...)`) never fires for loop=None -- verified
+        # against the CPython 3.14 asyncio.events source, so under the
+        # standard policy this call cannot raise at all. RuntimeError is
+        # kept as a defensive catch for a custom/third-party event-loop
+        # policy that overrides set_event_loop() and raises on teardown
+        # (mirrors the sibling `except RuntimeError` narrowing above for
+        # "no current event loop"-shaped failures). Verified NOT to raise
+        # DeprecationWarning on this project's Python 3.14.6. A blanket
+        # `except Exception` here previously silently swallowed a
+        # DeprecationWarning-as-exception raised anywhere in this block --
+        # narrowed per Task-107 followup to Task-7 audit recommendation #1.
         asyncio.set_event_loop(None)
-    except Exception:
+    except RuntimeError:
         pass
 
 
