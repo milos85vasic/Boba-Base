@@ -136,3 +136,32 @@ The forced logout at **20:50:59 was NOT caused by any forbidden CONST-033 mechan
 - CONST-033 Operational Note (triage protocol followed to letter)
 
 Non-compliance is a release blocker. The next occurrence of this incident class MUST trigger a full-context §12.12 recheck + escalation to operator per §11.4.66.
+
+---
+
+## RETROSPECTIVE §11.4.6 CORRECTION — RESOLVED via BOB-126 (added 2026-08-19T17:32:00Z)
+
+This doc's original hypothesis (PAM/Linger contradiction and/or various downstream mechanisms) was **WRONG**. The 7th forced-logout incident (BOB-126, 2026-08-19 16:43:43) captured the REAL root cause via kernel audit trail:
+
+```
+audit[399861]: SYSCALL syscall=62 a0=ffffffff a1=9
+  pid=399861 auid=1000 comm="pytest" exe="/usr/bin/python3.14"
+  key="sigkill_investigation"
+```
+
+A `pytest` process called `kill(-1, SIGKILL)`. Root cause: `tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out` created `AsyncMock()` without setting `mock.pid` as int. Production `_search_public_tracker` called `os.killpg(os.getpgid(proc.pid), SIGKILL)`. `MagicMock.__int__` defaults to 1, so `os.getpgid(1) == 1` → `os.killpg(1, SIGKILL)` → glibc → `kill(-1, SIGKILL)` = SIGKILL every UID-1000 process. Bug existed since 2026-04-24 (~4 months).
+
+**PAM session_close was a DOWNSTREAM effect**, not the initiator. The `Linger=yes` protection was irrelevant — the SIGKILL came from userspace (a UID-1000 process signaling its own UID-group), not from systemd's session lifecycle.
+
+**Fix chain**:
+
+- `ad4b46a` — boba: `search.py` int-guard + test hardening + §11.4.115 RED regression guard
+- `502586c` — constitution: NEW universal §11.4.263 anchor covering Python/Go/Rust/Bash/C
+- `bf01cf3` — boba: constitution pointer bump
+- `e984f4b` — boba: workable_items.db chain-close + regenerated docs
+
+**Verification**: 863/863 unit tests PASS + 14/14 Go race packages clean + 50+ min elapsed vs prior ~37-38 min cadence with no 8th incident.
+
+**§11.4.238 escape audit** logged in `docs/QA_DISCOVERY_LEDGER.md` Rev 12.
+
+See `docs/incidents/2026-08-19-6th-forced-logout.md` (Rev 4+) for the full attribution.
