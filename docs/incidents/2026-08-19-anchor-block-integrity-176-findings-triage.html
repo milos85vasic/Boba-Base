@@ -1,0 +1,315 @@
+<h1
+id="anchor-block-integrity-checker-surfaced-176-findings-on-the-constitution-mirror-set-triage-no-fixes">2026-08-19
+— Anchor-block-integrity checker surfaced 176 findings on the
+constitution mirror set: triage (no fixes)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T11:49:41Z <strong>Status:</strong> active
+<strong>Description:</strong> Triage of the 176 real findings BOB-105’s
+<code>scripts/anchor_block_integrity_check.sh</code> (commit
+<code>7cd080c</code> on <code>boba</code> HEAD <code>0497b3d</code>)
+surfaced against the four constitution mirrors
+(<code>constitution/{CLAUDE,AGENTS,QWEN,GEMINI}.md</code>).
+Investigation + classification ONLY per the operator directive — NO
+fixes applied. §11.4.238 discovery-channel-escape signal; §11.4.227(B)
+block-integrity/lockstep enforcement. <strong>Authority:</strong>
+§11.4.227(B) canonical vs. mirror layer discipline, §11.4.157 mirror
+lockstep, §11.4.238 automated-QA-discovers, §11.4.44 revision header,
+§11.4.6 no-guessing.</p>
+<h2 id="summary-counts-measured-2026-08-19t114941z">1. Summary counts
+(measured 2026-08-19T11:49:41Z)</h2>
+<p>Checker:
+<code>bash scripts/anchor_block_integrity_check.sh --config scripts/anchor_block_integrity_check.conf</code>
+(commit <code>7cd080c</code>).</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total findings</td>
+<td><strong>176</strong></td>
+</tr>
+<tr>
+<td><code>DUPLICATE-OR-COLLISION</code></td>
+<td>17</td>
+</tr>
+<tr>
+<td><code>LOCKSTEP-DIVERGENCE</code></td>
+<td>7 (task brief said 4 — actual 7)</td>
+</tr>
+<tr>
+<td><code>LOCKSTEP-GAP</code></td>
+<td>152</td>
+</tr>
+</tbody>
+</table>
+<p>The 7 divergences (not 4): <code>§11.4.69</code>,
+<code>§11.4.112</code>, <code>§11.4.120</code>, <code>§11.4.142</code>,
+<code>§11.4.192</code>, <code>§11.4.193</code>, <code>§11.4.201</code>,
+<code>§11.4.227</code>. Re-counting the checker output:
+<code>§11.4.201</code> is enumerated in the divergence list too.
+Correction: <strong>8</strong> distinct anchors show
+<code>LOCKSTEP-DIVERGENCE</code> when the additional duplicate-driven
+divergences are counted (see §3 note).</p>
+<p>The 17 duplicates split: Constitution.md 3 (<code>§11.4.30</code>,
+<code>§11.4.93</code>, <code>§11.4.202</code>), CLAUDE.md 3, AGENTS.md
+5, QWEN.md 4, GEMINI.md 2 — all in the anchor set
+<code>{§11.4.69, .112, .120, .142, .201}</code> plus the three
+Constitution-only cases.</p>
+<h2 id="duplicate-or-collision-classification">2.
+<code>DUPLICATE-OR-COLLISION</code> — classification</h2>
+<p>All 17 duplicates are the SAME structural class: an anchor with (a) a
+compact-summary/reference-heading block <strong>plus</strong> (b) a
+later verbatim-mandate or amendment block. The F7 pattern the
+round-of-2026-07-22 amendment already forensically identified
+(§11.4.208/§11.4.209) is now measured on 8 additional anchors.</p>
+<ul>
+<li><strong>REAL DEFECT (mirror layer, 14 findings)</strong>:
+<code>§11.4.69/.112/.120/.142/.201</code> duplicated across
+CLAUDE/AGENTS/QWEN/GEMINI mirrors. First occurrence is the compact
+section (bulleted-list entry or short heading), second is the full
+amendment block from a later round. Per §11.4.227(B)
+exactly-once-per-file: &gt;1 block-start = FAIL. Reconciliation follows
+the F7 pattern — keep the fuller variant, union in any unique element
+from the compact.</li>
+<li><strong>CANONICAL-VS-MIRROR LAYER (3 findings)</strong>:
+Constitution.md’s <code>§11.4.30</code>, <code>§11.4.93</code>,
+<code>§11.4.202</code> each appear as two block-starts (<code>###</code>
+heading + a later <code>**bold</code>). §11.4.227(B) explicitly permits
+canonical-vs-mirror layer variance; however the RULE “exactly one
+block-start per anchor per file” is written FILE-scoped, not
+layer-scoped — so these are REAL DEFECTS at the same severity as the
+mirror duplicates but arguably require operator adjudication whether
+Constitution.md’s dual-format tradition counts as a legitimate
+<code>&lt;H3&gt;+bold-reference</code> pair.</li>
+</ul>
+<h2 id="lockstep-divergence-per-anchor-triage">3.
+<code>LOCKSTEP-DIVERGENCE</code> — per-anchor triage</h2>
+<p>Extractor produces the first-block content-hash per mirror. Any
+mirror the same anchor appears twice in gets its FIRST occurrence
+hashed; that first occurrence’s variant (compact vs. full) is often what
+the divergence reveals — not that the full text is different, but that
+the FIRST occurrence’s shape differs.</p>
+<h3 id="real-defect">3.1 §11.4.69 — <strong>REAL DEFECT</strong></h3>
+<p>Hashes: AGENTS unique, others match. AGENTS.md has TWO occurrences
+(compact reference-heading L1526 + full amendment L2554); other three
+carry one block. First-occurrence hash for AGENTS is the compact short
+heading
+<code>**§11.4.69 — Universal sink-side positive-evidence taxonomy + mechanical enforcement (User mandate, 2026-05-20)**</code>;
+other mirrors’ first hit is the full-body block. Same F7 shape as
+§11.4.208/.209.</p>
+<h3 id="real-defect-1">3.2 §11.4.112 — <strong>REAL DEFECT</strong></h3>
+<p>Three distinct hashes across four mirrors. AGENTS=QWEN duplicate the
+anchor (compact + full pattern), CLAUDE duplicates it too but at a
+different pair of line offsets, GEMINI is the outlier single-block.
+Root: divergent compact vs. verbatim variant of the
+impossibility-verdict-bounded amendment.</p>
+<h3 id="real-defect-same-shape-as-.112">3.3 §11.4.120 — <strong>REAL
+DEFECT</strong> (same shape as .112)</h3>
+<p>Three hashes; AGENTS=QWEN, CLAUDE unique, GEMINI unique —
+compact/full order differs across the four mirrors.</p>
+<h3 id="real-defect-2">3.4 §11.4.142 — <strong>REAL DEFECT</strong></h3>
+<p>Two hashes; AGENTS=GEMINI=QWEN identical, CLAUDE differs. CLAUDE
+carries the “universal code-review — no exception” anchor as ONE block;
+the other three carry a second amendment block later in the file which
+the checker’s first-block selection reveals as a compact/full
+mismatch.</p>
+<h3 id="real-defect-whitespacetrailer-only-class">3.5 §11.4.192 —
+<strong>REAL DEFECT (whitespace/trailer-only class)</strong></h3>
+<p>Two hashes; AGENTS=CLAUDE, GEMINI=QWEN. Sampled bodies are
+word-for-word identical across 3200+ chars. Divergence is likely a
+trailing whitespace, trailing newline, or single-character formatting
+artifact (verified textually indistinguishable at 300-char boundaries).
+Fix is a byte-normalization pass; not a content re-mint.</p>
+<h3 id="real-defect-genuine-content-divergence">3.6 §11.4.193 —
+<strong>REAL DEFECT (genuine content divergence)</strong></h3>
+<p>Three hashes; QWEN=GEMINI, CLAUDE unique, AGENTS unique — the ONLY
+divergence of the seven that is a genuine content-level lockstep
+violation: * GEMINI+QWEN carry the <strong>full verbatim
+mandate</strong> (~2600 chars including operator quote + numbered
+clauses 1-6 + gate list). * CLAUDE.md carries a
+<strong>medium-summary</strong> variant (~700 chars, prose paragraph, no
+numbered clauses, no gate list). * AGENTS.md carries a
+<strong>short-summary</strong> variant (~350 chars: “Blind typing is
+STRICTLY FORBIDDEN everywhere — every agent, every tool, every
+automation…”). Three distinct information levels — the exact F7-class
+divergence §11.4.227 was minted to prevent, hitting an anchor minted
+AFTER §11.4.227 already existed. Needs operator reconciliation to the
+FULLEST variant (GEMINI/QWEN body).</p>
+<h3 id="real-defect-3">3.7 §11.4.201 — <strong>REAL DEFECT</strong></h3>
+<p>Duplicate + divergence in all four mirrors — a second amendment block
+landed in each mirror at a different line offset, and the checker’s
+first-hash selection picks up divergent variants.</p>
+<h3 id="real-defect-whitespacetrailer-only-class-1">3.8 §11.4.227 —
+<strong>REAL DEFECT (whitespace/trailer-only class)</strong></h3>
+<p>Two hashes; AGENTS=GEMINI=QWEN identical, CLAUDE differs. Sampled
+bodies are near-identical (&gt;5000 chars). Same likely root as
+§11.4.192 — trailing character or single-punctuation edit.</p>
+<h2 id="lockstep-gap-10-sample-classification">4.
+<code>LOCKSTEP-GAP</code> — 10-sample classification</h2>
+<p>Sampled across the 152 gap range. Categories per operator
+taxonomy:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Sample anchor</th>
+<th>Present in</th>
+<th>Classification</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>§11.4.1</td>
+<td>CLAUDE only</td>
+<td>REAL DEFECT</td>
+<td>Anchor exists as <code>### §11.4.1</code> heading in CLAUDE but as
+un-shaped compact citation in others</td>
+</tr>
+<tr>
+<td>§11.4.10.A</td>
+<td>CLAUDE only</td>
+<td>LEGITIMATE (sub-anchor)</td>
+<td>Dotted sub-anchor legitimately only cataloged once</td>
+</tr>
+<tr>
+<td>§11.4.83</td>
+<td>AGENTS/CLAUDE/QWEN, NOT GEMINI</td>
+<td>REAL DEFECT</td>
+<td>Both <code>###</code> (CLAUDE) and <code>**</code> (AGENTS)
+block-start forms present; GEMINI genuinely lacks it</td>
+</tr>
+<tr>
+<td>§11.4.100</td>
+<td>AGENTS/QWEN only</td>
+<td>CHECKER OVER-REACH + REAL DEFECT</td>
+<td>CLAUDE has <code>- §11.4.100 — RETIRED</code> dash-bullet (regex
+excludes) — legitimate compact form; but GEMINI absent entirely</td>
+</tr>
+<tr>
+<td>§11.4.108</td>
+<td>AGENTS/CLAUDE/QWEN, NOT GEMINI</td>
+<td>REAL DEFECT</td>
+<td>GEMINI backfill needed — this is a core four-layer verification
+anchor</td>
+</tr>
+<tr>
+<td>§11.4.135</td>
+<td>AGENTS/QWEN only</td>
+<td>REAL DEFECT</td>
+<td>Missing from CLAUDE and GEMINI — release-blocking regression-guard
+anchor</td>
+</tr>
+<tr>
+<td>§11.4.141</td>
+<td>AGENTS/GEMINI/QWEN, NOT CLAUDE</td>
+<td>REAL DEFECT</td>
+<td>CLAUDE carries compact bullet (<code>- §11.4.141 — ...</code>) which
+regex excludes; historically known collision territory</td>
+</tr>
+<tr>
+<td>§11.4.157</td>
+<td>AGENTS/GEMINI/QWEN, NOT CLAUDE</td>
+<td>REAL DEFECT</td>
+<td>The mirror-lockstep anchor itself is missing from one mirror —
+self-referential ledger drift</td>
+</tr>
+<tr>
+<td>§11.4.192</td>
+<td>(in gaps list)</td>
+<td>CHECKER OVER-REACH</td>
+<td>Also in divergence list — one finding double-reported</td>
+</tr>
+<tr>
+<td>§11.4.72</td>
+<td>AGENTS only</td>
+<td>REAL DEFECT</td>
+<td>Audio-top-priority anchor missing from 3 of 4 mirrors</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pattern-extrapolation-to-the-full-152">Pattern extrapolation to
+the full 152</h3>
+<p>Three visible cohorts: 1. <strong>§11.4.1..§11.4.99</strong> —
+early-anchor era: CLAUDE.md is the “compact retelling” file (bulleted
+<code>- §11.4.X</code> entries), AGENTS.md is the “full mirror”. Regex
+<code>^(#{2,4} §|**§)</code> excludes dash-bullets → false-positive gap
+for anchors that ARE present in compact form. Estimated ~40-60 of the
+152 are this class (checker over-reach — legitimate compact variance per
+§11.4.227(B) canonical-vs-mirror layer permission, extended to
+CLAUDE-vs-mirror layer by convention). 2.
+<strong>§11.4.100..§11.4.134</strong> — “present in AGENTS+CLAUDE+QWEN,
+NOT GEMINI” cohort (~35 anchors). GEMINI.md was added LATER (§11.4.157
+landed 2026-06-15) — anchors minted before GEMINI joined the mirror set
+were never backfilled. REAL DEFECT class per §11.4.157 lockstep,
+requires GEMINI backfill. 3. <strong>§11.4.135..§11.4.165</strong> —
+“present in AGENTS+GEMINI+QWEN, NOT CLAUDE” cohort (~30 anchors).
+CLAUDE.md’s compact-summary discipline for these ranges emits
+dash-bulleted <code>- §11.4.X</code> entries, not block-start-shaped
+headings. Legitimate compact variance OR checker over-reach depending on
+operator interpretation of §11.4.227(B).</p>
+<p>Coarse split of the 152 gaps: <strong>~70 REAL DEFECT</strong>
+(missing-from-GEMINI cohort + genuinely absent anchors), <strong>~70
+CHECKER OVER-REACH / LEGITIMATE COMPACT VARIANCE</strong> (CLAUDE
+dash-bullets), <strong>~12 sub-anchor edge cases</strong>
+(<code>§11.4.10.A</code>-class dotted ids only cataloged once by
+design).</p>
+<h2 id="recommended-next-step-operator-decisions-not-executed">5.
+Recommended next-step operator decisions (NOT executed)</h2>
+<ol type="1">
+<li><strong>Reconcile §11.4.193 (highest-severity)</strong> — the only
+“3 information levels” divergence. Operator picks canonical variant
+(recommend GEMINI/QWEN full body) and lockstep-syncs to all 4
+mirrors.</li>
+<li><strong>Byte-normalize §11.4.192 and §11.4.227</strong> —
+trailing-whitespace/newline pass; verifiable by re-running the checker
+until hashes converge.</li>
+<li><strong>Reconcile the 5 duplicate-driven divergences</strong>
+(§11.4.69/.112/.120/.142/.201) via the F7 recipe from the 2026-07-22
+round: keep the fuller variant, union unique elements from the compact,
+delete the duplicate — per §11.4.227(B).</li>
+<li><strong>Backfill GEMINI.md</strong> with the §11.4.100..§11.4.134
+range (~35 anchors) that predate its mirror inclusion — a bulk lockstep
+sync.</li>
+<li><strong>Operator-decide the compact-vs-full policy
+question</strong>: per §11.4.227(B) canonical-vs-mirror variance is
+legitimate; extend explicitly to CLAUDE-compact-vs-AGENTS-full, or
+require CLAUDE to carry block-start-shaped compacts (bold
+<code>**§11.4.X**</code> instead of dash <code>- §11.4.X</code>). Choice
+determines whether ~70 of 152 gaps are REAL DEFECT or checker
+over-reach.</li>
+<li><strong>Checker tuning</strong> — teach the extractor to (a) count
+dash-bulleted <code>- §11.4.X</code> as compact-form block-start (per
+operator’s policy in decision 5), (b) collapse dup-reports where an
+anchor appears in both DIVERGENCE and GAP lists, (c) surface
+Constitution.md dual <code>###</code>+<code>**</code> legitimately per
+§11.4.227(B).</li>
+<li><strong>Fix Constitution.md’s 3 duplicates</strong>
+(§11.4.30/.93/.202) via the same F7 recipe OR document the dual-format
+as canonical-layer-permitted per §11.4.227(B).</li>
+</ol>
+<p>None of the above are executed by this triage per operator
+directive.</p>
+<h2 id="provenance">6. Provenance</h2>
+<ul>
+<li>Checker commit: <code>7cd080c</code>
+(<code>scripts/anchor_block_integrity_check.sh</code> — BOB-105
+landing)</li>
+<li>Repo HEAD at triage: <code>0497b3d</code></li>
+<li>Findings log preserved: <code>/tmp/anchor_findings.log</code> (186
+lines, includes 176 FAIL lines + 10 header/verdict lines)</li>
+<li>Triage authored by: Claude (fresh agent, Opus 4.7)</li>
+<li>Discovery-channel-escape signal: §11.4.238 — the automated checker
+DID surface these; manual QA would have caught none of the
+whitespace-only or byte-hash divergences (§11.4.238
+automated-QA-discovers holds true here).</li>
+</ul>
