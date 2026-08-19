@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 11
-**Last modified:** 2026-08-19T15:34:00+02:00
+**Revision:** 12
+**Last modified:** 2026-08-19T17:20:00+02:00
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -603,3 +603,18 @@ predates any standing gate invoking that tool automatically. Four followup worka
 filed (`BOB-104`..`BOB-107`) for the specific new/strengthened automated checks each entry's
 `new-check` field names as not-yet-authored; none of the four checks are claimed as shipped by this
 backfill (§11.4.6) — they are tracked, not implemented, here.
+
+**2026-08-19 BOB-124/125/126 escape — SEVEN forced-logout incidents traced to ONE untested test-defect (chain closed):**
+
+Between 2026-08-18 20:50 and 2026-08-19 16:43, **SEVEN** forced-logout incidents (BOB-116 / BOB-120 / BOB-123 / BOB-124 / BOB-125 / BOB-126 — the seventh caught by kernel audit rules installed 15:56 during the sixth investigation) wiped the operator's entire graphical session, tmux server, ssh connections, browsers, and the working Claude Code process — every ~30-40 minutes for ~48 hours.
+
+**Actual root cause** (§11.4.6-attributed 2026-08-19 16:43:43 via `audit[399861]: SYSCALL syscall=62 a0=ffffffff a1=9 pid=399861 comm=\"pytest\" exe=\"/usr/bin/python3.14\"`): `tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out` created `AsyncMock()` without setting `mock.pid` as an int. Production `_search_public_tracker` code path called `os.killpg(os.getpgid(proc.pid), signal.SIGKILL)`. Python's `MagicMock.__int__` defaults to 1, so `os.getpgid(int(MagicMock())) == 1` → `os.killpg(1, SIGKILL)` → glibc → `kill(-1, SIGKILL)` = **SIGKILL every UID-1000 process**. Bug existed since 2026-04-24 (~4 months). `contextlib.suppress(Exception)` swallowed nothing because the syscall SUCCEEDED before any exception.
+
+**Discovery channel**: `operator-report` (7 times). **Coverage-escape audit** (§11.4.238(C)): the automated regime had NO check for "does a production-code function ever call killpg with pgid ≤ 1?" or "does a test create subprocess mocks without explicit int pid?". §11.4.115 RED-first was violated: the test that TRIGGERED the disaster had no assertion that the code path avoided the disaster. New check landed: `tests/unit/merge_service/test_deadline_tunable.py::test_bob126_regression_deadline_path_never_calls_killpg_with_pgid_le_1` (see commit ad4b46a) — a §11.4.115 RED-first regression guard asserting `os.killpg` is NEVER called with `pgid ≤ 1` even under the exact defect precondition. Reverts of the production-code pid-guard MUST make this test fail. Also NEW universal anchor **§11.4.263** — process-group signal-safety mandate (Constitution commit 502586c) — extends the mandate to every project inheriting the constitution (Python/Go/Rust/Bash/C) with four-layer coverage per §11.4.4(b).
+
+**§11.4.238 discipline preservation** (`agent-code-reading` DID FIND, sort of — but only on the 7th time, and only via kernel audit rules the operator ran a `su -c` command to install manually on the same day; the prior 6 investigations misattributed the mechanism to PAM/Linger contradictions and other downstream effects — all wrong per §11.4.6, honest self-correction at Rev 4 of the incident docs). This is the ledger's LARGEST out-of-band escape by user-visible impact.
+
+- **BOB-124** (5th incident): status=Fixed via BOB-126 root-cause. Incident doc filed 2026-08-19 15:35, corrected retrospectively.
+- **BOB-125** (6th): status=Fixed via BOB-126. Doc filed 16:11, Rev 4 correction 16:15.
+- **BOB-126** (7th): status=Fixed. Doc filed + closed same day.
+- Prior 4 (BOB-116, BOB-120, BOB-123 + the base BOB-116's "first" instance): retrospective correction pending — their attribution to PAM/Linger was wrong per BOB-126's captured evidence.
