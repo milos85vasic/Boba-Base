@@ -1,0 +1,163 @@
+<h1
+id="scriptsanchor_block_integrity_check.sh-mechanical-11.4.227b-anchor-block-integrity-gate">scripts/anchor_block_integrity_check.sh
+— mechanical §11.4.227(B) anchor-block-integrity gate</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-19T00:00:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-105 (§11.4.238 followup — mechanical
+§11.4.227(B) anchor-block-integrity check)</p>
+<h2 id="overview">Overview</h2>
+<p><code>scripts/anchor_block_integrity_check.sh</code> mechanically
+enforces §11.4.227(B) — the rule that propagation-class gates count
+anchor BLOCK-STARTS across a declared lockstep mirror set, never bare
+literals. It resolves four defect classes that a &gt;=1-literal
+presence-gate cannot see:</p>
+<ol type="1">
+<li><strong>BLIND-EXTRACTOR</strong> — zero block-starts extracted from
+a listed file (§11.4.201(6) false-null guard).</li>
+<li><strong>DUPLICATE-OR-COLLISION</strong> — the same anchor id
+<code>§11.4.NNN</code> heads more than one block-start in a single file.
+A duplicate is usually a cut-and-paste mistake; a <em>collision</em> is
+§11.4.54’s forbidden case — two different mandates minted under the same
+anchor number. Both fail with the same finding class; the block hashes
+tell them apart at review.</li>
+<li><strong>LOCKSTEP-DIVERGENCE</strong> — the same anchor’s block has
+different content-hashes across the mirror set (§11.4.157 lockstep
+broken).</li>
+<li><strong>LOCKSTEP-GAP</strong> — the same anchor appears in some
+mirrors but not others (a mirror is missing the anchor entirely).</li>
+</ol>
+<p>Sub-anchor prefix-match protection is built in:
+<code>§11.4.10.A</code> is a distinct id from <code>§11.4.10</code>,
+captured whole. Mid-body citations like <code>§11.4.115(F)</code> are
+excluded by construction (the block-start regex never accepts them at
+line start).</p>
+<h2 id="configuration-is-data-11.4.35">Configuration is DATA
+(§11.4.35)</h2>
+<p>The checker carries <strong>no</strong> project-specific literal. It
+reads its mirror-set + block-start regex from a config file resolved in
+this order:</p>
+<ol type="1">
+<li><code>--config &lt;path&gt;</code> argument</li>
+<li><code>$ANCHOR_INTEGRITY_CONFIG</code> env var</li>
+<li><code>scripts/anchor_block_integrity_check.conf</code>
+(default)</li>
+</ol>
+<p>The default config declares <code>constitution/CLAUDE.md</code>,
+<code>AGENTS.md</code>, <code>QWEN.md</code>, <code>GEMINI.md</code> as
+the byte-identical mirror set and <code>Constitution.md</code> as the
+canonical variant (excluded from mirror-hash equality per §11.4.227(B)
+canonical-vs-mirror layer variance).</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run against the default mirror set:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/anchor_block_integrity_check.sh</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Run against an alternate config (used by the challenge harness):</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/anchor_block_integrity_check.sh</span> <span class="at">--config</span> /path/to/other.conf</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Verbose (per-file block-start count):</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/anchor_block_integrity_check.sh</span> <span class="at">--verbose</span></span></code></pre></div>
+<p>Exit codes: - <code>0</code> — every invariant holds; PASS emitted to
+stdout. - <code>1</code> — one or more findings; each on stderr as
+<code>FAIL: &lt;class&gt;: &lt;detail&gt;</code>. - <code>2</code> —
+configuration/environment error (missing config, unreadable file).
+Distinct from finding-level FAIL per §11.4.201(4) conservative-safe
+default.</p>
+<h2 id="anti-bluff-11.4.10710-self-validation">Anti-bluff —
+§11.4.107(10) self-validation</h2>
+<p>The checker ships with
+<code>challenges/scripts/anchor_block_integrity_challenge.sh</code>,
+which runs it against five fixtures under
+<code>challenges/fixtures/anchor_block_integrity/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>fixture</th>
+<th>expected rc</th>
+<th>expected finding class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>golden-good</code></td>
+<td>0</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td><code>negative-control</code></td>
+<td>0</td>
+<td>(none — mid-body citations)</td>
+</tr>
+<tr>
+<td><code>golden-bad-duplicated</code></td>
+<td>1</td>
+<td><code>DUPLICATE-OR-COLLISION</code></td>
+</tr>
+<tr>
+<td><code>golden-bad-diverged</code></td>
+<td>1</td>
+<td><code>LOCKSTEP-DIVERGENCE</code></td>
+</tr>
+<tr>
+<td><code>golden-bad-collision</code></td>
+<td>1</td>
+<td><code>DUPLICATE-OR-COLLISION</code></td>
+</tr>
+</tbody>
+</table>
+<p>A checker that PASSes a golden-bad fixture, or FAILs
+<code>golden-good</code> or <code>negative-control</code>, is itself the
+bluff (§11.4.107(10)) and the harness exits 1.</p>
+<h2 id="findings-from-the-first-real-run-2026-08-19">Findings from the
+first real run (2026-08-19)</h2>
+<p>The first run against the actual <code>constitution/</code> mirror
+set reported <strong>176 findings</strong>, dominated by two
+classes:</p>
+<ul>
+<li><strong>LOCKSTEP-GAP</strong> on the majority of §11.4.5..§11.4.99
+range — anchors that carry a <code>### §11.4.NNN</code> block-start in
+one mirror (typically <code>CLAUDE.md</code> or <code>AGENTS.md</code>)
+but no matching block-start in one or more of the other three mirrors.
+Per-mirror asymmetry is the mechanism §11.4.227(B) predicts: a
+&gt;=1-literal presence-gate reads GREEN on each mirror in isolation
+while the mirror set as a whole is uneven.</li>
+<li><strong>LOCKSTEP-DIVERGENCE</strong> on <code>§11.4.69</code>,
+<code>§11.4.192</code>, <code>§11.4.193</code>, <code>§11.4.227</code> —
+the same anchor is block-started in every mirror but the block body
+differs, so the four mirrors are not byte-identical for those
+anchors.</li>
+</ul>
+<p>These findings are the §11.4.238 discovery-channel-escape signal
+BOB-105 was minted to surface. Closure of individual findings is
+constitution-submodule work outside this boba-side checker’s scope; this
+script’s job is to make the class OBSERVABLE from a boba pre-build gate
+per §11.4.226 (evidence-class-at-closure).</p>
+<h2 id="relationship-to-other-anchors">Relationship to other
+anchors</h2>
+<ul>
+<li><strong>§11.4.227(B)</strong> — the rule this script
+mechanises.</li>
+<li><strong>§11.4.157</strong> — content-hash lockstep across the mirror
+set.</li>
+<li><strong>§11.4.54</strong> — anchor numbers never reused (collision
+detection).</li>
+<li><strong>§11.4.201(6)</strong> — false-null guard on the extractor
+itself.</li>
+<li><strong>§11.4.107(10)</strong> — golden-good + golden-bad +
+negative-control validation of the checker as an oracle.</li>
+<li><strong>§11.4.35</strong> — consumer supplies mirror set + regex as
+DATA.</li>
+<li><strong>§11.4.6</strong> — no guessing; every FAIL carries the
+resolved anchor id + file + hash prefix as captured evidence.</li>
+</ul>
+<h2 id="companion-files">Companion files</h2>
+<ul>
+<li><code>scripts/anchor_block_integrity_check.sh</code> — the checker
+itself.</li>
+<li><code>scripts/anchor_block_integrity_check.conf</code> — the default
+config for boba’s own constitution mirror set.</li>
+<li><code>challenges/scripts/anchor_block_integrity_challenge.sh</code>
+— the §11.4.107(10) harness.</li>
+<li><code>challenges/fixtures/anchor_block_integrity/</code> — the five
+fixtures.</li>
+</ul>
