@@ -452,11 +452,15 @@ class TestHandlerProxyToQbittorrent:
         import urllib.error
 
         handler = _make_handler(path="/api/v2/app/version")
-        with patch("urllib.request.urlopen", side_effect=urllib.error.HTTPError(
+        err = urllib.error.HTTPError(
             url="/api/v2/app/version", code=404, msg="Not Found", hdrs=None, fp=None
-        )):
-            handler.proxy_to_qbittorrent(None)
-            handler.send_error.assert_called_with(404, "Not Found")
+        )
+        try:
+            with patch("urllib.request.urlopen", side_effect=err):
+                handler.proxy_to_qbittorrent(None)
+                handler.send_error.assert_called_with(404, "Not Found")
+        finally:
+            err.close()
 
     def test_proxy_generic_error(self):
         """Lines 947-952: generic error sends 502."""

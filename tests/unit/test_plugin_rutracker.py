@@ -556,11 +556,13 @@ class TestSearchExceptionHandling:
 
     def test_search_http_error_returns_empty(self):
         inst, cap = _load_rutracker()
-        with patch.object(
-            inst, "_open_url", side_effect=HTTPError("http://fake", 503, "Service Unavailable", {}, BytesIO(b""))
-        ):
-            inst.search("test")
-        assert len(cap) == 0
+        err = HTTPError("http://fake", 503, "Service Unavailable", {}, BytesIO(b""))
+        try:
+            with patch.object(inst, "_open_url", side_effect=err):
+                inst.search("test")
+            assert len(cap) == 0
+        finally:
+            err.close()
 
     def test_search_generic_exception_returns_empty(self):
         inst, cap = _load_rutracker()
@@ -614,9 +616,13 @@ class TestDownloadTorrent:
 
     def test_http_error_propagates(self):
         inst, _ = _load_rutracker()
-        with patch.object(inst, "_open_url", side_effect=HTTPError("http://fake", 404, "Not Found", {}, BytesIO(b""))):
-            with pytest.raises(HTTPError):
-                inst.download_torrent("http://fake/dl.php?t=1")
+        err = HTTPError("http://fake", 404, "Not Found", {}, BytesIO(b""))
+        try:
+            with patch.object(inst, "_open_url", side_effect=err):
+                with pytest.raises(HTTPError):
+                    inst.download_torrent("http://fake/dl.php?t=1")
+        finally:
+            err.close()
 
     def test_torrent_written_to_temp_file(self, tmp_path):
         """Valid torrent data is written to a temp file via fdopen."""
@@ -706,9 +712,13 @@ class TestFetchMagnetFromTopic:
 
     def test_http_error_returns_none(self):
         inst, _ = _load_rutracker()
-        with patch.object(inst, "_open_url", side_effect=HTTPError("http://fake", 404, "Not Found", {}, BytesIO(b""))):
-            result = inst._fetch_magnet_from_topic("12345")
-        assert result is None
+        err = HTTPError("http://fake", 404, "Not Found", {}, BytesIO(b""))
+        try:
+            with patch.object(inst, "_open_url", side_effect=err):
+                result = inst._fetch_magnet_from_topic("12345")
+            assert result is None
+        finally:
+            err.close()
 
     def test_topic_url_correctly_formatted(self):
         inst, _ = _load_rutracker()
@@ -757,8 +767,9 @@ class TestOpenUrl:
         mock_response.__exit__ = MagicMock(return_value=False)
         inst.opener = MagicMock()
         inst.opener.open.return_value = mock_response
-        with pytest.raises(HTTPError):
+        with pytest.raises(HTTPError) as exc_info:
             inst._open_url("http://example.com")
+        exc_info.value.close()
 
     def test_url_error_propagates(self):
         inst, _ = _load_rutracker()

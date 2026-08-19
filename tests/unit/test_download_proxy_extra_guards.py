@@ -158,11 +158,14 @@ class TestSendErrorRaisingIsSwallowed:
         err = urllib.error.HTTPError(
             url="/api/v2/app/version", code=404, msg="Not Found", hdrs=None, fp=None
         )
-        with patch("urllib.request.urlopen", side_effect=err):
-            # USER-OBSERVABLE: no exception escapes — the server thread
-            # survives a dead-client send_error.
-            handler.proxy_to_qbittorrent(None)
-        handler.send_error.assert_called_once_with(404, "Not Found")
+        try:
+            with patch("urllib.request.urlopen", side_effect=err):
+                # USER-OBSERVABLE: no exception escapes — the server thread
+                # survives a dead-client send_error.
+                handler.proxy_to_qbittorrent(None)
+            handler.send_error.assert_called_once_with(404, "Not Found")
+        finally:
+            err.close()
 
     def test_generic_error_send_error_raises_no_escape(self):
         handler = _make_handler(path="/api/v2/app/version")

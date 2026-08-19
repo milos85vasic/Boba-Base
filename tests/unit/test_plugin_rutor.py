@@ -526,9 +526,12 @@ class TestRequest:
         from urllib.error import HTTPError
 
         err = HTTPError("https://rutor.info/test", 403, "Forbidden", {}, None)
-        with patch.object(instance.session, "open", side_effect=err):
-            with pytest.raises(mod.EngineError, match="status: 403"):
-                instance._request("https://rutor.info/test")
+        try:
+            with patch.object(instance.session, "open", side_effect=err):
+                with pytest.raises(mod.EngineError, match="status: 403"):
+                    instance._request("https://rutor.info/test")
+        finally:
+            err.close()
 
 
 # ─── Tests: _search (URL construction) ───────────────────────────────────

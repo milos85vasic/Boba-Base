@@ -756,11 +756,13 @@ class TestRequest:
     def test_request_http_error(self):
         inst, _ = _load_kinozal()
         from urllib.error import HTTPError
-        with patch.object(inst.session, "open", side_effect=HTTPError(
-            "http://kinozal.tv", 403, "Forbidden", {}, None
-        )):
-            with pytest.raises(Exception, match="403"):
-                inst._request("http://kinozal.tv/page")
+        err = HTTPError("http://kinozal.tv", 403, "Forbidden", {}, None)
+        try:
+            with patch.object(inst.session, "open", side_effect=err):
+                with pytest.raises(Exception, match="403"):
+                    inst._request("http://kinozal.tv/page")
+        finally:
+            err.close()
 
     def test_request_with_data(self):
         inst, _ = _load_kinozal()

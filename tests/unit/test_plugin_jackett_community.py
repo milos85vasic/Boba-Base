@@ -480,10 +480,13 @@ class TestGetResponse:
             hdrs=None, fp=None
         )
         err.url = "magnet:?xt=urn:btih:redirect"
-        with patch.object(mod.urllib.request, "build_opener") as mock_opener:
-            mock_opener.return_value.open.side_effect = err
-            result = inst.get_response("http://example.com")
-        assert result == "magnet:?xt=urn:btih:redirect"
+        try:
+            with patch.object(mod.urllib.request, "build_opener") as mock_opener:
+                mock_opener.return_value.open.side_effect = err
+                result = inst.get_response("http://example.com")
+            assert result == "magnet:?xt=urn:btih:redirect"
+        finally:
+            err.close()
 
     def test_http_error_non_302_returns_none(self):
         inst, _, mod = _load_jackett()
@@ -491,10 +494,13 @@ class TestGetResponse:
             url="http://example.com", code=500, msg="Server Error",
             hdrs=None, fp=None
         )
-        with patch.object(mod.urllib.request, "build_opener") as mock_opener:
-            mock_opener.return_value.open.side_effect = err
-            result = inst.get_response("http://example.com")
-        assert result is None
+        try:
+            with patch.object(mod.urllib.request, "build_opener") as mock_opener:
+                mock_opener.return_value.open.side_effect = err
+                result = inst.get_response("http://example.com")
+            assert result is None
+        finally:
+            err.close()
 
     def test_generic_exception_returns_none(self):
         inst, _, mod = _load_jackett()

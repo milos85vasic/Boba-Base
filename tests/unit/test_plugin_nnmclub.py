@@ -1186,9 +1186,12 @@ class TestRequest:
         from urllib.error import HTTPError
 
         err = HTTPError("url", 403, "Forbidden", {}, None)
-        with patch.object(inst.session, "open", side_effect=err):
-            with pytest.raises(mod.EngineError, match="status: 403"):
-                inst._request("https://nnmclub.to/forum/page")
+        try:
+            with patch.object(inst.session, "open", side_effect=err):
+                with pytest.raises(mod.EngineError, match="status: 403"):
+                    inst._request("https://nnmclub.to/forum/page")
+        finally:
+            err.close()
 
     def test_generic_url_error(self):
         inst, mod, _ = self._make_inst()

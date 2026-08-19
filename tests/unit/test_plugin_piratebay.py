@@ -261,11 +261,15 @@ class TestRetrieveUrl:
     @patch("urllib.request.urlopen")
     def test_http_error_returns_empty(self, mock_urlopen):
         import urllib.error
-        mock_urlopen.side_effect = urllib.error.HTTPError(
+        err = urllib.error.HTTPError(
             "https://example.com", 403, "Forbidden", {}, io.BytesIO()
         )
-        result = self.pb.retrieve_url("https://example.com")
-        assert result == ""
+        try:
+            mock_urlopen.side_effect = err
+            result = self.pb.retrieve_url("https://example.com")
+            assert result == ""
+        finally:
+            err.close()
 
     @patch("urllib.request.urlopen")
     def test_html_entities_decoded(self, mock_urlopen):
