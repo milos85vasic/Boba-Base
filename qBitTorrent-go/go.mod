@@ -9,6 +9,9 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
+	// BOB-111: per-IP token-bucket rate limiter used by
+	// internal/middleware/ratelimit.go for the public HTTP surface.
+	golang.org/x/time v0.7.0
 	modernc.org/sqlite v1.50.0
 )
 

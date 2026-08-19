@@ -1,0 +1,12 @@
+=== RUN   TestRED_DisabledLimiter_NeverGates
+--- PASS: TestRED_DisabledLimiter_NeverGates (0.00s)
+=== RUN   TestGREEN_OverBudgetReturns429
+--- PASS: TestGREEN_OverBudgetReturns429 (0.00s)
+=== RUN   TestGREEN_PerIPScope_DifferentIPNotThrottled
+--- PASS: TestGREEN_PerIPScope_DifferentIPNotThrottled (0.00s)
+=== RUN   TestChaos_ConcurrentBurst_NoCrashNo5xx
+--- PASS: TestChaos_ConcurrentBurst_NoCrashNo5xx (0.00s)
+=== RUN   TestGin_RateLimit_Integrates
+--- PASS: TestGin_RateLimit_Integrates (0.00s)
+PASS
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/middleware	1.022s

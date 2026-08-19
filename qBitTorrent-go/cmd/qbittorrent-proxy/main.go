@@ -61,6 +61,11 @@ func main() {
 	// policy that echoes the specific Origin (no forbidden combination).
 	r.Use(middleware.CORS(parseAllowedOrigins(cfg.AllowedOrigins)...))
 	r.Use(middleware.Logger())
+	// BOB-111: per-IP token-bucket rate limiter on the public HTTP surface.
+	// Tuned via RATE_LIMIT_RPM / RATE_LIMIT_BURST / RATE_LIMIT_DISABLED env.
+	// A 429 refusal carries the minimal `{"error":"rate_limited"}` body +
+	// Retry-After: 60 header — no client IP echoed (§11.4.10).
+	r.Use(middleware.GinRateLimit(middleware.NewRateLimiterFromEnv()))
 
 	r.GET("/health", api.HealthHandler)
 

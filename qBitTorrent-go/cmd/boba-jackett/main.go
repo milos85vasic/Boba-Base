@@ -37,6 +37,7 @@ import (
 	"github.com/milos85vasic/qBitTorrent-go/internal/jackett"
 	"github.com/milos85vasic/qBitTorrent-go/internal/jackettapi"
 	"github.com/milos85vasic/qBitTorrent-go/internal/logging"
+	"github.com/milos85vasic/qBitTorrent-go/internal/middleware"
 )
 
 const (
@@ -201,9 +202,14 @@ func run() error {
 		},
 	}
 
+	// BOB-111: per-IP token-bucket rate limiter on the public HTTP surface.
+	// Wraps the jackettapi mux so every request (management API, health,
+	// autoconfig) is budgeted before dispatch. Env-tunable via RATE_LIMIT_RPM
+	// / RATE_LIMIT_BURST / RATE_LIMIT_DISABLED. §11.4.10-clean 429 body.
+	rateLimiter := middleware.NewRateLimiterFromEnv()
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           jackettapi.NewMux(deps),
+		Handler:           middleware.WithRateLimit(rateLimiter, jackettapi.NewMux(deps)),
 		ReadHeaderTimeout: 5 * time.Second,
 		// Catalog refresh fans out one HTTP call per indexer template
 		// (~600 in production); 60s is the operator-visible upper bound.

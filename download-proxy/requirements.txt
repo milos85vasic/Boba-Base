@@ -13,6 +13,13 @@ filelock>=3.15.0
 tenacity>=8.4.0
 pybreaker>=1.2.0
 cryptography>=42.0.0
+# BOB-111: per-IP rate limiting for the merge service's public HTTP surface
+# (POST /api/v1/search, GET / dashboard, GET /api/v1/search/stream SSE). Used
+# by download-proxy/src/api/rate_limit.py — an ASGI middleware wrapper around
+# limits-backed slowapi. In-memory backend by default (single-process); a
+# consumer wiring Redis via RATE_LIMIT_STORAGE_URI keeps the same limits across
+# multiple workers. See docs/qa/BOB-111/.
+slowapi>=0.1.9
 # Required by the qBittorrent nova3 framework helpers.py (top-level `import
 # socks`); without it every public-tracker plugin subprocess fails to import
 # in the python-alpine download-proxy container (BOB-005).

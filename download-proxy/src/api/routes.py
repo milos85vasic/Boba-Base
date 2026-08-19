@@ -29,6 +29,26 @@ except ImportError:  # loaded via importlib.util.spec_from_file_location in test
 
     theme_state = importlib.import_module("api.theme_state")
 
+# BOB-111: per-IP rate limiting decorators. `get_limiter()` returns None when
+# rate limiting is disabled (RATE_LIMIT_DISABLED=1) — in that case _rl becomes
+# a passthrough so the decorated handler runs unchanged (the RED baseline).
+try:
+    from .rate_limit import get_limiter, limit_for
+except ImportError:
+    import importlib
+
+    _rl_mod = importlib.import_module("api.rate_limit")
+    get_limiter = _rl_mod.get_limiter
+    limit_for = _rl_mod.limit_for
+
+
+def _rl(class_name: str):
+    """Return @limiter.limit(<class>) or a no-op decorator when disabled."""
+    lim = get_limiter()
+    if lim is None:
+        return lambda f: f
+    return lim.limit(limit_for(class_name))
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["search"])
@@ -334,6 +354,7 @@ def _serialize_merged_rows(merged: list[Any]) -> list[SearchResultResponse]:
 
 
 @router.post("/search", response_model=SearchResponse)
+@_rl("search")
 async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyped-def]
     """Kick off a search and return immediately.
 
@@ -675,6 +696,7 @@ def _supplied_stream_token(req: Request, token: str | None) -> str | None:
 
 
 @router.get("/search/stream/{search_id}")
+@_rl("sse_stream")
 async def search_stream(search_id: str, req: Request, token: str | None = None):  # type: ignore[no-untyped-def]
     from fastapi.responses import StreamingResponse  # noqa: F401
 

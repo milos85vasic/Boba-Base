@@ -158,6 +158,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# BOB-111: per-IP rate limiting for the public HTTP surface. Wired here
+# BEFORE the router include so the exception handler + SlowAPIMiddleware
+# see every route. `install()` is idempotent + operator-tunable via
+# RATE_LIMIT_SEARCH / RATE_LIMIT_DASHBOARD / RATE_LIMIT_SSE_STREAM env
+# vars. Set RATE_LIMIT_DISABLED=1 to bypass (integration harnesses only —
+# a production deploy MUST NOT set that flag). See docs/qa/BOB-111/.
+from .rate_limit import (  # noqa: E402
+    dashboard_limit_decorator,
+    install as _install_rate_limits,
+    search_limit_decorator,
+    sse_limit_decorator,
+)
+
+if os.getenv("RATE_LIMIT_DISABLED", "").strip().lower() not in ("1", "true", "yes"):
+    _install_rate_limits(app)
+    _rate_limits_active = True
+else:
+    logger.warning(
+        "Rate limiting DISABLED via RATE_LIMIT_DISABLED — public endpoints "
+        "are unbounded. Do NOT deploy in this state; the flag exists only "
+        "for the BOB-111 RED baseline / harness bypass."
+    )
+    _rate_limits_active = False
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):  # type: ignore[no-untyped-def]
@@ -334,13 +358,21 @@ def _serve_index_html():  # type: ignore[no-untyped-def]
     }
 
 
+# BOB-111: dashboard endpoints get the `dashboard` rate class. slowapi requires
+# the decorated handler to accept `request: Request` so the key function can see
+# the caller IP — we already have `request: Request` on the sibling handlers.
+_dashboard_deco = dashboard_limit_decorator(app) if _rate_limits_active else (lambda f: f)
+
+
 @app.get("/")
-async def dashboard():  # type: ignore[no-untyped-def]
+@_dashboard_deco
+async def dashboard(request: Request):  # type: ignore[no-untyped-def]
     return _serve_index_html()  # type: ignore[no-untyped-call]
 
 
 @app.get("/dashboard")
-async def dashboard_page():  # type: ignore[no-untyped-def]
+@_dashboard_deco
+async def dashboard_page(request: Request):  # type: ignore[no-untyped-def]
     return _serve_index_html()  # type: ignore[no-untyped-call]
 
 
