@@ -3,6 +3,6 @@
   "drained": 10,
   "feature_class": "sse_broker",
   "flood_events": 1000,
-  "publish_dur_us": 17740,
+  "publish_dur_us": 27546,
   "scenario": "producer_flood_bounded_by_buffer"
 }
