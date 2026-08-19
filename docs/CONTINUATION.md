@@ -1,27 +1,36 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 25
-**Last modified:** 2026-08-19T14:00:00Z
+**Revision:** 26
+**Last modified:** 2026-08-19T17:30:00Z
 
-## TERMINAL STATE (this write) — mid-session, 3 subagents in flight
+## TERMINAL STATE (this write) — 7-forced-logout chain CLOSED + universal §11.4.263 anchor landed
 
-- **Pre-build: 28 passed / 0 failed** — CM-BADGE-FRESHNESS-CHECK now invariant 28 GREEN (BOB-118 landing) + CM-MARKDOWN-EXPORT-SYNC (12 stale exports regenerated)
-- **3 boba remotes IN SYNC at HEAD** (this session added 12+ commits on top of the 2026-08-18 chain)
-- **BOB-123 4th forced-logout (2026-08-19 00:37:11)**: Phase-1 evidence-gathering instruments READY — sits ready to install via operator `su -c` at their terminal:
-  - **Path 1**: `docs/incidents/2026-08-19-sudo-audit-rules-for-operator.md` — 6 kernel audit rules (kill/tkill/pidfd_send_signal a1=9 + tgkill a2=9, b64+b32, persistent)
-  - **Path 2**: `scripts/system-slice-watchdog/` — system.slice systemd unit that survives user@1000 SIGKILL + captures forensics durably. `bash install.sh` prints `su -c` block for operator.
-  - **Path 3**: parallel-subagent cap = 1 for the crisis window, now relaxed to 3-4 post-operator STOP-lift
-- **§11.4.209 Fable-xhigh review of watchdog**: 3 rounds iterated to zero-finding GO
-  - Round 1: 0 BLOCKING / 4 IMPORTANT / 7 MINOR / NIT — all fixed
-  - Round 2: 0 BLOCKING / 1 IMPORTANT / 4 MINOR / NIT — all fixed  
-  - Round 3: GO-WITH-MINOR residuals folded → GREEN 27/0 + POLARITY inner-RED exit=1 CONFIRMED
-- **§11.4.6 UNCONFIRMED still standing**: direct SIGKILL initiator across all 4 incidents. Phase 1 completes only when audit rules + watchdog install + incident #5 (if any) attributes it.
-- **PAM/Linger contradiction breakthrough**: `gdm-password: Session closed for milosvasic` on tty2 fires at EXACT same timestamp as user@1000 SIGKILL in ALL 3 latest incidents (#2/#3/#4), despite `Linger=yes` which should have prevented systemd from killing user@1000. Direct initiator unattributable from journal without kernel audit.
-- **Root password rotation still owed** per §11.4.10 (value was in mid-turn transcript)
-- **3 subagents CURRENTLY in flight** for backlog progress:
-  - BOB-099 substring-match false-positive fix (constitution submodule hook)
-  - BOB-105 anchor-block-integrity checker (boba-side, §11.4.227(B))
-  - Task #87 anti-bluff correction doc + Task #42 §9.2 cross-device fallback
+- **Pre-build state**: full merge_service unit sweep 863/863 PASS + Go 14/14 packages race-clean. Real captured evidence at `docs/qa/2026-08-19-post-fix-verify/`.
+- **3 boba remotes IN SYNC at HEAD `e984f4b`**: 7-forced-logout chain resolution + DB update + regenerated Issues/Fixed/summaries.
+- **BOB-126 7th forced-logout CLOSED** — REAL ROOT CAUSE found + fixed:
+  - Kernel audit trail captured 2026-08-19 16:43:43: `audit[399861]: SYSCALL syscall=62 a0=ffffffff a1=9 comm="pytest" exe="/usr/bin/python3.14"` = pytest calling `kill(-1, SIGKILL)`.
+  - `tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out` created `AsyncMock()` without setting `mock.pid` as int. Production `_search_public_tracker` called `os.killpg(os.getpgid(proc.pid), SIGKILL)`. `MagicMock.__int__` defaults to 1, so `os.getpgid(1) == 1` → `os.killpg(1, SIGKILL)` → glibc → `kill(-1, SIGKILL)` = SIGKILL every UID-1000 process.
+  - Bug existed since 2026-04-24 (~4 months). Prior 6 incidents (BOB-116/120/123/124/125) all misattributed to PAM/Linger contradiction — that was DOWNSTREAM effect.
+- **Fix chain landed on all 3 boba remotes + 3/4 constitution upstreams**:
+  - `ad4b46a` — boba: `search.py` int-guard on pid + pgid before `killpg` (both cleanup paths); `test_deadline_tunable.py` explicit `mock.pid=12345` + patched killpg + new `test_bob126_regression_deadline_path_never_calls_killpg_with_pgid_le_1` §11.4.115 RED regression guard.
+  - `502586c` — constitution: NEW universal anchor **§11.4.263 process-group signal-safety mandate** covering Python/Go/Rust/Bash/C with four-layer coverage. Full text in `Constitution.md`, byte-identical compact mirrors in CLAUDE/AGENTS/QWEN/GEMINI.md (md5 `542e30907eaa00ffb1949cd2fe528ba2`). Pushed to gitflic + gitlab + github; gitverse rejected on org policy (deferred).
+  - `bf01cf3` — boba: constitution pointer bump.
+  - `1b06858` — boba: BOB-126 incident doc Rev 4 + evidence bundle + BOB-095 refresh + wave-6 recovery.
+  - `d7da1af` — boba: 5 BOB-122-fallout test fixes (4 iptorrents assertions + 1 SSE slowapi request-shape).
+  - `e389c29` — boba: QA_DISCOVERY_LEDGER Rev 12 (7-incident §11.4.238 escape entry).
+  - `0027dba` — boba: BOB-124 Rev 2 retrospective correction (pointed at BOB-126 root cause).
+  - `e984f4b` — boba: workable_items.db BOB-124/125/126 chain-close + regenerated Issues/Fixed + summaries + HTML/PDF + full evidence bundle.
+- **Verification** (§11.4.5 captured evidence):
+  - 863/863 merge_service unit tests PASS in 103s (was 858/863 pre-fix)
+  - 14/14 Go race-detector packages PASS clean in 20s
+  - No 8th incident since fix landed (**50+ min elapsed vs prior ~37-38 min cadence** at 17:30)
+  - Fixed.md now shows BOB-124 + BOB-125 + BOB-126 with proper resolution details
+- **Standing follow-ups** (surfaced by subagent C's docs+DB audit):
+  - **helixqa nested dirty state** — `? tools/opensource/anthropic-quickstarts`, `m tools/opensource/docling`, `? tools/test-apps/rest-demo`. Legit submodules in helixqa's `.gitmodules`, need `git submodule update --init` inside helixqa + operator decision on docling test-data drift. Out of scope for this session.
+  - **Constitution/gitverse push** — org policy rejected `push-to-create`. Track as §11.4.197 followup.
+  - **Retrospective correction** of BOB-116/120/123 incident docs (still carry pre-BOB-126 PAM/Linger hypothesis).
+  - **§11.4.185 manual QA** — required before release tag. Operator decision on version bump.
+- **§11.4.6 root cause CONFIRMED**: not PAM/Linger. Not systemd-oomd. Not idle timeout. A specific Python test called `kill(-1, SIGKILL)`. Documented + fixed + universally guarded.
 
 ## Session commit summary — 2026-08-19 landings (18 commits, all pushed)
 

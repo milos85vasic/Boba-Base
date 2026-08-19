@@ -1,61 +1,96 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 25 <strong>Last modified:</strong>
-2026-08-19T14:00:00Z</p>
+<p><strong>Revision:</strong> 26 <strong>Last modified:</strong>
+2026-08-19T17:30:00Z</p>
 <h2
-id="terminal-state-this-write-mid-session-3-subagents-in-flight">TERMINAL
-STATE (this write) — mid-session, 3 subagents in flight</h2>
+id="terminal-state-this-write-7-forced-logout-chain-closed-universal-11.4.263-anchor-landed">TERMINAL
+STATE (this write) — 7-forced-logout chain CLOSED + universal §11.4.263
+anchor landed</h2>
 <ul>
-<li><strong>Pre-build: 28 passed / 0 failed</strong> —
-CM-BADGE-FRESHNESS-CHECK now invariant 28 GREEN (BOB-118 landing) +
-CM-MARKDOWN-EXPORT-SYNC (12 stale exports regenerated)</li>
-<li><strong>3 boba remotes IN SYNC at HEAD</strong> (this session added
-12+ commits on top of the 2026-08-18 chain)</li>
-<li><strong>BOB-123 4th forced-logout (2026-08-19 00:37:11)</strong>:
-Phase-1 evidence-gathering instruments READY — sits ready to install via
-operator <code>su -c</code> at their terminal:
+<li><strong>Pre-build state</strong>: full merge_service unit sweep
+863/863 PASS + Go 14/14 packages race-clean. Real captured evidence at
+<code>docs/qa/2026-08-19-post-fix-verify/</code>.</li>
+<li><strong>3 boba remotes IN SYNC at HEAD
+<code>e984f4b</code></strong>: 7-forced-logout chain resolution + DB
+update + regenerated Issues/Fixed/summaries.</li>
+<li><strong>BOB-126 7th forced-logout CLOSED</strong> — REAL ROOT CAUSE
+found + fixed:
 <ul>
-<li><strong>Path 1</strong>:
-<code>docs/incidents/2026-08-19-sudo-audit-rules-for-operator.md</code>
-— 6 kernel audit rules (kill/tkill/pidfd_send_signal a1=9 + tgkill a2=9,
-b64+b32, persistent)</li>
-<li><strong>Path 2</strong>: <code>scripts/system-slice-watchdog/</code>
-— system.slice systemd unit that survives user@1000 SIGKILL + captures
-forensics durably. <code>bash install.sh</code> prints
-<code>su -c</code> block for operator.</li>
-<li><strong>Path 3</strong>: parallel-subagent cap = 1 for the crisis
-window, now relaxed to 3-4 post-operator STOP-lift</li>
+<li>Kernel audit trail captured 2026-08-19 16:43:43:
+<code>audit[399861]: SYSCALL syscall=62 a0=ffffffff a1=9 comm="pytest" exe="/usr/bin/python3.14"</code>
+= pytest calling <code>kill(-1, SIGKILL)</code>.</li>
+<li><code>tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out</code>
+created <code>AsyncMock()</code> without setting <code>mock.pid</code>
+as int. Production <code>_search_public_tracker</code> called
+<code>os.killpg(os.getpgid(proc.pid), SIGKILL)</code>.
+<code>MagicMock.__int__</code> defaults to 1, so
+<code>os.getpgid(1) == 1</code> → <code>os.killpg(1, SIGKILL)</code> →
+glibc → <code>kill(-1, SIGKILL)</code> = SIGKILL every UID-1000
+process.</li>
+<li>Bug existed since 2026-04-24 (~4 months). Prior 6 incidents
+(BOB-116/120/123/124/125) all misattributed to PAM/Linger contradiction
+— that was DOWNSTREAM effect.</li>
 </ul></li>
-<li><strong>§11.4.209 Fable-xhigh review of watchdog</strong>: 3 rounds
-iterated to zero-finding GO
+<li><strong>Fix chain landed on all 3 boba remotes + 3/4 constitution
+upstreams</strong>:
 <ul>
-<li>Round 1: 0 BLOCKING / 4 IMPORTANT / 7 MINOR / NIT — all fixed</li>
-<li>Round 2: 0 BLOCKING / 1 IMPORTANT / 4 MINOR / NIT — all fixed<br />
-</li>
-<li>Round 3: GO-WITH-MINOR residuals folded → GREEN 27/0 + POLARITY
-inner-RED exit=1 CONFIRMED</li>
+<li><code>ad4b46a</code> — boba: <code>search.py</code> int-guard on pid
++ pgid before <code>killpg</code> (both cleanup paths);
+<code>test_deadline_tunable.py</code> explicit
+<code>mock.pid=12345</code> + patched killpg + new
+<code>test_bob126_regression_deadline_path_never_calls_killpg_with_pgid_le_1</code>
+§11.4.115 RED regression guard.</li>
+<li><code>502586c</code> — constitution: NEW universal anchor
+<strong>§11.4.263 process-group signal-safety mandate</strong> covering
+Python/Go/Rust/Bash/C with four-layer coverage. Full text in
+<code>Constitution.md</code>, byte-identical compact mirrors in
+CLAUDE/AGENTS/QWEN/GEMINI.md (md5
+<code>542e30907eaa00ffb1949cd2fe528ba2</code>). Pushed to gitflic +
+gitlab + github; gitverse rejected on org policy (deferred).</li>
+<li><code>bf01cf3</code> — boba: constitution pointer bump.</li>
+<li><code>1b06858</code> — boba: BOB-126 incident doc Rev 4 + evidence
+bundle + BOB-095 refresh + wave-6 recovery.</li>
+<li><code>d7da1af</code> — boba: 5 BOB-122-fallout test fixes (4
+iptorrents assertions + 1 SSE slowapi request-shape).</li>
+<li><code>e389c29</code> — boba: QA_DISCOVERY_LEDGER Rev 12 (7-incident
+§11.4.238 escape entry).</li>
+<li><code>0027dba</code> — boba: BOB-124 Rev 2 retrospective correction
+(pointed at BOB-126 root cause).</li>
+<li><code>e984f4b</code> — boba: workable_items.db BOB-124/125/126
+chain-close + regenerated Issues/Fixed + summaries + HTML/PDF + full
+evidence bundle.</li>
 </ul></li>
-<li><strong>§11.4.6 UNCONFIRMED still standing</strong>: direct SIGKILL
-initiator across all 4 incidents. Phase 1 completes only when audit
-rules + watchdog install + incident #5 (if any) attributes it.</li>
-<li><strong>PAM/Linger contradiction breakthrough</strong>:
-<code>gdm-password: Session closed for milosvasic</code> on tty2 fires
-at EXACT same timestamp as user@1000 SIGKILL in ALL 3 latest incidents
-(#2/#3/#4), despite <code>Linger=yes</code> which should have prevented
-systemd from killing user@1000. Direct initiator unattributable from
-journal without kernel audit.</li>
-<li><strong>Root password rotation still owed</strong> per §11.4.10
-(value was in mid-turn transcript)</li>
-<li><strong>3 subagents CURRENTLY in flight</strong> for backlog
-progress:
+<li><strong>Verification</strong> (§11.4.5 captured evidence):
 <ul>
-<li>BOB-099 substring-match false-positive fix (constitution submodule
-hook)</li>
-<li>BOB-105 anchor-block-integrity checker (boba-side,
-§11.4.227(B))</li>
-<li>Task #87 anti-bluff correction doc + Task #42 §9.2 cross-device
-fallback</li>
+<li>863/863 merge_service unit tests PASS in 103s (was 858/863
+pre-fix)</li>
+<li>14/14 Go race-detector packages PASS clean in 20s</li>
+<li>No 8th incident since fix landed (<strong>50+ min elapsed vs prior
+~37-38 min cadence</strong> at 17:30)</li>
+<li>Fixed.md now shows BOB-124 + BOB-125 + BOB-126 with proper
+resolution details</li>
 </ul></li>
+<li><strong>Standing follow-ups</strong> (surfaced by subagent C’s
+docs+DB audit):
+<ul>
+<li><strong>helixqa nested dirty state</strong> —
+<code>? tools/opensource/anthropic-quickstarts</code>,
+<code>m tools/opensource/docling</code>,
+<code>? tools/test-apps/rest-demo</code>. Legit submodules in helixqa’s
+<code>.gitmodules</code>, need <code>git submodule update --init</code>
+inside helixqa + operator decision on docling test-data drift. Out of
+scope for this session.</li>
+<li><strong>Constitution/gitverse push</strong> — org policy rejected
+<code>push-to-create</code>. Track as §11.4.197 followup.</li>
+<li><strong>Retrospective correction</strong> of BOB-116/120/123
+incident docs (still carry pre-BOB-126 PAM/Linger hypothesis).</li>
+<li><strong>§11.4.185 manual QA</strong> — required before release tag.
+Operator decision on version bump.</li>
+</ul></li>
+<li><strong>§11.4.6 root cause CONFIRMED</strong>: not PAM/Linger. Not
+systemd-oomd. Not idle timeout. A specific Python test called
+<code>kill(-1, SIGKILL)</code>. Documented + fixed + universally
+guarded.</li>
 </ul>
 <h2
 id="session-commit-summary-2026-08-19-landings-18-commits-all-pushed">Session
