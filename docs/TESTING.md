@@ -1,7 +1,7 @@
 # Testing Guide
 
-**Revision:** 3
-**Last modified:** 2026-08-18T22:29:59Z
+**Revision:** 4
+**Last modified:** 2026-08-19T17:00:43Z
 
 This is the **authoritative test-type catalogue** for qBittorrent-Fixed.
 Every testable module in the repo must have coverage in every applicable
@@ -204,7 +204,7 @@ Contributing-section bullets. Last regenerated: 2026-08-19T16:17:38Z.
 | Python contract | `tests/contract/` | **12** | `pytest --collect-only -q` |
 | Frontend (Vitest) | `frontend/src/**/*.spec.ts` | **371** | collected (vitest list --run) |
 | HelixQA Challenges | `challenges/scripts/*.sh` | **38** | `ls challenges/scripts/*.sh \| wc -l` |
-| Pre-build invariants | `scripts/pre_build_verification.sh` | **28** | max total of every `[N/N]` progress label |
+| Pre-build invariants | `scripts/pre_build_verification.sh` | **29** | max total of every `[N/N]` progress label |
 
 **BOB-118 provenance note:** the README badge row previously read
 `python tests-585 passing` / `frontend tests-182 passing` with no

@@ -127,6 +127,19 @@
 #      auto-generated `__int__`/`__index__` (defaulting to 1) can drive
 #      the same broadcast-kill defect through a mocked test double.
 #      BLOCKING (contributes to FAIL_COUNT).
+#  29. CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID: runs
+#      scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh
+#      (§11.4.263, BOB-127, Task 8 syscall-audit rec #1) — the
+#      adjacent-class sibling of invariant 28: satisfying invariant 28
+#      (an explicit real int `.pid`) is necessary but NOT sufficient —
+#      this invariant statically scans tests/**/*.py for the SAME
+#      subprocess-standin doubles that DO set an explicit int-literal
+#      `.pid = <int>` but never patch `os.killpg` specifically, so the
+#      REAL syscall fires against a hardcoded, non-test-owned PID if it
+#      happens to collide with a live process on the host (Linux PID
+#      reuse). Found by Task 8 as 2 live hits in
+#      test_public_tracker_subprocess_timeout.py, fixed at commit
+#      8bedc5a. BLOCKING (contributes to FAIL_COUNT).
 #  (opt). Optional: challenges/scripts/run_all_challenges.sh (if FULL_VALIDATION=1)
 #
 # Constitution: §1.1 (paired mutation), §11.4 (anti-bluff covenant), §11.4.84 (working-tree quiescence), §11.4.107(10) (self-validated golden-good/golden-bad), §11.4.125 (code-review gate), §11.4.109 (anti-forgetting enforcement), §11.4.65 (universal Markdown export), §11.4.201(1) (false-positive-refusal is a FAIL-bluff), §11.4.238 (automated QA is the discoverer), §11.4.227(B) (propagation gates count block-starts), §12.12 (thread/process-headroom awareness), §11.4.234 (always-unblocked mechanism), §11.4.263 (process-group signal-safety mandate)
@@ -876,7 +889,7 @@ fi
 # forced-logout incidents (BOB-116/120/123/124/125/126). BLOCKING
 # (contributes to FAIL_COUNT): this closes a real host-safety defect
 # class, not a documentation-freshness or resource-pressure signal.
-echo "[27/28] CM-KILLPG-PGID-GUARD: no unguarded process-group kill calls (§11.4.263, BOB-126)"
+echo "[27/29] CM-KILLPG-PGID-GUARD: no unguarded process-group kill calls (§11.4.263, BOB-126)"
 KILLPG_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_killpg_pgid_guard.sh"
 if [[ ! -x "${KILLPG_GATE}" ]]; then
     fail "CM-KILLPG-PGID-GUARD: gate script missing or not executable at scripts/pre_build/check_cm_killpg_pgid_guard.sh"
@@ -902,7 +915,7 @@ fi
 # auto-generated `__int__`/`__index__` (defaulting to 1) reaches the same
 # broadcast-kill defect through a mocked test double. BLOCKING
 # (contributes to FAIL_COUNT).
-echo "[28/28] CM-TEST-MOCK-PID-EXPLICIT-INT: no unguarded subprocess-mock pid in tests (§11.4.263, BOB-126)"
+echo "[28/29] CM-TEST-MOCK-PID-EXPLICIT-INT: no unguarded subprocess-mock pid in tests (§11.4.263, BOB-126)"
 MOCK_PID_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh"
 if [[ ! -x "${MOCK_PID_GATE}" ]]; then
     fail "CM-TEST-MOCK-PID-EXPLICIT-INT: gate script missing or not executable at scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh"
@@ -919,6 +932,38 @@ else
         echo "        --- end ---"
     fi
     rm -f "${MOCK_PID_LOG}"
+fi
+
+# --- Invariant 29: CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID (§11.4.263, BOB-127) ---
+# Adjacent-class sibling of invariant 28: satisfying invariant 28 (an
+# explicit real int `.pid`) is necessary but NOT sufficient — the
+# production pid/pgid guard is satisfied by ANY real positive int, so a
+# test that sets `.pid = <int>` but never patches os.killpg lets the
+# REAL syscall fire against a hardcoded, non-test-owned PID (Linux PID
+# reuse can make that PID a live, unrelated process). Task 8's syscall
+# audit found this shape live in
+# test_public_tracker_subprocess_timeout.py (2 hits, fixed at commit
+# 8bedc5a). BLOCKING (contributes to FAIL_COUNT): a real, unmocked
+# destructive syscall fired from a "unit" test is a genuine host-safety
+# defect class, not a documentation-freshness or resource-pressure
+# signal.
+echo "[29/29] CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID: no unpatched real-pid subprocess-mock in tests (§11.4.263, BOB-127)"
+MOCK_PID_REAL_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh"
+if [[ ! -x "${MOCK_PID_REAL_GATE}" ]]; then
+    fail "CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID: gate script missing or not executable at scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh"
+else
+    MOCK_PID_REAL_LOG="$(mktemp)"
+    MOCK_PID_REAL_EXIT=0
+    bash "${MOCK_PID_REAL_GATE}" >"${MOCK_PID_REAL_LOG}" 2>&1 || MOCK_PID_REAL_EXIT=$?
+    if [[ "${MOCK_PID_REAL_EXIT}" -eq 0 ]]; then
+        pass "CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID: $(tail -n1 "${MOCK_PID_REAL_LOG}")"
+    else
+        fail "CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID: unpatched real-pid subprocess-mock hit(s) detected (exit ${MOCK_PID_REAL_EXIT})"
+        echo "        --- gate output ---"
+        sed 's/^/        /' "${MOCK_PID_REAL_LOG}"
+        echo "        --- end ---"
+    fi
+    rm -f "${MOCK_PID_REAL_LOG}"
 fi
 
 # --- Optional: Run challenge aggregator when FULL_VALIDATION=1 ---
