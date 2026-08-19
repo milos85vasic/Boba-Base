@@ -355,7 +355,9 @@ def _serialize_merged_rows(merged: list[Any]) -> list[SearchResultResponse]:
 
 @router.post("/search", response_model=SearchResponse)
 @_rl("search")
-async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyped-def]
+async def search(body: SearchRequest, request: Request):  # type: ignore[no-untyped-def]
+    # BOB-111 slowapi compat: rate-limiter needs the FastAPI Request param
+    # literally named `request`; body model renamed to `body` to free the name.
     """Kick off a search and return immediately.
 
     The endpoint returns ``status: "running"`` as soon as the search
@@ -373,7 +375,7 @@ async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyp
 
     from .hooks import dispatch_event
 
-    orch = _get_orchestrator(req)
+    orch = _get_orchestrator(request)
 
     if orch.is_search_queue_full():
         raise HTTPException(
@@ -383,14 +385,14 @@ async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyp
             ),
         )
 
-    await dispatch_event("search_start", {"query": request.query})
+    await dispatch_event("search_start", {"query": body.query})
 
     metadata = orch.start_search(
-        query=request.query,
-        category=request.category,
+        query=body.query,
+        category=body.category,
         enable_metadata=False,
-        validate_trackers=request.validate_trackers,
-        trackers=request.trackers,
+        validate_trackers=body.validate_trackers,
+        trackers=body.trackers,
     )
 
     # Fire-and-forget: the task populates _tracker_results incrementally
@@ -399,8 +401,8 @@ async def search(request: SearchRequest, req: Request):  # type: ignore[no-untyp
         try:
             await orch._run_search(
                 metadata.search_id,
-                request.query,
-                request.category,
+                body.query,
+                body.category,
             )
             await dispatch_event(
                 "search_complete",
@@ -697,13 +699,13 @@ def _supplied_stream_token(req: Request, token: str | None) -> str | None:
 
 @router.get("/search/stream/{search_id}")
 @_rl("sse_stream")
-async def search_stream(search_id: str, req: Request, token: str | None = None):  # type: ignore[no-untyped-def]
+async def search_stream(search_id: str, request: Request, token: str | None = None):  # type: ignore[no-untyped-def]
     from fastapi.responses import StreamingResponse  # noqa: F401
 
     from .streaming import SSEHandler
 
     global _sse_stream_count
-    orch = _get_orchestrator(req)
+    orch = _get_orchestrator(request)
     # 404 up front for unknown search IDs so clients (and the
     # integration tests that probe this path) don't hang on an
     # open SSE socket waiting for events that will never come.
@@ -712,7 +714,7 @@ async def search_stream(search_id: str, req: Request, token: str | None = None):
     # Per-search bearer-token gate (opt-in via SSE_REQUIRE_TOKEN). The 404
     # above intentionally precedes this so token probes can't enumerate
     # which search IDs exist.
-    if _sse_require_token() and not orch.validate_stream_token(search_id, _supplied_stream_token(req, token)):
+    if _sse_require_token() and not orch.validate_stream_token(search_id, _supplied_stream_token(request, token)):
         raise HTTPException(status_code=403, detail="Invalid or missing stream token")
     # Cap concurrent open SSE streams. Each stream reserves an event
     # loop task and holds a tracker_results dict pointer; without a
@@ -727,7 +729,7 @@ async def search_stream(search_id: str, req: Request, token: str | None = None):
         global _sse_stream_count
         _sse_stream_count += 1
         try:
-            async for frame in SSEHandler.search_results_stream(search_id, orch, request=req):
+            async for frame in SSEHandler.search_results_stream(search_id, orch, request=request):
                 yield frame
         finally:
             _sse_stream_count = max(0, _sse_stream_count - 1)
