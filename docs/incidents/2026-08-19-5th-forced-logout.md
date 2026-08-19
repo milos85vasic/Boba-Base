@@ -1,9 +1,11 @@
 # 5th Forced-Logout Incident — 2026-08-19 15:28:22 CEST
 
-**Revision:** 1
-**Last modified:** 2026-08-19T15:35:00Z
-**Tracker:** BOB-124 (to be minted)
-**Verdict (§11.4.6):** ROOT CAUSE STILL UNCONFIRMED — Phase 1 STILL INCOMPLETE
+**Revision:** 2
+**Last modified:** 2026-08-19T17:22:00Z
+**Tracker:** BOB-124
+**Verdict (§11.4.6):** ✅ **RESOLVED via BOB-126** — the 7th incident's kernel audit trail captured the SAME root cause that drove ALL 7 forced-logout incidents (BOB-116/120/123/124/125/126): a pytest process calling `kill(-1, SIGKILL)` via `MagicMock.__int__==1 → os.killpg(1, 9)` in `tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out`. Fix landed 2026-08-19 at boba commit `ad4b46a` (search.py int-guard + test hardening + §11.4.115 RED regression guard) + constitution commit `502586c` (universal §11.4.263 process-group signal-safety mandate) + boba pointer bump `bf01cf3`. See `docs/incidents/2026-08-19-6th-forced-logout.md` for the full attribution + §11.4.6 correction of the earlier "PAM/Linger contradiction" hypothesis.
+
+**REV-2 correction (2026-08-19 17:22):** the original doc claimed "PAM session_close" mechanism. That was a downstream EFFECT of the pytest kill(-1) — not the initiator. Attribution was CORRECTED by BOB-126's kernel audit trail (which required audit rules installed 15:56 to capture, ~1.5h after this 5th incident occurred).
 
 ## What happened
 
