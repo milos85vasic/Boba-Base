@@ -1,0 +1,98 @@
+<h1 id="th-forced-logout-incident-2026-08-19-152822-cest">5th
+Forced-Logout Incident — 2026-08-19 15:28:22 CEST</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-19T17:22:00Z <strong>Tracker:</strong> BOB-124 <strong>Verdict
+(§11.4.6):</strong> ✅ <strong>RESOLVED via BOB-126</strong> — the 7th
+incident’s kernel audit trail captured the SAME root cause that drove
+ALL 7 forced-logout incidents (BOB-116/120/123/124/125/126): a pytest
+process calling <code>kill(-1, SIGKILL)</code> via
+<code>MagicMock.__int__==1 → os.killpg(1, 9)</code> in
+<code>tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out</code>.
+Fix landed 2026-08-19 at boba commit <code>ad4b46a</code> (search.py
+int-guard + test hardening + §11.4.115 RED regression guard) +
+constitution commit <code>502586c</code> (universal §11.4.263
+process-group signal-safety mandate) + boba pointer bump
+<code>bf01cf3</code>. See
+<code>docs/incidents/2026-08-19-6th-forced-logout.md</code> for the full
+attribution + §11.4.6 correction of the earlier “PAM/Linger
+contradiction” hypothesis.</p>
+<p><strong>REV-2 correction (2026-08-19 17:22):</strong> the original
+doc claimed “PAM session_close” mechanism. That was a downstream EFFECT
+of the pytest kill(-1) — not the initiator. Attribution was CORRECTED by
+BOB-126’s kernel audit trail (which required audit rules installed 15:56
+to capture, ~1.5h after this 5th incident occurred).</p>
+<h2 id="what-happened">What happened</h2>
+<p>At <code>2026-08-19 15:28:22 CEST</code> (21 minutes after the 15:07
+login), <code>user@1000.service</code> was SIGKILLed:</p>
+<pre><code>Aug 19 15:28:22 nezha systemd[1]: user@1000.service: Main process exited,
+    code=killed, status=9/KILL</code></pre>
+<p>Same class as BOB-116 (#2), BOB-120 (#3), BOB-123 (#4). Fifth in the
+class.</p>
+<h2 id="distinction-from-the-1506-clean-shutdown">Distinction from the
+15:06 clean shutdown</h2>
+<p>At <code>2026-08-19 15:06:20-35</code> there was a CLEAN shutdown for
+the operator’s intentional reboot:</p>
+<pre><code>Aug 19 15:06:20 systemd[1]: Stopping user@1000.service - User Manager...
+Aug 19 15:06:35 systemd[1]: user@1000.service: Deactivated successfully.
+Aug 19 15:06:35 audit[1]: SERVICE_STOP ... res=success</code></pre>
+<p>The 15:06 event was <code>SERVICE_STOP res=success</code> (systemd
+Stop with normal exit). The 15:28:22 event is
+<code>code=killed, status=9/KILL</code> — the incident class. Not the
+same event.</p>
+<h2 id="iron-law-status">§11.4.6 Iron Law status</h2>
+<p>Phase 1 STILL incomplete. The BOB-123 audit rules
+(<code>docs/incidents/ 2026-08-19-sudo-audit-rules-for-operator.md</code>)
+were authored + committed but NEVER installed:</p>
+<ul>
+<li><code>/etc/audit/rules.d/logout_investigation.rules</code> — DOES
+NOT EXIST</li>
+<li><code>ausearch</code> — NOT on PATH (auditd package may not be
+installed)</li>
+<li>BOB-123 watchdog — NOT INSTALLED into system.slice</li>
+</ul>
+<p>Without kernel audit attribution, the SIGKILL initiator remains
+UNATTRIBUTABLE. This is now the 5th consecutive incident where Phase 1
+could not complete for the same structural reason.</p>
+<h2 id="systematic-debugging-phase-4.5-verdict">Systematic-debugging
+Phase 4.5 verdict</h2>
+<p>Per skill: “If ≥ 3 fixes failed: STOP and question the
+architecture.”</p>
+<p>We are now at 5 attempts, all blocked at the SAME architectural gap:
+<strong>preventive gates authored but not installed</strong> (requires
+operator terminal action).</p>
+<p><strong>The architectural problem is not the SIGKILL mechanism — it’s
+the install gap.</strong></p>
+<h2 id="correlate-signal-heavy-memory">Correlate signal — heavy
+memory</h2>
+<p>Prior session (13:13 → 15:06)
+<code>user@1000.service: Consumed 3h 22min 7.454s CPU time, 25.1G memory peak</code>.
+25 GB is very high. Load average at 15:32 (4 min after this incident) is
+<code>1.59, 6.39, 5.03</code> — sustained recent heavy load.</p>
+<p>Correlate strongly with prior 4 incidents which also happened under
+heavy parallel-subagent load.</p>
+<h2 id="actions-this-session">Actions this session</h2>
+<ul>
+<li>⏸️ Paused new subagent dispatches (operator “fix it all”
+directive)</li>
+<li>✅ Filed this incident doc</li>
+<li>🔄 Attempting to restart boba services (4/5 containers not yet up
+post-reboot)</li>
+<li>🚨 Escalating to operator via AskUserQuestion — Path 1 audit rules
+install is the ONLY remaining Phase 1 completion path</li>
+</ul>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><code>docs/incidents/2026-08-18-perceived-forced-logout-2nd.md</code>
+(BOB-116)</li>
+<li><code>docs/incidents/2026-08-18-3rd-forced-logout.md</code>
+(BOB-120)</li>
+<li><code>docs/incidents/2026-08-19-4th-forced-logout.md</code>
+(BOB-123)</li>
+<li><code>docs/incidents/2026-08-19-sudo-audit-rules-for-operator.md</code>
+(Rev 3 — Path 1)</li>
+<li><code>scripts/system-slice-watchdog/</code> (Path 2,
+ready-to-install)</li>
+<li>Memory playbook:
+<code>~/.claude-claude4/.../memory/forced_logout_incidents.md</code></li>
+<li>Evidence: <code>docs/qa/BOB-124/incident-5-forensics.log</code></li>
+</ul>

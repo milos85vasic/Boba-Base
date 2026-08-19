@@ -1,0 +1,14 @@
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/api	2.712s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/bootstrap	1.010s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/client	1.055s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/config	1.009s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/db	1.296s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/db/repos	2.825s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/envfile	1.020s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/httpx	1.011s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/jackett	3.200s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/jackettapi	3.391s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/logging	1.008s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/middleware	1.018s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/models	1.010s
+ok  	github.com/milos85vasic/qBitTorrent-go/internal/service	5.645s

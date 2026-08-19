@@ -192,7 +192,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>23</td>
+<td>27</td>
 </tr>
 <tr>
 <td>Feature</td>
@@ -217,7 +217,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>74</strong></td>
+<td><strong>78</strong></td>
 </tr>
 </tbody>
 </table>
@@ -594,6 +594,15 @@ behaviorally-equivalent HelixQA fake</td>
 </tr>
 <tr>
 <td>65</td>
+<td>Medium</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-071 — RD2-01: guard-forbidden-commands.sh hook has live
+reproducible substring carrier false-positive</td>
+</tr>
+<tr>
+<td>66</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -602,7 +611,7 @@ behaviorally-equivalent HelixQA fake</td>
 violations + 90% of closures have zero audit trail</td>
 </tr>
 <tr>
-<td>66</td>
+<td>67</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -611,7 +620,7 @@ violations + 90% of closures have zero audit trail</td>
 drifted (BOB-008 body differs)</td>
 </tr>
 <tr>
-<td>67</td>
+<td>68</td>
 <td>High</td>
 <td>Completed (→ Fixed.md)</td>
 <td>Task</td>
@@ -620,7 +629,7 @@ drifted (BOB-008 body differs)</td>
 docs/codegraph/Status.md are stale</td>
 </tr>
 <tr>
-<td>68</td>
+<td>69</td>
 <td>Medium</td>
 <td>Completed (→ Fixed.md)</td>
 <td>Task</td>
@@ -648,7 +657,7 @@ mechanical items-row restoration, not a re-performance of the original
 2026-08-15 work.]</td>
 </tr>
 <tr>
-<td>69</td>
+<td>70</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -681,7 +690,7 @@ source. Evidence:
 docs/qa/task-86-fix/{red_repro_sync_db_to_md.txt,green_after_fix.txt,unit_tests_go_test.txt}.</td>
 </tr>
 <tr>
-<td>70</td>
+<td>71</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -710,7 +719,7 @@ existed for this defect, verified by title/description search before
 minting).</td>
 </tr>
 <tr>
-<td>71</td>
+<td>72</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -735,7 +744,7 @@ RED-then-GREEN + paired mutation proof captured at
 docs/qa/task-54/RED-GREEN-transcript.md.</td>
 </tr>
 <tr>
-<td>72</td>
+<td>73</td>
 <td>Critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -787,7 +796,7 @@ forensic detail and docs/QA_DISCOVERY_LEDGER.md entry
 FORCED-LOGOUT-2026-08-18-2ND for the coverage-escape audit.</td>
 </tr>
 <tr>
-<td>73</td>
+<td>74</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -810,7 +819,7 @@ correct ‘Default: 1’ to ‘Default: 0’ in MERGE_SEARCH_DIAGNOSTICS.md to
 match search.py/docker-compose.yml.</td>
 </tr>
 <tr>
-<td>74</td>
+<td>75</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -819,6 +828,63 @@ match search.py/docker-compose.yml.</td>
 two parsers were written: (1) plugins/iptorrents.py (native qBittorrent
 nova3 search plugin) never decompressed the gzip-encoded response body
 in _get_link() (download_torrent() already did), used an unquoted </td>
+</tr>
+<tr>
+<td>76</td>
+<td>Critical</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-124 — 5th consecutive forced-logout of user@1000.service on host
+milosvasic (2026-08-19 15:28:22, fresh boot 15:07 -&gt; kill 15:28).
+Same PAM session_close synchronicity mechanism observed across incidents
+#2/#3/#4/#5, same Linger=yes contradiction, same UNCONFIRMED SIGKILL
+initiator. Per superpowers:systematic-debugging Phase 4.5: 5+ attempts
+against the same block = architectural problem. The block is not a
+missing detector — 4 preventive gates have been AUTHORED (BOB-116
+5-signature detector, BOB-120 out-of-scope watchdog design, BOB-123 PAM
+monitor, kernel auditctl rulesets) but 0 are INSTALLED because Path 1
+(auditctl) and Path 2 (system-slice systemd unit) both require operator
+sudo/su -c that has never actually been executed. Authoring a 6th
+detector is a §11.4.250 heuristic-tower defect. Closure requires an
+operator sudo install session verified by auditctl -l non-empty OR
+systemctl list-units –system boba-watch* non-empty. Evidence:
+docs/qa/BOB-124/incident-5-forensics.log. See project-memory playbook
+forced-logout-incidents for full mechanism + triage protocol.</td>
+</tr>
+<tr>
+<td>77</td>
+<td>Critical</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-125 — Sixth forced-logout SIGKILL cascade on user@1000,
+2026-08-19 16:04:54 CEST. First incident with kernel audit rules LIVE
+(installed 15:56). Prior 6 investigations misattributed the mechanism to
+PAM/Linger contradiction. Real root cause found by BOB-126: pytest
+calling kill(-1, SIGKILL) via MagicMock.__int__==1 → os.killpg(1, 9).
+Fix chain: ad4b46a + 502586c + bf01cf3 + 1b06858 + d7da1af + e389c29 +
+0027dba. See docs/incidents/2026-08-19-6th-forced-logout.md.</td>
+</tr>
+<tr>
+<td>78</td>
+<td>Critical</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-126 — Seventh forced-logout SIGKILL cascade. Kernel audit trail:
+audit[399861] syscall=62 a0=ffffffff a1=9 comm=pytest
+exe=/usr/bin/python3.14. Root cause:
+tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out
+created AsyncMock without setting mock.pid as int.
+_search_public_tracker called os.killpg(os.getpgid(proc.pid), SIGKILL).
+MagicMock.<strong>int</strong> defaults to 1, so os.getpgid(1)==1 →
+os.killpg(1, SIGKILL) → glibc → kill(-1, SIGKILL) = SIGKILL every
+UID-1000 process. Bug existed since 2026-04-24. FIX 3-layer: (1) boba
+ad4b46a search.py int-guard + test hardening + §11.4.115 RED regression
+guard. (2) constitution 502586c universal §11.4.263 anchor covering
+Python/Go/Rust/Bash/C. (3) boba bf01cf3 pointer bump. Verified: 863/863
+unit PASS + 14/14 Go race PASS + no 8th incident.</td>
 </tr>
 </tbody>
 </table>

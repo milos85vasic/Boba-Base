@@ -1,0 +1,177 @@
+<h1 id="th-forced-logout-incident-2026-08-19">6th Forced-Logout Incident
+— 2026-08-19</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-19T14:14:05Z <strong>Tracker:</strong> BOB-125 (to be minted)
+<strong>Verdict (§11.4.6):</strong> ROOT CAUSE STILL UNCONFIRMED — Phase
+1 attribution attempt live <strong>REV-2 correction:</strong> initial
+reading claimed “different mechanism than BOB-124 because I stayed
+connected” — WRONG. tmux <code>tmx-boba-5085.scope</code> under
+<code>user@1000.service/app.slice</code> gave illusion of continuity;
+user@1000 actually restarted at ~16:05 (new manager PID 262915,
+replacing 81142) and Claude Code resumed via SessionStart state-file,
+not process survival. This IS same class as BOB-124.</p>
+<h2 id="what-happened">What happened</h2>
+<p>Operator report at 2026-08-19 14:11:37Z (mid-turn during autonomous
+post-wave sequence): “we had another logout !!!”. Sixth event in the
+same class (BOB-116 / BOB-120 / BOB-123 / BOB-124 preceded).</p>
+<h2 id="distinction-from-prior-incidents">Distinction from prior
+incidents</h2>
+<p><strong>FIRST INCIDENT WITH THE PHASE 1 AUDIT SEAM LIVE.</strong>
+Rules installed 2026-08-19 15:56 CEST (same kernel boot 0 that started
+15:07):</p>
+<pre><code>-w /usr/bin/loginctl -p x -k logout_investigation
+-w /usr/bin/systemctl -p x -k logout_investigation
+-a always,exit -F arch=b64 -S kill,tkill,pidfd_send_signal -F a1=0x9 -k sigkill_investigation
+-a always,exit -F arch=b32 -S kill,tkill,pidfd_send_signal -F a1=0x9 -k sigkill_investigation
+-a always,exit -F arch=b64 -S tgkill -F a2=0x9 -k sigkill_investigation
+-a always,exit -F arch=b32 -S tgkill -F a2=0x9 -k sigkill_investigation</code></pre>
+<p>Kernel audit is boot-persistent (survives user@1000 SIGKILL cascade
+because it lives in kernel space, not user session).</p>
+<h2
+id="attribution-command-operator-action-required-rev-2-corrected-window">Attribution
+command (OPERATOR ACTION REQUIRED) — REV-2 corrected window</h2>
+<p>Phase-1 evidence (user manager PID transitions) narrows the event to
+<strong>~16:05:03</strong> (gdm-session-worker restart +
+graphical-session.target reached 16:05:11 under fresh manager PID
+262915). Audit rules were installed 15:56 → 16:05 kill WAS in scope.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-c</span> <span class="st">&#39;/usr/sbin/ausearch -k sigkill_investigation --start 15:55 | head -200&#39;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">su</span> <span class="at">-c</span> <span class="st">&#39;/usr/sbin/ausearch -k logout_investigation  --start 15:55 | head -200&#39;</span></span></code></pre></div>
+<p><strong>What to look for in the SYSCALL records around
+16:05</strong>: - <code>pid=&lt;X&gt;</code> — the SENDER PID -
+<code>comm=&lt;name&gt;</code> — sender program name
+(e.g. <code>systemd</code>, <code>loginctl</code>,
+<code>oom_reaper</code>, <code>podman</code>, <code>pkill</code>) -
+<code>exe=&lt;path&gt;</code> — full sender binary path -
+<code>auid=&lt;uid&gt;</code> — audit user id of sender - Paired
+<code>OBJ_PID</code> record: <code>opid=&lt;Y&gt;</code> — TARGET PID
+(should be user@1000 manager PID 81142)</p>
+<p>Three honest interpretation paths per §11.4.6: 1. Real SIGKILL hits
+with clear initiator → attribute + fix at source 2. Empty (no hits in
+15:55–16:10 window) → the kill mechanism bypasses ALL captured syscalls
+(kernel-internal OOM-kill would be one such class; different audit rule
+needed) 3. Overflow — audit <code>backlog_limit</code> too small; raise
+it before next incident</p>
+<p>Paste the output — the SYSCALL records carry <code>auid</code>,
+<code>pid</code>, <code>comm</code>, <code>exe</code> for the
+initiator.</p>
+<h2
+id="systematic-debugging-phase-4.5-verdict-catastrophic">Systematic-debugging
+Phase 4.5 verdict — CATASTROPHIC</h2>
+<p>6 incidents in ~48h. This is the FIRST time we have kernel-side
+forensic capture. If ausearch returns:</p>
+<ul>
+<li><strong>Real SIGKILL(9) hits</strong> — we finally attribute the
+initiator</li>
+<li><strong>Empty</strong> — either audit backlog dropped events (buffer
+overflow) OR the “logout” was a different mechanism (session-lock, tty
+hangup, ForwardToWall unit reload — NOT a SIGKILL cascade). This would
+be a §11.4.6 correction of the entire investigation hypothesis.</li>
+</ul>
+<p>Either outcome is progress.</p>
+<h2 id="phase-4.5-standing-rule-preserved">Phase 4.5 STANDING RULE
+preserved</h2>
+<p>Per memory playbook: <strong>do NOT author a 7th preventive
+gate.</strong> Every unshipped gate raises the tower height without
+raising the ceiling (§11.4.250 heuristic-tower defect). Attribution
+first.</p>
+<h2
+id="rev-3-phase-1-breakthrough-2026-08-19-1615-system-journal-captured-full-cascade">REV-3
+Phase-1 breakthrough (2026-08-19 ~16:15) — system journal captured full
+cascade</h2>
+<p>System-wide journal (readable to my user for these messages) captured
+the exact event at <strong>2026-08-19 16:04:54</strong>:</p>
+<pre><code>16:02:26  audit[81557]: SYSCALL syscall=62 a1=9 pid=81557 ppid=81142 comm=&quot;dbus-daemon&quot; exe=&quot;/usr/bin/dbus-daemon&quot; key=&quot;sigkill_investigation&quot;
+16:02:30  audit[81557]: SYSCALL syscall=62 a1=9 pid=81557 ppid=81142 comm=&quot;dbus-daemon&quot; exe=&quot;/usr/bin/dbus-daemon&quot; key=&quot;sigkill_investigation&quot;
+16:04:54  gdm-password][81128]: pam_tcb(gdm-password:session): Session closed for milosvasic
+16:04:54  audit[81128]: AUDIT1106 op=PAM:session_close ... exe=&quot;/usr/libexec/gdm-session-worker&quot; terminal=/dev/tty2 ses=7
+16:04:54  systemd[1]: user@1000.service: Main process exited, code=killed, status=9/KILL
+16:04:54  systemd[1]: user@1000.service: Killing process 83030 (gvfs-goa-volume) with signal SIGKILL
+16:04:54  systemd[1]: user@1000.service: Killing process 82548 (gsd-media-keys) with signal SIGKILL
+16:04:54  systemd[1]: user@1000.service: Killing process 105594 (ssh) with signal SIGKILL
+[... cascade of ~30 more processes ...]</code></pre>
+<p><strong>Signature identity confirmed</strong> — same as
+BOB-116/120/123/124: PAM session_close on gdm-password precedes
+<code>user@1000.service exited code=killed status=9/KILL</code>. §11.4.6
+Verdict: <strong>BOB-125 is the 6th occurrence of the PAM/Linger
+contradiction (BOB-123 anchor mechanism)</strong>.</p>
+<p><strong>Memory pressure ruled OUT</strong> — PSI cumulative
+<code>total=3575466 µs</code> = ~3.5s of full memory pressure across the
+entire 1h+ boot. Not OOM.</p>
+<p><strong>Attribution still pending</strong> — the SESSION_CLOSE was
+initiated by <code>/usr/libexec/gdm-session-worker</code> PID 81128, but
+WHO triggered gdm-worker to session-close (a
+<code>loginctl kill-session</code>, gnome-shell logout, X/Wayland
+session end, <code>systemctl stop graphical-session.target</code>, or
+something else) — that’s the Phase-1 gap. Audit rules stay live for
+incident #7. NO 7th preventive gate authored per memory-playbook Phase
+4.5 rule.</p>
+<p><strong>Two curious pre-cascade SIGKILL syscalls</strong> at 16:02:26
+and 16:02:30 from <code>dbus-daemon</code> (PID 81557 under old
+user@1000 manager 81142). Same key <code>sigkill_investigation</code>. 2
+minutes before the cascade. Could be dbus cleaning up dead peers OR
+could correlate with the terminator. Followup investigation
+candidate.</p>
+<h2 id="rev-4-real-root-cause-found-fixed-2026-08-19-1650">REV-4 REAL
+ROOT CAUSE FOUND + FIXED (2026-08-19 ~16:50)</h2>
+<p><strong>BOB-126 (7th incident) captured the real root cause</strong>
+— this was NOT a “PAM/Linger contradiction” as prior 6 investigations
+claimed. All 6 prior incidents had the SAME true root cause, invisible
+until audit rules installed 15:56.</p>
+<p><strong>Root cause</strong>:
+<code>tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out</code>
+created <code>AsyncMock()</code> without setting <code>mock.pid</code>
+as int. Production code <code>_search_public_tracker</code> called
+<code>os.killpg(os.getpgid(proc.pid), signal.SIGKILL)</code>. Python’s
+<code>MagicMock.__int__</code> defaults to 1, so: 1.
+<code>int(MagicMock()) == 1</code> 2. <code>os.getpgid(1) == 1</code>
+(init’s process group) 3. <code>os.killpg(1, SIGKILL)</code> → glibc →
+<code>kill(-1, SIGKILL)</code> = <strong>SIGKILL every UID-1000 process
+on host</strong> 4. <code>contextlib.suppress(Exception)</code>
+swallowed nothing — syscall SUCCEEDED</p>
+<p>Bug existed since 2026-04-24 (~4 months). Prior 6 forced-logout
+incidents were ALL this test being run under various conditions (my
+subagent sweeps, HelixQA autonomous mode, operator’s IDE).</p>
+<p><strong>FIX</strong> — three-layer defense-in-depth: 1. <strong>boba
+ad4b46a</strong>: <code>search.py</code>
+<code>_search_public_tracker</code> int-guards pid + pgid before
+<code>killpg</code>. Both cleanup paths (deadline + exception handler)
+hardened. 2. <strong>boba ad4b46a</strong>:
+<code>test_deadline_tunable.py</code> sets <code>mock.pid=12345</code>
+explicitly + patches <code>os.killpg</code> and <code>os.getpgid</code>
+as belt-and-suspenders. New §11.4.115 RED-first regression test
+<code>test_bob126_regression_deadline_path_never_calls_killpg_with_pgid_le_1</code>
+asserts <code>killpg</code> is NEVER called with <code>pgid ≤ 1</code>
+even under the exact defect precondition. 3. <strong>constitution
+502586c</strong>: NEW universal anchor <strong>§11.4.263 — process-group
+signal-safety mandate</strong>. Extends the fix to every project
+inheriting the constitution (Python/Go/Rust/Bash/C) with four-layer
+coverage per §11.4.4(b). Full text in <code>Constitution.md</code>;
+byte-identical compact mirrors in CLAUDE/AGENTS/QWEN/GEMINI.md (md5
+<code>542e30907eaa00ffb1949cd2fe528ba2</code>). 4. <strong>boba
+bf01cf3</strong>: pointer bump.</p>
+<p><strong>Verification</strong>: 9/9
+<code>test_deadline_tunable.py</code> PASS post-fix, including the new
+BOB-126 regression guard.</p>
+<p><strong>The 7-incident chain (BOB-116/120/123/124/125/126) is
+closed.</strong> No 8th incident should occur unless another codebase
+path calls killpg with unvalidated pgid.</p>
+<h2 id="actions-this-session">Actions this session</h2>
+<ul>
+<li>⏸️ PAUSED post-wave sequence</li>
+<li>📄 Filed this incident doc</li>
+<li>🚨 Waiting on operator’s ausearch output before ANY further
+action</li>
+<li>🔒 Container fleet: proxy sub-fleet was bringing up when incident
+reported (my <code>./start.sh -p</code> had just launched at 16:11:06 —
+proxy sub-fleet restart may or may not correlate)</li>
+</ul>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><code>docs/incidents/2026-08-19-5th-forced-logout.md</code>
+(BOB-124)</li>
+<li>Memory playbook:
+<code>~/.claude-claude4/.../memory/forced_logout_incidents.md</code></li>
+<li><code>docs/QA_DISCOVERY_LEDGER.md</code> Rev 11 (BOB-124 escape
+entry)</li>
+</ul>

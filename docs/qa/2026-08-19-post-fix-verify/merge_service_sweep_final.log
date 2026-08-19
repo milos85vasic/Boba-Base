@@ -1,0 +1,26 @@
+........................................................................ [  8%]
+........................................................................ [ 16%]
+........................................................................ [ 25%]
+........................................................................ [ 33%]
+........................................................................ [ 41%]
+........................................................................ [ 50%]
+........................................................................ [ 58%]
+........................................................................ [ 66%]
+........................................................................ [ 75%]
+........................................................................ [ 83%]
+........................................................................ [ 91%]
+.......................................................................  [100%]
+=============================== warnings summary ===============================
+.venv/lib64/python3/site-packages/fastapi/testclient.py:1
+  /run/media/milosvasic/DATA4TB/Projects/boba/.venv/lib64/python3/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/unit/merge_service/test_search_deep_coverage.py::TestRunSearchDiagClear::test_run_search_clears_stale_diag
+tests/unit/merge_service/test_search_deep_coverage.py::TestRunSearchStatSeed::test_run_search_backfills_missing_stats
+  /run/media/milosvasic/DATA4TB/Projects/boba/tests/conftest.py:125: RuntimeWarning: coroutine 'SearchOrchestrator._run_search.<locals>._bounded' was never awaited
+    gc.collect()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+863 passed, 3 warnings in 101.47s (0:01:41)

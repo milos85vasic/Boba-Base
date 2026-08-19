@@ -197,12 +197,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>9</td>
+<td>8</td>
 </tr>
 <tr>
 <td>Task</td>
 <td>In progress</td>
-<td>2</td>
+<td>3</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -212,12 +212,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>33</td>
+<td>32</td>
 </tr>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>48</strong></td>
+<td><strong>47</strong></td>
 </tr>
 </tbody>
 </table>
@@ -286,14 +286,6 @@ coverage-escape backfill</td>
 <td>High</td>
 <td>RD2-41: pre-build mutation-marker scan carrier false-positive
 silently defeats entire pre-build gate</td>
-</tr>
-<tr>
-<td>BOB-071</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>RD2-01: guard-forbidden-commands.sh hook has live reproducible
-substring carrier false-positive</td>
 </tr>
 <tr>
 <td>BOB-074</td>
@@ -668,7 +660,7 @@ checks, keyboard-nav coverage, and screen-reader labeling.</td>
 <tr>
 <td>BOB-111</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>High</td>
 <td>Source inspection across the whole stack (2026-08-18) verified no
 rate-limit mechanism exists for :7185 (qBittorrent WebUI proxy), :7187
@@ -684,7 +676,14 @@ dependency for the merge-search service; a Gin rate-limit middleware for
 boba-jackett following the existing internal/middleware/ pattern.
 qBittorrent’s own WebUI bandwidth-shaping settings were NOT verified to
 cover request-rate (only bandwidth) – do not assume they close this gap
-without checking.</td>
+without checking. Progress 2026-08-19: Python-side FULL (rate_limit.py +
+wired into <strong>init</strong>.py + routes.py, slowapi added to
+requirements). Go-side FULL (ratelimit.go + Gin form on
+qbittorrent-proxy:7186 + net/http form on boba-jackett:7189,
+golang.org/x/time added). All 5 Go tests PASS under -race. Python
+RED/GREEN tests authored + syntax-clean; live pytest owed inside
+container (host pydantic_core broken, unrelated). See
+docs/qa/BOB-111/EVIDENCE.md. Commit 8ee26b1.</td>
 </tr>
 <tr>
 <td>BOB-113</td>

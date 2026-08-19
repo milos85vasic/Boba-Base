@@ -1,0 +1,14 @@
+github.com/milos85vasic/qBitTorrent-go/internal/api
+github.com/milos85vasic/qBitTorrent-go/internal/bootstrap
+github.com/milos85vasic/qBitTorrent-go/internal/client
+github.com/milos85vasic/qBitTorrent-go/internal/config
+github.com/milos85vasic/qBitTorrent-go/internal/db
+github.com/milos85vasic/qBitTorrent-go/internal/db/repos
+github.com/milos85vasic/qBitTorrent-go/internal/envfile
+github.com/milos85vasic/qBitTorrent-go/internal/httpx
+github.com/milos85vasic/qBitTorrent-go/internal/jackett
+github.com/milos85vasic/qBitTorrent-go/internal/jackettapi
+github.com/milos85vasic/qBitTorrent-go/internal/logging
+github.com/milos85vasic/qBitTorrent-go/internal/middleware
+github.com/milos85vasic/qBitTorrent-go/internal/models
+github.com/milos85vasic/qBitTorrent-go/internal/service

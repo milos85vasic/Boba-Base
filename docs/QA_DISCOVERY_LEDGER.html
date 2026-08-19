@@ -1,6 +1,6 @@
 <h1 id="qa-discovery-channel-ledger">QA Discovery-Channel Ledger</h1>
-<p><strong>Revision:</strong> 10 <strong>Last modified:</strong>
-2026-08-18T23:59:00+02:00 <strong>Status:</strong> active
+<p><strong>Revision:</strong> 12 <strong>Last modified:</strong>
+2026-08-19T17:20:00+02:00 <strong>Status:</strong> active
 <strong>Constitution:</strong> §11.4.238 (automated QA must be the
 DISCOVERER, not the confirmer — every defect found outside the automated
 HelixQA regime is itself a coverage-escape release blocker, not merely a
@@ -1002,6 +1002,74 @@ boba-stack containers’ near-instant re-creation
 (<code>CreatedAt</code>=23:45:52, 3s after the kill) are reported as
 time-correlated observations, not established causes.</li>
 </ul>
+<h3
+id="forced-logout-2026-08-19-5th-5th-user1000.service-sigkill-at-152822-architectural-install-gap-4-authored-preventive-gates-0-installed">FORCED-LOGOUT-2026-08-19-5TH
+— 5th user@1000.service SIGKILL at 15:28:22, architectural install-gap:
+4 authored preventive gates, 0 installed</h3>
+<ul>
+<li><strong>id:</strong> BOB-124 (Type=Bug, Severity=Critical, Status=In
+progress — filed this session, evidence at
+<code>docs/qa/BOB-124/incident-5-forensics.log</code>). Companion to
+BOB-116/BOB-120/BOB-123 (incidents #2/#3/#4); full mechanism/triage
+lives in the <code>forced-logout-incidents</code> project-memory
+playbook.</li>
+<li><strong>date:</strong> 2026-08-19, 15:28:22 — the 5th forced-logout
+on this project (fresh host boot 15:07 → kill 15:28, exactly 21 minutes
+into a fresh session, first physical logout since incident #4’s ~00:37
+occurrence).</li>
+<li><strong>channel:</strong> <code>operator-report</code> at initial
+detection (operator physically observed the GDM greeter after lid
+re-open), corroborated by <code>agent-code-reading</code> during triage
+(journal grep confirmed the same PAM-session-close-synchronicity
+signature already documented across #2/#3/#4). No standing automated
+check monitored either the SIGKILL delivery or the leading
+resource-pressure signatures during this session. Evidence:
+<code>docs/qa/BOB-124/incident-5-forensics.log</code>.</li>
+<li><strong>escape-audit:</strong> <strong>the coverage escape is now
+architectural, not per-check</strong> — this is the 5th consecutive
+incident of the same class and the underlying block is the same across
+all five: the preventive gates authored in response to incidents
+#2/#3/#4 (BOB-116 5-signature detector, BOB-120 out-of-scope watchdog
+design, BOB-123 PAM-session-close monitor, sundry <code>auditctl</code>
+kernel rulesets) ALL require a <code>sudo</code>/<code>su -c</code>
+install step that has never actually been executed by the operator. The
+gate text ships; the mechanism does not run. Per
+<code>superpowers:systematic-debugging</code> skill Phase 4.5 (≥5
+attempts against the same block = architectural problem, not hypothesis
+failure) and per §11.4.250 (heuristic-tower signals a primitive defect),
+authoring a 6th detector would raise the tower height without raising
+the ceiling — the coverage escape is the install-gap, not any missing
+signature. The <code>boba-resource-pressure-check.timer</code> from
+BOB-116 DID install (it is a <code>--user</code> unit, no
+<code>sudo</code> needed) but is architecturally blind to a kill of its
+own hosting scope (BOB-120 gap), so its <code>installed but blind</code>
+status does not close this escape either.
+<code>existed-but-uninstalled</code> (a distinct §11.4.201(6) FALSE-NULL
+sub-class from <code>existed-but-missed</code> — the check exists in
+text, but no live instance runs to observe the defect at all).</li>
+<li><strong>new-check:</strong> <strong>NOT AUTHORING A NEW
+CHECK.</strong> Followup filed as BOB-124 itself: install one of the
+already-authored preventive paths (Path 1 kernel <code>auditctl</code>
+rules OR Path 2 out-of-scope systemd watchdog OR Path 4 dedicated
+<code>boba-watchdog</code> UID) via an operator <code>sudo</code>
+session, and verify it is live via <code>auditctl -l</code> non-empty or
+<code>systemctl list-units --system 'boba-watch*'</code> non-empty
+before this ledger entry may be closed. Closing this entry on a 5th
+authored-but- uninstalled detector would itself be a §11.4.238
+coverage-escape bluff (the exact failure mode this anchor exists to
+forbid) AND a §11.4.250 heuristic-tower violation.</li>
+<li><strong>Honest boundary (§11.4.6):</strong> the SIGKILL initiator
+remains UNCONFIRMED across all 5 incidents — the PAM session_close
+correlation is the mechanism, not the root initiator, and
+<code>Linger=yes</code> should have prevented the kill by design
+(whether a systemd bug, an unattributed
+<code>loginctl terminate-user</code> call, or an SDD/container-fleet
+component invoking a stop path at a different identifier we have not yet
+grepped is still open). This entry does NOT claim a root cause; it
+claims the coverage escape is the install-gap on the ALREADY-KNOWN
+preventive paths, which is itself proven by 5 consecutive occurrences
+without a single mechanical detection.</li>
+</ul>
 <h2 id="discovery-channel-split-tracked-per-11.4.238e">Discovery-channel
 split (tracked, per §11.4.238(E))</h2>
 <table>
@@ -1085,11 +1153,22 @@ FORCED-LOGOUT-2026-08-18-3RD)</td>
 <td>100%</td>
 </tr>
 <tr>
+<td>2026-08-19 (incremental, BOB-124 forced-logout incident #5 — 1 new
+<code>###</code> entry: 5th consecutive occurrence of user@1000 SIGKILL,
+escalating the coverage escape from “no preventive gate” to “4 authored
+preventive gates, 0 installed” — §11.4.250 heuristic-tower /
+architectural install-gap)</td>
+<td>0</td>
+<td>1 (<code>operator-report</code> x1:
+FORCED-LOGOUT-2026-08-19-5TH)</td>
+<td>100%</td>
+</tr>
+<tr>
 <td><strong>Cumulative total (all <code>###</code> entries to date, this
 row is what <code>CM-QA-DISCOVERY-LEDGER-FRESH</code>
 checks)</strong></td>
 <td><strong>0</strong></td>
-<td><strong>17</strong></td>
+<td><strong>18</strong></td>
 <td><strong>100%</strong></td>
 </tr>
 </tbody>
@@ -1143,3 +1222,62 @@ specific new/strengthened automated checks each entry’s
 <code>new-check</code> field names as not-yet-authored; none of the four
 checks are claimed as shipped by this backfill (§11.4.6) — they are
 tracked, not implemented, here.</p>
+<p><strong>2026-08-19 BOB-124/125/126 escape — SEVEN forced-logout
+incidents traced to ONE untested test-defect (chain
+closed):</strong></p>
+<p>Between 2026-08-18 20:50 and 2026-08-19 16:43, <strong>SEVEN</strong>
+forced-logout incidents (BOB-116 / BOB-120 / BOB-123 / BOB-124 / BOB-125
+/ BOB-126 — the seventh caught by kernel audit rules installed 15:56
+during the sixth investigation) wiped the operator’s entire graphical
+session, tmux server, ssh connections, browsers, and the working Claude
+Code process — every ~30-40 minutes for ~48 hours.</p>
+<p><strong>Actual root cause</strong> (§11.4.6-attributed 2026-08-19
+16:43:43 via
+<code>audit[399861]: SYSCALL syscall=62 a0=ffffffff a1=9 pid=399861 comm=\"pytest\" exe=\"/usr/bin/python3.14\"</code>):
+<code>tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out</code>
+created <code>AsyncMock()</code> without setting <code>mock.pid</code>
+as an int. Production <code>_search_public_tracker</code> code path
+called <code>os.killpg(os.getpgid(proc.pid), signal.SIGKILL)</code>.
+Python’s <code>MagicMock.__int__</code> defaults to 1, so
+<code>os.getpgid(int(MagicMock())) == 1</code> →
+<code>os.killpg(1, SIGKILL)</code> → glibc →
+<code>kill(-1, SIGKILL)</code> = <strong>SIGKILL every UID-1000
+process</strong>. Bug existed since 2026-04-24 (~4 months).
+<code>contextlib.suppress(Exception)</code> swallowed nothing because
+the syscall SUCCEEDED before any exception.</p>
+<p><strong>Discovery channel</strong>: <code>operator-report</code> (7
+times). <strong>Coverage-escape audit</strong> (§11.4.238(C)): the
+automated regime had NO check for “does a production-code function ever
+call killpg with pgid ≤ 1?” or “does a test create subprocess mocks
+without explicit int pid?”. §11.4.115 RED-first was violated: the test
+that TRIGGERED the disaster had no assertion that the code path avoided
+the disaster. New check landed:
+<code>tests/unit/merge_service/test_deadline_tunable.py::test_bob126_regression_deadline_path_never_calls_killpg_with_pgid_le_1</code>
+(see commit ad4b46a) — a §11.4.115 RED-first regression guard asserting
+<code>os.killpg</code> is NEVER called with <code>pgid ≤ 1</code> even
+under the exact defect precondition. Reverts of the production-code
+pid-guard MUST make this test fail. Also NEW universal anchor
+<strong>§11.4.263</strong> — process-group signal-safety mandate
+(Constitution commit 502586c) — extends the mandate to every project
+inheriting the constitution (Python/Go/Rust/Bash/C) with four-layer
+coverage per §11.4.4(b).</p>
+<p><strong>§11.4.238 discipline preservation</strong>
+(<code>agent-code-reading</code> DID FIND, sort of — but only on the 7th
+time, and only via kernel audit rules the operator ran a
+<code>su -c</code> command to install manually on the same day; the
+prior 6 investigations misattributed the mechanism to PAM/Linger
+contradictions and other downstream effects — all wrong per §11.4.6,
+honest self-correction at Rev 4 of the incident docs). This is the
+ledger’s LARGEST out-of-band escape by user-visible impact.</p>
+<ul>
+<li><strong>BOB-124</strong> (5th incident): status=Fixed via BOB-126
+root-cause. Incident doc filed 2026-08-19 15:35, corrected
+retrospectively.</li>
+<li><strong>BOB-125</strong> (6th): status=Fixed via BOB-126. Doc filed
+16:11, Rev 4 correction 16:15.</li>
+<li><strong>BOB-126</strong> (7th): status=Fixed. Doc filed + closed
+same day.</li>
+<li>Prior 4 (BOB-116, BOB-120, BOB-123 + the base BOB-116’s “first”
+instance): retrospective correction pending — their attribution to
+PAM/Linger was wrong per BOB-126’s captured evidence.</li>
+</ul>

@@ -1,0 +1,60 @@
+........................................................................ [  8%]
+.............................................F.......................... [ 16%]
+........................................................................ [ 25%]
+........................................................................ [ 33%]
+........................................................................ [ 41%]
+........................................................................ [ 50%]
+..........F.........................................................F... [ 58%]
+.F...................................................................... [ 66%]
+........................................................................ [ 75%]
+........................................................................ [ 83%]
+........................................................................ [ 91%]
+...............F.......................................................  [100%]
+=================================== FAILURES ===================================
+______ TestHTMLParserMalformedGuards.test_parse_iptorrents_html_valid_row ______
+tests/unit/merge_service/test_search_coverage.py:868: in test_parse_iptorrents_html_valid_row
+    assert results[0].seeds == 50
+E   AssertionError: assert 0 == 50
+E    +  where 0 = SearchResult(name='Good Movie 1080p', link='https://iptorrents.com/download.php/456/good.torrent', size='2.5 GB', seed...m/t/456', pub_date=None, tracker='iptorrents', category=None, freeleech=False, content_type='movie', quality='full_hd').seeds
+_____________ TestParseIptorrentsHtmlDeep.test_no_leechers_column ______________
+tests/unit/merge_service/test_search_deep_coverage.py:602: in test_no_leechers_column
+    assert results[0].seeds == 50
+E   AssertionError: assert 0 == 50
+E    +  where 0 = SearchResult(name='Only Seeds', link='https://iptorrents.com/download.php/888/onlyseeds.torrent', size='1 GB', seeds=0...rents.com/t/888', pub_date=None, tracker='iptorrents', category=None, freeleech=False, content_type=None, quality='sd').seeds
+__________________ TestParseIptorrentsHtml.test_single_result __________________
+tests/unit/merge_service/test_html_parsers.py:275: in test_single_result
+    assert r.seeds == 335
+E   AssertionError: assert 16 == 335
+E    +  where 16 = SearchResult(name='Ubuntu Server 24.04 LTS', link='https://iptorrents.com/download.php/12345/Ubuntu.Server.torrent', s...m/t/12345', pub_date=None, tracker='iptorrents', category=None, freeleech=False, content_type='software', quality='hd').seeds
+________________ TestParseIptorrentsHtml.test_multiple_results _________________
+tests/unit/merge_service/test_html_parsers.py:284: in test_multiple_results
+    assert results[0].seeds == 335
+E   AssertionError: assert 16 == 335
+E    +  where 16 = SearchResult(name='Ubuntu Server 24.04 LTS', link='https://iptorrents.com/download.php/12345/Ubuntu.Server.torrent', s...m/t/12345', pub_date=None, tracker='iptorrents', category=None, freeleech=False, content_type='software', quality='hd').seeds
+______________ test_search_complete_sse_carries_status_and_errors ______________
+tests/unit/merge_service/test_all_trackers_errored_sse_contract.py:112: in test_search_complete_sse_carries_status_and_errors
+    resp = await routes_mod.search(SearchRequest(query="debian"), fake_req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib64/python3/site-packages/slowapi/extension.py:728: in async_wrapper
+    raise Exception(
+E   Exception: parameter `request` must be an instance of starlette.requests.Request
+=============================== warnings summary ===============================
+.venv/lib64/python3/site-packages/fastapi/testclient.py:1
+  /run/media/milosvasic/DATA4TB/Projects/boba/.venv/lib64/python3/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/unit/merge_service/test_search_deep_coverage.py::TestRunSearchStatSeed::test_run_search_backfills_missing_stats
+tests/unit/merge_service/test_search_deep_coverage.py::TestRunSearchDiagClear::test_run_search_clears_stale_diag
+  /run/media/milosvasic/DATA4TB/Projects/boba/tests/conftest.py:125: RuntimeWarning: coroutine 'SearchOrchestrator._run_search.<locals>._bounded' was never awaited
+    gc.collect()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/merge_service/test_search_coverage.py::TestHTMLParserMalformedGuards::test_parse_iptorrents_html_valid_row
+FAILED tests/unit/merge_service/test_search_deep_coverage.py::TestParseIptorrentsHtmlDeep::test_no_leechers_column
+FAILED tests/unit/merge_service/test_html_parsers.py::TestParseIptorrentsHtml::test_single_result
+FAILED tests/unit/merge_service/test_html_parsers.py::TestParseIptorrentsHtml::test_multiple_results
+FAILED tests/unit/merge_service/test_all_trackers_errored_sse_contract.py::test_search_complete_sse_carries_status_and_errors
+5 failed, 858 passed, 3 warnings in 199.95s (0:03:19)

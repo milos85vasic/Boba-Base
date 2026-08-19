@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 23
-**Last modified:** 2026-08-18T22:24:54Z
+**Revision:** 15
+**Last modified:** 2026-08-15T12:15:00Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -832,4 +832,43 @@ IPTorrents changed its results-table markup since these two parsers were written
 **Created-By:** Claude
 
 ORIGINAL DEFECT (task #68 fix, commit 3520621): workable-items export regenerated docs/Issues.md and docs/Fixed.md from the tool's own internal revision counter, which did not track manually-bumped §11.4.44 revision headers already committed on disk. Fixed by wiring reconcileRevisionHeader (export_revision.go) into export.go's exportCmd. SIBLING DEFECT DISCOVERED (task #86, filed by task-incident-3-writeup subagent aebfe202 during BOB-120 filing, 2026-08-18/19): the task #68 fix covered ONLY the 'export' subcommand -- the sibling 'sync db-to-md' subcommand (syncDBToMD in sync.go), a documented first-class entry point (README.md Phase 4), shared the identical renderDocument-replays-the-DB's-stale-header mechanism but had NO reconciliation call at all. Live-reproduced 2026-08-19: docs/Fixed.md Revision 22->15 via 'workable-items sync db-to-md --out-fixed docs/Fixed.md' (matching the operator-reported 21->15). Root-caused + fixed by wiring the SAME reconcileRevisionHeader call into BOTH syncDBToMD write paths (--out-issues and --out-fixed). RED-first Go tests added (sync_revision_test.go, 3 tests): TestSyncDBToMD_NeverRegressesRevisionBelowCommittedFile, TestSyncDBToMD_FixedRevisionNeverRegresses (the exact 22->15 live case, replayed), TestSyncDBToMD_IdempotentOnRepeatedInvocation. All RED pre-fix (verified against pristine git HEAD), all GREEN post-fix. Live idempotency verified: two consecutive real 'sync db-to-md' invocations against docs/Fixed.md produced byte-identical output (md5 4fba107a). bin/workable-items + bin/workable-items-linux rebuilt from the fixed source. Evidence: docs/qa/task-86-fix/{red_repro_sync_db_to_md.txt,green_after_fix.txt,unit_tests_go_test.txt}.
+
+## BOB-124 — 5th forced-logout 2026-08-19 15:28:22 — architectural install-gap: 4 authored preventive gates never installed by operator
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/incidents/2026-08-19-5th-forced-logout.md
+**Severity:** Critical
+
+5th consecutive forced-logout of user@1000.service on host milosvasic (2026-08-19 15:28:22, fresh boot 15:07 -> kill 15:28). Same PAM session_close synchronicity mechanism observed across incidents #2/#3/#4/#5, same Linger=yes contradiction, same UNCONFIRMED SIGKILL initiator. Per superpowers:systematic-debugging Phase 4.5: 5+ attempts against the same block = architectural problem. The block is not a missing detector — 4 preventive gates have been AUTHORED (BOB-116 5-signature detector, BOB-120 out-of-scope watchdog design, BOB-123 PAM monitor, kernel auditctl rulesets) but 0 are INSTALLED because Path 1 (auditctl) and Path 2 (system-slice systemd unit) both require operator sudo/su -c that has never actually been executed. Authoring a 6th detector is a §11.4.250 heuristic-tower defect. Closure requires an operator sudo install session verified by auditctl -l non-empty OR systemctl list-units --system boba-watch* non-empty. Evidence: docs/qa/BOB-124/incident-5-forensics.log. See project-memory playbook forced-logout-incidents for full mechanism + triage protocol.
+
+## BOB-125 — 6th forced-logout 2026-08-19 16:04:54 — RESOLVED via BOB-126 (root cause was pytest kill(-1,9))
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/incidents/2026-08-19-6th-forced-logout.md
+**Severity:** Critical
+**Created-By:** AI
+**Assigned-To:** AI
+
+Sixth forced-logout SIGKILL cascade on user@1000, 2026-08-19 16:04:54 CEST. First incident with kernel audit rules LIVE (installed 15:56). Prior 6 investigations misattributed the mechanism to PAM/Linger contradiction. Real root cause found by BOB-126: pytest calling kill(-1, SIGKILL) via MagicMock.__int__==1 → os.killpg(1, 9). Fix chain: ad4b46a + 502586c + bf01cf3 + 1b06858 + d7da1af + e389c29 + 0027dba. See docs/incidents/2026-08-19-6th-forced-logout.md.
+
+## BOB-126 — 7th forced-logout 2026-08-19 16:43:43 — REAL ROOT CAUSE: pytest kill(-1,9) via MagicMock.__int__==1; §11.4.263 anchor + boba defense-in-depth
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/incidents/2026-08-19-6th-forced-logout.md
+**Severity:** Critical
+**Created-By:** AI
+**Assigned-To:** AI
+
+Seventh forced-logout SIGKILL cascade. Kernel audit trail: audit[399861] syscall=62 a0=ffffffff a1=9 comm=pytest exe=/usr/bin/python3.14. Root cause: tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out created AsyncMock without setting mock.pid as int. _search_public_tracker called os.killpg(os.getpgid(proc.pid), SIGKILL). MagicMock.__int__ defaults to 1, so os.getpgid(1)==1 → os.killpg(1, SIGKILL) → glibc → kill(-1, SIGKILL) = SIGKILL every UID-1000 process. Bug existed since 2026-04-24. FIX 3-layer: (1) boba ad4b46a search.py int-guard + test hardening + §11.4.115 RED regression guard. (2) constitution 502586c universal §11.4.263 anchor covering Python/Go/Rust/Bash/C. (3) boba bf01cf3 pointer bump. Verified: 863/863 unit PASS + 14/14 Go race PASS + no 8th incident.
+
+## BOB-071 — RD2-01: guard-forbidden-commands.sh hook has live reproducible substring carrier false-positive
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Severity:** Medium
+
+[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-01, P2] During this investigation the command echo === systemd system-level (may need no sudo for list) === was BLOCKED by the PreToolUse hook with BLOCKED — §6.U no-sudo, because the guard does a substring match for sudo against the ENTIRE command line, including inside an unrelated echo string (need no sudo for list). Exact §11.4.201 carrier-false-positive class GA-24 already documented for a different file — now independently reproduced live, proving structural pattern in guard matching approach not a one-off content gap. Fix: guard needs word-boundary / shell-token-aware matching (or restrict sudo/su check to actual command-invocation position) rather than an unanchored substring grep across the whole line, mirroring fix direction scoped for GA-24 (EXCLUDE_PATHS is band-aid per-file; root cause is matching strategy itself). Priority: P2 (annoying, self-correcting via retry, but real false-positive class that will keep recurring). Composes with RD2-36 (canonical remediation).
 
