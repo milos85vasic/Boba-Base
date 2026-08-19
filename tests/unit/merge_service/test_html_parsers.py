@@ -268,22 +268,33 @@ IPTORRENTS_FREELEECH_HTML = """<form><table id="torrents">
 
 class TestParseIptorrentsHtml:
     def test_single_result(self, orchestrator):
+        # BOB-122 (2026-08-19): the live IPTorrents markup carries three
+        # trailing numeric <td> cells in column order Snatches/Seeders/
+        # Leechers. The IPTORRENTS_SAMPLE_HTML fixture has trailing cells
+        # `<td>335</td><td>16</td><td>0</td>` = snatches=335, seeders=16,
+        # leechers=0. Previously this test asserted seeds==335 which was
+        # a pre-BOB-122 wrong-column interpretation.
         results = orchestrator._parse_iptorrents_html(IPTORRENTS_SAMPLE_HTML, "https://iptorrents.com")
         assert len(results) == 2
         r = results[0]
         assert "Ubuntu Server" in r.name
-        assert r.seeds == 335
-        assert r.leechers == 16
+        assert r.seeds == 16
+        assert r.leechers == 0  # BOB-122: last trailing <td>0</td> = leechers
         assert r.tracker == "iptorrents"
         assert r.freeleech is False
 
     def test_multiple_results(self, orchestrator):
+        # BOB-122: seeds is the SECOND of the last three numeric <td> per
+        # live-site column order (Snatches / Seeders / Leechers). Fixture
+        # row 2 has trailing cells `<td>200</td><td>30</td><td>5</td>` =
+        # snatches=200 / seeders=30 / leechers=5.
         results = orchestrator._parse_iptorrents_html(IPTORRENTS_SAMPLE_HTML, "https://iptorrents.com")
         assert len(results) == 2
         assert "Ubuntu Server" in results[0].name
-        assert results[0].seeds == 335
+        assert results[0].seeds == 16
         assert "Ubuntu Desktop" in results[1].name
-        assert results[1].seeds == 200
+        assert results[1].seeds == 30
+        assert results[1].leechers == 5
 
     def test_freeleech_detected(self, orchestrator):
         results = orchestrator._parse_iptorrents_html(IPTORRENTS_FREELEECH_HTML, "https://iptorrents.com")

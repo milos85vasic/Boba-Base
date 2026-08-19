@@ -587,7 +587,18 @@ class TestParseIptorrentsHtmlDeep:
         assert results[0].size == "0 B"
 
     def test_no_leechers_column(self, search_mod):
-        """Lines 1624-1625: missing leechers defaults to 0."""
+        """BOB-122 (2026-08-19) — live IPTorrents markup has three trailing
+        numeric <td> cells: Snatches / Seeders / Leechers. When the row
+        is truncated / non-conforming and the three-cell pattern does NOT
+        match (e.g. only one numeric column), seeds AND leechers safely
+        default to 0 — a defensive parse that must never surface bogus
+        values from an ambiguous row shape.
+
+        Previously this test used a 2-numeric-cell (seeds/leechers) shape
+        that the pre-BOB-122 parser accepted. Post-BOB-122, that shape
+        does not match the strict 3-cell pattern; the row is skipped
+        cleanly and seeds=0/leechers=0 default is honored.
+        """
         orch = search_mod.SearchOrchestrator()
         html = (
             '<table id="torrents"><tr>'
@@ -599,7 +610,11 @@ class TestParseIptorrentsHtmlDeep:
         )
         results = orch._parse_iptorrents_html(html, "https://iptorrents.com")
         assert len(results) == 1
-        assert results[0].seeds == 50
+        # Defensive parse: with only one numeric <td> the trailing 3-cell
+        # regex does NOT match, so seeds AND leechers default to 0. This
+        # is the correct anti-bluff behavior — never guess when the row
+        # shape is not recognizable.
+        assert results[0].seeds == 0
         assert results[0].leechers == 0
 
     def test_empty_rows_only_th(self, search_mod):

@@ -850,6 +850,11 @@ class TestHTMLParserMalformedGuards:
         assert results == []
 
     def test_parse_iptorrents_html_valid_row(self):
+        # BOB-122 (2026-08-19): live IPTorrents rows have THREE trailing
+        # numeric <td> cells (Snatches/Seeders/Leechers). The regex takes
+        # the last 3 numerics as (snatches, seeders, leechers). Fixture
+        # updated from a 2-cell shape (seeds/leechers) to the correct
+        # 3-cell shape so it reproduces the real defect surface.
         orch = SearchOrchestrator()
         html = (
             '<table id="torrents"><tr>'
@@ -858,14 +863,16 @@ class TestHTMLParserMalformedGuards:
             '<td><a class=" hv" href="/t/456">Good Movie 1080p</a></td>'
             '<td><a href="/download.php/456/good.torrent">dl</a></td>'
             '<td>2.5 GB</td>'
-            '<td>50</td>'
-            '<td>10</td>'
+            '<td>100</td>'  # snatches
+            '<td>50</td>'   # seeders
+            '<td>10</td>'   # leechers
             '</tr></table>'
         )
         results = orch._parse_iptorrents_html(html, "https://iptorrents.com")
         assert len(results) == 1
         assert results[0].name == "Good Movie 1080p"
         assert results[0].seeds == 50
+        assert results[0].leechers == 10
         assert results[0].size == "2.5 GB"
 
     def test_parse_iptorrents_html_freeleech_row(self):

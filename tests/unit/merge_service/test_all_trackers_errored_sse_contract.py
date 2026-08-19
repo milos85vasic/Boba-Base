@@ -103,13 +103,46 @@ async def test_search_complete_sse_carries_status_and_errors(monkeypatch):
 
     # Minimal fake Request whose .app.state has the orchestrator (the route
     # also falls back to module-level orchestrator_instance we set above).
+    # BOB-111-followup (50a218f) added slowapi rate limiting to /search;
+    # slowapi requires both Request AND Response to be starlette-typed.
+    # For a unit test that exercises the SSE contract we disable the
+    # limiter entirely — the rate limit is orthogonal to the SSE event
+    # contract we're guarding.
+    from starlette.requests import Request as _StarletteRequest
+
     class _FakeApp:
         class state:  # noqa: N801
             search_orchestrator = orch
 
-    fake_req = types.SimpleNamespace(app=_FakeApp())
+    _fake_app_instance = _FakeApp()
+    _scope = {
+        "type": "http",
+        "method": "POST",
+        "path": "/api/v1/search",
+        "headers": [(b"host", b"testclient")],
+        "query_string": b"",
+        "app": _fake_app_instance,
+        "client": ("testclient", 12345),
+        "server": ("testserver", 80),
+        "scheme": "http",
+        "http_version": "1.1",
+        "root_path": "",
+    }
+    fake_req = _StarletteRequest(scope=_scope)
+    # Disable slowapi rate limiting for this test — the SSE contract test
+    # exercises event dispatch, not rate-limit behavior. api/routes.py
+    # honors RATE_LIMIT_DISABLED=1 by making the @_rl decorator a no-op,
+    # so this must be set BEFORE routes_mod is imported. Since the module
+    # is already loaded, we monkey-patch the decorator wrapper directly.
+    monkeypatch.setenv("RATE_LIMIT_DISABLED", "1")
+    # If routes_mod already applied the slowapi decorator, unwrap search
+    # to its underlying function to bypass slowapi's Request/Response
+    # isinstance guards.
+    _search_impl = routes_mod.search
+    if hasattr(_search_impl, "__wrapped__"):
+        _search_impl = _search_impl.__wrapped__
 
-    resp = await routes_mod.search(SearchRequest(query="debian"), fake_req)
+    resp = await _search_impl(SearchRequest(query="debian"), fake_req)
     assert resp.status == "running"
 
     # Let the fire-and-forget background task finish (it dispatches search_complete).
