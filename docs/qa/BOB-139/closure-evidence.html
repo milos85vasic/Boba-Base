@@ -1,0 +1,286 @@
+<h1 id="bob-139-sse-disconnect-probe-fail-open-fail-closed">BOB-139 —
+SSE disconnect probe fail-open → fail-closed</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-20T15:49:48Z <strong>Status:</strong> Fixed (→ pending §11.4.120
+reconciliation of 2 stale gates — see §6) <strong>Type:</strong> Bug
+<strong>Track/label:</strong> (T1/main - claude4 - opus - xhigh)</p>
+<hr />
+<h2 id="the-defect">1. The defect</h2>
+<p>Both SSE generators in
+<code>download-proxy/src/api/streaming.py</code> guarded their
+<code>while True</code> loop with a byte-identical closure:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> _client_gone() <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> request <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="cf">await</span> request.is_disconnected()</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
+<p>The bare <code>except Exception: return False</code> meant a raising
+disconnect probe resolved to “client is still connected”, so the
+generator streamed forever.</p>
+<ul>
+<li><strong>§11.4.252 fail-closed-on-dangerous-combination</strong> —
+the probe is the <em>only</em> condition that terminates the loop. A
+path that cannot verify its precondition must refuse, not proceed.</li>
+<li><strong>§11.4.201(6) false-null</strong> — a raising probe and a
+genuinely-connected client returned the identical <code>False</code>;
+the loop could not distinguish “the client is here” from “I am
+blind”.</li>
+</ul>
+<h3
+id="blast-radius-found-during-investigation-not-in-the-original-brief">Blast
+radius found during investigation (not in the original brief)</h3>
+<p><code>download-proxy/src/api/routes.py:773-780</code> wraps
+<code>search_results_stream</code> in a <code>_sse_stream_count</code>
+guard capped by <code>_SSE_STREAM_MAX</code> (default
+<strong>32</strong>, line 720) and decrements it in a
+<code>finally</code>. A generator that never returns never runs that
+<code>finally</code>, so the counter never decrements. <strong>After 32
+leaked streams every subsequent client receives HTTP 429</strong> and
+the SSE feature is dead for everyone — the leak is not merely untidy, it
+is a self-inflicted denial of the feature.</p>
+<h2 id="the-fix">2. The fix</h2>
+<p>The two byte-identical closures were replaced by ONE module-level
+helper (§11.4.251 — two near-identical forks differing only in an id
+variable are exactly the duplication that drifts):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> _stream_stop_reason(request: Request <span class="op">|</span> <span class="va">None</span>, stream_id: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span></span></code></pre></div>
+<p>Returns a close reason when the loop MUST stop, <code>None</code>
+when it may continue.</p>
+<h3 id="why-this-specific-catch-shape">Why this specific catch
+shape</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Branch</th>
+<th>Behaviour</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>request is None</code></td>
+<td><code>return None</code> (continue)</td>
+<td>Nothing was probed, so nothing is <em>indeterminate</em> — the
+caller opted out of disconnect detection. Failing closed here would kill
+every request-less caller on iteration 1.</td>
+</tr>
+<tr>
+<td><code>except asyncio.CancelledError: raise</code></td>
+<td>propagate</td>
+<td>Task teardown, <strong>not</strong> a probe failure. Converting
+cancellation into an ordinary close breaks structured cancellation — a
+different defect. On Python 3.8+ <code>CancelledError</code> derives
+from <code>BaseException</code> and already escapes
+<code>except Exception</code>; naming it explicitly makes that guarantee
+<strong>load-bearing rather than incidental</strong>, and keeps it true
+if the catch is ever widened.</td>
+</tr>
+<tr>
+<td><code>except Exception</code></td>
+<td>log WARNING, <code>return CLOSE_REASON_PROBE_FAILED</code></td>
+<td>Fail closed + <strong>surface the fault</strong>. A silent
+fail-closed beats a fail-open but still hides a real error, so the log
+carries the stream id, exception type and message.</td>
+</tr>
+<tr>
+<td>probe returns truthy</td>
+<td><code>return CLOSE_REASON_CLIENT_DISCONNECTED</code></td>
+<td>Unchanged genuine-disconnect path.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="why-a-distinct-close-reason">Why a <em>distinct</em> close
+reason</h3>
+<p>A probe failure emits <code>reason: "disconnect_probe_failed"</code>,
+not <code>"client_disconnected"</code>. We do <strong>not</strong> know
+the client disconnected — only that we cannot see. Reporting the second
+as the first would be a §11.4.6 misstatement inside the event stream
+itself, and it makes the fault greppable in the stream, not only in
+logs. The genuine-disconnect reason string is unchanged, so no existing
+consumer contract is broken (verified: only
+<code>tests/unit/test_streaming.py</code> and a historical migration doc
+reference the literal).</p>
+<h3 id="why-fail-closed-is-the-safe-direction-the-asymmetry">Why
+fail-closed is the safe direction (the asymmetry)</h3>
+<p>SSE clients reconnect by design (<code>EventSource</code> retry), so
+a spurious close costs <strong>one reconnect and is fully
+recoverable</strong>. A fail-open costs a leaked socket and task for the
+lifetime of the process, is <strong>invisible</strong>, and exhausts the
+stream cap. A visible, recoverable stop beats an invisible, unbounded
+leak (§11.4.101).</p>
+<h2 id="red-green-both-polarities-both-generators">3. RED → GREEN, both
+polarities, both generators</h2>
+<p>New test: <code>tests/unit/api_layer/test_sse_client_gone.py</code>
+(12 tests), written and run <strong>before</strong> the fix. A fail-open
+loop never ends, so rather than hanging on a wall-clock timeout every
+stub counts its own polls and raises <code>_StreamDidNotStop</code> once
+the budget is spent — deterministic (§11.4.50), no wall clock.</p>
+<h3 id="red-pre-fix-first-failure-names-the-defect-directly">RED
+(pre-fix) — first failure names the defect directly</h3>
+<pre><code>E   api_layer.test_sse_client_gone._StreamDidNotStop: search_results_stream kept
+    polling for 51 iterations — it never stopped (fail-OPEN)
+tests/unit/api_layer/test_sse_client_gone.py:130: _StreamDidNotStop
+1 failed in 2.17s</code></pre>
+<p>Full pre-fix run — <strong>4 defect-capturing tests FAIL, 8 controls
+PASS</strong>:</p>
+<pre><code>PASSED  test_search_stream_continues_while_client_connected
+PASSED  test_search_stream_genuine_disconnect_keeps_its_own_reason
+PASSED  test_search_stream_propagates_cancellation
+PASSED  test_search_stream_without_request_is_not_failed_closed
+PASSED  test_download_stream_continues_while_client_connected
+PASSED  test_download_stream_genuine_disconnect_keeps_its_own_reason
+PASSED  test_download_stream_propagates_cancellation
+PASSED  test_download_stream_without_request_is_not_failed_closed
+FAILED  test_search_stream_terminates_when_probe_raises
+FAILED  test_search_stream_logs_probe_failure
+FAILED  test_download_stream_terminates_when_probe_raises
+FAILED  test_download_stream_logs_probe_failure
+4 failed, 8 passed in 5.72s</code></pre>
+<p><strong>Honest note (§11.4.6):</strong> the 8 control tests pass in
+<em>both</em> polarities by design. That is their job — they exist to
+catch a fix that over-terminates, so they are regression guards, not
+RED-capturing evidence. Only the 4 listed failures capture the escape.
+This is stated rather than presented as “12 RED”.</p>
+<h3 id="green-post-fix-all-12-controls-still-green">GREEN (post-fix) —
+all 12, controls still green</h3>
+<pre><code>WARNING  api.streaming:streaming.py:95 SSE disconnect probe failed for sid-raise (RuntimeError: receive channel gone) - closing stream fail-closed
+WARNING  api.streaming:streaming.py:95 SSE disconnect probe failed for sid-log (RuntimeError: receive channel gone) - closing stream fail-closed
+WARNING  api.streaming:streaming.py:95 SSE disconnect probe failed for dl-raise (RuntimeError: receive channel gone) - closing stream fail-closed
+WARNING  api.streaming:streaming.py:95 SSE disconnect probe failed for dl-log (RuntimeError: receive channel gone) - closing stream fail-closed
+PASSED  test_search_stream_terminates_when_probe_raises
+PASSED  test_search_stream_continues_while_client_connected
+PASSED  test_search_stream_genuine_disconnect_keeps_its_own_reason
+PASSED  test_search_stream_propagates_cancellation
+PASSED  test_search_stream_without_request_is_not_failed_closed
+PASSED  test_search_stream_logs_probe_failure
+PASSED  test_download_stream_terminates_when_probe_raises
+PASSED  test_download_stream_continues_while_client_connected
+PASSED  test_download_stream_genuine_disconnect_keeps_its_own_reason
+PASSED  test_download_stream_propagates_cancellation
+PASSED  test_download_stream_without_request_is_not_failed_closed
+PASSED  test_download_stream_logs_probe_failure
+12 passed in 3.37s</code></pre>
+<p>Both polarities are asserted for <strong>both</strong> generators
+(§11.4.201(1)): raising probe → stream <strong>terminates</strong>;
+connected client → stream <strong>continues uninterrupted</strong> and
+runs to <code>search_complete</code> / <code>download_complete</code>
+with <strong>no</strong> <code>event: close</code> emitted.</p>
+<h2 id="mutation-battery-1.1-the-assertions-are-load-bearing">4.
+Mutation battery (§1.1) — the assertions are load-bearing</h2>
+<p>Each mutation was applied to the fixed source, the suite re-run, and
+the source restored (verified byte-identical afterwards).</p>
+<pre><code>=== M1: fail-open restored (probe failure -&gt; keep streaming) ===
+FAILED test_search_stream_terminates_when_probe_raises
+FAILED test_search_stream_logs_probe_failure
+FAILED test_download_stream_terminates_when_probe_raises
+FAILED test_download_stream_logs_probe_failure
+4 failed, 8 passed
+
+=== M2: over-terminate (kill every request-less stream) ===
+FAILED test_search_stream_without_request_is_not_failed_closed
+FAILED test_download_stream_without_request_is_not_failed_closed
+2 failed, 10 passed
+
+=== M3: cancellation swallowed ===
+FAILED test_search_stream_propagates_cancellation
+FAILED test_download_stream_propagates_cancellation
+2 failed, 10 passed
+
+streaming.py restored to fixed state</code></pre>
+<p><strong>M1</strong> is the canonical revert (§11.4.115(F)).
+<strong>M2 is a mutation not written into the fix</strong>
+(§11.4.194(6)(d)) — it proves the <em>control</em> polarity is real: a
+fix that terminated every stream would be caught, so the controls are
+not decoration. <strong>M3</strong> proves cancellation handling is
+asserted, not assumed.</p>
+<h2 id="regression">5. Regression</h2>
+<pre><code>tests/unit/api_layer/                    211 passed in 188.20s</code></pre>
+<p>Wider <code>*sse*</code> / <code>*stream*</code> unit sweep (10
+files):</p>
+<pre><code>FAILED tests/unit/test_streaming.py::TestSSEHandler::test_download_progress_stream_client_disconnect_raises
+FAILED tests/unit/test_streaming.py::TestSearchResultsStreamEdgeCases::test_search_results_stream_client_disconnect_raises
+2 failed, 75 passed, 1 warning in 18.21s</code></pre>
+<p>Lint: <code>ruff check download-proxy/src/api/streaming.py</code> →
+<strong>All checks passed</strong>. (<code>ruff format</code> reports
+one deviation in <code>_build_merged_update</code> at line ~146 that is
+<strong>pre-existing at HEAD</strong> — verified against
+<code>git show HEAD:...</code> — and was not introduced or “fixed”
+here.)</p>
+<p>Integration files
+<code>tests/integration/test_realtime_streaming.py</code> and
+<code>test_streaming_browser.py</code> were <strong>NOT</strong> run:
+they require the live stack, and service restarts are owned by another
+agent this round (§11.4.119). <strong>Status against those: UNKNOWN —
+not measured, not claimed.</strong></p>
+<h2 id="blocking-follow-up-2-stale-gates-11.4.120-not-fixed-here">6. ⚠
+BLOCKING follow-up — 2 stale gates (§11.4.120), NOT fixed here</h2>
+<p>The 2 regression failures above are <strong>not</strong> caused by a
+defect in the fix. Both tests literally assert the fail-open, in their
+own docstrings and assertions:</p>
+<pre><code>tests/unit/test_streaming.py:105  &quot;&quot;&quot;When request.is_disconnected raises during download, stream continues.&quot;&quot;&quot;
+tests/unit/test_streaming.py:194  &quot;&quot;&quot;When request.is_disconnected raises, _client_gone returns False and stream continues.&quot;&quot;&quot;
+
+&gt;   assert not any(&quot;close&quot; in e for e in events)
+E   assert not True</code></pre>
+<p>§11.4.102 investigation performed first, as §11.4.120 requires: these
+gates asserted <strong>old-correct-now-removed</strong> behaviour; they
+are not catching a regression the fix introduced. §11.4.120 therefore
+mandates <strong>reconciliation</strong> — rewrite the gate to assert
+the NEW mechanism. Both alternatives are <strong>forbidden</strong>:
+fake-passing the gate, and reverting the correct fix.</p>
+<p><code>tests/unit/test_streaming.py</code> is <strong>outside this
+agent’s assigned file ownership</strong>, so it was deliberately left
+untouched (§11.4.119 single-owner — editing an unowned file to “help” is
+exactly the contention that corrupts parallel work). To make the block
+park the edit and not the work (§11.4.101), a <strong>self-verifying,
+ready-to-apply</strong> reconciliation ships alongside this doc:</p>
+<pre><code>docs/qa/BOB-139/reconcile_stale_gates.py</code></pre>
+<p>Verified on a scratchpad copy (the real file untouched): applies
+cleanly, replaces both stale gates, leaves <strong>0</strong> remaining
+<code>assert not any("close" ...)</code> assertions and
+<strong>2</strong> <code>disconnect_probe_failed</code> assertions, and
+<strong>refuses</strong> (exit 1) on a second run so it cannot
+half-apply or corrupt.</p>
+<p>The file’s owner should run:</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> docs/qa/BOB-139/reconcile_stale_gates.py</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">nice</span> <span class="at">-n</span> 19 .venv/bin/python <span class="at">-m</span> pytest tests/unit/test_streaming.py <span class="at">-q</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
+<p>Until then the suite is knowingly RED on those 2 tests.</p>
+<h2 id="found-honestly-not-fixed-11.4.6">7. Found, honestly NOT fixed
+(§11.4.6)</h2>
+<ol type="1">
+<li><strong><code>download-proxy/src/api/routes.py:167</code></strong> —
+<code>/theme/stream</code> calls
+<code>await request.is_disconnected()</code> with <strong>no</strong>
+guard at all. That is fail-closed <em>in effect</em> (an exception ends
+the generator and its <code>finally: store.unsubscribe(queue)</code>
+still runs, so it does not leak), but it terminates via an uncaught
+traceback rather than a clean <code>event: close</code>. Inconsistent
+with the contract established here. Not my file — not touched.</li>
+<li><strong><code>theme_state.py</code> / <code>main.py</code></strong>
+— read-only grep confirms neither contains an
+<code>is_disconnected</code> call, so the fail-open pattern does
+<strong>not</strong> exist there. No edit was needed or made.</li>
+<li><strong>Production probe-failure rate: UNKNOWN.</strong> I did not
+measure how often <code>request.is_disconnected()</code> actually raises
+in this deployment, and I did not independently verify the 7 CLOSE_WAIT
+sockets cited in the brief. Supporting (but not conclusive) evidence
+that the probe is not <em>systematically</em> broken:
+<code>/theme/stream</code> calls it unguarded in a
+<code>while True</code> and that endpoint works, which a
+systematically-raising probe would prevent. That is inference from a
+working endpoint, <strong>not</strong> a measurement — stated as
+such.</li>
+<li><strong>Pre-existing <code>ruff format</code> deviation</strong> in
+<code>_build_merged_update</code> (streaming.py ~line 146) left as
+found; reformatting it would have mixed an unrelated change into this
+fix.</li>
+</ol>

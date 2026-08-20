@@ -102,22 +102,26 @@ class TestSSEHandler:
         assert any("client_disconnected" in e for e in events)
 
     def test_download_progress_stream_client_disconnect_raises(self):
-        """When request.is_disconnected raises during download, stream continues."""
+        """A raising probe fails CLOSED: the stream STOPS (BOB-139, §11.4.252).
+
+        Reconciled per §11.4.120 — this gate previously asserted the fail-OPEN
+        behaviour ("stream continues"), which was the defect itself: an
+        unresolvable probe left the generator streaming forever, holding a
+        socket and a task.  "I cannot determine whether the client is gone"
+        now resolves to GONE, with its own honest close reason.
+        """
         request = MagicMock()
         request.is_disconnected = AsyncMock(side_effect=Exception("fail"))
 
-        call_count = [0]
-
         def get_progress(dl_id):
-            call_count[0] += 1
-            if call_count[0] > 2:
-                return None
-            return {"progress": 50, "complete": False}
+            raise AssertionError("stream must stop before polling progress")
 
         gen = SSEHandler.download_progress_stream("dl-id", get_progress, poll_interval=0, request=request)
         events = asyncio.run(self._collect(gen))
-        assert not any("close" in e for e in events)
-        assert any("download_complete" in e for e in events)
+        assert any("event: close" in e for e in events)
+        assert any("disconnect_probe_failed" in e for e in events)
+        # We do not KNOW the client disconnected, only that we cannot see.
+        assert not any("client_disconnected" in e for e in events)
 
     def test_download_progress_stream_complete_flag_true(self):
         """Progress with complete=True should stop the stream after yielding progress."""
@@ -191,37 +195,23 @@ class TestSearchResultsStreamEdgeCases:
         assert any("client_disconnected" in e for e in events)
 
     def test_search_results_stream_client_disconnect_raises(self):
-        """When request.is_disconnected raises, _client_gone returns False and stream continues."""
+        """A raising probe fails CLOSED: the stream STOPS (BOB-139, §11.4.252).
+
+        Reconciled per §11.4.120 — this gate previously asserted the fail-OPEN
+        behaviour.  See the download-stream sibling for the full rationale.
+        """
         request = MagicMock()
         request.is_disconnected = AsyncMock(side_effect=Exception("disconnect check failed"))
 
-        class FakeMeta:
-            status = "running"
-            total_results = 0
-            merged_results = 0
-            trackers_searched = []
-
-            def to_dict(self):
-                return {"status": "running"}
-
-        call_count = [0]
-
         class FakeOrchestrator:
             def get_search_status(self, sid):
-                call_count[0] += 1
-                if call_count[0] > 2:
-                    m = FakeMeta()
-                    m.status = "completed"
-                    return m
-                return FakeMeta()
-
-            def get_live_results(self, sid):
-                return []
+                raise AssertionError("stream must stop before polling the orchestrator")
 
         gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0, request=request)
         events = asyncio.run(self._collect(gen))
-        assert not any("close" in e for e in events)
-        assert any("search_complete" in e for e in events)
+        assert any("event: close" in e for e in events)
+        assert any("disconnect_probe_failed" in e for e in events)
+        assert not any("client_disconnected" in e for e in events)
 
     def test_search_results_stream_tracker_transitions(self):
         """Tracker status transitions should emit tracker_started and tracker_completed events."""

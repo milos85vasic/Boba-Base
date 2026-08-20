@@ -29,6 +29,79 @@ logger = logging.getLogger(__name__)
 # merged set equals what ``GET /search/{id}`` returns.
 MERGED_UPDATE_MIN_INTERVAL_S = 1.5
 
+# Close reasons emitted by the SSE generators' ``event: close`` sentinel.
+# They are DISTINCT on purpose: a confirmed disconnect and an unresolvable
+# disconnect probe are different facts, and reporting the second as the
+# first would be a §11.4.6 misstatement inside the event stream itself.
+CLOSE_REASON_CLIENT_DISCONNECTED = "client_disconnected"
+CLOSE_REASON_PROBE_FAILED = "disconnect_probe_failed"
+
+
+async def _stream_stop_reason(request: Request | None, stream_id: str) -> str | None:
+    """Decide whether an SSE loop must stop, and why.
+
+    Returns a close reason when the loop MUST terminate, or ``None`` when it
+    may keep streaming. Shared by both SSE generators — this decision is the
+    ONLY thing that ends their otherwise-infinite ``while True`` loops, so it
+    lives in exactly one place rather than as two near-identical closures
+    (§11.4.251).
+
+    FAIL-CLOSED CONTRACT (BOB-139). The previous implementation was::
+
+        try:
+            return await request.is_disconnected()
+        except Exception:
+            return False
+
+    which concluded "the client is still connected" whenever the probe itself
+    raised, and streamed forever holding a socket and a task. That is
+    fail-OPEN on the only terminating condition:
+
+    * §11.4.252 — a path that cannot verify its precondition must refuse, not
+      proceed. "I cannot determine whether the client is gone" resolves to
+      GONE.
+    * §11.4.201(6) — a raising probe and a genuinely-connected client both
+      returned the identical ``False``, so the loop could not distinguish
+      "the client is here" from "I am blind" (a false-null).
+
+    The asymmetry settles the direction: SSE clients reconnect by design
+    (``EventSource`` retry), so a spurious close costs one reconnect and is
+    fully recoverable, while a fail-open leaks a connection and a task for
+    the lifetime of the process — and, because ``api.routes`` decrements its
+    ``_sse_stream_count`` in a ``finally`` the leaked generator never reaches,
+    enough leaks exhaust ``_SSE_STREAM_MAX`` and every later client gets
+    HTTP 429. A visible, recoverable stop beats an invisible, unbounded leak.
+    """
+    if request is None:
+        # Nothing was probed, so nothing is indeterminate: the caller simply
+        # opted out of disconnect detection. Failing closed here would kill
+        # every request-less caller on its first iteration.
+        return None
+
+    try:
+        disconnected = await request.is_disconnected()
+    except asyncio.CancelledError:
+        # NOT a probe failure — the surrounding task is being torn down.
+        # Converting cancellation into an ordinary close would break
+        # structured cancellation, so it must propagate. On Python 3.8+
+        # ``CancelledError`` derives from ``BaseException`` and would already
+        # escape the ``except Exception`` below; naming it explicitly makes
+        # that guarantee load-bearing instead of incidental, and keeps it
+        # true if the catch is ever widened.
+        raise
+    except Exception as exc:
+        # A silent fail-closed is better than a fail-open but still hides a
+        # real fault, so the probe failure is logged with its cause.
+        logger.warning(
+            "SSE disconnect probe failed for %s (%s: %s) - closing stream fail-closed",
+            stream_id,
+            type(exc).__name__,
+            exc,
+        )
+        return CLOSE_REASON_PROBE_FAILED
+
+    return CLOSE_REASON_CLIENT_DISCONNECTED if disconnected else None
+
 
 def _build_merged_update(orchestrator: Any, search_id: str) -> dict[str, Any] | None:
     """Re-merge the accumulated raw results and serialize them.
@@ -125,7 +198,10 @@ class SSEHandler:
             request: Optional FastAPI Request.  When provided, the loop
                 polls ``request.is_disconnected()`` every iteration and
                 exits cleanly (emitting an ``event: close`` sentinel) if
-                the client has gone away.
+                the client has gone away.  The probe fails CLOSED: if it
+                raises, the stream stops with reason
+                ``disconnect_probe_failed`` rather than assuming the
+                client is still there.  See ``_stream_stop_reason``.
 
         Yields:
             SSE-formatted event strings
@@ -150,19 +226,12 @@ class SSEHandler:
         last_tracker_status: dict[str, str] = {}
         _TERMINAL_STATUSES = {"success", "empty", "error", "timeout", "cancelled"}
 
-        async def _client_gone() -> bool:
-            if request is None:
-                return False
-            try:
-                return await request.is_disconnected()
-            except Exception:
-                return False
-
         while True:
-            if await _client_gone():
+            stop_reason = await _stream_stop_reason(request, search_id)
+            if stop_reason is not None:
                 yield SSEHandler.format_event(
                     event="close",
-                    data={"search_id": search_id, "reason": "client_disconnected"},
+                    data={"search_id": search_id, "reason": stop_reason},
                     event_id=search_id,
                 )
                 return
@@ -337,7 +406,10 @@ class SSEHandler:
             request: Optional FastAPI Request.  When provided, the loop
                 polls ``request.is_disconnected()`` every iteration and
                 exits cleanly (emitting an ``event: close`` sentinel) if
-                the client has gone away.
+                the client has gone away.  The probe fails CLOSED: if it
+                raises, the stream stops with reason
+                ``disconnect_probe_failed`` rather than assuming the
+                client is still there.  See ``_stream_stop_reason``.
 
         Yields:
             SSE-formatted event strings
@@ -348,19 +420,12 @@ class SSEHandler:
             event_id=download_id,
         )
 
-        async def _client_gone() -> bool:
-            if request is None:
-                return False
-            try:
-                return await request.is_disconnected()
-            except Exception:
-                return False
-
         while True:
-            if await _client_gone():
+            stop_reason = await _stream_stop_reason(request, download_id)
+            if stop_reason is not None:
                 yield SSEHandler.format_event(
                     event="close",
-                    data={"download_id": download_id, "reason": "client_disconnected"},
+                    data={"download_id": download_id, "reason": stop_reason},
                     event_id=download_id,
                 )
                 return

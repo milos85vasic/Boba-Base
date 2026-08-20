@@ -197,7 +197,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>12</td>
+<td>13</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -212,7 +212,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>34</td>
+<td>33</td>
 </tr>
 <tr>
 <td><strong>TOTAL</strong></td>
@@ -774,46 +774,6 @@ it, AND a normally-connected client still streams uninterrupted
 covering raise -&gt; terminate and connected -&gt; continue.</td>
 </tr>
 <tr>
-<td>BOB-140</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-08-20T14:56:38Z <strong>Reported-By:</strong>
-Claude <strong>What (the report, verbatim):</strong>
-scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh (landed
-with BOB-138) implements a rule every project under this constitution
-needs: a container health check MUST cover every port its service
-serves, because a check probing a subset asserts a proxy signal instead
-of the real condition (§11.4.201). Its detection logic already carries
-ZERO boba literals – both the compose file and the served-port manifest
-are inputs, defaulted from the project root. It therefore belongs in
-constitution/scripts/gates/ and should be consumed BY REFERENCE by a
-thin boba delegator holding only boba’s scope DATA, exactly as
-check_cm_killpg_pgid_guard.sh was restructured (§11.4.177 / §11.4.28 /
-§11.4.74). WHY IT WAS NOT UPSTREAMED IMMEDIATELY: a concurrent agent was
-editing constitution/scripts/gates/ at the time (upstreaming the killpg
-engine). Two writers in one submodule directory risks losing work, so
-this was deferred deliberately and filed rather than silently skipped
-(§11.4.197). This is a known-and-tracked deviation from §11.4.177, not
-an oversight. Two properties MUST survive the move: 1. FAIL when zero
-services were checked – a quiet zero from a blind instrument is
-indistinguishable from a clean tree (§11.4.201(6)). 2. FAIL when
-python3+PyYAML is unavailable, rather than skipping, for the same
-reason. Acceptance: the engine lives in constitution/scripts/gates/,
-boba’s copy is a thin delegator carrying only its manifest path, both
-directions still verified (a service missing a served port FAILs; a
-fully-covered set PASSes), and no detection logic is duplicated between
-the two. <strong>Affected scope / file-scope manifest:</strong>
-scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh,
-config/served_ports.yaml, constitution/scripts/gates/
-<strong>Reproduction / context:</strong> n/a — known deviation recorded
-at landing time, not a discovered defect. <strong>Acceptance
-criteria:</strong> Detection engine in constitution/scripts/gates/; boba
-ships a thin delegator with scope DATA only; zero duplicated detection
-logic; both polarity directions still verified after the move.</td>
-</tr>
-<tr>
 <td>BOB-141</td>
 <td>Task</td>
 <td>Queued</td>
@@ -911,6 +871,53 @@ file-scope manifest:</strong> .worktrees/ci-split-workflows/,
 .worktrees/completion-initiative-phase-0/, gate scan-scope config
 <strong>Reproduction / context:</strong> git worktree list shows only
 the main checkout; git -C .worktrees/</td>
+</tr>
+<tr>
+<td>BOB-144</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Low</td>
+<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-08-20T15:53:57Z <strong>Reported-By:</strong>
+Claude <strong>What (the report, verbatim):</strong>
+<code>/theme/stream</code> in download-proxy/src/api/routes.py:167 calls
+the disconnect probe with NO guard at all: while True: if await
+request.is_disconnected(): break If that probe raises, the generator
+dies with an UNCAUGHT exception. IMPORTANT — this is NOT the BOB-139
+fail-open. The effect here is fail-CLOSED: the stream stops, and the
+enclosing <code>finally: store.unsubscribe(queue)</code> still runs, so
+the subscriber queue is released and nothing leaks. The outcome is
+CORRECT; the manner is not. What is wrong with it: - it terminates via
+an uncaught traceback rather than a clean SSE <code>close</code> event,
+so the client sees a truncated stream instead of a reason; - the failure
+is not logged as a probe failure, so a systematically raising probe
+would show up as recurring tracebacks with no diagnosis; - it is
+inconsistent with the two SSE generators in streaming.py, which after
+BOB-139 emit <code>event: close</code> with reason
+<code>disconnect_probe_failed</code> and log a warning. Three call sites
+of the same probe now behave two different ways. The BOB-139 fix
+deliberately did not touch this file (ownership boundary, §11.4.119),
+and flagged it honestly rather than fixing it out of scope. Acceptance:
+/theme/stream uses the same probe-failure discipline as the streaming.py
+generators — a clean close event with the
+<code>disconnect_probe_failed</code> reason plus a logged warning —
+proven in BOTH directions (§11.4.201(1)): a raising probe closes the
+stream cleanly AND a normally-connected client still streams
+uninterrupted. Prefer reusing the shared helper introduced by BOB-139
+rather than a third copy of the logic (§11.4.251). Honest boundary
+(§11.4.6): the production probe-failure rate is UNKNOWN — nobody has
+measured how often <code>is_disconnected()</code> actually raises. This
+is filed on the inconsistency and the missing diagnosis, not on a
+measured incident rate. <strong>Affected scope / file-scope
+manifest:</strong> download-proxy/src/api/routes.py (~line 167,
+stream_theme) <strong>Reproduction / context:</strong> Monkeypatch
+Request.is_disconnected to raise, open /theme/stream, observe the
+generator dies with an uncaught traceback rather than emitting event:
+close with reason disconnect_probe_failed as streaming.py now does.
+<strong>Acceptance criteria:</strong> Same probe-failure discipline as
+streaming.py (clean close + disconnect_probe_failed reason + logged
+warning), verified both directions, reusing the BOB-139 helper rather
+than a third copy.</td>
 </tr>
 </tbody>
 </table>
