@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 14
-**Last modified:** 2026-08-20T16:29:22Z
+**Revision:** 15
+**Last modified:** 2026-08-20T22:35:55Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -930,4 +930,68 @@ timeout 300 .venv/bin/python -m pytest tests/unit/test_auth_coverage.py::TestAll
 
 **Acceptance criteria:**
 The H1/H2 experiment is run and recorded. If H2: the unit test is made hermetic (no live-stack dependency) and passes with the stack both up and down. If H1: the auth-status path no longer reports has_session without a credential, with a RED test capturing it first.
+
+## BOB-149 — Managed-plugin count diverges 43/42/48 across constitution, CLAUDE.md and the README badge; the badge is hand-maintained and unguarded
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Low
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T22:35:42Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+The managed-plugin count diverges three ways across the repo:
+
+  .specify/memory/constitution.md  : 43   (and enumerates all 43 by name)
+  CLAUDE.md                        : 42   ("42 managed plugins")
+  README.md badge                  : 48   (plugins-48)
+
+AUTHORITATIVE SOURCE, per the constitution's own text ("the install-plugin.sh
+managed list is the canonical curated set"): the PLUGINS=() array in
+install-plugin.sh holds exactly 43 entries.
+
+Counted with a control needle (§11.4.201(7)(b)): the extractor was verified to
+match a known member ("rutracker") before its count was trusted. A first attempt
+returned 0 because the array entries are QUOTED ("academictorrents") and the
+pattern was unquoted — a false-null caught by the needle rather than reported as
+"no plugins".
+
+So the constitution is CORRECT and the other two are the drifted copies.
+
+Neither wrong number is harmless:
+  - CLAUDE.md's 42 is the file agents read as project instruction, so the wrong
+    number is the one most likely to be propagated into new work.
+  - README.md's 48 matches NEITHER the curated array (43) NOR plugins/*.py (36)
+    NOR plugins/**/*.py (69). It is not a stale-but-once-true number; nothing in
+    the repo currently equals 48, so its provenance is unknown.
+
+The badge is additionally UNGUARDED: compute-badges.sh does not derive the
+plugins badge at all — it is one of the hand-maintained ones. That is the same
+shape as the challenges/pre-build badges fixed at a6f36fa, which had been stale
+by 7 and 14 while the script printed "cross-checked, matches existing badge".
+The plugins badge escaped that fix because it was never in the script's scope.
+
+Acceptance:
+  1. CLAUDE.md states 43, matching the authoritative array.
+  2. The README plugins badge is DERIVED by compute-badges.sh from the PLUGINS=()
+     array (not hand-typed), so it cannot silently drift again.
+  3. tests/unit/test_compute_badges_all_badges_updated.sh is extended to cover
+     the plugins badge, so the guard covers every machine-derived badge rather
+     than the subset that happened to be fixed first.
+  4. Verified in both directions (§11.4.201(1)): the guard FAILs when the badge
+     disagrees with the array, and PASSes when they agree.
+
+Filed rather than fixed inside the v1.4.0 constitution amendment so the
+documentation fix and the governance change stay independently reviewable.
+
+**Affected scope / file-scope manifest:**
+CLAUDE.md, README.md (plugins badge), scripts/compute-badges.sh, tests/unit/test_compute_badges_all_badges_updated.sh
+
+**Reproduction / context:**
+Count the PLUGINS=() array in install-plugin.sh (43, needle-verified) and compare against CLAUDE.md ('42 managed plugins') and the README badge (plugins-48).
+
+**Acceptance criteria:**
+CLAUDE.md says 43; the README badge is derived by compute-badges.sh from the array; the badge guard covers it; both polarities verified.
 
