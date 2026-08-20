@@ -7,11 +7,14 @@ Starts both:
 2. The FastAPI merge service (REST API)
 """
 
+import asyncio
+import faulthandler
 import logging
 import os
 import signal
 import sys
 import threading
+import time
 
 from config.log_filter import CredentialScrubber
 
@@ -20,6 +23,207 @@ logging.getLogger().addFilter(CredentialScrubber())
 logger = logging.getLogger(__name__)
 
 _shutdown_event = threading.Event()
+
+
+# ---------------------------------------------------------------------------
+# BOB-137 stall observatory  --  OBSERVE-ONLY INSTRUMENT, NOT A FIX.
+#
+# The merge service (7187) has been observed to stop answering for a bounded
+# period while the download proxy (7186), served by the SAME process on a
+# different thread, keeps answering normally (docs/qa/BOB-137/forensics.md).
+# Identifying WHICH frame is responsible requires a stack dump taken WHILE the
+# stall is happening. `py-spy` cannot attach on this host
+# (kernel.yama.ptrace_scope=1), so the process must dump its OWN stacks.
+#
+# This block adds NO timeout, NO retry, NO restart and NO change to request
+# handling (§11.4.102 Iron Law: no fixes before root cause). It only observes:
+#
+#   * an asyncio heartbeat task stamps a monotonic clock once a second;
+#   * a plain (non-asyncio) watchdog thread notices when that stamp stops
+#     advancing -- i.e. the merge-service event loop is not running callbacks;
+#   * on stall it writes an all-thread traceback plus a per-thread CPU delta.
+#
+# The CPU delta is the discriminator the forensics could not settle: a thread
+# BUSY-LOOPING shows rising utime, a thread BLOCKED in a syscall shows flat
+# utime. Repeated dumps during one stall show whether the frame is stationary
+# (blocked) or moving (spinning).
+#
+# `faulthandler.dump_traceback()` is implemented in C and does not need the
+# GIL, so it can still dump when a Python thread is hogging it -- which is
+# exactly why `sys._current_frames()` was not used here (it needs the GIL and
+# would hang in the same way the thing it is measuring does).
+#
+# Manual dump at any time, no ptrace required:
+#     podman exec qbittorrent-proxy kill -USR1 1     # -> container log
+#     podman exec qbittorrent-proxy kill -QUIT 1     # -> dump file
+# (PID 1 is this process INSIDE the container namespace. Never run a bare
+# kill/pkill on the host, and never signal pgid <= 1 -- §11.4.263.)
+# ---------------------------------------------------------------------------
+
+_DIAG_ON = os.environ.get("BOBA_STALL_WATCHDOG", "1").strip().lower() not in ("0", "false", "no", "off")
+_DIAG_STALL_S = float(os.environ.get("BOBA_STALL_SECONDS", "20"))
+_DIAG_REDUMP_S = float(os.environ.get("BOBA_STALL_REDUMP_SECONDS", "60"))
+_DIAG_DIR = os.environ.get("BOBA_STALL_DUMP_DIR", "/config/download-proxy/diagnostics")
+_DIAG_MAX_DUMPS = int(os.environ.get("BOBA_STALL_MAX_DUMPS", "200"))
+
+# Monotonic stamp written by the asyncio heartbeat task. If it stops advancing
+# the merge-service event loop is not running callbacks. 0.0 == not started.
+_loop_beat = 0.0
+_loop_tid = 0
+_diag_dumps = 0
+_diag_fh = None
+_diag_errors: list[str] = []
+
+
+def _diag_open_dump_file():
+    """Pre-open the dump file at startup so a stall dump needs no new fd."""
+    global _diag_fh
+    try:
+        os.makedirs(_DIAG_DIR, exist_ok=True)
+        path = os.path.join(_DIAG_DIR, "stall_dumps.log")
+        _diag_fh = open(path, "a", buffering=1)  # noqa: SIM115 - lifetime = process
+        logger.info(f"BOB-137 stall watchdog: dumps -> {path}")
+    except OSError as e:
+        # An instrument that fails silently is a blind instrument (§11.4.201).
+        logger.error(f"BOB-137 stall watchdog: cannot open dump file: {e}")
+        _diag_fh = None
+
+
+def _diag_threads():
+    """{tid: (state, utime_ticks, stime_ticks, wchan)} from /proc/self/task."""
+    out = {}
+    try:
+        tids = os.listdir("/proc/self/task")
+    except OSError:
+        return out
+    for tid in tids:
+        try:
+            with open(f"/proc/self/task/{tid}/stat") as fh:
+                raw = fh.read()
+            # comm is parenthesised and may contain spaces -> split after ')'
+            tail = raw[raw.rindex(")") + 2 :].split()
+            state, utime, stime = tail[0], int(tail[11]), int(tail[12])
+            try:
+                with open(f"/proc/self/task/{tid}/wchan") as fh:
+                    wchan = fh.read().strip() or "0"
+            except OSError:
+                wchan = "?"
+            out[int(tid)] = (state, utime, stime, wchan)
+        except (OSError, ValueError, IndexError):
+            continue
+    return out
+
+
+def _diag_dump(stalled_for: float, episode: int) -> None:
+    """Write an all-thread traceback + per-thread CPU delta for one stall."""
+    global _diag_dumps
+    if _diag_dumps >= _DIAG_MAX_DUMPS:
+        return
+    _diag_dumps += 1
+
+    # C-level, GIL-free: do this FIRST so a GIL-starved watchdog still lands
+    # the stack before attempting any further Python-level work.
+    for sink in (_diag_fh, sys.stderr):
+        if sink is None:
+            continue
+        try:
+            sink.write(
+                f"\n===== BOB-137 STALL DUMP #{_diag_dumps} episode={episode} "
+                f"utc={time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} "
+                f"loop_silent_for={stalled_for:.1f}s loop_tid={_loop_tid} =====\n"
+            )
+            faulthandler.dump_traceback(file=sink, all_threads=True)
+        except Exception as exc:
+            # Must not raise and must not re-enter logging while the loop is
+            # wedged; recorded instead so the failure is observable, never
+            # swallowed (§11.4.201 - a silent instrument is a blind one).
+            _diag_errors.append(f"dump_traceback: {exc!r}")
+
+    # Per-thread CPU delta: rising utime == spinning, flat utime == blocked.
+    try:
+        before = _diag_threads()
+        time.sleep(1.0)
+        after = _diag_threads()
+        rows = ["--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---"]
+        for tid in sorted(after):
+            st, ut, stm, wch = after[tid]
+            put, pst = (before[tid][1], before[tid][2]) if tid in before else (ut, stm)
+            mark = "  <-- ASYNCIO LOOP" if tid == _loop_tid else ""
+            rows.append(
+                f"tid={tid} state={st} d_utime={ut - put} d_stime={stm - pst} wchan={wch}{mark}"
+            )
+        text = "\n".join(rows) + "\n"
+        for sink in (_diag_fh, sys.stderr):
+            if sink is not None:
+                sink.write(text)
+    except Exception as exc:
+        _diag_errors.append(f"cpu_delta: {exc!r}")
+
+
+def _diag_watchdog() -> None:
+    """Notice when the merge-service event loop stops running callbacks."""
+    episode = 0
+    stalling = False
+    next_dump = 0.0
+    while not _shutdown_event.is_set():
+        _shutdown_event.wait(2.0)
+        beat = _loop_beat
+        if beat <= 0.0:
+            continue  # event loop has not started yet
+        silent = time.monotonic() - beat
+        if silent < _DIAG_STALL_S:
+            if stalling:
+                logger.warning(
+                    f"BOB-137: merge-service event loop RECOVERED after ~{silent:.0f}s "
+                    f"(episode {episode})"
+                )
+                stalling = False
+            continue
+        now = time.monotonic()
+        if not stalling:
+            stalling = True
+            episode += 1
+            next_dump = 0.0
+            logger.error(
+                f"BOB-137: merge-service event loop SILENT for {silent:.0f}s "
+                f"(episode {episode}) -- dumping all thread stacks"
+            )
+        if now >= next_dump:
+            _diag_dump(silent, episode)
+            while _diag_errors:
+                logger.error(f"BOB-137 watchdog internal error: {_diag_errors.pop(0)}")
+            next_dump = now + _DIAG_REDUMP_S
+
+
+async def _diag_heartbeat() -> None:
+    """Stamp the monotonic clock from inside the merge-service event loop."""
+    global _loop_beat, _loop_tid
+    _loop_tid = threading.get_native_id()
+    while True:
+        _loop_beat = time.monotonic()
+        await asyncio.sleep(1.0)
+
+
+def _diag_install() -> None:
+    """Install the stall observatory. Never blocks or breaks startup."""
+    if not _DIAG_ON:
+        logger.info("BOB-137 stall watchdog: disabled (BOBA_STALL_WATCHDOG=0)")
+        return
+    try:
+        _diag_open_dump_file()
+        faulthandler.enable(file=sys.stderr, all_threads=True)
+        # On-demand dumps without ptrace. chain=False -> the default action
+        # (core dump / terminate for SIGQUIT) is NOT taken afterwards.
+        faulthandler.register(signal.SIGUSR1, file=sys.stderr, all_threads=True, chain=False)
+        if _diag_fh is not None:
+            faulthandler.register(signal.SIGQUIT, file=_diag_fh, all_threads=True, chain=False)
+        threading.Thread(target=_diag_watchdog, name="bob137-watchdog", daemon=True).start()
+        logger.info(
+            f"BOB-137 stall watchdog armed: stall>{_DIAG_STALL_S}s, redump every "
+            f"{_DIAG_REDUMP_S}s, SIGUSR1=dump-to-log SIGQUIT=dump-to-file"
+        )
+    except Exception as e:
+        logger.error(f"BOB-137 stall watchdog: install FAILED: {e}")
 
 
 def _signal_handler(signum: int, frame: object) -> None:
@@ -68,10 +272,20 @@ def start_fastapi_server() -> None:
         )
         server = uvicorn.Server(config)
 
-        # Run in async mode
-        import asyncio
+        # Run in async mode. The heartbeat task is the BOB-137 stall
+        # observatory's liveness probe; it stamps a monotonic clock from
+        # inside this event loop so the watchdog thread can tell "loop is
+        # idle" apart from "loop is not running callbacks at all". It adds
+        # no behaviour to request handling and is cancelled with the server.
+        async def _serve_with_heartbeat() -> None:
+            beat = asyncio.ensure_future(_diag_heartbeat()) if _DIAG_ON else None
+            try:
+                await server.serve()
+            finally:
+                if beat is not None:
+                    beat.cancel()
 
-        asyncio.run(server.serve())
+        asyncio.run(_serve_with_heartbeat())
     except Exception as e:
         logger.error(f"FastAPI server failed: {e}")
 
@@ -80,6 +294,9 @@ def main() -> None:
     """Main entry point."""
     signal.signal(signal.SIGTERM, _signal_handler)
     signal.signal(signal.SIGINT, _signal_handler)
+
+    # BOB-137: observe-only stall observatory (no timeouts/retries/restarts).
+    _diag_install()
 
     logger.info("=" * 60)
     logger.info("Боба Search Service Starting")

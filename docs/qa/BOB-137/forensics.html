@@ -1,70 +1,543 @@
 <h1 id="bob-137-merge-service-7187-wedge-captured-forensics">BOB-137 —
 merge service (7187) wedge: captured forensics</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-08-20T15:00:00Z</p>
-<p>Captured 2026-08-20 on the live stack while the defect was ACTIVE.
-Evidence class: runtime (§11.4.226) — live process, socket and thread
-state, not source inspection.</p>
-<h2 id="the-wedge-measured">1. The wedge, measured</h2>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-08-20T16:10:00Z</p>
+<p>Captured 2026-08-20 on the live stack. Evidence class: runtime
+(§11.4.226) — live process, socket and thread state plus in-process
+stack dumps, not source inspection.</p>
+<p><strong>STATUS: ROOT CAUSE ESTABLISHED.</strong> The spinning frame
+is named in §7 and proven by seven all-thread stack dumps taken while
+the defect was active (<code>stall_dump_1.txt</code>). Two inherited
+premises from Revision 2 are REFUTED under control conditions in §6 —
+read that section before citing Rev-2.</p>
+<p>No fix is proposed or applied here (§11.4.102 Iron Law). The only
+code change is an observe-only instrument (§9).</p>
+<hr />
+<h2 id="the-wedge-measured-revision-1-unchanged-still-accurate">1. The
+wedge, measured (Revision 1 — unchanged, still accurate)</h2>
 <p>Container <code>qbittorrent-proxy</code>, up 3h53m, reported
 <code>Up 4 hours (healthy)</code>:</p>
 <pre><code>curl --max-time 6 http://localhost:7186/       -&gt; HTTP 200 in 0.096s
 curl --max-time 6 http://localhost:7187/       -&gt; HTTP 000 after 6.004s</code></pre>
 <p>Both ports are served by the SAME process — <code>ss -ltnp</code>
-shows pid 2330069 holding fd 3 (7186) and fd 7 (7187). So this is not a
-crashed worker: one loop inside a live process stopped servicing
-requests while another in the same process kept working.</p>
-<h2 id="thread-census-the-gil-starvation-signature">2. Thread census
-(the GIL-starvation signature)</h2>
-<p>16 threads. One in state <code>R</code> with <code>wchan=0</code>;
-one in <code>do_sys_poll</code>; the other 14 all in
-<code>futex_wait_queue</code>. Process CPU 20.6% while nominally
-idle.</p>
-<p>A thread busy-looping in Python holds the GIL, and every other thread
-queues on the GIL futex. 7186 survives because <code>do_sys_poll</code>
-releases the GIL; the 7187 async loop needs sustained GIL time to
-service a request and starves.</p>
-<p>See <code>threads.txt</code>.</p>
-<h2 id="socket-state">3. Socket state</h2>
-<p>Seven sockets held by the process in <code>CLOSE-WAIT</code> with
-unread bytes still queued (Recv-Q 162, 162, 162, 79, 1, 1, 1): clients
-sent a request and hung up, and the application neither read it nor
-closed the fd. At first observation the 7187 LISTEN socket also had an
-unaccepted backlog (Recv-Q 6).</p>
-<p>NOT fd exhaustion — 48 of 16384 fds open. See
-<code>sockets.txt</code>.</p>
-<h2 id="log-silence">4. Log silence</h2>
-<p>The container log’s final entry predates the observation by ~2 hours;
-the service processed nothing in that window. See
-<code>container_log_tail.txt</code>.</p>
-<h2 id="root-cause-not-established">5. Root cause: NOT ESTABLISHED</h2>
-<p>All four <code>while True</code> loops in the service (routes.py:166,
-search.py:1169, streaming.py:161, streaming.py:359) are correctly
-bounded and awaited, so the spin is not a naive unslept loop.</p>
-<p><code>py-spy</code> could not attach to name the spinning frame: the
-host runs <code>kernel.yama.ptrace_scope=1</code>, which denies
-non-child attach. Per the §11.4.102 Iron Law no fix is proposed until
-the spinning frame is identified.</p>
-<h2 id="update-the-wedge-is-transient-and-self-clearing">6. UPDATE — the
-wedge is TRANSIENT and self-clearing</h2>
-<p>Roughly 15 minutes after the measurements above, and with NO restart
-and no intervention, 7187 began answering normally:</p>
-<pre><code>curl --max-time 8 http://localhost:7187/health -&gt; HTTP 200 in 0.021s</code></pre>
-<p>This materially changes the diagnosis: the service is not permanently
-wedged, it stalls for a bounded-but-long period (&gt;= 2h of log silence
-here) and then recovers. That is consistent with a long-running
-GIL-hogging operation completing, rather than a true deadlock.</p>
-<p>HONEST BOUNDARY (§11.4.6): the CAUSE of the recovery is UNKNOWN. A
-<code>py-spy</code> attach was attempted (and failed with EPERM) shortly
-before recovery was observed; whether that attempt perturbed the process
-is UNCONFIRMED. The recovery is NOT claimed to be spontaneous, only
-observed.</p>
-<p>Consequence for reproduction: a repro must SOAK — a point-in-time
-probe will often find the service healthy and conclude, falsely, that
-there is no defect (§11.4.201(6) false-null).</p>
-<h2 id="discovery-channel-11.4.238">7. Discovery channel
+shows one pid holding fd 3 (7186) and fd 7 (7187). Not a crashed worker:
+one loop inside a live process stopped servicing requests while another
+in the same process kept working. See <code>sockets.txt</code>,
+<code>threads.txt</code>, <code>container_log_tail.txt</code>.</p>
+<h2 id="reproduced-deterministically-new-revision-3">2. Reproduced
+deterministically (NEW, Revision 3)</h2>
+<p><code>scripts/diagnostics/bob137_soak.sh 2400 6</code> drives
+sustained concurrent <code>POST /api/v1/search</code> fan-out while an
+independent prober samples both ports every 5s. Measured
+2026-08-20T15:39Z–15:46Z:</p>
+<pre><code>probes total: 26
+7187 outages: 22      &lt;- merge service dead
+7186 outages:  0      &lt;- download proxy healthy throughout</code></pre>
+<p>The asymmetry is total: <strong>22 of 26 probes found 7187
+unreachable and 0 of 26 found 7186 unreachable</strong>, in the same
+process, at the same instants.</p>
+<p>The reproduced wedge carries the SAME socket fingerprint as the
+originally reported one (<code>repro_socket_state.txt</code>), which is
+what binds this repro to the reported defect rather than to a look-alike
+(§11.4.199, precondition provenance = <strong>observed</strong>, not
+constructed):</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Originally reported (§1)</th>
+<th>Reproduced (§2)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7187 LISTEN accept backlog</td>
+<td>Recv-Q 6</td>
+<td>Recv-Q 88</td>
+</tr>
+<tr>
+<td>7187 conns in CLOSE-WAIT with unread bytes</td>
+<td>162/162/162/79/1/1/1</td>
+<td>85/168/194/220/201/…</td>
+</tr>
+<tr>
+<td>7186 LISTEN backlog</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>fd exhaustion</td>
+<td>no (48/16384)</td>
+<td>no (118)</td>
+</tr>
+<tr>
+<td>thread count</td>
+<td>16</td>
+<td>19</td>
+</tr>
+</tbody>
+</table>
+<h2 id="why-7186-survives-while-7187-dies">3. Why 7186 survives while
+7187 dies</h2>
+<p>They are different servers on different threads of one process:</p>
+<ul>
+<li><strong>7186</strong> is <code>download_proxy.run_server()</code> —
+a blocking <code>socketserver</code> on its own thread
+(<code>main.py:242</code>). CPython releases the GIL every switch
+interval (default 5 ms), so it keeps getting scheduled even while
+another thread runs Python continuously.</li>
+<li><strong>7187</strong> is uvicorn on a single asyncio event loop
+(<code>main.py:288</code>). It has no second thread to fall back on: if
+any callback on that loop does not return, <strong>no</strong> other
+callback runs — not accept, not read, not the response write.</li>
+</ul>
+<p>That is why the accept queue backs up (Recv-Q 88 on the LISTEN
+socket) and why established connections sit in CLOSE-WAIT with the
+client’s request bytes still unread: the kernel completed the handshakes
+and buffered the bytes, the client gave up and sent FIN, and the
+application never ran to read or close either.</p>
+<h2 id="log-silence-and-self-clearing-explained-and-measured">4. Log
+silence and self-clearing, explained — and measured</h2>
+<p>Both follow from §3. Nothing is logged because nothing on the loop
+progresses; the service recovers with no restart because the callback
+eventually returns.</p>
+<p>Revision 3 measured two complete episodes end to end, with NO restart
+and no intervention (watchdog log):</p>
+<pre><code>15:40:03  SILENT for 22s (episode 1) -- dumping all thread stacks
+15:49:18  RECOVERED (episode 1)          -&gt; ~9 min 37 s of event-loop silence
+15:49:38  SILENT for 21s (episode 2) -- dumping all thread stacks
+15:55:13  RECOVERED (episode 2)          -&gt; ~5 min 56 s of event-loop silence</code></pre>
+<p>Load was stopped at 15:44Z, yet the loop kept spinning until 15:55Z —
+<strong>eleven minutes of stall after the last request was
+sent</strong>, draining merges already queued. Longest single stretch of
+continuous silence recorded by the watchdog:
+<code>loop_silent_for=572.7s</code>. This is the mechanism behind the
+originally reported ~2 h of log silence: the stall outlives the traffic
+that caused it, and concurrent searches queue their merges behind one
+another.</p>
+<p>Immediately after recovery the service answered normally
+(<code>HTTP 200 in 3.05s</code>, then sub-second), with no restart —
+which is exactly the Revision 2 §6 observation, now explained rather
+than merely noted.</p>
+<h3 id="episode-3-it-is-not-soak-only">Episode 3: it is NOT
+soak-only</h3>
+<p>At 15:56:17Z a THIRD episode began with <strong>zero load from this
+investigation</strong> (verified by enumerating real pids and excluding
+the probing shell’s own command line — the §11.4.196(D)/§12.12
+<code>pgrep -f</code> self-match footgun, which did initially produce a
+false hit here). Its dump shows the identical path:</p>
+<pre><code>  deduplicator.py, line 446 in _detect_content_type
+  deduplicator.py, line 201 in _extract_identity_from_result
+  deduplicator.py, line 224 in _check_match
+  deduplicator.py, line  81 in merge_results
+  search.py,       line 914 in _run_search
+  routes.py,       line 447 in _background</code></pre>
+<p>So the defect fires under ordinary traffic reaching
+<code>POST /api/v1/search</code>, not only under the synthetic soak. Any
+search large enough to make <code>merge_results</code> run long will
+stall the merge service for other callers.</p>
+<h2 id="sigterm-slowness-is-a-separate-benign-issue-new-decoupled">5.
+SIGTERM slowness is a SEPARATE, benign issue (NEW — decoupled)</h2>
+<p><code>podman restart</code> reported
+<code>StopSignal SIGTERM failed to stop container in 10 seconds, resorting to SIGKILL</code>
+on a <strong>healthy, freshly-started</strong> container. It is
+therefore NOT a symptom of the wedge. Cause is in <code>main()</code>:
+the handler sets <code>_shutdown_event</code>, then <code>main()</code>
+does <code>proxy_thread.join(timeout=5)</code> +
+<code>fastapi_thread.join(timeout=5)</code> on two threads that never
+exit — 10 s total, which equals podman’s stop grace period. Tracked
+separately; not part of this root cause.</p>
+<h2 id="refuted-inherited-premises-11.4.2054-11.4.201">6. REFUTED
+inherited premises (§11.4.205(4), §11.4.201)</h2>
+<p>Revision 2 diagnosed “GIL starvation” from two readings. Both are
+refuted:</p>
+<p><strong>(a) “1 thread in state R with <code>wchan=0</code>” is the
+OBSERVER ITSELF.</strong> Demonstrated under control conditions on this
+host: a thread that reads <code>/proc/self/task</code> is by definition
+running while it reads, so it reports <code>state=R</code>,
+<code>wchan=0</code> — and <code>d_utime=0</code>, i.e. it consumed no
+CPU:</p>
+<pre><code>observer tid: 312722
+  tid=312721 state=R wchan=futex_wait_queue
+  tid=312722 state=R wchan=0 &lt;== THE OBSERVER ITSELF</code></pre>
+<p>The same <code>R</code>/<code>wchan=0</code>/<code>d_utime=0</code>
+row appears in the self-test’s <em>golden-bad</em> case where the loop
+is blocked in <code>time.sleep</code> and <strong>nothing is
+spinning</strong>. Observer-induced signal (§11.4.201(10)); it is not
+evidence of a spinner.</p>
+<p><strong>(b) <code>ps %CPU 20.6</code> is a LIFETIME AVERAGE, not an
+instantaneous rate.</strong> <code>%CPU</code> is total CPU time ÷
+elapsed time since process start. Over 3h53m it says roughly 48 minutes
+of CPU were consumed at some point; it says nothing about what the
+process was doing at the moment of measurement (§11.4.201(9), field
+identity and semantic class — a cumulative ratio read as an
+occupancy).</p>
+<p><strong>(c) “14 threads in <code>futex_wait_queue</code>” is the
+normal idle state</strong> of any condition-variable waiter — here the
+<code>anyio</code> worker threads and the default
+<code>ThreadPoolExecutor</code> (visible by name in
+<code>stall_dump_1.txt</code>). Not a signature.</p>
+<p>The Rev-2 conclusion (“a thread busy-looping holds the GIL and
+everything else queues on it”) was directionally close to the truth but
+rested on three non-load-bearing readings. The actual mechanism (§7) was
+established from per-thread CPU deltas and in-process stack dumps
+instead.</p>
+<h2 id="root-cause-the-spinning-frame">7. ROOT CAUSE — the spinning
+frame</h2>
+<p><strong><code>Deduplicator.merge_results()</code> performs an O(N²)
+CPU-bound, regex-heavy deduplication synchronously on the asyncio
+event-loop thread.</strong></p>
+<p>Path: <code>routes.py:447 _background</code> (an asyncio task) →
+<code>await orch._run_search</code> → <code>search.py:914</code> calls
+<code>self.deduplicator.merge_results(all_results)</code> as a plain
+synchronous call. It is never handed to an executor, so for its entire
+duration the merge service’s only event loop runs no other callback.</p>
+<p>Seven dumps across one continuous 5.5-minute stall
+(<code>stall_dump_1.txt</code>):</p>
+<pre><code>===== BOB-137 STALL DUMP #1 loop_silent_for=21.7s  loop_tid=11 =====
+  File &quot;.../re/__init__.py&quot;, line 186 in sub
+  File &quot;.../merge_service/deduplicator.py&quot;, line 294 in _normalize_name
+  File &quot;.../merge_service/deduplicator.py&quot;, line 357 in _compare_identities
+  File &quot;.../merge_service/deduplicator.py&quot;, line 226 in _check_match
+  File &quot;.../merge_service/deduplicator.py&quot;, line  81 in merge_results
+  File &quot;.../merge_service/search.py&quot;,       line 914 in _run_search
+  File &quot;.../api/routes.py&quot;,                 line 447 in _background
+  File &quot;.../asyncio/events.py&quot;,             line  88 in _run          &lt;-- ON THE EVENT LOOP
+  File &quot;.../asyncio/base_events.py&quot;,        line 1999 in _run_once</code></pre>
+<p>Per-thread CPU delta, sampled over 1.0 s inside each dump:</p>
+<pre><code>DUMP #1 loop_silent_for= 21.7s   tid=11 state=R d_utime=97 d_stime=1  &lt;-- ASYNCIO LOOP
+DUMP #2 loop_silent_for= 82.9s   tid=11 state=R d_utime=97 d_stime=1  &lt;-- ASYNCIO LOOP
+DUMP #3 loop_silent_for=144.1s   tid=11 state=R d_utime=98 d_stime=1  &lt;-- ASYNCIO LOOP
+DUMP #4 loop_silent_for=205.3s   tid=11 state=R d_utime=81 d_stime=1  &lt;-- ASYNCIO LOOP
+DUMP #5 loop_silent_for=266.5s   tid=11 state=R d_utime=90 d_stime=1  &lt;-- ASYNCIO LOOP</code></pre>
+<p>Every other thread in every dump: <code>d_utime=0</code>. The loop
+thread alone burns 81–98 ticks per second — 81–98 % of one core, in
+<strong>user</strong> time, continuously.</p>
+<p><strong>It is executing, not blocked.</strong> The outer frames are
+identical in all seven dumps (<code>merge_results</code> →
+<code>_check_match</code>) while the inner frame MOVES between them —
+<code>_normalize_name</code>/<code>re.sub</code> (line 294),
+<code>_detect_content_type</code>/<code>re.search</code> (474),
+<code>_extract_identity_from_result</code>/<code>re.search</code> (209),
+<code>_compare_identities</code> (357, 358). A stationary outer frame
+with a moving inner frame and sustained user-space CPU is a CPU-bound
+loop, and is exactly what distinguishes it from a blocking syscall
+(which would show a fixed frame and <code>d_utime=0</code>).</p>
+<h3 id="why-it-grows-super-linearly-and-is-expensive-per-step">Why it
+grows super-linearly and is expensive per step</h3>
+<p><code>merge_results</code> (deduplicator.py:73-95) pops a seed and
+compares it against every remaining candidate — N(N-1)/2 comparisons in
+the worst case, when few results match. Measured growth on synthetic
+data is super-linear but not yet fully quadratic at N&lt;=400; see §8
+for the numbers and the honest boundary.</p>
+<p>Each comparison re-derives everything from scratch; nothing is cached
+(<code>grep -n "lru_cache" merge_service/deduplicator.py</code> → no
+matches):</p>
+<ul>
+<li><code>_check_match</code> calls
+<code>_extract_identity_from_result</code> <strong>twice</strong> — once
+for the seed and once for the candidate — so the seed’s identity is
+recomputed for every one of its candidates. Each call runs a
+season/episode regex, <code>_detect_content_type</code> (a chain of up
+to ~15 sequential <code>re.search</code> calls), plus resolution and
+codec regexes.</li>
+<li><code>_compare_identities</code> then calls
+<code>_normalize_name</code> on both titles; each call runs 5
+<code>re.sub</code> passes.</li>
+</ul>
+<p>The module contains 30 <code>re.*</code> call sites on this path.
+Order ~25 regex operations per comparison × N²/2 comparisons ≈ O(10 N²)
+regex operations. Single trackers were observed returning up to 189
+results (<code>container_log_tail.txt</code>); summed across the 43
+managed plugins, N in the low thousands puts this in the 10⁷–10⁸
+regex-operation range for ONE search.</p>
+<h3 id="why-stalls-reach-hours">Why stalls reach hours</h3>
+<p>Concurrent searches do not overlap — each queues its own
+<code>merge_results</code> on the same single loop, so their costs are
+<strong>additive</strong>. Observed here: load was stopped at 15:44Z and
+the loop was still spinning at 15:46Z, draining merges already queued.
+The originally reported ~2 h of log silence is consistent with several
+large fan-outs queued behind one another.</p>
+<p>The last lines before the original silence
+(<code>container_log_tail.txt</code>) are a security-suite fan-out
+across ~43 trackers with XSS/SQLi payload queries, followed by ~11
+repeats of “Loaded configuration for qBittorrent” — the memoised
+<code>get_config()</code> logging once per concurrent caller that raced
+its <code>_config is None</code> check. That is the concurrency burst
+which fed the merges.</p>
+<h3 id="every-observation-accounted-for">Every observation, accounted
+for</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Observation</th>
+<th>Explained by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7187 dead, 7186 alive, same process</td>
+<td>§3 — one loop vs a separate thread</td>
+</tr>
+<tr>
+<td>CLOSE-WAIT with unread request bytes</td>
+<td>loop never runs accept/read callbacks</td>
+</tr>
+<tr>
+<td>7187 LISTEN accept backlog (Recv-Q 6 → 88)</td>
+<td>same</td>
+</tr>
+<tr>
+<td>container log silent for ~2 h</td>
+<td>nothing on the loop progresses</td>
+</tr>
+<tr>
+<td>self-clears with no restart</td>
+<td>the merge finally returns</td>
+</tr>
+<tr>
+<td>16 threads wedged vs 5 idle</td>
+<td>fan-out’s anyio + executor pool</td>
+</tr>
+<tr>
+<td>high cumulative process CPU</td>
+<td>~1 core of regex work per merge</td>
+</tr>
+<tr>
+<td>stall duration unbounded/variable</td>
+<td>O(N²) in results, additive across searches</td>
+</tr>
+</tbody>
+</table>
+<h2 id="scale-measured-contention-immune">8. Scale, measured
+(contention-immune)</h2>
+<p>A first attempt to TIME <code>merge_results</code> ran inside the
+wedged container and was contaminated by CPU contention with the live
+spin (N=100 took 8.5 s while N=200 took 3.7 s — an ordering only
+contention explains). Those numbers are discarded, not reported
+(§11.4.201(10)).</p>
+<p>Instead the REGEX OPERATION COUNT was measured. A count is exact
+regardless of CPU contention, so it is valid under the conditions
+actually available (§11.4.201(8)).
+<code>re.sub/search/match/findall</code> were wrapped with a counter and
+<code>merge_results</code> run over synthetic result sets:</p>
+<pre><code>dataset A -- names drawn from a small vocabulary (many matches, groups collapse)
+     N    regex_ops    ops/N^2   growth per doubling
+    50       40,256       16.1
+   100      138,077       13.8   x3.4   (linear=x2, quadratic=x4)
+   200      388,142        9.7   x2.8
+   400    1,046,531        6.5   x2.7
+
+dataset B -- highly distinct names (few matches, groups do not collapse)
+     N    regex_ops    ops/N^2   growth per doubling
+    50       20,395        8.2
+   100       49,888        5.0   x2.4
+   200      129,764        3.2   x2.6
+   400      387,224        2.4   x3.0</code></pre>
+<p><strong>Honest reading (§11.4.6):</strong> this is SUPER-LINEAR but,
+on these datasets, NOT yet fully quadratic — growth per doubling is
+2.4–3.4 against 2.0 for linear and 4.0 for quadratic, and in dataset B
+it RISES with N (2.4 → 2.6 → 3.0). The claim supported by this
+measurement is “grows substantially faster than the number of results”,
+not “measured N²”. The <em>worst case</em> is quadratic by code
+structure — <code>merge_results</code> (deduplicator.py:73-95) compares
+each seed against every remaining candidate, i.e. N(N-1)/2 comparisons
+when nothing matches — and dataset B’s rising trend is consistent with
+approaching that bound as N grows.</p>
+<p>Per-comparison cost is the other half, and it is pure recomputation:
+<code>_normalize_name</code> is called at <strong>four</strong> sites
+per comparison (lines 275, 276 via <code>_compare_name_and_size</code>,
+and 357, 358 via <code>_compare_identities</code>), each running 5
+<code>re.sub</code> passes; <code>_extract_identity_from_result</code>
+runs twice more (lines 224-225), each including
+<code>_detect_content_type</code>’s chain of up to ~15 sequential
+<code>re.search</code> calls. Nothing is memoised —
+<code>grep -n "lru_cache" merge_service/deduplicator.py</code> returns
+no matches — so the seed’s own normalisation and identity are recomputed
+for every candidate it is compared against.</p>
+<p>Scale actually observed on the live service: <strong>572.7 s of
+continuous event-loop silence in a single episode</strong>, and the loop
+was still inside <code>merge_results</code> more than 15 minutes after
+all load had stopped.</p>
+<h2 id="the-instrument-download-proxysrcmain.py">9. The instrument
+(<code>download-proxy/src/main.py</code>)</h2>
+<p><code>py-spy</code> cannot attach on this host
+(<code>kernel.yama.ptrace_scope=1</code> denies non-child attach), so
+the process was made to dump its own stacks:</p>
+<ul>
+<li>an asyncio heartbeat task stamps a monotonic clock once a second
+from inside the merge-service loop;</li>
+<li>a plain watchdog thread notices when that stamp stops advancing and
+writes an all-thread traceback plus a per-thread CPU delta to
+<code>/config/download-proxy/diagnostics/stall_dumps.log</code> and to
+stderr;</li>
+<li><code>SIGUSR1</code> (dump to log) and <code>SIGQUIT</code> (dump to
+file) give an on-demand dump with no ptrace:
+<code>podman exec qbittorrent-proxy kill -USR1 1</code>.</li>
+</ul>
+<p><code>faulthandler.dump_traceback()</code> is C-level and does not
+need the GIL, which is why it was used instead of
+<code>sys._current_frames()</code> — the latter needs the GIL and would
+hang in the same way as the thing it is measuring.</p>
+<p>It adds <strong>no</strong> timeout, retry, restart or change to
+request handling.</p>
+<h3 id="the-instrument-is-self-validated-11.4.10710-11.4.2017b">The
+instrument is self-validated (§11.4.107(10), §11.4.201(7)(b))</h3>
+<p>A watchdog that never fires proves nothing — it could equally mean
+“no stall” or “blind instrument” (§11.4.201(6) false-null). Both poles
+are asserted by
+<code>scripts/diagnostics/bob137_watchdog_selftest.py</code>, run
+against the container’s own Python 3.12:</p>
+<pre><code>== GOLDEN-BAD: event loop blocked -&gt; watchdog MUST dump ==
+   PASS: dumped and named the blocking frame
+   PASS: per-thread CPU delta present (spin-vs-block discriminator)
+== GOLDEN-GOOD: event loop healthy -&gt; watchdog MUST stay quiet ==
+   PASS: stayed quiet on a healthy loop
+
+SELFTEST PASS - watchdog fires on a real stall and not otherwise.</code></pre>
+<h3 id="is-it-safe-to-leave-in-production">Is it safe to leave in
+production?</h3>
+<p>Yes, with one disclosed behaviour change. Each property was checked,
+not assumed:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Steady-state cost</td>
+<td>heartbeat wakes 1×/s, watchdog thread wakes 1×/2 s. No work while
+healthy.</td>
+</tr>
+<tr>
+<td>Can it hang the thing it measures?</td>
+<td>No. <code>faulthandler.dump_traceback()</code> is C-level and does
+not require the GIL.</td>
+</tr>
+<tr>
+<td>Disk growth</td>
+<td>Capped: <code>BOBA_STALL_MAX_DUMPS</code> (default 200) × ~9.5 KB
+observed ≈ 1.9 MB per process lifetime. Re-dump interval 60 s.</td>
+</tr>
+<tr>
+<td>Repo pollution (§11.4.30)</td>
+<td>None. Dumps land in <code>download-proxy/diagnostics/*.log</code>,
+already covered by <code>.gitignore:64</code> (<code>*.log</code>) —
+verified with <code>git check-ignore</code>.</td>
+</tr>
+<tr>
+<td>Signal conflicts</td>
+<td>None. No <code>SIGUSR1</code>/<code>SIGQUIT</code> handler exists in
+app source; <code>gunicorn</code> is not installed and
+<code>uvicorn.workers</code> (the only dependency referencing SIGQUIT)
+is never imported — verified in the live interpreter.</td>
+</tr>
+<tr>
+<td>Shutdown path</td>
+<td>Untouched. <code>SIGTERM</code>/<code>SIGINT</code> handlers are
+unchanged.</td>
+</tr>
+<tr>
+<td>Failure mode</td>
+<td>Fails open and loud: install is wrapped and logs
+<code>install FAILED</code>; internal dump errors are appended to
+<code>_diag_errors</code> and surfaced by the watchdog, never silently
+swallowed.</td>
+</tr>
+<tr>
+<td>Kill switch</td>
+<td><code>BOBA_STALL_WATCHDOG=0</code> disables it entirely; thresholds
+tunable via env.</td>
+</tr>
+<tr>
+<td>§11.4.263</td>
+<td>The instrument sends no signals at all. It only <em>registers</em>
+handlers.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Disclosed behaviour change:</strong>
+<code>faulthandler.register(SIGQUIT, chain=False)</code> replaces
+SIGQUIT’s default disposition, so <code>kill -QUIT</code> now dumps
+stacks and the process CONTINUES instead of terminating with a core
+dump. For a service this is the safer disposition, but an operator
+relying on <code>kill -QUIT</code> to stop the container would find it
+ineffective — <code>SIGTERM</code> is unaffected and remains the correct
+stop signal. If that trade is unwanted, drop the SIGQUIT registration
+and keep SIGUSR1, which is unused by anything.</p>
+<p><strong>Recommendation:</strong> keep it. The defect is transient and
+self-clearing, so without an always-armed in-process observer the next
+occurrence is again only catchable by luck — which is how it escaped
+automated QA in the first place.</p>
+<h2 id="discovery-channel-11.4.238">10. Discovery channel
 (§11.4.238)</h2>
 <p>Found by an agent hand-probing the host during an unrelated
-investigation — NOT by automated QA. Coverage escape. The sibling item
-BOB-138 records the health check that was structurally incapable of
-observing this.</p>
+investigation — NOT by automated QA. Coverage escape. Two escapes are
+now visible:</p>
+<ol type="1">
+<li>the health check could not observe this (sibling item BOB-138);</li>
+<li>no automated check exercises concurrent search fan-out and asserts
+the merge service stays responsive during it — which is precisely what
+<code>bob137_soak.sh</code> does, and it reproduced the defect in under
+two minutes.</li>
+</ol>
+<h2 id="artifacts">11. Artifacts</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>stall_dump_1.txt</code></td>
+<td>7 all-thread stack dumps + per-thread CPU deltas</td>
+</tr>
+<tr>
+<td><code>repro_socket_state.txt</code></td>
+<td>live socket/thread state during the reproduced wedge</td>
+</tr>
+<tr>
+<td><code>soak_probe.log</code></td>
+<td>per-probe 7186/7187 latency and HTTP code</td>
+</tr>
+<tr>
+<td><code>soak_driver.log</code></td>
+<td>fan-out request outcomes</td>
+</tr>
+<tr>
+<td><code>sockets.txt</code>, <code>threads.txt</code>,
+<code>container_log_tail.txt</code></td>
+<td>Revision 1 captures</td>
+</tr>
+<tr>
+<td><code>scripts/diagnostics/bob137_watchdog_selftest.py</code></td>
+<td>golden-good/golden-bad self-test</td>
+</tr>
+<tr>
+<td><code>scripts/diagnostics/bob137_soak.sh</code></td>
+<td>soak reproducer</td>
+</tr>
+</tbody>
+</table>

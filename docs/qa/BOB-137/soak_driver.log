@@ -1,0 +1,43 @@
+2026-08-20T15:39:15Z soak start: duration=2400s concurrency=6 host=localhost
+2026-08-20T15:39:15Z /search [200 0.050543] q=matrix 1999
+2026-08-20T15:39:15Z /search [200 0.142529] q=<style>body{background:red}</style>
+2026-08-20T15:39:15Z /search [200 0.340227] q=test
+2026-08-20T15:39:16Z /search [200 0.707168] q=matrix 1999
+2026-08-20T15:39:16Z /search [200 0.695360] q=matrix 1999
+2026-08-20T15:39:16Z /search [200 1.150508] q=<img src=x onerror=alert(1)>
+2026-08-20T15:39:24Z /search [200 4.891771] q=<style>body{background:red}</style>
+2026-08-20T15:39:24Z /search [200 4.907279] q=боба тест
+2026-08-20T15:39:24Z /search [200 4.919075] q=боба тест
+2026-08-20T15:39:24Z /search [429 5.595060] q=inception
+2026-08-20T15:39:24Z /search [429 5.610226] q=ubuntu
+2026-08-20T15:39:24Z /search [429 5.538328] q=matrix 1999
+2026-08-20T15:39:31Z /search/sync [429 3.972280] q=debian iso
+2026-08-20T15:39:31Z /search/sync [429 3.698463] q=ubuntu
+2026-08-20T15:39:31Z /search/sync [429 3.485446] q=debian iso
+2026-08-20T15:39:31Z /search/sync [429 3.607366] q=inception
+2026-08-20T15:39:33Z /search [429 5.778833] q=ubuntu
+2026-08-20T15:39:33Z /search [429 5.639397] q=debian iso
+2026-08-20T15:39:38Z /search/sync [429 2.071394] q=<img src=x onerror=alert(1)>
+2026-08-20T15:39:39Z /search [429 3.210333] q=ubuntu
+2026-08-20T15:39:39Z /search [429 3.232808] q=<style>body{background:red}</style>
+2026-08-20T15:39:39Z /search [429 3.090084] q=inception
+2026-08-20T15:39:39Z /search [429 3.058685] q=matrix 1999
+2026-08-20T15:39:39Z /search [429 3.058800] q=ubuntu
+2026-08-20T15:39:41Z /search [429 0.024424] q=debian iso
+2026-08-20T15:39:41Z /search [429 0.023162] q=<style>body{background:red}</style>
+2026-08-20T15:39:41Z /search/sync [429 0.012017] q=inception
+2026-08-20T15:39:41Z /search [429 0.009077] q=<style>body{background:red}</style>
+2026-08-20T15:39:42Z /search [429 0.097652] q=matrix 1999
+2026-08-20T15:39:42Z /search/sync [429 0.085748] q=<style>body{background:red}</style>
+2026-08-20T15:41:44Z /search [000 120.000794000 err] q=inception
+2026-08-20T15:41:44Z /search [000 120.001433000 err] q=test
+2026-08-20T15:41:44Z /search [000 120.000982000 err] q=../../etc/passwd
+2026-08-20T15:41:45Z /search [000 120.001036000 err] q=<style>body{background:red}</style>
+2026-08-20T15:41:45Z /search [000 120.000642000 err] q=test
+2026-08-20T15:41:45Z /search [000 120.002490000 err] q=matrix 1999
+2026-08-20T15:43:47Z /search [000 120.001017000 err] q=<img src=x onerror=alert(1)>
+2026-08-20T15:43:47Z /search/sync [000 120.001069000 err] q=inception
+2026-08-20T15:43:47Z /search [000 120.001199000 err] q=inception
+2026-08-20T15:43:47Z /search [000 120.001010000 err] q=боба тест
+2026-08-20T15:43:47Z /search [000 120.000611000 err] q=matrix 1999
+2026-08-20T15:43:47Z /search [000 120.001540000 err] q=matrix 1999

@@ -1,0 +1,2477 @@
+
+===== BOB-137 STALL DUMP #1 episode=1 utc=2026-08-20T15:40:04Z loop_silent_for=21.7s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 186 in sub
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 294 in _normalize_name
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 357 in _compare_identities
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 226 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=R d_utime=0 d_stime=0 wchan=0
+tid=11 state=R d_utime=97 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #2 episode=1 utc=2026-08-20T15:41:05Z loop_silent_for=82.9s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 177 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 474 in _detect_content_type
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 201 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 225 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=97 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #3 episode=1 utc=2026-08-20T15:42:06Z loop_silent_for=144.1s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 186 in sub
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 294 in _normalize_name
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 358 in _compare_identities
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 226 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=98 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #4 episode=1 utc=2026-08-20T15:43:07Z loop_silent_for=205.3s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 177 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 209 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 224 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=81 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #5 episode=1 utc=2026-08-20T15:44:08Z loop_silent_for=266.5s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 177 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 209 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 225 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=90 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #6 episode=1 utc=2026-08-20T15:45:10Z loop_silent_for=327.8s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 177 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 391 in _detect_content_type
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 201 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 224 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=R d_utime=0 d_stime=0 wchan=0
+tid=11 state=R d_utime=86 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #7 episode=1 utc=2026-08-20T15:46:11Z loop_silent_for=389.0s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 177 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 389 in _detect_content_type
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 201 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 224 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=1 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=90 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #8 episode=1 utc=2026-08-20T15:47:12Z loop_silent_for=450.2s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 177 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 391 in _detect_content_type
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 201 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 225 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=95 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #9 episode=1 utc=2026-08-20T15:48:13Z loop_silent_for=511.4s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 410 in <genexpr>
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 410 in _detect_content_type
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 201 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 224 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=85 d_stime=0 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #10 episode=1 utc=2026-08-20T15:49:14Z loop_silent_for=572.7s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 177 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 433 in _detect_content_type
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 201 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 225 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=79 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #11 episode=2 utc=2026-08-20T15:49:38Z loop_silent_for=20.8s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 177 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 454 in _detect_content_type
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 201 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 224 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=88 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #12 episode=2 utc=2026-08-20T15:50:39Z loop_silent_for=82.0s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 177 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 209 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 224 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=1 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=98 d_stime=2 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #13 episode=2 utc=2026-08-20T15:51:40Z loop_silent_for=143.2s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 186 in sub
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 298 in _normalize_name
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 358 in _compare_identities
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 226 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=82 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #14 episode=2 utc=2026-08-20T15:52:41Z loop_silent_for=204.5s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 179 in sub
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 298 in _normalize_name
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 276 in _compare_name_and_size
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 235 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=89 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #15 episode=2 utc=2026-08-20T15:53:43Z loop_silent_for=265.8s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 174 in search
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 474 in _detect_content_type
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 201 in _extract_identity_from_result
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 225 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=1 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=81 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+
+===== BOB-137 STALL DUMP #16 episode=2 utc=2026-08-20T15:54:44Z loop_silent_for=327.0s loop_tid=11 =====
+Thread 0x00007fb2cf782b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf885b38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cf51eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 355 in wait
+  File "/usr/local/lib/python3.12/queue.py", line 171 in get
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1022 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfa89b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2cfb8cb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d02bfb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d04c5b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d03c2b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d05c8b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d06cbb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d07ceb38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d08d1b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d09d4b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0c99b38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d0faab38 (most recent call first):
+  File "/usr/local/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d551eb38 (most recent call first):
+  File "/usr/local/lib/python3.12/re/__init__.py", line 186 in sub
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 294 in _normalize_name
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 275 in _compare_name_and_size
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 235 in _check_match
+  File "/config/download-proxy/src/merge_service/deduplicator.py", line 81 in merge_results
+  File "/config/download-proxy/src/merge_service/search.py", line 914 in _run_search
+  File "/config/download-proxy/src/api/routes.py", line 447 in _background
+  File "/usr/local/lib/python3.12/asyncio/events.py", line 88 in _run
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 1999 in _run_once
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 645 in run_forever
+  File "/usr/local/lib/python3.12/asyncio/base_events.py", line 678 in run_until_complete
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 118 in run
+  File "/usr/local/lib/python3.12/asyncio/runners.py", line 195 in run
+  File "/config/download-proxy/src/main.py", line 288 in start_fastapi_server
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d5621b38 (most recent call first):
+  File "/usr/local/lib/python3.12/selectors.py", line 415 in select
+  File "/usr/local/lib/python3.12/socketserver.py", line 235 in serve_forever
+  File "/config/qBittorrent/nova3/engines/download_proxy.py", line 968 in run_server
+  File "/config/download-proxy/src/main.py", line 242 in start_original_proxy
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Current thread 0x00007fb2d5743b38 (most recent call first):
+  File "/config/download-proxy/src/main.py", line 135 in _diag_dump
+  File "/config/download-proxy/src/main.py", line 192 in _diag_watchdog
+  File "/usr/local/lib/python3.12/threading.py", line 1012 in run
+  File "/usr/local/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/usr/local/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007fb2d6f62b28 (most recent call first):
+  File "/usr/local/lib/python3.12/threading.py", line 359 in wait
+  File "/usr/local/lib/python3.12/threading.py", line 655 in wait
+  File "/config/download-proxy/src/main.py", line 330 in main
+  File "/config/download-proxy/src/main.py", line 339 in <module>
+--- per-thread CPU over 1.0s (ticks: rising=SPINNING, flat=BLOCKED) ---
+tid=1 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=9 state=R d_utime=0 d_stime=0 wchan=0
+tid=10 state=S d_utime=0 d_stime=0 wchan=do_sys_poll
+tid=11 state=R d_utime=97 d_stime=1 wchan=0  <-- ASYNCIO LOOP
+tid=13 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=77 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=78 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=85 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=86 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=87 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=88 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=147 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=148 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=155 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=157 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=158 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=330 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=592 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
+tid=593 state=S d_utime=0 d_stime=0 wchan=futex_wait_queue
