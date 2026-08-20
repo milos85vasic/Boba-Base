@@ -1,67 +1,76 @@
 <!--
 Sync Impact Report:
-- Version change: 1.2.0 → 1.3.0 (MINOR)
-- Bump rationale: 2 new principles added (Anti-Bluff Captured Evidence,
-  Host-Session Safety), plus material expansions to Principles I, II, III,
-  IV, V, VI to reflect four months of codebase evolution (Aug 2026 drift
-  review). No principle removed or redefined incompatibly.
-- Modified principles (title unchanged unless noted):
-  I.   Container-First Architecture — service list 2 → 5, resource limits
-       + rootless Podman mandate added.
-  II.  Plugin Contract Integrity — 12 → 43 managed plugins, roster-backed
-       fingerprint sync (constitution §11.4.86) added.
-  III. Credential & Secret Security — cookies-file autoload (operator
-       mandate 2026-08-15) + boba.db encrypted vault + BOBA_MASTER_KEY /
-       BOBA_API_TOKEN added.
-  IV.  Container Runtime Portability — start.sh owns orchestration,
-       rootless Podman required (Hard Stop #3 / constitution §11.4.161).
-  V.   Private Tracker Bridge Pattern — Go binary variant under
-       `--profile go` documented alongside Python webui-bridge.py.
-  VI.  Validation-Driven Development — GitHub Actions permanently removed
-       (Hard Stop #1), `./ci.sh` canonical, ruff configured in
-       pyproject.toml, Angular 21 + Go test paths added.
-- New principles:
-  XII.  Anti-Bluff Captured Evidence (wraps constitution §11.4 / §11.4.5 /
-        §11.4.107 into a project-level covenant with `docs/qa/<run-id>/`
-        evidence discipline).
-  XIII. Host-Session Safety (wraps constitution §CONST-033 / §12 host
-        power-state ban + container mem_limit / pids_limit / oom_score_adj
-        into a project-level rule).
-- Added sections: Governance section now cites `constitution/` submodule
-  as the supreme inherited authority (§11.4.35 canonical-root inheritance).
+- Version change: 1.3.0 → 1.4.0 (MINOR)
+- Bump rationale: material expansion of existing guidance; no principle
+  added, removed, or redefined incompatibly. The 1.3.0 drift review
+  (earlier the same day) predated a working session that landed the
+  project's central quality gate, its §11.4.32 sweep, its §11.4.202
+  reporting wiring, and a class of measurement defects worth codifying.
+  MINOR, not MAJOR: nothing previously permitted becomes forbidden in a
+  way that invalidates existing work; nothing is removed.
+- Modified principles (titles unchanged):
+  I.   Container-First Architecture — the health-check clause read "at
+       least one health-check endpoint responding on the service's
+       port". A service serving TWO ports with a check on ONE satisfied
+       that wording, which is exactly what BOB-138 exploited: the
+       container reported "Up 4 hours (healthy)" while 7187 had been
+       dead ~2h. Now: the check MUST cover EVERY port the service
+       serves, enforced by pre-build invariant 44 against the declared
+       set in config/served_ports.yaml.
+  XII. Anti-Bluff Captured Evidence — four measurement disciplines
+       added, each with a forensic anchor measured in-session rather
+       than asserted: a null is not evidence without a control needle;
+       a count is a lead and the lines are the findings; match
+       structure not substring (carriers are not instances); an
+       instrument must not be counted in its own measurement.
+- Added sections:
+  * "Before Every Commit" steps 9-10 — the sanctioned commit path
+    (scripts/commit-push-all.sh), --scope against concurrent writers,
+    the RECORDED BOBA_SYNC_SKIP_CI deferral, and §11.4.202 reporting
+    directives. The 44-invariant gate had ZERO mentions in this
+    document before this amendment.
+  * "Before Every Release" steps 7 and 9 — the §11.4.32 sweep
+    (scripts/verify-all-constitution-rules.sh) and the §11.4.235
+    manual-QA-deploy cycle boundary.
+  * Governance — newly inherited anchors §11.4.264-267 are binding on
+    submodule-pointer advance whether or not this document has caught
+    up; where silent, the submodule governs.
 - Removed sections: (none)
 - Templates requiring updates:
-  ✅ plan-template.md — Constitution Check section is generic
-     ("[Gates determined based on constitution file]"); no hard-coded
-     principle names — no changes needed.
-  ✅ spec-template.md — no constitution refs — no changes needed.
-  ✅ tasks-template.md — no constitution refs — no changes needed.
-  ✅ checklist-template.md — generic — no changes needed.
-  ✅ agent-file-template.md — generic — no changes needed.
-  ✅ .claude/skills/speckit-*/SKILL.md — no principle refs (grep clean)
-     — no changes needed.
-- Follow-up TODOs (deferred, tracked here rather than embedded as bracket
-  tokens):
+  ✅ plan-template.md — Constitution Check is generic; no principle
+     names hard-coded — no changes needed (re-verified 2026-08-20).
+  ✅ spec-template.md / tasks-template.md / checklist-template.md /
+     agent-file-template.md — no constitution refs — no changes needed.
+  ✅ .claude/skills/speckit-*/SKILL.md — no principle refs — no changes
+     needed.
+  ⚠ CLAUDE.md — states "42 managed plugins"; the authoritative
+     install-plugin.sh PLUGINS=() array holds 43 (counted with a
+     control needle proving the extractor sees a known member). This
+     constitution's 43 is CORRECT; CLAUDE.md is the drifted copy.
+  ⚠ README.md — badge reads plugins-48, which matches neither the
+     curated array (43) nor plugins/*.py (36). compute-badges.sh does
+     not derive that badge, so it has never been checked.
+- Follow-up TODOs (deferred, tracked here rather than as bracket tokens):
   1. TODO(COVERAGE_GATE): Principle X keeps the 49% coverage gate as-is.
-     The inherited Helix Universal Constitution §11.4.224 mandates a
-     ≥85% floor with a §11.4.224(E) exclusion-list fence. Raising the
-     Boba gate is an operator §11.4.66 decision (options: hard floor /
-     §11.4.135-style monotone-decrease ratchet / per-corpus phase-in /
-     changed-code-only with deadline) that MUST be recorded before
-     first enforcement. No autonomous ratchet change is applied here.
+     The inherited §11.4.224 mandates a ≥85% floor with a §11.4.224(E)
+     exclusion-list fence. Raising the Boba gate is an operator
+     §11.4.66 decision (hard floor / monotone-decrease ratchet /
+     per-corpus phase-in / changed-code-only with deadline) that MUST
+     be recorded before first enforcement. No autonomous ratchet
+     change is applied here.
   2. TODO(BOB_MASTER_KEY_ROTATION): CORRECTED 2026-08-20 — an earlier
-     revision of this note claimed "no rotation procedure exists",
-     which was inaccurate (§11.4.6). A DOCUMENTED procedure does
-     exist at `docs/BOBA_DATABASE.md` § "Key Rotation". The real
-     defect is narrower and worse: that procedure prescribes
-     `./bin/boba-jackett rotate-key` and `envfile-replace`, and
-     BOTH subcommands are ABSENT from `qBitTorrent-go/**/*.go`
-     (verified by control-needle-checked search, §11.4.201(7)(b)).
-     The section was also titled "Manual rotation" while
-     `internal/bootstrap/bootstrap.go` writes `§ "Key Rotation"`
-     into every operator's `.env` — a dangling pointer, now fixed
-     by renaming the heading. Implementing the two subcommands is
-     a §11.4.197 tracked feature, not a constitutional change.
+     revision claimed "no rotation procedure exists", which was
+     inaccurate (§11.4.6). A DOCUMENTED procedure exists at
+     `docs/BOBA_DATABASE.md` § "Key Rotation". The real defect is
+     narrower and worse: it prescribes `./bin/boba-jackett rotate-key`
+     and `envfile-replace`, and BOTH subcommands are ABSENT from
+     `qBitTorrent-go/**/*.go` (control-needle-checked search,
+     §11.4.201(7)(b)). Implementing them is a §11.4.197 tracked
+     feature, not a constitutional change.
+  3. TODO(PLUGIN_COUNT_PROPAGATION): the 43/42/48 divergence above is
+     a documentation defect in CLAUDE.md and README.md, not in this
+     constitution. Filed rather than fixed inside a constitution
+     amendment, so the two changes stay independently reviewable.
 -->
 
 # qBitTorrent Platform Constitution
@@ -87,8 +96,22 @@ optional host process (`webui-bridge.py`).
   memory pressure (per constitution §CONST-033 operational note and
   §11.4.161 rootless container mandate).
 - New services MUST NOT be added without updating `docker-compose.yml`
-  AND all lifecycle scripts (`start.sh`, `stop.sh`), AND at least one
-  health-check endpoint responding on the service's port.
+  AND all lifecycle scripts (`start.sh`, `stop.sh`), AND a health check
+  covering EVERY port that service serves — not merely one of them.
+  A check probing a subset asserts a PROXY signal ("one port answers")
+  in place of the real condition ("this service is serving"), so the
+  service reports healthy indefinitely while its primary capability is
+  dead (inherited §11.4.201). Forensic anchor (BOB-138, 2026-08-20):
+  `download-proxy` serves 7186 and 7187 from ONE process but probed
+  only 7186; while the container reported `Up 4 hours (healthy)`,
+  7186 answered in 0.096s and 7187 had been returning nothing for
+  roughly two hours. Enforced by pre-build invariant 44
+  (`CM-HEALTHCHECK-COVERS-SERVED-PORTS`) against the declared port
+  set in `config/served_ports.yaml`; that set is DECLARED data, not
+  derived, because `network_mode: host` services carry no `ports:`
+  mapping and their env mixes served ports (`PROXY_PORT`) with
+  dependency ports (`QBITTORRENT_PORT`) under one indistinguishable
+  shape.
 - Volume mounts MUST use `./tmp/` (mapped to `/shared-tmp`) for
   inter-container file exchange (torrent files, temporary downloads).
 - Network mode MUST be `host` for all services to enable seamless
@@ -439,6 +462,34 @@ quality), §11.4.69 (universal sink-side evidence taxonomy), and
   under `docs/qa/<run-id>/` (per §11.4.83) — recorded transcripts,
   attached materials, structured assertions. A feature with no QA
   transcript is itself a PASS-bluff.
+- A NULL RESULT IS NOT EVIDENCE until the instrument is proven able to
+  see. A grep that returns zero, a suite that reports "0 failed", and a
+  scan that finds nothing are indistinguishable from a blind instrument
+  returning the same quiet zero (inherited §11.4.201(6)). Before a zero
+  is reported as absence, a CONTROL NEEDLE — a known-present value run
+  through the SAME query and path — MUST return non-null. Measured
+  instances in one session (2026-08-20): a security run reading
+  "117 passed, 0 failed" was 33 tests SKIPPING because a service was
+  unreachable; a badge script printed "cross-checked, matches existing
+  badge" while never comparing; a readiness loop "failed" only because
+  it had no `sleep`.
+- A COUNT IS A LEAD; THE LINES ARE THE FINDINGS (inherited
+  §11.4.194(6)(b)). A tally MUST NOT be reported as a finding count
+  until the underlying lines are read. Forensic anchor: pre-build
+  invariant 39 counted the gate's own SUMMARY line — which also starts
+  with the failure marker — so every failing root added one phantom and
+  the total read 38 when the truth was 36.
+- MATCH STRUCTURE, NOT SUBSTRING (inherited §11.4.201(7)(a)). A token
+  that MENTIONS X is a CARRIER, not an instance of X. Forensic anchors:
+  a badge-rewriting filter matched the prose paragraph DOCUMENTING it
+  and destroyed that documentation; a risky-verb scan of a new
+  diagnostic returned 6 hits, all of them comments stating what the
+  code does NOT do.
+- An instrument MUST NOT be counted in its own measurement (inherited
+  §11.4.201(10)). Forensic anchor: a thread census read "one thread in
+  state R, wchan=0" as a spinning thread; that was the OBSERVER — the
+  thread reading `/proc/self/task` is necessarily running and always
+  reports exactly that signature.
 - No hardcoded `localhost` / `127.0.0.1` for client-facing URLs.
   Any URL, API base, CORS origin, or service address returned to a
   browser MUST derive from the request's `Host` header,
@@ -546,6 +597,33 @@ missed feature. Host safety is non-negotiable.
    audit against the specific values being added).
 8. If touching a user-visible feature: capture end-to-end evidence
    under `docs/qa/<run-id>/` per Principle XII.
+9. Commit through `bash scripts/commit-push-all.sh "<message>"` — the
+   §11.4.234 dedicated entrypoint. It is the ONLY sanctioned path:
+   direct `git commit` / `git push` on the main repo bypass the gate,
+   the doc/DB sync seam, and the multi-upstream fan-out.
+   - It runs `scripts/pre_build_verification.sh` (44 invariants) as an
+     explicit stage. Boba ships NO blocking git hooks, so the
+     always-unblocked invariant holds at the hook layer by
+     construction.
+   - When another agent or process is concurrently writing the tree,
+     use `--scope <path>` (repeatable). Without it, stage 5 runs
+     `git add -A` and SWEEPS in-flight work from other writers — a
+     §11.4.84 quiescence violation observed 5x in one session
+     (BOB-068). A scoped commit refuses if anything outside the
+     declared scope is staged.
+   - The long gate MAY be deferred with `BOBA_SYNC_SKIP_CI=1`, which
+     the wrapper RECORDS in the commit message. A deferral is owed
+     work caught at the next run — never a silent skip. Deferring is
+     legitimate when concurrent writers would make invariant 30's
+     no-trace mtime assertion fire on THEIR writes rather than yours.
+10. A defect, question, or task raised in conversation MUST land as a
+    tracked item, never as a prose acknowledgement (§11.4.202). The
+    reporting directives `BUG:` / `TASK:` / `ISSUE:` are wired via
+    `.helix/reporting.yaml` and drive
+    `constitution/scripts/reporting/report_item.sh`, which creates the
+    item in `docs/workable_items.db`, regenerates every derived
+    document from it, and honestly SKIPs absent trackers rather than
+    faking a push.
 
 ### Before Every Release
 
@@ -559,9 +637,21 @@ missed feature. Host safety is non-negotiable.
    `bash challenges/scripts/host_no_auto_poweroff_challenge.sh` per
    Principle XIII — both MUST pass.
 6. Update `README.md`, `PLUGIN_STATUS.md`, and `CHANGELOG.md`.
-7. Follow the inherited Helix Universal Constitution §11.4.185
+7. Run `bash scripts/verify-all-constitution-rules.sh` — the §11.4.32
+   post-pull validation sweep. It carries NO gate logic of its own:
+   it delegates to the constitution's propagation suite and then
+   MECHANICALLY DISCOVERS every remaining `cm_*.sh`, so gates added
+   upstream are picked up with no edit here. It exits 3 — never 0 —
+   when it discovers zero gates, because a sweep that saw nothing is
+   blind, not clean.
+8. Follow the inherited Helix Universal Constitution §11.4.185
    manual-QA-final gate: no release tag is created until a QA-team
    manual pass confirms the release-cycle scope.
+9. Every deployment for manual QA testing CLOSES the outgoing
+   development cycle and STARTS a new one; the version code is
+   incremented AT THAT POINT (§11.4.235). Fixes for QA findings land
+   in the NEW cycle on the NEW version id, never patched onto the
+   already-deployed one.
 
 ### Code Conventions
 
@@ -605,6 +695,15 @@ practices, conventions, and ad-hoc decisions.
   / agent-found defects are confirmation-only, and any defect found
   out-of-band is itself a coverage-escape release blocker. See
   `docs/QA_DISCOVERY_LEDGER.md`.
+- Newly inherited anchors are binding the moment the submodule
+  pointer advances, whether or not this document has caught up. As of
+  the 2026-08-20 pull those include §11.4.264 (build once, promote ONE
+  content-addressed artifact — never rebuild per stage), §11.4.265
+  (progressive delivery gated on business metrics, not only
+  infrastructure metrics), §11.4.266 (claim-vs-reality ledger keyed on
+  what the project ADVERTISES), and §11.4.267 (shared attempt record —
+  a failed approach is never silently retried). Where this document is
+  silent on an inherited anchor, the submodule governs (§11.4.35).
 - All PRs and code reviews MUST verify compliance with these
   principles AND with the inherited universal constitution.
 - Amendments to THIS project constitution require: (1) a written
@@ -619,4 +718,4 @@ practices, conventions, and ad-hoc decisions.
 - The `CONTRIBUTING.md` file governs external contribution workflow
   and MUST remain consistent with the principles herein.
 
-**Version**: 1.3.0 | **Ratified**: 2026-04-13 | **Last Amended**: 2026-08-20
+**Version**: 1.4.0 | **Ratified**: 2026-04-13 | **Last Amended**: 2026-08-20
