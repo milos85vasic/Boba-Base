@@ -165,8 +165,29 @@ injected into proxy via <code>JACKETT_API_KEY</code>)</li>
 <strong>7186</strong> (proxy), <strong>7187</strong> (merge
 service)</li>
 <li><strong>qbittorrent-proxy-go</strong> (Go/Gin, opt-in via
-<code>--profile go</code>) — replaces the Python proxy on
-<strong>7186</strong>, <strong>7187</strong>, <strong>7188</strong></li>
+<code>--profile go</code>) — serves the merge service on
+<strong>7187</strong> only. <em>(Corrected 2026-08-20, BOB-141. This
+line previously read “replaces the Python proxy on 7186, 7187, 7188”,
+which the container cannot deliver:
+<code>qBitTorrent-go/Dockerfile:16</code> is
+<code>CMD ["/app/qbittorrent-proxy"]</code> — ONE binary — and
+<code>cmd/qbittorrent-proxy/main.go</code> binds a single
+<code>cfg.ServerPort</code>, which
+<code>internal/config/config.go:58</code> resolves from
+<code>MERGE_SERVICE_PORT</code> (default 7187).
+<code>webui-bridge</code> is a SEPARATE binary this container never
+starts, so nothing in it binds 7188, and nothing binds 7186 either —
+even though the compose service sets <code>PROXY_PORT=7186</code> and
+<code>BRIDGE_PORT=7188</code> in its environment and the Dockerfile’s
+<code>EXPOSE 7187 7188</code> declares a port nothing binds. Whether the
+container SHOULD run all three (matching the original intent) is an open
+question tracked as BOB-141; until it is decided this line describes
+what the container actually does. The stale prose was not harmless: it
+was used as the source of truth when authoring
+<code>config/served_ports.yaml</code>, and the resulting healthcheck
+gate then failed a service whose healthcheck was already correct — a
+§11.4.201(1) false-positive refusal caused by trusting the doc over the
+Dockerfile.)</em></li>
 <li><strong>boba-jackett</strong> (Go/Gin) — port <strong>7189</strong>,
 owns Jackett credentials, indexer overrides, autoconfig run history;
 backed by encrypted SQLite at <code>/config/boba.db</code></li>
@@ -212,7 +233,9 @@ scripts.</p>
 </tr>
 <tr>
 <td>7188</td>
-<td>webui-bridge (host process or Go binary)</td>
+<td>webui-bridge (host process <code>webui-bridge.py</code>, or the
+standalone Go <code>webui-bridge</code> binary — NOT started by the
+<code>qbittorrent-proxy-go</code> container, see BOB-141)</td>
 <td>manual start</td>
 </tr>
 <tr>

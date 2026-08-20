@@ -107,7 +107,23 @@ Multi-container setup via `docker-compose.yml`, with an optional Go backend:
 - **qbittorrent** (lscr.io/linuxserver/qbittorrent:latest) — port **7185**
 - **jackett** (lscr.io/linuxserver/jackett:latest) — port **9117**, auto-configured (API key extracted at startup and injected into proxy via `JACKETT_API_KEY`)
 - **qbittorrent-proxy** (python:3.12-alpine) — ports **7186** (proxy), **7187** (merge service)
-- **qbittorrent-proxy-go** (Go/Gin, opt-in via `--profile go`) — replaces the Python proxy on **7186**, **7187**, **7188**
+- **qbittorrent-proxy-go** (Go/Gin, opt-in via `--profile go`) — serves the merge
+  service on **7187** only. *(Corrected 2026-08-20, BOB-141. This line previously
+  read "replaces the Python proxy on 7186, 7187, 7188", which the container cannot
+  deliver: `qBitTorrent-go/Dockerfile:16` is `CMD ["/app/qbittorrent-proxy"]` — ONE
+  binary — and `cmd/qbittorrent-proxy/main.go` binds a single `cfg.ServerPort`,
+  which `internal/config/config.go:58` resolves from `MERGE_SERVICE_PORT`
+  (default 7187). `webui-bridge` is a SEPARATE binary this container never starts,
+  so nothing in it binds 7188, and nothing binds 7186 either — even though the
+  compose service sets `PROXY_PORT=7186` and `BRIDGE_PORT=7188` in its
+  environment and the Dockerfile's `EXPOSE 7187 7188` declares a port nothing
+  binds. Whether the container SHOULD run all three (matching the original
+  intent) is an open question tracked as BOB-141; until it is decided this line
+  describes what the container actually does. The stale prose was not harmless:
+  it was used as the source of truth when authoring `config/served_ports.yaml`,
+  and the resulting healthcheck gate then failed a service whose healthcheck was
+  already correct — a §11.4.201(1) false-positive refusal caused by trusting the
+  doc over the Dockerfile.)*
 - **boba-jackett** (Go/Gin) — port **7189**, owns Jackett credentials, indexer overrides, autoconfig run history; backed by encrypted SQLite at `/config/boba.db`
 
 `webui-bridge.py` is a host process on port **7188** for private tracker downloads. The Go `webui-bridge` binary replaces this when using the Go profile.
@@ -123,7 +139,7 @@ Container runtime auto-detected (podman preferred) in all shell scripts.
 | 7185 | qBittorrent WebUI (container-internal) | proxied via 7186 |
 | 7186 | Download proxy → qBittorrent WebUI | `http://localhost:7186` |
 | 7187 | Merge Search Service (FastAPI or Go/Gin) | `http://localhost:7187/` |
-| 7188 | webui-bridge (host process or Go binary) | manual start |
+| 7188 | webui-bridge (host process `webui-bridge.py`, or the standalone Go `webui-bridge` binary — NOT started by the `qbittorrent-proxy-go` container, see BOB-141) | manual start |
 | 7189 | boba-jackett (Go) | `http://localhost:7189` |
 | 9117 | Jackett indexer | `http://localhost:9117` |
 

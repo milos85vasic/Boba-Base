@@ -1,0 +1,58 @@
+<h1
+id="bob-141-claude.md-vs-the-go-dockerfile-doc-corrected-provisioning-question-open">BOB-141
+— CLAUDE.md vs the Go Dockerfile: doc corrected, provisioning question
+OPEN</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-20T17:05:00Z</p>
+<h2 id="what-was-wrong">What was wrong</h2>
+<p>CLAUDE.md stated the Go profile “replaces the Python proxy on
+<strong>7186</strong>, <strong>7187</strong>, <strong>7188</strong>”.
+The container cannot deliver that. Read from source, not prose:</p>
+<pre><code>qBitTorrent-go/Dockerfile:16    CMD [&quot;/app/qbittorrent-proxy&quot;]        (ONE binary)
+qBitTorrent-go/Dockerfile:15    EXPOSE 7187 7188                      (declares 2)
+cmd/qbittorrent-proxy/main.go   r.Run(fmt.Sprintf(&quot;:%d&quot;, cfg.ServerPort))  (binds 1)
+internal/config/config.go:58    ServerPort = MERGE_SERVICE_PORT (default 7187)</code></pre>
+<p><code>webui-bridge</code> is a separate binary
+(<code>cmd/webui-bridge</code>, <code>/bridge/health</code>,
+<code>cfg.BridgePort</code>) that this container never starts. Nothing
+in it binds 7186 either, though the compose service sets
+<code>PROXY_PORT=7186</code> and <code>BRIDGE_PORT=7188</code> in its
+environment, which reinforces the wrong impression.</p>
+<h2 id="why-it-mattered">Why it mattered</h2>
+<p>This prose was used as the source of truth when authoring
+<code>config/served_ports.yaml</code>, producing
+<code>serves: [7186, 7187, 7188]</code> for that service. The
+healthcheck gate built on it then FAILED a service whose healthcheck was
+already correct — a §11.4.201(1) false-positive refusal caused directly
+by trusting the doc over the Dockerfile. The manifest was corrected
+against source at the time; the doc was not, and would have misled the
+next reader identically.</p>
+<h2 id="done-in-this-pass">Done in this pass</h2>
+<ul>
+<li>CLAUDE.md line 110 now states the container serves <strong>7187
+only</strong>, with the source citations inline so the next reader can
+re-derive it rather than trust another sentence.</li>
+<li>The Port Map row for 7188 now says explicitly that the
+<code>qbittorrent-proxy-go</code> container does NOT start
+webui-bridge.</li>
+</ul>
+<p>Verified by re-deriving from source after the edit (Dockerfile CMD,
+<code>r.Run(addr)</code>, <code>ServerPort</code> resolution all re-read
+and quoted above).</p>
+<h2
+id="still-open-an-operator-decision-deliberately-not-made-here">STILL
+OPEN — an operator decision, deliberately not made here</h2>
+<p>Whether the doc was wrong, or the CONTAINER is under-provisioned
+relative to the original intent (it should also run webui-bridge and a
+7186 listener), is not determinable from the code — both readings are
+consistent with what exists. The doc now describes REALITY, which is the
+safe reversible state (§11.4.101); if the intent was a three-port
+container, the fix is to provision it and re-widen the doc, not to leave
+a doc describing something that does not run.</p>
+<p>Whichever way it resolves, these should agree with reality
+afterwards: - the compose service’s <code>PROXY_PORT</code> /
+<code>BRIDGE_PORT</code> env vars, which no process in that container
+consumes; - the Dockerfile’s <code>EXPOSE 7187 7188</code>, which
+declares a port nothing binds; - <code>config/served_ports.yaml</code>,
+which currently declares <code>serves: [7187]</code>.</p>
+<p>BOB-141 therefore stays OPEN.</p>
