@@ -7,10 +7,11 @@ Scenarios:
 - Port configuration
 """
 
+import asyncio
 import os
 import sys
 import threading
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -166,9 +167,13 @@ class TestMainFastAPIServer:
         import main
 
         mock_server = MagicMock()
+        mock_server.serve = AsyncMock()
         mock_config = MagicMock()
 
-        with patch("main.logger") as mock_logger:
+        # _DIAG_ON is a module-level constant read at import, so patch the
+        # attribute rather than the env var: with the heartbeat off the wrapper
+        # coroutine completes as soon as serve() returns.
+        with patch("main._DIAG_ON", False), patch("main.logger") as mock_logger:
             with patch.dict("sys.modules"):
                 with patch("uvicorn.Config", return_value=mock_config) as mock_config_cls:
                     with patch("uvicorn.Server", return_value=mock_server) as mock_server_cls:
@@ -177,7 +182,33 @@ class TestMainFastAPIServer:
                                 main.start_fastapi_server()
                                 mock_config_cls.assert_called_once()
                                 mock_server_cls.assert_called_once_with(mock_config)
-                                mock_asyncio_run.assert_called_once_with(mock_server.serve())
+                                # Reconciled per §11.4.120 (BOB-137). This gate
+                                # asserted `asyncio.run(server.serve())` by
+                                # IDENTITY. The BOB-137 stall observatory now
+                                # runs the server inside a small wrapper that
+                                # awaits server.serve() and cancels a diagnostic
+                                # heartbeat in its finally, so the identity
+                                # assertion broke while serving was unchanged —
+                                # confirmed at runtime, the live service answers
+                                # HTTP 200 on :7187 with this exact code.
+                                #
+                                # Asserting the wrapper's identity would just
+                                # re-freeze an implementation detail. Instead we
+                                # RUN what asyncio.run was handed and assert it
+                                # genuinely drives server.serve() — so a change
+                                # that stops serving still FAILs this gate.
+                                mock_asyncio_run.assert_called_once()
+                                served = mock_asyncio_run.call_args[0][0]
+                                # NOT asyncio.run() here — it is patched in this
+                                # very block, so calling it would hand the
+                                # coroutine straight back to the mock and assert
+                                # nothing (the coroutine would never be awaited).
+                                _loop = asyncio.new_event_loop()
+                                try:
+                                    _loop.run_until_complete(served)
+                                finally:
+                                    _loop.close()
+                                mock_server.serve.assert_awaited_once()
 
     def test_start_fastapi_server_uses_env_port(self):
         """start_fastapi_server should use MERGE_SERVICE_PORT from env."""

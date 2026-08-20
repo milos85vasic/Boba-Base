@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 13
-**Last modified:** 2026-08-20T16:11:07Z
+**Revision:** 14
+**Last modified:** 2026-08-20T16:29:22Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -860,4 +860,74 @@ Run the gate over plugins/ and compare to an AST enumeration of ast.Try.handlers
 
 **Acceptance criteria:**
 Detector finds all 42 AST-confirmed sites with zero false positives, with a paired §1.1 mutation carrying one fixture per cause (all four currently PASS the detector and must FAIL a correct one) plus a negative control that must NOT fire on a correctly-narrowed logging-and-re-raising handler.
+
+## BOB-148 — Standing red unit test nothing tracked: test_no_credentials asserts has_session False, gets True — real defect or non-hermetic test, undecided
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T16:28:57Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+tests/unit/test_auth_coverage.py:303
+  TestAllTrackersAuthStatus::test_no_credentials
+
+    assert result["trackers"]["qbittorrent"]["has_session"] is False
+    E   assert True is False
+
+The test asserts that with NO credentials configured, qbittorrent reports
+has_session=False. It reports True.
+
+PROVEN PRE-EXISTING, by experiment rather than by reasoning: a detached worktree
+at the session-start commit e335dde reproduces the identical failure. Nothing in
+this session touched download-proxy/src/api/auth.py or this test file (git log
+over the session range for both paths is empty). It was already red and nothing
+was tracking it — which is the actual defect worth recording: a standing red unit
+test that no item names will be re-discovered forever and attributed to whoever
+touches the tree next. It was in fact attributed twice today before being pinned
+down.
+
+TWO HYPOTHESES, both plausible, NEITHER confirmed (§11.4.6 — do not pick one
+without evidence):
+
+ (H1) A REAL DEFECT: the auth-status path reports has_session=True on the
+      strength of something other than a credential — a cached cookie, a
+      default-constructed client, or a truthy default in the status assembler.
+      If so, the operator-visible consequence is that the dashboard would show a
+      tracker as authenticated when it is not.
+
+ (H2) A NON-HERMETIC UNIT TEST (§11.4.27(A)): the test reads real state rather
+      than a stub, and the live qBittorrent container at :7185 — which is UP and
+      healthy on this host — supplies a genuine session. Under that hypothesis
+      the test would PASS on a host with the stack stopped, which makes it
+      environment-dependent, i.e. FLAKY, and §11.4.248 quarantine territory
+      rather than a product bug.
+
+DECISIVE EXPERIMENT (cheap, and it distinguishes them in one run): execute this
+single test with the stack stopped, or with the qBittorrent host/port pointed at
+a closed port. If it PASSES, H2 holds and the fix is to make the unit test
+hermetic (mock the client) — the product is fine. If it still FAILS, H1 holds and
+the fix is in the auth-status assembly path.
+
+Do NOT stop the stack casually to run this — other work depends on it. Prefer
+pointing the test at an unbound port via env override, which is reversible and
+affects nothing else.
+
+NOTE the §11.4.226 evidence-class consequence: if H2 holds, this test has been
+asserting a RUNTIME condition from a unit-test layer all along, which is why it
+reads red on a developer host and would read green in a clean CI container — the
+worst possible polarity, since the environment that most resembles production is
+the one where the test stays silent.
+
+**Affected scope / file-scope manifest:**
+tests/unit/test_auth_coverage.py:303, download-proxy/src/api/auth.py (auth-status assembly)
+
+**Reproduction / context:**
+timeout 300 .venv/bin/python -m pytest tests/unit/test_auth_coverage.py::TestAllTrackersAuthStatus::test_no_credentials -q --import-mode=importlib  -> assert True is False. Reproduces identically in a detached worktree at e335dde (session start).
+
+**Acceptance criteria:**
+The H1/H2 experiment is run and recorded. If H2: the unit test is made hermetic (no live-stack dependency) and passes with the stack both up and down. If H1: the auth-status path no longer reports has_session without a credential, with a RED test capturing it first.
 

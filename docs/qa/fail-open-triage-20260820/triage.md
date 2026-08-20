@@ -1,7 +1,7 @@
 # §11.4.252 fail-open triage — 2026-08-20
 
-**Revision:** 2
-**Last modified:** 2026-08-20T16:20:00Z
+**Revision:** 3
+**Last modified:** 2026-08-20T16:35:00Z
 **Scope:** every hit reported by pre-build invariant 39
 (`CM-DANGEROUS-COMBINATION-FAIL-CLOSED`, §11.4.252) over boba's five first-party
 source roots.
@@ -17,7 +17,7 @@ promoted from ADVISORY to BLOCKING (§11.4.224(E)/§11.4.66 — that decision is
 |---|---|
 | Hits reported by invariant 39 | **38** |
 | Actual anti-pattern hits | **36** |
-| Hits after this round's fixes | **30** |
+| Hits after this round's fixes | **29** |
 | Bucket (A) real defects — fixed | **8** (+1 the gate cannot see, also fixed) |
 | Bucket (B) correct idiom | **14** (+2 after A4/A6 were narrowed) |
 | Bucket (C) vendored/third-party | **14** |
@@ -53,8 +53,8 @@ is a valid control needle for the gate's regex (§11.4.201(7)):
 
 | Population | Count |
 |---|---|
-| Gate-reported (post-fix) | 30 |
-| AST ground truth, **same shape** the gate claims to detect | **42** |
+| Gate-reported (post-fix) | 29 |
+| AST ground truth, **same shape** the gate claims to detect | **41** |
 | **Missed by the gate** | **12** |
 | Additional bare `except:` whose body is not `pass` — excluded by the gate's shape **definition** | **13** |
 
@@ -298,27 +298,30 @@ limitation).
 
 ---
 
-## 4. §11.4.251 finding — byte-identical fork left divergent
+## 4. §11.4.251 finding — byte-identical fork (RESOLVED)
 
 `plugins/anilibra.py` and `plugins/community/anilibra.py` were **byte-identical**
-(`md5 a9e20a0aaf372eb534a0f46a7aea1c65`) and both were rewritten by boba in the
-same commit `edd50f8`. Fix **F8** touches only the top-level copy — the community
-tree is outside this task's declared file ownership — so the two copies now
-diverge by exactly that handler.
+(`md5 a9e20a0a…`) and both were rewritten by boba in commit `edd50f8`. Fix **F8**
+could only touch the top-level copy — the community tree is outside this task's
+declared file ownership — which would have left the two diverging by exactly that
+handler, manufacturing the fork §11.4.251 forbids.
 
-This is a genuine §11.4.251 byte-identical-fork condition and the correct
-resolution is **not** "patch both copies forever" but extracting one copy. Until
-that is decided, the transferable patch is:
+The transferable patch was published here rather than applied silently, and the
+coordinator landed it on the twin in the **same commit** (`0795721`). Verified:
 
-```python
-# plugins/community/anilibra.py:75
--        except Exception:
--            pass
-+        except Exception as e:
-+            print(f"Release {release_id} error: {e}", file=__import__("sys").stderr)
+```
+ast.dump(plugins/anilibra.py) == ast.dump(plugins/community/anilibra.py)   -> True
 ```
 
-Recommend a tracked §11.4.197 item.
+The two files are **behaviourally identical**; the defect is fixed in both and the
+gate no longer reports `community/anilibra.py:75`.
+
+**Residual, honestly stated:** they are no longer *byte*-identical — the two
+explanatory comments differ in wording. Nothing behavioural depends on it, but the
+md5-equality property that made drift between these twins trivially detectable is
+gone. The durable fix remains the §11.4.251 one — extract a single copy rather
+than maintain two — and that stays a tracked follow-up, not something this round
+resolved.
 
 ---
 
@@ -428,11 +431,13 @@ byte-empty.
 
 ```
 BEFORE: 36   (download-proxy/src 4, plugins 32, scripts 0, qBitTorrent-go 0, frontend/src 0)
-AFTER:  30   (download-proxy/src 4, plugins 26, scripts 0, qBitTorrent-go 0, frontend/src 0)
+AFTER:  29   (download-proxy/src 4, plugins 25, scripts 0, qBitTorrent-go 0, frontend/src 0)
 ```
 
-6 genuine eliminations; A4/A6 deliberately remain visible as declared bucket-B
-rather than hidden from the instrument (see §3.1).
+7 genuine eliminations — the 6 first-party (A) sites plus
+`plugins/community/anilibra.py:75`, whose §11.4.251 twin patch landed in the same
+commit (§4). A4/A6 deliberately remain **visible** as declared bucket-B rather
+than hidden from the instrument (see §3.1).
 
 ### Other checks
 
@@ -440,8 +445,31 @@ rather than hidden from the instrument (see §3.1).
 python3 -m py_compile plugins/*.py plugins/community/*.py   -> OK all plugins
 ruff check plugins/ docs/qa/fail-open-triage-20260820/      -> All checks passed!
 pytest tests/unit -k "<every changed file>"                 -> 642 passed, 0 failed
+pytest tests/unit  (FULL suite, 18m59s)                     -> 4415 passed, 3 failed
 pytest docs/qa/fail-open-triage-20260820/                   -> 29 passed
 ```
+
+### Full-suite attribution — the 3 failures are PRE-EXISTING (§11.4.6)
+
+The full run finished **4415 passed, 3 failed**. Exit code was 0, which is *not*
+evidence (an earlier backgrounded run also exited 0 with an empty output file), so
+the three were attributed by **experiment**, not by reasoning:
+
+```
+git checkout 1dd7b0a -- plugins/     # the commit BEFORE this work
+  -> 3 failed   (identical three)
+git checkout HEAD -- plugins/        # restore
+  -> md5sum -c: all 6 files OK       # byte-exact restore verified
+```
+
+They fail identically **without** any of this round's changes, so none is
+attributable to it:
+
+| Test | Owner |
+|---|---|
+| `test_main.py::…test_start_fastapi_server_imports_uvicorn` | another agent's `main.py` — asserts `asyncio.run(server.serve())` but now receives their new `_serve_with_heartbeat` coroutine |
+| `test_auth_coverage.py::…test_no_credentials` | `download-proxy/src/api/auth.py` `all_trackers_auth_status` — untouched here; `grep -rn env_loader download-proxy/src/` is **empty**, so there is no import path from any changed file |
+| `test_no_runtime_service_skips` | flags `tests/scaling/test_boba_scaling.py:73` — a scaling test untouched here |
 
 The nova3 plugin contract is guarded explicitly: `test_nova3_contract_preserved`
 loads `rutor`, `rutracker`, `anilibra` and `iptorrents` and asserts each still

@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
-2026-08-20T16:11:07Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 14 <strong>Last modified:</strong>
+2026-08-20T16:29:22Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -1507,5 +1507,73 @@ AST-confirmed sites with zero false positives, with a paired §1.1
 mutation carrying one fixture per cause (all four currently PASS the
 detector and must FAIL a correct one) plus a negative control that must
 NOT fire on a correctly-narrowed logging-and-re-raising handler.</p>
+<h2
+id="bob-148-standing-red-unit-test-nothing-tracked-test_no_credentials-asserts-has_session-false-gets-true-real-defect-or-non-hermetic-test-undecided">BOB-148
+— Standing red unit test nothing tracked: test_no_credentials asserts
+has_session False, gets True — real defect or non-hermetic test,
+undecided</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Medium <strong>Created-By:</strong>
+Claude</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-08-20T16:28:57Z <strong>Reported-By:</strong>
+Claude</p>
+<p><strong>What (the report, verbatim):</strong>
+tests/unit/test_auth_coverage.py:303
+TestAllTrackersAuthStatus::test_no_credentials</p>
+<pre><code>assert result[&quot;trackers&quot;][&quot;qbittorrent&quot;][&quot;has_session&quot;] is False
+E   assert True is False</code></pre>
+<p>The test asserts that with NO credentials configured, qbittorrent
+reports has_session=False. It reports True.</p>
+<p>PROVEN PRE-EXISTING, by experiment rather than by reasoning: a
+detached worktree at the session-start commit e335dde reproduces the
+identical failure. Nothing in this session touched
+download-proxy/src/api/auth.py or this test file (git log over the
+session range for both paths is empty). It was already red and nothing
+was tracking it — which is the actual defect worth recording: a standing
+red unit test that no item names will be re-discovered forever and
+attributed to whoever touches the tree next. It was in fact attributed
+twice today before being pinned down.</p>
+<p>TWO HYPOTHESES, both plausible, NEITHER confirmed (§11.4.6 — do not
+pick one without evidence):</p>
+<p>(H1) A REAL DEFECT: the auth-status path reports has_session=True on
+the strength of something other than a credential — a cached cookie, a
+default-constructed client, or a truthy default in the status assembler.
+If so, the operator-visible consequence is that the dashboard would show
+a tracker as authenticated when it is not.</p>
+<p>(H2) A NON-HERMETIC UNIT TEST (§11.4.27(A)): the test reads real
+state rather than a stub, and the live qBittorrent container at :7185 —
+which is UP and healthy on this host — supplies a genuine session. Under
+that hypothesis the test would PASS on a host with the stack stopped,
+which makes it environment-dependent, i.e. FLAKY, and §11.4.248
+quarantine territory rather than a product bug.</p>
+<p>DECISIVE EXPERIMENT (cheap, and it distinguishes them in one run):
+execute this single test with the stack stopped, or with the qBittorrent
+host/port pointed at a closed port. If it PASSES, H2 holds and the fix
+is to make the unit test hermetic (mock the client) — the product is
+fine. If it still FAILS, H1 holds and the fix is in the auth-status
+assembly path.</p>
+<p>Do NOT stop the stack casually to run this — other work depends on
+it. Prefer pointing the test at an unbound port via env override, which
+is reversible and affects nothing else.</p>
+<p>NOTE the §11.4.226 evidence-class consequence: if H2 holds, this test
+has been asserting a RUNTIME condition from a unit-test layer all along,
+which is why it reads red on a developer host and would read green in a
+clean CI container — the worst possible polarity, since the environment
+that most resembles production is the one where the test stays
+silent.</p>
+<p><strong>Affected scope / file-scope manifest:</strong>
+tests/unit/test_auth_coverage.py:303, download-proxy/src/api/auth.py
+(auth-status assembly)</p>
+<p><strong>Reproduction / context:</strong> timeout 300 .venv/bin/python
+-m pytest
+tests/unit/test_auth_coverage.py::TestAllTrackersAuthStatus::test_no_credentials
+-q –import-mode=importlib -&gt; assert True is False. Reproduces
+identically in a detached worktree at e335dde (session start).</p>
+<p><strong>Acceptance criteria:</strong> The H1/H2 experiment is run and
+recorded. If H2: the unit test is made hermetic (no live-stack
+dependency) and passes with the stack both up and down. If H1: the
+auth-status path no longer reports has_session without a credential,
+with a RED test capturing it first.</p>
 </body>
 </html>
