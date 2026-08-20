@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 21
-**Last modified:** 2026-08-20T16:11:07Z
+**Revision:** 22
+**Last modified:** 2026-08-20T16:15:21Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1147,4 +1147,49 @@ Monkeypatch Request.is_disconnected to raise, open an SSE stream, disconnect the
 
 **Acceptance criteria:**
 A raising disconnect probe terminates the stream (fail-closed per §11.4.252) rather than continuing it, AND a normally-connected client still streams uninterrupted (§11.4.201 both directions). Guard: a unit test for each SSE generator covering raise -> terminate and connected -> continue.
+
+## BOB-147 — Triage all 36 §11.4.252 fail-open hits: 9 real defects fixed, 14 correct idioms, 14 vendored
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/fail-open-triage-20260820/triage.md
+**Severity:** Medium
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-20T16:15:03Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+All 36 §11.4.252 fail-open hits classified with zero left unclassified, 9 real
+defects fixed RED-first, 2 stale gates reconciled per §11.4.120, and the phantom
+count in invariant 39 removed.
+
+  (A) real defect      9   fixed
+  (B) correct idiom   14   single-capability, or the primary failure is already
+                           logged/re-raised
+  (C) vendored        14   upstream headers + byte-identical community/ twin
+
+Fixed: env_loader.py:30, iptorrents.py:77, rutor.py:303/324/121,
+rutracker.py:349/370, helpers.py:220, anilibra.py:75, plus
+community/anilibra.py:75 (the §11.4.251 twin).
+
+Evidence: docs/qa/fail-open-triage-20260820/{triage.md, test_fail_open_regression.py,
+red_run.txt, green_run.txt}. RED 8 failed/18 passed -> GREEN 29 passed; each fix
+reverted makes its own guard FAIL; a CONST-XII no-op stub the author did not
+write keeps the structure but blanks the diagnostic and the guard STILL fails.
+
+Two follow-ups are tracked separately and are NOT part of this item:
+  BOB-146 — the constitution detector undercounts by 29% (30 vs 42 AST).
+  Promotion of invariant 39 to BLOCKING — needs a §11.4.224(E) fence over the
+  remaining 30, and the 10 unowned missed sites triaged first, or the fence is
+  written against an undercount. Operator's call (§11.4.66).
+
+**Affected scope / file-scope manifest:**
+plugins/*.py, plugins/community/anilibra.py, download-proxy/src/api/theme_state.py, download-proxy/src/merge_service/scheduler.py, tests/unit/test_plugin_rutor.py, tests/unit/test_plugin_rutracker.py, scripts/pre_build_verification.sh
+
+**Reproduction / context:**
+n/a — planned triage of an advisory gate's output, not a discovered defect.
+
+**Acceptance criteria:**
+Every hit classified; bucket-A fixes RED-first with paired mutations; stale gates reconciled not fake-passed; the count reflects findings not the gate's summary line.
 
