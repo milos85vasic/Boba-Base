@@ -150,7 +150,7 @@ fi
 
 # Run the gate and capture its output
 echo "  Running pre_build_verification.sh..."
-GATE_OUTPUT=$("${PROJECT_ROOT}/scripts/pre_build_verification.sh" 2>&1) && GATE_RC=$? || GATE_RC=$?
+GATE_OUTPUT=$(BOBA_PREBUILD_NESTED=1 "${PROJECT_ROOT}/scripts/pre_build_verification.sh" 2>&1) && GATE_RC=$? || GATE_RC=$?
 if [[ "${GATE_RC}" -eq 0 ]]; then
     pass "pre_build_verification.sh returns 0 (all invariants hold)"
 else
@@ -169,7 +169,12 @@ echo "  Mutation 1: Strip §11.4 anchor from Constitution.md"
 MUTATION_TARGET="${PROJECT_ROOT}/constitution/Constitution.md"
 MUTATION_ANCHOR='§11.4 End-user quality guarantee — forensic anchor'
 MUTATION_BACKUP=$(mktemp)
-cp "${MUTATION_TARGET}" "${MUTATION_BACKUP}"
+# `cp -p` on BOTH backup and restore: a plain `cp` puts back byte-identical
+# content but stamps a NEW mtime, and CM-MARKDOWN-EXPORT-SYNC (§11.4.65)
+# compares mtimes — so this mutation test silently manufactured
+# "CLAUDE.html/Constitution exports stale" and failed the gate on an
+# unrelated invariant. A test must leave NO trace in the real tree.
+cp -p "${MUTATION_TARGET}" "${MUTATION_BACKUP}"
 
 # Perform the mutation
 sed -i '' "s/${MUTATION_ANCHOR}/MUTATED_OUT/g" "${MUTATION_TARGET}" 2>/dev/null || \
@@ -177,12 +182,12 @@ sed -i "s/${MUTATION_ANCHOR}/MUTATED_OUT/g" "${MUTATION_TARGET}"
 
 # Run the gate — it MUST FAIL
 set +e
-"${PROJECT_ROOT}/scripts/pre_build_verification.sh" > /dev/null 2>&1
+BOBA_PREBUILD_NESTED=1 "${PROJECT_ROOT}/scripts/pre_build_verification.sh" > /dev/null 2>&1
 MUTATION_RC=$?
 set -e
 
 # Restore
-cp "${MUTATION_BACKUP}" "${MUTATION_TARGET}"
+cp -p "${MUTATION_BACKUP}" "${MUTATION_TARGET}"
 rm -f "${MUTATION_BACKUP}"
 
 if [[ "${MUTATION_RC}" -ne 0 ]]; then
@@ -196,7 +201,7 @@ fi
 echo "  Mutation 2: Strip inheritance pointer from CLAUDE.md"
 CLAUDE_INHERITANCE_HEADER='## INHERITED FROM constitution/CLAUDE.md'
 CLAUDE_BACKUP=$(mktemp)
-cp "${PROJECT_ROOT}/CLAUDE.md" "${CLAUDE_BACKUP}"
+cp -p "${PROJECT_ROOT}/CLAUDE.md" "${CLAUDE_BACKUP}"
 
 # Remove the inheritance block
 grep -vF "${CLAUDE_INHERITANCE_HEADER}" "${PROJECT_ROOT}/CLAUDE.md" > "${CLAUDE_BACKUP}.stripped"
@@ -204,12 +209,12 @@ grep -vF "${CLAUDE_INHERITANCE_HEADER}" "${PROJECT_ROOT}/CLAUDE.md" > "${CLAUDE_
 grep -vF 'constitution/CLAUDE.md' "${CLAUDE_BACKUP}.stripped" > "${PROJECT_ROOT}/CLAUDE.md"
 
 set +e
-"${PROJECT_ROOT}/scripts/pre_build_verification.sh" > /dev/null 2>&1
+BOBA_PREBUILD_NESTED=1 "${PROJECT_ROOT}/scripts/pre_build_verification.sh" > /dev/null 2>&1
 MUTATION2_RC=$?
 set -e
 
 # Restore
-cp "${CLAUDE_BACKUP}" "${PROJECT_ROOT}/CLAUDE.md"
+cp -p "${CLAUDE_BACKUP}" "${PROJECT_ROOT}/CLAUDE.md"
 rm -f "${CLAUDE_BACKUP}" "${CLAUDE_BACKUP}.stripped"
 
 if [[ "${MUTATION2_RC}" -ne 0 ]]; then

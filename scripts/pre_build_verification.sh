@@ -140,6 +140,20 @@
 #      reuse). Found by Task 8 as 2 live hits in
 #      test_public_tracker_subprocess_timeout.py, fixed at commit
 #      8bedc5a. BLOCKING (contributes to FAIL_COUNT).
+#  30. CM-BASH-UNIT-TESTS-EXECUTED: tests/unit/*.sh are actually EXECUTED
+#      (§11.4.226) — ci.sh runs pytest, which collects only test_*.py, so this
+#      whole suite was run by NOTHING. Carries a NO-TRACE assertion over the
+#      TRACKED corpus (main repo + constitution submodule, ~3.9k paths):
+#      a marker file is stamped before the suite and every tracked path is
+#      compared with bash's nanosecond-precise `-nt` afterwards, so a suite that
+#      mutates a real tracked file and restores it with a plain `cp` (identical
+#      content, NEW mtime — invisible to `git status`, and enough to make
+#      invariant 16 report a false "export stale") is caught instead of
+#      cascading into an unrelated invariant. Widened 2026-08-20 from a
+#      hardcoded 3-file list; see the block's own comments for the measured
+#      justification of its §11.4.224(E) submodule-scope exclusion, the
+#      §11.4.201(7)(b) control needle, and the coverage-preservation assertion
+#      that refuses to let the corpus silently shrink. BLOCKING.
 #  (opt). Optional: challenges/scripts/run_all_challenges.sh (if FULL_VALIDATION=1)
 #
 # Constitution: §1.1 (paired mutation), §11.4 (anti-bluff covenant), §11.4.84 (working-tree quiescence), §11.4.107(10) (self-validated golden-good/golden-bad), §11.4.125 (code-review gate), §11.4.109 (anti-forgetting enforcement), §11.4.65 (universal Markdown export), §11.4.201(1) (false-positive-refusal is a FAIL-bluff), §11.4.238 (automated QA is the discoverer), §11.4.227(B) (propagation gates count block-starts), §12.12 (thread/process-headroom awareness), §11.4.234 (always-unblocked mechanism), §11.4.263 (process-group signal-safety mandate)
@@ -986,19 +1000,141 @@ echo "[30/30] CM-BASH-UNIT-TESTS-EXECUTED: tests/unit/*.sh actually run (§11.4.
 # output; running them from INSIDE this invariant recurses infinitely (proven
 # live 2026-08-20: rc=124 timeout). The BOBA_PREBUILD_NESTED sentinel below is
 # the belt-and-braces guard; this list is the braces. They still run standalone.
+# Membership is evidence-based: a suite belongs here IFF it EXECUTES the gate
+# (`bash "$SCRIPT"`), not merely references it. Verified 2026-08-20 by grep +
+# timing; an earlier revision of this list had exactly the wrong two entries.
 BASH_TEST_SELF_RECURSIVE=(
-    "test_pre_build_workable_items_invariant.sh"
-    "test_pre_build_workable_items_diff_check.sh"
+    "test_export_sync_gate.sh"                    # bash "$GATE_SCRIPT" x3, ~299s
+    "test_pre_build_workable_items_invariant.sh"  # bash "$SCRIPT", timed out at 300s
 )
 # QUARANTINE — real debt, MUST only shrink. Removing a name without fixing its
 # suite is a §11.4.227 metric-gaming move.
-# TODO(BASH-TEST-QUARANTINE): fix and de-quarantine.
-BASH_TEST_QUARANTINE=(
-    "test_export_sync_gate.sh"                     # 1 passed, 2 failed (never executed until 2026-08-20)
-    "test_pre_build_workable_items_diff_check.sh"  # rc=1 (never executed until 2026-08-20)
-)
+# EMPTY as of 2026-08-20: all three original entries were resolved by ONE
+# root-cause fix in test_pre_build_workable_items_diff_check.sh (dead
+# session-scratchpad path + a plain `cp` restore that bumped docs/Issues.md's
+# mtime and manufactured false export staleness for the other two). Keep this
+# array — it is the ratchet; adding a name is allowed only as tracked debt.
+BASH_TEST_QUARANTINE=()
 BASH_TEST_RAN=0; BASH_TEST_FAILED=0; BASH_TEST_QUARANTINED=0
 BASH_TEST_FAILURES=()
+# --- NO-TRACE corpus snapshot (§11.4.84 working-tree quiescence) ---
+# WHY: several suites mutate REAL tracked files to prove a gate has teeth, then
+# restore them. A plain `cp` restore returns identical CONTENT but a NEW mtime,
+# and CM-MARKDOWN-EXPORT-SYNC (invariant 16) compares MTIMES — so a restore can
+# silently manufacture "<doc>.html stale" and fail an unrelated invariant
+# (measured cascade 2026-08-20: docs/Issues.md 1787213360 -> 1787213787, zero
+# content change). Restores must use `cp -p`; this seam CATCHES a regression
+# instead of trusting the convention.
+#
+# WIDENED 2026-08-20 from a hardcoded 3-file list (docs/Issues.md, CLAUDE.md,
+# constitution/Constitution.md) to the whole TRACKED corpus: a suite mutating
+# any OTHER tracked file slipped straight through the old list.
+#
+# WHY NOT `git status --porcelain`: it detects CONTENT change, and this defect
+# is mtime-only with byte-identical content. MEASURED 2026-08-20 in an isolated
+# throwaway repo — after a plain-`cp` restore, `git status --porcelain -- f.md`
+# printed 0 lines BEFORE and 0 lines AFTER. It is structurally BLIND to this
+# class (§11.4.201(6) FALSE-NULL), so it cannot be the instrument here.
+#
+# WHY a marker file + bash `-nt` instead of `stat -c%Y`: `%Y` is WHOLE SECONDS.
+# MEASURED 2026-08-20: a mutate+plain-`cp`-restore completing inside ONE
+# wall-clock second (marker %Y=1787217026, victim %Y=1787217026 — identical —
+# with %y differing at .733817268 vs .779816962) was CAUGHT by `-nt` and MISSED
+# by the `%Y` comparison this block used before. Widening the corpus therefore
+# also closed a same-second blind spot that the 3-file version had.
+BASH_TEST_TRACE_CORPUS=()
+BASH_TEST_TRACE_UNCOVERED=""
+BASH_TEST_TRACE_MARKER=""
+BASH_TEST_TRACE_DIR=""
+BASH_TEST_TRACE_NEEDLE_OK=1
+if [[ -z "${BOBA_PREBUILD_NESTED:-}" ]]; then
+    # CORPUS SCOPE — main repo + the `constitution` submodule.
+    # `git ls-files` at the top level does NOT descend into submodules, and
+    # constitution/Constitution.md (one of the three paths the old list covered)
+    # lives inside one — enumerated explicitly, or coverage would SHRINK while
+    # appearing to widen.
+    #
+    # EXCLUSION (§11.4.224(E) fence — stated, justified, liftable, never silent):
+    # the CONTENTS of submodules/{jackett,helixqa,challenges,containers} are out
+    # of the per-commit corpus. The justification is MEASURED, not assumed
+    # (§11.4.6) — 3 iterations each, idle host, 2026-08-20:
+    #     main + constitution        3,958 files   0.50-0.66 s
+    #     + all four submodules      62,069 files   9.4-13.8 s
+    # i.e. ~20x the wall-clock to cover the 58,111 additional files of those
+    # four trees, on a gate that runs at every commit (§11.4.234 keeps the
+    # commit/push mechanism unblocked). Evidence the excluded region is not
+    # where this defect lives: a full-tree `find -newer` across the ENTIRE
+    # window of a real suite run (2026-08-20; 7 suites, 0 failures) reported
+    # exactly TWO changed paths in the whole checkout —
+    # .remember/logs/memory-2026-08-20.log and .pytest_cache/v/randomly_seed —
+    # both UNTRACKED and gitignored, and NOTHING under submodules/ at all.
+    # helixqa/challenges/containers are own-org (§11.4.28 first-party), so this
+    # is tracked DEBT, not a permanent carve-out:
+    # TODO(NO-TRACE-SUBMODULE-SCOPE): register the §11.4.197 work item for full
+    # submodule-content coverage (cheaper enumeration, or a release-seam-only
+    # full run). Setting BOBA_NOTRACE_FULL_SUBMODULES=1 includes them NOW; that
+    # knob can only WIDEN the corpus, never narrow it, so it is not an escape
+    # hatch (§11.4.224 no-escape-hatch discipline).
+    #
+    # NO gate-owned-write exclusion list is needed: measured above, the suite
+    # writes ZERO tracked files. An unjustified exclusion is refused
+    # (§11.4.224(E)); an empty exclusion list is the honest outcome here.
+    # The membership index is filled in the SAME loops that build the corpus:
+    # expanding a ~4k-element array again just to search it measured ~80ms per
+    # extra pass, and the coverage-preservation check below needs three lookups.
+    declare -A _nt_seen=()
+    _nt_main=(); _nt_const=()
+    mapfile -d '' -t _nt_main < <(git -C "${PROJECT_ROOT}" ls-files -z 2>/dev/null || true)
+    for _p in ${_nt_main[@]+"${_nt_main[@]}"}; do
+        BASH_TEST_TRACE_CORPUS+=("${PROJECT_ROOT}/${_p}")
+        _nt_seen["${PROJECT_ROOT}/${_p}"]=1
+    done
+    if [[ -e "${PROJECT_ROOT}/constitution/.git" ]]; then
+        mapfile -d '' -t _nt_const < <(git -C "${PROJECT_ROOT}/constitution" ls-files -z --recurse-submodules 2>/dev/null || true)
+        for _p in ${_nt_const[@]+"${_nt_const[@]}"}; do
+            BASH_TEST_TRACE_CORPUS+=("${PROJECT_ROOT}/constitution/${_p}")
+            _nt_seen["${PROJECT_ROOT}/constitution/${_p}"]=1
+        done
+    fi
+    if [[ -n "${BOBA_NOTRACE_FULL_SUBMODULES:-}" ]]; then
+        while IFS= read -r _sm; do
+            [[ -n "${_sm}" ]] || continue
+            [[ "${_sm}" = "constitution" ]] && continue   # already enumerated above
+            [[ -e "${PROJECT_ROOT}/${_sm}/.git" ]] || continue
+            _nt_sub=()
+            mapfile -d '' -t _nt_sub < <(git -C "${PROJECT_ROOT}/${_sm}" ls-files -z --recurse-submodules 2>/dev/null || true)
+            for _p in ${_nt_sub[@]+"${_nt_sub[@]}"}; do
+                BASH_TEST_TRACE_CORPUS+=("${PROJECT_ROOT}/${_sm}/${_p}")
+                _nt_seen["${PROJECT_ROOT}/${_sm}/${_p}"]=1
+            done
+        done < <(git config -f "${PROJECT_ROOT}/.gitmodules" --get-regexp 'submodule\..*\.path' 2>/dev/null | awk '{print $2}')
+    fi
+
+    # COVERAGE-PRESERVATION assertion: the three paths the pre-widening list
+    # covered MUST still be inside the corpus. An un-initialised constitution
+    # submodule would otherwise SHRINK real coverage while the block reads as
+    # wider — a quiet zero is not a clean result (§11.4.201(6)).
+    for _lf in "${PROJECT_ROOT}/docs/Issues.md" "${PROJECT_ROOT}/CLAUDE.md" "${PROJECT_ROOT}/constitution/Constitution.md"; do
+        [[ -f "${_lf}" ]] || continue   # genuinely absent on disk -> nothing to lose coverage of
+        [[ -n "${_nt_seen[${_lf}]:-}" ]] || BASH_TEST_TRACE_UNCOVERED+="${_lf#"${PROJECT_ROOT}/"} "
+    done
+
+    # MARKER + CONTROL NEEDLE (§11.4.201(7)(b)): a "nothing moved" result is not
+    # evidence until the instrument is PROVEN able to see a move through the
+    # SAME path. The marker is created on the same filesystem as the corpus
+    # (qa-results/ is gitignored — .gitignore:273) so no cross-filesystem
+    # timestamp-granularity assumption is made; the needle then proves a file
+    # written after the marker really does compare `-nt` on THIS filesystem.
+    BASH_TEST_TRACE_DIR="${PROJECT_ROOT}/qa-results/.notrace"
+    mkdir -p "${BASH_TEST_TRACE_DIR}" 2>/dev/null || BASH_TEST_TRACE_DIR="$(mktemp -d)"
+    BASH_TEST_TRACE_MARKER="${BASH_TEST_TRACE_DIR}/marker"
+    rm -f "${BASH_TEST_TRACE_MARKER}" "${BASH_TEST_TRACE_DIR}/needle"
+    touch "${BASH_TEST_TRACE_MARKER}"
+    touch "${BASH_TEST_TRACE_DIR}/needle"
+    BASH_TEST_TRACE_NEEDLE_OK=0
+    [[ "${BASH_TEST_TRACE_DIR}/needle" -nt "${BASH_TEST_TRACE_MARKER}" ]] && BASH_TEST_TRACE_NEEDLE_OK=1
+    rm -f "${BASH_TEST_TRACE_DIR}/needle"
+fi
 if [[ -n "${BOBA_PREBUILD_NESTED:-}" ]]; then
     # Nested invocation (a test under this very invariant re-ran the gate).
     # Skipping here is what breaks the recursion — honest SKIP, never a PASS.
@@ -1008,7 +1144,9 @@ for _bt in "${PROJECT_ROOT}"/tests/unit/test_*.sh; do
     [[ -f "${_bt}" ]] || continue
     _btname="$(basename "${_bt}")"
     _skip=0
-    for _q in "${BASH_TEST_SELF_RECURSIVE[@]}" "${BASH_TEST_QUARANTINE[@]}"; do
+    # ${arr[@]+"${arr[@]}"} — safe expansion of a possibly-EMPTY array under
+    # `set -u` (the quarantine is empty as of 2026-08-20).
+    for _q in "${BASH_TEST_SELF_RECURSIVE[@]}" ${BASH_TEST_QUARANTINE[@]+"${BASH_TEST_QUARANTINE[@]}"}; do
         [[ "${_btname}" = "${_q}" ]] && { _skip=1; break; }
     done
     if [[ "${_skip}" -eq 1 ]]; then
@@ -1032,9 +1170,50 @@ elif [[ "${BASH_TEST_FAILED}" -gt 0 ]]; then
     for _f in "${BASH_TEST_FAILURES[@]}"; do
         echo "        - ${_f}" >&2
     done
+elif [[ "${#BASH_TEST_TRACE_CORPUS[@]}" -eq 0 ]]; then
+    # §11.4.201(6): an empty corpus makes the scan return the SAME quiet zero a
+    # genuinely clean tree returns. That is a FALSE-NULL, never a pass.
+    fail "CM-BASH-UNIT-TESTS-EXECUTED: no-trace corpus is EMPTY — the tracked-file enumeration is blind, not a clean tree"
+elif [[ -n "${BASH_TEST_TRACE_UNCOVERED}" ]]; then
+    fail "CM-BASH-UNIT-TESTS-EXECUTED: no-trace corpus LOST coverage of: ${BASH_TEST_TRACE_UNCOVERED}"
+    echo "        These paths were covered before the corpus widening; enumeration must not silently drop them." >&2
 else
-    pass "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_RAN} bash unit test(s) green (${BASH_TEST_QUARANTINED} quarantined)"
+    # NO-TRACE assertion: any tracked file whose mtime moved while the suite ran
+    # means a test wrote into the real tree — typically a plain `cp` restore
+    # where `cp -p` was required.
+    BASH_TEST_TRACE_VIOLATIONS=""
+    BASH_TEST_TRACE_VIOLATION_N=0
+    for _cf in ${BASH_TEST_TRACE_CORPUS[@]+"${BASH_TEST_TRACE_CORPUS[@]}"}; do
+        [[ "${_cf}" -nt "${BASH_TEST_TRACE_MARKER}" ]] || continue
+        # Regular files only. The submodule GITLINK entries `git ls-files` emits
+        # are DIRECTORIES; a directory's mtime moves whenever any entry is
+        # created inside it — including a gitignored temp file — which would be
+        # a §11.4.201(1) false-positive refusal, not a real trace.
+        [[ -f "${_cf}" ]] || continue
+        BASH_TEST_TRACE_VIOLATION_N=$((BASH_TEST_TRACE_VIOLATION_N + 1))
+        [[ "${BASH_TEST_TRACE_VIOLATION_N}" -le 20 ]] && BASH_TEST_TRACE_VIOLATIONS+="${_cf#"${PROJECT_ROOT}/"} "
+    done
+    if [[ "${BASH_TEST_TRACE_VIOLATION_N}" -gt 0 ]]; then
+        # State the OBSERVATION, not an unproven cause (§11.4.6): this seam sees
+        # the window, and cannot by itself distinguish a test's write from a
+        # concurrent editor's. Both are real §11.4.84 quiescence violations at
+        # the pre-build seam, and the two remedies differ — so name both.
+        fail "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_TRACE_VIOLATION_N} tracked file(s) mtime-moved while the bash suite ran: ${BASH_TEST_TRACE_VIOLATIONS}"
+        echo "        Either a suite restored with plain 'cp' where 'cp -p' is required (content AND" >&2
+        echo "        mtime must be put back), or the tree was not quiescent — a concurrent editor" >&2
+        echo "        wrote to it mid-run (§11.4.84). Re-run on a quiescent tree to tell them apart." >&2
+    elif [[ "${BASH_TEST_TRACE_NEEDLE_OK}" -ne 1 ]]; then
+        # The scan found nothing AND could not be proven able to see. Report the
+        # blindness honestly instead of claiming a clean result (§11.4.6);
+        # non-blocking per §11.4.234 — a coarse-granularity filesystem is a host
+        # property, not a defect in this tree.
+        pass "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_RAN} bash unit test(s) green (${BASH_TEST_QUARANTINED} quarantined); no-trace DEGRADED — control needle unproven on this filesystem, result not trusted"
+    else
+        pass "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_RAN} bash unit test(s) green (${BASH_TEST_QUARANTINED} quarantined), no-trace verified across ${#BASH_TEST_TRACE_CORPUS[@]} tracked paths (needle proven)"
+    fi
 fi
+[[ -n "${BASH_TEST_TRACE_MARKER}" ]] && rm -f "${BASH_TEST_TRACE_MARKER}"
+true   # keep the block's exit status clean for `set -e`
 
 # --- Optional: Run challenge aggregator when FULL_VALIDATION=1 ---
 if [[ -n "${FULL_VALIDATION:-}" ]] && [[ "${FULL_VALIDATION}" = "1" ]]; then

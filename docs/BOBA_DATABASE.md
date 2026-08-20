@@ -52,9 +52,24 @@ collapsed into a single atomic `envfile.Atomic` write at commit
 is `TestEnsureMasterKeyDoesNotDuplicateHeader` in
 `qBitTorrent-go/internal/bootstrap/bootstrap_test.go`.
 
-### Manual rotation
+### Key Rotation
 
-To rotate the master key without losing credentials:
+> **STATUS (verified 2026-08-20): NOT EXECUTABLE AS WRITTEN.** Both
+> subcommands below — `rotate-key` and `envfile-replace` — are **absent from
+> the source**. Verified by a control-needle-checked search of
+> `qBitTorrent-go/**/*.go` (§11.4.201(7)(b): the needle `EnsureMasterKey`
+> matched, so the absences are real, not a blind grep). There is also no built
+> `bin/boba-jackett` to probe. Treat the block below as the INTENDED design,
+> not a working runbook: today, use the "Loss recovery" path with `.env` as
+> the source of truth. Tracked as `TODO(BOB_MASTER_KEY_ROTATION)`.
+>
+> Heading note: this section is named **"Key Rotation"** because
+> `internal/bootstrap/bootstrap.go` writes `# To rotate: see
+> docs/BOBA_DATABASE.md § "Key Rotation".` into every operator's `.env`. It
+> was previously titled "Manual rotation", so that shipped pointer resolved to
+> nothing.
+
+To rotate the master key without losing credentials (INTENDED design):
 
 ```bash
 # 1. Stop the service (use the orchestrator, never raw podman/docker)

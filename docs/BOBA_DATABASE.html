@@ -106,8 +106,27 @@ commit <code>c0f20bc</code> to eliminate a silent data-loss window. The
 regression guard is
 <code>TestEnsureMasterKeyDoesNotDuplicateHeader</code> in
 <code>qBitTorrent-go/internal/bootstrap/bootstrap_test.go</code>.</p>
-<h3 id="manual-rotation">Manual rotation</h3>
-<p>To rotate the master key without losing credentials:</p>
+<h3 id="key-rotation">Key Rotation</h3>
+<blockquote>
+<p><strong>STATUS (verified 2026-08-20): NOT EXECUTABLE AS
+WRITTEN.</strong> Both subcommands below — <code>rotate-key</code> and
+<code>envfile-replace</code> — are <strong>absent from the
+source</strong>. Verified by a control-needle-checked search of
+<code>qBitTorrent-go/**/*.go</code> (§11.4.201(7)(b): the needle
+<code>EnsureMasterKey</code> matched, so the absences are real, not a
+blind grep). There is also no built <code>bin/boba-jackett</code> to
+probe. Treat the block below as the INTENDED design, not a working
+runbook: today, use the “Loss recovery” path with <code>.env</code> as
+the source of truth. Tracked as
+<code>TODO(BOB_MASTER_KEY_ROTATION)</code>.</p>
+<p>Heading note: this section is named <strong>“Key Rotation”</strong>
+because <code>internal/bootstrap/bootstrap.go</code> writes
+<code># To rotate: see docs/BOBA_DATABASE.md § "Key Rotation".</code>
+into every operator’s <code>.env</code>. It was previously titled
+“Manual rotation”, so that shipped pointer resolved to nothing.</p>
+</blockquote>
+<p>To rotate the master key without losing credentials (INTENDED
+design):</p>
 <div class="sourceCode" id="cb1"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Stop the service (use the orchestrator, never raw podman/docker)</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-stop   <span class="co"># or your orchestrator&#39;s equivalent</span></span>

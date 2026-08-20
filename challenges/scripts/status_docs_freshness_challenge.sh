@@ -251,7 +251,14 @@ BACKUP=""
 cleanup() {
     local rc=$?
     if [[ -n "${BACKUP}" && -f "${BACKUP}" ]]; then
-        cp "${BACKUP}" "${CODEGRAPH_STATUS}"
+        # -p: preserve the backup's (== the file's pre-backdate original)
+        # mtime on restore. A plain `cp` here would put back byte-identical
+        # content but stamp a NEW mtime, which manufactures a false
+        # "export is stale" finding under CM-MARKDOWN-EXPORT-SYNC (§11.4.65
+        # mtime comparison) with zero real content drift — the exact
+        # §11.4.84 quiescence violation this challenge must not itself
+        # cause. Load-bearing on EVERY exit path (normal, error, signal).
+        cp -p "${BACKUP}" "${CODEGRAPH_STATUS}"
         rm -f "${BACKUP}"
         BACKUP=""
     fi
@@ -281,7 +288,12 @@ echo
 echo "[RED] Backdating $(basename "${CODEGRAPH_STATUS}")'s Last-modified by 100d (EXPECT FAIL)"
 
 BACKUP="$(mktemp)"
-cp "${CODEGRAPH_STATUS}" "${BACKUP}"
+# -p: preserve CODEGRAPH_STATUS's real pre-backdate mtime in the backup so
+# both restore legs (the `cleanup` trap above and the explicit GREEN restore
+# below) can put it back byte-for-byte AND timestamp-for-timestamp, never
+# manufacturing a §11.4.65 CM-MARKDOWN-EXPORT-SYNC false-stale finding on
+# content that never really changed (§11.4.84 quiescence).
+cp -p "${CODEGRAPH_STATUS}" "${BACKUP}"
 
 STALE_TS="$(date -u -d '100 days ago' +%Y-%m-%dT%H:%M:%SZ)"
 CURRENT_LM="$(extract_last_modified "${CODEGRAPH_STATUS}")"
@@ -311,7 +323,11 @@ rm -f "${RED_LOG}"
 
 echo
 echo "[GREEN] Restoring original header (EXPECT PASS)"
-cp "${BACKUP}" "${CODEGRAPH_STATUS}"
+# -p: same mtime-preservation rationale as the backup leg and the cleanup
+# trap above — this explicit restore leg (the normal, non-trap completion
+# path) must not stamp a fresh mtime on restored-but-unchanged content
+# (§11.4.65 / §11.4.84).
+cp -p "${BACKUP}" "${CODEGRAPH_STATUS}"
 rm -f "${BACKUP}"
 BACKUP=""
 

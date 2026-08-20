@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 13
-**Last modified:** 2026-08-20T07:45:00+02:00
+**Revision:** 15
+**Last modified:** 2026-08-20T11:30:00+02:00
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -639,6 +639,94 @@ honest about starting now, not claiming a false complete history.
   RE-ignored rather than committed, since committing it would mint a phantom gitlink absent from
   `.gitmodules`.
 
+### NON-HERMETIC-TESTS-MUTATE-REAL-TREE — a dead session-scratchpad path made one test a FALSE PASS, and its plain-`cp` restore bumped mtimes that failed two OTHER suites
+
+- **id:** NON-HERMETIC-TESTS-MUTATE-REAL-TREE (no `BOB-NNN` minted — fixed in the same session).
+- **date:** 2026-08-20
+- **channel:** `agent-code-reading` — surfaced by the brand-new
+  `CM-BASH-UNIT-TESTS-EXECUTED` invariant (itself added the same day), then root-caused with
+  `superpowers:systematic-debugging`.
+- **summary:** Three "independent" failing suites had ONE root cause.
+  `tests/unit/test_pre_build_workable_items_diff_check.sh` (a) wrote and sourced its
+  invariant-extraction helper at a HARDCODED agent-session scratchpad path under a DEAD session id
+  (`…/aa7d8260-…/scratchpad/inv17_extract.sh`). Once that session ended both the redirect and the
+  `source` failed, so the extractor emitted NOTHING — which made its assertion 2 a genuine FAIL and,
+  far worse, made assertion 1 a **FALSE PASS**: empty output matched no "divergence" pattern, so a
+  blind instrument reported "the current tree is in sync". (b) It backed up and restored the REAL
+  `docs/Issues.md` with a plain `cp`, which returns byte-identical CONTENT but a NEW mtime.
+  `CM-MARKDOWN-EXPORT-SYNC` compares mtimes, so the restore manufactured "docs/Issues.html stale"
+  and failed `tests/test_constitution_inheritance.sh`, which asserts the whole gate returns 0. The
+  same plain-`cp` pattern existed in that suite too, for `CLAUDE.md` and
+  `constitution/Constitution.md`. Measured cascade: `docs/Issues.md` 1787213360 → 1787213787 with
+  ZERO content change. The third "failure", `test_export_sync_gate.sh`, was never broken at all —
+  it is state-dependent and had been observed while the tree genuinely had stale exports.
+- **escape-audit:** The entire `tests/unit/*.sh` bash suite was executed by NOTHING — `ci.sh` runs
+  `pytest tests/unit/` which collects only `test_*.py`, `run-all-tests.sh` only `bash -n`
+  syntax-checks, and `pre_build_verification.sh` merely MENTIONED some suites in comments. So no
+  seam ever ran them, and §11.4.226's "registration is not coverage" held exactly: these defects sat
+  dormant for an unknown period. Nothing anywhere asserted that a test leaves the real tree
+  unmodified (§11.4.84 quiescence had no mechanical enforcement), and nothing asserted that an
+  extraction helper actually produced output before its silence was read as a clean result
+  (§11.4.201(6) FALSE-NULL, §11.4.201(7)(b) missing control needle).
+- **new-check:** THREE seams, each mutation-proven. (1) Invariant `[30/30]
+  CM-BASH-UNIT-TESTS-EXECUTED` in `scripts/pre_build_verification.sh` now RUNS the suite (7 green,
+  0 quarantined). (2) That invariant gained a **NO-TRACE assertion**: it snapshots the mtimes of
+  `docs/Issues.md`, `CLAUDE.md` and `constitution/Constitution.md` before the suite and FAILs if any
+  moved. §1.1 paired mutation, run live: reverting one restore to a plain `cp` produced `FAIL:
+  a bash test MUTATED the real tree (mtime moved): docs/Issues.md (1787213787 -> 1787215890)`,
+  gate exit=1; restoring `cp -p` returned `no-trace verified`, gate exit=0, 32 passed / 0 failed.
+  (3) A **control needle** in the diff-check suite now requires the extracted invariant to emit one
+  of its own `PASS_MARKER:`/`FAIL_MARKER:` lines before "no divergence" may be read as good news —
+  the exact guard that would have caught the false pass. Post-fix: all three suites green
+  (`diff_check` 2/0, `export_sync_gate` 3/0, `constitution_inheritance` 21/0), and
+  `constitution_inheritance` runtime fell from a >840s timeout to 143s once its three nested gate
+  invocations were tagged `BOBA_PREBUILD_NESTED=1`.
+- **Honest boundary (§11.4.6):** the no-trace assertion covers the THREE files these suites are
+  known to mutate, not every tracked file — a suite that mutates something else would still slip
+  through. Widening it to the whole tracked corpus is cheap but was not measured here, so it is
+  stated as a gap rather than claimed. The deeper design issue also remains open: §11.4.86 mandates
+  content-hash change detection and `CM-MARKDOWN-EXPORT-SYNC` still uses mtime, which is why a
+  content-neutral rewrite can fake staleness at all. TODO(EXPORT-SYNC-CONTENT-HASH).
+
+### EXPORT-SYNC-MTIME-NOT-REPRODUCIBLE-ON-FRESH-CLONE — invariant 16 refuses a provably clean tree after `git clone`
+
+- **id:** EXPORT-SYNC-MTIME-NOT-REPRODUCIBLE-ON-FRESH-CLONE (no `BOB-NNN` minted; NOT fixed — see
+  honest boundary).
+- **date:** 2026-08-20
+- **channel:** `agent-code-reading` — found by a subagent investigating whether
+  `CM-MARKDOWN-EXPORT-SYNC` could migrate from mtime to §11.4.86 content-hash detection.
+- **summary:** Invariant 16 decides staleness with `[[ "${sib}" -ot "${md}" ]]` — a
+  NANOSECOND-precision mtime comparison — over a 143-file corpus. **Git does not preserve mtimes**,
+  and on checkout `.html` sorts before `.md`, so the write order races at millisecond resolution.
+  Measured on two fresh `git clone`s of this repo at the SAME commit, zero content drift:
+  clone A reported **15** in-scope exports STALE, clone B reported **19**, with deltas of
+  1.000–2.000 ms (e.g. `docs/features/Status.html` 2.000 ms older than its `.md`). The gate passes
+  on this working copy only because its exports happen to have been written after their sources.
+  So invariant 16 is non-reproducible across checkouts (§11.4.50) and would REFUSE a provably clean
+  tree on any fresh clone or CI checkout — the §11.4.201(1) false-positive FAIL-bluff class.
+- **escape-audit:** Nothing ever ran invariant 16 against a FRESH CLONE. Every execution has been
+  on a long-lived working copy where export mtimes happen to trail their sources, so the failure
+  mode is invisible by construction here. §11.4.86 explicitly mandates content-hash detection
+  ("NOT mtime") and this invariant has used mtime since it was written; the mandate existed as
+  prose and no seam enforced it (§11.4.227 prose-does-not-bind). The content-hash oracle that
+  WOULD be immune already exists and already runs — invariant 24 `CM-DOCS-CHAIN-ENGINE-VERIFY` —
+  but covers only **3 of 143** authored `.md` sources (2%), and nothing measured that coverage gap.
+- **new-check:** NONE YET — deliberately. The subagent probed the docs_chain engine in an isolated
+  scratch root and confirmed it is immune to exactly this cascade (mtime-only bump → `in-sync,
+  exit=0`; real content change → `STALE, exit=1`; missing state → fail-closed), but a migration
+  needs ~140 new context nodes AND a regenerator wired into the export pipeline. Without the
+  regenerator every legitimate doc edit would leave the baseline stale and the gate permanently
+  red — the half-migrated state that is WORSE than today's. Recommended order, to be tracked:
+  (1) extend `.docs_chain/contexts/` to cover invariant 16's corpus; (2) make the baseline
+  reproducible (tracked hash manifest regenerated+staged in the same commit per §11.4.12/§11.4.106,
+  or a documented fresh-clone sync); (3) ONLY THEN demote invariant 16 to existence-only and let
+  invariant 24 own staleness. Doing (3) first would remove the only staleness signal covering 140
+  docs. TODO(EXPORT-SYNC-CONTENT-HASH).
+- **Honest boundary (§11.4.6):** this entry records a defect that is **NOT fixed**. Invariant 16 is
+  untouched. Recording it here with no `new-check` is the honest state — claiming a closure would
+  be the §11.4.226 evidence-class bluff. The fresh-clone measurement is real and repeatable; the
+  migration is not attempted because it could not be proven safe within this change's file scope.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
@@ -652,7 +740,9 @@ honest about starting now, not claiming a false complete history.
 | 2026-08-18 (incremental, BOB-120 forced-logout incident — 1 new `### ` entry: 3rd occurrence of user@1000 SIGKILL on this project, plus the discovery that the BOB-116/task-77 preventive monitor itself lives inside the killed scope and cannot catch a kill landing before its own next fire) | 0 | 1 (`agent-code-reading` x1: FORCED-LOGOUT-2026-08-18-3RD) | 100% |
 | 2026-08-19 (incremental, BOB-124 forced-logout incident #5 — 1 new `### ` entry: 5th consecutive occurrence of user@1000 SIGKILL, escalating the coverage escape from "no preventive gate" to "4 authored preventive gates, 0 installed" — §11.4.250 heuristic-tower / architectural install-gap) | 0 | 1 (`operator-report` x1: FORCED-LOGOUT-2026-08-19-5TH) | 100% |
 | 2026-08-20 (incremental, tooling-defect sweep during a commit/push round — 2 new `### ` entries: the `compute-badges.sh` carrier-match README corruption + non-idempotent TESTING.md regeneration, and the repo-wide gitignore-shadows-tracked-files break of the §11.4.234 commit mechanism) | 0 | 2 (`agent-code-reading` x2: COMPUTE-BADGES-CARRIER-MATCH, GITIGNORE-SHADOWS-TRACKED-FILES) | 100% |
-| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **20** | **100%** |
+| 2026-08-20 (incremental, systematic-debugging of the 3 quarantined bash suites — 1 new `### ` entry: the non-hermetic dead-scratchpad-path + plain-`cp` mtime-bump root cause behind all three) | 0 | 1 (`agent-code-reading` x1: NON-HERMETIC-TESTS-MUTATE-REAL-TREE) | 100% |
+| 2026-08-20 (incremental, subagent fan-out — 1 new `### ` entry: invariant 16 mtime staleness is non-reproducible across fresh clones, found while investigating the content-hash migration) | 0 | 1 (`agent-code-reading` x1: EXPORT-SYNC-MTIME-NOT-REPRODUCIBLE-ON-FRESH-CLONE) | 100% |
+| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **22** | **100%** |
 
 **Pre-existing check-vs-table mismatch, found and fixed during this backfill (§11.4.6, not
 silently patched around):** `scripts/pre_build_verification.sh` invariant 19

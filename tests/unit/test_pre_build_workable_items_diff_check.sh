@@ -35,15 +35,29 @@ run_invariant_17() {
     # unrelated mutation-marker false-positive — aborts the full script
     # before invariant 17; see RD2-41 in docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md).
     # Extract and run just the invariant-17 block in a subshell.
-    awk '/# --- Invariant 17:/{flag=1} flag{print} /# --- Invariant 18:/{exit}' "$SCRIPT" \
-        > /tmp/.private/milosvasic/claude-1000/-run-media-milosvasic-DATA4TB-Projects-boba/aa7d8260-6b66-4009-9682-135f4fd74829/scratchpad/inv17_extract.sh
+    # §11.4.6 / hermeticity: use a per-invocation mktemp, NEVER a hardcoded
+    # agent-session scratchpad path. The previous version wrote to (and
+    # sourced from) a path under a DEAD session id
+    # (…/aa7d8260-6b66-4009-9682-135f4fd74829/scratchpad/inv17_extract.sh).
+    # Once that session ended the directory vanished, so BOTH the redirect and
+    # the source failed with "No such file or directory" and this function
+    # emitted NOTHING — which silently turned assertion 1 below into a FALSE
+    # PASS (empty output matched no "divergence" pattern) and assertion 2 into
+    # a spurious FAIL. §11.4.201(6): a quiet zero from a blind instrument and a
+    # genuinely clean result are indistinguishable.
+    local extract rc
+    extract="$(mktemp)" || return 1
+    awk '/# --- Invariant 17:/{flag=1} flag{print} /# --- Invariant 18:/{exit}' "$SCRIPT" > "$extract"
     (
         PROJECT_ROOT="$PROJECT_ROOT"
         pass() { echo "PASS_MARKER: $1"; }
         fail() { echo "FAIL_MARKER: $1"; }
-        # shellcheck disable=SC1091
-        source /tmp/.private/milosvasic/claude-1000/-run-media-milosvasic-DATA4TB-Projects-boba/aa7d8260-6b66-4009-9682-135f4fd74829/scratchpad/inv17_extract.sh
+        # shellcheck disable=SC1090
+        source "$extract"
     )
+    rc=$?
+    rm -f "$extract"
+    return $rc
 }
 
 # --- Test 1: on the real (currently-synced) tree, invariant 17's diff check
@@ -56,7 +70,15 @@ run_invariant_17() {
 #     assert overall pass, which would be a false claim about an unrelated,
 #     already-open item.
 OUT1="$(run_invariant_17 2>&1)" || true
-if echo "$OUT1" | grep -qi "divergence\|out of sync\|not in sync"; then
+# §11.4.201(7)(b) CONTROL NEEDLE — a NULL is not evidence until the instrument
+# is proven able to speak. Before reading "no divergence" as good news, require
+# that the extracted invariant actually RAN and emitted one of its own markers.
+# Without this guard an extraction failure reads identically to a clean tree,
+# which is exactly how the dead-scratchpad-path defect hid as a green PASS.
+if ! echo "$OUT1" | grep -q "PASS_MARKER:\|FAIL_MARKER:"; then
+    fail "invariant 17 emitted NO marker — the extraction/instrument is blind, so its silence proves nothing"
+    echo "$OUT1"
+elif echo "$OUT1" | grep -qi "divergence\|out of sync\|not in sync"; then
     fail "invariant 17's diff check reports the CURRENT tree as divergent — unexpected, investigate: $OUT1"
 else
     pass "invariant 17's diff check reports the current tree as in sync (no false divergence)"
@@ -65,8 +87,15 @@ fi
 # --- Test 2 (mutation): desync docs/Issues.md -> invariant 17 must FAIL ---
 ISSUES_MD="${PROJECT_ROOT}/docs/Issues.md"
 BACKUP="$(mktemp)"
-cp "$ISSUES_MD" "$BACKUP"
-trap 'cp "$BACKUP" "$ISSUES_MD"; rm -f "$BACKUP"' EXIT
+# `cp -p` on BOTH legs so the restore puts back the original CONTENT *and* the
+# original mtime. A plain `cp` restores byte-identical content but stamps a NEW
+# mtime, and CM-MARKDOWN-EXPORT-SYNC (§11.4.65) compares mtimes — so this test
+# silently manufactured "docs/Issues.html stale" and made
+# tests/test_constitution_inheritance.sh fail on an unrelated invariant.
+# Measured cascade (2026-08-20): Issues.md 1787213360 -> 1787213787 with ZERO
+# content change. A test must leave no trace in the real tree.
+cp -p "$ISSUES_MD" "$BACKUP"
+trap 'cp -p "$BACKUP" "$ISSUES_MD"; rm -f "$BACKUP"' EXIT
 
 printf '\n<!-- test-mutation: desynced from DB on purpose -->\n' >> "$ISSUES_MD"
 
@@ -81,7 +110,7 @@ else
     echo "$OUT2"
 fi
 
-cp "$BACKUP" "$ISSUES_MD"
+cp -p "$BACKUP" "$ISSUES_MD"
 rm -f "$BACKUP"
 trap - EXIT
 

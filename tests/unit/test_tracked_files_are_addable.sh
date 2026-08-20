@@ -33,19 +33,23 @@ PASS=0; FAIL=0
 pass() { PASS=$((PASS+1)); echo "  PASS: $1"; }
 fail() { FAIL=$((FAIL+1)); echo "  FAIL: $1"; }
 
-# ── Documented exception list (§11.4.224(E)-style exclusion fence) ──────────
-# Every entry MUST carry a justification. These are tracked GENERATED
-# artifacts (timestamped Playwright MCP page snapshots) that were committed
-# at some point and are matched by the `.playwright-mcp/` ignore rule. They
-# are NOT un-ignored here because the correct remedy is to stop tracking them
-# (§11.4.30 "no versioned build artifacts") — a REMOVAL of tracked content,
-# which is an operator decision under §11.4.122 and needs the §11.4.124
-# git-history investigation first. Listed here as an HONEST, enumerated gap
-# rather than silently passing or silently un-ignoring.
-# TODO(PLAYWRIGHT-MCP-ARTIFACTS): operator decision — untrack these 8 files?
+# ── Exclusion fence (§11.4.224(E) style) — currently EMPTY ─────────────────
+# RESOLVED 2026-08-20, TODO(PLAYWRIGHT-MCP-ARTIFACTS) closed. The 8 tracked
+# `.playwright-mcp/*.yml` Playwright-MCP accessibility snapshots that used to
+# sit here were untracked (`git rm --cached`, files kept on disk) after the
+# §11.4.124 git-history investigation proved they were: added by a single
+# unreviewed "Auto-commit" bulk sweep (1108fc1, 2026-06-15) BEFORE the
+# `.playwright-mcp/` ignore rule existed (b0cecc3), with ZERO consumers — the
+# only non-self reference is scripts/deploy-remote.sh, which EXCLUDES them
+# from deploy. Untracking approved by the operator per §11.4.122.
+#
+# The mechanism is kept (not deleted) so it stays the ratchet: any future
+# entry MUST carry a written justification from the closed class set
+# {generated-code | vendored-third-party | non-shipping-fixtures}. An empty
+# fence is the goal state — adding a name is tracked debt, never a shortcut.
 is_allowed_exception() {
     case "$1" in
-        .playwright-mcp/*) return 0 ;;
+        # (no exceptions — keep this list empty)
         *) return 1 ;;
     esac
 }

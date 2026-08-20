@@ -49,10 +49,19 @@ Sync Impact Report:
      §11.4.135-style monotone-decrease ratchet / per-corpus phase-in /
      changed-code-only with deadline) that MUST be recorded before
      first enforcement. No autonomous ratchet change is applied here.
-  2. TODO(BOB_MASTER_KEY_ROTATION): No rotation procedure exists for
-     `BOBA_MASTER_KEY`. Loss = total credential loss per
-     `docs/BOBA_DATABASE.md`. A rotation runbook is a §11.4.197
-     tracked item, not a constitutional change.
+  2. TODO(BOB_MASTER_KEY_ROTATION): CORRECTED 2026-08-20 — an earlier
+     revision of this note claimed "no rotation procedure exists",
+     which was inaccurate (§11.4.6). A DOCUMENTED procedure does
+     exist at `docs/BOBA_DATABASE.md` § "Key Rotation". The real
+     defect is narrower and worse: that procedure prescribes
+     `./bin/boba-jackett rotate-key` and `envfile-replace`, and
+     BOTH subcommands are ABSENT from `qBitTorrent-go/**/*.go`
+     (verified by control-needle-checked search, §11.4.201(7)(b)).
+     The section was also titled "Manual rotation" while
+     `internal/bootstrap/bootstrap.go` writes `§ "Key Rotation"`
+     into every operator's `.env` — a dangling pointer, now fixed
+     by renaming the heading. Implementing the two subcommands is
+     a §11.4.197 tracked feature, not a constitutional change.
 -->
 
 # qBitTorrent Platform Constitution

@@ -75,8 +75,19 @@ if [[ "${RED_MODE}" != "0" ]]; then
 
     echo "[2/3] RED polarity: corrupt ${VICTIM#${PROJECT_ROOT}/} by 1 byte (EXPECT verify exit 1)"
     BACKUP="$(mktemp)"
-    cp "${VICTIM}" "${BACKUP}"
-    trap 'cp "${BACKUP}" "${VICTIM}"; rm -f "${BACKUP}"' EXIT
+    # -p: preserve VICTIM's original mtime in the backup so the restore leg
+    # (below and in the EXIT trap) can put it back byte-for-byte AND
+    # timestamp-for-timestamp. A plain `cp` here would let the eventual
+    # restore stamp a NEW mtime on byte-identical content, which manufactures
+    # a false "export is stale" finding under CM-MARKDOWN-EXPORT-SYNC
+    # (§11.4.65 mtime comparison) despite zero real content drift — the
+    # exact §11.4.84 quiescence violation this challenge must not itself
+    # cause.
+    cp -p "${VICTIM}" "${BACKUP}"
+    # -p on the trap restore for the same reason: any exit path (including a
+    # signal) must put VICTIM back with its ORIGINAL mtime, never a
+    # restore-time mtime (§11.4.65 / §11.4.84).
+    trap 'cp -p "${BACKUP}" "${VICTIM}"; rm -f "${BACKUP}"' EXIT
 
     # Single-byte non-idempotent append — guaranteed to change content hash.
     printf '%s' "CHALLENGE_MUTATION_MARKER_$(date +%s%N)" >>"${VICTIM}"
@@ -102,7 +113,11 @@ if [[ "${RED_MODE}" != "0" ]]; then
     # -----------------------------------------------------------------------
     # Step 3: restore + re-verify — EXPECT green flip back to in-sync.
     # -----------------------------------------------------------------------
-    cp "${BACKUP}" "${VICTIM}"
+    # -p: same mtime-preservation rationale as the backup/trap legs above —
+    # this explicit restore leg (the normal, non-trap completion path) must
+    # not stamp a fresh mtime on restored-but-unchanged content
+    # (§11.4.65 / §11.4.84).
+    cp -p "${BACKUP}" "${VICTIM}"
     rm -f "${BACKUP}"
     trap - EXIT
 

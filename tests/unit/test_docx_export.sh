@@ -23,6 +23,35 @@ FAIL_COUNT=0
 pass() { PASS_COUNT=$((PASS_COUNT + 1)); echo "  PASS: $1"; }
 fail() { FAIL_COUNT=$((FAIL_COUNT + 1)); echo "  FAIL: $1"; }
 
+# Portable mtime helper (§11.4.81 cross-platform parity, §11.4.67
+# target-shell-parseability). GNU coreutils' `stat -f` is NOT the BSD
+# "-f <format>" flag: GNU's `-f` means "display file SYSTEM status" and
+# takes no argument, so `stat -f %m FILE` is parsed as two file operands
+# (the literal, nonexistent file "%m", plus FILE) and prints FILE's
+# multi-line filesystem-status dump (mount id / block counts / free
+# blocks) to stdout instead of a bare mtime integer. That garbled dump —
+# differing between calls only in the live "Free:" block count, which
+# fluctuates under filesystem activity — was being captured as the
+# "mtime" string, making the idempotency check intermittently FAIL even
+# when the DOCX genuinely was not regenerated. Try GNU syntax first (the
+# primary target), fall back to BSD syntax, and validate the captured
+# value is a bare non-negative integer before trusting it — a dump or any
+# other non-numeric garbage is rejected rather than silently compared.
+portable_mtime() {
+    local f="$1" val
+    val="$(stat -c %Y "$f" 2>/dev/null)" || val=""
+    if [[ "$val" =~ ^[0-9]+$ ]]; then
+        printf '%s\n' "$val"
+        return 0
+    fi
+    val="$(stat -f %m "$f" 2>/dev/null)" || val=""
+    if [[ "$val" =~ ^[0-9]+$ ]]; then
+        printf '%s\n' "$val"
+        return 0
+    fi
+    return 1
+}
+
 if ! command -v pandoc &>/dev/null; then
     echo "  SKIP: pandoc not installed — DOCX export requires pandoc (SKIP-OK: BOB-011)"
     echo "RESULT: ${PASS_COUNT} passed, ${FAIL_COUNT} failed (skipped)"
@@ -73,10 +102,10 @@ fi
 # (4) Idempotency — second run with no .md change must NOT regenerate the docx
 #     (mtime unchanged).
 if [[ -f "$DOCX" ]]; then
-    before="$(stat -f %m "$DOCX" 2>/dev/null || stat -c %Y "$DOCX")"
+    before="$(portable_mtime "$DOCX")"
     sleep 1
     bash "$SANDBOX/scripts/generate_markdown_exports.sh" >/dev/null 2>&1 || true
-    after="$(stat -f %m "$DOCX" 2>/dev/null || stat -c %Y "$DOCX")"
+    after="$(portable_mtime "$DOCX")"
     [[ "$before" == "$after" ]] \
         && pass "DOCX not regenerated when .md unchanged (idempotent)" \
         || fail "DOCX regenerated though .md unchanged (mtime $before -> $after)"
