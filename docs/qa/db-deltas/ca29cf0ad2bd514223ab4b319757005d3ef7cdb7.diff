@@ -1,0 +1,54 @@
+# Differential SQLite Dump — docs/workable_items.db
+# §11.4.226 evidence-class-at-closure / §11.4.95 SSoT / §11.4.115(F) machine-written evidence
+# §11.4.209 review IMPORTANT-2 remedy — task tracker #79
+#
+# Commit:    ca29cf0ad2bd514223ab4b319757005d3ef7cdb7
+# Parent:    a6f36fac4fdd982918de7019872bb29b2524698b
+# Generated: 2026-08-20T15:33:16Z
+# Tool:      sqlite3 3.50.6
+#
+## Row counts (table: before -> after)
+doc_segments                    142 -> 142         [same]
+firebase_metadata                 0 -> 0           [same]
+item_history                    195 -> 195         [same]
+items                           140 -> 140         [same]
+logic_groups                      0 -> 0           [same]
+meta                              4 -> 4           [same]
+obsolete_details                  0 -> 0           [same]
+operator_block_details            4 -> 4           [same]
+sqlite_sequence                   3 -> 3           [same]
+test_diary                        4 -> 5           [CHANGED]
+#
+## meta table (full content)
+### before
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-20 13:20:21
+last_sync_timestamp|2026-08-20 13:20:21|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+### after
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-20 13:20:21
+last_sync_timestamp|2026-08-20 13:20:21|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+#
+## Full logical .dump unified diff (before -> after)
+#
+--- /tmp/.private/milosvasic/tmp.xMQLskBKNE/before.sql	2026-08-20 17:33:16.761121528 +0200
++++ /tmp/.private/milosvasic/tmp.xMQLskBKNE/after.sql	2026-08-20 17:33:16.796121298 +0200
+@@ -301,6 +301,7 @@
+ INSERT INTO test_diary VALUES(2,'BOB-138','2026-08-20T14:55:20Z','AI-agent','PASS','Healthcheck extended to cover both served ports; verified in both directions inside the real container','Polarity: new two-probe exits 0 with both ports live, exits 1 with a genuinely-dead second port (7199, verified unbound); old single-probe exits 0 in that same broken state = the false pass. Static gate RED->GREEN (PASS, 5 services). An earlier polarity attempt against the live wedge was VOID because the wedge self-cleared mid-test; recorded as void, not dropped.','status unchanged',0,NULL,NULL,'docs/qa/BOB-138/closure-evidence.md','boot_service','2026-08-20 14:55:20');
+ INSERT INTO test_diary VALUES(3,'BOB-142','2026-08-20T15:02:55Z','AI-agent','PASS','RED->GREEN on field bounds, verified over real HTTP against the live service','RED 4 failed/2 passed (the 2 are §11.4.201(1) controls). GREEN 6 passed. Live: 100k-char query -> HTTP 422 string_too_long; realistic query -> HTTP 200 with real search_id; 10k-entry trackers -> HTTP 422. Regression 252 passed.','status unchanged',0,NULL,NULL,'docs/qa/BOB-142/closure-evidence.md','network_connectivity','2026-08-20 15:02:55');
+ INSERT INTO test_diary VALUES(4,'BOB-137','2026-08-20T15:03:18Z','AI-agent','FAIL','Additional symptom: container ignores SIGTERM and requires SIGKILL after 10s','During ./start.sh --reload-python: ''StopSignal SIGTERM failed to stop container qbittorrent-proxy in 10 seconds, resorting to SIGKILL''. A process whose shutdown handler cannot run within 10s is consistent with the blocked-thread/GIL-starvation evidence already captured. Still not a root cause.','status unchanged',0,NULL,NULL,'docs/qa/BOB-137/forensics.md','boot_service','2026-08-20 15:03:18');
++INSERT INTO test_diary VALUES(5,'BOB-141','2026-08-20T15:31:05Z','AI-agent','PASS','Doc corrected to match source; the provisioning question remains an operator decision so the item stays open','CLAUDE.md line 110 changed from ''replaces the Python proxy on 7186, 7187, 7188'' to ''serves the merge service on 7187 only'', with Dockerfile/main.go/config.go citations inline. Verified by re-deriving from source after the edit. Compose PROXY_PORT/BRIDGE_PORT env and EXPOSE 7188 still declare more than the container binds — left for the operator decision on direction.','status unchanged',0,NULL,NULL,'docs/qa/BOB-141/progress.md','boot_service','2026-08-20 15:31:05');
+ CREATE TABLE IF NOT EXISTS "items" (
+     atm_id           TEXT NOT NULL,
+     type             TEXT NOT NULL,
+@@ -645,7 +646,7 @@
+ );
+ INSERT INTO sqlite_sequence VALUES('item_history',196);
+ INSERT INTO sqlite_sequence VALUES('doc_segments',586);
+-INSERT INTO sqlite_sequence VALUES('test_diary',4);
++INSERT INTO sqlite_sequence VALUES('test_diary',5);
+ CREATE VIEW test_diary_summary AS
+ SELECT
+     d.atm_id                                                   AS atm_id,
