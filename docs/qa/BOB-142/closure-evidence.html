@@ -1,0 +1,92 @@
+<h1 id="bob-142-searchrequest-field-bounds-closure-evidence">BOB-142 —
+SearchRequest field bounds: closure evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-20T16:15:00Z</p>
+<h2 id="red-test-written-first-observed-failing">RED (test written
+first, observed failing)</h2>
+<p><code>tests/security/test_search_request_bounds.py</code>, run
+against the unbounded model:</p>
+<pre><code>FAILED test_oversized_query_is_refused
+FAILED test_oversized_sort_fields_are_refused
+FAILED test_oversized_tracker_filter_is_refused
+FAILED test_oversized_category_is_refused
+4 failed, 2 passed</code></pre>
+<p>The 2 that passed are the §11.4.201(1) CONTROLS — a realistic query
+and a 3-tracker filter must still be accepted. They passed before the
+fix, proving the suite cannot be satisfied by a validator that simply
+refuses everything.</p>
+<h2 id="green">GREEN</h2>
+<pre><code>6 passed, 1 warning in 4.93s</code></pre>
+<h2
+id="live-end-user-evidence-11.4.108-layer-4-real-http-no-test-harness">Live
+end-user evidence (§11.4.108 layer 4 — real HTTP, no test harness)</h2>
+<p>Against the running merge service on :7187 after
+<code>./start.sh --reload-python</code>:</p>
+<pre><code>$ curl -X POST localhost:7187/api/v1/search -d &#39;{&quot;query&quot;:&quot;&lt;100,000 chars&gt;&quot;}&#39;
+  -&gt; HTTP 422
+  {&quot;detail&quot;:[{&quot;type&quot;:&quot;string_too_long&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;query&quot;],
+              &quot;msg&quot;:&quot;String should have at most 256 characters&quot;, ...}]}
+
+$ curl -X POST localhost:7187/api/v1/search -d &#39;{&quot;query&quot;:&quot;interstellar 2014 1080p&quot;}&#39;
+  -&gt; HTTP 200
+  {&quot;search_id&quot;:&quot;c110659c-382f-461c-be28-f723022bacbc&quot;,
+   &quot;query&quot;:&quot;interstellar 2014 1080p&quot;,&quot;status&quot;:&quot;running&quot;,
+   &quot;trackers_searched&quot;:[&quot;rutracker&quot;,&quot;kinozal&quot;,&quot;n...
+
+$ curl -X POST localhost:7187/api/v1/search -d &#39;{&quot;query&quot;:&quot;ok&quot;,&quot;trackers&quot;:[10000 entries]}&#39;
+  -&gt; HTTP 422</code></pre>
+<p>Both directions on the real user path: the amplification vector is
+refused, and a legitimate search still returns a real
+<code>search_id</code> with a real tracker set.</p>
+<h2 id="regression">Regression</h2>
+<pre><code>252 passed  (tests/unit/test_merge_api_route_contracts.py, tests/unit/api_layer/,
+             tests/unit/test_rate_limit.py, tests/contract/test_openapi_contract.py,
+             tests/security/test_search_request_bounds.py,
+             tests/security/test_rate_limit_public_endpoints.py)</code></pre>
+<p>Full <code>tests/security/</code>: 117 passed, 33 skipped, 0
+failed.</p>
+<h2 id="bound-sizing-evidence-not-taste">Bound sizing (evidence, not
+taste)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>field</th>
+<th>bound</th>
+<th>measured basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>query</code></td>
+<td>256</td>
+<td>longest legitimate query in the repo is 14 chars
+(<code>boba-111-probe</code>)</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td>64</td>
+<td>longest is <code>boundary-max-length-url</code> (23)</td>
+</tr>
+<tr>
+<td><code>sort_by</code> / <code>sort_order</code></td>
+<td>32</td>
+<td>enum-like values, longest observed well under 16</td>
+</tr>
+<tr>
+<td><code>trackers</code></td>
+<td>64 entries</td>
+<td>43 managed plugins — a longer list is noise or an attempt</td>
+</tr>
+</tbody>
+</table>
+<h2 id="relationship-to-rate-limiting-bob-111">Relationship to rate
+limiting (BOB-111)</h2>
+<p>Complementary, not redundant. Rate limiting caps the request RATE;
+these bounds cap the per-request COST. A client inside its rate
+allowance could still send a multi-megabyte query into a 43-tracker
+fan-out, so neither control substitutes for the other.</p>

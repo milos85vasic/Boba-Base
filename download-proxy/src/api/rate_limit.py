@@ -20,23 +20,38 @@ consuming operator MAY override per-endpoint limits via env vars — see
 a minute is refused with 429 AND that dropping the middleware (paired §1.1
 mutation) makes the test FAIL — the assertion catches its own negation.
 
-§11.4.85 chaos: `tests/integration/test_rate_limit_chaos.py` proves 100 requests
-from one IP produce some 429s while a different IP stays UNTHROTTLED — the
-mechanism is per-IP + does not brown-out the service for other callers.
+§11.4.196(F) CONFIGURED != IN USE: `tests/security/test_rate_limit_public_endpoints.py`
+drives the REAL `api.app` and asserts each public class refuses at its
+configured threshold AND succeeds below it. The unit test above builds its own
+FastAPI app, so it alone cannot notice a production route losing its decorator.
+
+Per-IP isolation (caller A throttled does NOT throttle caller B) and the
+burst-behaviour check live in `tests/unit/test_rate_limit.py`
+(`test_green_different_ip_is_not_rate_limited`, `test_chaos_burst_produces_429s_no_5xx`).
+
+RELOAD HAZARD (measured 2026-08-20): `importlib.reload(api)` does NOT reload the
+cached `api.routes` submodule, so production routes stay bound to the PREVIOUS
+generation's Limiter while `SlowAPIMiddleware` consults the new one. The stale
+limiter keeps enforcing its already-exhausted counters and every request is
+refused with a false-positive 429 (§11.4.201(1)). A harness needing a fresh app
+MUST purge `api*` from `sys.modules` instead of reloading, then call
+`reset_counters()`.
 """
 
 from __future__ import annotations
 
 import logging
 import os
-from typing import Callable
+from collections.abc import Callable
 
+import limits
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+from slowapi.wrappers import Limit
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +148,23 @@ def get_limiter() -> Limiter | None:
     return _limiter
 
 
+def reset_counters() -> None:
+    """Drop every per-IP counter currently held by the active limiter.
+
+    A real lifecycle operation, not a test-only stub: it is the supported way
+    to return the limiter to a quiescent baseline without rebuilding the app —
+    used when a harness needs deterministic isolation between cases
+    (§11.4.14), and by an operator clearing buckets after a storage-backend
+    rotation. No-op when rate limiting is disabled.
+
+    Errors from the storage backend are NOT swallowed (§11.4.252): a caller
+    that asked for a clean baseline must learn if it did not get one.
+    """
+    if _limiter is None:
+        return
+    _limiter._storage.reset()
+
+
 def limit_for(class_name: str) -> str:
     """Return the effective limit string for the given class."""
     return _active_limits.get(class_name, DEFAULT_LIMITS.get(class_name, "60/minute"))
@@ -158,19 +190,30 @@ def install(
     in test harnesses that reload the module).
     """
     global _limiter, _active_limits
-    existing: Limiter | None = getattr(app.state, "limiter", None)
-    if existing is not None:
-        return existing
-
-    limiter = _build_limiter()
-    _limiter = limiter
-    app.state.limiter = limiter
-    _active_limits = {
+    resolved = {
         "search": search_limit or _env_limit("search"),
         "dashboard": dashboard_limit or _env_limit("dashboard"),
         "sse_stream": sse_limit or _env_limit("sse_stream"),
         "default": _env_limit("default"),
     }
+
+    existing: Limiter | None = getattr(app.state, "limiter", None)
+    if existing is not None:
+        # Already wired on this app — do NOT stack a second middleware. But we
+        # MUST still publish the module-level state: `_rl()` in routes.py reads
+        # `get_limiter()`, and returning early with `_limiter` still None makes
+        # every per-route decorator a silent passthrough, leaving the public
+        # endpoints unlimited while `app.state.rate_limit_config` still reports
+        # a healthy configuration (§11.4.196(F) CONFIGURED != IN USE).
+        _limiter = existing
+        _active_limits = resolved
+        app.state.rate_limit_config = dict(resolved)
+        return existing
+
+    limiter = _build_limiter()
+    _limiter = limiter
+    app.state.limiter = limiter
+    _active_limits = resolved
     app.state.rate_limit_config = dict(_active_limits)
     app.add_exception_handler(RateLimitExceeded, _rate_limited_response)  # type: ignore[arg-type]
     app.add_middleware(SlowAPIMiddleware)
@@ -209,3 +252,75 @@ def dashboard_limit_decorator(app: FastAPI) -> Callable[[Callable], Callable]:
 def sse_limit_decorator(app: FastAPI) -> Callable[[Callable], Callable]:
     limiter: Limiter = app.state.limiter
     return limiter.limit(app.state.rate_limit_config["sse_stream"])
+
+
+# ---------------------------------------------------------------------------
+# 422-BYPASS CLOSURE (BOB-111 follow-up, measured 2026-08-20)
+#
+# THE HOLE. FastAPI validates the request body BEFORE calling the endpoint
+# function, so a `@limiter.limit()` decorator wrapping that function never runs
+# when validation fails. slowapi's middleware ALSO refuses to apply its default
+# limits to any endpoint carrying an explicit decorator — see extension.py's
+# guard `not (in_middleware and endpoint_func_name in self.__marked_for_limiting)`
+# — because it expects the decorator to do the work. Neither fires on a 422, so
+# malformed requests to a decorated public endpoint cost NOTHING:
+#
+#     135 invalid POSTs to /api/v1/search -> 422:135  429:0   (TOTAL bypass)
+#     control, undecorated /health        -> first 429 at #121 (default works)
+#
+# THE CLOSURE. Route-level DEPENDENCIES run before the 422 is raised (verified:
+# an invalid body yields status=422 with the dependency already executed). So
+# the charge is moved into a dependency, which is reached on BOTH the valid and
+# the invalid path. It raises the same RateLimitExceeded the decorator would, so
+# `_rate_limited_response` formats an identical minimal 429 — no second response
+# shape to keep in sync.
+#
+# IMPORTANT: a route using this dependency must NOT also carry `@_rl(<class>)`,
+# or a well-formed request would be charged twice. Guarded by
+# tests/security/test_rate_limit_public_endpoints.py::
+#   test_valid_requests_are_not_double_charged
+# ---------------------------------------------------------------------------
+
+
+def rate_limit_dependency(class_name: str) -> Callable[[Request], None]:
+    """Return a FastAPI dependency charging `class_name`'s bucket per IP.
+
+    Use INSTEAD OF the `@_rl(class_name)` decorator on any endpoint that parses
+    a request body, so malformed payloads are charged too. No-op when rate
+    limiting is disabled (RATE_LIMIT_DISABLED=1), matching `_rl`'s passthrough.
+    """
+
+    def _charge(request: Request) -> None:
+        limiter = get_limiter()
+        if limiter is None:
+            return
+        parsed = limits.parse(limit_for(class_name))
+        wrapped = Limit(
+            parsed,
+            limiter._key_func,
+            f"boba:{class_name}",
+            False,
+            None,
+            None,
+            None,
+            1,
+            False,
+        )
+        key = limiter._key_func(request)
+        scope = f"boba:{class_name}"
+        # slowapi's `_rate_limit_exceeded_handler` AND its middleware both read
+        # `request.state.view_rate_limit` to build Retry-After / X-RateLimit-*
+        # headers. The decorator sets it (extension.py:530); a hand-rolled
+        # dependency must too, or the 429 handler dies with
+        # `AttributeError: 'State' object has no attribute 'view_rate_limit'`
+        # (measured). Shape is (RateLimitItem, [identifiers]) — the SAME
+        # identifiers passed to hit(), so get_window_stats() can find the bucket.
+        # Set on BOTH paths: successful responses get headers too.
+        request.state.view_rate_limit = (parsed, [key, scope])
+        # One shared bucket per (client, class) — the scope keeps the invalid
+        # and valid paths on the SAME counter rather than giving malformed
+        # requests their own free allowance.
+        if not limiter.limiter.hit(parsed, key, scope):
+            raise RateLimitExceeded(wrapped)
+
+    return _charge

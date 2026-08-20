@@ -1,0 +1,70 @@
+<h1 id="bob-137-merge-service-7187-wedge-captured-forensics">BOB-137 —
+merge service (7187) wedge: captured forensics</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-20T15:00:00Z</p>
+<p>Captured 2026-08-20 on the live stack while the defect was ACTIVE.
+Evidence class: runtime (§11.4.226) — live process, socket and thread
+state, not source inspection.</p>
+<h2 id="the-wedge-measured">1. The wedge, measured</h2>
+<p>Container <code>qbittorrent-proxy</code>, up 3h53m, reported
+<code>Up 4 hours (healthy)</code>:</p>
+<pre><code>curl --max-time 6 http://localhost:7186/       -&gt; HTTP 200 in 0.096s
+curl --max-time 6 http://localhost:7187/       -&gt; HTTP 000 after 6.004s</code></pre>
+<p>Both ports are served by the SAME process — <code>ss -ltnp</code>
+shows pid 2330069 holding fd 3 (7186) and fd 7 (7187). So this is not a
+crashed worker: one loop inside a live process stopped servicing
+requests while another in the same process kept working.</p>
+<h2 id="thread-census-the-gil-starvation-signature">2. Thread census
+(the GIL-starvation signature)</h2>
+<p>16 threads. One in state <code>R</code> with <code>wchan=0</code>;
+one in <code>do_sys_poll</code>; the other 14 all in
+<code>futex_wait_queue</code>. Process CPU 20.6% while nominally
+idle.</p>
+<p>A thread busy-looping in Python holds the GIL, and every other thread
+queues on the GIL futex. 7186 survives because <code>do_sys_poll</code>
+releases the GIL; the 7187 async loop needs sustained GIL time to
+service a request and starves.</p>
+<p>See <code>threads.txt</code>.</p>
+<h2 id="socket-state">3. Socket state</h2>
+<p>Seven sockets held by the process in <code>CLOSE-WAIT</code> with
+unread bytes still queued (Recv-Q 162, 162, 162, 79, 1, 1, 1): clients
+sent a request and hung up, and the application neither read it nor
+closed the fd. At first observation the 7187 LISTEN socket also had an
+unaccepted backlog (Recv-Q 6).</p>
+<p>NOT fd exhaustion — 48 of 16384 fds open. See
+<code>sockets.txt</code>.</p>
+<h2 id="log-silence">4. Log silence</h2>
+<p>The container log’s final entry predates the observation by ~2 hours;
+the service processed nothing in that window. See
+<code>container_log_tail.txt</code>.</p>
+<h2 id="root-cause-not-established">5. Root cause: NOT ESTABLISHED</h2>
+<p>All four <code>while True</code> loops in the service (routes.py:166,
+search.py:1169, streaming.py:161, streaming.py:359) are correctly
+bounded and awaited, so the spin is not a naive unslept loop.</p>
+<p><code>py-spy</code> could not attach to name the spinning frame: the
+host runs <code>kernel.yama.ptrace_scope=1</code>, which denies
+non-child attach. Per the §11.4.102 Iron Law no fix is proposed until
+the spinning frame is identified.</p>
+<h2 id="update-the-wedge-is-transient-and-self-clearing">6. UPDATE — the
+wedge is TRANSIENT and self-clearing</h2>
+<p>Roughly 15 minutes after the measurements above, and with NO restart
+and no intervention, 7187 began answering normally:</p>
+<pre><code>curl --max-time 8 http://localhost:7187/health -&gt; HTTP 200 in 0.021s</code></pre>
+<p>This materially changes the diagnosis: the service is not permanently
+wedged, it stalls for a bounded-but-long period (&gt;= 2h of log silence
+here) and then recovers. That is consistent with a long-running
+GIL-hogging operation completing, rather than a true deadlock.</p>
+<p>HONEST BOUNDARY (§11.4.6): the CAUSE of the recovery is UNKNOWN. A
+<code>py-spy</code> attach was attempted (and failed with EPERM) shortly
+before recovery was observed; whether that attempt perturbed the process
+is UNCONFIRMED. The recovery is NOT claimed to be spontaneous, only
+observed.</p>
+<p>Consequence for reproduction: a repro must SOAK — a point-in-time
+probe will often find the service healthy and conclude, falsely, that
+there is no defect (§11.4.201(6) false-null).</p>
+<h2 id="discovery-channel-11.4.238">7. Discovery channel
+(§11.4.238)</h2>
+<p>Found by an agent hand-probing the host during an unrelated
+investigation — NOT by automated QA. Coverage escape. The sibling item
+BOB-138 records the health check that was structurally incapable of
+observing this.</p>

@@ -33,13 +33,14 @@ except ImportError:  # loaded via importlib.util.spec_from_file_location in test
 # rate limiting is disabled (RATE_LIMIT_DISABLED=1) — in that case _rl becomes
 # a passthrough so the decorated handler runs unchanged (the RED baseline).
 try:
-    from .rate_limit import get_limiter, limit_for
+    from .rate_limit import get_limiter, limit_for, rate_limit_dependency
 except ImportError:
     import importlib
 
     _rl_mod = importlib.import_module("api.rate_limit")
     get_limiter = _rl_mod.get_limiter
     limit_for = _rl_mod.limit_for
+    rate_limit_dependency = _rl_mod.rate_limit_dependency
 
 
 def _rl(class_name: str):
@@ -184,19 +185,39 @@ async def stream_theme(request: Request):  # type: ignore[no-untyped-def]
 
 
 class SearchRequest(BaseModel):
-    query: str = Field(..., description="Search query", min_length=1)
-    category: str = Field(default="all", description="Category filter")
+    # Every field is BOUNDED. This endpoint fans one request out to ~43
+    # trackers, so an unbounded field is an amplification lever: one cheap
+    # request becomes N expensive upstream requests carrying attacker-
+    # controlled payload. Rate limiting does not close it -- a client inside
+    # its allowance can still send a multi-megabyte query, and the per-request
+    # COST is the problem here, not the request RATE.
+    #
+    # Limits are sized from measured usage, not taste (2026-08-20): the longest
+    # legitimate query anywhere in this repo is 14 chars ("boba-111-probe"),
+    # the longest category 23 ("boundary-max-length-url"), and there are 43
+    # managed plugins. Each bound leaves generous headroom over observed usage
+    # while removing the unbounded tail. Guard: tests/security/
+    # test_search_request_bounds.py asserts BOTH directions -- oversized is
+    # refused AND realistic input is still accepted (a validator that rejects
+    # legitimate traffic is as broken as one that accepts anything).
+    query: str = Field(..., description="Search query", min_length=1, max_length=256)
+    category: str = Field(default="all", description="Category filter", max_length=64)
     limit: int = Field(default=50, description="Maximum results", ge=1, le=100)
     enable_metadata: bool = Field(default=True, description="Enable metadata enrichment")
     validate_trackers: bool = Field(default=True, description="Validate tracker health")
-    sort_by: str = Field(default="seeds", description="Sort column")
-    sort_order: str = Field(default="desc", description="Sort direction: asc or desc")
+    sort_by: str = Field(default="seeds", description="Sort column", max_length=32)
+    sort_order: str = Field(
+        default="desc", description="Sort direction: asc or desc", max_length=32
+    )
     trackers: list[str] | None = Field(
         default=None,
+        max_length=64,
         description=(
             "Optional provider-selection filter (BUG-1): restrict the search to "
             "this subset of tracker names (case-insensitive). Omit / null / empty "
-            "list searches every enabled tracker (back-compat)."
+            "list searches every enabled tracker (back-compat). Bounded at 64 "
+            "entries -- there are 43 managed plugins, so a longer list can only "
+            "be noise or an amplification attempt."
         ),
     )
 
@@ -353,8 +374,16 @@ def _serialize_merged_rows(merged: list[Any]) -> list[SearchResultResponse]:
     return rows
 
 
-@router.post("/search", response_model=SearchResponse)
-@_rl("search")
+@router.post(
+    "/search",
+    response_model=SearchResponse,
+    # BOB-111 follow-up: the limiter is a DEPENDENCY, not @_rl("search"). A
+    # decorator wraps the endpoint function, which FastAPI never reaches when
+    # body validation fails — so malformed payloads were entirely un-limited
+    # (measured: 135 invalid POSTs -> 429:0). Dependencies run BEFORE the 422.
+    # Do NOT re-add @_rl("search") here: that would charge valid requests twice.
+    dependencies=[Depends(rate_limit_dependency("search"))],
+)
 async def search(body: SearchRequest, request: Request, response: Response):  # type: ignore[no-untyped-def]
     # BOB-111 slowapi compat: rate-limiter needs the FastAPI Request param
     # literally named `request`; body model renamed to `body` to free the name.

@@ -1,0 +1,3 @@
+═══ 2. thread count + state of the wedged pid ═══
+    PID NLWP STAT %CPU %MEM     ELAPSED CMD
+2330069   16 Ssl  20.6  0.1    03:53:15 python3 /config/download-proxy/src/main.py

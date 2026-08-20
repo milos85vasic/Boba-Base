@@ -211,7 +211,23 @@ services:
       jackett:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:7186/', timeout=5)\" || exit 1"]
+      # BOB-138: this container serves BOTH 7186 (download proxy) and 7187
+      # (merge search) from a SINGLE process, so the check must probe BOTH.
+      # It previously probed only 7186 -- and on 2026-08-20 the container
+      # reported "Up 4 hours (healthy)" while 7187 had been returning nothing
+      # for ~2 hours (7186 -> HTTP 200 in 0.096s, 7187 -> HTTP 000 after 6s).
+      # A check covering a subset of served ports asserts a PROXY signal
+      # instead of the real condition (§11.4.201), so the product's primary
+      # capability can die invisibly.
+      #
+      # `python -c` rather than curl: curl is ABSENT from the python:3.12-alpine
+      # image (verified in-container 2026-08-20), so the urllib probe is a
+      # deliberate choice, not an oversight. urlopen raises on a non-2xx or a
+      # timeout, so either port failing exits non-zero.
+      #
+      # Guarded by scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh
+      # against the declaration in config/served_ports.yaml.
+      test: ["CMD-SHELL", "python -c \"import urllib.request as u; u.urlopen('http://localhost:7186/', timeout=5); u.urlopen('http://localhost:7187/health', timeout=5)\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5

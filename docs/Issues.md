@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 8
-**Last modified:** 2026-08-19T18:07:03Z
+**Revision:** 9
+**Last modified:** 2026-08-20T14:59:05Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -22,8 +22,16 @@ attempted, `auth=True`). UNBLOCK — [A] operator completes the CAPTCHA flow
 at `/api/v1/auth/rutracker/captcha` + `/login`. [B] operator pastes a fresh
 `bb_session` cookie via `/auth/rutracker/cookie-login`. WHO — operator.
 
-**Evidence:** live search per-tracker stat `rutracker status=error auth=True
-error="login returned no session cookie — likely CAPTCHA"`.
+**Evidence:** live search per-tracker stat `rutracker status=error auth=True`.
+The diagnostic now reports `error_type="upstream_captcha"` with the FACT-based
+message "rutracker login.php returned no session cookie — this is the rutracker
+anti-abuse CAPTCHA wall (gates login.php when logins spike), not a credential
+failure. Set RUTRACKER_COOKIES from a logged-in browser session to bypass the
+login round-trip." (`download-proxy/src/merge_service/search.py`). The earlier
+quote here — `error="login returned no session cookie — likely CAPTCHA"` — was
+SUPERSEDED when BOB-117 landed and no longer exists in source; it is corrected
+rather than left as stale evidence (§11.4.6 no-guessing, §11.4.7 evidence must
+reflect the conditions it claims).
 
 ## BOB-065 — Lava P2: Egress diagnosis and VPN-host SOCKS routing (containers pkg/egress)
 
@@ -72,14 +80,6 @@ error="login returned no session cookie — likely CAPTCHA"`.
 **Severity:** Medium
 
 [Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-07, P2] tests/ has 18 subdirectories covering unit/integration/e2e/security/chaos/stress/performance/benchmark/UI (13 of the constitution ~14 mandated categories present). tests/load/locustfile.py covers throughput/scale only. No file anywhere mentions DDoS, flood, or attack-resilience testing — a distinct mandated category per §11.4.27, and not legitimately N/A given this is an internet-facing FastAPI/Gin service with public HTTP endpoints reachable over a LAN tunnel. Fix: author tests/ddos/ (or extend tests/load/) with rate-limit-enforcement, malformed-request-flood, and resource-exhaustion-under-attack coverage for the exposed download-proxy/merge-service endpoints. Priority: P2. Canonical implementation: RD2-32.
-
-## BOB-076 — RD2-09: submodules/jackett fork 1 commit behind upstream (informational)
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Low
-
-[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-09, P3 informational] git submodule status + fetch shows submodules/jackett 1 commit behind origin/master (e12342eb4, a trivial false-positive fix). All other submodules (constitution, challenges, containers, helixqa) are exactly at their upstream tip. Fix: bump when convenient; not blocking anything. Priority: P3. Canonical implementation: RD2-39.
 
 ## BOB-077 — RD2-10: Identify second host running the Auto-commit rsync/sync mechanism (OPERATOR-DECISION)
 
@@ -193,14 +193,6 @@ error="login returned no session cookie — likely CAPTCHA"`.
 **Severity:** Medium
 
 [Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-25, P2] Add a HelixQA Challenge entry exercising all three start.sh subcommands (reload_python, reload_plugins, recreate_stack) end-to-end against the real compose stack. Priority: P2.
-
-## BOB-091 — RD2-26: Relocate mocked SearchOrchestrator tests to unit/ + author real-service replacements (closes GA-14/15/16)
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** High
-
-[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-26, P1 — closes GA-14/15/16] For each of tests/integration/test_merge_api.py, tests/e2e/test_full_pipeline.py, tests/contract/test_tracker_stats_contract.py: (a) relocate the existing mocked version into tests/unit/ under an honest name (the coverage is valuable as unit-level route-contract testing — keep it, just where it belongs); (b) author a real-service replacement in the original directory using the repo existing live-stack fixtures (tests/fixtures/compose.py, tests/fixtures/services.py, tests/integration/test_fixtures_bring_up_services.py already prove this pattern works here). Verification: each relocated/replaced file directory-appropriate real-service test actually issues a real HTTP call to a real running service and asserts on the real response — no @patch/monkeypatch targeting SearchOrchestrator anywhere outside tests/unit/. Priority: P1.
 
 ## BOB-092 — RD2-27: Remove test_live_stack_evidence.py:265 nnmclub SKIP-on-404 fallback + verify live 200 (closes GA-13)
 
@@ -373,15 +365,6 @@ wrk is not installed on the development host; ApacheBench (ab) is, and was used 
 
 challenges/scripts/ddos_resilience_challenge.sh's --self-validate mode currently only ships a golden-bad fixture for the crash-resistance detector (per §11.4.107(10)/§11.4.201). The rate-limiting detector has no matching golden-bad fixture proving it would actually FAIL a synthetic no-rate-limit-enforced artifact, so an unvalidated rate-limit detector could silently pass a broken/absent rate-limit deployment. Add a synthetic fixture (e.g. a stub server that never returns 429/503 under burst) and assert the detector correctly reports the absence, closing the self-validation gap for this detector class.
 
-## BOB-117 — rutracker login diag still uses forbidden §11.4.6 'likely' vocabulary + wrong error_type (unfixed sibling of nnmclub fix)
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** High
-**Created-By:** AI
-
-search.py:1329 (_search_rutracker password-login path) still classifies a no-session-cookie login result as error_type=auth_failure with message 'rutracker login returned no session cookie — likely CAPTCHA wall or credential failure'. The adjacent code comment (lines 1244-1248, same function) already states as FACT that 'rutracker gates login.php behind a CAPTCHA when logins spike... the CAPTCHA is the real blocker' — yet the error classification still hedges with forbidden §11.4.6 vocabulary (likely) and reports the WRONG error_type (auth_failure instead of upstream_captcha), unlike the exact same class of bug already fixed for nnmclub per docs/qa/nnmclub-login-diagnosis-20260616.md (which replaced 'likely credential failure' with a FACT-based upstream_captcha classification + explanatory comment explicitly citing 'This is NOT likely a credential failure'). The rutracker code path could disambiguate the same way nnmclub's fix does (or by reading the login response body for a captcha marker, mirroring the existing pattern used ~20 lines later in the SAME function for the search response) but currently discards that opportunity and ships a guess. Found during a §11.4.6 bluff audit (docs/qa/task-bluff-audit/). Fix direction: apply the same upstream_captcha reclassification + FACT-based message used for nnmclub, or add a captcha-marker check on the login response before falling back to a hedged message.
-
 ## BOB-118 — README.md python-tests badge claims 585 passing; pytest --collect-only measures 5235 (9x stale/wrong)
 
 **Status:** Queued
@@ -432,4 +415,279 @@ BOB-129 subagent found qbittorrent-proxy container DEAD mid-investigation (podma
 **Severity:** Low
 
 Task #109 subagent found: tests/unit/test_merge_api_route_contracts.py::TestHooksEndpoint::test_list_hooks_after_create fails when run in bulk suite order with 'ERROR api.hooks:hooks.py:102 Failed to save hooks: [Errno 13] Permission denied: /config'. Passes in isolation (2.02s clean). Root cause: full-suite ordering pollution — some earlier test leaves state that makes hooks try to write to /config (which the test env doesn't own). Pre-existing, unrelated to BOB-126/BOB-129 chain. Fix strategy: identify the polluting test, add teardown or use a proper tempdir fixture for hooks storage in the offending test.
+
+## BOB-136 — Closure seam does not bind: 4 tracker rows found stale in one sweep, and workable-items diff is blind to body_md drift
+
+**Status:** Queued
+**Type:** Task
+**Severity:** High
+
+WHAT. A single 2026-08-20 sweep found FOUR workable-item rows whose tracked state contradicted
+reality: BOB-076 (closed by commit 99a486e on 2026-08-15, whose message literally says "closes
+BOB-076", still Queued), BOB-117 (fix landed AND covered by a permanent guard assertion, still
+Queued), BOB-091 (implemented under d1a8479 / a3b16bc / 2a0b543, still Queued), and BOB-008 whose
+Evidence field still quoted a diagnostic string that BOB-117 removed from source.
+
+CORRECTION 2026-08-20 (11.4.6). An earlier revision of this item claimed the enabling defect was
+that "workable-items diff is blind to body_md drift". That was WRONG and is corrected here rather
+than quietly edited. The engine is NOT blind. The FLAGLESS INVOCATION is:
+
+    workable-items diff --db docs/workable_items.db
+      -> "diff: DB and Markdown are in sync"     (opens ZERO .md files)
+
+    workable-items diff --db docs/workable_items.db --issues docs/Issues.md --fixed docs/Fixed.md
+      -> "~ BOB-008 body differs (md=1346 bytes db=1333 bytes)"   -> "diff: 1 difference(s)"
+
+Both measured on the same seeded body-only drift. An independent agent proved the mechanism with
+strace: the flagless form never opens any Markdown file. So this is a 11.4.201(6) FALSE-NULL of the
+CALLER, not a gap in the comparison logic. Importantly, pre_build_verification.sh invariant 17
+already passes both flags, so the STANDING GATE was never blind — the drift above was not caused by
+a blind gate.
+
+THE REAL DEFECTS, restated honestly.
+(1) The flagless form is a false-null trap: it reports a confident, reassuring "in sync" while
+    checking nothing. Any caller using it is a green-reporting blind check. It should either
+    default to the conventional Issues.md/Fixed.md paths or REFUSE with a clear error, never
+    return a clean verdict for a comparison it did not perform.
+(2) Work commonly lands under commit messages that do not carry the ATM id (GA-14/15/16 for
+    BOB-091), so nothing mechanically links a commit back to its row, and closure depends on a
+    human remembering. 11.4.227: an anchor done state is its SEAM landing, not its TEXT landing.
+
+ACCEPTANCE. (a) The flagless diff invocation no longer returns a clean verdict without reading
+Markdown, with a paired 1.1 mutation proving it. (b) A repo-wide grep confirms no caller uses the
+flagless form. (c) A sweep that flags any non-terminal item whose id appears in a merged commit
+message, so done-but-open rows are found mechanically rather than by a human noticing. (d) Honest
+boundary: this does not claim to prevent all drift.
+
+RELATED. scripts/hooks/docs-sync-commit-seam.sh (added under BOB-087) now enforces doc/DB sync at
+the commit seam and passes the flags explicitly, plus an independent body_md re-parse oracle.
+
+EVIDENCE. docs/qa/BOB-117/closure-evidence.md, docs/qa/BOB-076/closure-evidence.md,
+docs/qa/BOB-091/closure-evidence.md.
+
+## BOB-137 — Merge service on 7187 wedges while the same process still serves 7186 (GIL starvation by one spinning thread)
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T14:46:52Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+The merge service on port 7187 wedges after hours of uptime: the port stays bound
+and the container keeps reporting "healthy", but every HTTP request hangs until the
+client times out. Measured 2026-08-20 16:41 UTC+2 on a container up 3h53m:
+
+  curl http://localhost:7186/  -> HTTP 200 in 0.096s   (proxy, same process)
+  curl http://localhost:7187/  -> HTTP 000 after 6.0s  (merge service, WEDGED)
+
+Both ports are served by the SAME process (pid 2330069, fd 3 = 7186, fd 7 = 7187),
+so this is not a crashed worker -- one loop inside a live process has stopped
+servicing requests while another in the same process is fine.
+
+Thread state at the time of the wedge (/proc/2330069/task, 16 threads):
+  - tid 2330529: state R, wchan 0            <- ONE thread spinning on CPU
+  - tid 2330528: state S, wchan do_sys_poll  <- the healthy 7186 poll loop
+  - the other 14: state S, wchan futex_wait_queue
+
+That is the GIL-starvation signature: a thread busy-looping in Python holds the
+GIL and every other thread queues on the GIL futex. 7186 survives because
+do_sys_poll releases the GIL; the 7187 async loop needs sustained GIL time to
+service a request and starves. Process CPU was 20.6% while idle.
+
+Corroborating evidence: seven sockets held by the process sit in CLOSE-WAIT with
+unread bytes still in the receive queue (Recv-Q 162, 162, 162, 79, 1, 1, 1) --
+clients sent a request and hung up, and the app never read it or closed the fd.
+The listener had also accumulated an unaccepted backlog (Recv-Q 6 on the 7187
+LISTEN socket) at first observation. The container log's last line is 2h before
+the observation, so the service processed nothing in that window.
+
+NOT fd exhaustion: only 48 of 16384 fds were open.
+
+ROOT CAUSE NOT ESTABLISHED. All four `while True` loops in the service
+(routes.py:166, search.py:1169, streaming.py:161, streaming.py:359) are correctly
+bounded and awaited, so the spin is not a naive unslept loop. py-spy could not
+attach to name the spinning frame -- the host has kernel.yama.ptrace_scope=1,
+which denies non-child attach. Per the §11.4.102 Iron Law no fix is proposed until
+the spinning frame is identified.
+
+Next diagnostic step: obtain a Python stack. Either run py-spy INSIDE the
+container (musl wheel), or set ptrace_scope=0 for the duration of one dump, or
+add a SIGQUIT/faulthandler.register() dump hook to main.py so the running service
+can be asked for its own stacks without ptrace.
+
+DISCOVERY CHANNEL (§11.4.238): found by an agent probing the host by hand while
+investigating an unrelated test-suite result -- NOT by automated QA. This is a
+coverage escape in its own right; see the sibling item on the health check that
+was structurally incapable of observing it.
+
+**Affected scope / file-scope manifest:**
+download-proxy/src/main.py, download-proxy/src/merge_service/, download-proxy/src/api/streaming.py, docker-compose.yml (qbittorrent-proxy)
+
+**Reproduction / context:**
+Leave the qbittorrent-proxy container running for several hours with search traffic (a full tests/security run is sufficient). Then: curl --max-time 6 http://localhost:7186/ returns 200; curl --max-time 6 http://localhost:7187/ returns 000. Confirm with: ss -ltnp | grep 7187 (unaccepted backlog) and awk '{print $3}' /proc/<pid>/task/*/stat (one R thread, rest futex_wait_queue).
+
+**Acceptance criteria:**
+The spinning frame is identified from a real Python stack dump (not inferred), the busy-loop is fixed at its root, and a regression guard proves 7187 still answers after a sustained-traffic soak. Evidence: before/after curl timings on both ports plus a thread-state census showing no permanently-R thread.
+
+## BOB-139 — SSE _client_gone() swallows every exception into 'client still connected', so a raising disconnect probe streams forever (fail-open)
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T14:47:35Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+Both SSE generators in download-proxy/src/api/streaming.py (lines ~153 and ~351)
+guard their `while True` loop with this helper:
+
+    async def _client_gone() -> bool:
+        if request is None:
+            return False
+        try:
+            return await request.is_disconnected()
+        except Exception:
+            return False
+
+The bare `except Exception: return False` means: if the disconnect check itself
+ever raises, the generator concludes the client is STILL CONNECTED and keeps
+streaming -- forever. That is fail-OPEN on the only condition that terminates the
+loop, in a code path that holds a socket and a task.
+
+This is the §11.4.252 fail-closed rule inverted: the safe default for "I cannot
+determine whether the client is gone" is to treat it as gone and stop streaming
+(the client can always reconnect -- SSE is designed for that), not to keep an
+unbounded stream alive on an unresolvable signal.
+
+It is also a §11.4.201(6) false-null: a raising probe and a genuinely-connected
+client return the identical `False`, so the loop cannot distinguish "client is
+here" from "I am blind".
+
+Corroborating observation (2026-08-20): seven sockets held by the merge-service
+process were sitting in CLOSE-WAIT with unread request bytes -- clients had hung
+up and the server had not noticed. That is consistent with (though not yet proven
+to be caused by) this fail-open, and it is the reason this is filed rather than
+left as a style note.
+
+HONEST BOUNDARY: not proven to be the cause of the 7187 wedge -- both loops DO
+call `await asyncio.sleep(poll_interval)`, so they yield and would not busy-spin.
+This is filed as a real defect on its own merits (an unbounded stream on an
+unresolvable signal, plus a leaked socket and task), not as the wedge's root cause.
+
+**Affected scope / file-scope manifest:**
+download-proxy/src/api/streaming.py (_client_gone at ~line 153 and ~line 351)
+
+**Reproduction / context:**
+Monkeypatch Request.is_disconnected to raise, open an SSE stream, disconnect the client, and observe the generator never terminates (the loop keeps yielding and the task is never reclaimed).
+
+**Acceptance criteria:**
+A raising disconnect probe terminates the stream (fail-closed per §11.4.252) rather than continuing it, AND a normally-connected client still streams uninterrupted (§11.4.201 both directions). Guard: a unit test for each SSE generator covering raise -> terminate and connected -> continue.
+
+## BOB-140 — Upstream the healthcheck-covers-served-ports gate into constitution/scripts/gates/ and thin boba's copy to a delegator (§11.4.177)
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Medium
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-20T14:56:38Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh (landed with BOB-138)
+implements a rule every project under this constitution needs: a container health
+check MUST cover every port its service serves, because a check probing a subset
+asserts a proxy signal instead of the real condition (§11.4.201).
+
+Its detection logic already carries ZERO boba literals -- both the compose file and
+the served-port manifest are inputs, defaulted from the project root. It therefore
+belongs in constitution/scripts/gates/ and should be consumed BY REFERENCE by a thin
+boba delegator holding only boba's scope DATA, exactly as
+check_cm_killpg_pgid_guard.sh was restructured (§11.4.177 / §11.4.28 / §11.4.74).
+
+WHY IT WAS NOT UPSTREAMED IMMEDIATELY: a concurrent agent was editing
+constitution/scripts/gates/ at the time (upstreaming the killpg engine). Two writers
+in one submodule directory risks losing work, so this was deferred deliberately and
+filed rather than silently skipped (§11.4.197). This is a known-and-tracked
+deviation from §11.4.177, not an oversight.
+
+Two properties MUST survive the move:
+  1. FAIL when zero services were checked -- a quiet zero from a blind instrument is
+     indistinguishable from a clean tree (§11.4.201(6)).
+  2. FAIL when python3+PyYAML is unavailable, rather than skipping, for the same
+     reason.
+
+Acceptance: the engine lives in constitution/scripts/gates/, boba's copy is a thin
+delegator carrying only its manifest path, both directions still verified (a service
+missing a served port FAILs; a fully-covered set PASSes), and no detection logic is
+duplicated between the two.
+
+**Affected scope / file-scope manifest:**
+scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh, config/served_ports.yaml, constitution/scripts/gates/
+
+**Reproduction / context:**
+n/a — known deviation recorded at landing time, not a discovered defect.
+
+**Acceptance criteria:**
+Detection engine in constitution/scripts/gates/; boba ships a thin delegator with scope DATA only; zero duplicated detection logic; both polarity directions still verified after the move.
+
+## BOB-141 — CLAUDE.md claims the Go profile serves 7186/7187/7188 but its container binds only 7187 — doc contradicts the Dockerfile
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Low
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-20T14:56:38Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+CLAUDE.md's Architecture section states:
+
+  "qbittorrent-proxy-go (Go/Gin, opt-in via --profile go) -- replaces the Python
+   proxy on 7186, 7187, 7188"
+
+The container cannot deliver that. Read from source rather than prose:
+
+  qBitTorrent-go/Dockerfile:16    CMD ["/app/qbittorrent-proxy"]        (ONE binary)
+  qBitTorrent-go/Dockerfile:15    EXPOSE 7187 7188                      (declares 2)
+  cmd/qbittorrent-proxy/main.go   r.Run(fmt.Sprintf(":%d", cfg.ServerPort))  (binds 1)
+  internal/config/config.go:58    ServerPort = MERGE_SERVICE_PORT (default 7187)
+
+So the qbittorrent-proxy-go container binds 7187 ONLY. webui-bridge is a SEPARATE
+binary (cmd/webui-bridge, /bridge/health, cfg.BridgePort) that this container never
+starts, and nothing in it binds 7186 either -- although the compose service does set
+PROXY_PORT=7186 and BRIDGE_PORT=7188 in its environment, which reinforces the wrong
+impression. EXPOSE likewise declares a port nothing binds.
+
+WHY THIS MATTERS BEYOND TIDINESS: this prose was used as the source of truth when
+first authoring config/served_ports.yaml, producing a manifest entry of
+[7186, 7187, 7188] for that service. The healthcheck gate built on it then FAILED a
+service whose healthcheck was already correct -- a §11.4.201(1) false-positive
+refusal caused directly by trusting the doc over the Dockerfile. The manifest was
+corrected against source; the doc was not, and will mislead the next reader the
+same way.
+
+Either the doc is wrong, or the Go container is under-provisioned relative to intent
+(it should also run webui-bridge and a 7186 listener). Determining WHICH is part of
+this task -- do not simply reword the doc to match the current binary if the
+intended design was a three-port container.
+
+Related: the Go service's compose block sets PROXY_PORT and BRIDGE_PORT that no
+process in the container consumes, and EXPOSE lists 7188 unbound. Whichever way the
+above resolves, those should agree with reality afterwards.
+
+**Affected scope / file-scope manifest:**
+CLAUDE.md (Architecture + Port Map), docker-compose.yml (qbittorrent-proxy-go env/EXPOSE), qBitTorrent-go/Dockerfile
+
+**Reproduction / context:**
+Read qBitTorrent-go/Dockerfile:16 (single CMD) against CLAUDE.md's 'replaces the Python proxy on 7186, 7187, 7188'; confirm cfg.ServerPort resolves to MERGE_SERVICE_PORT=7187 in internal/config/config.go:58.
+
+**Acceptance criteria:**
+Doc and container agree, with the direction of the fix decided deliberately (correct the doc, or provision the container to match the documented intent). PROXY_PORT/BRIDGE_PORT env and EXPOSE lines agree with what the container actually binds.
 

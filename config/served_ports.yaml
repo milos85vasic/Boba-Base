@@ -1,0 +1,77 @@
+# ============================================================================
+# config/served_ports.yaml — boba's CONSUMER-OWNED declaration of which ports
+# each compose service SERVES (§11.4.35 DATA, never engine logic).
+# ============================================================================
+#
+# Consumed by scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh,
+# which asserts every served port appears in that service's health check.
+#
+# WHY THIS IS DECLARED AND NOT DERIVED (§11.4.6 no-guessing, §11.4.201(1)):
+#   These services run `network_mode: host`, so compose carries no `ports:`
+#   mapping to derive from — the only port numbers in the service block are
+#   environment variables, and those mix two DIFFERENT meanings that no
+#   syntactic rule separates:
+#
+#     PROXY_PORT=7186         <- a port this service SERVES        (in scope)
+#     MERGE_SERVICE_PORT=7187 <- a port this service SERVES        (in scope)
+#     QBITTORRENT_PORT=7185   <- a port this service CONNECTS TO   (NOT in scope)
+#
+#   A gate that swept `*_PORT` would demand a health check for 7185 on a
+#   service that does not serve it — a false-positive refusal, which §11.4.201(1)
+#   makes exactly as forbidden as a false pass. So the served set is declared
+#   here, by a human, with provenance.
+#
+# PROVENANCE: every entry below is cross-checked against the port map in
+# CLAUDE.md ("Port Map") and against the live listeners observed on the running
+# stack 2026-08-20 (`ss -ltnp`), which showed pid 2330069 holding BOTH fd 3 ->
+# 7186 and fd 7 -> 7187 — one process, two served ports.
+#
+# ADDING A SERVICE: if a compose service serves a port and is not listed here,
+# the gate reports it as UNDECLARED and fails. Silence is not an exemption
+# (§11.4.201(6): a blind gate and a clean tree both return a quiet zero).
+# ============================================================================
+
+schema_version: 1
+
+services:
+  # Keyed by compose SERVICE name (not container_name).
+  qbittorrent:
+    container_name: qbittorrent
+    serves: [7185]          # qBittorrent WebUI
+
+  jackett:
+    container_name: jackett
+    serves: [9117]          # Jackett indexer API
+
+  download-proxy:
+    container_name: qbittorrent-proxy
+    # BOB-138: this service serves BOTH ports from a single process, but its
+    # health check historically probed only 7186 — so a dead 7187 reported
+    # "healthy" for hours.
+    serves: [7186, 7187]    # download proxy + merge search service
+
+  qbittorrent-proxy-go:
+    container_name: qbittorrent-proxy-go
+    # CORRECTED 2026-08-20. This entry first read `[7186, 7187, 7188]`, taken
+    # from the CLAUDE.md prose "replaces the Python proxy on 7186, 7187, 7188".
+    # That is WRONG, and the gate built against it produced a FALSE POSITIVE
+    # against a service whose health check was already correct — the §11.4.201(1)
+    # false-refusal this very gate is supposed to prevent, committed in its own
+    # input data.
+    #
+    # The container's real topology, read from source rather than prose:
+    #   qBitTorrent-go/Dockerfile:16   CMD ["/app/qbittorrent-proxy"]   (ONE binary)
+    #   cmd/qbittorrent-proxy/main.go  r.Run(fmt.Sprintf(":%d", cfg.ServerPort))
+    #   internal/config/config.go:58   ServerPort = MERGE_SERVICE_PORT (7187)
+    # webui-bridge is a SEPARATE binary that this container never starts, so
+    # nothing here binds 7188; PROXY_PORT/BRIDGE_PORT are set in the service's
+    # environment but no process in the container listens on them.
+    # (`EXPOSE 7187 7188` in the Dockerfile likewise declares more than it binds.)
+    #
+    # The prose/reality divergence in CLAUDE.md is filed separately; it is a
+    # documentation defect, not a reason to widen this declaration.
+    serves: [7187]          # merge service only — the single binary this container runs
+
+  boba-jackett:
+    container_name: boba-jackett
+    serves: [7189]          # boba-jackett Go service

@@ -192,7 +192,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>31</td>
+<td>35</td>
 </tr>
 <tr>
 <td>Feature</td>
@@ -202,7 +202,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Task</td>
 <td>Completed (→ Fixed.md)</td>
-<td>13</td>
+<td>14</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -217,7 +217,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>82</strong></td>
+<td><strong>87</strong></td>
 </tr>
 </tbody>
 </table>
@@ -630,342 +630,249 @@ docs/codegraph/Status.md are stale</td>
 </tr>
 <tr>
 <td>69</td>
+<td>Low</td>
+<td>Completed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-076 — RD2-09: submodules/jackett fork 1 commit behind upstream
+(informational)</td>
+</tr>
+<tr>
+<td>70</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-091 — RD2-26: Relocate mocked SearchOrchestrator tests to unit/
++ author real-service replacements (closes GA-14/15/16)</td>
+</tr>
+<tr>
+<td>71</td>
 <td>Medium</td>
 <td>Completed (→ Fixed.md)</td>
 <td>Task</td>
 <td>—</td>
-<td>BOB-103 — Land docs_chain
-(git@github.com:vasic-digital/docs_chain.git) as depth-1 reusable-engine
-submodule at constitution/submodules/docs_chain/ pinned to
-helixcode-v1.1.0. Build engine binary. Wire pre-build gate invariant 24
-CM-DOCS-CHAIN-ENGINE-VERIFY into scripts/pre_build_verification.sh (real
-docs_chain verify –all against .docs_chain/contexts). Add
-challenges/scripts/docs_chain_verify_challenge.sh with §11.4.115
-RED_MODE polarity. Retire scripts/docs_chain.sh misnomer wrapper by
-renaming to scripts/workable-items-export.sh (git mv, history preserved)
-and updating active callers (pre_build_verification.sh + 2 test files +
-3 current-state docs). Constitution commit 47d41f8 pushed to all 6
-mirrors. Boba-side commit follows this workable-item creation.
-[Reconciled 2026-08-18 via BOB-072/073 SSoT-integrity remediation:
-original item’s Fixed-location DB row was deleted by a Fixed.md md-to-db
-reparse before this restoration ran (BOB-103 had never been written into
-docs/Fixed.md text) — original item_history rows (id=66 Opened
-2026-08-15, id=67 Completed 2026-08-15, evidence
-challenges/scripts/docs_chain_verify_challenge.sh) survive untouched and
-remain the authoritative closure record; this add+close pair is a
-mechanical items-row restoration, not a re-performance of the original
-2026-08-15 work.]</td>
-</tr>
-<tr>
-<td>70</td>
-<td>Medium</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-108 — ORIGINAL DEFECT (task #68 fix, commit 3520621):
-workable-items export regenerated docs/Issues.md and docs/Fixed.md from
-the tool’s own internal revision counter, which did not track
-manually-bumped §11.4.44 revision headers already committed on disk.
-Fixed by wiring reconcileRevisionHeader (export_revision.go) into
-export.go’s exportCmd. SIBLING DEFECT DISCOVERED (task #86, filed by
-task-incident-3-writeup subagent aebfe202 during BOB-120 filing,
-2026-08-18/19): the task #68 fix covered ONLY the ‘export’ subcommand –
-the sibling ‘sync db-to-md’ subcommand (syncDBToMD in sync.go), a
-documented first-class entry point (README.md Phase 4), shared the
-identical renderDocument-replays-the-DB’s-stale-header mechanism but had
-NO reconciliation call at all. Live-reproduced 2026-08-19: docs/Fixed.md
-Revision 22-&gt;15 via ‘workable-items sync db-to-md –out-fixed
-docs/Fixed.md’ (matching the operator-reported 21-&gt;15). Root-caused +
-fixed by wiring the SAME reconcileRevisionHeader call into BOTH
-syncDBToMD write paths (–out-issues and –out-fixed). RED-first Go tests
-added (sync_revision_test.go, 3 tests):
-TestSyncDBToMD_NeverRegressesRevisionBelowCommittedFile,
-TestSyncDBToMD_FixedRevisionNeverRegresses (the exact 22-&gt;15 live
-case, replayed), TestSyncDBToMD_IdempotentOnRepeatedInvocation. All RED
-pre-fix (verified against pristine git HEAD), all GREEN post-fix. Live
-idempotency verified: two consecutive real ‘sync db-to-md’ invocations
-against docs/Fixed.md produced byte-identical output (md5 4fba107a).
-bin/workable-items + bin/workable-items-linux rebuilt from the fixed
-source. Evidence:
-docs/qa/task-86-fix/{red_repro_sync_db_to_md.txt,green_after_fix.txt,unit_tests_go_test.txt}.</td>
-</tr>
-<tr>
-<td>71</td>
-<td>High</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-112 — qBitTorrent-go/internal/jackettapi/health.go:60-63 –
-HandleHealth makes a synchronous, uncached call to Jackett.GetCatalog()
-on every single hit to /healthz, with no cache, no distinct timeout, and
-no circuit breaker. Measured evidence (docs/testing/ddos_resilience.md
-Findings, 2026-08-18, RED_MODE=0, three independent live runs): up to
-98/150 (65%) of health-check requests timed out at 3s under a modest
-cold-start concurrent burst (10-50 concurrency), recovering to
-&lt;50ms/request once the burst subsided. This is a genuine
-self-inflicted DDoS amplification vector: an attacker or a
-mis-configured monitoring probe hitting /healthz too aggressively can
-make the Jackett-management API’s own health surface appear down without
-ever touching Jackett itself. Recommended fixes: cache the Jackett
-liveness signal with a short TTL refreshed by a background ticker; add a
-tight timeout/circuit-breaker around the GetCatalog call so /healthz
-itself never blocks past ~250-500ms regardless of Jackett’s state.
-Discovered + scaffolded by BOB-074 (commit ae2b5cb,
-challenges/scripts/ddos_resilience_challenge.sh); tracked as SDD session
-task #64 in .superpowers/sdd/progress.md prior to this DB filing – this
-item is the canonical, tracked workable-items record for that reference
-(§11.4.93 SSoT, §11.4.214 recurrence-links-not-mints: no prior BOB-NNN
-existed for this defect, verified by title/description search before
-minting).</td>
+<td>BOB-103 — Incorporate Docs Chain submodule per
+§11.4.106/§11.4.28(C)</td>
 </tr>
 <tr>
 <td>72</td>
-<td>High</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-115 — unresolvableClosureEvidence()
-(constitution/scripts/workable-items/cmd/workable-items/sync.go) checked
-evidence-path resolvability for EVERY item_history row belonging to a
-terminally-closed item, regardless of the row’s event_type. BOB-010’s
-real closure (history id=4, event=Completed) recorded a resolvable
-evidence_path; a LATER Updated event (history id=64, on=2026-08-10)
-recorded evidence_path=scripts/docs_chain.sh, a path that stopped
-resolving after that script was git-mv’d to
-scripts/workable-items-export.sh (commits 0558399/d9d512d). validate
-flagged the Updated row as an unresolvable closure claim, mechanically
-blocking every subsequent commit via commit-push-all.sh
-(BOBA_SYNC_SKIP_CI=1 was required to land 1f42357). Fix: added AND
-h.event_type IN (Fixed, Implemented, Completed, Obsolete) to the query,
-reusing the SAME closed set correct_evidence.go’s closureEvents /
-assign.go’s hasClosureEvidence already recognise. Regression guard:
-TestClosureEvidence_UpdatedEventOnClosedItem_UnresolvablePath_NoViolation,
-RED-then-GREEN + paired mutation proof captured at
-docs/qa/task-54/RED-GREEN-transcript.md.</td>
-</tr>
-<tr>
-<td>73</td>
-<td>Critical</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-116 — On 2026-08-18 the operator reported being fully logged out
-from host milosvasic account after returning from lid-closed state,
-finding themselves at the GDM greeter – the 2nd such incident on this
-project (1st was 2026-07-07, which produced the §12.12 anchor).
-Root-cause investigation
-(docs/incidents/2026-08-18-perceived-forced-logout-2nd.md) traced it to
-a resource-pressure cascade: a §12.12 EAGAIN/SocketException(11) cascade
-across Jackett trackers at 20:45:48, a pathological 15 GB ugrep from a
-Task#52 subagent, an HTTP flood at 20:49:00, and multi-fleet concurrent
-container pressure, culminating in systemd logging user@1000.service
-Main process exited, code=killed, status=9/KILL at 20:50:59 – no
-standing check consulted that signal before session termination, and
-CONST-033 triage confirmed no actual host suspend/poweroff occurred
-(this is a resource-exhaustion user-session OOM-kill, not a CONST-033
-violation). Comprehensive fixes landed this session: new 5-signature
-proactive detector
-challenges/scripts/resource_pressure_signature_challenge.sh (commit
-1f42357); five REAL per-signature §11.4.115(F) RED fixtures under
-challenges/fixtures/resource_pressure/ replacing an initially-overstated
-threshold-mutation polarity claim, verified via
-verify_resource_pressure_polarity.sh with RED confirmed 5/5 FAIL 0 SKIP
-0 (commit efbb8a6); wiring into scripts/pre_build_verification.sh
-invariant 25 (CM-RESOURCE-PRESSURE-SIGNATURE-CHECK) plus an hourly
-systemd –user timer boba-resource-pressure-check.timer, now LIVE and
-armed (commit ecb3bfe); a §11.4.238 QA-discovery-ledger entry
-FORCED-LOGOUT-2026-08-18-2ND documenting the coverage escape (commit
-98412bf); a fix for a CONST-033 challenge false-positive caused by
-scratchpad/.superpowers path scanning (part of commit 1f42357); 8
-machine-evidence artifacts under docs/qa/BOB-076/ (journalctl, oomctl,
-cgtop, PSI readings, ps LRSS snapshot, challenge pass/forced-fail logs,
-lid+session events); and a persistent-memory incident playbook at
-~/.claude-claude4/…/memory/forced_logout_incidents.md. NOTE ON ID
-COLLISION (documented honestly per §11.4.6/§11.4.54): all of the commits
-above and the docs/qa/ evidence directory used the label BOB-076 for
-this incident, but BOB-076 was ALREADY a distinct, legitimately-minted
-workable item (RD2-09: submodules/jackett fork 1 commit behind upstream,
-Type=Task, Status=Queued, minted 2026-08-15 – three days before this
-incident) at the time those commits landed. §11.4.54 forbids ID reuse,
-so this item is filed under a fresh monotonic ID instead of overwriting
-BOB-076; the real BOB-076 (jackett submodule bump) is untouched and
-unrelated to this incident – it was independently already resolved via
-commit 99a486e. See
-docs/incidents/2026-08-18-perceived-forced-logout-2nd.md for full
-forensic detail and docs/QA_DISCOVERY_LEDGER.md entry
-FORCED-LOGOUT-2026-08-18-2ND for the coverage-escape audit.</td>
-</tr>
-<tr>
-<td>74</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
 <td>—</td>
-<td>BOB-119 — docs/MERGE_SEARCH_DIAGNOSTICS.md line ~128 states
-‘Default: 1 (all trackers exposed; dead ones filtered by
-DEAD_PUBLIC_TRACKERS)’ for ENABLE_DEAD_TRACKERS. This is factually
-wrong: download-proxy/src/merge_service/search.py:1032 reads
-os.getenv(‘ENABLE_DEAD_TRACKERS’, ‘0’) (default string ‘0’) and
-docker-compose.yml:177 sets ENABLE_DEAD_TRACKERS=\0 (also default 0).
-The sibling doc docs/DEAD_TRACKERS_EXPLAINED.md correctly states ‘With
-ENABLE_DEAD_TRACKERS=0 (default): 24 public trackers active, 14
-excluded’ — confirmed against the current DEAD_PUBLIC_TRACKERS frozenset
-(14 entries, names match exactly). MERGE_SEARCH_DIAGNOSTICS.md’s stated
-default is the one document that disagrees with the source of truth, and
-could mislead an operator into believing dead trackers are shown to end
-users by default when they are actually filtered out by default. Found
-during a §11.4.6 bluff audit (docs/qa/task-bluff-audit/). Fix direction:
-correct ‘Default: 1’ to ‘Default: 0’ in MERGE_SEARCH_DIAGNOSTICS.md to
-match search.py/docker-compose.yml.</td>
+<td>BOB-108 — constitution scripts/workable-items export reverts
+docs/Issues.md + docs/Fixed.md revision counters</td>
+</tr>
+<tr>
+<td>73</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-112 — boba-jackett /healthz amplifies under cold-start
+concurrent burst via uncached Jackett.GetCatalog() call</td>
+</tr>
+<tr>
+<td>74</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-115 — Fix workable-items validate over-scoping to Updated-events
+(BOB-010 id=64 pattern)</td>
 </tr>
 <tr>
 <td>75</td>
-<td>High</td>
+<td>Critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
 <td>—</td>
-<td>BOB-122 — IPTorrents changed its results-table markup since these
-two parsers were written: (1) plugins/iptorrents.py (native qBittorrent
-nova3 search plugin) never decompressed the gzip-encoded response body
-in _get_link() (download_torrent() already did), used an unquoted </td>
+<td>BOB-116 — 2nd forced-logout incident: user@1000.service SIGKILLed
+after resource-pressure cascade (perceived host suspend)</td>
 </tr>
 <tr>
 <td>76</td>
-<td>Critical</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-124 — 5th consecutive forced-logout of user@1000.service on host
-milosvasic (2026-08-19 15:28:22, fresh boot 15:07 -&gt; kill 15:28).
-Same PAM session_close synchronicity mechanism observed across incidents
-#2/#3/#4/#5, same Linger=yes contradiction, same UNCONFIRMED SIGKILL
-initiator. Per superpowers:systematic-debugging Phase 4.5: 5+ attempts
-against the same block = architectural problem. The block is not a
-missing detector — 4 preventive gates have been AUTHORED (BOB-116
-5-signature detector, BOB-120 out-of-scope watchdog design, BOB-123 PAM
-monitor, kernel auditctl rulesets) but 0 are INSTALLED because Path 1
-(auditctl) and Path 2 (system-slice systemd unit) both require operator
-sudo/su -c that has never actually been executed. Authoring a 6th
-detector is a §11.4.250 heuristic-tower defect. Closure requires an
-operator sudo install session verified by auditctl -l non-empty OR
-systemctl list-units –system boba-watch* non-empty. Evidence:
-docs/qa/BOB-124/incident-5-forensics.log. See project-memory playbook
-forced-logout-incidents for full mechanism + triage protocol.</td>
-</tr>
-<tr>
-<td>77</td>
-<td>Critical</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-125 — Sixth forced-logout SIGKILL cascade on user@1000,
-2026-08-19 16:04:54 CEST. First incident with kernel audit rules LIVE
-(installed 15:56). Prior 6 investigations misattributed the mechanism to
-PAM/Linger contradiction. Real root cause found by BOB-126: pytest
-calling kill(-1, SIGKILL) via MagicMock.__int__==1 → os.killpg(1, 9).
-Fix chain: ad4b46a + 502586c + bf01cf3 + 1b06858 + d7da1af + e389c29 +
-0027dba. See docs/incidents/2026-08-19-6th-forced-logout.md.</td>
-</tr>
-<tr>
-<td>78</td>
-<td>Critical</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-126 — Seventh forced-logout SIGKILL cascade. Kernel audit trail:
-audit[399861] syscall=62 a0=ffffffff a1=9 comm=pytest
-exe=/usr/bin/python3.14. Root cause:
-tests/unit/merge_service/test_deadline_tunable.py::test_deadline_hit_flag_true_when_readline_times_out
-created AsyncMock without setting mock.pid as int.
-_search_public_tracker called os.killpg(os.getpgid(proc.pid), SIGKILL).
-MagicMock.<strong>int</strong> defaults to 1, so os.getpgid(1)==1 →
-os.killpg(1, SIGKILL) → glibc → kill(-1, SIGKILL) = SIGKILL every
-UID-1000 process. Bug existed since 2026-04-24. FIX 3-layer: (1) boba
-ad4b46a search.py int-guard + test hardening + §11.4.115 RED regression
-guard. (2) constitution 502586c universal §11.4.263 anchor covering
-Python/Go/Rust/Bash/C. (3) boba bf01cf3 pointer bump. Verified: 863/863
-unit PASS + 14/14 Go race PASS + no 8th incident.</td>
-</tr>
-<tr>
-<td>79</td>
-<td>Low</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-127 — Follow-up to BOB-126 systematic sweep. Task 8 audit
-surfaced 2 test cases in
-tests/unit/merge_service/test_public_tracker_subprocess_timeout.py that
-set explicit int mock.pid (12345, 1111) satisfying the production
-BOB-126 int-guard, but did NOT patch os.killpg/os.getpgid so the real
-syscalls fired against hardcoded non-owned PIDs. Low collision
-probability on typical host, but section 11.4.263(C) hygiene violation
-in the exact file authored to guard against host-wide kills. FIX at
-8bedc5a: added patch.object(_search.os, getpgid) +
-patch.object(_search.os, killpg) to both tests matching sibling
-test_process_group_kill_called_on_deadline pattern. 6/6 tests still
-PASS. Report: .superpowers/sdd/task-8-syscall-audit.md. Recommended gate
-CM-TEST-KILLPG-PATCHED-WHEN-REAL-PID tracked as separate followup.</td>
-</tr>
-<tr>
-<td>80</td>
-<td>Low</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-130 — Task 7 audit surfaced 3 pytest-timeout kills on
-tests/unit/test_compute_badges_script.py::TestComputeBadgesCheckModePolarity
-as UNCONFIRMED artifact. Task #110 verification REFUTED that hypothesis.
-All 3 test phases (baseline, nice-19, nice-19+parallel) timed out
-identically at 182-183s wall-clock (6 passed, 3 errors — deterministic,
-load-independent). Root cause via standalone timing: the synced_fixtures
-fixture (function-scoped) shells out scripts/compute-badges.sh in
-full-regeneration mode (pytest –collect-only across 5356 tests + vitest
-list –run) which is CPU-bound at 93.14s (203% CPU). Project default
-–timeout=60 in pyproject.toml is exceeded every invocation. Fix options
-per subagent report: (a) <span class="citation"
-data-cites="pytest.mark.timeout">@pytest.mark.timeout</span>(240) on
-TestComputeBadgesCheckModePolarity, (b) cache synced_fixtures across the
-3 consumer tests (currently function-scoped to work around a
-pinned-pytest fixture-finalizer bug). Full evidence:
-.superpowers/sdd/task7-badge-timeout-verification.md</td>
-</tr>
-<tr>
-<td>81</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
 <td>—</td>
-<td>BOB-132 — After BOB-131 recovery, qbittorrent-proxy container
-reports ‘unhealthy’ due to Connection refused reaching qbittorrent
-sidecar on localhost:7185. Separate from BOB-129 (slowapi) and BOB-131
-(conmon crash). Networking issue: qbittorrent-proxy expects to reach
-qbittorrent WebUI on localhost:7185 (container-internal port), but
-connection refused. Investigation: (a) is qbittorrent listening on 7185
-inside its container? podman exec qbittorrent ss -tlnp shows…? (b) is
-the docker-compose network topology correct post-recovery? (c) was this
-always broken or a regression? Not self-healing during BOB-129 subagent
-session. Blocks live tracker downloads which route through the
-proxy.</td>
+<td>BOB-117 — rutracker login diag still uses forbidden §11.4.6 ‘likely’
+vocabulary + wrong error_type (unfixed sibling of nnmclub fix)</td>
 </tr>
 <tr>
-<td>82</td>
+<td>77</td>
+<td>Medium</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-119 — docs/MERGE_SEARCH_DIAGNOSTICS.md states
+ENABLE_DEAD_TRACKERS default=1; actual code + compose default=0
+(contradicts sibling doc)</td>
+</tr>
+<tr>
+<td>78</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-122 — IPTorrents seed/leech parsing reports 0/0 despite real
+swarm data — outdated markup selectors in plugins/iptorrents.py AND
+download-proxy/src/merge_service/search.py</td>
+</tr>
+<tr>
+<td>79</td>
 <td>Critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
 <td>—</td>
-<td>BOB-133 — All 7 boba service ports DEAD: 7185 (qbittorrent WebUI),
-7186 (proxy), 7187 (merge_service), 7188 (webui-bridge), 7189
-(boba-jackett), 9117 (jackett), 8080. Podman reports all containers
-‘running/healthy’ but /proc/<pid> is absent for qbittorrent (pid 29972),
-jackett (pid 30021), boba-jackett (pid 31025). Stale-healthcheck class
-defect §11.4.180 masked service outage. §11.4.201(6) FALSE-NULL:
-‘healthy’ status is not evidence of aliveness. Discovery-channel escape
-(§11.4.238): only surfaced via BOB-129 subagent’s honest
-side-observation + orchestrator’s live-port probe — should have been
-caught by continuous container aliveness monitoring. Blocks §11.4.185
-manual QA (service isn’t running for operator to test). Recovery:
-./start.sh –recreate per CLAUDE.md Hard Stop #3 orchestrator-only
-contract.</td>
+<td>BOB-124 — 5th forced-logout 2026-08-19 15:28:22 — architectural
+install-gap: 4 authored preventive gates never installed by
+operator</td>
+</tr>
+<tr>
+<td>80</td>
+<td>Critical</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-125 — 6th forced-logout 2026-08-19 16:04:54 — RESOLVED via
+BOB-126 (root cause was pytest kill(-1,9))</td>
+</tr>
+<tr>
+<td>81</td>
+<td>Critical</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-126 — 7th forced-logout 2026-08-19 16:43:43 — REAL ROOT CAUSE:
+pytest kill(-1,9) via MagicMock.__int__==1; §11.4.263 anchor + boba
+defense-in-depth</td>
+</tr>
+<tr>
+<td>82</td>
+<td>Low</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-127 — Task 8 audit: 2 tests fired real killpg/getpgid on
+hardcoded PIDs (fixed 8bedc5a)</td>
+</tr>
+<tr>
+<td>83</td>
+<td>Low</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-130 — Badge-test timeout deterministic — synced_fixtures fixture
+93s vs –timeout=60</td>
+</tr>
+<tr>
+<td>84</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-132 — qbittorrent-proxy post-recovery: unhealthy — connection
+refused to qbittorrent sidecar on localhost:7185</td>
+</tr>
+<tr>
+<td>85</td>
+<td>Critical</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-133 — CRITICAL: fleet-wide container dead-but-healthy — podman
+stale-cache masks service outage</td>
+</tr>
+<tr>
+<td>86</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-138 — <strong>Reported-Via:</strong> §11.4.202 reporting
+directive <code>bug</code> on 2026-08-20T14:47:35Z
+<strong>Reported-By:</strong> Claude <strong>What (the report,
+verbatim):</strong> The qbittorrent-proxy container serves TWO ports
+from one process – 7186 (download proxy) and 7187 (merge service) – but
+its health check probes ONLY 7186: docker-compose.yml:214 test:
+[“CMD-SHELL”, “python -c "import urllib.request;
+urllib.request.urlopen(‘http://localhost:7186/’, timeout=5)" || exit 1”]
+So when 7187 dies the container reports “healthy” indefinitely. Measured
+2026-08-20: <code>podman ps</code> showed “Up 4 hours (healthy)” while
+7187 had been returning nothing for roughly two hours (see the sibling
+wedge item). This is the §11.4.201 defect class exactly: the guard
+asserts a PROXY signal (one port answers) instead of the REAL condition
+(every port this container serves answers). A false-negative health pass
+is a §11.4 PASS-bluff at the orchestration layer – an operator, an
+orchestrator restart policy, and any dependent service’s
+<code>depends_on: service_healthy</code> all read “healthy” while the
+product’s primary capability is dead. The asymmetry is visible in the
+same file: the Go variant’s health check at docker-compose.yml:129 DOES
+probe 7187 (<code>curl -sf http://localhost:7187/health</code>). The
+Python container – which serves both ports – checks only the one that
+happened to stay up. Note also that the two checks probe different
+things: line 129 uses /health, line 214 uses /. Whichever endpoint is
+used, the check must cover 7187. FIX DIRECTION: the health check must
+probe every port the container serves, and fail if ANY of them fails.
+Root cause here IS established (the check does not cover 7187),
+independent of WHY 7187 died – so this is separately fixable and does
+not wait on the wedge investigation. DISCOVERY CHANNEL (§11.4.238):
+found by hand-probing during an unrelated investigation, not by
+automated QA. Coverage escape: no automated check asserts that a
+container’s health check covers every port that container publishes.
+<strong>Affected scope / file-scope manifest:</strong>
+docker-compose.yml (qbittorrent-proxy healthcheck, line ~214)
+<strong>Reproduction / context:</strong> Wedge or stop the 7187 listener
+while leaving 7186 up, then observe ‘podman ps’ still reporting
+(healthy). Directly: curl –max-time 6 localhost:7186/ -&gt; 200 while
+curl –max-time 6 localhost:7187/ -&gt; 000, container status ‘healthy’.
+<strong>Acceptance criteria:</strong> The qbittorrent-proxy health check
+fails when 7187 is unreachable and passes when both ports answer. Guard:
+an automated check asserts every published port of a compose service
+appears in that service’s health check. Evidence: health check observed
+FAILING against a container with a dead 7187 and PASSING with both ports
+live (both directions, §11.4.201).</td>
+</tr>
+<tr>
+<td>87</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-142 — <strong>Reported-Via:</strong> §11.4.202 reporting
+directive <code>bug</code> on 2026-08-20T15:02:34Z
+<strong>Reported-By:</strong> Claude <strong>What (the report,
+verbatim):</strong> Every string and list field on SearchRequest except
+<code>limit</code> was UNBOUNDED: query: min_length=1, NO max_length
+category: NO max_length sort_by: NO max_length sort_order: NO max_length
+trackers: NO max_length (list) <code>limit</code> already carried
+ge=1/le=100, so the model had the bounding idiom – it simply was not
+applied to the other fields. WHY THIS IS AN AMPLIFICATION SURFACE, NOT A
+TIDINESS ISSUE: POST /api/v1/search fans ONE request out to ~43 tracker
+plugins. An unbounded field means one cheap inbound request becomes N
+expensive upstream requests, each carrying attacker-controlled payload.
+Rate limiting (BOB-111) does NOT close it: a client staying inside its
+allowance can still send a multi-megabyte query, and the per-request
+COST is the problem here, not the request RATE. The two controls are
+complementary; neither substitutes for the other. Verified on the live
+service BEFORE the fix: a 100,000-character query was accepted and
+dispatched. BOUNDS ARE EVIDENCE-BASED, NOT TASTE. Measured across the
+repo 2026-08-20: the longest legitimate query in any test or source is
+14 chars (“boba-111-probe”); the longest category is
+“boundary-max-length-url” (23); there are 43 managed plugins. Chosen
+limits leave generous headroom over observed usage while removing the
+unbounded tail: query 256, category 64, sort_by/sort_order 32, trackers
+64 entries. <strong>Affected scope / file-scope manifest:</strong>
+download-proxy/src/api/routes.py (SearchRequest),
+tests/security/test_search_request_bounds.py <strong>Reproduction /
+context:</strong> POST /api/v1/search with {“query”: “A”<em>100000}
+against the pre-fix service: accepted (HTTP 200) and dispatched to the
+tracker fan-out. Same for {“trackers”: [“t”]</em>10000}.
+<strong>Acceptance criteria:</strong> Oversized values are refused with
+HTTP 422 AND realistic values still return HTTP 200 (§11.4.201 both
+directions), proven against the live service over real HTTP.</td>
 </tr>
 </tbody>
 </table>

@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 17
-**Last modified:** 2026-08-19T18:07:03Z
+**Revision:** 19
+**Last modified:** 2026-08-20T15:03:18Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -907,4 +907,138 @@ All 7 boba service ports DEAD: 7185 (qbittorrent WebUI), 7186 (proxy), 7187 (mer
 **Severity:** Low
 
 Task 7 audit surfaced 3 pytest-timeout kills on tests/unit/test_compute_badges_script.py::TestComputeBadgesCheckModePolarity as UNCONFIRMED artifact. Task #110 verification REFUTED that hypothesis. All 3 test phases (baseline, nice-19, nice-19+parallel) timed out identically at 182-183s wall-clock (6 passed, 3 errors — deterministic, load-independent). Root cause via standalone timing: the synced_fixtures fixture (function-scoped) shells out scripts/compute-badges.sh in full-regeneration mode (pytest --collect-only across 5356 tests + vitest list --run) which is CPU-bound at 93.14s (203% CPU). Project default --timeout=60 in pyproject.toml is exceeded every invocation. Fix options per subagent report: (a) @pytest.mark.timeout(240) on TestComputeBadgesCheckModePolarity, (b) cache synced_fixtures across the 3 consumer tests (currently function-scoped to work around a pinned-pytest fixture-finalizer bug). Full evidence: .superpowers/sdd/task7-badge-timeout-verification.md
+
+## BOB-117 — rutracker login diag still uses forbidden §11.4.6 'likely' vocabulary + wrong error_type (unfixed sibling of nnmclub fix)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-117/closure-evidence.md
+**Severity:** High
+**Created-By:** AI
+
+rutracker login diag still uses forbidden §11.4.6 'likely' vocabulary + wrong error_type (unfixed sibling of nnmclub fix)
+
+## BOB-076 — RD2-09: submodules/jackett fork 1 commit behind upstream (informational)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-076/closure-evidence.md
+**Severity:** Low
+
+RD2-09: submodules/jackett fork 1 commit behind upstream (informational)
+
+## BOB-091 — RD2-26: Relocate mocked SearchOrchestrator tests to unit/ + author real-service replacements (closes GA-14/15/16)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-091/closure-evidence.md
+**Severity:** High
+
+RD2-26: Relocate mocked SearchOrchestrator tests to unit/ + author real-service replacements (closes GA-14/15/16)
+
+## BOB-138 — qbittorrent-proxy health check probes only 7186, so a dead 7187 merge service reports healthy forever
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-138/closure-evidence.md
+**Severity:** High
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T14:47:35Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+The qbittorrent-proxy container serves TWO ports from one process -- 7186 (download
+proxy) and 7187 (merge service) -- but its health check probes ONLY 7186:
+
+  docker-compose.yml:214
+    test: ["CMD-SHELL", "python -c \"import urllib.request;
+            urllib.request.urlopen('http://localhost:7186/', timeout=5)\" || exit 1"]
+
+So when 7187 dies the container reports "healthy" indefinitely. Measured
+2026-08-20: `podman ps` showed "Up 4 hours (healthy)" while 7187 had been
+returning nothing for roughly two hours (see the sibling wedge item).
+
+This is the §11.4.201 defect class exactly: the guard asserts a PROXY signal (one
+port answers) instead of the REAL condition (every port this container serves
+answers). A false-negative health pass is a §11.4 PASS-bluff at the orchestration
+layer -- an operator, an orchestrator restart policy, and any dependent service's
+`depends_on: service_healthy` all read "healthy" while the product's primary
+capability is dead.
+
+The asymmetry is visible in the same file: the Go variant's health check at
+docker-compose.yml:129 DOES probe 7187 (`curl -sf http://localhost:7187/health`).
+The Python container -- which serves both ports -- checks only the one that
+happened to stay up.
+
+Note also that the two checks probe different things: line 129 uses /health, line
+214 uses /. Whichever endpoint is used, the check must cover 7187.
+
+FIX DIRECTION: the health check must probe every port the container serves, and
+fail if ANY of them fails. Root cause here IS established (the check does not
+cover 7187), independent of WHY 7187 died -- so this is separately fixable and
+does not wait on the wedge investigation.
+
+DISCOVERY CHANNEL (§11.4.238): found by hand-probing during an unrelated
+investigation, not by automated QA. Coverage escape: no automated check asserts
+that a container's health check covers every port that container publishes.
+
+**Affected scope / file-scope manifest:**
+docker-compose.yml (qbittorrent-proxy healthcheck, line ~214)
+
+**Reproduction / context:**
+Wedge or stop the 7187 listener while leaving 7186 up, then observe 'podman ps' still reporting (healthy). Directly: curl --max-time 6 localhost:7186/ -> 200 while curl --max-time 6 localhost:7187/ -> 000, container status 'healthy'.
+
+**Acceptance criteria:**
+The qbittorrent-proxy health check fails when 7187 is unreachable and passes when both ports answer. Guard: an automated check asserts every published port of a compose service appears in that service's health check. Evidence: health check observed FAILING against a container with a dead 7187 and PASSING with both ports live (both directions, §11.4.201).
+
+## BOB-142 — SearchRequest fields were unbounded, so one request could amplify into a 43-tracker fan-out carrying arbitrary payload
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-142/closure-evidence.md
+**Severity:** High
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T15:02:34Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+Every string and list field on SearchRequest except `limit` was UNBOUNDED:
+
+  query:       min_length=1, NO max_length
+  category:    NO max_length
+  sort_by:     NO max_length
+  sort_order:  NO max_length
+  trackers:    NO max_length (list)
+
+`limit` already carried ge=1/le=100, so the model had the bounding idiom -- it
+simply was not applied to the other fields.
+
+WHY THIS IS AN AMPLIFICATION SURFACE, NOT A TIDINESS ISSUE: POST /api/v1/search
+fans ONE request out to ~43 tracker plugins. An unbounded field means one cheap
+inbound request becomes N expensive upstream requests, each carrying
+attacker-controlled payload. Rate limiting (BOB-111) does NOT close it: a client
+staying inside its allowance can still send a multi-megabyte query, and the
+per-request COST is the problem here, not the request RATE. The two controls are
+complementary; neither substitutes for the other.
+
+Verified on the live service BEFORE the fix: a 100,000-character query was
+accepted and dispatched.
+
+BOUNDS ARE EVIDENCE-BASED, NOT TASTE. Measured across the repo 2026-08-20: the
+longest legitimate query in any test or source is 14 chars ("boba-111-probe");
+the longest category is "boundary-max-length-url" (23); there are 43 managed
+plugins. Chosen limits leave generous headroom over observed usage while removing
+the unbounded tail: query 256, category 64, sort_by/sort_order 32, trackers 64
+entries.
+
+**Affected scope / file-scope manifest:**
+download-proxy/src/api/routes.py (SearchRequest), tests/security/test_search_request_bounds.py
+
+**Reproduction / context:**
+POST /api/v1/search with {"query": "A"*100000} against the pre-fix service: accepted (HTTP 200) and dispatched to the tracker fan-out. Same for {"trackers": ["t"]*10000}.
+
+**Acceptance criteria:**
+Oversized values are refused with HTTP 422 AND realistic values still return HTTP 200 (§11.4.201 both directions), proven against the live service over real HTTP.
 

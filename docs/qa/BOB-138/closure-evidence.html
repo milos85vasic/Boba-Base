@@ -1,0 +1,155 @@
+<h1
+id="bob-138-health-check-now-covers-every-served-port-closure-evidence">BOB-138
+— health check now covers every served port: closure evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-20T15:02:00Z</p>
+<h2 id="the-defect">The defect</h2>
+<p><code>docker-compose.yml</code> service <code>download-proxy</code>
+(container <code>qbittorrent-proxy</code>) serves BOTH 7186 and 7187
+from a single process, but its health check probed only 7186. Measured
+2026-08-20 while the container reported
+<code>Up 4 hours (healthy)</code>:</p>
+<pre><code>curl --max-time 6 http://localhost:7186/ -&gt; HTTP 200 in 0.096s
+curl --max-time 6 http://localhost:7187/ -&gt; HTTP 000 after 6.004s</code></pre>
+<p>The merge search service — the product’s primary capability — had
+been dead for roughly two hours and no signal in the stack could observe
+it. §11.4.201: the guard asserted a PROXY signal (one port answers)
+instead of the real condition.</p>
+<h2 id="the-fix">The fix</h2>
+<p>The health check now probes both ports. <code>curl</code> is ABSENT
+from the <code>python:3.12-alpine</code> image (verified in-container),
+so the <code>python -c</code> urllib probe is deliberate;
+<code>urlopen</code> raises on non-2xx or timeout, so either port
+failing exits non-zero.</p>
+<h2 id="polarity-evidence-both-directions-11.4.2011">Polarity evidence —
+BOTH directions (§11.4.201(1))</h2>
+<p>A guard must refuse the broken state AND accept the healthy one.
+Golden-bad is port 7199, verified unbound (<code>ss -ltn</code> shows no
+listener), executed inside the real container:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>command</th>
+<th>state</th>
+<th>exit</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>new two-probe</td>
+<td>both ports live</td>
+<td><strong>0</strong></td>
+<td>accepts a genuinely healthy service</td>
+</tr>
+<tr>
+<td>B</td>
+<td>new two-probe</td>
+<td>second port dead</td>
+<td><strong>1</strong></td>
+<td>the second probe is load-bearing</td>
+</tr>
+<tr>
+<td>C</td>
+<td>old single-probe</td>
+<td>second port dead</td>
+<td><strong>0</strong></td>
+<td>the false pass — i.e. the bug</td>
+</tr>
+</tbody>
+</table>
+<p>Row C is the defect reproduced; row B is the same state refused after
+the fix; row A proves the fix does not refuse legitimate traffic.</p>
+<h3 id="a-note-on-an-invalid-earlier-attempt-11.4.6">A note on an
+INVALID earlier attempt (§11.4.6)</h3>
+<p>A first polarity run was executed against the live 7187 wedge,
+intending to use it as the golden-bad. Between the forensics and that
+run the wedge SELF-CLEARED (7187 returned to HTTP 200 in 0.021s), so
+both the old and the new command exited 0 — not because they behave
+alike, but because nothing was broken. That run proved nothing and is
+recorded here as void rather than quietly dropped. The table above is
+the re-run against a port that is genuinely dead.</p>
+<h2 id="static-guard">Static guard</h2>
+<p><code>scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh</code>
+asserts every port declared in <code>config/served_ports.yaml</code>
+appears in that service’s health check.</p>
+<ul>
+<li>RED (pre-fix): FAIL —
+<code>download-proxy: serves [7186, 7187] but its healthcheck probes none of [7187]</code>,
+with the other services passing (so it is not a gate that simply refuses
+everything).</li>
+<li>GREEN (post-fix): <code>PASS (5 services verified)</code>.</li>
+</ul>
+<p>The gate also refuses to report success when it checked zero
+services, because a quiet zero from a blind instrument is
+indistinguishable from a clean tree (§11.4.201(6)).</p>
+<h2 id="a-false-positive-the-gate-caught-in-its-own-input-data">A false
+positive the gate caught in its own input data</h2>
+<p>The manifest first declared
+<code>qbittorrent-proxy-go: serves [7186, 7187, 7188]</code>, taken from
+CLAUDE.md prose. That is wrong:
+<code>qBitTorrent-go/Dockerfile:16</code> runs a single binary
+(<code>CMD ["/app/qbittorrent-proxy"]</code>) which binds one port
+(<code>ServerPort</code> = <code>MERGE_SERVICE_PORT</code> = 7187). The
+gate consequently failed a service whose health check was already
+correct — the §11.4.201(1) false refusal this gate exists to prevent,
+committed in its own DATA. The manifest was corrected against source
+rather than prose, and the entry now carries that provenance.</p>
+<h2 id="residual-tracked-not-silently-skipped">Residual (tracked, not
+silently skipped)</h2>
+<ul>
+<li>The gate is boba-local. Its logic carries no boba literal and
+belongs in <code>constitution/scripts/gates/</code> per §11.4.177, but a
+concurrent agent is editing that directory and a two-writer race there
+risks losing work. Upstreaming is tracked, not skipped (§11.4.197).</li>
+<li>CLAUDE.md states the Go profile “replaces the Python proxy on 7186,
+7187, 7188”, which the Dockerfile contradicts. Documentation defect,
+filed separately.</li>
+</ul>
+<h2 id="live-verification-and-a-restart-level-trap-worth-recording">Live
+verification — and a restart-level trap worth recording</h2>
+<p>The fix was first applied with
+<code>./start.sh --reload-python</code>. The container came back healthy
+and both ports answered, which looked like success. The cache-bust check
+CLAUDE.md mandates (“VERIFY served content matches committed code”)
+showed otherwise:</p>
+<pre><code>$ podman inspect qbittorrent-proxy --format &#39;{{json .Config.Healthcheck.Test}}&#39;
+[&quot;CMD-SHELL&quot;,&quot;python -c \&quot;import urllib.request; urllib.request.urlopen(
+   &#39;http://localhost:7186/&#39;, timeout=5)\&quot; || exit 1&quot;]      &lt;- STILL THE OLD CHECK</code></pre>
+<p><code>--reload-python</code> only RESTARTS the container, so a
+<code>docker-compose.yml</code> change is not applied. CLAUDE.md states
+this explicitly: a compose change requires
+<code>./start.sh --recreate</code>. Without the served-vs-committed
+check, this would have been reported as fixed while the old single-probe
+check was still running — the exact §11.4.108 SOURCE-vs-RUNTIME gap the
+guard exists to catch.</p>
+<p>After <code>./start.sh --recreate</code>:</p>
+<pre><code>$ podman inspect qbittorrent-proxy --format &#39;{{json .Config.Healthcheck.Test}}&#39;
+[&quot;CMD-SHELL&quot;,&quot;python -c \&quot;import urllib.request as u;
+   u.urlopen(&#39;http://localhost:7186/&#39;, timeout=5);
+   u.urlopen(&#39;http://localhost:7187/health&#39;, timeout=5)\&quot; || exit 1&quot;]
+
+$ podman ps --filter name=qbittorrent-proxy --format &#39;{{.Status}}&#39;
+Up 40 seconds (healthy)
+
+$ curl --max-time 8 localhost:7186/        -&gt; HTTP 200
+$ curl --max-time 8 localhost:7187/health  -&gt; HTTP 200</code></pre>
+<p>The two-probe check is now the one actually running, and the
+container reaches <code>(healthy)</code> through it — so the health
+signal now depends on the merge service being alive.</p>
+<h2 id="also-observed-during-the-restart-feeds-bob-137">Also observed
+during the restart (feeds BOB-137)</h2>
+<pre><code>level=warning msg=&quot;StopSignal SIGTERM failed to stop container qbittorrent-proxy
+in 10 seconds, resorting to SIGKILL&quot;</code></pre>
+<p>The service does not shut down cleanly on SIGTERM. That is consistent
+with the BOB-137 blocked-thread evidence and is recorded there as an
+additional symptom.</p>

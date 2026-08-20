@@ -1,0 +1,47 @@
+# ============================================================================
+# .helix/reporting.yaml — boba's CONSUMER-OWNED config for the §11.4.202
+# reporting directives (ISSUE / BUG / TASK).
+# ============================================================================
+#
+# The ENGINE is constitution/scripts/reporting/report_item.sh, consumed BY
+# REFERENCE (§11.4.28 / §11.4.177) and NEVER copied or edited. It carries zero
+# project literals and fails closed rather than guess any path (§11.4.6) —
+# every boba-specific value lives here, as DATA.
+#
+# Created 2026-08-20 to close the gap where boba inherited the §11.4.202
+# reporting engine but supplied no config, so every ISSUE/BUG/TASK directive
+# failed closed and reports had to be filed by hand.
+# ============================================================================
+
+schema_version: 1
+
+# The workable-items SQLite SSoT (§11.4.93 / §11.4.95). TRACKED in git — it is
+# authoritative source data, not a build artifact (§11.4.95 amends §11.4.93).
+db: docs/workable_items.db
+
+# Ticket-id prefix (§11.4.54): BOB-NNN, monotonic, never renumbered or reused.
+id_prefix: BOB
+
+default_severity: Medium
+default_reported_by: Operator
+
+# Full doc regeneration FROM the DB (§11.4.106 / §11.4.12 / §11.4.53 / §11.4.65):
+# workable-items export -> markdown export -> HTML/PDF/DOCX siblings ->
+# domain-summary stubs. Resolves the DB itself, so no {db} placeholder is
+# needed. This is boba's Step-1 feed into the real Docs Chain engine at
+# constitution/submodules/docs_chain/.
+sync_command: bash scripts/workable-items-export.sh
+
+# Captured evidence for every report (§11.4.5 / §11.4.69).
+evidence_dir: qa-results/reporting
+
+# The committed constitution binary (§11.4.177 by-reference; pre_build
+# invariant 17 resolves the same path).
+workable_items_bin: constitution/scripts/workable-items/bin/workable-items
+
+# External trackers (§11.4.148 D5). boba has NO external tracker client wired.
+# An empty list is the HONEST state (§11.4.3 / §11.4.6) — the engine records a
+# skip rather than fabricating a push. Never populate this with a command that
+# does not really exist: a tracker PASS is recorded only after a real command
+# exits 0 (§11.4.202 clause 4).
+trackers: []
