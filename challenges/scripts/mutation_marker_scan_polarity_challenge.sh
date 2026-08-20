@@ -1,143 +1,78 @@
 #!/usr/bin/env bash
-# mutation_marker_scan_polarity_challenge.sh — §11.4.107(10) self-validated
-# harness for INV23 (CM-NO-PRODUCTION-MUTATION-RESIDUE, §11.4.84) inside
-# scripts/pre_build_verification.sh.
+# mutation_marker_scan_polarity_challenge.sh — challenge-runner entry point for
+# the CM-NO-PRODUCTION-MUTATION-RESIDUE polarity harness (§11.4.84).
 #
-# BOB-070: the pre-fix scan matched bare comment-prefix + mutation-token
-# anywhere on a line, so any production source that DOCUMENTED the
-# pattern in a comment/docstring OR held the pattern in a string
-# literal FALSE-POSITIVE-FAILed the whole gate — the §11.4.201(7)(a)
-# carrier-not-thing class applied to the pre-build seam itself.
+# ── Why this file is now a DELEGATOR ────────────────────────────────────
+#   The previous version of this challenge re-declared the gate's own
+#   detection pattern inside itself — its own comment said so verbatim:
+#   "We reproduce the exact pattern here so the harness stays cheap AND
+#   stays byte-locked to the source". It was not byte-locked to anything.
+#   It built a private copy of the regex and then tested THAT copy, so its
+#   verdict described the copy, never the gate. That is a §11.4.249
+#   producer=oracle collapse: the thing under test and the thing deciding
+#   the verdict were the same artifact.
 #
-# Fixtures (challenges/fixtures/mutation_marker_scan/):
-#   real-mutation.py   — REAL residue; MUST be caught (exit 1 with hit)
-#   carrier-comment.py — docstring/comment MENTIONING the marker + a
-#                        guardrails:allow-tagged example; MUST NOT trip
-#   carrier-string.py  — marker text held only inside string literals;
-#                        MUST NOT trip
+#   The consequence was measured, not theorised. While this challenge
+#   reported GREEN on every run, the real gate drifted into being blind to
+#   5 of 7 real residue shapes (trailing-comment residue, mid-line
+#   short-circuit swallow, unfenced waiver bypass — see the forensic table
+#   in scripts/pre_build/check_cm_no_production_mutation_residue.sh). A
+#   green light that cannot go red is not an oracle, it is decoration.
 #
-# Polarity: each fixture is scanned in ISOLATION (INV23_FIXTURE_ROOT
-# override) so the harness distinguishes real from carrier — the
-# structural discriminator §11.4.201(7)(a) demands.
+# ── DELEGATE, not RETIRE, and why ───────────────────────────────────────
+#   The real harness lives at
+#     challenges/fixtures/mutation_marker_scan/polarity_check.sh
+#   and it executes the REAL gate script for all 13 fixtures, with a
+#   §11.4.201(7)(b) control needle that refuses to report any fixture
+#   CLEAN until a known-detectable residue has been SEEN through the same
+#   invocation path.
 #
-# Exit codes:
-#   0 — every fixture matched its expected polarity (scan is honest).
-#   1 — one or more fixtures diverged (scan is bluffing).
-#   2 — harness or environment error.
+#   Deleting this file outright would have silently dropped that harness
+#   out of the suite: challenges/scripts/run_all_challenges.sh discovers
+#   its work by globbing "$HERE"/*_challenge.sh, and the harness lives
+#   under challenges/fixtures/, which that glob never reaches. Retiring
+#   the challenge would therefore have removed the last thing that runs
+#   the harness — a §11.4.234(C) "gate lost on disconnect". So this file
+#   is kept at the discovered path and reduced to a delegator that owns no
+#   detection logic of its own. There is exactly ONE detector (the gate)
+#   and exactly ONE oracle (the harness); this file is neither.
 #
-# Cross-refs: §11.4.4 §11.4.84 §11.4.107(10) §11.4.115 §11.4.201 §11.4.109.
+#   It deliberately declares no marker tokens and no patterns. A file that
+#   holds no copy of the thing under test cannot drift away from it.
+#
+# Exit codes (passed through verbatim from the harness):
+#   0 — every fixture matched its expected polarity, needle seen.
+#   1 — one or more fixtures diverged (the gate is bluffing).
+#   2 — harness/environment error, including "control needle not seen",
+#       which is a §11.4.201(6) blind-instrument refusal and never a pass.
+#
+# Cross-refs: §1.1 §11.4.84 §11.4.107(10) §11.4.115 §11.4.201(7)
+#             §11.4.234(C) §11.4.240 §11.4.249
+set -uo pipefail
 
-set -euo pipefail
-
-HARNESS_NAME="mutation_marker_scan_polarity_challenge"
+CHALLENGE_NAME="mutation_marker_scan_polarity_challenge"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+HARNESS="${REPO_ROOT}/challenges/fixtures/mutation_marker_scan/polarity_check.sh"
 
-SCAN="$REPO_ROOT/scripts/pre_build_verification.sh"
-FIX_ROOT="$REPO_ROOT/challenges/fixtures/mutation_marker_scan"
-
-if [[ ! -x "$SCAN" ]]; then
-  echo "[$HARNESS_NAME] ERROR: pre_build_verification.sh not executable at $SCAN" >&2
-  exit 2
-fi
-if [[ ! -d "$FIX_ROOT" ]]; then
-  echo "[$HARNESS_NAME] ERROR: fixtures dir missing at $FIX_ROOT" >&2
-  exit 2
-fi
-
-# Fixture spec: name|expected_hit (0 = no hit expected, 1 = hit expected)
-FIXTURES=(
-  "real-mutation.py|1"
-  "carrier-comment.py|0"
-  "carrier-string.py|0"
-)
-
-RUN_ONE() {
-  # Runs the scan against a single-file fixture root and prints
-  #   HIT       - INV23 flagged the file (returned FAIL for invariant 23)
-  #   NOHIT     - INV23 passed the file
-  #   HARNESS-ERR
-  local fixture_path="$1"
-  local single_dir
-  single_dir="$(mktemp -d)"
-  cp "$fixture_path" "$single_dir/"
-
-  # We can not run the whole pre_build_verification.sh (many other
-  # invariants + heavy). Instead: extract INV23's core logic by
-  # sourcing scripts/pre_build_verification.sh is not feasible either
-  # (top-level side effects). We reproduce the exact pattern here so
-  # the harness stays cheap AND stays byte-locked to the source (any
-  # drift is a fixture-vs-source finding).
-  local _M_MARK _M_ALWAYS _M_IFFALSE INV23_PATTERN GUARD_ALLOW
-  _M_MARK="MUT""ATED"
-  _M_ALWAYS="alwa""ys pass"
-  _M_IFFALSE="if fals""e && "
-  GUARD_ALLOW="guard""rails:allow"
-
-  # Post-fix pattern (line-anchored comment class + anchored short-circuit
-  # shape) — mirrors the fix landed in pre_build_verification.sh.
-  INV23_PATTERN="(^[[:space:]]*(//|#)[[:space:]]*(${_M_MARK}|${_M_ALWAYS}))|(^[[:space:]]*${_M_IFFALSE})"
-
-  local hits
-  hits="$(grep -nHE "${INV23_PATTERN}" "$single_dir"/* 2>/dev/null \
-    | grep -vE "${GUARD_ALLOW}" \
-    | wc -l | tr -d ' ')"
-  rm -rf "$single_dir"
-  if [[ "$hits" -gt 0 ]]; then
-    echo "HIT"
-  else
-    echo "NOHIT"
-  fi
-}
-
-# The RED baseline function: emulates the PRE-FIX bare-substring pattern.
-RUN_ONE_RED() {
-  local fixture_path="$1"
-  local single_dir
-  single_dir="$(mktemp -d)"
-  cp "$fixture_path" "$single_dir/"
-  local _M_MARK _M_ALWAYS _M_IFFALSE PRE_FIX_PATTERN
-  _M_MARK="MUT""ATED"
-  _M_ALWAYS="alwa""ys pass"
-  _M_IFFALSE="if fals""e && "
-  # PRE-fix pattern (bare, unanchored) — matches carriers.
-  PRE_FIX_PATTERN="(//[[:space:]]*${_M_MARK})|(#[[:space:]]*${_M_MARK})|(//[[:space:]]*${_M_ALWAYS})|(#[[:space:]]*${_M_ALWAYS})|(${_M_IFFALSE})"
-  local hits
-  hits="$(grep -nHE "${PRE_FIX_PATTERN}" "$single_dir"/* 2>/dev/null | wc -l | tr -d ' ')"
-  rm -rf "$single_dir"
-  if [[ "$hits" -gt 0 ]]; then echo "HIT"; else echo "NOHIT"; fi
-}
-
-MODE="${1:-post-fix}"  # 'pre-fix' to run the RED baseline, 'post-fix' for the fixed scan
-
-echo "=== ${HARNESS_NAME} (mode=${MODE}) ==="
-fail_count=0
-for spec in "${FIXTURES[@]}"; do
-  IFS='|' read -r name expect_hit <<<"$spec"
-  path="$FIX_ROOT/$name"
-  if [[ ! -f "$path" ]]; then
-    echo "  [ERROR] missing fixture: $path"
+if [[ ! -f "${HARNESS}" ]]; then
+    echo "[${CHALLENGE_NAME}] ERROR: polarity harness missing at ${HARNESS}" >&2
+    echo "[${CHALLENGE_NAME}] Refusing to report a verdict — an absent oracle is not a pass." >&2
     exit 2
-  fi
-  if [[ "$MODE" == "pre-fix" ]]; then
-    got="$(RUN_ONE_RED "$path")"
-  else
-    got="$(RUN_ONE "$path")"
-  fi
-  want="NOHIT"
-  [[ "$expect_hit" == "1" ]] && want="HIT"
-  if [[ "$got" == "$want" ]]; then
-    echo "  [PASS] $name  expected=$want got=$got"
-  else
-    echo "  [FAIL] $name  expected=$want got=$got"
-    fail_count=$((fail_count + 1))
-  fi
-done
-
-if [[ "$fail_count" -eq 0 ]]; then
-  echo "=== ${HARNESS_NAME}: GREEN (all ${#FIXTURES[@]} fixtures matched expected polarity) ==="
-  exit 0
-else
-  echo "=== ${HARNESS_NAME}: RED (${fail_count} of ${#FIXTURES[@]} fixture(s) diverged) ==="
-  exit 1
 fi
+
+echo "=== ${CHALLENGE_NAME} ==="
+echo "  delegating to the real-gate harness: ${HARNESS#"${REPO_ROOT}/"}"
+echo "  (this challenge owns no detection logic — §11.4.249 producer != oracle)"
+echo
+
+bash "${HARNESS}"
+rc=$?
+
+echo
+case "${rc}" in
+    0) echo "=== ${CHALLENGE_NAME}: PASS (harness GREEN — real gate honest on both polarities) ===" ;;
+    1) echo "=== ${CHALLENGE_NAME}: FAIL (harness RED — real gate diverged on a fixture) ===" ;;
+    *) echo "=== ${CHALLENGE_NAME}: ERROR (harness exit ${rc} — verdict not trustworthy) ===" ;;
+esac
+exit "${rc}"

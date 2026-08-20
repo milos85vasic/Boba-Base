@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 9
-**Last modified:** 2026-08-20T14:59:05Z
+**Revision:** 10
+**Last modified:** 2026-08-20T15:08:35Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -690,4 +690,69 @@ Read qBitTorrent-go/Dockerfile:16 (single CMD) against CLAUDE.md's 'replaces the
 
 **Acceptance criteria:**
 Doc and container agree, with the direction of the fix decided deliberately (correct the doc, or provision the container to match the documented intent). PROXY_PORT/BRIDGE_PORT env and EXPOSE lines agree with what the container actually binds.
+
+## BOB-143 — Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate scan scope and manufacture false BOB-126-class findings
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T15:08:18Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+`.worktrees/ci-split-workflows/` (13M) and `.worktrees/completion-initiative-phase-0/`
+(33M) are ORPHANED: `git worktree list` reports only the main checkout, so neither is
+a registered worktree. Each contains a `.git` POINTER FILE whose target gitdir no
+longer exists, so git cannot resolve HEAD, branch, or status inside them -- every
+query returns empty.
+
+They are gitignored (.gitignore:122), so nothing tracks them and nothing will ever
+notice them drifting.
+
+WHY THIS IS NOT COSMETIC: they pollute the scan scope of whole-tree gates and
+manufacture false findings. Measured 2026-08-20 by the §11.4.32 sweep:
+
+  - `cm_test_mock_pid_explicit_int` reported 2 violations at
+    tests/unit/merge_service/test_deadline_tunable.py:44 -- BOTH inside these
+    orphaned trees. The MAIN tree's copy of that file is already hardened (it sets
+    `mock.pid = 12345` and patches os.killpg/os.getpgid) and passes the gate
+    cleanly. The finding read as a live §11.4.263 / BOB-126-class defect and was
+    not one.
+  - 6 of the 57 "missing anchor carrier" files flagged by the propagation gates
+    were likewise `.worktrees/**`.
+
+That is the §11.4.201(1) false-positive shape sourced from scan scope, and it costs
+real investigation time: a reader triaging "2 live BOB-126 violations" reasonably
+treats it as a host-safety emergency.
+
+CLARIFICATION (established during triage, so the record is not alarming):
+these trees are NOT a kill(-1) vector. Their `download-proxy/src/merge_service/
+search.py` contains ZERO `os.killpg` calls -- they predate that cleanup code
+entirely -- so there is no unguarded signal call to reach. Additionally
+`pyproject.toml` sets `testpaths = ["tests"]`, so a plain `pytest` run does not
+collect from `.worktrees/`. No host-safety risk was found. The defect is
+scan-scope noise plus 46M of unreferenced disk.
+
+WHY REMOVAL IS NOT DONE AUTONOMOUSLY (§11.4.122 / §11.4.124 / §11.4.101): because
+git cannot resolve their HEAD, it is NOT possible to prove their contents are
+merged into main. Deleting unprovable-provenance work is exactly the irreversible,
+operator-owned decision §11.4.122 reserves. Two options for the operator:
+  (a) confirm removal (they are stale dev scratch dirs) -- reversible only from
+      backup, so a §9.2 pre-op backup should precede it; or
+  (b) keep them and add `.worktrees/` to the gate scan-scope exclusion list as a
+      §11.4.224(E)-fenced, checked-in, justified entry.
+
+Either way the exclusion list is the cheaper immediate mitigation and does not
+destroy anything.
+
+**Affected scope / file-scope manifest:**
+.worktrees/ci-split-workflows/, .worktrees/completion-initiative-phase-0/, gate scan-scope config
+
+**Reproduction / context:**
+git worktree list shows only the main checkout; git -C .worktrees/<dir> log -1 returns empty (gitdir target missing). Run the §11.4.32 sweep and observe cm_test_mock_pid_explicit_int report 2 violations, both under .worktrees/, while the main-tree file passes the same gate.
+
+**Acceptance criteria:**
+Whole-tree gates no longer report findings sourced from orphaned worktrees: either the dirs are removed after operator confirmation with a §9.2 pre-op backup, or .worktrees/ is added to a checked-in §11.4.224(E)-fenced exclusion list with justification. Verify by re-running the sweep and confirming zero .worktrees-sourced findings.
 

@@ -16,6 +16,11 @@
 #     seam remains executed by name. The heavy `scripts/
 #     pre_build_verification.sh` is invoked here as the LONG STAGE and
 #     is skippable ONLY via an explicit recorded flag (see (D)).
+#     Stage 5a additionally enforces the §11.4.106(F) COMMIT-seam
+#     doc/DB sync check (BOB-087/RD2-20) — previously this project
+#     enforced doc/DB sync ONLY inside the skippable pre-build gate, so
+#     a BOBA_SYNC_SKIP_CI=1 run could land a commit whose tracked DB and
+#     Markdown disagreed. See scripts/hooks/docs-sync-commit-seam.sh.
 # (D) Always-unblocked invariant. A failing validation yields a clear
 #     per-check report + documented remediation path — never an opaque
 #     hung/rejected push. Long gates can be skipped via
@@ -253,6 +258,40 @@ echo "[commit-push-all] stage 4/6 — git status pre-commit"
 # diff touches docs/workable_items.db.
 PRE_COMMIT_HEAD="$(git rev-parse HEAD 2>/dev/null || echo "")"
 
+# ─── stage 5a helper: §11.4.106(F) commit-seam doc/DB sync check ──────
+# BOB-087 / RD2-20. Runs AFTER staging and BEFORE `git commit` — the
+# staged set IS the trigger, so this can only run once `git add` has
+# happened. Delegates to scripts/hooks/docs-sync-commit-seam.sh, which
+# reuses the workable-items + docs_chain engines (never reimplements
+# them) and closes the BOB-136 body_md-drift blind spot that
+# `workable-items diff` cannot see.
+#
+# §11.4.234(D) always-unblocked: the hook prints a NAMED per-check
+# report plus the exact remediation command on every refusal, and its
+# one LONG check (docs_chain verify, ~51s measured) honours the same
+# BOBA_SYNC_SKIP_CI=1 recorded-deferral flag used by stage 3 — so the
+# skip is already recorded as [skip-ci] in the commit message. A missing
+# hook script is a loud WARN, never a block.
+_docs_sync_seam_check() {
+    local hook="scripts/hooks/docs-sync-commit-seam.sh"
+    if [ ! -f "$hook" ]; then
+        echo "WARN: $hook missing — §11.4.106(F) commit-seam sync check NOT run." >&2
+        echo "      Commit proceeds per §11.4.234(D) always-unblocked." >&2
+        return 0
+    fi
+    echo "[commit-push-all] stage 5a/6 — §11.4.106(F) doc/DB sync seam"
+    if bash "$hook"; then
+        return 0
+    fi
+    echo "ERROR: §11.4.106(F) doc/DB sync seam REFUSED this commit (see report above)." >&2
+    echo "       Nothing was committed; your staged set is untouched." >&2
+    echo "       Run the printed REMEDIATION command, stage the regenerated" >&2
+    echo "       file(s), and re-run this exact command." >&2
+    echo "       To DEFER only the long export check for this run:" >&2
+    echo "       BOBA_SYNC_SKIP_CI=1 bash scripts/commit-push-all.sh \"$MSG\"" >&2
+    exit 1
+}
+
 # §11.4.201-style real-condition assertion for the --scope safety layer:
 # a path is "in scope" iff it EQUALS a declared scope entry, or sits
 # UNDER one (declared entry is a directory prefix). Never a substring
@@ -332,6 +371,7 @@ if [ "${#SCOPES[@]}" -gt 0 ]; then
     if git diff --cached --quiet; then
         echo "[commit-push-all] nothing to commit — skipping to push stage"
     else
+        _docs_sync_seam_check
         git commit -m "${MSG}${SKIP_TAG}"
     fi
 else
@@ -339,6 +379,7 @@ else
     if git diff --cached --quiet; then
         echo "[commit-push-all] nothing to commit — skipping to push stage"
     else
+        _docs_sync_seam_check
         git commit -m "${MSG}${SKIP_TAG}"
     fi
 fi

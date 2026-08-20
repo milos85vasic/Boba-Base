@@ -426,3 +426,39 @@ if [[ -f "${TESTING_MD}" ]]; then
 
     echo "compute-badges.sh: docs/TESTING.md '## Test counts' section refreshed"
 fi
+
+# --- §11.4.65 / §11.4.106 export sync -------------------------------------
+# This script MUTATES README.md and docs/TESTING.md, which both carry tracked
+# .html/.pdf/.docx siblings. Rewriting the .md without regenerating those
+# siblings leaves the tree permanently stale, so every badge refresh would
+# then FAIL invariant 1 (CM-MARKDOWN-EXPORT-SYNC) on the very next commit.
+#
+# Measured 2026-08-20: a badge refresh blocked a commit with
+#   "CM-MARKDOWN-EXPORT-SYNC: 4 export(s) missing/stale
+#      - README.html stale (source changed after export)
+#      - README.pdf stale  (source changed after export)
+#      - docs/TESTING.html stale (source changed after export)
+#      - docs/TESTING.pdf stale  (source changed after export)"
+# The oracle was right; this script was the producer of the staleness. Closing
+# the loop here means the mutation and its exports land together, as §11.4.12
+# requires ("regenerated in the same commit as any edit to its source").
+#
+# Honest boundary (§11.4.3/§11.4.6): the exporter SKIPs formats whose tool is
+# absent (no pandoc -> no .docx) and says so; a missing tool is reported, never
+# silently treated as success. A failure here is surfaced as a warning rather
+# than aborting, because the badge values themselves are already correctly
+# written by this point — losing them to a non-zero exit would be worse than a
+# stale export the next gate run will catch anyway.
+_EXPORTER="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/generate_markdown_exports.sh"
+if [[ -x "${_EXPORTER}" || -f "${_EXPORTER}" ]]; then
+    echo "compute-badges.sh: regenerating .md exports (§11.4.65) so the tree is not left stale"
+    if bash "${_EXPORTER}" >/dev/null 2>&1; then
+        echo "compute-badges.sh: exports regenerated"
+    else
+        echo "compute-badges.sh: WARNING — export regeneration failed; README/TESTING" >&2
+        echo "  siblings may be stale. Run 'bash scripts/generate_markdown_exports.sh'" >&2
+        echo "  before committing, or invariant 1 (CM-MARKDOWN-EXPORT-SYNC) will FAIL." >&2
+    fi
+else
+    echo "compute-badges.sh: WARNING — ${_EXPORTER} not found; exports NOT regenerated" >&2
+fi

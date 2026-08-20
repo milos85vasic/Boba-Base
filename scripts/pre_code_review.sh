@@ -5,13 +5,11 @@
 #   1. ruff check on all Python files
 #   2. mypy on download-proxy/src/
 #   3. bash -n syntax check on all scripts/*.sh
-#   4. No mutation markers in source files
-#      (same markers the pre-commit hook checks: MUT""ATED, // alwa""ys pass, # MUT""ATION)
-#      BOB-070 hardening: patterns are line-anchored to their comment
-#      shape and lines carrying `guardrails:allow` are skipped, so a
-#      docstring/comment/string-literal that MENTIONS the marker as
-#      documentation never false-positive-FAILs the gate
-#      (§11.4.84 + §11.4.201(7)(a) carrier-vs-thing).
+#   4. No mutation residue in production sources — DELEGATED to the
+#      canonical CM-NO-PRODUCTION-MUTATION-RESIDUE detector at
+#      scripts/pre_build/check_cm_no_production_mutation_residue.sh
+#      (see the Check 4 block below for why it is delegated, not
+#      re-implemented).
 #
 # Constitution: x11.4.125
 
@@ -36,20 +34,9 @@ fail() {
 echo "=== Code-Review Gate ==="
 echo
 
-# Build mutation marker patterns indirectly to avoid self-match.
-# BOB-070: patterns are LINE-ANCHORED (with optional indent) to the
-# comment-line shape a real mutation takes — a trailing / quoted /
-# in-string mention (e.g. `pattern = "# MUTATION"`, docstring quoting
-# the marker as documentation) never false-positive-FAILs the gate
-# (§11.4.201(7)(a) carrier-vs-thing).
-M1="^[[:space:]]*(//|#)[[:space:]]*MUT""ATED"
-M2="^[[:space:]]*// alwa""ys pass"
-M3="^[[:space:]]*# MUT""ATION"
-MUTATION_PATTERNS=("$M1" "$M2" "$M3")
-# §11.4.109-style per-line escape sentinel — a line carrying this
-# token is an INTENTIONAL documented carrier (audited by git-blame +
-# review); a real mutation would never carry it.
-GUARDRAILS_ALLOW_MARKER="guard""rails:allow"
+# Check 4 owns NO mutation-marker patterns of its own — see the Check 4
+# block below. The canonical detector is the single source of truth.
+RESIDUE_GATE="${SCRIPT_DIR}/pre_build/check_cm_no_production_mutation_residue.sh"
 
 RUFF_FAILED=0
 MYPY_FAILED=0
@@ -87,35 +74,70 @@ if [[ "$bash_errors" -eq 0 ]]; then
     pass "all scripts/*.sh pass syntax check"
 fi
 
-# --- Check 4: mutation markers (blocking — exclude tests/ and challenges/ where intentional) ---
-echo "[4/4] mutation marker check"
-marker_errors=0
-while IFS= read -r -d '' file; do
-    for pattern in "${MUTATION_PATTERNS[@]}"; do
-        # -E extended-regex for the ^[[:space:]]* line anchor; the
-        # guardrails:allow post-filter drops intentional carriers.
-        if grep -nE "$pattern" "$file" 2>/dev/null \
-             | grep -vE "$GUARDRAILS_ALLOW_MARKER" \
-             | grep -q .; then
-            echo "    MUTATION MARKER '$pattern' in $file"
-            marker_errors=$((marker_errors + 1))
-        fi
-    done
-done < <(find "$PROJECT_ROOT" -type f \( -name "*.py" -o -name "*.ts" -o -name "*.js" -o -name "*.go" -o -name "*.sh" \) \
-    ! -path "*/.venv/*" ! -path "*/venv/*" ! -path "*/site-packages/*" \
-    ! -path "*/node_modules/*" ! -path "*/.git/*" ! -path "*/submodules/*" \
-    ! -path "*/constitution/*" \
-    ! -path "*/out/*" ! -path "*/build/*" ! -path "*/dist/*" \
-    ! -path "*/__pycache__/*" ! -path "*/mutants/*" \
-    ! -path "*/.mypy_cache/*" ! -path "*/.pytest_cache/*" ! -path "*/.ruff_cache/*" \
-    ! -path "*/tests/*" ! -path "*/challenges/*" \
-    ! -path "*/scratchpad/*" ! -path "*/qa-results/*" -print0 2>/dev/null)
-
-if [[ "$marker_errors" -eq 0 ]]; then
-    pass "no mutation markers found"
+# --- Check 4: production mutation residue (blocking) — DELEGATED ---
+#
+# WHY DELEGATED, NOT RE-IMPLEMENTED (§11.4.240 / §11.4.249)
+#   This check used to carry its own copy of the marker patterns. That
+#   copy was LINE-ANCHORED (`^[[:space:]]*` + comment introducer), which
+#   is a POSITIONAL proxy, not a structural discriminator
+#   (§11.4.201(7)(a)). It therefore could not see the single most common
+#   real residue shape — a marker in a TRAILING comment on a live
+#   statement:
+#       return True  <trailing comment carrying the marker>
+#       return nil   <trailing comment carrying the marker>
+#   Measured on 2026-08-20 against this very script with a
+#   §11.4.201(7)(b) control needle: an own-line marker FIRED, while both
+#   trailing shapes above passed through and the gate printed "no
+#   mutation markers found" with exit 0. The same positional proxy had
+#   already been removed from the pre-build seam; this was the second
+#   site carrying it, so the codebase held two detectors that disagreed.
+#
+#   A third private copy of the logic would just be a third thing to
+#   drift. The canonical structural detector — which tracks docstring /
+#   block-comment / heredoc regions, masks string-literal interiors, and
+#   so separates a CARRIER from RESIDUE by grammar rather than by column
+#   — already exists and is proven on both polarities by
+#   challenges/fixtures/mutation_marker_scan/polarity_check.sh (13
+#   fixtures + control needle). This check now runs THAT, and owns no
+#   patterns, no exclusion list and no waiver logic of its own.
+#
+#   Scope note, stated rather than hidden (§11.4.6 / §11.4.234(C)): the
+#   canonical detector is invoked in its DEFAULT mode, so the corpus it
+#   walks is its own declared production-source scope. It parses
+#   .go/.py/.sh/.bash. The retired local copy also globbed .ts/.js, so
+#   own-line residue in frontend TypeScript is no longer covered here.
+#   That coverage is NOT silently dropped: it is printed on every run
+#   below and is owed as a §11.4.197 follow-up to extend the canonical
+#   detector (adding a language needs a comment-introducer + string/
+#   template-literal model in the detector, which is that script's to
+#   own — re-adding a blind line-anchored .ts scan here would recreate
+#   exactly the defect this change removes).
+echo "[4/4] production mutation residue check (delegated to canonical detector)"
+if [[ ! -x "$RESIDUE_GATE" ]]; then
+    # §11.4.201: an absent detector is not a clean tree. Refuse.
+    fail "canonical residue detector missing or not executable: $RESIDUE_GATE"
+    BLOCKING_FAIL=$((BLOCKING_FAIL + 1))
 else
-    fail "$marker_errors mutation marker(s) detected"
-    BLOCKING_FAIL=$((BLOCKING_FAIL + marker_errors))
+    residue_rc=0
+    "$RESIDUE_GATE" || residue_rc=$?
+    case "$residue_rc" in
+        0)
+            pass "no production mutation residue (canonical detector)"
+            ;;
+        1)
+            fail "production mutation residue detected (see hits above)"
+            BLOCKING_FAIL=$((BLOCKING_FAIL + 1))
+            ;;
+        *)
+            # exit 2 = the detector could not see (zero-file walk, awk
+            # fatal). A blind instrument and a clean tree return the same
+            # quiet zero, so this is a FAIL, never a pass (§11.4.201(6)).
+            fail "canonical residue detector errored (exit $residue_rc) — result not trustworthy"
+            BLOCKING_FAIL=$((BLOCKING_FAIL + 1))
+            ;;
+    esac
+    echo "    NOTE: canonical detector parses .go/.py/.sh/.bash; frontend .ts/.js"
+    echo "          are outside its corpus — owed §11.4.197 follow-up, not a silent gap."
 fi
 
 echo

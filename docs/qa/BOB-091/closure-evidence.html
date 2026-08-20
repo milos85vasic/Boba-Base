@@ -1,0 +1,73 @@
+<h1 id="bob-091-closure-evidence">BOB-091 closure evidence</h1>
+<p><strong>Item:</strong> BOB-091 (RD2-26) — Relocate mocked
+SearchOrchestrator tests to unit/ + author real integration tests
+<strong>Type:</strong> Bug · <strong>Closed as:</strong> Fixed (→
+Fixed.md) per §11.4.33 <strong>Closed:</strong> 2026-08-20</p>
+<h2 id="why-this-was-still-queued">Why this was still Queued</h2>
+<p>The work landed weeks ago under commits whose messages did not carry
+the ATM id, so the tracker row was never reconciled. Fourth instance of
+this drift class found in one sweep (with BOB-076, BOB-117, and
+BOB-008’s stale evidence).</p>
+<pre><code>d1a8479  RD2-26a — test_merge_api.py no longer mocks the system under test   (GA-14)
+a3b16bc  stop mocking SearchOrchestrator in tests/e2e/test_full_pipeline.py  (GA-15)
+2a0b543  stop mocking SearchOrchestrator in the tracker_stats contract test  (GA-16)</code></pre>
+<h2 id="closure-criterion-from-the-items-own-body_md">Closure criterion
+(from the item’s own body_md)</h2>
+<p>“no <span class="citation"
+data-cites="patch/monkeypatch">@patch/monkeypatch</span> targeting
+SearchOrchestrator anywhere outside tests/unit/.”</p>
+<h2
+id="verification-re-derived-independently-not-inherited-from-the-commit-messages">Verification
+— re-derived independently, not inherited from the commit messages</h2>
+<h3 id="live-orchestrator-mocks-outside-testsunit-zero">Live
+orchestrator mocks outside tests/unit/: ZERO</h3>
+<pre><code>tests/integration/test_merge_api.py            0 live
+tests/e2e/test_full_pipeline.py                0 live
+tests/contract/test_tracker_stats_contract.py  0 live</code></pre>
+<h3 id="controllers-own-false-alarm-recorded-11.4.6">Controller’s own
+false alarm, recorded (§11.4.6)</h3>
+<p>A first pass by the controller reported 1 and 2 “live” mocks in two
+of those files. That was a CARRIER MATCH, not a finding: the regex
+excluded <code>#</code> comments but NOT docstrings, and every hit was
+inside a module docstring documenting the file’s own history —</p>
+<pre><code>tests/integration/test_merge_api.py:20
+  test while every route test did ``@patch(&quot;api.routes._get_orchestrator&quot;)``
+tests/contract/test_tracker_stats_contract.py:18
+  This file used to ``monkeypatch.setattr(SearchOrchestrator,</code></pre>
+<p>This is the §11.4.201(7)(a) match-structure-not-substring footgun. It
+is recorded here rather than quietly dropped, because the first count
+was wrong and the record should show why.</p>
+<h3
+id="control-needle-the-search-instrument-is-not-blind-11.4.2017b">Control
+needle — the search instrument is not blind (§11.4.201(7)(b))</h3>
+<pre><code>grep -cE &#39;(@patch|patch\.object|monkeypatch\.setattr)&#39; tests/unit/test_merge_api_route_contracts.py
+21</code></pre>
+<p>The needle proves the pattern matches real mocks where they exist, so
+the zeros above are evidence.</p>
+<h3 id="relocated-unit-tests-green">Relocated unit tests: GREEN</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_merge_api_route_contracts.py \
+    tests/unit/test_full_pipeline_orchestration_logic.py \
+    tests/unit/test_tracker_stats_shape.py -q --import-mode=importlib
+40 passed, 1 warning in 19.63s</code></pre>
+<h3
+id="the-real-service-tests-are-genuinely-real-and-their-skip-is-genuinely-honest">The
+real-service tests are genuinely real, and their SKIP is genuinely
+honest</h3>
+<p>The three relocated-from files now drive the live service over real
+HTTP with no mock in the call path. Their honest-SKIP path (§11.4.3) was
+observed for real when the service became unreachable mid-session under
+host contention:</p>
+<pre><code>tests/contract/test_tracker_stats_contract.py   3 skipped  — &quot;merge search service unreachable ... No fake-pass&quot;
+tests/e2e/test_full_pipeline.py                 3 skipped  — &quot;merge service not reachable ... (no fake-pass, no orchestrator mocking)&quot;
+tests/integration/test_merge_api.py            20 skipped  — polls ~90s then gives up honestly</code></pre>
+<p>The skip path was also forced deliberately with
+MERGE_SERVICE_URL=http://localhost:1 and produced the identical honest
+skip — confirming it is a real code path, not an accident of timing.</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p>Mocks of SearchOrchestrator still exist in tests/concurrency/,
+tests/property/, tests/stress/ and tests/security/. Each mocks it as an
+INCIDENTAL dependency while exercising a different system under test
+(semaphore concurrency, Hypothesis properties, auth-status
+qBittorrent-failure handling, SSRF-guard logic). None is a mislabelled
+“SearchOrchestrator test”, so none is in this item’s scope — recorded as
+an observation, not silently omitted and not claimed fixed.</p>

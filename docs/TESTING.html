@@ -1,6 +1,6 @@
 <h1 id="testing-guide">Testing Guide</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-08-19T17:00:43Z</p>
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-08-20T14:17:27Z</p>
 <p>This is the <strong>authoritative test-type catalogue</strong> for
 qBittorrent-Fixed. Every testable module in the repo must have coverage
 in every applicable row below. The catalogue is derived from Part C of
@@ -294,6 +294,15 @@ pyproject.toml)</td>
 <code>cd frontend &amp;&amp; license-checker</code></td>
 <td><code>artifacts/licenses/</code></td>
 </tr>
+<tr>
+<td>31</td>
+<td>DDoS (abuse resilience)</td>
+<td>pytest + Starlette TestClient + httpx ASGI</td>
+<td><code>tests/ddos/</code></td>
+<td><code>pytest tests/ddos/ -v --import-mode=importlib</code></td>
+<td><code>htmlcov/</code> — see <a href="#ddos-tests">DDoS
+tests</a></td>
+</tr>
 </tbody>
 </table>
 <p>Rows marked <em>pending</em> are scaffolded by the
@@ -529,6 +538,268 @@ the theme-picker.</td>
 <code>./scripts/freeze-openapi.sh</code> to refresh
 <code>docs/api/openapi.json</code> so the contract test
 <code>test_frozen_and_live_have_same_schemas</code> stays green.</p>
+<h2 id="ddos-tests">DDoS tests</h2>
+<p><code>tests/ddos/</code> is the §11.4.27(B) / §11.4.169 <strong>“ddos
+tests”</strong> type: abuse resilience, as distinct from throughput
+(<code>tests/load/</code>), overload (<code>tests/stress/</code>) and
+threshold correctness (<code>tests/security/</code>).</p>
+<h3 id="what-it-covers">What it covers</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>File</th>
+<th>The question it answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Capped burst flood</td>
+<td><code>test_request_flood.py</code></td>
+<td>Are excess requests <strong>refused</strong> rather than served?
+Does the refusal path stay clean (no 5xx)? Does the service still answer
+afterwards? Can one flooding client deny service to
+<strong>another</strong> client?</td>
+</tr>
+<tr>
+<td>Slow client / slow body</td>
+<td><code>test_slow_request.py</code></td>
+<td>Does one slow request <strong>starve</strong> everyone else
+(head-of-line blocking)? Covers both a slow handler and a dribbled
+request body.</td>
+</tr>
+<tr>
+<td>Payload-size abuse</td>
+<td><code>test_payload_abuse.py</code></td>
+<td>Is an oversized upload <strong>refused by an explicit guard</strong>
+(413) rather than buffered and processed? Does an oversized JSON body
+avoid a 5xx? Can size be used to <strong>bypass</strong> the per-IP
+limiter?</td>
+</tr>
+<tr>
+<td>Resource-exhaustion admission control</td>
+<td><code>test_resource_exhaustion.py</code></td>
+<td>Does <code>MAX_CONCURRENT_SEARCHES</code> actually
+<strong>engage</strong> and shed load with a 429? Does it catch a
+distributed client whose per-IP budget is untouched?</td>
+</tr>
+</tbody>
+</table>
+<p>Every assertion reads a <strong>user-observable outcome</strong> — a
+status-code population, a response body, a post-attack liveness probe,
+bystander throughput — never “no exception was raised” (§11.4 /
+§11.4.1).</p>
+<p><strong>Evidence class (§11.4.226):</strong>
+runtime-on-the-real-ASGI-app. The tests drive the real
+<code>api.app</code> through the real middleware stack, real routers and
+real slowapi decorators, <strong>in-process</strong>.</p>
+<h3
+id="safety-bounds-12-12.6-12.11-claude.md-mandatory-standard-9">Safety
+bounds (§12, §12.6, §12.11, CLAUDE.md Mandatory Standard 9)</h3>
+<p>This host runs live containers and parallel agents, and resource
+exhaustion here has previously caused forced logouts. The suite is
+therefore bounded by construction, not by convention. <strong>No bound
+below may be raised without re-justifying the host budget
+here.</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Bound</th>
+<th>Value</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Live stack contact</td>
+<td><strong>none</strong></td>
+<td>No socket is opened. Nothing ever reaches
+<code>127.0.0.1:7187</code> or any port. A flood against the operator’s
+running stack is forbidden outright.</td>
+</tr>
+<tr>
+<td>Largest single burst</td>
+<td><code>MAX_BURST_REQUESTS</code> = <strong>24</strong></td>
+<td>~4x the smallest limit under test — enough to prove “refused, not
+served” with margin. There is no unbounded loop and no “flood until it
+breaks” anywhere.</td>
+</tr>
+<tr>
+<td>Concurrent clients</td>
+<td><code>MAX_CONCURRENT_CLIENTS</code> = <strong>5</strong></td>
+<td>Coroutines on ONE event loop. No thread pool, no process pool.</td>
+</tr>
+<tr>
+<td>Liveness probes</td>
+<td><code>MAX_LIVENESS_PROBES</code> = <strong>60</strong> @ 20 ms</td>
+<td>Sub-millisecond in-process <code>GET /health</code> calls with no
+I/O.</td>
+</tr>
+<tr>
+<td>Largest allocation</td>
+<td><code>OVERSIZE_UPLOAD_BYTES</code> ≈ <strong>10 MiB</strong></td>
+<td>Crosses the production 10 MiB guard by 4 KiB — the smallest margin
+that proves it.</td>
+</tr>
+<tr>
+<td>Tracker fan-out</td>
+<td><strong>neutralised</strong></td>
+<td><code>SearchOrchestrator._run_search</code> is stubbed, so no test
+can emit traffic at RuTracker / Kinozal / NNMClub or spawn nova3
+subprocesses.</td>
+</tr>
+<tr>
+<td>Wall clock</td>
+<td>whole suite ≈ <strong>27 s</strong></td>
+<td>Well inside the 60 s <code>pytest-timeout</code> cap.</td>
+</tr>
+</tbody>
+</table>
+<p>The constants live in <code>tests/ddos/conftest.py</code> and are
+read by the tests — they are hard caps, not targets.</p>
+<h3 id="what-this-does-not-cover-honest-gaps-11.4.6-11.4.3">What this
+does NOT cover (honest gaps, §11.4.6 / §11.4.3)</h3>
+<p>Stated so nobody mistakes a green run for more than it is:</p>
+<ol type="1">
+<li><strong>TCP-level slowloris is not tested anywhere.</strong> Partial
+headers, a dribbled TLS handshake, kernel accept-queue exhaustion and
+uvicorn’s own connection / keep-alive timeouts all live <em>below</em>
+ASGI and are unreachable in-process. <code>test_slow_request.py</code>
+covers the ASGI-layer analogue (a dribbled body); the socket-level probe
+is covered by <strong>neither</strong> this suite nor
+<code>challenges/scripts/ddos_resilience_challenge.sh</code>. Genuinely
+open.</li>
+<li><strong>No multi-host or real-network traffic.</strong> Distributed
+source addresses are <em>simulated</em> via <code>X-Forwarded-For</code>
+with the production <code>TRUST_FORWARDED_FOR</code> knob enabled. Real
+botnet behaviour, NAT effects and upstream infrastructure are out of
+scope.</li>
+<li><strong>Saturation is simulated, not driven.</strong>
+<code>test_resource_exhaustion.py</code> sets the orchestrator’s
+in-flight counter directly rather than starting real 43-tracker fan-outs
+— driving true saturation is exactly the off-host damage the host budget
+forbids. The <em>guard</em> under test is real; the <em>state</em> is
+set.</li>
+<li><strong><code>SearchRequest.query</code> has no
+<code>max_length</code></strong> (<code>api/routes.py:187</code>
+declares only <code>min_length=1</code>). An oversized query is
+therefore <strong>accepted</strong> and forwarded to the tracker fan-out
+— a real amplification gap.
+<code>test_oversized_query_does_not_5xx_and_service_stays_live</code>
+pins the properties that <em>do</em> hold (no 5xx, service stays live)
+rather than asserting a refusal that does not exist. Closing the gap is
+a production-source change and is <strong>not</strong> done by this
+suite.</li>
+<li><strong>Multi-worker / multi-process limiter coherence is
+untested.</strong> The default <code>memory://</code> slowapi backend is
+per-process; a deployment scaled past one worker needs
+<code>RATE_LIMIT_STORAGE_URI</code> pointed at Redis for the counters to
+mean anything. Nothing here exercises that path.</li>
+</ol>
+<h3 id="how-to-run">How to run</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the suite (in-process, ~27s, safe to run any time)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> <span class="at">-m</span> pytest tests/ddos/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># the paired §1.1 falsifiability proof — breaks each defence in a THROWAWAY</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># COPY of download-proxy/src and asserts the suite turns red</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/ddos/mutations/run_mutation_check.sh</span></code></pre></div>
+<p>The mutation runner never touches the real source tree: it copies
+<code>download-proxy/src</code> to a <code>mktemp -d</code> directory,
+mutates the copy, and points the suite at it via the
+<code>BOBA_DDOS_SRC_PATH</code> seam in
+<code>tests/ddos/conftest.py</code>. This checkout is worked by several
+agents at once, so an in-place mutation could be swept into someone
+else’s commit before restoration — the §11.4.84 working-tree-quiescence
+failure mode. It also runs an <strong>unmutated control</strong> first,
+so a failure caused by the copy mechanism can never be mistaken for a
+mutation being caught (§11.4.201(1)).</p>
+<p>Mutations and the defence each one breaks:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Mutation</th>
+<th>Must turn red</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td>Rate limits raised to <code>100000/minute</code></td>
+<td><code>test_request_flood.py</code></td>
+</tr>
+<tr>
+<td>M2</td>
+<td>Limiter key collapsed to a constant (all clients share one
+bucket)</td>
+<td><code>test_request_flood.py</code></td>
+</tr>
+<tr>
+<td>M3</td>
+<td>Upload size guard raised 10 MiB → 10 GiB</td>
+<td><code>test_payload_abuse.py</code></td>
+</tr>
+<tr>
+<td>M4</td>
+<td><code>is_search_queue_full()</code> → always <code>False</code></td>
+<td><code>test_resource_exhaustion.py</code></td>
+</tr>
+<tr>
+<td>M5</td>
+<td>Synchronous <code>time.sleep</code> in the request path
+(head-of-line blocking)</td>
+<td><code>test_slow_request.py</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>M5 is why the slow-request oracle is throughput and not
+latency.</strong> Two earlier versions of that file were bluffs that M5
+caught: asserting <em>ordering</em> stayed green because a blocking
+request still finishes last, and asserting per-probe <em>latency</em>
+stayed green because a blocked event loop does not make a bystander
+probe slow — it stops scheduling it at all (measured: worst probe
+latency 0.0129 s while only <strong>2</strong> probes ran in a 0.948 s
+window). Bystander <strong>throughput</strong> is the observable that
+actually collapses.</p>
+<h3 id="relationship-to-the-neighbouring-suites">Relationship to the
+neighbouring suites</h3>
+<p><code>tests/ddos/</code> deliberately does not re-test what these
+already cover:</p>
+<ul>
+<li><code>tests/unit/test_rate_limit.py</code> — slowapi works, per-IP
+isolation, 429 body, on a <strong>synthetic</strong> FastAPI app.</li>
+<li><code>tests/security/test_rate_limit_public_endpoints.py</code> —
+the <strong>real</strong> app’s routes carry the limiter at their
+<strong>configured thresholds</strong> (§11.4.196(F)).</li>
+<li><code>challenges/scripts/ddos_resilience_challenge.sh</code> — the
+<strong>live-socket</strong> layer: a bounded localhost concurrency ramp
+against <code>:7185</code> / <code>:7187</code> / <code>:7189</code>
+health surfaces, crash resistance, cross-endpoint isolation, and the
+BOB-112 <code>/healthz</code> TTL-cache regression guard. Requires the
+stack to be up; this pytest suite does not.</li>
+</ul>
+<p>There is one deliberate overlap:
+<code>test_flooding_client_does_not_deny_service_to_another_client</code>
+asserts per-client isolation that the unit suite also asserts — but on
+the <strong>real</strong> app, so it notices a production route or
+middleware regression that collapses the key function, which a
+synthetic-app test structurally cannot.</p>
 <h2 id="gotchas">Gotchas</h2>
 <ul>
 <li><code>pytest</code> needs <code>--import-mode=importlib</code> for
@@ -553,7 +824,7 @@ workflows. Only the <code>nightly.yml</code> and
 href="../scripts/compute-badges.sh"><code>scripts/compute-badges.sh</code></a>
 — never hand-typed. Corroborates the README badge row + the
 Contributing-section bullets. Last regenerated:
-2026-08-20T08:00:47Z.</p>
+2026-08-20T15:15:27Z.</p>
 <table>
 <colgroup>
 <col style="width: 25%" />
@@ -573,7 +844,7 @@ Contributing-section bullets. Last regenerated:
 <tr>
 <td>Python (whole <code>tests/</code> tree)</td>
 <td><code>tests/</code></td>
-<td><strong>5358</strong></td>
+<td><strong>5400</strong></td>
 <td><code>pytest --collect-only -q</code></td>
 </tr>
 <tr>
@@ -615,7 +886,7 @@ Contributing-section bullets. Last regenerated:
 <tr>
 <td>Pre-build invariants</td>
 <td><code>scripts/pre_build_verification.sh</code></td>
-<td><strong>30</strong></td>
+<td><strong>44</strong></td>
 <td>max total of every <code>[N/N]</code> progress label</td>
 </tr>
 </tbody>

@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-5358%20collected-blue">
+  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-5400%20collected-blue">
   <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-371%20collected-blue">
   <img alt="plugins"        src="https://img.shields.io/badge/plugins-48-blue">
   <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">

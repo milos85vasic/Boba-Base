@@ -197,7 +197,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>11</td>
+<td>12</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -217,7 +217,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>52</strong></td>
+<td><strong>53</strong></td>
 </tr>
 </tbody>
 </table>
@@ -859,6 +859,58 @@ to MERGE_SERVICE_PORT=7187 in internal/config/config.go:58.
 direction of the fix decided deliberately (correct the doc, or provision
 the container to match the documented intent). PROXY_PORT/BRIDGE_PORT
 env and EXPOSE lines agree with what the container actually binds.</td>
+</tr>
+<tr>
+<td>BOB-143</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Medium</td>
+<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-08-20T15:08:18Z <strong>Reported-By:</strong>
+Claude <strong>What (the report, verbatim):</strong>
+<code>.worktrees/ci-split-workflows/</code> (13M) and
+<code>.worktrees/completion-initiative-phase-0/</code> (33M) are
+ORPHANED: <code>git worktree list</code> reports only the main checkout,
+so neither is a registered worktree. Each contains a <code>.git</code>
+POINTER FILE whose target gitdir no longer exists, so git cannot resolve
+HEAD, branch, or status inside them – every query returns empty. They
+are gitignored (.gitignore:122), so nothing tracks them and nothing will
+ever notice them drifting. WHY THIS IS NOT COSMETIC: they pollute the
+scan scope of whole-tree gates and manufacture false findings. Measured
+2026-08-20 by the §11.4.32 sweep: -
+<code>cm_test_mock_pid_explicit_int</code> reported 2 violations at
+tests/unit/merge_service/test_deadline_tunable.py:44 – BOTH inside these
+orphaned trees. The MAIN tree’s copy of that file is already hardened
+(it sets <code>mock.pid = 12345</code> and patches os.killpg/os.getpgid)
+and passes the gate cleanly. The finding read as a live §11.4.263 /
+BOB-126-class defect and was not one. - 6 of the 57 “missing anchor
+carrier” files flagged by the propagation gates were likewise
+<code>.worktrees/**</code>. That is the §11.4.201(1) false-positive
+shape sourced from scan scope, and it costs real investigation time: a
+reader triaging “2 live BOB-126 violations” reasonably treats it as a
+host-safety emergency. CLARIFICATION (established during triage, so the
+record is not alarming): these trees are NOT a kill(-1) vector. Their
+<code>download-proxy/src/merge_service/ search.py</code> contains ZERO
+<code>os.killpg</code> calls – they predate that cleanup code entirely –
+so there is no unguarded signal call to reach. Additionally
+<code>pyproject.toml</code> sets <code>testpaths = ["tests"]</code>, so
+a plain <code>pytest</code> run does not collect from
+<code>.worktrees/</code>. No host-safety risk was found. The defect is
+scan-scope noise plus 46M of unreferenced disk. WHY REMOVAL IS NOT DONE
+AUTONOMOUSLY (§11.4.122 / §11.4.124 / §11.4.101): because git cannot
+resolve their HEAD, it is NOT possible to prove their contents are
+merged into main. Deleting unprovable-provenance work is exactly the
+irreversible, operator-owned decision §11.4.122 reserves. Two options
+for the operator: (a) confirm removal (they are stale dev scratch dirs)
+– reversible only from backup, so a §9.2 pre-op backup should precede
+it; or (b) keep them and add <code>.worktrees/</code> to the gate
+scan-scope exclusion list as a §11.4.224(E)-fenced, checked-in,
+justified entry. Either way the exclusion list is the cheaper immediate
+mitigation and does not destroy anything. <strong>Affected scope /
+file-scope manifest:</strong> .worktrees/ci-split-workflows/,
+.worktrees/completion-initiative-phase-0/, gate scan-scope config
+<strong>Reproduction / context:</strong> git worktree list shows only
+the main checkout; git -C .worktrees/</td>
 </tr>
 </tbody>
 </table>

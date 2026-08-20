@@ -1,7 +1,7 @@
 # Testing Guide
 
-**Revision:** 4
-**Last modified:** 2026-08-19T17:00:43Z
+**Revision:** 5
+**Last modified:** 2026-08-20T14:17:27Z
 
 This is the **authoritative test-type catalogue** for qBittorrent-Fixed.
 Every testable module in the repo must have coverage in every applicable
@@ -63,6 +63,7 @@ activate the venv first with `source .venv/bin/activate` and drop the
 | 28 | SAST | Semgrep + Bandit + SonarQube | CI job | `semgrep scan --config=auto` / `bandit -r download-proxy/src` | `artifacts/scans/` |
 | 29 | Secret scan | Gitleaks + TruffleHog | CI job | `gitleaks detect` | `artifacts/scans/` |
 | 30 | License compliance | pip-licenses + license-checker | CI job | `pip-licenses` / `cd frontend && license-checker` | `artifacts/licenses/` |
+| 31 | DDoS (abuse resilience) | pytest + Starlette TestClient + httpx ASGI | `tests/ddos/` | `pytest tests/ddos/ -v --import-mode=importlib` | `htmlcov/` — see [DDoS tests](#ddos-tests) |
 
 Rows marked *pending* are scaffolded by the completion-initiative plan
 phases (see the plan document for the phase that ships each one).
@@ -171,6 +172,136 @@ Whenever the `TrackerSearchStat` shape changes, run
 `./scripts/freeze-openapi.sh` to refresh `docs/api/openapi.json` so
 the contract test `test_frozen_and_live_have_same_schemas` stays green.
 
+## DDoS tests
+
+`tests/ddos/` is the §11.4.27(B) / §11.4.169 **"ddos tests"** type: abuse
+resilience, as distinct from throughput (`tests/load/`), overload
+(`tests/stress/`) and threshold correctness (`tests/security/`).
+
+### What it covers
+
+| Dimension | File | The question it answers |
+|---|---|---|
+| Capped burst flood | `test_request_flood.py` | Are excess requests **refused** rather than served? Does the refusal path stay clean (no 5xx)? Does the service still answer afterwards? Can one flooding client deny service to **another** client? |
+| Slow client / slow body | `test_slow_request.py` | Does one slow request **starve** everyone else (head-of-line blocking)? Covers both a slow handler and a dribbled request body. |
+| Payload-size abuse | `test_payload_abuse.py` | Is an oversized upload **refused by an explicit guard** (413) rather than buffered and processed? Does an oversized JSON body avoid a 5xx? Can size be used to **bypass** the per-IP limiter? |
+| Resource-exhaustion admission control | `test_resource_exhaustion.py` | Does `MAX_CONCURRENT_SEARCHES` actually **engage** and shed load with a 429? Does it catch a distributed client whose per-IP budget is untouched? |
+
+Every assertion reads a **user-observable outcome** — a status-code population,
+a response body, a post-attack liveness probe, bystander throughput — never
+"no exception was raised" (§11.4 / §11.4.1).
+
+**Evidence class (§11.4.226):** runtime-on-the-real-ASGI-app. The tests drive
+the real `api.app` through the real middleware stack, real routers and real
+slowapi decorators, **in-process**.
+
+### Safety bounds (§12, §12.6, §12.11, CLAUDE.md Mandatory Standard 9)
+
+This host runs live containers and parallel agents, and resource exhaustion
+here has previously caused forced logouts. The suite is therefore bounded by
+construction, not by convention. **No bound below may be raised without
+re-justifying the host budget here.**
+
+| Bound | Value | Why |
+|---|---|---|
+| Live stack contact | **none** | No socket is opened. Nothing ever reaches `127.0.0.1:7187` or any port. A flood against the operator's running stack is forbidden outright. |
+| Largest single burst | `MAX_BURST_REQUESTS` = **24** | ~4x the smallest limit under test — enough to prove "refused, not served" with margin. There is no unbounded loop and no "flood until it breaks" anywhere. |
+| Concurrent clients | `MAX_CONCURRENT_CLIENTS` = **5** | Coroutines on ONE event loop. No thread pool, no process pool. |
+| Liveness probes | `MAX_LIVENESS_PROBES` = **60** @ 20 ms | Sub-millisecond in-process `GET /health` calls with no I/O. |
+| Largest allocation | `OVERSIZE_UPLOAD_BYTES` ≈ **10 MiB** | Crosses the production 10 MiB guard by 4 KiB — the smallest margin that proves it. |
+| Tracker fan-out | **neutralised** | `SearchOrchestrator._run_search` is stubbed, so no test can emit traffic at RuTracker / Kinozal / NNMClub or spawn nova3 subprocesses. |
+| Wall clock | whole suite ≈ **27 s** | Well inside the 60 s `pytest-timeout` cap. |
+
+The constants live in `tests/ddos/conftest.py` and are read by the tests — they
+are hard caps, not targets.
+
+### What this does NOT cover (honest gaps, §11.4.6 / §11.4.3)
+
+Stated so nobody mistakes a green run for more than it is:
+
+1. **TCP-level slowloris is not tested anywhere.** Partial headers, a dribbled
+   TLS handshake, kernel accept-queue exhaustion and uvicorn's own connection /
+   keep-alive timeouts all live *below* ASGI and are unreachable in-process.
+   `test_slow_request.py` covers the ASGI-layer analogue (a dribbled body); the
+   socket-level probe is covered by **neither** this suite nor
+   `challenges/scripts/ddos_resilience_challenge.sh`. Genuinely open.
+2. **No multi-host or real-network traffic.** Distributed source addresses are
+   *simulated* via `X-Forwarded-For` with the production `TRUST_FORWARDED_FOR`
+   knob enabled. Real botnet behaviour, NAT effects and upstream infrastructure
+   are out of scope.
+3. **Saturation is simulated, not driven.** `test_resource_exhaustion.py` sets
+   the orchestrator's in-flight counter directly rather than starting real
+   43-tracker fan-outs — driving true saturation is exactly the off-host damage
+   the host budget forbids. The *guard* under test is real; the *state* is set.
+4. **`SearchRequest.query` has no `max_length`** (`api/routes.py:187` declares
+   only `min_length=1`). An oversized query is therefore **accepted** and
+   forwarded to the tracker fan-out — a real amplification gap.
+   `test_oversized_query_does_not_5xx_and_service_stays_live` pins the
+   properties that *do* hold (no 5xx, service stays live) rather than asserting
+   a refusal that does not exist. Closing the gap is a production-source change
+   and is **not** done by this suite.
+5. **Multi-worker / multi-process limiter coherence is untested.** The default
+   `memory://` slowapi backend is per-process; a deployment scaled past one
+   worker needs `RATE_LIMIT_STORAGE_URI` pointed at Redis for the counters to
+   mean anything. Nothing here exercises that path.
+
+### How to run
+
+```bash
+# the suite (in-process, ~27s, safe to run any time)
+.venv/bin/python -m pytest tests/ddos/ -v --import-mode=importlib
+
+# the paired §1.1 falsifiability proof — breaks each defence in a THROWAWAY
+# COPY of download-proxy/src and asserts the suite turns red
+bash tests/ddos/mutations/run_mutation_check.sh
+```
+
+The mutation runner never touches the real source tree: it copies
+`download-proxy/src` to a `mktemp -d` directory, mutates the copy, and points
+the suite at it via the `BOBA_DDOS_SRC_PATH` seam in `tests/ddos/conftest.py`.
+This checkout is worked by several agents at once, so an in-place mutation could
+be swept into someone else's commit before restoration — the §11.4.84
+working-tree-quiescence failure mode. It also runs an **unmutated control**
+first, so a failure caused by the copy mechanism can never be mistaken for a
+mutation being caught (§11.4.201(1)).
+
+Mutations and the defence each one breaks:
+
+| # | Mutation | Must turn red |
+|---|---|---|
+| M1 | Rate limits raised to `100000/minute` | `test_request_flood.py` |
+| M2 | Limiter key collapsed to a constant (all clients share one bucket) | `test_request_flood.py` |
+| M3 | Upload size guard raised 10 MiB → 10 GiB | `test_payload_abuse.py` |
+| M4 | `is_search_queue_full()` → always `False` | `test_resource_exhaustion.py` |
+| M5 | Synchronous `time.sleep` in the request path (head-of-line blocking) | `test_slow_request.py` |
+
+**M5 is why the slow-request oracle is throughput and not latency.** Two earlier
+versions of that file were bluffs that M5 caught: asserting *ordering* stayed
+green because a blocking request still finishes last, and asserting per-probe
+*latency* stayed green because a blocked event loop does not make a bystander
+probe slow — it stops scheduling it at all (measured: worst probe latency
+0.0129 s while only **2** probes ran in a 0.948 s window). Bystander
+**throughput** is the observable that actually collapses.
+
+### Relationship to the neighbouring suites
+
+`tests/ddos/` deliberately does not re-test what these already cover:
+
+- `tests/unit/test_rate_limit.py` — slowapi works, per-IP isolation, 429 body,
+  on a **synthetic** FastAPI app.
+- `tests/security/test_rate_limit_public_endpoints.py` — the **real** app's
+  routes carry the limiter at their **configured thresholds** (§11.4.196(F)).
+- `challenges/scripts/ddos_resilience_challenge.sh` — the **live-socket** layer:
+  a bounded localhost concurrency ramp against `:7185` / `:7187` / `:7189`
+  health surfaces, crash resistance, cross-endpoint isolation, and the BOB-112
+  `/healthz` TTL-cache regression guard. Requires the stack to be up; this
+  pytest suite does not.
+
+There is one deliberate overlap: `test_flooding_client_does_not_deny_service_to_another_client`
+asserts per-client isolation that the unit suite also asserts — but on the
+**real** app, so it notices a production route or middleware regression that
+collapses the key function, which a synthetic-app test structurally cannot.
+
 ## Gotchas
 
 - `pytest` needs `--import-mode=importlib` for the merge service —
@@ -189,18 +320,18 @@ the contract test `test_frozen_and_live_have_same_schemas` stays green.
 
 Regenerated by [`scripts/compute-badges.sh`](../scripts/compute-badges.sh)
 — never hand-typed. Corroborates the README badge row + the
-Contributing-section bullets. Last regenerated: 2026-08-20T08:00:47Z.
+Contributing-section bullets. Last regenerated: 2026-08-20T15:15:27Z.
 
 | Suite | Directory | Real count | Method |
 |---|---|---|---|
-| Python (whole `tests/` tree) | `tests/` | **5358** | `pytest --collect-only -q` |
+| Python (whole `tests/` tree) | `tests/` | **5400** | `pytest --collect-only -q` |
 | Python unit | `tests/unit/` | **4406** | `pytest --collect-only -q` |
 | Python integration | `tests/integration/` | **288** | `pytest --collect-only -q` |
 | Python e2e | `tests/e2e/` | **30** | `pytest --collect-only -q` |
 | Python contract | `tests/contract/` | **12** | `pytest --collect-only -q` |
 | Frontend (Vitest) | `frontend/src/**/*.spec.ts` | **371** | collected (vitest list --run) |
 | HelixQA Challenges | `challenges/scripts/*.sh` | **38** | `ls challenges/scripts/*.sh \| wc -l` |
-| Pre-build invariants | `scripts/pre_build_verification.sh` | **30** | max total of every `[N/N]` progress label |
+| Pre-build invariants | `scripts/pre_build_verification.sh` | **44** | max total of every `[N/N]` progress label |
 
 **BOB-118 provenance note:** the README badge row previously read
 `python tests-585 passing` / `frontend tests-182 passing` with no
