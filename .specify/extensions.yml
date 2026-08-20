@@ -1,4 +1,11 @@
 installed:
+# `git` has been registered and enabled in .specify/extensions/.registry since
+# 2026-04-13 and its hooks are declared below (before_constitution,
+# before_specify, before_*/after_* commit hooks), but it was missing from this
+# list — so a hook declared `optional: false` referenced an extension this file
+# reported as not installed. Reconciled 2026-08-20 against the registry, which
+# is the authoritative record (§11.4.6: looked up, never assumed).
+- git
 - superspec
 settings:
   auto_execute_hooks: true

@@ -329,6 +329,19 @@ prefix denylist; defaults to
 <code>MERGE_SERVICE_PORT</code> (<code>7187</code>),
 <code>PROXY_PORT</code> (<code>7186</code>), <code>BRIDGE_PORT</code>
 (<code>7188</code>).</p>
+<p><strong>Cookies-file autoload (operator mandate 2026-08-15)</strong>:
+per-tracker Netscape cookies files at
+<code>${TRACKER_COOKIE_DIR:-$HOME/Downloads}/cookies_&lt;tracker&gt;.txt</code>
+(lowercase; today: <code>rutracker</code>, <code>nnmclub</code>,
+<code>rutor</code>, <code>kinozal</code>) are auto-loaded into
+<code>.env</code> as <code>&lt;TRACKER&gt;_COOKIES=...</code> by
+<code>scripts/load-tracker-cookies.sh</code> before every
+<code>boba-svc up</code>, <code>boba-svc restart</code>,
+<code>install.sh</code> Stage 6, and <code>start.sh</code> boot.
+Refreshing a session = <em>re-export from browser → restart</em>. Every
+write is atomic + <code>chmod 600</code> + §11.4.10.A leak-audited;
+cookie values NEVER enter logs. Full doc: <a
+href="docs/guides/tracker-credentials.md"><code>docs/guides/tracker-credentials.md</code></a>.</p>
 <blockquote>
 <p><strong>RuTor is a PUBLIC tracker with no login endpoint</strong> —
 it needs no authentication. Any

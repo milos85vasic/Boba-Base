@@ -1,6 +1,6 @@
 <h1 id="qa-discovery-channel-ledger">QA Discovery-Channel Ledger</h1>
-<p><strong>Revision:</strong> 12 <strong>Last modified:</strong>
-2026-08-19T17:20:00+02:00 <strong>Status:</strong> active
+<p><strong>Revision:</strong> 13 <strong>Last modified:</strong>
+2026-08-20T07:45:00+02:00 <strong>Status:</strong> active
 <strong>Constitution:</strong> §11.4.238 (automated QA must be the
 DISCOVERER, not the confirmer — every defect found outside the automated
 HelixQA regime is itself a coverage-escape release blocker, not merely a
@@ -1070,6 +1070,143 @@ claims the coverage escape is the install-gap on the ALREADY-KNOWN
 preventive paths, which is itself proven by 5 consecutive occurrences
 without a single mechanical detection.</li>
 </ul>
+<h3
+id="compute-badges-carrier-match-compute-badges.sh-destroyed-a-readme-prose-line-substring-match-not-structural-and-accumulated-a-blank-line-in-docstesting.md-on-every-run">COMPUTE-BADGES-CARRIER-MATCH
+— <code>compute-badges.sh</code> destroyed a README prose line
+(substring match, not structural) and accumulated a blank line in
+<code>docs/TESTING.md</code> on every run</h3>
+<ul>
+<li><strong>id:</strong> COMPUTE-BADGES-CARRIER-MATCH (no
+<code>BOB-NNN</code> minted — fixed in the same session it was found;
+slug per the §11.4.238 schema’s “else a short slug”).</li>
+<li><strong>date:</strong> 2026-08-20</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — found
+while reviewing the <code>git diff</code> produced by running
+<code>scripts/compute-badges.sh</code> as the prescribed remediation for
+a <code>CM-BADGE-FRESHNESS-CHECK</code> WARN. The corruption was visible
+only because the diff was read line-by-line before committing.</li>
+<li><strong>summary:</strong> Two distinct defects in
+<code>scripts/compute-badges.sh</code>. (1) CORRUPTION: the README
+rewrite used bare awk patterns <code>/alt="tests"/</code> and
+<code>/alt="vitest"/</code>, which fire on ANY line containing those
+literals — including the prose paragraph at <code>README.md:56</code>
+that <em>documents this very filter</em>. The script replaced that prose
+line with an <code>&lt;img&gt;</code> badge tag, destroying
+documentation content. (2) NON-IDEMPOTENCE: the
+<code>docs/TESTING.md</code> section regenerator stripped the old
+<code>## Test counts</code> section but NOT the blank line(s) preceding
+it, then unconditionally re-emitted a leading blank line — accumulating
+one blank line per run without bound. The live file had reached
+<strong>7</strong> accumulated blank lines, i.e. the defect had been
+running silently for ~7 regenerations.</li>
+<li><strong>escape-audit:</strong> <code>CM-BADGE-FRESHNESS-CHECK</code>
+(invariant 26 in <code>scripts/pre_build_verification.sh</code>) was the
+only standing check over this script, and it verifies <strong>only that
+the badge COUNTS match live counts</strong> — it never asserted that the
+rewrite left non-badge content intact, so a rewrite that corrupts prose
+while producing correct badge lines passes it. Worse, the checker is
+<em>structurally incapable</em> of seeing this class:
+<code>compute-badges.sh --check</code> tests
+<code>grep -qF "${PY_LINE}"</code>, and the corruption REPLACES the
+prose line with exactly <code>${PY_LINE}</code> — so on a corrupted
+README the checker reports “in sync” (a §11.4.201(6) FALSE-NULL in the
+checker itself). No check anywhere asserted idempotence, which is why
+defect (2) accumulated 7 times undetected. This is the §11.4.201(7)(a)
+carrier-match footgun (match STRUCTURE, not substring) reproducing
+inside our own tooling — the same class already anchored twice
+(§11.4.196(D) process-carrier, §12.12 self-match).</li>
+<li><strong>new-check:</strong>
+<code>tests/unit/test_compute_badges_carrier_match.sh</code> (6
+assertions), which drives the REAL script through its REAL
+<code>--readme</code>/<code>--testing-md</code> invocation path
+(§11.4.201(11)) against a fixture containing both a genuine badge block
+and a carrier prose line. §11.4.115 RED-capture evidence, observed
+before the fix:
+<code>FAIL: carrier prose line was OVERWRITTEN — substring match instead of structural match</code>
+with the fixture showing the prose line replaced by
+<code>&lt;img alt="tests" … python%20tests-5358%20collected-blue"&gt;</code>,
+and
+<code>FAIL: TESTING.md: blank lines ACCUMULATE across runs (2 -&gt; 3) — not idempotent</code>.
+GREEN after the fix: <code>RESULT: 6 passed, 0 failed</code>, with the
+real <code>README.md</code> verified byte-identical (prose survived) and
+the real <code>docs/TESTING.md</code> self-healing 7 → 1 blank lines.
+The test also carries a false-negative guard (assertion 2 fails if a
+“fix” simply disables the rewrite, §11.4.201(1)).</li>
+</ul>
+<h3
+id="gitignore-shadows-tracked-files-58-tracked-files-were-rejected-by-git-add-silently-breaking-the-11.4.234-commit-mechanism">GITIGNORE-SHADOWS-TRACKED-FILES
+— 58 TRACKED files were rejected by <code>git add</code>, silently
+breaking the §11.4.234 commit mechanism</h3>
+<ul>
+<li><strong>id:</strong> GITIGNORE-SHADOWS-TRACKED-FILES (no
+<code>BOB-NNN</code> minted — fixed in the same session).</li>
+<li><strong>date:</strong> 2026-08-20</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — surfaced
+when <code>scripts/commit-push-all.sh</code> aborted at stage 5 with
+<code>The following paths are ignored by one of your .gitignore files: .specify/memory</code>
+while committing the tracked project constitution. A repo-wide sweep
+then generalised the instance.</li>
+<li><strong>summary:</strong> When a <code>.gitignore</code> rule
+matches a path that is ALSO tracked, <code>git add &lt;path&gt;</code>
+exits NON-ZERO. Under <code>set -euo pipefail</code> that kills the
+mandated §11.4.234 commit entrypoint mid-run — the file is committed in
+the repo and visibly modified in <code>git status</code>, yet impossible
+to commit through the only sanctioned path. A sweep found
+<strong>58</strong> such tracked files across <strong>five</strong>
+rules: <code>.claude/</code> (the §11.4.109 PreToolUse hook config),
+<code>.opencode/</code> (15 Spec Kit agent commands),
+<code>.specify/*</code> (32 governance/template files),
+<code>config/merge-service/</code> (3 production config files),
+<code>.playwright-mcp/</code> (8 generated snapshots). Notably
+<code>.gitignore:206</code> already carried
+<code>!.claude/settings.json</code> — an INERT negation, because git
+cannot re-include a file whose parent directory is excluded
+(<code>dir/</code> must be <code>dir/*</code> first). The author’s
+intent was correct and had been silently defeated for an unknown
+period.</li>
+<li><strong>escape-audit:</strong> NO check existed over the
+tracked-vs-ignored intersection at all — not in
+<code>scripts/pre_build_verification.sh</code>, not in
+<code>scripts/commit-push-all.sh</code> (whose stage-2 cheap validation
+checks <code>.env</code> leakage but never
+<code>git add</code>-ability), and not in any test. The condition is
+invisible in normal operation because it only manifests when a shadowed
+file is <em>modified</em>; all 58 sat dormant. The §11.4.234(D)
+always-unblocked invariant had no mechanical enforcement, and §11.4.30
+(“tracked authoritative content is never gitignored”) existed only as
+prose — the §11.4.227 prose-does-not-bind/seams-do failure
+verbatim.</li>
+<li><strong>new-check:</strong>
+<code>tests/unit/test_tracked_files_are_addable.sh</code>. Enumerates
+rule-matched tracked paths in one
+<code>git check-ignore --no-index</code> pass, then verifies each
+through the REAL <code>git add --dry-run</code> invocation path
+(§11.4.201(11)), and carries a <strong>control needle</strong> asserting
+the detector can actually see (§11.4.201(7)(b) — a blind instrument and
+a clean repo both return a quiet zero). §11.4.115 RED-capture evidence,
+observed before the fix:
+<code>FAIL: 50 TRACKED file(s) are rejected by 'git add' — the §11.4.234 commit mechanism is broken for them</code>,
+each named with its responsible rule, alongside
+<code>PASS: control needle: check-ignore instrument is seeing</code>.
+GREEN after the <code>.gitignore</code> negations:
+<code>RESULT: 2 passed, 0 failed</code>. The 8
+<code>.playwright-mcp/</code> entries are held in a documented exclusion
+fence (§11.4.224(E) style) rather than silently un-ignored: they are
+tracked GENERATED artifacts whose correct remedy is to stop tracking
+them (§11.4.30), a removal that is an operator decision under §11.4.122
+requiring the §11.4.124 git-history investigation first — recorded as
+<code>TODO(PLAYWRIGHT-MCP-ARTIFACTS)</code> in the test.</li>
+<li><strong>Honest boundary (§11.4.6):</strong> the fix un-ignored the
+tracked trees and the guard prevents recurrence repo-wide, but it does
+NOT retroactively prove the 58 shadowed files were otherwise correct —
+only that they are now committable. Un-ignoring also revealed the
+vendored <code>.specify/extensions/superspec/</code> checkout (own
+<code>.git</code> gitdir pointer, ~14 MB assets, its own
+<code>.github/workflows/ci.yml</code>, duplicating the root
+<code>superspec</code> submodule); it was deliberately RE-ignored rather
+than committed, since committing it would mint a phantom gitlink absent
+from <code>.gitmodules</code>.</li>
+</ul>
 <h2 id="discovery-channel-split-tracked-per-11.4.238e">Discovery-channel
 split (tracked, per §11.4.238(E))</h2>
 <table>
@@ -1164,11 +1301,23 @@ FORCED-LOGOUT-2026-08-19-5TH)</td>
 <td>100%</td>
 </tr>
 <tr>
+<td>2026-08-20 (incremental, tooling-defect sweep during a commit/push
+round — 2 new <code>###</code> entries: the
+<code>compute-badges.sh</code> carrier-match README corruption +
+non-idempotent TESTING.md regeneration, and the repo-wide
+gitignore-shadows-tracked-files break of the §11.4.234 commit
+mechanism)</td>
+<td>0</td>
+<td>2 (<code>agent-code-reading</code> x2: COMPUTE-BADGES-CARRIER-MATCH,
+GITIGNORE-SHADOWS-TRACKED-FILES)</td>
+<td>100%</td>
+</tr>
+<tr>
 <td><strong>Cumulative total (all <code>###</code> entries to date, this
 row is what <code>CM-QA-DISCOVERY-LEDGER-FRESH</code>
 checks)</strong></td>
 <td><strong>0</strong></td>
-<td><strong>18</strong></td>
+<td><strong>20</strong></td>
 <td><strong>100%</strong></td>
 </tr>
 </tbody>

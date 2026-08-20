@@ -30,7 +30,7 @@
   <img alt="plugins"        src="https://img.shields.io/badge/plugins-48-blue">
   <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
   <img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">
-  <img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-29-blue">
+  <img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-30-blue">
   <img alt="challenges"     src="https://img.shields.io/badge/challenges-31-blue">
   <img alt="scan"           src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
   <img alt="license"        src="https://img.shields.io/badge/license-Apache%202.0-green">
@@ -47,16 +47,18 @@
       previously read "ci-auto" (nightly/security triggers) which is FALSE per
       the current Hard Stop rule and has been corrected, not merely refreshed.
     - pre-build invariants: informational count from the highest `[N/N]` label
-      in `scripts/pre_build_verification.sh` (currently `[29/29]`, includes the
-      new CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID invariant (§11.4.263, BOB-127,
-      Task 8 syscall-audit rec #1) alongside the earlier CM-KILLPG-PGID-GUARD +
-      CM-TEST-MOCK-PID-EXPLICIT-INT invariants (§11.4.263, BOB-126)) — a count,
-      not an asserted current PASS across all 29. NOTE: `scripts/compute-badges.sh`
+      in `scripts/pre_build_verification.sh` (currently `[30/30]`, includes the
+      new CM-BASH-UNIT-TESTS-EXECUTED invariant (§11.4.226 — the tests/unit/*.sh
+      bash suite was previously executed by NOTHING) alongside
+      CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID (§11.4.263, BOB-127, Task 8
+      syscall-audit rec #1), CM-KILLPG-PGID-GUARD and
+      CM-TEST-MOCK-PID-EXPLICIT-INT (§11.4.263, BOB-126)) — a count,
+      not an asserted current PASS across all 30. NOTE: `scripts/compute-badges.sh`
       computes this count correctly but its README-rewrite `awk` filter only
       matches `alt="tests"` / `alt="vitest"` — it does not actually rewrite
       this badge line despite logging "(unchanged, cross-checked, matches
       existing badge)"; this line was updated by hand from a live grep of
-      every `[N/N]` label in `scripts/pre_build_verification.sh` (max = 29).
+      every `[N/N]` label in `scripts/pre_build_verification.sh` (max = 30).
       Tracked as a pre-existing compute-badges.sh gap, out of this task's
       scope.
     - challenges: informational count of `challenges/scripts/*.sh` (31),

@@ -142,8 +142,16 @@ frontend/.angular/
 frontend/coverage/
 download-proxy/src/ui/dist/
 
-# Scheduler runtime files
-config/merge-service/
+# Scheduler runtime files.
+# NOTE: '/*' not '/' — git cannot re-include a file whose PARENT DIR is
+# excluded, so a bare 'config/merge-service/' would make the tracked config
+# below un-addable (§11.4.30 tracked content is never gitignored; §11.4.234(D)
+# the commit mechanism is always unblocked).
+# Guard: tests/unit/test_tracked_files_are_addable.sh
+config/merge-service/*
+!config/merge-service/data-model.yaml
+!config/merge-service/hooks.yaml
+!config/merge-service/log_event.sh
 
 # Duplicate source tree (container gets code via volume mount)
 config/download-proxy/src/
@@ -155,9 +163,30 @@ tmp/*
 !tmp/README.md
 
 # IDE directories
-.opencode/
+# '.opencode/*' not '.opencode/' — the tracked Spec Kit agent commands under
+# .opencode/command/ must stay addable (git cannot re-include a file whose
+# parent dir is excluded).
+.opencode/*
+!.opencode/command/
 .specify/*
 !.specify/README.md
+# The rest of .specify/ is TRACKED Spec Kit governance (templates, extensions,
+# scripts, integrations, manifests). Only .specify/workflows/ is generated and
+# stays ignored by the blanket rule above.
+!.specify/extensions/
+!.specify/extensions.yml
+!.specify/feature.json
+!.specify/init-options.json
+!.specify/integration.json
+!.specify/integrations/
+!.specify/scripts/
+!.specify/templates/
+# ...EXCEPT the vendored superspec extension checkout: it carries its OWN .git
+# (gitdir pointer), ~14 MB of PNG assets, and its own .github/workflows/ CI
+# file, and it DUPLICATES the root `superspec` submodule (same upstream,
+# WangX0111/superspec). Committing it would create a phantom gitlink that is
+# not registered in .gitmodules. Stays ignored.
+.specify/extensions/superspec/
 # .specify/memory/ holds the TRACKED project constitution — authoritative
 # governance source data, never a build artifact. Per §11.4.30 (tracked
 # authoritative content is never gitignored) and §11.4.215 (a doc that
@@ -201,7 +230,10 @@ config/boba.db-shm
 config/boba.db-wal
 
 # Local Claude Code settings (per-user)
-.claude/
+# '/*' not '/' — with a bare '.claude/' the negation below is INERT (git cannot
+# re-include a file whose parent dir is excluded), which silently made the
+# tracked §11.4.109 PreToolUse hook config un-addable.
+.claude/*
 # But track the project-level PreToolUse hook config
 !.claude/settings.json
 

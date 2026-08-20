@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 12
-**Last modified:** 2026-08-19T17:20:00+02:00
+**Revision:** 13
+**Last modified:** 2026-08-20T07:45:00+02:00
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -556,6 +556,89 @@ honest about starting now, not claiming a false complete history.
   claims the coverage escape is the install-gap on the ALREADY-KNOWN preventive paths, which is
   itself proven by 5 consecutive occurrences without a single mechanical detection.
 
+### COMPUTE-BADGES-CARRIER-MATCH — `compute-badges.sh` destroyed a README prose line (substring match, not structural) and accumulated a blank line in `docs/TESTING.md` on every run
+
+- **id:** COMPUTE-BADGES-CARRIER-MATCH (no `BOB-NNN` minted — fixed in the same session it was
+  found; slug per the §11.4.238 schema's "else a short slug").
+- **date:** 2026-08-20
+- **channel:** `agent-code-reading` — found while reviewing the `git diff` produced by running
+  `scripts/compute-badges.sh` as the prescribed remediation for a `CM-BADGE-FRESHNESS-CHECK` WARN.
+  The corruption was visible only because the diff was read line-by-line before committing.
+- **summary:** Two distinct defects in `scripts/compute-badges.sh`. (1) CORRUPTION: the README
+  rewrite used bare awk patterns `/alt="tests"/` and `/alt="vitest"/`, which fire on ANY line
+  containing those literals — including the prose paragraph at `README.md:56` that *documents this
+  very filter*. The script replaced that prose line with an `<img>` badge tag, destroying
+  documentation content. (2) NON-IDEMPOTENCE: the `docs/TESTING.md` section regenerator stripped
+  the old `## Test counts` section but NOT the blank line(s) preceding it, then unconditionally
+  re-emitted a leading blank line — accumulating one blank line per run without bound. The live
+  file had reached **7** accumulated blank lines, i.e. the defect had been running silently for
+  ~7 regenerations.
+- **escape-audit:** `CM-BADGE-FRESHNESS-CHECK` (invariant 26 in `scripts/pre_build_verification.sh`)
+  was the only standing check over this script, and it verifies **only that the badge COUNTS match
+  live counts** — it never asserted that the rewrite left non-badge content intact, so a rewrite
+  that corrupts prose while producing correct badge lines passes it. Worse, the checker is
+  *structurally incapable* of seeing this class: `compute-badges.sh --check` tests
+  `grep -qF "${PY_LINE}"`, and the corruption REPLACES the prose line with exactly `${PY_LINE}` —
+  so on a corrupted README the checker reports "in sync" (a §11.4.201(6) FALSE-NULL in the checker
+  itself). No check anywhere asserted idempotence, which is why defect (2) accumulated 7 times
+  undetected. This is the §11.4.201(7)(a) carrier-match footgun (match STRUCTURE, not substring)
+  reproducing inside our own tooling — the same class already anchored twice (§11.4.196(D)
+  process-carrier, §12.12 self-match).
+- **new-check:** `tests/unit/test_compute_badges_carrier_match.sh` (6 assertions), which drives the
+  REAL script through its REAL `--readme`/`--testing-md` invocation path (§11.4.201(11)) against a
+  fixture containing both a genuine badge block and a carrier prose line. §11.4.115 RED-capture
+  evidence, observed before the fix: `FAIL: carrier prose line was OVERWRITTEN — substring match
+  instead of structural match` with the fixture showing the prose line replaced by
+  `<img alt="tests" … python%20tests-5358%20collected-blue">`, and
+  `FAIL: TESTING.md: blank lines ACCUMULATE across runs (2 -> 3) — not idempotent`. GREEN after the
+  fix: `RESULT: 6 passed, 0 failed`, with the real `README.md` verified byte-identical (prose
+  survived) and the real `docs/TESTING.md` self-healing 7 → 1 blank lines. The test also carries a
+  false-negative guard (assertion 2 fails if a "fix" simply disables the rewrite, §11.4.201(1)).
+
+### GITIGNORE-SHADOWS-TRACKED-FILES — 58 TRACKED files were rejected by `git add`, silently breaking the §11.4.234 commit mechanism
+
+- **id:** GITIGNORE-SHADOWS-TRACKED-FILES (no `BOB-NNN` minted — fixed in the same session).
+- **date:** 2026-08-20
+- **channel:** `agent-code-reading` — surfaced when `scripts/commit-push-all.sh` aborted at stage 5
+  with `The following paths are ignored by one of your .gitignore files: .specify/memory` while
+  committing the tracked project constitution. A repo-wide sweep then generalised the instance.
+- **summary:** When a `.gitignore` rule matches a path that is ALSO tracked, `git add <path>` exits
+  NON-ZERO. Under `set -euo pipefail` that kills the mandated §11.4.234 commit entrypoint mid-run —
+  the file is committed in the repo and visibly modified in `git status`, yet impossible to commit
+  through the only sanctioned path. A sweep found **58** such tracked files across **five** rules:
+  `.claude/` (the §11.4.109 PreToolUse hook config), `.opencode/` (15 Spec Kit agent commands),
+  `.specify/*` (32 governance/template files), `config/merge-service/` (3 production config files),
+  `.playwright-mcp/` (8 generated snapshots). Notably `.gitignore:206` already carried
+  `!.claude/settings.json` — an INERT negation, because git cannot re-include a file whose parent
+  directory is excluded (`dir/` must be `dir/*` first). The author's intent was correct and had
+  been silently defeated for an unknown period.
+- **escape-audit:** NO check existed over the tracked-vs-ignored intersection at all — not in
+  `scripts/pre_build_verification.sh`, not in `scripts/commit-push-all.sh` (whose stage-2 cheap
+  validation checks `.env` leakage but never `git add`-ability), and not in any test. The condition
+  is invisible in normal operation because it only manifests when a shadowed file is *modified*;
+  all 58 sat dormant. The §11.4.234(D) always-unblocked invariant had no mechanical enforcement,
+  and §11.4.30 ("tracked authoritative content is never gitignored") existed only as prose — the
+  §11.4.227 prose-does-not-bind/seams-do failure verbatim.
+- **new-check:** `tests/unit/test_tracked_files_are_addable.sh`. Enumerates rule-matched tracked
+  paths in one `git check-ignore --no-index` pass, then verifies each through the REAL
+  `git add --dry-run` invocation path (§11.4.201(11)), and carries a **control needle** asserting
+  the detector can actually see (§11.4.201(7)(b) — a blind instrument and a clean repo both return
+  a quiet zero). §11.4.115 RED-capture evidence, observed before the fix: `FAIL: 50 TRACKED file(s)
+  are rejected by 'git add' — the §11.4.234 commit mechanism is broken for them`, each named with
+  its responsible rule, alongside `PASS: control needle: check-ignore instrument is seeing`. GREEN
+  after the `.gitignore` negations: `RESULT: 2 passed, 0 failed`. The 8 `.playwright-mcp/` entries
+  are held in a documented exclusion fence (§11.4.224(E) style) rather than silently un-ignored:
+  they are tracked GENERATED artifacts whose correct remedy is to stop tracking them (§11.4.30), a
+  removal that is an operator decision under §11.4.122 requiring the §11.4.124 git-history
+  investigation first — recorded as `TODO(PLAYWRIGHT-MCP-ARTIFACTS)` in the test.
+- **Honest boundary (§11.4.6):** the fix un-ignored the tracked trees and the guard prevents
+  recurrence repo-wide, but it does NOT retroactively prove the 58 shadowed files were otherwise
+  correct — only that they are now committable. Un-ignoring also revealed the vendored
+  `.specify/extensions/superspec/` checkout (own `.git` gitdir pointer, ~14 MB assets, its own
+  `.github/workflows/ci.yml`, duplicating the root `superspec` submodule); it was deliberately
+  RE-ignored rather than committed, since committing it would mint a phantom gitlink absent from
+  `.gitmodules`.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
@@ -568,7 +651,8 @@ honest about starting now, not claiming a false complete history.
 | 2026-08-18 (incremental, §11.4.209 review IMPORTANT-2 remedy — 1 new `### ` entry: `docs/workable_items.db` binary blob committed without differential evidence, discovered by `agent-code-reading`) | 0 | 1 (`agent-code-reading` x1: DB-BLOB-COMMITTED-WITHOUT-DELTA-3520621) | 100% |
 | 2026-08-18 (incremental, BOB-120 forced-logout incident — 1 new `### ` entry: 3rd occurrence of user@1000 SIGKILL on this project, plus the discovery that the BOB-116/task-77 preventive monitor itself lives inside the killed scope and cannot catch a kill landing before its own next fire) | 0 | 1 (`agent-code-reading` x1: FORCED-LOGOUT-2026-08-18-3RD) | 100% |
 | 2026-08-19 (incremental, BOB-124 forced-logout incident #5 — 1 new `### ` entry: 5th consecutive occurrence of user@1000 SIGKILL, escalating the coverage escape from "no preventive gate" to "4 authored preventive gates, 0 installed" — §11.4.250 heuristic-tower / architectural install-gap) | 0 | 1 (`operator-report` x1: FORCED-LOGOUT-2026-08-19-5TH) | 100% |
-| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **18** | **100%** |
+| 2026-08-20 (incremental, tooling-defect sweep during a commit/push round — 2 new `### ` entries: the `compute-badges.sh` carrier-match README corruption + non-idempotent TESTING.md regeneration, and the repo-wide gitignore-shadows-tracked-files break of the §11.4.234 commit mechanism) | 0 | 2 (`agent-code-reading` x2: COMPUTE-BADGES-CARRIER-MATCH, GITIGNORE-SHADOWS-TRACKED-FILES) | 100% |
+| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **20** | **100%** |
 
 **Pre-existing check-vs-table mismatch, found and fixed during this backfill (§11.4.6, not
 silently patched around):** `scripts/pre_build_verification.sh` invariant 19

@@ -312,8 +312,19 @@ awk -v py_line="${PY_LINE}" -v fe_line="${FE_LINE}" \
     -v py_count="${PY_COUNT}" -v fe_count="${FE_COUNT}" \
     -v py_subset="${PY_SUBSET_COUNT}" \
     '
-    /alt="tests"/          { print py_line; next }
-    /alt="vitest"/         { print fe_line; next }
+    # §11.4.201(7)(a) match STRUCTURE, not substring. The pre-fix patterns were
+    # bare /alt="tests"/ and /alt="vitest"/, which fire on ANY line containing
+    # those literals — including the prose paragraph in README.md that
+    # DOCUMENTS this very filter. That prose line was replaced with an <img>
+    # tag, destroying documentation (observed 2026-08-20). Two independent
+    # guards now apply, either of which alone would have prevented it:
+    #   (1) in_badge_block — we are inside the <p align="center"> badge block
+    #   (2) the line IS an <img …> tag whose src is a shields.io badge URL
+    # Regression test: tests/unit/test_compute_badges_carrier_match.sh
+    /<p align="center">/ { in_badge_block = 1 }
+    /<\/p>/              { in_badge_block = 0 }
+    in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="tests"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print py_line; next }
+    in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="vitest"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print fe_line; next }
     /Python unit \+ e2e \+ contract/ {
         if (py_subset == "NA") {
             print
@@ -354,7 +365,19 @@ if [[ -f "${TESTING_MD}" ]]; then
         awk '
             /^## Test counts \(machine-derived, §11\.4\.259\)/ { skip = 1; next }
             skip && /^## / { skip = 0 }
-            !skip { print }
+            !skip { lines[++n] = $0 }
+            END {
+                # Also drop the blank line(s) that PRECEDED the stripped
+                # heading. Without this, the unconditional leading `echo ""`
+                # in the regeneration block below appends one MORE blank line
+                # on every run and they accumulate without bound — the section
+                # is always re-appended at EOF, so trimming trailing blanks
+                # here is safe regardless of where the old section sat.
+                # §11.4.50 determinism: N runs must equal 1 run.
+                # Regression: tests/unit/test_compute_badges_carrier_match.sh
+                while (n > 0 && lines[n] ~ /^[[:space:]]*$/) { n-- }
+                for (i = 1; i <= n; i++) { print lines[i] }
+            }
         ' "${TESTING_MD}" > "${TMP_TESTING}"
         mv "${TMP_TESTING}" "${TESTING_MD}"
     fi
