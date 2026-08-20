@@ -1,0 +1,117 @@
+<h1
+id="scriptspre_buildcheck_cm_healthcheck_covers_served_ports.sh-cm-healthcheck-covers-served-ports">scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh
+— CM-HEALTHCHECK-COVERS-SERVED-PORTS</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-20T17:30:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-138 (defect fixed) / BOB-140 (engine
+upstreamed per §11.4.177)</p>
+<h2 id="overview">Overview</h2>
+<p>Asserts that every port a compose service SERVES appears in that
+service’s health check. A check probing only a subset asserts a PROXY
+signal (“one port answers”) in place of the REAL condition (“this
+service is serving”), so a service can report healthy indefinitely while
+its primary capability is dead (§11.4.201).</p>
+<p>Wired as <strong>pre-build invariant 44</strong>, BLOCKING.</p>
+<h2
+id="why-it-exists-the-forensic-anchor-bob-138-measured-2026-08-20">Why
+it exists — the forensic anchor (BOB-138, measured 2026-08-20)</h2>
+<p>The <code>download-proxy</code> service serves 7186 and 7187 from ONE
+process, but its health check probed only 7186. On a container reporting
+<code>Up 4 hours (healthy)</code>:</p>
+<pre><code>curl --max-time 6 http://localhost:7186/       -&gt; HTTP 200 in 0.096s
+curl --max-time 6 http://localhost:7187/health -&gt; HTTP 000 after 6.004s</code></pre>
+<p>The merge search service — the product’s primary capability — had
+been dead for roughly two hours, and nothing in the stack could observe
+it. An operator, a restart policy, and any
+<code>depends_on: service_healthy</code> all read “healthy”.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code></li>
+<li><code>python3</code> with <strong>PyYAML</strong>. If no interpreter
+with PyYAML is reachable the gate <strong>FAILs</strong> — it does not
+SKIP. A gate that cannot parse cannot assert, and a quiet zero from a
+blind instrument is indistinguishable from a clean tree
+(§11.4.201(6)).</li>
+<li>The constitution submodule checked out (the detection engine lives
+there).</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh <span class="at">--help</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh COMPOSE MANIFEST</span></code></pre></div>
+<p>Exit codes: <code>0</code> PASS · <code>1</code> FAIL ·
+<code>2</code> engine missing or engine usage error. Invariant 44 treats
+any non-zero (other than a timeout) as FAIL, so a missing submodule
+blocks rather than silently passes.</p>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<p>This file is a <strong>thin delegator</strong> (§11.4.177 /
+§11.4.28): it holds only boba’s scope DATA and <code>exec</code>s the
+shared engine at
+<code>constitution/scripts/gates/cm_healthcheck_covers_served_ports.sh</code>.
+No detection logic lives here, so it cannot drift from the engine. The
+engine carries no project literal; both the compose file and the
+manifest are inputs.</p>
+<p>The engine reports a finding when a service:</p>
+<ul>
+<li>serves a declared port its health check does not probe;</li>
+<li>serves ports but declares no health check at all;</li>
+<li>is declared in the manifest but absent from the compose file (stale
+entry);</li>
+<li>publishes ports or declares a health check but is
+<strong>UNDECLARED</strong> in the manifest — silence is not an
+exemption.</li>
+</ul>
+<p>Ports match as whole numbers, so 7187 never matches inside 71870 or
+17187.</p>
+<h2
+id="the-served-port-manifest-is-data-and-why-it-is-declared-not-derived">The
+served-port manifest is DATA, and why it is declared not derived</h2>
+<p><code>config/served_ports.yaml</code> (§11.4.35) lists, per compose
+service, the ports it serves. These services use
+<code>network_mode: host</code>, so there is no <code>ports:</code>
+mapping to derive from, and the environment mixes two indistinguishable
+meanings:</p>
+<pre><code>PROXY_PORT=7186          &lt;- a port this service SERVES
+MERGE_SERVICE_PORT=7187  &lt;- a port this service SERVES
+QBITTORRENT_PORT=7185    &lt;- a port this service CONNECTS TO</code></pre>
+<p>A gate sweeping <code>*_PORT</code> would demand a health check for a
+port the service does not serve — a false-positive refusal, which
+§11.4.201(1) forbids exactly as firmly as a false pass.</p>
+<p><strong>This trap is not hypothetical.</strong> The manifest’s first
+version declared
+<code>qbittorrent-proxy-go: serves [7186, 7187, 7188]</code>, taken from
+CLAUDE.md prose. The Dockerfile runs one binary binding 7187, so the
+gate failed a service whose health check was already correct. The
+manifest is now derived from source, and the doc was corrected
+(BOB-141).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Zero services checked</strong> → FAIL, not PASS. The gate
+refuses to call a blind run clean.</li>
+<li><strong>Both <code>test:</code> spellings</strong> (list form and
+string form) are handled.</li>
+<li><strong>Compose parsing limits</strong> (pre-existing, unchanged): a
+single compose file, with no <code>extends</code>, overlay or profile
+resolution. Not currently exercised by boba, but a consumer using
+overlays should know the manifest is checked against the base file
+only.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li>Engine:
+<code>constitution/scripts/gates/cm_healthcheck_covers_served_ports.sh</code></li>
+<li>Paired §1.1 mutation test:
+<code>constitution/scripts/gates/cm_healthcheck_covers_served_ports_mutation_test.sh</code>
+(13 fixtures: 11 FAIL-on-mutation, 2 PASS-on-clean negative
+controls)</li>
+<li>Data: <code>config/served_ports.yaml</code></li>
+<li>Evidence: <code>docs/qa/BOB-138/closure-evidence.md</code>,
+<code>docs/qa/BOB-140/closure-evidence.md</code></li>
+<li>Wiring: <code>scripts/pre_build_verification.sh</code> invariant
+44</li>
+</ul>
+<p><strong>Last verified:</strong> 2026-08-20 — delegator
+<code>PASS (5 services verified)</code>, mutation test
+<code>META PASS</code> 13/13, both fail-closed properties confirmed
+through the delegator.</p>
