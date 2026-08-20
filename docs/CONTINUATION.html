@@ -1,11 +1,146 @@
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 26 <strong>Last modified:</strong>
-2026-08-19T17:30:00Z</p>
+<p><strong>Revision:</strong> 27 <strong>Last modified:</strong>
+2026-08-20T12:17:48Z</p>
 <h2
-id="terminal-state-this-write-7-forced-logout-chain-closed-universal-11.4.263-anchor-landed">TERMINAL
-STATE (this write) — 7-forced-logout chain CLOSED + universal §11.4.263
-anchor landed</h2>
+id="terminal-state-this-write-45-commits-landed-since-rev-26-df7bc41-e0d60ab-constitution-v1.3.0-drift-review-bob-126-fallout-closed-quality-tooling-3-agent-fan-out">TERMINAL
+STATE (this write) — 45 commits landed since Rev 26 (df7bc41 → e0d60ab):
+constitution v1.3.0 drift-review, BOB-126 fallout closed,
+quality-tooling 3-agent fan-out</h2>
+<ul>
+<li><strong>Staleness measured, not assumed (§11.4.6)</strong>: Rev 26
+was written at <code>df7bc41</code> (2026-08-19T17:25:34+02:00). HEAD is
+now <code>e0d60ab</code> (2026-08-20T12:01:57+02:00) — <strong>45
+commits, ~19h elapsed</strong>, not the “53 days / 24+ commits” figure
+this session’s own workable item (BOB-081) was originally filed under;
+that figure described an earlier, since-superseded staleness state (Rev
+25 or before). <code>git status --porcelain</code> on <code>main</code>
+at write time shows the tree otherwise clean except an in-flight
+parallel edit (see below).</li>
+<li><strong>3 remotes IN SYNC at HEAD <code>e0d60ab</code></strong>
+(github/origin/upstream — 0 ahead / 0 behind, verified via
+<code>git fetch --all</code> + per-remote
+<code>git log --oneline &lt;remote&gt;/main..HEAD</code> and the
+reverse).</li>
+<li><strong>In-flight, NOT part of this write</strong>:
+<code>scripts/pre_build_verification.sh</code> (modified, uncommitted) +
+two new untracked files <code>scripts/lib/export_staleness.sh</code> and
+<code>tests/unit/test_export_staleness_oracle.sh</code>. These are
+consistent with the <code>TODO(EXPORT-SYNC-CONTENT-HASH)</code>
+migration plan e0d60ab left explicitly open (mtime-based
+export-staleness check is not reproducible across fresh clones —
+nanosecond mtime deltas + <code>.html</code> sorting before
+<code>.md</code> on checkout produced false-STALE on two fresh-clone
+runs). Owned by a concurrent session/agent per this task’s file-scope
+restriction; not committed, not evaluated here.</li>
+<li><strong>Constitution submodule bumped to v1.3.0</strong>
+(<code>78f18e8</code>, pointer now <code>502586c</code>) — full
+drift-review closing ~4 months of doc/code drift (container roster 2→5
+services, plugin roster 12→43, cookies-file autoload, Hard Stop #3
+orchestration ownership, Go webui-bridge profile, new Principles XII
+Anti-Bluff Captured Evidence + XIII Host-Session Safety) plus new
+universal anchor <strong>§11.4.263 process-group signal-safety
+mandate</strong> (the BOB-126 <code>killpg(pgid≤1)</code> forensic
+anchor, generalised across Python/Go/Rust/Bash/C).</li>
+<li><strong>BOB-126 fallout fully closed</strong>: BOB-127
+(evidence_path fix), BOB-128 (killpg-carrier guard collision with the
+new §11.4.263 gate — fixed <code>be36f32</code>;
+<code>CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID</code> landed as pre_build
+invariant 29), BOB-129 (<strong>real production slowapi/starlette
+rate-limiting defect</strong> found by a Task-105 subagent and fixed on
+production endpoints, before/after evidence captured —
+<code>44f3bbe</code>/<code>e141d5b</code>), BOB-130 (pre_build timeout
+raised for a genuinely CPU-bound 93s fixture), BOB-131/132/133/135
+registered. All eight registered/closed in the DB at
+<code>d9955d6</code>, exports regenerated.</li>
+<li><strong><code>5223f48</code> — 5 caveats closed with RED→GREEN
+evidence, not assertion</strong>: (1) <code>compute-badges.sh</code> — a
+bare <code>awk</code> filter had been corrupting README by overwriting
+its own documenting prose line, plus a non-idempotent
+<code>docs/TESTING.md</code> regenerator that had accumulated to 7 stray
+blank lines; both fixed + guarded
+(<code>test_compute_badges_carrier_match.sh</code>). (2) A
+<code>.gitignore</code> rule was shadowing 58 TRACKED files (including
+the §11.4.109 hook config <code>.claude/settings.json</code> and
+production <code>config/merge-service/*</code>), which made
+<code>git add</code> exit non-zero under <code>set -euo pipefail</code>
+— i.e. it could silently break the mandated commit entrypoint;
+unshadowed + guarded (<code>test_tracked_files_are_addable.sh</code>).
+(3) 2 dead constitution-mirror push URLs removed (repos verified
+non-existent via <code>gh</code>) — multi-URL fan-out was aborting on
+first failure and starving URLs 5–10; fan-out now completes 8/8. (4) QA
+discovery ledger: 2 new out-of-band entries with escape-audit +
+new-check, 18→20. (5) <code>speckit.git.initialize</code> root-cause
+fixed (an <code>.specify/extensions.yml</code> config omission).
+<strong>Bonus finding</strong>: <code>tests/unit/*.sh</code> were being
+executed by nothing (<code>ci.sh</code> only collects
+<code>test_*.py</code>) — new pre_build invariant 30
+<code>CM-BASH-UNIT-TESTS-EXECUTED</code> wires them in; first run
+immediately surfaced 3 latent FAILs, quarantined by name as tracked debt
+per §11.4.226 (predicted exactly this).</li>
+<li><strong><code>e0d60ab</code> (HEAD) — 3-agent fan-out, each verified
+by the controller, none accepted on claim (§11.4.262)</strong>: Agent 1
+fixed a ~50%-flaky DOCX-export test (GNU vs BSD <code>stat -f</code>
+syntax divergence — portable <code>portable_mtime()</code> helper
+landed, validated against real GNU/BSD polarity). Agent 2 stopped two
+challenge scripts from bumping mtimes of real tracked files on
+backup/restore (<code>cp</code>→<code>cp -p</code>), verified
+byte-identical + unchanged mtime/sha256 post-run. Agent 3 widened the
+mutation-residue “no-trace” assertion from 3 tracked paths to
+<strong>3958</strong> (main repo + constitution submodule —
+<code>git ls-files</code> does not descend into submodules), replacing a
+whole-second <code>stat -c%Y</code> compare (proven blind to same-second
+mutate+restore) with a <code>bash -nt</code>-vs-marker-file compare,
+plus three new §11.4.201 refusal branches (empty corpus / unenumerable
+legacy path / unproven control needle) and a 6-quadrant polarity proof
+against the shipped bytes. Controller work: 8 stale
+<code>.playwright-mcp</code> tracked snapshots untracked (kept on disk,
+zero consumers verified, operator-approved per §11.4.122);
+<code>docs/BOBA_DATABASE.md</code>’s dangling
+<code>§ Key Rotation</code> anchor fixed + the rotation procedure
+honestly marked NOT executable (no
+<code>rotate-key</code>/<code>envfile-replace</code> in source —
+corrects an earlier overclaim). QA ledger rev 15, entries 20→22, gate
+32/32 passed. <strong>One item deliberately left OPEN, not
+closed</strong>, per §11.4.226 evidence-class discipline:
+<code>EXPORT-SYNC-MTIME-NOT-REPRODUCIBLE-ON-FRESH-CLONE</code> — see the
+in-flight files noted above.</li>
+<li><strong>Standing follow-ups from Rev 26 — status re-checked this
+write</strong>: “helixqa nested dirty state” — <strong>now
+CLEAN</strong> (<code>git status --porcelain</code> inside
+<code>submodules/helixqa</code> returns empty at write time; superseded,
+no longer open). “Retrospective correction of BOB-116/120/123 incident
+docs” — <strong>DONE</strong> (<code>b696873</code>, landed same day as
+Rev 26, ~2 min after). “Constitution/gitverse push rejected by org
+policy” — <strong>still open</strong>, no new evidence found this write;
+remains a tracked §11.4.197 followup. “§11.4.185 manual QA before
+release tag” — <strong>UNKNOWN</strong>: no commit in the
+<code>df7bc41..HEAD</code> range references manual QA or §11.4.185; not
+confirmed done, not confirmed still pending — treat as still owed until
+evidence surfaces.</li>
+<li><strong>Open work-item tracker snapshot</strong>
+(<code>docs/workable_items.db</code>, queried live at write time):
+<strong>50 non-terminal items</strong> — 43 Queued, 3 In progress
+(BOB-066 Lava P3 upstream-proxy wiring, BOB-104 CodeGraph
+nested-.gitignore regression challenge, BOB-111 real rate limiting for
+boba’s 3 public HTTP endpoints), 4 Operator-blocked (BOB-008 RuTracker
+CAPTCHA, BOB-077 second Auto-commit host identification, BOB-101
+<code>--profile go</code> parity goal, BOB-102 LAN-exposure threat model
+— all await an explicit operator decision). The RD2-series backlog
+(BOB-065/068/069/070/074/076/078–100) covering egress diagnosis, the
+unattributed Auto-commit mechanism, DDoS/scaling/UX test-type coverage,
+and README doc-link completeness is still fully queued. Full enumerated
+list in <code>docs/Issues.md</code> /
+<code>docs/Issues_Summary.md</code> (§11.4.57/§11.4.212).</li>
+<li><strong>This entry closes BOB-081</strong> (RD2-14 — author this
+Session-N CONTINUATION.md entry). Test-count badges currently read 5358
+Python / 371 frontend tests collected (<code>README.md</code>, refreshed
+at <code>c37727b</code>).</li>
+</ul>
+<h2
+id="terminal-state-previous-write-7-forced-logout-chain-closed-universal-11.4.263-anchor-landed">TERMINAL
+STATE (previous write) — 7-forced-logout chain CLOSED + universal
+§11.4.263 anchor landed</h2>
 <ul>
 <li><strong>Pre-build state</strong>: full merge_service unit sweep
 863/863 PASS + Go 14/14 packages race-clean. Real captured evidence at

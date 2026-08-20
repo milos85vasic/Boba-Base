@@ -1,9 +1,26 @@
 # BobaLink Browser Extension — Status
 
-**Revision:** 15
-**Last modified:** 2026-06-13T13:10:00Z
+**Revision:** 16
+**Last modified:** 2026-08-20T12:27:23Z
 **Scope:** BobaLink (`extension/`) — WXT + TypeScript Manifest-V3 browser extension that detects magnet links and `.torrent` URLs and forwards them to the Boba merge service on port 7187.
 **Authority:** master plan `docs/browser_extension/IMPLEMENTATION_PLAN.md` (9 phases).
+
+> **Rev 16 (2026-08-20, BOB-083 / GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-16) —
+> staleness remediation (§11.4.44/§11.4.45/§11.4.86):** this ledger's last content
+> touch was `37fcbe4` (2026-06-13, Session 12/wave-15) — **68 days** before this
+> pass. Real evidence gathered this session (`git log`, a fresh `npx vitest run`,
+> `npx tsc --noEmit`, `npm run lint` — all executed just now, not recalled from
+> memory, §11.4.6): only **3 commits** touched `extension/` in the 68-day gap —
+> `ee4a01b` (2026-06-15, a genuine MV3 service-worker-teardown resilience fix,
+> new section below), `a410b91` (2026-06-16, coverage-only test additions, no
+> product change), and `54e313f` (2026-08-08, a mechanical `async`→
+> `Promise.resolve` test-fixture refactor in `torrent-file.test.ts`, no behavior
+> change). This is a **TARGETED refresh** (§11.4.6 option B, the same bounded-scope
+> discipline `docs/features/Status.md` Rev 8 used): the new session below documents
+> exactly what changed + a fresh full-suite run's real result; it does **not**
+> re-verify every pre-existing per-phase claim from Sessions 11–12 against the
+> current tree (out of scope for a docs-sync pass — see the honest gap noted in
+> the new session block).
 
 > Captured-evidence-driven (§11.4.5 / §11.4.45). Every PASS cites a real commit hash
 > and/or a verified test/file artifact. Rows lacking runtime evidence are marked
@@ -129,6 +146,83 @@ Two further parallel-subagent waves (§11.4.103), verified together by `extensio
   `vitest.config.ts testTimeout: 30s` so heavy perf/stress tests are never killed by the default
   5 s runner timeout under concurrent-suite contention (their real budgets are their own internal
   assertions). Subagents found **no product defects** in client/bencode/text-scanner.
+
+## Session 16 (2026-08-20) — 68-day staleness catch-up (BOB-083)
+
+Real `git log -- extension/` evidence: only 3 commits touched `extension/` between
+`37fcbe4` (2026-06-13, Session 12/wave-15) and this pass's HEAD `e0d60ab`
+(2026-08-20). All 3 reviewed:
+
+- **`ee4a01b` (2026-06-15) — genuine MV3 service-worker-teardown resilience fix
+  (crash-audit finding S3, `docs/issues/fixed/BUGFIXES.md`).** `tabResults` was a
+  bare top-level `Map<number, PageScanResult>` — MV3 service-worker in-memory
+  state that is DISCARDED whenever Chrome idles-out and tears down the worker
+  (~30s). After a teardown, the popup's `get-detected` read and the context-menu
+  "Send all" / `send-all` command both silently no-op'd (both are guarded by
+  `if (result)`), so a user's already-detected torrents vanished with no error.
+  Fixed in `extension/src/background/index.ts`: every write now goes through
+  `chrome.storage.session` (survives SW respawn within a browser session, cleared
+  on browser close — the correct lifetime) via new `getTabResult`/`setTabResult`
+  helpers, with the in-memory `Map` kept only as a fast-lane cache. RED
+  (null-after-simulated-teardown) → GREEN, permanent guard
+  `extension/tests/unit/background-sw-teardown.test.ts` (new file, 310 lines).
+  Independent review (conductor-reviews-subagent, §11.4.70/§11.4.142): **GO**, no
+  mutation residue.
+- **`a410b91` (2026-06-16) — coverage-only, no product change.**
+  `src/parser/torrent-file.ts` coverage 75.4% → 89.9%: `parseTorrentFromUrl` was
+  untested (success / 404 / network-wrap / content-type paths) and
+  `computeInfohash`'s error-wrap path was untested. Every new assertion RED-proven
+  against a mutated regression (§11.4.115) then restored GREEN. No defect found.
+- **`54e313f` (2026-08-08) — mechanical test-fixture refactor, no behavior
+  change.** `tests/unit/torrent-file.test.ts`'s `vi.stubGlobal("fetch", …)` mocks
+  rewritten from `async () => ({…})` to `() => Promise.resolve({…})` (same
+  resolved shape); `extension/package-lock.json` touched incidentally.
+
+**Fresh evidence gathered THIS session (2026-08-20, real commands, not recalled):**
+
+- `npx tsc --noEmit` → **clean** (exit 0).
+- `npm run lint` (`eslint src/ tests/ --ext .ts`) → **0 errors / 0 warnings**.
+- `npx vitest run` (full suite, this host, HEAD `e0d60ab`) →
+  **69 spec files (63 passed / 6 failed), 822 tests (815 passed / 7 failed)**,
+  duration 256.5s. `find tests src -iname '*.test.ts' -o -iname '*.spec.ts'`
+  independently counts **71** spec files on disk — the 2-file gap is
+  `tests/e2e/extension-loads.spec.ts` (Playwright, not collected by `vitest run`)
+  plus `tests/live/download-endpoint.live.test.ts` (reachability-gated, honest
+  SKIP when the backend is down per §11.4.3, not counted as a vitest pass/fail
+  here). This raises the previously-cited "814 passed (814)" baseline (Session
+  12/wave-15, 2026-06-13) to a real, freshly-measured **822** total (+8, from
+  `a410b91`'s new `torrent-file.ts` coverage tests).
+  - **The 7 failures are ALL bounded-time perf/stress/security-budget assertions,
+    not functional test failures**, and this run executed on a host that was
+    simultaneously running this docs-refresh agent's other work (heavy
+    concurrent load — 9 `node (vitest N)` worker processes observed live):
+    `tests/perf/scanner.perf.test.ts` (p99 budget), `tests/perf/parsers.perf.test.ts`,
+    `tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts` (sub-quadratic
+    scaling ratio), and `tests/security/scanner-hostile-input.test.ts` (junk-flood
+    30s bound — observed 120.9s, ≈4× over). This is the **exact same
+    host-load-coupled flakiness class** Session 12 already found and partially
+    hardened for sibling tests (BUGFIXES 27, §11.4.50/§11.4.118) — a tight
+    wall-clock budget failing under contention is a known instrument limitation
+    on this class of test, not by itself proof of a product regression.
+  - `PENDING_FORENSICS:` whether these 7 are pure host-contention flakes (the
+    established pattern) or a genuine new timing regression is **not resolved by
+    this pass** — confirming that requires re-running the suite in isolation on a
+    quiet host, which is out of this docs-only task's charter (this agent does not
+    own `tests/` or `extension/src/`; see the task-scope note in the Rev 16 header
+    above). Recorded honestly rather than asserted either way (§11.4.6).
+- Build artifacts: `.output/chrome-mv3/` present on disk; `firefox-mv2/` and the
+  per-store `bobalink-1.0.0-*.zip` files are **not** currently present in the
+  working tree (expected — gitignored build outputs of `ci-ext.sh`, not
+  regenerated in this pass since this is a docs-sync task, not a build task).
+  `ci-ext.sh` itself is present and executable; not re-run here.
+- **Honest scope boundary (§11.4.6):** the per-phase table below and the
+  Session-11/12 narrative above are carried forward UNCHANGED from Rev 15 except
+  where this session's evidence directly bears on them (the S3 resilience fix is
+  documented here, not retrofitted into the Session-11 Phase-4/5 rows, to avoid
+  rewriting history this pass did not re-verify). A full per-phase re-audit
+  against the current tree was judged out of the bounded scope of this
+  staleness-catch-up pass, exactly as `docs/features/Status.md` Rev 8 scoped
+  itself.
 
 ## Per-phase status
 

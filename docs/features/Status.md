@@ -1,9 +1,30 @@
 # Boba — Feature Status (all components)
 
-**Revision:** 8
-**Last modified:** 2026-08-18T13:33:41Z
+**Revision:** 9
+**Last modified:** 2026-08-20T12:27:23Z
 **Scope:** Every system component, service, infrastructure piece, and client app of the Boba project — one row per REAL unit (endpoint / handler / client method / component control / plugin / subcommand / script), grouped by component.
 **Authority:** assembled by READ-ONLY repo inventory (codegraph + grep + source reading) on 2026-06-15, expanded to per-unit granularity (§11.4.118 discovery-pressure) on 2026-06-16. Cross-references `AGENTS.md`, `CLAUDE.md`, `docs/REMAINING_WORK_PLAN.md`.
+
+> **Rev 9 (2026-08-20, BOB-083 / GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-16) —
+> staleness catch-up (§11.4.44/§11.4.45/§11.4.86):** 161 commits landed between the
+> Rev 8 pass (`e6162f7`, 2026-08-18) and this pass's HEAD (`e0d60ab`, 2026-08-20).
+> Real `git log e6162f7..HEAD` evidence: the overwhelming majority are the BOB-126
+> forced-logout `killpg(-1, SIGKILL)` incident chain (root cause found + closed,
+> new universal §11.4.263 anchor) plus surrounding test/gate/quality hardening
+> (BOB-127..135) — process-safety and CI-discipline work, **not new product
+> features**, so no new feature rows are warranted from that set (§11.4.6: verified
+> by reading the commit log, not assumed). Two exceptions **were** feature-relevant
+> and are corrected below with cited live evidence: **RW-06** (RuTracker ReDoS fix
+> deployment) — CLOSED live 2026-08-19 (`1c0389a`, BOB-093); **RW-07** (nnmclub
+> `/auth/nnmclub/status` SOURCE→ARTIFACT drift) — CLOSED live 2026-08-19 (`7baef2b`,
+> BOB-092). Both rows below updated to `PASS — LIVE` with their real evidence
+> paths. `docs/REMAINING_WORK_PLAN.md` itself was NOT edited (out of this task's
+> owned-file scope — see the Status_Summary companion for the plain-language
+> version of this note). Total features cataloged: **unchanged at 292** (no rows
+> added or removed this pass, only 2 existing rows' Validation cells corrected).
+> Every other pre-existing row was left untouched — a full per-unit re-audit
+> against the 161-commit delta was judged out of the bounded scope of this
+> staleness-catch-up pass, per the same §11.4.6 option-B discipline Rev 8 used.
 
 > **Rev 8 (2026-08-18, BOB-075) — staleness remediation (§11.4.44 / §11.4.86 / GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-08):** the audit's staleness claim was CONFIRMED, not a false positive — a real content edit landed in `ea86ce1` (2026-08-15, the docs_chain-engine row swap in §8d below) WITHOUT the Revision/Last-modified header being bumped, and 60 commits landed between the Rev 7 content commit (`646b295`, 2026-06-16) and this pass (`64705eb`, 2026-08-18) that were never reflected at row-granularity. This pass performed a TARGETED refresh (§11.4.6 option B — this document is narrative, "assembled by READ-ONLY repo inventory," not mechanically derivable from a single source-of-truth table, so a full per-unit re-audit of all 289 pre-existing rows was judged out of the bounded scope of a staleness-fix task and is NOT claimed here): added 3 new rows to §8d for scripts that shipped since Rev 7 and were completely absent from this ledger — `scripts/load-tracker-cookies.sh` (tracker-cookies autoload, `619a5f6`), `scripts/boba-svc.sh` (sudo-free systemd wrapper, `444d94e`), `scripts/commit-push-all.sh` (§11.4.234 dedicated commit/push entrypoint, `08e870e`) — each cited to its real source file + covering challenge. Total features cataloged: 289 → **292**. Every pre-existing row was left untouched (no content was invented to "look fresh"); the honest scope boundary of this pass is recorded under "Components NOT inventoried" below.
 
@@ -94,7 +115,7 @@ Entry: `download-proxy/src/main.py` (starts legacy proxy thread + uvicorn `api:a
 | `GET /auth/rutracker/captcha` — fetch CAPTCHA image (`auth.py:108`) | implemented | yes | integration `test_auth_and_links.py` | partial — operator-blocked (BOB-008) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `POST /auth/rutracker/login` — username/password + CAPTCHA login (`auth.py:214`) | implemented | yes | integration `test_auth_and_links.py` | partial — operator-blocked (BOB-008) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `POST /auth/rutracker/cookie-login` — cookie-based login (`auth.py:298`) | implemented | yes | integration `test_auth_and_links.py` | **PASS — LIVE 2026-06-16** — `RUTRACKER_COOKIES` cookie path authenticates (`2fc29fc`); rutracker `the matrix` = 50 real results on nezha (`docs/qa/search-fix-verify-20260616/` §1) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
-| `GET /auth/nnmclub/status` — NNM-Club session state (`auth.py:350`) | implemented | yes | e2e `test_live_stack_evidence.py:265` (skips — SOURCE→ARTIFACT drift RW-07) | partial — route 404 on running container (RW-07) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
+| `GET /auth/nnmclub/status` — NNM-Club session state (`auth.py:350`) | implemented | yes | e2e `test_live_stack_evidence.py:265` (no longer skips — see Rev 9) | **PASS — LIVE 2026-08-19 (BOB-092)** — RW-07 SOURCE→ARTIFACT drift resolved: live probe post-`./start.sh -p` returns HTTP 200 with `authenticated:bool` JSON (`docs/qa/2026-08-19-bob-092/nnmclub_status_probe_post_removal.txt`); the e2e's SKIP-on-404 fallback removed (`7baef2b`), test now hard-FAILs on recurrence instead of silently skipping | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `POST /auth/nnmclub/login` — NNM-Club login (`auth.py:407`) | implemented | yes | e2e `test_live_stack_evidence.py` | partial — live-gated | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `GET /auth/status` — all-tracker aggregate session state (`auth.py:479`) | implemented | yes | integration `test_auth_state_ui.py`; auth-status cookie-reflection test (§1.1) | **PASS — LIVE 2026-06-16** — now reflects `RUTRACKER_COOKIES`/`NNMCLUB_COOKIES` env before first search (`9c2f8dc`), so dashboard chips show rutracker/nnmclub green (`docs/qa/search-fix-verify-20260616/` §3) | N/A (no UI — test-covered + exercised by web Trackers tab auth chips) |
 | `POST /auth/qbittorrent/logout` — qBit WebUI logout (`auth.py:532`) | implemented | yes | integration `test_login_actions.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web qBit login dialog) |
@@ -334,7 +355,7 @@ Plugin contract: class with `url`, `name`, `supported_categories`, `search()`, `
 | `yts.py` | public | implemented | yes (curated) | stress `test_plugin_parsers_stress_chaos.py` | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `jackett.py` | aggregator | implemented | yes (curated) | covered via jackett autoconfig tests | tested-green-in-suite | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `iptorrents.py` | private (freeleech-only) | implemented | yes (curated) | integration `tests/integration/test_iptorrents.py` | **PASS — LIVE 2026-06-16** — full-fleet `the matrix` on nezha: **49** results, `success` (`docs/qa/search-fix-verify-20260616/` §6); freeleech-only policy enforced | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
-| `rutracker.py` | private (cookies / CAPTCHA) | implemented | yes (curated) | integration `test_tracker_auth_live.py`; cookie-injection `tests/unit/` rutracker-cookie test (§1.1); stress `test_plugin_parsers_stress_chaos.py` (ReDoS §11.4.85) | **PASS — LIVE 2026-06-16** — new `RUTRACKER_COOKIES` injection (`2fc29fc`) bypasses the CAPTCHA-walled login; `the matrix` returns **50** results incl. "Матрица / The Matrix" (`docs/qa/search-fix-verify-20260616/` §1,§6). ReDoS fix in source not yet deployed (RW-06); CAPTCHA password-login still operator-blocked (BOB-008) | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
+| `rutracker.py` | private (cookies / CAPTCHA) | implemented | yes (curated) | integration `test_tracker_auth_live.py`; cookie-injection `tests/unit/` rutracker-cookie test (§1.1); stress `test_plugin_parsers_stress_chaos.py` (ReDoS §11.4.85); ReDoS-deployment challenge `challenges/scripts/rutracker_redos_regex_bounds_challenge.sh` | **PASS — LIVE 2026-06-16** — new `RUTRACKER_COOKIES` injection (`2fc29fc`) bypasses the CAPTCHA-walled login; `the matrix` returns **50** results incl. "Матрица / The Matrix" (`docs/qa/search-fix-verify-20260616/` §1,§6). **RW-06 CLOSED — PASS — LIVE 2026-08-19 (BOB-093)**: bounded quadratic-safe regex `{0,512}` confirmed present in the deployed container copy (sha256-pinned, `docs/qa/BOB-093/`), RED-mutated unsafe form correctly flagged by the oracle, live rutracker search smoke returned HTTP 200/28607 bytes. CAPTCHA password-login still operator-blocked (BOB-008) | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `kinozal.py` | private | implemented | yes (curated) | integration `test_tracker_auth_live.py` | **PASS — LIVE 2026-06-16** — full-fleet `the matrix` on nezha: **50** results, `success` (`docs/qa/search-fix-verify-20260616/` §6) | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 | `nnmclub.py` | private (cookies) | implemented | yes (curated) | integration `test_tracker_auth_live.py` | **PASS — LIVE 2026-06-16** — `NNMCLUB_COOKIES` auth (Cloudflare Turnstile bypass): `the matrix` returns **50** results incl. "Matrix Resurrections (2021)" (`docs/qa/search-fix-verify-20260616/` §1,§6) | N/A (no UI — test-covered + exercised by web search flow) (tracker backend) |
 
@@ -594,6 +615,19 @@ Bridges qBittorrent WebUI with private-tracker auth. NOT a container.
 
 ## Components NOT inventoried / discrepancies (honest gaps, §11.4.6)
 
+- **Rev 9 scope boundary (BOB-083, 2026-08-20):** this pass corrected 2
+  pre-existing rows (RW-06 rutracker ReDoS-deploy row §4b, RW-07 nnmclub-status
+  row §1b) to `PASS — LIVE` with real evidence citations (`1c0389a`/BOB-093,
+  `7baef2b`/BOB-092), but did **NOT** re-audit the other ~290 pre-existing rows
+  against the 161-commit delta since Rev 8 (2026-08-18) — same bounded-scope
+  reasoning as Rev 8. Known-real, non-feature work that landed in that window
+  and is intentionally NOT itemized as new rows here (process-safety/CI
+  discipline, not a product feature): the BOB-126 `killpg(-1, SIGKILL)`
+  forced-logout incident chain root-cause + fix (`ad4b46a`, new universal
+  §11.4.263 anchor) and its surrounding gate/test hardening (BOB-127..135,
+  ~150 commits). A future pass MAY re-run the full inventory to close this gap
+  properly; until then this document is accurate for what it explicitly claims
+  and honestly incomplete for what it does not.
 - **Rev 8 scope boundary (BOB-075, 2026-08-18):** this pass added 3 new rows for
   scripts that shipped with no prior row (§8d) and fixed the missing Rev/date
   bump for the `ea86ce1` content edit, but did **NOT** re-audit the other ~289

@@ -181,8 +181,8 @@
 </header>
 <h1 id="boba-feature-status-all-components">Boba — Feature Status (all
 components)</h1>
-<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
-2026-08-18T13:33:41Z <strong>Scope:</strong> Every system component,
+<p><strong>Revision:</strong> 9 <strong>Last modified:</strong>
+2026-08-20T12:27:23Z <strong>Scope:</strong> Every system component,
 service, infrastructure piece, and client app of the Boba project — one
 row per REAL unit (endpoint / handler / client method / component
 control / plugin / subcommand / script), grouped by component.
@@ -191,6 +191,35 @@ control / plugin / subcommand / script), grouped by component.
 granularity (§11.4.118 discovery-pressure) on 2026-06-16.
 Cross-references <code>AGENTS.md</code>, <code>CLAUDE.md</code>,
 <code>docs/REMAINING_WORK_PLAN.md</code>.</p>
+<blockquote>
+<p><strong>Rev 9 (2026-08-20, BOB-083 /
+GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-16) — staleness catch-up
+(§11.4.44/§11.4.45/§11.4.86):</strong> 161 commits landed between the
+Rev 8 pass (<code>e6162f7</code>, 2026-08-18) and this pass’s HEAD
+(<code>e0d60ab</code>, 2026-08-20). Real
+<code>git log e6162f7..HEAD</code> evidence: the overwhelming majority
+are the BOB-126 forced-logout <code>killpg(-1, SIGKILL)</code> incident
+chain (root cause found + closed, new universal §11.4.263 anchor) plus
+surrounding test/gate/quality hardening (BOB-127..135) — process-safety
+and CI-discipline work, <strong>not new product features</strong>, so no
+new feature rows are warranted from that set (§11.4.6: verified by
+reading the commit log, not assumed). Two exceptions
+<strong>were</strong> feature-relevant and are corrected below with
+cited live evidence: <strong>RW-06</strong> (RuTracker ReDoS fix
+deployment) — CLOSED live 2026-08-19 (<code>1c0389a</code>, BOB-093);
+<strong>RW-07</strong> (nnmclub <code>/auth/nnmclub/status</code>
+SOURCE→ARTIFACT drift) — CLOSED live 2026-08-19 (<code>7baef2b</code>,
+BOB-092). Both rows below updated to <code>PASS — LIVE</code> with their
+real evidence paths. <code>docs/REMAINING_WORK_PLAN.md</code> itself was
+NOT edited (out of this task’s owned-file scope — see the Status_Summary
+companion for the plain-language version of this note). Total features
+cataloged: <strong>unchanged at 292</strong> (no rows added or removed
+this pass, only 2 existing rows’ Validation cells corrected). Every
+other pre-existing row was left untouched — a full per-unit re-audit
+against the 161-commit delta was judged out of the bounded scope of this
+staleness-catch-up pass, per the same §11.4.6 option-B discipline Rev 8
+used.</p>
+</blockquote>
 <blockquote>
 <p><strong>Rev 8 (2026-08-18, BOB-075) — staleness remediation (§11.4.44
 / §11.4.86 / GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-08):</strong> the
@@ -690,9 +719,15 @@ chips)</td>
 (<code>auth.py:350</code>)</td>
 <td>implemented</td>
 <td>yes</td>
-<td>e2e <code>test_live_stack_evidence.py:265</code> (skips —
-SOURCE→ARTIFACT drift RW-07)</td>
-<td>partial — route 404 on running container (RW-07)</td>
+<td>e2e <code>test_live_stack_evidence.py:265</code> (no longer skips —
+see Rev 9)</td>
+<td><strong>PASS — LIVE 2026-08-19 (BOB-092)</strong> — RW-07
+SOURCE→ARTIFACT drift resolved: live probe
+post-<code>./start.sh -p</code> returns HTTP 200 with
+<code>authenticated:bool</code> JSON
+(<code>docs/qa/2026-08-19-bob-092/nnmclub_status_probe_post_removal.txt</code>);
+the e2e’s SKIP-on-404 fallback removed (<code>7baef2b</code>), test now
+hard-FAILs on recurrence instead of silently skipping</td>
 <td>N/A (no UI — test-covered + exercised by web Trackers tab auth
 chips)</td>
 </tr>
@@ -2496,13 +2531,19 @@ backend)</td>
 <td>yes (curated)</td>
 <td>integration <code>test_tracker_auth_live.py</code>; cookie-injection
 <code>tests/unit/</code> rutracker-cookie test (§1.1); stress
-<code>test_plugin_parsers_stress_chaos.py</code> (ReDoS §11.4.85)</td>
+<code>test_plugin_parsers_stress_chaos.py</code> (ReDoS §11.4.85);
+ReDoS-deployment challenge
+<code>challenges/scripts/rutracker_redos_regex_bounds_challenge.sh</code></td>
 <td><strong>PASS — LIVE 2026-06-16</strong> — new
 <code>RUTRACKER_COOKIES</code> injection (<code>2fc29fc</code>) bypasses
 the CAPTCHA-walled login; <code>the matrix</code> returns
 <strong>50</strong> results incl. “Матрица / The Matrix”
-(<code>docs/qa/search-fix-verify-20260616/</code> §1,§6). ReDoS fix in
-source not yet deployed (RW-06); CAPTCHA password-login still
+(<code>docs/qa/search-fix-verify-20260616/</code> §1,§6). <strong>RW-06
+CLOSED — PASS — LIVE 2026-08-19 (BOB-093)</strong>: bounded
+quadratic-safe regex <code>{0,512}</code> confirmed present in the
+deployed container copy (sha256-pinned, <code>docs/qa/BOB-093/</code>),
+RED-mutated unsafe form correctly flagged by the oracle, live rutracker
+search smoke returned HTTP 200/28607 bytes. CAPTCHA password-login still
 operator-blocked (BOB-008)</td>
 <td>N/A (no UI — test-covered + exercised by web search flow) (tracker
 backend)</td>
@@ -4282,6 +4323,21 @@ encrypted boba.db</td>
 id="components-not-inventoried-discrepancies-honest-gaps-11.4.6">Components
 NOT inventoried / discrepancies (honest gaps, §11.4.6)</h2>
 <ul>
+<li><strong>Rev 9 scope boundary (BOB-083, 2026-08-20):</strong> this
+pass corrected 2 pre-existing rows (RW-06 rutracker ReDoS-deploy row
+§4b, RW-07 nnmclub-status row §1b) to <code>PASS — LIVE</code> with real
+evidence citations (<code>1c0389a</code>/BOB-093,
+<code>7baef2b</code>/BOB-092), but did <strong>NOT</strong> re-audit the
+other ~290 pre-existing rows against the 161-commit delta since Rev 8
+(2026-08-18) — same bounded-scope reasoning as Rev 8. Known-real,
+non-feature work that landed in that window and is intentionally NOT
+itemized as new rows here (process-safety/CI discipline, not a product
+feature): the BOB-126 <code>killpg(-1, SIGKILL)</code> forced-logout
+incident chain root-cause + fix (<code>ad4b46a</code>, new universal
+§11.4.263 anchor) and its surrounding gate/test hardening (BOB-127..135,
+~150 commits). A future pass MAY re-run the full inventory to close this
+gap properly; until then this document is accurate for what it
+explicitly claims and honestly incomplete for what it does not.</li>
 <li><strong>Rev 8 scope boundary (BOB-075, 2026-08-18):</strong> this
 pass added 3 new rows for scripts that shipped with no prior row (§8d)
 and fixed the missing Rev/date bump for the <code>ea86ce1</code> content

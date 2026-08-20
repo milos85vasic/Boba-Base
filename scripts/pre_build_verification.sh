@@ -371,6 +371,17 @@ fi
 # .docx siblings are gitignored per BOB-011 (WARNING only, not failure).
 echo "[16/23] CM-MARKDOWN-EXPORT-SYNC: all-Markdown export freshness (§11.4.65)"
 
+# §11.4.65 staleness oracle. NOT a plain mtime compare: git does not preserve
+# mtimes and ".html" sorts before ".md", so on any fresh clone every export
+# lands with an earlier mtime (measured: 65 and 68 false-stale pairs across two
+# checkout-index extractions of the SAME commit; .pdf 0/141, proving it is
+# alphabetical write order). The same mtime heuristic ALSO hides real staleness:
+# once an export's mtime drifts ahead, generate_markdown_exports.sh skips it
+# forever (measured: extract-tracker-cookies.md had IPTORRENTS 9x, its .html 0x).
+# See scripts/lib/export_staleness.sh + tests/unit/test_export_staleness_oracle.sh
+# shellcheck source=scripts/lib/export_staleness.sh
+source "${PROJECT_ROOT}/scripts/lib/export_staleness.sh"
+
 export_sync_violations=()
 export_docx_warnings=()
 
@@ -387,8 +398,8 @@ while IFS= read -r -d '' md; do
         sib="${md%.md}.${ext}"
         if [[ ! -f "${sib}" ]]; then
             export_sync_violations+=("${rel%.md}.${ext} missing")
-        elif [[ "${sib}" -ot "${md}" ]]; then
-            export_sync_violations+=("${rel%.md}.${ext} stale (older than ${rel})")
+        elif export_is_stale "${md}" "${sib}" "${PROJECT_ROOT}"; then
+            export_sync_violations+=("${rel%.md}.${ext} stale (source changed after export)")
         fi
     done
 

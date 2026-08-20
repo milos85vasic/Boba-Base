@@ -22,11 +22,18 @@ nodes:
   status_html: { kind: html,   path: docs/codegraph/Status.html }
   status_pdf:  { kind: pdf,    path: docs/codegraph/Status.pdf }
   status_docx: { kind: docx,   path: docs/codegraph/Status.docx }
+  status_summary_md:   { kind: status_summary, path: docs/codegraph/Status_Summary.md }
+  status_summary_html: { kind: html,           path: docs/codegraph/Status_Summary.html }
+  status_summary_pdf:  { kind: pdf,            path: docs/codegraph/Status_Summary.pdf }
+  status_summary_docx: { kind: docx,           path: docs/codegraph/Status_Summary.docx }
 
 edges:
   - { type: derive-from, from: status_md,   to: status_html, transform: md2html }
   - { type: derive-from, from: status_html, to: status_pdf,  transform: html2pdf }
   - { type: derive-from, from: status_md,   to: status_docx, transform: md2docx }
+  - { type: derive-from, from: status_summary_md,   to: status_summary_html, transform: md2html }
+  - { type: derive-from, from: status_summary_html, to: status_summary_pdf,  transform: html2pdf }
+  - { type: derive-from, from: status_summary_md,   to: status_summary_docx, transform: md2docx }
 
 transforms:
   md2html:  { builtin: pandoc-html }

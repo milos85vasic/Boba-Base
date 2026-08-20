@@ -1,190 +1,37 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Status</title>
-  <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
-    html {
-      color: #1a1a1a;
-      background-color: #fdfdfd;
-    }
-    body {
-      margin: 0 auto;
-      max-width: 36em;
-      padding-left: 50px;
-      padding-right: 50px;
-      padding-top: 50px;
-      padding-bottom: 50px;
-      hyphens: auto;
-      overflow-wrap: break-word;
-      text-rendering: optimizeLegibility;
-      font-kerning: normal;
-    }
-    @media (max-width: 600px) {
-      body {
-        font-size: 0.9em;
-        padding: 12px;
-      }
-      h1 {
-        font-size: 1.8em;
-      }
-    }
-    @media print {
-      html {
-        background-color: white;
-      }
-      body {
-        background-color: transparent;
-        color: black;
-        font-size: 12pt;
-      }
-      p, h2, h3 {
-        orphans: 3;
-        widows: 3;
-      }
-      h2, h3, h4 {
-        page-break-after: avoid;
-      }
-    }
-    p {
-      margin: 1em 0;
-    }
-    a {
-      color: #1a1a1a;
-    }
-    a:visited {
-      color: #1a1a1a;
-    }
-    img {
-      max-width: 100%;
-    }
-    svg {
-      height: auto;
-      max-width: 100%;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.4em;
-    }
-    h5, h6 {
-      font-size: 1em;
-      font-style: italic;
-    }
-    h6 {
-      font-weight: normal;
-    }
-    ol, ul {
-      padding-left: 1.7em;
-      margin-top: 1em;
-    }
-    li > ol, li > ul {
-      margin-top: 0;
-    }
-    blockquote {
-      margin: 1em 0 1em 1.7em;
-      padding-left: 1em;
-      border-left: 2px solid #e6e6e6;
-      color: #606060;
-    }
-    code {
-      white-space: pre-wrap;
-      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
-      font-size: 85%;
-      margin: 0;
-      hyphens: manual;
-    }
-    pre {
-      margin: 1em 0;
-      overflow: auto;
-    }
-    pre code {
-      padding: 0;
-      overflow: visible;
-      overflow-wrap: normal;
-    }
-    .sourceCode {
-     background-color: transparent;
-     overflow: visible;
-    }
-    hr {
-      border: none;
-      border-top: 1px solid #1a1a1a;
-      height: 1px;
-      margin: 1em 0;
-    }
-    table {
-      margin: 1em 0;
-      border-collapse: collapse;
-      width: 100%;
-      overflow-x: auto;
-      display: block;
-      font-variant-numeric: lining-nums tabular-nums;
-    }
-    table caption {
-      margin-bottom: 0.75em;
-    }
-    tbody {
-      margin-top: 0.5em;
-      border-top: 1px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    th {
-      border-top: 1px solid #1a1a1a;
-      padding: 0.25em 0.5em 0.25em 0.5em;
-    }
-    td {
-      padding: 0.125em 0.5em 0.25em 0.5em;
-    }
-    header {
-      margin-bottom: 4em;
-      text-align: center;
-    }
-    #TOC li {
-      list-style: none;
-    }
-    #TOC ul {
-      padding-left: 1.3em;
-    }
-    #TOC > ul {
-      padding-left: 0;
-    }
-    #TOC a:not(:hover) {
-      text-decoration: none;
-    }
-    span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    /* The extra [class] is a hack that increases specificity enough to
-       override a similar rule in reveal.js */
-    ul.task-list[class]{list-style: none;}
-    ul.task-list li input[type="checkbox"] {
-      font-size: inherit;
-      width: 0.8em;
-      margin: 0 0.8em 0.2em -1.6em;
-      vertical-align: middle;
-    }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-  </style>
-</head>
-<body>
-<header id="title-block-header">
-<h1 class="title">Status</h1>
-</header>
 <h1 id="bobalink-browser-extension-status">BobaLink Browser Extension —
 Status</h1>
-<p><strong>Revision:</strong> 15 <strong>Last modified:</strong>
-2026-06-13T13:10:00Z <strong>Scope:</strong> BobaLink
+<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
+2026-08-20T12:27:23Z <strong>Scope:</strong> BobaLink
 (<code>extension/</code>) — WXT + TypeScript Manifest-V3 browser
 extension that detects magnet links and <code>.torrent</code> URLs and
 forwards them to the Boba merge service on port 7187.
 <strong>Authority:</strong> master plan
 <code>docs/browser_extension/IMPLEMENTATION_PLAN.md</code> (9
 phases).</p>
+<blockquote>
+<p><strong>Rev 16 (2026-08-20, BOB-083 /
+GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-16) — staleness remediation
+(§11.4.44/§11.4.45/§11.4.86):</strong> this ledger’s last content touch
+was <code>37fcbe4</code> (2026-06-13, Session 12/wave-15) — <strong>68
+days</strong> before this pass. Real evidence gathered this session
+(<code>git log</code>, a fresh <code>npx vitest run</code>,
+<code>npx tsc --noEmit</code>, <code>npm run lint</code> — all executed
+just now, not recalled from memory, §11.4.6): only <strong>3
+commits</strong> touched <code>extension/</code> in the 68-day gap —
+<code>ee4a01b</code> (2026-06-15, a genuine MV3 service-worker-teardown
+resilience fix, new section below), <code>a410b91</code> (2026-06-16,
+coverage-only test additions, no product change), and
+<code>54e313f</code> (2026-08-08, a mechanical <code>async</code>→
+<code>Promise.resolve</code> test-fixture refactor in
+<code>torrent-file.test.ts</code>, no behavior change). This is a
+<strong>TARGETED refresh</strong> (§11.4.6 option B, the same
+bounded-scope discipline <code>docs/features/Status.md</code> Rev 8
+used): the new session below documents exactly what changed + a fresh
+full-suite run’s real result; it does <strong>not</strong> re-verify
+every pre-existing per-phase claim from Sessions 11–12 against the
+current tree (out of scope for a docs-sync pass — see the honest gap
+noted in the new session block).</p>
+</blockquote>
 <blockquote>
 <p>Captured-evidence-driven (§11.4.5 / §11.4.45). Every PASS cites a
 real commit hash and/or a verified test/file artifact. Rows lacking
@@ -384,6 +231,113 @@ tests are never killed by the default 5 s runner timeout under
 concurrent-suite contention (their real budgets are their own internal
 assertions). Subagents found <strong>no product defects</strong> in
 client/bencode/text-scanner.</li>
+</ul>
+<h2 id="session-16-2026-08-20-68-day-staleness-catch-up-bob-083">Session
+16 (2026-08-20) — 68-day staleness catch-up (BOB-083)</h2>
+<p>Real <code>git log -- extension/</code> evidence: only 3 commits
+touched <code>extension/</code> between <code>37fcbe4</code>
+(2026-06-13, Session 12/wave-15) and this pass’s HEAD
+<code>e0d60ab</code> (2026-08-20). All 3 reviewed:</p>
+<ul>
+<li><strong><code>ee4a01b</code> (2026-06-15) — genuine MV3
+service-worker-teardown resilience fix (crash-audit finding S3,
+<code>docs/issues/fixed/BUGFIXES.md</code>).</strong>
+<code>tabResults</code> was a bare top-level
+<code>Map&lt;number, PageScanResult&gt;</code> — MV3 service-worker
+in-memory state that is DISCARDED whenever Chrome idles-out and tears
+down the worker (~30s). After a teardown, the popup’s
+<code>get-detected</code> read and the context-menu “Send all” /
+<code>send-all</code> command both silently no-op’d (both are guarded by
+<code>if (result)</code>), so a user’s already-detected torrents
+vanished with no error. Fixed in
+<code>extension/src/background/index.ts</code>: every write now goes
+through <code>chrome.storage.session</code> (survives SW respawn within
+a browser session, cleared on browser close — the correct lifetime) via
+new <code>getTabResult</code>/<code>setTabResult</code> helpers, with
+the in-memory <code>Map</code> kept only as a fast-lane cache. RED
+(null-after-simulated-teardown) → GREEN, permanent guard
+<code>extension/tests/unit/background-sw-teardown.test.ts</code> (new
+file, 310 lines). Independent review (conductor-reviews-subagent,
+§11.4.70/§11.4.142): <strong>GO</strong>, no mutation residue.</li>
+<li><strong><code>a410b91</code> (2026-06-16) — coverage-only, no
+product change.</strong> <code>src/parser/torrent-file.ts</code>
+coverage 75.4% → 89.9%: <code>parseTorrentFromUrl</code> was untested
+(success / 404 / network-wrap / content-type paths) and
+<code>computeInfohash</code>’s error-wrap path was untested. Every new
+assertion RED-proven against a mutated regression (§11.4.115) then
+restored GREEN. No defect found.</li>
+<li><strong><code>54e313f</code> (2026-08-08) — mechanical test-fixture
+refactor, no behavior change.</strong>
+<code>tests/unit/torrent-file.test.ts</code>’s
+<code>vi.stubGlobal("fetch", …)</code> mocks rewritten from
+<code>async () =&gt; ({…})</code> to
+<code>() =&gt; Promise.resolve({…})</code> (same resolved shape);
+<code>extension/package-lock.json</code> touched incidentally.</li>
+</ul>
+<p><strong>Fresh evidence gathered THIS session (2026-08-20, real
+commands, not recalled):</strong></p>
+<ul>
+<li><code>npx tsc --noEmit</code> → <strong>clean</strong> (exit
+0).</li>
+<li><code>npm run lint</code>
+(<code>eslint src/ tests/ --ext .ts</code>) → <strong>0 errors / 0
+warnings</strong>.</li>
+<li><code>npx vitest run</code> (full suite, this host, HEAD
+<code>e0d60ab</code>) → <strong>69 spec files (63 passed / 6 failed),
+822 tests (815 passed / 7 failed)</strong>, duration 256.5s.
+<code>find tests src -iname '*.test.ts' -o -iname '*.spec.ts'</code>
+independently counts <strong>71</strong> spec files on disk — the 2-file
+gap is <code>tests/e2e/extension-loads.spec.ts</code> (Playwright, not
+collected by <code>vitest run</code>) plus
+<code>tests/live/download-endpoint.live.test.ts</code>
+(reachability-gated, honest SKIP when the backend is down per §11.4.3,
+not counted as a vitest pass/fail here). This raises the
+previously-cited “814 passed (814)” baseline (Session 12/wave-15,
+2026-06-13) to a real, freshly-measured <strong>822</strong> total (+8,
+from <code>a410b91</code>’s new <code>torrent-file.ts</code> coverage
+tests).
+<ul>
+<li><strong>The 7 failures are ALL bounded-time
+perf/stress/security-budget assertions, not functional test
+failures</strong>, and this run executed on a host that was
+simultaneously running this docs-refresh agent’s other work (heavy
+concurrent load — 9 <code>node (vitest N)</code> worker processes
+observed live): <code>tests/perf/scanner.perf.test.ts</code> (p99
+budget), <code>tests/perf/parsers.perf.test.ts</code>,
+<code>tests/stress/orchestrator-ratelimiter-tabgroup.stress.test.ts</code>
+(sub-quadratic scaling ratio), and
+<code>tests/security/scanner-hostile-input.test.ts</code> (junk-flood
+30s bound — observed 120.9s, ≈4× over). This is the <strong>exact same
+host-load-coupled flakiness class</strong> Session 12 already found and
+partially hardened for sibling tests (BUGFIXES 27, §11.4.50/§11.4.118) —
+a tight wall-clock budget failing under contention is a known instrument
+limitation on this class of test, not by itself proof of a product
+regression.</li>
+<li><code>PENDING_FORENSICS:</code> whether these 7 are pure
+host-contention flakes (the established pattern) or a genuine new timing
+regression is <strong>not resolved by this pass</strong> — confirming
+that requires re-running the suite in isolation on a quiet host, which
+is out of this docs-only task’s charter (this agent does not own
+<code>tests/</code> or <code>extension/src/</code>; see the task-scope
+note in the Rev 16 header above). Recorded honestly rather than asserted
+either way (§11.4.6).</li>
+</ul></li>
+<li>Build artifacts: <code>.output/chrome-mv3/</code> present on disk;
+<code>firefox-mv2/</code> and the per-store
+<code>bobalink-1.0.0-*.zip</code> files are <strong>not</strong>
+currently present in the working tree (expected — gitignored build
+outputs of <code>ci-ext.sh</code>, not regenerated in this pass since
+this is a docs-sync task, not a build task). <code>ci-ext.sh</code>
+itself is present and executable; not re-run here.</li>
+<li><strong>Honest scope boundary (§11.4.6):</strong> the per-phase
+table below and the Session-11/12 narrative above are carried forward
+UNCHANGED from Rev 15 except where this session’s evidence directly
+bears on them (the S3 resilience fix is documented here, not retrofitted
+into the Session-11 Phase-4/5 rows, to avoid rewriting history this pass
+did not re-verify). A full per-phase re-audit against the current tree
+was judged out of the bounded scope of this staleness-catch-up pass,
+exactly as <code>docs/features/Status.md</code> Rev 8 scoped
+itself.</li>
 </ul>
 <h2 id="per-phase-status">Per-phase status</h2>
 <table>
@@ -622,5 +576,3 @@ chrome+firefox builds); orchestrator + rate-limiter stress
 integration round-trips (real sendMessage→onMessage bridge);
 USER/INSTALL/DEV guides (§11.4.65 exports).</li>
 </ul>
-</body>
-</html>

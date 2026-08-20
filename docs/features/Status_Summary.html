@@ -180,14 +180,19 @@
 <h1 class="title">Status_Summary</h1>
 </header>
 <h1 id="boba-feature-status-summary">Boba — Feature Status Summary</h1>
-<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
-2026-06-16T23:30:00Z <strong>Scope:</strong> Two-audience summary
+<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
+2026-08-20T12:27:23Z <strong>Scope:</strong> Two-audience summary
 companion of <code>docs/features/Status.md</code> (§11.4.56). Page 1 =
 product/operator audience; Page 2 = software-engineer audience.</p>
 <blockquote>
 <p>Captured-evidence-driven (§11.4.5 / §11.4.45 / §11.4.56 / §11.4.86).
-Mirrors <code>Status.md</code> — when that file changes, regenerate this
-one (see <code>.docs_chain/contexts/features-status.yaml</code>).</p>
+Mirrors <code>Status.md</code> (currently Rev 9) — when that file
+changes, regenerate this one (see
+<code>.docs_chain/contexts/features-status.yaml</code>). <strong>Rev 8
+note (2026-08-20, BOB-083):</strong> this summary was 65 days stale
+(last synced at <code>Status.md</code> Rev 7, 2026-06-16) while
+<code>Status.md</code> had advanced to Rev 9 — regenerated from the
+current <code>Status.md</code> to close that gap.</p>
 </blockquote>
 <hr />
 <h2 id="page-1-for-the-product-operator-team">Page 1 — For the product /
@@ -206,20 +211,39 @@ add-to-qBittorrent, magnet copy/open, .torrent upload, and
 active-downloads view. - The Angular dashboard (search grid, magnet
 dialog, theme picker, qBit login, Jackett management tabs) and the
 BobaLink browser extension (detects magnet/.torrent links on any page,
-“Send” / “Send-All” to Boba) are both shipping and heavily tested (the
-extension alone has 559 passing tests). - Jackett indexers are
-auto-configured at startup; credentials live encrypted in a local
-database, edited from the dashboard’s Jackett page (boba-jackett service
-on :7189). - Private-tracker support (RuTracker, Kinozal, NNM-Club,
-IPTorrents) works through the WebUI bridge and download proxy. -
-<strong>Search now handles multi-word queries (verified live
-2026-06-16).</strong> A bug crashed ~17 trackers whenever a query
-contained a space (“the matrix”); it is fixed. A full-fleet
-<code>the matrix</code> search on the live stack returns <strong>2600
-results from 23 trackers with zero plugin crashes</strong>, and
-<strong>all four private trackers authenticate</strong> (RuTracker 50,
-NNM-Club 50, Kinozal 50, IPTorrents 49) using operator-supplied browser
-cookies. Proof: <code>docs/qa/search-fix-verify-20260616/</code>.</p>
+“Send” / “Send-All” to Boba) are both shipping and heavily tested. The
+extension’s test count was re-measured live this session: <strong>822
+automated tests across 69 files, 815 currently passing</strong> (see
+<code>docs/browser_extension/Status_Summary.md</code> Rev 4 for the full
+breakdown of the 7 not currently passing — they are timing/speed checks,
+not feature-broken checks, and the failure looks like normal
+computer-was-busy noise, not yet confirmed either way). - Jackett
+indexers are auto-configured at startup; credentials live encrypted in a
+local database, edited from the dashboard’s Jackett page (boba-jackett
+service on :7189). - Private-tracker support (RuTracker, Kinozal,
+NNM-Club, IPTorrents) works through the WebUI bridge and download proxy.
+- <strong>Search handles multi-word queries</strong> (fixed and
+live-verified 2026-06-16). A full-fleet <code>the matrix</code> search
+on the live stack returns <strong>2600 results from 23 trackers with
+zero plugin crashes</strong>, and <strong>all four private trackers
+authenticate</strong> (RuTracker 50, NNM-Club 50, Kinozal 50, IPTorrents
+49) using operator-supplied browser cookies. Proof:
+<code>docs/qa/search-fix-verify-20260616/</code>. - <strong>Two
+previously-pending items are now confirmed fixed and live
+(2026-08-19):</strong> the NNM-Club status indicator on the dashboard
+now correctly reflects real login state instead of always showing
+unavailable, and the RuTracker search speed fix is confirmed actually
+running in the live server (not just sitting in the source code unused).
+Both were double-checked against the real running system, not just the
+code. - <strong>A serious, unrelated background-safety bug was found and
+permanently fixed since the last update.</strong> A test-cleanup routine
+could, under a rare condition, accidentally send a “force-quit
+everything” signal to the whole computer session instead of just the one
+process it meant to stop — this could force-close the developer’s
+desktop session. It has been root-caused, fixed, and a permanent
+safeguard was added project-wide so this class of bug cannot recur
+silently. This does not affect end users running the product normally;
+it affected developers running the test suite on their own machine.</p>
 <p><strong>What’s partial or pending:</strong> - <strong>RuTracker
 login</strong> — automated cookie login now works: an operator pastes
 their browser cookies once (<code>RUTRACKER_COOKIES</code>) and
@@ -236,13 +260,14 @@ security hardenings are queued</strong> — some write endpoints are open
 by default on the LAN tunnel, and a couple of fetch paths need SSRF
 protection (tracked as RW-01..RW-05 in the remaining-work plan). An
 operator decision on LAN exposure gates how aggressive these need to be.
-- <strong>One private-tracker status route (NNM-Club)</strong> needs a
-container redeploy to go live (a source-vs-running drift, RW-07). -
-<strong>The RuTracker ReDoS speed fix</strong> is in the code but needs
-to be pushed into the running container (RW-06). - <strong>The Go
-backend is an opt-in preview, not the product</strong> — it replicates
-the API shape but is missing real plugin search, enrichment, and a
-working scheduler. The Python backend is the complete one.</p>
+- <del>One private-tracker status route (NNM-Club) needs a container
+redeploy to go live</del> <strong>DONE (2026-08-19) — see
+above.</strong> - <del>The RuTracker ReDoS speed fix is in the code but
+needs to be pushed into the running container</del> <strong>DONE
+(2026-08-19) — see above.</strong> - <strong>The Go backend is an opt-in
+preview, not the product</strong> — it replicates the API shape but is
+missing real plugin search, enrichment, and a working scheduler. The
+Python backend is the complete one.</p>
 <p><strong>What you (the operator) may need to act on:</strong> - Decide
 whether the LAN tunnel should stay open (<code>0.0.0.0</code>) or bind
 to localhost (RW-05). - Solve the RuTracker CAPTCHA once when private
@@ -250,35 +275,75 @@ RuTracker search is needed (BOB-008). - Decide whether the Go profile
 parity is a release goal (RW-09).</p>
 <p><strong>Honest note on testing depth:</strong> every feature in this
 catalog is backed by a real source file and, in nearly all cases, an
-automated test. Each of the 288 rows now carries a DEFINITIVE video
-status (no row left vague): <strong>28 are VIDEO-CONFIRMED</strong> —
-shown on-screen in a committed recording (the boba-ctl CLI
-status/health/list, the web dashboard search journey + tab navigation +
-qBit/Download buttons + theme + processing spinner +
+automated test. <code>Status.md</code> now catalogs <strong>292
+rows</strong> (unchanged this pass — only 2 rows’ correctness was
+updated, no rows added/removed). Its own per-row video tally (291 of the
+292 rows; a 1-row pre-existing count discrepancy <code>Status.md</code>
+itself flags and has not yet resolved) is: <strong>28
+VIDEO-CONFIRMED</strong> — shown on-screen in a committed recording (the
+boba-ctl CLI status/health/list, the web dashboard search journey + tab
+navigation + qBit/Download buttons + theme + processing spinner +
 bridge/qBit-Connected header indicator + Jackett credentials page &amp;
 Add-credential dialog, and the BobaLink extension scan/popup/options)
-(<code>docs/qa/recordings-20260615/</code>); <strong>246 are N/A (no
+(<code>docs/qa/recordings-20260615/</code>); <strong>249 N/A (no
 UI)</strong> — back-end endpoints, handlers, parsers, services and
 scripts that have no screen of their own and are confirmed by their
-tests plus the UI/CLI journey that drives them; <strong>14 are PENDING
-(UI — film next)</strong> — user-visible dialogs/controls (magnet
-dialog, qBit login dialog [can’t be shown without logout — qBit is
-already connected], confirm/tracker-stat dialogs, the Jackett indexer
+tests plus the UI/CLI journey that drives them; <strong>14 PENDING (UI —
+film next)</strong> — user-visible dialogs/controls (magnet dialog, qBit
+login dialog [can’t be shown without logout — qBit is already
+connected], confirm/tracker-stat dialogs, the Jackett indexer
 dialogs/tabs) not yet <em>individually</em> filmed. The 14 PENDING-UI
-items are the remaining visual-confirmation pass.</p>
+items are the remaining visual-confirmation pass. <strong>Not
+re-verified this pass:</strong> the other ~289 pre-existing rows were
+not re-checked against the ~161 commits that landed since the last full
+pass (2026-08-18) — see the engineering note below.</p>
 <hr />
 <h2 id="page-2-for-software-engineers">Page 2 — For software
 engineers</h2>
 <p><strong>Inventory method (2026-06-15, expanded 2026-06-16):</strong>
 read-only codegraph + grep + source reading across the repo, then
-expanded to per-unit granularity (§11.4.118). <strong>289 features
-cataloged</strong> across 8 components (Rev 7: +1 new
+expanded to per-unit granularity (§11.4.118). <strong>292 features
+cataloged</strong> across 8 components (Rev 8: +3 new host-script rows —
+<code>scripts/load-tracker-cookies.sh</code>,
+<code>scripts/boba-svc.sh</code>,
+<code>scripts/commit-push-all.sh</code>; Rev 7: +1 new
 <code>/api/v1/healthz</code> endpoint; was 135 at Rev 2 — finer
 granularity, one row per real
 endpoint/handler/client-method/component-control/plugin/subcommand/script).
 Every row in <code>Status.md</code> cites a source file (file:line where
 load-bearing), endpoint, command, or control. No invented features
 (§11.4.6).</p>
+<p><strong>Rev 9 delta (2026-08-20, BOB-083 / RD2-16) — 2 rows corrected
+with live evidence, 0 rows added:</strong> -
+<code>GET /auth/nnmclub/status</code> (§1b):
+<code>partial — 404 (RW-07)</code> →
+<strong><code>PASS — LIVE 2026-08-19</code></strong>
+(<code>7baef2b</code>, BOB-092): the e2e’s SKIP-on-404 fallback was
+removed after a live probe post-<code>./start.sh -p</code> confirmed
+HTTP 200 with <code>authenticated:bool</code>; evidence
+<code>docs/qa/2026-08-19-bob-092/nnmclub_status_probe_post_removal.txt</code>.
+RW-07 is CLOSED. - <code>rutracker.py</code> (§4b):
+<code>ReDoS fix not yet deployed (RW-06)</code> →
+<strong><code>PASS — LIVE 2026-08-19</code></strong>
+(<code>1c0389a</code>, BOB-093): the bounded <code>{0,512}</code> regex
+confirmed present (sha256-pinned) in the deployed container copy,
+RED-mutated unsafe form correctly flagged, live search smoke HTTP 200.
+RW-06 is CLOSED. Challenge:
+<code>challenges/scripts/rutracker_redos_regex_bounds_challenge.sh</code>
+(self-validated, §11.4.107(10)). - The other 161 commits in the
+<code>e6162f7..HEAD</code> range (2026-08-18→2026-08-20) are almost
+entirely the <strong>BOB-126 killpg forced-logout incident
+chain</strong> (<code>os.killpg(pgid, SIGKILL)</code> on an unvalidated
+<code>pgid</code> — a <code>MagicMock</code>-default <code>pid=1</code>
+propagated to <code>os.getpgid(1)==1</code> →
+<code>kill(-1, SIGKILL)</code>, force-killing every UID-1000 process;
+root-caused, fixed at <code>ad4b46a</code>, new universal constitution
+anchor <strong>§11.4.263</strong>) plus its surrounding
+gate/test/quality hardening (BOB-127..135). Process-safety and
+CI-discipline work, not a new product feature — no new rows minted from
+that set. <code>extension/</code>’s own 3-commit delta in the same
+window is covered separately in
+<code>docs/browser_extension/Status_Summary.md</code> Rev 4.</p>
 <p><strong>Component / feature counts + posture:</strong></p>
 <table>
 <colgroup>
@@ -300,12 +365,12 @@ load-bearing), endpoint, command, or control. No invented features
 <td>Download Proxy + Merge Search (Python/FastAPI)</td>
 <td><code>download-proxy/src</code> :7186/:7187</td>
 <td>69</td>
-<td>Shipped default; nearly all tested-green-in-suite. <strong>Rev 7:
-multi-word URL-encoding fix + cookie auth PROVEN live on nezha</strong>
-(2600 results / 23 trackers / 0 encoding crashes;
-rutracker/nnmclub/kinozal/iptorrents 50/50/50/49). New
-<code>GET /api/v1/healthz</code> JSON endpoint
-(<code>routes.py:37</code>, <code>137d7ff</code>). Open gaps: hooks auth
+<td>Shipped default; nearly all tested-green-in-suite. Multi-word
+URL-encoding fix + cookie auth PROVEN live on nezha (2600 results / 23
+trackers / 0 encoding crashes; rutracker/nnmclub/kinozal/iptorrents
+50/50/50/49). <strong>Rev 9: <code>/auth/nnmclub/status</code> RW-07
+drift CLOSED live (BOB-092).</strong> <code>GET /api/v1/healthz</code>
+JSON endpoint (<code>routes.py:37</code>). Open gaps: hooks auth
 (RW-01), default-open write surface (RW-02), SSRF (RW-03), magnet auth
 (RW-04); validator (BEP48/15) has no dedicated test; Kinozal/IPTorrents
 have no REST auth route.</td>
@@ -335,14 +400,13 @@ autoconfig, runs history, overrides, admin auth, hardened CORS.</td>
 <td><code>plugins/*.py</code></td>
 <td>30</td>
 <td>One row per real plugin present in tree (21 with matching file) +
-support modules. Parser sweep stress-chaos coverage. <strong>Rev 7:
-multi-word URL-encoding fix live-verified (<code>limetorrents</code>/§4a
-adopted plugins); rutracker/nnmclub/kinozal/iptorrents auth PASS live
-(50/50/50/49); <code>kickass.py</code> reclassified Won’t-fix
-structurally-impossible (§11.4.112, Cloudflare/JS-challenge).</strong>
-rutracker ReDoS fix not yet deployed (RW-06). CORRECTION:
-<code>install-plugin.sh</code> PLUGINS array has <strong>44
-entries</strong>, not 12; ~23
+support modules. Parser sweep stress-chaos coverage. Multi-word
+URL-encoding fix live-verified; rutracker/nnmclub/kinozal/iptorrents
+auth PASS live (50/50/50/49); <code>kickass.py</code> reclassified
+Won’t-fix structurally-impossible (§11.4.112, Cloudflare/JS-challenge).
+<strong>Rev 9: rutracker ReDoS deploy RW-06 CLOSED live
+(BOB-093).</strong> CORRECTION: <code>install-plugin.sh</code> PLUGINS
+array has <strong>44 entries</strong>, not 12; ~23
 (incl. <code>torrentproject</code>/<code>torrentscsv</code>) are curated
 names with no file in this tree — itemized as discrepancy rows, not
 asserted working.</td>
@@ -360,10 +424,15 @@ per Jackett page control.</td>
 <td>BobaLink extension</td>
 <td><code>extension/</code> (WXT MV3)</td>
 <td>39</td>
-<td>Per <code>docs/browser_extension/Status.md</code>;
-unit/integration/security/chaos/perf/a11y/live; built zips present.
-Itemized per popup control, scanner, parser, api module, shared util,
-and <strong>8 locales</strong> (en/de/es/fr/it/ja/pt/ru).</td>
+<td>Per <code>docs/browser_extension/Status.md</code> (Rev 16) /
+<code>Status_Summary.md</code> (Rev 4);
+unit/integration/security/chaos/perf/a11y/i18n/e2e/live.
+<strong>Re-measured live 2026-08-20: 822 tests / 69 spec files, 815
+passing</strong> (up from the 559/52 baseline this summary previously
+cited — see the companion doc for the full analysis of the 7
+currently-not-passing timing tests). Itemized per popup control,
+scanner, parser, api module, shared util, and <strong>8 locales</strong>
+(en/de/es/fr/it/ja/pt/ru).</td>
 </tr>
 <tr>
 <td>WebUI bridge</td>
@@ -374,12 +443,13 @@ and <strong>8 locales</strong> (en/de/es/fr/it/ja/pt/ru).</td>
 <tr>
 <td>Infra / CLI / scripts</td>
 <td>repo root + <code>scripts/</code></td>
-<td>40</td>
+<td>43</td>
 <td>Itemized: boba-ctl 5 subcommands + wrapper, lifecycle scripts,
-CI/test wrappers, and the full <code>scripts/</code> helper set.
-CORRECTION: <code>boba-ctl.sh</code> DOES exist
-(<code>scripts/boba-ctl.sh</code>), Rev 2 said it did not. Several
-scripts un-validated (no dedicated test).</td>
+CI/test wrappers, and the full <code>scripts/</code> helper set. Rev 8
+added 3 rows: <code>load-tracker-cookies.sh</code> (tracker-cookies
+autoload), <code>boba-svc.sh</code> (sudo-free systemd wrapper),
+<code>commit-push-all.sh</code> (§11.4.234 dedicated commit/push
+entrypoint). Several scripts un-validated (no dedicated test).</td>
 </tr>
 </tbody>
 </table>
@@ -398,7 +468,10 @@ Frontend:
 <code>frontend/src/app/components/{dashboard,magnet-dialog,qbit-login-dialog,theme-picker,tracker-stat-dialog}/</code>,
 <code>services/{api,sse,theme,toast,dialog}.service.ts</code>,
 <code>jackett/{credentials,indexers}/</code>. - Extension:
-<code>extension/src/{api,scanner,parser,popup,options,tabgroups,shared}/</code>.</p>
+<code>extension/src/{api,scanner,parser,popup,options,tabgroups,shared,background}/</code>.
+- BOB-126 killpg fix: <code>merge_service</code> guard code + §11.4.263
+(constitution anchor), evidence under <code>docs/incidents/</code> and
+the DB entries for BOB-124/125/126.</p>
 <p><strong>Test corpus locations:</strong> Python
 <code>tests/{unit,integration,e2e,security,stress,chaos,property,contract,concurrency,memory,observability,benchmark,performance,load,docs}/</code>;
 Go <code>qBitTorrent-go/internal/**/*_test.go</code> +
@@ -407,21 +480,34 @@ Go <code>qBitTorrent-go/internal/**/*_test.go</code> +
 <code>extension/tests/{unit,integration,security,chaos,perf,a11y,e2e,live,i18n}</code>.</p>
 <p><strong>Open work cross-reference:</strong>
 <code>docs/REMAINING_WORK_PLAN.md</code> RW-01..RW-21 + BOB-008
-(operator-blocked CAPTCHA). <strong>Live-verified fix batch (Rev
-7):</strong> <code>docs/qa/search-fix-verify-20260616/</code>
+(operator-blocked CAPTCHA). <strong>RW-06 and RW-07 are now CLOSED
+(2026-08-19, see Rev 9 delta above) —
+<code>docs/REMAINING_WORK_PLAN.md</code> itself was NOT edited by this
+pass</strong> (out of this task’s owned-file scope; a follow-up should
+update that plan doc’s own RW-06/RW-07 entries to match). Live-verified
+fix batch: <code>docs/qa/search-fix-verify-20260616/</code>
 (search/auth) + <code>docs/research/kickass_403_20260616/</code>
-(kickass won’t-fix); commits
-<code>137d7ff</code>/<code>da7d709</code>/<code>2fc29fc</code>/<code>9c2f8dc</code>/<code>7e9cab5</code>.</p>
+(kickass won’t-fix) + <code>docs/qa/BOB-093/</code> (RW-06) +
+<code>docs/qa/2026-08-19-bob-092/</code> (RW-07); commits
+<code>137d7ff</code>/<code>da7d709</code>/<code>2fc29fc</code>/<code>9c2f8dc</code>/<code>7e9cab5</code>/<code>1c0389a</code>/<code>7baef2b</code>.</p>
 <p><strong>Engineering follow-ups for this doc:</strong> - The Video
-column is now DEFINITIVE for all 288 rows (28 VIDEO-CONFIRMED / 14
-PENDING-UI / 246 N/A-no-UI). Remaining UI evidence gap = the 14
+column is DEFINITIVE for 291 of 292 rows (28 VIDEO-CONFIRMED / 14
+PENDING-UI / 249 N/A-no-UI; <code>Status.md</code> itself flags an
+unresolved 1-row count discrepancy from Rev ≤7, not reconciled by this
+pass). Remaining UI evidence gap = the 14
 <code>PENDING (UI — film next)</code> rows
 (magnet/qBit-login/confirm/tracker-stat dialogs + Jackett indexer
-dialogs/tabs); film those per §11.4.107/§11.4.143 to close it. The 246
+dialogs/tabs); film those per §11.4.107/§11.4.143 to close it. The 249
 N/A rows are back-end/script units with no screen of their own
 (test-covered + exercised by the confirmed UI/CLI journeys) — not a
-recording gap. - Confirm whether a Prometheus <code>/metrics</code>
-endpoint exists or stats are in-process only
+recording gap. - <strong>Owed from this pass:</strong> a full per-unit
+re-audit of the ~290 pre-existing rows against the 161-commit delta
+(2026-08-18→2026-08-20) was judged out of scope for this
+staleness-catch-up (§11.4.6 option B, same discipline as Rev 7→8).
+<code>docs/REMAINING_WORK_PLAN.md</code>’s own RW-06/RW-07 entries still
+read PARTIAL/UNVERIFIABLE and need a follow-up edit to match this doc’s
+now-CLOSED status for both. - Confirm whether a Prometheus
+<code>/metrics</code> endpoint exists or stats are in-process only
 (<code>GET /api/v1/stats</code>) — no
 <code>Counter()/Histogram()/Gauge()</code> definitions found in
 <code>download-proxy/src</code>. - Resolve the
@@ -432,6 +518,10 @@ curated-name-vs-missing-file discrepancy for the ~23 plugins in the
 Go
 <code>DownloadHandler</code>/<code>ActiveDownloadsHandler</code>/<code>FetchTorrent</code>
 stubs + scheduler driver loop (RW-10/RW-11) before the Go profile can
-claim parity.</p>
+claim parity. - Confirm (in isolation, on a quiet host) whether the 7
+currently-failing BobaLink extension timing/perf/stress tests are pure
+host-contention flakiness or a genuine new regression — not resolved by
+this pass (see <code>docs/browser_extension/Status_Summary.md</code> Rev
+4).</p>
 </body>
 </html>
