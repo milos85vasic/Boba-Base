@@ -72,8 +72,19 @@ class anilibra:
                     "pub_date": str(int(time.time())),
                 }
                 prettyPrinter(result)
-        except Exception:
-            pass
+        except Exception as e:
+            # §11.4.252(3): mirrors the fix applied to plugins/anilibra.py in the
+            # same commit. These two files are byte-identical twins (§11.4.251),
+            # so fixing only one creates exactly the fork that drifts. This
+            # handler used to swallow every per-release network/JSON failure, so
+            # a fully-broken torrents endpoint rendered as a silent empty result
+            # set with no reason. Non-fatal, so one bad release cannot abort the
+            # whole run.
+            #
+            # stderr, NOT stdout: nova3 parses plugin STDOUT, so a diagnostic
+            # printed there would corrupt the result stream it is meant to
+            # explain.
+            print(f"Release {release_id} error: {e}", file=__import__("sys").stderr)
 
     def download_torrent(self, url):
         """AniLibria returns magnet links directly."""

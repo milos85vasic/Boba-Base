@@ -6,6 +6,7 @@ Search order: os.environ → ./env file paths
 """
 
 import os
+import sys
 
 
 def load_env_files(*extra_paths: str):
@@ -27,8 +28,19 @@ def load_env_files(*extra_paths: str):
                             k, v = k.strip(), v.strip().strip('"').strip("'")
                             if k and k not in os.environ:
                                 os.environ[k] = v
-            except Exception:
-                pass
+            except Exception as exc:
+                # §11.4.252(3): a partially-read .env leaves earlier keys applied
+                # and silently drops the rest. Never swallow the reason -- a
+                # downstream "credentials not configured" warning would otherwise
+                # misname a corrupt/unreadable file as an absent one.
+                # Non-fatal by design: this loader runs at nova3 plugin-import
+                # time, so raising here would break plugin loading entirely. The
+                # credential precondition itself still fails closed downstream
+                # (rutracker sentinel check, iptorrents._login guard).
+                print(
+                    f"env_loader: failed to read {path}: {type(exc).__name__}: {exc}",
+                    file=sys.stderr,
+                )
 
 
 def get_env(key: str, default: str = "") -> str:

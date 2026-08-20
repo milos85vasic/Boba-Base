@@ -1,0 +1,17 @@
+# fail-open triage 2026-08-20 — RED baseline — 2026-08-20T15:38:57Z
+# git HEAD: c95b0c1
+
+E        +      where '' = <built-in method getvalue of _io.StringIO object at 0x7f539de11120>()
+E        +        where <built-in method getvalue of _io.StringIO object at 0x7f539de11120> = <_io.StringIO object at 0x7f539de11120>.getvalue
+
+docs/qa/fail-open-triage-20260820/test_bob144_fail_open_regression.py:389: AssertionError
+=========================== short test summary info ============================
+FAILED docs/qa/fail-open-triage-20260820/test_bob144_fail_open_regression.py::test_a1_env_loader_unreadable_file_emits_diagnostic
+FAILED docs/qa/fail-open-triage-20260820/test_bob144_fail_open_regression.py::test_a2_iptorrents_unreadable_credentials_file_emits_diagnostic
+FAILED docs/qa/fail-open-triage-20260820/test_bob144_fail_open_regression.py::test_a3_html_instead_of_torrent_surfaces_the_specific_reason[rutor-<html><body>Login required</body></html>]
+FAILED docs/qa/fail-open-triage-20260820/test_bob144_fail_open_regression.py::test_a3_html_instead_of_torrent_surfaces_the_specific_reason[rutracker-<!DOCTYPE html><html>Login required</html>]
+FAILED docs/qa/fail-open-triage-20260820/test_bob144_fail_open_regression.py::test_a4_no_bare_except_in_owned_first_party_plugins[rutor.py]
+FAILED docs/qa/fail-open-triage-20260820/test_bob144_fail_open_regression.py::test_a4_no_bare_except_in_owned_first_party_plugins[rutracker.py]
+FAILED docs/qa/fail-open-triage-20260820/test_bob144_fail_open_regression.py::test_a7_fetch_magnet_network_failure_emits_diagnostic
+FAILED docs/qa/fail-open-triage-20260820/test_bob144_fail_open_regression.py::test_a8_anilibra_release_fetch_failure_emits_diagnostic
+8 failed, 18 passed in 0.44s

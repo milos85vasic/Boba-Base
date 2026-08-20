@@ -342,12 +342,15 @@ class RuTracker(object):
                 raise ValueError("No data received from URL: {}".format(url))
 
             if not data.startswith(b"d"):
-                try:
-                    decoded = data.decode("utf-8", errors="ignore")
-                    if "<html" in decoded.lower() or "<!doctype" in decoded.lower():
-                        raise ValueError("Received HTML page instead of torrent file")
-                except:
-                    pass
+                # §11.4.252(3): the refusal must NAME the unresolved precondition.
+                # For a private tracker an HTML body almost always means the
+                # session expired / login failed -- the former bare `except:`
+                # caught the ValueError raised two lines above and replaced that
+                # actionable reason with the generic one. decode(errors="ignore")
+                # with a valid codec cannot raise, so the guard was unnecessary.
+                decoded = data.decode("utf-8", errors="ignore")
+                if "<html" in decoded.lower() or "<!doctype" in decoded.lower():
+                    raise ValueError("Received HTML page instead of torrent file")
                 raise ValueError("Downloaded data is not a valid torrent file")
 
             file_handle, temp_path = tempfile.mkstemp(suffix=".torrent", prefix="rutracker_")
@@ -365,9 +368,15 @@ class RuTracker(object):
                 sys.stdout.flush()
 
             except Exception as e:
-                try:
+                # §11.4.252 (bucket B after triage): narrowed from a bare `except:`, which
+                # also caught KeyboardInterrupt/SystemExit -- a Ctrl-C during cleanup of a
+                # credentialed download was silently discarded. The swallow itself is
+                # correct here: best-effort cleanup, and the real error re-raises below.
+                # Kept ABOVE the handler so the §11.4.252 gate can still SEE this site
+                # (a comment between `except` and `pass` blinds its detector).
+                try:  # noqa: SIM105
                     os.unlink(temp_path)
-                except:
+                except OSError:
                     pass
                 raise e
 

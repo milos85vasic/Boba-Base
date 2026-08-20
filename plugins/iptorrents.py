@@ -74,8 +74,18 @@ class iptorrents(object):
                                 self.username = v
                             elif k == "IPTORRENTS_PASSWORD" and not self.password:
                                 self.password = v
-                except Exception:
-                    pass
+                except Exception as exc:
+                    # §11.4.252(3): swallowing this makes an unreadable/corrupt
+                    # credentials file indistinguishable from an absent one --
+                    # _login() below would report "No credentials configured"
+                    # and hide the real cause. Never log the values themselves
+                    # (§11.4.10): the path and the exception type only.
+                    logger.warning(
+                        "IPTorrents: could not read credentials from %s: %s: %s",
+                        env_path,
+                        type(exc).__name__,
+                        exc,
+                    )
 
     def _login(self):
         if not self.username or not self.password:

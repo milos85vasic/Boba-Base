@@ -1451,10 +1451,20 @@ else
         _dlog="$(mktemp)"; _drc=0
         timeout "${CONST_GATE_TIMEOUT}" bash "${DANGER_GATE}" --root "${PROJECT_ROOT}/${_dr}" --quiet >"${_dlog}" 2>&1 || _drc=$?
         if [[ "${_drc}" -ne 0 ]]; then
-            _dn="$(grep -ac '^❌' "${_dlog}" || true)"
+            # A COUNT IS A LEAD; THE LINES ARE THE FINDINGS (§11.4.194(6)(b)).
+            # This previously counted every line starting with the failure
+            # marker — including the gate's OWN SUMMARY line, which also starts
+            # with it ("FAIL — 26 fail-open anti-pattern hit(s) found"). Each
+            # failing root therefore contributed exactly ONE phantom hit, and
+            # the reported total read 38 when the truth was 36.
+            #
+            # A finding line NAMES A LOCATION (" at <path>:<line>"); the summary
+            # never does. Matching that structure, rather than the marker glyph,
+            # is the §11.4.201(9) field-identity fix: a summary is not a finding.
+            _dn="$(grep -acE '^❌.* at .*:[0-9]+' "${_dlog}" || true)"
             DANGER_HITS=$((DANGER_HITS + ${_dn:-0}))
             DANGER_DETAIL+=("${_dr}:${_dn:-?}")
-            grep -a '^❌' "${_dlog}" | sed 's/^/        /' | sed -n '1,6p'
+            grep -aE '^❌.* at .*:[0-9]+' "${_dlog}" | sed 's/^/        /' | sed -n '1,6p'
         fi
         rm -f "${_dlog}"
     done

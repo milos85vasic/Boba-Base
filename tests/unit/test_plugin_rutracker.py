@@ -598,7 +598,10 @@ class TestDownloadTorrent:
         inst, _ = _load_rutracker()
         html_data = b"<html><body>Login required</body></html>"
         with patch.object(inst, "_open_url", return_value=html_data):
-            with pytest.raises(ValueError, match="not a valid torrent"):
+            # Reconciled per §11.4.120 — see the sibling note in
+            # tests/unit/test_plugin_rutor.py. test_non_torrent_binary_raises
+            # below still asserts the generic message for non-HTML input.
+            with pytest.raises(ValueError, match="Received HTML page instead of torrent file"):
                 inst.download_torrent("http://fake/dl.php?t=1")
 
     def test_non_torrent_binary_raises(self):

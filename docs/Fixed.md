@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 19
-**Last modified:** 2026-08-20T15:03:18Z
+**Revision:** 21
+**Last modified:** 2026-08-20T16:11:07Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1041,4 +1041,110 @@ POST /api/v1/search with {"query": "A"*100000} against the pre-fix service: acce
 
 **Acceptance criteria:**
 Oversized values are refused with HTTP 422 AND realistic values still return HTTP 200 (§11.4.201 both directions), proven against the live service over real HTTP.
+
+## BOB-140 — Upstream the healthcheck-covers-served-ports gate into constitution/scripts/gates/ and thin boba's copy to a delegator (§11.4.177)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-140/closure-evidence.md
+**Severity:** Medium
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-20T14:56:38Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh (landed with BOB-138)
+implements a rule every project under this constitution needs: a container health
+check MUST cover every port its service serves, because a check probing a subset
+asserts a proxy signal instead of the real condition (§11.4.201).
+
+Its detection logic already carries ZERO boba literals -- both the compose file and
+the served-port manifest are inputs, defaulted from the project root. It therefore
+belongs in constitution/scripts/gates/ and should be consumed BY REFERENCE by a thin
+boba delegator holding only boba's scope DATA, exactly as
+check_cm_killpg_pgid_guard.sh was restructured (§11.4.177 / §11.4.28 / §11.4.74).
+
+WHY IT WAS NOT UPSTREAMED IMMEDIATELY: a concurrent agent was editing
+constitution/scripts/gates/ at the time (upstreaming the killpg engine). Two writers
+in one submodule directory risks losing work, so this was deferred deliberately and
+filed rather than silently skipped (§11.4.197). This is a known-and-tracked
+deviation from §11.4.177, not an oversight.
+
+Two properties MUST survive the move:
+  1. FAIL when zero services were checked -- a quiet zero from a blind instrument is
+     indistinguishable from a clean tree (§11.4.201(6)).
+  2. FAIL when python3+PyYAML is unavailable, rather than skipping, for the same
+     reason.
+
+Acceptance: the engine lives in constitution/scripts/gates/, boba's copy is a thin
+delegator carrying only its manifest path, both directions still verified (a service
+missing a served port FAILs; a fully-covered set PASSes), and no detection logic is
+duplicated between the two.
+
+**Affected scope / file-scope manifest:**
+scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh, config/served_ports.yaml, constitution/scripts/gates/
+
+**Reproduction / context:**
+n/a — known deviation recorded at landing time, not a discovered defect.
+
+**Acceptance criteria:**
+Detection engine in constitution/scripts/gates/; boba ships a thin delegator with scope DATA only; zero duplicated detection logic; both polarity directions still verified after the move.
+
+## BOB-139 — SSE _client_gone() swallows every exception into 'client still connected', so a raising disconnect probe streams forever (fail-open)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-139/closure-evidence.md
+**Severity:** Medium
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T14:47:35Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+Both SSE generators in download-proxy/src/api/streaming.py (lines ~153 and ~351)
+guard their `while True` loop with this helper:
+
+    async def _client_gone() -> bool:
+        if request is None:
+            return False
+        try:
+            return await request.is_disconnected()
+        except Exception:
+            return False
+
+The bare `except Exception: return False` means: if the disconnect check itself
+ever raises, the generator concludes the client is STILL CONNECTED and keeps
+streaming -- forever. That is fail-OPEN on the only condition that terminates the
+loop, in a code path that holds a socket and a task.
+
+This is the §11.4.252 fail-closed rule inverted: the safe default for "I cannot
+determine whether the client is gone" is to treat it as gone and stop streaming
+(the client can always reconnect -- SSE is designed for that), not to keep an
+unbounded stream alive on an unresolvable signal.
+
+It is also a §11.4.201(6) false-null: a raising probe and a genuinely-connected
+client return the identical `False`, so the loop cannot distinguish "client is
+here" from "I am blind".
+
+Corroborating observation (2026-08-20): seven sockets held by the merge-service
+process were sitting in CLOSE-WAIT with unread request bytes -- clients had hung
+up and the server had not noticed. That is consistent with (though not yet proven
+to be caused by) this fail-open, and it is the reason this is filed rather than
+left as a style note.
+
+HONEST BOUNDARY: not proven to be the cause of the 7187 wedge -- both loops DO
+call `await asyncio.sleep(poll_interval)`, so they yield and would not busy-spin.
+This is filed as a real defect on its own merits (an unbounded stream on an
+unresolvable signal, plus a leaked socket and task), not as the wedge's root cause.
+
+**Affected scope / file-scope manifest:**
+download-proxy/src/api/streaming.py (_client_gone at ~line 153 and ~line 351)
+
+**Reproduction / context:**
+Monkeypatch Request.is_disconnected to raise, open an SSE stream, disconnect the client, and observe the generator never terminates (the loop keeps yielding and the task is never reclaimed).
+
+**Acceptance criteria:**
+A raising disconnect probe terminates the stream (fail-closed per §11.4.252) rather than continuing it, AND a normally-connected client still streams uninterrupted (§11.4.201 both directions). Guard: a unit test for each SSE generator covering raise -> terminate and connected -> continue.
 

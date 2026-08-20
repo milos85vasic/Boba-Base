@@ -72,8 +72,13 @@ class anilibra:
                     "pub_date": str(int(time.time())),
                 }
                 prettyPrinter(result)
-        except Exception:
-            pass
+        except Exception as e:
+            # §11.4.252(3): search() already reports its own failures on stderr
+            # (see above); this handler used to swallow every per-release
+            # network/JSON failure, so a fully-broken torrents endpoint rendered
+            # as a silent empty result set with no reason. Same stderr idiom as
+            # search(); non-fatal so one bad release cannot abort the whole run.
+            print(f"Release {release_id} error: {e}", file=__import__("sys").stderr)
 
     def download_torrent(self, url):
         """AniLibria returns magnet links directly."""

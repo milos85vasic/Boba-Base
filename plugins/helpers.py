@@ -217,7 +217,14 @@ def fetch_magnet_from_page(url: str, regex_pattern: Optional[str] = None) -> str
         match = re.search(regex_pattern, page_content)
         if match:
             return match.group(0)
-    except Exception:
-        pass
+    except Exception as exc:
+        # §11.4.252(3): without this the caller cannot tell a network/TLS/HTTP
+        # failure apart from "this page genuinely has no magnet link" -- both
+        # returned "". The empty-string contract is preserved (callers treat it
+        # as "not found" and fall back), but the reason is now surfaced.
+        print(
+            f"helpers.fetch_magnet_from_page: {url} failed: {type(exc).__name__}: {exc}",
+            file=sys.stderr,
+        )
 
     return ""

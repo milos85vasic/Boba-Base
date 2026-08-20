@@ -436,7 +436,15 @@ class TestDownloadTorrent:
         instance, _, _ = _load_rutor()
         html_data = b"<html><body>Error page</body></html>"
         with patch.object(instance, "_request", return_value=html_data):
-            with pytest.raises(ValueError, match="not a valid torrent file"):
+            # Reconciled per §11.4.120. This gate asserted the GENERIC message,
+            # which an HTML body only ever produced because a bare `except:`
+            # swallowed the SPECIFIC ValueError raised two lines above it. With
+            # the swallow removed the specific reason reaches the caller, so the
+            # FAIL was the fix landing, not a regression. Asserting the specific
+            # message is what lets this gate catch a re-introduced swallow —
+            # test_non_bencode_non_html_raises below still asserts the GENERIC
+            # message for non-HTML junk, proving the fix did not over-broaden.
+            with pytest.raises(ValueError, match="Received HTML page instead of torrent file"):
                 instance._download_torrent("https://rutor.info/download/12345")
 
     def test_non_bencode_non_html_raises(self):

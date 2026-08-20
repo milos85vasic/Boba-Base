@@ -118,7 +118,11 @@ def date_normalize(date_str: str) -> int:
     try:
         date_str = [date_str.replace(m, f"{i:02d}") for i, m in enumerate(months, 1) if m in date_str][0]
         return int(time.mktime(time.strptime(date_str, "%d %m %y")))
-    except:
+    except (IndexError, ValueError, OverflowError, OSError):
+        # §11.4.252: narrowed from a bare `except:`. The "now" fallback is the
+        # intended behaviour for an unparseable tracker date, but the bare form
+        # also caught KeyboardInterrupt/SystemExit. IndexError = no month matched,
+        # ValueError = strptime mismatch, OverflowError/OSError = mktime range.
         return int(time.time())
 
 
@@ -296,12 +300,15 @@ class Rutor:
 
         # Verify this looks like a torrent file
         if not response.startswith(b"d"):
-            try:
-                decoded = response.decode("utf-8", errors="ignore")
-                if "<html" in decoded.lower():
-                    raise ValueError("Received HTML page instead of torrent file")
-            except:
-                pass
+            # §11.4.252(3): the refusal must NAME the unresolved precondition.
+            # The former bare `except:` here caught the ValueError raised two
+            # lines above, destroying the operator-actionable "you are being
+            # served a login page" signal and reporting the generic message
+            # instead. decode(errors="ignore") with a valid codec cannot raise,
+            # so the guard was both harmful and unnecessary.
+            decoded = response.decode("utf-8", errors="ignore")
+            if "<html" in decoded.lower():
+                raise ValueError("Received HTML page instead of torrent file")
             raise ValueError("Downloaded data is not a valid torrent file")
 
         file_handle, temp_path = tempfile.mkstemp(suffix=".torrent", prefix="rutor_")
@@ -319,9 +326,15 @@ class Rutor:
             sys.stdout.flush()
 
         except Exception as e:
-            try:
+            # §11.4.252 (bucket B after triage): narrowed from a bare `except:`, which
+            # also caught KeyboardInterrupt/SystemExit -- a Ctrl-C during cleanup of a
+            # credentialed download was silently discarded. The swallow itself is
+            # correct here: best-effort cleanup, and the real error re-raises below.
+            # Kept ABOVE the handler so the §11.4.252 gate can still SEE this site
+            # (a comment between `except` and `pass` blinds its detector).
+            try:  # noqa: SIM105
                 os.unlink(temp_path)
-            except:
+            except OSError:
                 pass
             raise e
 

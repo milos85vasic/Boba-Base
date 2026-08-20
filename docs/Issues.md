@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 12
-**Last modified:** 2026-08-20T15:54:29Z
+**Revision:** 13
+**Last modified:** 2026-08-20T16:11:07Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -532,62 +532,6 @@ Leave the qbittorrent-proxy container running for several hours with search traf
 **Acceptance criteria:**
 The spinning frame is identified from a real Python stack dump (not inferred), the busy-loop is fixed at its root, and a regression guard proves 7187 still answers after a sustained-traffic soak. Evidence: before/after curl timings on both ports plus a thread-state census showing no permanently-R thread.
 
-## BOB-139 — SSE _client_gone() swallows every exception into 'client still connected', so a raising disconnect probe streams forever (fail-open)
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Medium
-**Created-By:** Claude
-
-**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T14:47:35Z
-**Reported-By:** Claude
-
-**What (the report, verbatim):**
-Both SSE generators in download-proxy/src/api/streaming.py (lines ~153 and ~351)
-guard their `while True` loop with this helper:
-
-    async def _client_gone() -> bool:
-        if request is None:
-            return False
-        try:
-            return await request.is_disconnected()
-        except Exception:
-            return False
-
-The bare `except Exception: return False` means: if the disconnect check itself
-ever raises, the generator concludes the client is STILL CONNECTED and keeps
-streaming -- forever. That is fail-OPEN on the only condition that terminates the
-loop, in a code path that holds a socket and a task.
-
-This is the §11.4.252 fail-closed rule inverted: the safe default for "I cannot
-determine whether the client is gone" is to treat it as gone and stop streaming
-(the client can always reconnect -- SSE is designed for that), not to keep an
-unbounded stream alive on an unresolvable signal.
-
-It is also a §11.4.201(6) false-null: a raising probe and a genuinely-connected
-client return the identical `False`, so the loop cannot distinguish "client is
-here" from "I am blind".
-
-Corroborating observation (2026-08-20): seven sockets held by the merge-service
-process were sitting in CLOSE-WAIT with unread request bytes -- clients had hung
-up and the server had not noticed. That is consistent with (though not yet proven
-to be caused by) this fail-open, and it is the reason this is filed rather than
-left as a style note.
-
-HONEST BOUNDARY: not proven to be the cause of the 7187 wedge -- both loops DO
-call `await asyncio.sleep(poll_interval)`, so they yield and would not busy-spin.
-This is filed as a real defect on its own merits (an unbounded stream on an
-unresolvable signal, plus a leaked socket and task), not as the wedge's root cause.
-
-**Affected scope / file-scope manifest:**
-download-proxy/src/api/streaming.py (_client_gone at ~line 153 and ~line 351)
-
-**Reproduction / context:**
-Monkeypatch Request.is_disconnected to raise, open an SSE stream, disconnect the client, and observe the generator never terminates (the loop keeps yielding and the task is never reclaimed).
-
-**Acceptance criteria:**
-A raising disconnect probe terminates the stream (fail-closed per §11.4.252) rather than continuing it, AND a normally-connected client still streams uninterrupted (§11.4.201 both directions). Guard: a unit test for each SSE generator covering raise -> terminate and connected -> continue.
-
 ## BOB-141 — CLAUDE.md claims the Go profile serves 7186/7187/7188 but its container binds only 7187 — doc contradicts the Dockerfile
 
 **Status:** Queued
@@ -764,4 +708,156 @@ Monkeypatch Request.is_disconnected to raise, open /theme/stream, observe the ge
 
 **Acceptance criteria:**
 Same probe-failure discipline as streaming.py (clean close + disconnect_probe_failed reason + logged warning), verified both directions, reusing the BOB-139 helper rather than a third copy.
+
+## BOB-145 — Fix the 7187 wedge: offload and/or memoise Deduplicator.merge_results so O(N^2) regex work stops blocking the asyncio event loop
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T16:01:43Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+BOB-137 established the root cause: Deduplicator.merge_results() is called as a
+PLAIN SYNCHRONOUS CALL at merge_service/search.py:914 and therefore executes ON
+the asyncio event-loop thread. While it runs, uvicorn's only loop runs no callback
+— no accept, no read, no write — so port 7187 stops answering entirely. Measured
+episodes of 9m37s and 5m56s, self-clearing, recurring under ordinary traffic.
+
+This item is the FIX. BOB-137 is the diagnosis and stays separate per the
+§11.4.102 Iron Law — the investigation deliberately applied no fix.
+
+Three candidate directions, not yet chosen:
+
+ (a) OFFLOAD — hand merge_results to a thread executor (asyncio.to_thread /
+     run_in_executor). Smallest change, immediately unblocks the loop. Does NOT
+     make the work cheaper, so a large enough merge still burns a core; and it
+     introduces concurrency around self._last_merged_results and metadata, which
+     must be checked for races before it is called safe.
+
+ (b) MEMOISE — _normalize_name is called at FOUR sites per comparison, each
+     running 5 re.sub, and _extract_identity_from_result twice more with a
+     ~15-re.search chain. lru_cache has ZERO matches in that module today, so the
+     seed's own normalisation is recomputed for every candidate. Caching the
+     per-result normalisation is a large constant-factor win with no concurrency
+     risk.
+
+ (c) REDUCE THE COMPARISON SET — the O(N^2) shape itself (blocking/bucketing by a
+     cheap key before pairwise comparison). Largest win, largest change, highest
+     risk of altering dedup RESULTS — which would need its own correctness
+     evidence, not just a speed measurement.
+
+(b) then (a) is the likely order: (b) is risk-free and may alone bring the merge
+under the threshold, and (a) guarantees the loop is never blocked regardless.
+
+MANDATORY for whoever takes this:
+ - RED FIRST (§11.4.43/§11.4.224): a test that FAILS on the current code by
+   demonstrating the loop is blocked during a merge — e.g. assert a concurrent
+   request to 7187 is served within a bounded time while a large merge runs. A
+   pure speed benchmark is NOT the RED test; the defect is loop-blocking, not
+   slowness.
+ - BOTH POLARITIES (§11.4.201(1)): the loop stays responsive under a large merge
+   AND dedup results are unchanged for the existing corpus. A fix that speeds up
+   merging while changing which duplicates are detected is a different defect.
+ - Use the existing instrument: scripts/diagnostics/bob137_soak.sh reproduced the
+   wedge 22/26; it is the natural GREEN check.
+ - Honest boundary carried from BOB-137: measured growth is SUPER-LINEAR but not
+   fully quadratic at N<=400 (2.4-3.4x per doubling vs 4.0). Worst case is
+   quadratic BY CODE STRUCTURE. Do not cite "measured N^2".
+
+**Affected scope / file-scope manifest:**
+download-proxy/src/merge_service/search.py:914, download-proxy/src/merge_service/deduplicator.py
+
+**Reproduction / context:**
+bash scripts/diagnostics/bob137_soak.sh — reproduced the wedge in 22/26 probes (7187 dead, 7186 alive throughout).
+
+**Acceptance criteria:**
+Port 7187 answers within a bounded time while a large merge runs (loop never blocked), AND dedup results are unchanged for the existing corpus. Proven with the soak repro flipping from 22/26-dead to 0/N-dead, plus a dedup-equivalence check.
+
+## BOB-146 — Constitution §11.4.252 detector undercounts by 29% (30 vs 42 AST ground truth) — 4 distinct blind spots make its output a floor, not a census
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+**Created-By:** Claude
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T16:10:50Z
+**Reported-By:** Claude
+
+**What (the report, verbatim):**
+The constitution's §11.4.252 detector (constitution/scripts/gates/
+cm_dangerous_combination_fail_closed.sh) UNDERCOUNTS by 29%. Measured against an
+independent AST instrument (structure, not text — a valid control needle per
+§11.4.201(7)) on boba's plugins tree:
+
+    gate reports        : 30
+    AST ground truth    : 42
+    missed              : 12
+    false positives     : 0
+
+A gate that misses 12 of 42 while reporting a confident number is a §11.4.201(6)
+false-null: its output reads as a census when it is a FLOOR. Anyone fencing an
+exclusion list against that number (§11.4.224(E)) would write the fence against
+an undercount and lock the invisible sites out of scope permanently.
+
+FOUR DISTINCT CAUSES, each independently falsifiable:
+
+L1 — TRAILING COMMENT DEFEATS THE REGEX (10 of the 12).
+  The pattern anchors the handler line with `…:[[:space:]]*$`, so
+  `except Exception:  # noqa: S110` never matches. The irony is load-bearing:
+  the sites a human consciously reviewed and annotated are exactly the ones the
+  gate cannot see.
+
+L2 — TUPLE CLAUSE DEFEATS THE REGEX (2 of the 12).
+  The exception-type group is `[A-Za-z_.]+`, which cannot match `(`, so
+  `except (OSError, ValueError):` is invisible.
+
+L3 — A COMMENT BETWEEN `except` AND `pass` DEFEATS THE BODY CHECK.
+  The detector reads exactly `lineno+1`. Zero current instances, but demonstrated
+  live. This one has a nasty second-order effect: a well-intentioned reviewer
+  adding an explanatory comment INSIDE a handler makes that site vanish from the
+  gate. The triage agent hit this itself — its first patch put comments inside two
+  handlers, and the resulting count would have read 28 while only 6 sites were
+  genuinely eliminated. It caught and corrected that rather than reporting the
+  better number, which is exactly the §11.4 discipline working.
+
+L4 — THE SHAPE ITSELF, not the regex.
+  The body must be exactly `pass`, so `except: return <default>` is out of scope
+  BY CONSTRUCTION. 13 such sites remain in boba (12 vendored `community/`, 1
+  `linuxtracker.py:51`), plus `plugins/rutor.py:121` (`except: return
+  int(time.time())`) which a structural invariant found and which is now fixed.
+  Returning a silent default is the SAME defect class as `pass` — arguably worse,
+  because the caller receives a plausible value rather than nothing.
+
+RECOMMENDED FIX: replace the text-matching detector with an AST-based one for
+Python. `except` handlers are trivially enumerable from `ast.Try.handlers`, and
+a handler whose body neither re-raises nor logs nor returns a distinguishable
+failure signal is decidable structurally. Text matching cannot reach L1-L4
+without accumulating epicycles; each of the four above is a separate regex patch
+under the current design.
+
+WHATEVER THE FIX, IT MUST BE FALSIFIABLE (§1.1): the paired mutation must include
+one fixture per cause — trailing comment, tuple clause, comment-before-pass, and
+`return <default>` — each of which the CURRENT detector passes and a correct one
+must FAIL. A negative control is required too: a correctly-narrowed handler that
+logs and re-raises must NOT fire (§11.4.201(1)).
+
+CONSUMER-SIDE NOTE (already fixed, boba): pre_build_verification.sh invariant 39
+counted the gate's own SUMMARY line as a finding, because that line also starts
+with the failure marker. Each failing root added exactly one phantom, so the
+reported total read 38 when the gate itself said 36. Fixed by matching the
+finding STRUCTURE (a finding names " at <path>:<line>"; a summary never does)
+rather than the marker glyph. That is a separate defect from the four above, in
+the consumer, and is NOT part of this item.
+
+**Affected scope / file-scope manifest:**
+constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh (+ its paired mutation test)
+
+**Reproduction / context:**
+Run the gate over plugins/ and compare to an AST enumeration of ast.Try.handlers: gate=30, AST=42, 12 missed, 0 false positives. Each cause reproduces standalone: except Exception:  # noqa (L1); except (OSError, ValueError): (L2); a comment between except and pass (L3); except: return <default> (L4).
+
+**Acceptance criteria:**
+Detector finds all 42 AST-confirmed sites with zero false positives, with a paired §1.1 mutation carrying one fixture per cause (all four currently PASS the detector and must FAIL a correct one) plus a negative control that must NOT fire on a correctly-narrowed logging-and-re-raising handler.
 
