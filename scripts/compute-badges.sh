@@ -279,6 +279,20 @@ fi
 PY_LINE="  <img alt=\"tests\"          src=\"https://img.shields.io/badge/${PY_LABEL}\">"
 FE_LINE="  <img alt=\"vitest\"         src=\"https://img.shields.io/badge/${FE_LABEL}\">"
 
+# The pre-build and challenges badges were previously REPORTED as
+# "(unchanged, cross-checked, matches existing badge)" while never being
+# compared to anything and never being rewritten. Measured 2026-08-20: the
+# script announced 44 invariants / 38 challenges while README carried 30 and
+# 31. That parenthetical was a hardcoded string — a §11.4 bluff at the badge
+# layer, in the same file BOB-118 already caught carrying untraceable badge
+# numbers. Both badges are now built, checked and rewritten exactly like the
+# python/frontend pair, so the claim is earned rather than asserted.
+# Guard: tests/unit/test_compute_badges_all_badges_updated.sh
+PB_LABEL="pre--build%20invariants-$(shields_encode "${PB_COUNT}")-blue"
+CH_LABEL="challenges-$(shields_encode "${CH_COUNT}")-blue"
+PB_LINE="  <img alt=\"pre-build\"      src=\"https://img.shields.io/badge/${PB_LABEL}\">"
+CH_LINE="  <img alt=\"challenges\"     src=\"https://img.shields.io/badge/${CH_LABEL}\">"
+
 if [[ "${MODE}" == "check" ]]; then
     STALE=0
     if ! grep -qF "${PY_LINE}" "${README}" 2>/dev/null; then
@@ -287,6 +301,14 @@ if [[ "${MODE}" == "check" ]]; then
     fi
     if ! grep -qF "${FE_LINE}" "${README}" 2>/dev/null; then
         echo "STALE: frontend tests badge does not match live count (${FE_COUNT} ${FE_METHOD})"
+        STALE=1
+    fi
+    if ! grep -qF "${PB_LINE}" "${README}" 2>/dev/null; then
+        echo "STALE: pre-build invariants badge does not match live count (${PB_COUNT})"
+        STALE=1
+    fi
+    if ! grep -qF "${CH_LINE}" "${README}" 2>/dev/null; then
+        echo "STALE: challenges badge does not match live count (${CH_COUNT})"
         STALE=1
     fi
     if [[ "${STALE}" -eq 1 ]]; then
@@ -309,6 +331,7 @@ TMP_README="$(mktemp)"
 trap 'rm -f "${TMP_README}"' EXIT
 
 awk -v py_line="${PY_LINE}" -v fe_line="${FE_LINE}" \
+    -v pb_line="${PB_LINE}" -v ch_line="${CH_LINE}" \
     -v py_count="${PY_COUNT}" -v fe_count="${FE_COUNT}" \
     -v py_subset="${PY_SUBSET_COUNT}" \
     '
@@ -324,6 +347,8 @@ awk -v py_line="${PY_LINE}" -v fe_line="${FE_LINE}" \
     /<p align="center">/ { in_badge_block = 1 }
     /<\/p>/              { in_badge_block = 0 }
     in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="tests"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print py_line; next }
+    in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="pre-build"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print pb_line; next }
+    in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="challenges"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print ch_line; next }
     in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="vitest"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print fe_line; next }
     /Python unit \+ e2e \+ contract/ {
         if (py_subset == "NA") {
@@ -350,8 +375,20 @@ trap - EXIT
 echo "compute-badges.sh: README.md badges refreshed"
 echo "  python tests:   ${PY_COUNT} (${PY_METHOD})"
 echo "  frontend tests: ${FE_COUNT} (${FE_METHOD})"
-echo "  challenges:     ${CH_COUNT} (unchanged, cross-checked, matches existing badge)"
-echo "  pre-build invariants: ${PB_COUNT} (unchanged, cross-checked, matches existing badge)"
+# §11.4.6: report what was actually verified, never a hardcoded claim. These two
+# lines previously read "(unchanged, cross-checked, matches existing badge)"
+# unconditionally, while the badges they described were stale by 14 and 7.
+for _b in "challenges:${CH_COUNT}:${CH_LINE}" "pre-build invariants:${PB_COUNT}:${PB_LINE}"; do
+    _name="${_b%%:*}"; _rest="${_b#*:}"; _cnt="${_rest%%:*}"; _line="${_rest#*:}"
+    if grep -qF "${_line}" "${README}" 2>/dev/null; then
+        echo "  ${_name}: ${_cnt} (badge verified present in README)"
+    else
+        # Unreachable in normal operation — the awk pass above rewrites both
+        # lines. If it fires, the badge block shape changed and the rewrite
+        # silently missed; say so rather than claim a match (§11.4.201(6)).
+        echo "  ${_name}: ${_cnt} (WARNING: badge NOT found in README after rewrite — badge block shape may have changed)" >&2
+    fi
+done
 
 # ---------------------------------------------------------------------------
 # Update docs/TESTING.md — the corroborating authoritative source that BOB-118
