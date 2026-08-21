@@ -137,6 +137,12 @@ for the per-tracker matrix, browser-export step-by-step, precedence rules,
 and the security posture (§11.4.10.A leak audit, cookie-value-never-logged).
 Common questions: **[FAQ](docs/FAQ.md)**.
 
+Downloads and directories the system creates are owned by the account that started it —
+no `chown` step after every download. See the
+**[File Ownership Guide](docs/guides/file-ownership.md)** for why that requires
+`PUID=0` under rootless Podman, how to verify it on your own machine, and how to repair
+content created before the fix.
+
 ### At a glance
 
 | Category | Mandatory | Optional | Documentation |

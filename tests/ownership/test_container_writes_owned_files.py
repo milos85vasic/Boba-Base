@@ -35,6 +35,8 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+import yaml
+
 import pytest
 
 # The image whose ownership behaviour this feature must fix. It is the service
@@ -56,6 +58,48 @@ def _runtime() -> str | None:
         if shutil.which(candidate):
             return candidate
     return None
+
+
+def _configured_puid_pgid() -> tuple[str, str]:
+    """Read PUID/PGID for the qbittorrent service FROM docker-compose.yml.
+
+    THIS IS THE LOAD-BEARING PART OF THIS TEST, and it is why the values are
+    not written here as literals.
+
+    A test that hardcodes ``PUID=1000`` asserts a permanent property of the
+    IMAGE — "the linuxserver image, told to run its app as uid 1000, produces
+    files at host uid 100999 under a rootless mapping". That is a true fact,
+    and it is unfixable: no change to this project can make it false. A test
+    that can never go green is not a RED, it is a restatement of how user
+    namespaces work, and it would keep failing after the defect was fixed
+    (§11.4.201(1) — a refusal that fires on a healthy system).
+
+    What this feature actually changes is the CONFIGURATION. So the test reads
+    the configuration and asks the question that matters: *does the system, as
+    it is configured right now, write files this operator owns?* Reverting the
+    fix in docker-compose.yml therefore turns this test red again, which is
+    what makes it a regression guard rather than decoration (§1.1).
+    """
+    compose = Path(__file__).resolve().parents[2] / "docker-compose.yml"
+    doc = yaml.safe_load(compose.read_text())
+    env = doc["services"]["qbittorrent"]["environment"]
+    # `environment` may be a list of KEY=VALUE or a mapping; handle both rather
+    # than assuming, because either is valid compose and a wrong assumption
+    # here would silently test the wrong value.
+    if isinstance(env, dict):
+        found = {k: str(v) for k, v in env.items()}
+    else:
+        found = dict(
+            item.split("=", 1) for item in env if isinstance(item, str) and "=" in item
+        )
+    try:
+        return found["PUID"], found["PGID"]
+    except KeyError as exc:  # pragma: no cover - a malformed compose file
+        raise AssertionError(
+            f"docker-compose.yml qbittorrent service declares no {exc.args[0]}. "
+            f"This test cannot report on a configuration it cannot read; that "
+            f"is a blind instrument, not a pass (§11.4.201(6))."
+        ) from exc
 
 
 def _container_cleanup(runtime: str, path: str) -> None:
@@ -125,13 +169,12 @@ def test_container_written_file_is_owned_by_the_operator() -> None:
         os.chmod(tmp, 0o777)
         target = Path(tmp) / "written_by_the_app"
 
-        # PUID/PGID 1000 is the CURRENT configuration under test. Phase 3
-        # changes it; this test is what proves the change did something.
+        puid, pgid = _configured_puid_pgid()
         result = subprocess.run(
             [
                 runtime, "run", "--rm",
-                "-e", "PUID=1000",
-                "-e", "PGID=1000",
+                "-e", f"PUID={puid}",
+                "-e", f"PGID={pgid}",
                 "-v", f"{tmp}:/downloads:Z",
                 IMAGE,
                 "sh", "-c",
@@ -183,12 +226,13 @@ def test_container_written_directory_is_owned_by_the_operator() -> None:
       try:
         os.chmod(tmp, 0o777)
         nested = Path(tmp) / "outer" / "inner"
+        puid, pgid = _configured_puid_pgid()
 
         subprocess.run(
             [
                 runtime, "run", "--rm",
-                "-e", "PUID=1000",
-                "-e", "PGID=1000",
+                "-e", f"PUID={puid}",
+                "-e", f"PGID={pgid}",
                 "-v", f"{tmp}:/downloads:Z",
                 IMAGE,
                 "sh", "-c",

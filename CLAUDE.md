@@ -89,6 +89,18 @@ For deeper reference (technology stack, per-test-file mapping, full gotchas), se
   See `docs/MERGE_SEARCH_DIAGNOSTICS.md` §"Rebuild / restart contract"
   for the full table.
 
+- **`PUID=0`/`PGID=0` on `qbittorrent` + `jackett` is DELIBERATE** — do not "fix" it
+  back to `1000`. Rootless podman maps container uid 0 to the **host operator**
+  (uid 1000), and container uid *N* to `100000+N-1`; `PUID=1000` therefore made every
+  download land at host uid **100999** (`UNKNOWN`), which the operator had to `chown`
+  by hand. `PUID=0` grants **no host privilege** — the container is still rootless and
+  still confined to the operator's own account (§11.4.161 preserved). The other three
+  services (`download-proxy`, `qbittorrent-proxy-go`, `boba-jackett`) already run as
+  container root and already write host-uid-1000 files — they need no change.
+  **Never add `userns_mode: keep-id` to any service in this stack**: it hangs the
+  linuxserver images (measured, twice) and is pointless for the root-running ones.
+  See `docs/guides/file-ownership.md`.
+
 - **WebUI credentials `admin`/`admin` are hardcoded** — do not change.
 - **Never commit `.env`** — it contains tracker credentials.
 - **Never commit `.ruff_cache/`** — add to `.gitignore`.

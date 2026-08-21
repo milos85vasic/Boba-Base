@@ -76,6 +76,11 @@ is. Saying so is the load-bearing content of the spec.
 
 ## R3. Route A — map the container user to the host user (`userns_mode: keep-id`)
 
+> **SUPERSEDED IN PART — see [R9](#r9-correction--route-a-was-wrong-it-supersedes-r3s-route-a-verdict-and-r5s-route-table).** The "VIABLE for `download-proxy`,
+> `qbittorrent-proxy-go`, `boba-jackett`" verdict below was WRONG. It generalised an
+> `alpine` result to three services that were never probed individually. The
+> "BLOCKED for `qbittorrent` and `jackett`" half stands and was re-confirmed.
+
 **Decision**: **VIABLE for `download-proxy`, `qbittorrent-proxy-go`, `boba-jackett`.
 BLOCKED for `qbittorrent` and `jackett`.**
 
@@ -156,6 +161,11 @@ preserved.
 ---
 
 ## R5. Mixed-route consequence
+
+> **SUPERSEDED IN PART — see [R9](#r9-correction--route-a-was-wrong-it-supersedes-r3s-route-a-verdict-and-r5s-route-table).** The three Route-A rows below were
+> refuted by measurement at implementation time: those services already run as
+> container uid 0 and already write host-uid-1000 files, so `keep-id` was both
+> unnecessary and actively harmful. The two Route-B rows stand.
 
 **Decision**: The fix is **per-service**, not global. Two services take Route B, three
 take Route A.
@@ -240,3 +250,128 @@ operational log.
 - **§11.4.235**: applying a `docker-compose.yml` change requires `./start.sh
   --recreate`, not `--reload-python`. A restart does not re-read the compose file —
   this cost a false "fixed" earlier in the same session and MUST be in the tasks.
+
+## R9. CORRECTION — Route A was wrong; it supersedes R3's Route-A verdict and R5's route table
+
+**Status**: This section **supersedes** the Route-A half of [R3](#r3-route-a--map-the-container-user-to-the-host-user-userns_mode-keep-id)
+and the three Route-A rows of [R5](#r5-mixed-route-consequence). R3 and R5 are left in
+place unedited on purpose — what was believed, and why it was believed, is the whole
+value of this record. Read them, then read this.
+
+**Recorded**: 2026-08-21, at implementation time, from measurement on the live stack.
+
+### What R3/R5 planned
+
+A mixed route: Route B (`PUID=0`) for the two linuxserver.io services (`qbittorrent`,
+`jackett`), and Route A (`userns_mode: keep-id`) for the other three
+(`download-proxy`, `qbittorrent-proxy-go`, `boba-jackett`).
+
+### What measurement showed
+
+**Every service already runs as container uid 0:**
+
+```
+$ for s in qbittorrent jackett qbittorrent-proxy boba-jackett; do
+    printf '%-22s ' "$s"; podman exec "$s" id -u; done
+qbittorrent            0
+jackett                0
+qbittorrent-proxy      0
+boba-jackett           0
+```
+
+`qBitTorrent-go/Dockerfile` contains **no `USER` directive** (0 occurrences), so that
+service runs as root as well.
+
+**A write probe — write a real file through the service, read the owner back FROM THE
+HOST:**
+
+```
+download-proxy   -> host uid 1000 (milosvasic)     <-- already correct
+boba-jackett     -> host uid 1000 (milosvasic)     <-- already correct
+qbittorrent, via `s6-setuidgid abc` under PUID=1000
+                 -> host uid 100999 (UNKNOWN)      <-- the defect
+```
+
+**The third line is the CONTROL NEEDLE (§11.4.201(6)/(7)).** A null or a clean reading
+is not evidence until the instrument is proven able to see the defect through the same
+path. It can: the same probe, same host, same image, reports the broken identity when
+the broken configuration is present. That is what makes the two `1000` readings a real
+result rather than a blind instrument.
+
+**Control needle re-run after the fix landed (§11.4.6 — stated because it changes what
+the reading means).** Re-running the probe against the *live* `qbittorrent` container
+now returns host uid 1000, because `PUID=0` has already been applied and the container
+recreated — `podman exec qbittorrent id abc` reports `uid=0(root)`. The live container
+is therefore no longer a valid negative control. The control was reconstructed with a
+throwaway `PUID=1000` container against the same image:
+
+```
+$ podman run --rm -e PUID=1000 -e PGID=1000 -v "$T":/downloads \
+    lscr.io/linuxserver/qbittorrent:latest \
+    sh -c 's6-setuidgid abc touch /downloads/prefix_control'
+$ stat -c '%u (%U)' "$T"/prefix_control
+stat: cannot statx '.../prefix_control': Permission denied     <-- as the operator
+$ podman unshare stat -c 'in-ns uid %u' "$T"/prefix_control
+in-ns uid 1000                                                 <-- = host 100000+1000-1
+```
+
+Note what the operator's own view of the defect actually is: not merely a strange
+number, but `Permission denied` on a file in a directory they own.
+
+### Why Route A was wrong
+
+Under rootless Podman, **container uid 0 maps to the host operator (uid 1000)**. A
+container that already runs as root is therefore *already* writing operator-owned
+files — which is exactly what the write probe measured for `download-proxy` and
+`boba-jackett`.
+
+Applying `userns_mode: keep-id` to such a container would have:
+
+1. **changed nothing beneficial** — the files were already landing at host uid 1000; and
+2. **left the container with no usable root** — the identical failure R3 already
+   measured on the linuxserver images, where `--userns=keep-id` made the container
+   **hang with no output, twice**.
+
+So Route A was not a no-op. It was a regression waiting to be applied to three
+services that were already correct.
+
+### Corrected decision
+
+| Service | Image | Action taken | Basis |
+|---|---|---|---|
+| `qbittorrent` | linuxserver | **Changed** — `PUID=0` / `PGID=0` | R4; keep-id hangs the image (R3) |
+| `jackett` | linuxserver | **Changed** — `PUID=0` / `PGID=0` | R4; same |
+| `download-proxy` | python:alpine | **No change** — verified already writing as host uid 1000 | write probe above |
+| `qbittorrent-proxy-go` | built Go | **No change** — runs as root, no `USER` directive | `podman exec id -u` = 0 |
+| `boba-jackett` | built Go | **No change** — verified already writing as host uid 1000 | write probe above |
+
+`userns_mode: keep-id` is applied to **no service in this stack**.
+
+Tasks **T010 / T011 / T012** are therefore closed as **"no change required —
+measured"**, not as "done". The distinction is load-bearing: "done" would imply an
+edit was made and verified; "no change required — measured" states that the correct
+state was found to already hold and names the measurement that established it.
+
+### The lesson — and it is the project's own rule
+
+R3 measured `--userns=keep-id` against a bare `alpine` image — which runs as root and
+has no init — and generalised that single result to three services it had **not
+individually probed**. R5 even flagged this in its own honest-boundary note ("Route A
+is confirmed for `alpine` and asserted for the two Go images ... Tasks MUST verify
+each service individually rather than generalising from the alpine result"). The
+boundary was written down correctly and the route table was built anyway.
+
+> **A measurement taken through a DIFFERENT path than the one you intend to gate is
+> not evidence about that path.** (§11.4.201(7)(c) — the path is part of the
+> instrument.)
+
+`alpine` and `lscr.io/linuxserver/*` differ in precisely the property under test: the
+presence of an s6 init that requires root before dropping privileges. Probing the
+first told us nothing binding about the second, and nothing at all about the two Go
+images, which were never probed under `keep-id` before being assigned to Route A.
+
+The corrective practice is per-target probing: **one probe per service, through the
+service's own path, with a control needle proving the probe can see the defect.**
+That is what produced this correction, and it is what the tasks now require.
+
+---

@@ -3,8 +3,25 @@ services:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     environment:
-      - PUID=1000
-      - PGID=1000
+      # ── OPERATOR-OWNED WRITES (feature 002, FR-001/FR-002/FR-016) ──────────
+      # PUID/PGID are 0, NOT 1000, and the 0 is load-bearing.
+      #
+      # This image boots as root to run its s6 init, then drops to the `abc`
+      # user at PUID. Under ROOTLESS podman the host maps container uid N to
+      # 100000+N-1, so PUID=1000 made every download land at host uid 100999 —
+      # an identity the operator does not have, which is why ownership had to
+      # be changed by hand after every download.
+      #
+      # Container uid 0 maps to the HOST OPERATOR (uid 1000), so PUID=0 makes
+      # the application write files the operator owns. This grants NO host
+      # privilege: "root" inside a rootless container IS the unprivileged host
+      # user it was launched by. §11.4.161 rootless operation is preserved.
+      #
+      # The alternative (--userns=keep-id) was tried and REJECTED: it leaves
+      # this image with no usable root and it HANGS with no output, measured
+      # twice (research.md R3). PUID=0 was measured to work on this same image.
+      - PUID=0
+      - PGID=0
       - TZ=Europe/Moscow
       - WEBUI_PORT=7185
       - WEBUI_USERNAME=admin
@@ -39,8 +56,25 @@ services:
     image: lscr.io/linuxserver/jackett:latest
     container_name: jackett
     environment:
-      - PUID=1000
-      - PGID=1000
+      # ── OPERATOR-OWNED WRITES (feature 002, FR-001/FR-002/FR-016) ──────────
+      # PUID/PGID are 0, NOT 1000, and the 0 is load-bearing.
+      #
+      # This image boots as root to run its s6 init, then drops to the `abc`
+      # user at PUID. Under ROOTLESS podman the host maps container uid N to
+      # 100000+N-1, so PUID=1000 made every download land at host uid 100999 —
+      # an identity the operator does not have, which is why ownership had to
+      # be changed by hand after every download.
+      #
+      # Container uid 0 maps to the HOST OPERATOR (uid 1000), so PUID=0 makes
+      # the application write files the operator owns. This grants NO host
+      # privilege: "root" inside a rootless container IS the unprivileged host
+      # user it was launched by. §11.4.161 rootless operation is preserved.
+      #
+      # The alternative (--userns=keep-id) was tried and REJECTED: it leaves
+      # this image with no usable root and it HANGS with no output, measured
+      # twice (research.md R3). PUID=0 was measured to work on this same image.
+      - PUID=0
+      - PGID=0
       - TZ=Europe/Moscow
       - AUTO_UPDATE=true
     volumes:

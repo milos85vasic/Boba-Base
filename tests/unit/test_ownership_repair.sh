@@ -492,7 +492,7 @@ echo
 # ===========================================================================
 echo "Case 5: interrupt -> resume (marker written only on success)"
 _c5_done=0
-for _c5_size in 3000 9000; do
+for _c5_size in 800 3000; do
     [[ "${_c5_done}" -eq 1 ]] && break
     SB3="$(sb_new)" || { fail "could not build sandbox"; break; }
     IN3="${SB3}/fixture/in_scope"
@@ -500,8 +500,13 @@ for _c5_size in 3000 9000; do
     printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN3}" | sb_scope "${SB3}"
     _c5_total="$(wrong_owned_count "${IN3}")"
 
+    # `exec` is load-bearing: without it $! is the SUBSHELL's pid, whose
+    # /proc cmdline is this test script, and signal_pid_safely's identity gate
+    # correctly refuses to signal it — the interrupt then never lands and the
+    # case reports a false failure against a correct implementation. Measured
+    # 2026-08-21 during the reference-implementation validation run.
     (
-        cd "${SB3}" && OWNED_PATHS_FILE="${SB3}/config/owned_paths.yaml" \
+        cd "${SB3}" && exec env OWNED_PATHS_FILE="${SB3}/config/owned_paths.yaml" \
             bash "${SB3}/scripts/ownership_repair.sh" \
                 --scope "${SB3}/config/owned_paths.yaml" >/dev/null 2>&1
     ) &
@@ -509,6 +514,11 @@ for _c5_size in 3000 9000; do
 
     # Poll for genuine PARTIAL progress — evidence-driven, not timing-driven,
     # so the interrupt lands in a real mid-run state rather than a guessed one.
+    # Sizes are a ladder, not a guess: the base must be small enough to keep
+    # this suite well inside pre_build invariant 30's `timeout 300` (measured
+    # 2026-08-21 against a deliberately naive fork-per-file reference
+    # implementation), and the escalation exists because a FAST implementation
+    # could finish 800 items before the first poll observes a partial state.
     _c5_partial=0
     for _try in $(seq 1 800); do
         _remaining="$(wrong_owned_count "${IN3}")"
@@ -520,16 +530,27 @@ for _c5_size in 3000 9000; do
     done
 
     if [[ "${_c5_partial}" -eq 1 ]]; then
-        signal_pid_safely "${BG_PID}" TERM "${SB3}/scripts/ownership_repair.sh" || true
+        _c5_signalled=1
+        if ! signal_pid_safely "${BG_PID}" TERM "${SB3}/scripts/ownership_repair.sh"; then
+            _c5_signalled=0
+        fi
         for _try in $(seq 1 200); do
             kill -0 "${BG_PID}" 2>/dev/null || break
             sleep 0.01
         done
         if kill -0 "${BG_PID}" 2>/dev/null; then
-            signal_pid_safely "${BG_PID}" KILL "${SB3}/scripts/ownership_repair.sh" || true
+            signal_pid_safely "${BG_PID}" KILL "${SB3}/scripts/ownership_repair.sh" || _c5_signalled=0
         fi
         wait "${BG_PID}" 2>/dev/null
         BG_PID=""
+
+        # A refused signal means the run was NEVER interrupted, so every
+        # assertion below would be about a COMPLETED pass. Claim nothing.
+        if [[ "${_c5_signalled}" -ne 1 ]]; then
+            fail "interrupt: could not signal the backgrounded repair (pid identity gate refused) — the run was not interrupted, so nothing about FR-004a is claimed (§11.4.6)"
+            _c5_done=1
+            continue
+        fi
 
         # 5a: marker MUST be absent. This null is only trusted because the
         # same detector fired in case 1 (§11.4.201(7)(b) control needle).
@@ -565,7 +586,7 @@ for _c5_size in 3000 9000; do
         fi
         wait "${BG_PID}" 2>/dev/null
         BG_PID=""
-        if [[ "${_c5_size}" == "9000" ]]; then
+        if [[ "${_c5_size}" == "3000" ]]; then
             fail "interrupt: could not observe a partial mid-run state even at ${_c5_size} items — the case could not be driven, so nothing about FR-004a is claimed (§11.4.6)"
             _c5_done=1
         fi
@@ -672,7 +693,7 @@ echo "    seeded unprivileged: chown -> EPERM, unshare -Ur chown -> EINVAL, and"
 echo "    unshare --map-users over the real subuid range -> EPERM (all measured"
 echo "    2026-08-21). An unprivileged process also could not repair such an item"
 echo "    back, so no implementation could turn that fixture green here. Covered"
-echo "    by tests/integration/test_container_writes_owned_files.py instead."
+echo "    by tests/ownership/test_container_writes_owned_files.py instead."
 echo "  * A genuine chown/chgrp EPERM on an EXISTING item (the real-world failure"
 echo "    mode behind FR-006) needs a foreign-owned file, which is the same"
 echo "    privilege gap. Case 7 uses the absent-non-optional-path route, which is"

@@ -63,16 +63,16 @@ with no elevation (quickstart Scenario 1).
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Set `PUID=0` / `PGID=0` for the `qbittorrent` service in `docker-compose.yml`, with an inline comment recording WHY: `keep-id` hangs this image (research.md R3, measured twice), and container-root under rootless Podman IS host uid 1000 — it holds no host privilege [FR-001, FR-002, FR-016]
-- [ ] T009 [P] [US1] Set `PUID=0` / `PGID=0` for the `jackett` service in `docker-compose.yml` with the same rationale comment [FR-016]
-- [ ] T010 [P] [US1] Add `userns_mode: "keep-id"` to the `download-proxy` service in `docker-compose.yml` (verified on alpine, research.md R3; podman-compose 1.5.0 translates it at `podman_compose.py:1208`) [FR-016]
-- [ ] T011 [US1] Verify `userns_mode: "keep-id"` on `qbittorrent-proxy-go` INDIVIDUALLY before adopting it — research.md R5 records this as asserted-not-demonstrated for the built Go images. If it hangs like the linuxserver images, fall back to Route B and record the measurement [FR-016]
-- [ ] T012 [US1] Verify and apply the same for `boba-jackett` individually (it writes `config/boba.db`, so FR-012 depends on it) [FR-012, FR-016]
-- [ ] T013 [US1] Capture a start-to-healthy TIMING BASELINE before any compose change (`time ./start.sh --recreate` plus per-service healthy time from `podman ps`), recorded in `specs/002-user-owned-downloads/` — SC-005 compares against this, and US2 deliberately ADDS a blocking startup stage, so without a pre-change number SC-005 is unfalsifiable [SC-005]
-- [ ] T014 [US1] Apply with `./start.sh --recreate` — NOT `--reload-python`. A restart does not re-read `docker-compose.yml`; this distinction already cost a false "fixed" earlier in this project (§11.4.235) [FR-001, FR-002]
-- [ ] T015 [TDD] [US1] Re-run `tests/integration/test_container_writes_owned_files.py`: it MUST now report the operator's uid. Paste the before (100999) and after (1000) output together — that pairing is the evidence, not the after alone [FR-001, SC-001]
-- [ ] T016 [US1] Verify ownership PERSISTS: after T015 passes, run `./stop.sh && ./start.sh`, re-check `find "$DD" ! -uid $(id -u) | wc -l` is 0, then `./start.sh --recreate` and re-check again. "Ownership was correct once" is not the claim FR-007 makes [FR-007, SC-004]
-- [ ] T017 [US1] Run [quickstart.md](./quickstart.md) Scenario 1 end to end against a REAL download and paste the terminal output, including the rename/move/delete round-trip (§11.4 requires an actual end-user invocation, not a test-harness result) [FR-003, SC-001, SC-002]
+- [x] T008 [US1] Set `PUID=0` / `PGID=0` for the `qbittorrent` service in `docker-compose.yml`, with an inline comment recording WHY: `keep-id` hangs this image (research.md R3, measured twice), and container-root under rootless Podman IS host uid 1000 — it holds no host privilege [FR-001, FR-002, FR-016]
+- [x] T009 [P] [US1] Set `PUID=0` / `PGID=0` for the `jackett` service in `docker-compose.yml` with the same rationale comment [FR-016]
+- [x] ~~T010~~ **CLOSED — no change required (measured 2026-08-21)**: `download-proxy` was measured to write as host uid **1000** already (probe: write a real file into a host-mounted path, read the owner back from the host; control = the linuxserver app user reading 100999, proving the probe can see the defect). It runs as root, and container-root IS the host operator under rootless podman. `keep-id` would change nothing useful and would leave it with no usable root — the hang measured in research.md R3. Applying `keep-id` here would have been a regression, not a fix. Evidence: `specs/002-user-owned-downloads/evidence/T014-T017-us1-green.md`.
+- [x] ~~T011~~ **CLOSED — no change required (measured 2026-08-21)**: `qBitTorrent-go/Dockerfile` declares no `USER`, so `qbittorrent-proxy-go` runs as root and inherits the same correct mapping as the other root-running services. The individual verification this task asked for is exactly what closed it. Applying `keep-id` here would have been a regression, not a fix. Evidence: `specs/002-user-owned-downloads/evidence/T014-T017-us1-green.md`.
+- [x] ~~T012~~ **CLOSED — no change required (measured 2026-08-21)**: `boba-jackett` was measured to write as host uid **1000** already, by the same probe and control. Applying `keep-id` here would have been a regression, not a fix. Evidence: `specs/002-user-owned-downloads/evidence/T014-T017-us1-green.md`.
+- [x] T013 [US1] Capture a start-to-healthy TIMING BASELINE before any compose change (`time ./start.sh --recreate` plus per-service healthy time from `podman ps`), recorded in `specs/002-user-owned-downloads/` — SC-005 compares against this, and US2 deliberately ADDS a blocking startup stage, so without a pre-change number SC-005 is unfalsifiable [SC-005]
+- [x] T014 [US1] Apply with `./start.sh --recreate` — NOT `--reload-python`. A restart does not re-read `docker-compose.yml`; this distinction already cost a false "fixed" earlier in this project (§11.4.235) [FR-001, FR-002]
+- [x] T015 [TDD] [US1] Re-run `tests/integration/test_container_writes_owned_files.py`: it MUST now report the operator's uid. Paste the before (100999) and after (1000) output together — that pairing is the evidence, not the after alone [FR-001, SC-001]
+- [x] T016 [US1] Verify ownership PERSISTS: after T015 passes, run `./stop.sh && ./start.sh`, re-check `find "$DD" ! -uid $(id -u) | wc -l` is 0, then `./start.sh --recreate` and re-check again. "Ownership was correct once" is not the claim FR-007 makes [FR-007, SC-004]
+- [x] T017 [US1] Run [quickstart.md](./quickstart.md) Scenario 1 end to end against a REAL download and paste the terminal output, including the rename/move/delete round-trip (§11.4 requires an actual end-user invocation, not a test-harness result) [FR-003, SC-001, SC-002]
 - [ ] T018 [REVIEW] [US1] Independent review of the `docker-compose.yml` changes before proceeding (§11.4.142/§11.4.209): confirm no service that mounts an in-scope path was missed, and that no permission was relaxed
 
 **Checkpoint**: US1 is independently shippable. New downloads are operator-owned; the pre-existing backlog is NOT yet repaired and the operator will still see old wrongly-owned items.
@@ -177,11 +177,11 @@ Tests → implementation → real-invocation evidence → review.
 | Group | Tasks | Why safe |
 |---|---|---|
 | Foundational tests | T005, T006, T007 | different files, no shared state |
-| Compose service edits | T009, T010 | different service blocks; T008 first to establish the comment pattern |
+| Compose service edits | T009 only | different service blocks; T008 first to establish the comment pattern |
 | Docs polish | T037, T038, T039 | different files, no code dependency |
 | Cross-story | Phase 5 (US3) alongside Phase 3/4 | US3 touches lifecycle only, never ownership |
 
-**Not parallelisable**: T008–T012 and T014 all edit `docker-compose.yml` (T013 is a timing
+**Not parallelisable**: T008–T009 and T014 all edit `docker-compose.yml` (T010–T012 turned out to need no edit at all) (T013 is a timing
 capture, not an edit). Serialise them or take
 the §11.4.84 quiescence risk of two writers in one file.
 

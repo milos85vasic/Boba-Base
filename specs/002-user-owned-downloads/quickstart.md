@@ -49,13 +49,21 @@ Complete one download, then:
 
 ```bash
 DD=$(grep -E '^QBITTORRENT_DATA_DIR=' .env | cut -d= -f2- | tr -d '"')
-find "$DD" -newermt '-10 minutes' -printf '%U %p\n' | sort -u | head
+find "$DD" -mmin -10 -printf '%U %p\n' | sort -u | head
 ```
+
+> Use `-mmin -10`, **not** `-newermt '-10 minutes'`. On a host where `find` is `bfs`
+> (checked with `find --version`) every relative `-newermt` form is *rejected*: the command
+> writes an error to stderr and prints nothing on stdout, so a reader capturing only stdout
+> sees a clean empty result and concludes no files were created — on a system that had just
+> written 791 MB. That false null was hit for real while validating this scenario, and was
+> only caught because a control file of known age was on disk to prove the instrument had
+> gone blind (§11.4.201(6), §11.4.201(12)).
 
 **Expected**: every uid is yours. Then prove usability rather than inferring it:
 
 ```bash
-F=$(find "$DD" -newermt '-10 minutes' -type f | head -1)
+F=$(find "$DD" -mmin -10 -type f | head -1)
 mv "$F" "$F.renamed" && mv "$F.renamed" "$F" && echo "RENAME OK"
 ```
 
