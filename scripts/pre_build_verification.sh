@@ -1595,6 +1595,42 @@ else
     rm -f "${HC_LOG}"
 fi
 
+# --- Invariant 33: CM-OWNERSHIP-INVARIANTS (§11.4.201, FR-011 of feature 002) ---
+# Refuses a tree where the operator-owned-writes fix has been weakened or
+# reverted. Under ROOTLESS podman container uid N maps to host 100000+N-1, so a
+# linuxserver service running its app at PUID=1000 writes files at host uid
+# 100999 — an identity the operator does not have, which is the defect that
+# forced a manual chown after every download. Container uid 0 maps to the HOST
+# OPERATOR and grants no host privilege, so PUID=0 is the fix.
+#
+# Slot 33 is used because it is FREE: this file labels 35 invariants against a
+# denominator of 44, with 33-38/40/42/43 unused. Taking a free slot avoids
+# renumbering 35 labels (a large, purely-cosmetic diff that would conflict with
+# concurrent work). The denominator's disagreement with the real count is a
+# PRE-EXISTING defect this block does not introduce and does not fix; it is
+# tracked rather than silently absorbed (§11.4.261).
+#
+# The gate parses YAML structurally, never by substring, so a comment merely
+# MENTIONING keep-id or PUID=1000 cannot trip it. BLOCKING.
+echo "[33/44] CM-OWNERSHIP-INVARIANTS: operator-owned writes not reverted (§11.4.201, FR-011)"
+OWNINV_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_ownership_invariants.sh"
+if [[ ! -x "${OWNINV_GATE}" ]]; then
+    fail "CM-OWNERSHIP-INVARIANTS: gate script missing or not executable at scripts/pre_build/check_cm_ownership_invariants.sh"
+else
+    OWNINV_LOG="$(mktemp)"
+    OWNINV_EXIT=0
+    bash "${OWNINV_GATE}" >"${OWNINV_LOG}" 2>&1 || OWNINV_EXIT=$?
+    if [[ "${OWNINV_EXIT}" -eq 0 ]]; then
+        pass "CM-OWNERSHIP-INVARIANTS: $(tail -n1 "${OWNINV_LOG}")"
+    else
+        fail "CM-OWNERSHIP-INVARIANTS: ownership invariant violated (exit ${OWNINV_EXIT})"
+        echo "        --- gate output ---"
+        sed 's/^/        /' "${OWNINV_LOG}"
+        echo "        --- end ---"
+    fi
+    rm -f "${OWNINV_LOG}"
+fi
+
 # --- Optional: Run challenge aggregator when FULL_VALIDATION=1 ---
 if [[ -n "${FULL_VALIDATION:-}" ]] && [[ "${FULL_VALIDATION}" = "1" ]]; then
     echo
