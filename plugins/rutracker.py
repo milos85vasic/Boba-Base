@@ -138,20 +138,49 @@ class RuTracker(object):
     # few dozen chars in). re.S is NOT used, so ``[^>]``/``[^"]`` already stop at
     # newlines too.
     re_search_queries = re.compile(r'<a[^>]{0,512}?href="tracker\.php\?([^"]{0,256}?start=\d+)"')
-    re_threads = re.compile(r'<tr id="trs-tr-\d+.*?</tr>', re.S)
+    # BOB-093 ReDoS bounds, part 2 (measured 2026-08-21, see docs/qa/BOB-093/).
+    # ``.*?</tr>`` under re.S was QUADRATIC: a page of ``<tr id="trs-tr-1``
+    # prefixes with no ``</tr>`` anywhere makes every row-start scan to EOF.
+    # Measured min-of-3 on ``'<tr id="trs-tr-1' * k``: 0.77s / 2.29s / 9.46s at
+    # k=1000/2000/4000 (growth 2.96x, 4.14x per doubling = n^2). Capping the row
+    # body makes each row-start O(1)-bounded -> overall linear: 0.13s / 0.43s /
+    # 0.79s / 1.44s at k=1000..8000 (growth ~1.8x = n). 4096 is 13x the largest
+    # row body observed in any shipped fixture (315 chars) and ~2x a realistic
+    # rutracker row; widen it here if a real row is ever truncated -- the cost is
+    # linear in the bound (b=8192 measured 3.77s at k=8000, b=2048 measured 0.72s).
+    re_threads = re.compile(r'<tr id="trs-tr-\d{1,12}.{0,4096}?</tr>', re.S)
+    # BOB-093 ReDoS bounds, part 3 (measured 2026-08-21). The six ``.+?``/``.*?``
+    # separators under re.S were CUBIC. The dominant cost was NOT the inter-cell
+    # gaps but ``.*?>`` and ``.+?<``: under re.S they can span a whole ``><``
+    # storm, so the two of them permute against the five later gaps. Measured on
+    # ``'a data-topic_id="1"' + "><" * k``: 0.17s / 2.60s / 25.80s at k=250/500/
+    # 1000 (growth ~9x per doubling = n^3) -- i.e. a 2 KB row cost 25s, and
+    # ``re_torrent_data.search`` runs once PER ROW. Replacing those two with
+    # negated classes that structurally cannot cross the delimiter they seek
+    # (``[^<>]`` before ``>``, ``[^<]`` before ``<``) removes the permutation
+    # entirely: 0.000049s / 0.000008s / 0.000004s on the same inputs, and FLAT to
+    # 32 KB. The remaining ``.{1,512}?`` gaps are inter-cell markup (largest gap
+    # observed in any shipped fixture: 64 chars, so 8x headroom); they are bounded
+    # because a ``data-ts_text="1"`` storm attacks them directly -- measured 3.22s
+    # at bound 2048 vs 0.017s at bound 512 on a 256 KB chunk.
     re_torrent_data = re.compile(
-        r'a data-topic_id="(?P<id>\d+?)".*?>(?P<title>.+?)<'
-        r".+?"
-        r'data-ts_text="(?P<size>\d+?)"'
-        r".+?"
-        r'data-ts_text="(?P<seeds>[-\d]+?)"'
-        r".+?"
-        r"leechmed.+?>(?P<leech>\d+?)<"
-        r".+?"
-        r'data-ts_text="(?P<pub_date>\d+?)"',
+        r'a data-topic_id="(?P<id>\d{1,12})"[^<>]{0,512}?>(?P<title>[^<]{1,1024}?)<'
+        r".{1,512}?"
+        r'data-ts_text="(?P<size>\d{1,20})"'
+        r".{1,512}?"
+        r'data-ts_text="(?P<seeds>[-\d]{1,20})"'
+        r".{1,512}?"
+        r"leechmed.{1,512}?>(?P<leech>\d{1,20})<"
+        r".{1,512}?"
+        r'data-ts_text="(?P<pub_date>\d{1,20})"',
         re.S,
     )
     re_magnet = re.compile(r"magnet:\?xt=urn:btih:([a-fA-F0-9]{40})", re.I)
+    # BOB-093: counts the row-starts `re_threads` is SUPPOSED to match, so a row
+    # skipped because it overran a bound is observable instead of silent. Matches
+    # exactly the prefix `re_threads` requires, so a `<tr id="trs-tr-` with no
+    # digit after it is not counted as a miss (§11.4.201 false-positive guard).
+    re_row_start = re.compile(r'<tr id="trs-tr-\d')
 
     @property
     def forum_url(self) -> str:
@@ -252,15 +281,46 @@ class RuTracker(object):
             logger.error(f"Search failed for {url}: {e}")
             return []
 
-        for thread in self.re_threads.findall(data):
+        # BOB-093 bound-exceedance telemetry. Both parsers are bounded, so a
+        # legitimately huge row (long title + long forum name + long username)
+        # can overrun a bound and be dropped. `if match:` with no else made that
+        # drop TOTALLY SILENT -- the §11.4.201 false-negative shape. Count what
+        # each stage should have produced and warn on divergence, so the bounds
+        # can later be calibrated from production logs instead of guessed.
+        row_starts = len(self.re_row_start.findall(data))
+        threads = self.re_threads.findall(data)
+        if len(threads) < row_starts:
+            logger.warning(
+                "rutracker: re_threads matched %d of %d row-starts -- %d row(s) "
+                "dropped -- each is either over the {0,4096} row bound or has no "
+                "closing </tr> (BOB-093). Raise the bound in re_threads if "
+                "this recurs on real pages.",
+                len(threads),
+                row_starts,
+                row_starts - len(threads),
+            )
+
+        parsed = 0
+        for thread in threads:
             match = self.re_torrent_data.search(thread)
             if match:
+                parsed += 1
                 torrent_data = match.groupdict()
                 logger.debug("Torrent data: {}".format(torrent_data))
                 result = self.__build_result(torrent_data)
                 self.results[result["id"]] = result
                 if __name__ != "__main__":
                     novaprinter.prettyPrinter(result)
+
+        if parsed < len(threads):
+            logger.warning(
+                "rutracker: re_torrent_data parsed %d of %d rows -- %d row(s) "
+                "dropped (malformed, or over the {1,512}/{1,1024} field bounds, "
+                "BOB-093).",
+                parsed,
+                len(threads),
+                len(threads) - parsed,
+            )
 
         if is_first:
             matches = self.re_search_queries.findall(data)

@@ -11,6 +11,7 @@ _check_mirrors, _get_env, _get_mirrors_from_env, Config, edge cases
 import gzip
 import importlib.util
 import os
+import re
 import sys
 import types
 from http.cookiejar import Cookie
@@ -960,3 +961,271 @@ class TestEdgeCases:
         import rutracker
 
         assert link.count("&tr=") == len(rutracker.RUTRACKER_TRACKERS)
+
+
+# ─── BOB-093 · ReDoS regression guard (structural layer) ──────────────────
+#
+# Measured 2026-08-21 (docs/qa/BOB-093/redos_timing.md): the pre-fix
+# `re_threads` was QUADRATIC (9.46s on a 64 KB row-prefix storm) and the
+# pre-fix `re_torrent_data` was CUBIC (25.8s on a 2 KB '><' storm, run once
+# PER ROW).  Both are now bounded.  This guard fails a future edit that
+# reintroduces an unbounded scan.
+#
+# RULE: flag any `*` or `+` quantifier whose ATOM is `.` or a negated class
+# `[^...]` — those are the atoms that can scan across arbitrary content to
+# EOF.  `\d+` / `[-\d]+` are digit-runs (self-limiting) and are allowed, so
+# this guard does not force churn on `re_search_queries` / `re_magnet`.
+# The negated-class case is deliberately included: the BOB-093 part-1 fix
+# comment records that a bare `[^>]*?` was NOT enough (a payload with no `>`
+# still scans to EOF, ~76s measured).
+#
+# KNOWN BLIND SPOT (reviewed, accepted): the `(?<!\\)` lookbehind reads the
+# SECOND backslash of an escaped backslash as an escape, so a pattern spelling
+# a literal backslash then a live `.` metachar — `\\.*` — is not flagged. It
+# is obscure and none of the four rutracker patterns is written that way. It is
+# also not load-bearing on its own: the behavioural guard in
+# tests/stress/test_rutracker_redos_bounds.py times the compiled regex, so an
+# unbounded scan spelled ANY way is caught there. That complementarity is the
+# point of having two layers — an independent review confirmed it by mutating
+# `{0,4096}?` to `{0,999999}?` (bounded spelling, unbounded effect), which this
+# structural rule cannot see BY DESIGN and the behavioural cap caught.
+UNBOUNDED_SCAN_QUANTIFIER = re.compile(r"(?<!\\)(?:\.|\[\^(?:[^\]\\]|\\.)*\])(?:\*|\+)")
+
+# The exact patterns that shipped before the BOB-093 fixes.  They are the
+# permanent golden-bad fixtures (§11.4.107(10)): the guard re-proves on
+# EVERY run that it still rejects them, so it can never rot into a
+# tautology that passes no matter what.
+HISTORICAL_VULNERABLE_PATTERNS = {
+    "re_threads": r'<tr id="trs-tr-\d+.*?</tr>',
+    "re_torrent_data": (
+        r'a data-topic_id="(?P<id>\d+?)".*?>(?P<title>.+?)<'
+        r".+?"
+        r'data-ts_text="(?P<size>\d+?)"'
+        r".+?"
+        r'data-ts_text="(?P<seeds>[-\d]+?)"'
+        r".+?"
+        r"leechmed.+?>(?P<leech>\d+?)<"
+        r".+?"
+        r'data-ts_text="(?P<pub_date>\d+?)"'
+    ),
+    "re_search_queries": r'<a.+?href="tracker\.php\?(.*?start=\d+)"',
+    "re_search_queries_naive_negated": r'<a[^>]*?href="tracker\.php\?',
+}
+
+GUARDED_REGEX_NAMES = ("re_threads", "re_torrent_data", "re_search_queries", "re_magnet")
+
+
+class TestReDoSRegexBounds:
+    """Every scanning quantifier in the rutracker parsers stays bounded."""
+
+    @pytest.mark.parametrize("name", GUARDED_REGEX_NAMES)
+    def test_no_unbounded_scan_quantifier(self, name):
+        inst, _ = _load_rutracker()
+        pattern = getattr(inst, name).pattern
+        offenders = UNBOUNDED_SCAN_QUANTIFIER.findall(pattern)
+        assert offenders == [], (
+            f"BOB-093 ReDoS regression: {name} reintroduced unbounded scan "
+            f"quantifier(s) {offenders}. Replace `.` with a bounded `.{{0,N}}?` "
+            f"or with a negated class that cannot cross its delimiter "
+            f"(`[^<]`, `[^<>]`). Pattern: {pattern!r}"
+        )
+
+    def test_delimiter_gaps_use_negated_classes(self):
+        """The two gaps that drove the cubic blow-up must not use `.` at all.
+
+        `.*?>` and `.+?<` under re.S can span a whole `><` storm; the
+        negated classes structurally cannot cross the delimiter they seek,
+        which is what collapsed 25.8s to 4 microseconds.
+        """
+        inst, _ = _load_rutracker()
+        pattern = inst.re_torrent_data.pattern
+        assert "[^<>]{0,512}?>" in pattern, (
+            "BOB-093: the topic-anchor gap must be `[^<>]{0,512}?>` — a `.`-based "
+            f"scan there is cubic. Pattern: {pattern!r}"
+        )
+        assert "[^<]{1,1024}?" in pattern, (
+            "BOB-093: the title must be `[^<]{1,1024}?` — a `.`-based scan there "
+            f"is cubic. Pattern: {pattern!r}"
+        )
+
+    @pytest.mark.parametrize("name", sorted(HISTORICAL_VULNERABLE_PATTERNS))
+    def test_guard_rejects_the_historical_vulnerable_patterns(self, name):
+        """§1.1 self-validation: the guard must FAIL on the real pre-fix source.
+
+        A guard never observed rejecting the genuinely-broken artifact is
+        unvalidated instrumentation (§11.4.115(F)).  These are not synthetic
+        mutations — they are the exact strings that shipped and that were
+        measured taking 9.46s / 25.8s.
+        """
+        offenders = UNBOUNDED_SCAN_QUANTIFIER.findall(HISTORICAL_VULNERABLE_PATTERNS[name])
+        assert offenders, (
+            f"guard has no teeth: it accepted the historical vulnerable "
+            f"{name} pattern unchanged"
+        )
+
+    def test_guard_does_not_fire_on_bounded_or_escaped_forms(self):
+        """§11.4.201(1) false-positive guard: a bounded/escaped form must pass.
+
+        A guard that refuses correct code is a FAIL-bluff, exactly as a guard
+        that passes broken code is a PASS-bluff.
+        """
+        for benign in (
+            r"tracker\.php\?x{0,9}",          # escaped literal dot, bounded
+            r"[^<]{1,64}?",                    # bounded negated class
+            r"\d+",                            # digit-run: self-limiting
+            r"[-\d]+",                         # signed digit-run: self-limiting
+            r"[a-fA-F0-9]{40}",                # fixed-width class
+        ):
+            assert UNBOUNDED_SCAN_QUANTIFIER.findall(benign) == [], (
+                f"guard false-positive on benign pattern {benign!r}"
+            )
+
+    def test_merge_service_fork_stays_bounded(self):
+        """The merge_service rutracker parser is a fork of these regexes.
+
+        `download-proxy/src/merge_service/search.py` carries its own copy of
+        `re_threads` / `re_torrent_data` and is the parser on the LIVE
+        :7187 search path.  It shipped byte-identical vulnerable patterns
+        (§11.4.251 fork-and-diverge).  Guard both copies or the fork silently
+        keeps the defect.
+        """
+        src = os.path.join(REPO, "download-proxy", "src", "merge_service", "search.py")
+        if not os.path.exists(src):
+            pytest.skip("merge_service/search.py absent (topology_unsupported)")
+        with open(src, encoding="utf-8") as fh:
+            text = fh.read()
+        # Locate each assignment on its own rather than slicing a fixed window
+        # from a hardcoded prefix: a prefix change used to raise ValueError (a
+        # test ERROR, not a readable assert) and an inserted comment used to
+        # push the tail out of the window, silently un-scanning it. The
+        # quantifiers here are bounded for the same reason the code under test
+        # is.
+        threads_assign = re.search(r"re_threads\s*=\s*re\.compile\(.{0,400}?\)\s*$", text, re.M | re.S)
+        td_assign = re.search(
+            r"re_torrent_data\s*=\s*re\.compile\(.{0,3000}?^\s*\)", text, re.M | re.S
+        )
+        assert threads_assign is not None, (
+            f"could not locate the `re_threads` assignment in {src}; the fork "
+            f"guard is not scanning anything (§11.4.201 blind instrument)"
+        )
+        assert td_assign is not None, (
+            f"could not locate the `re_torrent_data` assignment in {src}; the "
+            f"fork guard is not scanning anything (§11.4.201 blind instrument)"
+        )
+        block = threads_assign.group(0) + "\n" + td_assign.group(0)
+        offenders = UNBOUNDED_SCAN_QUANTIFIER.findall(block)
+        assert offenders == [], (
+            "BOB-093 ReDoS regression in the merge_service rutracker fork: "
+            f"unbounded scan quantifier(s) {offenders} in {src}"
+        )
+
+
+# ─── BOB-093 · bound-exceedance telemetry (IMPORTANT-1 from review) ───────
+#
+# Both parsers are bounded, so a legitimately huge row can overrun a bound and
+# be dropped.  Before this, both consumers were `if match:` with no else and
+# search.py logged only from INSIDE a matched row, so the drop was TOTALLY
+# SILENT — the §11.4.201 false-negative shape.  These tests prove the warning
+# actually fires; a log line nobody asserts on is a claim, not evidence.
+
+
+# A healthy page as rutracker actually serves one: the results table carries a
+# HEADER row and the page carries other tables, so non-row `<tr>` elements are
+# normal.  `re_row_start` must count ONLY real result rows.
+#
+# This fixture pins the OVER-counting direction, which was previously unpinned:
+# review mutated `re_row_start` from `<tr id="trs-tr-\d` to a bare `<tr` and ALL
+# 15 telemetry+ReDoS tests still passed, because no healthy fixture contained a
+# non-row `<tr>`.  A future "simplification" of the counter would then emit a
+# spurious drop-warning on every real page, with nothing failing — the exact
+# cry-wolf regression this test exists to catch.  (The UNDER-counting direction
+# was already pinned by the bound-exceedance tests.)
+HEALTHY_PAGE_WITH_HEADER_ROW = (
+    '<table class="forumline">'
+    '<tr class="tbs-top"><th>Forum</th><th>Topic</th><th>Size</th></tr>'
+    + MULTI_ROWS
+    + "</table>"
+)
+
+
+def _oversized_row(body_bytes):
+    """A well-formed row whose body exceeds the {0,4096} re_threads bound."""
+    return (
+        '<tr id="trs-tr-777">'
+        '<td><a data-topic_id="777">Huge</a></td>'
+        f'<td class="pad">{"F" * body_bytes}</td>'
+        '<td data-ts_text="100"></td>'
+        '<td data-ts_text="5"></td>'
+        '<td class="leechmed"><b>1</b></td>'
+        '<td data-ts_text="1609459200"></td>'
+        "</tr>"
+    )
+
+
+class TestBoundExceedanceTelemetry:
+    def test_row_over_the_re_threads_bound_is_reported_not_silent(self, caplog):
+        inst, _ = _load_rutracker()
+        page = _oversized_row(5000)
+        assert inst.re_row_start.search(page), "fixture must contain a row-start"
+        assert inst.re_threads.findall(page) == [], (
+            "fixture must actually overrun the bound, else this test proves nothing"
+        )
+        with caplog.at_level("WARNING"):
+            with patch.object(inst, "_open_url", return_value=page.encode(inst.encoding)):
+                inst._RuTracker__execute_search("http://fake/url")
+        warnings = [r.getMessage() for r in caplog.records if r.levelname == "WARNING"]
+        assert any("re_threads matched 0 of 1 row-starts" in w for w in warnings), (
+            f"a row dropped by the row bound must be reported, got: {warnings}"
+        )
+
+    def test_row_the_field_parser_rejects_is_reported_not_silent(self, caplog):
+        inst, _ = _load_rutracker()
+        page = MALFORMED_NO_SIZE
+        assert len(inst.re_threads.findall(page)) == 1
+        assert inst.re_torrent_data.search(page) is None
+        with caplog.at_level("WARNING"):
+            with patch.object(inst, "_open_url", return_value=page.encode(inst.encoding)):
+                inst._RuTracker__execute_search("http://fake/url")
+        warnings = [r.getMessage() for r in caplog.records if r.levelname == "WARNING"]
+        assert any("re_torrent_data parsed 0 of 1 rows" in w for w in warnings), (
+            f"a row dropped by the field parser must be reported, got: {warnings}"
+        )
+
+    def test_healthy_page_emits_no_drop_warning(self, caplog):
+        """§11.4.201(1): telemetry that cries wolf on a clean page is a FAIL-bluff.
+
+        The fixture deliberately contains a non-row `<tr class="tbs-top">`
+        header, so a counter that over-counts (e.g. simplified to a bare `<tr`)
+        sees 3 row-starts against 2 rows and trips this test.
+        """
+        inst, _ = _load_rutracker()
+        inst.results = {}
+        page = HEALTHY_PAGE_WITH_HEADER_ROW
+        assert "<tr class=" in page, "fixture must carry a non-row <tr> to pin specificity"
+        assert len(inst.re_row_start.findall(page)) == 2, (
+            "re_row_start must count exactly the 2 result rows, not the header "
+            "row — over-counting makes every real page emit a spurious warning"
+        )
+        with caplog.at_level("WARNING"):
+            with patch.object(inst, "_open_url", return_value=page.encode(inst.encoding)):
+                inst._RuTracker__execute_search("http://fake/url")
+        warnings = [r.getMessage() for r in caplog.records if r.levelname == "WARNING"]
+        assert not [w for w in warnings if "dropped" in w], (
+            f"clean 2-row page must produce no drop warning, got: {warnings}"
+        )
+
+    def test_merge_service_fork_also_counts_drops(self):
+        """The fork must not stay silent while the plugin reports (§11.4.251)."""
+        src = os.path.join(REPO, "download-proxy", "src", "merge_service", "search.py")
+        if not os.path.exists(src):
+            pytest.skip("merge_service/search.py absent (topology_unsupported)")
+        with open(src, encoding="utf-8") as fh:
+            text = fh.read()
+        for needle in (
+            "re_threads matched %d of %d row-starts",
+            "re_torrent_data parsed %d of %d rows",
+        ):
+            assert needle in text, (
+                f"BOB-093: the merge_service rutracker fork lost its bound-exceedance "
+                f"telemetry ({needle!r}); a dropped row there is silent again"
+            )

@@ -1,0 +1,643 @@
+<h1 id="bob-093-rutracker-redos-regex-bounds-measured-timings">BOB-093 —
+rutracker ReDoS regex bounds: measured timings</h1>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-08-21T00:00:00Z <strong>Scope:</strong> the substantive
+(offline-provable) half of BOB-093. The live compose bring-up half is
+explicitly DEFERRED — see “Deferred” below.</p>
+<h2 id="what-the-prior-evidence-bundle-already-established">What the
+prior evidence bundle already established</h2>
+<p><code>docs/qa/BOB-093/evidence.txt</code> +
+<code>verdict_GREEN.json</code> (2026-08-19, commit 1c0389a) establish,
+with runtime-class evidence:</p>
+<ol type="1">
+<li><code>re_search_queries</code> was changed from the quadratic
+<code>&lt;a.+?href="tracker\.php\?(.*?start=\d+)"</code> to the bounded
+<code>&lt;a[^&gt;]{0,512}?href="tracker\.php\?([^"]{0,256}?start=\d+)"</code>.</li>
+<li>That bounded form is present in the DEPLOYED plugin inside the
+running <code>qbittorrent-proxy</code> container
+(<code>/config/qBittorrent/nova3/engines/ rutracker.py</code>, sha256
+<code>76a6bd2e…</code>) — the §11.4.108 layer-3 claim.</li>
+<li>A self-validated challenge
+(<code>challenges/scripts/ rutracker_redos_regex_bounds_challenge.sh</code>)
+with golden-good/golden-bad and a §11.4.115 RED on a mutated copy.</li>
+</ol>
+<p><strong>What it did NOT establish</strong>, and what this round
+adds:</p>
+<ul>
+<li>Every check in that bundle is a <strong>pattern-PRESENCE</strong>
+check (does the deployed file contain the bounded string?). None of them
+<strong>times</strong> a regex, so none of them can see catastrophic
+backtracking in a regex that was never inspected. It covered ONE of the
+plugin’s four regexes.</li>
+<li>The bundle’s line <em>“proves deployed rutracker plugin functions
+end-to-end with the bounded regex”</em> is <strong>not supported by its
+own payload</strong>. In <code>live_search_smoke.txt</code> the single
+returned result carries <code>"tracker": "linuxtracker"</code>, and
+rutracker’s own entry reads
+<code>"status": "empty", "results_count": 0, "duration_ms": 164</code>.
+The BOB-136 adoption audit reached the same conclusion
+independently.</li>
+</ul>
+<h2 id="method">Method</h2>
+<p>Growth-curve measurement, not inspection. Each regex is run against
+an adversarial input at doubling sizes; a pathological regex shows
+superlinear growth, a bounded one plateaus.</p>
+<p>Host safety (§12.6/§12.12): every probe ran single-threaded under
+<code>nice -n 19 ionice -c 3 timeout --signal=KILL &lt;20–180&gt;s</code>.
+An OS-level timeout is the only sound bound here — Python signal
+handlers cannot interrupt a running <code>re.search</code>, which is one
+uninterruptible C call, so an in-process alarm would not have fired.
+Probes print one flushed line per size, so a SIGKILL mid-run still
+leaves the completed rows as evidence. <code>Killed</code> in a table
+below is the hard bound firing, not a crash.</p>
+<h2 id="red-before-all-four-regexes-measured">RED — before (all four
+regexes measured)</h2>
+<p>Growth <code>ratio</code> is time(2n)/time(n): ~2 = linear, ~4 =
+quadratic, ~8 = cubic.</p>
+<h3
+id="re_threads-tr-idtrs-tr-d.tr-re.s-quadratic"><code>re_threads</code>
+= <code>&lt;tr id="trs-tr-\d+.*?&lt;/tr&gt;</code> (re.S) —
+QUADRATIC</h3>
+<p>Attack <code>'&lt;tr id="trs-tr-1' * k</code>: many row-starts, no
+<code>&lt;/tr&gt;</code> anywhere, so every start scans to EOF. Applied
+to the WHOLE page via <code>.findall()</code>.</p>
+<table>
+<thead>
+<tr>
+<th>k</th>
+<th>bytes</th>
+<th>seconds</th>
+<th>ratio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>500</td>
+<td>8 000</td>
+<td>0.113842</td>
+<td>–</td>
+</tr>
+<tr>
+<td>1 000</td>
+<td>16 000</td>
+<td>0.191936</td>
+<td>1.69</td>
+</tr>
+<tr>
+<td>2 000</td>
+<td>32 000</td>
+<td>1.002507</td>
+<td>5.22</td>
+</tr>
+<tr>
+<td>4 000</td>
+<td>64 000</td>
+<td>4.483936</td>
+<td>4.47</td>
+</tr>
+<tr>
+<td>8 000</td>
+<td>128 000</td>
+<td>13.434783</td>
+<td>3.00</td>
+</tr>
+</tbody>
+</table>
+<h3 id="re_torrent_data-cubic-worst"><code>re_torrent_data</code> —
+CUBIC (worst)</h3>
+<p>Attack <code>'a data-topic_id="1"' + "&gt;&lt;" * k</code>: every
+<code>&gt;</code> and every <code>&lt;</code> is a backtrack point for
+<code>.*?&gt;</code> and <code>.+?&lt;</code> under re.S. Run once
+<strong>per row</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>k</th>
+<th>bytes</th>
+<th>seconds</th>
+<th>ratio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>250</td>
+<td>519</td>
+<td>0.171091</td>
+<td>–</td>
+</tr>
+<tr>
+<td>500</td>
+<td>1 019</td>
+<td>2.604068</td>
+<td>15.2</td>
+</tr>
+<tr>
+<td>1 000</td>
+<td>2 019</td>
+<td>25.804848</td>
+<td>9.91</td>
+</tr>
+<tr>
+<td>2 000</td>
+<td>4 019</td>
+<td><em>Killed at 40s bound</em></td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<p>A <strong>2 KB</strong> row cost <strong>25.8 s</strong>. Second
+attack, <code>data-ts_text="1"</code> storm
+(<code>'a data-topic_id="1"&gt;t&lt;' + 'data-ts_text="1"' * k</code>),
+attacking the five inter-cell gaps: 0.98 s @ 4 KB, 8.62 s @ 8 KB, 29.17
+s @ 12 KB, 65.13 s @ 16 KB. Third attack, <code>leechmed</code> storm:
+10.27 s @ 72 KB.</p>
+<h3
+id="re_search_queries-bounded-by-the-earlier-bob-093-fix-linear"><code>re_search_queries</code>
+(bounded by the earlier BOB-093 fix) — LINEAR ✅</h3>
+<p>Attack <code>'&lt;a ' * k</code>. Historical form shown for
+contrast.</p>
+<table>
+<thead>
+<tr>
+<th>k</th>
+<th>bytes</th>
+<th>historical <code>.+?</code></th>
+<th>ratio</th>
+<th>current bounded</th>
+<th>ratio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2 000</td>
+<td>6 000</td>
+<td>0.063239</td>
+<td>–</td>
+<td>0.008630</td>
+<td>–</td>
+</tr>
+<tr>
+<td>4 000</td>
+<td>12 000</td>
+<td>0.242998</td>
+<td>3.84</td>
+<td>0.018048</td>
+<td>2.09</td>
+</tr>
+<tr>
+<td>8 000</td>
+<td>24 000</td>
+<td>1.254772</td>
+<td>5.16</td>
+<td>0.042664</td>
+<td>2.36</td>
+</tr>
+<tr>
+<td>16 000</td>
+<td>48 000</td>
+<td>3.930997</td>
+<td>3.13</td>
+<td>0.087473</td>
+<td>2.05</td>
+</tr>
+<tr>
+<td>32 000</td>
+<td>96 000</td>
+<td><em>Killed at 20s</em></td>
+<td>–</td>
+<td>0.173063</td>
+<td>1.98</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The earlier BOB-093 fix is confirmed effective by
+measurement</strong>, not only by pattern presence. This is the negative
+result the item needed.</p>
+<h3
+id="re_magnet-magnetxturnbtiha-fa-f0-940-linear"><code>re_magnet</code>
+= <code>magnet:\?xt=urn:btih:([a-fA-F0-9]{40})</code> — LINEAR ✅</h3>
+<p>Attack: 39 valid hex chars + 1 invalid, repeated (near-miss at the
+<code>{40}</code> boundary). 0.001873 / 0.003536 / 0.007466 / 0.016386 /
+0.034712 s at 120 KB → 1.92 MB; ratios 1.89 / 2.11 / 2.19 / 2.12. Safe
+as written.</p>
+<h2 id="the-fix">The fix</h2>
+<p>The decisive finding is that the dominant cost in
+<code>re_torrent_data</code> was <strong>not</strong> the inter-cell
+gaps but <code>.*?&gt;</code> and <code>.+?&lt;</code>: under
+<code>re.S</code> those two can span an entire <code>&gt;&lt;</code>
+storm and permute against the five later gaps. Replacing them with
+negated classes that structurally cannot cross the delimiter they are
+searching for removes the permutation outright.</p>
+<pre><code>re_threads       &lt;tr id=&quot;trs-tr-\d{1,12}.{0,4096}?&lt;/tr&gt;
+re_torrent_data  a data-topic_id=&quot;(?P&lt;id&gt;\d{1,12})&quot;[^&lt;&gt;]{0,512}?&gt;(?P&lt;title&gt;[^&lt;]{1,1024}?)&lt;
+                 .{1,512}? data-ts_text=&quot;(?P&lt;size&gt;\d{1,20})&quot;          … (×4 gaps)</code></pre>
+<p>Bound calibration (evidence, not guesswork). Largest values observed
+across every row fixture the repo ships
+(<code>tests/unit/test_plugin_rutracker.py</code> +
+<code>tests/unit/merge_service/test_private_tracker_html_fixtures.py</code>):
+row body <strong>315</strong>, topic-anchor gap <strong>64</strong>,
+title <strong>30</strong>, inter-cell gaps <strong>≤18</strong>, topic
+id <strong>5 digits</strong>. Against those the chosen bounds are
+13×/8×/34×/28×.</p>
+<p><strong>Those multiples overstate the real headroom, and the honest
+figures are smaller.</strong> The shipped fixtures are synthetic and
+small. Independent review reconstructed a realistic rutracker row — 1
+415 B, 242-char Cyrillic title, full 10-column markup — and against
+<em>that</em> the two tightest margins are <strong>2.9× on the 4096 row
+bound and 2.6× on the 512 inter-cell gap bound</strong>, not 13× and 8×.
+Both bounds are therefore “~2–3× a realistic row”, and neither has the
+comfortable margin the fixture-relative multiples suggest. This is why
+the bound-exceedance telemetry below exists: the margins are thin enough
+that a real page crossing them is a reachable state, so a crossing must
+be observable. Cost is linear in the bound, measured, so widening later
+is a known-cost change: <code>re_threads</code> @ k=8000 → 3.77 s
+(b=8192), 1.44 s (b=4096), 0.72 s (b=2048); inter-cell gap on a 256 KB
+chunk → 3.22 s (2048), 0.21 s (1024), 0.017 s (512).</p>
+<h2 id="green-after-same-inputs">GREEN — after, same inputs</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>attack</th>
+<th>regex</th>
+<th>before</th>
+<th>after</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gtlt_storm</code> k=1000 (2 KB)</td>
+<td><code>re_torrent_data</code></td>
+<td>25.804848 s</td>
+<td><strong>0.000004 s</strong></td>
+</tr>
+<tr>
+<td><code>gtlt_storm</code> k=16000 (32 KB)</td>
+<td><code>re_torrent_data</code></td>
+<td><em>unreachable</em></td>
+<td><strong>0.000048 s</strong></td>
+</tr>
+<tr>
+<td><code>ts_text_storm</code> k=16000 (256 KB)</td>
+<td><code>re_torrent_data</code></td>
+<td>65.13 s @ 16 KB</td>
+<td><strong>0.027943 s</strong></td>
+</tr>
+<tr>
+<td><code>leechmed_storm</code> k=16000 (144 KB)</td>
+<td><code>re_torrent_data</code></td>
+<td>10.27 s @ 72 KB</td>
+<td><strong>0.000133 s</strong></td>
+</tr>
+<tr>
+<td><code>tr_storm</code> k=4000 (64 KB)</td>
+<td><code>re_threads</code></td>
+<td>9.4608 s</td>
+<td><strong>0.7887 s</strong></td>
+</tr>
+<tr>
+<td><code>tr_storm</code> k=8000 (128 KB)</td>
+<td><code>re_threads</code></td>
+<td><em>unreachable</em></td>
+<td><strong>1.4393 s</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>re_torrent_data</code> is now <strong>flat</strong> — cost
+stops growing with input, because no quantifier can scan past its bound.
+<code>re_threads</code> is linear (min-of-3 across k=1000…8000: ratios
+1.51 / 1.90 / 1.82 vs the pre-fix 2.96 / 4.14).</p>
+<p><strong>Correctness on real-shaped input:</strong> the bounded
+patterns extract byte-identical groups to the pre-fix patterns on every
+row fixture across both test files (<strong>16</strong> rows; this round
+first counted 14 — the difference is whether deliberately-malformed rows
+are counted, cosmetic either way), and independent review reproduced
+that on a reconstructed realistic 1 415-byte row with a 242-char
+Cyrillic title: identical extraction.</p>
+<p><strong>They are NOT semantically equivalent in general, and that is
+stated as a fact rather than glossed.</strong> Review built 18
+adversarial inputs and diffed old-vs-new match behaviour mechanically:
+<strong>8 diverge</strong>. Every divergence falls into one of two
+classes — (a) the old pattern’s match was itself garbage (e.g. a title
+beginning with <code>&lt;</code> yielded the old title
+<code>'&lt;b&gt;Beatles'</code>, i.e. raw markup shipped as a display
+name), or (b) a bound exceedance. <strong>None converts a
+previously-CORRECT extraction into a wrong one.</strong> Class (b) is
+the one with an operational cost, and it is what the telemetry below
+makes visible.</p>
+<p>Suite state: 96 passed in
+<code>tests/unit/test_plugin_rutracker.py</code>. The merge_service
+parser figure reproduces as 31 + 25 when the two parser files are run
+<strong>separately</strong>; run together they hit a pre-existing
+collision (see Honest gaps).</p>
+<h2 id="second-affected-file-a-fork-11.4.251">Second affected file (a
+fork, §11.4.251)</h2>
+<p><code>download-proxy/src/merge_service/search.py:1393</code> carried
+a <strong>byte-identical copy</strong> of both vulnerable regexes, and
+it — not the qBittorrent plugin — is the parser on the live
+<code>:7187</code> search path the prior smoke exercised. Both copies
+are fixed, and <code>test_merge_service_fork_stays_bounded</code> guards
+the fork so it cannot drift back alone.</p>
+<h2
+id="bound-exceedance-telemetry-added-after-review-important-1">Bound-exceedance
+telemetry (added after review, IMPORTANT-1)</h2>
+<p>Bounding a regex trades a hang for a <strong>silent drop</strong>,
+and both consumers were <code>if match:</code> with no <code>else</code>
+— <code>plugins/rutracker.py</code> and
+<code>download-proxy/src/merge_service/search.py</code>, the latter
+logging only from <em>inside</em> a matched row. A legitimate row over
+4096 B (long title + long forum name + long username) therefore vanished
+with <strong>zero signal</strong>: the §11.4.201 false-negative shape,
+and with only 2.6–2.9× real headroom it is a reachable state, not a
+theoretical one.</p>
+<p>Both consumers now count what each stage should have produced and
+<code>logger.warning</code> on divergence:</p>
+<ul>
+<li><code>&lt;tr id="trs-tr-\d</code> row-starts vs
+<code>re_threads</code> matches → row bound exceeded or unterminated
+row;</li>
+<li><code>re_threads</code> matches vs <code>re_torrent_data</code>
+matches → malformed row or field bound exceeded.</li>
+</ul>
+<p>This converts a silent skip into an observable signal
+<strong>and</strong> makes the bounds calibratable from production logs
+instead of from synthetic fixtures — which is the standing gap, since no
+real rutracker page is obtainable (below).</p>
+<p>Both directions of the counter are pinned. UNDER-counting was already
+caught by the bound-exceedance tests. OVER-counting was
+<strong>not</strong>: review mutated <code>re_row_start</code> from
+<code>&lt;tr id="trs-tr-\d</code> to a bare <code>&lt;tr</code> and all
+15 telemetry+ReDoS tests passed, because no healthy fixture contained a
+non-row <code>&lt;tr&gt;</code>. A real page has header rows and other
+tables, so that mutation would emit a spurious drop-warning on
+<strong>every</strong> page with nothing failing — a cry-wolf regression
+vector. The healthy-page fixture now carries a
+<code>&lt;tr class="tbs-top"&gt;</code> header row, and the mutant is
+caught (<code>assert 3 == 2</code>).</p>
+<p>Proven, not asserted: <code>TestBoundExceedanceTelemetry</code> (4
+tests) drives <code>__execute_search</code> with a 5 000-byte row
+(verified to actually overrun the bound, else the test would prove
+nothing) and with a row the field parser rejects, and asserts the exact
+warning text; a fourth test asserts a clean 2-row page produces
+<strong>no</strong> drop warning (§11.4.201(1) — telemetry that cries
+wolf is a FAIL-bluff), and a fifth guards the fork’s copy.</p>
+<h2 id="guards">Guards</h2>
+<p><strong>Structural</strong> —
+<code>tests/unit/test_plugin_rutracker.py::TestReDoSRegexBounds</code>
+(11 tests, 2.5 s). Flags any <code>*</code>/<code>+</code> quantifier
+whose atom is <code>.</code> or a negated class <code>[^…]</code> — the
+atoms that can scan to EOF. <code>\d+</code> / <code>[-\d]+</code> are
+digit-runs, self-limiting, allowed. Self-validating on every run against
+the four real pre-fix patterns as golden-bad, plus a false-positive
+guard on benign bounded/escaped forms (§11.4.201(1)).</p>
+<p><strong>Behavioural</strong> —
+<code>tests/stress/test_rutracker_redos_bounds.py</code> (3 tests, ~24
+s). Times the live compiled regex against each attack and caps it; the
+same harness must simultaneously measure the pre-fix pattern
+<strong>over</strong> the cap, so a broken timer cannot pass everything
+(§11.4.107(10)). A source check alone is source-class evidence for a
+runtime-class claim (§11.4.226) and would miss a differently-spelled
+unbounded scan.</p>
+<p><strong>Every teeth-check is relative or floor-shaped, none is an
+absolute floor on <code>hist_s</code>.</strong> The two flat cases keep
+their absolute <code>live_s &lt;= cap</code> regression assert, but
+their <em>teeth-check</em> — the half that proves the harness can still
+see the blow-up — is <code>hist_s &gt; 100 × live_s</code>.</p>
+<p>The first version used an absolute <code>hist_s &gt; cap</code>
+floor, and that was the same defect as the tr_storm cap, mirrored.
+Re-review measured the historical <code>gtlt_storm</code> at
+<strong>0.4887 s</strong> in a full-suite run and 0.465 / 0.453 / 0.452
+s standalone — all <strong>under</strong> the 0.5 s floor, so the
+teeth-check <strong>false-FAILED on healthy code</strong>. Cause
+established, not guessed: the 1.70 s “idle” baseline was taken with
+cores at powersave clocks under contention; with load down and a core
+boosting to 2.7 GHz the same measurement runs <strong>~3.7×
+faster</strong>. A 3.4× floor margin cannot survive 3.7× clock-state
+variance, and <code>ts_text_storm</code> was the next domino at
+5.4×.</p>
+<p>Reproduced here across three consecutive runs on this box: historical
+<code>gtlt_storm</code> came in at <strong>0.6762 / 0.5190 / 0.8430
+s</strong> — run 2 sat 3.8% above the old floor, i.e. a coin flip. Over
+the same three runs the <em>separations</em> were 846 316× / 467 986× /
+602 566×, never near the 100× threshold. Both halves share the clock, so
+the ratio cancels the variance — the identical argument already used for
+tr_storm, now applied consistently.</p>
+<p>Note what review did rather than hide: it left the honest FAIL
+artifact in <code>qa-results/</code> instead of re-running until green
+(§11.4.248).</p>
+<p><code>tr_storm</code> uses a <strong>relative discriminator</strong>
+instead, and the original absolute cap on it was a defect. There the fix
+is <em>linear</em> and the pre-fix is <em>quadratic</em>, so the honest
+gap is ~15×, not ~80× — and both halves inflate together under load.
+Independent review measured <code>live_s = 4.13 s</code> against a 0.98
+s idle baseline (<strong>4.2× inflation under 3-agent load</strong>) and
+the 3.5 s cap <strong>failed with zero code defect</strong>: a
+§11.4.201(1) FAIL-bluff, and precisely the re-run-until-green trainer
+(§11.4.248) that the removed ratio test had been. The comment budgeted
+“~2× slowdown”; this box does over 4×.</p>
+<p>The fix is to compare the two halves measured in the <strong>same
+run</strong>, which cancels the shared inflation:
+<code>hist_s &gt; 4 × live_s</code>, plus a loose 10 s sanity ceiling
+that is not the discriminator. Separations: idle 14.6×; under 3-agent
+load 9.2×; a quadratic regression 1.09×. The 4× threshold sits with
+&gt;2× margin on both sides.</p>
+<p>The relative arm also carries its own teeth-check,
+<code>hist_s &gt; 1.0 s</code>. Without it a zeroed timer read as
+<code>float("inf")</code> separation and <strong>passed</strong>: review
+stubbed <code>_best</code> to <code>0.0</code> (mutation M-D1) and,
+while the two absolute arms failed, the relative arm sailed through,
+because it had dropped the teeth-check the absolute arms kept.
+Suite-level the dead-timer control still held via the siblings, so “a
+broken timer cannot pass everything” stayed literally true — but that
+<em>arm’s</em> own §11.4.107(10) self-validation was gone. Observed
+<code>hist_s</code> range across every box state is 3.64–38.1 s, so a
+1.0 s floor keeps ≥3.6× margin. Applying the flat arms’ relative teeth
+closes their dead-timer path by the same mechanism, since
+<code>0 &gt; 100 × 0</code> is False.</p>
+<p>A growth-<strong>ratio</strong> test (<code>time(2n)/time(n)</code>)
+was written earlier and <strong>removed, not weakened</strong>, for the
+same class of reason — a ratio of two <em>independent</em> measurements
+amplifies noise. The relative discriminator here is different in kind:
+it ratios two measurements of the <em>same</em> input in the <em>same
+run</em>, so contention is common-mode and cancels rather than
+compounding.</p>
+<h2 id="mutation-the-guards-have-teeth">§1.1 mutation — the guards have
+teeth</h2>
+<p>The mutation is the fix’s own revert (§11.4.115(F)), applied to both
+files.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>mutation</th>
+<th>structural (unit)</th>
+<th>behavioural (stress)</th>
+<th>telemetry (unit)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>revert both regexes to pre-fix</td>
+<td><strong>4 failed</strong></td>
+<td><strong>4 failed</strong></td>
+<td>–</td>
+</tr>
+<tr>
+<td>C: <code>{0,4096}?</code> → <code>{0,999999}?</code></td>
+<td>11 passed — <strong>blind by design</strong></td>
+<td><strong>1 failed</strong>: separation <strong>1.35×</strong> vs 4.0×
+threshold (live 3.2316 s vs historical 4.3681 s)</td>
+<td>–</td>
+</tr>
+<tr>
+<td>strip both <code>logger.warning</code> telemetry blocks</td>
+<td>–</td>
+<td>–</td>
+<td><strong>3 failed</strong> of 4</td>
+</tr>
+<tr>
+<td>M-D1: <code>_best</code> → <code>0.0</code> (dead timer)</td>
+<td>–</td>
+<td><strong>3 failed</strong> of 3 (was 2 of 3)</td>
+<td>–</td>
+</tr>
+<tr>
+<td>M-D2: payload builders → <code>""</code></td>
+<td>–</td>
+<td><strong>3 failed</strong> of 3, deterministically (was
+stochastic)</td>
+<td>–</td>
+</tr>
+<tr>
+<td>M-T2: <code>re_row_start</code> → bare <code>&lt;tr&gt;</code></td>
+<td>–</td>
+<td>–</td>
+<td><strong>1 failed</strong> (was 0 of 15)</td>
+</tr>
+</tbody>
+</table>
+<p>Mutation C is the load-bearing demonstration that the two layers are
+<strong>complementary, not redundant</strong>: a bounded
+<em>spelling</em> with an unbounded <em>effect</em> is invisible to a
+pattern-text rule by construction, and only the behavioural timer
+catches it. Review found the same independently. In the telemetry row
+the 4th test correctly still passes — it is the false-positive guard,
+which <em>should</em> pass when no warning is emitted at all.</p>
+<p>Reviewer-run mutations (five, independent of mine): none escaped both
+nets.</p>
+<p>Restored afterwards and verified by sha256 against the pre-mutation
+baseline (both files <code>OK</code>), with a residue scan showing 0
+pre-fix patterns left in source (§11.4.84).</p>
+<p>Stability (§11.4.50): 3 consecutive full runs of the behavioural
+guard — 3 passed / 3 passed / 3 passed.</p>
+<h2 id="deferred-and-why">Deferred — and why</h2>
+<p>The item’s title asks for a <strong>live compose bring-up</strong>.
+That is <strong>not done here</strong>, deliberately: container
+orchestration is owned by the operator’s <code>start.sh</code> (Hard
+Stop #3), the stack is currently serving, and this agent must not bring
+it up or restart it. Concretely deferred:</p>
+<ol type="1">
+<li><strong><code>./install-plugin.sh</code> +
+<code>./start.sh --reload-plugins</code></strong> to copy the fixed
+<code>plugins/rutracker.py</code> into
+<code>config/qBittorrent/nova3/engines/rutracker.py</code> and load it.
+The installed copy on disk is therefore still the pre-fix one; it was
+left untouched on purpose, since a direct edit there is clobbered by the
+next install and the source of truth is <code>plugins/</code>.</li>
+<li><strong><code>./start.sh --reload-python</code></strong> for the
+<code>merge_service/search.py</code> change (bind-mounted, needs a
+<code>__pycache__</code> clear + container restart).</li>
+<li><strong>Re-running
+<code>challenges/scripts/rutracker_redos_regex_bounds_challenge.sh</code></strong>
+against the container to re-establish the §11.4.108 layer-3 sha256 match
+for the two newly-fixed regexes. The existing GREEN verdict covers only
+<code>re_search_queries</code>.</li>
+<li><strong>The item’s 4th acceptance sub-step — “capture timing of a
+large rutracker result page (&lt;2 s)”</strong> — still unmet, and it is
+not merely a deployment matter: rutracker returned
+<code>status: empty, results_count: 0</code> in the prior smoke, so no
+large page has ever been obtained to time. Independent review attempted
+a live fetch with the operator’s <code>cookies_rutracker.txt</code> and
+<strong>rutracker.org now serves a Cloudflare JS challenge (“Just a
+moment…”) to curl even WITH valid cookies</strong>. That independently
+explains the prior smoke’s <code>results_count: 0</code>, and it means
+this sub-step is <strong>not merely blocked on credentials</strong> —
+cookies alone cannot satisfy it. Filed as <strong>BOB-172</strong>, and
+independently re-confirmed with cookie-bearing curl; deliberately not
+worked around here.</li>
+</ol>
+<p>Everything above is layer-3/layer-4 (§11.4.108). This round’s
+evidence reaches <strong>SOURCE and behaviour of the compiled regex
+in-process</strong> — it does not claim the container is running the
+fix.</p>
+<h2 id="honest-gaps">Honest gaps</h2>
+<ul>
+<li><strong>Raising the bounds is not free safety, and that is why they
+were left alone.</strong> A larger bound linearly raises the
+<em>adversarial</em> budget the bound exists to cap — measured:
+<code>b=8192</code> costs 3.77 s worst case, ~2.6× the current
+<code>b=4096</code>. Raising on a hypothesised row shape with
+<strong>zero observed instances</strong> would trade a MEASURED DoS
+budget for an UNMEASURED truncation risk: a §11.4.6 guess in the
+opposite direction. With the telemetry now emitting exact counts,
+keep-and-calibrate-from-observation is the §11.4.101 reversible-safe
+default. The calibration debt is tracked as its own item on BOB-093
+rather than living only in this sentence.</li>
+<li><strong>No real rutracker page was available to calibrate
+against</strong>, and the Cloudflare challenge (BOB-172) means one
+cannot currently be fetched. Bounds are calibrated from synthetic
+fixtures plus a reconstructed realistic row, giving only
+<strong>2.6–2.9×</strong> real headroom on the two tightest bounds. A
+row crossing a bound is <strong>no longer silent</strong> (telemetry
+above), but it is still <strong>dropped</strong>, not recovered — the
+warning tells you to raise the bound, it does not save that row. Raising
+the bounds is a one-literal change with its cost curve recorded beside
+it.</li>
+<li><strong><code>re_threads</code> is bounded, not free.</strong> A 128
+KB adversarial page still costs ~1.4 s. The win is
+linear-instead-of-quadratic; the constant scales with the bound.</li>
+<li>The <code>.{1,512}?</code> inter-cell gaps remain
+<code>.</code>-based. They are bounded and measured flat, but a
+negated-class formulation is impossible there because real markup
+between cells legitimately contains <code>&lt;</code>, <code>&gt;</code>
+and <code>"</code>.</li>
+<li><strong>Unrelated pre-existing breakage observed, not
+fixed:</strong>
+<ol type="a">
+<li>the <code>schemathesis</code> pytest plugin fails to import
+(<code>ModuleNotFoundError: No module named 'rpds.rpds'</code>), so
+every pytest run above used <code>-p no:schemathesis</code>;</li>
+<li>the BOB-165 recipe <code>PYTEST_DISABLE_PLUGIN_AUTOLOAD=1</code>
+breaks 5 pre-existing env-dependent tests in
+<code>tests/unit/test_plugin_rutracker.py</code>
+(<code>TestConfig::test_default_mirrors</code>,
+<code>test_env_mirrors_override</code>,
+<code>test_get_env_with_default</code>,
+<code>test_get_mirrors_from_env_empty</code>,
+<code>test_get_mirrors_from_env_whitespace</code>) — they need an
+autoloaded env plugin. Proven pre-existing: HEAD’s own copy of the file
+fails the same 5 under the same flags. With autoload on and only
+schemathesis disabled the file is 96/96 green. It also requires
+<code>-p pytest_timeout</code>, since the <code>--timeout=60</code> in
+<code>pyproject.toml</code> is otherwise an unknown argument;</li>
+<li><code>tests/unit/merge_service/test_html_parsers.py</code> +
+<code>test_search_coverage.py</code> run together produce 31 setup
+errors
+(<code>No module named 'merge_service.search.deduplicator'; 'merge_service.search' is not a package</code>).
+Proven pre-existing: with <code>search.py</code> reverted to its HEAD
+content the identical 31 errors appear.</li>
+</ol></li>
+<li><code>plugins/rutracker.py</code> does not satisfy
+<code>ruff format</code>; that drift is pre-existing on HEAD and was
+left alone to keep the diff scoped.</li>
+</ul>

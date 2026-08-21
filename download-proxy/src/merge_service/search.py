@@ -1390,23 +1390,44 @@ class SearchOrchestrator:
         logger = logging.getLogger(__name__)
         results: list[SearchResult] = []
 
-        re_threads = re.compile(r'<tr id="trs-tr-\d+.*?</tr>', re.S)
+        re_threads = re.compile(r'<tr id="trs-tr-\d{1,12}.{0,4096}?</tr>', re.S)
         re_torrent_data = re.compile(
-            r'a data-topic_id="(?P<id>\d+?)".*?>(?P<title>.+?)<'
-            r".+?"
-            r'data-ts_text="(?P<size>\d+?)"'
-            r".+?"
-            r'data-ts_text="(?P<seeds>[-\d]+?)"'
-            r".+?"
-            r"leechmed.+?>(?P<leech>\d+?)<"
-            r".+?"
-            r'data-ts_text="(?P<pub_date>\d+?)"',
+            r'a data-topic_id="(?P<id>\d{1,12})"[^<>]{0,512}?>(?P<title>[^<]{1,1024}?)<'
+            r".{1,512}?"
+            r'data-ts_text="(?P<size>\d{1,20})"'
+            r".{1,512}?"
+            r'data-ts_text="(?P<seeds>[-\d]{1,20})"'
+            r".{1,512}?"
+            r"leechmed.{1,512}?>(?P<leech>\d{1,20})<"
+            r".{1,512}?"
+            r'data-ts_text="(?P<pub_date>\d{1,20})"',
             re.S,
         )
 
-        for thread in re_threads.findall(html_content):
+        # BOB-093 bound-exceedance telemetry. Both parsers are bounded, so a
+        # legitimately huge row can overrun a bound and be dropped. The only
+        # logging below sits INSIDE `if match:`, so a row that never matched
+        # produced no signal at all -- the §11.4.201 false-negative shape.
+        # Counting each stage makes the drop observable and lets the bounds be
+        # calibrated from production logs instead of guessed.
+        re_row_start = re.compile(r'<tr id="trs-tr-\d')
+        row_starts = len(re_row_start.findall(html_content))
+        threads = re_threads.findall(html_content)
+        if len(threads) < row_starts:
+            logger.warning(
+                "rutracker: re_threads matched %d of %d row-starts -- %d row(s) "
+                "dropped -- each is either over the {0,4096} row bound or has no "
+                "closing </tr> (BOB-093).",
+                len(threads),
+                row_starts,
+                row_starts - len(threads),
+            )
+
+        parsed = 0
+        for thread in threads:
             match = re_torrent_data.search(thread)
             if match:
+                parsed += 1
                 try:
                     d = match.groupdict()
                     title = html.unescape(d["title"])
@@ -1435,6 +1456,16 @@ class SearchOrchestrator:
                 except Exception as e:
                     logger.debug(f"Skipping malformed RuTracker result: {e}")
                     continue
+
+        if parsed < len(threads):
+            logger.warning(
+                "rutracker: re_torrent_data parsed %d of %d rows -- %d row(s) "
+                "dropped (malformed, or over the {1,512}/{1,1024} field bounds, "
+                "BOB-093).",
+                parsed,
+                len(threads),
+                len(threads) - parsed,
+            )
 
         return results
 
