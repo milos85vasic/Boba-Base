@@ -6,10 +6,10 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 8 |
+| Bug | Fixed (→ Fixed.md) | 9 |
 | Bug | In progress | 2 |
 | Bug | Operator-blocked | 1 |
-| Bug | Queued | 9 |
+| Bug | Queued | 8 |
 | Bug | Ready for testing | 1 |
 | Task | Completed (→ Fixed.md) | 1 |
 | Task | In progress | 9 |
@@ -73,5 +73,5 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 | BOB-154 | Bug | Ready for testing | Medium | Host venv and production container run different starlette versions (1.4.1 vs 1.6.0) |
 | BOB-155 | Bug | Fixed (→ Fixed.md) | High | workable-items diff reports 'DB and Markdown are in sync' having opened zero Markdown files when --issues/--fixed are omitted |
 | BOB-156 | Bug | Queued | Medium | BOB-145 event-loop regression guard is load-sensitive and flaky: 8786ms under host load vs a 900-1500ms ceiling calibrated on a quiet host |
-| BOB-157 | Bug | Queued | High | Our own BOB-137 stall watchdog can segfault the merge service: faulthandler dump_traceback(all_threads=True) hits an unpatched CPython 3.12 defect |
+| BOB-157 | Bug | Fixed (→ Fixed.md) | High | Our own BOB-137 stall watchdog can segfault the merge service: faulthandler dump_traceback(all_threads=True) hits an unpatched CPython 3.12 defect |
 | BOB-158 | Bug | Queued | High | tests/conftest.py cannot run on the production interpreter: binds asyncio.events._get_event_loop_policy, a 3.13+ private API, while production is 3.12.13 |

@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 33
-**Last modified:** 2026-08-21T18:33:34Z
+**Revision:** 34
+**Last modified:** 2026-08-21T18:38:54Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1119,7 +1119,7 @@ The guard gives the same verdict on a loaded host as on a quiet one - or it meas
 
 ## BOB-157 — Our own BOB-137 stall watchdog can segfault the merge service: faulthandler dump_traceback(all_threads=True) hits an unpatched CPython 3.12 defect
 
-**Status:** Queued
+**Status:** Fixed (→ Fixed.md)
 **Type:** Bug
 **Severity:** High
 **Created-By:** AI
