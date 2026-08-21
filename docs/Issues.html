@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 31 <strong>Last modified:</strong>
-2026-08-21T17:32:01Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 33 <strong>Last modified:</strong>
+2026-08-21T18:33:34Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -397,16 +397,6 @@ been created 2026-08-10 as Task/Queued (the four Lava P1..P4 items); the
 closed-as-Implemented status flip (citing per-finding implementing
 commits) remains owed under this item.</p>
 <h2
-id="bob-084-rd2-17-reconcile-bob-008-dbmd-body-drift-via-the-workable-items-tool">BOB-084
-— RD2-17: Reconcile BOB-008 DB/MD body drift via the workable-items
-tool</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> High</p>
-<p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-17, P1]
-Reconcile BOB-008 DB/MD body drift (RD2-04) via the workable-items tool.
-Priority: P1. Composes with RD2-04 (evidence source) and RD2-20
-(preventive fix).</p>
-<h2
 id="bob-085-rd2-18-create-top-level-boba-proxymerge-service-v1.0.0-readiness-ledger-closes-ga-10">BOB-085
 — RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness
 ledger (closes GA-10)</h2>
@@ -423,13 +413,51 @@ proxy/merge-service ledger created. Priority: P2.</p>
 id="bob-087-rd2-20-wire-docs_chain-commit-seam-sync-hook-per-11.4.106f-so-db-writes-cannot-land-without-md-mirror">BOB-087
 — RD2-20: Wire docs_chain / commit-seam sync hook per §11.4.106(F) so DB
 writes cannot land without MD mirror</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> High</p>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Severity:</strong> High</p>
 <p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-20, P0] Wire
 (or fix) the docs_chain / commit-seam sync hook per §11.4.106(F) so a
 docs/workable_items.db write can never again land without its MD mirror
 in the same commit — this is the mechanical fix that prevents Root Cause
 2 from recurring, not just a one-time catch-up. Priority: P0.</p>
+<p><strong>Progress 2026-08-21:</strong> MEASURED against all three
+seams §11.4.106(F) names, not one. COMMIT seam: COVERED —
+scripts/hooks/docs-sync-commit-seam.sh is invoked from
+scripts/commit-push-all.sh at BOTH commit call sites (the –scope branch
+and the git add -A branch) via _docs_sync_seam_check, after staging and
+before git commit, exiting 1 on refusal; there is no third path to git
+commit in that script. Proven in BOTH directions on temp copies with the
+real DB sha256 unchanged: an MD-side body edit is detected and named
+(self-test golden-bad, victim BOB-008), and a real engine DB write with
+the Markdown deliberately left stale is detected and named (golden-bad,
+BOB-084) — that second direction is the one the item’s own text claims —
+while a clean tree stays silent (negative control, no §11.4.201(1) false
+positive). BUILD seam: COVERED — pre_build_verification.sh invariant 17
+runs validate AND diff with –issues/–fixed passed explicitly (never the
+flagless form BOB-155 fixed), invariants 18/22 cover the export leg with
+a real-invocation assertion, invariant 24 runs the real docs_chain
+engine verify –all; RESIDUAL: no CHECK 3 equivalent there, so the build
+seam inherits diff’s blindness to the body_md class (the BOB-136 class).
+CONSTITUTION-PULL seam: NOT COVERED — a grep for
+workable-items|docs-sync|docs_chain|11.4.106 returns 0 in BOTH
+constitution/scripts/post_update_hook.sh and
+scripts/verify-all-constitution-rules.sh, control-needled so the zeros
+are sight not blindness (needle ‘skill’ 38 hits,
+‘covenant_propagation_suite’ 7 hits, negative control 0); of the 172
+gates under constitution/scripts/gates/ only two mention the engines and
+both are anchor-literal presence gates that compare no DB against any
+Markdown, and config/constitution-sweep.conf adds no such check. So a
+constitution pull can be treated as canonical with the tracker never
+re-compared. REMAINS: wire the already-existing seam into
+scripts/verify-all-constitution-rules.sh BY REFERENCE (bash
+scripts/hooks/docs-sync-commit-seam.sh –files docs/Issues.md
+docs/Fixed.md docs/workable_items.db), reporting
+PASS/FAIL/SKIP-with-reason in the sweep’s own vocabulary and never a
+silent pass on an absent tool — a wiring change, not a second
+implementation (§11.4.227). NOT DONE this round: that file sits outside
+the working brief’s declared file scope, so the gap is named and the
+item stays open rather than the scope being exceeded (§11.4.6).
+EVIDENCE. docs/qa/BOB-087/seam-coverage-measurement.md.</p>
 <h2
 id="bob-088-rd2-21-completeverify-readme-tracked-items-status-documents-table-row-completeness-ga-07-remainder">BOB-088
 — RD2-21: Complete/verify README Tracked-Items + Status Documents table

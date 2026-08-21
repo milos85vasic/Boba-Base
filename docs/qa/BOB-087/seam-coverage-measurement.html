@@ -1,0 +1,134 @@
+<h1 id="bob-087-11.4.106f-three-seam-coverage-measurement">BOB-087 —
+§11.4.106(F) three-seam coverage measurement</h1>
+<p><strong>Item:</strong> BOB-087 (RD2-20) — Wire docs_chain /
+commit-seam sync hook per §11.4.106(F) <strong>Type:</strong> Task ·
+<strong>Status after this measurement:</strong> In progress (2 of 3
+seams covered) <strong>Measured:</strong> 2026-08-21</p>
+<h2 id="what-11.4.106f-requires">What §11.4.106(F) requires</h2>
+<blockquote>
+<p>“the doc/DB sync is enforced at the COMMIT seam (hook refuses a
+commit whose staged set touches a chain source while its exports/DB are
+stale) + the BUILD seam (pre-build gate) + the CONSTITUTION-PULL seam
+(§11.4.164 post-update hook)”</p>
+</blockquote>
+<p>Three seams. Each was measured separately.</p>
+<hr />
+<h2 id="seam-1-commit-covered-measured-both-polarities">SEAM 1 — COMMIT:
+<strong>COVERED</strong> (measured, both polarities)</h2>
+<p><code>scripts/hooks/docs-sync-commit-seam.sh</code> exists (368
+lines) and is invoked from <code>scripts/commit-push-all.sh</code> at
+<strong>both</strong> commit call sites — the <code>--scope</code>
+branch (line 378) and the <code>git add -A</code> branch (line 386) —
+through <code>_docs_sync_seam_check</code> (line 275), which runs
+<em>after</em> staging and <em>before</em> <code>git commit</code>, and
+<code>exit 1</code>s the whole wrapper on refusal. There is no third
+path to <code>git commit</code> in that script.</p>
+<p>Live run over the tracker file set:</p>
+<pre><code>$ bash scripts/hooks/docs-sync-commit-seam.sh --files docs/Issues.md docs/Fixed.md docs/workable_items.db
+CHECK 1 workable-items validate ......... PASS
+CHECK 2 workable-items diff ............. PASS
+CHECK 3 body_md drift oracle ............ PASS</code></pre>
+<h3 id="the-items-literal-claim-tested-in-both-directions">The item’s
+literal claim, tested in both directions</h3>
+<p>The acceptance text is <em>“a docs/workable_items.db write can never
+again land without its MD mirror in the same commit”</em>. A
+one-directional oracle would satisfy the words and miss half the defect,
+so both directions were driven. Everything ran on temp copies; the real
+<code>docs/workable_items.db</code> sha256 was unchanged before and
+after (<code>28e12f219590e667</code>).</p>
+<p><strong>MD drifts, DB stale</strong> — the hook’s own §11.4.107(10)
+self-test:</p>
+<pre><code>golden-good     PASS  (clean tree reproduces tracked DB; oracle does not false-fire)
+golden-bad      PASS  (seeded body drift DETECTED and named: BOB-008)</code></pre>
+<p><strong>DB written, MD stale</strong> — the direction the item
+actually names. A <em>real engine</em> write
+(<code>workable-items update --id BOB-084 -status "In progress"</code>)
+was applied to a temp copy of the DB with the working-tree Markdown
+deliberately left alone:</p>
+<pre><code>negative control   PASS  (no DB write -&gt; oracle silent; no false positive §11.4.201(1))
+golden-bad         PASS  (DB-only write DETECTED and named: BOB-084)</code></pre>
+<p>So the seam refuses a DB write whose MD mirror is absent, and does
+not refuse a clean tree. It has also refused live commits in anger today
+on checks 1, 2, 3 and 5 (operator-reported).</p>
+<hr />
+<h2 id="seam-2-build-covered-with-one-named-residual">SEAM 2 — BUILD:
+<strong>COVERED</strong> (with one named residual)</h2>
+<p><code>scripts/pre_build_verification.sh</code> invariant 17
+(<code>CM-WORKABLE-ITEMS-VALIDATE</code>) runs <strong>both</strong>
+halves, and passes the Markdown paths explicitly — not the flagless
+form:</p>
+<pre><code>workable-items validate --db &quot;${WORKABLE_DB}&quot;
+workable-items diff --db &quot;${WORKABLE_DB}&quot; --issues &quot;${ISSUES_MD}&quot; --fixed &quot;${FIXED_MD}&quot;</code></pre>
+<p>Invariant 18 / 22 cover <code>workable-items-export.sh</code> (the
+.md→exports leg, including a real-invocation assertion so a
+silently-skipping export cannot pass), and invariant 24
+(<code>CM-DOCS-CHAIN-ENGINE-VERIFY</code>) runs the real Docs Chain
+engine <code>verify --all</code> against
+<code>.docs_chain/contexts/*</code>.</p>
+<p><strong>Residual (named, not silently absorbed):</strong> the build
+seam has no equivalent of the commit seam’s CHECK 3. <code>diff</code>
+is structurally blind to body-only drift — that blindness is BOB-136,
+and it is exactly how BOB-008’s Evidence text rotted unnoticed. The
+build seam therefore enforces doc/DB sync but cannot see the body_md
+class. This is a <em>narrower</em> instrument at that seam, not an
+absent one.</p>
+<hr />
+<h2
+id="seam-3-constitution-pull-not-covered-measured-absence-control-needled">SEAM
+3 — CONSTITUTION-PULL: <strong>NOT COVERED</strong> (measured absence,
+control-needled)</h2>
+<p>Neither hook that runs on a constitution pull performs any doc/DB
+sync check.</p>
+<pre><code>$ grep -cE &quot;workable-items|docs-sync|docs_chain|11\.4\.106&quot; constitution/scripts/post_update_hook.sh
+0
+$ grep -cE &quot;workable-items|docs-sync|docs_chain|11\.4\.106&quot; scripts/verify-all-constitution-rules.sh
+0</code></pre>
+<p>A zero is not evidence until the instrument is proven able to see
+through the same path (§11.4.201(7)(b)). Control needles, same grep,
+same files:</p>
+<pre><code>post_update_hook.sh            &quot;skill&quot;                        -&gt; 38   (sees)
+post_update_hook.sh            &quot;ZZZ_NOT_PRESENT_NEEDLE&quot;       -&gt;  0   (negative control)
+verify-all-constitution-rules  &quot;covenant_propagation_suite&quot;   -&gt;  7   (sees)</code></pre>
+<p>The instrument sees. The zeros are real.</p>
+<p>Nor does the sweep pick a sync check up transitively: of the 172
+gates under <code>constitution/scripts/gates/</code>, only two mention
+the workable-items or docs_chain engines
+(<code>cm_covenant_114_202_propagation.sh</code>,
+<code>cm_covenant_114_213_propagation.sh</code>) and both are
+<em>anchor-literal presence</em> gates — they assert a governance file
+contains a string, and perform no DB↔︎Markdown comparison.
+<code>config/constitution-sweep.conf</code> adds no such check
+either.</p>
+<p><strong>Consequence:</strong> a constitution pull that lands a
+doc-affecting change can be treated as canonical with the tracker’s DB
+and Markdown never re-compared. §11.4.32 names
+<code>scripts/verify-all-constitution-rules.sh</code> as boba’s sweep,
+so that is where the missing check belongs.</p>
+<hr />
+<h2 id="remaining-work-precise">Remaining work (precise)</h2>
+<ol type="1">
+<li>Add a doc/DB sync stage to
+<code>scripts/verify-all-constitution-rules.sh</code> that invokes the
+already-existing seam by reference —
+<code>bash scripts/hooks/docs-sync-commit-seam.sh --files docs/Issues.md docs/Fixed.md docs/workable_items.db</code>
+— reporting PASS / FAIL / SKIP-with-reason in the sweep’s existing
+verdict vocabulary, never a silent pass on an absent tool (§11.4.3 /
+§11.4.201). No new gate logic: the seam already exists and is
+self-validated, so this is a wiring change, not a second implementation
+(§11.4.227).</li>
+<li>Optional, tracked separately as the BOB-136 class: give the build
+seam the CHECK 3 body_md oracle so <code>diff</code>’s blindness is not
+the build seam’s blindness.</li>
+</ol>
+<p>Not done in this round: both files are outside the declared file
+scope of the working brief
+(<code>scripts/pre_build_verification.sh</code> is explicitly forbidden;
+<code>scripts/verify-all-constitution-rules.sh</code> is not in the
+granted scope). Naming the gap and leaving the item open is the honest
+outcome rather than exceeding scope (§11.4.6).</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p>The commit seam proves the tracked DB and the working-tree Markdown
+agree at commit time. It does not prove either side is <em>correct</em>,
+and it only fires when the staged set touches a chain source — a
+pure-code commit stages none, which is why CHECK 5 (BOB-136 closure
+seam) deliberately runs before the early exit.</p>

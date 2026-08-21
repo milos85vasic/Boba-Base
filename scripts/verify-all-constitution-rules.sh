@@ -355,6 +355,45 @@ for g in "${all_gates[@]}"; do
     fi
 done
 
+# ── §11.4.106(F) SEAM 3: the CONSTITUTION-PULL seam ────────────────────────
+#
+# §11.4.106(F) binds the doc/DB sync check at THREE write-seams: commit, build,
+# and constitution-pull. Measured 2026-08-21, the first two were covered and
+# THIS ONE WAS NOT — `grep -c` for workable-items / docs-sync / docs_chain over
+# this file and constitution/scripts/post_update_hook.sh returned 0 for all
+# three. Control-needled so the zeros were sight rather than blindness: the
+# token "skill" returns 38 in the same file.
+#
+# WIRED BY REFERENCE, not reimplemented (§11.4.227): this delegates to the same
+# hook the commit seam already uses, so there is exactly one implementation of
+# the check and it cannot drift between seams. A second copy here would be a
+# parallel mechanism whose divergence nobody would notice.
+#
+# Reported in this sweep's OWN vocabulary (pass/fail/skip counters) so it is
+# accounted for in the coverage arithmetic rather than sitting outside it.
+_seam_hook="${root}/scripts/hooks/docs-sync-commit-seam.sh"
+if [ ! -x "$_seam_hook" ]; then
+    # Absent is an honest SKIP, not a pass: a consumer without a tracker DB has
+    # nothing to sync, and refusing it here would be a §11.4.201(1) false
+    # positive against a legitimately-shaped project.
+    echo "⏭️  CM-DOCS-DB-SYNC-ON-PULL: SKIP — hook absent at scripts/hooks/docs-sync-commit-seam.sh"
+    skip=$((skip + 1))
+else
+    _seam_log="$(mktemp)"
+    _seam_rc=0
+    bash "$_seam_hook" --files docs/Issues.md docs/Fixed.md docs/workable_items.db \
+        >"$_seam_log" 2>&1 || _seam_rc=$?
+    if [ "$_seam_rc" -eq 0 ]; then
+        echo "✅ CM-DOCS-DB-SYNC-ON-PULL: PASS — tracker DB and its Markdown mirror agree after the pull"
+        pass=$((pass + 1))
+    else
+        echo "❌ CM-DOCS-DB-SYNC-ON-PULL: FAIL — the pulled tree's DB and Markdown disagree (exit ${_seam_rc})"
+        sed 's/^/        /' "$_seam_log"
+        fail=$((fail + 1))
+    fi
+    rm -f "$_seam_log"
+fi
+
 accounted=$((pass+fail+skip+err+tmo))
 echo
 echo "======================================================================"

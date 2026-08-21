@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 23
-**Last modified:** 2026-08-21T16:12:09Z
+**Revision:** 24
+**Last modified:** 2026-08-21T18:28:18Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1346,4 +1346,13 @@ RETRO-REGISTRATION, filed 2026-08-21 by the BOB-136 closure-seam adoption sweep.
 WHAT THE DEFECT WAS. Part of the BOB-126 fallout. The new §11.4.263 static gate CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID collided with its sibling CM-KILLPG-PGID-GUARD: each matched the other's killpg literals as a carrier — the same carrier-vs-thing false-positive class as BOB-070 and BOB-099, this time between two freshly-landed gates.
 
 WHAT LANDED. fa0fe63 added the gate plus its meta-test; be36f32 fixed the carrier collision; 29c33de wired the gate as pre-build invariant 29. Verified this session in the current tree: scripts/pre_build_verification.sh declares invariant 29 at lines 135 and 948-970, the gate script scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh is present and executable, and its meta-test exists at tests/pre_build/test_check_cm_test_mock_pid_patched_when_real_pid.sh. docs/CONTINUATION.md Rev 27 independently records this as 'BOB-128 (killpg-carrier guard collision with the new §11.4.263 gate — fixed be36f32; CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID landed as pre_build invariant 29)'. Note the invariant's own in-file comment credits BOB-127 rather than BOB-128 — a cosmetic mis-attribution, not a functional gap.
+
+## BOB-084 — RD2-17: Reconcile BOB-008 DB/MD body drift via the workable-items tool
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-084/closure-evidence.md
+**Severity:** High
+
+RD2-17: Reconcile BOB-008 DB/MD body drift via the workable-items tool
 

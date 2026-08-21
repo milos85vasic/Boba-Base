@@ -11,11 +11,12 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 | Bug | Operator-blocked | 1 |
 | Bug | Queued | 9 |
 | Bug | Ready for testing | 1 |
+| Task | Completed (→ Fixed.md) | 1 |
 | Task | In progress | 9 |
 | Task | Operator-blocked | 3 |
-| Task | Queued | 19 |
+| Task | Queued | 17 |
 | Task | Ready for testing | 2 |
-| **TOTAL** | | **54** |
+| **TOTAL** | | **53** |
 
 ## Items
 
@@ -32,9 +33,8 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 | BOB-079 | Task | Queued | Medium | RD2-12: Retroactive attributed history notes for GA-18/21/22/25/26/27 changes (never rewrite published history) |
 | BOB-080 | Task | Queued | High | RD2-13: Retroactive Fable-xhigh code review of the substantive Auto-commit diffs |
 | BOB-082 | Task | Queued | High | RD2-15: Create BOB-064..067 workable items for the four Lava-porting findings (closes GA-05) |
-| BOB-084 | Task | Queued | High | RD2-17: Reconcile BOB-008 DB/MD body drift via the workable-items tool |
 | BOB-085 | Task | Queued | Medium | RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness ledger (closes GA-10) |
-| BOB-087 | Task | Queued | High | RD2-20: Wire docs_chain / commit-seam sync hook per §11.4.106(F) so DB writes cannot land without MD mirror |
+| BOB-087 | Task | Completed (→ Fixed.md) | High | RD2-20: Wire docs_chain / commit-seam sync hook per §11.4.106(F) so DB writes cannot land without MD mirror |
 | BOB-088 | Task | Queued | Medium | RD2-21: Complete/verify README Tracked-Items + Status Documents table row-completeness (GA-07 remainder) |
 | BOB-090 | Task | In progress | Medium | RD2-25: HelixQA Challenge entry exercising all three start.sh subcommands end-to-end against real compose stack |
 | BOB-092 | Bug | Queued | Medium | RD2-27: Remove test_live_stack_evidence.py:265 nnmclub SKIP-on-404 fallback + verify live 200 (closes GA-13) |
@@ -74,4 +74,4 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 | BOB-155 | Bug | Fixed (→ Fixed.md) | High | workable-items diff reports 'DB and Markdown are in sync' having opened zero Markdown files when --issues/--fixed are omitted |
 | BOB-156 | Bug | Queued | Medium | BOB-145 event-loop regression guard is load-sensitive and flaky: 8786ms under host load vs a 900-1500ms ceiling calibrated on a quiet host |
 | BOB-157 | Bug | Queued | High | Our own BOB-137 stall watchdog can segfault the merge service: faulthandler dump_traceback(all_threads=True) hits an unpatched CPython 3.12 defect |
-| BOB-158 | Bug | Queued | High | **Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T17:29:10Z **Reported-By:** AI  **What (the report, verbatim):** The test suite has silently acquired a dependency on an interpreter production does not run. tests/conftest.py:207 calls asyncio.events._get_event_loop_policy() - a PRIVATE API that does not exist before Python 3.13 - in an AUTOUSE fixture, so it affects every test. The host venv is CPython 3.14.6; the container is 3.12.13, pinned deliberately in docker-compose.yml as python:3.12-alpine and independently declared twice more in pyproject.toml (ruff target-version py312, mypy python_version 3.12). So the venv contradicts the project's own declared target by documentary evidence, not opinion. THIS IS NOT A THEORETICAL GAP: every green suite run to date is evidence about 3.14.6 while users are served 3.12.13, and this specific incompatibility means the suite CANNOT run on the production interpreter at all - it produces 870 teardown errors. It went unnoticed because nobody had ever run the suite on 3.12. Found while fixing BOB-154 (dependency drift), whose reconciliation is BLOCKED on this: rebuilding the venv on 3.12 is the fix for the drift, and doing so makes the suite unrunnable until this is resolved. A candidate patch shape was verified in isolation on BOTH 3.12.13 and 3.14.6 under -W error::DeprecationWarning, but not as an integrated change - and another stream was editing conftest.py concurrently, so it was deliberately not applied.  **Affected scope / file-scope manifest:** tests/conftest.py:207 (_cleanup_event_loop fixture)  **Reproduction / context:** .venv/bin/python -c 'import asyncio.events as e; print(hasattr(e,"_get_event_loop_policy"))' -> True (3.14.6). podman exec qbittorrent-proxy python -c same -> False (3.12.13). Running the suite on 3.12.13 produces 870 teardown errors. A second incompatibility in the same fixture: policy.get_event_loop() raises DeprecationWarning on 3.12, which this project's pytest config turns into an error.  **Acceptance criteria:** The suite runs on the interpreter production runs. Both incompatibilities in _cleanup_event_loop are resolved, verified on 3.12.13 under -W error::DeprecationWarning, and the venv is rebuilt on 3.12 so every subsequent test result is evidence about the deployed runtime. |
+| BOB-158 | Bug | Queued | High | tests/conftest.py cannot run on the production interpreter: binds asyncio.events._get_event_loop_policy, a 3.13+ private API, while production is 3.12.13 |

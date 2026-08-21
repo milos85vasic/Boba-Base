@@ -216,6 +216,11 @@ SQLite single-source-of-truth (§11.4.12).</p>
 </tr>
 <tr>
 <td>Task</td>
+<td>Completed (→ Fixed.md)</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Task</td>
 <td>In progress</td>
 <td>9</td>
 </tr>
@@ -227,7 +232,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>19</td>
+<td>17</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -237,7 +242,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>54</strong></td>
+<td><strong>53</strong></td>
 </tr>
 </tbody>
 </table>
@@ -348,14 +353,6 @@ Auto-commit diffs</td>
 findings (closes GA-05)</td>
 </tr>
 <tr>
-<td>BOB-084</td>
-<td>Task</td>
-<td>Queued</td>
-<td>High</td>
-<td>RD2-17: Reconcile BOB-008 DB/MD body drift via the workable-items
-tool</td>
-</tr>
-<tr>
 <td>BOB-085</td>
 <td>Task</td>
 <td>Queued</td>
@@ -366,7 +363,7 @@ ledger (closes GA-10)</td>
 <tr>
 <td>BOB-087</td>
 <td>Task</td>
-<td>Queued</td>
+<td>Completed (→ Fixed.md)</td>
 <td>High</td>
 <td>RD2-20: Wire docs_chain / commit-seam sync hook per §11.4.106(F) so
 DB writes cannot land without MD mirror</td>
@@ -694,41 +691,9 @@ faulthandler dump_traceback(all_threads=True) hits an unpatched CPython
 <td>Bug</td>
 <td>Queued</td>
 <td>High</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>bug</code> on 2026-08-21T17:29:10Z <strong>Reported-By:</strong>
-AI <strong>What (the report, verbatim):</strong> The test suite has
-silently acquired a dependency on an interpreter production does not
-run. tests/conftest.py:207 calls asyncio.events._get_event_loop_policy()
-- a PRIVATE API that does not exist before Python 3.13 - in an AUTOUSE
-fixture, so it affects every test. The host venv is CPython 3.14.6; the
-container is 3.12.13, pinned deliberately in docker-compose.yml as
-python:3.12-alpine and independently declared twice more in
-pyproject.toml (ruff target-version py312, mypy python_version 3.12). So
-the venv contradicts the project’s own declared target by documentary
-evidence, not opinion. THIS IS NOT A THEORETICAL GAP: every green suite
-run to date is evidence about 3.14.6 while users are served 3.12.13, and
-this specific incompatibility means the suite CANNOT run on the
-production interpreter at all - it produces 870 teardown errors. It went
-unnoticed because nobody had ever run the suite on 3.12. Found while
-fixing BOB-154 (dependency drift), whose reconciliation is BLOCKED on
-this: rebuilding the venv on 3.12 is the fix for the drift, and doing so
-makes the suite unrunnable until this is resolved. A candidate patch
-shape was verified in isolation on BOTH 3.12.13 and 3.14.6 under -W
-error::DeprecationWarning, but not as an integrated change - and another
-stream was editing conftest.py concurrently, so it was deliberately not
-applied. <strong>Affected scope / file-scope manifest:</strong>
-tests/conftest.py:207 (_cleanup_event_loop fixture) <strong>Reproduction
-/ context:</strong> .venv/bin/python -c ’import asyncio.events as e;
-print(hasattr(e,“_get_event_loop_policy”))’ -&gt; True (3.14.6). podman
-exec qbittorrent-proxy python -c same -&gt; False (3.12.13). Running the
-suite on 3.12.13 produces 870 teardown errors. A second incompatibility
-in the same fixture: policy.get_event_loop() raises DeprecationWarning
-on 3.12, which this project’s pytest config turns into an error.
-<strong>Acceptance criteria:</strong> The suite runs on the interpreter
-production runs. Both incompatibilities in _cleanup_event_loop are
-resolved, verified on 3.12.13 under -W error::DeprecationWarning, and
-the venv is rebuilt on 3.12 so every subsequent test result is evidence
-about the deployed runtime.</td>
+<td>tests/conftest.py cannot run on the production interpreter: binds
+asyncio.events._get_event_loop_policy, a 3.13+ private API, while
+production is 3.12.13</td>
 </tr>
 </tbody>
 </table>
