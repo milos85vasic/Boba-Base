@@ -1,0 +1,21 @@
+=== BOB-136 acceptance (c): CM-CLOSURE-SEAM-BINDS wired into pre_build_verification.sh ===
+captured: 2026-08-21T20:05:48Z  HEAD: 57e20c0
+
+--- (1) WIRING: the invariant is invoked by the pre-build driver, not merely present on disk ---
+1797:echo "[49/49] CM-CLOSURE-SEAM-BINDS: done-but-open rows found mechanically (§11.4.226)"
+1817:if [[ -x "${PROJECT_ROOT}/scripts/pre_build/check_cm_closure_seam_binds.sh" ]]; then
+1818:    if bash "${PROJECT_ROOT}/scripts/pre_build/check_cm_closure_seam_binds.sh"; then
+1819:        pass "CM-CLOSURE-SEAM-BINDS: no stale rows, no flagless-diff callers"
+1821:        fail "CM-CLOSURE-SEAM-BINDS: a done-claiming commit references a non-terminal row (or a flagless diff caller exists)"
+1825:    echo "  SKIP: scripts/pre_build/check_cm_closure_seam_binds.sh absent or not executable"
+
+--- (2) COUNT: driver advertises 49 invariants (was 48 before this wiring) ---
+  occurrences of "/49": 49
+
+--- (3) RUNTIME: the gate itself executes and passes ---
+[check_cm_closure_seam_binds] CM-CLOSURE-SEAM-BINDS — scope: git history
+  tracker rows read (read-only) ... 164
+  structural commit<->item links .. 220
+  control needle (§11.4.201(7)(b)) . PASS (4/4 known links seen)
+  CHECK A closure seam .............. PASS (0 stale rows)
+  CHECK B flagless-diff callers ..... PASS (0 callers of the false-null form)

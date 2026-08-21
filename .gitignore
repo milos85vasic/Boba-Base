@@ -303,3 +303,14 @@ cookies_*.txt
 **/cookies_*.txt
 .cookies/
 tracker-cookies/
+
+# Export-pipeline scratch files (§11.4.30 temp-file class).
+# The PDF exporter writes `toPdfViaTempFile<pid>-<n>.{html,pdf}` into the
+# REPO ROOT while rendering, then removes them. Two ways they survive: the
+# exporter is killed mid-render, or something reads the tree while a render
+# is in flight. Observed 2026-08-21 with two generations live during a single
+# `workable-items-export.sh` run. `*.tmp` (line 70) does NOT match them —
+# they end in `-0.html` / `-1.pdf` — so without this pattern a `git add -A`
+# concurrent with an export commits them (the §11.4.84 sweep hazard, with a
+# build artifact as the payload).
+toPdfViaTempFile*

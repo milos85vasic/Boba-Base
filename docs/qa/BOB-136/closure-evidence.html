@@ -1,0 +1,70 @@
+<h1 id="bob-136-closure-evidence">BOB-136 — closure evidence</h1>
+<p><strong>Item:</strong> Closure seam does not bind: 4 tracker rows
+found stale in one sweep, and <code>workable-items diff</code> is blind
+to body_md drift <strong>Type:</strong> Task · <strong>Closed:</strong>
+2026-08-21 · <strong>HEAD at capture:</strong> 57e20c0</p>
+<p>Every acceptance clause below was verified by INVOCATION, not by
+reading source or usage text (§11.4.226 — a runtime-layer claim needs
+runtime-class evidence).</p>
+<h2
+id="a-the-flagless-diff-no-longer-returns-a-clean-verdict-without-reading-markdown">(a)
+The flagless <code>diff</code> no longer returns a clean verdict without
+reading Markdown</h2>
+<pre><code>$ workable-items diff --db docs/workable_items.db
+exit=1
+diff: at least one of --issues / --fixed is required — refusing to report a
+DB-vs-Markdown verdict without reading any Markdown (pass --db-only to run
+just the DB-internal integrity checks)</code></pre>
+<p>The explicit escape says what it did NOT do, rather than implying a
+comparison:</p>
+<pre><code>$ workable-items diff --db docs/workable_items.db --db-only
+diff: DB-internal checks passed — 164 item(s) inspected; no Markdown compared (--db-only)</code></pre>
+<p>CONTROL NEEDLE (§11.4.201(7)(b)) — the refusal above is only evidence
+if the binary still works on the same DB when given the flags. It
+does:</p>
+<pre><code>$ workable-items diff --db docs/workable_items.db --issues docs/Issues.md --fixed docs/Fixed.md
+diff: DB and Markdown are in sync (compared 164 Markdown item(s) against 164 DB item(s);
+read docs/Issues.md, docs/Fixed.md)</code></pre>
+<p>Without that third line the exit=1 above would be indistinguishable
+from a broken binary refusing everything.</p>
+<h2 id="b-no-caller-uses-the-flagless-form">(b) No caller uses the
+flagless form</h2>
+<pre><code>CHECK B flagless-diff callers ..... PASS (0 callers of the false-null form)</code></pre>
+<h2
+id="c-a-sweep-flags-non-terminal-rows-whose-id-appears-in-a-merged-commit">(c)
+A sweep flags non-terminal rows whose id appears in a merged commit</h2>
+<p>Wired as pre-build invariant 49, verified at three layers:</p>
+<ul>
+<li><p>SOURCE — <code>pre_build_verification.sh:1818</code> invokes the
+gate script</p></li>
+<li><p>ARTIFACT — the driver advertises 49/49 (was 48 before this
+wiring)</p></li>
+<li><p>RUNTIME — the gate executes:</p>
+<pre><code>structural commit&lt;-&gt;item links .. 220
+control needle (§11.4.201(7)(b)) . PASS (4/4 known links seen)
+CHECK A closure seam .............. PASS (0 stale rows, 0 untracked ids)</code></pre></li>
+</ul>
+<p>The needle matters for the same reason as in (a): CHECK A’s zero is
+only meaningful because the instrument was proven able to see 4/4 known
+links through the same path. A blind sweep and a clean repo both report
+zero.</p>
+<h2
+id="the-two-blockers-the-bodys-last-progress-line-named-are-drained">The
+two blockers the body’s last Progress line named are drained</h2>
+<p>That line read: <em>“20 stale rows and 2 untracked ids remain to
+drain, and the gate is not wired into pre_build_verification.sh”</em>.
+All three conditions are now false. <code>N_UNTRK &gt; 0</code> fails
+the gate (check_cm_closure_seam_binds.sh:617), so CHECK A PASS entails
+untracked ids are zero as well as stale rows — a fact the PASS message
+did not previously state, and which misled a reader of this very closure
+before it was corrected to report both counts.</p>
+<h2 id="honest-boundary-11.4.6-what-this-does-not-claim">Honest boundary
+(§11.4.6) — what this does NOT claim</h2>
+<p>The seam only sees work that DECLARES its id in a commit message. A
+fix landing under a message naming no item stays invisible to it. That
+is BOB-136’s own second defect, and acceptance clause (d) scoped it out
+explicitly: <em>“this does not claim to prevent all drift.”</em> Closing
+this item does not close that gap.</p>
+<h2 id="reproduce">Reproduce</h2>
+<pre><code>bash scripts/pre_build/check_cm_closure_seam_binds.sh
+bash tests/pre_build/test_check_cm_closure_seam_binds.sh    # 30/30</code></pre>

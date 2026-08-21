@@ -645,7 +645,7 @@ elif [[ "$N_CONTRA" -gt 0 || "$N_UNREC" -gt 0 || "$N_UNTRK" -gt 0 ]]; then
     done
     echo "  ${N_STALE} stale row(s), ${N_UNTRK} untracked id(s)." >&2
 else
-    echo "  CHECK A closure seam .............. PASS (0 stale rows)"
+    echo "  CHECK A closure seam .............. PASS (0 stale rows, 0 untracked ids)"
 fi
 
 # CHECK B runs only in sweep mode — it is a repo property, not a property

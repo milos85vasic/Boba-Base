@@ -1,0 +1,12 @@
+=== BOB-136 acceptance (a)(b)(c) verified by invocation, 2026-08-21T20:08:12Z HEAD 57e20c0 ===
+
+--- (a) flagless diff must NOT return a clean verdict without reading Markdown ---
+  exit=1
+  stdout/stderr: diff: at least one of --issues / --fixed is required — refusing to report a DB-vs-Markdown verdict without reading any Markdown (pass --db-only to run just the DB-internal integrity checks)
+
+  (a-control) the --db-only escape must be explicit that it reads no Markdown:
+    diff: DB-internal checks passed — 164 item(s) inspected; no Markdown compared (--db-only)
+
+  (a-needle §11.4.201(7)(b)) the flagged form on the SAME db must still work, proving the refusal
+                             above is a real refusal and not a broken binary:
+    diff: DB and Markdown are in sync (compared 164 Markdown item(s) against 164 DB item(s); read docs/Issues.md, docs/Fixed.md)

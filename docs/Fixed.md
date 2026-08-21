@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 26
-**Last modified:** 2026-08-21T20:01:05Z
+**Revision:** 27
+**Last modified:** 2026-08-21T20:10:37Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1373,4 +1373,13 @@ RD2-12: Retroactive attributed history notes for GA-18/21/22/25/26/27 changes (n
 **Severity:** Medium
 
 RD2-27: Remove test_live_stack_evidence.py:265 nnmclub SKIP-on-404 fallback + verify live 200 (closes GA-13)
+
+## BOB-136 — Closure seam does not bind: 4 tracker rows found stale in one sweep, and workable-items diff is blind to body_md drift
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-136/closure-evidence.md
+**Severity:** High
+
+Closure seam does not bind: 4 tracker rows found stale in one sweep, and workable-items diff is blind to body_md drift
 

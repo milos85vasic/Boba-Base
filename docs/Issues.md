@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 43
-**Last modified:** 2026-08-21T20:01:05Z
+**Revision:** 45
+**Last modified:** 2026-08-21T20:13:56Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -338,58 +338,6 @@ DELIVERED: `docs/guides/container-death-triage.md` (a 6-class decision table plu
 
 Task #109 subagent found: tests/unit/test_merge_api_route_contracts.py::TestHooksEndpoint::test_list_hooks_after_create fails when run in bulk suite order with 'ERROR api.hooks:hooks.py:102 Failed to save hooks: [Errno 13] Permission denied: /config'. Passes in isolation (2.02s clean). Root cause: full-suite ordering pollution — some earlier test leaves state that makes hooks try to write to /config (which the test env doesn't own). Pre-existing, unrelated to BOB-126/BOB-129 chain. Fix strategy: identify the polluting test, add teardown or use a proper tempdir fixture for hooks storage in the offending test.
 
-## BOB-136 — Closure seam does not bind: 4 tracker rows found stale in one sweep, and workable-items diff is blind to body_md drift
-
-**Status:** Ready for testing
-**Type:** Task
-**Severity:** High
-
-WHAT. A single 2026-08-20 sweep found FOUR workable-item rows whose tracked state contradicted
-reality: BOB-076 (closed by commit 99a486e on 2026-08-15, whose message literally says "closes
-BOB-076", still Queued), BOB-117 (fix landed AND covered by a permanent guard assertion, still
-Queued), BOB-091 (implemented under d1a8479 / a3b16bc / 2a0b543, still Queued), and BOB-008 whose
-Evidence field still quoted a diagnostic string that BOB-117 removed from source.
-
-CORRECTION 2026-08-20 (11.4.6). An earlier revision of this item claimed the enabling defect was
-that "workable-items diff is blind to body_md drift". That was WRONG and is corrected here rather
-than quietly edited. The engine is NOT blind. The FLAGLESS INVOCATION is:
-
-    workable-items diff --db docs/workable_items.db
-      -> "diff: DB and Markdown are in sync"     (opens ZERO .md files)
-
-    workable-items diff --db docs/workable_items.db --issues docs/Issues.md --fixed docs/Fixed.md
-      -> "~ BOB-008 body differs (md=1346 bytes db=1333 bytes)"   -> "diff: 1 difference(s)"
-
-Both measured on the same seeded body-only drift. An independent agent proved the mechanism with
-strace: the flagless form never opens any Markdown file. So this is a 11.4.201(6) FALSE-NULL of the
-CALLER, not a gap in the comparison logic. Importantly, pre_build_verification.sh invariant 17
-already passes both flags, so the STANDING GATE was never blind — the drift above was not caused by
-a blind gate.
-
-THE REAL DEFECTS, restated honestly.
-(1) The flagless form is a false-null trap: it reports a confident, reassuring "in sync" while
-    checking nothing. Any caller using it is a green-reporting blind check. It should either
-    default to the conventional Issues.md/Fixed.md paths or REFUSE with a clear error, never
-    return a clean verdict for a comparison it did not perform.
-(2) Work commonly lands under commit messages that do not carry the ATM id (GA-14/15/16 for
-    BOB-091), so nothing mechanically links a commit back to its row, and closure depends on a
-    human remembering. 11.4.227: an anchor done state is its SEAM landing, not its TEXT landing.
-
-ACCEPTANCE. (a) The flagless diff invocation no longer returns a clean verdict without reading
-Markdown, with a paired 1.1 mutation proving it. (b) A repo-wide grep confirms no caller uses the
-flagless form. (c) A sweep that flags any non-terminal item whose id appears in a merged commit
-message, so done-but-open rows are found mechanically rather than by a human noticing. (d) Honest
-boundary: this does not claim to prevent all drift.
-
-RELATED. scripts/hooks/docs-sync-commit-seam.sh (added under BOB-087) now enforces doc/DB sync at
-the commit seam and passes the flags explicitly, plus an independent body_md re-parse oracle.
-
-EVIDENCE. docs/qa/BOB-117/closure-evidence.md, docs/qa/BOB-076/closure-evidence.md,
-docs/qa/BOB-091/closure-evidence.md.
-
-
-
-**Progress 2026-08-21:** The closure seam now BINDS TO GIT. Finding: every pre-existing check compared the tracker to ITSELF (DB vs its own invariants, DB vs Markdown, Markdown vs exports) — none ever consulted git, so all four stayed green while a row said Queued and the fix had landed weeks earlier. The commit hook also EXITED EARLY when no tracker file was staged, skipping exactly the pure-code-fix commits whose rows fail to move. Built check_cm_closure_seam_binds.sh plus a --message commit-seam mode wired as CHECK 5 before that early exit; it judges only the ids the PENDING message declares, so it is monotone and structurally cannot block on the backlog. Meta-test 29/29, live polarity 2 refused / 2 passed, §1.1 flips both golden-bads to MUTANT=0. PROVEN IN ANGER: it refused the very commit that introduced it, because that message declared BOB-136 and BOB-121 while both rows still read Queued. NOT YET CLOSED — 20 stale rows and 2 untracked ids remain to drain, and the gate is not wired into pre_build_verification.sh (that would break the build immediately on the pre-existing backlog; --report-only first). Honest boundary: it only sees work that DECLARES its id, so a fix landing under a message naming no item stays invisible — which is BOB-136's own second defect.
 ## BOB-137 — Merge service on 7187 wedges while the same process still serves 7186 (GIL starvation by one spinning thread)
 
 **Status:** In progress
@@ -1360,4 +1308,29 @@ python3 -m pytest tests/e2e/test_live_stack_evidence.py -q --import-mode=importl
 
 **Acceptance criteria:**
 python3 -m pytest tests/unit/ -v --import-mode=importlib -- the command CLAUDE.md documents -- reaches collection without ModuleNotFoundError, OR CLAUDE.md is corrected to document the supported runner explicitly. Either way the documented command and the working command agree (11.4.99: a guide that misleads is the documentation-layer equivalent of a PASS-bluff).
+
+## BOB-166 — update --status accepts a terminal status without migrating the row, so 10 closed items sit in the open tracker while validate/diff/closure-seam all report green
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT. §11.4.19 requires closure migration to be ATOMIC: a resolving item moves to Fixed.md, DISAPPEARS from Issues_Summary (open-only) and APPEARS in Fixed_Summary (closed-only). Ten rows violate all three properties right now — they carry a terminal status yet current_location='Issues', so they render in docs/Issues.md and are listed in docs/Issues_Summary.md with a status that literally reads '(→ Fixed.md)', while appearing 0 times in Fixed_Summary.md. Any reader of the canonical open tracker is told these are open work.
+
+MANIFEST (measured 2026-08-21): BOB-087 (Completed), BOB-129, BOB-131, BOB-144, BOB-145, BOB-146, BOB-148, BOB-153, BOB-155, BOB-157 (all 'Fixed (→ Fixed.md)'). Confirmed rendering: BOB-155/087/157 each grep 1 in Issues.md, 0 in Fixed.md, present in Issues_Summary.md, 0 hits in Fixed_Summary.md.
+
+ROOT CAUSE (reproduced at runtime, not inferred). 'close' performs the atomic migration and REQUIRES --evidence. 'update --status' sets any §11.4.15 closed-set value with NO evidence and NO migration — and it knows the location, because it prints it. On a COPY of the real DB:
+    $ workable-items update --id BOB-065 --db repro.db --status 'Fixed (→ Fixed.md)'
+      update: BOB-065 updated in Issues (status=Fixed (→ Fixed.md), type=Task)
+    $ sqlite3 repro.db 'SELECT atm_id,status,current_location ...'
+      BOB-065|Fixed (→ Fixed.md)|Issues
+So the seam that is supposed to be the ONLY closure path (close, evidence-gated per §11.4.146(D3)) has a parallel unguarded path that reaches the same status while skipping BOTH the evidence requirement and the migration.
+
+WHY NOTHING CAUGHT IT (§11.4.238 coverage-escape audit). Three standing checks stay GREEN on a DB holding the forbidden row, verified on the poisoned copy from the repo root so no cwd artifact is involved: (1) 'validate' → 'OK — 164 items, all invariants satisfied' (it has no status↔location coherence invariant); (2) 'diff' → 'in sync' (DB and Markdown agree — on the WRONG state; agreement is not correctness); (3) CM-CLOSURE-SEAM-BINDS CHECK A → PASS (it flags NON-terminal rows whose id appears in a work commit; these rows are terminal, so they are outside its predicate by construction). This was found by reading a status tally, not by the automated regime — a §11.4.238 discovery-channel escape, which is itself a defect of equal standing to the mis-located rows.
+
+ACCEPTANCE. (a) 'update' REFUSES a terminal status and names 'close' as the correct path, with a paired §1.1 mutation proving the refusal (removing the guard must make the mutation pass). (b) 'validate' grows a status↔location coherence invariant that FAILS on the forbidden state, with a golden-bad fixture and a negative control (a legitimately terminal row in Fixed must NOT fire — §11.4.201(1)). (c) The 10 existing rows are drained to Fixed with class-matched evidence per row, or, where a row's evidence cannot be produced, honestly re-opened rather than migrated on a bare assertion. (d) Honest boundary: this closes the update-path hole and the detection gap; it does not claim every historical status write was evidence-backed.
+
+NOT CLAIMED. No fix is implemented by this filing. The 10 rows are untouched; draining them is acceptance (c) and each needs its own evidence, not a bulk UPDATE.
 

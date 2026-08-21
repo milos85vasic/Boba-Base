@@ -8,10 +8,10 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 |---|---|---|
 | Bug | Fixed (→ Fixed.md) | 42 |
 | Feature | Implemented (→ Fixed.md) | 17 |
-| Task | Completed (→ Fixed.md) | 26 |
+| Task | Completed (→ Fixed.md) | 27 |
 | Task | Fixed (→ Fixed.md) | 4 |
 | Task | Implemented (→ Fixed.md) | 17 |
-| **TOTAL** | | **106** |
+| **TOTAL** | | **107** |
 
 ## Items
 
@@ -118,8 +118,9 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | 99 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-130 — Badge-test timeout deterministic — synced_fixtures fixture 93s vs --timeout=60 |
 | 100 | High | Fixed (→ Fixed.md) | Bug | — | BOB-132 — qbittorrent-proxy post-recovery: unhealthy — connection refused to qbittorrent sidecar on localhost:7185 |
 | 101 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-133 — CRITICAL: fleet-wide container dead-but-healthy — podman stale-cache masks service outage |
-| 102 | High | Fixed (→ Fixed.md) | Bug | — | BOB-138 — qbittorrent-proxy health check probes only 7186, so a dead 7187 merge service reports healthy forever |
-| 103 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-139 — SSE _client_gone() swallows every exception into 'client still connected', so a raising disconnect probe streams forever (fail-open) |
-| 104 | Medium | Completed (→ Fixed.md) | Task | — | BOB-140 — Upstream the healthcheck-covers-served-ports gate into constitution/scripts/gates/ and thin boba's copy to a delegator (§11.4.177) |
-| 105 | High | Fixed (→ Fixed.md) | Bug | — | BOB-142 — SearchRequest fields were unbounded, so one request could amplify into a 43-tracker fan-out carrying arbitrary payload |
-| 106 | Medium | Completed (→ Fixed.md) | Task | — | BOB-147 — Triage all 36 §11.4.252 fail-open hits: 9 real defects fixed, 14 correct idioms, 14 vendored |
+| 102 | High | Completed (→ Fixed.md) | Task | — | BOB-136 — Closure seam does not bind: 4 tracker rows found stale in one sweep, and workable-items diff is blind to body_md drift |
+| 103 | High | Fixed (→ Fixed.md) | Bug | — | BOB-138 — qbittorrent-proxy health check probes only 7186, so a dead 7187 merge service reports healthy forever |
+| 104 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-139 — SSE _client_gone() swallows every exception into 'client still connected', so a raising disconnect probe streams forever (fail-open) |
+| 105 | Medium | Completed (→ Fixed.md) | Task | — | BOB-140 — Upstream the healthcheck-covers-served-ports gate into constitution/scripts/gates/ and thin boba's copy to a delegator (§11.4.177) |
+| 106 | High | Fixed (→ Fixed.md) | Bug | — | BOB-142 — SearchRequest fields were unbounded, so one request could amplify into a 43-tracker fan-out carrying arbitrary payload |
+| 107 | Medium | Completed (→ Fixed.md) | Task | — | BOB-147 — Triage all 36 §11.4.252 fail-open hits: 9 real defects fixed, 14 correct idioms, 14 vendored |

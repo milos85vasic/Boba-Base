@@ -1811,7 +1811,7 @@ echo "[49/49] CM-CLOSURE-SEAM-BINDS: done-but-open rows found mechanically (§11
 # WHY IT IS SAFE TO WIRE NOW, stated as a measured fact rather than a hope: the
 # row's own body gave the blocker as "would break the build immediately on the
 # pre-existing backlog". That blocker is FALSIFIED — the backlog is 0. Measured
-# live this session: "CHECK A closure seam .......... PASS (0 stale rows)".
+# live this session: "CHECK A closure seam .......... PASS (0 stale rows, 0 untracked ids)".
 # The one row it previously reported (BOB-120) was a §11.4.201(1) FALSE POSITIVE
 # on a gerund carrier, fixed at the detector rather than by exempting the row.
 if [[ -x "${PROJECT_ROOT}/scripts/pre_build/check_cm_closure_seam_binds.sh" ]]; then
