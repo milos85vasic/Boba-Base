@@ -1612,15 +1612,12 @@ fi
 # forced a manual chown after every download. Container uid 0 maps to the HOST
 # OPERATOR and grants no host privilege, so PUID=0 is the fix.
 #
-# Slot 45 is a NEW slot (the denominator moved 44 -> 45): this file labels 35 invariants against a
-# denominator of 44, with 33-38/40/42/43 unused. Taking a free slot avoids
-# renumbering 35 labels (a large, purely-cosmetic diff that would conflict with
-# concurrent work). The denominator's disagreement with the real count is a
-# PRE-EXISTING defect this block does not introduce and does not fix; it is
-# tracked rather than silently absorbed (§11.4.261).
-#
-# The gate parses YAML structurally, never by substring, so a comment merely
-# MENTIONING keep-id or PUID=1000 cannot trip it. BLOCKING.
+# THE INVARIANT NUMBER IS THE PART THAT ROTS. This block previously
+# explained why slot 45 was free under a denominator of 44 — a statement
+# that was already false by the time it was committed, because the same
+# commit renumbered the file to /46. See the two-syntax census note at the
+# CM-PLUGIN-COUNT block for why counting labels here is easy to get wrong.
+# BLOCKING.
 echo "[45/46] CM-OWNERSHIP-INVARIANTS: operator-owned writes not reverted (§11.4.201, FR-011)"
 OWNINV_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_ownership_invariants.sh"
 if [[ ! -x "${OWNINV_GATE}" ]]; then

@@ -490,7 +490,36 @@ flush_batch() {
             # (always 777) and cannot be set, so the ONLY effect chmod could
             # ever have here is on the target, which is never what we want.
             [[ -L "${BATCH_PATHS[${i}]}" ]] && continue
-            chmod "${BATCH_MODES[${i}]}" -- "${BATCH_PATHS[${i}]}" 2>/dev/null || true
+
+            # STRIP setuid/setgid WHEN THE OWNER CHANGED — the mode is not the
+            # whole story, and this is the one place where restoring the exact
+            # bits is the WRONG thing to do.
+            #
+            # The kernel clears S_ISUID/S_ISGID on chown(2) deliberately: the
+            # bit's MEANING is "run as the owner", so it changes meaning when
+            # the owner changes. Restoring it verbatim under the new uid
+            # inverts the protection the kernel just applied.
+            #
+            # Measured against this script: a wrongly-owned `4755` file came
+            # out of the repair as `4755` owned by the OPERATOR. Before the
+            # repair its setuid granted uid 100999 — an identity nobody has,
+            # so inert. After, it grants THE OPERATOR to anyone who can
+            # execute it, and the download root is world-traversable.
+            # Numerically the mode never widened; semantically it inverted,
+            # and FR-015 is about the semantics ("MUST NOT relax access
+            # restrictions"), not the octal.
+            #
+            # preserve_mode entries are exempt because the caller has
+            # explicitly asked for the exact bits — and the only shipped
+            # preserve_mode entry is a mode-600 data file with no special
+            # bits, so nothing shipped loses anything.
+            _mode="${BATCH_MODES[${i}]}"
+            if [[ "${BATCH_RESTORE_MODE}" -ne 1 && ${#_mode} -gt 3 ]]; then
+                # keep sticky (1000), drop setuid+setgid (6000)
+                _mode="$(( 8#${_mode} & 8#1777 ))"
+                _mode="$(printf '%o' "${_mode}")"
+            fi
+            chmod "${_mode}" -- "${BATCH_PATHS[${i}]}" 2>/dev/null || true
         fi
     done
 

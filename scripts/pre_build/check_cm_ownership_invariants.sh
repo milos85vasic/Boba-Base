@@ -142,41 +142,20 @@
 #              itself a §11.4.201 bluff)
 #   2 — ERROR (usage error)
 #
-# REGISTRATION STATUS — WIRED AND BLOCKING (verified, §11.4.196(F)):
-#   scripts/pre_build_verification.sh runs this gate as invariant
-#   `[33/44] CM-OWNERSHIP-INVARIANTS` (the block immediately preceding that
-#   file's FULL_VALIDATION section). It invokes this script with no arguments,
-#   reports the verdict with `tail -n1`, and routes a non-zero exit through
-#   `fail` — so a finding BLOCKS the build rather than warning.
+# REGISTRATION STATUS — WIRED AND BLOCKING (§11.4.196(F)).
+#   scripts/pre_build_verification.sh runs this gate BY NAME as
+#   CM-OWNERSHIP-INVARIANTS: it invokes this script with no arguments, reports
+#   the verdict with `tail -n1`, and routes a non-zero exit through `fail`, so
+#   a finding BLOCKS the build rather than warning.
 #
-#   This paragraph previously read "EXECUTABLE AND HONEST BUT NOT YET WIRED",
-#   describing a §11.4.196(F) configured-vs-in-use gap that had since been
-#   closed. It was corrected on 2026-08-21 after re-reading the runner rather
-#   than trusting the claim: a gate whose entire purpose is honesty may not
-#   carry a false statement about itself, and a stale "not wired" note is the
-#   §11.4.6 failure in the direction that makes the gate look weaker than it
-#   is — which invites someone to "finally wire it" and land a duplicate block.
-#
-#   KNOWN, NOT INTRODUCED HERE (§11.4.261 tracked, not absorbed): the literal
-#   `33/44` is now carried by TWO blocks in that runner — this one and
-#   `run_const_gate "33/44" "CM-CLI-AGENT-PLUGINS-WIRED"`. The slot was free
-#   when this gate claimed it and a concurrently-landed gate took the same
-#   number. Both blocks execute; only the printed label collides. Renumbering
-#   belongs to whoever owns pre_build_verification.sh (out of this file's
-#   scope), together with that file's pre-existing 35-invariants-vs-44-
-#   denominator mismatch. Recorded here so the next reader is not misled by a
-#   duplicated label into thinking one of the two gates does not run.
-#
-# Cross-references:
-#   specs/002-user-owned-downloads/ FR-011 (this gate's requirement),
-#   config/owned_paths.yaml (which already names this file as its consumer),
-#   scripts/lib/ownership.sh + scripts/ownership_precondition.sh +
-#   scripts/ownership_repair.sh (the runtime half of the same contract),
-#   tests/pre_build/test_check_cm_ownership_invariants.sh (its §1.1 paired
-#   mutation), scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh
-#   (the sibling whose structure this file follows).
-#   §11.4.1 §11.4.6 §11.4.18 §11.4.35 §11.4.69 §11.4.107(10) §11.4.108
-#   §11.4.115 §11.4.135 §11.4.201 §11.4.226 §11.4.238 §11.4.263.
+#   THE INVARIANT NUMBER IS DELIBERATELY NOT WRITTEN HERE, and that omission is
+#   the lesson rather than laziness. This paragraph has now gone stale TWICE:
+#   once claiming the gate was unwired after it had been wired, and then — in
+#   the very commit that fixed that — claiming a slot number and a label
+#   collision that the same commit had just renumbered away. Both times the
+#   false statement lived in a gate whose entire purpose is honesty, and both
+#   times the rotting part was THE NUMBER. The name is greppable and stable;
+#   the number is neither. Cite the name.
 
 set -euo pipefail
 

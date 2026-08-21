@@ -1,0 +1,438 @@
+<h1
+id="bob-131-qbittorrent-proxy-podman-conmon-crash-two-different-events-neither-a-conmon-crash">BOB-131
+— “qbittorrent-proxy podman conmon crash”: two different events, neither
+a conmon crash</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T17:06:26Z <strong>Tracker:</strong> BOB-131 (Bug, Queued,
+Medium) <strong>Verdict (§11.4.6):</strong> <strong>The ticket’s premise
+is FALSE as written.</strong> No <code>conmon</code> process crashed.
+BOB-131 conflates <strong>two unrelated events</strong>, each now
+identified from primary evidence: 1. <strong>2026-08-19 22:41:39 CEST —
+a host power-off.</strong> The container exited <strong>0</strong>
+(clean SIGTERM) and was removed with every other container on the
+machine. It was then <strong>absent for 14h 06m 43s</strong> because the
+boba stack has <strong>no boot-persistence unit enabled</strong>. Class:
+<code>HOST-POWER-TRANSITION</code>. 2. <strong>2026-08-20 17:56:26 CEST
+— a genuine SIGSEGV inside the container.</strong>
+<code>died exit=139</code> (128+11). The crash is in <strong>CPython’s
+own traceback dumper</strong>, reached from a <strong>project-owned
+diagnostic</strong> (the BOB-137 stall watchdog calling
+<code>faulthandler.dump_traceback(all_threads=True)</code>), and it is a
+<strong>known upstream CPython defect fixed in 3.13/3.14 but not in the
+3.12 the image ships</strong>. Class: <code>PROCESS-SIGSEGV</code>.</p>
+<p><strong>Answer to the task’s a/b/c:</strong> <strong>(a) a real
+project-side trigger of (b) a known runtime defect.</strong> It is
+<em>latent, not currently firing</em>, and it is <strong>not
+reproducible without deliberately stalling the event loop</strong> — see
+<a
+href="#reproduction-not-attempted-on-the-live-stack">Reproduction</a>.
+No fix was manufactured; the code that must change is owned by BOB-137
+and is outside this investigation’s file scope.</p>
+<hr />
+<h2 id="the-real-error-text">1. The real error text</h2>
+<p>The ticket says “podman conmon crash”. The primary record says this
+(<code>journalctl</code>, host TZ <strong>Europe/Belgrade CEST =
+UTC+02:00</strong>):</p>
+<pre><code>Aug 20 17:56:26 nezha kernel: python3[314359]: segfault at 70 ip 00007fb2d690fea0 sp 00007fb2d58d2220 error 4 in libpython3.12.so.1.0[141ea0,7fb2d68d2000+2c3000] likely on CPU 1 (core 1, socket 0)
+Aug 20 17:56:26 nezha kernel: Code: 24 46 03 0f 84 d1 00 00 00 41 83 ef 01 0f 84 2d 01 00 00 4d 8b 34 24 ba 07 00 00 00 48 8d 35 ea 14 35 00 89 df e8 10 33 fc ff &lt;49&gt; 8b 46 70 48 85 c0 74 11 48 8b 40 08 f6 80 ab 00 00 00 10 0f 85
+Aug 20 17:56:26 nezha kernel: audit: type=1701 audit(1787241386.129:755): auid=1000 uid=1000 gid=1000 ses=1 pid=314359 comm=&quot;python3&quot; exe=&quot;/usr/local/bin/python3.12&quot; sig=11 res=1
+Aug 20 17:56:26 nezha audit[314359]: ANOM_ABEND auid=1000 uid=1000 gid=1000 ses=1 pid=314359 comm=&quot;python3&quot; exe=&quot;/usr/local/bin/python3.12&quot; sig=11 res=1</code></pre>
+<p>and the container’s own stdout, captured because podman’s log driver
+is <code>journald</code>:</p>
+<pre><code>2026-08-20T17:56:26+02:00 nezha qbittorrent-proxy[314357]: Thread 0x00007fb2d551eb38 (most recent call first):
+2026-08-20T17:56:26+02:00 nezha qbittorrent-proxy[314357]:   File &quot;/usr/local/lib/python3.12/enum.py&quot;, line 1294 in value
+2026-08-20T17:56:26+02:00 nezha qbittorrent-proxy[314357]:   File &quot;/usr/local/lib/python3.12/enum.py&quot;, line 212 in __get__
+2026-08-20T17:56:26+02:00 nezha qbittorrent-proxy[314357]:   File Fatal Python error: Segmentation fault
+2026-08-20T17:56:26+02:00 nezha qbittorrent-proxy[314357]: Extension modules: multidict._multidict, yarl._quoting_c, propcache._helpers_c, aiohttp._http_writer, aiohttp._http_parser, aiohttp._websocket.mask, aiohttp._websocket.reader_c, frozenlist._frozenlist, rapidfuzz._feature_detector_cpp, rapidfuzz.distance._initialize_cpp, rapidfuzz.distance.metrics_cpp_avx2, rapidfuzz.fuzz_cpp_avx2, rapidfuzz.process_cpp_impl, rapidfuzz.utils_cpp, Levenshtein.levenshtein_cpp, _cffi_backend (total: 16)</code></pre>
+<p>Read the third-from-last line carefully:
+<strong><code>File Fatal Python error:</code></strong>. The dumper wrote
+the literal <code>"  File "</code> for the next frame and then died
+mid-line; the SIGSEGV handler’s banner was spliced into the same stream.
+That truncation is the signature, and it matches the machine code
+exactly (§3).</p>
+<p><strong>No conmon crash appears anywhere.</strong> Over the full
+journal retention (2026-08-14T05:20:28+02:00 → now) the only
+<code>conmon</code> messages above <code>&lt;nwarn&gt;</code> are four,
+none of them a conmon fault:</p>
+<pre><code>conmon &lt;CID&gt; &lt;error&gt;: Failed to create container: exit status 1                  (x2)
+conmon &lt;CID&gt; &lt;error&gt;: Failed to write 137 to exit file: ... No such file or directory  (x2)</code></pre>
+<p>Those are conmon <strong>reporting</strong> a condition. A conmon
+crash would put <code>conmon</code> itself in a kernel
+<code>segfault</code>/<code>ANOM_ABEND</code> line; the only such line
+in 7.5 days is the <code>python3</code> one above. Treating “a
+<code>conmon &lt;error&gt;:</code> string in the log” as “conmon
+crashed” is a §11.4.201 carrier match — the token mentions the thing, it
+is not the thing.</p>
+<hr />
+<h2 id="when-it-last-occurred-and-whether-it-still-does">2. When it last
+occurred, and whether it still does</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr>
+<td>Occurrences of this SIGSEGV in the whole journal retention</td>
+<td><strong>exactly 1</strong></td>
+</tr>
+<tr>
+<td>Last (and only) occurrence</td>
+<td><strong>2026-08-20 17:56:26 CEST</strong> =
+<code>2026-08-20T15:56:26Z</code></td>
+</tr>
+<tr>
+<td>Occurrences since</td>
+<td><strong>0</strong> — zero <code>Fatal Python error</code>, zero
+stall dumps since <code>2026-08-20T15:56:27</code></td>
+</tr>
+<tr>
+<td>Container now</td>
+<td><code>Up</code>, <code>healthy</code>, <code>RestartCount=0</code>,
+<code>ExitCode=0</code>, CID <code>979cbb757b77…</code></td>
+</tr>
+<tr>
+<td>Is the mechanism still armed?</td>
+<td><strong>YES</strong> — see §5</td>
+</tr>
+</tbody>
+</table>
+<p>It recovered by itself: podman’s <code>restart: unless-stopped</code>
+policy restarted the container <strong>0.03 s</strong> later.</p>
+<pre><code>Aug 20 17:56:26.231718 container died     0dcf880eeb6e…   (exit 139)
+Aug 20 17:56:26.265280 container restart  0dcf880eeb6e…
+Aug 20 17:56:26.376375 container init     0dcf880eeb6e…
+Aug 20 17:56:26.386894 container start    0dcf880eeb6e…</code></pre>
+<p>conmon did its job perfectly: it observed the SIGSEGV, reported exit
+139, and the restart policy fired. <strong>The runtime behaved correctly
+throughout.</strong></p>
+<hr />
+<h2 id="the-conditions-what-actually-triggered-it">3. The conditions —
+what actually triggered it</h2>
+<p>Not a restart, not a teardown, not an exec. It was a
+<strong>project-owned diagnostic running on a live 18-thread
+process</strong>.</p>
+<p>Four seconds of context, from the container’s own stdout:</p>
+<pre><code>2026-08-20T17:50:39+02:00 qbittorrent-proxy[314357]: ===== BOB-137 STALL DUMP #12 episode=2 utc=2026-08-20T15:50:39Z loop_silent_for=82.0s loop_tid=11 =====</code></pre>
+<p>That banner is emitted by
+<code>download-proxy/src/main.py</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sink.write(<span class="ss">f&quot;</span><span class="ch">\n</span><span class="ss">===== BOB-137 STALL DUMP #</span><span class="sc">{</span>_diag_dumps<span class="sc">}</span><span class="ss"> episode=</span><span class="sc">{</span>episode<span class="sc">}</span><span class="ss"> ...&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>faulthandler.dump_traceback(<span class="bu">file</span><span class="op">=</span>sink, all_threads<span class="op">=</span><span class="va">True</span>)     <span class="co"># main.py:135</span></span></code></pre></div>
+<p>The BOB-137 stall watchdog fires when the asyncio event loop goes
+silent for <code>&gt;20 s</code> and re-dumps every 60 s. On 2026-08-20
+it fired <strong>17 times</strong> in 16 minutes
+(<code>download-proxy/diagnostics/stall_dumps.log</code>,
+<code>#1</code> at <code>15:40:04Z</code> through <code>#17</code> at
+<code>15:56:17Z</code>). Dump <code>#17</code> completed to the
+<strong>file</strong> sink, then the <strong>stderr</strong> pass of the
+same dump crashed 9 seconds later at <code>15:56:26Z</code>.</p>
+<p>The instrumentation’s own source comment names the exact trade-off
+that killed it:</p>
+<blockquote>
+<p><code>faulthandler.dump_traceback()</code> is implemented in C and
+does not need the GIL, so it can still dump when a Python thread is
+hogging it – which is exactly why <code>sys._current_frames()</code> was
+not used here (it needs the GIL and would hang in the same way the thing
+it is measuring does).</p>
+</blockquote>
+<p><strong>Because it does not take the GIL, it walks other threads’
+frame chains while those threads are mutating them.</strong> That is the
+race.</p>
+<h3 id="machine-level-proof-it-is-that-exact-code-path">3.1
+Machine-level proof it is that exact code path</h3>
+<p>The kernel’s <code>Code:</code> dump was byte-matched against the
+library on disk inside the running container (pure-Python ELF read, no
+binutils in the image):</p>
+<pre><code>kernel Code: bytes at &lt;IP&gt;: 49 8b 46 70 48 85 c0 74 11 48 8b 40 08 f6 80 ab 00 00 00 10 0f 85
+library bytes at 0x141ea0  : 49 8b 46 70 48 85 c0 74 11 48 8b 40 08 f6 80 ab 00 00 00 10 0f 85
+MATCH: True
+kernel Code: bytes before &lt;IP&gt;: 4d 8b 34 24 ba 07 00 00 00 48 8d 35 ea 14 35 00 89 df e8 10 33 fc ff
+library bytes before 0x141ea0 : 4d 8b 34 24 ba 07 00 00 00 48 8d 35 ea 14 35 00 89 df e8 10 33 fc ff
+MATCH: True</code></pre>
+<p>Decoded, that is CPython’s <code>dump_frame()</code>:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode asm"><code class="sourceCode fasm"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>4d 8b 34 24              <span class="bu">mov</span>  <span class="kw">r14</span><span class="op">,</span> <span class="op">[</span><span class="kw">r12</span><span class="op">]</span>          <span class="co">; code = frame-&gt;f_executable   -&gt; NULL</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>ba <span class="dv">07</span> <span class="dv">00</span> <span class="dv">00</span> <span class="dv">00</span>           mov  <span class="kw">edx</span><span class="op">,</span> <span class="dv">7</span>              <span class="co">; strlen(&quot;  File &quot;)</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>48 8d 35 ea <span class="dv">14</span> <span class="dv">35</span> <span class="dv">00</span>     lea  <span class="kw">rsi</span><span class="op">,</span> <span class="op">[</span>rip<span class="op">+</span><span class="bn">0x3514ea</span><span class="op">]</span> <span class="co">; -&gt; the string &quot;  File &quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>89 <span class="dt">df</span>                    mov  <span class="kw">edi</span><span class="op">,</span> <span class="kw">ebx</span>            <span class="co">; fd</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>e8 <span class="dv">10</span> <span class="dv">33</span> fc ff           call <span class="op">&lt;</span>_Py_write_noraise<span class="op">&gt;</span> <span class="co">; writes &quot;  File &quot;   &lt;-- the truncated log line</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>49 8b 46 70          &lt;-- <span class="bu">mov</span>  <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">r14</span><span class="op">+</span><span class="bn">0x70</span><span class="op">]</span>     <span class="co">; code-&gt;co_filename   *** FAULT: r14 == NULL ***</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>48 85 c0                 test <span class="kw">rax</span><span class="op">,</span> <span class="kw">rax</span>            <span class="co">; if (co_filename != NULL</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>74 11                    <span class="cf">je</span>   <span class="op">...</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>48 8b 40 08              <span class="bu">mov</span>  <span class="kw">rax</span><span class="op">,</span> <span class="op">[</span><span class="kw">rax</span><span class="op">+</span><span class="dv">8</span><span class="op">]</span>        <span class="co">;     &amp;&amp; Py_TYPE(co_filename)</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>f6 <span class="dv">80</span> ab <span class="dv">00</span> <span class="dv">00</span> <span class="dv">00</span> <span class="dv">10</span>     test <span class="dt">byte</span> <span class="op">[</span><span class="kw">rax</span><span class="op">+</span><span class="bn">0xab</span><span class="op">],</span> <span class="dv">16</span>  <span class="co">;     tp_flags &amp; Py_TPFLAGS_UNICODE_SUBCLASS</span></span></code></pre></div>
+<ul>
+<li>The <code>lea</code> operand resolves to the literal
+<strong><code>"  File "</code></strong> with <code>edx = 7</code> — its
+exact length — which is precisely the text the log line was truncated
+after.</li>
+<li>The faulting address is <code>0x70</code> (NULL +
+<code>offsetof(PyCodeObject, co_filename)</code>).</li>
+<li>Nearest preceding exported symbol is
+<strong><code>_Py_DumpDecimal</code></strong>, a
+<code>Python/traceback.c</code> function, <code>+0x200</code> before the
+fault.</li>
+</ul>
+<p>The faulting binary is container-side, not host-side:
+<code>/usr/local/bin/python3.12</code> <strong>does not exist on this
+host</strong> (host Python is <code>/usr/bin/python3</code>,
+<strong>3.14.6</strong>); inside the container it is Python
+<strong>3.12.13</strong>, image
+<code>docker.io/library/python:3.12-alpine</code>, digest
+<code>sha256:aa679aa4eed6eb56c1dc6ad3f1b98b7d2d788fd961596779d188fdedad97fb38</code>.</p>
+<h3
+id="upstream-this-is-a-known-cpython-bug-11.4.99-fetched-2026-08-21">3.2
+Upstream — this is a known CPython bug (§11.4.99, fetched
+2026-08-21)</h3>
+<ul>
+<li><strong><a
+href="https://github.com/python/cpython/issues/116008">python/cpython#116008</a></strong>
+— “Segfault in faulthandler signal handler with threads”. Crashes in
+<strong><code>dump_frame()</code> at
+<code>Python/traceback.c:1190</code> accessing
+<code>code-&gt;co_filename</code></strong> — the same function and the
+same field. Cause: faulthandler touching thread state / frame objects
+that other threads are concurrently changing. <strong>Status:
+closed/fixed</strong>, backports listed for <strong>3.13
+(#142017)</strong> and <strong>3.14 (#142013)</strong>.</li>
+<li><strong><a
+href="https://github.com/python/cpython/issues/128400">python/cpython#128400</a></strong>
+— crash in <code>_Py_DumpTracebackThreads</code> where
+<strong><code>_PyFrame_GetCode()</code> finds <code>executable</code>
+NULL</strong> — the same NULL <code>f_executable</code> this crash
+loaded. Fix direction: <em>“Stop-the-world when manually calling
+<code>faulthandler</code>”</em>.</li>
+</ul>
+<p><strong>No 3.12 backport is listed in either issue.</strong> The
+image ships 3.12.13, so staying on <code>python:3.12-alpine</code> does
+not acquire the fix. (§11.4.6: I did not verify 3.12’s branch policy
+directly — recorded as <em>not listed</em>, not as
+<em>refused</em>.)</p>
+<hr />
+<h2 id="the-other-half-of-the-ticket-the-14-hour-absence">4. The other
+half of the ticket — the 14-hour absence</h2>
+<p>This is the event the BOB-129 subagent actually walked into, and it
+is <strong>not a crash at all</strong>.</p>
+<pre><code>Aug 19 22:41:39 nezha systemd-logind[1296]: The system will power off now!
+Aug 19 22:41:39 nezha systemd-logind[1296]: System is powering down.
+Aug 19 22:41:39 nezha systemd[1]: Stopped target graphical.target - Graphical Interface.
+Aug 19 22:41:39 nezha systemd[1]: Stopping gdm.service - GNOME Display Manager...
+Aug 19 22:41:39 nezha qbittorrent-proxy[1168513]: 2026-08-19 20:41:39,920 - INFO - Shutting down...</code></pre>
+<p><code>systemd[1]</code> — the <strong>system</strong> manager, not
+the user manager — stopping <code>graphical.target</code>,
+<code>gdm</code>, <code>getty</code>, <code>bluetooth</code>,
+<code>timers</code>. The container ran its own SIGTERM handler and
+exited <strong>0</strong>. Boot <code>-3</code> ended
+<code>22:42:02 CEST</code>.</p>
+<p><strong>Answer to BOB-131’s question (a) “how long was the container
+dead before discovery”:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Timestamp (UTC)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>died exit=0</code> → <code>cleanup</code> →
+<code>remove</code></td>
+<td><code>2026-08-19T20:41:54Z</code></td>
+</tr>
+<tr>
+<td><code>create</code> (recovery via <code>./start.sh</code>)</td>
+<td><code>2026-08-20T10:48:37Z</code></td>
+</tr>
+<tr>
+<td><strong>Absent</strong></td>
+<td><strong>14h 06m 43s</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The host itself was back up at <code>2026-08-19 23:35:30 CEST</code>
+(boot <code>-1</code>), so for <strong>13h 13m of that window the
+machine was running with the boba stack simply not started.</strong></p>
+<h3 id="why-it-did-not-come-back-on-its-own">Why it did not come back on
+its own</h3>
+<p><code>restart: unless-stopped</code> is a <em>within-podman</em>
+policy. It does not survive a host power cycle. Boot persistence needs a
+unit, and <strong>none is enabled</strong>:</p>
+<pre><code>podman-restart.service            disabled   (user scope)
+podman-restart.service            disabled   (system scope)
+boba-stack.service                linked     disabled
+boba-webui-bridge.service         linked     disabled
+loginctl show-user milosvasic -p Linger  -&gt;  Linger=yes</code></pre>
+<p><code>boba-stack.service</code> <strong>exists and is linked but is
+not enabled</strong>, and lingering is already on — so the capability is
+present and one <code>systemctl --user enable</code> away. <strong>That
+is an operator decision and touching it is outside this investigation’s
+file scope; it is handed over in §6, not performed.</strong></p>
+<hr />
+<h2 id="is-the-crash-mechanism-still-armed-yes.">5. Is the crash
+mechanism still armed? Yes.</h2>
+<pre><code>2026-08-21T17:20:39+02:00 qbittorrent-proxy[2449341]: BOB-137 stall watchdog armed: stall&gt;20.0s, redump every 60.0s, SIGUSR1=dump-to-log SIGQUIT=dump-to-file</code></pre>
+<p>Defaults apply (<code>BOBA_STALL_WATCHDOG</code> unset in the
+container ⇒ on; <code>_DIAG_STALL_S=20</code>,
+<code>_DIAG_REDUMP_S=60</code>, <code>_DIAG_MAX_DUMPS=200</code>).</p>
+<p>It has not fired since the crash because BOB-137’s root cause — dedup
+running <code>O(N²)</code> regex work synchronously on the asyncio event
+loop, fixed in <code>1dd7b0a</code> — no longer stalls the loop past 20
+s. <strong>The dumper is still wired to the same unsafe API.</strong>
+Any future ≥20 s loop stall re-enters the identical race.</p>
+<p>This is the honest statement of residual risk: <strong>latent, armed,
+one trigger away, and the trigger is exactly the condition the watchdog
+exists to observe.</strong></p>
+<hr />
+<h2 id="handed-to-the-operator-not-performed">6. Handed to the operator
+— NOT performed</h2>
+<p>Both items below were deliberately not executed: the stack is live,
+three other agents are working, and neither is mine to decide.</p>
+<p><strong>(i) Reproduction.</strong> Requires deliberately stalling the
+event loop on a running container. Do this in a throwaway stack, never
+the operator’s:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># NOT run here. Requires a disposable stack; will crash the proxy container.</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./start.sh</span>                     <span class="co"># a scratch checkout, not the live one</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec qbittorrent-proxy python3 <span class="at">-c</span> <span class="st">&#39;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="st">import faulthandler, threading, time</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="st">def spin():</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="st">    while True:                      # churn frames so f_executable is</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="st">        (lambda: (lambda: None)())() # transiently NULL for a walker</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="st">threading.Thread(target=spin, daemon=True).start()</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="st">for _ in range(10000):</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="st">    faulthandler.dump_traceback(all_threads=True)   # racy by construction</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Expected: exit 139 + a kernel ANOM_ABEND sig=11 for /usr/local/bin/python3.12.</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="co"># §11.4.6: this reproduction is CONSTRUCTED, not traced from the incident&#39;s own</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="co"># preconditions, so per §11.4.115(G) it can mint DEFENSIVE HARDENING only --</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="co"># it cannot close BOB-131 as &quot;fixed&quot;.</span></span></code></pre></div>
+<p><strong>(ii) Boot persistence</strong> (closes the 14h-absence
+half):</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> enable <span class="at">--now</span> boba-stack.service     <span class="co"># operator decision</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or:  systemctl --user enable podman-restart.service</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> is-enabled boba-stack.service       <span class="co"># expect: enabled</span></span></code></pre></div>
+<p><strong>(iii) For BOB-137’s owner</strong> (the file is theirs,
+<code>download-proxy/src/main.py</code>): the stall dumper’s use of
+<code>faulthandler.dump_traceback(all_threads=True)</code> on a live
+multithreaded process is the crash vector. The upstream fix direction is
+<em>stop-the-world</em>; on 3.12 that is unavailable. Options are theirs
+to weigh — dump only the current thread, gate <code>all_threads</code>
+behind an opt-in, cap dumps per episode, or move the image to 3.13+.
+<strong>No change was made here.</strong></p>
+<hr />
+<h2 id="reproduction-not-attempted-on-the-live-stack">Reproduction (not
+attempted on the live stack)</h2>
+<p>Per the task’s constraint and §11.4.119, reproduction was
+<strong>not</strong> attempted: it requires either crashing the
+operator’s running proxy or restarting the stack, and the stack is live
+with the operator on the machine. The procedure is handed over in §6(i).
+Verdict <strong>(a)</strong> rests on the causal chain in §3, which is
+established from primary evidence (byte-matched machine code + the
+container’s own truncated dump + the upstream issue), not from a
+reproduction.</p>
+<hr />
+<h2 id="what-was-not-the-cause-the-three-lookalikes">What was NOT the
+cause — the three lookalikes</h2>
+<p>Every one of these was checked and excluded from evidence. The
+reusable version of this is <a
+href="../guides/container-death-triage.md"><code>docs/guides/container-death-triage.md</code></a>.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Lookalike</th>
+<th>Verdict</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>cgroup OOM-kill</strong></td>
+<td><strong>EXCLUDED</strong></td>
+<td><code>memory.events: oom_kill 0</code>,
+<code>oom_group_kill 0</code>. <strong>Zero</strong>
+<code>oom-kill</code> / <code>Memory cgroup out of memory</code> /
+<code>Killed process</code> lines in the entire 7.5-day journal
+retention. Flight recorder: <code>k_oom=0</code> and
+<code>oom_cgroups=""</code> across all 62 samples.</td>
+</tr>
+<tr>
+<td><strong>cgroup memory-ceiling pressure</strong></td>
+<td><strong>REAL, but not the cause</strong></td>
+<td><code>memory.max = 805306368</code> (768 MiB, matching
+<code>mem_limit: 768m</code>), <code>memory.peak = 805371904</code>,
+<code>memory.events: max 1584</code> in 48 min — the container lives
+<em>at</em> its ceiling. But <code>max</code> is
+<strong>reclaim</strong>, not a kill: <code>oom_kill</code> stayed 0.
+Containment working as designed. It cannot produce a SIGSEGV.</td>
+</tr>
+<tr>
+<td><strong>§12.12 thread / RLIMIT_NPROC exhaustion</strong></td>
+<td><strong>EXCLUDED</strong></td>
+<td><code>ulimit -u</code> = <strong>65536</strong> soft <em>and</em>
+hard; observed peak <code>unit_pids_peak = 1559</code> (<strong>2.4
+%</strong>). No <code>EAGAIN</code>, no “failed to create new OS
+thread”, no <code>pthread_create failed</code>, no “Cannot allocate
+memory” anywhere. Distinct signature, absent.</td>
+</tr>
+<tr>
+<td><strong>Host memory pressure</strong></td>
+<td><strong>EXCLUDED</strong></td>
+<td>Flight recorder (62 samples): <code>psi_mem_full10</code> max
+<strong>0.64</strong>, <code>mem_avail_kb</code> min <strong>43.9
+GB</strong> of 62.6 GB.</td>
+</tr>
+<tr>
+<td><strong>Host power event during the SIGSEGV</strong></td>
+<td><strong>EXCLUDED</strong></td>
+<td><code>k_suspend=0</code>, <code>boot_changed=0</code>, no boot
+boundary near <code>2026-08-20 17:56</code>. (The <em>separate</em>
+2026-08-19 event <strong>was</strong> a power-off — §4.)</td>
+</tr>
+<tr>
+<td><strong>conmon crash</strong></td>
+<td><strong>EXCLUDED</strong></td>
+<td>§1.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>The flight recorder (<code>scripts/flight-recorder/</code>) began
+sampling at <strong>2026-08-21T15:52:01Z</strong>, <em>after</em> both
+events. It cannot retro-cover them; it is cited above only for the
+<strong>current</strong> baseline. Stated explicitly per §11.4.6 rather
+than presented as incident-time evidence.</p>
+</blockquote>
+<hr />
+<h2 id="environment-measured-not-assumed">Environment (measured, not
+assumed)</h2>
+<pre><code>podman 5.7.1        conmon 2.2.1 (commit: alt1)      crun 1.27
+rootless=true       cgroupVersion=v2                 cgroupManager=systemd
+EventLogger=journald   LogDriver=journald            OCIRuntime=crun
+host python /usr/bin/python3 -&gt; 3.14.6 (ALT Sisyphus)
+container python /usr/local/bin/python3.12 -&gt; 3.12.13
+host TZ Europe/Belgrade (CEST, +0200);  journal retention from 2026-08-14T05:20:28+02:00</code></pre>
+<p><strong>Timezone caution for anyone re-reading these logs:</strong>
+<code>podman ps</code> and some <code>podman events</code> records for
+the boba containers print <strong><code>+0300</code></strong> while the
+host journal prints <strong><code>+0200 CEST</code></strong>. The two
+disagree by an hour on the same instant. Every timestamp in this
+document is stated with its zone; the SIGSEGV is
+<code>2026-08-20 17:56:26 CEST</code> =
+<code>2026-08-20T15:56:26Z</code>.</p>
+<h2 id="discovery-channel-note-11.4.238">Discovery-channel note
+(§11.4.238)</h2>
+<p>Both events were found by an agent investigating something else
+(BOB-129), not by container health monitoring — the escape BOB-131
+itself records. The detector added by this investigation is <a
+href="../../scripts/diagnostics/bob131_container_death_triage.sh"><code>scripts/diagnostics/bob131_container_death_triage.sh</code></a>,
+which classifies both of these events correctly from raw evidence and
+distinguishes them from all three lookalikes. It is a
+<strong>triage</strong> detector, not a monitor: it answers <em>“what
+killed this container”</em>, not <em>“is the container up”</em>.</p>

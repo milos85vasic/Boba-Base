@@ -192,7 +192,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>6</td>
+<td>7</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -232,7 +232,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>52</strong></td>
+<td><strong>53</strong></td>
 </tr>
 </tbody>
 </table>
@@ -284,14 +284,7 @@ Jackett + compose env-forward</td>
 <td>In progress</td>
 <td>High</td>
 <td>RD2-00: unattributed, unreviewed Auto-commit mechanism pushing to
-main [BOB-136 adoption audit 2026-08-21 -&gt; In progress] Work landed
-but acceptance NOT met. a7e55f9 completed the Phase-1 investigation (no
-daemon; shared-checkout race confirmed) and 0972cbc added
-commit-push-all.sh –scope + challenge, described in its own message as
-an ‘Interim tooling remedy for BOB-068 while the §11.4.179 architectural
-fix (task #67 proposal) is designed’. 35e53db is a DRAFT PROPOSAL only.
-The §11.4.179 clone-isolation fix is not landed, so the item stays
-open.</td>
+main</td>
 </tr>
 <tr>
 <td>BOB-069</td>
@@ -299,13 +292,7 @@ open.</td>
 <td>In progress</td>
 <td>High</td>
 <td>RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing
-coverage-escape backfill [BOB-136 adoption audit 2026-08-21 -&gt; In
-progress] a4173c8 stood up the ledger + 4 followups; 709b06c closed 2
-Important review findings (CODEGRAPH-1.5.0-GITIGNORE entry, BOB-108
-filed). The BOB-009/010 evidence_path gap this item names as remaining
-open was closed under BOB-086 (f78f383). NOT terminal by the item’s own
-text: it is explicitly scoped ‘P1-ongoing’, with the full retroactive
-audit of the ~50 GA-NN/RD2-NN findings deliberately NOT attempted.</td>
+coverage-escape backfill</td>
 </tr>
 <tr>
 <td>BOB-074</td>
@@ -313,15 +300,7 @@ audit of the ~50 GA-NN/RD2-NN findings deliberately NOT attempted.</td>
 <td>In progress</td>
 <td>Medium</td>
 <td>RD2-07: DDoS-class testing fully absent from the mandated test-type
-matrix [BOB-136 adoption audit 2026-08-21 -&gt; In progress] ae2b5cb
-authored challenges/scripts/ddos_resilience_challenge.sh (424 lines, 3
-public surfaces) + docs/testing/{ddos_resilience,test_type_matrix}.md,
-so DDoS-class testing is no longer ‘fully absent’. But of the three
-coverages this item’s Fix line enumerates, a grep of the shipped
-challenge finds flood=2 hits, malformed=0, exhaust=0 —
-malformed-request-flood and resource-exhaustion-under-attack are not
-covered. 258b7db filed the 6 followups (BOB-109..114). Partial, not
-complete.</td>
+matrix</td>
 </tr>
 <tr>
 <td>BOB-077</td>
@@ -401,16 +380,7 @@ table row-completeness (GA-07 remainder)</td>
 <td>In progress</td>
 <td>Medium</td>
 <td>RD2-25: HelixQA Challenge entry exercising all three start.sh
-subcommands end-to-end against real compose stack [BOB-136 adoption
-audit 2026-08-21 -&gt; In progress] a9366c9 bumped submodules/helixqa to
-HelixDevelopment/qa@00c5ca4 adding banks/boba-start-sh-reload.yaml (3
-cases, all three subcommands). The bank EXISTS but has never been
-EXECUTED: the commit states honestly that the helixqa binary was not
-built in-session (§11.4.3 SKIP feature_disabled_by_config) and ‘live
-bin/helixqa list demo is deferred’, with only YAML-parse evidence
-captured. This item’s acceptance is end-to-end execution against the
-real compose stack — artifact-class evidence cannot close a
-runtime-class acceptance (§11.4.226).</td>
+subcommands end-to-end against real compose stack</td>
 </tr>
 <tr>
 <td>BOB-092</td>
@@ -426,16 +396,7 @@ fallback + verify live 200 (closes GA-13)</td>
 <td>In progress</td>
 <td>High</td>
 <td>RD2-28: Live compose bring-up + verify rutracker ReDoS regex bounds
-deployed to container (closes runtime half of GA-12) [BOB-136 adoption
-audit 2026-08-21 -&gt; In progress] 1c0389a proved 3 of the 4 sub-steps
-with strong runtime evidence: the bounded regex is confirmed in the
-DEPLOYED /config/qBittorrent/nova3/engines/rutracker.py inside the
-running container (sha256 76a6bd2e..), with a self-validated challenge +
-§11.4.115 RED (mutated unsafe form FAILs) and GREEN verdict JSON. The
-4th sub-step is NOT met: ‘capture timing of a large rutracker result
-page (&lt;2s)’ was not exercised — in
-docs/qa/BOB-093/live_search_smoke.txt rutracker returned status=empty,
-results_count=0 in 164ms, so no large page was ever timed.</td>
+deployed to container (closes runtime half of GA-12)</td>
 </tr>
 <tr>
 <td>BOB-094</td>
@@ -443,15 +404,7 @@ results_count=0 in 164ms, so no large page was ever timed.</td>
 <td>In progress</td>
 <td>Medium</td>
 <td>RD2-29: Author tests/stress/test_tracker_fetch_stress_chaos.py with
-§11.4.85 fault injection [BOB-136 adoption audit 2026-08-21 -&gt; In
-progress] The suite landed (test file at 4b7b21d, evidence +
-RED-on-mutated-classifier capture at f3ca131) with 9 test functions: 2
-stress, 3 boundary, 3 chaos (network_drop, midflight_kill,
-input_corruption), 1 category_map. This item explicitly requires fault
-injection across process-kill, network-fault AND resource-exhaustion.
-Only 2 of those 3 classes are present — there is no resource-exhaustion
-scenario in tests/stress/test_tracker_fetch_stress_chaos.py.
-Partial.</td>
+§11.4.85 fault injection</td>
 </tr>
 <tr>
 <td>BOB-095</td>
@@ -459,15 +412,7 @@ Partial.</td>
 <td>In progress</td>
 <td>Medium</td>
 <td>RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py
-for Go-side triangle [BOB-136 adoption audit 2026-08-21 -&gt; In
-progress] d5c8c3e authored
-qBitTorrent-go/internal/service/sse_broker_stress_chaos_test.go (462
-lines, 6 scenarios, 2 RED captures) and found+fixed a real
-double-unsubscribe ‘close of closed channel’ defect. But this item names
-a THREE-component triangle: sse_broker.go + internal/api/hooks.go +
-internal/api/scheduler_api.go. Only sse_broker.go is covered — there is
-no stress_chaos test anywhere under qBitTorrent-go/internal/api/. 1 of
-3, partial.</td>
+for Go-side triangle</td>
 </tr>
 <tr>
 <td>BOB-097</td>
@@ -563,23 +508,7 @@ rate-limit detector</td>
 <td>Queued</td>
 <td>Critical</td>
 <td>3rd forced-logout incident 2026-08-18 23:45:49 — SIGKILL user@1000 +
-preventive-timer-inside-user-slice architectural gap [BOB-136 adoption
-audit 2026-08-21 -&gt; DELIBERATELY LEFT QUEUED] The
-CM-CLOSURE-SEAM-BINDS gate classifies this row as a CONTRADICTION ‘via
-closes, commit d84d226’. That is a CARRIER match, not a closure. The
-matching text in d84d226 is ‘closing BOB-120 requires an
-out-of-user-scope watchdog, not more documentation’ — a statement of
-what closure would take, and the same commit states ‘New architectural
-finding, filed as BOB-120 (Critical, left Queued)’. d84d226 FILED this
-item; it did not close it. The architectural fix remains unlanded:
-BOB-121, which carries it, is still Ready for testing and its own body
-states it is NOT CLOSED, with two operator decisions owed and the
-watchdog UNTESTED AGAINST A REAL FORCED LOGOUT (survival inferred from
-cgroup topology, not observed). Moving this row on documentation alone
-would be precisely the §11.4.238 coverage-escape bluff this item’s own
-text warns against. Status unchanged; the gate finding is expected to
-persist until the out-of-scope watchdog actually lands and is
-verified.</td>
+preventive-timer-inside-user-slice architectural gap</td>
 </tr>
 <tr>
 <td>BOB-121</td>
@@ -595,29 +524,12 @@ incident #3)</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Medium</td>
 <td>Potential production slowapi/starlette defect flagged by Task 105
-subagent — ## CLOSED 2026-08-21. CONFIRMED as a real defect but ALREADY
-REMEDIATED by commit 44f3bbe — and this ticket’s PREMISE is REFUTED. It
-is not a slowapi/starlette incompatibility: the mechanism reproduces
-IDENTICALLY at host starlette 1.4.1 and container 1.6.0, and slowapi’s
-own docs state the contract verbatim (docs/index.md, fetched
-2026-08-21). The true root cause is a documented API-usage contract —
-headers_enabled=True requires a <code>response: Response</code>
-parameter when the endpoint does not itself return a Response. The REAL
-remaining work was that NO regression guard existed: the only prior
-references were comments in tests that bypass the decorator via
-<strong>wrapped</strong> and never execute slowapi’s wrapper — a fixed
-defect with nothing falsifiable guarding it. Added
-tests/unit/test_bob129_slowapi_response_contract.py: 6 tests including a
-control needle proving the installed slowapi still raises, and a DRIFT
-DETECTOR that fails when any new decorated endpoint appears without the
-parameter. §1.1 (revert of 44f3bbe) -&gt; 3 failed with the real 500
-body; restore byte-identical. Description corrected: the incompatibility
-framing was wrong.</td>
+subagent</td>
 </tr>
 <tr>
 <td>BOB-131</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>Fixed (→ Fixed.md)</td>
 <td>Medium</td>
 <td>qbittorrent-proxy podman conmon crash — pre-existing, surfaced
 during BOB-129 investigation</td>
@@ -635,359 +547,178 @@ during BOB-129 investigation</td>
 <td>Task</td>
 <td>Ready for testing</td>
 <td>High</td>
-<td>WHAT. A single 2026-08-20 sweep found FOUR workable-item rows whose
-tracked state contradicted reality: BOB-076 (closed by commit 99a486e on
-2026-08-15, whose message literally says “closes BOB-076”, still
-Queued), BOB-117 (fix landed AND covered by a permanent guard assertion,
-still Queued), BOB-091 (implemented under d1a8479 / a3b16bc / 2a0b543,
-still Queued), and BOB-008 whose Evidence field still quoted a
-diagnostic string that BOB-117 removed from source. CORRECTION
-2026-08-20 (11.4.6). An earlier revision of this item claimed the
-enabling defect was that “workable-items diff is blind to body_md
-drift”. That was WRONG and is corrected here rather than quietly edited.
-The engine is NOT blind. The FLAGLESS INVOCATION is: workable-items diff
-–db docs/workable_items.db -&gt; “diff: DB and Markdown are in sync”
-(opens ZERO .md files) workable-items diff –db docs/workable_items.db
-–issues docs/Issues.md –fixed docs/Fixed.md -&gt; “~ BOB-008 body
-differs (md=1346 bytes db=1333 bytes)” -&gt; “diff: 1 difference(s)”
-Both measured on the same seeded body-only drift. An independent agent
-proved the mechanism with strace: the flagless form never opens any
-Markdown file. So this is a 11.4.201(6) FALSE-NULL of the CALLER, not a
-gap in the comparison logic. Importantly, pre_build_verification.sh
-invariant 17 already passes both flags, so the STANDING GATE was never
-blind — the drift above was not caused by a blind gate. THE REAL
-DEFECTS, restated honestly. (1) The flagless form is a false-null trap:
-it reports a confident, reassuring “in sync” while checking nothing. Any
-caller using it is a green-reporting blind check. It should either
-default to the conventional Issues.md/Fixed.md paths or REFUSE with a
-clear error, never return a clean verdict for a comparison it did not
-perform. (2) Work commonly lands under commit messages that do not carry
-the ATM id (GA-14/15/16 for BOB-091), so nothing mechanically links a
-commit back to its row, and closure depends on a human remembering.
-11.4.227: an anchor done state is its SEAM landing, not its TEXT
-landing. ACCEPTANCE. (a) The flagless diff invocation no longer returns
-a clean verdict without reading Markdown, with a paired 1.1 mutation
-proving it. (b) A repo-wide grep confirms no caller uses the flagless
-form. (c) A sweep that flags any non-terminal item whose id appears in a
-merged commit message, so done-but-open rows are found mechanically
-rather than by a human noticing. (d) Honest boundary: this does not
-claim to prevent all drift. RELATED.
-scripts/hooks/docs-sync-commit-seam.sh (added under BOB-087) now
-enforces doc/DB sync at the commit seam and passes the flags explicitly,
-plus an independent body_md re-parse oracle. EVIDENCE.
-docs/qa/BOB-117/closure-evidence.md,
-docs/qa/BOB-076/closure-evidence.md,
-docs/qa/BOB-091/closure-evidence.md.</td>
+<td>Closure seam does not bind: 4 tracker rows found stale in one sweep,
+and workable-items diff is blind to body_md drift</td>
 </tr>
 <tr>
 <td>BOB-137</td>
 <td>Bug</td>
 <td>In progress</td>
 <td>High</td>
+<td>Merge service on 7187 wedges while the same process still serves
+7186 (GIL starvation by one spinning thread)</td>
+</tr>
+<tr>
+<td>BOB-141</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Low</td>
+<td>CLAUDE.md claims the Go profile serves 7186/7187/7188 but its
+container binds only 7187 — doc contradicts the Dockerfile</td>
+</tr>
+<tr>
+<td>BOB-143</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate
+scan scope and manufacture false BOB-126-class findings</td>
+</tr>
+<tr>
+<td>BOB-144</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Low</td>
+<td>/theme/stream calls the disconnect probe unguarded — fail-closed but
+via an uncaught traceback, inconsistent with the two SSE generators</td>
+</tr>
+<tr>
+<td>BOB-145</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>High</td>
+<td>Fix the 7187 wedge: offload and/or memoise
+Deduplicator.merge_results so O(N^2) regex work stops blocking the
+asyncio event loop</td>
+</tr>
+<tr>
+<td>BOB-146</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>High</td>
+<td>Constitution §11.4.252 detector undercounts by 29% (30 vs 42 AST
+ground truth) — 4 distinct blind spots make its output a floor, not a
+census</td>
+</tr>
+<tr>
+<td>BOB-148</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Medium</td>
+<td>Standing red unit test nothing tracked: test_no_credentials asserts
+has_session False, gets True — real defect or non-hermetic test,
+undecided</td>
+</tr>
+<tr>
+<td>BOB-149</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Low</td>
+<td>Managed-plugin count diverges 43/42/48 across constitution,
+CLAUDE.md and the README badge; the badge is hand-maintained and
+unguarded</td>
+</tr>
+<tr>
+<td>BOB-150</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Low</td>
+<td>pre_build_verification.sh invariant labels read N/44 but only 35
+invariants are labelled</td>
+</tr>
+<tr>
+<td>BOB-151</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>CM-SCRIPT-DOCS-SYNC is a named gate with no implementation, and 24
+of 36 scripts have no companion doc</td>
+</tr>
+<tr>
+<td>BOB-152</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>Constitution sweep walks vendored third-party code: 82% of one
+gate’s 38,291 findings come from submodules/</td>
+</tr>
+<tr>
+<td>BOB-153</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>Go profile cannot build: go.mod requires go 1.26.2 but the
+Dockerfile builder is golang:1.23-alpine</td>
+</tr>
+<tr>
+<td>BOB-154</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>Host venv and production container run different starlette versions
+(1.4.1 vs 1.6.0)</td>
+</tr>
+<tr>
+<td>BOB-155</td>
+<td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>High</td>
+<td>workable-items diff reports ‘DB and Markdown are in sync’ having
+opened zero Markdown files when –issues/–fixed are omitted</td>
+</tr>
+<tr>
+<td>BOB-156</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>BOB-145 event-loop regression guard is load-sensitive and flaky:
+8786ms under host load vs a 900-1500ms ceiling calibrated on a quiet
+host</td>
+</tr>
+<tr>
+<td>BOB-157</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>High</td>
 <td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>bug</code> on 2026-08-20T14:46:52Z <strong>Reported-By:</strong>
-Claude <strong>What (the report, verbatim):</strong> The merge service
-on port 7187 wedges after hours of uptime: the port stays bound and the
-container keeps reporting “healthy”, but every HTTP request hangs until
-the client times out. Measured 2026-08-20 16:41 UTC+2 on a container up
-3h53m: curl http://localhost:7186/ -&gt; HTTP 200 in 0.096s (proxy, same
-process) curl http://localhost:7187/ -&gt; HTTP 000 after 6.0s (merge
-service, WEDGED) Both ports are served by the SAME process (pid 2330069,
-fd 3 = 7186, fd 7 = 7187), so this is not a crashed worker – one loop
-inside a live process has stopped servicing requests while another in
-the same process is fine. Thread state at the time of the wedge
-(/proc/2330069/task, 16 threads): - tid 2330529: state R, wchan 0 &lt;-
-ONE thread spinning on CPU - tid 2330528: state S, wchan do_sys_poll
-&lt;- the healthy 7186 poll loop - the other 14: state S, wchan
-futex_wait_queue That is the GIL-starvation signature: a thread
-busy-looping in Python holds the GIL and every other thread queues on
-the GIL futex. 7186 survives because do_sys_poll releases the GIL; the
-7187 async loop needs sustained GIL time to service a request and
-starves. Process CPU was 20.6% while idle. Corroborating evidence: seven
-sockets held by the process sit in CLOSE-WAIT with unread bytes still in
-the receive queue (Recv-Q 162, 162, 162, 79, 1, 1, 1) – clients sent a
-request and hung up, and the app never read it or closed the fd. The
-listener had also accumulated an unaccepted backlog (Recv-Q 6 on the
-7187 LISTEN socket) at first observation. The container log’s last line
-is 2h before the observation, so the service processed nothing in that
-window. NOT fd exhaustion: only 48 of 16384 fds were open. ROOT CAUSE
-NOT ESTABLISHED. All four <code>while True</code> loops in the service
-(routes.py:166, search.py:1169, streaming.py:161, streaming.py:359) are
-correctly bounded and awaited, so the spin is not a naive unslept loop.
-py-spy could not attach to name the spinning frame – the host has
-kernel.yama.ptrace_scope=1, which denies non-child attach. Per the
-§11.4.102 Iron Law no fix is proposed until the spinning frame is
-identified. Next diagnostic step: obtain a Python stack. Either run
-py-spy INSIDE the container (musl wheel), or set ptrace_scope=0 for the
-duration of one dump, or add a SIGQUIT/faulthandler.register() dump hook
-to main.py so the running service can be asked for its own stacks
-without ptrace. DISCOVERY CHANNEL (§11.4.238): found by an agent probing
-the host by hand while investigating an unrelated test-suite result –
-NOT by automated QA. This is a coverage escape in its own right; see the
-sibling item on the health check that was structurally incapable of
-observing it. <strong>Affected scope / file-scope manifest:</strong>
-download-proxy/src/main.py, download-proxy/src/merge_service/,
-download-proxy/src/api/streaming.py, docker-compose.yml
-(qbittorrent-proxy) <strong>Reproduction / context:</strong> Leave the
-qbittorrent-proxy container running for several hours with search
-traffic (a full tests/security run is sufficient). Then: curl –max-time
-6 http://localhost:7186/ returns 200; curl –max-time 6
-http://localhost:7187/ returns 000. Confirm with: ss -ltnp | grep 7187
-(unaccepted backlog) and awk ’{print <span class="math inline">$3}'
-/proc/&lt;pid&gt;/task/*/stat (one R thread, rest
-futex_wait_queue).  **Acceptance criteria:** The spinning frame is
-identified from a real Python stack dump (not inferred), the busy-loop
-is fixed at its root, and a regression guard proves 7187 still answers
-after a sustained-traffic soak. Evidence: before/after curl timings on
-both ports plus a thread-state census showing no permanently-R
-thread.  [BOB-136 adoption audit 2026-08-21 -&gt; In progress] 1dd7b0a
-ESTABLISHED the root cause with captured evidence (16 stack dumps
-showing Deduplicator.merge_results() called synchronously at
-search.py:914 on the event-loop thread; loop thread sustained 81-98%
-user-space CPU while all other threads showed d_utime=0). The
-remediation landed under BOB-145 (0572b71, now Fixed), whose own text is
-headed 'BOB-145 - the 7187 wedge' and which refuted the assumed O(N^2)
-cause by profiling. BOB-137 and BOB-145 therefore describe the SAME
-defect; per §11.4.214 that is a link/dedup decision, not a unilateral
-close, and no post-fix re-observation of the multi-hour wedge is
-recorded against BOB-137 itself. Left open pending that linkage
-decision. |
-| BOB-141 | Task | Queued | Low | **Reported-Via:** §11.4.202 reporting
-directive `task` on 2026-08-20T14:56:38Z **Reported-By:** Claude  **What
-(the report, verbatim):** CLAUDE.md's Architecture section
-states:    "qbittorrent-proxy-go (Go/Gin, opt-in via --profile go) --
-replaces the Python    proxy on 7186, 7187, 7188"  The container cannot
-deliver that. Read from source rather than
-prose:    qBitTorrent-go/Dockerfile:16    CMD
-["/app/qbittorrent-proxy"]        (ONE
-binary)   qBitTorrent-go/Dockerfile:15    EXPOSE 7187
-7188                      (declares
-2)   cmd/qbittorrent-proxy/main.go   r.Run(fmt.Sprintf(":%d",
-cfg.ServerPort))  (binds 1)   internal/config/config.go:58    ServerPort
-= MERGE_SERVICE_PORT (default 7187)  So the qbittorrent-proxy-go
-container binds 7187 ONLY. webui-bridge is a SEPARATE binary
-(cmd/webui-bridge, /bridge/health, cfg.BridgePort) that this container
-never starts, and nothing in it binds 7186 either -- although the
-compose service does set PROXY_PORT=7186 and BRIDGE_PORT=7188 in its
-environment, which reinforces the wrong impression. EXPOSE likewise
-declares a port nothing binds.  WHY THIS MATTERS BEYOND TIDINESS: this
-prose was used as the source of truth when first authoring
-config/served_ports.yaml, producing a manifest entry of [7186, 7187,
-7188] for that service. The healthcheck gate built on it then FAILED a
-service whose healthcheck was already correct -- a §11.4.201(1)
-false-positive refusal caused directly by trusting the doc over the
-Dockerfile. The manifest was corrected against source; the doc was not,
-and will mislead the next reader the same way.  Either the doc is wrong,
-or the Go container is under-provisioned relative to intent (it should
-also run webui-bridge and a 7186 listener). Determining WHICH is part of
-this task -- do not simply reword the doc to match the current binary if
-the intended design was a three-port container.  Related: the Go
-service's compose block sets PROXY_PORT and BRIDGE_PORT that no process
-in the container consumes, and EXPOSE lists 7188 unbound. Whichever way
-the above resolves, those should agree with reality
-afterwards.  **Affected scope / file-scope manifest:** CLAUDE.md
-(Architecture + Port Map), docker-compose.yml (qbittorrent-proxy-go
-env/EXPOSE), qBitTorrent-go/Dockerfile  **Reproduction / context:** Read
-qBitTorrent-go/Dockerfile:16 (single CMD) against CLAUDE.md's 'replaces
-the Python proxy on 7186, 7187, 7188'; confirm cfg.ServerPort resolves
-to MERGE_SERVICE_PORT=7187 in
-internal/config/config.go:58.  **Acceptance criteria:** Doc and
-container agree, with the direction of the fix decided deliberately
-(correct the doc, or provision the container to match the documented
-intent). PROXY_PORT/BRIDGE_PORT env and EXPOSE lines agree with what the
-container actually binds. |
-| BOB-143 | Bug | Queued | Medium | **Reported-Via:** §11.4.202
-reporting directive `bug` on 2026-08-20T15:08:18Z **Reported-By:**
-Claude  **What (the report, verbatim):**
-`.worktrees/ci-split-workflows/` (13M) and
-`.worktrees/completion-initiative-phase-0/` (33M) are ORPHANED: `git
-worktree list` reports only the main checkout, so neither is a
-registered worktree. Each contains a `.git` POINTER FILE whose target
-gitdir no longer exists, so git cannot resolve HEAD, branch, or status
-inside them -- every query returns empty.  They are gitignored
-(.gitignore:122), so nothing tracks them and nothing will ever notice
-them drifting.  WHY THIS IS NOT COSMETIC: they pollute the scan scope of
-whole-tree gates and manufacture false findings. Measured 2026-08-20 by
-the §11.4.32 sweep:    - `cm_test_mock_pid_explicit_int` reported 2
-violations at     tests/unit/merge_service/test_deadline_tunable.py:44
--- BOTH inside these     orphaned trees. The MAIN tree's copy of that
-file is already hardened (it sets     `mock.pid = 12345` and patches
-os.killpg/os.getpgid) and passes the gate     cleanly. The finding read
-as a live §11.4.263 / BOB-126-class defect and was     not one.   - 6 of
-the 57 "missing anchor carrier" files flagged by the propagation
-gates     were likewise `.worktrees/**`.  That is the §11.4.201(1)
-false-positive shape sourced from scan scope, and it costs real
-investigation time: a reader triaging "2 live BOB-126 violations"
-reasonably treats it as a host-safety emergency.  CLARIFICATION
-(established during triage, so the record is not alarming): these trees
-are NOT a kill(-1) vector. Their `download-proxy/src/merge_service/
-search.py` contains ZERO `os.killpg` calls -- they predate that cleanup
-code entirely -- so there is no unguarded signal call to reach.
-Additionally `pyproject.toml` sets `testpaths = ["tests"]`, so a plain
-`pytest` run does not collect from `.worktrees/`. No host-safety risk
-was found. The defect is scan-scope noise plus 46M of unreferenced
-disk.  WHY REMOVAL IS NOT DONE AUTONOMOUSLY (§11.4.122 / §11.4.124 /
-§11.4.101): because git cannot resolve their HEAD, it is NOT possible to
-prove their contents are merged into main. Deleting
-unprovable-provenance work is exactly the irreversible, operator-owned
-decision §11.4.122 reserves. Two options for the operator:   (a) confirm
-removal (they are stale dev scratch dirs) -- reversible only
-from       backup, so a §9.2 pre-op backup should precede it; or   (b)
-keep them and add `.worktrees/` to the gate scan-scope exclusion list as
-a       §11.4.224(E)-fenced, checked-in, justified entry.  Either way
-the exclusion list is the cheaper immediate mitigation and does not
-destroy anything.  **Affected scope / file-scope manifest:**
-.worktrees/ci-split-workflows/,
-.worktrees/completion-initiative-phase-0/, gate scan-scope
-config  **Reproduction / context:** git worktree list shows only the
-main checkout; git -C .worktrees/&lt;dir&gt; log -1 returns empty
-(gitdir target missing). Run the §11.4.32 sweep and observe
-cm_test_mock_pid_explicit_int report 2 violations, both under
-.worktrees/, while the main-tree file passes the same
-gate.  **Acceptance criteria:** Whole-tree gates no longer report
-findings sourced from orphaned worktrees: either the dirs are removed
-after operator confirmation with a §9.2 pre-op backup, or .worktrees/ is
-added to a checked-in §11.4.224(E)-fenced exclusion list with
-justification. Verify by re-running the sweep and confirming zero
-.worktrees-sourced findings. |
-| BOB-144 | Bug | Fixed (→ Fixed.md) | Low | **Reported-Via:** §11.4.202
-reporting directive `bug` on 2026-08-20T15:53:57Z **Reported-By:**
-Claude  **What (the report, verbatim):** `/theme/stream` in
-download-proxy/src/api/routes.py:167 calls the disconnect probe with NO
-guard at all:      while True:         if await
-request.is_disconnected():             break  If that probe raises, the
-generator dies with an UNCAUGHT exception.  IMPORTANT — this is NOT the
-BOB-139 fail-open. The effect here is fail-CLOSED: the stream stops, and
-the enclosing `finally: store.unsubscribe(queue)` still runs, so the
-subscriber queue is released and nothing leaks. The outcome is CORRECT;
-the manner is not.  What is wrong with it:   - it terminates via an
-uncaught traceback rather than a clean SSE `close`     event, so the
-client sees a truncated stream instead of a reason;   - the failure is
-not logged as a probe failure, so a systematically raising     probe
-would show up as recurring tracebacks with no diagnosis;   - it is
-inconsistent with the two SSE generators in streaming.py, which
-after     BOB-139 emit `event: close` with reason
-`disconnect_probe_failed` and log a     warning. Three call sites of the
-same probe now behave two different ways.  The BOB-139 fix deliberately
-did not touch this file (ownership boundary, §11.4.119), and flagged it
-honestly rather than fixing it out of scope.  Acceptance: /theme/stream
-uses the same probe-failure discipline as the streaming.py generators —
-a clean close event with the `disconnect_probe_failed` reason plus a
-logged warning — proven in BOTH directions (§11.4.201(1)): a raising
-probe closes the stream cleanly AND a normally-connected client still
-streams uninterrupted. Prefer reusing the shared helper introduced by
-BOB-139 rather than a third copy of the logic (§11.4.251).  Honest
-boundary (§11.4.6): the production probe-failure rate is UNKNOWN —
-nobody has measured how often `is_disconnected()` actually raises. This
-is filed on the inconsistency and the missing diagnosis, not on a
-measured incident rate.  **Affected scope / file-scope manifest:**
-download-proxy/src/api/routes.py (~line 167,
-stream_theme)  **Reproduction / context:** Monkeypatch
-Request.is_disconnected to raise, open /theme/stream, observe the
-generator dies with an uncaught traceback rather than emitting event:
-close with reason disconnect_probe_failed as streaming.py now
-does.  **Acceptance criteria:** Same probe-failure discipline as
-streaming.py (clean close + disconnect_probe_failed reason + logged
-warning), verified both directions, reusing the BOB-139 helper rather
-than a third copy.  ---  ## CLOSED 2026-08-21. /theme/stream's bare
-`await request.is_disconnected()` now routes through the shared BOB-139
-helper and emits a NAMED close reason instead of letting the exception
-escape. The outcome was already safe (subscriber_count 0-&gt;0 proved
-the finally released the queue) but safety was a side effect of an
-escaping traceback, not a decision — one upstream try/except from
-becoming fail-open. RED 4 failed / 2 passed -&gt; GREEN 6 passed; the 2
-pre-fix passes are the deliberate do-not-weaken guards and are green in
-BOTH states. Revert -&gt; same 4 failures -&gt; restore byte-identical
-(sha256 94107969… / 6492c8cf…). Honest boundary: the live container
-still has the pre-fix module imported, so no live-container runtime
-verification is claimed. |
-| BOB-145 | Bug | Fixed (→ Fixed.md) | High | **Reported-Via:**
-§11.4.202 reporting directive `bug` on 2026-08-20T16:01:43Z
-**Reported-By:** Claude  **What (the report, verbatim):** BOB-137
-established the root cause: Deduplicator.merge_results() is called as a
-PLAIN SYNCHRONOUS CALL at merge_service/search.py:914 and therefore
-executes ON the asyncio event-loop thread. While it runs, uvicorn's only
-loop runs no callback — no accept, no read, no write — so port 7187
-stops answering entirely. Measured episodes of 9m37s and 5m56s,
-self-clearing, recurring under ordinary traffic.  This item is the FIX.
-BOB-137 is the diagnosis and stays separate per the §11.4.102 Iron Law —
-the investigation deliberately applied no fix.  Three candidate
-directions, not yet chosen:   (a) OFFLOAD — hand merge_results to a
-thread executor (asyncio.to_thread /      run_in_executor). Smallest
-change, immediately unblocks the loop. Does NOT      make the work
-cheaper, so a large enough merge still burns a core; and
-it      introduces concurrency around self._last_merged_results and
-metadata, which      must be checked for races before it is called
-safe.   (b) MEMOISE — _normalize_name is called at FOUR sites per
-comparison, each      running 5 re.sub, and
-_extract_identity_from_result twice more with a      ~15-re.search
-chain. lru_cache has ZERO matches in that module today, so
-the      seed's own normalisation is recomputed for every candidate.
-Caching the      per-result normalisation is a large constant-factor win
-with no concurrency      risk.   (c) REDUCE THE COMPARISON SET — the
-O(N^2) shape itself (blocking/bucketing by a      cheap key before
-pairwise comparison). Largest win, largest change, highest      risk of
-altering dedup RESULTS — which would need its own
-correctness      evidence, not just a speed measurement.  (b) then (a)
-is the likely order: (b) is risk-free and may alone bring the merge
-under the threshold, and (a) guarantees the loop is never blocked
-regardless.  MANDATORY for whoever takes this:  - RED FIRST
-(§11.4.43/§11.4.224): a test that FAILS on the current code
-by    demonstrating the loop is blocked during a merge — e.g. assert a
-concurrent    request to 7187 is served within a bounded time while a
-large merge runs. A    pure speed benchmark is NOT the RED test; the
-defect is loop-blocking, not    slowness.  - BOTH POLARITIES
-(§11.4.201(1)): the loop stays responsive under a large merge    AND
-dedup results are unchanged for the existing corpus. A fix that speeds
-up    merging while changing which duplicates are detected is a
-different defect.  - Use the existing instrument:
-scripts/diagnostics/bob137_soak.sh reproduced the    wedge 22/26; it is
-the natural GREEN check.  - Honest boundary carried from BOB-137:
-measured growth is SUPER-LINEAR but not    fully quadratic at N&lt;=400
-(2.4-3.4x per doubling vs 4.0). Worst case is    quadratic BY CODE
-STRUCTURE. Do not cite "measured N^2".  **Affected scope / file-scope
-manifest:** download-proxy/src/merge_service/search.py:914,
-download-proxy/src/merge_service/deduplicator.py  **Reproduction /
-context:** bash scripts/diagnostics/bob137_soak.sh — reproduced the
-wedge in 22/26 probes (7187 dead, 7186 alive throughout).  **Acceptance
-criteria:** Port 7187 answers within a bounded time while a large merge
-runs (loop never blocked), AND dedup results are unchanged for the
-existing corpus. Proven with the soak repro flipping from 22/26-dead to
-0/N-dead, plus a dedup-equivalence check.  ---  ## CLOSED 2026-08-21.
-The assumed O(N^2) comparison cost was NOT the problem: cProfile at
-N=400 showed Levenshtein at 0.223s (2.3%) while identity extraction,
-normalisation and 2,107,721 re._compile calls dominated — over only 400
-distinct names. Fixed by memoising the pure per-string derivations and
-hoisting them out of the inner loop; comparison count UNTOUCHED, so no
-matching rule changed. N=400 loop-block 3970ms -&gt; median 349ms; N=800
-7337ms -&gt; ~815ms. RED observed at 3970ms vs a 900ms ceiling; revert
--&gt; 8994ms; restore byte-identical. Bucketing was IMPLEMENTED and
-MEASURED before rejection: 0.0% prune rate at N=400 and N=800, and the
-effective form is unsound because Tier 2 matches on infohash independent
-of name. Honest limit: the loop still stops while merge_results runs —
-the window shrank, it did not vanish; removing it needs an await at the
-search.py call site. |
-| BOB-146 | Bug | Fixed (→ Fixed.md) | High | **Reported-Via:**
-§11.4.202 reporting directive `bug` on 2026-08-20T16:10:50Z
-**Reported-By:** Claude  **What (the report, verbatim):** The
-constitution's §11.4.252 detector (constitution/scripts/gates/
-cm_dangerous_combination_fail_closed.sh) UNDERCOUNTS by 29%. Measured
-against an independent AST instrument (structure, not text — a valid
-control needle per §11.4.201(7)) on boba's plugins tree:      gate
-reports        : 30     AST ground truth    :
-42     missed              : 12     false positives     : 0  A gate that
-misses 12 of 42 while reporting a confident number is a §11.4.201(6)
-false-null: its output reads as a census when it is a FLOOR. Anyone
-fencing an exclusion list against that number (§11.4.224(E)) would write
-the fence against an undercount and lock the invisible sites out of
-scope permanently.  FOUR DISTINCT CAUSES, each independently
-falsifiable:  L1 — TRAILING COMMENT DEFEATS THE REGEX (10 of the
-12).   The pattern anchors the handler line with
-`…:[[:space:]]*$</span><code>, so</code>except Exception: # noqa:
-S110<code>never matches. The irony is load-bearing:   the sites a human consciously reviewed and annotated are exactly the ones the   gate cannot see.  L2 — TUPLE CLAUSE DEFEATS THE REGEX (2 of the 12).   The exception-type group is</code>[A-Za-z_.]+<code>, which cannot match</code>(<code>, so</code>except
-(OSError,
-ValueError):<code>is invisible.  L3 — A COMMENT BETWEEN</code>except<code>AND</code>pass<code>DEFEATS THE BODY CHECK.   The detector reads exactly</code>lineno+1<code>. Zero current instances, but demonstrated   live. This one has a nasty second-order effect: a well-intentioned reviewer   adding an explanatory comment INSIDE a handler makes that site vanish from the   gate. The triage agent hit this itself — its first patch put comments inside two   handlers, and the resulting count would have read 28 while only 6 sites were   genuinely eliminated. It caught and corrected that rather than reporting the   better number, which is exactly the §11.4 discipline working.  L4 — THE SHAPE ITSELF, not the regex.   The body must be exactly</code>pass<code>, so</code>except:
-return </td>
+<code>bug</code> on 2026-08-21T17:18:18Z <strong>Reported-By:</strong>
+AI <strong>What (the report, verbatim):</strong> Our own diagnostic is a
+crash vector, and it is still armed. download-proxy/src/main.py:135
+calls faulthandler.dump_traceback(file=sink, all_threads=True) on a live
+18-thread process; three further registrations at 214/217/219 use
+all_threads=True as well. Upstream python/cpython#116008 and #128400 are
+the same NULL f_executable in dump_frame() at Python/traceback.c:1190 -
+FIXED and backported to 3.13/3.14, with NO 3.12 backport listed. The
+container ships Python 3.12.13. Container logs still show ‘BOB-137 stall
+watchdog armed: stall&gt;20.0s’. It has not fired again only because
+BOB-137’s root cause was improved enough that the loop rarely stalls
+past the threshold - but BOB-137 is NOT closed, and its live
+verification the same day measured the loop still blocking, with 18.4%
+of probes stalled 1-5s and two dead events in 15 minutes. So this is
+latent, not resolved: one 20s stall away. Note the perverse shape - the
+worse the wedge gets, the more likely the tool built to diagnose it is
+to kill the process, destroying the evidence it exists to capture. Found
+while investigating BOB-131, whose own premise (a conmon crash) turned
+out to be false: no conmon process crashed; the ticket conflated this
+python3 segfault with an unrelated 14-hour absence caused by a host
+power-off. <strong>Affected scope / file-scope manifest:</strong>
+download-proxy/src/main.py:135 (and the registrations at 214/217/219)
+<strong>Reproduction / context:</strong> 2026-08-20 17:56:26 CEST, one
+occurrence: kernel ‘python3[314359]: segfault at 70 … in
+libpython3.12.so.1.0’ plus the container’s own truncated dump ending
+mid-’ File ‘. The kernel Code: bytes at IP were byte-matched against the
+library inside the running container (MATCH), decoding to mov r14,[r12]
+(frame-&gt;f_executable = NULL) then mov rax,[r14+0x70]
+(code-&gt;co_filename) -&gt; fault; the preceding lea resolves to the
+literal’ File ’ with edx=7, its exact length. The watchdog had fired 17
+times in 16 minutes that day; dump 17 completed to the file sink, then
+the stderr pass crashed. <strong>Acceptance criteria:</strong> The
+diagnostic cannot crash the service it diagnoses. Either
+all_threads=True is dropped for the periodic dump, or the dump is gated
+behind something that cannot fault on a live multi-threaded process, or
+the runtime moves to a Python where the upstream fix is present - and
+whichever is chosen, the choice is recorded against the upstream issue
+so a later runtime bump does not silently re-arm it.</td>
 </tr>
 </tbody>
 </table>
