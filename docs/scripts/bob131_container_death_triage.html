@@ -1,0 +1,125 @@
+<h1
+id="bob131_container_death_triage.sh"><code>bob131_container_death_triage.sh</code></h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T17:06:26Z <strong>Script:</strong> <a
+href="../../scripts/diagnostics/bob131_container_death_triage.sh"><code>scripts/diagnostics/bob131_container_death_triage.sh</code></a>
+<strong>Companion doc per §11.4.18.</strong> Update both in the same
+commit.</p>
+<h2 id="overview">Overview</h2>
+<p>Classifies why a rootless-podman container stopped, into one of six
+mutually exclusive classes, from evidence rather than from a guess.
+Written for BOB-131, where a single ticket recorded “podman conmon
+crash” for two unrelated events — a host power-off and a SIGSEGV inside
+the containerised process — and neither was a conmon crash.</p>
+<p>The reasoning it encodes is documented in <a
+href="../guides/container-death-triage.md"><code>docs/guides/container-death-triage.md</code></a>.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p><code>bash</code>, <code>awk</code>, <code>grep</code>.
+<code>collect</code> additionally needs <code>podman</code> and
+<code>journalctl</code> and read access to <code>/sys/fs/cgroup</code>.
+<code>classify</code> and <code>--selftest</code> need neither podman
+nor the journal, so they run anywhere.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">S</span><span class="op">=</span>./scripts/diagnostics/bob131_container_death_triage.sh</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">$S</span> <span class="at">--selftest</span>                                          <span class="co"># 8 golden fixtures</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">$S</span> collect <span class="op">&lt;</span>container<span class="op">&gt;</span> <span class="op">&lt;</span>since<span class="op">&gt;</span> <span class="op">&lt;</span>until<span class="op">&gt;</span> <span class="op">&gt;</span> bundle.txt    <span class="co"># read-only evidence bundle</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">$S</span> classify bundle.txt                                 <span class="co"># VERDICT + </span><span class="al">NOTE</span><span class="co"> lines</span></span></code></pre></div>
+<p><code>&lt;since&gt;</code> / <code>&lt;until&gt;</code> are
+host-local <code>journalctl</code> timestamps
+(<code>"2026-08-20 17:55:30"</code>).</p>
+<h3 id="example">Example</h3>
+<pre><code>$ $S collect qbittorrent-proxy &quot;2026-08-20 17:55:30&quot; &quot;2026-08-20 17:57:00&quot; &gt; /tmp/b.txt
+$ $S classify /tmp/b.txt
+VERDICT: PROCESS-SIGSEGV
+NOTE: exit 139 (=128+11) and/or a kernel SIGSEGV/ANOM_ABEND record:
+NOTE: the container&#39;s PID 1 died of SIGSEGV.
+...</code></pre>
+<h2 id="classes">Classes</h2>
+<p><code>HOST-POWER-TRANSITION</code> ·
+<code>THREAD-LIMIT-EXHAUSTION</code> · <code>CGROUP-OOM-KILL</code> ·
+<code>PROCESS-SIGSEGV</code> · <code>ORCHESTRATED-STOP</code> ·
+<code>CGROUP-MEMORY-CEILING</code> · <code>UNKNOWN</code></p>
+<p>Evaluated in that order, most-specific first. <code>UNKNOWN</code> is
+a real answer: it means no class matched, not that the tool failed.</p>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<p><code>collect</code> writes a plain-text bundle of
+<code>### SECTION</code> blocks (<code>EXIT_CODE</code>,
+<code>EVENTS</code>, <code>KERNEL</code>, <code>LOGIND</code>,
+<code>LOGS</code>, <code>CONMON</code>, <code>CGROUP</code>,
+<code>LIMITS</code>). <code>classify</code> reads only that bundle, so
+verdicts are reproducible offline and fixtures are just bundles.</p>
+<p>Two deliberate source choices, both §11.4.201:</p>
+<ul>
+<li><strong><code>EXIT_CODE</code> comes from the
+<code>died exit=</code> event inside the window</strong>, falling back
+to <code>podman inspect</code> only when the window has none. Reading it
+from <code>inspect</code> alone would describe whatever container
+carries that <em>name</em> today — a different container for any
+historical window.</li>
+<li><strong><code>CGROUP</code> is read live</strong> and the bundle
+says so. A dead container’s cgroup no longer exists, so these numbers
+describe present pressure, never the incident’s.</li>
+</ul>
+<h2 id="side-effects">Side effects</h2>
+<p><strong>None.</strong> Every podman, journal and cgroup access is
+read-only. The script starts, stops, restarts, removes and signals
+nothing — it issues no signal at all, so it cannot reach pgid ≤ 1
+(§11.4.263, Hard Stop #3).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><code>podman events</code> can return nothing for a window that
+demonstrably contains events. Verdicts do not depend on it; the journal
+sections carry the weight.</li>
+<li>A bundle with no evidence at all classifies <code>UNKNOWN</code>,
+which is also the negative control’s expected result.</li>
+<li><code>CGROUP-MEMORY-CEILING</code> is emitted as a primary verdict
+only when nothing else matched. Otherwise it appears as a
+<code>NOTE:</code> — pressure, not cause.</li>
+</ul>
+<h2 id="testing">Testing</h2>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="va">$S</span> <span class="at">--selftest</span>      <span class="co"># exit 0 on 8/8</span></span></code></pre></div>
+<p>Eight fixtures: one per class, a <strong>negative control</strong>
+(quiet container ⇒ <code>UNKNOWN</code>) guarding against false
+positives, and a <strong>conmon-carrier</strong> fixture asserting that
+a <code>conmon &lt;error&gt;:</code> line does not divert the
+verdict.</p>
+<p>Verified 2026-08-21: 5 consecutive runs all <code>PASS (8/8)</code>,
+rc=0 (§11.4.50). Paired §1.1 mutations both make it FAIL:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Mutation</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>neuter the power-off detector</td>
+<td><code>FAIL (1/8 wrong)</code></td>
+</tr>
+<tr>
+<td>collapse <code>oom_kill &gt; 0</code> into
+<code>oom_kill &gt;= 0</code></td>
+<td><code>FAIL (5/8 wrong)</code> — including the negative control</td>
+</tr>
+</tbody>
+</table>
+<h2 id="related">Related</h2>
+<ul>
+<li><a
+href="../guides/container-death-triage.md"><code>docs/guides/container-death-triage.md</code></a>
+— the triage reasoning</li>
+<li><a
+href="../incidents/2026-08-21-bob131-container-death-triage.md"><code>docs/incidents/2026-08-21-bob131-container-death-triage.md</code></a>
+— the BOB-131 investigation</li>
+<li><code>scripts/flight-recorder/</code> — continuous session-health
+sampling (OOM cgroup attribution, thread ramp, PSI)</li>
+</ul>
+<p><strong>Last verified:</strong> 2026-08-21</p>

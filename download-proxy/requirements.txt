@@ -1,26 +1,125 @@
-requests>=2.31.0
-urllib3>=2.0.0
-fastapi>=0.110.0
-uvicorn>=0.29.0
+# Runtime dependencies for the download-proxy / merge-search service
+# (download-proxy/src), installed INTO the stock `python:3.12-alpine` image at
+# CONTAINER START by start-proxy.sh:
+#
+#     pip install --quiet --no-cache-dir -r /config/download-proxy/requirements.txt
+#
+# `./download-proxy` is bind-mounted at `/config/download-proxy`
+# (docker-compose.yml), so THIS file is the one the container reads. There is
+# no image build and no baked dependency layer: whatever this file resolves to
+# at restart time IS production.
+#
+# ---------------------------------------------------------------------------
+# WHY EVERY VERSION IS PINNED (BOB-154) — this file used to carry `>=` floors
+# with no ceiling and no lock, which made the resolved set a function of the
+# INSTALL DATE rather than of this file. Measured 2026-08-21:
+#
+#     host .venv installed 2026-08-07 23:12  ->  starlette 1.4.1, uvicorn 0.52.1,
+#                                                idna 3.18,  filelock 3.32.2, ...
+#     container  installed 2026-08-21 15:20  ->  starlette 1.6.0, uvicorn 0.52.4,
+#                                                idna 3.19,  filelock 3.32.3, ...
+#
+# Eight packages diverged — exactly the ones that shipped a release in the
+# 14 days between the two installs. Every test run on the host was therefore
+# evidence about a dependency set production does not run. Worse, because the
+# install happens at every container start, an unpinned file re-rolled the dice
+# on EVERY restart: the divergence regenerated itself, differently each time,
+# and nothing anywhere reported it.
+#
+# Pinning is the correct shape here because this is an APPLICATION, not a
+# library: applications pin so that the artifact is reproducible, libraries
+# float so that consumers can resolve. A `>=`-floored application requirements
+# file is the defect, not a stylistic preference.
+#
+# HOW THESE VALUES WERE CHOSEN (§11.4.6 — measured, never guessed): they are
+# the set the production container was ALREADY running on 2026-08-21, read out
+# of the live container with `pip list --format=freeze`. That matters for
+# safety: every one of these versions is proven installable on this exact
+# `python:3.12-alpine` image, because it was installed there. Re-resolving to
+# the same versions on the next restart cannot fail to build.
+#
+# HOW A ROTTED PIN GETS NOTICED (a pin nothing maintains is its own defect):
+# `scripts/scan.sh` already runs `pip-audit -r download-proxy/requirements.txt`
+# and writes JSON + SARIF to the artifact dir. Against the old `>=` floors
+# pip-audit had to resolve to "latest" — a moving target that was not what
+# production ran, so its verdict described a set nobody was running. Against
+# these pins it audits EXACTLY the production set and names the exact version
+# to raise. Pinning strictly improves the signal that already existed; it does
+# not create a new promise nobody keeps.
+#
+# HOW TO RAISE A PIN: change the version here, restart the container, then
+# reconcile the host venv with the SAME file so the two stay in step:
+#     ./start.sh --recreate                       # container re-resolves
+#     .venv/bin/python -m pip install -r download-proxy/requirements.txt
+#     bash scripts/pre_build/check_cm_runtime_deps_parity.sh   # must PASS
+#
+# The parity gate (CM-RUNTIME-DEPS-PARITY) compares the two REAL resolved sets
+# and fails loudly when they drift apart again, so this pin is not the only
+# thing standing between the project and a repeat of BOB-154.
+# ---------------------------------------------------------------------------
+
+# --- Direct dependencies (imported by download-proxy/src) ------------------
+requests==2.34.2
+urllib3==2.7.0
+fastapi==0.141.1
+uvicorn==0.52.4
 # Required by FastAPI's UploadFile/File multipart parsing for the raw
 # .torrent upload endpoint POST /api/v1/download/upload (BobaLink extension).
-python-multipart>=0.0.9
-aiohttp>=3.9.0
-pydantic>=2.0.0
-Levenshtein>=0.21.0
-cachetools>=5.3.0
-filelock>=3.15.0
-tenacity>=8.4.0
-pybreaker>=1.2.0
-cryptography>=42.0.0
+python-multipart==0.0.32
+aiohttp==3.14.3
+pydantic==2.13.4
+Levenshtein==0.27.4
+cachetools==7.1.7
+filelock==3.32.3
+tenacity==9.1.4
+pybreaker==1.4.1
+cryptography==50.0.0
 # BOB-111: per-IP rate limiting for the merge service's public HTTP surface
 # (POST /api/v1/search, GET / dashboard, GET /api/v1/search/stream SSE). Used
 # by download-proxy/src/api/rate_limit.py — an ASGI middleware wrapper around
 # limits-backed slowapi. In-memory backend by default (single-process); a
 # consumer wiring Redis via RATE_LIMIT_STORAGE_URI keeps the same limits across
 # multiple workers. See docs/qa/BOB-111/.
-slowapi>=0.1.9
+slowapi==0.1.10
 # Required by the qBittorrent nova3 framework helpers.py (top-level `import
 # socks`); without it every public-tracker plugin subprocess fails to import
 # in the python-alpine download-proxy container (BOB-005).
-PySocks>=1.7.1
+PySocks==1.7.1
+
+# --- Transitive closure (BOB-154) ------------------------------------------
+# Pinned because pinning direct dependencies alone does NOT close the hole
+# that produced BOB-154: `starlette` — the package the defect was reported
+# against — is a TRANSITIVE of fastapi and appears nowhere above. With only
+# the direct set pinned it would still float and still diverge. A lock is only
+# a lock if it covers the whole closure.
+#
+# Derived from the live container's resolved set, not hand-written. `pip`
+# itself is deliberately excluded: it belongs to the base image, and pinning
+# the installer inside the file it is installing is a self-modification
+# footgun.
+aiohappyeyeballs==2.7.1
+aiosignal==1.4.0
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.14.2
+attrs==26.1.0
+certifi==2026.7.22
+cffi==2.1.1
+charset-normalizer==3.5.1
+click==8.4.2
+Deprecated==1.3.1
+frozenlist==1.8.0
+h11==0.16.0
+idna==3.19
+limits==5.8.0
+multidict==6.7.1
+packaging==26.3
+propcache==0.5.2
+pycparser==3.0
+pydantic_core==2.46.4
+RapidFuzz==3.14.5
+starlette==1.6.0
+typing_extensions==4.16.0
+typing-inspection==0.4.4
+wrapt==2.3.0
+yarl==1.24.5

@@ -1,0 +1,243 @@
+<h1
+id="scriptspre_buildcheck_cm_runtime_deps_parity.sh-cm-runtime-deps-parity">scripts/pre_build/check_cm_runtime_deps_parity.sh
+— CM-RUNTIME-DEPS-PARITY</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T19:20:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-154 (host venv and production container ran
+different stacks)</p>
+<h2 id="overview">Overview</h2>
+<p>Asserts that the interpreter and dependency set the
+<strong>tests</strong> run against is the same one
+<strong>production</strong> serves. It compares the two REAL resolved
+sets — read live out of the host virtualenv and live out of the running
+container — never a requirements file against itself. A specification
+compared to itself is a check that cannot fail.</p>
+<p>Not yet wired into <code>scripts/pre_build_verification.sh</code>;
+the wiring block is at the end of this document and is applied by the
+operator (that file is contended).</p>
+<h2
+id="why-it-exists-the-forensic-anchor-bob-154-measured-2026-08-21">Why
+it exists — the forensic anchor (BOB-154, measured 2026-08-21)</h2>
+<p><code>download-proxy/requirements.txt</code> carried
+<code>&gt;=</code> floors with no ceiling and no lock, and
+<code>start-proxy.sh</code> pip-installs from it into a stock
+<code>python:3.12-alpine</code> image <strong>at every container
+start</strong>. There is no image build and no baked dependency layer,
+so the resolved set was a function of the install <em>date</em> rather
+than of the file. Measured from <code>dist-info</code> mtimes:</p>
+<pre><code>host .venv  installed 2026-08-07 23:12  -&gt;  CPython 3.14.6, starlette 1.4.1
+container   installed 2026-08-21 15:20  -&gt;  CPython 3.12.13, starlette 1.6.0</code></pre>
+<p>Eight packages diverged — exactly those that shipped a release in the
+fourteen days between the two installs — plus a <strong>two-minor
+interpreter gap</strong> that the original report did not see at all.
+Every green suite was evidence about a stack nobody served.</p>
+<p>The harm was not hypothetical. Running the suite on the production
+interpreter for the first time surfaced <code>tests/conftest.py</code>
+binding to <code>asyncio.events._get_event_loop_policy</code>, a private
+API that does not exist before Python 3.13. The test suite had silently
+accreted a dependency on an interpreter production does not run, because
+nothing ever checked.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code> 4+ (associative-array-free, but uses
+<code>mktemp</code>, <code>awk</code>, <code>grep</code>).</li>
+<li>For a non-SKIP run: <code>podman</code> or <code>docker</code>, the
+<code>qbittorrent-proxy</code> container running, and a host virtualenv
+at <code>.venv/</code> whose interpreter has <code>pip</code>.</li>
+<li>No network. No writes. The container is only ever read via
+<code>exec</code>.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_runtime_deps_parity.sh</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_runtime_deps_parity.sh <span class="at">--help</span></span></code></pre></div>
+<p>Exit codes: <code>0</code> PASS or honest SKIP, <code>1</code> FAIL,
+<code>2</code> usage ERROR. The verdict line is always last on stdout so
+the pre-build wiring can read it with <code>tail -n1</code>; a SKIP
+verdict begins with <code>SKIP(</code>.</p>
+<p>Consumer DATA via environment (§11.4.35):</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VENV_PYTHON</code></td>
+<td><code>.venv/bin/python</code></td>
+<td>host interpreter to probe</td>
+</tr>
+<tr>
+<td><code>PROXY_CONTAINER</code></td>
+<td><code>qbittorrent-proxy</code></td>
+<td>container to probe</td>
+</tr>
+<tr>
+<td><code>CONTAINER_RUNTIME</code></td>
+<td>autodetect, podman first</td>
+<td>runtime binary</td>
+</tr>
+</tbody>
+</table>
+<p><code>CM_DEPS_HOST_SNAPSHOT</code> /
+<code>CM_DEPS_CONTAINER_SNAPSHOT</code> inject pre-recorded snapshots
+instead of probing. They exist <strong>only</strong> so the paired
+meta-test can build hermetic fixtures; setting them in a real run
+defeats the entire point of the gate, which is that it reads
+reality.</p>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li>Probe both sides into a normalised snapshot: a
+<code>#python X.Y.Z</code> line plus <code>name==version</code> lines,
+names normalised per PEP 503 (<code>typing_extensions</code>,
+<code>typing-extensions</code> and <code>Typing.Extensions</code> are
+one package).</li>
+<li>Refuse an empty snapshot. A blind probe and a matching stack both
+return a quiet zero, and reading that as parity is the §11.4.201(6)
+false-null.</li>
+<li>Run the <strong>control needle</strong> (§11.4.201(7)(b)): re-run
+the comparator against a copy of the container snapshot carrying one
+synthetic package the host cannot have, and require the finding count to
+rise by exactly one. Silence from a comparator never proven able to
+speak is not evidence.</li>
+<li>Compare, and classify each finding as a failure or a declared
+divergence.</li>
+</ol>
+<h3 id="what-is-compared-and-what-is-deliberately-not">What is compared,
+and what is deliberately not</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Compared</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Interpreter <code>major.minor</code></td>
+<td>must match; a minor gap changes language and stdlib behaviour</td>
+</tr>
+<tr>
+<td>Interpreter patch</td>
+<td>reported, <strong>not</strong> fatal — see below</td>
+</tr>
+<tr>
+<td>Packages in both sets</td>
+<td>versions must match exactly</td>
+</tr>
+<tr>
+<td>Packages only in the container</td>
+<td>FAIL — the tests cannot exercise a production dependency they do not
+have</td>
+</tr>
+<tr>
+<td>Packages only in the venv</td>
+<td>ignored — a venv is <em>supposed</em> to carry pytest, ruff, mypy,
+playwright</td>
+</tr>
+<tr>
+<td><code>pip</code>, <code>setuptools</code>, <code>wheel</code></td>
+<td>excluded by name</td>
+</tr>
+</tbody>
+</table>
+<p>The patch-level and installer exclusions are deliberate applications
+of §11.4.201(1), which forbids a false-positive refusal as firmly as a
+false pass. Alpine’s CPython point release and the host’s will
+legitimately differ by days, and
+<code>download-proxy/requirements.txt</code> deliberately does not pin
+<code>pip</code> (pinning the installer inside the file it is installing
+is a self-modification footgun). Failing on either would demand an
+action the fix cannot perform — and a gate that cries wolf is switched
+off within a week, which is a worse outcome than the skew it was
+reporting.</p>
+<p>The installer exclusion is a <strong>named list</strong>, never a
+pattern, so it cannot silently swallow a real dependency. Fixture
+<code>golden-bad-installer-only</code> proves <code>pip</code> is
+ignored in the same run where a genuine skew is still caught.</p>
+<h2
+id="declared-divergences-and-why-they-cannot-become-an-off-switch">Declared
+divergences, and why they cannot become an off switch</h2>
+<p>The BOB-154 acceptance criterion permits a divergence that is
+<em>declared</em> rather than eliminated.
+<code>DECLARED_DIVERGENCES</code> in the gate holds
+<code>key|reason|tracked-item</code> entries; a matching finding is
+printed loudly on every run and does not fail the gate.</p>
+<p>Two properties keep that honest:</p>
+<ul>
+<li>every entry carries a reason and a tracked item, so it is debt with
+an owner rather than a shrug;</li>
+<li>a <strong>stale</strong> declaration — one matching no current
+divergence — is itself a FAIL. A declaration cannot be filed
+pre-emptively and cannot outlive the condition it excuses. This is the
+§11.4.227 monotone ratchet applied to excuses.</li>
+</ul>
+<h2 id="honest-skip">Honest SKIP</h2>
+<p>No container runtime, no running container, or no host interpreter
+produces a <code>SKIP(§11.4.3)</code> with the reason stated, and exit
+0. A stopped stack is a legitimate state, not evidence of drift. A gate
+that hard-failed on a stopped stack would be disabled by the first
+person who ran a build with the stack down — so the SKIP is what keeps
+the gate alive. It is never silent: the reason is printed and the
+verdict line says <code>SKIP</code>, so the wiring can tell a skip from
+a pass.</p>
+<h2 id="relationship-to-the-pin">Relationship to the pin</h2>
+<p><code>download-proxy/requirements.txt</code> is now pinned to the
+full transitive closure, derived from the live container. The pin and
+this gate do different jobs and neither substitutes for the other:</p>
+<ul>
+<li>the <strong>pin</strong> makes production reproducible across
+restarts;</li>
+<li>the <strong>gate</strong> makes any future divergence visible.</li>
+</ul>
+<p>A pin alone cannot notice that the <em>other</em> side moved, cannot
+reach the interpreter, and rots silently when nobody maintains it. A
+gate alone leaves production re-rolling its dependency dice on every
+restart.</p>
+<p>A rotted pin is noticed by machinery that already exists:
+<code>scripts/scan.sh</code> runs
+<code>pip-audit -r download-proxy/requirements.txt</code>. Against the
+old floors pip-audit had to resolve to “latest” — a moving target nobody
+was running. Against exact pins it audits the production set and names
+the version to raise.</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Stack down</strong> — SKIP with reason, exit 0.</li>
+<li><strong>Container running but <code>pip</code> missing inside
+it</strong> — probe fails, SKIP with reason rather than a fabricated
+verdict.</li>
+<li><strong>Empty snapshot from either side</strong> — FAIL, never
+pass.</li>
+<li><strong>Blinded comparator</strong> — FAIL via the control needle.
+The paired meta-test mutates the comparator to report nothing and proves
+the gate still fails.</li>
+<li><strong>Both sides pinned to the same rotted set</strong> — the gate
+PASSes, correctly: they <em>do</em> agree. Rot is
+<code>pip-audit</code>’s job, not this gate’s.</li>
+</ul>
+<h2 id="verification">Verification</h2>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/pre_build/test_check_cm_runtime_deps_parity.sh</span></code></pre></div>
+<p>11 hermetic fixtures, one skip case, one §1.1 paired mutation, and a
+real-tree smoke run. The real-tree case deliberately does not assert a
+fixed exit code: it is 1 while the venv is unreconciled and 0
+afterwards, and asserting either would make the harness lie on the other
+side of the operator’s apply step.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>download-proxy/requirements.txt</code> — the pinned set this
+gate keeps honest</li>
+<li><code>tests/pre_build/test_check_cm_runtime_deps_parity.sh</code> —
+the §1.1 pair</li>
+<li><code>scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh</code>
+— sibling gate, same §11.4.201 guard-honesty discipline</li>
+<li><code>scripts/scan.sh</code> — <code>pip-audit</code> over the
+pinned file</li>
+</ul>

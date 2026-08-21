@@ -1,0 +1,302 @@
+<h1
+id="scriptspre_buildcheck_cm_go_toolchain_matches_builder.sh-cm-go-toolchain-matches-builder-static-pre-build-gate">scripts/pre_build/check_cm_go_toolchain_matches_builder.sh
+— CM-GO-TOOLCHAIN-MATCHES-BUILDER static pre-build gate</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T00:00:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-153</p>
+<h2 id="purpose">Purpose</h2>
+<p>Refuse any tree in which a Dockerfile’s Go <strong>builder
+image</strong> cannot satisfy the <code>go</code> directive of the
+<code>go.mod</code> it builds.</p>
+<p>The two values are a floor and its satisfier. They must move together
+— but nothing in this repository compared them, which is exactly why
+they diverged.</p>
+<h2 id="forensic-anchor-bob-153">Forensic anchor (BOB-153)</h2>
+<p><code>qBitTorrent-go/go.mod</code> declared <code>go 1.26.2</code>
+while <code>qBitTorrent-go/Dockerfile</code> built
+<code>FROM golang:1.23-alpine</code>, so the Go profile could not build
+at all:</p>
+<pre><code>go: go.mod requires go &gt;= 1.26.2 (running go 1.23.12; GOTOOLCHAIN=local)</code></pre>
+<p>Both halves of that error are properties of the image, confirmed by
+reading the published image config from the registry (no pull
+needed):</p>
+<table>
+<thead>
+<tr>
+<th>image</th>
+<th><code>GOLANG_VERSION</code></th>
+<th><code>GOTOOLCHAIN</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>golang:1.23-alpine</code></td>
+<td>1.23.12</td>
+<td>local</td>
+</tr>
+<tr>
+<td><code>golang:1.26-alpine</code></td>
+<td>1.26.7</td>
+<td>local</td>
+</tr>
+<tr>
+<td><code>golang:1.26.2-alpine</code></td>
+<td>1.26.2</td>
+<td>local</td>
+</tr>
+</tbody>
+</table>
+<p>The official Go images pin <code>GOTOOLCHAIN=local</code>
+deliberately, so an insufficient builder is a <strong>hard
+failure</strong> rather than a silent toolchain download.</p>
+<p><code>git log -p --follow</code> shows both values were introduced by
+the <strong>same commit</strong> (<code>4002c57</code>, 2026-04-22).
+This was never a drift over time — the two were born divergent and
+nothing ever compared them, so the defect sat unnoticed for four months
+until the profile was actually needed. That is the §11.4.227
+prose-not-seam gap in its purest form: a real invariant nobody had
+written down as a check.</p>
+<p>Beyond the build breakage, the mismatch blocked feature 002’s
+quickstart Scenario 6, which exists to confirm the operator-owned-writes
+fix reaches every service (FR-016).</p>
+<h2 id="why-the-directive-was-right-and-the-builder-was-wrong">Why the
+directive was right and the builder was wrong</h2>
+<p>The <code>go 1.26.2</code> directive is not an author’s preference.
+It is forced by the dependency graph:</p>
+<table>
+<thead>
+<tr>
+<th>dependency</th>
+<th>its own <code>go</code> directive</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>github.com/getkin/kin-openapi v0.136.0</code> (direct)</td>
+<td><code>go 1.26</code></td>
+</tr>
+<tr>
+<td><code>github.com/gin-gonic/gin v1.12.0</code> (direct)</td>
+<td><code>go 1.25.0</code></td>
+</tr>
+<tr>
+<td><code>modernc.org/sqlite v1.50.0</code> (direct)</td>
+<td><code>go 1.25.0</code></td>
+</tr>
+<tr>
+<td><code>golang.org/x/net v0.51.0</code></td>
+<td><code>go 1.25.0</code></td>
+</tr>
+</tbody>
+</table>
+<p>Go 1.21+ refuses to build a module whose dependency requires a newer
+toolchain, and <code>go get</code> <strong>raises</strong> the directive
+automatically to satisfy it. Reproduced in a throwaway module:
+<code>go get github.com/getkin/kin-openapi@v0.136.0</code> wrote exactly
+<code>go 1.26.2</code> unprompted, and forcing the directive back down
+to <code>1.23</code> under <code>-mod=readonly</code> made the build
+refuse to proceed.</p>
+<p>So “lower the directive to match the builder” is not an available
+option; it is a dependency downgrade wearing a one-line disguise. The
+builder image was the value that was wrong.</p>
+<h2 id="what-the-gate-asserts-the-real-condition-not-a-proxy">What the
+gate asserts — the real condition, not a proxy</h2>
+<pre><code>builder_toolchain_version  &gt;=  go.mod `go` directive</code></pre>
+<p><strong>Not string equality.</strong> Equality is the tempting
+implementation and it is wrong: it would refuse
+<code>golang:1.27-alpine</code> against a <code>go 1.26.2</code>
+directive even though that builder satisfies the floor completely.
+§11.4.201(1) makes such a false-<strong>positive</strong> refusal
+exactly as forbidden as a false pass — it halts real work and teaches
+people to route around gates. The comparison is therefore a real version
+comparison, in both directions.</p>
+<h2 id="the-three-valued-verdict">The three-valued verdict</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>tag shape vs directive</th>
+<th>verdict</th>
+<th>why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>newer major/minor, or equal minor with patch ≥</td>
+<td><strong>ok</strong></td>
+<td>satisfies the floor</td>
+</tr>
+<tr>
+<td>older major/minor, or equal minor with patch &lt;</td>
+<td><strong>FAIL</strong></td>
+<td>provably cannot build</td>
+</tr>
+<tr>
+<td>tag names no patch, directive names patch 0</td>
+<td><strong>ok</strong></td>
+<td>nothing to prove</td>
+</tr>
+<tr>
+<td>tag names no patch, directive names patch &gt; 0</td>
+<td><strong>WARN</strong> (non-blocking)</td>
+<td>floats; true today, not verifiable here</td>
+</tr>
+<tr>
+<td>tag names no version (<code>latest</code>, <code>alpine</code>)</td>
+<td><strong>FAIL</strong></td>
+<td>unresolvable <em>and</em> unreproducible</td>
+</tr>
+</tbody>
+</table>
+<p>The middle value exists for a reason. <code>golang:1.26-alpine</code>
+resolves today to 1.26.7, which satisfies a <code>go 1.26.2</code> floor
+— but <strong>nothing in the tree proves that</strong>; statically
+<code>1.26</code> reads as 1.26.0, which does not. Failing it would
+refuse a build that demonstrably works (§11.4.201(1)); passing it
+silently would assert something unverified (§11.4.6). So it is a
+non-blocking WARN naming the fix, following the precedent
+<code>check_cm_plugin_count.sh</code> set for the README badge and
+§11.4.234’s rule that a pre-build gate must not block a build over
+something that is not broken.</p>
+<p><code>qBitTorrent-go/Dockerfile.jackett</code> is exactly this shape
+today and is reported as a WARN, not a FAIL.</p>
+<h2 id="carrier-vs-thing">Carrier vs thing</h2>
+<p>Only a real instruction line matches —
+<code>^[[:space:]]*FROM[[:space:]]+golang:</code>. A comment
+<em>mentioning</em> an old builder (“this used to be
+<code>FROM golang:1.23-alpine</code>”) is a carrier, not a builder, and
+must not trip the gate (§11.4.201(7)(a)). A substring scan for
+<code>golang:1.23</code> would fail that distinction; the paired
+meta-test’s <code>good-carrier</code> fixture holds the gate to it.</p>
+<h2 id="control-needles">Control needles</h2>
+<p>A quiet zero from a blind extractor is indistinguishable from a clean
+tree (§11.4.201(6)). Before any result is trusted, both extractors are
+proven able to <strong>see</strong>: a synthetic
+<code>FROM golang:</code> stage is injected into an in-memory copy of
+each Dockerfile and the extracted count must rise by exactly one, and a
+synthetic directive is injected into each <code>go.mod</code> and must
+be read back. Zero discovered pairs is likewise a FAIL.</p>
+<blockquote>
+<p>The needle earned its keep immediately.
+<code>qBitTorrent-go/Dockerfile</code> ends <strong>without</strong> a
+trailing newline (last byte <code>]</code>), so the first
+implementation’s <code>echo</code>-based injection glued the synthetic
+stage onto the end of <code>CMD [...]</code> and the extractor correctly
+did not see it. The needle caught a flaw in its own injection before any
+verdict was trusted — which is precisely what a needle is for. The
+injection now leads with <code>\n</code>.</p>
+</blockquote>
+<h2 id="scope">Scope</h2>
+<p>First-party modules only. <code>submodules/</code> and
+<code>constitution/</code> are consumed by reference and owned upstream
+(§11.4.28/§11.4.177); refusing this repository’s build over an upstream
+repo’s Dockerfile would be a refusal its owner here cannot fix. A Go
+module with no golang-builder Dockerfile (<code>cmd/boba-ctl</code>,
+built on the host) has no builder image to reconcile and is correctly
+not a pair.</p>
+<p>Pairing walks <strong>up</strong> from each Dockerfile’s directory to
+the nearest <code>go.mod</code>. That matches how the build context is
+declared — <code>docker-compose.yml</code> sets
+<code>context: ./qBitTorrent-go</code> for both of that directory’s
+Dockerfiles — so the module found is the module the builder actually
+compiles.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_go_toolchain_matches_builder.sh</span>              <span class="co"># this repository</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_go_toolchain_matches_builder.sh</span> <span class="at">--root</span> DIR   <span class="co"># treat DIR as root</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_go_toolchain_matches_builder.sh</span> <span class="at">-v</span>           <span class="co"># show every pair</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_go_toolchain_matches_builder.sh</span> <span class="at">--help</span></span></code></pre></div>
+<p><strong>Inputs:</strong> optional <code>--root DIR</code>; no stdin;
+no env input. <strong>Outputs:</strong> per-pair verdict on stdout, the
+<code>PASS</code> line always last (the pre-build wiring reads it with
+<code>tail -n1</code>); findings and the <code>FAIL</code> summary on
+stderr. <strong>Side-effects:</strong> none. Read-only; writes only to
+<code>mktemp</code> files it removes. Signals nothing, so §11.4.263 has
+no surface here. <strong>Dependencies:</strong> bash, sed, grep, find,
+wc, mktemp.</p>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>code</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>PASS — ≥1 pair checked, every builder satisfies its directive</td>
+</tr>
+<tr>
+<td>1</td>
+<td>FAIL — a mismatch, an unversioned tag, or zero pairs discovered</td>
+</tr>
+<tr>
+<td>2</td>
+<td>ERROR — usage error, or a control needle proved an extractor
+blind</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong><code>find</code> here is <code>bfs</code>, not GNU
+findutils.</strong> Only portable primaries
+(<code>-name</code>/<code>-type</code>/<code>-prune</code>/<code>-print</code>)
+are used; relative <code>-newermt</code> forms are rejected by bfs while
+printing nothing to stdout, which would turn a hard failure into a
+clean-looking empty result. <code>find</code>’s stderr is therefore
+treated as fatal rather than ignored.</li>
+<li><strong>Multi-stage Dockerfiles</strong> with several
+<code>FROM golang:</code> stages are each checked; the count in the PASS
+line is builder <em>stages</em>, not files.</li>
+<li><strong>A golang builder with no enclosing
+<code>go.mod</code></strong> is reported only under <code>-v</code> and
+does not fail the build — that is not this gate’s invariant.</li>
+</ul>
+<h2 id="paired-1.1-mutation-test">Paired §1.1 mutation test</h2>
+<p><code>tests/pre_build/test_check_cm_go_toolchain_matches_builder.sh</code>
+— 13 checks across hermetic fixture roots plus a real-tree smoke
+run:</p>
+<ul>
+<li>5 golden-good (including the <strong>false-positive guard</strong>:
+a strictly newer builder must not be refused, and the
+<strong>carrier</strong> fixture)</li>
+<li>1 warn fixture asserting both the exit code <strong>and</strong>
+that the WARN is actually emitted (a silently dropped warn is a
+§11.4.201(6) false-null)</li>
+<li>5 golden-bad (including <code>bad-bob153</code>, the exact pre-fix
+shape, as a permanent regression guard, and <code>bad-inverted</code>
+for the likelier future recurrence where someone raises
+<code>go.mod</code> and forgets the Dockerfile)</li>
+<li>1 blind-instrument guard (zero pairs must fail loudly)</li>
+<li>the real checkout</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/pre_build/test_check_cm_go_toolchain_matches_builder.sh</span></code></pre></div>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>scripts/pre_build/check_cm_plugin_count.sh</code> — the
+non-blocking-WARN precedent</li>
+<li><code>scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh</code>
+— sibling pre-build gate</li>
+<li><code>docs/workable_items.db</code> — BOB-153</li>
+</ul>
+<p><strong>Last verified:</strong> 2026-08-21 (gate GREEN on the real
+tree; meta-test 13/13).</p>
+<blockquote>
+<p><strong>Export status (§11.4.65):</strong> the <code>.html</code>,
+<code>.pdf</code> and <code>.docx</code> twins of this guide were
+generated automatically by the repository’s documentation export hook
+shortly after this file landed. They are derived artifacts — edit this
+<code>.md</code> and let the hook regenerate them; do not hand-edit the
+twins.</p>
+</blockquote>

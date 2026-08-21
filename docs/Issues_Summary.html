@@ -192,7 +192,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>7</td>
+<td>8</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -207,7 +207,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>10</td>
+<td>9</td>
+</tr>
+<tr>
+<td>Bug</td>
+<td>Ready for testing</td>
+<td>1</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -232,7 +237,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>53</strong></td>
+<td><strong>54</strong></td>
 </tr>
 </tbody>
 </table>
@@ -645,7 +650,7 @@ gate’s 38,291 findings come from submodules/</td>
 <tr>
 <td>BOB-153</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>Fixed (→ Fixed.md)</td>
 <td>Medium</td>
 <td>Go profile cannot build: go.mod requires go 1.26.2 but the
 Dockerfile builder is golang:1.23-alpine</td>
@@ -653,7 +658,7 @@ Dockerfile builder is golang:1.23-alpine</td>
 <tr>
 <td>BOB-154</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>Ready for testing</td>
 <td>Medium</td>
 <td>Host venv and production container run different starlette versions
 (1.4.1 vs 1.6.0)</td>
@@ -680,45 +685,50 @@ host</td>
 <td>Bug</td>
 <td>Queued</td>
 <td>High</td>
+<td>Our own BOB-137 stall watchdog can segfault the merge service:
+faulthandler dump_traceback(all_threads=True) hits an unpatched CPython
+3.12 defect</td>
+</tr>
+<tr>
+<td>BOB-158</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>High</td>
 <td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>bug</code> on 2026-08-21T17:18:18Z <strong>Reported-By:</strong>
-AI <strong>What (the report, verbatim):</strong> Our own diagnostic is a
-crash vector, and it is still armed. download-proxy/src/main.py:135
-calls faulthandler.dump_traceback(file=sink, all_threads=True) on a live
-18-thread process; three further registrations at 214/217/219 use
-all_threads=True as well. Upstream python/cpython#116008 and #128400 are
-the same NULL f_executable in dump_frame() at Python/traceback.c:1190 -
-FIXED and backported to 3.13/3.14, with NO 3.12 backport listed. The
-container ships Python 3.12.13. Container logs still show ‘BOB-137 stall
-watchdog armed: stall&gt;20.0s’. It has not fired again only because
-BOB-137’s root cause was improved enough that the loop rarely stalls
-past the threshold - but BOB-137 is NOT closed, and its live
-verification the same day measured the loop still blocking, with 18.4%
-of probes stalled 1-5s and two dead events in 15 minutes. So this is
-latent, not resolved: one 20s stall away. Note the perverse shape - the
-worse the wedge gets, the more likely the tool built to diagnose it is
-to kill the process, destroying the evidence it exists to capture. Found
-while investigating BOB-131, whose own premise (a conmon crash) turned
-out to be false: no conmon process crashed; the ticket conflated this
-python3 segfault with an unrelated 14-hour absence caused by a host
-power-off. <strong>Affected scope / file-scope manifest:</strong>
-download-proxy/src/main.py:135 (and the registrations at 214/217/219)
-<strong>Reproduction / context:</strong> 2026-08-20 17:56:26 CEST, one
-occurrence: kernel ‘python3[314359]: segfault at 70 … in
-libpython3.12.so.1.0’ plus the container’s own truncated dump ending
-mid-’ File ‘. The kernel Code: bytes at IP were byte-matched against the
-library inside the running container (MATCH), decoding to mov r14,[r12]
-(frame-&gt;f_executable = NULL) then mov rax,[r14+0x70]
-(code-&gt;co_filename) -&gt; fault; the preceding lea resolves to the
-literal’ File ’ with edx=7, its exact length. The watchdog had fired 17
-times in 16 minutes that day; dump 17 completed to the file sink, then
-the stderr pass crashed. <strong>Acceptance criteria:</strong> The
-diagnostic cannot crash the service it diagnoses. Either
-all_threads=True is dropped for the periodic dump, or the dump is gated
-behind something that cannot fault on a live multi-threaded process, or
-the runtime moves to a Python where the upstream fix is present - and
-whichever is chosen, the choice is recorded against the upstream issue
-so a later runtime bump does not silently re-arm it.</td>
+<code>bug</code> on 2026-08-21T17:29:10Z <strong>Reported-By:</strong>
+AI <strong>What (the report, verbatim):</strong> The test suite has
+silently acquired a dependency on an interpreter production does not
+run. tests/conftest.py:207 calls asyncio.events._get_event_loop_policy()
+- a PRIVATE API that does not exist before Python 3.13 - in an AUTOUSE
+fixture, so it affects every test. The host venv is CPython 3.14.6; the
+container is 3.12.13, pinned deliberately in docker-compose.yml as
+python:3.12-alpine and independently declared twice more in
+pyproject.toml (ruff target-version py312, mypy python_version 3.12). So
+the venv contradicts the project’s own declared target by documentary
+evidence, not opinion. THIS IS NOT A THEORETICAL GAP: every green suite
+run to date is evidence about 3.14.6 while users are served 3.12.13, and
+this specific incompatibility means the suite CANNOT run on the
+production interpreter at all - it produces 870 teardown errors. It went
+unnoticed because nobody had ever run the suite on 3.12. Found while
+fixing BOB-154 (dependency drift), whose reconciliation is BLOCKED on
+this: rebuilding the venv on 3.12 is the fix for the drift, and doing so
+makes the suite unrunnable until this is resolved. A candidate patch
+shape was verified in isolation on BOTH 3.12.13 and 3.14.6 under -W
+error::DeprecationWarning, but not as an integrated change - and another
+stream was editing conftest.py concurrently, so it was deliberately not
+applied. <strong>Affected scope / file-scope manifest:</strong>
+tests/conftest.py:207 (_cleanup_event_loop fixture) <strong>Reproduction
+/ context:</strong> .venv/bin/python -c ’import asyncio.events as e;
+print(hasattr(e,“_get_event_loop_policy”))’ -&gt; True (3.14.6). podman
+exec qbittorrent-proxy python -c same -&gt; False (3.12.13). Running the
+suite on 3.12.13 produces 870 teardown errors. A second incompatibility
+in the same fixture: policy.get_event_loop() raises DeprecationWarning
+on 3.12, which this project’s pytest config turns into an error.
+<strong>Acceptance criteria:</strong> The suite runs on the interpreter
+production runs. Both incompatibilities in _cleanup_event_loop are
+resolved, verified on 3.12.13 under -W error::DeprecationWarning, and
+the venv is rebuilt on 3.12 so every subsequent test result is evidence
+about the deployed runtime.</td>
 </tr>
 </tbody>
 </table>

@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 29
-**Last modified:** 2026-08-21T17:25:57Z
+**Revision:** 31
+**Last modified:** 2026-08-21T17:32:01Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1027,7 +1027,7 @@ The sweep scans code this project actually ships. Vendored third-party trees und
 
 ## BOB-153 — Go profile cannot build: go.mod requires go 1.26.2 but the Dockerfile builder is golang:1.23-alpine
 
-**Status:** Queued
+**Status:** Fixed (→ Fixed.md)
 **Type:** Bug
 **Severity:** Medium
 **Created-By:** AI
@@ -1049,7 +1049,7 @@ The go profile builds. Either the builder image is raised to a toolchain satisfy
 
 ## BOB-154 — Host venv and production container run different starlette versions (1.4.1 vs 1.6.0)
 
-**Status:** Queued
+**Status:** Ready for testing
 **Type:** Bug
 **Severity:** Medium
 **Created-By:** AI
@@ -1143,4 +1143,26 @@ download-proxy/src/main.py:135 (and the registrations at 214/217/219)
 
 **Acceptance criteria:**
 The diagnostic cannot crash the service it diagnoses. Either all_threads=True is dropped for the periodic dump, or the dump is gated behind something that cannot fault on a live multi-threaded process, or the runtime moves to a Python where the upstream fix is present - and whichever is chosen, the choice is recorded against the upstream issue so a later runtime bump does not silently re-arm it.
+
+## BOB-158 — tests/conftest.py cannot run on the production interpreter: binds asyncio.events._get_event_loop_policy, a 3.13+ private API, while production is 3.12.13
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T17:29:10Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+The test suite has silently acquired a dependency on an interpreter production does not run. tests/conftest.py:207 calls asyncio.events._get_event_loop_policy() - a PRIVATE API that does not exist before Python 3.13 - in an AUTOUSE fixture, so it affects every test. The host venv is CPython 3.14.6; the container is 3.12.13, pinned deliberately in docker-compose.yml as python:3.12-alpine and independently declared twice more in pyproject.toml (ruff target-version py312, mypy python_version 3.12). So the venv contradicts the project's own declared target by documentary evidence, not opinion. THIS IS NOT A THEORETICAL GAP: every green suite run to date is evidence about 3.14.6 while users are served 3.12.13, and this specific incompatibility means the suite CANNOT run on the production interpreter at all - it produces 870 teardown errors. It went unnoticed because nobody had ever run the suite on 3.12. Found while fixing BOB-154 (dependency drift), whose reconciliation is BLOCKED on this: rebuilding the venv on 3.12 is the fix for the drift, and doing so makes the suite unrunnable until this is resolved. A candidate patch shape was verified in isolation on BOTH 3.12.13 and 3.14.6 under -W error::DeprecationWarning, but not as an integrated change - and another stream was editing conftest.py concurrently, so it was deliberately not applied.
+
+**Affected scope / file-scope manifest:**
+tests/conftest.py:207 (_cleanup_event_loop fixture)
+
+**Reproduction / context:**
+.venv/bin/python -c 'import asyncio.events as e; print(hasattr(e,"_get_event_loop_policy"))' -> True (3.14.6). podman exec qbittorrent-proxy python -c same -> False (3.12.13). Running the suite on 3.12.13 produces 870 teardown errors. A second incompatibility in the same fixture: policy.get_event_loop() raises DeprecationWarning on 3.12, which this project's pytest config turns into an error.
+
+**Acceptance criteria:**
+The suite runs on the interpreter production runs. Both incompatibilities in _cleanup_event_loop are resolved, verified on 3.12.13 under -W error::DeprecationWarning, and the venv is rebuilt on 3.12 so every subsequent test result is evidence about the deployed runtime.
 

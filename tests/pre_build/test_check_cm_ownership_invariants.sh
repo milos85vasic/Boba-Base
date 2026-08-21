@@ -50,8 +50,52 @@
 #     real-tree       -> exit 0 (the gate with no arguments, against the
 #                        actual checkout)
 #
+#   BUILD-RESOLVED SCOPE (the FROM-chain resolver of commit 649622a; every
+#   golden-bad below is DISCRIMINATING — measured to exit 0 against the pre-fix
+#   gate at 0e5aca5 and 1 against the current one, so reverting the resolver
+#   turns this suite red. See the section comment for why each fixture carries
+#   a second, healthy, image:-based linuxserver service):
+#     build-puid1000        -> exit 1 (build base resolves to linuxserver and
+#                              the service declares PUID=1000 — the formerly
+#                              BLIND case: no `image:` key, so the image-only
+#                              derivation classified it not-linuxserver and
+#                              never PUID-checked it)
+#     build-no-puid         -> exit 1 (same, declaring no PUID at all)
+#     build-alias-chain     -> exit 1 (last stage names an `AS` alias that
+#                              resolves back to a linuxserver stage)
+#     build-arg-default     -> exit 1 (global `ARG BASE=lscr.io/...` expanded
+#                              into `FROM ${BASE}`)
+#     build-platform-flag   -> exit 1 (`--platform=` is a FROM flag, not the
+#                              image reference)
+#     build-inline          -> exit 1 (`build.dockerfile_inline` carries the
+#                              FROM; no Dockerfile exists on disk)
+#     build-arg-nodefault   -> exit 1 (`ARG BASE` with no default: the base is
+#                              UNVERIFIABLE, and §11.4.201(6) forbids reading
+#                              that silence as "not linuxserver")
+#     build-dockerfile-absent -> exit 1 (no Dockerfile at either candidate
+#                              path: UNVERIFIABLE, refusal reports what it
+#                              tried)
+#   BUILD-RESOLVED GOLDEN-FALSE (the resolver must widen the SCOPE without
+#   changing the VERDICT for a healthy tree — a resolver that refused every
+#   build-based service would satisfy every golden-bad above and still be a
+#   §11.4.201(1) false-positive engine):
+#     build-comment-carrier -> exit 0 (a Dockerfile COMMENT mentioning
+#                              lscr.io/linuxserver; the real base is alpine)
+#     build-alpine-base     -> exit 0 (multi-stage golang -> alpine, boba's own
+#                              boba-jackett / qbittorrent-proxy-go shape)
+#     build-linuxserver-puid0-ok -> exit 0 (resolved linuxserver base that is
+#                              CORRECTLY held at PUID=0/PGID=0)
+#
 # A gate that PASSes any golden-bad, or FAILs any golden-FALSE, is itself the
 # bluff (§11.4.107(10)) and this harness reports it.
+#
+# ACCEPTANCE (§11.4.115(F) — the canonical §1.1 mutation for a landed fix is
+# that fix's own revert). This suite was run against the PRE-FIX gate,
+# extracted read-only with
+#     git show 0e5aca5:scripts/pre_build/check_cm_ownership_invariants.sh
+# and it FAILS there on the eight build-resolved golden-bad fixtures. Before
+# this section existed it passed 19/19 against that same pre-fix gate, which is
+# what made the resolver revert-invisible.
 #
 # Usage:   bash tests/pre_build/test_check_cm_ownership_invariants.sh
 # Inputs:  none (no stdin, no env input).
@@ -342,6 +386,240 @@ YAML
 )"
 expect_rc "registry-port (host:port/linuxserver/img:tag still matched)" 0 "${C_REGPORT}" "${OWNED_OK}" \
     "mirrored: image=reg.example:5000/linuxserver/qbittorrent:1 -> linuxserver"
+
+# --------------------------------------------------------------------------
+# BUILD-RESOLVED SCOPE (the FROM-chain resolver, commit 649622a)
+#
+# WHY THIS SECTION EXISTS AND WHY EVERY FIXTURE IN IT CARRIES A SECOND,
+# HEALTHY, image:-BASED LINUXSERVER SERVICE — this is the load-bearing detail,
+# not decoration:
+#
+#   The resolver was landed with its validation living only in a commit
+#   message, and an independent re-review PROVED the omission was not cosmetic:
+#   it extracted the PRE-FIX gate (`git show 0e5aca5:...`), pointed THIS
+#   harness at it, and got 19/19 PASS. Every fixture above classifies through
+#   the `image:` key, so the entire resolver could be reverted wholesale and
+#   this suite stayed green. Per §11.4.115(F) the canonical §1.1 mutation for a
+#   landed fix IS that fix's own revert — and that mutation was invisible to
+#   everything in the repository.
+#
+#   The trap that made it invisible is worth naming, because it is easy to walk
+#   back into: a fixture whose ONLY linuxserver-ish service is the build-based
+#   one is NOT discriminating. The pre-fix gate classifies it not-linuxserver,
+#   then trips its own "N service(s) parsed but ZERO are linuxserver-based"
+#   clause and ALSO exits 1 — the right answer for the wrong reason, and an
+#   exit-code assertion cannot tell the two apart. Anchoring each fixture with
+#   a correct `image:`-based linuxserver service keeps linuxserver_checked >= 1
+#   on BOTH gates, so the ONLY thing left that can move the verdict is whether
+#   the build base was resolved. Measured against 0e5aca5, every golden-bad
+#   fixture below exits 0 on the pre-fix gate and 1 on the current one.
+#
+#   Do not "simplify" these fixtures by deleting the anchor service.
+# --------------------------------------------------------------------------
+
+# mk_ctx <dirname> — write a Dockerfile into a build context from stdin.
+# The context lives inside TMP_ROOT, and the compose fixtures reference it
+# relatively, so locate_dockerfile()'s compose-relative resolution finds it
+# without the repo-root fallback ever being consulted.
+mk_ctx() {
+    local dir="${TMP_ROOT}/$1"
+    mkdir -p "${dir}"
+    cat >"${dir}/Dockerfile"
+}
+
+# compose_build <file> <context-or-inline-block> — emit a compose fixture with
+# the healthy anchor service plus a `svc-under-test` carrying the given build
+# stanza and environment lines (passed as the remaining arguments, verbatim).
+compose_build() {
+    local out="${TMP_ROOT}/$1"; shift
+    local build_stanza="$1"; shift
+    {
+        printf 'services:\n'
+        printf '  qbittorrent:\n'
+        printf '    image: lscr.io/linuxserver/qbittorrent:latest\n'
+        printf '    environment:\n'
+        printf '      - PUID=0\n'
+        printf '      - PGID=0\n'
+        printf '  svc-under-test:\n'
+        printf '%s\n' "${build_stanza}"
+        local line
+        for line in "$@"; do
+            printf '%s\n' "${line}"
+        done
+    } >"${out}"
+    echo "${out}"
+}
+
+# --- GOLDEN-BAD: a resolved linuxserver base with a reverted PUID ----------
+mk_ctx ctx_build_puid <<'DOCKERFILE'
+FROM lscr.io/linuxserver/qbittorrent:latest
+RUN echo "derived image"
+DOCKERFILE
+C_BUILD_PUID="$(compose_build compose_build_puid.yml \
+    '    build:
+      context: ./ctx_build_puid' \
+    '    environment:' '      - PUID=1000' '      - PGID=1000')"
+expect_rc "build-puid1000 (build base resolves to linuxserver, PUID reverted)" 1 \
+    "${C_BUILD_PUID}" "${OWNED_OK}" \
+    "svc-under-test: PUID=1000, expected 0" \
+    "svc-under-test: PGID=1000, expected 0"
+
+# --- GOLDEN-BAD: resolved linuxserver base with NO PUID at all -------------
+# The defect reached by OMISSION rather than by a wrong value: the image then
+# runs the app as its `abc` default (911) -> host uid 101910.
+mk_ctx ctx_build_nopuid <<'DOCKERFILE'
+FROM lscr.io/linuxserver/jackett:latest
+DOCKERFILE
+C_BUILD_NOPUID="$(compose_build compose_build_nopuid.yml \
+    '    build:
+      context: ./ctx_build_nopuid')"
+expect_rc "build-no-puid (resolved linuxserver base declaring no PUID at all)" 1 \
+    "${C_BUILD_NOPUID}" "${OWNED_OK}" \
+    "svc-under-test: linuxserver service (build base=lscr.io/linuxserver/jackett:latest" \
+    "declares NO PUID" "declares NO PGID"
+
+# --- GOLDEN-BAD: multi-stage AS-alias chain resolving to linuxserver -------
+# The LAST stage is the runtime image, and it names an alias rather than a
+# registry reference. A resolver that read only the first or only the last
+# FROM literal would miss this.
+mk_ctx ctx_build_chain <<'DOCKERFILE'
+FROM lscr.io/linuxserver/qbittorrent:latest AS runtime-base
+FROM golang:1.23-alpine AS builder
+RUN echo "compile something"
+FROM runtime-base
+COPY --from=builder /out /out
+DOCKERFILE
+C_BUILD_CHAIN="$(compose_build compose_build_chain.yml \
+    '    build:
+      context: ./ctx_build_chain' \
+    '    environment:' '      - PUID=1000' '      - PGID=0')"
+expect_rc "build-alias-chain (last stage -> AS alias -> linuxserver)" 1 \
+    "${C_BUILD_CHAIN}" "${OWNED_OK}" \
+    "svc-under-test: PUID=1000, expected 0"
+
+# --- GOLDEN-BAD: global ARG default substituted into FROM ------------------
+mk_ctx ctx_build_argdflt <<'DOCKERFILE'
+ARG BASE=lscr.io/linuxserver/jackett:latest
+FROM ${BASE}
+DOCKERFILE
+C_BUILD_ARGDFLT="$(compose_build compose_build_argdflt.yml \
+    '    build:
+      context: ./ctx_build_argdflt' \
+    '    environment:' '      - PUID=1000' '      - PGID=0')"
+expect_rc "build-arg-default (ARG default expands to a linuxserver base)" 1 \
+    "${C_BUILD_ARGDFLT}" "${OWNED_OK}" \
+    "svc-under-test: PUID=1000, expected 0"
+
+# --- GOLDEN-BAD: `--platform=` is a FROM flag, not the image reference -----
+mk_ctx ctx_build_platform <<'DOCKERFILE'
+FROM --platform=linux/amd64 lscr.io/linuxserver/qbittorrent:latest
+DOCKERFILE
+C_BUILD_PLATFORM="$(compose_build compose_build_platform.yml \
+    '    build:
+      context: ./ctx_build_platform')"
+expect_rc "build-platform-flag (--platform operand skipped, base still resolved)" 1 \
+    "${C_BUILD_PLATFORM}" "${OWNED_OK}" \
+    "svc-under-test: linuxserver service (build base=lscr.io/linuxserver/qbittorrent:latest" \
+    "declares NO PUID"
+
+# --- GOLDEN-BAD: build.dockerfile_inline carries the FROM ------------------
+# No Dockerfile exists on disk at all here; the base lives in the compose file.
+C_BUILD_INLINE="$(compose_build compose_build_inline.yml \
+    '    build:
+      context: .
+      dockerfile_inline: |
+        FROM lscr.io/linuxserver/qbittorrent:latest
+        RUN echo "inline"' \
+    '    environment:' '      - PUID=1000' '      - PGID=0')"
+expect_rc "build-inline (dockerfile_inline base resolves to linuxserver)" 1 \
+    "${C_BUILD_INLINE}" "${OWNED_OK}" \
+    "svc-under-test: PUID=1000, expected 0"
+
+# --- GOLDEN-BAD: UNVERIFIABLE base — ARG with no default -------------------
+# §11.4.201(6): an unresolvable base is precisely where a linuxserver image
+# would hide, so the quiet "not linuxserver" the pre-fix gate returned was a
+# FALSE-NULL. The refusal must NAME the argument it could not resolve.
+mk_ctx ctx_build_argless <<'DOCKERFILE'
+ARG BASE
+FROM ${BASE}
+DOCKERFILE
+C_BUILD_ARGLESS="$(compose_build compose_build_argless.yml \
+    '    build:
+      context: ./ctx_build_argless')"
+expect_rc "build-arg-nodefault (FROM \${BASE} with no default -> UNVERIFIABLE)" 1 \
+    "${C_BUILD_ARGLESS}" "${OWNED_OK}" \
+    "svc-under-test: base image UNVERIFIABLE" \
+    "build argument(s) BASE that have no default"
+
+# --- GOLDEN-BAD: UNVERIFIABLE base — no Dockerfile anywhere ----------------
+# The context name is deliberately one that exists neither under TMP_ROOT nor
+# at the repo root, so BOTH locate_dockerfile candidates genuinely miss and the
+# refusal reports what it tried (§11.4.201(5)).
+C_BUILD_NODF="$(compose_build compose_build_nodf.yml \
+    '    build:
+      context: ./ctx_build_absent_no_such_context_zz')"
+expect_rc "build-dockerfile-absent (no Dockerfile found -> UNVERIFIABLE)" 1 \
+    "${C_BUILD_NODF}" "${OWNED_OK}" \
+    "svc-under-test: builds from \`Dockerfile\`" \
+    "UNVERIFIABLE — no Dockerfile was found"
+
+# --- GOLDEN-FALSE: a Dockerfile COMMENT naming a linuxserver image ---------
+# The compose-side carrier guard already exists above; this is its Dockerfile-
+# side twin. A substring scan of the build context would fire here; a token
+# parse that drops comment lines before reading instructions must not.
+mk_ctx ctx_build_comment <<'DOCKERFILE'
+# This image used to be FROM lscr.io/linuxserver/qbittorrent:latest back when
+# PUID=1000 was needed. Recording the history in a comment must not make the
+# gate treat this alpine build as a linuxserver service.
+FROM alpine:3.20
+RUN echo "not linuxserver"
+DOCKERFILE
+C_BUILD_COMMENT="$(compose_build compose_build_comment.yml \
+    '    build:
+      context: ./ctx_build_comment')"
+expect_rc "build-comment-carrier (Dockerfile comment mentions lscr.io/linuxserver)" 0 \
+    "${C_BUILD_COMMENT}" "${OWNED_OK}" \
+    "svc-under-test: build base=alpine:3.20" \
+    "not linuxserver-based, PUID not required" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
+
+# --- GOLDEN-FALSE: a genuinely non-linuxserver build base -----------------
+# boba's own locally-built services (boba-jackett, qbittorrent-proxy-go) have
+# this exact shape. Demanding a PUID here would be the §11.4.201(1) false-
+# positive refusal — as broken as passing a reverted tree.
+mk_ctx ctx_build_alpine <<'DOCKERFILE'
+FROM golang:1.23-alpine AS builder
+RUN echo "build the binary"
+FROM alpine:3.20
+COPY --from=builder /app /app
+DOCKERFILE
+C_BUILD_ALPINE="$(compose_build compose_build_alpine.yml \
+    '    build:
+      context: ./ctx_build_alpine')"
+expect_rc "build-alpine-base (resolved base is genuinely not linuxserver)" 0 \
+    "${C_BUILD_ALPINE}" "${OWNED_OK}" \
+    "svc-under-test: build base=alpine:3.20" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
+
+# --- GOLDEN-FALSE: resolved linuxserver base that is CORRECTLY set --------
+# Proves the resolver widens the SCOPE without changing the VERDICT for a
+# healthy service: it is classified linuxserver, PUID/PGID are checked, and
+# they pass. A resolver that refused every build-based service would satisfy
+# every golden-bad above and still be broken.
+mk_ctx ctx_build_ok <<'DOCKERFILE'
+FROM lscr.io/linuxserver/qbittorrent:latest
+RUN echo "derived, and correctly configured"
+DOCKERFILE
+C_BUILD_OK="$(compose_build compose_build_ok.yml \
+    '    build:
+      context: ./ctx_build_ok' \
+    '    environment:' '      - PUID=0' '      - PGID=0')"
+expect_rc "build-linuxserver-puid0-ok (resolved linuxserver base, PUID=0)" 0 \
+    "${C_BUILD_OK}" "${OWNED_OK}" \
+    "svc-under-test: build base=lscr.io/linuxserver/qbittorrent:latest" \
+    "linuxserver, PUID=0, PGID=0 OK" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
+
 
 # --------------------------------------------------------------------------
 # Real-tree smoke: the gate with NO arguments, against the actual checkout
