@@ -33,6 +33,15 @@ account. Moving its lifecycle under session-scoped service management changes **
 and how it starts**, not **which identity owns the files it writes**. Adopting that
 mechanism alone would leave the reported defect exactly as it is.
 
+## Clarifications
+
+### Session 2026-08-21
+
+- Q: If the automatic ownership repair is interrupted partway (power loss, stop, crash), what should happen on the next start? → A: Resume until complete — the "already ran" marker is written only after a fully successful pass.
+- Q: Should the automatic first-start repair block startup until it finishes, or let the system come up while it runs? → A: Block startup until complete, reporting progress.
+- Q: Should there be a time limit on the blocking first-start repair? → A: No bound — run to completion; progress and resume-on-interrupt are the mitigation.
+- Q: Should ownership scope include container-written project paths beyond downloads? → A: Yes — all container-written paths, including `config/` and `config/boba.db`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Downloaded files are immediately usable (Priority: P1)
@@ -81,8 +90,10 @@ what changed exists.
 1. **Given** existing content owned by the mapped identity, **When** the system starts
    for the first time after the fix, **Then** all of it becomes operator-owned with no
    operator action.
-2. **Given** the repair has already run, **When** the system starts again, **Then** it
-   does not re-walk the tree and makes no further changes.
+2. **Given** the repair has already completed SUCCESSFULLY, **When** the system starts
+   again, **Then** it does not re-walk the tree and makes no further changes.
+2b. **Given** the repair was INTERRUPTED partway, **When** the system starts again,
+   **Then** it resumes and continues until every in-scope item is operator-owned.
 2a. **Given** the automatic repair has run, **When** the operator inspects the record
    it wrote, **Then** every item whose ownership it changed is identifiable.
 3. **Given** content outside the declared download scope, **When** the repair runs,
@@ -132,8 +143,16 @@ agree about what is running.
 - If the operator's account identity ever differs from the identity the system was
   configured with, the system must refuse or report clearly rather than write files
   nobody can manage.
+- A service that runs only under an optional profile must not be overlooked: the
+  defect returns the moment it runs (FR-016).
+- The repair must not widen access on anything it touches; the credential database in
+  particular must stay as restricted as it is now (FR-015).
 - Ownership must remain correct across a restart and across a full recreate of the
   system, not only immediately after the change is applied.
+- A very large pre-existing library makes the first start take proportionally longer,
+  by design (FR-004f). This is accepted behaviour, not a defect — but it MUST be
+  distinguishable from a hang, which is what FR-004e's real-progress requirement
+  exists to guarantee.
 
 ## Requirements *(mandatory)*
 
@@ -149,8 +168,13 @@ agree about what is running.
   download root — under the operator's ownership AUTOMATICALLY, on the first start
   after the fix is in place, with no operator action required (operator decision,
   2026-08-21).
-- **FR-004a**: That automatic repair MUST run ONCE, not on every start. Subsequent
-  starts MUST NOT re-walk the tree.
+- **FR-004a**: That automatic repair MUST run ONCE SUCCESSFULLY, not on every start.
+  The "already ran" marker MUST be written ONLY after a fully successful pass, so an
+  interrupted run (power loss, stop, crash) RESUMES on the next start and keeps
+  resuming until it completes. Marking on START instead would let a single crash
+  permanently skip the remainder and leave the library half-owned — the run-once
+  optimisation would defeat the repair it exists to optimise. Once the marker is
+  written, subsequent starts MUST NOT re-walk the tree.
 - **FR-004b**: Because FR-004 changes ownership of pre-existing data without being
   asked, the repair MUST record what it changed in a durable, operator-readable
   record before changing it, sufficient to identify every item whose ownership it
@@ -158,6 +182,25 @@ agree about what is running.
   requirement is what keeps that choice recoverable rather than irreversible.
 - **FR-004c**: The operator MUST also be able to invoke the same repair explicitly,
   for content added later by other means.
+- **FR-004d**: The automatic repair MUST BLOCK startup until it completes: no service
+  that writes to operator-visible storage may accept work until every in-scope item is
+  operator-owned. A background repair is explicitly rejected — it would leave a window
+  in which downloads land in a half-repaired tree, so the reported defect would still
+  bite, intermittently and unpredictably, which is harder to diagnose than the
+  consistent defect being replaced.
+- **FR-004e**: While blocking, the repair MUST report progress in a form the operator
+  can see, so a large library never presents as a hung startup. Progress MUST reflect
+  real work completed, not a spinner or a fixed-step estimate.
+- **FR-004f**: The blocking repair MUST NOT impose a time limit on itself. It runs to
+  completion however long that takes. A budget that falls back to background would
+  reintroduce the half-repaired window rejected in FR-004d; a budget that aborts would
+  leave the library knowingly half-owned and restore the manual step this feature
+  exists to remove. The operator's escape hatch is FR-004a: stopping the system is
+  safe, because the next start resumes.
+- **FR-004g**: Because the repair blocks every download-writing service (FR-004d), no
+  download can be in progress while it runs. Concurrent-modification handling between
+  the repair and an active download is therefore OUT OF SCOPE by construction, not by
+  omission.
 - **FR-005**: The repair MUST be scoped to declared locations and MUST NOT alter
   anything outside them.
 - **FR-006**: The repair MUST report any item it could not repair, and MUST NOT report
@@ -181,6 +224,28 @@ agree about what is running.
   check that passes because it never actually wrote anything is a false pass.
 - **FR-011**: An automated check MUST detect a regression of this behaviour — that is,
   it MUST fail if the system again creates content the operator cannot modify.
+- **FR-012**: Ownership scope MUST include container-written project paths, not only
+  downloads (clarified 2026-08-21). Measured on the host: the configuration tree held
+  51 items owned by the mapped identity, and the credential database was mode 600
+  under an owner that does not resolve — so the operator could not read it.
+- **FR-013**: The operator MUST be able to perform the documented backup procedure —
+  copying the credential database and the environment file together — without an
+  ownership step. This is currently IMPOSSIBLE, and the governing documentation warns
+  that losing the master key means total credential loss, so the backup it prescribes
+  is both mandatory and unperformable. Fixing FR-012 is what unblocks it.
+- **FR-014**: No project path the system itself created may be left in a state where
+  the operator cannot read, edit, or back it up.
+- **FR-015**: Changing ownership MUST NOT relax access restrictions. The credential
+  database is currently mode 600 and MUST remain no more permissive than it is today.
+  Bringing a credential store under the operator's ownership while widening who can
+  read it would trade a usability defect for a security one — a strictly worse
+  outcome. (Recorded as an informed default, not an operator decision: no reasonable
+  alternative exists.)
+- **FR-016**: The fix MUST apply to EVERY service that writes to in-scope locations,
+  including services that only run under an optional profile. Correcting some services
+  and not others reproduces the defect the moment an uncorrected one runs, and the
+  resulting intermittent behaviour is harder to diagnose than the consistent defect
+  being replaced. (Informed default — partial application is not a coherent option.)
 
 ### Key Entities
 
@@ -188,8 +253,11 @@ agree about what is running.
   writes.
 - **Mapped identity**: the distinct host identity the container platform currently
   attributes created files to; the source of the defect.
-- **Operator-visible storage**: the configured download locations — completed content,
-  in-progress content, and the root that contains them.
+- **Operator-visible storage**: every location the system writes that the operator is
+  expected to handle. This is BROADER than downloads (clarified 2026-08-21): it covers
+  the configured download locations — completed content, in-progress content, and the
+  root that contains them — AND container-written project paths such as the
+  configuration tree and the credential database.
 - **Pre-existing content**: content created before the fix, which the one-time repair
   addresses.
 
@@ -207,6 +275,12 @@ agree about what is running.
   account.
 - **SC-004**: Ownership remains correct after a restart and after a full recreate, on
   100% of trials.
+- **SC-004a**: At the moment the system first accepts a download, **0** in-scope items
+  are owned by anything other than the operator — i.e. there is no window in which the
+  defect can recur.
+- **SC-007**: The operator can complete the documented credential-database backup in a
+  single copy operation, with no ownership step — verified by performing it, not by
+  inspecting permissions.
 - **SC-005**: The whole system can be started and stopped through the session-scoped
   mechanism, with every service reaching a healthy state within the same time budget
   as the existing start path.
@@ -220,8 +294,11 @@ agree about what is running.
   host). The system is single-operator; no multi-user arbitration is in scope.
 - "Manipulated" means the ordinary operations a person performs on their own files —
   rename, move, delete, edit — not a formal permissions model.
-- The download locations already configured are the operator-visible storage in scope.
-  Internal state that the operator never handles directly is out of scope.
+- Operator-visible storage in scope is every location the system writes that the
+  operator is expected to handle: the configured download locations AND
+  container-written project paths including the credential database (FR-012). An
+  earlier draft scoped this to downloads only; that was corrected once evidence showed
+  the credential database is unreadable to its own owner.
 - The repair runs automatically on first start (operator decision, 2026-08-21). The
   spec's own recommendation was explicit invocation, on the grounds that rewriting
   ownership across a large existing library without being asked is hard to undo; the
@@ -247,7 +324,11 @@ agree about what is running.
 - Multi-user or multi-tenant ownership arbitration.
 - Changing where downloads are stored.
 - Any privileged, system-wide service installation.
-- Repairing content outside the declared download locations.
+- Repairing content outside the declared locations. NOTE: the declared locations were
+  WIDENED on 2026-08-21 to include container-written project paths (FR-012); an earlier
+  draft of this spec placed "internal state the operator never handles directly" out of
+  scope, which was wrong — the documented backup procedure requires the operator to
+  handle the credential database directly.
 
 ## Clarifications Resolved
 

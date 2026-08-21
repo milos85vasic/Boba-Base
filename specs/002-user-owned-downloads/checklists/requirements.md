@@ -93,3 +93,43 @@ Mechanically re-verified rather than eyeballed:
 - All four mandatory sections present.
 
 Ready for `/speckit-plan`.
+
+### Validation iteration 3 — 2026-08-21 (post-`/speckit-clarify`)
+
+**16/16 → 16/16 items passing. No state changes; no regressions.** Four clarifying
+questions were asked and integrated; the spec became more complete, not less.
+
+Re-evaluated rather than assumed, with the two items most at risk from the scope
+widening checked explicitly:
+
+- **"Scope is clearly bounded"** — still passes. Scope WIDENED (FR-012: container-written
+  project paths, not only downloads) but remains explicitly bounded: the in-scope
+  definition is stated on the entity, and the Out of Scope section survives and was
+  itself corrected rather than left contradicting the new scope.
+- **"No implementation details"** — passes. A framework/language scan initially
+  reported 7 hits, which would have failed this item. All 7 were the substring `gin`
+  inside "chan**gin**g" and "lo**gin**" — carriers, not instances. Zero real framework
+  nouns. Recorded because the detection pattern fell into exactly the substring trap
+  it was written to catch, and a reader re-running that scan will see the same 7.
+- **"Success criteria are technology-agnostic"** — passes, verified by scanning the
+  Success Criteria section in isolation: 0 technology nouns inside it. The `uid` and
+  `systemctl` mentions elsewhere are observed evidence in Problem Framing and the
+  template-required verbatim Input quote.
+- **"No [NEEDS CLARIFICATION] markers remain"** — 0.
+
+Contradiction scan: 0 obsolete statements. Q4 invalidated two earlier statements (the
+Out of Scope line and the matching Assumption, both of which had placed "internal
+state the operator never handles directly" out of scope). Both were REPLACED rather
+than supplemented, so no contradictory text survives — verified by scanning for the
+superseded wording and finding 0 occurrences.
+
+Structure: exactly 4 `- Q:` bullets under one `### Session 2026-08-21`, matching the
+4 questions asked; 0 duplicates; the only new headings are `## Clarifications` and
+that session subheading.
+
+**The material finding of this session** was not a wording gap. Checking whether the
+scope question was real surfaced that `config/boba.db` is mode 600 under an owner
+that does not resolve — so the backup procedure `docs/BOBA_DATABASE.md` §3 instructs
+the operator to perform, and whose omission that same document warns means total
+credential loss, is currently IMPOSSIBLE to perform. The spec had placed that file
+out of scope. That is now FR-012/FR-013 and SC-007.
