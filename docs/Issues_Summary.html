@@ -191,13 +191,18 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tbody>
 <tr>
 <td>Bug</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Bug</td>
 <td>Operator-blocked</td>
 <td>1</td>
 </tr>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>18</td>
+<td>14</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -217,7 +222,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>60</strong></td>
+<td><strong>61</strong></td>
 </tr>
 </tbody>
 </table>
@@ -596,10 +601,27 @@ incident #3)</td>
 <tr>
 <td>BOB-129</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>Fixed (→ Fixed.md)</td>
 <td>Medium</td>
 <td>Potential production slowapi/starlette defect flagged by Task 105
-subagent</td>
+subagent — ## CLOSED 2026-08-21. CONFIRMED as a real defect but ALREADY
+REMEDIATED by commit 44f3bbe — and this ticket’s PREMISE is REFUTED. It
+is not a slowapi/starlette incompatibility: the mechanism reproduces
+IDENTICALLY at host starlette 1.4.1 and container 1.6.0, and slowapi’s
+own docs state the contract verbatim (docs/index.md, fetched
+2026-08-21). The true root cause is a documented API-usage contract —
+headers_enabled=True requires a <code>response: Response</code>
+parameter when the endpoint does not itself return a Response. The REAL
+remaining work was that NO regression guard existed: the only prior
+references were comments in tests that bypass the decorator via
+<strong>wrapped</strong> and never execute slowapi’s wrapper — a fixed
+defect with nothing falsifiable guarding it. Added
+tests/unit/test_bob129_slowapi_response_contract.py: 6 tests including a
+control needle proving the installed slowapi still raises, and a DRIFT
+DETECTOR that fails when any new decorated endpoint appears without the
+parameter. §1.1 (revert of 44f3bbe) -&gt; 3 failed with the real 500
+body; restore byte-identical. Description corrected: the incompatibility
+framing was wrong.</td>
 </tr>
 <tr>
 <td>BOB-131</td>
@@ -825,9 +847,9 @@ after operator confirmation with a §9.2 pre-op backup, or .worktrees/ is
 added to a checked-in §11.4.224(E)-fenced exclusion list with
 justification. Verify by re-running the sweep and confirming zero
 .worktrees-sourced findings. |
-| BOB-144 | Bug | Queued | Low | **Reported-Via:** §11.4.202 reporting
-directive `bug` on 2026-08-20T15:53:57Z **Reported-By:** Claude  **What
-(the report, verbatim):** `/theme/stream` in
+| BOB-144 | Bug | Fixed (→ Fixed.md) | Low | **Reported-Via:** §11.4.202
+reporting directive `bug` on 2026-08-20T15:53:57Z **Reported-By:**
+Claude  **What (the report, verbatim):** `/theme/stream` in
 download-proxy/src/api/routes.py:167 calls the disconnect probe with NO
 guard at all:      while True:         if await
 request.is_disconnected():             break  If that probe raises, the
@@ -864,36 +886,48 @@ close with reason disconnect_probe_failed as streaming.py now
 does.  **Acceptance criteria:** Same probe-failure discipline as
 streaming.py (clean close + disconnect_probe_failed reason + logged
 warning), verified both directions, reusing the BOB-139 helper rather
-than a third copy. |
-| BOB-145 | Bug | Queued | High | **Reported-Via:** §11.4.202 reporting
-directive `bug` on 2026-08-20T16:01:43Z **Reported-By:** Claude  **What
-(the report, verbatim):** BOB-137 established the root cause:
-Deduplicator.merge_results() is called as a PLAIN SYNCHRONOUS CALL at
-merge_service/search.py:914 and therefore executes ON the asyncio
-event-loop thread. While it runs, uvicorn's only loop runs no callback —
-no accept, no read, no write — so port 7187 stops answering entirely.
-Measured episodes of 9m37s and 5m56s, self-clearing, recurring under
-ordinary traffic.  This item is the FIX. BOB-137 is the diagnosis and
-stays separate per the §11.4.102 Iron Law — the investigation
-deliberately applied no fix.  Three candidate directions, not yet
-chosen:   (a) OFFLOAD — hand merge_results to a thread executor
-(asyncio.to_thread /      run_in_executor). Smallest change, immediately
-unblocks the loop. Does NOT      make the work cheaper, so a large
-enough merge still burns a core; and it      introduces concurrency
-around self._last_merged_results and metadata, which      must be
-checked for races before it is called safe.   (b) MEMOISE —
-_normalize_name is called at FOUR sites per comparison,
-each      running 5 re.sub, and _extract_identity_from_result twice more
-with a      ~15-re.search chain. lru_cache has ZERO matches in that
-module today, so the      seed's own normalisation is recomputed for
-every candidate. Caching the      per-result normalisation is a large
-constant-factor win with no concurrency      risk.   (c) REDUCE THE
-COMPARISON SET — the O(N^2) shape itself (blocking/bucketing by
-a      cheap key before pairwise comparison). Largest win, largest
-change, highest      risk of altering dedup RESULTS — which would need
-its own correctness      evidence, not just a speed measurement.  (b)
-then (a) is the likely order: (b) is risk-free and may alone bring the
-merge under the threshold, and (a) guarantees the loop is never blocked
+than a third copy.  ---  ## CLOSED 2026-08-21. /theme/stream's bare
+`await request.is_disconnected()` now routes through the shared BOB-139
+helper and emits a NAMED close reason instead of letting the exception
+escape. The outcome was already safe (subscriber_count 0-&gt;0 proved
+the finally released the queue) but safety was a side effect of an
+escaping traceback, not a decision — one upstream try/except from
+becoming fail-open. RED 4 failed / 2 passed -&gt; GREEN 6 passed; the 2
+pre-fix passes are the deliberate do-not-weaken guards and are green in
+BOTH states. Revert -&gt; same 4 failures -&gt; restore byte-identical
+(sha256 94107969… / 6492c8cf…). Honest boundary: the live container
+still has the pre-fix module imported, so no live-container runtime
+verification is claimed. |
+| BOB-145 | Bug | Fixed (→ Fixed.md) | High | **Reported-Via:**
+§11.4.202 reporting directive `bug` on 2026-08-20T16:01:43Z
+**Reported-By:** Claude  **What (the report, verbatim):** BOB-137
+established the root cause: Deduplicator.merge_results() is called as a
+PLAIN SYNCHRONOUS CALL at merge_service/search.py:914 and therefore
+executes ON the asyncio event-loop thread. While it runs, uvicorn's only
+loop runs no callback — no accept, no read, no write — so port 7187
+stops answering entirely. Measured episodes of 9m37s and 5m56s,
+self-clearing, recurring under ordinary traffic.  This item is the FIX.
+BOB-137 is the diagnosis and stays separate per the §11.4.102 Iron Law —
+the investigation deliberately applied no fix.  Three candidate
+directions, not yet chosen:   (a) OFFLOAD — hand merge_results to a
+thread executor (asyncio.to_thread /      run_in_executor). Smallest
+change, immediately unblocks the loop. Does NOT      make the work
+cheaper, so a large enough merge still burns a core; and
+it      introduces concurrency around self._last_merged_results and
+metadata, which      must be checked for races before it is called
+safe.   (b) MEMOISE — _normalize_name is called at FOUR sites per
+comparison, each      running 5 re.sub, and
+_extract_identity_from_result twice more with a      ~15-re.search
+chain. lru_cache has ZERO matches in that module today, so
+the      seed's own normalisation is recomputed for every candidate.
+Caching the      per-result normalisation is a large constant-factor win
+with no concurrency      risk.   (c) REDUCE THE COMPARISON SET — the
+O(N^2) shape itself (blocking/bucketing by a      cheap key before
+pairwise comparison). Largest win, largest change, highest      risk of
+altering dedup RESULTS — which would need its own
+correctness      evidence, not just a speed measurement.  (b) then (a)
+is the likely order: (b) is risk-free and may alone bring the merge
+under the threshold, and (a) guarantees the loop is never blocked
 regardless.  MANDATORY for whoever takes this:  - RED FIRST
 (§11.4.43/§11.4.224): a test that FAILS on the current code
 by    demonstrating the loop is blocked during a merge — e.g. assert a
@@ -916,22 +950,36 @@ wedge in 22/26 probes (7187 dead, 7186 alive throughout).  **Acceptance
 criteria:** Port 7187 answers within a bounded time while a large merge
 runs (loop never blocked), AND dedup results are unchanged for the
 existing corpus. Proven with the soak repro flipping from 22/26-dead to
-0/N-dead, plus a dedup-equivalence check. |
-| BOB-146 | Bug | Queued | High | **Reported-Via:** §11.4.202 reporting
-directive `bug` on 2026-08-20T16:10:50Z **Reported-By:** Claude  **What
-(the report, verbatim):** The constitution's §11.4.252 detector
-(constitution/scripts/gates/ cm_dangerous_combination_fail_closed.sh)
-UNDERCOUNTS by 29%. Measured against an independent AST instrument
-(structure, not text — a valid control needle per §11.4.201(7)) on
-boba's plugins tree:      gate reports        : 30     AST ground
-truth    : 42     missed              : 12     false positives     :
-0  A gate that misses 12 of 42 while reporting a confident number is a
-§11.4.201(6) false-null: its output reads as a census when it is a
-FLOOR. Anyone fencing an exclusion list against that number
-(§11.4.224(E)) would write the fence against an undercount and lock the
-invisible sites out of scope permanently.  FOUR DISTINCT CAUSES, each
-independently falsifiable:  L1 — TRAILING COMMENT DEFEATS THE REGEX (10
-of the 12).   The pattern anchors the handler line with
+0/N-dead, plus a dedup-equivalence check.  ---  ## CLOSED 2026-08-21.
+The assumed O(N^2) comparison cost was NOT the problem: cProfile at
+N=400 showed Levenshtein at 0.223s (2.3%) while identity extraction,
+normalisation and 2,107,721 re._compile calls dominated — over only 400
+distinct names. Fixed by memoising the pure per-string derivations and
+hoisting them out of the inner loop; comparison count UNTOUCHED, so no
+matching rule changed. N=400 loop-block 3970ms -&gt; median 349ms; N=800
+7337ms -&gt; ~815ms. RED observed at 3970ms vs a 900ms ceiling; revert
+-&gt; 8994ms; restore byte-identical. Bucketing was IMPLEMENTED and
+MEASURED before rejection: 0.0% prune rate at N=400 and N=800, and the
+effective form is unsound because Tier 2 matches on infohash independent
+of name. Honest limit: the loop still stops while merge_results runs —
+the window shrank, it did not vanish; removing it needs an await at the
+search.py call site. |
+| BOB-146 | Bug | Fixed (→ Fixed.md) | High | **Reported-Via:**
+§11.4.202 reporting directive `bug` on 2026-08-20T16:10:50Z
+**Reported-By:** Claude  **What (the report, verbatim):** The
+constitution's §11.4.252 detector (constitution/scripts/gates/
+cm_dangerous_combination_fail_closed.sh) UNDERCOUNTS by 29%. Measured
+against an independent AST instrument (structure, not text — a valid
+control needle per §11.4.201(7)) on boba's plugins tree:      gate
+reports        : 30     AST ground truth    :
+42     missed              : 12     false positives     : 0  A gate that
+misses 12 of 42 while reporting a confident number is a §11.4.201(6)
+false-null: its output reads as a census when it is a FLOOR. Anyone
+fencing an exclusion list against that number (§11.4.224(E)) would write
+the fence against an undercount and lock the invisible sites out of
+scope permanently.  FOUR DISTINCT CAUSES, each independently
+falsifiable:  L1 — TRAILING COMMENT DEFEATS THE REGEX (10 of the
+12).   The pattern anchors the handler line with
 `…:[[:space:]]*$</span><code>, so</code>except Exception: # noqa:
 S110<code>never matches. The irony is load-bearing:   the sites a human consciously reviewed and annotated are exactly the ones the   gate cannot see.  L2 — TUPLE CLAUSE DEFEATS THE REGEX (2 of the 12).   The exception-type group is</code>[A-Za-z_.]+<code>, which cannot match</code>(<code>, so</code>except
 (OSError,

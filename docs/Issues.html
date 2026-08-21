@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 19 <strong>Last modified:</strong>
-2026-08-21T15:40:01Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 21 <strong>Last modified:</strong>
+2026-08-21T15:46:20Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -999,8 +999,8 @@ implemented in this task.</p>
 id="bob-129-potential-production-slowapistarlette-defect-flagged-by-task-105-subagent">BOB-129
 — Potential production slowapi/starlette defect flagged by Task 105
 subagent</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> Medium</p>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Severity:</strong> Medium</p>
 <p>Task #105 subagent (fixing 9 slowapi test failures) reported honestly
 that the same slowapi/starlette incompatibility likely hits the
 production /search and /search/stream endpoints under real HTTP traffic
@@ -1301,8 +1301,9 @@ with justification. Verify by re-running the sweep and confirming zero
 id="bob-144-themestream-calls-the-disconnect-probe-unguarded-fail-closed-but-via-an-uncaught-traceback-inconsistent-with-the-two-sse-generators">BOB-144
 — /theme/stream calls the disconnect probe unguarded — fail-closed but
 via an uncaught traceback, inconsistent with the two SSE generators</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> Low <strong>Created-By:</strong> Claude</p>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Severity:</strong> Low <strong>Created-By:</strong>
+Claude</p>
 <p><strong>Reported-Via:</strong> §11.4.202 reporting directive
 <code>bug</code> on 2026-08-20T15:53:57Z <strong>Reported-By:</strong>
 Claude</p>
@@ -1356,8 +1357,9 @@ than a third copy.</p>
 id="bob-145-fix-the-7187-wedge-offload-andor-memoise-deduplicator.merge_results-so-on2-regex-work-stops-blocking-the-asyncio-event-loop">BOB-145
 — Fix the 7187 wedge: offload and/or memoise Deduplicator.merge_results
 so O(N^2) regex work stops blocking the asyncio event loop</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> High <strong>Created-By:</strong> Claude</p>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Severity:</strong> High <strong>Created-By:</strong>
+Claude</p>
 <p><strong>Reported-Via:</strong> §11.4.202 reporting directive
 <code>bug</code> on 2026-08-20T16:01:43Z <strong>Reported-By:</strong>
 Claude</p>
@@ -1424,8 +1426,9 @@ id="bob-146-constitution-11.4.252-detector-undercounts-by-29-30-vs-42-ast-ground
 — Constitution §11.4.252 detector undercounts by 29% (30 vs 42 AST
 ground truth) — 4 distinct blind spots make its output a floor, not a
 census</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> High <strong>Created-By:</strong> Claude</p>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Severity:</strong> High <strong>Created-By:</strong>
+Claude</p>
 <p><strong>Reported-Via:</strong> §11.4.202 reporting directive
 <code>bug</code> on 2026-08-20T16:10:50Z <strong>Reported-By:</strong>
 Claude</p>
@@ -1512,8 +1515,8 @@ id="bob-148-standing-red-unit-test-nothing-tracked-test_no_credentials-asserts-h
 — Standing red unit test nothing tracked: test_no_credentials asserts
 has_session False, gets True — real defect or non-hermetic test,
 undecided</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> Medium <strong>Created-By:</strong>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Severity:</strong> Medium <strong>Created-By:</strong>
 Claude</p>
 <p><strong>Reported-Via:</strong> §11.4.202 reporting directive
 <code>bug</code> on 2026-08-20T16:28:57Z <strong>Reported-By:</strong>
@@ -1783,5 +1786,42 @@ the builder image is raised to a toolchain satisfying go.mod, or
 go.mod’s directive is lowered to what the builder provides - and
 whichever is chosen, a check ties the two together so they cannot drift
 apart again, because nothing currently compares them.</p>
+<h2
+id="bob-154-host-venv-and-production-container-run-different-starlette-versions-1.4.1-vs-1.6.0">BOB-154
+— Host venv and production container run different starlette versions
+(1.4.1 vs 1.6.0)</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Medium <strong>Created-By:</strong> AI</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-08-21T15:46:07Z <strong>Reported-By:</strong>
+AI</p>
+<p><strong>What (the report, verbatim):</strong> The host virtualenv
+used to run this project’s unit tests resolves starlette 1.4.1 while the
+running qbittorrent-proxy container resolves 1.6.0. Every other
+implicated package matches, so this is a genuine
+unpinned-transitive-dependency drift rather than a deliberate
+difference. It matters because it silently weakens every test result: a
+green suite on the host is evidence about 1.4.1, and production is
+1.6.0. A behavioural change between those versions would be invisible to
+the tests that exist to catch it, which is the
+build-once-run-the-same-bytes property the constitution asks for.
+Surfaced while investigating BOB-129, where the defect happened to
+reproduce IDENTICALLY at both versions - which is what allowed that
+ticket’s slowapi/starlette-incompatibility premise to be refuted. That
+was luck, not design: the next divergence may not be
+version-independent, and nothing would tell us.</p>
+<p><strong>Affected scope / file-scope manifest:</strong>
+download-proxy/requirements.txt, .venv, container qbittorrent-proxy</p>
+<p><strong>Reproduction / context:</strong> .venv/bin/python -c ’import
+starlette;print(starlette.__version__)’ -&gt; 1.4.1 ; podman exec
+qbittorrent-proxy python -c ’import
+starlette;print(starlette.__version__)’ -&gt; 1.6.0. Same fastapi
+(0.141.1), same slowapi (0.1.10), same limits (5.8.0) - starlette alone
+diverges.</p>
+<p><strong>Acceptance criteria:</strong> The interpreter that runs the
+tests and the interpreter that serves production resolve the same
+versions, pinned so they cannot drift apart silently - or, if a
+divergence is deliberate, it is declared and a check asserts the
+declared pair rather than leaving it to chance.</p>
 </body>
 </html>

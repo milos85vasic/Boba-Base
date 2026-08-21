@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 19
-**Last modified:** 2026-08-21T15:40:01Z
+**Revision:** 21
+**Last modified:** 2026-08-21T15:46:20Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -394,7 +394,7 @@ Phase 1 design-only proposal: the BOB-116/task-77 resource-pressure preventive s
 
 ## BOB-129 — Potential production slowapi/starlette defect flagged by Task 105 subagent
 
-**Status:** Queued
+**Status:** Fixed (→ Fixed.md)
 **Type:** Bug
 **Severity:** Medium
 
@@ -654,7 +654,7 @@ Whole-tree gates no longer report findings sourced from orphaned worktrees: eith
 
 ## BOB-144 — /theme/stream calls the disconnect probe unguarded — fail-closed but via an uncaught traceback, inconsistent with the two SSE generators
 
-**Status:** Queued
+**Status:** Fixed (→ Fixed.md)
 **Type:** Bug
 **Severity:** Low
 **Created-By:** Claude
@@ -711,7 +711,7 @@ Same probe-failure discipline as streaming.py (clean close + disconnect_probe_fa
 
 ## BOB-145 — Fix the 7187 wedge: offload and/or memoise Deduplicator.merge_results so O(N^2) regex work stops blocking the asyncio event loop
 
-**Status:** Queued
+**Status:** Fixed (→ Fixed.md)
 **Type:** Bug
 **Severity:** High
 **Created-By:** Claude
@@ -778,7 +778,7 @@ Port 7187 answers within a bounded time while a large merge runs (loop never blo
 
 ## BOB-146 — Constitution §11.4.252 detector undercounts by 29% (30 vs 42 AST ground truth) — 4 distinct blind spots make its output a floor, not a census
 
-**Status:** Queued
+**Status:** Fixed (→ Fixed.md)
 **Type:** Bug
 **Severity:** High
 **Created-By:** Claude
@@ -863,7 +863,7 @@ Detector finds all 42 AST-confirmed sites with zero false positives, with a pair
 
 ## BOB-148 — Standing red unit test nothing tracked: test_no_credentials asserts has_session False, gets True — real defect or non-hermetic test, undecided
 
-**Status:** Queued
+**Status:** Fixed (→ Fixed.md)
 **Type:** Bug
 **Severity:** Medium
 **Created-By:** Claude
@@ -1082,4 +1082,26 @@ grep '^go ' qBitTorrent-go/go.mod -> 'go 1.26.2'; grep 'FROM golang' qBitTorrent
 
 **Acceptance criteria:**
 The go profile builds. Either the builder image is raised to a toolchain satisfying go.mod, or go.mod's directive is lowered to what the builder provides - and whichever is chosen, a check ties the two together so they cannot drift apart again, because nothing currently compares them.
+
+## BOB-154 — Host venv and production container run different starlette versions (1.4.1 vs 1.6.0)
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T15:46:07Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+The host virtualenv used to run this project's unit tests resolves starlette 1.4.1 while the running qbittorrent-proxy container resolves 1.6.0. Every other implicated package matches, so this is a genuine unpinned-transitive-dependency drift rather than a deliberate difference. It matters because it silently weakens every test result: a green suite on the host is evidence about 1.4.1, and production is 1.6.0. A behavioural change between those versions would be invisible to the tests that exist to catch it, which is the build-once-run-the-same-bytes property the constitution asks for. Surfaced while investigating BOB-129, where the defect happened to reproduce IDENTICALLY at both versions - which is what allowed that ticket's slowapi/starlette-incompatibility premise to be refuted. That was luck, not design: the next divergence may not be version-independent, and nothing would tell us.
+
+**Affected scope / file-scope manifest:**
+download-proxy/requirements.txt, .venv, container qbittorrent-proxy
+
+**Reproduction / context:**
+.venv/bin/python -c 'import starlette;print(starlette.__version__)' -> 1.4.1 ; podman exec qbittorrent-proxy python -c 'import starlette;print(starlette.__version__)' -> 1.6.0. Same fastapi (0.141.1), same slowapi (0.1.10), same limits (5.8.0) - starlette alone diverges.
+
+**Acceptance criteria:**
+The interpreter that runs the tests and the interpreter that serves production resolve the same versions, pinned so they cannot drift apart silently - or, if a divergence is deliberate, it is declared and a check asserts the declared pair rather than leaving it to chance.
 
