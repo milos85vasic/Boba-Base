@@ -18,7 +18,7 @@
 #
 #   GOLDEN-BAD (synthetic, one defect class each):
 #     no-puid         -> exit 1 (linuxserver service declaring NO PUID at all:
-#                        the image's `abc` (911) default -> host 101910, the
+#                        the image's `abc` (911) default -> host 100910, the
 #                        same defect reached by omission)
 #     keep-id         -> exit 1 (`userns_mode: keep-id` reintroduced)
 #     keep-id-uid     -> exit 1 (the `keep-id:uid=...,gid=...` spelling)
@@ -85,6 +85,43 @@
 #                              boba-jackett / qbittorrent-proxy-go shape)
 #     build-linuxserver-puid0-ok -> exit 0 (resolved linuxserver base that is
 #                              CORRECTLY held at PUID=0/PGID=0)
+#
+#   MOUNT-SCOPE / RUN-AS-USER (invariant 4, E5 route completeness, T034 —
+#   added 2026-08-21 for independent review finding IMPORTANT-1; every
+#   golden-bad below was MEASURED to exit 0 against the pre-fix gate, so the
+#   §11.4.115(F) revert of invariant 4 turns this suite red):
+#     mount-user-attack     -> exit 1 (the reviewer's verbatim four-line
+#                              attack: `user: "1000:1000"` + a mount of the
+#                              declared download root, appended to a copy of
+#                              the real compose. The pre-fix gate PASSED it.)
+#     mount-user-config     -> exit 1 (the plausible hardening pass: `user:
+#                              1000` on a service mounting `./config`, the
+#                              tree that holds the credential store)
+#     mount-user-with-puid0 -> exit 1 (a compose `user:` overrides the image
+#                              entrypoint's uid, so PUID=0 cannot rescue it)
+#     mount-user-unresolvable -> exit 1 (`user: "${SVC_UID}"` cannot be proven
+#                              root; the quiet "cannot tell" must not be read
+#                              as "runs as root" — §11.4.201(6))
+#     mount-dockerfile-user -> exit 1 (the downgrade hidden in a Dockerfile
+#                              `USER appuser`, invisible to a compose-key-only
+#                              reader)
+#   MOUNT-SCOPE GOLDEN-FALSE (a rule that fired on every `user:` would satisfy
+#   every golden-bad above and still be a §11.4.201(1) false-positive engine):
+#     mount-real-compose    -> exit 0 (the real tree: five services mount
+#                              in-scope paths, none declares a `user:`)
+#     mount-user-root       -> exit 0 (explicit `user: "0:0"`)
+#     mount-linuxserver-puid0 -> exit 0 (the sanctioned PUID=0 pattern with an
+#                              in-scope mount)
+#     mount-user-out-of-scope -> exit 0 (non-root `user:` on a service that
+#                              mounts NOTHING in scope — an ordinary hardened
+#                              sidecar is none of this gate's business)
+#     mount-dockerfile-user-root -> exit 0 (a trailing `USER root` is a root
+#                              declaration, not a downgrade)
+#     mount-build-no-user   -> exit 0 (boba-jackett's real shape: a build with
+#                              no USER directive at all)
+#     mount-dockerfile-user-carrier -> exit 0 (a Dockerfile COMMENT mentioning
+#                              `USER appuser` — the BOB-138 carrier class, one
+#                              more time, against the new reader)
 #
 # A gate that PASSes any golden-bad, or FAILs any golden-FALSE, is itself the
 # bluff (§11.4.107(10)) and this harness reports it.
@@ -466,7 +503,7 @@ expect_rc "build-puid1000 (build base resolves to linuxserver, PUID reverted)" 1
 
 # --- GOLDEN-BAD: resolved linuxserver base with NO PUID at all -------------
 # The defect reached by OMISSION rather than by a wrong value: the image then
-# runs the app as its `abc` default (911) -> host uid 101910.
+# runs the app as its `abc` default (911) -> host uid 100910.
 mk_ctx ctx_build_nopuid <<'DOCKERFILE'
 FROM lscr.io/linuxserver/jackett:latest
 DOCKERFILE
@@ -620,6 +657,243 @@ expect_rc "build-linuxserver-puid0-ok (resolved linuxserver base, PUID=0)" 0 \
     "linuxserver, PUID=0, PGID=0 OK" \
     "PASS: CM-OWNERSHIP-INVARIANTS"
 
+
+# --------------------------------------------------------------------------
+# MOUNT-SCOPE / RUN-AS-USER COMPLETENESS (E5, task T034 — FR-011/FR-016)
+#
+# WHY THIS SECTION EXISTS (independent review finding IMPORTANT-1, reproduced
+# 2026-08-21 against the pre-fix gate):
+#
+#   The gate asserted PUID on linuxserver services and forbade keep-id, and it
+#   NEVER READ `volumes:` OR `user:`. The reviewer appended four lines to a copy
+#   of the real docker-compose.yml —
+#
+#       attack-writer:
+#         image: python:3.12-alpine
+#         user: "1000:1000"
+#         volumes:
+#           - ${QBITTORRENT_DATA_DIR:-/mnt/DATA}:/downloads
+#
+#   — and the gate printed `PASS: CM-OWNERSHIP-INVARIANTS`, exit 0. That
+#   service's writes land at host uid 100999: the reported defect, verbatim,
+#   waved through by the gate that exists to make it un-revertable.
+#
+#   This is not an exotic construction. A well-meaning "don't run containers as
+#   root" hardening pass that adds `user: "1000:1000"` to download-proxy would
+#   silently reintroduce the defect for `config/` — including the encrypted
+#   credential store — while every existing invariant stayed green.
+#
+#   tasks.md T034 and data-model.md E5 BOTH describe the gate as asserting that
+#   every compose service mounting an in-scope path declares a route. The
+#   shipped gate contained no mount analysis at all, so T034 was marked done
+#   for a strictly weaker gate than it described.
+#
+# WHY EVERY FIXTURE HERE CARRIES A HEALTHY ANCHOR LINUXSERVER SERVICE:
+#   the same reason the build-resolved section does — without it the pre-fix
+#   gate trips its own "ZERO are linuxserver-based" clause and exits 1 for the
+#   WRONG reason, and an exit-code assertion cannot tell the two apart. Each
+#   golden-bad below was MEASURED to exit 0 on the pre-fix gate.
+# --------------------------------------------------------------------------
+
+# compose_mount <file> <service-body-lines...> — emit a compose fixture with
+# the healthy anchor service plus `svc-under-test` carrying the given lines.
+compose_mount() {
+    local out="${TMP_ROOT}/$1"; shift
+    {
+        printf 'services:\n'
+        printf '  qbittorrent:\n'
+        printf '    image: lscr.io/linuxserver/qbittorrent:latest\n'
+        printf '    environment:\n'
+        printf '      - PUID=0\n'
+        printf '      - PGID=0\n'
+        printf '  svc-under-test:\n'
+        local line
+        for line in "$@"; do
+            printf '%s\n' "${line}"
+        done
+    } >"${out}"
+    echo "${out}"
+}
+
+# --- GOLDEN-BAD: the reviewer's exact attack, verbatim --------------------
+C_ATTACK="${TMP_ROOT}/compose_attack_writer.yml"
+{
+    cat "${REAL_COMPOSE}"
+    printf '\n  attack-writer:\n'
+    printf '    image: python:3.12-alpine\n'
+    printf '    user: "1000:1000"\n'
+    printf '    volumes:\n'
+    printf '      - ${QBITTORRENT_DATA_DIR:-/mnt/DATA}:/downloads\n'
+} >"${C_ATTACK}"
+expect_rc "mount-user-attack (reviewer's verbatim user:1000:1000 + in-scope mount)" 1 \
+    "${C_ATTACK}" "${OWNED_OK}" \
+    "attack-writer: mounts the declared location" \
+    'declares `user: 1000:1000`' \
+    "NOT container-root"
+
+# --- GOLDEN-BAD: the plausible hardening pass on config/ ------------------
+# `config/` holds the encrypted credential store, so a non-root `user:` here
+# reproduces the exact state that made config/boba.db unreadable to its owner.
+C_USER_CONFIG="$(compose_mount compose_user_config.yml \
+    '    image: python:3.12-alpine' \
+    '    user: "1000"' \
+    '    volumes:' \
+    '      - ./config:/config')"
+expect_rc "mount-user-config (hardening pass adds user: 1000 to a config/ writer)" 1 \
+    "${C_USER_CONFIG}" "${OWNED_OK}" \
+    "svc-under-test: mounts the declared location" \
+    'declares `user: 1000`' \
+    "host uid 100999"
+
+# --- GOLDEN-BAD: PUID=0 does NOT rescue a compose `user:` override --------
+# A compose `user:` replaces the container's entrypoint uid outright, so the
+# linuxserver entrypoint never runs as root and never drops to PUID. Reading
+# PUID=0 as sufficient here would be a gate that passes its own defect.
+C_USER_PUID0="$(compose_mount compose_user_with_puid0.yml \
+    '    image: lscr.io/linuxserver/jackett:latest' \
+    '    user: "1000:1000"' \
+    '    environment:' \
+    '      - PUID=0' \
+    '      - PGID=0' \
+    '    volumes:' \
+    '      - ${QBITTORRENT_DATA_DIR:-/mnt/DATA}:/downloads')"
+expect_rc "mount-user-with-puid0 (user: override defeats PUID=0)" 1 \
+    "${C_USER_PUID0}" "${OWNED_OK}" \
+    "svc-under-test: mounts the declared location" \
+    "NOT container-root" \
+    "overrides the image entrypoint"
+
+# --- GOLDEN-BAD: a `user:` nobody can resolve is not a proven root --------
+# §11.4.201(6): the quiet "cannot tell" must not be read as "runs as root".
+C_USER_VAR="$(compose_mount compose_user_var.yml \
+    '    image: python:3.12-alpine' \
+    '    user: "${SVC_UID}"' \
+    '    volumes:' \
+    '      - ./config:/config')"
+expect_rc "mount-user-unresolvable (user: \${SVC_UID} cannot be proven root)" 1 \
+    "${C_USER_VAR}" "${OWNED_OK}" \
+    "svc-under-test: mounts the declared location" \
+    'declares `user: ${SVC_UID}`' \
+    "not statically resolvable"
+
+# --- GOLDEN-BAD: the downgrade hidden in a Dockerfile USER directive ------
+# A build-based service has no compose `user:` at all; the downgrade lives in
+# its Dockerfile. Reading only the compose key would leave this blind.
+mk_ctx ctx_user_dockerfile <<'DOCKERFILE'
+FROM alpine:3.20
+RUN adduser -D -u 1000 appuser
+USER appuser
+DOCKERFILE
+C_USER_DF="$(compose_mount compose_user_dockerfile.yml \
+    '    build:' \
+    '      context: ./ctx_user_dockerfile' \
+    '    volumes:' \
+    '      - ./config:/config')"
+expect_rc "mount-dockerfile-user (USER appuser downgrade in the build)" 1 \
+    "${C_USER_DF}" "${OWNED_OK}" \
+    "svc-under-test: mounts the declared location" \
+    "USER appuser" \
+    "NOT container-root"
+
+# --------------------------------------------------------------------------
+# MOUNT-SCOPE GOLDEN-FALSE (§11.4.201(1) — the mount rule must not refuse a
+# healthy tree; a rule that fired on every `user:` would satisfy every
+# golden-bad above and still be a false-positive engine)
+# --------------------------------------------------------------------------
+
+# (a) the real docker-compose.yml as it stands today — five services mount
+#     in-scope paths and NONE declares a `user:`; every one runs as container
+#     root, which is the measured-correct route. Covered by golden-good above
+#     and by real-tree below; asserted here on the INFO line so the pass is
+#     positive evidence rather than a bare exit code (§11.4.245).
+expect_rc "mount-real-compose (every in-scope mounter runs as container root)" 0 \
+    "${COMPOSE_GOOD}" "${OWNED_OK}" \
+    "runs as container root" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
+
+# (b) an EXPLICIT root user: is the sanctioned way to say it out loud.
+C_USER_ROOT="$(compose_mount compose_user_root.yml \
+    '    image: python:3.12-alpine' \
+    '    user: "0:0"' \
+    '    volumes:' \
+    '      - ./config:/config')"
+expect_rc "mount-user-root (explicit user: \"0:0\" is container root)" 0 \
+    "${C_USER_ROOT}" "${OWNED_OK}" \
+    'svc-under-test: mounts declared scope' \
+    "runs as container root" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
+
+# (c) the sanctioned linuxserver pattern: PUID=0, no `user:`, mounts in scope.
+C_LS_PUID0_MOUNT="$(compose_mount compose_ls_puid0_mount.yml \
+    '    image: lscr.io/linuxserver/jackett:latest' \
+    '    environment:' \
+    '      - PUID=0' \
+    '      - PGID=0' \
+    '    volumes:' \
+    '      - ${QBITTORRENT_DATA_DIR:-/mnt/DATA}:/downloads')"
+expect_rc "mount-linuxserver-puid0 (sanctioned PUID=0 pattern, in-scope mount)" 0 \
+    "${C_LS_PUID0_MOUNT}" "${OWNED_OK}" \
+    "svc-under-test: image=lscr.io/linuxserver/jackett:latest -> linuxserver, PUID=0, PGID=0 OK" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
+
+# (d) a non-root `user:` on a service that mounts NOTHING in scope is none of
+#     this gate's business. Refusing it would be the §11.4.201(1) false
+#     positive — and would refuse a perfectly ordinary hardened sidecar.
+C_USER_OOS="$(compose_mount compose_user_out_of_scope.yml \
+    '    image: python:3.12-alpine' \
+    '    user: "1000:1000"' \
+    '    volumes:' \
+    '      - ./frontend:/app')"
+expect_rc "mount-user-out-of-scope (non-root user:, no in-scope mount)" 0 \
+    "${C_USER_OOS}" "${OWNED_OK}" \
+    "svc-under-test: mounts nothing in the declared ownership scope" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
+
+# (e) `USER root` in a Dockerfile is a root declaration, not a downgrade.
+mk_ctx ctx_user_root_df <<'DOCKERFILE'
+FROM alpine:3.20
+RUN adduser -D -u 1000 appuser
+USER appuser
+USER root
+DOCKERFILE
+C_USER_ROOT_DF="$(compose_mount compose_user_root_df.yml \
+    '    build:' \
+    '      context: ./ctx_user_root_df' \
+    '    volumes:' \
+    '      - ./config:/config')"
+expect_rc "mount-dockerfile-user-root (last USER root is not a downgrade)" 0 \
+    "${C_USER_ROOT_DF}" "${OWNED_OK}" \
+    "runs as container root" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
+
+# (f) boba-jackett's real shape: build-based, no USER directive anywhere,
+#     mounts ./config. It was MEASURED to write as host uid 1000 as-is.
+C_USER_NO_DF="$(compose_mount compose_user_no_directive.yml \
+    '    build:' \
+    '      context: ./ctx_build_alpine' \
+    '    volumes:' \
+    '      - ./config:/config')"
+expect_rc "mount-build-no-user (build service with no USER directive)" 0 \
+    "${C_USER_NO_DF}" "${OWNED_OK}" \
+    "runs as container root" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
+
+# (g) a Dockerfile COMMENT mentioning USER must not read as a downgrade —
+#     the carrier guard, one more time, on the new reader (BOB-138 class).
+mk_ctx ctx_user_comment_df <<'DOCKERFILE'
+FROM alpine:3.20
+# We used to run `USER appuser` here before the ownership fix landed.
+RUN echo "runs as root on purpose"
+DOCKERFILE
+C_USER_COMMENT_DF="$(compose_mount compose_user_comment_df.yml \
+    '    build:' \
+    '      context: ./ctx_user_comment_df' \
+    '    volumes:' \
+    '      - ./config:/config')"
+expect_rc "mount-dockerfile-user-carrier (comment mentioning USER appuser)" 0 \
+    "${C_USER_COMMENT_DF}" "${OWNED_OK}" \
+    "runs as container root" \
+    "PASS: CM-OWNERSHIP-INVARIANTS"
 
 # --------------------------------------------------------------------------
 # Real-tree smoke: the gate with NO arguments, against the actual checkout

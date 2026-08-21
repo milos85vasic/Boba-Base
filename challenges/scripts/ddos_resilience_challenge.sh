@@ -176,25 +176,112 @@ tally_rc() {
   awk -v rc="$2" '$2 == rc' "$1" 2>/dev/null | wc -l | tr -d '[:space:]'
 }
 
-# --- §11.4.107(10)-style self-validation: prove the crash-detector can see -
-# a genuinely broken endpoint. Spins up two THROWAWAY local python3 servers
-# (never the real boba stack) — one that always answers 200, one that always
-# answers 500 — and asserts our detection logic PASSes the good one and
-# FAILs the bad one. This validates assertion (a)'s detector honesty; the
-# rate-limit detector (b) has no equivalent synthetic fixture in this round
-# (documented gap — see docs/testing/ddos_resilience.md "Self-validation
-# scope").
-if [ "$MODE" = "--self-validate" ]; then
+# --- the rate-limit detector: ONE implementation, two consumers -------------
+# §11.4.249 (producer != oracle): the live run and --self-validate call the
+# SAME functions below, so a mutation to the detector breaks the self-test
+# too. A second copy inside the self-test would validate the copy, not the
+# detector that actually mints live verdicts — a tautology.
+#
+# ratelimit_classify answers the only question the detector asks: did this
+# endpoint emit any 429 under the burst? It matches on FIELD 1 of the probe
+# log — the curl-reported HTTP STATUS CODE — and never on response bodies or
+# headers. §11.4.201(7)(a): a token that MENTIONS rate limiting is a CARRIER,
+# not the thing; the golden-FALSE carrier fixture in --self-validate locks
+# that structural match in so it cannot regress to a substring match.
+ratelimit_classify() {
+  local n429
+  n429=$(tally_field "$1" '^429')
+  if [ "${n429:-0}" -gt 0 ] 2>/dev/null; then echo "engaged"; else echo "absent"; fi
+}
+
+# ratelimit_verdict_kind maps (class, RED_MODE) -> PASS|FAIL|SKIP. Pure: it
+# prints the kind and nothing else and touches no counters, so
+# --self-validate can assert the FULL truth table without side effects.
+#   engaged + GREEN -> PASS  a configured limiter demonstrably fires
+#   engaged + RED   -> FAIL  RED reproduces the ABSENCE; a 429 means fixed
+#   absent  + GREEN -> SKIP  honest §11.4.3 extension_absent, never a bluff
+#   absent  + RED   -> PASS  RED reproduces boba's real current state
+ratelimit_verdict_kind() {
+  case "$1/$2" in
+    engaged/1) echo FAIL ;;
+    engaged/*) echo PASS ;;
+    absent/1)  echo PASS ;;
+    *)         echo SKIP ;;
+  esac
+}
+
+# §11.4.263: never signal a pgid, never trust an unset pid. Validate as an
+# integer > 1 before any kill — kill(-1)/killpg(1) SIGKILLs every process of
+# this uid, the exact BOB-126 forced-logout mechanism.
+kill_pid_safe() {
+  local p="${1:-}"
+  case "$p" in ''|*[!0-9]*) return 0 ;; esac
+  [ "$p" -gt 1 ] 2>/dev/null || return 0
+  kill "$p" >/dev/null 2>&1
+  return 0
+}
+
+# --- §11.4.107(10) self-validation: prove BOTH detectors can actually see --
+# Spins up THROWAWAY local python3 servers (never the real boba stack) and
+# asserts each detector distinguishes a healthy fixture from a broken one.
+# An analyzer that PASSes its own golden-BAD fixture is itself the bluff.
+#
+# Detector 1 — CRASH RESISTANCE (assertion (a)):
+#   golden-GOOD   always 200                  -> must NOT be flagged
+#   golden-BAD    always 500                  -> must see 30/30 5xx
+#
+# Detector 2 — RATE LIMITING (assertion (b)) — added by BOB-114, closing the
+# BOB-074 gap where this detector had NO fixture at all and had therefore
+# never been observed to FAIL (unvalidated instrumentation, §11.4.115(F);
+# the §1.1 mutation "make the 429 tally always report 999" left the old
+# self-test fully green, proving it was blind to a detector that would
+# certify a completely unprotected deployment as rate-limited):
+#   golden-GOOD   200 up to a threshold, 429 past it -> class MUST be
+#                 "engaged". This drives the detector's positive arm, which
+#                 no fixture had ever exercised.
+#   golden-BAD    always 200, never 429 and never 503, no matter the burst
+#                 -> class MUST be "absent". This is the artifact BOB-114
+#                 names: a deployment with no rate limiting at all.
+#   golden-FALSE-WITH-CARRIER (§11.4.201(7)(a), and (1): a false-positive
+#                 refusal is as forbidden as a false pass) — 200 responses
+#                 carrying X-RateLimit-Limit / X-RateLimit-Remaining /
+#                 Retry-After headers AND a body that literally reads
+#                 "429 Too Many Requests: rate limit exceeded", while
+#                 enforcing nothing. A server that ADVERTISES a limit it
+#                 never applies is the exact lookalike a substring-matching
+#                 detector false-fires on; class MUST STILL be "absent".
+#   Plus the full (class x RED_MODE) verdict truth table, so both polarity
+#   arms of ratelimit_verdict_kind are exercised, not just the one boba's
+#   current limiter-less state happens to hit.
+#
+# Returns 0 = detectors honest, 1 = a detector failed its own fixtures.
+run_self_validation() {
   echo "=== ddos_resilience_challenge: self-validate ==="
   if ! command -v python3 >/dev/null 2>&1; then
-    echo "SKIP: python3 not found — cannot spin up golden-good/golden-bad fixtures"
-    exit 0
+    echo "SKIP: python3 not found (reason=tooling_absent) — cannot spin up golden fixtures"
+    return 0
   fi
+  # Fixture probes are deliberately smaller than a live tier: these are
+  # localhost throwaway servers, so 12 requests at c=6 already drives every
+  # detector arm, and fewer forks means less wall-clock on a loaded host.
+  # The self-test also runs under its OWN, larger wall-clock budget: the
+  # 12s live budget exists to bound a genuinely-slow REAL backend, and
+  # borrowing it here would let ordinary host load TRUNCATE the fixture
+  # sample and turn a healthy detector into a false FAIL (§11.4.201(1)).
+  # SV_MIN_SAMPLE is the floor below which a truncated sample is not
+  # evidence either way (§11.4.201(6)) and the self-test says so instead of
+  # guessing.
+  local SV_PROBE_N=12 SV_PROBE_C=6 SV_MIN_SAMPLE=8
+  local sv_saved_budget="$TIER_WALLCLOCK_BUDGET_S"
+  TIER_WALLCLOCK_BUDGET_S=30
+  local tmp
   tmp="$(mktemp -d)"
+  sv_pids=()
   cleanup_sv() {
-    [ -n "${good_pid:-}" ] && kill "$good_pid" >/dev/null 2>&1
-    [ -n "${bad_pid:-}" ] && kill "$bad_pid" >/dev/null 2>&1
+    local p
+    for p in ${sv_pids[@]+"${sv_pids[@]}"}; do kill_pid_safe "$p"; done
     rm -rf "$tmp"
+    TIER_WALLCLOCK_BUDGET_S="$sv_saved_budget"
   }
   trap cleanup_sv EXIT
 
@@ -210,8 +297,9 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
-port = int(sys.argv[1])
-ThreadingHTTPServer(("127.0.0.1", port), H).serve_forever()
+srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+print("PORT=%d" % srv.server_address[1], flush=True)
+srv.serve_forever()
 PYEOF
   cat > "$tmp/bad_server.py" <<'PYEOF'
 import sys
@@ -225,61 +313,229 @@ class H(BaseHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
-port = int(sys.argv[1])
-ThreadingHTTPServer(("127.0.0.1", port), H).serve_forever()
+srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+print("PORT=%d" % srv.server_address[1], flush=True)
+srv.serve_forever()
 PYEOF
 
-  good_port=18743
-  bad_port=18744
-  python3 "$tmp/good_server.py" "$good_port" &
-  good_pid=$!
-  python3 "$tmp/bad_server.py" "$bad_port" &
-  bad_pid=$!
+  # golden-GOOD for the rate-limit detector: a limiter that really fires.
+  cat > "$tmp/rl_enforcing_server.py" <<'PYEOF'
+import sys, threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-  # Wait for both to accept connections (bounded poll, host-safe).
-  ok=0
-  for _ in $(seq 1 30); do
-    if curl -sS -o /dev/null --max-time 1 "http://127.0.0.1:$good_port/" 2>/dev/null \
-       && curl -sS -o /dev/null --max-time 1 "http://127.0.0.1:$bad_port/" 2>/dev/null; then
-      ok=1
-      break
-    fi
-    sleep 0.1
-  done
-  if [ "$ok" -ne 1 ]; then
-    echo "FAIL: self-validate — golden fixtures never came up"
-    exit 1
-  fi
+LIMIT = int(sys.argv[1]) if len(sys.argv) > 1 else 5
+_lock = threading.Lock()
+_seen = 0
 
-  goodfile="$tmp/good.log"
-  badfile="$tmp/bad.log"
-  run_curl_status_probe "http://127.0.0.1:$good_port/" 30 10 "$goodfile"
-  run_curl_status_probe "http://127.0.0.1:$bad_port/" 30 10 "$badfile"
+class H(BaseHTTPRequestHandler):
+    def do_GET(self):
+        global _seen
+        with _lock:
+            _seen += 1
+            n = _seen
+        if n > LIMIT:
+            self.send_response(429)
+            self.send_header("Retry-After", "1")
+            self.end_headers()
+            self.wfile.write(b"429 Too Many Requests")
+        else:
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"ok")
+    def log_message(self, *a):
+        pass
 
+srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+print("PORT=%d" % srv.server_address[1], flush=True)
+srv.serve_forever()
+PYEOF
+
+  # golden-BAD for the rate-limit detector: no limiting whatsoever. Never a
+  # 429, never a 503, no matter how hard the burst hits it.
+  cat > "$tmp/rl_absent_server.py" <<'PYEOF'
+import sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+class H(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"ok - unlimited, this server enforces no request rate limit")
+    def log_message(self, *a):
+        pass
+
+srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+print("PORT=%d" % srv.server_address[1], flush=True)
+srv.serve_forever()
+PYEOF
+
+  # golden-FALSE-WITH-CARRIER: every TEXTUAL signal of rate limiting, zero
+  # enforcement. Status stays 200 forever.
+  cat > "$tmp/rl_carrier_server.py" <<'PYEOF'
+import sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+class H(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("X-RateLimit-Limit", "5")
+        self.send_header("X-RateLimit-Remaining", "0")
+        self.send_header("X-RateLimit-Policy", "429-on-exceed")
+        self.send_header("Retry-After", "1")
+        self.end_headers()
+        self.wfile.write(
+            b"429 Too Many Requests: rate limit exceeded -- ADVISORY TEXT ONLY. "
+            b"This server advertises a limit it never enforces; the status line "
+            b"stays 200 forever. A detector that matches this is matching a "
+            b"carrier, not the thing."
+        )
+    def log_message(self, *a):
+        pass
+
+srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+print("PORT=%d" % srv.server_address[1], flush=True)
+srv.serve_forever()
+PYEOF
+
+  # Start a fixture and learn the kernel-assigned port from its own stdout.
+  # Port 0 + read-back removes the fixed-port collision that would make this
+  # self-test flaky (§11.4.248 — a flaky gate is a bluff). ThreadingHTTPServer
+  # binds AND listens in its constructor, so the printed PORT= line is itself
+  # the readiness signal: no HTTP poll is needed, and none is sent (a poll
+  # would consume the enforcing fixture's limit budget).
+  sv_last_port=""
+  sv_start_server() {
+    local script="$1" portfile="$2"
+    shift 2
+    : > "$portfile"
+    python3 "$script" "$@" > "$portfile" 2>/dev/null &
+    local pid=$!
+    sv_pids+=("$pid")
+    sv_last_port=""
+    local i
+    for ((i = 0; i < 100; i++)); do
+      sv_last_port=$(sed -n 's/^PORT=\([0-9][0-9]*\)$/\1/p' "$portfile" 2>/dev/null | head -1)
+      [ -n "$sv_last_port" ] && return 0
+      sleep 0.05
+    done
+    return 1
+  }
+
+  local good_port bad_port rl_on_port rl_off_port rl_carrier_port
+  if ! sv_start_server "$tmp/good_server.py"        "$tmp/p_good.txt";    then echo "FAIL: self-validate — golden-good fixture never bound a port";      cleanup_sv; trap - EXIT; return 1; fi
+  good_port="$sv_last_port"
+  if ! sv_start_server "$tmp/bad_server.py"         "$tmp/p_bad.txt";     then echo "FAIL: self-validate — golden-bad fixture never bound a port";       cleanup_sv; trap - EXIT; return 1; fi
+  bad_port="$sv_last_port"
+  if ! sv_start_server "$tmp/rl_enforcing_server.py" "$tmp/p_rlon.txt" 2; then echo "FAIL: self-validate — rate-limit enforcing fixture never bound a port"; cleanup_sv; trap - EXIT; return 1; fi
+  rl_on_port="$sv_last_port"
+  if ! sv_start_server "$tmp/rl_absent_server.py"   "$tmp/p_rloff.txt";   then echo "FAIL: self-validate — rate-limit absent fixture never bound a port"; cleanup_sv; trap - EXIT; return 1; fi
+  rl_off_port="$sv_last_port"
+  if ! sv_start_server "$tmp/rl_carrier_server.py"  "$tmp/p_rlcar.txt";   then echo "FAIL: self-validate — rate-limit carrier fixture never bound a port"; cleanup_sv; trap - EXIT; return 1; fi
+  rl_carrier_port="$sv_last_port"
+
+  local sv_bad=0
+
+  # --- Detector 1: crash resistance -----------------------------------------
+  local goodfile="$tmp/good.log" badfile="$tmp/bad.log"
+  run_curl_status_probe "http://127.0.0.1:$good_port/" "$SV_PROBE_N" "$SV_PROBE_C" "$goodfile"
+  run_curl_status_probe "http://127.0.0.1:$bad_port/"  "$SV_PROBE_N" "$SV_PROBE_C" "$badfile"
+
+  local good_n good_5xx good_fail bad_n bad_5xx bad_fail
+  good_n=$(wc -l < "$goodfile" 2>/dev/null | tr -d '[:space:]')
   good_5xx=$(tally_field "$goodfile" '^5')
   good_fail=$(tally_nonzero_rc "$goodfile")
+  bad_n=$(wc -l < "$badfile" 2>/dev/null | tr -d '[:space:]')
   bad_5xx=$(tally_field "$badfile" '^5')
   bad_fail=$(tally_nonzero_rc "$badfile")
 
-  echo "golden-good: 5xx=$good_5xx conn_fail=$good_fail (expect both 0)"
-  echo "golden-bad:  5xx=$bad_5xx conn_fail=$bad_fail (expect 5xx=30)"
-
-  sv_bad=0
+  echo "--- detector 1: crash resistance ---"
+  echo "  golden-good: n=$good_n 5xx=$good_5xx conn_fail=$good_fail (want 5xx=0 conn_fail=0)"
+  echo "  golden-bad:  n=$bad_n 5xx=$bad_5xx conn_fail=$bad_fail (want 5xx=n)"
+  # Assertions are SAMPLE-RELATIVE, never against the literal request count:
+  # run_curl_status_probe stops launching once its wall-clock budget is spent,
+  # so a hard "== 30" would turn ordinary host load into a false FAIL.
+  if ! [ "${good_n:-0}" -ge "$SV_MIN_SAMPLE" ] 2>/dev/null; then
+    echo "  [SELF-VAL BAD] golden-good sample too small ($good_n < $SV_MIN_SAMPLE) — truncated sample is not evidence either way (§11.4.201(6)); host is too loaded to validate the crash detector"
+    sv_bad=1
+  fi
   if [ "$good_5xx" != "0" ] || [ "$good_fail" != "0" ]; then
-    echo "[SELF-VAL BAD] crash-detector flagged the golden-GOOD fixture as crashing"
+    echo "  [SELF-VAL BAD] crash-detector flagged the golden-GOOD fixture as crashing"
     sv_bad=1
   fi
-  if [ "$bad_5xx" != "30" ]; then
-    echo "[SELF-VAL BAD] crash-detector did NOT see all 30/30 5xx on the golden-BAD fixture"
+  if ! [ "${bad_n:-0}" -ge "$SV_MIN_SAMPLE" ] 2>/dev/null; then
+    echo "  [SELF-VAL BAD] golden-bad sample too small ($bad_n < $SV_MIN_SAMPLE) — truncated sample is not evidence either way (§11.4.201(6))"
+    sv_bad=1
+  elif [ "$bad_5xx" != "$bad_n" ]; then
+    echo "  [SELF-VAL BAD] crash-detector saw only $bad_5xx of $bad_n responses as 5xx on the golden-BAD fixture (every single one is a 500)"
     sv_bad=1
   fi
 
+  # --- Detector 2: rate limiting (BOB-114) ----------------------------------
+  # Drives the REAL detector (ratelimit_classify / ratelimit_verdict_kind —
+  # the same functions the live run mints verdicts from), never a copy.
+  echo "--- detector 2: rate limiting ---"
+  rl_check() {
+    # rl_check <label> <url> <expected-class>
+    local label="$1" url="$2" want="$3"
+    local log="$tmp/rl_${label}.log"
+    run_curl_status_probe "$url" "$SV_PROBE_N" "$SV_PROBE_C" "$log"
+    local n n429 n5xx got kg kr want_kg want_kr
+    n=$(wc -l < "$log" 2>/dev/null | tr -d '[:space:]')
+    n429=$(tally_field "$log" '^429')
+    n5xx=$(tally_field "$log" '^5')
+    got=$(ratelimit_classify "$log")
+    kg=$(ratelimit_verdict_kind "$got" 0)
+    kr=$(ratelimit_verdict_kind "$got" 1)
+    if [ "$want" = "engaged" ]; then want_kg=PASS; want_kr=FAIL; else want_kg=SKIP; want_kr=PASS; fi
+    echo "  fixture '$label': n=$n 429=$n429 5xx=$n5xx -> class=$got (want=$want)  verdict GREEN=$kg RED=$kr"
+    if [ "$got" != "$want" ]; then
+      echo "  [SELF-VAL BAD] rate-limit detector classified '$label' as '$got', expected '$want'"
+      sv_bad=1
+    fi
+    if [ "$kg" != "$want_kg" ] || [ "$kr" != "$want_kr" ]; then
+      echo "  [SELF-VAL BAD] rate-limit verdict table wrong for '$label': GREEN=$kg (want $want_kg) RED=$kr (want $want_kr)"
+      sv_bad=1
+    fi
+    if ! [ "${n:-0}" -ge "$SV_MIN_SAMPLE" ] 2>/dev/null; then
+      echo "  [SELF-VAL BAD] fixture '$label' sample too small ($n < $SV_MIN_SAMPLE) — truncated sample is not evidence either way (§11.4.201(6))"
+      sv_bad=1
+    fi
+    if [ "$want" = "engaged" ]; then
+      if ! [ "${n429:-0}" -ge 1 ] 2>/dev/null; then
+        echo "  [SELF-VAL BAD] enforcing fixture '$label' produced 0 x 429 — the detector's 'engaged' arm was never driven"
+        sv_bad=1
+      fi
+    else
+      if [ "${n429:-0}" != "0" ]; then
+        echo "  [SELF-VAL BAD] non-enforcing fixture '$label' produced ${n429} x 429 — detector saw a limit that does not exist"
+        sv_bad=1
+      fi
+      if [ "${n5xx:-0}" != "0" ]; then
+        echo "  [SELF-VAL BAD] non-enforcing fixture '$label' produced ${n5xx} x 5xx — fixture is not a clean never-429/503 stub"
+        sv_bad=1
+      fi
+    fi
+  }
+  rl_check enforcing "http://127.0.0.1:$rl_on_port/"      engaged
+  rl_check absent    "http://127.0.0.1:$rl_off_port/"     absent
+  rl_check carrier   "http://127.0.0.1:$rl_carrier_port/" absent
+
+  cleanup_sv
+  trap - EXIT
   if [ "$sv_bad" -eq 0 ]; then
-    echo "PASS: self-validate — crash-resistance detector correctly distinguishes golden-good from golden-bad"
-    exit 0
+    echo "PASS: self-validate — crash-resistance AND rate-limit detectors each"
+    echo "      distinguish their golden-good from their golden-bad fixture, and the"
+    echo "      rate-limit detector does NOT fire on the advertises-but-never-enforces"
+    echo "      carrier (§11.4.107(10) + §11.4.201(1)(7)(a))"
+    return 0
   fi
   echo "FAIL: self-validate — detector honesty check failed"
-  exit 1
+  return 1
+}
+
+if [ "$MODE" = "--self-validate" ]; then
+  run_self_validation
+  exit $?
 fi
 
 # --- §11.4.115 RED/GREEN regression guard: BOB-112 /healthz TTL cache ------
@@ -398,6 +654,23 @@ if [ "$MODE" = "--healthz" ]; then
   exit 1
 fi
 
+# --- §11.4.115(F): an unvalidated detector mints no verdicts ------------------
+# BOB-114 wired the self-validation to run AUTOMATICALLY on every live
+# invocation — including the bare no-arg form challenges/scripts/
+# run_all_challenges.sh uses — instead of waiting for an operator to remember
+# `--self-validate`. Registration is not coverage (§11.4.226): before this,
+# the self-test existed but nothing ever executed it in the normal path, so
+# both detectors could have rotted silently between manual runs. Measured
+# cost of running it first: ~1s, against this challenge's 180s aggregator
+# budget. python3-less hosts SKIP honestly and the live run proceeds.
+if ! run_self_validation; then
+  echo ""
+  echo "FAIL: ddos_resilience_challenge — detector self-validation FAILED; refusing to"
+  echo "      mint live verdicts from unvalidated instrumentation (§11.4.115(F))."
+  exit 1
+fi
+echo ""
+
 # --- Live run ----------------------------------------------------------------
 echo "=== ddos_resilience_challenge (BOB-074) ==="
 echo "RED_MODE=$RED_MODE  (0=GREEN guard, 1=reproduce pre-fix defect state)"
@@ -465,22 +738,27 @@ for name in "${EP_NAMES[@]}"; do
   fi
 
   # --- (b) rate limiting: real RED/GREEN polarity, no invented threshold ---
+  # The classification and the verdict kind come from ratelimit_classify /
+  # ratelimit_verdict_kind — the SAME two functions --self-validate drives
+  # its golden-good / golden-bad / golden-false-carrier fixtures through
+  # (BOB-114). This live verdict is therefore minted by instrumentation that
+  # has been OBSERVED to FAIL on a genuinely broken artifact, which is what
+  # §11.4.115(F) requires before a detector may mint verdicts at all.
   heaviest_file="$workdir/${name}_c${heaviest_c}.log"
   r429_heaviest=$(tally_field "$heaviest_file" '^429')
-  if [ "$r429_heaviest" -gt 0 ]; then
-    if [ "$RED_MODE" = "1" ]; then
-      verdict FAIL "$name: rate limiting IS engaged ($r429_heaviest x 429 at c=$heaviest_c) — RED expected its absence; defect appears fixed"
-    else
-      verdict PASS "$name: rate limiting engaged — $r429_heaviest x 429 observed at heaviest tier c=$heaviest_c"
-    fi
-  else
-    if [ "$RED_MODE" = "1" ]; then
-      verdict PASS "$name: confirmed absence of rate limiting at c=$heaviest_c (RED reproduces the real current defect)"
-    else
+  rl_class=$(ratelimit_classify "$heaviest_file")
+  rl_kind=$(ratelimit_verdict_kind "$rl_class" "$RED_MODE")
+  case "$rl_class/$rl_kind" in
+    engaged/FAIL)
+      verdict FAIL "$name: rate limiting IS engaged ($r429_heaviest x 429 at c=$heaviest_c) — RED expected its absence; defect appears fixed" ;;
+    engaged/PASS)
+      verdict PASS "$name: rate limiting engaged — $r429_heaviest x 429 observed at heaviest tier c=$heaviest_c" ;;
+    absent/PASS)
+      verdict PASS "$name: confirmed absence of rate limiting at c=$heaviest_c (RED reproduces the real current defect)" ;;
+    *)
       verdict SKIP "$name: no rate limiting configured (reason=extension_absent — no rate-limit middleware/proxy exists anywhere in boba's stack as of 2026-08-18; tracked as BOB-074 followup, see docs/testing/ddos_resilience.md)"
-      notes+=("$name: rate limiting SKIP'd — extension_absent, followup filed")
-    fi
-  fi
+      notes+=("$name: rate limiting SKIP'd — extension_absent, followup filed") ;;
+  esac
 
   # --- (c) cross-endpoint isolation while this endpoint is under load ---
   sibling_file="$workdir/${name}_siblings.log"

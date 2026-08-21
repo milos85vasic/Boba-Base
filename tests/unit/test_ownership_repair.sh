@@ -97,8 +97,17 @@
 # real-identity resolution, not a substring guess).
 #
 # §11.4.14: every fixture is a mktemp tree reaped by a trap on every exit path.
-# The real download tree and the real config/owned_paths.yaml are never read
-# and never touched.
+# The real download tree is never read and never touched, and NOTHING outside a
+# mktemp sandbox is ever MUTATED.
+#
+# ONE READ-ONLY EXCEPTION, added deliberately (Case 10): the shipped
+# config/owned_paths.yaml and docker-compose.yml are READ — never written — to
+# assert that the declared scope covers every container-written location. That
+# assertion cannot be made against a fixture: a fixture scope is whatever this
+# suite writes into it, so it would only ever prove the suite agrees with
+# itself. The property under test is a property of the SHIPPED files, so the
+# shipped files are what must be read (§11.4.201(11) — probe the artifact, not a
+# stand-in for it).
 
 set -uo pipefail
 
@@ -142,6 +151,13 @@ echo "  5 interrupt/resume: kill mid-run -> marker ABSENT -> re-run completes (F
 echo "  6 scope re-arm    : scope change invalidates the marker (data-model E2)"
 echo "  7 honest failure  : unrepairable item reported, does NOT exit 0 (FR-006)"
 echo "  8 symlink fence   : a link inside scope does NOT carry the repair outside (FR-005)"
+echo "  9 preserve_mode fence: preserve_mode must not chmod THROUGH a symlink (FR-005+FR-015)"
+echo " 10 scope coverage  : the SHIPPED scope declares every rw bind-mount source (FR-012)"
+echo " 11 record loss     : a destroyed change record is REPORTED, not silently replaced"
+echo " 12 record rotation : a superseded change record is preserved as its own artifact"
+echo " 13 state dir       : OWNERSHIP_STATE_DIR overrides; the default path is unchanged"
+echo " 14 relative scope  : a repo-relative entry resolves against the project root (E1)"
+echo " 15 dotenv shape    : the shipped .env entry keeps a 600 credential file at 600"
 echo
 
 # ---------------------------------------------------------------------------
@@ -970,6 +986,403 @@ else
         pass "preserve_mode symlink fence: the link is still a link pointing at its original target"
     else
         fail "preserve_mode symlink fence: the link was resolved, rewritten or replaced"
+    fi
+fi
+
+
+
+# ===========================================================================
+# CASE 10 — the SHIPPED scope declares every container-written location.
+#
+# WHY THIS CASE READS THE REAL FILES (the one read-only exception, see header).
+# FR-012's scope is "ALL container-written paths". A location the containers
+# write but that config/owned_paths.yaml does not declare is invisible to the
+# whole feature at once: the precondition never probes it, the repair never
+# walks it, and the pre-build gate reports nothing about it. That is not a
+# backlog question ("is it wrongly owned TODAY?") but a DETECTION question, and
+# owned_paths.yaml's own header answers it: "A location the system writes but
+# that is absent here is UNDECLARED, and the gate reports it rather than
+# silently passing — silence is not an exemption (§11.4.201(6))."
+#
+# The expected set is DERIVED from docker-compose.yml, never hardcoded here: a
+# hardcoded list is a second source of truth that drifts the moment a mount is
+# added, which is the very way the gap arose (§11.4.238 — the automated check
+# must be the discoverer).
+#
+# READ-ONLY mounts are excluded by construction: a container cannot write
+# through `:ro`, so it cannot create wrongly-owned content there.
+# A declared ANCESTOR counts as coverage — `config/jackett` is written rw by
+# the jackett service and is covered by the declared `config` tree.
+# ===========================================================================
+echo
+echo "Case 10: the SHIPPED scope declares every container-written (rw bind-mount) location"
+_C10_COMPOSE="${PROJECT_ROOT}/docker-compose.yml"
+_C10_SCOPE="${PROJECT_ROOT}/config/owned_paths.yaml"
+if [[ ! -f "${_C10_COMPOSE}" ]]; then
+    fail "scope coverage: ${_C10_COMPOSE} missing — cannot derive the container-written set"
+elif [[ ! -f "${_C10_SCOPE}" ]]; then
+    fail "scope coverage: ${_C10_SCOPE} missing — nothing declares the ownership scope"
+else
+    _C10_OUT="$(python3 - "${_C10_COMPOSE}" "${_C10_SCOPE}" "${PROJECT_ROOT}" <<'PYEOF'
+import os, re, sys, yaml
+
+compose_p, scope_p, root = sys.argv[1], sys.argv[2], sys.argv[3]
+
+def expand(raw):
+    def sub(m):
+        var, dflt = m.group(1), m.group(3)
+        return os.environ.get(var) or (dflt if dflt is not None else "")
+    return re.sub(r'\$\{([A-Za-z_][A-Za-z0-9_]*)(:-([^}]*))?\}', sub, raw)
+
+def split_mount(vol):
+    """Split a compose volume spec on ':' — but NEVER inside a ${...} span.
+
+    MEASURED 2026-08-21: a naive vol.split(':') cuts
+    '${QBITTORRENT_DATA_DIR:-/mnt/DATA}:/downloads' at the ':-' INSIDE the
+    default-value syntax, yielding the source '${QBITTORRENT_DATA_DIR'. That
+    reported the download root as UNDECLARED when it is the first entry in the
+    shipped scope — a §11.4.201 instrument defect producing a confident wrong
+    answer, in the very check whose job is to detect undeclared paths.
+    """
+    out, cur, depth, i = [], [], 0, 0
+    while i < len(vol):
+        c = vol[i]
+        if c == "$" and vol[i + 1:i + 2] == "{":
+            depth += 1
+            cur.append("${")
+            i += 2
+            continue
+        if c == "}" and depth > 0:
+            depth -= 1
+        if c == ":" and depth == 0:
+            out.append("".join(cur))
+            cur = []
+            i += 1
+            continue
+        cur.append(c)
+        i += 1
+    out.append("".join(cur))
+    return out
+
+
+def absolutise(p):
+    p = expand(p)
+    if not p:
+        return ""
+    if not p.startswith("/"):
+        p = os.path.join(root, p)
+    return os.path.normpath(p)
+
+# ---- the container-written set, derived from the compose file --------------
+compose = yaml.safe_load(open(compose_p)) or {}
+written = {}   # abs path -> "svc[, svc]"
+for svc, body in (compose.get("services") or {}).items():
+    for vol in ((body or {}).get("volumes") or []):
+        if not isinstance(vol, str):
+            continue
+        parts = split_mount(vol)
+        if len(parts) < 2:
+            continue
+        src, opts = parts[0], parts[2:]
+        # read-only mounts cannot produce wrongly-owned content
+        if any("ro" == o.strip() for o in opts):
+            continue
+        # named volumes are managed by the runtime, not host paths in this repo
+        if not (src.startswith("./") or src.startswith("/") or src.startswith("${")):
+            continue
+        a = absolutise(src)
+        if not a:
+            continue
+        written.setdefault(a, set()).add(svc)
+
+# ---- the declared set ------------------------------------------------------
+scope = yaml.safe_load(open(scope_p)) or {}
+declared = []
+for e in (scope.get("paths") or []):
+    a = absolutise(str(e.get("path", "")))
+    if a:
+        declared.append(a)
+
+def covered(target):
+    for d in declared:
+        if target == d or target.startswith(d.rstrip("/") + "/"):
+            return True
+    return False
+
+missing = sorted(t for t in written if not covered(t))
+for m in missing:
+    print("MISSING\t%s\t%s" % (m, ",".join(sorted(written[m]))))
+print("SUMMARY\t%d\t%d" % (len(written), len(missing)))
+PYEOF
+)"
+    _C10_RC=$?
+    if [[ "${_C10_RC}" -ne 0 || -z "${_C10_OUT}" ]]; then
+        fail "scope coverage: could not derive the container-written set (python/PyYAML failure) — this is a BLIND read, not a clean result (§11.4.201(6))"
+    else
+        _c10_total="$(printf '%s\n' "${_C10_OUT}" | awk -F'\t' '$1=="SUMMARY"{print $2}')"
+        _c10_miss="$(printf '%s\n' "${_C10_OUT}"  | awk -F'\t' '$1=="SUMMARY"{print $3}')"
+        # CONTROL NEEDLE (§11.4.201(7)(b)): a zero-missing reading is only
+        # evidence if the derivation actually saw the mounts. A derivation that
+        # found NO rw bind mounts at all is blind, and its zero says nothing.
+        if [[ -z "${_c10_total}" || "${_c10_total}" -eq 0 ]]; then
+            fail "scope coverage: derived 0 rw bind-mount sources from docker-compose.yml — the instrument is BLIND, so 'nothing missing' is not evidence"
+        elif [[ "${_c10_miss}" -eq 0 ]]; then
+            pass "scope coverage: all ${_c10_total} rw bind-mount source(s) in docker-compose.yml are declared (or covered by a declared ancestor)"
+        else
+            fail "scope coverage: ${_c10_miss}/${_c10_total} container-written location(s) are UNDECLARED — FR-012 says the scope is ALL container-written paths, and an undeclared path is invisible to the precondition, the repair AND the gate"
+            printf '%s\n' "${_C10_OUT}" | awk -F'\t' '$1=="MISSING"{printf "        UNDECLARED: %s  (written rw by: %s)\n", $2, $3}'
+        fi
+    fi
+fi
+
+# ===========================================================================
+# CASE 11 — a destroyed change record is REPORTED, never silently replaced.
+#
+# FORENSIC ANCHOR (measured on the live host, 2026-08-21): the completion
+# marker and the FR-004b change record were both written at 17:20 (the journal
+# carries "already complete for this scope (marker: logs/ownership/
+# repair-marker.json)"), and by 20:32 logs/ was EMPTY with a 19:21 mtime — a
+# repo actor had deleted the operator's recovery trail. Nothing noticed.
+#
+# The record's home is a gitignored logs/ tree that repo actors demonstrably
+# clean, so "append-only" describes this script's own discipline, NOT a
+# guarantee about the file's survival. A run that finds its predecessor's
+# record gone and quietly starts a new one reports a recovery trail it does not
+# have, which is the §11.4/§11.4.1 bluff at the durability layer. It must say so.
+# ===========================================================================
+echo
+echo "Case 11: a destroyed change record is reported, not silently replaced"
+SB7="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN7="${SB7}/fixture/t1"
+seed_tree "${IN7}" 3 "${WRONG_GID}"
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN7}" | sb_scope "${SB7}"
+
+run_repair "${SB7}"
+_C11_PROBE="${IN7}/item_00000.bin"
+mapfile -t _C11_RECORDS < <(artifact_mentions "${SB7}" "${_C11_PROBE}")
+
+if [[ "${RUN_RC}" -ne 0 ]]; then
+    fail "record loss: the seeding run exited ${RUN_RC} — no precondition to destroy"
+elif [[ "${#_C11_RECORDS[@]}" -eq 0 ]]; then
+    fail "record loss: the seeding run wrote no change record naming ${_C11_PROBE} — nothing to destroy, so this case would prove nothing"
+else
+    # Destroy exactly what an external actor destroyed: the record file(s).
+    # The marker is deliberately LEFT IN PLACE — it is the thing that still
+    # claims a completed run, and the loss is only detectable against it.
+    for _f in "${_C11_RECORDS[@]}"; do rm -f -- "${_f}"; done
+    if [[ -n "$(artifact_mentions "${SB7}" "${_C11_PROBE}")" ]]; then
+        fail "record loss: could not destroy the change record — the fixture precondition was not established"
+    else
+        run_repair "${SB7}" --force
+        if grep -qi 'change record named by the completion marker is MISSING' <<< "${RUN_OUT}"; then
+            pass "record loss: the run REPORTS that the marker's named change record is gone (FR-004b trail loss is surfaced, not swallowed)"
+        else
+            fail "record loss: the run started a fresh record SILENTLY — a destroyed FR-004b recovery trail was neither detected nor reported"
+            printf '%s\n' "${RUN_OUT}" | sed 's/^/        /' | head -8
+        fi
+    fi
+fi
+
+# ===========================================================================
+# CASE 12 — a superseded change record is PRESERVED as its own artifact.
+#
+# data-model E3 calls the record "durable" and "append-only". Appending forever
+# into ONE file makes that single file the whole trail: it is the single point
+# of loss Case 11 just demonstrated, and it also means run N's record cannot be
+# read without reading every prior run's. Rotating each run's record into its
+# own artifact preserves the superseded trail WITHOUT depending on one file
+# surviving, and makes each run's record self-contained.
+# ===========================================================================
+echo
+echo "Case 12: a superseded change record is preserved as a distinct artifact"
+SB8="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN8A="${SB8}/fixture/first"
+IN8B="${SB8}/fixture/second"
+seed_tree "${IN8A}" 3 "${WRONG_GID}"
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN8A}" | sb_scope "${SB8}"
+run_repair "${SB8}"
+_C12_A="${IN8A}/item_00000.bin"
+
+if [[ "${RUN_RC}" -ne 0 ]]; then
+    fail "record rotation: the first run exited ${RUN_RC} — no first record to supersede"
+elif [[ -z "$(artifact_mentions "${SB8}" "${_C12_A}")" ]]; then
+    fail "record rotation: the first run wrote no record naming ${_C12_A} — nothing to supersede"
+else
+    # Second run, armed by a genuine scope change (the realistic path).
+    seed_tree "${IN8B}" 3 "${WRONG_GID}"
+    printf '%s\tdownloads\tfalse\tfalse\ttrue\n%s\tdownloads\tfalse\tfalse\ttrue\n' \
+        "${IN8A}" "${IN8B}" | sb_scope "${SB8}"
+    run_repair "${SB8}"
+    _C12_B="${IN8B}/item_00000.bin"
+
+    mapfile -t _C12_FA < <(artifact_mentions "${SB8}" "${_C12_A}")
+    mapfile -t _C12_FB < <(artifact_mentions "${SB8}" "${_C12_B}")
+
+    if [[ "${#_C12_FA[@]}" -eq 0 ]]; then
+        fail "record rotation: the FIRST run's record was DESTROYED by the second run — a superseded trail must be preserved, never overwritten"
+    else
+        pass "record rotation: the first run's record survives the second run"
+    fi
+
+    if [[ "${#_C12_FB[@]}" -eq 0 ]]; then
+        fail "record rotation: the second run wrote no record naming ${_C12_B} — the second run recorded nothing"
+    else
+        # Disjointness is the rotation property: run 2 must NOT have appended
+        # into run 1's artifact, and run 1's artifact must still exist alongside.
+        _c12_shared=0
+        for _a in "${_C12_FA[@]}"; do
+            for _b in "${_C12_FB[@]}"; do
+                [[ "${_a}" == "${_b}" ]] && _c12_shared=1
+            done
+        done
+        if [[ "${_c12_shared}" -eq 0 ]]; then
+            pass "record rotation: each run's record is its own artifact (run 1 and run 2 share no record file)"
+        else
+            fail "record rotation: run 2 appended into run 1's record file — the two runs share an artifact, so ONE deletion still destroys BOTH trails (the Case 11 failure mode, unmitigated)"
+        fi
+    fi
+fi
+
+# ===========================================================================
+# CASE 13 — the state directory is overridable, and its DEFAULT is unchanged.
+#
+# STATE_DIR was a fixed constant, so an ad-hoc invocation shared the live
+# operator's marker and change record: a hand-run repair could mark the live
+# scope "complete" or interleave its records with the real ones. Overridable
+# state makes an ad-hoc run harmless. The default MUST NOT move — the live path
+# logs/ownership/ is what the operator, the journal line and the documentation
+# all already name, so this case pins it explicitly rather than trusting it.
+# ===========================================================================
+echo
+echo "Case 13: the state directory is overridable, default unchanged"
+SB9="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN9="${SB9}/fixture/statedir"
+seed_tree "${IN9}" 3 "${WRONG_GID}"
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN9}" | sb_scope "${SB9}"
+
+_C13_EXT="$(mktemp -d "${RUN_ROOT}/extstate.XXXXXXXX")"
+_C13_OUT="$(
+    cd "${SB9}" && OWNERSHIP_STATE_DIR="${_C13_EXT}" \
+        bash "${SB9}/scripts/ownership_repair.sh" --scope "${SB9}/config/owned_paths.yaml" 2>&1
+)"
+_C13_RC=$?
+_C13_FP="$(sb_fingerprint "${SB9}")"
+
+if [[ "${_C13_RC}" -ne 0 ]]; then
+    fail "state-dir override: the run exited ${_C13_RC} with OWNERSHIP_STATE_DIR set"
+    printf '%s\n' "${_C13_OUT}" | sed 's/^/        /' | head -6
+else
+    if [[ -n "${_C13_FP}" ]] && grep -rqF -- "${_C13_FP}" "${_C13_EXT}" 2>/dev/null; then
+        pass "state-dir override: the marker landed in OWNERSHIP_STATE_DIR"
+    else
+        fail "state-dir override: OWNERSHIP_STATE_DIR was ignored — no artifact there carries the scope fingerprint"
+    fi
+    if [[ ! -e "${SB9}/logs" ]]; then
+        pass "state-dir override: the DEFAULT state directory was not created when the override is set (an ad-hoc run does not touch the live trail)"
+    else
+        fail "state-dir override: the run also wrote ${SB9}/logs — the override did not redirect state, it duplicated it"
+    fi
+fi
+
+# The default must remain byte-for-byte the documented live path.
+SB9B="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN9B="${SB9B}/fixture/defaultstate"
+seed_tree "${IN9B}" 3 "${WRONG_GID}"
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN9B}" | sb_scope "${SB9B}"
+run_repair "${SB9B}"
+if [[ -f "${SB9B}/logs/ownership/repair-marker.json" ]]; then
+    pass "state-dir default: unchanged — marker at logs/ownership/repair-marker.json (the live path the journal and docs already name)"
+else
+    fail "state-dir default: logs/ownership/repair-marker.json absent — the default state location MOVED, which breaks the live path"
+fi
+
+# ===========================================================================
+# CASE 14 — a repo-relative declared path resolves against the PROJECT ROOT,
+# not the caller's cwd (data-model E1: "declared paths may be repo-relative").
+#
+# MEASURED 2026-08-21 against the pre-fix script: with a relative entry, a run
+# started from a different working directory reported
+#   "FAILED fixture/... — declared path does not exist and is not optional"
+# and exited 1, on a path that plainly exists. That is the §11.4.201(1)
+# false-positive refusal — the repair refusing on a condition that is absent.
+#
+# It is not academic: the SHIPPED scope declares `config`, `config/boba.db`,
+# `.env`, `tmp` and `download-proxy` RELATIVELY, so every one of them behaves
+# this way from any cwd but the project root. The sibling consumer
+# scripts/ownership_precondition.sh already absolutises via its `absolutise()`
+# helper, so the two consumers of ONE scope file disagreed about what a
+# relative entry means.
+# ===========================================================================
+echo
+echo "Case 14: a repo-relative declared path resolves against the project root, from any cwd"
+SB10="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN10="${SB10}/fixture/relscope"
+seed_tree "${IN10}" 3 "${WRONG_GID}"
+# The entry is deliberately RELATIVE — the shipped shape.
+printf 'fixture/relscope\tdownloads\tfalse\tfalse\ttrue\n' | sb_scope "${SB10}"
+_C14_WRONG_BEFORE="$(wrong_owned_count "${IN10}")"
+
+# Run from a cwd that is NOT the project root. `/` is chosen because it is
+# guaranteed to exist and guaranteed not to contain `fixture/relscope`.
+_C14_OUT="$(
+    cd / && bash "${SB10}/scripts/ownership_repair.sh" \
+        --scope "${SB10}/config/owned_paths.yaml" 2>&1
+)"
+_C14_RC=$?
+
+if [[ "${_C14_WRONG_BEFORE}" -eq 0 ]]; then
+    fail "relative scope: fixture seeded 0 wrongly-owned items — the fixture is blind"
+elif [[ "${_C14_RC}" -ne 0 ]]; then
+    fail "relative scope: exit ${_C14_RC} from a foreign cwd — a relative declared path was read as absent (§11.4.201(1) false-positive refusal)"
+    printf '%s\n' "${_C14_OUT}" | sed 's/^/        /' | head -6
+elif [[ "$(wrong_owned_count "${IN10}")" -ne 0 ]]; then
+    fail "relative scope: exit 0 but the tree was NOT repaired — the run resolved the relative path to somewhere else and reported success about nothing"
+else
+    pass "relative scope: a repo-relative entry was resolved against the project root and repaired from a foreign cwd"
+fi
+
+# ===========================================================================
+# CASE 15 — the SHIPPED `.env` entry shape: a mode-600 credential file declared
+# preserve_mode/optional/non-recursive keeps mode 600 exactly.
+#
+# HONESTY NOTE (§11.4.6): this case was GREEN the moment it was written. The
+# code path it exercises is the same one Case 2 already proves, so it captured
+# no RED and no defect is claimed for it. It exists as a shipped-shape pin: the
+# `.env` entry added to config/owned_paths.yaml is the FIRST preserve_mode entry
+# that is not config/boba.db, and .env is the file start.sh chmods to 0600 and
+# the file boba-jackett rewrites (bootstrap.EnsureMasterKey) through a
+# tmp+rename that REPLACES the inode. A future change that widened the
+# mode-restore step would silently widen the file holding BOBA_MASTER_KEY.
+#
+# §11.4.10: the fixture contains a variable NAME and a placeholder only. No
+# credential value is created, read, printed or logged anywhere in this suite.
+# ===========================================================================
+echo
+echo "Case 15: shipped .env entry shape — preserve_mode keeps a 600 credential file at 600"
+SB11="$(sb_new)" || { fail "could not build sandbox"; finish; }
+_C15_ENV="${SB11}/dotenv_fixture"
+printf 'PLACEHOLDER_NAME_ONLY=not-a-credential\n' > "${_C15_ENV}"
+chmod 600 "${_C15_ENV}"
+chgrp "${WRONG_GID}" "${_C15_ENV}"
+printf 'dotenv_fixture\tcredential-store\ttrue\ttrue\tfalse\n' | sb_scope "${SB11}"
+
+_C15_MODE_BEFORE="$(stat -c '%a' "${_C15_ENV}")"
+_C15_GID_BEFORE="$(stat -c '%g' "${_C15_ENV}")"
+if [[ "${_C15_MODE_BEFORE}" != "600" || "${_C15_GID_BEFORE}" == "${OP_GID}" ]]; then
+    fail "dotenv shape: fixture is mode ${_C15_MODE_BEFORE} gid ${_C15_GID_BEFORE} — a widening or a repair would be invisible"
+else
+    run_repair "${SB11}"
+    _C15_MODE_AFTER="$(stat -c '%a' "${_C15_ENV}" 2>/dev/null)"
+    _C15_GID_AFTER="$(stat -c '%g' "${_C15_ENV}" 2>/dev/null)"
+    if [[ "${_C15_MODE_AFTER}" == "600" ]]; then
+        pass "dotenv shape: credential file still mode 600 after the repair (never widened, FR-015)"
+    else
+        fail "dotenv shape: credential file went 600 -> ${_C15_MODE_AFTER} — the repair WIDENED the file that holds BOBA_MASTER_KEY"
+    fi
+    if [[ "${_C15_GID_AFTER}" == "${OP_GID}" ]]; then
+        pass "dotenv shape: credential file ownership WAS repaired (preserve_mode guards bits, not ownership)"
+    else
+        fail "dotenv shape: credential file still gid ${_C15_GID_AFTER} — preserve_mode must not stop the ownership repair itself"
     fi
 fi
 

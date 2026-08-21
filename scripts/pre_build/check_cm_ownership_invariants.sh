@@ -10,7 +10,39 @@
 #     (1) every linuxserver-based compose service declares PUID=0 AND PGID=0;
 #     (2) NO service declares `userns_mode: keep-id`;
 #     (3) the declared ownership scope config/owned_paths.yaml exists, parses,
-#         and is non-empty.
+#         and is non-empty;
+#     (4) every compose service whose MOUNT SOURCES intersect that scope runs
+#         as container root — no `user:` key and no Dockerfile `USER` directive
+#         downgrading it away from uid 0 (E5 route completeness, task T034).
+#
+# WHY (4) EXISTS, AND WHY ITS ABSENCE WAS NOT A COSMETIC GAP (independent
+# review finding IMPORTANT-1, reproduced on this host 2026-08-21):
+#   Invariants (1)-(3) read `image:`, `environment:` and `userns_mode:`. They
+#   never read `volumes:` and never read `user:`. A reviewer appended four
+#   lines to a COPY of the real docker-compose.yml —
+#
+#       attack-writer:
+#         image: python:3.12-alpine
+#         user: "1000:1000"
+#         volumes:
+#           - ${QBITTORRENT_DATA_DIR:-/mnt/DATA}:/downloads
+#
+#   — and this gate printed `PASS: CM-OWNERSHIP-INVARIANTS`, exit 0. That
+#   service writes into the download root as container uid 1000, which rootless
+#   podman maps to host uid 100999: the reported defect, verbatim, waved
+#   through by the gate that exists to make it un-revertable.
+#
+#   The construction is not exotic. A well-meaning "don't run containers as
+#   root" hardening pass that adds `user: "1000:1000"` to download-proxy would
+#   silently reintroduce the defect for `config/` — including the encrypted
+#   credential store whose unreadability started this feature — while every
+#   other invariant here stayed green.
+#
+#   tasks.md T034 and data-model.md E5 BOTH describe this gate as asserting
+#   that every service mounting an in-scope path declares a route. Until (4)
+#   landed it asserted no such thing, so T034 was marked [x] for a strictly
+#   weaker gate than its own description. (4) is what makes the description
+#   true rather than aspirational.
 #
 #   Each refusal names the SERVICE and WHAT was wrong, and prints the resolved
 #   evidence it refused on (§11.4.201(5)).
@@ -18,6 +50,14 @@
 # FORENSIC ANCHOR (measured on this host, 2026-08-21, research.md R6):
 #   The stack runs under ROOTLESS podman, which maps container uid N to host
 #   uid 100000+N-1 and container uid 0 to the HOST OPERATOR (uid 1000).
+#   MEASURED on this host 2026-08-21, not assumed — `podman info` reports
+#   `0->1000 (size 1)` and `1->100000 (size 65536)`, and /etc/subuid carries
+#   `<operator>:100000:65536`. (Correction, same date: four places in this file
+#   and two in its meta-test previously wrote the `abc` default uid 911 as host
+#   uid 101910. The arithmetic gives 100910 — the error was exactly 1000, and
+#   it survived because nobody re-derived it from the mapping the very next
+#   line states. The 100999 figure IS correct and is the one measured
+#   end-to-end: 100000 + 1000 - 1.)
 #   The linuxserver.io images (`qbittorrent`, `jackett`) boot as root and drop
 #   the application to the `abc` user at PUID. With PUID=1000 every download
 #   landed at host uid 100999 — an identity the operator does not have:
@@ -35,7 +75,7 @@
 # exemption):
 #   A hardcoded list of {qbittorrent, jackett} would leave a linuxserver
 #   service added LATER silently uncovered: it would inherit the image's abc
-#   default (uid 911 -> host 101910) and reproduce the defect while this gate
+#   default (uid 911 -> host 100910) and reproduce the defect while this gate
 #   reported a clean tree. The image reference is the real condition, so the
 #   scope is computed from it — the registry/namespace path components are
 #   compared for EQUALITY to `linuxserver`, so a repository merely CONTAINING
@@ -51,7 +91,7 @@
 #         build: { context: ./build-ctx }     # FROM lscr.io/linuxserver/...
 #         environment: [ PUID=1000 ]
 #
-#   PASSED this gate (exit 0) while its writes would land at host uid 101910 —
+#   PASSED this gate (exit 0) while its writes would land at host uid 100910 —
 #   the exact defect FR-011 exists to make un-revertable, arrived at through a
 #   hole in the gate's own scope rather than through a wrong value.
 #
@@ -73,7 +113,7 @@
 #
 # WHY A MISSING PUID ON A LINUXSERVER SERVICE IS A FINDING, NOT A PASS:
 #   Absence is not neutrality here. With no PUID the image runs the app as
-#   `abc` (911) and the host sees 101910 — the exact defect class, arrived at
+#   `abc` (911) and the host sees 100910 — the exact defect class, arrived at
 #   by omission instead of by a wrong value. §11.4.201(6): a quiet zero from
 #   an unasserted condition is not a clean tree.
 #
@@ -128,7 +168,8 @@
 #           no container is touched, and NO PROCESS IS EVER SIGNALLED (so the
 #           §11.4.263 pgid>1 obligation is vacuously satisfied — there is no
 #           kill/killpg call in this file to guard).
-# Dependencies: bash, python3 with PyYAML.
+# Dependencies: bash, python3 with PyYAML, scripts/lib/ownership.sh (SOURCED,
+#           never re-implemented — see the §11.4.251 note at the source line).
 #
 # Scope DATA (consumer-owned, §11.4.35):
 #   compose     : docker-compose.yml         (repo root; overridable, arg 1)
@@ -216,11 +257,48 @@ if ! PY="$(resolve_python)"; then
     exit 1
 fi
 
+# ---------------------------------------------------------------------------
+# Shared readers (§11.4.251 — ONE compose parser and ONE scope parser for this
+# feature, consumed by BOTH this gate and scripts/ownership_precondition.sh).
+#
+# The mount/`user:` invariant below needs exactly the compose facts the startup
+# precondition already reads. Writing a second reader here would be the
+# near-identical fork §11.4.251 forbids — and, worse, would let the two
+# readers drift on the one question they both exist to answer. They therefore
+# both call scripts/lib/ownership.sh.
+#
+# The library defines functions only and has no side effects at source time, so
+# sourcing it cannot perturb this gate's read-only contract. It relaxes strict
+# mode for its own callers, so strict mode is re-armed immediately after.
+# ---------------------------------------------------------------------------
+# shellcheck source=scripts/lib/ownership.sh
+source "${REPO_ROOT}/scripts/lib/ownership.sh"
+set -euo pipefail
+
 ANALYZER_OUT="$(mktemp)"
-trap 'rm -f "${ANALYZER_OUT}"' EXIT
+COMPOSE_ROWS_FILE="$(mktemp)"
+SCOPE_ROWS_FILE="$(mktemp)"
+trap 'rm -f "${ANALYZER_OUT}" "${COMPOSE_ROWS_FILE}" "${SCOPE_ROWS_FILE}"' EXIT
+
+# The library probes interpreters independently; hand it the one already proven
+# able to `import yaml` here so the two cannot disagree about what is usable.
+export PYTHON_BIN="${PY}"
+export OWNED_PATHS_FILE
+
+# A reader that could not run leaves an EMPTY file, and the analyzer reports
+# that emptiness as an unreadable input rather than as "declares nothing" —
+# a blind read and a clean tree must never return the same quiet zero
+# (§11.4.201(6)).
+if ! ownership_compose_rows "${COMPOSE_FILE}" >"${COMPOSE_ROWS_FILE}" 2>/dev/null; then
+    : >"${COMPOSE_ROWS_FILE}"
+fi
+if ! ownership_scope_entries >"${SCOPE_ROWS_FILE}" 2>/dev/null; then
+    : >"${SCOPE_ROWS_FILE}"
+fi
 
 set +e
-"${PY}" - "${COMPOSE_FILE}" "${OWNED_PATHS_FILE}" "${REPO_ROOT}" >"${ANALYZER_OUT}" 2>&1 <<'PY_EOF'
+"${PY}" - "${COMPOSE_FILE}" "${OWNED_PATHS_FILE}" "${REPO_ROOT}" \
+        "${COMPOSE_ROWS_FILE}" "${SCOPE_ROWS_FILE}" >"${ANALYZER_OUT}" 2>&1 <<'PY_EOF'
 """Structural analyzer for CM-OWNERSHIP-INVARIANTS.
 
 Emits line-oriented results the bash wrapper routes to stdout/stderr:
@@ -242,10 +320,12 @@ import sys
 import yaml
 
 compose_path, owned_paths_path, repo_root = sys.argv[1], sys.argv[2], sys.argv[3]
+compose_rows_path, scope_rows_path = sys.argv[4], sys.argv[5]
 compose_dir = os.path.dirname(os.path.abspath(compose_path))
 
 findings = []
 infos = []
+dockerfile_text = {}
 
 
 def info(msg):
@@ -345,14 +425,18 @@ def locate_dockerfile(context, dockerfile):
     return None, tried
 
 
-def dockerfile_stages(text):
-    """Parse a Dockerfile into ([(base_ref, alias_lower_or_None)], global_args).
+def dockerfile_logical_lines(text):
+    """Split a Dockerfile into logical instruction lines.
 
     Token-structural, not a substring scan: comment lines are dropped and
     backslash continuations are joined BEFORE any instruction is read, so a
-    Dockerfile comment merely MENTIONING an image reference is invisible.
-    Only ARGs declared before the first FROM are collected — those are the only
-    ones Docker permits a FROM line to reference.
+    Dockerfile comment merely MENTIONING an image reference — or a `USER`
+    downgrade — is invisible to every reader built on this.
+
+    ONE tokenizer, deliberately: both the FROM-chain resolver and the USER
+    reader below consume it. A second copy would be the near-identical fork
+    §11.4.251 forbids, and the two would drift on comment and continuation
+    handling — the exact carrier class BOB-138 was.
     """
     logical = []
     buffer = ""
@@ -372,6 +456,34 @@ def dockerfile_stages(text):
         buffer = ""
     if buffer.strip():
         logical.append(buffer.strip())
+    return logical
+
+
+def dockerfile_last_user(text):
+    """The operand of the LAST `USER` instruction, or None when there is none.
+
+    The LAST one wins because that is what Docker leaves in effect for the
+    container's process; a Dockerfile that drops to `appuser` to install
+    something and then returns to `USER root` runs as root, and reading the
+    first USER would refuse it — the §11.4.201(1) false positive.
+    """
+    found = None
+    for line in dockerfile_logical_lines(text):
+        parts = line.split()
+        if parts and parts[0].upper() == "USER":
+            operands = [t for t in parts[1:] if not t.startswith("--")]
+            if operands:
+                found = operands[0].strip().strip('"').strip("'")
+    return found
+
+
+def dockerfile_stages(text):
+    """Parse a Dockerfile into ([(base_ref, alias_lower_or_None)], global_args).
+
+    Only ARGs declared before the first FROM are collected — those are the only
+    ones Docker permits a FROM line to reference.
+    """
+    logical = dockerfile_logical_lines(text)
 
     stages = []
     global_args = {}
@@ -503,6 +615,11 @@ def classify_service(name, service, image):
             return None, None
         source = "%s (%s)" % (located, how)
 
+    # Recorded so the mount/`user:` invariant can read this service's USER
+    # directive from the SAME bytes this classification used — one read, one
+    # tokenizer, no second opinion about what the Dockerfile says.
+    dockerfile_text[name] = (text, source)
+
     base, reason = resolve_runtime_base(text)
     if base is None:
         finding(
@@ -536,6 +653,240 @@ def environment_map(service):
         for key, value in env.items():
             result[str(key).strip()] = None if value is None else str(value).strip()
     return result
+
+
+# --- Invariant 4 support: the declared scope and the compose mount/user map --
+#
+# WHY THIS INVARIANT EXISTS (independent review finding IMPORTANT-1, 2026-08-21)
+#   Invariants 1-3 read `image:`, `environment:` and `userns_mode:` and NEVER
+#   read `volumes:` or `user:`. A reviewer appended four lines to a copy of the
+#   real docker-compose.yml —
+#
+#       attack-writer:
+#         image: python:3.12-alpine
+#         user: "1000:1000"
+#         volumes:
+#           - ${QBITTORRENT_DATA_DIR:-/mnt/DATA}:/downloads
+#
+#   — and this gate printed PASS, exit 0. That service's writes land at host
+#   uid 100999: the reported defect, verbatim, waved through by the gate whose
+#   whole job is to make it un-revertable. A well-meaning "don't run containers
+#   as root" hardening pass adding `user:` to download-proxy would reintroduce
+#   it for `config/` — including the encrypted credential store.
+#
+#   tasks.md T034 and data-model.md E5 both describe this gate as asserting
+#   that every compose service mounting an in-scope path declares a route.
+#   Until now it asserted no such thing, so T034 was marked done for a strictly
+#   weaker gate than it described. This is the clause that makes the
+#   description true.
+#
+# WHY THE ROUTE IS "RUNS AS CONTAINER ROOT", NOT "keep-id OR PUID=0"
+#   E5's table (written before the measurements landed) lists `userns_mode:
+#   keep-id` as route A for three services. keep-id was subsequently TRIED and
+#   REJECTED — it leaves the container with no usable root and HANGS the
+#   linuxserver images (research.md R3), and invariant 2 above now hard-FORBIDS
+#   it. The three services E5 assigns to route A were MEASURED to write as host
+#   uid 1000 already, for the reason this clause checks: they run as container
+#   root, and rootless podman maps container uid 0 to the host operator. So the
+#   real route set is {container-root, linuxserver-with-PUID=0}, and this
+#   clause asserts the first while invariant 1 asserts the second.
+
+def load_tsv(path, width, label):
+    """Read a TAB-separated table, EMPTY FIELDS PRESERVED. [] when unreadable.
+
+    `str.split("\\t")` rather than a shell-style read for the reason recorded on
+    split_tsv() in scripts/ownership_precondition.sh: TAB is IFS whitespace, so
+    a run of tabs collapses into one delimiter and every later column shifts
+    left. A service built from a Dockerfile has no `image:` and often no PUID,
+    so its row is exactly the empty-middle-fields shape that bug eats.
+    """
+    rows = []
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.rstrip("\n")
+                if not line.strip():
+                    continue
+                fields = line.split("\t")
+                if len(fields) < width:
+                    fields += [""] * (width - len(fields))
+                rows.append(fields)
+    except OSError as exc:
+        finding("%s: could not be read (%s) — the mount/`user:` invariant "
+                "asserted NOTHING" % (label, exc))
+    return rows
+
+
+compose_rows = {row[0]: row for row in load_tsv(compose_rows_path, 6, "compose-rows")}
+scope_paths = []
+for row in load_tsv(scope_rows_path, 5, "scope-rows"):
+    declared = row[0].strip()
+    if not declared:
+        continue
+    if not os.path.isabs(declared):
+        declared = os.path.join(repo_root, declared)
+    declared = os.path.normpath(declared)
+    if declared not in scope_paths:
+        scope_paths.append(declared)
+
+
+def path_related(a, b):
+    """True when a write inside one lands inside the other.
+
+    Checked in BOTH directions on purpose: a service mounting an ANCESTOR of a
+    declared location writes into it (`./config` covers `config/boba.db`), and
+    a service mounting a SUBDIRECTORY of one writes into it too
+    (`./config/jackett` lands inside the declared `config`). Matching one
+    direction would silently drop half the services that can produce files
+    there — and this gate exists because a silent drop shipped once already.
+    """
+    if not a or not b:
+        return False
+    return a == b or a.startswith(b + "/") or b.startswith(a + "/")
+
+
+def user_verdict(raw):
+    """Classify a run-as-user declaration. Returns (verdict, detail).
+
+    verdict: 'root' | 'nonroot' | 'unresolvable'
+
+    A value carrying `$` is UNRESOLVABLE, never assumed root: the environment
+    that supplies it is not visible here, and reading that silence as "runs as
+    root" is the §11.4.201(6) false-null — with the safe reading on the wrong
+    side of it.
+    """
+    value = raw.strip().strip('"').strip("'")
+    if "$" in value:
+        return "unresolvable", value
+    uid = value.split(":", 1)[0].strip()
+    if uid in ("0", "root"):
+        return "root", value
+    return "nonroot", uid
+
+
+def host_uid_note(uid):
+    """The host identity a container uid maps to under rootless podman."""
+    if uid.isdigit() and int(uid) > 0:
+        return ("Under rootless podman container uid %s maps to host uid %d, "
+                "an identity the operator does not have (this is exactly how "
+                "PUID=1000 produced host uid 100999)."
+                % (uid, 100000 + int(uid) - 1))
+    return ("`%s` is a named account inside the image, so the host uid it maps "
+            "to is whatever the image assigned it — not the operator." % uid)
+
+
+NONROOT_REMEDY = (
+    "A compose `user:` overrides the image entrypoint's own uid, so a "
+    "linuxserver PUID=0 cannot rescue it. Run this service as container root "
+    "instead — drop the `user:` key, or declare `user: \"0:0\"`; container "
+    "uid 0 maps to the HOST OPERATOR (uid 1000) and grants no host privilege."
+)
+
+
+def check_mount_user(name):
+    """Invariant 4 for one service. Records its own INFO or FINDING."""
+    if not scope_paths or not compose_rows:
+        # Both blind states are already reported once, above, by name. Emitting
+        # a per-service echo of the same fact would bury the real finding.
+        return
+    row = compose_rows.get(name)
+    if row is None:
+        finding(
+            "%s: the shared compose reader produced no row for this service, "
+            "so its `volumes:` and `user:` were NEVER READ and the mount "
+            "invariant asserted nothing about it. A service this gate cannot "
+            "read is exactly where a non-root writer would hide."
+            % name
+        )
+        return
+
+    in_scope = []
+    for mount in [m for m in row[4].split(",") if m]:
+        for declared in scope_paths:
+            if path_related(mount, declared):
+                in_scope.append(declared)
+                break
+    if not in_scope:
+        info("%s: mounts nothing in the declared ownership scope — `user:` "
+             "not constrained here" % name)
+        return
+
+    where = in_scope[0]
+    more = "" if len(in_scope) == 1 else " (+%d more declared location(s))" % (len(in_scope) - 1)
+
+    raw_user = row[5]
+    if raw_user:
+        verdict, detail = user_verdict(raw_user)
+        if verdict == "root":
+            info("%s: mounts declared scope %s%s and runs as container root "
+                 "(user: %s) — writes land at the host operator"
+                 % (name, where, more, detail))
+            return
+        if verdict == "unresolvable":
+            finding(
+                "%s: mounts the declared location %s%s and declares "
+                "`user: %s`, which is not statically resolvable, so it cannot "
+                "be proven to run as container root. Declare the identity "
+                "inline (`user: \"0:0\"`) or drop the key."
+                % (name, where, more, detail)
+            )
+            return
+        finding(
+            "%s: mounts the declared location %s%s and declares `user: %s` — "
+            "uid %s, which is NOT container-root. %s Every file this service "
+            "writes into that location would land at that identity — the FR-011 "
+            "defect, reintroduced through `user:` rather than through PUID. %s"
+            % (name, where, more, raw_user.strip().strip('"').strip("'"),
+               detail, host_uid_note(detail), NONROOT_REMEDY)
+        )
+        return
+
+    entry = dockerfile_text.get(name)
+    if entry is not None:
+        text, source = entry
+        directive = dockerfile_last_user(text)
+        if directive is not None:
+            verdict, detail = user_verdict(directive)
+            if verdict == "nonroot":
+                finding(
+                    "%s: mounts the declared location %s%s and its Dockerfile "
+                    "(%s) ends with `USER %s`, which is NOT container-root. %s "
+                    "The downgrade is in the build rather than in compose, so "
+                    "reading only the compose `user:` key would miss it "
+                    "entirely. Remove the trailing USER instruction, or add "
+                    "`USER root` after it, so the service writes as container "
+                    "root."
+                    % (name, where, more, source, directive, host_uid_note(detail))
+                )
+                return
+            if verdict == "unresolvable":
+                finding(
+                    "%s: mounts the declared location %s%s and its Dockerfile "
+                    "(%s) ends with `USER %s`, which is not statically "
+                    "resolvable, so it cannot be proven to run as container "
+                    "root."
+                    % (name, where, more, source, directive)
+                )
+                return
+            info("%s: mounts declared scope %s%s and runs as container root "
+                 "(Dockerfile USER %s) — writes land at the host operator"
+                 % (name, where, more, directive))
+            return
+
+    # No compose `user:` and no Dockerfile USER downgrade: the container's
+    # process runs as its image default.
+    #
+    # HONEST GAP (§11.4.6): for an `image:`-based service this gate cannot see
+    # a USER baked into an image it has not pulled, so "no declared downgrade"
+    # is what is asserted here — not "the image provably runs as root". The
+    # runtime half of that question belongs to the P1 container-write probe in
+    # scripts/ownership_precondition.sh, which observes the identity a real
+    # write actually lands at. Stated rather than papered over: a gate that
+    # claimed to have proven the image's built-in USER would be asserting a
+    # fact it never read.
+    info("%s: mounts declared scope %s%s and runs as container root (no "
+         "`user:` downgrade declared) — writes land at the host operator"
+         % (name, where, more))
 
 
 # --- Invariant 3: the declared ownership scope exists and parses -----------
@@ -588,6 +939,22 @@ if ok and not services:
 
 info("compose: %s (%d service(s))" % (compose_path, len(services)))
 
+# Invariant 4 coverage, stated BEFORE any per-service line so a reader never
+# has to infer from silence whether the mount check ran (§11.4.201(6)).
+if services and not compose_rows:
+    finding("compose-rows: the shared reader (scripts/lib/ownership.sh "
+            "ownership_compose_rows) returned NOTHING while %d service(s) "
+            "parsed here — the mount/`user:` invariant is BLIND, and a blind "
+            "instrument is not a clean tree" % len(services))
+elif services and not scope_paths:
+    info("mount/`user:` invariant: NOT RUN — the declared scope yielded no "
+         "usable location, so there is nothing to test a mount against (the "
+         "owned-paths finding above is the refusal)")
+elif services:
+    info("mount/`user:` invariant: %d declared location(s) in scope, %d "
+         "compose service(s) read for `volumes:` and `user:`"
+         % (len(scope_paths), len(compose_rows)))
+
 linuxserver_checked = 0
 
 for name in sorted(services):
@@ -612,6 +979,13 @@ for name in sorted(services):
             )
 
     is_linuxserver, evidence = classify_service(name, service, image)
+
+    # --- Invariant 4: mount-scope / run-as-user completeness (E5, FR-016) --
+    # Runs for EVERY service, before the classification-driven `continue`s
+    # below: the reviewer's attack service is not linuxserver-based and has no
+    # PUID at all, so a check reachable only on the linuxserver path would
+    # never see it.
+    check_mount_user(name)
 
     if is_linuxserver is None:
         # UNVERIFIABLE. classify_service already recorded a finding naming what
@@ -639,7 +1013,7 @@ for name in sorted(services):
             finding(
                 "%s: linuxserver service (%s) declares NO %s — the image then "
                 "runs the app as its `abc` default (uid 911), which rootless "
-                "podman maps to host uid 101910, and every file it writes is "
+                "podman maps to host uid 100910, and every file it writes is "
                 "unreachable to the operator. Declare %s=0."
                 % (name, evidence, key, key)
             )
@@ -717,5 +1091,5 @@ if [[ "${FINDING_COUNT}" -gt 0 ]]; then
     exit 1
 fi
 
-echo "PASS: ${GATE_NAME} — linuxserver PUID/PGID=0, no userns_mode keep-id, ownership scope declared"
+echo "PASS: ${GATE_NAME} — linuxserver PUID/PGID=0, no userns_mode keep-id, ownership scope declared, every in-scope mounter runs as container root"
 exit 0

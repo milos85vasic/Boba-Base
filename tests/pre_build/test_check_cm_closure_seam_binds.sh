@@ -28,6 +28,13 @@
 #   car-3  work commit QUOTING "closes <id>" verbatim
 #   car-4  `docs(<id>): ...`               non-work commit type
 #   car-5  `<id>` mentioned only in body prose, no closure keyword
+#   car-6  gerund: "closing <id> requires ..." -- the gerund heads a noun
+#          phrase that is the SUBJECT of "requires", i.e. a statement of what
+#          closure would TAKE, not a declaration that it happened. Lives HERE,
+#          outside the gate, because the gate's own --self-test is the PRODUCER:
+#          a coherent revert (restore the regex AND drop its self-test line, one
+#          file, one edit) sailed through this meta-test at 29/29 while this case
+#          was absent -- the producer==oracle collapse (§11.4.249/§11.4.240).
 #
 # Exit: 0 all cases matched expectation; 1 divergence; 2 harness error.
 #
@@ -212,6 +219,10 @@ expect "car-4 docs-type commit scoped to the id" 0 --repo "$D" --db "$B" --prefi
 D="$(printf 'chore(x): tidy\tsee %s-024 for background\n' "$PFX" | mk_repo car5)"
 B="$(mk_db "$D" "$PFX-024=Queued")"
 expect "car-5 body-prose mention, no closure keyword" 0 --repo "$D" --db "$B" --prefix "$PFX"
+
+D="$(printf 'docs(x): tidy\tclosing %s-025 requires an out-of-user-scope watchdog\n' "$PFX" | mk_repo car6)"
+B="$(mk_db "$D" "$PFX-025=Queued")"
+expect "car-6 gerund states what closure would TAKE" 0 --repo "$D" --db "$B" --prefix "$PFX"
 
 echo "  --- COMMIT-SEAM mode (the binding seam) ---"
 D="$(printf 'chore: init\n' | mk_repo seam)"

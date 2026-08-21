@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Boba UX A11y Golden-Bad Fixture</title>
+  <style>
+    body { background:#ffffff; color:#1a1a1a; font-family: sans-serif; margin: 2rem; }
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.2rem; }
+    .decorative { width: 24px; height: 24px; }
+    .low-contrast { color:#aaaaaa; background:#ffffff; } /* ~2.32:1, fails WCAG AA 4.5:1 */
+    .icon-btn svg { width:16px; height:16px; }
+  </style>
+  <!-- Intentionally NO outline focus-visible style — irrelevant to the
+       axe scan itself (covered separately by the keyboard-nav fixtures)
+       but kept minimal on purpose. -->
+</head>
+<body>
+  <header>
+    <!-- (1) VIOLATION: missing <html lang> attribute above (html-has-lang). -->
+    <h1>Boba UX Accessibility Fixture (broken)</h1>
+  </header>
+  <main>
+    <h2>Search</h2>
+    <form>
+      <!-- (2) VIOLATION: label removed / disassociated from the input
+           (label). -->
+      <span>Search query</span>
+      <input id="q" name="q" type="text">
+      <button type="submit">Search</button>
+    </form>
+
+    <h2>Results</h2>
+    <!-- (3) VIOLATION: meaningful image with NO alt attribute at all
+         (image-alt). -->
+    <img src="poster.jpg" width="80" height="120">
+    <!-- Decorative image: STILL alt="" — kept correct on purpose, proving
+         the oracle does not blanket-flag every image once a page has
+         real violations elsewhere (golden-FALSE case 1, retained). -->
+    <img src="divider.png" alt="" class="decorative">
+    <!-- Icon-only control: STILL the correct aria-hidden + aria-label
+         pattern — kept correct on purpose (golden-FALSE case 2, retained). -->
+    <button class="icon-btn" aria-label="Download magnet link">
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M1 1h14v14H1z"/></svg>
+    </button>
+    <a href="#results">Jump to results</a>
+
+    <!-- (4) VIOLATION: body text below WCAG AA 4.5:1 contrast
+         (color-contrast). -->
+    <p class="low-contrast">Low-contrast text example that fails WCAG AA.</p>
+  </main>
+</body>
+</html>

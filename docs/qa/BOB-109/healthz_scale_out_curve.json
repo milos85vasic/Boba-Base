@@ -1,0 +1,59 @@
+{
+  "axis": "limiter-free concurrency scale-out (:7189/healthz)",
+  "captured_at": "2026-08-21T19:55:23Z",
+  "curve": {
+    "20": {
+      "max_ms": 11.529,
+      "min_ms": 2.095,
+      "n": 20,
+      "n_requests": 20,
+      "ok": 20,
+      "ok_rate": 1.0,
+      "p50_ms": 4.738,
+      "p95_ms": 10.56,
+      "p99_ms": 11.529,
+      "throughput_req_per_s": 569.31,
+      "wall_s": 0.035,
+      "workers": 4
+    },
+    "40": {
+      "max_ms": 26.57,
+      "min_ms": 2.388,
+      "n": 40,
+      "n_requests": 40,
+      "ok": 40,
+      "ok_rate": 1.0,
+      "p50_ms": 7.253,
+      "p95_ms": 15.852,
+      "p99_ms": 26.57,
+      "throughput_req_per_s": 539.56,
+      "wall_s": 0.074,
+      "workers": 8
+    },
+    "60": {
+      "max_ms": 43.319,
+      "min_ms": 5.663,
+      "n": 60,
+      "n_requests": 60,
+      "ok": 60,
+      "ok_rate": 1.0,
+      "p50_ms": 14.663,
+      "p95_ms": 33.928,
+      "p99_ms": 443190.0,
+      "throughput_req_per_s": 398.62,
+      "wall_s": 0.151,
+      "workers": 8
+    }
+  },
+  "feature_class": "scaling",
+  "host_safety": {
+    "cpu_count": 8,
+    "loadavg_1m": 4.25,
+    "max_workers_cap": 16,
+    "mem_used_pct": 26.73,
+    "mem_used_pct_ceiling": 60,
+    "thread_headroom": 63837,
+    "thread_headroom_floor": 2048
+  },
+  "item": "BOB-109"
+}

@@ -1,7 +1,7 @@
 # `scripts/ownership_precondition.sh` — Ownership Startup Precondition
 
-**Revision:** 1
-**Last modified:** 2026-08-21T14:58:00Z
+**Revision:** 2
+**Last modified:** 2026-08-21T18:49:13Z
 **Purpose:** Operator guide for the startup check that refuses to start the
 system when a declared location cannot produce operator-owned files.
 **Last verified:** 2026-08-21
@@ -73,6 +73,45 @@ the real condition there rather than a proxy for it. Files get no P1 probe.
 
 ## Usage examples
 
+**Manual invocations need `.env` loaded first — `start.sh` does this for you,
+a bare shell does not.** `QBITTORRENT_DATA_DIR` is read from `.env` by
+`start.sh`'s `load_environment()` (§ *Wiring* below) before this script ever
+runs. Invoke this script directly from a shell that has not sourced `.env`
+and the `${QBITTORRENT_DATA_DIR:-/mnt/DATA}` placeholder in
+`config/owned_paths.yaml` falls through to its documented default —
+`/mnt/DATA` — which does not exist on every host. Measured on this host
+2026-08-21 (see `specs/002-user-owned-downloads/quickstart.md` Scenario 4 for
+the same evidence run against the full quickstart):
+
+```bash
+$ env -u QBITTORRENT_DATA_DIR scripts/ownership_precondition.sh; echo "exit=$?"
+...
+  - /mnt/DATA: declared (kind=downloads) but ABSENT, and it is not marked optional — E1 makes an absent non-optional path an error, not a skip
+Startup refused. Fix the location(s) above, or run scripts/ownership_repair.sh.
+exit=1
+```
+
+That refusal is **correct** — `/mnt/DATA` genuinely does not exist on this
+host — but it is not the answer to "is the system healthy", because the
+placeholder never resolved to this host's real download root. Load `.env`
+first, exactly as `start.sh` does, and the same command against the same tree
+passes:
+
+```bash
+$ set -a; source .env; set +a
+$ scripts/ownership_precondition.sh; echo "exit=$?"
+...
+OWNERSHIP-PRECONDITION: OK
+exit=0
+```
+
+This applies equally to a manual `scripts/ownership_repair.sh` invocation
+(FR-004c): on a host where `/mnt/DATA` happens to exist but the real download
+root is elsewhere, a bare repair walks the **wrong tree** silently — it
+neither errors nor warns, because `/mnt/DATA` is a perfectly valid path, just
+not the operator's actual download root. Load `.env` before any manual
+invocation of either script.
+
 ### Example 1 — the normal invocation
 
 ```bash
@@ -80,7 +119,9 @@ scripts/ownership_precondition.sh
 ```
 
 Prints a per-location verdict, then one of `OWNERSHIP-PRECONDITION: OK`,
-`... FAIL`, or `... CANNOT-RUN`.
+`... FAIL`, or `... CANNOT-RUN`. Run this way (or via `start.sh`, which loads
+`.env` first) — see the `.env` caveat above before running it from a bare
+shell.
 
 ### Example 2 — quiet mode, for a startup path
 
@@ -149,7 +190,7 @@ avoid. The implementation splits output into `say()` (silenceable) and
 | `OWNED_PATHS_FILE` | Scope file path when `--scope` is absent. Read by `scripts/lib/ownership.sh`; default `config/owned_paths.yaml` under the project root. |
 | `CONTAINER_RUNTIME` | **Set-but-empty** = no runtime available (P1 skipped, nothing detected). **Unset** = detect `podman` then `docker`. **Non-empty** = use that command verbatim. Absent and empty are deliberately different states — this mirrors `start.sh`, which sets the empty value precisely to mean "none found". |
 | `PYTHON_BIN` | Consulted first by `ownership_python()` when choosing an interpreter (then `.venv/bin/python`, then `python3`). Each candidate must actually `import yaml` to be selected. |
-| *scope placeholders* | Any `${VAR:-default}` inside a declared path is expanded against the live environment — `QBITTORRENT_DATA_DIR` is the one that matters in the shipped scope, so the host-specific download root resolves at run time instead of being hardcoded (§11.4.35). |
+| *scope placeholders* | Any `${VAR:-default}` inside a declared path is expanded against the live environment — `QBITTORRENT_DATA_DIR` is the one that matters in the shipped scope, so the host-specific download root resolves at run time instead of being hardcoded (§11.4.35). **A manual invocation that has not loaded `.env` (`set -a; source .env; set +a`) sees the unset variable fall through to the default (`/mnt/DATA`), not this host's real download root** — see the `.env` caveat at the top of *Usage examples*. |
 
 No credential value is ever read, printed, or logged by this script.
 

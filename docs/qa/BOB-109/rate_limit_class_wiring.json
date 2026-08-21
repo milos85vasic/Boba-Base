@@ -1,0 +1,12 @@
+{
+  "axis": "declared-vs-served limit class wiring",
+  "captured_at": "2026-08-21T19:54:15Z",
+  "declared_default": "120/minute",
+  "declared_sse_stream": "5/minute",
+  "feature_class": "scaling",
+  "item": "BOB-109",
+  "route": "/api/v1/theme/stream",
+  "served_binding_limit": 120,
+  "served_limit_raw": "120",
+  "unwired": true
+}

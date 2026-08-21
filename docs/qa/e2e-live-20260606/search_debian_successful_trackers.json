@@ -7,12 +7,7 @@
   {
     "name": "bitsearch",
     "status": "success",
-    "results_count": 80
-  },
-  {
-    "name": "glotorrents",
-    "status": "success",
-    "results_count": 1
+    "results_count": 20
   },
   {
     "name": "iptorrents",
@@ -20,14 +15,24 @@
     "results_count": 49
   },
   {
+    "name": "jackett",
+    "status": "success",
+    "results_count": 51
+  },
+  {
     "name": "limetorrents",
     "status": "success",
-    "results_count": 39
+    "results_count": 37
   },
   {
     "name": "linuxtracker",
     "status": "success",
-    "results_count": 165
+    "results_count": 75
+  },
+  {
+    "name": "nnmclub",
+    "status": "success",
+    "results_count": 50
   },
   {
     "name": "nyaa",
@@ -77,11 +82,11 @@
   {
     "name": "torrentproject",
     "status": "success",
-    "results_count": 74
+    "results_count": 66
   },
   {
     "name": "torrentscsv",
     "status": "success",
-    "results_count": 21
+    "results_count": 5
   }
 ]

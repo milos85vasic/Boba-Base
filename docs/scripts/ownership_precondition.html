@@ -1,8 +1,8 @@
 <h1
 id="scriptsownership_precondition.sh-ownership-startup-precondition"><code>scripts/ownership_precondition.sh</code>
 — Ownership Startup Precondition</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-21T14:58:00Z <strong>Purpose:</strong> Operator guide for the
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-21T18:49:13Z <strong>Purpose:</strong> Operator guide for the
 startup check that refuses to start the system when a declared location
 cannot produce operator-owned files. <strong>Last verified:</strong>
 2026-08-21</p>
@@ -104,31 +104,71 @@ run; the script reports an honest SKIP rather than refusing, see
 <em>Edge cases</em>.</li>
 </ul>
 <h2 id="usage-examples">Usage examples</h2>
+<p><strong>Manual invocations need <code>.env</code> loaded first —
+<code>start.sh</code> does this for you, a bare shell does not.</strong>
+<code>QBITTORRENT_DATA_DIR</code> is read from <code>.env</code> by
+<code>start.sh</code>’s <code>load_environment()</code> (§
+<em>Wiring</em> below) before this script ever runs. Invoke this script
+directly from a shell that has not sourced <code>.env</code> and the
+<code>${QBITTORRENT_DATA_DIR:-/mnt/DATA}</code> placeholder in
+<code>config/owned_paths.yaml</code> falls through to its documented
+default — <code>/mnt/DATA</code> — which does not exist on every host.
+Measured on this host 2026-08-21 (see
+<code>specs/002-user-owned-downloads/quickstart.md</code> Scenario 4 for
+the same evidence run against the full quickstart):</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> env <span class="at">-u</span> QBITTORRENT_DATA_DIR scripts/ownership_precondition.sh<span class="kw">;</span> <span class="bu">echo</span> <span class="st">&quot;exit=</span><span class="va">$?</span><span class="st">&quot;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="ex">-</span> /mnt/DATA: declared <span class="er">(</span><span class="va">kind</span><span class="op">=</span>downloads<span class="kw">)</span> <span class="ex">but</span> ABSENT, and it is not marked optional — E1 makes an absent non-optional path an error, not a skip</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">Startup</span> refused. Fix the location<span class="er">(</span><span class="ex">s</span><span class="kw">)</span> <span class="ex">above,</span> or run scripts/ownership_repair.sh.</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">exit</span><span class="op">=</span>1</span></code></pre></div>
+<p>That refusal is <strong>correct</strong> — <code>/mnt/DATA</code>
+genuinely does not exist on this host — but it is not the answer to “is
+the system healthy”, because the placeholder never resolved to this
+host’s real download root. Load <code>.env</code> first, exactly as
+<code>start.sh</code> does, and the same command against the same tree
+passes:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> set <span class="at">-a</span><span class="kw">;</span> <span class="bu">source</span> .env<span class="kw">;</span> <span class="bu">set</span> +a</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> scripts/ownership_precondition.sh<span class="kw">;</span> <span class="bu">echo</span> <span class="st">&quot;exit=</span><span class="va">$?</span><span class="st">&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ex">OWNERSHIP-PRECONDITION:</span> OK</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="va">exit</span><span class="op">=</span>0</span></code></pre></div>
+<p>This applies equally to a manual
+<code>scripts/ownership_repair.sh</code> invocation (FR-004c): on a host
+where <code>/mnt/DATA</code> happens to exist but the real download root
+is elsewhere, a bare repair walks the <strong>wrong tree</strong>
+silently — it neither errors nor warns, because <code>/mnt/DATA</code>
+is a perfectly valid path, just not the operator’s actual download root.
+Load <code>.env</code> before any manual invocation of either
+script.</p>
 <h3 id="example-1-the-normal-invocation">Example 1 — the normal
 invocation</h3>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span></span></code></pre></div>
 <p>Prints a per-location verdict, then one of
 <code>OWNERSHIP-PRECONDITION: OK</code>, <code>... FAIL</code>, or
-<code>... CANNOT-RUN</code>.</p>
+<code>... CANNOT-RUN</code>. Run this way (or via <code>start.sh</code>,
+which loads <code>.env</code> first) — see the <code>.env</code> caveat
+above before running it from a bare shell.</p>
 <h3 id="example-2-quiet-mode-for-a-startup-path">Example 2 — quiet mode,
 for a startup path</h3>
-<div class="sourceCode" id="cb2"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--quiet</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--quiet</span></span></code></pre></div>
 <p>Suppresses passing detail and the success banner. It does
 <strong>not</strong> suppress a refusal, a cannot-run report, or a
 probe-coverage gap — see <em>Flags</em>.</p>
 <h3 id="example-3-check-a-different-scope-file">Example 3 — check a
 different scope file</h3>
-<div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--scope</span> /path/to/other_owned_paths.yaml</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--scope</span><span class="op">=</span>/path/to/other_owned_paths.yaml   <span class="co"># equivalent</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--scope</span> /path/to/other_owned_paths.yaml</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--scope</span><span class="op">=</span>/path/to/other_owned_paths.yaml   <span class="co"># equivalent</span></span></code></pre></div>
 <p>Both forms are accepted. <code>--scope</code> takes precedence over
 the <code>OWNED_PATHS_FILE</code> environment variable.</p>
 <h3 id="example-4-declare-that-there-is-no-container-runtime">Example 4
 — declare that there is no container runtime</h3>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">CONTAINER_RUNTIME</span><span class="op">=</span> <span class="ex">scripts/ownership_precondition.sh</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">CONTAINER_RUNTIME</span><span class="op">=</span> <span class="ex">scripts/ownership_precondition.sh</span></span></code></pre></div>
 <p>An explicitly <strong>empty</strong> <code>CONTAINER_RUNTIME</code>
 means “there is no runtime” and is honoured as such — P1 is skipped and
 no container is launched. This is how test suites and gates run the
@@ -137,13 +177,13 @@ script without spawning containers. Contrast with the variable being
 script detect <code>podman</code>/<code>docker</code> itself.</p>
 <h3 id="example-5-use-in-a-shell-conditional">Example 5 — use in a shell
 conditional</h3>
-<div class="sourceCode" id="cb5"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--quiet</span><span class="kw">;</span> <span class="cf">then</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;safe to start&quot;</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">rc</span><span class="op">=</span><span class="va">$?</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;refused (exit </span><span class="va">${rc}</span><span class="st">) — see the report above&quot;</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--quiet</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;safe to start&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">rc</span><span class="op">=</span><span class="va">$?</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;refused (exit </span><span class="va">${rc}</span><span class="st">) — see the report above&quot;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div>
 <p>Note that <code>1</code> and <code>2</code> mean different things and
 must not be collapsed; see <em>Exit codes</em>.</p>
 <h2 id="flags">Flags</h2>
@@ -233,7 +273,12 @@ interpreter (then <code>.venv/bin/python</code>, then
 <td>Any <code>${VAR:-default}</code> inside a declared path is expanded
 against the live environment — <code>QBITTORRENT_DATA_DIR</code> is the
 one that matters in the shipped scope, so the host-specific download
-root resolves at run time instead of being hardcoded (§11.4.35).</td>
+root resolves at run time instead of being hardcoded (§11.4.35).
+<strong>A manual invocation that has not loaded <code>.env</code>
+(<code>set -a; source .env; set +a</code>) sees the unset variable fall
+through to the default (<code>/mnt/DATA</code>), not this host’s real
+download root</strong> — see the <code>.env</code> caveat at the top of
+<em>Usage examples</em>.</td>
 </tr>
 </tbody>
 </table>

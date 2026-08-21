@@ -9,15 +9,15 @@
       "base_url": ""
     },
     "nnmclub": {
-      "has_session": false,
-      "base_url": ""
+      "has_session": true,
+      "base_url": "https://nnmclub.to"
     },
     "iptorrents": {
       "has_session": true,
       "base_url": "https://iptorrents.com"
     },
     "qbittorrent": {
-      "has_session": false,
+      "has_session": true,
       "username": "admin"
     }
   }

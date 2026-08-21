@@ -210,6 +210,38 @@ else
     fi
 
     # =====================================================================
+    # PHASE 4.5: OWNERSHIP TESTS
+    # =====================================================================
+    # tests/ownership/test_container_writes_owned_files.py is the §11.4.115
+    # RED-turned-regression-guard for FR-011/FR-007 (002-user-owned-downloads)
+    # — proven via a docker-compose.yml revert mutation to catch the real
+    # defect. It moved OUT of tests/integration/ (commit 58d340a) because that
+    # package's autouse fixture waits on the live merge service and hangs for
+    # a test that needs only a container RUNTIME, not the running stack. It
+    # was never re-wired into any runner afterward (reported, not fixed, in
+    # commit 04742d7's own message) — closed here.
+    #
+    # The suite's own `pytest.mark.skipif(_runtime() is None, ...)` is the
+    # gate: on a host with no podman/docker it reports SKIPPED (rc 0), never
+    # a failure — verified 2026-08-21 with PATH stripped of both runtimes
+    # ("2 skipped in 0.28s", rc=0). The runtime probe below only decides
+    # whether to bother invoking pytest at all; it does not change what the
+    # suite itself would report.
+    section "PHASE 4.5: Ownership Tests"
+
+    OWNERSHIP_RUNTIME="${CONTAINER_RUNTIME:-$(command -v podman 2>/dev/null || command -v docker 2>/dev/null || echo "")}"
+    if [[ -n "$OWNERSHIP_RUNTIME" ]]; then
+        step "pytest — ownership tests (container-write ownership, FR-011/FR-007)"
+        if "$PYTHON" -m pytest "$SCRIPT_DIR/tests/ownership/" -v --import-mode=importlib --tb=short --timeout=180 2>&1 | tail -6; then
+            pass "Ownership tests"
+        else
+            fail "Ownership tests"
+        fi
+    else
+        skip "Ownership tests (no podman/docker)"
+    fi
+
+    # =====================================================================
     # PHASE 5: E2E TESTS
     # =====================================================================
     section "PHASE 5: E2E Tests"

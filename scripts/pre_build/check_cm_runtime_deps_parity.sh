@@ -329,7 +329,11 @@ if [[ -s "$FINDINGS" ]]; then
     n="$(wc -l < "$FINDINGS" | tr -d ' ')"
     echo "  The tests and production are not running the same stack, so a green" >&2
     echo "  suite is evidence about a set nobody serves (BOB-154)." >&2
-    echo "  Reconcile with: .venv/bin/python -m pip install -r download-proxy/requirements.txt" >&2
+    echo "  Reconcile PACKAGE findings with: .venv/bin/python -m pip install -r download-proxy/requirements.txt" >&2
+    echo "  That does NOT touch an 'interpreter:' finding above — pip cannot change the" >&2
+    echo "  venv's own CPython version. Reconciling the interpreter needs the venv" >&2
+    echo "  rebuilt on the container's Python (3.12), tracked as BOB-154 (blocked on" >&2
+    echo "  BOB-158's conftest.py incompatibility with 3.12 until that lands)." >&2
     echo "FAIL: $GATE — $n undeclared divergence(s) between the test stack and production"
     exit 1
 fi

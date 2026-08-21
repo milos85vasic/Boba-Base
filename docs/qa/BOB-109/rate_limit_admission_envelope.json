@@ -1,0 +1,31 @@
+{
+  "axis": "admission envelope (non-destructive header read)",
+  "captured_at": "2026-08-21T19:55:23Z",
+  "declared_default_limits": {
+    "dashboard": "60/minute",
+    "default": "120/minute",
+    "search": "10/minute",
+    "sse_stream": "5/minute"
+  },
+  "feature_class": "scaling",
+  "item": "BOB-109",
+  "method": "one request per class; limiter never driven to exhaustion because it is a per-IP resource shared with concurrent agents (\u00a711.4.119)",
+  "observed": {
+    "dashboard_root": {
+      "binding_limit": null,
+      "limit": null,
+      "path": "/",
+      "remaining": null,
+      "retry_after": null,
+      "status": 404
+    },
+    "sse_stream": {
+      "binding_limit": null,
+      "limit": null,
+      "path": "/api/v1/theme/stream",
+      "remaining": null,
+      "retry_after": null,
+      "status": 404
+    }
+  }
+}

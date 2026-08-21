@@ -1,8 +1,8 @@
 <h1
 id="scriptsownership_repair.sh-ownership-repair"><code>scripts/ownership_repair.sh</code>
 — Ownership Repair</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-21T15:00:00Z <strong>Purpose:</strong> Operator guide for the
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-21T19:05:00Z <strong>Purpose:</strong> Operator guide for the
 tool that brings pre-existing content back under the ownership of the
 person who started the system. <strong>Last verified:</strong>
 2026-08-21</p>
@@ -169,6 +169,15 @@ nothing. Also bypasses the marker check.</td>
 space-separated form is exit <code>2</code>.</td>
 </tr>
 <tr>
+<td><code>--state-dir &lt;p&gt;</code> /
+<code>--state-dir=&lt;p&gt;</code></td>
+<td>Override where the completion marker and change record live (default
+<code>logs/ownership/</code> under the project root). Use it for any
+ad-hoc invocation so the run does not share — or overwrite — the live
+operator’s marker and recovery trail. A missing argument to the
+space-separated form is exit <code>2</code>.</td>
+</tr>
+<tr>
 <td><code>-h</code>, <code>--help</code></td>
 <td>Print usage and exit <code>0</code>.</td>
 </tr>
@@ -204,6 +213,14 @@ detect <code>podman</code>, then <code>docker</code>.
 <strong>Non-empty</strong> = use that command verbatim. Set-but-empty is
 honoured rather than re-detected: probing behind a value the caller
 explicitly set would do work the caller said not to do (§11.4.201).</td>
+</tr>
+<tr>
+<td><code>OWNERSHIP_STATE_DIR</code></td>
+<td>Where the marker and change record live. Default
+<code>&lt;project-root&gt;/logs/ownership</code>.
+<code>--state-dir</code> sets it. Empty is treated as unset (the default
+is used) rather than as “the current directory” — silently writing the
+operator’s trail into <code>$PWD</code> would be worse than either.</td>
 </tr>
 <tr>
 <td><code>OWNERSHIP_REPAIR_RENICED</code></td>
@@ -347,15 +364,18 @@ pass is one scope read and one fingerprint comparison.</li>
 <h2 id="internal-behaviour">Internal behaviour</h2>
 <h3 id="output-artifacts">Output artifacts</h3>
 <p>Both live in <code>logs/ownership/</code> at the <strong>project
-root</strong> — operator-readable, on the host (never only inside a
-container, an E3 rule), and inside the already gitignored
+root</strong> by default — operator-readable, on the host (never only
+inside a container, an E3 rule), and inside the already gitignored
 <code>logs/</code> tree so an operational log never becomes a §11.4.30
 versioned-artifact violation. <code>docs/qa/</code> was deliberately not
 used: that tree is curated QA evidence (§11.4.83) and is the wrong home
-for an operational log.</p>
+for an operational log. The location is overridable per run via
+<code>--state-dir</code> / <code>OWNERSHIP_STATE_DIR</code>; the
+<strong>default has not moved</strong>.</p>
 <p><strong><code>logs/ownership/repair-changes.ndjson</code></strong> —
-the <strong>E3 change record</strong>. Append-only, one JSON object per
-line, greppable by path:</p>
+the <strong>E3 change record</strong> of the run currently <strong>in
+flight</strong>. Appended to, one JSON object per line, greppable by
+path:</p>
 <div class="sourceCode" id="cb7"><pre
 class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;path&quot;</span><span class="fu">:</span><span class="st">&quot;/…/config/some.file&quot;</span><span class="fu">,</span><span class="dt">&quot;previous_uid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_gid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_mode&quot;</span><span class="fu">:</span><span class="st">&quot;644&quot;</span><span class="fu">,</span><span class="dt">&quot;new_uid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;new_gid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;changed_at&quot;</span><span class="fu">:</span><span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span><span class="dt">&quot;outcome&quot;</span><span class="fu">:</span><span class="st">&quot;changed&quot;</span><span class="fu">}</span></span></code></pre></div>
 <p><code>outcome</code> is one of <code>changed</code> |
@@ -367,20 +387,67 @@ from a real value.</p>
 <p>This record is the operator’s recovery trail for a repair they did
 not approve item by item. It holds <strong>paths, uids, gids and modes
 only</strong> — never file contents, never credential values (§11.4.10).
-<code>boba.db</code> appears as a path; nothing of its contents ever
-does.</p>
+<code>boba.db</code> and <code>.env</code> appear as paths; nothing of
+their contents ever does.</p>
+<p><strong><code>logs/ownership/repair-changes.&lt;UTC-timestamp&gt;.ndjson</code></strong>
+— the same record once its run <strong>completed</strong>. On a
+successful pass the in-flight record is rotated to a timestamped name
+and is never written again, so two completed runs can never share an
+artifact and one deletion can destroy at most one run’s trail. A run
+that changed nothing produces no record at all (an empty file is removed
+rather than rotated, so a stream of empty files cannot bury the ones
+carrying evidence). An <strong>interrupted</strong> run’s partial record
+is <em>not</em> rotated — it keeps the plain name and the resuming run
+appends to it, so one logical repair keeps one record.</p>
+<h4 id="what-durable-honestly-means-here-11.4.6">What “durable” honestly
+means here (§11.4.6)</h4>
+<p>data-model E3 calls this record <em>durable</em> and
+<em>append-only</em>. Measured 2026-08-21, that overclaims. The honest
+statement is narrower:</p>
+<ul>
+<li><strong>Guaranteed</strong> — the script only ever appends to the
+record of a run in flight. It never rewrites or truncates one, and never
+deletes a record belonging to a completed run.</li>
+<li><strong>Not guaranteed</strong> — that the file still
+<em>exists</em> later. It lives in a gitignored <code>logs/</code> tree
+that repo tooling demonstrably cleans. On 2026-08-21 a marker and record
+written at 17:20 were both gone by 20:32 (<code>logs/</code> empty, dir
+mtime 19:21), deleted by a project actor, and nothing noticed. This
+script cannot defend a directory it does not own.</li>
+</ul>
+<p>What it offers instead is <strong>detection</strong>: the marker
+names the record file of the run it marks, and a later run that finds
+that file gone prints</p>
+<pre><code>[ownership-repair] WARNING: the change record named by the completion marker is MISSING: &lt;name&gt;</code></pre>
+<p>before opening a new record, so the loss is visible rather than
+absorbed. <strong>Boundary:</strong> if the whole state directory is
+removed, the marker goes with the record and there is nothing left to
+detect the loss against. Nothing here recovers a destroyed trail, and
+this document does not claim it does.</p>
+<p>If you need a trail that survives repo tooling, point
+<code>--state-dir</code> somewhere outside the repository.</p>
 <p><strong><code>logs/ownership/repair-marker.json</code></strong> — the
 <strong>E2 completion marker</strong>:</p>
-<div class="sourceCode" id="cb8"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;completed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;scope_fingerprint&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;sha256 of the sorted declared scope&gt;&quot;</span><span class="fu">,</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;items_changed&quot;</span><span class="fu">:</span> <span class="dv">52</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;completed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;scope_fingerprint&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;sha256 of the sorted declared scope&gt;&quot;</span><span class="fu">,</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;items_changed&quot;</span><span class="fu">:</span> <span class="dv">52</span><span class="fu">,</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;record_file&quot;</span><span class="fu">:</span> <span class="st">&quot;repair-changes.20260821T140000Z.ndjson&quot;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 <p>Written via <code>mktemp</code> + <code>mv -f</code>, so a
 half-written marker can never be read by the next start. Validity is a
 literal match on the current fingerprint inside the file — a stale
 fingerprint is treated exactly as an absent marker.</p>
+<p><code>record_file</code> names this run’s rotated change record, and
+is JSON <code>null</code> when the run changed nothing (no trail exists,
+so inventing a name would produce a false “MISSING” report on the next
+run). It is the <em>only</em> thing that makes a destroyed trail
+detectable.</p>
+<p>The fingerprint is computed from the scope file’s literal text
+<strong>before</strong> any repo-relative path is resolved, so it does
+not depend on the directory the run was started from — a change of
+directory must not invalidate a marker.</p>
 <h3 id="the-pass">The pass</h3>
 <ol type="1">
 <li><strong>Re-exec</strong> under <code>nice</code>/<code>ionice</code>
@@ -509,3 +576,24 @@ alone. The automatic first-start invocation is described from the call
 actually present in the working tree at 2026-08-21T15:10Z
 (<code>start.sh</code> → <code>run_ownership_gate()</code>), not from
 the contract’s word for it.</p>
+<p>2026-08-21 (Revision 2) — re-verified after four behaviour changes,
+each with a test-first RED observed in
+<code>tests/unit/test_ownership_repair.sh</code> before the fix:</p>
+<ul>
+<li>repo-relative declared paths are now resolved against the project
+root (Case 14). Measured pre-fix: a run started from <code>/</code>
+reported
+<code>FAILED fixture/... — declared path does not exist and is not optional</code>
+and exited 1 on a path that plainly existed — the §11.4.201(1)
+false-positive refusal. The sibling
+<code>scripts/ownership_precondition.sh</code> already absolutised, so
+the two readers of one scope file had disagreed about relative
+entries.</li>
+<li>the state directory is overridable, default unchanged (Case
+13);</li>
+<li>a completed run’s record is rotated to its own artifact (Case
+12);</li>
+<li>a destroyed record named by the marker is reported (Case 11).</li>
+</ul>
+<p>Suite: 34 assertions passing before this change, 44 after, 0 failed,
+0 skipped.</p>

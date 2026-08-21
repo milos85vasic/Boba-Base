@@ -107,6 +107,14 @@ The gate derives "linuxserver" from the `image:` key, and its header claims this
 linuxserver service added LATER". A service built from a Dockerfile with
 `FROM lscr.io/linuxserver/...` has **no** `image:` key. The reviewer constructed that case
 and the gate **PASSED it undetected** — a `PUID=1000` there would map to host 101910 and go
+<!-- CORRECTION 2026-08-21: the figure 101910 above is WRONG by exactly 1000. MEASURED
+     via `podman info`: the subuid map is 1->100000 (size 65536), and CLAUDE.md states
+     container uid N -> host 100000+N-1. So PUID=1000 maps to host 100999 (not 101910)
+     and container uid 911 maps to 100910 (not 101910). The same off-by-1000 appeared 4x
+     in check_cm_ownership_invariants.sh and 2x in its meta-test and was corrected there.
+     The record above is left verbatim because it is evidence of what the review said;
+     this note is the correction, not a rewrite. The finding it supports is unaffected --
+     the defect was that the gate passed the fixture at all, whatever the exact uid. -->
 unreported. The gate's self-described completeness overstates its coverage. Remediation in
 flight.
 

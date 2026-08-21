@@ -1,6 +1,6 @@
 event: search_start
-data: {"search_id": "d2332f35-e1c2-4440-bfa7-194d4792e234", "status": "started"}
-id: d2332f35-e1c2-4440-bfa7-194d4792e234
+data: {"search_id": "15d83851-79c3-47b2-be2e-81807a77395e", "status": "started"}
+id: 15d83851-79c3-47b2-be2e-81807a77395e
 
 event: tracker_started
-data: {"name": "rutracker", "tracker_url": "https://rutracker.org", "status": "running", "results_count": 0, "started_at": "2026-06-06T14:52:31.876487+00:00", "completed_at": null, "duration_ms": null, "error": null, "error_type": null, "authenticated": true, "attempt": 1, "http_status": null, "category": "all", "query": "debian", "notes": {}}
+data: {"name": "rutracker", "tracker_url": "https://rutracker.org", "status": "running", "results_count": 0, "started_at": "2026-08-21T19:29:04.511685+00:00", "completed_at": null, "duration_ms": null, "error": null, "error_type": null, "authenticated": true, "attempt": 1, "http_status": null, "category": "all", "query": "debian", "notes": {}}

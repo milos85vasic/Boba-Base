@@ -1,7 +1,7 @@
 # `scripts/ownership_repair.sh` — Ownership Repair
 
-**Revision:** 1
-**Last modified:** 2026-08-21T15:00:00Z
+**Revision:** 2
+**Last modified:** 2026-08-21T19:05:00Z
 **Purpose:** Operator guide for the tool that brings pre-existing content back
 under the ownership of the person who started the system.
 **Last verified:** 2026-08-21
@@ -153,6 +153,7 @@ gates and test suites run the script without touching a runtime.
 | `--force` | Ignore a valid completion marker and re-walk the declared scope. |
 | `--dry-run` | Report what would change; change nothing, record nothing, create nothing. Also bypasses the marker check. |
 | `--scope <path>` / `--scope=<path>` | Override the declared scope file. A missing argument to the space-separated form is exit `2`. |
+| `--state-dir <p>` / `--state-dir=<p>` | Override where the completion marker and change record live (default `logs/ownership/` under the project root). Use it for any ad-hoc invocation so the run does not share — or overwrite — the live operator's marker and recovery trail. A missing argument to the space-separated form is exit `2`. |
 | `-h`, `--help` | Print usage and exit `0`. |
 | *(anything else)* | Unrecognised: error + usage to stderr, exit `2`. |
 
@@ -162,6 +163,7 @@ gates and test suites run the script without touching a runtime.
 |---|---|
 | `OWNED_PATHS_FILE` | Scope file path when `--scope` is absent. Default `config/owned_paths.yaml` under the project root. |
 | `CONTAINER_RUNTIME` | **Set-but-empty** = no runtime available; the `unshare` fallback is disabled. **Unset** = detect `podman`, then `docker`. **Non-empty** = use that command verbatim. Set-but-empty is honoured rather than re-detected: probing behind a value the caller explicitly set would do work the caller said not to do (§11.4.201). |
+| `OWNERSHIP_STATE_DIR` | Where the marker and change record live. Default `<project-root>/logs/ownership`. `--state-dir` sets it. Empty is treated as unset (the default is used) rather than as "the current directory" — silently writing the operator's trail into `$PWD` would be worse than either. |
 | `OWNERSHIP_REPAIR_RENICED` | Internal. Set by the script's own host-safety re-exec so it happens exactly once; not intended to be set by hand. |
 | `PYTHON_BIN` | Consulted first when the shared library chooses a PyYAML-capable interpreter. |
 | `TMPDIR` | Where the run's scratch directory is created (removed on exit). |
@@ -243,14 +245,16 @@ Exiting `0` there would make `--dry-run` useless as a pre-flight check.
 
 ### Output artifacts
 
-Both live in `logs/ownership/` at the **project root** — operator-readable, on
-the host (never only inside a container, an E3 rule), and inside the already
-gitignored `logs/` tree so an operational log never becomes a §11.4.30
-versioned-artifact violation. `docs/qa/` was deliberately not used: that tree is
-curated QA evidence (§11.4.83) and is the wrong home for an operational log.
+Both live in `logs/ownership/` at the **project root** by default —
+operator-readable, on the host (never only inside a container, an E3 rule), and
+inside the already gitignored `logs/` tree so an operational log never becomes a
+§11.4.30 versioned-artifact violation. `docs/qa/` was deliberately not used:
+that tree is curated QA evidence (§11.4.83) and is the wrong home for an
+operational log. The location is overridable per run via `--state-dir` /
+`OWNERSHIP_STATE_DIR`; the **default has not moved**.
 
-**`logs/ownership/repair-changes.ndjson`** — the **E3 change record**. Append-only,
-one JSON object per line, greppable by path:
+**`logs/ownership/repair-changes.ndjson`** — the **E3 change record** of the run
+currently **in flight**. Appended to, one JSON object per line, greppable by path:
 
 ```json
 {"path":"/…/config/some.file","previous_uid":100999,"previous_gid":100999,"previous_mode":"644","new_uid":1000,"new_gid":1000,"changed_at":"2026-08-21T14:00:00Z","outcome":"changed"}
@@ -263,8 +267,47 @@ reader could not tell a sentinel from a real value.
 
 This record is the operator's recovery trail for a repair they did not approve
 item by item. It holds **paths, uids, gids and modes only** — never file
-contents, never credential values (§11.4.10). `boba.db` appears as a path;
-nothing of its contents ever does.
+contents, never credential values (§11.4.10). `boba.db` and `.env` appear as
+paths; nothing of their contents ever does.
+
+**`logs/ownership/repair-changes.<UTC-timestamp>.ndjson`** — the same record once
+its run **completed**. On a successful pass the in-flight record is rotated to a
+timestamped name and is never written again, so two completed runs can never
+share an artifact and one deletion can destroy at most one run's trail. A run
+that changed nothing produces no record at all (an empty file is removed rather
+than rotated, so a stream of empty files cannot bury the ones carrying
+evidence). An **interrupted** run's partial record is *not* rotated — it keeps
+the plain name and the resuming run appends to it, so one logical repair keeps
+one record.
+
+#### What "durable" honestly means here (§11.4.6)
+
+data-model E3 calls this record *durable* and *append-only*. Measured
+2026-08-21, that overclaims. The honest statement is narrower:
+
+* **Guaranteed** — the script only ever appends to the record of a run in
+  flight. It never rewrites or truncates one, and never deletes a record
+  belonging to a completed run.
+* **Not guaranteed** — that the file still *exists* later. It lives in a
+  gitignored `logs/` tree that repo tooling demonstrably cleans. On 2026-08-21 a
+  marker and record written at 17:20 were both gone by 20:32 (`logs/` empty, dir
+  mtime 19:21), deleted by a project actor, and nothing noticed. This script
+  cannot defend a directory it does not own.
+
+What it offers instead is **detection**: the marker names the record file of the
+run it marks, and a later run that finds that file gone prints
+
+```
+[ownership-repair] WARNING: the change record named by the completion marker is MISSING: <name>
+```
+
+before opening a new record, so the loss is visible rather than absorbed.
+**Boundary:** if the whole state directory is removed, the marker goes with the
+record and there is nothing left to detect the loss against. Nothing here
+recovers a destroyed trail, and this document does not claim it does.
+
+If you need a trail that survives repo tooling, point `--state-dir` somewhere
+outside the repository.
 
 **`logs/ownership/repair-marker.json`** — the **E2 completion marker**:
 
@@ -272,13 +315,23 @@ nothing of its contents ever does.
 {
   "completed_at": "2026-08-21T14:00:00Z",
   "scope_fingerprint": "<sha256 of the sorted declared scope>",
-  "items_changed": 52
+  "items_changed": 52,
+  "record_file": "repair-changes.20260821T140000Z.ndjson"
 }
 ```
 
 Written via `mktemp` + `mv -f`, so a half-written marker can never be read by
 the next start. Validity is a literal match on the current fingerprint inside
 the file — a stale fingerprint is treated exactly as an absent marker.
+
+`record_file` names this run's rotated change record, and is JSON `null` when
+the run changed nothing (no trail exists, so inventing a name would produce a
+false "MISSING" report on the next run). It is the *only* thing that makes a
+destroyed trail detectable.
+
+The fingerprint is computed from the scope file's literal text **before** any
+repo-relative path is resolved, so it does not depend on the directory the run
+was started from — a change of directory must not invalidate a marker.
 
 ### The pass
 
@@ -377,3 +430,18 @@ edge case in this document was read from `scripts/ownership_repair.sh` and
 first-start invocation is described from the call actually present in the
 working tree at 2026-08-21T15:10Z (`start.sh` → `run_ownership_gate()`), not
 from the contract's word for it.
+
+2026-08-21 (Revision 2) — re-verified after four behaviour changes, each with a
+test-first RED observed in `tests/unit/test_ownership_repair.sh` before the fix:
+
+* repo-relative declared paths are now resolved against the project root
+  (Case 14). Measured pre-fix: a run started from `/` reported
+  `FAILED fixture/... — declared path does not exist and is not optional` and
+  exited 1 on a path that plainly existed — the §11.4.201(1) false-positive
+  refusal. The sibling `scripts/ownership_precondition.sh` already absolutised,
+  so the two readers of one scope file had disagreed about relative entries.
+* the state directory is overridable, default unchanged (Case 13);
+* a completed run's record is rotated to its own artifact (Case 12);
+* a destroyed record named by the marker is reported (Case 11).
+
+Suite: 34 assertions passing before this change, 44 after, 0 failed, 0 skipped.

@@ -54,6 +54,7 @@ cat > "$FIX_README" <<EOF
   <img alt="tests"          src="https://img.shields.io/badge/python%20tests-1%20collected-blue">
   <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-1%20collected-blue">
   <img alt="plugins"        src="https://img.shields.io/badge/plugins-48-blue">
+  <img alt="license"        src="https://img.shields.io/badge/license-Apache%202.0-green">
 </p>
 
 Provenance note: compute-badges.sh computes the count correctly but its
@@ -106,10 +107,38 @@ else
 fi
 
 # ── Assertion 3: unrelated badge lines in the block are untouched ──
-if grep -qF '<img alt="plugins"        src="https://img.shields.io/badge/plugins-48-blue">' "$FIX_README"; then
-    pass "unrelated badge line (plugins) untouched"
+# §11.4.120 reconciliation (2026-08-21): this assertion originally used the
+# `plugins` badge as its "unrelated, must-stay-untouched" control. BOB-149
+# (commit c2c47a8) deliberately taught compute-badges.sh to compute AND
+# rewrite the plugins badge from install-plugin.sh's real PLUGINS=() roster
+# — plugins stopped being unrelated to this script's remit on that commit,
+# and this test's fixture (still declaring a stale `plugins-48-blue`) was
+# never updated to match, so it started failing against a CORRECT change
+# (verified: the real README's plugins badge already reads `plugins-43-blue`,
+# matching install-plugin.sh's 43-entry curated roster — compute-badges.sh's
+# `--check` mode does NOT flag it as stale). Per §11.4.120 the fix is
+# reconciliation, not fake-passing: the carrier control moves to `license`,
+# a badge line compute-badges.sh has no awk rule for and genuinely never
+# touches, so the over-reach guard this assertion exists for stays lethal —
+# and a NEW assertion below proves the plugins badge is still actively
+# (and correctly) managed, so a future regression that stops refreshing it
+# is still caught.
+if grep -qF '<img alt="license"        src="https://img.shields.io/badge/license-Apache%202.0-green">' "$FIX_README"; then
+    pass "unrelated badge line (license) untouched"
 else
-    fail "unrelated badge line (plugins) was modified"
+    fail "unrelated badge line (license) was modified"
+fi
+
+# ── Assertion 3b: the plugins badge IS a managed badge and gets refreshed ──
+# (BOB-149) away from the fixture's deliberately-stale placeholder value.
+if grep -qF 'plugins-48-blue' "$FIX_README"; then
+    fail "plugins badge was NOT refreshed (still the fixture's stale placeholder 48)"
+else
+    if grep -qE '^[[:space:]]*<img alt="plugins"[[:space:]]+src="https://img\.shields\.io/badge/plugins-[0-9]+-blue">$' "$FIX_README"; then
+        pass "plugins badge refreshed to a live count (BOB-149 managed badge)"
+    else
+        fail "plugins badge missing/malformed after rewrite"
+    fi
 fi
 
 # ── Assertion 4: IDEMPOTENCE of the docs/TESTING.md section rewrite ──

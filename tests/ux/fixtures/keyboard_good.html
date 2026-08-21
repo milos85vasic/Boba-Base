@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Boba UX Keyboard-Nav Golden-Good Fixture</title>
+  <style>
+    body { background:#ffffff; color:#1a1a1a; font-family: sans-serif; margin: 2rem; }
+    /* A real, visible focus indicator on every interactive element. */
+    a:focus-visible, button:focus-visible, input:focus-visible {
+      outline: 3px solid #0b5fff;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <a href="#main" id="skip">Skip to content</a>
+  <nav>
+    <a href="#one" id="nav1">Link One</a>
+    <a href="#two" id="nav2">Link Two</a>
+  </nav>
+  <main id="main">
+    <button id="btn1">Action One</button>
+    <input id="inp1" type="text" aria-label="query">
+    <button id="btn2">Action Two</button>
+  </main>
+</body>
+</html>

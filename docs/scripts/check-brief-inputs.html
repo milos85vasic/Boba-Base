@@ -1,0 +1,74 @@
+<h1
+id="scriptshookscheck-brief-inputs.sh-pre-dispatch-input-existence-check"><code>scripts/hooks/check-brief-inputs.sh</code>
+— pre-dispatch input existence check</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T19:55:00Z <strong>Purpose:</strong> §11.4.201(6) / §11.4.252
+fail-closed check that every input a task brief declares actually exists
+and is non-empty BEFORE a subagent is dispatched against it.
+<strong>Last verified:</strong> 2026-08-21</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>A task brief names its source materials. If one of those files is
+missing when the subagent starts, the agent does not stop — it proceeds
+against what it can read and produces confident output grounded in less
+evidence than the brief promised. That is the §11.4.201(6) FALSE-NULL at
+the dispatch layer: absent input and empty input are indistinguishable
+from “nothing to say here”.</p>
+<p>MEASURED, the case this guard exists for: the forensic brief
+<code>.superpowers/sdd/task-phase1a-brief.md</code> still exists, but
+the scratchpad session directory holding its inputs is <strong>entirely
+gone</strong>. Run against that brief today, this guard separates the 6
+genuinely-missing files (naming each) from the 2 that are present, and
+exits 1 — reproducing exactly what should have blocked that
+dispatch.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>A readable brief file, or an explicit <code>--file</code> list. No
+network, no runtime.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<pre><code>bash scripts/hooks/check-brief-inputs.sh --brief &lt;path-to-brief&gt;
+bash scripts/hooks/check-brief-inputs.sh --file &lt;p1&gt; --file &lt;p2&gt;
+bash scripts/hooks/check-brief-inputs.sh --self-test</code></pre>
+<p>Exit status: <code>0</code> when every declared input exists and is
+non-empty; <code>1</code> otherwise, with a per-path report naming each
+missing file and the remediation (“respawn the producer”).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Present but EMPTY is a failure, not a pass.</strong> A
+zero-byte file is the clearest form of the false-null this guard exists
+to catch.</li>
+<li><strong>Path shorthand.</strong> Briefs in this repo abbreviate long
+paths with <code>…</code>; the extractor handles that convention rather
+than silently skipping such lines — a skipped line would be a false-null
+of its own.</li>
+<li><strong>A brief with no <code>## Source materials</code>
+section</strong> yields nothing to check; that is reported honestly
+rather than counted as a pass.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<p>Fails CLOSED (§11.4.252): when an input’s status cannot be resolved,
+the guard refuses rather than proceeding, and prints the resolved
+evidence for every refusal (§11.4.201(5)) so a false positive is
+diagnosable in one step.</p>
+<p><strong>Paired §1.1 mutation (verified):</strong> neutering the
+existence/non-empty checks makes the self-test FAIL and makes the real
+scan report “OK — all 8 present” against the forensic brief — the exact
+fabricate-on-absent-evidence failure mode this guard prevents. Restored,
+sha256-identical, both green.</p>
+<h2 id="known-gap-stated-rather-than-implied">Known gap — stated rather
+than implied</h2>
+<p>This is <strong>conductor-run tooling, not an automatic PreToolUse
+hook</strong>. A brief’s required-input list lives in free-form prose
+that the Agent tool’s structured input does not expose, so an automatic
+prompt-scraping gate would itself be an unproven pattern-match
+(§11.4.201(7)(a)). Its seam is therefore the dispatch procedure — a
+habit backed by a runnable check — and that limitation is tracked in
+<strong>BOB-162</strong> rather than papered over.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>tests/hooks/test_check_brief_inputs.sh</code> — 15
+real-invocation assertions</li>
+<li><code>scripts/hooks/unattributed-commit-guard.sh</code> — sibling
+hygiene guard</li>
+</ul>

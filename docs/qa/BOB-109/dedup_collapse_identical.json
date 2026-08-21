@@ -1,0 +1,9 @@
+{
+  "axis": "dedup correctness at scale (all-identical union)",
+  "captured_at": "2026-08-21T19:56:03Z",
+  "elapsed_ms": 184.453,
+  "feature_class": "scaling",
+  "groups_out": 300,
+  "item": "BOB-109",
+  "n_results": 300
+}

@@ -95,6 +95,23 @@ harness_new_sandbox() {
     # absolute path, NOT PATH-resolved, so it needs its own recorder.
     harness_write_shim "$sb/repo/scripts/boba-ctl.sh"
 
+    # Feature 002's ownership gate (start.sh run_ownership_precondition /
+    # run_ownership_repair) REFUSES to start when these scripts are missing, so
+    # a sandbox without them cannot reach the reload/recreate dispatch at all.
+    # MEASURED 2026-08-21: test_start_reload_recreate.sh went 8/8 -> 1/8 the
+    # moment the gate landed (c2c47a8, committed under a recorded [skip-ci]
+    # deferral per §11.4.234(D)); the pre-gate start.sh still scores 8/8, which
+    # is the control proving the drop is the gate and not the suite.
+    #
+    # These recorder shims model "the ownership gate passed" AND make the gate's
+    # ORDER relative to compose observable in argv.log -- which is exactly the
+    # FR-004d invariant the recreate suite asserts. The gate's OWN correctness
+    # is covered by tests/unit/test_ownership_precondition.sh and
+    # tests/unit/test_ownership_repair.sh; stubbing it here is a seam, not a
+    # weakening (§11.4.120 reconcile-to-the-new-mechanism).
+    harness_write_shim "$sb/repo/scripts/ownership_precondition.sh"
+    harness_write_shim "$sb/repo/scripts/ownership_repair.sh"
+
     for util in "${HARNESS_SYSBIN_UTILS[@]}"; do
         local real
         real="$(PATH="/usr/bin:/bin:/usr/sbin:/sbin" command -v "$util" 2>/dev/null || true)"

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import sys
+import types
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
@@ -74,6 +75,67 @@ def _fixup_merge_service_path() -> None:
             ms.__path__ = [_CORRECT_MS_PATH]  # type: ignore[attr-defined]
 
 
+def _resync_submodule_attrs() -> None:
+    """Make every parent package's submodule ATTRIBUTE agree with ``sys.modules``.
+
+    Importing ``api.hooks`` has TWO side effects: ``sys.modules["api.hooks"] =
+    mod`` AND ``sys.modules["api"].hooks = mod``. The snapshot/restore in
+    :func:`_isolate_download_proxy_modules` only ever repaired the first one.
+    The second is an in-place mutation of a module object the snapshot copied by
+    reference, so restoring ``sys.modules`` cannot undo it.
+
+    That gap produced BOB-135. ``tests/unit/api_layer/test_hooks_coverage.py``
+    (and its siblings) legitimately purge ``sys.modules["api.hooks"]`` and
+    re-import it; both views then point at the FRESH module. On teardown
+    ``sys.modules.update(saved)`` put the ORIGINAL object back in ``sys.modules``
+    while the parent attribute kept the fresh one -- from there on, two live
+    ``api.hooks`` modules with independent ``HOOKS_FILE`` globals, and which one
+    you got depended on how you asked for it:
+    ``monkeypatch.setattr("api.hooks.HOOKS_FILE", ...)`` walks the parent
+    ATTRIBUTE (pytest's ``derive_importpath``/``resolve``), while ``from
+    api.hooks import router`` returns the ``sys.modules`` entry. The patch landed
+    on the module the app did not use, so the app kept the real
+    ``/config/download-proxy/hooks.json`` path and its write was refused with
+    ``[Errno 13] Permission denied: '/config'`` -- a failure that only appeared
+    once an earlier test had split the module, i.e. only in the bulk suite.
+
+    ``sys.modules`` is authoritative (it is what ``import`` returns), so parent
+    attributes are re-pointed at it. Attributes left orphaned by a purge are
+    dropped as well, because ``resolve()`` reads the parent attribute BEFORE it
+    attempts an import and would otherwise keep handing out the dead module.
+
+    Guarded by ``tests/unit/test_module_attr_isolation_guard.py`` (§11.4.135).
+    """
+    # sys.modules -> parent attribute.
+    for name, mod in list(sys.modules.items()):
+        if "." not in name or not isinstance(mod, types.ModuleType):
+            continue
+        if name.split(".", 1)[0] not in _POLLUTING_ROOTS:
+            continue
+        parent_name, _, child = name.rpartition(".")
+        parent = sys.modules.get(parent_name)
+        # Only real modules: a few tests install a MagicMock as sys.modules["api"]
+        # and assert on it, so writing attributes onto it would be pollution of
+        # exactly the kind this fixture exists to prevent.
+        if not isinstance(parent, types.ModuleType):
+            continue
+        if getattr(parent, child, None) is not mod:
+            setattr(parent, child, mod)
+
+    # Drop parent attributes whose sys.modules entry is gone.
+    for name, parent in list(sys.modules.items()):
+        if not isinstance(parent, types.ModuleType) or not hasattr(parent, "__path__"):
+            continue
+        if name.split(".", 1)[0] not in _POLLUTING_ROOTS:
+            continue
+        for child, value in list(vars(parent).items()):
+            if not isinstance(value, types.ModuleType):
+                continue
+            full = f"{name}.{child}"
+            if getattr(value, "__name__", None) == full and full not in sys.modules:
+                delattr(parent, child)
+
+
 def _purge_stub_api_module() -> None:
     """Remove stub api packages created by test modules at import time.
 
@@ -125,10 +187,12 @@ def _cleanup_event_loop(request):
     gc.collect()
 
     # Close any loop that was set on the current thread without creating
-    # a new one.  We probe the policy's internal storage first; if that
-    # fails we fall back to the public API.
+    # a new one.  The policy's thread-local storage is the only accessor
+    # that can read the current loop WITHOUT manufacturing one, so it is
+    # the sole probe -- see the no-fallback note below.
     try:
-        # asyncio.get_event_loop_policy() itself is deprecated (slated for
+        # Resolving the POLICY getter is interpreter-dependent (BOB-158).
+        # asyncio.get_event_loop_policy() is deprecated from 3.14 (slated for
         # removal in Python 3.16) and, under this project's default
         # `error::DeprecationWarning` pytest filter (pyproject.toml), calling
         # it raises DeprecationWarning-as-exception on EVERY test's teardown
@@ -136,18 +200,54 @@ def _cleanup_event_loop(request):
         # is the exact same lazy-init implementation the public function
         # delegates to (verified: `get_event_loop_policy` is a one-line
         # `warnings._deprecated(...)` shim around it) with no deprecation
-        # shim of its own, so this preserves identical behaviour without
-        # tripping the filter. See tests/conftest.py Task-7 warnings audit
+        # shim of its own -- but it is ABSENT on the interpreter production
+        # actually runs, 3.12.13 (docker-compose.yml pins python:3.12-alpine;
+        # pyproject.toml declares py312 for both ruff and mypy). The exact
+        # release that introduced the private name was not probed (no 3.13
+        # interpreter available here), so this binds by feature-detection
+        # rather than by a version comparison. Measured on the two
+        # interpreters that matter, under -W error::DeprecationWarning:
+        #
+        #   3.14.6   _get_event_loop_policy present; public getter WARNS
+        #   3.12.13  _get_event_loop_policy ABSENT;  public getter is silent
+        #
+        # so binding whichever name this interpreter provides is warning-free
+        # on both. Hardcoding the private name made the suite unrunnable on
+        # the deployed interpreter: AttributeError on every teardown, which
+        # `except RuntimeError` below does not catch (measured: 870 passed,
+        # 870 errors for tests/unit/merge_service/ on 3.12.13). The lookup is
+        # deliberately lazy rather than a `getattr(..., default)`: a default
+        # argument is evaluated eagerly and would itself raise on a future
+        # release that has completed the 3.16 removal.
+        # See tests/conftest.py Task-7 warnings audit
         # (.superpowers/sdd/task-7-warnings-audit.md) for the root-cause
         # trail: this DeprecationWarning was previously silently absorbed by
         # a too-broad `except Exception: pass` immediately below (§11.4.201(1)
         # false-positive guard-bug).
-        policy = asyncio.events._get_event_loop_policy()
+        _get_policy = getattr(asyncio.events, "_get_event_loop_policy", None)
+        if _get_policy is None:
+            _get_policy = asyncio.events.get_event_loop_policy
+        policy = _get_policy()
         loop = None
         if hasattr(policy, "_local") and hasattr(policy._local, "_loop"):
             loop = policy._local._loop
-        if loop is None:
-            loop = policy.get_event_loop()
+        # There is deliberately NO `policy.get_event_loop()` fallback here
+        # (BOB-158). Under the stock policy `_local._loop` is authoritative --
+        # set_event_loop(l) stores l there and get_event_loop() reads it back
+        # (measured: `policy._local._loop is l` after set_event_loop(l), on
+        # both 3.12.13 and 3.14.6) -- so once it is None there is no
+        # pre-existing loop left for a fallback to discover. All the fallback
+        # could do was manufacture one, which is exactly what the comment
+        # above forbids: measured on 3.12.13 it raises
+        # DeprecationWarning("There is no current event loop") -- an error
+        # under the filter above, and the second half of BOB-158 -- and,
+        # unfiltered, it CREATES a fresh loop only for this block to close.
+        # On 3.14.6 it can only raise RuntimeError, which the handler below
+        # swallowed, so the dead branch stayed invisible for as long as the
+        # suite ran on 3.14 alone. `_local._loop` is present on BOTH
+        # interpreters, so removing the fallback costs no coverage on either;
+        # a policy without `_local` leaves `loop` None and this fixture
+        # correctly does nothing rather than guess.
         if loop is not None and not loop.is_closed():
             if loop.is_running():
                 # Cancel every task we can reach.
@@ -186,18 +286,17 @@ def _cleanup_event_loop(request):
                     pass
                 loop.close()
     except RuntimeError:
-        # The only legitimate exception this block can raise: no current
-        # event loop set for this thread (policy.get_event_loop() raises
-        # RuntimeError("There is no current event loop in thread ...")
-        # rather than auto-creating one on this Python version -- verified
-        # empirically, `.venv/bin/python -W error::DeprecationWarning -c
-        # "import asyncio.events as ev; ev._get_event_loop_policy()
-        # .get_event_loop()"` raises plain RuntimeError, not
-        # DeprecationWarning). A blanket `except Exception` here previously
-        # also silently swallowed any DeprecationWarning-as-exception raised
-        # by this block's own code (e.g. from a stray deprecated-API call),
-        # defeating the project's error::DeprecationWarning enforcement
-        # policy -- narrowed per Task-7 warnings audit recommendation #1.
+        # Defensive only. This previously caught the RuntimeError("There is
+        # no current event loop in thread ...") raised by the
+        # policy.get_event_loop() fallback on 3.14; that call is gone
+        # (BOB-158), so the sole reachable source left is loop.close()
+        # racing a loop that became running between the is_running() test
+        # and the close. Deliberately still narrow: a blanket
+        # `except Exception` here previously silently swallowed any
+        # DeprecationWarning-as-exception raised by this block's own code
+        # (e.g. from a stray deprecated-API call), defeating the project's
+        # error::DeprecationWarning enforcement policy -- narrowed per
+        # Task-7 warnings audit recommendation #1.
         pass
 
     # Unset the thread-local loop so the next test starts fresh.
@@ -275,6 +374,7 @@ def _isolate_download_proxy_modules(request):
     _saved_environ = dict(os.environ)
     _fixup_merge_service_path()
     _purge_stub_api_module()
+    _resync_submodule_attrs()
     try:
         yield
     finally:
@@ -290,6 +390,9 @@ def _isolate_download_proxy_modules(request):
         os.environ.clear()
         os.environ.update(_saved_environ)
         _fixup_merge_service_path()
+        # sys.modules.update(saved) above cannot undo the parent-package
+        # attributes the import system mutated in place -- see BOB-135.
+        _resync_submodule_attrs()
 
 
 # Re-export live-service fixtures so that tests can request them by name

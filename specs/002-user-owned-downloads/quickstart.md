@@ -107,7 +107,27 @@ rather than on success — the exact defect clarify Q1 closed.
 
 ## Scenario 4 — Unusable storage refuses startup (FR-010 / §11.4.201(1))
 
+**Load `.env` first.** `scripts/ownership_precondition.sh` is invoked here directly,
+not via `./start.sh` — and only `start.sh`'s `load_environment()` exports
+`QBITTORRENT_DATA_DIR` from `.env`. A bare shell that has not sourced `.env` leaves the
+`${QBITTORRENT_DATA_DIR:-/mnt/DATA}` placeholder in `config/owned_paths.yaml` falling
+through to its documented default (`/mnt/DATA`), not this host's real download root.
+Measured on this host 2026-08-21:
+
 ```bash
+$ env -u QBITTORRENT_DATA_DIR scripts/ownership_precondition.sh; echo "exit=$?"
+...
+  - /mnt/DATA: declared (kind=downloads) but ABSENT, and it is not marked optional — E1 makes an absent non-optional path an error, not a skip
+Startup refused. Fix the location(s) above, or run scripts/ownership_repair.sh.
+exit=1
+```
+
+That is a real refusal, but it is refusing over the wrong path, not testing the healthy
+system this scenario is meant to check. Load `.env` the same way `start.sh` does, then
+run the scenario as written:
+
+```bash
+set -a; source .env; set +a
 scripts/ownership_precondition.sh; echo "exit=$?"     # healthy: expect 0
 ```
 

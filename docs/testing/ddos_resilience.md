@@ -1,7 +1,7 @@
 # DDoS Resilience Testing
 
-**Revision:** 2
-**Last modified:** 2026-08-18T19:25:00Z
+**Revision:** 3
+**Last modified:** 2026-08-21T19:40:00Z
 
 Documents `challenges/scripts/ddos_resilience_challenge.sh` — the DDoS-class
 testing scaffold added by **BOB-074** to close a gap in boba's §11.4.27
@@ -94,21 +94,94 @@ again, `RED_MODE=1` goes back to `PASS` (defect reproduced) and `RED_MODE=0`
 would `FAIL` — "strip rate limiting → challenge FAILs" holds from the point
 a limiter first exists.
 
-## Self-validation (§11.4.107(10)-style)
+## Self-validation (§11.4.107(10))
 
-`bash challenges/scripts/ddos_resilience_challenge.sh --self-validate` spins
-up two throwaway local `python3` `ThreadingHTTPServer`s — one that always
-answers `200`, one that always answers `500` — and asserts the
-crash-resistance detector correctly `PASS`es the good fixture and `FAIL`s
-the bad one. This proves the detector is not a tautology (it can actually
-see a broken backend), not merely that it runs without crashing.
+The self-validation runs **automatically at the start of every invocation**,
+including the bare no-arg form `challenges/scripts/run_all_challenges.sh`
+uses — it is not something an operator has to remember to ask for. If a
+detector fails its own fixtures the challenge refuses to run the live probes
+at all and exits `1`: an unvalidated detector mints no verdicts
+(§11.4.115(F)). Registration is not coverage (§11.4.226) — before **BOB-114**
+the self-test existed but nothing in the normal path ever executed it.
+`--self-validate` still works as a standalone mode for running just the
+fixtures.
 
-**Scope limitation, stated honestly:** this round only self-validates the
-crash-resistance detector (assertion 1). The rate-limiting detector
-(assertion 2) has no synthetic golden-bad fixture in this scaffold — a
-throwaway server that emits 429s past some threshold would be needed to
-validate it, and was left out of this round for time. Filed as a followup
-(see below).
+Every fixture is a throwaway local `python3` `ThreadingHTTPServer` bound to
+port **0** (the kernel picks a free port, which the server prints on stdout
+and the script reads back) — never a fixed port, so two concurrent runs
+cannot collide, and never the real boba stack.
+
+### Detector 1 — crash resistance
+
+| Fixture | Behaviour | Detector must |
+|---|---|---|
+| golden-**good** | always `200` | not flag it |
+| golden-**bad** | always `500` | see every response as `5xx` |
+
+### Detector 2 — rate limiting (added by BOB-114)
+
+Before BOB-114 this detector had **no fixture at all** and had therefore
+never been observed to FAIL — unvalidated instrumentation in the
+§11.4.115(F) sense. The RED that proved it: a §1.1 mutation making the 429
+tally always report `999` (so the detector always claims "rate limiting
+engaged") left the old self-test **fully green**. A detector that would
+certify a completely unprotected deployment as rate-limited was invisible to
+its own self-test.
+
+| Fixture | Behaviour | Detector must classify |
+|---|---|---|
+| golden-**good** (`enforcing`) | `200` up to a threshold, `429` past it | `engaged` |
+| golden-**bad** (`absent`) | always `200`; never `429`, never `503`, no matter the burst | `absent` |
+| golden-**FALSE-with-carrier** (`carrier`) | always `200`, but carrying `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Policy` / `Retry-After` headers **and** a body that literally reads `429 Too Many Requests: rate limit exceeded` | `absent` |
+
+The carrier fixture is the §11.4.201(7)(a) guard: a server that *advertises*
+a limit it never enforces is the exact lookalike a substring-matching
+detector false-fires on, and a false-positive refusal is as forbidden as a
+false pass (§11.4.201(1)). The detector matches on **field 1 of the probe
+log — the curl-reported HTTP status code** — never on bodies or headers.
+
+The self-test also asserts the full **(class × `RED_MODE`) verdict truth
+table**, so both polarity arms are exercised rather than only the one boba's
+current state happens to hit:
+
+| class | `RED_MODE=0` (GREEN) | `RED_MODE=1` (RED) |
+|---|---|---|
+| `engaged` | `PASS` | `FAIL` |
+| `absent` | `SKIP` (`extension_absent`) | `PASS` |
+
+### One detector, two consumers
+
+`ratelimit_classify` and `ratelimit_verdict_kind` are the **single**
+implementation. The live run and the self-test both call them, so a mutation
+to the detector breaks the self-test too. A second copy inside the self-test
+would validate the copy, not the detector that mints live verdicts — a
+tautology (§11.4.249).
+
+### Mutation evidence (2026-08-21)
+
+Each mutation was applied to the real file, run, then restored and verified
+byte-identical by sha256. The mutation harness itself carries a control
+needle: it refuses to draw any conclusion unless the file's sha256 actually
+changed — an earlier version of this harness silently failed to apply its
+mutations and reported "mutation survived" from an instrument that never
+fired (§11.4.201(6)).
+
+| Mutation | Effect | Result |
+|---|---|---|
+| **M1** — 429 tally always returns `999` | detector always claims "engaged" | `absent` + `carrier` both flip to `engaged` → **FAIL** |
+| **M2** — 429 tally always returns `0` | detector can never see a real limiter | `enforcing` flips to `absent` → **FAIL** |
+| **M3** — probe records the response **body prefix** instead of the HTTP status code (the §11.4.201(9) field-identity regression) | a body that *mentions* `429` is read as the *status* `429` | **only** `carrier` flips (`429=12`) → **FAIL** — this is the carrier fixture earning its place |
+
+### Sample-relative assertions
+
+Assertions are made against the sample actually collected, never against the
+literal request count: `run_curl_status_probe` stops launching once its
+wall-clock budget is spent, so a hard `== 30` would turn ordinary host load
+into a false FAIL. The self-test runs under its own larger budget (30s, vs
+the 12s live-tier budget which exists to bound a genuinely-slow *real*
+backend) and refuses to conclude at all below `SV_MIN_SAMPLE` — a truncated
+sample is not evidence either way (§11.4.201(6)).
+
 
 ## Scoping decisions
 
@@ -329,9 +402,13 @@ completed — see the BOB-NNN id on each item below:
    challenge) to exercise the real `POST /api/v1/search` fanout path via a
    sandboxed/mocked-tracker setup, without ever touching real third-party
    tracker sites.
-4. **Task** (filed as **BOB-114**): add a golden-bad synthetic fixture to
-   `--self-validate` that validates the rate-limiting detector itself
-   (currently only the crash-resistance detector is self-validated).
+4. **Task** (filed as **BOB-114**, **CLOSED 2026-08-21**): add a golden-bad
+   synthetic fixture to `--self-validate` that validates the rate-limiting
+   detector itself. Delivered with three fixtures (enforcing / absent /
+   advertises-but-never-enforces carrier), the full polarity truth table, a
+   shared single-implementation detector, and automatic execution on every
+   invocation — see "Self-validation" above for the RED and the M1/M2/M3
+   mutation evidence.
 5. **Task (test-type matrix, see `docs/testing/test_type_matrix.md`)**
    (filed as **BOB-109** scaling / **BOB-110** UX): scaling-class and
    UX-class test coverage are both fully absent from boba's mandated

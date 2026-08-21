@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Boba UX A11y Golden-Good Fixture</title>
+  <style>
+    body { background:#ffffff; color:#1a1a1a; font-family: sans-serif; margin: 2rem; }
+    h1 { font-size: 1.6rem; }
+    h2 { font-size: 1.2rem; }
+    .decorative { width: 24px; height: 24px; }
+    button:focus-visible, a:focus-visible, input:focus-visible {
+      outline: 3px solid #0b5fff;
+      outline-offset: 2px;
+    }
+    .icon-btn svg { width:16px; height:16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Boba UX Accessibility Fixture</h1>
+  </header>
+  <main>
+    <h2>Search</h2>
+    <form>
+      <label for="q">Search query</label>
+      <input id="q" name="q" type="text">
+      <button type="submit">Search</button>
+    </form>
+
+    <h2>Results</h2>
+    <!-- Meaningful image: real descriptive alt text (BOB-110 golden case). -->
+    <img src="poster.jpg" alt="Ubuntu 24.04 LTS official cover art" width="80" height="120">
+    <!-- Decorative image: empty alt is the CORRECT pattern and MUST NOT be
+         flagged by the accessibility oracle (BOB-110 golden-FALSE case 1). -->
+    <img src="divider.png" alt="" class="decorative">
+    <!-- Icon-only control: the icon is aria-hidden (decorative) while the
+         BUTTON itself carries the accessible name via aria-label. This is
+         the correct pattern and MUST NOT be flagged (BOB-110 golden-FALSE
+         case 2 — the aria-hidden decorative icon). -->
+    <button class="icon-btn" aria-label="Download magnet link">
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16"><path d="M1 1h14v14H1z"/></svg>
+    </button>
+    <a href="#results">Jump to results</a>
+  </main>
+</body>
+</html>

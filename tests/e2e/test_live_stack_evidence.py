@@ -25,6 +25,8 @@ Evidence dir: docs/qa/e2e-live-20260606/
 
 from __future__ import annotations
 
+import ast
+import inspect
 import json
 import os
 import time
@@ -76,6 +78,49 @@ def _wait_for_idle(max_wait: float = 180.0) -> None:
             pass
         time.sleep(2)
     # Don't hard-fail on a busy service; the search call itself retries.
+
+
+# §11.4.69 CM-NO-FAIL-OPEN-SKIP: the closed set of `error_type` values that
+# are DEFINITIVE product-side failures — our own credentials were rejected,
+# our own container is missing a required path, or our own plugin broke.
+# None of these can honestly be reported as "a transient upstream outage",
+# so a test MUST NOT convert them into a PASS-counting SKIP.
+# Vocabulary grounded in download-proxy/src/merge_service/search.py
+# (_classify_plugin_failure), read 2026-08-21 — not invented (§11.4.6).
+DEFINITIVE_AUTH_FAILURE_TYPES = frozenset(
+    {
+        "upstream_http_403",        # credentials rejected by upstream
+        "plugin_env_missing",       # container lacks a path the plugin needs
+        "plugin_crashed",           # our plugin raised
+        "plugin_parse_failure",     # our plugin could not parse upstream
+        "plugin_bad_query_encoding",  # our plugin did not URL-encode
+    }
+)
+
+# Genuinely transient / network-side conditions. These remain honestly
+# skippable — the §11.4.201(1) false-positive guard: hardening the
+# definitive classes must NOT turn a real outage into a false FAIL.
+TRANSIENT_AUTH_FAILURE_TYPES = frozenset(
+    {
+        "deadline_timeout",
+        "upstream_timeout",
+        "dns_failure",
+        "tls_failure",
+        "upstream_incomplete",
+        "upstream_http_404",  # upstream domain moved — upstream-side, not ours
+    }
+)
+
+
+def _auth_failure_is_definitive(stat: dict) -> bool:
+    """True when a tracker stat carries a DEFINITIVE product-side failure.
+
+    §11.4.6: an `error_type` outside BOTH closed sets is UNKNOWN, not
+    "transient" — we return False (conservative-safe, still skippable per
+    §11.4.101) but the caller states the unresolved signal honestly rather
+    than asserting "transient outage" as a fact it has not established.
+    """
+    return stat.get("error_type") in DEFINITIVE_AUTH_FAILURE_TYPES
 
 
 @pytest.fixture(scope="module")
@@ -205,9 +250,30 @@ def test_iptorrents_is_authenticated_in_search(debian_search: dict) -> None:
         {k: ipt.get(k) for k in ("name", "status", "authenticated", "results_count", "error", "error_type")},
     )
     if not ipt.get("authenticated") and ipt.get("status") != "success":
-        pytest.skip(  # SKIP-OK: iptorrents momentarily down, §11.4.3
-            f"iptorrents not authenticated and status={ipt.get('status')!r} "
-            f"(error={ipt.get('error')!r}) — treating as transient outage, not a fail."
+        # §11.4.69 CM-NO-FAIL-OPEN-SKIP (BOB-092, extend-to-all-cases
+        # §11.4.146): the OLD code skipped unconditionally here and asserted
+        # "transient outage" as a fact. That is a fail-open: rejected
+        # credentials (upstream_http_403) and a broken container
+        # (plugin_env_missing) are DEFINITIVE product failures and were
+        # being reported as a PASS-counting SKIP.
+        if _auth_failure_is_definitive(ipt):
+            pytest.fail(
+                f"iptorrents auth failed DEFINITIVELY: error_type="
+                f"{ipt.get('error_type')!r}, status={ipt.get('status')!r}, "
+                f"error={ipt.get('error')!r}. This is a product-side failure "
+                "(credentials rejected / container or plugin broken), not a "
+                "transient upstream outage — §11.4.69 forbids skipping it."
+            )
+        if ipt.get("error_type") in TRANSIENT_AUTH_FAILURE_TYPES:
+            pytest.skip(  # SKIP-OK: proven-transient upstream condition, §11.4.3
+                f"iptorrents transient upstream condition error_type="
+                f"{ipt.get('error_type')!r} (error={ipt.get('error')!r})."
+            )
+        pytest.skip(  # SKIP-OK: signal unresolved, conservative-safe §11.4.101
+            f"UNKNOWN: iptorrents not authenticated, status={ipt.get('status')!r}, "
+            f"error_type={ipt.get('error_type')!r} is in neither the definitive "
+            "nor the transient closed set — cannot classify (§11.4.6), so this "
+            "is NOT reported as a transient outage."
         )
     # User-observable: the dashboard chip shows iptorrents as authenticated.
     assert ipt.get("authenticated") is True, (
@@ -353,3 +419,131 @@ def test_sse_stream_emits_lifecycle_events(live_url: str) -> None:
         f"no recognised SSE lifecycle event arrived; events seen: {sorted(events)}, "
         f"first frames: {frames[:6]}"
     )
+
+
+# --------------------------------------------------------------------------- #
+# 8. BOB-092 — §11.4.69 CM-NO-FAIL-OPEN-SKIP guards
+# --------------------------------------------------------------------------- #
+def _module_ast() -> ast.Module:
+    """Parse THIS module's own source for structural inspection.
+
+    §11.4.201(7)(a): match STRUCTURE, not substring. A grep for "404"
+    matches this comment; an AST walk cannot be fooled by a carrier, and a
+    rename/reword mutation still trips the guard (so it is not the
+    tautological string-deletion mutation §11.4.115(F) refuses).
+    """
+    return ast.parse(inspect.getsource(__import__(__name__, fromlist=["_"])))
+
+
+def _func_node(name: str) -> ast.FunctionDef:
+    for node in ast.walk(_module_ast()):
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return node
+    raise AssertionError(f"function {name!r} not found in module AST")
+
+
+def _skip_calls(node: ast.AST) -> list[ast.Call]:
+    out = []
+    for sub in ast.walk(node):
+        if (
+            isinstance(sub, ast.Call)
+            and isinstance(sub.func, ast.Attribute)
+            and sub.func.attr == "skip"
+            and isinstance(sub.func.value, ast.Name)
+            and sub.func.value.id == "pytest"
+        ):
+            out.append(sub)
+    return out
+
+
+def _mentions_status_code(node: ast.AST) -> bool:
+    """True if this subtree reads an HTTP status code."""
+    return any(
+        isinstance(sub, ast.Attribute) and sub.attr == "status_code"
+        for sub in ast.walk(node)
+    )
+
+
+def test_guard_nnmclub_status_test_has_no_fail_open_skip() -> None:
+    """BOB-092 PERMANENT REGRESSION GUARD (§11.4.135).
+
+    The fix that removed the SKIP-on-404 landed at commit 7baef2b with NO
+    guard, and the only test covering it needs the LIVE STACK — so with the
+    stack down a re-introduced fail-open would be invisible. This guard is
+    live-stack-INDEPENDENT and fails the moment the fail-open returns.
+
+    §11.4.69 reasoning: a 404 is a RESPONSE, so the host was reachable and
+    `network_unreachable_external` is definitionally false. No other member
+    of the closed reason set fits either — the service is our own, on the
+    configured port, with the route declared in source. A 404 is therefore a
+    real §11.4.108 SOURCE->ARTIFACT deployment drift and MUST hard-FAIL.
+    """
+    fn = _func_node("test_nnmclub_status_endpoint")
+    offenders = _skip_calls(fn)
+    assert not offenders, (
+        "BOB-092 REGRESSION: test_nnmclub_status_endpoint contains "
+        f"{len(offenders)} pytest.skip() call(s) at line(s) "
+        f"{[c.lineno for c in offenders]}. A non-200 from our own service is a "
+        "real product failure (§11.4.108 drift) and must FAIL, never SKIP "
+        "(§11.4.69 CM-NO-FAIL-OPEN-SKIP)."
+    )
+
+
+def test_guard_no_skip_is_conditioned_on_an_http_status_code() -> None:
+    """Class-wide guard (§11.4.146 extend-to-all-cases).
+
+    A received HTTP status code proves the host ANSWERED. Branching on one
+    to decide to SKIP is the BOB-092 fail-open shape wherever it appears, so
+    no `if <...>.status_code ...:` block in this module may contain a skip.
+    """
+    offenders: list[tuple[int, int]] = []
+    for node in ast.walk(_module_ast()):
+        if isinstance(node, ast.If) and _mentions_status_code(node.test):
+            for call in _skip_calls(node):
+                offenders.append((node.lineno, call.lineno))
+    assert not offenders, (
+        "fail-open detected: skip() reached from an HTTP-status-code branch at "
+        f"(if_line, skip_line)={offenders}. The host responded, so no closed-set "
+        "§11.4.69 reason applies — this must FAIL, not SKIP."
+    )
+
+
+def test_guard_legitimate_topology_skip_is_preserved() -> None:
+    """GOLDEN-FALSE / §11.4.201(1) false-positive guard.
+
+    Hardening the fail-open must NOT turn every legitimate skip into a false
+    FAIL. A genuinely UNREACHABLE host (connection refused — no response at
+    all) and a genuinely absent tracker are honest §11.4.3 topology skips and
+    MUST remain skips. If a future 'hardening' deletes them, this fails.
+    """
+    unreachable = _func_node("live_url")
+    assert _skip_calls(unreachable), (
+        "live_url fixture no longer SKIPs when the service is unreachable. An "
+        "unreachable host yields NO response — that is an honest topology skip "
+        "(§11.4.3), not a product failure. Removing it is a §11.4.201(1) "
+        "false-positive refusal."
+    )
+    assert not _mentions_status_code(unreachable), (
+        "live_url's skip must stay conditioned on reachability, not on a "
+        "status code (a status code means the host answered)."
+    )
+
+    absent = _func_node("test_iptorrents_is_authenticated_in_search")
+    assert _skip_calls(absent), (
+        "the iptorrents test must retain an honest skip for the "
+        "not-configured / proven-transient cases (§11.4.201(1))."
+    )
+
+
+def test_definitive_auth_failure_is_not_skipped() -> None:
+    """A tracker whose sink-side probe reports a DEFINITIVE product-side
+    failure MUST NOT be skipped as a 'transient outage' (§11.4.69)."""
+    assert _auth_failure_is_definitive({"error_type": "upstream_http_403"}) is True
+    assert _auth_failure_is_definitive({"error_type": "plugin_env_missing"}) is True
+
+
+def test_transient_outage_is_still_skipped() -> None:
+    """GOLDEN-FALSE (§11.4.201(1)): a genuinely transient upstream
+    condition must still be skippable, not turned into a false FAIL."""
+    assert _auth_failure_is_definitive({"error_type": "upstream_timeout"}) is False
+    assert _auth_failure_is_definitive({"error_type": "dns_failure"}) is False

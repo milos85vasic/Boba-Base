@@ -1,0 +1,123 @@
+<h1
+id="scriptstestingupdate_readme_doc_links.sh-readme-tracked-items-table-regenerator"><code>scripts/testing/update_readme_doc_links.sh</code>
+— README Tracked-Items table regenerator</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T19:45:00Z <strong>Purpose:</strong> §11.4.57 machine-derived
+regenerator for README.md’s
+<code>### Tracked-Items + Status Documents</code> table. <strong>Last
+verified:</strong> 2026-08-21</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p><code>README.md</code> carries a
+<code>### Tracked-Items + Status Documents</code> table (bounded by
+<code>&lt;!-- doc-link-section:begin --&gt;</code> /
+<code>&lt;!-- doc-link-section:end --&gt;</code> markers) that is the
+mandated entry point (§11.4.57 / §11.4.212) for every tracker and status
+document in this repository. Each row’s <code>Last modified</code> and
+<code>Revision</code> cells are supposed to be sourced verbatim from the
+document’s own §11.4.44 revision header, and the <code>HTML</code> /
+<code>PDF</code> cells are supposed to reflect whether those exports
+actually exist on disk.</p>
+<p>Before this script existed, that table was hand-maintained, and it
+had drifted: measured 2026-08-21 (BOB-088), 10 of its 18 rows carried a
+stale <code>Revision</code>/<code>Last modified</code> pair
+(e.g. <code>docs/Issues.md</code> carried <code>**Revision:** 38</code>
+while the table still read <code>10</code>), two rows read
+<code>— (not yet exported)</code> for HTML/PDF cells that had real
+exports on disk, and one MANDATED document
+(<code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code>, cited by name
+in BOB-088’s own body text) had no row at all.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/testing/update_readme_doc_links.sh</span>            <span class="co"># rewrite README.md in place</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/testing/update_readme_doc_links.sh</span> <span class="at">--check</span>     <span class="co"># read-only; exit 0 = in sync, exit 2 = stale</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/testing/update_readme_doc_links.sh</span> <span class="at">--check</span> <span class="at">--readme</span> <span class="op">&lt;</span>path<span class="op">&gt;</span>  <span class="co"># override target (tests)</span></span></code></pre></div>
+<p>Default mode rewrites <code>README.md</code> in place.
+<code>--check</code> mode is read-only and prints a unified diff of the
+stale rows before exiting 2 — safe to wire into a pre-commit or
+pre-build sweep.</p>
+<p><strong>This script does not regenerate
+<code>README.html</code>/<code>.pdf</code>/<code>.docx</code>.</strong>
+Run <code>scripts/generate_markdown_exports.sh</code> afterward
+(§11.4.65/§11.4.12) so the exports stay in sync with the source it just
+edited.</p>
+<h2 id="scope-deliberately-narrow">Scope (deliberately narrow)</h2>
+<p>This generator owns only the closed-set “Tracked-Items” row class
+§11.4.57 names: <code>Issues</code>/<code>Fixed</code> + their
+<code>_Summary</code> companions, <code>CONTINUATION</code>,
+<code>PORTING-FROM-LAVA</code>, <code>REMAINING_WORK_PLAN</code>, every
+<code>docs/GOVERNANCE_AUDIT_*.md</code> (auto-discovered via
+<code>git ls-files</code>, so a third round audit doc is picked up
+automatically), <code>COMPLETION_STATUS</code>,
+<code>RELEASE_READINESS_20260616</code>,
+<code>QA_DISCOVERY_LEDGER</code>, and every
+<code>docs/**/Status.md</code> + its <code>Status_Summary.md</code> (and
+<code>RELEASE_READINESS.md</code> sibling, if present) pair, likewise
+auto-discovered.</p>
+<p>§11.4.212’s broader “every §11.4.65-scope doc must be reachable from
+README, directly or transitively” obligation is a distinct,
+editorial-judgement- bearing task (which subsection a guide/research
+doc/plan belongs under) and is handled separately in README.md’s other
+<code>###</code> subsections — this generator does not attempt it, to
+avoid silently mis-categorizing a doc it has no basis to categorize
+(§11.4.6).</p>
+<h2 id="internal-behavior">Internal behavior</h2>
+<ol type="1">
+<li>Builds a manifest of <code>label|relative-path</code> pairs: a fixed
+list plus two auto-discovered classes
+(<code>docs/GOVERNANCE_AUDIT_*.md</code>, <code>docs/**/Status.md</code>
+pairs).</li>
+<li>For each manifest entry, reads <code>**Revision:**</code> /
+<code>**Last modified:**</code> straight out of the file’s own header
+(§11.4.44) — a document with no header emits <code>—</code> for both
+cells, never a fabricated value.</li>
+<li>Checks <code>[[ -f ... ]]</code> for the <code>.html</code> and
+<code>.pdf</code> siblings on THIS run — never carried forward from the
+table’s previous state.</li>
+<li>Replaces only the table portion of the content between the
+<code>doc-link-section</code> markers; the hand-authored intro paragraph
+above the table, and anything after the table but before the end marker,
+are left untouched.</li>
+</ol>
+<h3 id="a-fixed-defect-worth-knowing-about-bob-088-2026-08-21">A fixed
+defect worth knowing about (BOB-088, 2026-08-21)</h3>
+<p>The first version of the block-rewrite <code>awk</code> state machine
+dropped only the old table’s header line and its <code>|---</code>
+separator, then fell through to printing every old data row unchanged —
+so applying the generator to a genuinely stale table produced
+<strong>two back-to-back copies</strong> of the table instead of
+replacing it. Caught by a RED-first regression test
+(<code>tests/unit/test_update_readme_doc_links_no_duplication.sh</code>,
+run against the pre-fix script and confirmed to fail 3/5 assertions
+before the fix, then pass 5/5 after) before it ever shipped in a
+commit.</p>
+<h2 id="testing">Testing</h2>
+<ul>
+<li><code>tests/unit/test_update_readme_doc_links_no_duplication.sh</code>
+— regression guard for the table-duplication defect above; drives the
+real script through its real invocation path against a fixture whose
+<code>Issues</code> row carries a deliberately stale
+<code>Revision</code>, and asserts (1) exactly one <code>Issues</code>
+row survives the rewrite, (2) the stale value was corrected to the real
+live value read off <code>docs/Issues.md</code>, (3) content after the
+table block is preserved, (4) the end marker is not duplicated, (5) a
+second run is idempotent.</li>
+</ul>
+<h2 id="dependencies">Dependencies</h2>
+<p><code>bash</code> 4+, <code>git</code>, <code>sed</code>,
+<code>grep</code>, <code>awk</code>. No Python, no network access.</p>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><code>README.md</code> — the file this script rewrites.</li>
+<li>CLAUDE.md / <code>constitution/CLAUDE.md</code> §11.4.57 — the
+mandate this script implements (README doc-link section + revision
+metadata).</li>
+<li>CLAUDE.md / <code>constitution/CLAUDE.md</code> §11.4.212 — README
+as the canonical documentation entry point (the broader obligation this
+script does NOT attempt; see “Scope” above).</li>
+<li><code>scripts/generate_markdown_exports.sh</code> — must be run
+afterward to keep
+<code>README.html</code>/<code>.pdf</code>/<code>.docx</code> in
+sync.</li>
+<li>BOB-088 — the tracked workable item this script closes.</li>
+</ul>

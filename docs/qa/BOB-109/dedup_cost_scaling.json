@@ -1,0 +1,81 @@
+{
+  "axis": "dedup cost vs result-set size (worst case: all-distinct)",
+  "captured_at": "2026-08-21T19:56:02Z",
+  "complexity_note": "merge_results rescans all remaining candidates per seed, so all-distinct input is quadratic BY DESIGN. This gate catches a regression PAST quadratic, not quadratic itself.",
+  "feature_class": "scaling",
+  "growth": [
+    {
+      "from_n": 100,
+      "growth_exponent": 1.7285,
+      "p50_ratio": 3.3139,
+      "to_n": 200
+    },
+    {
+      "from_n": 200,
+      "growth_exponent": 1.8658,
+      "p50_ratio": 3.6447,
+      "to_n": 400
+    },
+    {
+      "from_n": 400,
+      "growth_exponent": 2.023,
+      "p50_ratio": 4.0643,
+      "to_n": 800
+    }
+  ],
+  "host_safety": {
+    "cpu_count": 8,
+    "loadavg_1m": 4.2,
+    "max_workers_cap": 16,
+    "mem_used_pct": 24.74,
+    "mem_used_pct_ceiling": 60,
+    "thread_headroom": 63920,
+    "thread_headroom_floor": 2048
+  },
+  "item": "BOB-109",
+  "max_growth_exponent_allowed": 2.35,
+  "per_size": {
+    "100": {
+      "groups_out": 100,
+      "max_ms": 27.094,
+      "min_ms": 26.024,
+      "n": 2,
+      "n_results": 100,
+      "p50_ms": 26.559,
+      "p95_ms": 27.094,
+      "p99_ms": 27.094
+    },
+    "200": {
+      "groups_out": 200,
+      "max_ms": 88.878,
+      "min_ms": 87.15,
+      "n": 2,
+      "n_results": 200,
+      "p50_ms": 88.014,
+      "p95_ms": 88.878,
+      "p99_ms": 88.878
+    },
+    "400": {
+      "groups_out": 400,
+      "max_ms": 324.857,
+      "min_ms": 316.714,
+      "n": 2,
+      "n_results": 400,
+      "p50_ms": 320.786,
+      "p95_ms": 324.857,
+      "p99_ms": 324.857
+    },
+    "800": {
+      "groups_out": 800,
+      "max_ms": 1321.452,
+      "min_ms": 1286.101,
+      "n": 2,
+      "n_results": 800,
+      "p50_ms": 1303.777,
+      "p95_ms": 1321.452,
+      "p99_ms": 1321.452
+    }
+  },
+  "repeats_per_size": 2,
+  "worst_growth_exponent": 2.023
+}

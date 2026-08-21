@@ -868,15 +868,47 @@ reload_plugins() {
 #   declared download root and config/ are `optional: false` — probing them
 #   before they exist would refuse a healthy fresh checkout, which is the
 #   false-positive refusal §11.4.201(1) forbids just as firmly as a false pass.
-run_ownership_gate() {
-    local precondition="$SCRIPT_DIR/scripts/ownership_precondition.sh"
-    local repair="$SCRIPT_DIR/scripts/ownership_repair.sh"
-    local -a nice_prefix=()
-    local rc
+# ---------------------------------------------------------------------------
+# THE OWNERSHIP GATE IS TWO HALVES WITH DIFFERENT QUIESCENCE REQUIREMENTS.
+# They are separate functions for that reason, not for tidiness (T041 IMPORTANT-2):
+#
+#   precondition  READS docker-compose.yml. It needs no quiescence, and it must
+#                 run FIRST so a bad compose is refused BEFORE the operator's
+#                 stack is taken down rather than after (FR-010).
+#
+#   repair        WALKS AND CHOWNS the declared tree. A container that is still
+#                 up can write a new non-operator-owned file BEHIND the walk,
+#                 after which the completion marker records "complete" over a
+#                 tree that is not -- and those stragglers are never repaired
+#                 without a manual --force. FR-004g calls repair-vs-download
+#                 concurrency out of scope "by construction"; the construction
+#                 only EXISTS if the repair runs while nothing can write, which
+#                 is what the --recreate ordering below guarantees (FR-004d).
+#
+# The worst case is precisely the migration moment this feature exists for: the
+# first `--recreate` after the fix, with the OLD PUID=1000 qbittorrent still up
+# and mid-download.
+#
+# Ordering is asserted behaviourally, not by convention:
+#   tests/unit/test_start_reload_recreate.sh
+#     PRECONDITION_BEFORE_DOWN / REPAIR_AFTER_DOWN / REPAIR_BEFORE_UP
+# ---------------------------------------------------------------------------
 
+# One definition shared by both halves (§11.4.251 -- not two near-identical
+# copies). §11.4.24/§12: a multi-thousand-item walk must never compete with the
+# operator's interactive session.
+OWNERSHIP_NICE=()
+ownership_set_nice_prefix() {
+    OWNERSHIP_NICE=()
     if command -v nice >/dev/null 2>&1 && command -v ionice >/dev/null 2>&1; then
-        nice_prefix=(nice -n 19 ionice -c 3)
+        OWNERSHIP_NICE=(nice -n 19 ionice -c 3)
     fi
+}
+
+run_ownership_precondition() {
+    local precondition="$SCRIPT_DIR/scripts/ownership_precondition.sh"
+    local rc
+    ownership_set_nice_prefix
 
     if [[ ! -f "$precondition" ]]; then
         print_error "Ownership precondition script missing: $precondition"
@@ -886,7 +918,7 @@ run_ownership_gate() {
 
     print_info "Ownership precondition: probing every declared location (FR-010)..."
     set +e
-    "${nice_prefix[@]}" bash "$precondition"
+    "${OWNERSHIP_NICE[@]}" bash "$precondition"
     rc=$?
     set -e
     case "$rc" in
@@ -906,6 +938,13 @@ run_ownership_gate() {
             ;;
     esac
 
+}
+
+run_ownership_repair() {
+    local repair="$SCRIPT_DIR/scripts/ownership_repair.sh"
+    local rc
+    ownership_set_nice_prefix
+
     if [[ ! -f "$repair" ]]; then
         print_error "Ownership repair script missing: $repair"
         print_error "Refusing to start — pre-existing content cannot be brought under the operator (FR-004d)."
@@ -914,7 +953,7 @@ run_ownership_gate() {
 
     print_info "Ownership repair: bringing any pre-existing content under the operator (FR-004d)..."
     set +e
-    "${nice_prefix[@]}" bash "$repair"
+    "${OWNERSHIP_NICE[@]}" bash "$repair"
     rc=$?
     set -e
     if [[ "$rc" -ne 0 ]]; then
@@ -923,6 +962,15 @@ run_ownership_gate() {
         exit 1
     fi
     print_success "Ownership repair complete — every in-scope item is operator-owned"
+}
+
+# Cold-start / warm-start entry point: the declared locations have just been
+# created and no container has been brought up yet by THIS invocation, so both
+# halves run back to back. The --recreate path does NOT use this wrapper -- it
+# interleaves `down` between the halves; see the dispatch below.
+run_ownership_gate() {
+    run_ownership_precondition
+    run_ownership_repair
 }
 
 # ---------------------------------------------------------------------------
@@ -975,13 +1023,20 @@ report_systemd_state() {
     print_warning "  Reconcile with:  bash scripts/boba-svc.sh up      (re-runs this same start.sh)"
 }
 
-recreate_stack() {
+# down and up are SEPARATE so the ownership repair can run BETWEEN them, in the
+# one window where no container can write to the declared tree (FR-004d). The
+# print/warn/error lines are kept verbatim: the recreate suite's paired §1.1
+# mutations anchor on them, and reconciling a fix must not silently disarm the
+# mutations that prove the gate has teeth (§11.4.120).
+stack_down() {
     print_info "Recreating the full stack ($COMPOSE_CMD down && $COMPOSE_CMD up -d)..."
 
     if ! $COMPOSE_CMD down; then
         print_warning "Stack may not have been running — continuing to bring it up"
     fi
+}
 
+stack_up() {
     if ! $COMPOSE_CMD up -d; then
         print_error "Failed to bring the stack back up"
         exit 1
@@ -1116,8 +1171,10 @@ main() {
     fi
 
     if [[ "$recreate_flag" == true ]]; then
-        run_ownership_gate
-        recreate_stack
+        run_ownership_precondition
+        stack_down
+        run_ownership_repair
+        stack_up
         harden_config_permissions
         assert_credential_store_mode
         report_systemd_state
@@ -1129,8 +1186,21 @@ main() {
     update_qbittorrent_config
     create_data_directories
 
-    # Ownership gate runs here — after the declared locations exist, before any
-    # container writes into them (FR-010 / FR-004d). See run_ownership_gate.
+    # Ownership gate runs here — after the declared locations exist, and before
+    # THIS invocation brings anything up (FR-010 / FR-004d).
+    #
+    # HONEST BOUNDARY (§11.4.6), do not read more into this than it says: the
+    # claim above is about what THIS invocation starts. If the operator runs a
+    # warm `./start.sh` over an ALREADY-RUNNING stack, containers are writing
+    # while the repair walks, and the FR-004d window the --recreate path closes
+    # by interleaving `down` is NOT closed here.
+    #
+    # Bounded in practice, not by luck: after any successful pass the completion
+    # marker is valid for the scope fingerprint and the repair short-circuits
+    # without walking at all (scripts/ownership_repair.sh marker_is_valid), so
+    # the window needs a STALE-or-absent marker AND a live stack together. That
+    # is a real combination — a newly declared scope entry re-arms the marker —
+    # so it is tracked, not dismissed.
     run_ownership_gate
 
     if [[ "$build_frontend_flag" == true ]]; then

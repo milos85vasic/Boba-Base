@@ -240,7 +240,7 @@ function in_quoted_span(pre,    n) {
         line = lines[li]
         if (is_quoted_line(line)) continue            # (c3)
         s = line; sofar = ""
-        while (match(s, /[Cc]los(e|es|ed|ing)|[Ff]ix(es|ed)?|[Rr]esolv(e|es|ed)/)) {
+        while (match(s, /[Cc]los(e|es|ed)|[Ff]ix(es|ed)?|[Rr]esolv(e|es|ed)/)) {
             pre  = substr(s, 1, RSTART - 1)
             rest = substr(s, RSTART + RLENGTH)
             # (c3) an inline-quoted phrase: `closes BOB-076` inside quotes
@@ -366,7 +366,7 @@ _check_flagless_diff_callers() {
         # (§11.4.201(7)(a)) this whole file is about.
         { line = $0 }
         line ~ /^[[:space:]]*#/ { next }
-        # A real invocation ALWAYS passes --db. That single structural
+        # A real invocation ALWAYS supplies --db. That single structural
         # requirement removes every `echo "... workable-items diff ..."`
         # progress/report string in the tree (measured: 3 such carriers in
         # scripts/hooks/docs-sync-commit-seam.sh alone).
@@ -444,6 +444,44 @@ _self_test() {
     _expect "c1 filing verb, work type"   "test(x): register ${PREFIX}-150 for later" "" ""
     _expect "c2 path component"           "fix(x): refresh docs/qa/${PREFIX}-117/evidence.md" "" ""
     _expect "c3 quoted closure phrase"    "docs(x): its message says \"closes ${PREFIX}-076\"" "" ""
+    # MEASURED CARRIER (§11.4.201(7)(a)), not hypothetical: commit d84d226 in
+    # this repo reads "closing BOB-120 requires an out-of-user-scope watchdog"
+    # — the GERUND heading a noun phrase that is the SUBJECT of "requires", i.e.
+    # a statement of what closure would TAKE, not a declaration that it HAPPENED.
+    # The same commit says "filed as BOB-120 (Critical, left Queued)". Matching
+    # it produced a permanent false CONTRADICTION against a correctly-Queued row
+    # — the §11.4.201(1) harm that teaches readers to ignore the gate. No
+    # conventional-commit trailer uses the gerund, so it is out of the finite-verb
+    # alternation; "closes/closed/fixes/fixed/resolves/resolved" still match.
+    #
+    # MEASURED COVERAGE LIMIT (§11.4.6 — stated, not implied). The justification
+    # above is about TRAILERS, but this extractor matches prose ANYWHERE in
+    # subject+body, so the narrowing is wider than that argument earns. An
+    # independent reviewer measured the cost against a genuine gerund
+    # DECLARATION ("closing <id> with this change"), narrowed vs gerund-restored:
+    #
+    #     work type, Queued row        -> UNRECONCILED (was CONTRADICTION: downgraded)
+    #     work type, In-progress row   -> no finding    (was CONTRADICTION)
+    #     docs type, Queued            -> no finding    (was CONTRADICTION)
+    #     docs type, In-progress       -> no finding    (was CONTRADICTION)
+    #     body prose, docs, In-progress-> no finding    (was CONTRADICTION)
+    #
+    # So 4 of 5 shapes become invisible and the survivor is downgraded in
+    # severity. That cost is accepted on MEASURED frequency, not on taste: over
+    # all history the gerund appears adjacent to an id exactly TWICE, both the
+    # SAME carrier sentence (the second already suppressed by in_quoted_span),
+    # and ZERO genuine gerund closure declarations exist. If that ever changes,
+    # the honest fix is a structural discriminator (gerund followed by a
+    # requirement verb is discussion; gerund followed by "with/in/via" is a
+    # declaration), NOT re-adding the bare gerund — that reinstates the false
+    # positive against a correctly-Queued row.
+    #
+    # The independent guard for this narrowing is car-6 in
+    # tests/pre_build/test_check_cm_closure_seam_binds.sh, deliberately OUTSIDE
+    # this file: a coherent revert (restore the regex AND delete the self-test
+    # case below, one file, one edit) sailed through the meta-test at 29/30
+    # while that case was absent.
+    _expect "c3 gerund discusses closure" "docs(x): tidy" "closing ${PREFIX}-120 requires a watchdog" ""
     _expect "c3 quoted id, WORK type"     "fix(x): the ticket quotes \"closes ${PREFIX}-076\" verbatim" "" ""
     _expect "c3 backtick-quoted id"       "fix(x): grep for \140${PREFIX}-076\140 in the corpus" "" ""
     _expect "c3 indented pasted ticket"   "docs(x): paste ticket" "    fix(a): closes ${PREFIX}-076" ""

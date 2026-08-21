@@ -121,7 +121,20 @@ never wrote anything is a false pass.
 Per-service record of which mechanism applies. Lives in `docker-compose.yml`; reproduced
 here as the FR-016 completeness map.
 
-| Service | Route | Setting | Evidence |
+> **SUPERSEDED — see
+> [research.md R9](./research.md#r9-correction--route-a-was-wrong-it-supersedes-r3s-route-a-verdict-and-r5s-route-table).**
+> The original table below (planned at Phase-0/Phase-1 design time, before any
+> implementation) assigned Route A (`userns_mode: keep-id`) to `download-proxy`,
+> `qbittorrent-proxy-go`, and `boba-jackett`. Measurement at implementation time showed
+> all three already run as container uid 0 and already write host-uid-1000 files — Route
+> A was never applied to them because it would have been a regression (the same hang R3
+> measured on the linuxserver images), not a no-op. `userns_mode: keep-id` is applied to
+> **no service in this stack**; `docker-compose.yml` carries no `userns_mode` key at all
+> (grep-verified 2026-08-21). Route B (`PUID=0`/`PGID=0`) is the only route shipped. The
+> planned table is left below unedited — what was believed, and why, is the record —
+> followed by the table as actually shipped.
+
+| Service | Route (as planned, Phase 0/1) | Setting | Evidence |
 |---|---|---|---|
 | `qbittorrent` | B | `PUID=0` / `PGID=0` | keep-id hangs this image (R3) |
 | `jackett` | B | `PUID=0` / `PGID=0` | same |
@@ -129,9 +142,21 @@ here as the FR-016 completeness map.
 | `qbittorrent-proxy-go` | A | `userns_mode: keep-id` | **to verify per-service** (R5 boundary) |
 | `boba-jackett` | A | `userns_mode: keep-id` | **to verify per-service**; writes `boba.db` |
 
+### As shipped (research.md R9)
+
+| Service | Route | Setting | Evidence |
+|---|---|---|---|
+| `qbittorrent` | B | `PUID=0` / `PGID=0` | keep-id hangs this image (R3); re-confirmed |
+| `jackett` | B | `PUID=0` / `PGID=0` | same |
+| `download-proxy` | **none** | no `userns_mode` change | write probe: already host uid 1000 (R9) |
+| `qbittorrent-proxy-go` | **none** | no `userns_mode` change | runs as container uid 0, no `USER` directive (R9) |
+| `boba-jackett` | **none** | no `userns_mode` change | write probe: already host uid 1000 (R9) |
+
 **Validation rule**: every service that mounts an E1 path MUST appear in this table with a
 route. A service that mounts an in-scope path and has neither setting is an FR-016
-violation — partial application returns the defect the moment that service runs.
+violation — partial application returns the defect the moment that service runs. "None"
+above is a recorded, evidenced route decision (already-correct, verified by write probe),
+not an omission.
 
 ---
 

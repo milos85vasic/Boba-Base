@@ -1,0 +1,85 @@
+<h1
+id="scriptshooksunattributed-commit-guard.sh-unattributed-commit-detector"><code>scripts/hooks/unattributed-commit-guard.sh</code>
+— unattributed-commit detector</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T19:55:00Z <strong>Purpose:</strong> §11.4.84 / §11.4.238
+guard that finds commits landing on this repository with no attribution
+— no tracked-item id, no task, no PR reference. <strong>Last
+verified:</strong> 2026-08-21</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>A commit whose entire subject is <code>Auto-commit</code> (or
+<code>sync: …</code>) and whose body carries no <code>BOB-NNN</code> /
+task / PR reference cannot be traced to the work that motivated it. That
+is a §11.4.238 discovery problem rather than a style complaint: when
+such a commit later turns out to have introduced a defect, there is no
+item to reopen (§11.4.214) and no review to point at (§11.4.142).</p>
+<p>This guard makes that population <strong>mechanically
+visible</strong> instead of something a human notices while reading
+<code>git log</code>.</p>
+<p>MEASURED on this repository, 2026-08-21: <strong>21</strong> bare
+<code>Auto-commit</code> subjects exist across all refs, and
+<strong>14</strong> commits violate the rule in the default range
+(<code>v1.0.0-rc..HEAD</code>) — 11 bare <code>Auto-commit</code> plus 2
+<code>sync: …</code>, the latter class missed entirely by the narrower
+grep that preceded this guard.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>A git working tree (the guard reads history only; it never
+writes).</li>
+<li><code>git</code> on PATH. No network, no container runtime, no
+credentials.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<pre><code>bash scripts/hooks/unattributed-commit-guard.sh                # default range
+bash scripts/hooks/unattributed-commit-guard.sh --range A..B   # explicit range
+bash scripts/hooks/unattributed-commit-guard.sh --self-test    # §11.4.107(10)</code></pre>
+<p>Default range is “since the last tag reachable from HEAD”.</p>
+<p>Exit status: <code>0</code> clean, non-zero when violations are found
+(each named).</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>A referenced <code>Auto-commit</code> is NOT a
+violation.</strong> A commit may keep the bare subject provided its body
+cites an item; the guard’s false-positive control needle covers exactly
+this case, so a legitimately-attributed commit is never flagged
+(§11.4.201(1) — a false refusal is as forbidden as a false pass).</li>
+<li><strong>Merge commits</strong> inherit their subject from git and
+are not authored prose.</li>
+<li><strong>An empty range</strong> (no commits since the last tag) is a
+clean <code>0</code>, not an error.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<p>The subject pattern set is CLOSED and explicit rather than heuristic:
+matching “anything that looks low-effort” would produce exactly the
+false refusals §11.4.201(1) forbids. A commit is a violation only when
+its subject matches the closed set AND the FULL message carries no
+reference.</p>
+<p><code>--self-test</code> ships golden-good, golden-bad, and the
+false-positive control needle, and is the §11.4.107(10) self-validation:
+a guard never observed FAILing on a genuinely-broken input is
+unvalidated instrumentation (§11.4.115(F)).</p>
+<p><strong>Paired §1.1 mutation (verified):</strong> neutering the
+pattern match makes the self-test FAIL and makes the real scan silently
+report OK against 21 known violations — the exact bluff. Restored, the
+file is sha256-identical and the scan again names the 14.</p>
+<h2 id="known-gap-read-this-before-trusting-a-green-run">Known gap —
+read this before trusting a green run</h2>
+<p><strong>This guard is not yet wired into any seam.</strong> It runs
+when a human types it, so it is not standing detection pressure
+(§11.4.226 — registration is not coverage). Wiring it as-is would refuse
+every commit immediately, because the 14 pre-existing violations are
+real and cannot be fixed in the moment; that is a §11.4.224(E)
+brownfield-adoption decision the operator owns, tracked as
+<strong>BOB-162</strong> with the options enumerated. Until that answer
+is recorded, a clean run of this guard means only “the range you asked
+about is clean”.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>tests/hooks/test_unattributed_commit_guard.sh</code> — 9
+real-invocation assertions</li>
+<li><code>docs/history/BOB-079-attributed-auto-commit-history.md</code>
+— the attribution record built FROM this guard’s output (BOB-079)</li>
+<li><code>scripts/hooks/check-brief-inputs.sh</code> — sibling
+dispatch-hygiene guard</li>
+</ul>

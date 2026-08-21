@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 24
-**Last modified:** 2026-08-21T18:28:18Z
+**Revision:** 25
+**Last modified:** 2026-08-21T19:41:44Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1355,4 +1355,13 @@ WHAT LANDED. fa0fe63 added the gate plus its meta-test; be36f32 fixed the carrie
 **Severity:** High
 
 RD2-17: Reconcile BOB-008 DB/MD body drift via the workable-items tool
+
+## BOB-079 — RD2-12: Retroactive attributed history notes for GA-18/21/22/25/26/27 changes (never rewrite published history)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/history/BOB-079-attributed-auto-commit-history.md
+**Severity:** Medium
+
+RD2-12: Retroactive attributed history notes for GA-18/21/22/25/26/27 changes (never rewrite published history)
 

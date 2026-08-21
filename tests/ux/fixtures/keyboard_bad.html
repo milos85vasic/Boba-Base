@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Boba UX Keyboard-Nav Golden-Bad Fixture</title>
+  <style>
+    body { background:#ffffff; color:#1a1a1a; font-family: sans-serif; margin: 2rem; }
+    /* VIOLATION: focus indicator explicitly suppressed with no
+       replacement — a keyboard user tabbing to #inp1 sees no visible
+       change at all. */
+    #inp1:focus { outline: none; box-shadow: none; }
+  </style>
+</head>
+<body>
+  <a href="#main" id="skip">Skip to content</a>
+  <nav>
+    <a href="#one" id="nav1">Link One</a>
+    <a href="#two" id="nav2">Link Two</a>
+  </nav>
+  <main id="main">
+    <button id="btn1">Action One</button>
+    <input id="inp1" type="text" aria-label="query">
+    <!-- VIOLATION: tabindex="-1" removes this real, visible, clickable
+         button from the sequential keyboard Tab order — a mouse user can
+         click it, a keyboard-only user cannot reach it by tabbing. -->
+    <button id="btn2" tabindex="-1">Action Two (keyboard-unreachable)</button>
+  </main>
+</body>
+</html>

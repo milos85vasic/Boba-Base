@@ -22,6 +22,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_start_reload_harness.
 
 CTL_DOWN='boba-ctl.sh|down'
 CTL_UP='boba-ctl.sh|up|-d'
+OWN_PRE='ownership_precondition.sh'
+OWN_REP='ownership_repair.sh'
 
 mk() {
     local mut="$1"; shift
@@ -114,12 +116,55 @@ check_UP_FAILURE_IS_FATAL() {
     harness_cleanup "$sb"; return $ok
 }
 
+
+# --- FR-004d ordering (T041 IMPORTANT-2) -----------------------------------
+# The repair WALKS AND CHOWNS the declared tree. A container that is still up
+# can write a new non-operator-owned file BEHIND the walk, after which the
+# completion marker records "complete" over a tree that is not -- and those
+# stragglers are never repaired without a manual --force. The worst case is
+# precisely the migration moment this feature exists for: the first
+# `--recreate` after the fix, with the OLD PUID=1000 qbittorrent mid-download.
+#
+# The precondition is the opposite: it READS docker-compose.yml, needs no
+# quiescence, and must run FIRST so a bad compose is refused BEFORE the
+# operator's stack is taken down rather than after.
+
+check_PRECONDITION_BEFORE_DOWN() {
+    local sb; sb="$(mk "$1" podman podman-compose)"
+    harness_run "$sb" --recreate
+    local ok=1; harness_log_before "$sb" "$OWN_PRE" "$CTL_DOWN" && ok=0
+    CHECK_DIAG="precondition must precede down (refuse before tearing the stack down); log: $(tr '\n' ' ' < "$sb/argv.log")"
+    harness_cleanup "$sb"; return $ok
+}
+
+check_REPAIR_AFTER_DOWN() {
+    local sb; sb="$(mk "$1" podman podman-compose)"
+    harness_run "$sb" --recreate
+    local ok=1; harness_log_before "$sb" "$CTL_DOWN" "$OWN_REP" && ok=0
+    CHECK_DIAG="down must precede the repair (FR-004d: no live writer during the walk); log: $(tr '\n' ' ' < "$sb/argv.log")"
+    harness_cleanup "$sb"; return $ok
+}
+
+check_REPAIR_BEFORE_UP() {
+    local sb; sb="$(mk "$1" podman podman-compose)"
+    harness_run "$sb" --recreate
+    local ok=1; harness_log_before "$sb" "$OWN_REP" "$CTL_UP" && ok=0
+    CHECK_DIAG="the repair must complete before up -d restores writers; log: $(tr '\n' ' ' < "$sb/argv.log")"
+    harness_cleanup "$sb"; return $ok
+}
+
 CHECK_NAMES=(
+    PRECONDITION_BEFORE_DOWN
+    REPAIR_AFTER_DOWN
+    REPAIR_BEFORE_UP
     BOBACTL_DOWN_AND_UP DOWN_BEFORE_UP UP_IS_DETACHED NO_RAW_RUNTIME_CALLS
     NO_BOBA_CTL_USES_COMPOSE EXIT_ZERO_AND_SUCCESS_MSG
     DOWN_FAILURE_IS_NONFATAL UP_FAILURE_IS_FATAL
 )
 declare -A CHECK_DESC=(
+    [PRECONDITION_BEFORE_DOWN]='probes ownership BEFORE tearing the stack down (FR-010)'
+    [REPAIR_AFTER_DOWN]='repairs only after down, so no container writes behind the walk (FR-004d)'
+    [REPAIR_BEFORE_UP]='completes the repair before up -d restores writers (FR-004d)'
     [BOBACTL_DOWN_AND_UP]='issues down and up -d through the boba-ctl orchestrator'
     [DOWN_BEFORE_UP]='tears the stack down before bringing it up'
     [UP_IS_DETACHED]='brings the stack up detached (-d)'
@@ -130,6 +175,9 @@ declare -A CHECK_DESC=(
     [UP_FAILURE_IS_FATAL]='exits non-zero when up fails'
 )
 declare -A CHECK_MUTATION=(
+    [PRECONDITION_BEFORE_DOWN]='s/^        run_ownership_precondition$//; /^        stack_down$/a \        run_ownership_precondition'
+    [REPAIR_AFTER_DOWN]='/^        stack_down$/i \        run_ownership_repair'
+    [REPAIR_BEFORE_UP]='s/^        run_ownership_repair$//; /^        stack_up$/a \        run_ownership_repair'
     [BOBACTL_DOWN_AND_UP]='s/COMPOSE_CMD="\$SCRIPT_DIR\/scripts\/boba-ctl.sh"/COMPOSE_CMD="$SCRIPT_DIR\/scripts\/boba-ctl-TYPO.sh"/'
     [DOWN_BEFORE_UP]='/print_info "Recreating the full stack/a \    $COMPOSE_CMD up -d'
     [UP_IS_DETACHED]='s/if ! \$COMPOSE_CMD up -d; then/if ! $COMPOSE_CMD up; then/'

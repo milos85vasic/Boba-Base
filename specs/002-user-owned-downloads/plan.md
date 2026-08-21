@@ -19,6 +19,19 @@ under the mapping approach that works everywhere else (measured, see
   which the rootless mapping resolves to host uid 1000)
 - `download-proxy`, `qbittorrent-proxy-go`, `boba-jackett` → **`userns_mode: keep-id`**
 
+> **SUPERSEDED IN PART — see
+> [research.md R9](./research.md#r9-correction--route-a-was-wrong-it-supersedes-r3s-route-a-verdict-and-r5s-route-table).**
+> The third bullet above was WRONG and was never applied. All three of `download-proxy`,
+> `qbittorrent-proxy-go`, and `boba-jackett` already run as container uid 0, which the
+> rootless mapping already resolves to host uid 1000 — a write probe measured them
+> already writing operator-owned files with no `userns_mode` change at all. Applying
+> `keep-id` to them would have been a regression (the same hang R3 measured on the
+> linuxserver images), not a no-op. `userns_mode: keep-id` is applied to **no service in
+> this stack**; the `qbittorrent`/`jackett` bullet above (`PUID=0`/`PGID=0`) is the only
+> route actually shipped. This project's own CLAUDE.md now states the corrected rule
+> directly: "Never add `userns_mode: keep-id` to any service in this stack ... it hangs
+> the linuxserver images (measured, twice) and is pointless for the root-running ones."
+
 Plus a blocking, resumable first-start repair for the existing backlog, and a startup
 precondition that refuses to run when a configured location cannot produce operator-owned
 files.
@@ -55,7 +68,7 @@ tree today · 51 wrongly-owned items under `config/` · repair must not assume t
 |---|---|---|
 | **I. Container-First** | Change is confined to `docker-compose.yml` + lifecycle scripts, which the principle names as the contract. It requires both to move together, and the health check to cover every served port — already enforced by invariant 44 and untouched here. | **PASS** |
 | **III. Credential & Secret Security** | `config/boba.db` enters scope. FR-015 forbids relaxing its mode 600. The change makes the documented backup *possible*, which the principle requires and which is currently broken. No secret is printed, logged, or moved. | **PASS** |
-| **IV. Container Runtime Portability** | Both routes are rootless. `userns_mode: keep-id` is Podman-specific; Docker maps it differently. The project mandates rootless Podman (§11.4.161) and auto-detects runtime, so this is consistent — but it MUST be recorded as a Podman-coupled setting, see Complexity Tracking. | **PASS (with note)** |
+| **IV. Container Runtime Portability** | Both routes are rootless. `userns_mode: keep-id` is Podman-specific; Docker maps it differently. The project mandates rootless Podman (§11.4.161) and auto-detects runtime, so this is consistent — but it MUST be recorded as a Podman-coupled setting, see Complexity Tracking. *(As planned at Phase-0/Phase-1 gate time. As shipped, `keep-id` is applied to no service — see the Summary supersession above / research.md R9 — so the Podman-coupling note in Complexity Tracking below is likewise historical, not a live constraint.)* | **PASS (with note)** |
 | **VI. Validation-Driven** | `./ci.sh` remains the gate; no CI/CD is added (Hard Stop #1 intact). | **PASS** |
 | **IX. TDD** | RED already exists: research.md R1 reproduces host uid 100999 against the real image via `s6-setuidgid abc`. It fails pre-fix and passes post-fix. | **PASS** |
 | **X. Hermetic Tests** | The RED repro needs a real container, so it is an integration test, not a unit test. It MUST be marked so and MUST skip (not fail) where no container runtime exists (§11.4.3). | **PASS (with obligation)** |
@@ -95,7 +108,7 @@ specs/002-user-owned-downloads/
 ### Source Code (repository root)
 
 ```text
-docker-compose.yml                     # PUID/PGID per service; userns_mode per service
+docker-compose.yml                     # PUID/PGID per service; userns_mode planned per-service, shipped on none (research.md R9)
 start.sh                               # invokes the precondition + repair before services
 scripts/
 ├── boba-ctl.sh                        # compose wrapper (no userns logic; passes through)
@@ -128,10 +141,15 @@ host.
 
 ## Complexity Tracking
 
+Both rows below record the Phase-0/Phase-1 planning-time analysis. **As shipped**
+(research.md R9), `keep-id` is applied to no service — the second row's Podman-coupling
+concern therefore never materialised. Left unedited, per the same left-in-place-on-purpose
+convention research.md R3/R5 use, because what was believed and why is the record.
+
 | Item | Why it is needed | Simpler alternative rejected because |
 |---|---|---|
-| **Two different routes for one problem** | The linuxserver images hang under `keep-id` (measured twice, R3); the Go/alpine services have no s6 root requirement. | A single uniform route is impossible: `keep-id` everywhere breaks qbittorrent — the service that writes downloads — and `PUID=0` everywhere would make non-s6 images run as root for no benefit. |
-| **`userns_mode: keep-id` is Podman-specific** | Docker interprets `userns_mode` differently (it has no `keep-id`), so this couples three services to Podman. | Acceptable: §11.4.161 already mandates rootless Podman project-wide and `run-all-tests.sh` is already podman-only. Recorded so a future Docker port knows it must revisit this, rather than discovering it as a silent behaviour change. |
+| **Two different routes for one problem** *(as planned)* | The linuxserver images hang under `keep-id` (measured twice, R3); the Go/alpine services have no s6 root requirement. | A single uniform route is impossible: `keep-id` everywhere breaks qbittorrent — the service that writes downloads — and `PUID=0` everywhere would make non-s6 images run as root for no benefit. |
+| **`userns_mode: keep-id` is Podman-specific** *(as planned; not shipped — see above)* | Docker interprets `userns_mode` differently (it has no `keep-id`), so this couples three services to Podman. | Acceptable: §11.4.161 already mandates rootless Podman project-wide and `run-all-tests.sh` is already podman-only. Recorded so a future Docker port knows it must revisit this, rather than discovering it as a silent behaviour change. |
 | **A separate declared scope file** | Scope cannot be derived: compose env mixes served and dependency values, and the download root differs per host. | Deriving it would produce a false-positive refusal — the §11.4.201(1) failure the healthcheck gate already hit once when its manifest was seeded from prose instead of source. |
 | **Repair blocks startup** | FR-004d — a background repair leaves a window where downloads land in a half-repaired tree. | Operator chose blocking in clarify Q2 after being shown the trade-off. |
 

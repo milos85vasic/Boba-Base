@@ -1,0 +1,337 @@
+<h1 id="ux-class-accessibility-usability-test-coverage-bob-110">UX-class
+(accessibility / usability) test coverage — BOB-110</h1>
+<p><strong>Status:</strong> Coverage added. One real, currently-failing
+assertion documents a genuinely discovered defect in the live dashboard
+(see “Known finding” below) — it is deliberately left failing, not
+silenced, per §11.4.238 (automated QA must be the discoverer).</p>
+<h2 id="what-was-missing">What was missing</h2>
+<p><code>docs/testing/test_type_matrix.md</code>’s §11.4.27 test-type
+audit found UI <strong>functional</strong> coverage
+(<code>frontend/**/*.spec.ts</code> Vitest unit tests,
+<code>frontend/e2e/*.spec.ts</code> and <code>tests/e2e/*.py</code>
+Playwright walkthroughs) but <strong>nothing framed around
+usability/accessibility/UX outcomes specifically</strong>. The one
+existing test with “accessible” in its name —
+<code>tests/integration/test_ui_quick.py::test_dashboard_accessible</code>
+— asserts only <code>response.status_code == 200</code> and
+<code>"&lt;app-root&gt;" in r.text</code>; it is an HTTP-reachability
+check, not an accessibility check. This gap is exactly what BOB-110
+(filed as a BOB-074 followup) scoped.</p>
+<h2 id="suite-location">Suite location</h2>
+<pre><code>tests/ux/
+├── conftest.py                        # Playwright + axe-core fixtures
+├── fixtures/
+│   ├── a11y_good.html                 # every a11y floor item done right
+│   ├── a11y_bad.html                  # same page, 4 planted violations
+│   ├── keyboard_good.html             # 6 controls, all keyboard-reachable
+│   └── keyboard_bad.html              # unreachable control + invisible focus
+├── test_accessibility_axe.py          # axe-core oracle validation (fixtures)
+├── test_keyboard_navigation.py        # real Tab-key traversal (fixtures)
+└── test_live_dashboard_accessibility.py  # same oracle vs the REAL product</code></pre>
+<p><code>frontend/package.json</code> gained one new devDependency:
+<code>axe-core</code> (installed via
+<code>npm install --save-dev axe-core</code>, real npm registry install,
+not vendored by hand) so the oracle’s JS is available at
+<code>frontend/node_modules/axe-core/axe.min.js</code>.</p>
+<h2 id="surfaces-that-actually-exist-verified-not-assumed">Surfaces that
+actually exist (verified, not assumed)</h2>
+<p>Two candidate UI surfaces were checked before writing anything:</p>
+<ol type="1">
+<li><strong><code>frontend/</code></strong> — Angular 21 dashboard,
+Vitest unit tests, Playwright e2e skeleton. The e2e skeleton
+(<code>frontend/e2e/README.md</code>) requires a manually started
+<code>ng serve</code> dev server on <code>:4200</code>, which was
+<strong>not</strong> running in this session
+(<code>curl http://localhost:4200/</code> → connection refused). Not
+used as the live target for that reason — starting a second dev server
+was out of scope/resource-budget for this dispatch.</li>
+<li><strong>The merge-service root at
+<code>http://localhost:7187/</code></strong> — confirmed live
+(<code>curl</code> → <code>200</code>). Its raw HTML is
+<code>&lt;app-root&gt;&lt;/app-root&gt;</code> (the compiled Angular
+bundle, same app as <code>frontend/</code>, served statically) —
+<strong>not</strong> the separate Jinja2
+<code>download-proxy/src/ui/templates/dashboard.html</code>, which is
+not what answers <code>GET /</code> today. This was verified, not
+assumed: <code>curl -s http://localhost:7187/</code> shows
+<code>&lt;script src="main-VUXUAYF5.js"&gt;</code> and
+<code>&lt;base href="/"&gt;</code>, i.e. the Angular SPA shell.</li>
+</ol>
+<p><code>test_live_dashboard_accessibility.py</code> targets surface (2)
+via the project’s standard <code>merge_service_live</code> pytest
+fixture (<code>tests/fixtures/services.py</code>, the same fixture every
+other integration/e2e test in this repo uses) so it inherits the
+existing topology-detection / honest-skip behaviour.</p>
+<h2 id="oracle-chosen-and-why-the-weaker-ones-were-rejected">Oracle
+chosen, and why the weaker ones were rejected</h2>
+<p><strong>Chosen: a real axe-core scan of a real, Playwright-rendered,
+JS-hydrated DOM.</strong> Descending strength, per §11.4.170
+(value-equality assertions are forbidden as the <em>proof</em> a UI is
+correct):</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Candidate oracle</th>
+<th>Verdict</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Real axe-core scan of rendered DOM</td>
+<td><strong>Used</strong></td>
+<td>Implements the actual WCAG 2.x success criteria (real computed
+contrast, real ARIA resolution, real accessible-name computation)
+against a real browser’s render of the real page.</td>
+</tr>
+<tr>
+<td>Rendered-DOM assertions without axe (hand-rolled)</td>
+<td>Used <em>in addition</em>, for structural facts axe does not enforce
+(single <code>&lt;h1&gt;</code>, real keyboard Tab order, real computed
+focus style)</td>
+<td>Still a real-DOM oracle, just axe doesn’t have a rule for these
+specific structural facts.</td>
+</tr>
+<tr>
+<td>Static template grep (<code>grep alt= *.component.html</code>)</td>
+<td><strong>Rejected as primary oracle</strong></td>
+<td>Cannot see computed contrast, cannot see ARIA state Angular sets at
+runtime, and — concretely proven in this session — the merge-service
+root ships an <strong>empty</strong>
+<code>&lt;app-root&gt;&lt;/app-root&gt;</code> until JS executes
+(<code>curl</code> confirms this). A grep-only oracle would be auditing
+a page nobody ever sees; it is also exactly the
+oracle-agrees-with-source pattern that would pass a component that never
+renders.</td>
+</tr>
+<tr>
+<td>Value-equality (e.g. asserting a hex string == an expected hex
+string)</td>
+<td><strong>Forbidden outright (§11.4.170)</strong></td>
+<td>Never used anywhere in this suite.</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="accessibility-floor-covered-each-assertion-can-genuinely-fail">Accessibility
+floor covered (each assertion can genuinely FAIL)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>How it is asserted</th>
+<th>Real fail path proven</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Images have alt text</td>
+<td>axe <code>image-alt</code> rule</td>
+<td><code>a11y_bad.html</code>’s alt-less <code>&lt;img&gt;</code> is
+flagged; verified by rule id + exact offending <code>&lt;img&gt;</code>
+HTML snippet.</td>
+</tr>
+<tr>
+<td>Form controls have associated labels</td>
+<td>axe <code>label</code> rule</td>
+<td><code>a11y_bad.html</code>’s disassociated
+<code>&lt;span&gt;Search query&lt;/span&gt;</code> + unlabeled
+<code>#q</code> input is flagged.</td>
+</tr>
+<tr>
+<td>Interactive controls are keyboard-reachable</td>
+<td>Real <code>page.keyboard.press("Tab")</code> traversal, asserting on
+<code>document.activeElement.id</code> after each press</td>
+<td><code>keyboard_bad.html</code>’s <code>tabindex="-1"</code> button
+is proven never reached across 8 real Tab presses, while still
+<code>is_visible()</code> (so “not reached” means keyboard-unreachable,
+not “doesn’t exist”).</td>
+</tr>
+<tr>
+<td>Interactive controls have <code>:focus-visible</code></td>
+<td>Real computed
+<code>outlineStyle</code>/<code>outlineWidth</code>/<code>boxShadow</code>
+read <strong>after</strong> a real Tab press</td>
+<td><code>keyboard_bad.html</code>’s
+<code>#inp1:focus{outline:none;box-shadow:none;}</code> is proven to
+produce no visible indicator.</td>
+</tr>
+<tr>
+<td>Colour contrast meets WCAG AA (≥ 4.5:1)</td>
+<td>axe <code>color-contrast</code> rule (computes real rendered
+contrast)</td>
+<td><code>a11y_bad.html</code>’s <code>#aaaaaa</code> on
+<code>#ffffff</code> (2.32:1, computed independently in Python against
+the WCAG relative-luminance formula before authoring the fixture) is
+flagged. <strong>Also caught the real live-dashboard defect below — this
+is not just a fixture demonstration.</strong></td>
+</tr>
+<tr>
+<td>One <code>&lt;h1&gt;</code>, sane heading outline</td>
+<td><code>page.locator("h1").count()</code> (real DOM) + axe
+<code>heading-order</code> (in the default WCAG tag set)</td>
+<td>Direct DOM count assertion; <code>a11y_good.html</code> has exactly
+one, and the count is a real post-render count, not a hardcoded
+expectation about markup that was never rendered.</td>
+</tr>
+<tr>
+<td><code>&lt;html lang&gt;</code> present</td>
+<td>axe <code>html-has-lang</code> rule +
+<code>document.documentElement.lang</code> read</td>
+<td><code>a11y_bad.html</code> omits <code>&lt;html lang&gt;</code>
+entirely; both the axe rule and the direct DOM read confirm it.</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="golden-false-cases-correct-patterns-that-must-not-be-flagged">Golden-FALSE
+cases (correct patterns that must NOT be flagged)</h2>
+<p>Both are present in <strong><code>a11y_bad.html</code></strong> — the
+same page that has four real, flagged violations — specifically so the
+proof is that the oracle discriminates pattern-by-pattern, not merely
+“the whole page happened to pass”:</p>
+<ol type="1">
+<li><strong>Decorative image, <code>alt=""</code></strong>
+(<code>test_decorative_image_alt_empty_not_flagged</code>) — asserted
+absent from every violation’s node list.</li>
+<li><strong><code>aria-hidden="true"</code> decorative icon inside an
+<code>aria-label</code>-carrying button</strong>
+(<code>test_aria_hidden_icon_not_flagged</code>) — asserted absent from
+every violation’s node list, plus an explicit check that
+<code>button-name</code> / <code>aria-hidden-body</code> never fire for
+the button itself.</li>
+</ol>
+<h2 id="red-green-evidence-this-session">RED → GREEN evidence (this
+session)</h2>
+<p><code>tests/ux/fixtures/a11y_good.html</code>’s meaningful
+<code>&lt;img&gt;</code> alt attribute was removed, the golden-good
+suite was run and observed to <strong>FAIL</strong> on
+<code>image-alt</code>, the file was restored, and a
+<code>sha256sum</code> before/after proved a byte-identical restore
+before re-running to observe <strong>PASS</strong> again. Full pasted
+transcript in the BOB-110 dispatch report (agent turn, this session) —
+summary:</p>
+<pre><code>sha256 before:  15d83ce66c33889a1c876505e3892f979800123e2d9b25e3c504efac96e7d47e
+RED:            TestGoldenGoodFixture::test_zero_wcag_violations FAILED
+                (image-alt: &quot;Images must have alternative text&quot;)
+sha256 after restore: 15d83ce66c33889a1c876505e3892f979800123e2d9b25e3c504efac96e7d47e  (IDENTICAL)
+GREEN:          TestGoldenGoodFixture::test_zero_wcag_violations PASSED</code></pre>
+<h2
+id="known-finding-real-currently-failing-deliberately-not-silenced">Known
+finding — real, currently-failing, deliberately not silenced</h2>
+<p><code>test_live_dashboard_accessibility.py::test_live_dashboard_axe_scan</code>
+<strong>fails today</strong> against the real live dashboard. This is a
+genuine discovered defect, not a fixture artefact and not a test bug —
+axe reports <code>color-contrast</code> (serious) on 21 nodes, including
+the header brand text, the page <code>&lt;h1&gt;</code>, and the tagline
+<code>&lt;p&gt;</code>. Exact computed colours + ratios (extracted from
+the same live axe run, this session):</p>
+<table>
+<thead>
+<tr>
+<th>Element(s)</th>
+<th>fg</th>
+<th>bg</th>
+<th>ratio</th>
+<th>required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.brand</code></td>
+<td><code>#9d001e</code></td>
+<td><code>#3c3f41</code></td>
+<td>1.43:1</td>
+<td>4.5:1</td>
+</tr>
+<tr>
+<td><code>h1</code></td>
+<td><code>#9d001e</code></td>
+<td><code>#3c3f41</code></td>
+<td>1.62:1</td>
+<td>3:1 (large text)</td>
+</tr>
+<tr>
+<td><code>p.tagline</code></td>
+<td><code>#808080</code></td>
+<td><code>#3c3f41</code></td>
+<td>2.68:1</td>
+<td>4.5:1</td>
+</tr>
+<tr>
+<td>Service links (×3)</td>
+<td><code>#a9b7c6</code></td>
+<td><code>#4e5254</code></td>
+<td>3.86:1</td>
+<td>4.5:1</td>
+</tr>
+</tbody>
+</table>
+<p>These correspond to the theme’s <code>--color-accent</code>
+(<code>#9d001e</code>) and <code>--color-text-secondary</code>
+(<code>#808080</code>) tokens against <code>--color-bg-secondary</code>
+(<code>#3c3f41</code>) / <code>--color-bg-tertiary</code>
+(<code>#4e5254</code>) — a real theme-contrast defect in the
+currently-active (Darcula-style) palette, not a one-off.</p>
+<p>Per this task’s scope (a new <code>tests/ux/</code> suite and/or
+<code>frontend/</code> <strong>test</strong> files only — no production
+Angular template/CSS edits were made), this assertion is left
+<strong>failing on purpose</strong>: it is the new automated gate
+correctly catching real product debt before a human QA pass would have
+(§11.4.238). <strong>This is a release-relevant finding, not a suite
+defect</strong> — route it to a tracked follow-up item for whoever owns
+<code>frontend/</code> theme tokens.</p>
+<h2 id="honest-gaps">Honest gaps</h2>
+<ul>
+<li><strong><code>frontend/e2e/*.spec.ts</code> (the Angular
+dev-server-hosted app) was not scanned</strong> — only the equivalent
+build served at <code>:7187</code> was, because starting
+<code>ng serve</code> was out of budget for this dispatch. Since
+<code>:7187</code> serves the same compiled Angular bundle, this is a
+reasonable proxy but not a substitute for scanning the dev-server-hosted
+route set directly (different routes, e.g. <code>/jackett/*</code>, were
+not scanned at all — this pass only covers the dashboard landing view).
+Command that would close this gap:
+<code>cd frontend &amp;&amp; npm run start &amp; npx playwright test</code>
+combined with pointing
+<code>tests/ux/test_live_dashboard_accessibility.py</code> (or a
+sibling) at <code>http://localhost:4200</code>.</li>
+<li><strong>Only the landing view was scanned live</strong> — the
+Jackett credentials / indexers sub-routes, dialogs, and toast
+notifications were not driven and scanned. <code>axe-core</code>’s
+ruleset and the keyboard-nav helpers in
+<code>tests/ux/conftest.py</code> are reusable for those routes; adding
+<code>page.goto(f"{merge_service_live}/jackett")</code>-style tests is
+the natural next increment.</li>
+<li><strong>Environment gotcha, unrelated to this suite:</strong>
+<code>python3 -m pytest</code> with default plugin autoloading currently
+fails to even collect <em>any</em> test in this repository
+(<code>ModuleNotFoundError: No module named 'rpds.rpds'</code>,
+transitively imported by the <code>schemathesis</code> pytest-plugin
+entry point via
+<code>jsonschema</code>/<code>referencing</code>/<code>rpds-py</code>).
+This is a broken native-extension install pre-existing in this
+environment, reproduced against an unrelated file
+(<code>tests/e2e/test_crossapp_theme.py --collect-only</code>) — not
+something introduced by this suite, and out of this dispatch’s scope to
+fix (<code>pyproject.toml</code> is not in scope). Every command in this
+document and this session’s transcript was run with the workaround:
+<code>PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest ... -p pytest_timeout</code>.</li>
+</ul>
+<h2 id="running-the-suite">Running the suite</h2>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /path/to/boba</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">PYTEST_DISABLE_PLUGIN_AUTOLOAD</span><span class="op">=</span>1 <span class="ex">python3</span> <span class="at">-m</span> pytest tests/ux/ <span class="at">-p</span> pytest_timeout <span class="at">-v</span></span></code></pre></div>
+<p>(See “Honest gaps” above for why
+<code>PYTEST_DISABLE_PLUGIN_AUTOLOAD=1</code> is currently required
+project-wide, not specific to this suite.)</p>

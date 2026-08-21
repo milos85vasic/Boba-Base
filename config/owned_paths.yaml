@@ -40,7 +40,33 @@
 #   config/boba.db : mode 600, owner does not resolve -> the operator cannot
 #                    read their own credential database, so the backup that
 #                    docs/BOBA_DATABASE.md §3 MANDATES is impossible to perform
-#   tmp/           : already uid 1000 — NOT listed, nothing to fix
+#   tmp/           : already uid 1000 — nothing to REPAIR. Listed anyway; see
+#                    "CURRENT STATE IS NOT SCOPE" below.
+#   download-proxy/: already uid 1000 — nothing to REPAIR. Listed anyway.
+#   .env           : already uid 1000, mode 600 — nothing to REPAIR. Listed anyway.
+#
+# ── CURRENT STATE IS NOT SCOPE (corrected 2026-08-21) ──────────────────────
+#
+# An earlier revision of this file omitted tmp/ with the reason "already uid
+# 1000 — NOT listed, nothing to fix". That answers the REPAIR-BACKLOG question
+# ("is it wrongly owned today?") and mistakes it for the SCOPE question ("can it
+# ever become wrongly owned, and would we notice?"). They are different
+# questions with different consequences: an undeclared location is invisible to
+# the precondition (never probed), invisible to the repair (never walked) and
+# invisible to the gate (never reported) — so a future wrongly-owned write there
+# is silent, which is exactly the §11.4.201(6) false-null this file's own
+# "ADDING AN ENTRY" note forbids.
+#
+# The three entries below are therefore declared on the basis of WHO WRITES
+# THEM, measured from docker-compose.yml, not on the basis of what they happen
+# to be owned by today. FR-012's scope is ALL container-written paths.
+#
+# Machine-checked: tests/unit/test_ownership_repair.sh Case 10 derives the set
+# of read-WRITE bind-mount sources from docker-compose.yml and FAILS if any of
+# them is neither declared here nor covered by a declared ancestor. Read-only
+# (`:ro`) mounts are excluded by construction — a container cannot write through
+# them. That check is what makes this list mechanically complete rather than
+# maintained by memory (§11.4.238 — the automated check must be the discoverer).
 #
 # ── ADDING AN ENTRY ────────────────────────────────────────────────────────
 #
@@ -85,5 +111,64 @@ paths:
   - path: "config/boba.db"
     kind: credential-store
     optional: true          # absent before first boot; absence is not an error
+    preserve_mode: true
+    recursive: false
+
+  # The shared scratch tree. Mounted READ-WRITE as /shared-tmp by THREE services
+  # (qbittorrent, qbittorrent-proxy-go, download-proxy — docker-compose.yml
+  # lines 50, 168, 250), so all three can create content here.
+  #
+  # optional: false because tmp/ is present in every clone — tmp/README.md is
+  # tracked, so the directory cannot be missing from a checkout — AND because
+  # all three services bind-mount it: a genuinely missing tmp/ is a broken
+  # precondition for the stack, not a false alarm. Refusing on it is asserting
+  # the real condition, not a proxy for one (§11.4.201(1)).
+  - path: "tmp"
+    kind: shared-scratch
+    optional: false
+    preserve_mode: false
+    recursive: true
+
+  # The bind-mounted Python source tree (docker-compose.yml line 249,
+  # ./download-proxy:/config/download-proxy — READ-WRITE, no :ro). The container
+  # writes __pycache__/ directories into it as container root; CLAUDE.md's
+  # restart contract depends on this mount being live and writable from both
+  # sides ("edits to download-proxy/src/ are live; just clear __pycache__").
+  #
+  # Content written here by a container that the operator cannot then delete or
+  # replace is the same defect class as the download tree — with the extra edge
+  # that this is a git-TRACKED source tree, so a wrongly-owned artifact inside
+  # it also breaks the operator's ability to clean their own working copy.
+  - path: "download-proxy"
+    kind: source-tree
+    optional: false
+    preserve_mode: false
+    recursive: true
+
+  # The environment file. Mounted READ-WRITE into boba-jackett at
+  # /host-env/.env (docker-compose.yml line 309 — note the deliberate ABSENCE
+  # of :ro, because the container really does write it), and
+  # bootstrap.EnsureMasterKey PERSISTS BOBA_MASTER_KEY into it via
+  # envfile.Atomic — a tmp+fsync+rename that REPLACES THE INODE. The file the
+  # operator ends up owning is therefore one the container created, which is
+  # precisely the condition this feature exists to keep operator-owned.
+  #
+  # Losing read access to this file is strictly worse than losing it on
+  # config/boba.db: .env holds BOBA_MASTER_KEY, and docs/BOBA_DATABASE.md
+  # states that losing the key makes every stored credential unrecoverable.
+  #
+  # preserve_mode is TRUE and load-bearing, exactly as for config/boba.db:
+  # .env is mode 600 per §11.4.10 and the repair MUST NOT widen it. This
+  # composes with (does not duplicate) start.sh, which forces .env to 0600 in
+  # ensure_boba_master_key and asserts the mode of config/boba.db in
+  # assert_credential_store_mode: start.sh SETS the floor, this entry stops the
+  # repair from moving it. Nothing here reads, prints or logs any value from
+  # this file — only its path, owner and mode are ever handled (§11.4.10).
+  #
+  # optional: true — .env is gitignored and legitimately absent before setup.sh
+  # has ever run, and absence is not an error (the config/boba.db precedent).
+  - path: ".env"
+    kind: credential-store
+    optional: true
     preserve_mode: true
     recursive: false

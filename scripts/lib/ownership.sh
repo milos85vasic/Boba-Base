@@ -161,3 +161,151 @@ probe_location() {
 ownership_scope_fingerprint() {
     ownership_scope_entries | LC_ALL=C sort | sha256sum | cut -d' ' -f1
 }
+
+# ---------------------------------------------------------------------------
+# ownership_compose_rows <compose-file> [extra-root ...] — emit one
+# TAB-separated row per compose service:
+#
+#     <service>\t<image>\t<userns_mode>\t<PUID>\t<mount-src,...>\t<user>
+#
+# THE SINGLE COMPOSE READER FOR THIS FEATURE (§11.4.251 — no second copy).
+#   It was a bash function private to scripts/ownership_precondition.sh until
+#   2026-08-21, when an independent review (finding IMPORTANT-1) proved the
+#   FR-011 pre-build gate had NO mount analysis at all and passed a compose
+#   file that reintroduced the defect through the `user:` key. Teaching the
+#   gate to read mounts by writing it a second parser would have been the
+#   near-identical fork §11.4.251 forbids — and would have let the two readers
+#   drift on exactly the question they both have to answer. It therefore moved
+#   here, and BOTH the precondition and the gate consume this one function.
+#
+# WHY THE `user` FIELD IS EMITTED RAW AND NEVER VARIABLE-EXPANDED:
+#   `image`, `userns_mode`, `PUID` and the mount sources are expanded against
+#   the live environment, because the caller needs the value that will actually
+#   be used. `user` is deliberately NOT: an unset `${SVC_UID}` would expand to
+#   the empty string, and an empty `user` field is indistinguishable from "this
+#   service declares no user: at all" — the §11.4.201(6) FALSE-NULL, and the
+#   one that matters most here, because "declares no user:" is the SAFE reading
+#   and "cannot be resolved" is not. Callers receive the raw text and decide;
+#   a value carrying `$` is reported unresolvable, never assumed to be root.
+#
+# WHY RELATIVE MOUNT SOURCES ARE NORMALISED AGAINST SEVERAL ROOTS:
+#   Compose resolves a relative source against the COMPOSE FILE's directory.
+#   The pre-build gate takes its compose path as an argument precisely so the
+#   §1.1 paired mutation can run against a COPY in a temp dir, and a copied
+#   compose leaves `./config` pointing at a temp directory that intersects no
+#   declared location — so a single-root resolution would make the mutation
+#   fixture silently drop half the ownership scope and pass. Every candidate
+#   root is therefore emitted, and a caller treats the service as in-scope when
+#   ANY candidate matches. That direction is the conservative-safe one
+#   (§11.4.201(4)): it can only widen what gets checked, never narrow it.
+#
+# WHY A NAMED VOLUME IS NOT A HOST PATH:
+#   Compose's short syntax treats a source that does not begin with `.`, `/`,
+#   `~` (or a `$` placeholder resolving to one) as a NAMED VOLUME, which lives
+#   in the runtime's own storage and can never be a declared host location.
+#   Normalising `myvol` into `<root>/myvol` would invent a host path nobody
+#   mounts — a §11.4.201(1) false positive waiting for the first project that
+#   names a volume after a declared directory.
+#
+# Returns non-zero when the compose file is missing/unreadable/unparseable, so
+# a caller can distinguish "declares nothing" from "could not be read".
+# ---------------------------------------------------------------------------
+ownership_compose_rows() {
+    local compose="$1"; shift
+    local py
+    [[ -f "${compose}" ]] || return 1
+    py="$(ownership_python)" || return 1
+    "${py}" - "${compose}" "$(ownership_project_root)" "$@" <<'PYEOF'
+import os, re, sys, yaml
+
+compose = sys.argv[1]
+roots = []
+for candidate in [os.path.dirname(os.path.abspath(compose))] + list(sys.argv[2:]):
+    candidate = os.path.abspath(candidate)
+    if candidate not in roots:
+        roots.append(candidate)
+
+try:
+    doc = yaml.safe_load(open(compose)) or {}
+except Exception as exc:                       # unreadable/unparseable compose
+    print("compose: %s" % exc, file=sys.stderr)
+    sys.exit(1)
+
+_VAR = re.compile(r'\$\{([A-Za-z_][A-Za-z0-9_]*)(:-([^}]*))?\}')
+
+
+def expand(value):
+    def sub(m):
+        var, dflt = m.group(1), m.group(3)
+        return os.environ.get(var) or (dflt if dflt is not None else "")
+    return _VAR.sub(sub, str(value))
+
+
+def normalise(raw_src):
+    """Absolute candidate paths for one mount source, or [] for a named volume."""
+    if not raw_src:
+        return []
+    if raw_src[0] not in "./~$":
+        return []                               # named volume, not a host path
+    src = expand(raw_src)
+    if not src:
+        return []
+    if src.startswith("~"):
+        src = os.path.expanduser(src)
+    if os.path.isabs(src):
+        return [os.path.normpath(src)]
+    out = []
+    for root in roots:
+        candidate = os.path.normpath(os.path.join(root, src))
+        if candidate not in out:
+            out.append(candidate)
+    return out
+
+
+for name, svc in (doc.get("services") or {}).items():
+    if not isinstance(svc, dict):
+        continue
+    image = expand(svc.get("image") or "")
+    userns = expand(svc.get("userns_mode") or "")
+
+    puid = ""
+    env = svc.get("environment") or []
+    pairs = env.items() if isinstance(env, dict) else [
+        tuple(str(e).split("=", 1)) for e in env
+    ]
+    for kv in pairs:
+        if len(kv) == 2 and str(kv[0]).strip() == "PUID":
+            puid = expand(kv[1]).strip()
+
+    # RAW on purpose — see the header note on the FALSE-NULL this avoids.
+    user = svc.get("user")
+    user = "" if user is None else str(user).strip()
+
+    sources = []
+    for vol in (svc.get("volumes") or []):
+        if isinstance(vol, dict):
+            raw = str(vol.get("source", "") or "")
+        else:
+            # Expand AFTER taking the source token, but split on the colon that
+            # separates source from target FIRST — a `${VAR:-/mnt/DATA}:/dst`
+            # entry carries a colon inside the placeholder, so a naive split
+            # would tear the default value in half and yield a bogus source.
+            text = str(vol)
+            depth = 0
+            cut = len(text)
+            for i, ch in enumerate(text):
+                if text.startswith("${", i):
+                    depth += 1
+                elif ch == "}" and depth:
+                    depth -= 1
+                elif ch == ":" and depth == 0:
+                    cut = i
+                    break
+            raw = text[:cut]
+        for candidate in normalise(raw):
+            if candidate not in sources:
+                sources.append(candidate)
+
+    print("\t".join([name, image, userns, puid, ",".join(sources), user]))
+PYEOF
+}
