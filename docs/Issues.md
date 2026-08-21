@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 40
-**Last modified:** 2026-08-21T19:41:44Z
+**Revision:** 43
+**Last modified:** 2026-08-21T20:01:05Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -148,14 +148,6 @@ RD2-07: DDoS-class testing fully absent from the mandated test-type matrix
 RD2-25: HelixQA Challenge entry exercising all three start.sh subcommands end-to-end against real compose stack
 
 [BOB-136 adoption audit 2026-08-21 -> In progress] a9366c9 bumped submodules/helixqa to HelixDevelopment/qa@00c5ca4 adding banks/boba-start-sh-reload.yaml (3 cases, all three subcommands). The bank EXISTS but has never been EXECUTED: the commit states honestly that the helixqa binary was not built in-session (§11.4.3 SKIP feature_disabled_by_config) and 'live bin/helixqa list demo is deferred', with only YAML-parse evidence captured. This item's acceptance is end-to-end execution against the real compose stack — artifact-class evidence cannot close a runtime-class acceptance (§11.4.226).
-
-## BOB-092 — RD2-27: Remove test_live_stack_evidence.py:265 nnmclub SKIP-on-404 fallback + verify live 200 (closes GA-13)
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Medium
-
-[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-27, P1 — closes GA-13] tests/e2e/test_live_stack_evidence.py:265 — with the live stack up, confirm curl :7187/api/v1/auth/nnmclub/status returns 200 (redeploy first if source≠artifact drift persists — see Root Cause 6), remove the skip fallback entirely, let the real assertion run. Priority: P1.
 
 ## BOB-093 — RD2-28: Live compose bring-up + verify rutracker ReDoS regex bounds deployed to container (closes runtime half of GA-12)
 
@@ -1308,4 +1300,64 @@ Assertion (c) requires a sibling-endpoint probe to answer ^2 (a 2xx). :7187 now 
 
 **Acceptance criteria:**
 The operator has answered the classification question below, the answer is recorded as consumer DATA, and assertion (c) implements it. The challenge then produces the same verdict across 3 consecutive runs against a rate-limited stack (11.4.50 deterministic consistency), and the fix ships a paired 1.1 mutation proving assertion (c) still catches a genuinely degraded sibling endpoint -- narrowing it must not blind it (11.4.201(1)).
+
+## BOB-164 — Live dashboard fails WCAG AA colour contrast on 21 nodes — brand heading measures 1.43:1 against a 3:1 floor
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** BOB-110 UX-class coverage, discovered by the new axe-core suite on its first live run
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T19:56:53Z
+**Reported-By:** BOB-110 UX-class coverage, discovered by the new axe-core suite on its first live run
+
+**What (the report, verbatim):**
+This is a REAL user-facing defect, not a test-tuning artifact, and it was found by the automated regime rather than by a human squinting at the page -- which is exactly the 11.4.238 posture the project is aiming for.
+
+The static-grep oracle would NOT have found it. Measured: the served root ships an empty <app-root></app-root> pre-hydration, so any check reading the raw HTML audits a page nobody sees. The violation only exists in the hydrated DOM, which is why 11.4.170 requires a rendered oracle and forbids value-equality assertions as the proof a UI is correct.
+
+Severity reasoning, stated rather than assumed: this is user-visible and affects the primary dashboard heading, but it degrades legibility rather than breaking function, and the surface is operator-facing rather than public. Medium, not High.
+
+The failing test was left FAILING on purpose (11.4.238) instead of silenced or marked xfail. tests/ux/ currently reports 1 failed, 16 passed; that 1 is this defect. Anyone reading a red UX suite should read it as this item, not as flakiness -- and when this is fixed the suite goes fully green, which is the signal that it is closed.
+
+HONEST SCOPE LIMIT (11.4.6): only the dashboard landing view was scanned. The /jackett/* sub-routes and the ng-serve-hosted :4200 route set were NOT audited -- the commands to close both are recorded in docs/testing/ux_accessibility.md. So this item's 21 nodes are a floor, not a total.
+
+**Affected scope / file-scope manifest:**
+the Angular dashboard served at http://localhost:7187/ (same compiled SPA as frontend/); production component CSS, not test files
+
+**Reproduction / context:**
+Run tests/ux/test_live_dashboard_accessibility.py against the running merge service. axe-core v4.13.0, scanning a real Playwright-rendered JS-hydrated DOM, reports color-contrast violations on 21 nodes. Measured pairs: .brand / h1 text #9d001e on background #3c3f41 = 1.43-1.62:1 (WCAG AA large-text floor is 3:1); tagline #808080 on #3c3f41 = 2.68:1 (body-text floor is 4.5:1).
+
+**Acceptance criteria:**
+axe-core reports ZERO color-contrast violations against the live rendered dashboard, with the fix made in production component CSS rather than by relaxing the assertion or excluding the rule (11.4.120: reconcile to the correct mechanism, never weaken the check). The existing tests/ux/ suite is the guard and already fails today, so the RED is captured -- closure requires it flipping GREEN against the live surface, which is runtime-class evidence per 11.4.226.
+
+## BOB-165 — Every documented python3 -m pytest command fails at collection: user-site rpds carries a 3.13 ABI extension under python 3.14
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+**Created-By:** surfaced while capturing closure evidence for BOB-092; diagnosed rather than worked around
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T20:00:08Z
+**Reported-By:** surfaced while capturing closure evidence for BOB-092; diagnosed rather than worked around
+
+**What (the report, verbatim):**
+This is a STALE-ABI-AFTER-INTERPRETER-UPGRADE defect, not a missing package. The package is installed; its compiled half is built for the previous interpreter. That distinction matters because 'pip install rpds-py' style advice can appear to succeed while leaving the 313 artefact in place.
+
+WHY IT WAS NOT NOTICED EARLIER, stated as fact: the paths that DO work all avoid system python3. ci.sh selects an interpreter through _select_python; the long-running suites in this session ran .venv/bin/python -m pytest and passed. So the automated regime is green while the DOCUMENTED operator command is broken -- an 11.4.238-shaped gap, since the escape was found by an agent capturing evidence rather than by the regime.
+
+WORKAROUND (measured, not theorised): PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 with the needed plugins passed explicitly (-p pytest_timeout ...) avoids the schemathesis autoload that drags in jsonschema -> referencing -> rpds. That is a workaround, NOT the fix: it silences the import path rather than repairing the install, and it will surprise the next person who runs the documented command verbatim.
+
+RELATED, and worth deciding together rather than twice: BOB-154 wants .venv rebuilt on 3.12 to match the container (which runs CPython 3.12.13 while both system and venv run 3.14.6). There are therefore THREE interpreters in play. Whoever rebuilds the venv should confirm rpds resolves for the TARGET interpreter afterwards, or this same class reappears one directory over.
+
+HONEST BOUNDARY (11.4.6): this item does NOT claim any test is wrong or any product code is broken. The product and the venv-run suites are unaffected. What is broken is the documented entry point.
+
+**Affected scope / file-scope manifest:**
+host user site-packages (~/.local/lib/python3/site-packages/rpds/); every CLAUDE.md-documented 'python3 -m pytest ...' invocation; any tooling that uses system python3 rather than .venv/bin/python
+
+**Reproduction / context:**
+python3 -m pytest tests/e2e/test_live_stack_evidence.py -q --import-mode=importlib  ->  ModuleNotFoundError: No module named 'rpds.rpds', raised during collection via the schemathesis plugin autoload -> jsonschema -> referencing._core -> rpds. MEASURED root cause: system python3 is 3.14.6, but ~/.local/lib/python3/site-packages/rpds/ ships rpds.cpython-313-x86_64-linux-gnu.so -- an extension built for 3.13. rpds/__init__.py does 'from .rpds import *', and a 313-tagged .so is not importable by 3.14, so the submodule genuinely does not exist for this interpreter. The venv is CORRECT and unaffected: .venv/lib64/python3/site-packages/rpds/ ships rpds.cpython-314-x86_64-linux-gnu.so and '.venv/bin/python -c import rpds' succeeds.
+
+**Acceptance criteria:**
+python3 -m pytest tests/unit/ -v --import-mode=importlib -- the command CLAUDE.md documents -- reaches collection without ModuleNotFoundError, OR CLAUDE.md is corrected to document the supported runner explicitly. Either way the documented command and the working command agree (11.4.99: a guide that misleads is the documentation-layer equivalent of a PASS-bluff).
 

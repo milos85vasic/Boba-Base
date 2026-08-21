@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 25
-**Last modified:** 2026-08-21T19:41:44Z
+**Revision:** 26
+**Last modified:** 2026-08-21T20:01:05Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1364,4 +1364,13 @@ RD2-17: Reconcile BOB-008 DB/MD body drift via the workable-items tool
 **Severity:** Medium
 
 RD2-12: Retroactive attributed history notes for GA-18/21/22/25/26/27 changes (never rewrite published history)
+
+## BOB-092 — RD2-27: Remove test_live_stack_evidence.py:265 nnmclub SKIP-on-404 fallback + verify live 200 (closes GA-13)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-092/closure_run_20260821.log
+**Severity:** Medium
+
+RD2-27: Remove test_live_stack_evidence.py:265 nnmclub SKIP-on-404 fallback + verify live 200 (closes GA-13)
 

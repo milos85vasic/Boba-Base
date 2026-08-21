@@ -6,12 +6,12 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 41 |
+| Bug | Fixed (→ Fixed.md) | 42 |
 | Feature | Implemented (→ Fixed.md) | 17 |
 | Task | Completed (→ Fixed.md) | 26 |
 | Task | Fixed (→ Fixed.md) | 4 |
 | Task | Implemented (→ Fixed.md) | 17 |
-| **TOTAL** | | **105** |
+| **TOTAL** | | **106** |
 
 ## Items
 
@@ -94,31 +94,32 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | 75 | Medium | Completed (→ Fixed.md) | Task | — | BOB-086 — RD2-19: Fix BOB-009/BOB-010 evidence_path + backfill item_history for 56 silent closures |
 | 76 | High | Completed (→ Fixed.md) | Task | — | BOB-089 — RD2-24: RED-first tests for start.sh reload_python/reload_plugins/recreate_stack (closes test-half of GA-27) |
 | 77 | High | Fixed (→ Fixed.md) | Bug | — | BOB-091 — RD2-26: Relocate mocked SearchOrchestrator tests to unit/ + author real-service replacements (closes GA-14/15/16) |
-| 78 | Medium | Completed (→ Fixed.md) | Task | — | BOB-096 — RD2-31: Extend qBitTorrent-go jackett_db_test.go with real process-kill/resource-exhaustion fault injection |
-| 79 | Medium | Completed (→ Fixed.md) | Task | — | BOB-098 — RD2-34: Parametrize 20 hardcoded /Volumes/T7 paths in helixqa banks with PROJECT_ROOT (closes GA-23) |
-| 80 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-099 — RD2-36: Fix guard-forbidden-commands.sh substring-match false-positive class + add const033-poweroff-signal-triage carrier to EXCLUDE_PATHS |
-| 81 | Medium | Completed (→ Fixed.md) | Task | — | BOB-103 — Incorporate Docs Chain submodule per §11.4.106/§11.4.28(C) |
-| 82 | Medium | Completed (→ Fixed.md) | Task | — | BOB-105 — §11.4.238 followup: mechanical §11.4.227(B) anchor-block-integrity check |
-| 83 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-108 — constitution scripts/workable-items export reverts docs/Issues.md + docs/Fixed.md revision counters |
-| 84 | High | Fixed (→ Fixed.md) | Bug | — | BOB-112 — boba-jackett /healthz amplifies under cold-start concurrent burst via uncached Jackett.GetCatalog() call |
-| 85 | Low | Completed (→ Fixed.md) | Task | — | BOB-113 — BOB-074 followup: add wrk to dev tooling for DDoS/load challenges |
-| 86 | High | Fixed (→ Fixed.md) | Bug | — | BOB-115 — Fix workable-items validate over-scoping to Updated-events (BOB-010 id=64 pattern) |
-| 87 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-116 — 2nd forced-logout incident: user@1000.service SIGKILLed after resource-pressure cascade (perceived host suspend) |
-| 88 | High | Fixed (→ Fixed.md) | Bug | — | BOB-117 — rutracker login diag still uses forbidden §11.4.6 'likely' vocabulary + wrong error_type (unfixed sibling of nnmclub fix) |
-| 89 | High | Fixed (→ Fixed.md) | Bug | — | BOB-118 — README.md python-tests badge claims 585 passing; pytest --collect-only measures 5235 (9x stale/wrong) |
-| 90 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-119 — docs/MERGE_SEARCH_DIAGNOSTICS.md states ENABLE_DEAD_TRACKERS default=1; actual code + compose default=0 (contradicts sibling doc) |
-| 91 | High | Fixed (→ Fixed.md) | Bug | — | BOB-122 — IPTorrents seed/leech parsing reports 0/0 despite real swarm data — outdated markup selectors in plugins/iptorrents.py AND download-proxy/src/merge_service/search.py |
-| 92 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-123 — 4th forced-logout incident 2026-08-19 00:37:11 — PAM/Linger contradiction breakthrough (retro-registered: id used in 6 commits with no tracker row) |
-| 93 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-124 — 5th forced-logout 2026-08-19 15:28:22 — architectural install-gap: 4 authored preventive gates never installed by operator |
-| 94 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-125 — 6th forced-logout 2026-08-19 16:04:54 — RESOLVED via BOB-126 (root cause was pytest kill(-1,9)) |
-| 95 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-126 — 7th forced-logout 2026-08-19 16:43:43 — REAL ROOT CAUSE: pytest kill(-1,9) via MagicMock.__int__==1; §11.4.263 anchor + boba defense-in-depth |
-| 96 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-127 — Task 8 audit: 2 tests fired real killpg/getpgid on hardcoded PIDs (fixed 8bedc5a) |
-| 97 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-128 — killpg-carrier collision between CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID and sibling CM-KILLPG-PGID-GUARD (retro-registered: id used in 3 commits with no tracker row) |
-| 98 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-130 — Badge-test timeout deterministic — synced_fixtures fixture 93s vs --timeout=60 |
-| 99 | High | Fixed (→ Fixed.md) | Bug | — | BOB-132 — qbittorrent-proxy post-recovery: unhealthy — connection refused to qbittorrent sidecar on localhost:7185 |
-| 100 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-133 — CRITICAL: fleet-wide container dead-but-healthy — podman stale-cache masks service outage |
-| 101 | High | Fixed (→ Fixed.md) | Bug | — | BOB-138 — qbittorrent-proxy health check probes only 7186, so a dead 7187 merge service reports healthy forever |
-| 102 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-139 — SSE _client_gone() swallows every exception into 'client still connected', so a raising disconnect probe streams forever (fail-open) |
-| 103 | Medium | Completed (→ Fixed.md) | Task | — | BOB-140 — Upstream the healthcheck-covers-served-ports gate into constitution/scripts/gates/ and thin boba's copy to a delegator (§11.4.177) |
-| 104 | High | Fixed (→ Fixed.md) | Bug | — | BOB-142 — SearchRequest fields were unbounded, so one request could amplify into a 43-tracker fan-out carrying arbitrary payload |
-| 105 | Medium | Completed (→ Fixed.md) | Task | — | BOB-147 — Triage all 36 §11.4.252 fail-open hits: 9 real defects fixed, 14 correct idioms, 14 vendored |
+| 78 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-092 — RD2-27: Remove test_live_stack_evidence.py:265 nnmclub SKIP-on-404 fallback + verify live 200 (closes GA-13) |
+| 79 | Medium | Completed (→ Fixed.md) | Task | — | BOB-096 — RD2-31: Extend qBitTorrent-go jackett_db_test.go with real process-kill/resource-exhaustion fault injection |
+| 80 | Medium | Completed (→ Fixed.md) | Task | — | BOB-098 — RD2-34: Parametrize 20 hardcoded /Volumes/T7 paths in helixqa banks with PROJECT_ROOT (closes GA-23) |
+| 81 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-099 — RD2-36: Fix guard-forbidden-commands.sh substring-match false-positive class + add const033-poweroff-signal-triage carrier to EXCLUDE_PATHS |
+| 82 | Medium | Completed (→ Fixed.md) | Task | — | BOB-103 — Incorporate Docs Chain submodule per §11.4.106/§11.4.28(C) |
+| 83 | Medium | Completed (→ Fixed.md) | Task | — | BOB-105 — §11.4.238 followup: mechanical §11.4.227(B) anchor-block-integrity check |
+| 84 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-108 — constitution scripts/workable-items export reverts docs/Issues.md + docs/Fixed.md revision counters |
+| 85 | High | Fixed (→ Fixed.md) | Bug | — | BOB-112 — boba-jackett /healthz amplifies under cold-start concurrent burst via uncached Jackett.GetCatalog() call |
+| 86 | Low | Completed (→ Fixed.md) | Task | — | BOB-113 — BOB-074 followup: add wrk to dev tooling for DDoS/load challenges |
+| 87 | High | Fixed (→ Fixed.md) | Bug | — | BOB-115 — Fix workable-items validate over-scoping to Updated-events (BOB-010 id=64 pattern) |
+| 88 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-116 — 2nd forced-logout incident: user@1000.service SIGKILLed after resource-pressure cascade (perceived host suspend) |
+| 89 | High | Fixed (→ Fixed.md) | Bug | — | BOB-117 — rutracker login diag still uses forbidden §11.4.6 'likely' vocabulary + wrong error_type (unfixed sibling of nnmclub fix) |
+| 90 | High | Fixed (→ Fixed.md) | Bug | — | BOB-118 — README.md python-tests badge claims 585 passing; pytest --collect-only measures 5235 (9x stale/wrong) |
+| 91 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-119 — docs/MERGE_SEARCH_DIAGNOSTICS.md states ENABLE_DEAD_TRACKERS default=1; actual code + compose default=0 (contradicts sibling doc) |
+| 92 | High | Fixed (→ Fixed.md) | Bug | — | BOB-122 — IPTorrents seed/leech parsing reports 0/0 despite real swarm data — outdated markup selectors in plugins/iptorrents.py AND download-proxy/src/merge_service/search.py |
+| 93 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-123 — 4th forced-logout incident 2026-08-19 00:37:11 — PAM/Linger contradiction breakthrough (retro-registered: id used in 6 commits with no tracker row) |
+| 94 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-124 — 5th forced-logout 2026-08-19 15:28:22 — architectural install-gap: 4 authored preventive gates never installed by operator |
+| 95 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-125 — 6th forced-logout 2026-08-19 16:04:54 — RESOLVED via BOB-126 (root cause was pytest kill(-1,9)) |
+| 96 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-126 — 7th forced-logout 2026-08-19 16:43:43 — REAL ROOT CAUSE: pytest kill(-1,9) via MagicMock.__int__==1; §11.4.263 anchor + boba defense-in-depth |
+| 97 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-127 — Task 8 audit: 2 tests fired real killpg/getpgid on hardcoded PIDs (fixed 8bedc5a) |
+| 98 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-128 — killpg-carrier collision between CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID and sibling CM-KILLPG-PGID-GUARD (retro-registered: id used in 3 commits with no tracker row) |
+| 99 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-130 — Badge-test timeout deterministic — synced_fixtures fixture 93s vs --timeout=60 |
+| 100 | High | Fixed (→ Fixed.md) | Bug | — | BOB-132 — qbittorrent-proxy post-recovery: unhealthy — connection refused to qbittorrent sidecar on localhost:7185 |
+| 101 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-133 — CRITICAL: fleet-wide container dead-but-healthy — podman stale-cache masks service outage |
+| 102 | High | Fixed (→ Fixed.md) | Bug | — | BOB-138 — qbittorrent-proxy health check probes only 7186, so a dead 7187 merge service reports healthy forever |
+| 103 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-139 — SSE _client_gone() swallows every exception into 'client still connected', so a raising disconnect probe streams forever (fail-open) |
+| 104 | Medium | Completed (→ Fixed.md) | Task | — | BOB-140 — Upstream the healthcheck-covers-served-ports gate into constitution/scripts/gates/ and thin boba's copy to a delegator (§11.4.177) |
+| 105 | High | Fixed (→ Fixed.md) | Bug | — | BOB-142 — SearchRequest fields were unbounded, so one request could amplify into a 43-tracker fan-out carrying arbitrary payload |
+| 106 | Medium | Completed (→ Fixed.md) | Task | — | BOB-147 — Triage all 36 §11.4.252 fail-open hits: 9 real defects fixed, 14 correct idioms, 14 vendored |

@@ -1,0 +1,14 @@
+.............                                                            [100%]
+=============================== warnings summary ===============================
+../../../../../../home/milosvasic/.local/lib/python3/site-packages/_pytest/config/__init__.py:1434
+  /home/milosvasic/.local/lib/python3/site-packages/_pytest/config/__init__.py:1434: PytestConfigWarning: Unknown config option: asyncio_default_test_loop_scope
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+../../../../../../home/milosvasic/.local/lib/python3/site-packages/_pytest/config/__init__.py:1434
+  /home/milosvasic/.local/lib/python3/site-packages/_pytest/config/__init__.py:1434: PytestConfigWarning: Unknown config option: asyncio_mode
+  
+    self._warn_or_fail_if_strict(f"Unknown config option: {key}\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+13 passed, 2 warnings in 92.90s (0:01:32)
