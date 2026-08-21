@@ -42,6 +42,321 @@ PLUGIN_PATTERNS = {
 COMPILED_PATTERNS = {plugin: [re.compile(p, re.I) for p in patterns] for plugin, patterns in PLUGIN_PATTERNS.items()}
 
 
+# ---------------------------------------------------------------------------
+# BOB-111 — per-IP rate limiting for the :7186 public surface.
+#
+# WHY THIS IS NOT slowapi (§11.4.251 — one mechanism, not a divergent copy).
+# The merge service on :7187 is protected by `SlowAPIMiddleware`, installed in
+# `download-proxy/src/api/rate_limit.py`. That middleware is ASGI. THIS server
+# is a stdlib `ThreadingHTTPServer` running on its OWN THREAD in the same
+# process (`download-proxy/src/main.py::start_original_proxy`), so no ASGI
+# middleware can reach it — measured 2026-08-21 on the operator's live stack:
+#
+#     Server: BaseHTTP/0.6 Python/3.12.13     (:7186, stdlib)
+#     Server: uvicorn                          (:7187, ASGI)
+#     150 sequential GET :7186/  ->  200:150  429:0
+#
+# The module docstring of `api/rate_limit.py` previously claimed install()
+# covered ":7186 (same FastAPI app object today)". That claim was FALSE and is
+# corrected there by this change.
+#
+# `plugins/download_proxy.py` additionally has a hard constraint the merge
+# service does not: it is loaded by qBittorrent's nova3 engine loader as a
+# search plugin, and it therefore imports NOTHING but the standard library.
+# Pulling in fastapi/slowapi/limits here would couple the plugin surface to the
+# merge service's dependency tree.
+#
+# So the TRANSPORT adapter differs (it must), while the POLICY CONTRACT is kept
+# identical to :7187 on every operator-visible axis:
+#
+#   * limit strings              "N/second|minute|hour|day"
+#   * env override naming        RATE_LIMIT_<CLASS>
+#   * global escape              RATE_LIMIT_DISABLED=1
+#   * per-IP keying              RemoteAddr, X-Forwarded-For ONLY under an
+#                                explicit TRUST_FORWARDED_FOR=1 opt-in
+#   * strategy                   fixed window
+#   * refusal                    HTTP 429, body {"error": "rate_limited"},
+#                                Retry-After + X-RateLimit-* headers
+#   * one bucket per request     a request is charged to EXACTLY ONE class,
+#                                never two (the same rule api/rate_limit.py
+#                                states for its dependency-vs-decorator split)
+#
+# TWO CLASSES, and the split is the same shape as :7187's cheap/expensive one:
+#
+#   proxy           — WebUI passthrough + theme/logo assets. GENEROUS.
+#                     MEASURED 2026-08-21: the qBittorrent WebUI page served
+#                     through :7186 references 76 UNIQUE local sub-resources
+#                     (223 src/href occurrences), so ONE cold page load is
+#                     ~77 requests in a ~1s burst; qBittorrent's WebUI then
+#                     polls /api/v2/sync/maindata at its default 1500ms
+#                     refresh interval = 40 req/min sustained, and the
+#                     container healthcheck adds 2/min. A limit anywhere near
+#                     :7187's 60/minute would blank the operator's WebUI on
+#                     the first page load — that would be a §11.4.201(1)
+#                     false-positive refusal, as bad as no limiter at all.
+#                     600/minute leaves headroom for ~7 cold loads per minute
+#                     on top of sustained polling, while still cutting a
+#                     `wrk -c 100` flood (BOB-112 measured >1000 req/s) by
+#                     two orders of magnitude.
+#
+#   proxy_download  — POST /api/v2/torrents/add carrying a TRACKER url, i.e.
+#                     the branch that shells out to nova2dl AND makes an
+#                     outbound authenticated tracker request. That is the
+#                     amplification vector, the exact analogue of :7187's
+#                     /api/v1/search fan-out, and it gets the same 10/minute.
+#
+# Buckets are per (client, class), so exhausting the download budget can never
+# lock the operator out of the WebUI.
+#
+# MEMORY: the bucket registry is bounded. Idle buckets are reaped after
+# RATE_LIMIT_IDLE_REAP_SECONDS (default 900s, matching the Go limiter in
+# qBitTorrent-go/internal/middleware/ratelimit.go), and a hard cap evicts the
+# least-recently-used entry, so a source-IP fan-out cannot grow the map without
+# limit inside a 768m container.
+#
+# TRACKED FOLLOW-UP (BOB-111 review, M3) — X-Forwarded-For is FORGEABLE by
+# design when TRUST_FORWARDED_FOR=1. The leftmost entry is client-controlled,
+# so behind a proxy that APPENDS rather than REPLACES it, a caller can prepend
+# a fabricated address and mint a fresh per-IP budget on demand. The correct
+# closure is to trust the RIGHTMOST entry contributed by a known-trusted proxy
+# hop, or to bind to a configured trusted-proxy CIDR set.
+#
+# NOT FIXED HERE, deliberately: this behaviour is EXACT PARITY with :7187's
+# `_client_key` (download-proxy/src/api/rate_limit.py), the opt-in is OFF by
+# default, and this stack runs `network_mode: host` with no reverse proxy, so
+# the forgeable path is unreachable as deployed. Fixing one port and not the
+# other would leave two divergent keying policies behind one contract
+# (§11.4.251). It is one follow-up covering BOTH :7186 and :7187.
+# ---------------------------------------------------------------------------
+
+import threading as _rl_threading
+import time as _rl_time
+
+# Period names accepted by the `limits` library that backs :7187, so an
+# operator can move a limit string between the two ports unchanged. MEASURED
+# 2026-08-21 against limits.parse():
+#     "10/second" / "10/minute" / "10/hour" / "10/day" / "10/month" /
+#     "10/year" / "100/5minutes"   -> accepted
+#     "10/s" / "10/m" / "10/min" / "10/h" / "10/d"  -> ValueError
+# Abbreviations are REJECTED there, so they are rejected here too.
+_RL_PERIODS = {
+    "second": 1,
+    "minute": 60,
+    "hour": 3600,
+    "day": 86400,
+    "month": 2592000,
+    "year": 31104000,
+}
+
+RATE_LIMIT_DEFAULTS = {
+    "proxy": "600/minute",
+    "proxy_download": "10/minute",
+}
+
+_RL_MAX_BUCKETS = 4096
+
+
+def _rl_env_true(name):
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes")
+
+
+def _rl_parse_period(text):
+    """Return window seconds for a `limits`-grammar period, or None.
+
+    Accepts an optional integer multiple prefix ("5minutes") and an optional
+    trailing plural, matching :7187. Deliberately does NOT accept "s"/"m"/"h"/
+    "d" — those are ValueError on :7187, and mapping them to a guessed period
+    would silently reinterpret an operator's configuration (§11.4.6).
+    """
+    m = re.match(r"^(\d*)\s*([a-z]+)$", text.strip().lower())
+    if not m:
+        return None
+    multiple = int(m.group(1)) if m.group(1) else 1
+    name = m.group(2)
+    if name not in _RL_PERIODS and name.endswith("s") and name[:-1] in _RL_PERIODS:
+        name = name[:-1]
+    if name not in _RL_PERIODS or multiple < 1:
+        return None
+    return _RL_PERIODS[name] * multiple
+
+
+def _rl_parse_limit(raw, fallback):
+    """Parse "N/period" into (count, window_seconds).
+
+    An unparseable value falls back to the class default and SAYS SO — it never
+    silently disables the limit, and never silently reinterprets it as some
+    other period (§11.4.201: a guard that quietly stops guarding is worse than
+    one that refuses loudly; §11.4.6: a value we could not honour is reported,
+    not guessed).
+    """
+    text = (raw or "").strip()
+    if not text:
+        text = fallback
+    count_s, sep, period_s = text.partition("/")
+    period = _rl_parse_period(period_s) if sep else None
+    try:
+        count = int(count_s.strip())
+    except ValueError:
+        count = 0
+    if period is not None and count > 0:
+        return count, period
+    logger.error(
+        "Invalid rate limit %r (expected 'N/second|minute|hour|day|month|year'); "
+        "falling back to %r",
+        text,
+        fallback,
+    )
+    count_s, _, period_s = fallback.partition("/")
+    return int(count_s), _rl_parse_period(period_s)
+
+
+def _rl_env_int(name, fallback, minimum=1):
+    """Read a positive integer env knob, degrading LOUDLY rather than fatally.
+
+    IMPORTANT: this runs at MODULE IMPORT. A bare int() here means a typo in a
+    tuning knob raises ValueError during import; `main.py::start_original_proxy`
+    catches it, logs "Original proxy failed", and :7186 never binds — a total
+    WebUI outage from a malformed env var (reproduced 2026-08-21 with
+    RATE_LIMIT_IDLE_REAP_SECONDS=abc). Same loud-fallback shape as
+    `_rl_parse_limit`, and clamped to `minimum` so a non-positive value cannot
+    silently invert the behaviour it configures.
+    """
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return fallback
+    try:
+        value = int(raw)
+    except ValueError:
+        logger.error("Invalid %s=%r (expected an integer); using %s", name, raw, fallback)
+        return fallback
+    if value < minimum:
+        logger.error("%s=%s is below the minimum %s; clamping", name, value, minimum)
+        return minimum
+    return value
+
+
+def _rl_limit_for(class_name):
+    return _rl_parse_limit(
+        os.environ.get("RATE_LIMIT_" + class_name.upper()),
+        RATE_LIMIT_DEFAULTS[class_name],
+    )
+
+
+class FixedWindowRateLimiter:
+    """Per-(IP, class) fixed-window counters. Safe for ThreadingHTTPServer."""
+
+    def __init__(self, limits, idle_reap_seconds=900, max_buckets=_RL_MAX_BUCKETS):
+        self._limits = dict(limits)
+        self._idle_reap = idle_reap_seconds
+        self._max_buckets = max_buckets
+        self._lock = _rl_threading.Lock()
+        # key -> [window_start, count, last_seen]
+        self._buckets = {}
+
+    def limit_for(self, class_name):
+        return self._limits.get(class_name, self._limits["proxy"])
+
+    def check(self, client, class_name, now=None):
+        """Charge one request.
+
+        Returns (allowed, limit, remaining, reset_after, first_refusal).
+
+        `first_refusal` is True only for the FIRST refusal in a given window,
+        so the caller can log the event ONCE instead of once per refused
+        request. That matters: a refusal is cheaper than the work it prevents,
+        but a WARNING line per refusal is not — a flood that the limiter
+        successfully refuses would still fill the operator's log and the
+        container's disk, turning the mitigation into its own
+        resource-exhaustion vector. Measured 2026-08-21 before this was added:
+        a 604-request flood past the 600/minute budget emitted 200 refusals
+        and 200 identical WARNING lines.
+        """
+        count, window = self.limit_for(class_name)
+        now = _rl_time.monotonic() if now is None else now
+        key = (client, class_name)
+        with self._lock:
+            self._reap(now)
+            start, used, _, refused = self._buckets.get(key, (now, 0, now, 0))
+            if now - start >= window:
+                start, used, refused = now, 0, 0
+            allowed = used < count
+            if allowed:
+                used += 1
+            else:
+                refused += 1
+            self._buckets[key] = (start, used, now, refused)
+            reset_after = max(1, int(window - (now - start)) + 1)
+            return allowed, count, max(0, count - used), reset_after, (not allowed and refused == 1)
+
+    def _reap(self, now):
+        """Drop idle buckets; hard-evict LRU if still over the cap."""
+        if len(self._buckets) > self._max_buckets // 2:
+            stale = [k for k, v in self._buckets.items() if now - v[2] > self._idle_reap]
+            for k in stale:
+                del self._buckets[k]
+        while len(self._buckets) > self._max_buckets:
+            oldest = min(self._buckets, key=lambda k: self._buckets[k][2])
+            del self._buckets[oldest]
+
+
+RATE_LIMIT_DISABLED = _rl_env_true("RATE_LIMIT_DISABLED")
+TRUST_FORWARDED_FOR = _rl_env_true("TRUST_FORWARDED_FOR")
+RATE_LIMIT_IDLE_REAP_SECONDS = _rl_env_int("RATE_LIMIT_IDLE_REAP_SECONDS", 900)
+
+_RATE_LIMITER = (
+    None
+    if RATE_LIMIT_DISABLED
+    else FixedWindowRateLimiter(
+        {name: _rl_limit_for(name) for name in RATE_LIMIT_DEFAULTS},
+        idle_reap_seconds=RATE_LIMIT_IDLE_REAP_SECONDS,
+    )
+)
+
+if RATE_LIMIT_DISABLED:
+    logger.warning(
+        "Rate limiting DISABLED via RATE_LIMIT_DISABLED - :%s accepts unbounded "
+        "request rates. Intended for RED baselines and integration harnesses only.",
+        PROXY_PORT,
+    )
+
+
+def classify_request(command, path, body):
+    """Return the rate-limit class a request must be charged to.
+
+    EXACTLY ONE class per request, and the guarantee that matters is
+    ONE-DIRECTIONAL: a request that WILL reach `download_via_nova2dl` is never
+    charged to the cheap class. That is the safety property — the amplification
+    vector can never be missed.
+
+    The converse does NOT hold, deliberately. This runs BEFORE
+    `handle_request`, so it does not re-do that function's multipart sniff: a
+    MULTIPART torrents/add upload whose raw bytes happen to contain a
+    `urls=<tracker-url>` field parses as form-encoded here and is charged to
+    `proxy_download`, while `handle_request` will pass it straight through to
+    qBittorrent without any nova2dl fan-out. Such a request is OVER-charged
+    against the tighter bucket. That asymmetry is the intended trade: an
+    over-charge costs a legitimate uploader part of a 10/minute budget, an
+    under-charge would hand an attacker the subprocess-plus-tracker-fetch path
+    for free.
+
+    A MALFORMED body cannot escape either — it falls back to the generous
+    passthrough class rather than being waved through uncharged (the 422-bypass
+    lesson from api/rate_limit.py).
+    """
+    if command != "POST" or body is None:
+        return "proxy"
+    try:
+        if urllib.parse.urlparse(path).path != "/api/v2/torrents/add":
+            return "proxy"
+        urls = urllib.parse.parse_qs(body.decode("utf-8")).get("urls", [""])[0]
+    except (UnicodeDecodeError, ValueError):
+        return "proxy"
+    if urls and identify_plugin(urls):
+        return "proxy_download"
+    return "proxy"
+
+
+
 def identify_plugin(url):
     for plugin, patterns in COMPILED_PATTERNS.items():
         for pattern in patterns:
@@ -771,7 +1086,65 @@ class DownloadHandler(BaseHTTPRequestHandler):
         if "/api/" in self.path:
             logger.info(f"{self.address_string()} - {format % args}")
 
+    # -- BOB-111 rate limiting ------------------------------------------
+    # Charged at the TOP of every entry point, before ANY work: before the
+    # logo/theme short-circuits, before the qBittorrent round-trip and before
+    # the nova2dl fan-out. A limiter that only guards the expensive branch
+    # leaves the cheap ones as a free amplifier for the same socket.
+
+    def _rate_limit_client(self):
+        """Per-IP key. X-Forwarded-For is honoured ONLY under an explicit
+        TRUST_FORWARDED_FOR=1 opt-in — trusting it by default lets any caller
+        forge a source IP and mint an unlimited budget."""
+        if TRUST_FORWARDED_FOR:
+            fwd = (self.headers.get("X-Forwarded-For") or "").strip()
+            if fwd:
+                return fwd.split(",")[0].strip()
+        try:
+            return self.client_address[0]
+        except (AttributeError, IndexError, TypeError):
+            return "unknown"
+
+    def _send_rate_limited(self, limit, remaining, reset_after):
+        """Minimal 429 — an opaque token only (§11.4.10). No client IP, no
+        bucket internals, no class name in the body."""
+        payload = b'{"error": "rate_limited"}'
+        try:
+            self.send_response(429)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Retry-After", str(reset_after))
+            self.send_header("X-RateLimit-Limit", str(limit))
+            self.send_header("X-RateLimit-Remaining", str(remaining))
+            self.send_header("X-RateLimit-Reset", str(reset_after))
+            self.end_headers()
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    def _rate_limit_ok(self, body):
+        """Charge this request. Returns False iff it was refused (429 sent)."""
+        if _RATE_LIMITER is None:
+            return True
+        class_name = classify_request(self.command, self.path, body)
+        allowed, limit, remaining, reset_after, first_refusal = _RATE_LIMITER.check(
+            self._rate_limit_client(), class_name
+        )
+        if allowed:
+            return True
+        if first_refusal:
+            # ONCE per client per window — see FixedWindowRateLimiter.check.
+            # Logged WITHOUT the client IP or the request body (§11.4.10).
+            logger.warning(
+                "Rate limited: class=%s limit=%s (further refusals in this "
+                "window are suppressed)", class_name, limit
+            )
+        self._send_rate_limited(limit, remaining, reset_after)
+        return False
+
     def do_GET(self):
+        if not self._rate_limit_ok(None):
+            return
         if self._serve_boba_logo():
             return
         if self._serve_theme_bridge():
@@ -781,6 +1154,8 @@ class DownloadHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length) if content_length > 0 else None
+        if not self._rate_limit_ok(body):
+            return
         self.handle_request(body)
 
     def _serve_boba_logo(self) -> bool:

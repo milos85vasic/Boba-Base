@@ -209,7 +209,7 @@ func run() error {
 	rateLimiter := middleware.NewRateLimiterFromEnv()
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           middleware.WithRateLimit(rateLimiter, jackettapi.NewMux(deps)),
+		Handler:           newServerHandler(rateLimiter, deps),
 		ReadHeaderTimeout: 5 * time.Second,
 		// Catalog refresh fans out one HTTP call per indexer template
 		// (~600 in production); 60s is the operator-visible upper bound.
@@ -242,4 +242,21 @@ func run() error {
 		}
 		return nil
 	}
+}
+
+// newServerHandler builds boba-jackett's HTTP handler chain: the per-IP rate
+// limiter (BOB-111) in FRONT of the jackettapi mux, so every request — the
+// management API, /healthz, /openapi.json and any 404 — is budgeted BEFORE
+// dispatch.
+//
+// WHY THIS IS A NAMED FUNCTION rather than an inline expression in the
+// http.Server literal (§11.4.196(F) — CONFIGURED != IN USE). The limiter's own
+// unit tests in internal/middleware exercise WithRateLimit against a stub
+// handler. They pass whether or not this binary actually wraps its mux, so
+// they structurally cannot notice the wrap being dropped here — the exact gap
+// tests/security/test_rate_limit_public_endpoints.py closes for the merge
+// service on :7187. Extracting the chain gives main_test.go something real to
+// drive: it builds THIS function's output and asserts a burst is refused.
+func newServerHandler(rl *middleware.RateLimiter, deps *jackettapi.Deps) http.Handler {
+	return middleware.WithRateLimit(rl, jackettapi.NewMux(deps))
 }

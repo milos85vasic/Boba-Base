@@ -1,7 +1,28 @@
 """Per-IP rate limiting for the merge service's public HTTP surface (BOB-111).
 
-Public endpoints on ports 7186 (proxy) + 7187 (merge dashboard/API) MUST NOT be
-open to unbounded request rates — the BOB-112 forensics showed unlimited
+SCOPE — THIS MODULE COVERS :7187 ONLY. An earlier revision of this docstring
+claimed `install()` also covered "the proxy service on :7186 (same FastAPI app
+object today)". That was MEASURED FALSE on 2026-08-21 against the operator's
+live stack:
+
+    Server: uvicorn                        (:7187 — this app)
+    Server: BaseHTTP/0.6 Python/3.12.13    (:7186 — NOT this app)
+    150 sequential GET :7186/  ->  200:150  429:0
+
+:7186 is served by `plugins/download_proxy.py::run_server()`, a stdlib
+`ThreadingHTTPServer` started on a SEPARATE THREAD by
+`download-proxy/src/main.py::start_original_proxy`. It is not an ASGI app, so
+`SlowAPIMiddleware` cannot reach it and never did. :7186 now carries its own
+limiter, implemented in `plugins/download_proxy.py` under the SAME policy
+contract (limit-string grammar, `RATE_LIMIT_<CLASS>` env naming,
+`RATE_LIMIT_DISABLED`, `TRUST_FORWARDED_FOR` opt-in, fixed window, and an
+identical `{"error": "rate_limited"}` + `Retry-After` refusal) — see the
+BOB-111 block comment there for why the transport adapter has to differ and
+why it stays stdlib-only. Guarded by
+`tests/security/test_rate_limit_download_proxy.py`.
+
+The merge service's public endpoints MUST NOT be open to unbounded request
+rates — the BOB-112 forensics showed unlimited
 POST /api/v1/search calls can DDoS the tracker fan-out (`wrk` hit >1000 req/s
 against an untuned service and starved every legitimate caller). This module
 adds slowapi-backed per-IP rate limiting with three closed classes:
@@ -93,6 +114,21 @@ def _env_limit(class_name: str) -> str:
 # trust lets any client claim any source IP + trivially bypass per-IP limits.
 # ---------------------------------------------------------------------------
 
+#
+# TRACKED FOLLOW-UP (BOB-111 review, M3) — X-Forwarded-For is FORGEABLE by
+# design when TRUST_FORWARDED_FOR=1. The leftmost entry is client-controlled,
+# so behind a proxy that APPENDS rather than REPLACES it, a caller can prepend
+# a fabricated address and mint a fresh per-IP budget on demand. The correct
+# closure is to trust the RIGHTMOST entry contributed by a known-trusted proxy
+# hop, or to bind to a configured trusted-proxy CIDR set.
+#
+# NOT FIXED HERE, deliberately: this behaviour is EXACT PARITY with :7187's
+# `_client_key` (download-proxy/src/api/rate_limit.py), the opt-in is OFF by
+# default, and this stack runs `network_mode: host` with no reverse proxy, so
+# the forgeable path is unreachable as deployed. Fixing one port and not the
+# other would leave two divergent keying policies behind one contract
+# (§11.4.251). It is one follow-up covering BOTH :7186 and :7187.
+
 def _client_key(request: Request) -> str:
     if os.getenv("TRUST_FORWARDED_FOR", "").strip().lower() in ("1", "true", "yes"):
         fwd = request.headers.get("x-forwarded-for", "").strip()
@@ -181,9 +217,10 @@ def install(
 
     Returns the `Limiter` so callers can attach per-endpoint decorators — the
     global middleware enforces `default_limits`; per-endpoint overrides use
-    `@limiter.limit("10/minute")` on the route function. Called by both
-    `download-proxy/src/api/__init__.py` (merge service :7187) and the proxy
-    service on :7186 (same FastAPI app object today).
+    `@limiter.limit("10/minute")` on the route function. Called by
+    `download-proxy/src/api/__init__.py` — the merge service on :7187, and
+    ONLY that. :7186 is a separate stdlib server on its own thread and carries
+    its own limiter (see this module's SCOPE note).
 
     Idempotent: calling twice is a no-op — the second call returns the same
     Limiter without stacking middleware (guards against import-order surprises

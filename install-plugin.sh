@@ -307,6 +307,44 @@ for plugin in "${SELECTED_PLUGINS[@]}"; do
     print_success "${plugin} staged"
 done
 
+# ---------------------------------------------------------------------------
+# Infrastructure modules — NOT search-engine plugins (BOB-111).
+#
+# DELIBERATELY A SEPARATE ARRAY, NEVER PLUGINS=(). The PLUGINS array is the
+# canonical curated search-engine roster: constitution Principle II enumerates
+# it by name and scripts/pre_build/check_cm_plugin_count.sh machine-guards its
+# size. `download_proxy.py` and `env_loader.py` are not engines — adding them
+# to that array would inflate the guarded roster and trip both gates.
+#
+# WHY THEY MUST BE COPIED HERE AT ALL (§11.4.108 SOURCE -> RUNTIME).
+# `download-proxy/src/main.py::start_original_proxy` imports `download_proxy`
+# from ENGINES_DIR (default /config/qBittorrent/nova3/engines), NOT from
+# plugins/ and NOT from the bind-mounted download-proxy/src tree. Only
+# setup.sh's ONE-TIME first-run block ever copied it there, so an edit to
+# plugins/download_proxy.py could never reach the running :7186 through the
+# documented "./install-plugin.sh then ./start.sh --reload-plugins" workflow —
+# the engines copy stayed at its first-run bytes indefinitely. Measured
+# 2026-08-21: engines copy 34,972 B vs plugins/ source 50,085 B.
+#
+# These modules carry no .png icon and no .json descriptor, so this is a plain
+# file copy rather than the plugin staging above.
+# ---------------------------------------------------------------------------
+INFRA_MODULES=(download_proxy.py env_loader.py)
+
+for infra in "${INFRA_MODULES[@]}"; do
+    infra_file="plugins/${infra}"
+    if [[ ! -f "$infra_file" ]]; then
+        print_warning "Infrastructure module not found: ${infra_file} — skipping"
+        continue
+    fi
+    if ! cp "$infra_file" "$ENGINES_DIR/" 2>/dev/null; then
+        print_error "Failed to stage ${infra} into ${ENGINES_DIR}"
+        continue
+    fi
+    chmod 644 "$ENGINES_DIR/${infra}" 2>/dev/null || true
+    print_success "${infra} staged (infrastructure module)"
+done
+
 # Install to running container(s) if applicable.
 # §11.4.108: the engine bytes MUST reach EVERY container that runs the nova3
 # engine subprocess. The merge service (download-proxy) spawns the engine
@@ -340,6 +378,17 @@ if [[ "$LOCAL_MODE" == "false" ]]; then
                 plugin_icon="plugins/${plugin}.png"
                 [[ -f "$plugin_icon" ]] && "$RUNTIME" cp "$plugin_icon" "${CONTAINER_NAME}:/config/qBittorrent/nova3/engines/" 2>/dev/null || true
                 "$RUNTIME" exec "$CONTAINER_NAME" chmod 644 "/config/qBittorrent/nova3/engines/${plugin}.py" 2>/dev/null || true
+            done
+            # BOB-111: the infrastructure modules must reach the container too
+            # — :7186's server code lives in download_proxy.py, and the merge
+            # service imports it from this directory at boot.
+            for infra in "${INFRA_MODULES[@]}"; do
+                [[ -f "plugins/${infra}" ]] || continue
+                if ! "$RUNTIME" cp "plugins/${infra}" "${CONTAINER_NAME}:/config/qBittorrent/nova3/engines/" 2>/dev/null; then
+                    print_error "Failed to copy ${infra} to ${CONTAINER_NAME}"
+                    continue
+                fi
+                "$RUNTIME" exec "$CONTAINER_NAME" chmod 644 "/config/qBittorrent/nova3/engines/${infra}" 2>/dev/null || true
             done
             print_success "plugins installed into ${CONTAINER_NAME}"
         done
