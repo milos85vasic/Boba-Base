@@ -92,8 +92,29 @@
 #   fallback (asserting the declared ownership route) verifies CONFIGURATION
 #   and not BEHAVIOUR, and refuses only on evidence it actually holds.
 #
+# ── WHY PUID=0 ON A ROOTFUL RUNTIME IS A THIRD REFUSAL TRIGGER ─────────────
+#   Added 2026-08-21 (independent review finding IMPORTANT-2). PUID=0 is safe
+#   ONLY because container uid 0 maps to the unprivileged operator under
+#   ROOTLESS podman. Under a ROOTFUL runtime that premise is false — container
+#   uid 0 is real host root — so PUID=0 would run the linuxserver application
+#   as genuine root, writing into the bind-mounted ./config (the encrypted
+#   credential store) and the download tree as uid 0: strictly WORSE than the
+#   PUID=1000 it replaced, which at least ran unprivileged. Nothing enforced
+#   the rootless premise: start.sh falls back to docker with no rootless
+#   assertion, and the FR-011 pre-build gate checks that PUID=0 is PRESENT
+#   while knowing nothing about the runtime.
+#
+#   This is a refusal trigger and a route reading is not, because the two are
+#   different in kind: a route reading INFERS ownership from configuration,
+#   whereas assert_rootless_runtime MEASURES the runtime (`podman info` /
+#   `docker info`, field names read from real output, never guessed) and
+#   refuses only on the dangerous COMBINATION of a measured-rootful runtime
+#   AND a parsed PUID=0 declaration (§11.4.252 fail-closed). Rootlessness that
+#   cannot be determined is a NAMED SKIP — neither a pass nor a refusal
+#   (§11.4.201(1)/(6)).
+#
 # ── WHY A FAILED ROUTE ASSERTION DOES NOT, BY ITSELF, REFUSE ───────────────
-#   The contract enumerates exactly two refusal triggers: P1 fails, or P2
+#   The contract enumerates two OWNERSHIP refusal triggers: P1 fails, or P2
 #   fails. A route assertion reads docker-compose.yml — configuration — and the
 #   same contract forbids inferring ownership from configuration alone. Turning
 #   a config reading into a refusal would make this check refuse on a proxy,
@@ -230,6 +251,210 @@ resolve_runtime() {
         fi
     done
     return 0
+}
+
+# ---------------------------------------------------------------------------
+# detect_rootless <runtime> — MEASURE whether the runtime is rootless.
+#
+# Echoes exactly one of:  rootless | rootful | unknown:<reason>
+#
+# WHY MEASURED AND NOT ASSUMED (§11.4.201, §11.4.6):
+#   "podman means rootless" is a GUESS. Podman runs rootful when invoked by
+#   root, and Docker runs rootless when installed in rootless mode — so the
+#   runtime's NAME is a proxy for the condition, not the condition. The real
+#   condition is what the daemon/engine reports about itself, so that is what
+#   is read. Field names were READ FROM REAL OUTPUT on this host (2026-08-21),
+#   never guessed:
+#     podman -> `.Host.Security.Rootless`, a bool; measured `true` here.
+#     docker -> `.SecurityOptions`, a []string carrying the standalone token
+#               `name=rootless` in rootless mode. HONEST GAP (§11.4.6): docker
+#               is NOT INSTALLED on the host where this was authored, so the
+#               docker branch is written from Docker's documented rootless
+#               indicator and is UNMEASURED here. It is deliberately built to
+#               fail toward `unknown` (a named skip) rather than toward a
+#               confident `rootful`, so an unverified reading can never
+#               manufacture a refusal.
+#
+# WHY EVERY AMBIGUITY BECOMES `unknown`, NEVER `rootful` (§11.4.201(1)/(6)):
+#   A refusal is only earned by a POSITIVE reading that the runtime is rootful.
+#   A failed command, an unparseable value, an empty option list or an
+#   unrecognised runtime are all the instrument failing to see — and a blind
+#   instrument and a genuinely-rootful engine return the same quiet nothing.
+#   Reading that silence as "rootful" would refuse healthy hosts; reading it as
+#   "rootless" would wave through the very case this exists to catch. It is
+#   therefore reported as neither.
+# ---------------------------------------------------------------------------
+detect_rootless() {
+    local runtime="$1"
+    [[ -n "${runtime}" ]] || { printf 'unknown:no_container_runtime\n'; return 0; }
+
+    local base out="" rc=0 line field
+    base="$(basename -- "${runtime}")"
+
+    case "${base}" in
+        podman)
+            # `timeout` wraps a real binary here, never a shell function, so the
+            # §11.4.201(12) exec-wrapper footgun (rc=127 on a function) cannot
+            # arise; and no background watchdog subshell is spawned inside this
+            # command substitution, so it cannot stall on an orphaned sleep.
+            out="$(timeout 30 "${runtime}" info --format '{{.Host.Security.Rootless}}' 2>/dev/null)" || rc=$?
+            if [[ "${rc}" -ne 0 ]]; then
+                printf 'unknown:podman_info_failed(exit %s)\n' "${rc}"
+                return 0
+            fi
+            case "$(printf '%s' "${out}" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')" in
+                true)  printf 'rootless\n' ;;
+                false) printf 'rootful\n' ;;
+                *)     printf 'unknown:podman_rootless_field_unrecognised(%s)\n' \
+                              "$(printf '%s' "${out}" | tr '\n' ' ' | cut -c1-60)" ;;
+            esac
+            return 0
+            ;;
+        docker)
+            out="$(timeout 30 "${runtime}" info --format '{{range .SecurityOptions}}{{println .}}{{end}}' 2>/dev/null)" || rc=$?
+            if [[ "${rc}" -ne 0 ]]; then
+                printf 'unknown:docker_info_failed(exit %s)\n' "${rc}"
+                return 0
+            fi
+            if [[ -z "${out//[[:space:]]/}" ]]; then
+                # An engine that reported NO security options told us nothing.
+                printf 'unknown:docker_security_options_empty\n'
+                return 0
+            fi
+            # Structural match on a comma-separated FIELD, never a substring:
+            # a profile path containing the word "rootless" must not read as
+            # the `name=rootless` marker.
+            while IFS= read -r line; do
+                [[ -n "${line}" ]] || continue
+                local IFS_SAVE="${IFS}"
+                IFS=','
+                # shellcheck disable=SC2206
+                local fields=(${line})
+                IFS="${IFS_SAVE}"
+                for field in "${fields[@]:-}"; do
+                    if [[ "${field//[[:space:]]/}" == "name=rootless" ]]; then
+                        printf 'rootless\n'
+                        return 0
+                    fi
+                done
+            done <<< "${out}"
+            printf 'rootful\n'
+            return 0
+            ;;
+        *)
+            printf 'unknown:unrecognised_runtime(%s)\n' "${base}"
+            return 0
+            ;;
+    esac
+}
+
+# ---------------------------------------------------------------------------
+# puid_zero_services — names of compose services that declare PUID=0.
+#
+# Prints nothing when there are none (an empty line would read as one unnamed
+# service). Read from the already-parsed COMPOSE_ROWS so the PUID value comes
+# from a YAML parse, never a grep: a comment mentioning PUID=0 is not a
+# declaration.
+# ---------------------------------------------------------------------------
+puid_zero_services() {
+    local row svc puid
+    local -a found=()
+    [[ -n "${COMPOSE_ROWS}" ]] || return 0
+    while IFS= read -r row; do
+        [[ -n "${row}" ]] || continue
+        split_tsv "${row}"
+        svc="${TSV_FIELDS[0]:-}"; puid="${TSV_FIELDS[3]:-}"
+        [[ -n "${svc}" ]] || continue
+        if [[ "${puid}" == "0" ]]; then
+            found+=("${svc}")
+        fi
+    done <<< "${COMPOSE_ROWS}"
+    [[ "${#found[@]}" -gt 0 ]] || return 0
+    printf '%s\n' "${found[@]}"
+}
+
+# ---------------------------------------------------------------------------
+# assert_rootless_runtime — refuse to let PUID=0 take effect on a ROOTFUL
+# runtime (§11.4.252 fail-closed on a dangerous combination).
+#
+# ── WHY THIS IS A REFUSAL TRIGGER AND A ROUTE READING IS NOT ────────────────
+#   The header warns that a route assertion must never refuse, because it
+#   INFERS ownership from configuration. This check is a different kind: it
+#   does not infer anything about ownership from the compose file — it MEASURES
+#   the runtime (detect_rootless) and combines that measurement with a parsed
+#   fact (a service declares PUID=0). The harm it prevents is also different:
+#   not "files land at the wrong uid" but "the application runs as GENUINE host
+#   root". Under rootless podman container uid 0 IS the unprivileged operator,
+#   which is the entire basis for PUID=0. Under a ROOTFUL runtime that premise
+#   is false: container uid 0 is real host root, and PUID=0 would run the
+#   linuxserver app as root writing into the bind-mounted ./config — which
+#   holds the encrypted credential store — and into the download tree as uid 0.
+#   That is STRICTLY WORSE than the PUID=1000 this feature replaced, which at
+#   least ran unprivileged. So the compose comment's no-privilege claim is
+#   CONDITIONAL on rootlessness, and this is the check that enforces the
+#   condition instead of asserting the conclusion.
+#
+# ── WHY IT RUNS BEFORE THE PROBES ──────────────────────────────────────────
+#   p1_probe launches a container with `--user <PUID>`. On a rootful runtime
+#   with PUID=0 that probe would itself create a ROOT-OWNED file inside a
+#   declared location and then fail to remove it as the operator. The check
+#   that exists to prevent root writes must not perform one first.
+#
+# ── WHY IT REFUSES ONLY WHEN PUID=0 IS ACTUALLY DECLARED ───────────────────
+#   A rootful runtime is not, by itself, this feature's business. The dangerous
+#   COMBINATION is rootful + PUID=0. Refusing a rootful host that declares no
+#   PUID=0 anywhere would be the §11.4.201(1) false-positive refusal, so the
+#   trigger is the combination, and the refusal names both halves.
+# ---------------------------------------------------------------------------
+assert_rootless_runtime() {
+    local verdict
+    verdict="$(detect_rootless "${RUNTIME}")"
+
+    local -a puid0=()
+    readarray -t puid0 < <(puid_zero_services)
+
+    case "${verdict}" in
+        rootless)
+            say "  runtime: ${RUNTIME} measured ROOTLESS — container uid 0 is the operator, PUID=0 grants no host privilege"
+            return 0
+            ;;
+        rootful)
+            if [[ "${#puid0[@]}" -eq 0 ]]; then
+                # Measured rootful, but nothing declares PUID=0, so the
+                # dangerous combination does not exist. Said out loud rather
+                # than passed in silence.
+                say_always "  runtime: ${RUNTIME} measured ROOTFUL, but no compose service declares PUID=0 — nothing to refuse"
+                return 0
+            fi
+            say_always "OWNERSHIP-PRECONDITION: FAIL"
+            say_always "  - runtime ${RUNTIME} measured ROOTFUL, and these service(s) declare PUID=0: ${puid0[*]}"
+            say_always "    Under a rootful runtime container uid 0 is REAL HOST ROOT — not the"
+            say_always "    unprivileged operator it is under rootless podman. PUID=0 would run"
+            say_always "    the application as genuine root, writing into the bind-mounted"
+            say_always "    ./config (which holds the encrypted credential store) and into the"
+            say_always "    download tree as uid 0. That is strictly worse than the PUID=1000"
+            say_always "    this feature replaced, so startup is refused rather than allowed to"
+            say_always "    silently escalate."
+            say_always "    Fix by running the stack rootless (§11.4.161 — podman as the"
+            say_always "    operator, or docker in rootless mode), which is what PUID=0 assumes."
+            say_always "Startup refused."
+            exit "${EXIT_REFUSE}"
+            ;;
+        *)
+            # unknown:<reason> — a NAMED, honest skip. Not a pass (nothing was
+            # asserted) and not a refusal (nothing was observed). Printed even
+            # under --quiet: a safety assertion that did not run is not good
+            # news, and --quiet only hides good news.
+            say_always "  rootless assertion: SKIP (${verdict#unknown:})"
+            if [[ "${#puid0[@]}" -gt 0 ]]; then
+                say_always "    ${#puid0[@]} service(s) declare PUID=0 (${puid0[*]}), and PUID=0 is safe"
+                say_always "    ONLY on a rootless runtime. Rootlessness could NOT be determined"
+                say_always "    here, so this run asserts NOTHING about it — it neither confirms"
+                say_always "    the runtime is safe nor observes that it is not."
+            fi
+            return 0
+            ;;
+    esac
 }
 
 # ---------------------------------------------------------------------------
@@ -520,6 +745,13 @@ main() {
     local operator_uid
     operator_uid="$(ownership_operator_uid)"
     say "Ownership precondition: scope ${scope}, operator uid ${operator_uid}"
+
+    # BEFORE any probe: p1_probe launches a container with `--user <PUID>`, so
+    # on a rootful runtime with PUID=0 it would create a root-owned file inside
+    # a declared location. The check that exists to prevent root writes must
+    # not perform one first. Refuses (exit 1) on rootful + PUID=0; otherwise
+    # returns, having either confirmed rootless or named an honest skip.
+    assert_rootless_runtime
 
     # Row shape (scripts/lib/ownership.sh):
     #   <path>\t<kind>\t<optional>\t<preserve_mode>\t<recursive>

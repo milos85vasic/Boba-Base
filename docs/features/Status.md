@@ -1,7 +1,7 @@
 # Boba — Feature Status (all components)
 
-**Revision:** 9
-**Last modified:** 2026-08-20T12:27:23Z
+**Revision:** 10
+**Last modified:** 2026-08-21T00:00:00Z
 **Scope:** Every system component, service, infrastructure piece, and client app of the Boba project — one row per REAL unit (endpoint / handler / client method / component control / plugin / subcommand / script), grouped by component.
 **Authority:** assembled by READ-ONLY repo inventory (codegraph + grep + source reading) on 2026-06-15, expanded to per-unit granularity (§11.4.118 discovery-pressure) on 2026-06-16. Cross-references `AGENTS.md`, `CLAUDE.md`, `docs/REMAINING_WORK_PLAN.md`.
 
@@ -331,7 +331,25 @@ Entry: `qBitTorrent-go/cmd/boba-jackett/main.go`; router `internal/jackettapi/ro
 
 ## 4. Tracker plugins (`plugins/*.py`)
 
-Plugin contract: class with `url`, `name`, `supported_categories`, `search()`, `download_torrent()`. Installed into container by `install-plugin.sh`. The `install-plugin.sh` `PLUGINS` array names **44 plugins** (curated install set); the `plugins/` tree carries **27 `*.py` files** (24 tracker/aggregator plugins + 3 support: `nova2`, `novaprinter`, `socks`, `helpers`, `env_loader`, `theme_injector`, `download_proxy`). Many curated names have NO matching file in this repo tree (the install script fetches/expects them elsewhere) — flagged honestly below.
+Plugin contract: class with `url`, `name`, `supported_categories`, `search()`,
+`download_torrent()` — the *target* contract, not a description of every engine today
+(see `CLAUDE.md` § Plugin System for the measured exceptions). Installed into the
+container by `install-plugin.sh`. Three counts, each answering a different question:
+
+- **43 search-plugin engines** named by the `PLUGINS=()` array <!-- CM-PLUGIN-COUNT: curated -->
+  — the canonical managed roster.
+- **43 distinct engine modules** on disk <!-- CM-PLUGIN-COUNT: engines -->
+  across `plugins/`, `plugins/community/` and `plugins/webui_compatible/`; measured
+  2026-08-21, this is exactly the curated array.
+- **36 `*.py` files** sit directly in `plugins/` <!-- CM-PLUGIN-COUNT: toplevel -->
+  — the engines plus support modules (`nova2`, `novaprinter`, `socks`, `helpers`,
+  `env_loader`, `theme_injector`, `download_proxy`), which are NOT plugins.
+
+Corrected per BOB-149: the previous revision stated 44 and 27, said "3 support" while
+listing 7, and claimed "many curated names have NO matching file in this repo tree".
+That last claim was FALSE — every one of the 43 curated names resolves to a file in
+this tree (verified by set comparison, control-needle proven §11.4.201(7)(b)). These
+counts are guarded by `scripts/pre_build/check_cm_plugin_count.sh`.
 
 ### 4a. Plugins present in `plugins/` AND named in the curated array
 

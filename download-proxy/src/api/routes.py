@@ -155,7 +155,54 @@ async def stream_theme(request: Request):  # type: ignore[no-untyped-def]
     then one ``event: theme`` line per PUT. A ``: keepalive`` comment
     is sent every 15s when idle so proxies don't hang up the
     connection.
+
+    Termination is decided by :func:`api.streaming._stream_stop_reason` —
+    the SAME helper both ``streaming.py`` SSE generators use — so all three
+    call sites of the disconnect probe behave identically (BOB-144).
+
+    FAIL-CLOSED BY CONSTRUCTION, NOT BY ACCIDENT (§11.4.252). This loop used
+    to call the probe bare::
+
+        while True:
+            if await request.is_disconnected():
+                break
+
+    A raising probe killed the generator with an UNCAUGHT exception. The
+    outcome was already safe — the ``finally`` below still released the
+    subscriber queue, so nothing leaked — but it was safe *incidentally*:
+    the stop was a side effect of an escaping traceback rather than a
+    decision. That is a defect on three counts even while the behaviour is
+    correct:
+
+    * the safety was one upstream ``try``/``except`` away from silently
+      becoming a fail-OPEN, because nothing in the code stated the intent;
+    * the client saw a truncated stream with no reason instead of a clean
+      ``event: close`` sentinel;
+    * the failure surfaced as an anonymous recurring traceback, so a
+      systematically raising probe was undiagnosable (§11.4.6).
+
+    The probe is now evaluated through the shared helper, which resolves the
+    precondition explicitly, logs a warning naming the cause, and reports
+    ``disconnect_probe_failed`` — distinct from ``client_disconnected``,
+    because "the client is gone" and "I cannot tell whether the client is
+    gone" are different facts and conflating them would be a §11.4.6
+    misstatement inside the event stream itself. ``CancelledError`` is
+    re-raised by the helper, so structured cancellation still propagates.
     """
+    # Reused, never re-implemented (§11.4.251): a third copy of the probe
+    # logic is exactly how the three call sites drifted apart in the first
+    # place. Imported lazily inside the handler, mirroring the existing
+    # ``from .streaming import SSEHandler`` call site below, so the
+    # routes <-> streaming pair never forms an import cycle.
+    try:
+        from .streaming import _stream_stop_reason
+    except ImportError:  # pragma: no cover - import shape varies under importlib
+        from api.streaming import _stream_stop_reason  # type: ignore[no-redef]
+
+    # Correlates the close event with the helper's log line when several
+    # theme subscribers are connected at once, matching the per-stream id
+    # granularity the search/download generators already use.
+    stream_id = f"theme-{uuid.uuid4().hex[:8]}"
 
     async def gen():  # type: ignore[no-untyped-def]
         store = theme_state.get_store()
@@ -164,14 +211,22 @@ async def stream_theme(request: Request):  # type: ignore[no-untyped-def]
             current = store.get()
             yield f"event: theme\ndata: {json.dumps(current.to_dict())}\n\n".encode()
             while True:
-                if await request.is_disconnected():
-                    break
+                stop_reason = await _stream_stop_reason(request, stream_id)
+                if stop_reason is not None:
+                    # Deliberate, named refusal — never a bare ``break`` and
+                    # never an escaped traceback.
+                    payload = {"stream_id": stream_id, "reason": stop_reason}
+                    yield f"event: close\ndata: {json.dumps(payload)}\n\n".encode()
+                    return
                 try:
                     state = await asyncio.wait_for(queue.get(), timeout=15)
                     yield f"event: theme\ndata: {json.dumps(state.to_dict())}\n\n".encode()
                 except TimeoutError:
                     yield b": keepalive\n\n"
         finally:
+            # Unchanged: the fail-closed guarantee this endpoint always had.
+            # The subscriber is released on EVERY exit path, including the
+            # probe-failure return above.
             store.unsubscribe(queue)
 
     return StreamingResponse(

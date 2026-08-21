@@ -1,188 +1,7 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Status</title>
-  <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
-    html {
-      color: #1a1a1a;
-      background-color: #fdfdfd;
-    }
-    body {
-      margin: 0 auto;
-      max-width: 36em;
-      padding-left: 50px;
-      padding-right: 50px;
-      padding-top: 50px;
-      padding-bottom: 50px;
-      hyphens: auto;
-      overflow-wrap: break-word;
-      text-rendering: optimizeLegibility;
-      font-kerning: normal;
-    }
-    @media (max-width: 600px) {
-      body {
-        font-size: 0.9em;
-        padding: 12px;
-      }
-      h1 {
-        font-size: 1.8em;
-      }
-    }
-    @media print {
-      html {
-        background-color: white;
-      }
-      body {
-        background-color: transparent;
-        color: black;
-        font-size: 12pt;
-      }
-      p, h2, h3 {
-        orphans: 3;
-        widows: 3;
-      }
-      h2, h3, h4 {
-        page-break-after: avoid;
-      }
-    }
-    p {
-      margin: 1em 0;
-    }
-    a {
-      color: #1a1a1a;
-    }
-    a:visited {
-      color: #1a1a1a;
-    }
-    img {
-      max-width: 100%;
-    }
-    svg {
-      height: auto;
-      max-width: 100%;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.4em;
-    }
-    h5, h6 {
-      font-size: 1em;
-      font-style: italic;
-    }
-    h6 {
-      font-weight: normal;
-    }
-    ol, ul {
-      padding-left: 1.7em;
-      margin-top: 1em;
-    }
-    li > ol, li > ul {
-      margin-top: 0;
-    }
-    blockquote {
-      margin: 1em 0 1em 1.7em;
-      padding-left: 1em;
-      border-left: 2px solid #e6e6e6;
-      color: #606060;
-    }
-    code {
-      white-space: pre-wrap;
-      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
-      font-size: 85%;
-      margin: 0;
-      hyphens: manual;
-    }
-    pre {
-      margin: 1em 0;
-      overflow: auto;
-    }
-    pre code {
-      padding: 0;
-      overflow: visible;
-      overflow-wrap: normal;
-    }
-    .sourceCode {
-     background-color: transparent;
-     overflow: visible;
-    }
-    hr {
-      border: none;
-      border-top: 1px solid #1a1a1a;
-      height: 1px;
-      margin: 1em 0;
-    }
-    table {
-      margin: 1em 0;
-      border-collapse: collapse;
-      width: 100%;
-      overflow-x: auto;
-      display: block;
-      font-variant-numeric: lining-nums tabular-nums;
-    }
-    table caption {
-      margin-bottom: 0.75em;
-    }
-    tbody {
-      margin-top: 0.5em;
-      border-top: 1px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    th {
-      border-top: 1px solid #1a1a1a;
-      padding: 0.25em 0.5em 0.25em 0.5em;
-    }
-    td {
-      padding: 0.125em 0.5em 0.25em 0.5em;
-    }
-    header {
-      margin-bottom: 4em;
-      text-align: center;
-    }
-    #TOC li {
-      list-style: none;
-    }
-    #TOC ul {
-      padding-left: 1.3em;
-    }
-    #TOC > ul {
-      padding-left: 0;
-    }
-    #TOC a:not(:hover) {
-      text-decoration: none;
-    }
-    span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    /* The extra [class] is a hack that increases specificity enough to
-       override a similar rule in reveal.js */
-    ul.task-list[class]{list-style: none;}
-    ul.task-list li input[type="checkbox"] {
-      font-size: inherit;
-      width: 0.8em;
-      margin: 0 0.8em 0.2em -1.6em;
-      vertical-align: middle;
-    }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-  </style>
-</head>
-<body>
-<header id="title-block-header">
-<h1 class="title">Status</h1>
-</header>
 <h1 id="boba-feature-status-all-components">Boba — Feature Status (all
 components)</h1>
-<p><strong>Revision:</strong> 9 <strong>Last modified:</strong>
-2026-08-20T12:27:23Z <strong>Scope:</strong> Every system component,
+<p><strong>Revision:</strong> 10 <strong>Last modified:</strong>
+2026-08-21T00:00:00Z <strong>Scope:</strong> Every system component,
 service, infrastructure piece, and client app of the Boba project — one
 row per REAL unit (endpoint / handler / client method / component
 control / plugin / subcommand / script), grouped by component.
@@ -2292,16 +2111,33 @@ autoconfig run)</td>
 (<code>plugins/*.py</code>)</h2>
 <p>Plugin contract: class with <code>url</code>, <code>name</code>,
 <code>supported_categories</code>, <code>search()</code>,
-<code>download_torrent()</code>. Installed into container by
-<code>install-plugin.sh</code>. The <code>install-plugin.sh</code>
-<code>PLUGINS</code> array names <strong>44 plugins</strong> (curated
-install set); the <code>plugins/</code> tree carries <strong>27
-<code>*.py</code> files</strong> (24 tracker/aggregator plugins + 3
-support: <code>nova2</code>, <code>novaprinter</code>,
+<code>download_torrent()</code> — the <em>target</em> contract, not a
+description of every engine today (see <code>CLAUDE.md</code> § Plugin
+System for the measured exceptions). Installed into the container by
+<code>install-plugin.sh</code>. Three counts, each answering a different
+question:</p>
+<ul>
+<li><strong>43 search-plugin engines</strong> named by the
+<code>PLUGINS=()</code> array <!-- CM-PLUGIN-COUNT: curated --> — the
+canonical managed roster.</li>
+<li><strong>43 distinct engine modules</strong> on disk
+<!-- CM-PLUGIN-COUNT: engines --> across <code>plugins/</code>,
+<code>plugins/community/</code> and
+<code>plugins/webui_compatible/</code>; measured 2026-08-21, this is
+exactly the curated array.</li>
+<li><strong>36 <code>*.py</code> files</strong> sit directly in
+<code>plugins/</code> <!-- CM-PLUGIN-COUNT: toplevel --> — the engines
+plus support modules (<code>nova2</code>, <code>novaprinter</code>,
 <code>socks</code>, <code>helpers</code>, <code>env_loader</code>,
-<code>theme_injector</code>, <code>download_proxy</code>). Many curated
-names have NO matching file in this repo tree (the install script
-fetches/expects them elsewhere) — flagged honestly below.</p>
+<code>theme_injector</code>, <code>download_proxy</code>), which are NOT
+plugins.</li>
+</ul>
+<p>Corrected per BOB-149: the previous revision stated 44 and 27, said
+“3 support” while listing 7, and claimed “many curated names have NO
+matching file in this repo tree”. That last claim was FALSE — every one
+of the 43 curated names resolves to a file in this tree (verified by set
+comparison, control-needle proven §11.4.201(7)(b)). These counts are
+guarded by <code>scripts/pre_build/check_cm_plugin_count.sh</code>.</p>
 <h3
 id="a.-plugins-present-in-plugins-and-named-in-the-curated-array">4a.
 Plugins present in <code>plugins/</code> AND named in the curated
@@ -4392,5 +4228,3 @@ journey + dashboard tab/button/theme/Jackett tour). Remaining
 per-feature flows are an in-progress recording pass
 (§11.4.107/§11.4.143).</li>
 </ul>
-</body>
-</html>

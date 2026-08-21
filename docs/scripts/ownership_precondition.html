@@ -1,0 +1,501 @@
+<h1
+id="scriptsownership_precondition.sh-ownership-startup-precondition"><code>scripts/ownership_precondition.sh</code>
+— Ownership Startup Precondition</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T14:58:00Z <strong>Purpose:</strong> Operator guide for the
+startup check that refuses to start the system when a declared location
+cannot produce operator-owned files. <strong>Last verified:</strong>
+2026-08-21</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p><code>scripts/ownership_precondition.sh</code> answers exactly one
+question, for every location listed in
+<code>config/owned_paths.yaml</code>:</p>
+<blockquote>
+<p>If this system writes a file here, will that file belong to the
+person who started the system?</p>
+</blockquote>
+<p>If the answer is “no” anywhere, the script exits non-zero so startup
+can be refused. This is <strong>fail-closed by operator
+decision</strong> (clarify session, 2026-08-21): starting with a warning
+was explicitly rejected, because a missed warning silently reproduces
+the defect the feature exists to remove — content landing at an identity
+(uid <code>100999</code> under a rootless container mapping) that has no
+host account, so the operator could not read, move, or delete their own
+downloads, and could not read their own credential database.</p>
+<h3 id="why-it-probes-instead-of-inspecting">Why it PROBES instead of
+inspecting</h3>
+<p><strong>Ownership of a location cannot be read off the location
+itself.</strong> This is the single most important thing to understand
+about this script, and it is measured fact rather than caution: the
+download root was owned by the operator’s uid <strong>and still received
+files at uid 100999</strong>. That is the defect. So the directory’s own
+owner, the configured <code>PUID</code>, and “no error occurred” are all
+<em>proxies</em> for the condition — and §11.4.201 forbids asserting a
+proxy in place of the condition it stands for. A probe that passes
+because it never wrote anything is a false pass.</p>
+<p>Every verdict this script emits therefore comes from creating a
+<strong>real file</strong> in the <strong>real location</strong> and
+reading the owner back from the host, then removing the file.</p>
+<h3
+id="why-there-are-two-probes-and-why-neither-speaks-for-the-other">Why
+there are TWO probes, and why neither speaks for the other</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Probe</th>
+<th>What it does</th>
+<th>What it proves</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P2</strong> (host write)</td>
+<td>The script, running as the operator, creates a file in the location,
+reads its owner, removes it</td>
+<td>The location exists, is writable, and is on a filesystem that
+carries ownership at all. <strong>Necessary, never
+sufficient.</strong></td>
+</tr>
+<tr>
+<td><strong>P1</strong> (container write)</td>
+<td>A throwaway container writes into the location as the <em>service’s
+declared identity</em>, then the owner is read back <strong>from the
+host</strong></td>
+<td>The real condition. This is the only probe that can observe the
+reported defect.</td>
+</tr>
+</tbody>
+</table>
+<p>P2 alone is not enough for a reason that was measured during Phase 1
+of this feature: a host-side write by the operator produces an
+operator-owned file <strong>even in the directory whose container writes
+land at 100999</strong> — <code>probe_location</code> returned
+<code>ok</code> for exactly that directory. So the report keeps the two
+probes separate and never dresses a P2 pass up as a P1 pass.</p>
+<p>Declared <strong>files</strong> (the credential store,
+<code>config/boba.db</code>) are the one carve-out: there is nothing to
+create beside them, and reading the target’s own owner IS the real
+condition there rather than a proxy for it. Files get no P1 probe.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code> 4+, <code>stat</code>, <code>mktemp</code>
+(coreutils)</li>
+<li><code>python3</code> with <strong>PyYAML</strong> — used to parse
+<code>config/owned_paths.yaml</code> and
+<code>docker-compose.yml</code>. The interpreter is <em>probed</em>, not
+assumed: a python3 that cannot <code>import yaml</code> is treated as
+unusable, and the script exits <code>2</code> rather than producing a
+confusing downstream failure.</li>
+<li><code>scripts/lib/ownership.sh</code> — sourced, never
+re-implemented (scope resolution, operator uid, and the probe itself
+live there and are shared with <code>scripts/ownership_repair.sh</code>
+and the pre-build gate).</li>
+<li><code>config/owned_paths.yaml</code> — the declared scope
+(data-model <strong>E1</strong>).</li>
+<li><strong>Optional:</strong> <code>podman</code> or
+<code>docker</code>. Without a container runtime the P1 probe cannot
+run; the script reports an honest SKIP rather than refusing, see
+<em>Edge cases</em>.</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<h3 id="example-1-the-normal-invocation">Example 1 — the normal
+invocation</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span></span></code></pre></div>
+<p>Prints a per-location verdict, then one of
+<code>OWNERSHIP-PRECONDITION: OK</code>, <code>... FAIL</code>, or
+<code>... CANNOT-RUN</code>.</p>
+<h3 id="example-2-quiet-mode-for-a-startup-path">Example 2 — quiet mode,
+for a startup path</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--quiet</span></span></code></pre></div>
+<p>Suppresses passing detail and the success banner. It does
+<strong>not</strong> suppress a refusal, a cannot-run report, or a
+probe-coverage gap — see <em>Flags</em>.</p>
+<h3 id="example-3-check-a-different-scope-file">Example 3 — check a
+different scope file</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--scope</span> /path/to/other_owned_paths.yaml</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--scope</span><span class="op">=</span>/path/to/other_owned_paths.yaml   <span class="co"># equivalent</span></span></code></pre></div>
+<p>Both forms are accepted. <code>--scope</code> takes precedence over
+the <code>OWNED_PATHS_FILE</code> environment variable.</p>
+<h3 id="example-4-declare-that-there-is-no-container-runtime">Example 4
+— declare that there is no container runtime</h3>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">CONTAINER_RUNTIME</span><span class="op">=</span> <span class="ex">scripts/ownership_precondition.sh</span></span></code></pre></div>
+<p>An explicitly <strong>empty</strong> <code>CONTAINER_RUNTIME</code>
+means “there is no runtime” and is honoured as such — P1 is skipped and
+no container is launched. This is how test suites and gates run the
+script without spawning containers. Contrast with the variable being
+<strong>unset</strong>, which means “not decided yet” and makes the
+script detect <code>podman</code>/<code>docker</code> itself.</p>
+<h3 id="example-5-use-in-a-shell-conditional">Example 5 — use in a shell
+conditional</h3>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="ex">scripts/ownership_precondition.sh</span> <span class="at">--quiet</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;safe to start&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">rc</span><span class="op">=</span><span class="va">$?</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">echo</span> <span class="st">&quot;refused (exit </span><span class="va">${rc}</span><span class="st">) — see the report above&quot;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span></code></pre></div>
+<p>Note that <code>1</code> and <code>2</code> mean different things and
+must not be collapsed; see <em>Exit codes</em>.</p>
+<h2 id="flags">Flags</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--scope &lt;path&gt;</code> /
+<code>--scope=&lt;path&gt;</code></td>
+<td>Scope file to check. Overrides <code>OWNED_PATHS_FILE</code>. A
+missing argument to the space-separated form is exit <code>2</code>, not
+a silent default.</td>
+</tr>
+<tr>
+<td><code>--quiet</code></td>
+<td>Suppress per-location OK detail and the
+<code>OWNERSHIP-PRECONDITION: OK</code> banner. Refusals, cannot-run
+reports, and probe-coverage gaps are <strong>always</strong>
+printed.</td>
+</tr>
+<tr>
+<td><code>-h</code>, <code>--help</code></td>
+<td>Print usage and exit <code>0</code>.</td>
+</tr>
+<tr>
+<td><em>(anything else)</em></td>
+<td>Unrecognised: usage to stderr, then exit <code>2</code>. An unknown
+flag means the caller asked for something this script does not do;
+ignoring it would silently run a <em>different</em> check than the one
+requested.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why <code>--quiet</code> hides only good news.</strong> A
+quiet flag that could hide a refusal — or hide the fact that the probe
+which observes the real defect never ran — would re-create the
+missed-warning failure the fail-closed decision was made to avoid. The
+implementation splits output into <code>say()</code> (silenceable) and
+<code>say_always()</code> (never silenced), and every failure path uses
+<code>say_always</code>.</p>
+<h2 id="env-vars">Env vars</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OWNED_PATHS_FILE</code></td>
+<td>Scope file path when <code>--scope</code> is absent. Read by
+<code>scripts/lib/ownership.sh</code>; default
+<code>config/owned_paths.yaml</code> under the project root.</td>
+</tr>
+<tr>
+<td><code>CONTAINER_RUNTIME</code></td>
+<td><strong>Set-but-empty</strong> = no runtime available (P1 skipped,
+nothing detected). <strong>Unset</strong> = detect <code>podman</code>
+then <code>docker</code>. <strong>Non-empty</strong> = use that command
+verbatim. Absent and empty are deliberately different states — this
+mirrors <code>start.sh</code>, which sets the empty value precisely to
+mean “none found”.</td>
+</tr>
+<tr>
+<td><code>PYTHON_BIN</code></td>
+<td>Consulted first by <code>ownership_python()</code> when choosing an
+interpreter (then <code>.venv/bin/python</code>, then
+<code>python3</code>). Each candidate must actually
+<code>import yaml</code> to be selected.</td>
+</tr>
+<tr>
+<td><em>scope placeholders</em></td>
+<td>Any <code>${VAR:-default}</code> inside a declared path is expanded
+against the live environment — <code>QBITTORRENT_DATA_DIR</code> is the
+one that matters in the shipped scope, so the host-specific download
+root resolves at run time instead of being hardcoded (§11.4.35).</td>
+</tr>
+</tbody>
+</table>
+<p>No credential value is ever read, printed, or logged by this
+script.</p>
+<h2 id="exit-codes">Exit codes</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>Every declared location can produce operator-owned files.</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>At least one cannot — <strong>startup MUST NOT proceed.</strong>
+Each offending location is named individually.</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td><strong>The check could not run at all.</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>2</code> is not a pass, and it is not a failure of the
+system either.</strong> It means the check asserted <em>nothing</em>:
+the scope file was missing, unparseable, or empty; no python3 with
+PyYAML was available; or the caller passed an unusable argument.
+Reporting “could not run” as success is the §11.4.201(6)
+blind-instrument failure — a blind instrument and a clean system return
+the same quiet zero — so this script refuses to conflate them. The
+<code>CANNOT-RUN</code> report always names the cause and ends with the
+literal line:</p>
+<pre><code>This check asserted NOTHING. It is not a pass — fix the cause above and re-run.</code></pre>
+<p>A caller that treats <code>2</code> as success has re-introduced the
+exact class of defect this feature exists to remove.</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>A declared path that is absent and
+<code>optional: true</code></strong> → not a failure. Reported as
+<code>absent, declared optional — not a failure</code> and skipped.
+<code>config/boba.db</code> is exactly this shape before first boot, and
+this case is the contract’s mandated <strong>negative control</strong>:
+a guard that refuses a healthy system is as broken as one that passes a
+broken one (§11.4.201(1)).</li>
+<li><strong>A declared path that is absent and not optional</strong> →
+failure (exit <code>1</code>). Per data-model E1 an absent non-optional
+path is an error, not a skip.</li>
+<li><strong>No container runtime</strong> → P1 is skipped with the named
+reason <code>runtime_unavailable</code>, and the script says out loud
+that nothing here asserts a service write would land at the operator’s
+uid. It does <strong>not</strong> refuse: refusing every host without a
+runtime would be a §11.4.201(1) false-positive refusal, which is exactly
+as forbidden as a false pass.</li>
+<li><strong>P1 could not run for another reason</strong> → also a named
+SKIP, never a refusal. The reasons are a closed set:
+<code>runtime_unavailable</code>, <code>route_unavailable</code>
+(compose file unreadable), <code>route_undeclared</code> (no compose
+service mounts this location), <code>service_image_unavailable</code>
+(no locally-present image, so reproducing the service would need a
+network pull at startup),
+<code>probe_container_failed(&lt;service&gt;: &lt;first 120 chars of stderr&gt;)</code>,
+and <code>probe_file_not_found(&lt;service&gt;)</code> (the container
+reported success but nothing landed on the host — the probe observed
+nothing, so it asserts nothing).</li>
+<li><strong><code>docker-compose.yml</code> missing or
+unparseable</strong> → routes are reported as
+<code>route information unavailable</code>, not as “no route declared”.
+An unread file and a file declaring nothing are different findings
+(§11.4.201(6)).</li>
+<li><strong>A compose service with no declared ownership route</strong>
+→ reported as
+<code>NO route declared (neither userns_mode: keep-id nor PUID=0)</code>,
+but this alone does <strong>not</strong> refuse. A route reading is
+<em>configuration</em>, and the contract forbids inferring ownership
+from configuration; turning a config reading into a refusal would make
+this check refuse on a proxy, inside the check written to forbid
+proxies. Route <strong>completeness</strong> is enforced where it
+belongs: the pre-build gate
+<code>scripts/pre_build/check_cm_ownership_invariants.sh</code>
+(invariant 33, <code>CM-OWNERSHIP-INVARIANTS</code>).</li>
+<li><strong>An unrecognised verdict from either probe</strong> is a
+failure, not a pass — “unrecognised is not clean”.</li>
+<li><strong>A probe file left behind</strong>: both probes remove their
+probe file, including on the container-failure path. The host probe uses
+<code>mktemp</code> inside the probed directory; the container probe
+uses a <code>$$</code>/<code>$RANDOM</code>-suffixed marker name.</li>
+<li><strong>Wiring, measured 2026-08-21T15:10Z:</strong>
+<code>start.sh</code> calls this script from
+<code>run_ownership_gate()</code>, which runs on the normal start path
+<strong>after</strong> the directory-creation stages and
+<strong>before</strong> any container writes (also on the
+<code>--recreate</code> path). The ordering is deliberate: the declared
+download root and <code>config/</code> are <code>optional: false</code>,
+so probing them before they exist would refuse a healthy fresh checkout
+— the §11.4.201(1) false-positive refusal. <code>start.sh</code> treats
+<strong>both</strong> exit <code>1</code> and exit <code>2</code> as
+refuse-to-start, and a missing script file as refuse-to-start; only exit
+<code>0</code> proceeds. It runs the script under
+<code>nice -n 19 ionice -c 3</code> when both tools are present. The
+systemd unit <code>scripts/systemd/user/boba-stack.service</code>
+deliberately does <strong>not</strong> declare its own
+<code>ExecStartPre</code> for this: it invokes
+<code>./start.sh --no-build</code> and inherits the single gate, so the
+two paths cannot contradict each other about whether the precondition
+ran. This wiring landed while this document was being written — it was
+measured directly in the working tree, not taken from the contract
+(§11.4.6).</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li><strong>Parse arguments.</strong> <code>--scope</code> is exported
+as <code>OWNED_PATHS_FILE</code> so the shared library sees it (the
+library’s documented override, not a backdoor).</li>
+<li><strong>Read the scope.</strong>
+<code>ownership_scope_entries</code> emits one TAB-separated row per
+declared entry:
+<code>&lt;path&gt;\t&lt;kind&gt;\t&lt;optional&gt;\t&lt;preserve_mode&gt;\t&lt;recursive&gt;</code>.
+A read failure is exit <code>2</code>; a scope with zero locations is
+also exit <code>2</code> — “a precondition that checked zero locations
+has verified nothing”.</li>
+<li><strong>Resolve the runtime</strong> (see
+<code>CONTAINER_RUNTIME</code> above) and <strong>read the compose
+routes</strong> — one row per service carrying its image,
+<code>userns_mode</code>, <code>PUID</code>, and normalised mount
+sources, with <code>${VAR:-default}</code> expanded <em>before</em> the
+<code>host:container</code> split (splitting first would tear a default
+value containing a colon in half).</li>
+<li><strong>Per declared location:</strong>
+<ol type="a">
+<li>Run <strong>P2</strong> via <code>probe_location</code>. Verdicts
+are <code>ok</code>, <code>absent</code>, <code>unwritable</code>,
+<code>wrong-owner:&lt;uid&gt;</code> (data-model
+<strong>E4</strong>).</li>
+<li>If the location is a regular <strong>file</strong>, stop here — its
+own owner is the real condition.</li>
+<li>Otherwise run <strong>P1</strong>: pick a compose service whose
+mount contains or is contained by this location <em>and</em> whose image
+is already present locally, then run
+<code>&lt;runtime&gt; run --rm --network=none [--userns=&lt;mode&gt;] [--user &lt;PUID&gt;] --entrypoint /bin/sh -v &lt;dir&gt;:/ownership-probe:z &lt;image&gt; -c "touch …"</code>
+under a 120-second <code>timeout</code>, <code>stat</code> the resulting
+file <strong>on the host</strong>, and remove it. The image’s own
+entrypoint is bypassed on purpose: the probe must perform a bare write,
+not boot the service.</li>
+</ol></li>
+<li><strong>Print the probe-coverage report</strong> whenever any P1 was
+skipped — always, <code>--quiet</code> included. It names each skipped
+location and reason, states that nothing there asserts a service write
+would land at the operator’s uid, and prints the declared route as the
+clearly-labelled configuration-only fallback.</li>
+<li><strong>Verdict.</strong> Any failure →
+<code>OWNERSHIP-PRECONDITION: FAIL</code>, every offending location
+named, plus the actionable line
+<code>Startup refused. Fix the location(s) above, or run scripts/ownership_repair.sh.</code>
+Otherwise <code>OWNERSHIP-PRECONDITION: OK</code>.</li>
+</ol>
+<h3 id="two-implementation-details-worth-knowing">Two implementation
+details worth knowing</h3>
+<ul>
+<li><strong>Path containment is checked in both directions.</strong> A
+service that mounts an <em>ancestor</em> of a declared location writes
+into it, and a service that mounts a <em>subdirectory</em> of it also
+writes into it. Matching one direction only would silently drop half the
+services that can produce files there.</li>
+<li><strong>TAB-separated rows are split with
+<code>readarray -d $'\t'</code>, not
+<code>IFS=$'\t' read</code>.</strong> TAB is an IFS <em>whitespace</em>
+character, so <code>read</code> collapses a run of tabs into one
+delimiter — a row with empty middle fields (a compose service built from
+a Dockerfile has no <code>image:</code>) then shifts every later field
+left and the mounts column reads as EMPTY. Measured against this
+repository’s own <code>docker-compose.yml</code> on 2026-08-21: the
+first version of the script used the collapsing read and reported “no
+compose service mounts this location” for <code>config/</code> and for
+the download root <strong>while five services mount them</strong> — a
+false statement produced by the instrument rather than by the system
+(§11.4.201(7)(c), “the path is part of the instrument”). The unit
+fixture scope has no compose service at all, so the suite could not see
+this; only running the real invocation against the real scope did.</li>
+</ul>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><a href="ownership_repair.md"><code>ownership_repair.md</code></a> —
+<code>scripts/ownership_repair.sh</code>, the remediation this script’s
+failure message points the operator at. The precondition
+<strong>detects</strong>; the repair <strong>fixes</strong>.</li>
+<li><code>scripts/lib/ownership.sh</code> — the shared library both
+scripts source (<code>ownership_scope_entries</code>,
+<code>ownership_operator_uid</code>, <code>probe_location</code>,
+<code>ownership_scope_fingerprint</code>). Sourced rather than forked: a
+second copy would be the near-identical fork §11.4.251 forbids and would
+drift from the repair and the gate that read the same scope.</li>
+<li><code>scripts/pre_build/check_cm_ownership_invariants.sh</code> —
+invariant 33 (<code>CM-OWNERSHIP-INVARIANTS</code>) of
+<code>scripts/pre_build_verification.sh</code>. Enforces route
+<strong>completeness</strong> across compose services, which this script
+deliberately only reports.</li>
+<li><code>config/owned_paths.yaml</code> — the declared scope (E1).
+Adding an entry here changes the scope fingerprint, which re-arms the
+repair.</li>
+<li><code>tests/unit/test_ownership_precondition.sh</code> — the paired
+contract suite.</li>
+<li><code>tests/ownership/test_container_writes_owned_files.py</code> —
+the §11.4.115 RED that captured the original defect at uid 100999.</li>
+<li><a
+href="../guides/file-ownership.md"><code>../guides/file-ownership.md</code></a>
+— the operator-facing narrative for the whole ownership feature.</li>
+</ul>
+<h2 id="cross-references">Cross-references</h2>
+<ul>
+<li><code>specs/002-user-owned-downloads/contracts/startup-precondition.md</code>
+— the contract this script implements (FR-010, FR-010a, FR-010b),
+including the 2026-08-21 amendment (finding X1) that split the single
+probe into P1/P2.</li>
+<li><code>specs/002-user-owned-downloads/data-model.md</code> —
+<strong>E1</strong> scope, <strong>E4</strong> probe verdicts,
+<strong>E5</strong> service ownership routes.</li>
+<li><strong>§11.4.201</strong> — every guard asserts the real condition;
+a false-positive refusal is a FAIL-bluff exactly as forbidden as a
+false-negative pass. This is the anchor behind the probe, behind the
+P1-skip-not-refuse rule, and behind exit <code>2</code> being distinct
+from exit <code>0</code>.</li>
+<li><strong>§11.4.6</strong> — no guessing: an unreadable scope is
+reported as unreadable, not as empty.</li>
+<li><strong>§11.4.3</strong> — honest SKIP-with-reason, which is what an
+unavailable P1 emits.</li>
+</ul>
+<h2 id="anti-bluff-11.4-discipline">Anti-bluff &amp; §11.4
+discipline</h2>
+<ul>
+<li>Every verdict comes from a <strong>file that was actually created
+and whose owner was actually read back</strong>. No verdict is derived
+from a directory’s own owner, from <code>PUID</code>, or from the
+absence of an error.</li>
+<li>The probe that can observe the real defect (P1) is never
+<em>implied</em> by the one that cannot (P2). When P1 does not run, the
+report says so, unconditionally, and labels the configuration fallback
+as configuration.</li>
+<li><code>2</code> (cannot run) is structurally separate from
+<code>0</code> (pass), so a blind instrument can never be read as a
+clean system.</li>
+<li><code>--quiet</code> cannot hide a refusal or a coverage gap.</li>
+<li>§11.4.263: this script signals no processes — there is no
+<code>kill</code>, <code>pkill</code>, or <code>killpg</code> anywhere
+in it, so the <code>pgid &lt;= 1</code> broadcast-kill hazard cannot
+arise.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-08-21 — every flag, exit code, environment variable, and skip
+reason in this document was read from
+<code>scripts/ownership_precondition.sh</code> and
+<code>scripts/lib/ownership.sh</code> at commit-time state, not from the
+script’s own usage text alone. The <code>start.sh</code> wiring is
+described from the invocation actually present in the working tree at
+2026-08-21T15:10Z (<code>run_ownership_gate()</code>, called at two
+sites), not from the contract’s word for it.</p>

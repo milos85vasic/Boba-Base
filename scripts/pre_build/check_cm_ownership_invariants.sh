@@ -30,8 +30,9 @@
 #   container-root == the host operator. It grants NO host privilege: rootless
 #   podman's container-root is still the unprivileged operator uid on the host.
 #
-# WHY "linuxserver-based" IS DERIVED FROM `image:`, NOT A SERVICE-NAME LIST
-# (§11.4.201(6) — silence is not an exemption):
+# WHY "linuxserver-based" IS DERIVED FROM `image:` **AND** FROM A RESOLVED
+# `build:` BASE, NOT A SERVICE-NAME LIST (§11.4.201(6) — silence is not an
+# exemption):
 #   A hardcoded list of {qbittorrent, jackett} would leave a linuxserver
 #   service added LATER silently uncovered: it would inherit the image's abc
 #   default (uid 911 -> host 101910) and reproduce the defect while this gate
@@ -39,6 +40,36 @@
 #   scope is computed from it — the registry/namespace path components are
 #   compared for EQUALITY to `linuxserver`, so a repository merely CONTAINING
 #   that word (e.g. `acme/mylinuxserverfork`) is not a carrier match.
+#
+#   THE `image:`-ONLY DERIVATION WAS ITSELF BLIND, AND IT WAS PROVEN BLIND
+#   (independent review finding MINOR-1, reproduced 2026-08-21 before this
+#   fix): a service BUILT from a Dockerfile has NO `image:` key, so
+#   `image_is_linuxserver(None)` was false and the service was classified
+#   NOT-linuxserver and never PUID-checked. The constructed case
+#
+#       qbt-derived-local:
+#         build: { context: ./build-ctx }     # FROM lscr.io/linuxserver/...
+#         environment: [ PUID=1000 ]
+#
+#   PASSED this gate (exit 0) while its writes would land at host uid 101910 —
+#   the exact defect FR-011 exists to make un-revertable, arrived at through a
+#   hole in the gate's own scope rather than through a wrong value.
+#
+#   The fix RESOLVES the base instead of assuming it: for a service carrying a
+#   `build:`, the Dockerfile's FROM chain is parsed (last stage = the runtime
+#   image, `AS` aliases followed back, global ARG defaults substituted) and the
+#   SAME namespace-equality test is applied to the resolved base — one
+#   predicate, not a second forked copy (§11.4.251). When the base genuinely
+#   CANNOT be resolved (Dockerfile absent, `FROM ${ARG}` with no default,
+#   circular stage reference) the gate emits an "unverifiable base" FINDING and
+#   REFUSES. Silence is not an exemption: an unresolvable base is precisely the
+#   case where a linuxserver image could hide, so the quiet zero it used to
+#   return was the §11.4.201(6) FALSE-NULL, not a clean tree.
+#
+#   The Dockerfile is read by INSTRUCTION TOKENS (keyword + operands), with
+#   comment lines dropped before parsing — so a Dockerfile comment merely
+#   MENTIONING `lscr.io/linuxserver/...` is invisible here, exactly as a
+#   compose comment mentioning PUID=1000 is invisible to the YAML parse.
 #
 # WHY A MISSING PUID ON A LINUXSERVER SERVICE IS A FINDING, NOT A PASS:
 #   Absence is not neutrality here. With no PUID the image runs the app as
@@ -111,18 +142,30 @@
 #              itself a §11.4.201 bluff)
 #   2 — ERROR (usage error)
 #
-# REGISTRATION STATUS (honest gap, §11.4.6 — read before trusting this gate):
-#   scripts/pre_build_verification.sh has NO auto-discovery for
-#   scripts/pre_build/*.sh: every invariant is a hand-written block carrying a
-#   literal `[N/44]` label. Wiring this gate in therefore edits that file, which
-#   was owned by another work stream when this gate was authored, so the block
-#   was NOT applied here (a concurrent edit would have raced it). Until it is
-#   applied, this gate is EXECUTABLE AND HONEST BUT NOT YET WIRED — which is
-#   exactly the §11.4.196(F) configured-vs-in-use gap, and it is recorded rather
-#   than papered over. The block to paste (before the FULL_VALIDATION section)
-#   is reproduced in the handover; it mirrors the CM-HEALTHCHECK-COVERS-SERVED-
-#   PORTS block verbatim, reading the verdict with `tail -n1` and treating a
-#   timeout (124) as a FAIL, never a pass.
+# REGISTRATION STATUS — WIRED AND BLOCKING (verified, §11.4.196(F)):
+#   scripts/pre_build_verification.sh runs this gate as invariant
+#   `[33/44] CM-OWNERSHIP-INVARIANTS` (the block immediately preceding that
+#   file's FULL_VALIDATION section). It invokes this script with no arguments,
+#   reports the verdict with `tail -n1`, and routes a non-zero exit through
+#   `fail` — so a finding BLOCKS the build rather than warning.
+#
+#   This paragraph previously read "EXECUTABLE AND HONEST BUT NOT YET WIRED",
+#   describing a §11.4.196(F) configured-vs-in-use gap that had since been
+#   closed. It was corrected on 2026-08-21 after re-reading the runner rather
+#   than trusting the claim: a gate whose entire purpose is honesty may not
+#   carry a false statement about itself, and a stale "not wired" note is the
+#   §11.4.6 failure in the direction that makes the gate look weaker than it
+#   is — which invites someone to "finally wire it" and land a duplicate block.
+#
+#   KNOWN, NOT INTRODUCED HERE (§11.4.261 tracked, not absorbed): the literal
+#   `33/44` is now carried by TWO blocks in that runner — this one and
+#   `run_const_gate "33/44" "CM-CLI-AGENT-PLUGINS-WIRED"`. The slot was free
+#   when this gate claimed it and a concurrently-landed gate took the same
+#   number. Both blocks execute; only the printed label collides. Renumbering
+#   belongs to whoever owns pre_build_verification.sh (out of this file's
+#   scope), together with that file's pre-existing 35-invariants-vs-44-
+#   denominator mismatch. Recorded here so the next reader is not misled by a
+#   duplicated label into thinking one of the two gates does not run.
 #
 # Cross-references:
 #   specs/002-user-owned-downloads/ FR-011 (this gate's requirement),
@@ -198,7 +241,7 @@ ANALYZER_OUT="$(mktemp)"
 trap 'rm -f "${ANALYZER_OUT}"' EXIT
 
 set +e
-"${PY}" - "${COMPOSE_FILE}" "${OWNED_PATHS_FILE}" >"${ANALYZER_OUT}" 2>&1 <<'PY_EOF'
+"${PY}" - "${COMPOSE_FILE}" "${OWNED_PATHS_FILE}" "${REPO_ROOT}" >"${ANALYZER_OUT}" 2>&1 <<'PY_EOF'
 """Structural analyzer for CM-OWNERSHIP-INVARIANTS.
 
 Emits line-oriented results the bash wrapper routes to stdout/stderr:
@@ -213,11 +256,14 @@ comment that MENTIONS `keep-id` or `PUID=1000` is invisible to the parser, so
 prose can never be mistaken for a declaration. This project has repeatedly
 been bitten by greps matching prose (BOB-138/BOB-141).
 """
+import os
+import re
 import sys
 
 import yaml
 
-compose_path, owned_paths_path = sys.argv[1], sys.argv[2]
+compose_path, owned_paths_path, repo_root = sys.argv[1], sys.argv[2], sys.argv[3]
+compose_dir = os.path.dirname(os.path.abspath(compose_path))
 
 findings = []
 infos = []
@@ -263,6 +309,235 @@ def image_is_linuxserver(image):
     parts[-1] = parts[-1].split(":", 1)[0]
     # The namespace components are everything but the final image name.
     return any(part.lower() == "linuxserver" for part in parts[:-1])
+
+
+_VAR_RE = re.compile(
+    r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::?-([^}]*))?\}"   # ${VAR} / ${VAR:-dflt}
+    r"|\$([A-Za-z_][A-Za-z0-9_]*)"                       # $VAR
+)
+
+
+def build_spec(service):
+    """Normalise compose `build:` (string OR mapping form).
+
+    Returns (context, dockerfile, inline_text) or None when there is no build.
+    """
+    spec = service.get("build")
+    if spec is None:
+        return None
+    if isinstance(spec, str):
+        return (spec, "Dockerfile", None)
+    if isinstance(spec, dict):
+        inline = spec.get("dockerfile_inline")
+        inline = inline if isinstance(inline, str) and inline.strip() else None
+        context = str(spec.get("context") or ".")
+        dockerfile = str(spec.get("dockerfile") or "Dockerfile")
+        return (context, dockerfile, inline)
+    return None
+
+
+def locate_dockerfile(context, dockerfile):
+    """Resolve a build context to a real Dockerfile path.
+
+    Returns (path, how) on success, or (None, [candidates tried]).
+
+    Compose resolves a relative context against the COMPOSE FILE's directory,
+    so that is tried FIRST and is the correct semantics. The repo root is a
+    documented SECOND attempt for one specific reason: this gate takes the
+    compose file as a positional argument precisely so the §1.1 paired mutation
+    can run against a COPY in a temp dir, and a copied compose leaves its build
+    context behind in the repo. Which candidate actually resolved is REPORTED
+    (§11.4.201(5)), never silently substituted.
+    """
+    tried = []
+    for root, label in ((compose_dir, "compose-relative"),
+                        (repo_root, "repo-root-relative")):
+        if os.path.isabs(dockerfile):
+            candidate = dockerfile
+        elif os.path.isabs(context):
+            candidate = os.path.join(context, dockerfile)
+        else:
+            candidate = os.path.join(root, context, dockerfile)
+        candidate = os.path.normpath(candidate)
+        if candidate not in tried:
+            tried.append(candidate)
+        if os.path.isfile(candidate):
+            return candidate, label
+    return None, tried
+
+
+def dockerfile_stages(text):
+    """Parse a Dockerfile into ([(base_ref, alias_lower_or_None)], global_args).
+
+    Token-structural, not a substring scan: comment lines are dropped and
+    backslash continuations are joined BEFORE any instruction is read, so a
+    Dockerfile comment merely MENTIONING an image reference is invisible.
+    Only ARGs declared before the first FROM are collected — those are the only
+    ones Docker permits a FROM line to reference.
+    """
+    logical = []
+    buffer = ""
+    for raw in text.splitlines():
+        stripped = raw.strip()
+        if stripped.startswith("#"):
+            # A comment is a comment whether or not a continuation is open.
+            continue
+        if not buffer and not stripped:
+            continue
+        if raw.rstrip().endswith("\\"):
+            buffer += raw.rstrip()[:-1] + " "
+            continue
+        buffer += raw
+        if buffer.strip():
+            logical.append(buffer.strip())
+        buffer = ""
+    if buffer.strip():
+        logical.append(buffer.strip())
+
+    stages = []
+    global_args = {}
+    for line in logical:
+        parts = line.split()
+        if not parts:
+            continue
+        keyword = parts[0].upper()
+        if keyword == "ARG" and not stages:
+            for token in parts[1:]:
+                if "=" in token:
+                    key, value = token.split("=", 1)
+                    global_args[key.strip()] = value.strip().strip('"').strip("'")
+                else:
+                    global_args.setdefault(token.strip(), None)
+        elif keyword == "FROM":
+            # `--platform=...` and any future flag are operands of FROM, not
+            # the image reference.
+            operands = [t for t in parts[1:] if not t.startswith("--")]
+            if not operands:
+                continue
+            alias = None
+            if len(operands) >= 3 and operands[1].upper() == "AS":
+                alias = operands[2].lower()
+            stages.append((operands[0], alias))
+    return stages, global_args
+
+
+def expand_build_arg(ref, args):
+    """Substitute global ARG values into a FROM reference.
+
+    Returns (expanded, [names that could not be resolved]). An unresolved name
+    is NOT silently blanked into a match-nothing string — it is reported, so
+    `FROM ${BASE}` with no default becomes an explicit unverifiable finding
+    rather than a quiet "not linuxserver".
+    """
+    unresolved = []
+
+    def substitute(match):
+        name = match.group(1) or match.group(3)
+        default = match.group(2)
+        if args.get(name):
+            return args[name]
+        if default is not None:
+            return default
+        unresolved.append(name)
+        return ""
+
+    return _VAR_RE.sub(substitute, ref), unresolved
+
+
+def resolve_runtime_base(text):
+    """Resolve a Dockerfile's RUNTIME base image.
+
+    The LAST stage is the image compose actually runs; an `AS` alias is
+    followed back to the stage it names (with a cycle guard). Returns
+    (base_ref, None) or (None, reason).
+    """
+    stages, args = dockerfile_stages(text)
+    if not stages:
+        return None, "the Dockerfile contains no FROM instruction"
+
+    alias_index = {}
+    for index, (_, alias) in enumerate(stages):
+        if alias:
+            alias_index[alias] = index
+
+    index = len(stages) - 1
+    seen = set()
+    while True:
+        if index in seen:
+            return None, "the Dockerfile's build stages reference each other circularly"
+        seen.add(index)
+        expanded, unresolved = expand_build_arg(stages[index][0], args)
+        if unresolved:
+            return None, ("FROM references build argument(s) %s that have no default, "
+                          "so the base image is not statically determinable"
+                          % ", ".join(sorted(set(unresolved))))
+        expanded = expanded.strip()
+        if not expanded:
+            return None, "FROM expands to an empty image reference"
+        target = alias_index.get(expanded.lower())
+        if target is None:
+            return expanded, None
+        index = target
+
+
+def classify_service(name, service, image):
+    """Decide whether a service runs a linuxserver-based image.
+
+    Returns (True, evidence) / (False, evidence) / (None, None). None means
+    UNVERIFIABLE — a finding has already been recorded, because a base nobody
+    can resolve is exactly where a linuxserver image would hide, and reading
+    that silence as "not linuxserver" is the §11.4.201(6) false-null this
+    gate exists to refuse.
+    """
+    if image_is_linuxserver(image):
+        return True, "image=%s" % image
+
+    spec = build_spec(service)
+    if spec is None:
+        return False, "image=%s" % (image if image else "<no image and no build>")
+
+    context, dockerfile, inline = spec
+    if inline is not None:
+        text, source = inline, "build.dockerfile_inline"
+    else:
+        located, how = locate_dockerfile(context, dockerfile)
+        if located is None:
+            finding(
+                "%s: builds from `%s` (context `%s`) but its base image is "
+                "UNVERIFIABLE — no Dockerfile was found, so this gate cannot "
+                "tell whether the service is linuxserver-based and MUST NOT "
+                "assume it is not. Tried: %s. Declare its route: give the "
+                "service an explicit `image:`, or make the Dockerfile "
+                "readable from here."
+                % (name, dockerfile, context, "; ".join(how))
+            )
+            return None, None
+        try:
+            with open(located, "r", encoding="utf-8", errors="replace") as handle:
+                text = handle.read()
+        except OSError as exc:
+            finding(
+                "%s: base image UNVERIFIABLE — its Dockerfile %s could not be "
+                "read (%s). Declare its route rather than leaving the base "
+                "unchecked." % (name, located, exc)
+            )
+            return None, None
+        source = "%s (%s)" % (located, how)
+
+    base, reason = resolve_runtime_base(text)
+    if base is None:
+        finding(
+            "%s: base image UNVERIFIABLE from %s — %s. A base this gate cannot "
+            "resolve is exactly where a linuxserver image hides, so it is "
+            "refused rather than assumed non-linuxserver. Declare its route: "
+            "pin the base explicitly (or give the service an `image:`) so "
+            "PUID can be held to 0 when it needs to be."
+            % (name, source, reason)
+        )
+        return None, None
+
+    evidence = "build base=%s (from %s)" % (base, source)
+    return image_is_linuxserver(base), evidence
 
 
 def environment_map(service):
@@ -357,12 +632,24 @@ for name in sorted(services):
                 % (name, userns)
             )
 
-    if not image_is_linuxserver(image):
+    is_linuxserver, evidence = classify_service(name, service, image)
+
+    if is_linuxserver is None:
+        # UNVERIFIABLE. classify_service already recorded a finding naming what
+        # it tried and why it could not decide. Deliberately NOT counted as
+        # checked: an unresolved base has asserted nothing in either direction,
+        # and counting it would let it satisfy the "at least one linuxserver
+        # service was checked" clause below.
+        continue
+
+    if not is_linuxserver:
         # Correct as-is and deliberately unchanged: these run as root already
         # and were MEASURED to write as host uid 1000. Demanding a PUID here
-        # would be the false-positive refusal §11.4.201(1) forbids.
-        info("%s: image=%s -> not linuxserver-based, PUID not required"
-             % (name, image if image else "<built locally, no image key>"))
+        # would be the false-positive refusal §11.4.201(1) forbids. Reached now
+        # only when the base was RESOLVED and found non-linuxserver, never when
+        # it merely could not be read.
+        info("%s: %s -> not linuxserver-based, PUID not required"
+             % (name, evidence))
         continue
 
     linuxserver_checked += 1
@@ -371,11 +658,11 @@ for name in sorted(services):
     for key in ("PUID", "PGID"):
         if key not in env:
             finding(
-                "%s: linuxserver image `%s` declares NO %s — the image then "
+                "%s: linuxserver service (%s) declares NO %s — the image then "
                 "runs the app as its `abc` default (uid 911), which rootless "
                 "podman maps to host uid 101910, and every file it writes is "
                 "unreachable to the operator. Declare %s=0."
-                % (name, image, key, key)
+                % (name, evidence, key, key)
             )
             continue
         value = env[key]
@@ -401,7 +688,7 @@ for name in sorted(services):
         resolved.append("%s=%s" % (key, value))
 
     if len(resolved) == 2:
-        info("%s: image=%s -> linuxserver, %s OK" % (name, image, ", ".join(resolved)))
+        info("%s: %s -> linuxserver, %s OK" % (name, evidence, ", ".join(resolved)))
 
 if services and linuxserver_checked == 0:
     # Distinguishable from the blind-parse case above (services WERE parsed),

@@ -346,12 +346,53 @@ broker - <code>internal/client/</code> — qBittorrent Web API client -
 <code>internal/middleware/</code> — CORS and logging - Migration spec:
 <code>docs/migration/Migration_Python_Codebase_To_Go.md</code></p>
 <h2 id="plugin-system">Plugin System</h2>
-<p><code>plugins/</code> has <strong>42 managed plugins</strong>.
-<code>install-plugin.sh</code> manages a curated subset:
-<code>eztv jackett limetorrents piratebay solidtorrents torlock torrentproject torrentscsv rutracker rutor kinozal nnmclub</code></p>
+<p>Three rosters live here and they answer three different questions.
+Conflating them is BOB-149, where the count drifted to 42 in this file
+and 48 in the README badge. Every number below is machine-derived and
+guarded by <code>scripts/pre_build/check_cm_plugin_count.sh</code> — do
+not hand-edit one without re-running that gate.</p>
+<ul>
+<li><strong>43 search-plugin engines</strong> are managed by
+<code>install-plugin.sh</code> <!-- CM-PLUGIN-COUNT: curated --> — its
+<code>PLUGINS=()</code> array is the canonical roster, and constitution
+Principle II enumerates the same 43 by name. This is the number meant by
+“managed plugins”.</li>
+<li><strong>43 distinct engine modules</strong> exist on disk
+<!-- CM-PLUGIN-COUNT: engines --> across <code>plugins/</code>,
+<code>plugins/community/</code> and
+<code>plugins/webui_compatible/</code>. Measured 2026-08-21: this set is
+<em>identical</em> to the curated array, so
+<code>install-plugin.sh</code> no longer manages a subset — it manages
+the whole roster.</li>
+<li><strong>12 bootstrap plugins</strong> are copied by
+<code>setup.sh</code> <!-- CM-PLUGIN-COUNT: bootstrap --> from its own
+separate <code>PLUGINS=()</code> array
+(<code>eztv jackett limetorrents piratebay solidtorrents torlock torrentproject torrentscsv rutracker rutor kinozal nnmclub</code>)
+— the retired “canonical 12”, a proper subset of the 43. That array is
+one-time-setup scope only; <code>./install-plugin.sh</code> is what
+installs the full roster.</li>
+</ul>
+<p>Neither of these is a plugin count: <strong>36 <code>*.py</code>
+files</strong> sit directly in <code>plugins/</code>
+<!-- CM-PLUGIN-COUNT: toplevel --> and <strong>69 <code>*.py</code>
+files</strong> exist recursively <!-- CM-PLUGIN-COUNT: recursive -->.
+Both mix engines with non-engine utility modules
+(<code>env_loader.py</code>, <code>helpers.py</code>,
+<code>novaprinter.py</code>, <code>nova2.py</code>,
+<code>socks.py</code>, <code>theme_injector.py</code>,
+<code>download_proxy.py</code>), and the recursive figure additionally
+counts the <code>community/</code> and <code>webui_compatible/</code>
+variants of engines already counted once.</p>
 <p>Plugin contract: Python class with <code>url</code>,
 <code>name</code>, <code>supported_categories</code>,
-<code>search()</code>, <code>download_torrent()</code>. Installed to
+<code>search()</code>, <code>download_torrent()</code>. This is the
+<em>target</em> contract, not a description of every engine today
+(§11.4.6, measured 2026-08-21): <code>eztv</code> and
+<code>solidtorrents</code> ship no <code>download_torrent()</code> (they
+return magnet links), and <code>torrentdownload</code> and
+<code>academictorrents</code> declare no
+<code>supported_categories</code>. Do not use the contract as a count
+predicate — it yields yet another, different number. Installed to
 <code>config/qBittorrent/nova3/engines/</code> inside container.</p>
 <h2 id="environment-variables">Environment Variables</h2>
 <p>Priority: shell env → <code>./.env</code> → <code>~/.qbit.env</code>

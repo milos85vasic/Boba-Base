@@ -237,10 +237,38 @@ Key files (in `qBitTorrent-go/`):
 
 ## Plugin System
 
-`plugins/` has **42 managed plugins**. `install-plugin.sh` manages a curated subset:
-`eztv jackett limetorrents piratebay solidtorrents torlock torrentproject torrentscsv rutracker rutor kinozal nnmclub`
+Three rosters live here and they answer three different questions. Conflating them is
+BOB-149, where the count drifted to 42 in this file and 48 in the README badge. Every
+number below is machine-derived and guarded by
+`scripts/pre_build/check_cm_plugin_count.sh` — do not hand-edit one without re-running
+that gate.
 
-Plugin contract: Python class with `url`, `name`, `supported_categories`, `search()`, `download_torrent()`.
+- **43 search-plugin engines** are managed by `install-plugin.sh` <!-- CM-PLUGIN-COUNT: curated -->
+  — its `PLUGINS=()` array is the canonical roster, and constitution Principle II
+  enumerates the same 43 by name. This is the number meant by "managed plugins".
+- **43 distinct engine modules** exist on disk <!-- CM-PLUGIN-COUNT: engines -->
+  across `plugins/`, `plugins/community/` and `plugins/webui_compatible/`. Measured
+  2026-08-21: this set is *identical* to the curated array, so `install-plugin.sh` no
+  longer manages a subset — it manages the whole roster.
+- **12 bootstrap plugins** are copied by `setup.sh` <!-- CM-PLUGIN-COUNT: bootstrap -->
+  from its own separate `PLUGINS=()` array (`eztv jackett limetorrents piratebay
+  solidtorrents torlock torrentproject torrentscsv rutracker rutor kinozal nnmclub`) —
+  the retired "canonical 12", a proper subset of the 43. That array is one-time-setup
+  scope only; `./install-plugin.sh` is what installs the full roster.
+
+Neither of these is a plugin count: **36 `*.py` files** sit directly in `plugins/` <!-- CM-PLUGIN-COUNT: toplevel -->
+and **69 `*.py` files** exist recursively <!-- CM-PLUGIN-COUNT: recursive -->. Both mix
+engines with non-engine utility modules (`env_loader.py`, `helpers.py`, `novaprinter.py`,
+`nova2.py`, `socks.py`, `theme_injector.py`, `download_proxy.py`), and the recursive
+figure additionally counts the `community/` and `webui_compatible/` variants of engines
+already counted once.
+
+Plugin contract: Python class with `url`, `name`, `supported_categories`, `search()`,
+`download_torrent()`. This is the *target* contract, not a description of every engine
+today (§11.4.6, measured 2026-08-21): `eztv` and `solidtorrents` ship no
+`download_torrent()` (they return magnet links), and `torrentdownload` and
+`academictorrents` declare no `supported_categories`. Do not use the contract as a count
+predicate — it yields yet another, different number.
 Installed to `config/qBittorrent/nova3/engines/` inside container.
 
 ## Environment Variables

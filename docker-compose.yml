@@ -12,10 +12,19 @@ services:
       # an identity the operator does not have, which is why ownership had to
       # be changed by hand after every download.
       #
-      # Container uid 0 maps to the HOST OPERATOR (uid 1000), so PUID=0 makes
-      # the application write files the operator owns. This grants NO host
-      # privilege: "root" inside a rootless container IS the unprivileged host
-      # user it was launched by. §11.4.161 rootless operation is preserved.
+      # Under that same rootless mapping container uid 0 is the HOST OPERATOR
+      # (uid 1000), so PUID=0 makes the app write files the operator owns.
+      #
+      # THE NO-PRIVILEGE PROPERTY IS CONDITIONAL ON THE ROOTLESS RUNTIME
+      # (§11.4.161), not on PUID=0. ROOTLESS: container-root IS the
+      # unprivileged host user that launched it, so PUID=0 grants NO host
+      # privilege. ROOTFUL (e.g. docker with no userns-remap): container uid 0
+      # is REAL host root, so PUID=0 would run this app as genuine root writing
+      # into the bind-mounted ./config (the encrypted credential store) —
+      # strictly WORSE than PUID=1000, which at least ran unprivileged.
+      # scripts/ownership_precondition.sh MEASURES rootlessness at startup and
+      # REFUSES on a rootful runtime, so PUID=0 cannot silently take effect
+      # there. Do not delete that check to "simplify" startup.
       #
       # The alternative (--userns=keep-id) was tried and REJECTED: it leaves
       # this image with no usable root and it HANGS with no output, measured
@@ -65,10 +74,19 @@ services:
       # an identity the operator does not have, which is why ownership had to
       # be changed by hand after every download.
       #
-      # Container uid 0 maps to the HOST OPERATOR (uid 1000), so PUID=0 makes
-      # the application write files the operator owns. This grants NO host
-      # privilege: "root" inside a rootless container IS the unprivileged host
-      # user it was launched by. §11.4.161 rootless operation is preserved.
+      # Under that same rootless mapping container uid 0 is the HOST OPERATOR
+      # (uid 1000), so PUID=0 makes the app write files the operator owns.
+      #
+      # THE NO-PRIVILEGE PROPERTY IS CONDITIONAL ON THE ROOTLESS RUNTIME
+      # (§11.4.161), not on PUID=0. ROOTLESS: container-root IS the
+      # unprivileged host user that launched it, so PUID=0 grants NO host
+      # privilege. ROOTFUL (e.g. docker with no userns-remap): container uid 0
+      # is REAL host root, so PUID=0 would run this app as genuine root writing
+      # into the bind-mounted ./config (the encrypted credential store) —
+      # strictly WORSE than PUID=1000, which at least ran unprivileged.
+      # scripts/ownership_precondition.sh MEASURES rootlessness at startup and
+      # REFUSES on a rootful runtime, so PUID=0 cannot silently take effect
+      # there. Do not delete that check to "simplify" startup.
       #
       # The alternative (--userns=keep-id) was tried and REJECTED: it leaves
       # this image with no usable root and it HANGS with no output, measured

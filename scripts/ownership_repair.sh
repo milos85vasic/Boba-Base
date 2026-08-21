@@ -470,6 +470,26 @@ flush_batch() {
     # costs nothing.
     for i in "${!BATCH_PATHS[@]}"; do
         if [[ "${BATCH_RESTORE_MODE}" -eq 1 || ${#BATCH_MODES[${i}]} -gt 3 ]]; then
+            # NEVER chmod a symlink. `chmod` has no `-h` counterpart on Linux, so
+            # it ALWAYS follows the link and changes the TARGET — and the target
+            # may be outside the declared scope, which breaks the scope fence in
+            # the one dimension `chown -h` does not cover.
+            #
+            # This is not theoretical; it was reproduced against this script:
+            # a symlink's `find -printf '%m'` is 777, so "restoring its mode"
+            # meant chmod 777 ON THE TARGET. With the shipped
+            # config/owned_paths.yaml, whose ONLY preserve_mode entry is the
+            # encrypted credential store config/boba.db, an operator who had
+            # relocated that DB and symlinked it into config/ would have had the
+            # real store go 600 -> 777. Measured: BEFORE 600, AFTER 777.
+            #
+            # That inverts FR-015, whose whole purpose is to never trade a
+            # usability defect for a security one — so skipping symlinks here is
+            # not a special case, it is the rule the fence already implies.
+            # Nothing is lost: a symlink's own mode is meaningless on Linux
+            # (always 777) and cannot be set, so the ONLY effect chmod could
+            # ever have here is on the target, which is never what we want.
+            [[ -L "${BATCH_PATHS[${i}]}" ]] && continue
             chmod "${BATCH_MODES[${i}]}" -- "${BATCH_PATHS[${i}]}" 2>/dev/null || true
         fi
     done

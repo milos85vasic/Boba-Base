@@ -141,6 +141,7 @@ echo "  4 golden-good     : correct tree -> exit 0, change record EMPTY, nothing
 echo "  5 interrupt/resume: kill mid-run -> marker ABSENT -> re-run completes (FR-004a)"
 echo "  6 scope re-arm    : scope change invalidates the marker (data-model E2)"
 echo "  7 honest failure  : unrepairable item reported, does NOT exit 0 (FR-006)"
+echo "  8 symlink fence   : a link inside scope does NOT carry the repair outside (FR-005)"
 echo
 
 # ---------------------------------------------------------------------------
@@ -253,6 +254,19 @@ seed_tree() {
 # manifest <dir> — relative path + uid + gid + mode, sorted. "Nothing mutated"
 # is asserted against this, so it is a direct observation, not an inference.
 manifest() { find "$1" -printf '%P %U %G %m\n' 2>/dev/null | LC_ALL=C sort; }
+
+# content_digest <dir> — relative path + sha256 of every file's CONTENT, sorted.
+# manifest() is blind to content: a reach that truncates or rewrites a file
+# while leaving owner and mode alone reads as "unchanged" to it (measured
+# 2026-08-21 — a mutation that resolved symlinks by writing through them left
+# the manifest assertion GREEN). Used to close that dimension where a scope
+# fence is being proven, over trees small enough for it to be free.
+content_digest() {
+    local root="$1" rel
+    while IFS= read -r rel; do
+        printf '%s  %s\n' "$(sha256sum < "${root}/${rel}" | cut -d' ' -f1)" "${rel}"
+    done < <(find "${root}" -type f -printf '%P\n' 2>/dev/null | LC_ALL=C sort)
+}
 
 # wrong_owned_count <dir> — items NOT owned by the operator (uid AND gid).
 wrong_owned_count() {
@@ -685,6 +699,180 @@ fi
 echo
 
 # ===========================================================================
+# CASE 8 — the scope fence under SYMLINKS (FR-005).
+#
+# The repair's most dangerous property is out-of-scope REACH: it changes
+# ownership recursively, so a symlink INSIDE the declared scope pointing
+# OUTSIDE it is the one construct that could carry that mutation to a file
+# nobody declared. `chown -h` and find's default -P are what fence it, and an
+# unexercised fence is one refactor away from not being one — case 3's
+# negative control proves the walk does not wander, but a sibling tree is not
+# a symlink and cannot prove anything about dereference. So this case drives
+# all three shapes a symlink can take through a REAL run:
+#
+#   * a symlink to a FILE outside the scope      — dereference on chown
+#   * a symlink to a DIRECTORY outside the scope — recursive descent, the one
+#     that could run away and walk a tree nobody declared
+#   * a DANGLING symlink                         — must not crash the run nor
+#     make it exit non-zero spuriously (§11.4.201(1) false-positive refusal)
+#
+# NON-VACUITY IS THE WHOLE DIFFICULTY. Two ways this case could pass while
+# proving nothing, both guarded before any assertion is made:
+#   (a) the out-of-scope targets are already in the state a reach would leave
+#       them in, so "unchanged" says nothing -> they are seeded at the WRONG
+#       gid, and one of them additionally at mode 600, so a reach in EITHER
+#       the ownership or the mode dimension is a visible delta;
+#   (b) the symlinks are operator-owned already, so the walk never names them
+#       and the fence is never even approached -> they are `chgrp -h`'d to the
+#       wrong gid and that is ASSERTED, not assumed, before the run.
+#
+# Every link points at a target this suite created inside its OWN mktemp
+# sandbox. Nothing here points at a real path: if the fence were broken, the
+# blast radius is the sandbox the EXIT trap reaps (§11.4.14).
+# ===========================================================================
+echo "Case 8: out-of-scope reach through symlinks (FR-005)"
+SB5="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN5="${SB5}/fixture/in_scope"
+OUT5="${SB5}/fixture/out_of_scope"
+LNK_FILE="${IN5}/link_to_outside_file"
+LNK_DIR="${IN5}/link_to_outside_dir"
+LNK_DANGLE="${IN5}/dangling_link"
+DANGLE_TARGET="${SB5}/fixture/target_that_never_exists"
+
+seed_tree "${IN5}" 6 "${WRONG_GID}"
+seed_tree "${OUT5}" 4 "${WRONG_GID}"
+# A second observable dimension: mode. Seeded at 600 so a mode-following
+# restore step would show up in the manifest exactly as an ownership reach does.
+printf 'out-of-scope-secret\n' > "${OUT5}/secret.bin"
+chgrp "${WRONG_GID}" "${OUT5}/secret.bin"
+chmod 600 "${OUT5}/secret.bin"
+
+# Links are created AFTER seed_tree so its `chgrp -R` cannot touch them, and
+# are given the wrong gid with `chgrp -h` so the LINK — never its target — is
+# what the walk will find not-operator-owned.
+ln -s "${OUT5}/secret.bin"    "${LNK_FILE}"
+ln -s "${OUT5}/sub"           "${LNK_DIR}"
+ln -s "${DANGLE_TARGET}"      "${LNK_DANGLE}"
+chgrp -h "${WRONG_GID}" "${LNK_FILE}" "${LNK_DIR}" "${LNK_DANGLE}"
+
+# Only the in-scope tree is declared. preserve_mode is false — the same shape
+# the real download tree and config tree use.
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN5}" | sb_scope "${SB5}"
+
+# -- fixture guards: refuse to claim anything from a blind fixture -----------
+_c8_links_wrong=0
+for _l in "${LNK_FILE}" "${LNK_DIR}" "${LNK_DANGLE}"; do
+    [[ -L "${_l}" ]] || continue
+    [[ "$(stat -c '%u:%g' "${_l}")" == "${OP_UID}:${OP_GID}" ]] || _c8_links_wrong=$((_c8_links_wrong + 1))
+done
+OUT5_BEFORE="$(manifest "${OUT5}")"
+OUT5_CONTENT_BEFORE="$(content_digest "${OUT5}")"
+OUT5_WRONG_BEFORE="$(wrong_owned_count "${OUT5}")"
+IN5_WRONG_BEFORE="$(wrong_owned_count "${IN5}")"
+
+if [[ "${_c8_links_wrong}" -ne 3 ]]; then
+    fail "symlink fence: only ${_c8_links_wrong}/3 links are not-operator-owned before the run — the walk would never name them and the fence is never approached (blind fixture, not a result)"
+elif [[ "${OUT5_WRONG_BEFORE}" -eq 0 ]]; then
+    fail "symlink fence: the out-of-scope tree is already operator-owned — a reach would leave no trace, so 'unchanged' would prove nothing (blind fixture, not a result)"
+elif [[ -e "${DANGLE_TARGET}" ]]; then
+    fail "symlink fence: the dangling link's target exists — it is not dangling, so the case would not be the case (blind fixture, not a result)"
+else
+    run_repair "${SB5}"
+
+    # -- 8a: the run genuinely DID work, so 8b is not green on a no-op ------
+    if [[ "${IN5_WRONG_BEFORE}" -gt 0 && "$(wrong_owned_count "${IN5}")" -eq 0 ]]; then
+        pass "symlink fence: the in-scope tree WAS repaired in this run (the fence is proven against a run that really mutated, not a no-op)"
+    else
+        fail "symlink fence: the in-scope tree was not repaired ($(wrong_owned_count "${IN5}")/${IN5_WRONG_BEFORE} still wrong) — every out-of-scope assertion below would be vacuous"
+    fi
+
+    # -- 8b: THE FENCE. Out-of-scope tree byte-identical in owner/group/mode.
+    # One assertion covers all three reach vectors: dereference-on-chown (the
+    # file link), recursive descent (the directory link), and any mode-follow.
+    OUT5_AFTER="$(manifest "${OUT5}")"
+    if [[ "${OUT5_BEFORE}" == "${OUT5_AFTER}" ]]; then
+        pass "symlink fence: out-of-scope targets byte-identical in owner/group/mode — a symlink inside the scope did NOT carry the repair outside it (FR-005)"
+    else
+        fail "symlink fence: the repair reached OUTSIDE the declared scope THROUGH A SYMLINK — FR-005 violation"
+        diff <(printf '%s\n' "${OUT5_BEFORE}") <(printf '%s\n' "${OUT5_AFTER}") | head -8 | sed 's/^/        /'
+    fi
+
+    # -- 8b2: and unchanged in CONTENT. A fence that only watches metadata
+    # would call a reach that truncated or rewrote an out-of-scope file
+    # "byte-identical" — the worse reach reported as the clean one.
+    if [[ "${OUT5_CONTENT_BEFORE}" == "$(content_digest "${OUT5}")" ]]; then
+        pass "symlink fence: out-of-scope file CONTENT unchanged (no write reached through a link either)"
+    else
+        fail "symlink fence: out-of-scope file content changed — the repair WROTE through a symlink"
+        diff <(printf '%s\n' "${OUT5_CONTENT_BEFORE}") <(printf '%s\n' "$(content_digest "${OUT5}")") | head -8 | sed 's/^/        /'
+    fi
+
+    # -- 8c: nor is an out-of-scope path recorded as touched (E3).
+    # Probed under BOTH spellings, because a walk that follows links records
+    # the path AS IT REACHED IT: a resolved walk names ${OUT5}/sub/nested.bin,
+    # while a link-traversing walk names ${LNK_DIR}/nested.bin — the same
+    # out-of-scope file under a name the first probe alone would never match.
+    # (Measured: probing only the resolved spelling left this assertion GREEN
+    # against a deliberately link-following `find -L` mutation.) The links
+    # THEMSELVES are in scope and are legitimately recorded, so only paths
+    # strictly UNDER the directory link are treated as a leak.
+    _c8_leaked=""
+    for _p in "${OUT5}/secret.bin" "${OUT5}/sub/nested.bin" "${OUT5}/sub/deeper/deep.bin" \
+              "${LNK_DIR}/nested.bin" "${LNK_DIR}/deeper/deep.bin"; do
+        if [[ -n "$(artifact_mentions "${SB5}" "${_p}")" ]]; then _c8_leaked="${_p}"; break; fi
+    done
+    if [[ -z "${_c8_leaked}" ]]; then
+        pass "symlink fence: no out-of-scope path appears in the change record, under either the resolved or the link-traversed spelling"
+    else
+        fail "symlink fence: the change record names the out-of-scope path ${_c8_leaked} — the walk went through a link and treated what it found as in scope"
+    fi
+
+    # -- 8d: the links THEMSELVES are in scope and must be repaired AS links.
+    # This is the suite's own contract: wrong_owned_count uses find's default
+    # -P, so a link counts by its own lstat identity.
+    _c8_unrepaired=""
+    for _l in "${LNK_FILE}" "${LNK_DIR}" "${LNK_DANGLE}"; do
+        if [[ "$(stat -c '%u:%g' "${_l}" 2>/dev/null)" != "${OP_UID}:${OP_GID}" ]]; then
+            _c8_unrepaired="${_l}"; break
+        fi
+    done
+    if [[ -z "${_c8_unrepaired}" ]]; then
+        pass "symlink fence: all three in-scope links are now operator-owned AS LINKS (fencing the target is not an excuse to skip the link)"
+    else
+        fail "symlink fence: ${_c8_unrepaired} is still not operator-owned — an in-scope item was skipped rather than repaired"
+    fi
+
+    # -- 8e: the links survive as links, still pointing where they did ------
+    _c8_mangled=""
+    for _l in "${LNK_FILE}:${OUT5}/secret.bin" "${LNK_DIR}:${OUT5}/sub" "${LNK_DANGLE}:${DANGLE_TARGET}"; do
+        _lp="${_l%%:*}"; _lt="${_l#*:}"
+        if [[ ! -L "${_lp}" || "$(readlink "${_lp}")" != "${_lt}" ]]; then _c8_mangled="${_lp}"; break; fi
+    done
+    if [[ -z "${_c8_mangled}" ]]; then
+        pass "symlink fence: every link is still a link pointing at its original target (the repair did not resolve or replace it)"
+    else
+        fail "symlink fence: ${_c8_mangled} is no longer a symlink to its original target — the repair rewrote the link itself"
+    fi
+
+    # -- 8f: a DANGLING link is not a failure. §11.4.201(1): refusing a run
+    # over a broken link the operator legitimately has is a FAIL-bluff exactly
+    # as a missed defect is a PASS-bluff.
+    if [[ "${RUN_RC}" -eq 0 ]]; then
+        pass "symlink fence: exit 0 with a dangling symlink in scope (a broken link is not an unrepairable item)"
+    else
+        fail "symlink fence: exit ${RUN_RC} — a dangling symlink in scope made the run report failure (§11.4.201(1) false-positive refusal)"
+    fi
+
+    # -- 8g: and the dangling link's absent target is still absent ----------
+    if [[ ! -e "${DANGLE_TARGET}" && ! -L "${DANGLE_TARGET}" ]]; then
+        pass "symlink fence: the dangling link's absent target was not created by the run"
+    else
+        fail "symlink fence: the run created ${DANGLE_TARGET} — a broken link must be chowned as a link, never materialised"
+    fi
+fi
+echo
+
+# ===========================================================================
 # DECLARED GAPS (§11.4.6 — stated, never silently implied covered)
 # ===========================================================================
 echo "DECLARED GAPS — not covered by this unit suite, by measurement not by choice:"
@@ -700,5 +888,90 @@ echo "    privilege gap. Case 7 uses the absent-non-optional-path route, which i
 echo "    real and deterministic but exercises a different code path than EPERM."
 echo "  * FR-004d blocking-before-services and FR-004e real progress output are"
 echo "    integration-layer properties and are deliberately not asserted here."
+echo "  * The preserve_mode:TRUE symlink path WAS broken and is now covered"
+echo "    by Case 9: a bare chmod follows a symlink on Linux (there is no -h),"
+echo "    and a symlink's find %m is 777, so the mode-restore step moved an"
+echo "    OUT-OF-SCOPE target from 600 to 777. Measured and fixed 2026-08-21."
+
+
+# ---------------------------------------------------------------------------
+# CASE 9 — the scope fence under symlinks with preserve_mode TRUE (FR-005 + FR-015).
+#
+# WHY SEPARATE FROM CASE 8. Case 8 fences a preserve_mode:FALSE entry, the shape
+# the download tree and config tree use. preserve_mode:TRUE is DIFFERENT CODE:
+# it runs a mode-restore step after the chown, and that step is where the fence
+# leaked.
+#
+# `chmod` has NO `-h` counterpart on Linux, so it ALWAYS follows a symlink and
+# changes the TARGET. A symlink's `find -printf '%m'` is 777, so "restoring the
+# item's own mode" meant chmod 777 ON THE TARGET, which may sit outside the
+# declared scope. Measured against the real script before the fix:
+# out-of-scope target 600 -> 777.
+#
+# Not academic: the SHIPPED config/owned_paths.yaml has exactly ONE
+# preserve_mode:true entry — config/boba.db, the encrypted credential store. An
+# operator who had relocated that DB and symlinked it into config/ would have
+# had the real store widened to 777 by the very tool whose FR-015 exists to stop
+# a usability fix from becoming a security regression.
+# ---------------------------------------------------------------------------
+echo
+echo "Case 9: preserve_mode TRUE must not chmod through a symlink (FR-005 + FR-015)"
+SB6="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN6="${SB6}/fixture/in_scope_pm"
+OUT6="${SB6}/fixture/out_of_scope_pm"
+LNK6="${IN6}/relocated_store.db"
+
+seed_tree "${IN6}" 3 "${WRONG_GID}"
+mkdir -p "${OUT6}"
+printf 'encrypted-credential-bytes\n' > "${OUT6}/credstore.bin"
+chmod 600 "${OUT6}/credstore.bin"
+
+# The LINK is wrongly-owned so the walk finds it; its TARGET is correctly owned
+# and mode 600, so any change to the target is unambiguously a reach rather than
+# a repair the tool was asked to perform.
+ln -s "${OUT6}/credstore.bin" "${LNK6}"
+chgrp -h "${WRONG_GID}" "${LNK6}"
+
+printf '%s\tproject-config\tfalse\ttrue\ttrue\n' "${IN6}" | sb_scope "${SB6}"
+
+OUT6_MODE_BEFORE="$(stat -c '%a' "${OUT6}/credstore.bin")"
+OUT6_DIGEST_BEFORE="$(content_digest "${OUT6}")"
+IN6_WRONG_BEFORE="$(wrong_owned_count "${IN6}")"
+
+if [[ ! -L "${LNK6}" ]]; then
+    fail "preserve_mode symlink fence: fixture link is not a symlink — nothing was tested"
+elif [[ "$(stat -c '%g' "${LNK6}")" == "${OP_GID}" ]]; then
+    fail "preserve_mode symlink fence: fixture link already operator-owned — the walk would never reach it"
+elif [[ "${OUT6_MODE_BEFORE}" != "600" ]]; then
+    fail "preserve_mode symlink fence: fixture target is mode ${OUT6_MODE_BEFORE}, expected 600 — a widening would be invisible"
+else
+    run_repair "${SB6}"
+
+    if [[ "${IN6_WRONG_BEFORE}" -gt 0 && "$(wrong_owned_count "${IN6}")" -eq 0 ]]; then
+        pass "preserve_mode symlink fence: the in-scope tree WAS repaired in this run (9b is not green on a no-op)"
+    else
+        fail "preserve_mode symlink fence: in-scope tree not repaired — the fence assertion would be vacuous"
+    fi
+
+    _c9_mode_after="$(stat -c '%a' "${OUT6}/credstore.bin" 2>/dev/null)"
+    if [[ "${_c9_mode_after}" == "${OUT6_MODE_BEFORE}" ]]; then
+        pass "preserve_mode symlink fence: out-of-scope target still mode ${OUT6_MODE_BEFORE} — chmod did not follow the link"
+    else
+        fail "preserve_mode symlink fence: out-of-scope target went ${OUT6_MODE_BEFORE} -> ${_c9_mode_after} — chmod followed the symlink (FR-005 breach; FR-015 inverted when that target is a credential store)"
+    fi
+
+    if [[ "$(content_digest "${OUT6}")" == "${OUT6_DIGEST_BEFORE}" ]]; then
+        pass "preserve_mode symlink fence: out-of-scope content byte-identical"
+    else
+        fail "preserve_mode symlink fence: out-of-scope content changed"
+    fi
+
+    if [[ -L "${LNK6}" && "$(readlink "${LNK6}")" == "${OUT6}/credstore.bin" ]]; then
+        pass "preserve_mode symlink fence: the link is still a link pointing at its original target"
+    else
+        fail "preserve_mode symlink fence: the link was resolved, rewritten or replaced"
+    fi
+fi
+
 
 finish
