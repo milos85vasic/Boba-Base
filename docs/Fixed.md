@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 22
-**Last modified:** 2026-08-20T16:15:21Z
+**Revision:** 23
+**Last modified:** 2026-08-21T16:12:09Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1192,4 +1192,158 @@ n/a — planned triage of an advisory gate's output, not a discovered defect.
 
 **Acceptance criteria:**
 Every hit classified; bucket-A fixes RED-first with paired mutations; stale gates reconciled not fake-passed; the count reflects findings not the gate's summary line.
+
+## BOB-081 — RD2-14: Author CONTINUATION.md Session 15 entry (currently 53 days / 24+ commits behind HEAD)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/CONTINUATION.md
+**Severity:** High
+
+RD2-14: Author CONTINUATION.md Session 15 entry (currently 53 days / 24+ commits behind HEAD)
+
+[BOB-136 adoption audit 2026-08-21 -> Completed] e335dde. docs/CONTINUATION.md is at Revision 27, Last modified 2026-08-20T12:17:48Z, carrying a themed TERMINAL STATE entry over the 45 commits df7bc41->e0d60ab. Every element of this item's acceptance is present (Session-N entry by theme + Revision + Last modified). The entry itself states 'This entry closes BOB-081'. The commit additionally CORRECTED this ticket's own premise: the filed '53 days / 24+ commits' staleness figure was measured to be 45 commits / ~19 hours.
+
+## BOB-083 — RD2-16: Regenerate browser_extension/features/codegraph Status.md + Summary/HTML/PDF siblings
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/codegraph/Status_Summary.md
+**Severity:** Medium
+
+RD2-16: Regenerate browser_extension/features/codegraph Status.md + Summary/HTML/PDF siblings
+
+[BOB-136 adoption audit 2026-08-21 -> Completed] e335dde regenerated all three Status doc sets named here: browser_extension Status 15->16 + Summary 3->4, features Status 8->9 + Summary 7->8, and docs/codegraph/Status_Summary.md CREATED (it did not exist at all — a real §11.4.56 gap). docs/codegraph/Status.md was already current from e6162f7 (BOB-075 staleness refresh) so it needed no regeneration. HTML/PDF siblings landed in the same commit.
+
+## BOB-086 — RD2-19: Fix BOB-009/BOB-010 evidence_path + backfill item_history for 56 silent closures
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-086/backfill_evidence
+**Severity:** Medium
+
+RD2-19: Fix BOB-009/BOB-010 evidence_path + backfill item_history for 56 silent closures
+
+[BOB-136 adoption audit 2026-08-21 -> Completed] f78f383 delivers both halves with measured before/after: item_history 106->162 rows, 66->122 distinct atm_ids, 56->0 silent Fixed items, 56 backfill rows; and BOB-009/BOB-010 commit_ref=7d243cc + closure_date=2026-08-06 set. Each of the 56 carries a per-item captured-evidence artefact under docs/qa/BOB-086/backfill_evidence/ that resolves to a real file. Validator reported OK post-change. 0268771 landed the twin exports.
+
+## BOB-089 — RD2-24: RED-first tests for start.sh reload_python/reload_plugins/recreate_stack (closes test-half of GA-27)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-089/GREEN_all_three.log
+**Severity:** High
+
+RD2-24: RED-first tests for start.sh reload_python/reload_plugins/recreate_stack (closes test-half of GA-27)
+
+[BOB-136 adoption audit 2026-08-21 -> Completed] 2667be6 authored tests/integration/test_start_sh_reload_paths.py driving all three subcommands through the real invocation path against a live rootless podman fleet, each asserting a runtime property read from the target per §11.4.115(F): --reload-python (marker __pycache__ gone AND StartedAt bumped AND container id unchanged), --reload-plugins (StartedAt bumped, id unchanged, marker NOT auto-copied), --recreate (container id CHANGES — the discriminator). §11.4.115 RED captured at docs/qa/BOB-089/RED_reload_python_stub.log by stubbing reload_python()'s cache-clear to a no-op; GREEN at docs/qa/BOB-089/GREEN_all_three.log (105s, all PASS). e335dde added 4 further bash suites (32 assertions, zero container side effects).
+
+## BOB-096 — RD2-31: Extend qBitTorrent-go jackett_db_test.go with real process-kill/resource-exhaustion fault injection
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-096/GREEN_after_restore.log
+**Severity:** Medium
+
+RD2-31: Extend qBitTorrent-go jackett_db_test.go with real process-kill/resource-exhaustion fault injection
+
+[BOB-136 adoption audit 2026-08-21 -> Completed] 76d6b1f closes the exact gap named here — this item asks for resource-exhaustion injection on top of jackett_db_test.go's existing concurrency-only coverage. Added TestChaos_FileDescriptorExhaustion (bounded os.Pipe() FD pressure capped at min(RLIMIT_NOFILE/4,512) per §12.6) and TestChaos_ConcurrentContextCancelWrite. §11.4.115 RED-first: a phantom-name mutation produced 'confirmed-write KILL_PHANTOM lost after cancel'; restored, GREEN re-captured under identical race conditions. Race-clean under go test -race -count=3. Process-kill SIGKILL coverage already existed and still passes.
+
+## BOB-098 — RD2-34: Parametrize 20 hardcoded /Volumes/T7 paths in helixqa banks with PROJECT_ROOT (closes GA-23)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** challenges/scripts/no_hardcoded_volumes_t7_challenge.sh
+**Severity:** Medium
+
+RD2-34: Parametrize 20 hardcoded /Volumes/T7 paths in helixqa banks with PROJECT_ROOT (closes GA-23)
+
+[BOB-136 adoption audit 2026-08-21 -> Completed] 5670def parametrized the last remaining literal with ${HELIX_OTA_PROJECT_ROOT} (upstream HelixDevelopment/qa@c19ce2b, submodule pointer bumped) and shipped a §11.4.115-shape regression guard. Verified independently this session: grep -rn /Volumes/T7 submodules/helixqa/banks/ returns exit 1 / zero hits. Note the count in this item's title (20) had already been reduced by earlier waves; 5670def closed the final one, and the acceptance observable — zero hardcoded host-mount literals in the banks — now holds.
+
+## BOB-105 — §11.4.238 followup: mechanical §11.4.227(B) anchor-block-integrity check
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** challenges/scripts/anchor_block_integrity_challenge.sh
+**Severity:** Medium
+**Created-By:** Claude
+
+§11.4.238 followup: mechanical §11.4.227(B) anchor-block-integrity check
+
+[BOB-136 adoption audit 2026-08-21 -> Completed] 7cd080c delivers exactly what this item asks for: scripts/anchor_block_integrity_check.sh enforcing §11.4.227(B) (exactly-once per anchor per file, lockstep sha256 divergence across the mirror set, lockstep gap, DUPLICATE-OR-COLLISION for one NNN heading two mandates, plus a §11.4.201(6) BLIND-EXTRACTOR guard and full dotted-id extraction so §11.4.10.A never prefix-matches §11.4.10), driven by a consumer-owned config per §11.4.35, with a §11.4.107(10) self-validated harness at challenges/scripts/anchor_block_integrity_challenge.sh over 5 fixtures (golden-good, negative-control, golden-bad-duplicated, golden-bad-diverged, golden-bad-collision). The 176 findings it then produced were triaged separately in bf985ab and are a distinct operator-owned §11.4.66 decision, not part of this item's acceptance.
+
+## BOB-113 — BOB-074 followup: add wrk to dev tooling for DDoS/load challenges
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-112/wrk_evidence.log
+**Severity:** Low
+**Created-By:** Claude
+
+BOB-074 followup: add wrk to dev tooling for DDoS/load challenges
+
+[BOB-136 adoption audit 2026-08-21 -> Completed] c7dfdde landed scripts/install-dev-tools.sh (rootless-by-default per §11.4.161, --allow-sudo opt-in, Linux+macOS, wrk/hey/siege). Its 'Closes BOB-113 (code layer)' hedge is resolved by e2a2e3e, which records 'bash scripts/install-dev-tools.sh run live' and then used the resulting wrk for a real 4t/100c/30s load test with latency percentiles (baseline 97.1% timeouts / p99 2.67s vs post-fix 0.0% / 27049 req/s / p99 19.89ms). Verified this session: wrk resolves on PATH at /home/milosvasic/bin/wrk. The acceptance — a modern HTTP benchmarking tool with latency-percentile histograms available out of the box — is met and demonstrated in use.
+
+## BOB-070 — RD2-41: pre-build mutation-marker scan carrier false-positive silently defeats entire pre-build gate
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** challenges/scripts/mutation_marker_scan_polarity_challenge.sh
+**Severity:** High
+
+RD2-41: pre-build mutation-marker scan carrier false-positive silently defeats entire pre-build gate
+
+[BOB-136 adoption audit 2026-08-21 -> Fixed] 6e3b74a implements this item's stated 'Fix needed' — the marker scanner is now line-anchored with a guardrails:allow escape, killing the carrier false-positive class at BOTH sites the item names (pre_build_verification.sh invariant 23 and pre_code_review.sh). Proven by a §11.4.107(10) polarity harness over three fixtures: real-mutation.py -> HIT, carrier-comment.py -> NOHIT, carrier-string.py -> NOHIT. The practical impact this item flagged (the entire pre-build gate aborting before invariant 17 was ever reached) is resolved: pre_build_verification.sh reported 27/0 GREEN with INV23 PASS on a clean tree.
+
+## BOB-099 — RD2-36: Fix guard-forbidden-commands.sh substring-match false-positive class + add const033-poweroff-signal-triage carrier to EXCLUDE_PATHS
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** constitution/scripts/hooks/test_guard_forbidden_commands.sh
+**Severity:** Medium
+
+RD2-36: Fix guard-forbidden-commands.sh substring-match false-positive class + add const033-poweroff-signal-triage carrier to EXCLUDE_PATHS
+
+[BOB-136 adoption audit 2026-08-21 -> Fixed] The carrier-vs-thing class fix landed at constitution commit ee4d751 with the pointer bumped in 60dc3ba, covered by a 32/32 suite (11 golden-TRUE + 16 golden-FALSE carriers + 2 escape-hatch + 2 host-power). Verified this session: constitution/scripts/hooks/guard-forbidden-commands.sh carries token/word-boundary matching. Corroborated independently — BOB-071 (RD2-01, the same live-reproducible false positive) was closed as duplicate-of BOB-099 in 1685a2f citing this fix. The EXCLUDE_PATHS stopgap this item mentions was deliberately not added and is moot: the item itself specified 'word-boundary/token-aware matching, not another EXCLUDE_PATHS band-aid', and the class fix supersedes the stopgap.
+
+## BOB-118 — README.md python-tests badge claims 585 passing; pytest --collect-only measures 5235 (9x stale/wrong)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/TESTING.md
+**Severity:** High
+**Created-By:** AI
+
+README.md python-tests badge claims 585 passing; pytest --collect-only measures 5235 (9x stale/wrong)
+
+[BOB-136 adoption audit 2026-08-21 -> Fixed] Both halves of this item's fix direction are met. f517eaa landed scripts/compute-badges.sh deriving counts from machine-readable sources (pytest --co, vitest --list, gate exit codes) per §11.4.259, with unit coverage and a §11.4.18 companion doc; a6f36fa then caught and fixed a SECOND bluff in the same file (challenges/pre-build badges printed a hardcoded 'cross-checked, matches existing badge' line while never being compared or updated — stale by 7 and 14) and widened the guard to every machine-derived badge. Verified this session: README.md now reads tests-5437 collected and tests-371 collected, and docs/TESTING.md line 327 carries the authoritative 5437 with its derivation command — so the cited authoritative source can now actually corroborate the badge, which was the specific defect reported.
+
+## BOB-123 — 4th forced-logout incident 2026-08-19 00:37:11 — PAM/Linger contradiction breakthrough (retro-registered: id used in 6 commits with no tracker row)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/incidents/2026-08-19-4th-forced-logout.md
+**Severity:** Critical
+**Created-By:** Claude
+
+RETRO-REGISTRATION, filed 2026-08-21 by the BOB-136 closure-seam adoption sweep. This id was declared in SIX commits (6c0b785, d635885, a9c2af9, 69de436, 8278a42, ad4b46a) yet NEVER had a row in docs/workable_items.db — verified against the last 8 committed revisions of the DB, all returning 0 rows for it. It is not a typo: the id was used consistently across multiple days and three rounds of §11.4.209 Fable review, and it slots exactly into the incident-chain numbering (BOB-116=2nd, BOB-120=3rd, THIS=4th on 2026-08-19 00:37:11, BOB-124=5th, BOB-125=6th, BOB-126=7th). The row is filed now to make the history-declared id resolvable; it is NOT backdated and does not claim the work was tracked at the time — the missing row is itself the §11.4.202/§11.4.210 intake escape being recorded.
+
+WHAT LANDED UNDER THIS ID. 6c0b785 filed the 4th forced-logout incident doc (docs/incidents/2026-08-19-4th-forced-logout.md, with .html/.pdf/.docx twins). d635885 then implemented the out-of-scope system.slice watchdog for user@1000 SIGKILL forensics, iterated to a §11.4.134 zero-finding verdict across three review rounds (a9c2af9 round 1, 69de436 round 2 N1-N6, 8278a42 round 3 residuals).
+
+RESOLUTION. The defect is closed by the BOB-126 root cause, not by this item's own remediation: ad4b46a ('CRITICAL — merge_service killpg guard closes 7-forced-logout chain') enumerates the seven incidents it closes and lists 'BOB-123 2026-08-19 00:37:11' explicitly among them. The root cause was pytest kill(-1, SIGKILL) reaching every UID-1000 process via MagicMock.__int__ == 1, generalised into universal anchor §11.4.263. This mirrors exactly how siblings BOB-124/BOB-125/BOB-126 were closed, each carrying its own incident doc as evidence.
+
+STILL OPEN ELSEWHERE, DELIBERATELY NOT CLOSED HERE. The watchdog work-stream that also carried this id is tracked by BOB-121 ('External watchdog for the forced-logout architectural gap'), currently Ready for testing and explicitly NOT CLOSED — two operator decisions are owed and it remains UNTESTED AGAINST A REAL FORCED LOGOUT. The architectural gap BOB-120 names is likewise still Queued. Closing this row closes the 4th INCIDENT, nothing more.
+
+## BOB-128 — killpg-carrier collision between CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID and sibling CM-KILLPG-PGID-GUARD (retro-registered: id used in 3 commits with no tracker row)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh
+**Severity:** Medium
+**Created-By:** Claude
+
+RETRO-REGISTRATION, filed 2026-08-21 by the BOB-136 closure-seam adoption sweep. Commit d9955d6 ('BOB-127/128/129/130/131/132/133/135 registered/closed + regen exports') ASSERTS this id was registered, but it never was: BOB-127, BOB-129, BOB-130, BOB-131, BOB-132, BOB-133 and BOB-135 all have rows and BOB-128 does not, and no committed revision of docs/workable_items.db has ever contained it. The commit message is therefore inaccurate for exactly one of the eight ids. The row is filed now to make the history-declared id resolvable; it is NOT backdated.
+
+WHAT THE DEFECT WAS. Part of the BOB-126 fallout. The new §11.4.263 static gate CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID collided with its sibling CM-KILLPG-PGID-GUARD: each matched the other's killpg literals as a carrier — the same carrier-vs-thing false-positive class as BOB-070 and BOB-099, this time between two freshly-landed gates.
+
+WHAT LANDED. fa0fe63 added the gate plus its meta-test; be36f32 fixed the carrier collision; 29c33de wired the gate as pre-build invariant 29. Verified this session in the current tree: scripts/pre_build_verification.sh declares invariant 29 at lines 135 and 948-970, the gate script scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh is present and executable, and its meta-test exists at tests/pre_build/test_check_cm_test_mock_pid_patched_when_real_pid.sh. docs/CONTINUATION.md Rev 27 independently records this as 'BOB-128 (killpg-carrier guard collision with the new §11.4.263 gate — fixed be36f32; CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID landed as pre_build invariant 29)'. Note the invariant's own in-file comment credits BOB-127 rather than BOB-128 — a cosmetic mis-attribution, not a functional gap.
 

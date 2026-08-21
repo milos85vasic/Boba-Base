@@ -192,7 +192,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>5</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Bug</td>
+<td>In progress</td>
+<td>2</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -202,12 +207,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>15</td>
+<td>9</td>
 </tr>
 <tr>
 <td>Task</td>
 <td>In progress</td>
-<td>3</td>
+<td>9</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -217,7 +222,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>33</td>
+<td>19</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -227,7 +232,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>62</strong></td>
+<td><strong>51</strong></td>
 </tr>
 </tbody>
 </table>
@@ -276,34 +281,47 @@ Jackett + compose env-forward</td>
 <tr>
 <td>BOB-068</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>High</td>
 <td>RD2-00: unattributed, unreviewed Auto-commit mechanism pushing to
-main</td>
+main [BOB-136 adoption audit 2026-08-21 -&gt; In progress] Work landed
+but acceptance NOT met. a7e55f9 completed the Phase-1 investigation (no
+daemon; shared-checkout race confirmed) and 0972cbc added
+commit-push-all.sh –scope + challenge, described in its own message as
+an ‘Interim tooling remedy for BOB-068 while the §11.4.179 architectural
+fix (task #67 proposal) is designed’. 35e53db is a DRAFT PROPOSAL only.
+The §11.4.179 clone-isolation fix is not landed, so the item stays
+open.</td>
 </tr>
 <tr>
 <td>BOB-069</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>High</td>
 <td>RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing
-coverage-escape backfill</td>
-</tr>
-<tr>
-<td>BOB-070</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>High</td>
-<td>RD2-41: pre-build mutation-marker scan carrier false-positive
-silently defeats entire pre-build gate</td>
+coverage-escape backfill [BOB-136 adoption audit 2026-08-21 -&gt; In
+progress] a4173c8 stood up the ledger + 4 followups; 709b06c closed 2
+Important review findings (CODEGRAPH-1.5.0-GITIGNORE entry, BOB-108
+filed). The BOB-009/010 evidence_path gap this item names as remaining
+open was closed under BOB-086 (f78f383). NOT terminal by the item’s own
+text: it is explicitly scoped ‘P1-ongoing’, with the full retroactive
+audit of the ~50 GA-NN/RD2-NN findings deliberately NOT attempted.</td>
 </tr>
 <tr>
 <td>BOB-074</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
 <td>RD2-07: DDoS-class testing fully absent from the mandated test-type
-matrix</td>
+matrix [BOB-136 adoption audit 2026-08-21 -&gt; In progress] ae2b5cb
+authored challenges/scripts/ddos_resilience_challenge.sh (424 lines, 3
+public surfaces) + docs/testing/{ddos_resilience,test_type_matrix}.md,
+so DDoS-class testing is no longer ‘fully absent’. But of the three
+coverages this item’s Fix line enumerates, a grep of the shipped
+challenge finds flood=2 hits, malformed=0, exhaust=0 —
+malformed-request-flood and resource-exhaustion-under-attack are not
+covered. 258b7db filed the 6 followups (BOB-109..114). Partial, not
+complete.</td>
 </tr>
 <tr>
 <td>BOB-077</td>
@@ -338,28 +356,12 @@ GA-18/21/22/25/26/27 changes (never rewrite published history)</td>
 Auto-commit diffs</td>
 </tr>
 <tr>
-<td>BOB-081</td>
-<td>Task</td>
-<td>Queued</td>
-<td>High</td>
-<td>RD2-14: Author CONTINUATION.md Session 15 entry (currently 53 days /
-24+ commits behind HEAD)</td>
-</tr>
-<tr>
 <td>BOB-082</td>
 <td>Task</td>
 <td>Queued</td>
 <td>High</td>
 <td>RD2-15: Create BOB-064..067 workable items for the four Lava-porting
 findings (closes GA-05)</td>
-</tr>
-<tr>
-<td>BOB-083</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>RD2-16: Regenerate browser_extension/features/codegraph Status.md +
-Summary/HTML/PDF siblings</td>
 </tr>
 <tr>
 <td>BOB-084</td>
@@ -378,14 +380,6 @@ tool</td>
 ledger (closes GA-10)</td>
 </tr>
 <tr>
-<td>BOB-086</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>RD2-19: Fix BOB-009/BOB-010 evidence_path + backfill item_history
-for 56 silent closures</td>
-</tr>
-<tr>
 <td>BOB-087</td>
 <td>Task</td>
 <td>Queued</td>
@@ -402,21 +396,21 @@ DB writes cannot land without MD mirror</td>
 table row-completeness (GA-07 remainder)</td>
 </tr>
 <tr>
-<td>BOB-089</td>
-<td>Task</td>
-<td>Queued</td>
-<td>High</td>
-<td>RD2-24: RED-first tests for start.sh
-reload_python/reload_plugins/recreate_stack (closes test-half of
-GA-27)</td>
-</tr>
-<tr>
 <td>BOB-090</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
 <td>RD2-25: HelixQA Challenge entry exercising all three start.sh
-subcommands end-to-end against real compose stack</td>
+subcommands end-to-end against real compose stack [BOB-136 adoption
+audit 2026-08-21 -&gt; In progress] a9366c9 bumped submodules/helixqa to
+HelixDevelopment/qa@00c5ca4 adding banks/boba-start-sh-reload.yaml (3
+cases, all three subcommands). The bank EXISTS but has never been
+EXECUTED: the commit states honestly that the helixqa binary was not
+built in-session (§11.4.3 SKIP feature_disabled_by_config) and ‘live
+bin/helixqa list demo is deferred’, with only YAML-parse evidence
+captured. This item’s acceptance is end-to-end execution against the
+real compose stack — artifact-class evidence cannot close a
+runtime-class acceptance (§11.4.226).</td>
 </tr>
 <tr>
 <td>BOB-092</td>
@@ -429,34 +423,51 @@ fallback + verify live 200 (closes GA-13)</td>
 <tr>
 <td>BOB-093</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>High</td>
 <td>RD2-28: Live compose bring-up + verify rutracker ReDoS regex bounds
-deployed to container (closes runtime half of GA-12)</td>
+deployed to container (closes runtime half of GA-12) [BOB-136 adoption
+audit 2026-08-21 -&gt; In progress] 1c0389a proved 3 of the 4 sub-steps
+with strong runtime evidence: the bounded regex is confirmed in the
+DEPLOYED /config/qBittorrent/nova3/engines/rutracker.py inside the
+running container (sha256 76a6bd2e..), with a self-validated challenge +
+§11.4.115 RED (mutated unsafe form FAILs) and GREEN verdict JSON. The
+4th sub-step is NOT met: ‘capture timing of a large rutracker result
+page (&lt;2s)’ was not exercised — in
+docs/qa/BOB-093/live_search_smoke.txt rutracker returned status=empty,
+results_count=0 in 164ms, so no large page was ever timed.</td>
 </tr>
 <tr>
 <td>BOB-094</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
 <td>RD2-29: Author tests/stress/test_tracker_fetch_stress_chaos.py with
-§11.4.85 fault injection</td>
+§11.4.85 fault injection [BOB-136 adoption audit 2026-08-21 -&gt; In
+progress] The suite landed (test file at 4b7b21d, evidence +
+RED-on-mutated-classifier capture at f3ca131) with 9 test functions: 2
+stress, 3 boundary, 3 chaos (network_drop, midflight_kill,
+input_corruption), 1 category_map. This item explicitly requires fault
+injection across process-kill, network-fault AND resource-exhaustion.
+Only 2 of those 3 classes are present — there is no resource-exhaustion
+scenario in tests/stress/test_tracker_fetch_stress_chaos.py.
+Partial.</td>
 </tr>
 <tr>
 <td>BOB-095</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
 <td>RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py
-for Go-side triangle</td>
-</tr>
-<tr>
-<td>BOB-096</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>RD2-31: Extend qBitTorrent-go jackett_db_test.go with real
-process-kill/resource-exhaustion fault injection</td>
+for Go-side triangle [BOB-136 adoption audit 2026-08-21 -&gt; In
+progress] d5c8c3e authored
+qBitTorrent-go/internal/service/sse_broker_stress_chaos_test.go (462
+lines, 6 scenarios, 2 RED captures) and found+fixed a real
+double-unsubscribe ‘close of closed channel’ defect. But this item names
+a THREE-component triangle: sse_broker.go + internal/api/hooks.go +
+internal/api/scheduler_api.go. Only sse_broker.go is covered — there is
+no stress_chaos test anywhere under qBitTorrent-go/internal/api/. 1 of
+3, partial.</td>
 </tr>
 <tr>
 <td>BOB-097</td>
@@ -465,23 +476,6 @@ process-kill/resource-exhaustion fault injection</td>
 <td>Low</td>
 <td>RD2-32: Author DDoS-class coverage for exposed download-proxy/merge
 endpoints (canonical impl of RD2-07)</td>
-</tr>
-<tr>
-<td>BOB-098</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>RD2-34: Parametrize 20 hardcoded /Volumes/T7 paths in helixqa banks
-with PROJECT_ROOT (closes GA-23)</td>
-</tr>
-<tr>
-<td>BOB-099</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>RD2-36: Fix guard-forbidden-commands.sh substring-match
-false-positive class + add const033-poweroff-signal-triage carrier to
-EXCLUDE_PATHS</td>
 </tr>
 <tr>
 <td>BOB-100</td>
@@ -514,14 +508,6 @@ RW-10..13) — OPERATOR-DECISION</td>
 <td>Medium</td>
 <td>§11.4.238 followup: CodeGraph 1.5.0 nested-.gitignore regression
 challenge</td>
-</tr>
-<tr>
-<td>BOB-105</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>§11.4.238 followup: mechanical §11.4.227(B) anchor-block-integrity
-check</td>
 </tr>
 <tr>
 <td>BOB-106</td>
@@ -564,14 +550,6 @@ absent</td>
 HTTP endpoints</td>
 </tr>
 <tr>
-<td>BOB-113</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Low</td>
-<td>BOB-074 followup: add wrk to dev tooling for DDoS/load
-challenges</td>
-</tr>
-<tr>
 <td>BOB-114</td>
 <td>Task</td>
 <td>Queued</td>
@@ -580,20 +558,28 @@ challenges</td>
 rate-limit detector</td>
 </tr>
 <tr>
-<td>BOB-118</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>High</td>
-<td>README.md python-tests badge claims 585 passing; pytest
-–collect-only measures 5235 (9x stale/wrong)</td>
-</tr>
-<tr>
 <td>BOB-120</td>
 <td>Bug</td>
 <td>Queued</td>
 <td>Critical</td>
 <td>3rd forced-logout incident 2026-08-18 23:45:49 — SIGKILL user@1000 +
-preventive-timer-inside-user-slice architectural gap</td>
+preventive-timer-inside-user-slice architectural gap [BOB-136 adoption
+audit 2026-08-21 -&gt; DELIBERATELY LEFT QUEUED] The
+CM-CLOSURE-SEAM-BINDS gate classifies this row as a CONTRADICTION ‘via
+closes, commit d84d226’. That is a CARRIER match, not a closure. The
+matching text in d84d226 is ‘closing BOB-120 requires an
+out-of-user-scope watchdog, not more documentation’ — a statement of
+what closure would take, and the same commit states ‘New architectural
+finding, filed as BOB-120 (Critical, left Queued)’. d84d226 FILED this
+item; it did not close it. The architectural fix remains unlanded:
+BOB-121, which carries it, is still Ready for testing and its own body
+states it is NOT CLOSED, with two operator decisions owed and the
+watchdog UNTESTED AGAINST A REAL FORCED LOGOUT (survival inferred from
+cgroup topology, not observed). Moving this row on documentation alone
+would be precisely the §11.4.238 coverage-escape bluff this item’s own
+text warns against. Status unchanged; the gate finding is expected to
+persist until the out-of-scope watchdog actually lands and is
+verified.</td>
 </tr>
 <tr>
 <td>BOB-121</td>
@@ -696,7 +682,7 @@ docs/qa/BOB-091/closure-evidence.md.</td>
 <tr>
 <td>BOB-137</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>High</td>
 <td><strong>Reported-Via:</strong> §11.4.202 reporting directive
 <code>bug</code> on 2026-08-20T14:46:52Z <strong>Reported-By:</strong>
@@ -753,7 +739,19 @@ futex_wait_queue).  **Acceptance criteria:** The spinning frame is
 identified from a real Python stack dump (not inferred), the busy-loop
 is fixed at its root, and a regression guard proves 7187 still answers
 after a sustained-traffic soak. Evidence: before/after curl timings on
-both ports plus a thread-state census showing no permanently-R thread. |
+both ports plus a thread-state census showing no permanently-R
+thread.  [BOB-136 adoption audit 2026-08-21 -&gt; In progress] 1dd7b0a
+ESTABLISHED the root cause with captured evidence (16 stack dumps
+showing Deduplicator.merge_results() called synchronously at
+search.py:914 on the event-loop thread; loop thread sustained 81-98%
+user-space CPU while all other threads showed d_utime=0). The
+remediation landed under BOB-145 (0572b71, now Fixed), whose own text is
+headed 'BOB-145 - the 7187 wedge' and which refuted the assumed O(N^2)
+cause by profiling. BOB-137 and BOB-145 therefore describe the SAME
+defect; per §11.4.214 that is a link/dedup decision, not a unilateral
+close, and no post-fix re-observation of the multi-hour wedge is
+recorded against BOB-137 itself. Left open pending that linkage
+decision. |
 | BOB-141 | Task | Queued | Low | **Reported-Via:** §11.4.202 reporting
 directive `task` on 2026-08-20T14:56:38Z **Reported-By:** Claude  **What
 (the report, verbatim):** CLAUDE.md's Architecture section

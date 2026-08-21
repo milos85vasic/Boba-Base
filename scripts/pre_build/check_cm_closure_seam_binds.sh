@@ -328,6 +328,34 @@ REM
 # Scanned over EXECUTABLE tracked files only: docs and the tracker DB
 # legitimately QUOTE the flagless form (this gate's own header does),
 # and matching those would be the carrier mistake this gate is about.
+# THE ONE PATH THIS SCAN MUST NOT WALK IS ITS OWN PAIRED META-TEST.
+#
+# That file's golden-bad fixture CONTAINS a genuine flagless invocation — it
+# has to, because a §1.1 fixture that does not contain the thing the gate
+# detects cannot prove the gate detects it. Scanning it therefore produces a
+# guaranteed false positive: the gate fails on a healthy tree because its own
+# proof-of-teeth exists. That is the §11.4.201(1) false-positive refusal, and
+# it is not hypothetical here — a sibling gate in this repo was independently
+# measured flagging its OWN golden-bad fixtures the same way.
+#
+# The exclusion is deliberately ONE FILE, matched exactly (grep -vxF), not a
+# directory or a glob. Excluding tests/ wholesale would hide a real flagless
+# caller in any other test, which is precisely the "narrow the gate until it
+# passes" move this gate exists to catch elsewhere.
+_SELF_META_TEST="tests/pre_build/test_check_cm_closure_seam_binds.sh"
+
+# MEASURED COVERAGE LIMIT (§11.4.6 — stated, not implied). This scan matches
+# the SHELL invocation shape (`"$WI_BIN" diff --db ...`), proven by planting
+# one in a tracked .sh file: FAIL naming file:line, restore -> PASS. It does
+# NOT match a language-level call such as
+#     subprocess.run(["workable-items", "diff", "--db", DB])
+# because the list form puts a comma between the binary and the subcommand.
+# Verified by planting exactly that in a tracked .py file: the gate stayed
+# GREEN. `.py` and `.go` are in the file list, so that is a real blind spot,
+# not an intentional scope. Recorded rather than papered over — a gate whose
+# claimed reach exceeds its measured reach is the kind of overstatement this
+# file exists to catch.
+
 _check_flagless_diff_callers() {
     local hits=0
     while IFS= read -r f; do
@@ -363,7 +391,8 @@ _check_flagless_diff_callers() {
         }
         END { exit (c > 0 ? 1 : 0) }
         ' "$REPO/$f" || hits=$((hits + 1))
-    done < <(cd "$REPO" && git ls-files '*.sh' '*.bash' '*.py' '*.go' 2>/dev/null || true)
+    done < <(cd "$REPO" && git ls-files '*.sh' '*.bash' '*.py' '*.go' 2>/dev/null \
+                 | grep -vxF "$_SELF_META_TEST" || true)
     return "$((hits > 0 ? 1 : 0))"
 }
 
