@@ -42,6 +42,7 @@ markers = [
     "asyncio: async test (pytest-asyncio)",
     "requires_credentials: test needs real tracker credentials (.env)",
     "requires_compose: test needs the full docker-compose stack up",
+    "requires_runtime: test needs a container runtime (podman/docker) but NOT the full stack",
     "slow: test takes longer than 1s (opt-in)",
     "stress: high-load stress test (opt-in)",
     "security: security-focused test",

@@ -23,8 +23,42 @@ phases:
       verdicts_NOT_exercised: [wrong-owner]
   - id: 2
     name: Foundational (RED)
-    status: in-progress
+    status: complete
     tasks: [T004, T005, T006, T007]
+    checkpoint:
+      red_observed: true
+      red_reason_verified: true   # assertions, not errors, not teardown
+      integration_red: "uid 100999 vs operator 1000, both file and directory"
+      unit_reds: "both name the missing target script explicitly"
+      cleanup_verified: true      # 0 leftovers after run (podman unshare)
+      killpg_audit: "no unguarded signals; 1 carrier-match comment, 1 guarded kill -0"
+    deviations:
+      - moved tests/integration/test_container_writes_owned_files.py to
+        tests/ownership/ - tests/integration/conftest.py installs an AUTOUSE
+        fixture that waits for the live merge service, so every test there needs
+        the full stack UP. This test needs only a container RUNTIME. In the
+        original location it hung 60s and ERRORED whenever the stack was down.
+      - registered pytest marker `requires_runtime` in pyproject.toml
+        (--strict-markers is on; `integration` was never registered)
+    constraints_imposed_on_later_tasks:
+      - T033 MUST treat an explicitly-empty CONTAINER_RUNTIME as "no container
+        runtime" rather than re-detecting podman. The T006 suite sets it that way
+        on every invocation, because podman IS installed and pre-build invariant
+        30 executes every tests/unit/*.sh - an unguarded suite would launch real
+        containers at gate time (§12.6/§12.12).
+      - T033 must honour the --scope flag; the T006 suite deliberately does not
+        also set OWNED_PATHS_FILE, so an implementation that ignores --scope is
+        caught.
+
+  known_gaps_from_phase_2:
+    - "E4 wrong-owner verdict is unreachable in unit tests: creating a file owned
+      by another uid needs privilege. Only the container probe (P1) produces the
+      uid-100999 shape. Unit suites cover unwritable/absent instead - decisive per
+      the contract, but not the shape the feature targets."
+    - "tests/integration/conftest.py hangs 60-180s and errors instead of skipping
+      honestly (§11.4.3) when the stack is down. Pre-existing, affects other tests,
+      NOT fixed here - out of scope and shared infrastructure."
+
   - id: 3
     name: US1 - downloads usable
     status: not-started
