@@ -1,0 +1,38 @@
+=== BOB-169 CORRECTION — the .pdf twins ARE implicated ===
+captured: 2026-08-21T20:33:10Z  HEAD: 49975bb
+
+The filed item asserted: 'the .pdf twins embed their own encoding and are
+not implicated by this measurement'. That assertion is FALSE. It was written
+without probing a PDF, and is corrected here rather than quietly edited
+(§11.4.6 — the convention BOB-136's own body establishes).
+
+--- probe: docs/BOBA_DATABASE.pdf, text layer via pdftotext ---
+  11:the spec at docs/superpowers/specs/2026-04-27-jackett-managementui-and-system-db-design.md Â§ 5 for full normative text.
+  48:Snapshot of Jackettâ€™s
+  72:Explicit env_name â†’
+  98:start.sh also calls an ensure_boba_master_key helper as a belt-andsuspenders so the variable is present in the hostâ€™s .env even if the
+
+--- the SOURCE .md at the corresponding construct is CLEAN UTF-8 ---
+  60:> `qBitTorrent-go/**/*.go` (§11.4.201(7)(b): the needle `EnsureMasterKey`
+
+READING. 'Â§' is the UTF-8 encoding of § (0xC2 0xA7) rendered as two latin-1
+characters; likewise 'â€™' for ' and 'â†’' for →. The source is clean, so the
+corruption was introduced during export, not authored.
+
+WHY THIS IS WORSE THAN THE HTML CASE, not merely additional:
+  HTML fragment  -> no charset declared; the BYTES on disk are still correct
+                    UTF-8, and a browser told the right encoding renders them
+                    correctly. Fixable by adding <meta charset>, no re-render.
+  PDF            -> the mis-decoded characters are BAKED INTO the text layer
+                    as glyphs. No viewer setting recovers them. Only
+                    regeneration from the clean source fixes it.
+
+MECHANISM (hypothesis, NOT proven — §11.4.6): the PDF is plausibly rendered
+FROM the charset-less HTML fragment, so the missing declaration propagates
+into the PDF pipeline and is frozen there. This is consistent with both
+artifacts sharing one defect, but the pipeline was NOT traced. Whoever takes
+BOB-169 must establish it by invocation before relying on it.
+
+SCOPE NOT MEASURED: only ONE pdf was probed. The 286-file census covered .html
+only. How many of the ~300 PDFs carry baked mojibake is UNKNOWN and must be
+counted, not extrapolated from this single sample.

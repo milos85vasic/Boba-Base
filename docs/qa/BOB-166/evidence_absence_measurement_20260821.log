@@ -1,0 +1,50 @@
+=== BOB-166 — evidence-row census for the 10 unmigrated closures ===
+captured: 2026-08-21T20:26:23Z   HEAD: 49975bb
+
+QUESTION: acceptance (c) says the 10 rows must be drained to Fixed with
+class-matched evidence PER ROW. Does that evidence already exist?
+
+--- the 10 unmigrated rows: id | evidence_history_rows | latest evidence_path ---
+BOB-087|0|(none)
+BOB-129|0|(none)
+BOB-131|0|(none)
+BOB-144|0|(none)
+BOB-145|0|(none)
+BOB-146|0|(none)
+BOB-148|0|(none)
+BOB-153|0|(none)
+BOB-155|0|(none)
+BOB-157|0|(none)
+
+--- CONTROL NEEDLE (§11.4.201(7)(b)) ---
+A zero from a hand-written query is not evidence until the query is shown
+able to return non-zero through the SAME path. Two items closed TODAY via
+the 'close' subcommand, which requires --evidence:
+BOB-092|Fixed|1|docs/qa/BOB-092/closure_run_20260821.log
+BOB-136|Fixed|1|docs/qa/BOB-136/closure-evidence.md
+
+NEEDLE VERDICT: PASS — the query returns 1 evidence row each for the two
+properly-closed items. The ten zeros above are real ABSENCE, not a blind query.
+
+=== WHAT THIS MEANS FOR ACCEPTANCE (c) ===
+Not one of the ten has ANY recorded evidence_path. This is the discriminator
+predicted by BOB-166's root cause: 'close' migrates AND records evidence;
+'update --status' does neither. All ten bear the signature of the second path.
+
+So draining them is NOT a mechanical migration. Each row needs its evidence
+LOCATED (it may exist under docs/qa/<id>/ without ever being recorded) or
+PRODUCED, and any row whose closure cannot be evidenced must be honestly
+REOPENED rather than migrated on a bare assertion (§11.4.226: a status must
+not outrun its evidence).
+
+--- do any of the ten have an UNRECORDED artifact on disk? ---
+  BOB-087   docs/qa/BOB-087/: 4 file(s)
+  BOB-129   docs/qa/BOB-129/: 2 file(s)
+  BOB-131   docs/qa/BOB-131/: 0 file(s)
+  BOB-144   docs/qa/BOB-144/: 0 file(s)
+  BOB-145   docs/qa/BOB-145/: 0 file(s)
+  BOB-146   docs/qa/BOB-146/: 0 file(s)
+  BOB-148   docs/qa/BOB-148/: 0 file(s)
+  BOB-153   docs/qa/BOB-153/: 0 file(s)
+  BOB-155   docs/qa/BOB-155/: 0 file(s)
+  BOB-157   docs/qa/BOB-157/: 0 file(s)

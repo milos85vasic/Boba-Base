@@ -207,7 +207,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>13</td>
+<td>14</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -232,7 +232,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>20</td>
+<td>21</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -242,7 +242,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>60</strong></td>
+<td><strong>62</strong></td>
 </tr>
 </tbody>
 </table>
@@ -1167,6 +1167,68 @@ that is its own finding: a missing challenge must be loud (§11.4.3
 SKIP-with-reason at minimum), never absent-and-quiet. SEVERITY. Low as a
 defect, but it sits on the challenge-coverage seam, so (c) may deserve
 its own item.</td>
+</tr>
+<tr>
+<td>BOB-169</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>WHAT. The §11.4.65 markdown-export mandate requires every in-scope
+doc to ship .html/.pdf twins. 286 of the 326 .html files under docs/
+(excluding dist/ and node_modules/) are pandoc FRAGMENTS — they begin at
+</td>
+</tr>
+<tr>
+<td>BOB-170</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>WHAT. The BOB-109 scaling suite gates its two timing tests on
+loadavg_1m/nproc &lt;= 0.75 — on this 8-cpu host, a 1-minute load
+average at or below 6.0 — and SKIPs loudly otherwise. That gate is
+correct and was adopted for a good reason (§11.4.201(8)): the author
+validated a 2.10 growth-exponent threshold, then observed it FALSE-FAIL
+correct code at load 11.06 (baseline span 2.136), and at load 15-23
+measured baseline spans of 2.358 against injected-cubic mutants at
+2.278-2.331 — the signal is smaller than the noise and the two are not
+separable in either direction. Gating was the honest response. THE
+PROBLEM. The gate has consequently NEVER RUN under its own precondition.
+Every recorded run today measured load 9.15-23; the independent reviewer
+measured 9.66 during review; the conductor measured 6.45 at its lowest.
+GREEN polarity WAS observed — at loads 9.4-11.6 (span 1.882) and in
+three stability runs (1.759/1.832/1.848) — but never once beneath the
+shipped ceiling. The author states this honestly as an inference from
+data rather than a run they can paste, and the reviewer confirmed the
+inference is sound (quiescence is strictly more favourable). Sound
+inference is still not an observed run. WHY THAT MATTERS (§11.4.226). A
+registered, topology-present guard that never executes is
+indistinguishable from a guard that would fail if it did. Nothing
+currently ensures it ever runs: no freshness contract, no scheduled
+quiet-window invocation, no tracked item — which is precisely the
+unexecuted-standing-guard class §11.4.226 names, where registration gets
+treated as coverage while execution is nobody’s job. The forensic
+precedent in that anchor is two standing guards that, when finally
+executed, immediately emitted latent FAILs. ACCEPTANCE. (a) Execute both
+quiescence-gated timing tests on a host whose 1-minute loadavg is
+genuinely &lt;= 0.75/cpu — no agent fleet, no concurrent build — and
+capture the run as an artifact showing the resolved load reading
+alongside the measured span exponent, so the precondition is provable
+from the artifact and not asserted. (b) Record the observed GREEN
+polarity in the item and in the test source, replacing the current
+honest-inference note. (c) If the gate FAILS under genuine quiescence,
+that is the finding this item exists to surface, and it reopens the
+threshold-calibration question rather than being worked around. (d)
+Establish a freshness contract per §11.4.226: how stale a quiescent
+verdict may be before the gate counts as uncovered again, so this does
+not silently return to never-executing. HONEST BOUNDARY. This item does
+not claim the gate is wrong. The evidence points the other way —
+quiescence is strictly more favourable than the loads where GREEN was
+already observed. It claims only that the run has not happened, and that
+an unexecuted guard cannot be cited as coverage. PROVENANCE. Raised as
+IMPORTANT-2 by the independent Fable-substrate reviewer of the BOB-109
+work, and independently corroborated: the reviewer verified the SKIP is
+loud and prints its resolved numbers, and confirmed the shipped tests do
+SKIP at today’s load.</td>
 </tr>
 </tbody>
 </table>

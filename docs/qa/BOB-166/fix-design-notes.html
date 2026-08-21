@@ -1,0 +1,92 @@
+<h1
+id="bob-166-fix-design-notes-scoping-only-nothing-implemented">BOB-166 —
+fix design notes (scoping only, nothing implemented)</h1>
+<p>Captured 2026-08-21 while the defect was fresh. This is a SCOPE for
+whoever takes the item, not a patch. Everything below is read from
+source; nothing was changed.</p>
+<h2 id="where-the-hole-is">Where the hole is</h2>
+<p><code>constitution/scripts/workable-items/cmd/workable-items/mutate.go</code></p>
+<pre><code>main.go:123      case &quot;update&quot;:  runUpdate(args[1:])
+mutate.go:69     func runUpdate(...)
+mutate.go:152    if set[&quot;status&quot;] {
+mutate.go:153        ns := normalizeStatus(*status)
+mutate.go:154        // normalizeStatus never returns a non-closed-set value, but guard
+mutate.go:155        // explicitly so a typo&#39;d --status surfaces rather than silently
+mutate.go:156        // mapping to Queued. ...
+mutate.go:158        cur.Status = ns
+mutate.go:159    }</code></pre>
+<p>The validation asks exactly one question — <em>is this a legal
+§11.4.15 value?</em> — and a terminal status IS legal. Nothing asks the
+second question: <em>is this status legal FOR THIS ROW’S LOCATION?</em>
+So <code>Fixed (→ Fixed.md)</code> is accepted on a row whose
+<code>current_location</code> is still <code>Issues</code>, producing
+the state §11.4.19 forbids.</p>
+<h2 id="the-sibling-that-already-gets-this-right">The sibling that
+already gets this right</h2>
+<p><code>move</code> documents precisely the invariant
+<code>update</code> lacks (mutate.go:18-21):</p>
+<pre><code>- move — the general REVERSE-OF-CLOSE relocation ... with an optional new
+         status ... Refuses any destination/status pair that would create
+         an INTEG-03 desync.</code></pre>
+<p>So the codebase already has the CONCEPT (a destination/status pair
+can be invalid) and a name for the failure (INTEG-03 desync).
+<code>update</code> simply never consults it. That matters for the fix:
+this is reusing an existing invariant at a seam that skipped it, NOT
+inventing a new rule (§11.4.227 — an anchor’s done state is its SEAM
+landing, not its text landing).</p>
+<h2 id="shape-of-the-fix">Shape of the fix</h2>
+<ol type="1">
+<li><p>In <code>runUpdate</code>, after
+<code>ns := normalizeStatus(*status)</code>, refuse when <code>ns</code>
+is terminal AND the resulting location would be <code>Issues</code>. The
+message must name the correct path rather than just saying no:</p>
+<pre><code>update: refusing to set terminal status &quot;Fixed (→ Fixed.md)&quot; on BOB-NNN
+while it is located in Issues — a terminal status without the migration
+leaves the row in the OPEN tracker (§11.4.19 requires the move to be
+atomic). Use instead:
+  workable-items close BOB-NNN --db &lt;p&gt; --status fixed --evidence &lt;path&gt;
+or, if the row is genuinely already closed elsewhere:
+  workable-items move --id BOB-NNN --db &lt;p&gt; --to Fixed --why &lt;text&gt;</code></pre>
+<p>Naming both paths matters: <code>close</code> is right for a NEW
+closure (it demands evidence), <code>move</code> for reconciling an
+already-closed row.</p></li>
+<li><p>Extend <code>validate</code> with a status↔︎location coherence
+invariant so the EXISTING ten rows are caught, not just future writes. A
+guard on the write seam alone leaves the current corpus silently wrong —
+the §11.4.146(D3) full-table-sweep argument: a diff-only check misses
+rows written before the guard existed, and raw-SQL writers bypass the
+CLI entirely.</p></li>
+</ol>
+<h2 id="test-first-obligations-11.4.224">Test-first obligations
+(§11.4.224)</h2>
+<ul>
+<li>RED before the guard: a test that performs the exact reproduction
+(<code>update --status 'Fixed (→ Fixed.md)'</code> on a Queued row in
+Issues) and asserts the resulting row is NOT in the forbidden state. It
+must FAIL on today’s code — verify that, do not assume it.</li>
+<li>Paired §1.1 mutation: remove the refusal; the test must go red. A
+guard never observed failing is unvalidated instrumentation
+(§11.4.115(F)).</li>
+<li>NEGATIVE CONTROL, non-negotiable (§11.4.201(1)):
+<code>update --status</code> on a NON-terminal value must still work,
+and a terminal status on a row ALREADY in <code>Fixed</code> must still
+work — otherwise the guard becomes a false-positive refusal that blocks
+legitimate edits, which is a FAIL-bluff of equal severity to the hole it
+closes.</li>
+</ul>
+<h2 id="constraint-that-is-easy-to-miss">Constraint that is easy to
+miss</h2>
+<p>This code lives in the CONSTITUTION submodule and is consumed by
+other projects (§11.4.28). The fix must carry NO boba literal — no
+<code>BOB-</code> prefix, no <code>docs/Issues.md</code> path. It is a
+statement about the engine’s own closed-set semantics, which is what
+makes it safe to land there. Per §11.4.26 the submodule must be fetched
+and pulled BEFORE editing, and pushed to all its upstreams after.</p>
+<h2 id="evidence-already-captured">Evidence already captured</h2>
+<ul>
+<li><code>evidence_absence_measurement_20260821.log</code> — all ten
+rows have ZERO evidence rows, control-needled against two rows closed
+via <code>close</code> (1 each). Splits the drain into two classes:
+BOB-087/BOB-129 have unrecorded artifacts on disk; eight have
+nothing.</li>
+</ul>

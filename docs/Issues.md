@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 46
-**Last modified:** 2026-08-21T20:22:05Z
+**Revision:** 48
+**Last modified:** 2026-08-21T20:50:08Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1381,4 +1381,72 @@ WHY IT MATTERS. Whether this is cosmetic or a §11.4.201 gate-honesty defect dep
 ACCEPTANCE. (a) Determine and record the runner's actual behaviour on the missing entry by invoking it, not by reading it. (b) EITHER author the challenge, OR remove the entry — with §11.4.124 discipline: check git history for whether it once existed and was deleted, since a silently-dropped challenge is the more interesting defect. (c) If the runner silently skips missing entries, that is its own finding: a missing challenge must be loud (§11.4.3 SKIP-with-reason at minimum), never absent-and-quiet.
 
 SEVERITY. Low as a defect, but it sits on the challenge-coverage seam, so (c) may deserve its own item.
+
+## BOB-169 — 286 of 326 exported .html docs are headless pandoc fragments with no DOCTYPE and no charset, so UTF-8 section marks and arrows render as mojibake when opened directly
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT. The §11.4.65 markdown-export mandate requires every in-scope doc to ship .html/.pdf twins. 286 of the 326 .html files under docs/ (excluding dist/ and node_modules/) are pandoc FRAGMENTS — they begin at <h1> with no <!DOCTYPE>, no <html>/<head>, and critically no <meta charset='utf-8'>. Census run 2026-08-21.
+
+CONCRETE HARM, measured not assumed. Sample docs/BOBA_DATABASE.html: DOCTYPE 0, charset 0, and 30 lines carrying non-ASCII — the distinct characters present are § — ' " " →. With no charset declaration a browser opening the file directly (file:// or a plain static host sending no charset header) falls back to its default encoding, typically windows-1252, and renders § as Â§ and → as â†'. Those are not incidental characters in this corpus: every constitutional cross-reference in these documents is a § literal, so the mojibake lands on the most load-bearing token in the text. Fragments also carry no viewport meta, so they do not scale on mobile.
+
+HOW IT SURFACED. Chasing a CM-DOCS-CHAIN-ENGINE-VERIFY failure on the features-status context. docs_chain sync regenerated docs/features/Status.{html,docx,pdf} and the HTML diff was 183 insertions / 0 DELETIONS — the body was untouched and a full pandoc preamble was PREPENDED, proving the committed file had been a fragment. Its sibling docs/codegraph/Status.html already began with <!DOCTYPE>, so two derivatives in the same docs_chain config were being produced in different modes. That mismatch is what made verify FAIL, and the gate's own message ('derived docs drift from .md sources') misattributes it: the content was not drifting from the source, the generator was inconsistent.
+
+THE DETECTION GAP (§11.4.238). Pre-build invariant 16 CM-MARKDOWN-EXPORT-SYNC PASSED on the whole corpus — 'all in-scope docs have fresh .html/.pdf siblings'. It checks PRESENCE and FRESHNESS, never VALIDITY, so a 0-byte-preamble fragment satisfies it exactly as a well-formed document does. This was found by reading a failing gate's diff, not by the regime: a §11.4.238 discovery-channel escape, and the missing check is the interesting half.
+
+ROOT CAUSE IS NOT YET PROVEN (§11.4.6). Two generators exist — scripts/generate_markdown_exports.sh (invoked via workable-items-export.sh) and the docs_chain engine — and they demonstrably disagree on standalone vs fragment mode for the same source. WHICH one emits fragments, and whether it does so always or under specific flags, is NOT established here and must not be assumed. Whoever takes this item determines it by invoking both on one fixture and comparing, before changing either.
+
+ACCEPTANCE. (a) Determine by invocation which generator emits fragments and under what conditions; record it. (b) Make the emitting generator produce standalone documents (charset + viewport at minimum), so the two paths agree — §11.4.251: one artifact should not have two generators that disagree. (c) Regenerate the 286 affected files. (d) Extend CM-MARKDOWN-EXPORT-SYNC (or add a sibling) to assert VALIDITY, not just presence: every exported .html declares a charset. Paired §1.1 mutation — strip the charset from one export and the gate must FAIL. Include a negative control so a legitimately standalone doc does not fire (§11.4.201(1)). (e) Honest boundary: this is about the HTML twins only; the .pdf twins embed their own encoding and are not implicated by this measurement.
+
+ALREADY DONE. docs/features/Status.{html,docx,pdf} regenerated via 'docs_chain sync features-status' (evidence qa-results/docs_chain/20260821T202805Z); verify --all now exits 0. That is 3 of the 289 files; the remaining 286 are untouched.
+
+CORRECTION 2026-08-21 (§11.4.6) — recorded openly rather than quietly edited, per the convention BOB-136's own body establishes. An earlier revision of this item asserted: "the .pdf twins embed their own encoding and are not implicated by this measurement." That assertion is FALSE. It was written without probing a single PDF.
+
+Probing docs/BOBA_DATABASE.pdf via pdftotext returns 'Â§ 5', 'Jackettâ€™s' and 'â†' — UTF-8 byte sequences (§ = 0xC2 0xA7) decoded as latin-1 — while the SOURCE .md at the corresponding construct is clean UTF-8. So the corruption was introduced during export, not authored.
+
+The PDF case is WORSE than the HTML case, not merely additional. An HTML fragment still holds correct UTF-8 BYTES on disk; a browser told the right encoding renders it correctly, so adding <meta charset> fixes it with no re-render. In a PDF the mis-decoded characters are baked into the text layer as glyphs — no viewer setting recovers them, and only regeneration from clean source fixes it.
+
+MECHANISM (hypothesis, NOT proven — §11.4.6): the PDF is plausibly rendered FROM the charset-less HTML fragment, so the missing declaration propagates into the PDF pipeline and freezes there. Consistent with both artifacts sharing one root defect, but the pipeline was NOT traced. Establish it by invocation before relying on it.
+
+SCOPE NOT MEASURED: exactly ONE pdf was probed. The 286-file census covered .html only. How many of the ~300 PDFs carry baked mojibake is UNKNOWN and must be COUNTED, not extrapolated from a single sample. Acceptance (e) is therefore REPLACED: it previously scoped PDFs out; it now requires the PDF corpus to be counted and regenerated alongside the HTML.
+
+Evidence: docs/qa/BOB-169/pdf_mojibake_correction_20260821.log
+
+ROOT CAUSE PROVEN 2026-08-21 — acceptance (a) is SATISFIED, do not repeat it. Full evidence: docs/qa/BOB-169/root_cause_proven_20260821.md
+
+THE GENERATOR: scripts/generate_markdown_exports.sh:57 runs `pandoc -f markdown -t html5 -o "$html" "$md" --metadata title=...` with NO --standalone/-s, so pandoc emits a body fragment with no DOCTYPE, no head, and no <meta charset>. A tell that the flag was intended and lost: --metadata title= is passed on that same line, and a title can only render inside a standalone document's <head><title> — the script computes a title it is structurally unable to emit.
+
+THE TWO BRANCHES DISAGREE, AND THE FALLBACK IS THE CORRECT ONE: the else-branch (python-markdown, used only when pandoc is ABSENT) explicitly writes <!DOCTYPE html><html><head><meta charset="utf-8">. So the PREFERRED path is the defective one and a host WITHOUT pandoc produces CORRECT exports. That inversion is why this survived — the defect is invisible on exactly the machines least likely to be treated as degraded.
+
+THE PDF MECHANISM IS NO LONGER A HYPOTHESIS: line 76 runs `weasyprint "$html" "$pdf"` — the PDF is rendered FROM the charset-less fragment, so weasyprint's encoding fallback bakes the mis-decoded glyphs into the PDF text layer.
+
+CONFIRMED BY A FALSIFIABLE PREDICTION: DOCX takes a THIRD path (line 85, pandoc -t docx direct from markdown, never touching the HTML), so it must be clean if the chain is right. Measured on docs/BOBA_DATABASE.*: .docx = 0 mojibake sequences and 7 clean § characters; .pdf = 'Â§ 5' / 'Jackettâ€™s' / 'â†'; .html = no DOCTYPE, no charset, 30 non-ASCII lines. The DOCX shares the same source and the same pandoc binary and differs ONLY in not passing through the HTML — isolating the defect to the HTML step and ruling out both a corrupt source and a broken pandoc.
+
+THE FIX IS NOT JUST THE FLAG. The generator is mtime-guarded ([[ ! -f "$html" || "$md" -nt "$pdf" ]]), measured: a full export run AFTER docs_chain rewrote Status.html standalone did NOT revert it. So adding -s heals a file only when its .md is next touched — the corpus would heal silently, unevenly, over an unbounded period, with no point at which anyone can declare it done. Acceptance (c) therefore requires a FORCED regeneration pass, and HTML must be regenerated BEFORE the PDFs, since regenerating PDFs first re-bakes the same mojibake from the still-broken fragment.
+
+DELIBERATELY NOT FIXED IN THIS PASS. The flag is one character but the regeneration is ~286 HTML plus their PDFs in a single commit, and four subagent streams are live in this checkout. A 600-file rewrite during parallel dispatch is a §11.4.84 collision waiting to happen. This is scoped for a dedicated pass on a quiescent tree.
+
+## BOB-170 — Capture one quiescent GREEN run of the scaling growth gate, which has never executed under its own loadavg<=0.75/cpu precondition and has no scheduled window that would make it
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Medium
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT. The BOB-109 scaling suite gates its two timing tests on loadavg_1m/nproc <= 0.75 — on this 8-cpu host, a 1-minute load average at or below 6.0 — and SKIPs loudly otherwise. That gate is correct and was adopted for a good reason (§11.4.201(8)): the author validated a 2.10 growth-exponent threshold, then observed it FALSE-FAIL correct code at load 11.06 (baseline span 2.136), and at load 15-23 measured baseline spans of 2.358 against injected-cubic mutants at 2.278-2.331 — the signal is smaller than the noise and the two are not separable in either direction. Gating was the honest response.
+
+THE PROBLEM. The gate has consequently NEVER RUN under its own precondition. Every recorded run today measured load 9.15-23; the independent reviewer measured 9.66 during review; the conductor measured 6.45 at its lowest. GREEN polarity WAS observed — at loads 9.4-11.6 (span 1.882) and in three stability runs (1.759/1.832/1.848) — but never once beneath the shipped ceiling. The author states this honestly as an inference from data rather than a run they can paste, and the reviewer confirmed the inference is sound (quiescence is strictly more favourable). Sound inference is still not an observed run.
+
+WHY THAT MATTERS (§11.4.226). A registered, topology-present guard that never executes is indistinguishable from a guard that would fail if it did. Nothing currently ensures it ever runs: no freshness contract, no scheduled quiet-window invocation, no tracked item — which is precisely the unexecuted-standing-guard class §11.4.226 names, where registration gets treated as coverage while execution is nobody's job. The forensic precedent in that anchor is two standing guards that, when finally executed, immediately emitted latent FAILs.
+
+ACCEPTANCE. (a) Execute both quiescence-gated timing tests on a host whose 1-minute loadavg is genuinely <= 0.75/cpu — no agent fleet, no concurrent build — and capture the run as an artifact showing the resolved load reading alongside the measured span exponent, so the precondition is provable from the artifact and not asserted. (b) Record the observed GREEN polarity in the item and in the test source, replacing the current honest-inference note. (c) If the gate FAILS under genuine quiescence, that is the finding this item exists to surface, and it reopens the threshold-calibration question rather than being worked around. (d) Establish a freshness contract per §11.4.226: how stale a quiescent verdict may be before the gate counts as uncovered again, so this does not silently return to never-executing.
+
+HONEST BOUNDARY. This item does not claim the gate is wrong. The evidence points the other way — quiescence is strictly more favourable than the loads where GREEN was already observed. It claims only that the run has not happened, and that an unexecuted guard cannot be cited as coverage.
+
+PROVENANCE. Raised as IMPORTANT-2 by the independent Fable-substrate reviewer of the BOB-109 work, and independently corroborated: the reviewer verified the SKIP is loud and prints its resolved numbers, and confirmed the shipped tests do SKIP at today's load.
 

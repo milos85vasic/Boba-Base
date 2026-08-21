@@ -1,0 +1,94 @@
+<h1 id="bob-169-root-cause-proven-acceptance-a-satisfied">BOB-169 — root
+cause PROVEN (acceptance (a) satisfied)</h1>
+<p>Captured 2026-08-21. The filed item asked whoever took it to
+“determine by invocation which generator emits fragments and under what
+conditions”. That is now answered from source plus a falsifiable
+prediction that held, so acceptance (a) can be closed rather than
+repeated.</p>
+<h2 id="the-generator">The generator</h2>
+<p><code>scripts/generate_markdown_exports.sh:57</code></p>
+<pre><code>pandoc -f markdown -t html5 -o &quot;$html&quot; &quot;$md&quot; --metadata title=&quot;$(basename &quot;$md&quot; .md)&quot;</code></pre>
+<p>No <code>--standalone</code> / <code>-s</code>. Without it pandoc
+emits a BODY FRAGMENT — no <code>&lt;!DOCTYPE&gt;</code>, no
+<code>&lt;html&gt;</code>, no <code>&lt;head&gt;</code>, and therefore
+no <code>&lt;meta charset&gt;</code>.</p>
+<p>A tell that the flag was intended and lost:
+<code>--metadata title=</code> is passed on that same line, and the
+title can only ever render inside a standalone document’s
+<code>&lt;head&gt;&lt;title&gt;</code>. As written the script computes a
+title it is structurally incapable of emitting.</p>
+<h2
+id="the-two-branches-disagree-and-the-fallback-is-the-correct-one">The
+two branches disagree, and the FALLBACK is the correct one</h2>
+<p>The <code>else</code> branch (python-markdown, used only when pandoc
+is ABSENT) writes:</p>
+<pre><code>&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;title&gt;{title}&lt;/title&gt;&lt;/head&gt;...</code></pre>
+<p>So the LESS-preferred path is well-formed and the PREFERRED path is
+defective. The consequence is inverted from the usual: a host WITHOUT
+pandoc produces correct exports, and a properly-provisioned host
+produces broken ones. That is why this survived — the defect is
+invisible on exactly the machines least likely to be treated as
+degraded.</p>
+<h2 id="the-pdf-mechanism-proven-no-longer-hypothesis">The PDF mechanism
+— proven, no longer hypothesis</h2>
+<p><code>generate_markdown_exports.sh:76</code></p>
+<pre><code>weasyprint &quot;$html&quot; &quot;$pdf&quot;</code></pre>
+<p>The PDF is rendered FROM the fragment HTML. Given no encoding
+declaration, weasyprint applies its fallback, and the UTF-8 bytes are
+decoded as latin-1 and BAKED INTO the PDF text layer as glyphs. An
+earlier revision of BOB-169 recorded this as an untraced hypothesis; it
+is now read directly from the source chain.</p>
+<h2 id="the-falsifiable-prediction-that-confirms-it">The falsifiable
+prediction that confirms it</h2>
+<p>DOCX is generated on a THIRD path —
+<code>pandoc -f markdown -t docx</code> at line 85, direct from
+markdown, never touching the HTML. If the chain above is correct, the
+DOCX must be CLEAN while its .html and .pdf siblings are not. Measured
+on docs/BOBA_DATABASE.*:</p>
+<pre><code>.docx  -&gt;  0 mojibake sequences,  7 clean § characters   (word/document.xml)
+.pdf   -&gt;  &#39;Â§ 5&#39;, &#39;Jackettâ€™s&#39;, &#39;â†&#39;                    (pdftotext)
+.html  -&gt;  no DOCTYPE, no charset, 30 lines of non-ASCII</code></pre>
+<p>The DOCX is the control. It shares the same source markdown and the
+same pandoc binary, and differs only in NOT passing through the
+charset-less HTML — and it is clean. That isolates the defect to the
+HTML step and rules out a corrupt source or a broken pandoc.</p>
+<h2 id="the-fix">The fix</h2>
+<p>Add <code>-s</code> (or <code>--standalone</code>) to line 57.
+pandoc’s default html5 standalone template emits
+<code>&lt;meta charset="utf-8" /&gt;</code> — verified empirically, not
+assumed: when docs_chain regenerated docs/features/Status.html with a
+standalone pipeline, the diff was 183 insertions / 0 deletions and the
+inserted preamble contained exactly that meta tag.</p>
+<p>Then regenerate. Note the blast radius honestly: 286 .html files plus
+their PDFs change in one commit, and every PDF must be re-rendered AFTER
+the HTML is fixed — regenerating PDFs first would re-bake the same
+mojibake.</p>
+<h2 id="what-is-still-not-measured">What is still NOT measured</h2>
+<p>How many of the ~300 PDFs carry baked mojibake. One was probed. The
+286-file census covered .html only. Count it; do not extrapolate.</p>
+<h2
+id="nuance-discovered-after-the-fact-the-generator-is-mtime-guarded">Nuance
+discovered after the fact: the generator is mtime-guarded</h2>
+<p><code>generate_markdown_exports.sh</code> only (re)generates when</p>
+<pre><code>[[ ! -f &quot;$html&quot; || &quot;$md&quot; -nt &quot;$pdf&quot; ]]</code></pre>
+<p>Measured consequence: a full <code>workable-items-export.sh</code>
+run AFTER docs_chain had rewritten docs/features/Status.html as a
+standalone document did NOT revert it —
+<code>docs_chain verify --all</code> still reported both contexts
+in-sync. The export skipped the file because its HTML is now newer than
+its source.</p>
+<p>Two implications for the fix:</p>
+<ol type="1">
+<li>Adding <code>-s</code> to line 57 will NOT heal the 286 existing
+fragments. They will be regenerated only when their .md is next touched
+— so the corpus would heal silently, unevenly, and over an unbounded
+period, with no point at which anyone can say it is done. The fix
+therefore needs a FORCED regeneration pass, not just the flag.</li>
+<li>It also explains why this defect is so old and so quiet: files are
+rewritten only on source change, so a fragment minted once persists
+indefinitely, and the corpus accumulated 286 of them one document at a
+time.</li>
+</ol>
+<p>Order matters in that forced pass: HTML must be regenerated BEFORE
+the PDFs, because weasyprint reads the HTML. Regenerating PDFs first
+re-bakes the same mojibake from the still-charset-less fragment.</p>
