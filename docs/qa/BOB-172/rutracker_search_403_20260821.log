@@ -1,0 +1,47 @@
+=== rutracker search endpoint returns 403 with Cloudflare challenge markers ===
+captured: 2026-08-21T21:00:18Z   HEAD: 02e09ca
+NOTE: all probes UNAUTHENTICATED — no cookie file was read, no credential
+      value appears in this artifact (§11.4.10).
+
+--- probe 1: forum index ---
+  GET https://rutracker.org/forum/index.php
+    http_code=200  size=96283
+    <title>RuTracker.org</title>, <meta charset="Windows-1251">, canonical link present
+    challenge markers: 0    -> the site itself is REACHABLE and serving real content
+
+--- probe 2: SEARCH endpoint (the path that matters) ---
+  GET https://rutracker.org/forum/tracker.php?nm=debian
+    http_code=403  size=5351
+    challenge markers (Just a moment|cf-chl|challenge-platform): 1
+    login markers (login_username|form_token|Вход):              0
+    result-row marker (trs-tr-):                                  0
+
+READING: the 403 is BOT PROTECTION, not an auth redirect. Zero login markers
+means the server is not asking us to sign in — it is refusing the request
+before authentication is even considered. So supplying valid credentials or
+a fresh cookie jar does NOT address this.
+
+=== A CORRECTION I HAD TO MAKE MID-INVESTIGATION (§11.4.199) ===
+An independent reviewer reported that rutracker serves a Cloudflare challenge
+to curl even WITH cookies. I set out to verify it, probed index.php, got a
+clean 200 with no challenge markers, and was one step from recording the
+reviewer's claim as REFUTED.
+
+That conclusion would have been wrong, and wrong for a textbook reason: I used
+a DIFFERENT sequence than the one that reaches the precondition. index.php is
+not the search path. §11.4.199 says a repro that misses the precondition
+proves NOTHING — it is not evidence of absence — and this is exactly that
+shape. The reviewer's claim was substantially correct; my probe was aimed at
+the wrong endpoint.
+
+What the two probes together establish is SHARPER than either the reviewer's
+claim or my near-refutation: it is not 'rutracker is behind Cloudflare'
+(the index is open); it is 'the SEARCH endpoint specifically returns 403'.
+
+=== WHY THIS MATTERS BEYOND ONE ITEM ===
+This independently explains an observation recorded in TWO separate places as
+an unexplained anomaly: docs/qa/BOB-093/live_search_smoke.txt shows rutracker
+returning status=empty, results_count=0 in 164ms, and the BOB-136 audit
+reached the same observation independently. Both recorded the symptom; neither
+had the cause. 164ms is far too fast for a real search and is entirely
+consistent with an immediate 403.
