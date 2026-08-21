@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 15
-**Last modified:** 2026-08-20T11:30:00+02:00
+**Revision:** 16
+**Last modified:** 2026-08-21T15:05:00Z
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -727,6 +727,80 @@ honest about starting now, not claiming a false complete history.
   be the §11.4.226 evidence-class bluff. The fresh-clone measurement is real and repeatable; the
   migration is not attempted because it could not be proven safe within this change's file scope.
 
+### BOB-CONTAINER-WRITES-NOT-OPERATOR-OWNED — every file the system produced was owned by an identity the operator did not have
+
+- **id:** feature `002-user-owned-downloads` (spec + tasks under
+  `specs/002-user-owned-downloads/`); no single `BOB-NNN` mints the defect itself.
+- **date:** 2026-08-21
+- **channel:** `operator-report` — the operator hit it while using the product: downloaded
+  content, and the project's own `config/` tree, could not be moved, edited, or deleted by
+  the account that started the system. Nothing in the automated regime raised it, before or
+  after.
+- **summary:** Every file the containerised services wrote landed at host uid `100999` — a
+  rootless-container sub-uid with **no host account**. Measured on 2026-08-21 before the
+  fix: the download root rendered as `UNKNOWN:UNKNOWN` and held content at 100999; `config/`
+  held **51** items at 100999; and `config/boba.db` (mode `600`, owner unresolvable) could
+  not be read by the operator at all — which silently made the backup procedure that
+  `docs/BOBA_DATABASE.md` § 3 *mandates* impossible to perform. The document prescribed no
+  workaround because it never knew it was blocked.
+- **escape-audit:** **No automated check ever asserted the OWNERSHIP of a file the system
+  produced.** This is a scope gap with a precise shape, not a missing idea. The suites that
+  covered these paths asserted *completion* and *response status*: a download finished, an
+  endpoint returned success, a file appeared where it was expected. Every one of those
+  properties is **true of a file owned by 100999** — they stayed green for the entire life
+  of the defect, and would have stayed green indefinitely, because none of them ever read a
+  produced file's `st_uid` back from the host and compared it to anything. The defect was
+  therefore invisible **by construction** to the whole standing regime, not merely missed by
+  it. Two compounding factors, both §11.4.201-class: (a) ownership of a location **cannot be
+  inferred from the location itself** — the download root was owned by uid 1000 and still
+  received 100999-owned files, so any check reading the directory's own owner, the
+  configured `PUID`, or "no error occurred" would have passed while broken (a proxy standing
+  in for the condition); and (b) a **host-side** write by the operator produces an
+  operator-owned file even in the directory whose *container* writes land at 100999 —
+  measured during Phase 1 of the fix, where the shared host probe returned `ok` for exactly
+  that directory. So even the obvious first version of the check would have been a false
+  pass. The check that would have caught it is precisely the one that now exists: write a
+  real file **through the real application path**, read the owner back **from the host**, and
+  compare it to the operator's uid.
+- **new-check:** four artifacts, all landed on branch `002-user-owned-downloads`:
+  1. `tests/ownership/test_container_writes_owned_files.py` — the §11.4.115 **RED**. A
+     throwaway container writes a file and a directory tree into the location as the
+     service's declared identity; the test reads the owner back from the host. Observed
+     **failing at uid `100999`** before the fix (the test's own docstring records
+     `RED (pre-fix): owner uid is 100999 — an identity with no host account`); passes now.
+     Covers FR-002 at every level of a created tree, not only the leaf file.
+  2. `tests/unit/test_ownership_precondition.sh` — contract suite for
+     `scripts/ownership_precondition.sh`, the fail-closed startup check that refuses to
+     start when a declared location cannot produce operator-owned files. Includes the
+     §11.4.201(1) both-directions set the contract mandates: golden-bad (wrongly-owned
+     location → exit 1), golden-good (→ exit 0), and a negative control (an `optional: true`
+     location that is simply absent → exit 0, **not** a refusal).
+  3. `tests/unit/test_ownership_repair.sh` — contract suite for
+     `scripts/ownership_repair.sh`, including the interrupt case (kill mid-run → marker
+     absent → next run resumes) and the preserve-mode case (`config/boba.db` keeps its exact
+     bits after repair).
+  4. **`CM-OWNERSHIP-INVARIANTS`** — the standing gate, wired as **invariant 33** of
+     `scripts/pre_build_verification.sh`, delegating to
+     `scripts/pre_build/check_cm_ownership_invariants.sh` with its paired §1.1 mutation
+     `check_cm_ownership_invariants_mutation_test.sh` (revert one service's ownership route →
+     the gate must FAIL). This is what stops the route from being silently reverted later —
+     per §11.4.226, a source-only fix with no standing guard is exactly the closure class
+     that reopens the next time someone edits `docker-compose.yml`.
+- **Honest boundary (§11.4.6):** the defect is fixed and the checks above are in place, but
+  the escape itself is not undone — this is recorded as a **coverage escape**, not as a
+  clean closure, because a human using the product was the discovery layer and §11.4.238
+  makes that a failure of the regime regardless of how well the defect was then fixed. Two
+  residuals are stated rather than glossed: (a) the `start.sh` wiring
+  (`run_ownership_gate()`, refusing to start on precondition exit `1` **or** `2` and on a
+  failed repair) is present in the working tree as of 2026-08-21T15:10Z but was still
+  **uncommitted** when this entry was written — so the gate is not yet proven by a run of the
+  committed tree, and task **T031** remains the tracking item until it is; (b) the
+  container-write probe inside `scripts/ownership_precondition.sh` needs
+  a container runtime and a locally-present service image, and honestly SKIPs with a named
+  reason where it has neither (§11.4.3) — on such a host the standing check verifies the
+  declared ownership **route** (configuration) rather than observed **behaviour**, and says
+  so in its own output rather than reporting the fallback as the real condition.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
@@ -742,7 +816,8 @@ honest about starting now, not claiming a false complete history.
 | 2026-08-20 (incremental, tooling-defect sweep during a commit/push round — 2 new `### ` entries: the `compute-badges.sh` carrier-match README corruption + non-idempotent TESTING.md regeneration, and the repo-wide gitignore-shadows-tracked-files break of the §11.4.234 commit mechanism) | 0 | 2 (`agent-code-reading` x2: COMPUTE-BADGES-CARRIER-MATCH, GITIGNORE-SHADOWS-TRACKED-FILES) | 100% |
 | 2026-08-20 (incremental, systematic-debugging of the 3 quarantined bash suites — 1 new `### ` entry: the non-hermetic dead-scratchpad-path + plain-`cp` mtime-bump root cause behind all three) | 0 | 1 (`agent-code-reading` x1: NON-HERMETIC-TESTS-MUTATE-REAL-TREE) | 100% |
 | 2026-08-20 (incremental, subagent fan-out — 1 new `### ` entry: invariant 16 mtime staleness is non-reproducible across fresh clones, found while investigating the content-hash migration) | 0 | 1 (`agent-code-reading` x1: EXPORT-SYNC-MTIME-NOT-REPRODUCIBLE-ON-FRESH-CLONE) | 100% |
-| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **22** | **100%** |
+| 2026-08-21 (incremental, feature 002-user-owned-downloads — 1 new `### ` entry: every container-produced file owned by uid 100999, reported by the operator while using the product; no automated check had ever asserted a produced file's owner) | 0 | 1 (`operator-report` x1: BOB-CONTAINER-WRITES-NOT-OPERATOR-OWNED) | 100% |
+| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **23** | **100%** |
 
 **Pre-existing check-vs-table mismatch, found and fixed during this backfill (§11.4.6, not
 silently patched around):** `scripts/pre_build_verification.sh` invariant 19

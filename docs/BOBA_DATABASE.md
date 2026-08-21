@@ -1,7 +1,7 @@
 # Boba System Database
 
-**Revision:** 1
-**Last modified:** 2026-06-06T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-08-21T15:02:00Z
 
 The `boba-jackett` Go service (port `7189`) owns a SQLite system
 database at `config/boba.db` (default; override with `BOBA_DB_PATH`).
@@ -118,6 +118,26 @@ they were never written back to `.env`.
 
 ## 3. Backup procedure
 
+> **Performable as of 2026-08-21.** This procedure was previously impossible to
+> carry out, and the document did not say so — it prescribed no workaround
+> because it never recorded the blockage. `config/boba.db` is mode `600`, and
+> its owner was a rootless-container sub-uid (`100999`) with no host account,
+> so the operator could not read their own credential database and neither `cp`
+> nor `sqlite3 .backup` could open it. Feature `002-user-owned-downloads`
+> restored the file to the operator. **Measured 2026-08-21:**
+>
+> ```
+> config/boba.db mode=600 owner=milosvasic(1000) group=milosvasic(1000) size=81920
+> ```
+>
+> A copy of the file read cleanly (81920 bytes) and the source stayed mode
+> `600` afterwards. No elevation, no `podman unshare`, and no chown-first step
+> is needed — if you find yourself reaching for one, the ownership regression
+> has returned: run `scripts/ownership_precondition.sh` (it names the offending
+> location) and then `scripts/ownership_repair.sh`. See
+> [`scripts/ownership_repair.md`](scripts/ownership_repair.md) and
+> [`guides/file-ownership.md`](guides/file-ownership.md).
+
 Two acceptable approaches.
 
 **Cold backup (service stopped):**
@@ -143,6 +163,27 @@ the master key is useless without the DB.
 
 Both files MUST be stored with mode `0600` (or stricter) on persistent
 media; treat them as you would a private SSH key.
+
+### The fix restored the OWNER, not the mode — and the mode must stay `600`
+
+`config/boba.db` remains mode `600` and **MUST** stay mode `600`. The ownership
+repair changes who owns the file; it explicitly does not relax who may read it
+(the file is declared `preserve_mode: true` in `config/owned_paths.yaml`, and
+`scripts/ownership_repair.sh` restores each item's original permission bits
+after the `chown`, because a non-root `chown(2)` can clear them).
+
+This distinction is the whole point. A backup that started succeeding because
+the file had become world-readable would not be a fix — it would be a security
+regression wearing a fix's clothes: a credential store made readable by every
+account on the host, traded for a convenience the correct owner already
+provides. The backup works now because the file **belongs** to the operator,
+not because it was opened up.
+
+If `stat -c '%a %U' config/boba.db` ever reports anything wider than `600`, or
+an owner that is not the account running the system, stop and treat it as a
+defect. The standing guards are the Layer 4 challenge
+`boba_db_file_perms_challenge.sh` (§ 4 below) for the mode, and pre-build
+invariant 33 `CM-OWNERSHIP-INVARIANTS` for the ownership route.
 
 ## 4. File permissions
 

@@ -1,0 +1,3475 @@
+{
+ "_comment": "BOB-145 characterization golden (\u00a711.4.243). Captured from the PRE-FIX deduplicator so that any change to which results merge together is caught. Regenerate ONLY with an explicit, reviewed decision that the dedup semantics were meant to change \u2014 a silent regeneration voids the guard.",
+ "captured_from_deduplicator_sha256": "5b977c32008a00177907ff6403d9147d3cf43dea9d4efe3af55354c515cd7391",
+ "captured_at_repo_head": "f28e91d7d877ae51a4cacd669174a1ecd84e113f",
+ "corpus_size": 400,
+ "group_count": 219,
+ "groups": [
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000000",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000028",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000140",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000154"
+   ],
+   "title": "Vertigo Directors Cut 113 2019 1080p BluRay x265-RARBG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 700,
+   "total_leechers": 100
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000001",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000029",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000155"
+   ],
+   "title": "Vertigo Directors Cut 113 2020 2160p WEB-DL HEVC-YTS",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 581,
+   "total_leechers": 83
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000002",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000002a",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000142",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000156"
+   ],
+   "title": "Alien Directors Cut 114 2021 720p WEBRip x264-NTb",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "uhd_4k",
+   "total_seeds": 756,
+   "total_leechers": 108
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000003",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000002b",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000012f"
+   ],
+   "title": "Gladiator Directors Cut 1 2018 720p HDRip x264-FLUX",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 43,
+   "total_leechers": 49
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000004",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000130"
+   ],
+   "title": "Gladiator Directors Cut 1 2019 1080p BluRay x265-CMRG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 56,
+   "total_leechers": 8
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000005",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000002d"
+   ],
+   "title": "Gladiator Directors Cut 1 2020 2160p WEB-DL HEVC-RARBG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 50,
+   "total_leechers": 50
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000006",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000002e",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000132"
+   ],
+   "title": "Interstellar Directors Cut 2 2021 720p WEBRip x264-YTS",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 106,
+   "total_leechers": 58
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000007",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000002f",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000133"
+   ],
+   "title": "Interstellar Directors Cut 2 2022 1080p HDRip x265-NTb",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 127,
+   "total_leechers": 61
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000008",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000044",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000080",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000bc",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000170"
+   ],
+   "title": "Interstellar Extended 22 2019 2160p BluRay HEVC-FLUX",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 820,
+   "total_leechers": 110
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000009",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000135"
+   ],
+   "title": "Casablanca Directors Cut 103 2020 720p WEB-DL x264-CMRG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 126,
+   "total_leechers": 18
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000000a"
+   ],
+   "title": "Casablanca Directors Cut 3 2017 1080p WEBRip x265-RARBG",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 70,
+   "total_leechers": 10
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000000b",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000033"
+   ],
+   "title": "Casablanca Directors Cut 3 2018 2160p HDRip HEVC-YTS",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 134,
+   "total_leechers": 12
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000000c",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000034"
+   ],
+   "title": "Whiplash Directors Cut 4 2019 720p BluRay x264-NTb",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 148,
+   "total_leechers": 14
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000000d",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000035",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000139"
+   ],
+   "title": "Whiplash Directors Cut 4 2020 1080p WEB-DL x265-FLUX",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 253,
+   "total_leechers": 29
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000000e",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000013a"
+   ],
+   "title": "Whiplash Directors Cut 4 2021 2160p WEBRip HEVC-CMRG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 196,
+   "total_leechers": 28
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000000f",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000037"
+   ],
+   "title": "Arrival Directors Cut 5 2022 720p HDRip x264-RARBG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 190,
+   "total_leechers": 20
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000010",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000013c"
+   ],
+   "title": "Arrival Directors Cut 105 2019 1080p BluRay x265-YTS",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 224,
+   "total_leechers": 32
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000011",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000013d"
+   ],
+   "title": "Arrival Directors Cut 105 2020 2160p WEB-DL HEVC-NTb",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 238,
+   "total_leechers": 34
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000012",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000013e"
+   ],
+   "title": "Parasite Directors Cut 106 2021 720p WEBRip x264-FLUX",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 252,
+   "total_leechers": 36
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000013"
+   ],
+   "title": "Parasite Directors Cut 6 2018 1080p HDRip x265-CMRG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 133,
+   "total_leechers": 19
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000014",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000002c"
+   ],
+   "title": "Parasite Directors Cut 6 2019 2160p BluRay HEVC-RARBG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 148,
+   "total_leechers": 64
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000015",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000141"
+   ],
+   "title": "Oppenheimer Directors Cut 7 2020 720p WEB-DL x264-YTS",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 294,
+   "total_leechers": 42
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000016"
+   ],
+   "title": "Oppenheimer Directors Cut 7 2021 1080p WEBRip x265-NTb",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 154,
+   "total_leechers": 22
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000017",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000143"
+   ],
+   "title": "Oppenheimer Directors Cut 7 2022 2160p HDRip HEVC-FLUX",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 322,
+   "total_leechers": 46
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000018",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000144",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000158"
+   ],
+   "title": "Dune Directors Cut 108 2019 720p BluRay x264-CMRG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "uhd_4k",
+   "total_seeds": 344,
+   "total_leechers": 92
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000019",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000031",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000131",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000145",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000159"
+   ],
+   "title": "Dune Directors Cut 108 2020 1080p WEB-DL x265-RARBG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 443,
+   "total_leechers": 149
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000001a",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000146",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000015a"
+   ],
+   "title": "Dune Directors Cut 108 2021 2160p WEBRip HEVC-YTS",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 386,
+   "total_leechers": 98
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000001b",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000147"
+   ],
+   "title": "Amadeus Directors Cut 9 2018 720p HDRip x264-NTb",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 378,
+   "total_leechers": 54
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000001c",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000148",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000015c"
+   ],
+   "title": "Amadeus Directors Cut 9 2019 1080p BluRay x265-FLUX",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 428,
+   "total_leechers": 104
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000001d",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000149",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000015d"
+   ],
+   "title": "Amadeus Directors Cut 9 2020 2160p WEB-DL HEVC-CMRG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 449,
+   "total_leechers": 107
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000001e",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000012e",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000136",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000014a"
+   ],
+   "title": "Chinatown Directors Cut 10 2021 720p WEBRip x264-RARBG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "uhd_4k",
+   "total_seeds": 504,
+   "total_leechers": 72
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000001f",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000137",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000014b",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000015f"
+   ],
+   "title": "Chinatown Directors Cut 10 2022 1080p HDRip x265-YTS",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 568,
+   "total_leechers": 74
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000020",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000138",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000014c",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000160"
+   ],
+   "title": "Chinatown Directors Cut 110 2019 2160p BluRay HEVC-NTb",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 596,
+   "total_leechers": 78
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000021",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000014d",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000161"
+   ],
+   "title": "Braveheart Directors Cut 111 2020 720p WEB-DL x264-FLUX",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "uhd_4k",
+   "total_seeds": 533,
+   "total_leechers": 69
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000022",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000014e",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000162"
+   ],
+   "title": "Braveheart Directors Cut 111 2021 1080p WEBRip x265-CMRG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 554,
+   "total_leechers": 72
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000023",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000032",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000013b",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000014f",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000015e",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000163"
+   ],
+   "title": "Braveheart Directors Cut 11 2018 2160p HDRip HEVC-RARBG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 780,
+   "total_leechers": 90
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000024",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000150"
+   ],
+   "title": "Memento Directors Cut 12 2019 720p BluRay x264-YTS",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 504,
+   "total_leechers": 72
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000025",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000151"
+   ],
+   "title": "Memento Directors Cut 12 2020 1080p WEB-DL x265-NTb",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 518,
+   "total_leechers": 74
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000026",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000152"
+   ],
+   "title": "Memento Directors Cut 12 2021 2160p WEBRip HEVC-FLUX",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 532,
+   "total_leechers": 76
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000027",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000013f",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000153"
+   ],
+   "title": "Vertigo Directors Cut 13 2022 720p HDRip x264-CMRG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 679,
+   "total_leechers": 97
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000030"
+   ],
+   "title": "Heat Directors Cut 16 2015 720p BluRay x264-FLUX",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 36,
+   "total_leechers": 48
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000036"
+   ],
+   "title": "Prisoners Directors Cut 18 2021 720p WEBRip x264-CMRG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 78,
+   "total_leechers": 4
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000038",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000164"
+   ],
+   "title": "Prisoners Directors Cut 118 2019 2160p BluRay HEVC-YTS",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 184,
+   "total_leechers": 12
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000039",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000165"
+   ],
+   "title": "Nightcrawler Directors Cut 119 2020 720p WEB-DL x264-NTb",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 198,
+   "total_leechers": 14
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000003a",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000166"
+   ],
+   "title": "Nightcrawler Directors Cut 119 2021 1080p WEBRip x265-FLUX",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 212,
+   "total_leechers": 16
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000003b",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000167"
+   ],
+   "title": "Nightcrawler Directors Cut 19 2018 2160p HDRip HEVC-CMRG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 226,
+   "total_leechers": 18
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000003c",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000078",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a0",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000168"
+   ],
+   "title": "Inception Extended 20 2019 720p BluRay x264-RARBG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 700,
+   "total_leechers": 50
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000003d",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000079",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a1",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000169"
+   ],
+   "title": "Inception Extended 20 2020 1080p WEB-DL x265-YTS",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 728,
+   "total_leechers": 54
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000003e",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000007a",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a2",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000016a"
+   ],
+   "title": "Inception Extended 20 2021 2160p WEBRip HEVC-NTb",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 756,
+   "total_leechers": 58
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000003f",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000007b",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a3",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000016b"
+   ],
+   "title": "Gladiator Remastered 41 2018 720p HDRip x264-FLUX",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 784,
+   "total_leechers": 62
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000040",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000007c",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a4",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000016c"
+   ],
+   "title": "Gladiator Remastered 41 2019 1080p BluRay x265-CMRG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 812,
+   "total_leechers": 66
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000041",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000007d",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a5",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000016d"
+   ],
+   "title": "Gladiator Remastered 41 2020 2160p WEB-DL HEVC-RARBG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 840,
+   "total_leechers": 70
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000042",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000007e",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000016e"
+   ],
+   "title": "Interstellar Remastered 42 2021 720p WEBRip x264-YTS",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 606,
+   "total_leechers": 58
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000043",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000007f",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000016f"
+   ],
+   "title": "Interstellar Remastered 42 2022 1080p HDRip x265-NTb",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 627,
+   "total_leechers": 61
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000045",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000081",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000171"
+   ],
+   "title": "Casablanca Extended 23 2020 720p WEB-DL x264-CMRG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 369,
+   "total_leechers": 67
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000046",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000082",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000172"
+   ],
+   "title": "Casablanca Extended 23 2021 1080p WEBRip x265-RARBG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 390,
+   "total_leechers": 70
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000047",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000083",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000173"
+   ],
+   "title": "Casablanca Extended 23 2022 2160p HDRip HEVC-YTS",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 411,
+   "total_leechers": 73
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000048",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000084",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000174"
+   ],
+   "title": "Whiplash Extended 124 2019 720p BluRay x264-NTb",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 432,
+   "total_leechers": 76
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000049",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000085",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000175"
+   ],
+   "title": "Whiplash Extended 124 2020 1080p WEB-DL x265-FLUX",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 453,
+   "total_leechers": 79
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000004a",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000086",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000176"
+   ],
+   "title": "Whiplash Extended 124 2021 2160p WEBRip HEVC-CMRG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 474,
+   "total_leechers": 82
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000004b",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000087",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000177"
+   ],
+   "title": "Arrival Extended 25 2018 720p HDRip x264-RARBG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 495,
+   "total_leechers": 85
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000004c",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000088",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000178"
+   ],
+   "title": "Arrival Extended 25 2019 1080p BluRay x265-YTS",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 516,
+   "total_leechers": 88
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000004d",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000089",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000179"
+   ],
+   "title": "Arrival Extended 25 2020 2160p WEB-DL HEVC-NTb",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 537,
+   "total_leechers": 91
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000004e",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000008a",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000017a"
+   ],
+   "title": "Parasite Extended 26 2021 720p WEBRip x264-FLUX",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 558,
+   "total_leechers": 94
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000004f",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000008b",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000017b"
+   ],
+   "title": "Parasite Extended 26 2022 1080p HDRip x265-CMRG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 579,
+   "total_leechers": 97
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000050",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000008c",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000017c"
+   ],
+   "title": "Parasite Extended 126 2019 2160p BluRay HEVC-RARBG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 600,
+   "total_leechers": 100
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000051",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000008d",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000017d"
+   ],
+   "title": "Oppenheimer Extended 127 2020 720p WEB-DL x264-YTS",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 621,
+   "total_leechers": 103
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000052",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000008e",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000017e"
+   ],
+   "title": "Oppenheimer Extended 127 2021 1080p WEBRip x265-NTb",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 642,
+   "total_leechers": 106
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000053",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000008f",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000017f"
+   ],
+   "title": "Oppenheimer Extended 27 2018 2160p HDRip HEVC-FLUX",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 663,
+   "total_leechers": 109
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000054",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000090",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000180"
+   ],
+   "title": "Dune Extended 28 2019 720p BluRay x264-CMRG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 684,
+   "total_leechers": 112
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000055",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000181"
+   ],
+   "title": "Dune Extended 28 2020 1080p WEB-DL x265-RARBG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 590,
+   "total_leechers": 70
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000056",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000092",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000182"
+   ],
+   "title": "Dune Extended 28 2021 2160p WEBRip HEVC-YTS",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 126,
+   "total_leechers": 118
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000057"
+   ],
+   "title": "Amadeus Extended 29 2022 720p HDRip x264-NTb",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 9,
+   "total_leechers": 37
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000058",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000094",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000184"
+   ],
+   "title": "Amadeus Remastered 49 2019 1080p BluRay x265-FLUX",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 168,
+   "total_leechers": 124
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000059",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000095",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000185"
+   ],
+   "title": "Amadeus Remastered 49 2020 2160p WEB-DL HEVC-CMRG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 189,
+   "total_leechers": 127
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000005a",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000096",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000186"
+   ],
+   "title": "Chinatown Remastered 50 2021 720p WEBRip x264-RARBG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 210,
+   "total_leechers": 80
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000005b",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000097",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000187"
+   ],
+   "title": "Chinatown Remastered 50 2022 1080p HDRip x265-YTS",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 231,
+   "total_leechers": 83
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000005c",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000098"
+   ],
+   "title": "Chinatown Extended 30 2019 2160p BluRay HEVC-NTb",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 208,
+   "total_leechers": 44
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000005d",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000099",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000189"
+   ],
+   "title": "Braveheart Extended 31 2020 720p WEB-DL x264-FLUX",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 273,
+   "total_leechers": 89
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000005e",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000018a"
+   ],
+   "title": "Braveheart Extended 31 2021 1080p WEBRip x265-CMRG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 116,
+   "total_leechers": 88
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000005f",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000009b",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000018b"
+   ],
+   "title": "Braveheart Remastered 51 2018 2160p HDRip HEVC-RARBG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 315,
+   "total_leechers": 95
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000060",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000009c",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000018c"
+   ],
+   "title": "Memento Remastered 52 2019 720p BluRay x264-YTS",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 336,
+   "total_leechers": 98
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000061",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000009d",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000018d"
+   ],
+   "title": "Memento Remastered 52 2020 1080p WEB-DL x265-NTb",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 357,
+   "total_leechers": 101
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000062",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000009e",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000018e"
+   ],
+   "title": "Memento Remastered 52 2021 2160p WEBRip HEVC-FLUX",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 378,
+   "total_leechers": 104
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000063"
+   ],
+   "title": "Vertigo Extended 33 2018 720p HDRip x264-CMRG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 93,
+   "total_leechers": 49
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000064"
+   ],
+   "title": "Vertigo Extended 33 2019 1080p BluRay x265-RARBG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 100,
+   "total_leechers": 0
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000065"
+   ],
+   "title": "Vertigo Extended 33 2020 2160p WEB-DL HEVC-YTS",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 107,
+   "total_leechers": 1
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000066"
+   ],
+   "title": "Alien Extended 34 2021 720p WEBRip x264-NTb",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 114,
+   "total_leechers": 2
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000067"
+   ],
+   "title": "Alien Extended 34 2022 1080p HDRip x265-FLUX",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 121,
+   "total_leechers": 3
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000068"
+   ],
+   "title": "Alien Extended 34 2015 2160p BluRay HEVC-CMRG",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 128,
+   "total_leechers": 4
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000069"
+   ],
+   "title": "Predator Extended 35 2016 720p WEB-DL x264-RARBG",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 135,
+   "total_leechers": 5
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000006a",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a6"
+   ],
+   "title": "Predator Remastered 55 2021 1080p WEBRip x265-YTS",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 404,
+   "total_leechers": 22
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000006b",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a7"
+   ],
+   "title": "Predator Remastered 55 2022 2160p HDRip HEVC-NTb",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 418,
+   "total_leechers": 24
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000006c",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a8"
+   ],
+   "title": "Heat Extended 36 2019 720p BluRay x264-FLUX",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 432,
+   "total_leechers": 26
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000006d"
+   ],
+   "title": "Heat Extended 36 2020 1080p WEB-DL x265-CMRG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 163,
+   "total_leechers": 9
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000006e",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000009a",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000aa"
+   ],
+   "title": "Heat Extended 36 2021 2160p WEBRip HEVC-RARBG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 638,
+   "total_leechers": 34
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000006f"
+   ],
+   "title": "Sicario Extended 37 2022 720p HDRip x264-YTS",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 177,
+   "total_leechers": 11
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000070",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ac",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000188"
+   ],
+   "title": "Sicario Remastered 57 2019 1080p BluRay x265-NTb",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 232,
+   "total_leechers": 76
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000071",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ad"
+   ],
+   "title": "Sicario Remastered 57 2020 2160p WEB-DL HEVC-FLUX",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 202,
+   "total_leechers": 36
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000072",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ae"
+   ],
+   "title": "Prisoners Remastered 58 2021 720p WEBRip x264-CMRG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 216,
+   "total_leechers": 38
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000073",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000af"
+   ],
+   "title": "Prisoners Extended 38 2018 1080p HDRip x265-RARBG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 230,
+   "total_leechers": 40
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000074",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b0"
+   ],
+   "title": "Prisoners Extended 38 2019 2160p BluRay HEVC-YTS",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 244,
+   "total_leechers": 42
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000075",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b1"
+   ],
+   "title": "Nightcrawler Extended 39 2020 720p WEB-DL x264-NTb",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 258,
+   "total_leechers": 44
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000076",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b2"
+   ],
+   "title": "Nightcrawler Extended 39 2021 1080p WEBRip x265-FLUX",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 272,
+   "total_leechers": 46
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000077",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b3"
+   ],
+   "title": "Nightcrawler Extended 39 2022 2160p HDRip HEVC-CMRG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 286,
+   "total_leechers": 48
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000091"
+   ],
+   "title": "Dune Remastered 48 2016 1080p WEB-DL x265-RARBG",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 115,
+   "total_leechers": 45
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000093",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000183"
+   ],
+   "title": "Amadeus Remastered 49 2018 720p HDRip x264-NTb",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 138,
+   "total_leechers": 84
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000009f",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000018f"
+   ],
+   "title": "Vertigo Remastered 53 2022 720p HDRip x264-CMRG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 306,
+   "total_leechers": 58
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000a9"
+   ],
+   "title": "Heat Remastered 56 2016 1080p WEB-DL x265-CMRG",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 283,
+   "total_leechers": 19
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ab"
+   ],
+   "title": "Sicario Remastered 57 2018 720p HDRip x264-YTS",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 297,
+   "total_leechers": 21
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b4",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000dc"
+   ],
+   "title": "Inception Theatrical 60 2019 720p BluRay x264-RARBG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 100,
+   "total_leechers": 50
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b5",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000dd"
+   ],
+   "title": "Inception Theatrical 60 2020 1080p WEB-DL x265-YTS",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 114,
+   "total_leechers": 52
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b6",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000de"
+   ],
+   "title": "Inception Theatrical 60 2021 2160p WEBRip HEVC-NTb",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 128,
+   "total_leechers": 54
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b7"
+   ],
+   "title": "Gladiator Theatrical 61 2022 720p HDRip x264-FLUX",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 81,
+   "total_leechers": 33
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b8"
+   ],
+   "title": "Gladiator Theatrical 61 2015 1080p BluRay x265-CMRG",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 88,
+   "total_leechers": 34
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000b9",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e1"
+   ],
+   "title": "Gladiator Theatrical 61 2016 2160p WEB-DL HEVC-RARBG",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 170,
+   "total_leechers": 60
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ba"
+   ],
+   "title": "Interstellar Theatrical 62 2017 720p WEBRip x264-YTS",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 102,
+   "total_leechers": 36
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000bb"
+   ],
+   "title": "Interstellar Theatrical 62 2018 1080p HDRip x265-NTb",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 109,
+   "total_leechers": 37
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000bd"
+   ],
+   "title": "Casablanca Theatrical 63 2020 720p WEB-DL x264-CMRG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 123,
+   "total_leechers": 39
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000be"
+   ],
+   "title": "Casablanca Theatrical 63 2021 1080p WEBRip x265-RARBG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 130,
+   "total_leechers": 40
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000bf"
+   ],
+   "title": "Casablanca Theatrical 63 2022 2160p HDRip HEVC-YTS",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 137,
+   "total_leechers": 41
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c0"
+   ],
+   "title": "Whiplash Theatrical 64 2015 720p BluRay x264-NTb",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 144,
+   "total_leechers": 42
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c1"
+   ],
+   "title": "Whiplash Theatrical 64 2016 1080p WEB-DL x265-FLUX",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 151,
+   "total_leechers": 43
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c2"
+   ],
+   "title": "Whiplash Theatrical 64 2017 2160p WEBRip HEVC-CMRG",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 158,
+   "total_leechers": 44
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c3"
+   ],
+   "title": "Arrival Theatrical 65 2018 720p HDRip x264-RARBG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 165,
+   "total_leechers": 45
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c4"
+   ],
+   "title": "Arrival Theatrical 65 2019 1080p BluRay x265-YTS",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 172,
+   "total_leechers": 46
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c5"
+   ],
+   "title": "Arrival Theatrical 65 2020 2160p WEB-DL HEVC-NTb",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 179,
+   "total_leechers": 47
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c6"
+   ],
+   "title": "Parasite Theatrical 66 2021 720p WEBRip x264-FLUX",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 186,
+   "total_leechers": 48
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c7"
+   ],
+   "title": "Parasite Theatrical 66 2022 1080p HDRip x265-CMRG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 193,
+   "total_leechers": 49
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c8"
+   ],
+   "title": "Parasite Theatrical 66 2015 2160p BluRay HEVC-RARBG",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 200,
+   "total_leechers": 0
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000c9"
+   ],
+   "title": "Oppenheimer Theatrical 67 2016 720p WEB-DL x264-YTS",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 207,
+   "total_leechers": 1
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ca"
+   ],
+   "title": "Oppenheimer Theatrical 67 2017 1080p WEBRip x265-NTb",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 214,
+   "total_leechers": 2
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000cb"
+   ],
+   "title": "Oppenheimer Theatrical 67 2018 2160p HDRip HEVC-FLUX",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 221,
+   "total_leechers": 3
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000cc"
+   ],
+   "title": "Dune Theatrical 68 2019 720p BluRay x264-CMRG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 228,
+   "total_leechers": 4
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000cd",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e5"
+   ],
+   "title": "Dune Theatrical 68 2020 1080p WEB-DL x265-RARBG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 338,
+   "total_leechers": 34
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ce"
+   ],
+   "title": "Dune Theatrical 68 2021 2160p WEBRip HEVC-YTS",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 242,
+   "total_leechers": 6
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000cf"
+   ],
+   "title": "Amadeus Theatrical 69 2022 720p HDRip x264-NTb",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 249,
+   "total_leechers": 7
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d0"
+   ],
+   "title": "Amadeus Theatrical 69 2015 1080p BluRay x265-FLUX",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 256,
+   "total_leechers": 8
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d1"
+   ],
+   "title": "Amadeus Theatrical 69 2016 2160p WEB-DL HEVC-CMRG",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 263,
+   "total_leechers": 9
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d2"
+   ],
+   "title": "Chinatown Theatrical 70 2017 720p WEBRip x264-RARBG",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 270,
+   "total_leechers": 10
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d3"
+   ],
+   "title": "Chinatown Theatrical 70 2018 1080p HDRip x265-YTS",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 277,
+   "total_leechers": 11
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d4"
+   ],
+   "title": "Chinatown Theatrical 70 2019 2160p BluRay HEVC-NTb",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 284,
+   "total_leechers": 12
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d5"
+   ],
+   "title": "Braveheart Theatrical 71 2020 720p WEB-DL x264-FLUX",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 291,
+   "total_leechers": 13
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d6",
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e6"
+   ],
+   "title": "Braveheart Theatrical 71 2021 1080p WEBRip x265-CMRG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 408,
+   "total_leechers": 44
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d7"
+   ],
+   "title": "Braveheart Theatrical 71 2022 2160p HDRip HEVC-RARBG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 5,
+   "total_leechers": 15
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d8"
+   ],
+   "title": "Memento Theatrical 72 2015 720p BluRay x264-YTS",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 12,
+   "total_leechers": 16
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000d9"
+   ],
+   "title": "Memento Theatrical 72 2016 1080p WEB-DL x265-NTb",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 19,
+   "total_leechers": 17
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000da"
+   ],
+   "title": "Memento Theatrical 72 2017 2160p WEBRip HEVC-FLUX",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 26,
+   "total_leechers": 18
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000db"
+   ],
+   "title": "Vertigo Theatrical 73 2018 720p HDRip x264-CMRG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 33,
+   "total_leechers": 19
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000df"
+   ],
+   "title": "Alien Theatrical 74 2022 1080p HDRip x265-FLUX",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 61,
+   "total_leechers": 23
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e0"
+   ],
+   "title": "Alien Theatrical 74 2015 2160p BluRay HEVC-CMRG",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 68,
+   "total_leechers": 24
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e2"
+   ],
+   "title": "Predator Theatrical 75 2017 1080p WEBRip x265-YTS",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 82,
+   "total_leechers": 26
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e3"
+   ],
+   "title": "Predator Theatrical 75 2018 2160p HDRip HEVC-NTb",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 89,
+   "total_leechers": 27
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e4"
+   ],
+   "title": "Heat Theatrical 76 2019 720p BluRay x264-FLUX",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 96,
+   "total_leechers": 28
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e7"
+   ],
+   "title": "Sicario Theatrical 77 2022 720p HDRip x264-YTS",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 117,
+   "total_leechers": 31
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e8"
+   ],
+   "title": "Sicario Theatrical 77 2015 1080p BluRay x265-NTb",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 124,
+   "total_leechers": 32
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000e9"
+   ],
+   "title": "Sicario Theatrical 77 2016 2160p WEB-DL HEVC-FLUX",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 131,
+   "total_leechers": 33
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ea"
+   ],
+   "title": "Prisoners Theatrical 78 2017 720p WEBRip x264-CMRG",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 138,
+   "total_leechers": 34
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000eb"
+   ],
+   "title": "Prisoners Theatrical 78 2018 1080p HDRip x265-RARBG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 145,
+   "total_leechers": 35
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ec"
+   ],
+   "title": "Prisoners Theatrical 78 2019 2160p BluRay HEVC-YTS",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 152,
+   "total_leechers": 36
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ed"
+   ],
+   "title": "Nightcrawler Theatrical 79 2020 720p WEB-DL x264-NTb",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 159,
+   "total_leechers": 37
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ee"
+   ],
+   "title": "Nightcrawler Theatrical 79 2021 1080p WEBRip x265-FLUX",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 166,
+   "total_leechers": 38
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ef"
+   ],
+   "title": "Nightcrawler Theatrical 79 2022 2160p HDRip HEVC-CMRG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 173,
+   "total_leechers": 39
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f0",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000118"
+   ],
+   "title": "Inception Anniversary 80 2015 720p BluRay x264-RARBG",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 340,
+   "total_leechers": 70
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f1",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000119"
+   ],
+   "title": "Inception Anniversary 80 2016 1080p WEB-DL x265-YTS",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 354,
+   "total_leechers": 72
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f2",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000011a"
+   ],
+   "title": "Inception Anniversary 80 2017 2160p WEBRip HEVC-NTb",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 368,
+   "total_leechers": 74
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f3"
+   ],
+   "title": "Gladiator Anniversary 81 2018 720p HDRip x264-FLUX",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 201,
+   "total_leechers": 43
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f4",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000011c"
+   ],
+   "title": "Gladiator Anniversary 81 2019 1080p BluRay x265-CMRG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 396,
+   "total_leechers": 78
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f5",
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000011d"
+   ],
+   "title": "Gladiator Anniversary 81 2020 2160p WEB-DL HEVC-RARBG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 410,
+   "total_leechers": 80
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f6"
+   ],
+   "title": "Interstellar Anniversary 82 2021 720p WEBRip x264-YTS",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 222,
+   "total_leechers": 46
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f7"
+   ],
+   "title": "Interstellar Anniversary 82 2022 1080p HDRip x265-NTb",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 229,
+   "total_leechers": 47
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f8"
+   ],
+   "title": "Interstellar Anniversary 82 2015 2160p BluRay HEVC-FLUX",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 236,
+   "total_leechers": 48
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000f9"
+   ],
+   "title": "Casablanca Anniversary 83 2016 720p WEB-DL x264-CMRG",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 243,
+   "total_leechers": 49
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000fa"
+   ],
+   "title": "Casablanca Anniversary 83 2017 1080p WEBRip x265-RARBG",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 250,
+   "total_leechers": 0
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000fb"
+   ],
+   "title": "Casablanca Anniversary 83 2018 2160p HDRip HEVC-YTS",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 257,
+   "total_leechers": 1
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000fc"
+   ],
+   "title": "Whiplash Anniversary 84 2019 720p BluRay x264-NTb",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 264,
+   "total_leechers": 2
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000fd"
+   ],
+   "title": "Whiplash Anniversary 84 2020 1080p WEB-DL x265-FLUX",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 271,
+   "total_leechers": 3
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000fe"
+   ],
+   "title": "Whiplash Anniversary 84 2021 2160p WEBRip HEVC-CMRG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 278,
+   "total_leechers": 4
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:00000000000000000000000000000000000000ff",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000127"
+   ],
+   "title": "Arrival Anniversary 85 2022 720p HDRip x264-RARBG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "full_hd",
+   "total_seeds": 550,
+   "total_leechers": 50
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000100",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000128"
+   ],
+   "title": "Arrival Anniversary 85 2015 1080p BluRay x265-YTS",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "uhd_4k",
+   "total_seeds": 564,
+   "total_leechers": 52
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000101"
+   ],
+   "title": "Arrival Anniversary 85 2016 2160p WEB-DL HEVC-NTb",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 299,
+   "total_leechers": 7
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000102"
+   ],
+   "title": "Parasite Anniversary 86 2017 720p WEBRip x264-FLUX",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 6,
+   "total_leechers": 8
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000103"
+   ],
+   "title": "Parasite Anniversary 86 2018 1080p HDRip x265-CMRG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 13,
+   "total_leechers": 9
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000104"
+   ],
+   "title": "Parasite Anniversary 86 2019 2160p BluRay HEVC-RARBG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 20,
+   "total_leechers": 10
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000105"
+   ],
+   "title": "Oppenheimer Anniversary 87 2020 720p WEB-DL x264-YTS",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 27,
+   "total_leechers": 11
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000106"
+   ],
+   "title": "Oppenheimer Anniversary 87 2021 1080p WEBRip x265-NTb",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 34,
+   "total_leechers": 12
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000107"
+   ],
+   "title": "Oppenheimer Anniversary 87 2022 2160p HDRip HEVC-FLUX",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 41,
+   "total_leechers": 13
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000108"
+   ],
+   "title": "Dune Anniversary 88 2015 720p BluRay x264-CMRG",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 48,
+   "total_leechers": 14
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000109"
+   ],
+   "title": "Dune Anniversary 88 2016 1080p WEB-DL x265-RARBG",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 55,
+   "total_leechers": 15
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000010a"
+   ],
+   "title": "Dune Anniversary 88 2017 2160p WEBRip HEVC-YTS",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 62,
+   "total_leechers": 16
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000010b"
+   ],
+   "title": "Amadeus Anniversary 89 2018 720p HDRip x264-NTb",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 69,
+   "total_leechers": 17
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000010c"
+   ],
+   "title": "Amadeus Anniversary 89 2019 1080p BluRay x265-FLUX",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 76,
+   "total_leechers": 18
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000010d"
+   ],
+   "title": "Amadeus Anniversary 89 2020 2160p WEB-DL HEVC-CMRG",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 83,
+   "total_leechers": 19
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000010e"
+   ],
+   "title": "Chinatown Anniversary 90 2021 720p WEBRip x264-RARBG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 90,
+   "total_leechers": 20
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000010f"
+   ],
+   "title": "Chinatown Anniversary 90 2022 1080p HDRip x265-YTS",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 97,
+   "total_leechers": 21
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000110"
+   ],
+   "title": "Chinatown Anniversary 90 2015 2160p BluRay HEVC-NTb",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 104,
+   "total_leechers": 22
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000111"
+   ],
+   "title": "Braveheart Anniversary 91 2016 720p WEB-DL x264-FLUX",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 111,
+   "total_leechers": 23
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000112",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000113",
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000122"
+   ],
+   "title": "Braveheart Anniversary 91 2018 2160p HDRip HEVC-RARBG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 473,
+   "total_leechers": 89
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000114"
+   ],
+   "title": "Memento Anniversary 92 2019 720p BluRay x264-YTS",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 132,
+   "total_leechers": 26
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000115"
+   ],
+   "title": "Memento Anniversary 92 2020 1080p WEB-DL x265-NTb",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 139,
+   "total_leechers": 27
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000116"
+   ],
+   "title": "Memento Anniversary 92 2021 2160p WEBRip HEVC-FLUX",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 146,
+   "total_leechers": 28
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000117"
+   ],
+   "title": "Vertigo Anniversary 93 2022 720p HDRip x264-CMRG",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 153,
+   "total_leechers": 29
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000011b"
+   ],
+   "title": "Alien Anniversary 94 2018 1080p HDRip x265-FLUX",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 181,
+   "total_leechers": 33
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000011e"
+   ],
+   "title": "Predator Anniversary 95 2021 1080p WEBRip x265-YTS",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 202,
+   "total_leechers": 36
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000011f"
+   ],
+   "title": "Predator Anniversary 95 2022 2160p HDRip HEVC-NTb",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 209,
+   "total_leechers": 37
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000120"
+   ],
+   "title": "Heat Anniversary 96 2015 720p BluRay x264-FLUX",
+   "year": 2015,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 216,
+   "total_leechers": 38
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000121"
+   ],
+   "title": "Heat Anniversary 96 2016 1080p WEB-DL x265-CMRG",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 223,
+   "total_leechers": 39
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000123"
+   ],
+   "title": "Sicario Anniversary 97 2018 720p HDRip x264-YTS",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 237,
+   "total_leechers": 41
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000124"
+   ],
+   "title": "Sicario Anniversary 97 2019 1080p BluRay x265-NTb",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 244,
+   "total_leechers": 42
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000125"
+   ],
+   "title": "Sicario Anniversary 97 2020 2160p WEB-DL HEVC-FLUX",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 251,
+   "total_leechers": 43
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000126"
+   ],
+   "title": "Prisoners Anniversary 98 2021 720p WEBRip x264-CMRG",
+   "year": 2021,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 258,
+   "total_leechers": 44
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000129"
+   ],
+   "title": "Nightcrawler Anniversary 99 2016 720p WEB-DL x264-NTb",
+   "year": 2016,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 279,
+   "total_leechers": 47
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000012a"
+   ],
+   "title": "Nightcrawler Anniversary 99 2017 1080p WEBRip x265-FLUX",
+   "year": 2017,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 286,
+   "total_leechers": 48
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000012b"
+   ],
+   "title": "Nightcrawler Anniversary 99 2018 2160p HDRip HEVC-CMRG",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 293,
+   "total_leechers": 49
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000012c"
+   ],
+   "title": "Inception Directors Cut 100 2019 720p BluRay x264-RARBG",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "720p",
+   "codec": "x264",
+   "best_quality": "hd",
+   "total_seeds": 0,
+   "total_leechers": 0
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000012d"
+   ],
+   "title": "Inception Directors Cut 100 2020 1080p WEB-DL x265-YTS",
+   "year": 2020,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 7,
+   "total_leechers": 1
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000134"
+   ],
+   "title": "Interstellar Directors Cut 102 2019 2160p BluRay HEVC-FLUX",
+   "year": 2019,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 56,
+   "total_leechers": 8
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:0000000000000000000000000000000000000157"
+   ],
+   "title": "Alien Directors Cut 114 2022 1080p HDRip x265-FLUX",
+   "year": 2022,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "1080p",
+   "codec": "x265",
+   "best_quality": "full_hd",
+   "total_seeds": 1,
+   "total_leechers": 43
+  },
+  {
+   "members": [
+    "magnet:?xt=urn:btih:000000000000000000000000000000000000015b"
+   ],
+   "title": "Predator Directors Cut 115 2018 2160p HDRip HEVC-NTb",
+   "year": 2018,
+   "content_type": "movie",
+   "season": null,
+   "episode": null,
+   "resolution": "2160p",
+   "codec": "hevc",
+   "best_quality": "uhd_4k",
+   "total_seeds": 29,
+   "total_leechers": 47
+  }
+ ]
+}

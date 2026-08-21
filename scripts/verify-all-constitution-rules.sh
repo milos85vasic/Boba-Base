@@ -258,6 +258,40 @@ else
     fi
 fi
 
+# ── BOB-143: keep dead trees out of every gate's scan scope ─────────────────
+#
+# WHY THIS EXISTS. The per-gate wrappers under scripts/pre_build/ pass CURATED
+# scan roots. This sweep does not: config/constitution-sweep.conf passes
+# `--root @ROOT@`, so every gate walks the WHOLE repository — including
+# `.worktrees/`, which holds orphaned checkouts of branches from 2026-04 whose
+# gitdir pointers reference a directory that no longer exists (the repo was
+# renamed qBitTorrent -> boba). That code is not shipped and cannot be fixed in
+# place, so a finding against it is a §11.4.201(1) FALSE-POSITIVE REFUSAL: it
+# fails the sweep over a dead tree while the live tree is correct.
+#
+# MEASURED, not assumed (2026-08-21): cm_test_mock_pid_explicit_int over the
+# whole root reported exactly 2 findings, BOTH from .worktrees/ and ZERO from
+# the real tree — the live copy is hardened (mock.pid set, os.killpg patched).
+# So that gate flipped FAIL -> PASS purely on scan scope.
+#
+# THIS IS NOT "NARROW THE GATE UNTIL IT PASSES". The exclusion was validated in
+# BOTH directions: with it active a violation planted under tests/ is still
+# caught and named, and the gate still exits 1. It removes dead-tree findings
+# and nothing else.
+#
+# The gates accept exclusions ONLY via environment (an unknown argv is exit 2),
+# which is why this is an export here and not a row in the consumer conf file.
+#
+# HONEST SCOPE: this addresses `.worktrees/`. It does NOT address the larger
+# pollution measured alongside it — 82% of cm_oracle_strategy findings come from
+# `submodules/`, i.e. vendored third-party code the sweep also walks. That is a
+# separate, larger decision and is filed rather than silently folded in here.
+_BOB143_SWEEP_EXCLUDE=".git node_modules vendor .venv __pycache__ scripts/gates out build dist .worktrees"
+export MOCK_PID_GUARD_EXCLUDE="${MOCK_PID_GUARD_EXCLUDE:-$_BOB143_SWEEP_EXCLUDE}"
+export ORACLE_GUARD_EXCLUDE="${ORACLE_GUARD_EXCLUDE:-$_BOB143_SWEEP_EXCLUDE}"
+export KILLPG_GUARD_EXCLUDE="${KILLPG_GUARD_EXCLUDE:-$_BOB143_SWEEP_EXCLUDE}"
+export DANGEROUS_COMBO_EXCLUDE="${DANGEROUS_COMBO_EXCLUDE:-$_BOB143_SWEEP_EXCLUDE}"
+
 # ── PHASE B — every gate the runner does not cover, run individually ────────
 echo
 echo "── Phase B: gates not covered by the batch runner ──────────────────────"

@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 16
-**Last modified:** 2026-08-21T14:46:07Z
+**Revision:** 17
+**Last modified:** 2026-08-21T15:05:33Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1016,4 +1016,26 @@ grep -oE '\[[0-9]+/44\]' scripts/pre_build_verification.sh | wc -l  -> 35 (denom
 
 **Acceptance criteria:**
 Either the denominator matches the real number of labelled invariants, or the numbering is compacted to be contiguous - and whichever is chosen, a gate or the runner itself derives the denominator rather than restating it as a literal, so the two cannot drift apart again.
+
+## BOB-151 — CM-SCRIPT-DOCS-SYNC is a named gate with no implementation, and 24 of 36 scripts have no companion doc
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Medium
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-21T15:05:33Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+The §11.4.18 script-documentation rule names a gate CM-SCRIPT-DOCS-SYNC, but no executable file in this repository implements it. Because nothing measures the obligation, 24 of 36 scripts under scripts/ have no docs/scripts/<name>.md companion - two thirds of them. This is the named-gate ledger gap the constitution itself warns about: a gate that is named but never implemented reads as coverage while providing none, and the corpus grows words instead of enforcement. Surfaced while writing the two ownership companions, which were themselves only written because the feature plan asked for them explicitly - not because any gate demanded it. Filing rather than absorbing: an unstated finding reads as no finding, and a 67% documentation gap that nothing reports will not shrink on its own.
+
+**Affected scope / file-scope manifest:**
+scripts/*.sh, docs/scripts/*.md, scripts/pre_build_verification.sh
+
+**Reproduction / context:**
+grep -rl CM-SCRIPT-DOCS-SYNC --include='*.sh' --include='*.py' . (excluding submodules) -> 0 files. Control needle in the same command shape: CM-OWNERSHIP-INVARIANTS -> 3 files, CM-KILLPG-PGID-GUARD -> 7 files, so the search is not blind. Then: for s in scripts/*.sh; do [ -f docs/scripts/$(basename $s .sh).md ] || echo missing; done -> 24 of 36 missing.
+
+**Acceptance criteria:**
+Either the gate is implemented and the 24 missing companions are written (the count becoming a monotone-decreasing ratchet so it cannot grow), or the obligation is explicitly scoped down to a defined subset with the reason recorded. What is NOT acceptable is the current state, where the rule is stated and nothing measures it.
 
