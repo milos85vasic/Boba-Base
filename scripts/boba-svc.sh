@@ -55,10 +55,25 @@ UNIT_SRC="$SCRIPT_DIR/systemd/user"
 UNIT_DST="$HOME/.config/systemd/user"
 
 # The full unit inventory. When we add more services, extend this list.
+#
+# INVENTORY DRIFT, MEASURED AND FIXED 2026-08-21 (feature
+# 002-user-owned-downloads, T029/T030): the resource-pressure pair was
+# installed into ~/.config/systemd/user/ (symlinks dated Aug 18) while
+# being absent from this list, so `boba-svc install` did not manage them
+# and `boba-svc uninstall` left two dangling symlinks pointing back into
+# the repo. The inventory must list every unit shipped in
+# scripts/systemd/user/ — that is what makes install/uninstall total.
+#
+# Listing them here installs and removes them with the rest; it does NOT
+# make them part of boba.target. They are deliberately outside the target
+# so host resource-pressure monitoring keeps running while the stack is
+# down (see the comment in boba-resource-pressure-check.service).
 UNITS=(
     "boba.target"
     "boba-stack.service"
     "boba-webui-bridge.service"
+    "boba-resource-pressure-check.service"
+    "boba-resource-pressure-check.timer"
 )
 
 # Health probe targets — { NAME PORT PATH EXPECTED_CODES }.

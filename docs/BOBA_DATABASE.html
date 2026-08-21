@@ -1,6 +1,6 @@
 <h1 id="boba-system-database">Boba System Database</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T00:00:00Z</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-21T15:02:00Z</p>
 <p>The <code>boba-jackett</code> Go service (port <code>7189</code>)
 owns a SQLite system database at <code>config/boba.db</code> (default;
 override with <code>BOBA_DB_PATH</code>). Sensitive columns are
@@ -168,18 +168,40 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="
 <p>UI-only edits made after the original bootstrap are NOT recoverable —
 they were never written back to <code>.env</code>.</p>
 <h2 id="backup-procedure">3. Backup procedure</h2>
+<blockquote>
+<p><strong>Performable as of 2026-08-21.</strong> This procedure was
+previously impossible to carry out, and the document did not say so — it
+prescribed no workaround because it never recorded the blockage.
+<code>config/boba.db</code> is mode <code>600</code>, and its owner was
+a rootless-container sub-uid (<code>100999</code>) with no host account,
+so the operator could not read their own credential database and neither
+<code>cp</code> nor <code>sqlite3 .backup</code> could open it. Feature
+<code>002-user-owned-downloads</code> restored the file to the operator.
+<strong>Measured 2026-08-21:</strong></p>
+<pre><code>config/boba.db mode=600 owner=milosvasic(1000) group=milosvasic(1000) size=81920</code></pre>
+<p>A copy of the file read cleanly (81920 bytes) and the source stayed
+mode <code>600</code> afterwards. No elevation, no
+<code>podman unshare</code>, and no chown-first step is needed — if you
+find yourself reaching for one, the ownership regression has returned:
+run <code>scripts/ownership_precondition.sh</code> (it names the
+offending location) and then <code>scripts/ownership_repair.sh</code>.
+See <a
+href="scripts/ownership_repair.md"><code>scripts/ownership_repair.md</code></a>
+and <a
+href="guides/file-ownership.md"><code>guides/file-ownership.md</code></a>.</p>
+</blockquote>
 <p>Two acceptable approaches.</p>
 <p><strong>Cold backup (service stopped):</strong></p>
-<div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-stop</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> config/boba.db config/boba.db.bak</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env .env.bak</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-start</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-stop</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> config/boba.db config/boba.db.bak</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env .env.bak</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-start</span></code></pre></div>
 <p><strong>Hot backup (service running):</strong> use SQLite’s online
 <code>.backup</code>:</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sqlite3</span> config/boba.db <span class="st">&quot;.backup config/boba.db.bak&quot;</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env .env.bak</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">sqlite3</span> config/boba.db <span class="st">&quot;.backup config/boba.db.bak&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env .env.bak</span></code></pre></div>
 <p><code>.backup</code> respects WAL semantics and produces a
 transactionally consistent snapshot. <strong>Always back up
 <code>boba.db.bak</code> and <code>.env.bak</code> together</strong> —
@@ -187,6 +209,31 @@ the DB is useless without the matching master key, and the master key is
 useless without the DB.</p>
 <p>Both files MUST be stored with mode <code>0600</code> (or stricter)
 on persistent media; treat them as you would a private SSH key.</p>
+<h3
+id="the-fix-restored-the-owner-not-the-mode-and-the-mode-must-stay-600">The
+fix restored the OWNER, not the mode — and the mode must stay
+<code>600</code></h3>
+<p><code>config/boba.db</code> remains mode <code>600</code> and
+<strong>MUST</strong> stay mode <code>600</code>. The ownership repair
+changes who owns the file; it explicitly does not relax who may read it
+(the file is declared <code>preserve_mode: true</code> in
+<code>config/owned_paths.yaml</code>, and
+<code>scripts/ownership_repair.sh</code> restores each item’s original
+permission bits after the <code>chown</code>, because a non-root
+<code>chown(2)</code> can clear them).</p>
+<p>This distinction is the whole point. A backup that started succeeding
+because the file had become world-readable would not be a fix — it would
+be a security regression wearing a fix’s clothes: a credential store
+made readable by every account on the host, traded for a convenience the
+correct owner already provides. The backup works now because the file
+<strong>belongs</strong> to the operator, not because it was opened
+up.</p>
+<p>If <code>stat -c '%a %U' config/boba.db</code> ever reports anything
+wider than <code>600</code>, or an owner that is not the account running
+the system, stop and treat it as a defect. The standing guards are the
+Layer 4 challenge <code>boba_db_file_perms_challenge.sh</code> (§ 4
+below) for the mode, and pre-build invariant 33
+<code>CM-OWNERSHIP-INVARIANTS</code> for the ownership route.</p>
 <h2 id="file-permissions">4. File permissions</h2>
 <p>Both files MUST be <code>0600</code> (owner read/write only):</p>
 <table>
@@ -231,24 +278,24 @@ DB</h2>
 <p>If <code>boba.db</code> becomes corrupted (truncated, partial writes,
 foreign-key violations from manual edits, etc.), the recovery path
 is:</p>
-<div class="sourceCode" id="cb5"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Stop the service (orchestrator)</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-stop</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Move the broken DB aside (DO NOT delete — keep it for forensics)</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db config/boba.db.broken</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Also move WAL/SHM if present</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db-wal config/boba.db-wal.broken <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db-shm config/boba.db-shm.broken <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Restart — bootstrap.EnsureMasterKey notices the missing DB,</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co">#    re-creates the schema (migration 001), then re-imports any</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">#    credentials still present in .env.</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-start</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Verify</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7189/healthz <span class="kw">|</span> <span class="ex">jq</span> .</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7189/api/v1/credentials <span class="kw">|</span> <span class="ex">jq</span> <span class="st">&#39;length&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Stop the service (orchestrator)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-stop</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Move the broken DB aside (DO NOT delete — keep it for forensics)</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db config/boba.db.broken</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Also move WAL/SHM if present</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db-wal config/boba.db-wal.broken <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="fu">mv</span> config/boba.db-shm config/boba.db-shm.broken <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">||</span> <span class="fu">true</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Restart — bootstrap.EnsureMasterKey notices the missing DB,</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">#    re-creates the schema (migration 001), then re-imports any</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co">#    credentials still present in .env.</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> boba-jackett-start</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Verify</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7189/healthz <span class="kw">|</span> <span class="ex">jq</span> .</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-s</span> http://localhost:7189/api/v1/credentials <span class="kw">|</span> <span class="ex">jq</span> <span class="st">&#39;length&#39;</span></span></code></pre></div>
 <p>Anything entered via the UI after the original bootstrap and before
 the corruption is unrecoverable from <code>.env</code> alone — see § 2
 “Loss recovery”. Always pair regular backups (§ 3) with this recovery

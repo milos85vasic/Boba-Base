@@ -4,8 +4,10 @@
 # Purpose: replace hand-typed / stale shields.io badge numbers in README.md
 #   with counts computed from REAL, freshly-run invocations of the tools
 #   that produce them (pytest --collect-only, vitest list --run, a real
-#   `ls` of challenges/scripts/, and a grep of the pre-build gate's own
-#   highest "[N/N]" progress label) — never a hand-typed or assumed number.
+#   `ls` of challenges/scripts/, a grep of the pre-build gate's own
+#   highest "[N/N]" progress label, and a control-needle-proven parse of
+#   install-plugin.sh's PLUGINS=() curated roster) — never a hand-typed or
+#   assumed number.
 #
 # Usage:
 #   scripts/compute-badges.sh                 # compute + rewrite README.md
@@ -22,7 +24,8 @@
 #                                              # golden-good/golden-bad test).
 #
 # Inputs: tests/ (python suite), frontend/ (vitest suite),
-#   challenges/scripts/*.sh, scripts/pre_build_verification.sh.
+#   challenges/scripts/*.sh, scripts/pre_build_verification.sh,
+#   install-plugin.sh (PLUGINS=() curated roster — BOB-149).
 # Outputs: README.md badge row + Contributing-section bullets (default mode
 #   only), docs/TESTING.md "Test counts" section (default mode only).
 # Side-effects: none in --check mode. Rewrites README.md + docs/TESTING.md
@@ -180,6 +183,71 @@ count_prebuild_invariants() {
 }
 
 # ---------------------------------------------------------------------------
+# Managed-plugin roster count — quoted entries in install-plugin.sh's
+# PLUGINS=() array. That array is THE canonical managed roster (constitution
+# Principle II enumerates it BY NAME).
+#
+# WHY THIS IS DERIVED RATHER THAN HAND-TYPED (BOB-149): this badge read 48
+# for months. 48 was an April-2026 count of `plugins/*.py` FILES, relabelled
+# as "plugin engines" and never updated after a community/ reorganisation
+# moved files out — nothing in the repository equals 48 today. Every sibling
+# badge in this script is derived; this one was not, which is precisely why
+# it drifted and stayed drifted. A hand-maintained badge is a number nothing
+# checks (§11.4.259 machine-derivation).
+#
+# WHY `curated` AND NOT ANOTHER METRIC: "managed plugins" resolved to FIVE
+# individually-correct numbers — curated 43 (this array), bootstrap 12
+# (setup.sh's separate array), engines 43 (distinct modules on disk),
+# toplevel 36 (plugins/*.py), recursive 69 (plugins/**/*.py) — and that
+# ambiguity WAS the defect. This badge names the curated roster, the same
+# metric scripts/pre_build/check_cm_plugin_count.sh derives from the same
+# source, so the two cannot silently disagree.
+#
+# CONTROL NEEDLE (§11.4.201(7)(b)): the entry pattern REQUIRES the quotes,
+# and BOB-149's first extraction attempt omitted them and returned a
+# confident 0 against a 43-entry array. A silent 0 here would render a
+# "plugins-0" badge — a fabricated number wearing a derived badge's uniform,
+# strictly worse than the stale 48. So the extractor is proven able to SEE
+# before its count is trusted: a synthetic entry is injected into an
+# in-memory copy and the count must rise by EXACTLY one. If it does not, the
+# instrument is blind and the badge goes GRAY N/A with the reason — never a
+# number (§11.4.6).
+# ---------------------------------------------------------------------------
+count_managed_plugins() {
+    local install_sh="${ROOT_DIR}/install-plugin.sh"
+    if [[ ! -f "${install_sh}" ]]; then
+        echo "NA|install-plugin.sh not found"
+        return
+    fi
+    # `grep -cE` (no -o) is used deliberately: the -coE form is documented in
+    # scripts/pre_build/check_cm_plugin_count.sh as returning a
+    # context-dependent count on this host's ugrep (§11.4.201(12)). Verified
+    # 2026-08-21 that this form returns 43 both at top level and inside a
+    # `set -euo pipefail` function subshell.
+    local base needled probe
+    base="$(sed -n '/^PLUGINS=(/,/^)/p' "${install_sh}" \
+        | grep -cE '^[[:space:]]*"[a-z0-9_]+"[[:space:]]*$' || true)"
+    probe="$(mktemp)"
+    awk '
+        /^PLUGINS=\(/ { inblk = 1 }
+        inblk && /^\)/ { print "  \"zzz_synthetic_needle\""; inblk = 0 }
+        { print }
+    ' "${install_sh}" > "${probe}"
+    needled="$(sed -n '/^PLUGINS=(/,/^)/p' "${probe}" \
+        | grep -cE '^[[:space:]]*"[a-z0-9_]+"[[:space:]]*$' || true)"
+    rm -f "${probe}"
+    if [[ "${needled}" -ne $((base + 1)) ]]; then
+        echo "NA|control needle failed (${base} -> ${needled}); PLUGINS=() extractor is blind"
+        return
+    fi
+    if [[ "${base}" -eq 0 ]]; then
+        echo "NA|install-plugin.sh PLUGINS=() array parsed as empty"
+        return
+    fi
+    echo "${base}|install-plugin.sh PLUGINS=() curated roster, control-needle proven"
+}
+
+# ---------------------------------------------------------------------------
 # §11.4.259 closed color vocabulary: GREEN(success)/AMBER(yellow)/RED(critical)
 # /GRAY(lightgrey, N/A). These are informational COUNT badges (existence, not
 # a pass/fail assertion) so a genuinely-computed count is always "blue"
@@ -223,6 +291,10 @@ CH_COUNT="${CH_RESULT%%|*}"
 
 PB_RESULT="$(count_prebuild_invariants)"
 PB_COUNT="${PB_RESULT%%|*}"
+
+PL_RESULT="$(count_managed_plugins)"
+PL_COUNT="${PL_RESULT%%|*}"
+PL_METHOD="${PL_RESULT#*|}"
 
 # ---------------------------------------------------------------------------
 # Scoped subset for the Contributing-section bullet, which names an EXACT
@@ -293,6 +365,20 @@ CH_LABEL="challenges-$(shields_encode "${CH_COUNT}")-blue"
 PB_LINE="  <img alt=\"pre-build\"      src=\"https://img.shields.io/badge/${PB_LABEL}\">"
 CH_LINE="  <img alt=\"challenges\"     src=\"https://img.shields.io/badge/${CH_LABEL}\">"
 
+# The plugins badge is the third member of this hand-typed-then-drifted family
+# (BOB-149, after BOB-118's python/frontend pair and the pre-build/challenges
+# pair above). The value MUST stay a bare integer: the CM-PLUGIN-COUNT gate
+# cross-checks it with `plugins-\([0-9][0-9]*\)-`, so decorating it would make
+# that cross-check silently stop matching — a §11.4.201(6) false-null in the
+# checker, not a cosmetic choice. An unmeasurable count degrades to GRAY N/A
+# (which that regex correctly does not match) rather than to a made-up number.
+if [[ "${PL_COUNT}" == "NA" ]]; then
+    PL_LABEL="plugins-N%2FA%20%28${PL_METHOD// /%20}%29-lightgrey"
+else
+    PL_LABEL="plugins-$(shields_encode "${PL_COUNT}")-blue"
+fi
+PL_LINE="  <img alt=\"plugins\"        src=\"https://img.shields.io/badge/${PL_LABEL}\">"
+
 if [[ "${MODE}" == "check" ]]; then
     STALE=0
     if ! grep -qF "${PY_LINE}" "${README}" 2>/dev/null; then
@@ -309,6 +395,10 @@ if [[ "${MODE}" == "check" ]]; then
     fi
     if ! grep -qF "${CH_LINE}" "${README}" 2>/dev/null; then
         echo "STALE: challenges badge does not match live count (${CH_COUNT})"
+        STALE=1
+    fi
+    if ! grep -qF "${PL_LINE}" "${README}" 2>/dev/null; then
+        echo "STALE: plugins badge does not match live count (${PL_COUNT} — ${PL_METHOD})"
         STALE=1
     fi
     if [[ "${STALE}" -eq 1 ]]; then
@@ -332,6 +422,7 @@ trap 'rm -f "${TMP_README}"' EXIT
 
 awk -v py_line="${PY_LINE}" -v fe_line="${FE_LINE}" \
     -v pb_line="${PB_LINE}" -v ch_line="${CH_LINE}" \
+    -v pl_line="${PL_LINE}" \
     -v py_count="${PY_COUNT}" -v fe_count="${FE_COUNT}" \
     -v py_subset="${PY_SUBSET_COUNT}" \
     '
@@ -350,6 +441,7 @@ awk -v py_line="${PY_LINE}" -v fe_line="${FE_LINE}" \
     in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="pre-build"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print pb_line; next }
     in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="challenges"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print ch_line; next }
     in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="vitest"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print fe_line; next }
+    in_badge_block && /^[[:space:]]*<img[[:space:]]+alt="plugins"[[:space:]]+src="https:\/\/img\.shields\.io\/badge\// { print pl_line; next }
     /Python unit \+ e2e \+ contract/ {
         if (py_subset == "NA") {
             print
@@ -378,7 +470,8 @@ echo "  frontend tests: ${FE_COUNT} (${FE_METHOD})"
 # §11.4.6: report what was actually verified, never a hardcoded claim. These two
 # lines previously read "(unchanged, cross-checked, matches existing badge)"
 # unconditionally, while the badges they described were stale by 14 and 7.
-for _b in "challenges:${CH_COUNT}:${CH_LINE}" "pre-build invariants:${PB_COUNT}:${PB_LINE}"; do
+for _b in "challenges:${CH_COUNT}:${CH_LINE}" "pre-build invariants:${PB_COUNT}:${PB_LINE}" \
+          "managed plugins:${PL_COUNT}:${PL_LINE}"; do
     _name="${_b%%:*}"; _rest="${_b#*:}"; _cnt="${_rest%%:*}"; _line="${_rest#*:}"
     if grep -qF "${_line}" "${README}" 2>/dev/null; then
         echo "  ${_name}: ${_cnt} (badge verified present in README)"

@@ -25,12 +25,12 @@
 </p>
 
 <p align="center">
-  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-5400%20collected-blue">
+  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-5437%20collected-blue">
   <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-371%20collected-blue">
-  <img alt="plugins"        src="https://img.shields.io/badge/plugins-48-blue">
+  <img alt="plugins"        src="https://img.shields.io/badge/plugins-43-blue">
   <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
   <img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">
-  <img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-44-blue">
+  <img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-46-blue">
   <img alt="challenges"     src="https://img.shields.io/badge/challenges-38-blue">
   <img alt="scan"           src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
   <img alt="license"        src="https://img.shields.io/badge/license-Apache%202.0-green">
@@ -46,26 +46,31 @@
       executable (CLAUDE.md Hard Stop: "CI IS MANUAL — permanent"). This badge
       previously read "ci-auto" (nightly/security triggers) which is FALSE per
       the current Hard Stop rule and has been corrected, not merely refreshed.
-    - pre-build invariants: informational count from the highest `[N/N]` label
-      in `scripts/pre_build_verification.sh` (currently `[30/30]`, includes the
-      new CM-BASH-UNIT-TESTS-EXECUTED invariant (§11.4.226 — the tests/unit/*.sh
-      bash suite was previously executed by NOTHING) alongside
-      CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID (§11.4.263, BOB-127, Task 8
-      syscall-audit rec #1), CM-KILLPG-PGID-GUARD and
-      CM-TEST-MOCK-PID-EXPLICIT-INT (§11.4.263, BOB-126)) — a count,
-      not an asserted current PASS across all 30. NOTE: `scripts/compute-badges.sh`
-      computes this count correctly but its README-rewrite `awk` filter only
-      matches `alt="tests"` / `alt="vitest"` — it does not actually rewrite
-      this badge line despite logging "(unchanged, cross-checked, matches
-      existing badge)"; this line was updated by hand from a live grep of
-      every `[N/N]` label in `scripts/pre_build_verification.sh` (max = 30).
-      Tracked as a pre-existing compute-badges.sh gap, out of this task's
-      scope.
+    - pre-build invariants: DERIVED — informational count from the highest
+      `[N/N]` label in `scripts/pre_build_verification.sh`; a count, not an
+      asserted current PASS across all of them. This bullet previously said the
+      badge was hand-updated because compute-badges.sh's `awk` filter "only
+      matches `alt=\"tests\"` / `alt=\"vitest\"`" and "does not actually rewrite
+      this badge line". Both claims are now false: the filter rewrites the
+      pre-build, challenges and plugins lines too, and the script verifies each
+      rewritten line is present in README before reporting it (the earlier
+      hardcoded "(unchanged, cross-checked...)" string was removed when that
+      §11.4 badge-layer bluff was fixed). Corrected 2026-08-21 alongside BOB-149
+      — a stale note asserting a tool is broken is the same doc-vs-code drift
+      class BOB-149 filed, in the very file that drift lives in.
     - challenges: informational count of `challenges/scripts/*.sh` (31),
       including the new resource_pressure_signature_challenge.sh +
       verify_resource_pressure_polarity.sh + the ddos_resilience_challenge.sh
       `--healthz` mode extension — a count, not an asserted current PASS.
-  tests/vitest/plugins/merge/scan/license badges are carried forward unverified
+    - plugins: DERIVED, not carried forward (BOB-149). `scripts/compute-badges.sh`
+      now parses install-plugin.sh's `PLUGINS=()` curated roster — THE canonical
+      managed roster per constitution Principle II — behind a §11.4.201(7)(b)
+      control needle, and rewrites this badge line like every other derived
+      badge. It previously read 48, an April-2026 count of `plugins/*.py` FILES
+      relabelled "plugin engines" and never refreshed after a community/ reorg;
+      nothing in the repository equals 48 today. Cross-checked at build time by
+      `scripts/pre_build_verification.sh` invariant 46 (CM-PLUGIN-COUNT).
+  tests/vitest/merge/scan/license badges are carried forward unverified
   this session (out of this task's scope) — see docs/TESTING.md for the current
   authoritative per-suite counts.
 -->
@@ -210,7 +215,7 @@ no HTML/PDF export yet (never fabricated).
 - [`docs/USER_MANUAL.md`](docs/USER_MANUAL.md) — end-user walkthrough
 - [`docs/TOKENS_AND_KEYS.md`](docs/TOKENS_AND_KEYS.md) — **⭐ credentials / tokens / env vars (mandatory vs optional + registration links)**
 - [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) — runtime-switchable palette catalogue (8 palettes, dark + light, Darcula default)
-- [`docs/PLUGINS.md`](docs/PLUGINS.md) — the 48 plugin engines
+- [`docs/PLUGINS.md`](docs/PLUGINS.md) — the 43 plugin engines
 - [`docs/PLUGIN_TROUBLESHOOTING.md`](docs/PLUGIN_TROUBLESHOOTING.md) — what to check when a plugin breaks
 
 ### Architecture & subsystems
@@ -358,7 +363,7 @@ Each artefact ships with `SHA256SUMS` + `BUILD_INFO.json`.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) and the TDD protocol in [`CLAUDE.md`](CLAUDE.md). PRs must keep the following green:
 
-- Python unit + e2e + contract (`pytest` — 4448 tests collected, see docs/TESTING.md)
+- Python unit + e2e + contract (`pytest` — 4474 tests collected, see docs/TESTING.md)
 - Frontend Vitest (`ng test` — 371 tests collected, see docs/TESTING.md)
 - Ruff + bandit + shellcheck (via `scripts/scan.sh`)
 

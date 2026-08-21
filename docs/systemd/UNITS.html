@@ -1,0 +1,163 @@
+<h1 id="boba-systemd-user-units">Boba systemd user units</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T00:00:00Z <strong>Scope:</strong>
+<code>scripts/systemd/user/**</code> — the <code>systemctl --user</code>
+start path and how it relates to <code>./start.sh</code>.
+<strong>Authority:</strong> feature
+<code>002-user-owned-downloads</code> (FR-008, FR-009, FR-010, FR-016);
+CLAUDE.md Hard Stop #3; CONST-033.</p>
+<h2 id="why-this-document-exists">Why this document exists</h2>
+<p>The project has two start paths. The operator’s own words that opened
+this feature name the second one explicitly:</p>
+<blockquote>
+<p>“Make sure that System runs (starts) and creates and modifies files
+as current user under which we do start it using
+<code>systemctl --user</code> space so downloads we have and directories
+that have been created can be manipulated by current account user!”</p>
+</blockquote>
+<p>Two start paths that disagree is a defect on its own: one of them is
+wrong and nobody knows which. This document records the deliberate
+decision that keeps them from disagreeing, and the guarantees each path
+carries.</p>
+<h2 id="the-units">The units</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Unit</th>
+<th>Type</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boba.target</code></td>
+<td>target</td>
+<td>Umbrella. <code>Wants=</code> the stack and the bridge. Enabled into
+<code>default.target</code>.</td>
+</tr>
+<tr>
+<td><code>boba-stack.service</code></td>
+<td>oneshot + <code>RemainAfterExit</code></td>
+<td>Delegates to <code>./start.sh --no-build</code> /
+<code>./stop.sh</code>.</td>
+</tr>
+<tr>
+<td><code>boba-webui-bridge.service</code></td>
+<td>simple</td>
+<td>Supervises the <code>webui-bridge</code> Go binary on port
+7188.</td>
+</tr>
+<tr>
+<td><code>boba-resource-pressure-check.service</code></td>
+<td>oneshot</td>
+<td>Runs the resource-pressure challenge.</td>
+</tr>
+<tr>
+<td><code>boba-resource-pressure-check.timer</code></td>
+<td>timer</td>
+<td>Fires the check. Into <code>timers.target</code>,
+<strong>not</strong> <code>boba.target</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The resource-pressure pair is deliberately outside
+<code>boba.target</code>: host resource-pressure monitoring must keep
+running when the stack is down. It is still part of the
+<code>scripts/boba-svc.sh</code> install inventory, so
+<code>install</code>/<code>uninstall</code> are total.</p>
+<h2 id="lifecycle-ownership-the-deliberate-decision-fr-009">Lifecycle
+ownership — the deliberate decision (FR-009)</h2>
+<p>A strict two-layer split:</p>
+<ul>
+<li><strong>Outer layer — systemd</strong> owns <em>session</em>
+lifecycle only: autostart at login/boot, stop on logout, journal
+capture, restart-on-failure. It issues <strong>no container command of
+any kind</strong>.</li>
+<li><strong>Inner layer — <code>start.sh</code></strong> owns
+<em>container</em> orchestration exclusively (Hard Stop #3), and is the
+only place the ownership gate lives.</li>
+</ul>
+<p>Three properties follow, and they are what make the two paths safe
+together:</p>
+<ol type="1">
+<li><strong>No unit may contain a raw <code>podman</code> /
+<code>docker</code> / compose command.</strong> Every unit delegates to
+<code>./start.sh</code> or <code>./stop.sh</code>. Verified: the only
+occurrences of those words under <code>scripts/systemd/user/</code> are
+in comments, never in a directive.</li>
+<li><strong><code>start.sh</code> is idempotent</strong>, so
+<code>systemctl --user start boba.target</code> against an
+already-running stack <em>converges</em> instead of conflicting.</li>
+<li><strong>The containers are the single source of truth for “what is
+running.”</strong></li>
+</ol>
+<h2
+id="the-ownership-gate-is-inherited-never-duplicated-fr-010-fr-004d">The
+ownership gate is inherited, never duplicated (FR-010, FR-004d)</h2>
+<p><code>start.sh</code> runs <code>run_ownership_gate()</code> before
+any container writes into a declared location: the precondition
+(<code>scripts/ownership_precondition.sh</code>, fail-closed on both
+exit 1 <em>and</em> exit 2) followed by the repair
+(<code>scripts/ownership_repair.sh</code>), both under
+<code>nice -n 19 ionice -c 3</code>.</p>
+<p>That gate is <strong>not</strong> declared as an
+<code>ExecStartPre=</code> in any unit. It exists in exactly one place
+and the systemd path inherits it by delegating to <code>start.sh</code>.
+Two copies would be two things that can drift, and a systemd path whose
+gate had drifted from the <code>start.sh</code> path is precisely the
+contradiction FR-009 forbids. Anything <code>start.sh</code> enforces,
+<code>systemctl --user start boba.target</code> enforces — by
+construction, with no further wiring.</p>
+<h2
+id="the-one-divergence-that-cannot-be-engineered-away-and-how-it-is-handled">The
+one divergence that cannot be engineered away, and how it is
+handled</h2>
+<p><code>boba-stack.service</code> is <code>Type=oneshot</code> +
+<code>RemainAfterExit=yes</code>. systemd’s notion of “active” therefore
+means <em>“this unit ran <code>start.sh</code> once and it exited
+0”</em> — not <em>“the containers are up.”</em> Start the stack directly
+with <code>./start.sh</code> and systemd keeps reporting
+<code>inactive</code> while the containers are healthy. systemd cannot
+observe a stack it did not itself start.</p>
+<p>That divergence is not hidden. <code>start.sh</code> ends by
+comparing systemd’s view with reality and, when they differ, printing
+the real state, the systemd state, and the single command that
+reconciles them (<code>bash scripts/boba-svc.sh up</code>, which re-runs
+this same <code>start.sh</code>). A divergence the operator is told
+about is not a contradiction; a silent one is.</p>
+<h2 id="restart-bounding">Restart bounding</h2>
+<p><code>boba-stack.service</code> sets <code>RestartSec=30</code>,
+while systemd’s default rate-limit window is <code>10s</code> /
+<code>5</code> tries. Restarts 30 s apart never accumulate inside a 10 s
+window, so the default limiter could never trip: a persistently failing
+<code>start.sh</code> would re-run a full stack start every 30 s
+forever, silently. That matters more now that <code>start.sh</code> is
+fail-closed on the ownership precondition, because a genuine refusal is
+persistent by design. The unit sets
+<code>StartLimitIntervalSec=600</code> / <code>StartLimitBurst=3</code>,
+so a real transient still self-heals while a persistent refusal lands in
+<code>failed</code>, where <code>systemctl --user status</code> shows
+it.</p>
+<h2 id="const-033">CONST-033</h2>
+<p>No unit here contains any power-state directive, and none may be
+added. No suspend / hibernate / poweroff / reboot / halt / kexec, and no
+setting that cascades into an idle action. Verified: the only
+occurrences of those words under <code>scripts/systemd/user/</code> are
+in prose comments, never in a directive.</p>
+<h2 id="operating-the-units">Operating the units</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh install    <span class="co"># symlink every unit into ~/.config/systemd/user/</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh enable     <span class="co"># autostart at login/boot (reports linger state)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh up         <span class="co"># systemctl --user start boba.target</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh status     <span class="co"># systemd view</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh health     <span class="co"># HTTP probes of every published endpoint</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh down       <span class="co"># systemctl --user stop boba.target</span></span></code></pre></div>
+<p>No <code>sudo</code> at any point. Boot-time autostart without a
+login additionally needs linger
+(<code>loginctl enable-linger &lt;user&gt;</code>), which
+<code>boba-svc</code> reports but never runs itself.</p>

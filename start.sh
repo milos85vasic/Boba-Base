@@ -359,11 +359,102 @@ create_directories() {
     mkdir -p config/qBittorrent
     mkdir -p config/qBittorrent/nova3/engines
 
-    if _podman_unshare_works; then
-        podman unshare chmod -R a+rw config/ 2>/dev/null || true
-    fi
+    harden_config_permissions
 
     print_success "Directories created"
+}
+
+# ---------------------------------------------------------------------------
+# harden_config_permissions — NARROW config/ permissions; never widen them.
+# Feature 002-user-owned-downloads (FR-015), security regression fixed
+# 2026-08-21.
+#
+# WHAT THIS REPLACED, AND WHY REMOVAL IS PROVEN SAFE (§11.4.124 —
+# investigate before removing, never "no references ⇒ delete"):
+#
+#   This function replaces `podman unshare chmod -R a+rw config/`, added
+#   2026-04-14 in commit 00f1fa6 ("Fix start.sh config/ permissions for podman
+#   unshare"). Git archaeology places it squarely in the PRE-fix world this
+#   feature exists to end: container writes landed at host uid 100999, the
+#   operator could not access config/, and the workaround blanket-widened the
+#   whole tree so that *somebody* could write it.
+#
+#   That premise is now false. Every compose service that mounts anything under
+#   ./config was enumerated from docker-compose.yml and each one writes as host
+#   uid 1000 — the operator, who OWNS the tree:
+#       qbittorrent           PUID=0/PGID=0        -> container root = host uid 1000
+#       jackett               PUID=0/PGID=0        -> container root = host uid 1000
+#       download-proxy        no PUID (root)       -> container root = host uid 1000
+#       boba-jackett          no PUID (root)       -> container root = host uid 1000
+#       qbittorrent-proxy-go  no PUID (root)       -> container root = host uid 1000  [profile: go]
+#   Under rootless Podman container-root IS the host operator, which is the same
+#   measured fact the ownership precondition's in-container probe asserts on every
+#   start. Owner permissions therefore suffice and `a+rw` buys nothing.
+#
+#   What it COST was not nothing: it left the AES-256-GCM credential store
+#   config/boba.db at mode 666 — world-readable AND world-writable — so any
+#   local user could read or REPLACE it. That is strictly worse than the
+#   ownership defect it was compensating for, and it contradicts FR-015, which
+#   requires the credential store stay no more permissive than 600.
+#
+#   `_podman_unshare_works` is NOT orphaned by this removal: copy_plugins still
+#   calls it for `podman unshare cp`.
+#
+# DIRECTION IS ONE-WAY (FR-015): this function only ever REMOVES permission
+# bits. `go-w` cannot widen anything, and the credential store is forced DOWN to
+# 600 only when it is currently more permissive. Nothing here can grant access
+# that did not already exist.
+harden_config_permissions() {
+    local cfg="$SCRIPT_DIR/config"
+    [[ -d "$cfg" ]] || return 0
+
+    # Strip group/other WRITE across the tree. Read bits are left alone: this
+    # change is scoped to the write vector the old widening opened, and blindly
+    # stripping read from a running stack's config would be a different, riskier
+    # change than the defect warrants.
+    chmod -R go-w "$cfg" 2>/dev/null || true
+
+    # The credential store is held to FR-015's floor explicitly, because
+    # "no more permissive than 600" is the whole requirement for this one file.
+    if [[ -f "$cfg/boba.db" ]]; then
+        chmod 600 "$cfg/boba.db" 2>/dev/null || true
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# assert_credential_store_mode — the regression check that makes FR-015
+# enforced rather than merely documented.
+#
+# WHY AN ASSERTION AND NOT A COMMENT: the mode is changed at RUNTIME, by this
+# script and by whatever the containers do while they run, so inspecting the
+# source proves nothing about the file on disk. A comment saying "must be 600"
+# is exactly how the 666 regression survived unnoticed. This reads the REAL
+# mode off the REAL file after the stack is up and FAILS LOUDLY when it is more
+# permissive than 600 (§11.4.201 — assert the real condition).
+#
+# An ABSENT store is not a failure: config/boba.db does not exist before first
+# boot, which is why the ownership scope declares it optional: true. Refusing on
+# absence would be the false-positive refusal §11.4.201(1) forbids.
+assert_credential_store_mode() {
+    local db="$SCRIPT_DIR/config/boba.db"
+    [[ -f "$db" ]] || { print_info "Credential store not created yet — mode check skipped (absent, not a failure)"; return 0; }
+
+    local mode owner
+    mode="$(stat -c '%a' "$db" 2>/dev/null || true)"
+    owner="$(stat -c '%U:%G' "$db" 2>/dev/null || true)"
+    if [[ -z "$mode" ]]; then
+        print_error "Could not read the mode of $db — refusing to report success on an unverified credential store."
+        exit 1
+    fi
+
+    # Any bit set outside owner rw is more permissive than 600.
+    if [[ "$mode" != "600" ]] && [[ "$((8#$mode & 8#177))" -ne 0 ]]; then
+        print_error "SECURITY: credential store $db is mode $mode (owner $owner) — more permissive than 600 (FR-015)."
+        print_error "  This store holds the AES-256-GCM master-key-encrypted tracker credentials."
+        print_error "  Refusing to report a successful start on a widened credential store."
+        exit 1
+    fi
+    print_success "Credential store $db mode $mode owner $owner — no more permissive than 600 (FR-015)"
 }
 
 pull_image() {
@@ -747,6 +838,143 @@ reload_plugins() {
 # the same boba-ctl/podman-compose/docker-compose invocation
 # start_container()/stop_container() already use — so this stays routed
 # through the sanctioned orchestrator instead of a raw `compose` call.
+# ---------------------------------------------------------------------------
+# Ownership gate — feature 002-user-owned-downloads (FR-010, FR-010a, FR-010b,
+# FR-004d).
+#
+# WHY IT LIVES HERE AND DELIBERATELY NOWHERE ELSE:
+#   start.sh is the project's single container-orchestration entry point
+#   (CLAUDE.md Hard Stop #3), and scripts/systemd/user/boba-stack.service
+#   delegates to this script rather than driving containers itself. Placing the
+#   gate here therefore gives BOTH start paths — `./start.sh` and
+#   `systemctl --user start boba.target` — the identical guarantee BY
+#   CONSTRUCTION. There is deliberately NO second copy inside the unit: two
+#   copies are two things that can drift, and a systemd path that could bypass
+#   the gate is exactly the contradiction FR-009 forbids.
+#
+# WHY FAIL-CLOSED:
+#   Operator decision recorded in FR-010: starting with a warning was
+#   explicitly rejected, because a missed warning silently reproduces the
+#   defect this feature exists to remove. Exit 2 (the check could not run) is
+#   NOT a pass either — a check that asserted nothing has proven nothing, and
+#   reporting that as success is the blind-instrument failure of §11.4.201(6).
+#
+# WHY nice/ionice:
+#   The repair may walk a large library and this host runs mission-critical
+#   work (Constitution Principle XIII / §12).
+#
+# ORDERING:
+#   Called AFTER the directory-creation stages on the normal path, because the
+#   declared download root and config/ are `optional: false` — probing them
+#   before they exist would refuse a healthy fresh checkout, which is the
+#   false-positive refusal §11.4.201(1) forbids just as firmly as a false pass.
+run_ownership_gate() {
+    local precondition="$SCRIPT_DIR/scripts/ownership_precondition.sh"
+    local repair="$SCRIPT_DIR/scripts/ownership_repair.sh"
+    local -a nice_prefix=()
+    local rc
+
+    if command -v nice >/dev/null 2>&1 && command -v ionice >/dev/null 2>&1; then
+        nice_prefix=(nice -n 19 ionice -c 3)
+    fi
+
+    if [[ ! -f "$precondition" ]]; then
+        print_error "Ownership precondition script missing: $precondition"
+        print_error "Refusing to start — FR-010 cannot be asserted without it."
+        exit 1
+    fi
+
+    print_info "Ownership precondition: probing every declared location (FR-010)..."
+    set +e
+    "${nice_prefix[@]}" bash "$precondition"
+    rc=$?
+    set -e
+    case "$rc" in
+        0)
+            print_success "Ownership precondition OK — every declared location produces operator-owned files"
+            ;;
+        1)
+            print_error "Ownership precondition FAILED — refusing to start (FR-010)."
+            print_error "  The offending location(s) are named in the report above (FR-010a)."
+            print_error "  Remediate with: bash scripts/ownership_repair.sh"
+            exit 1
+            ;;
+        *)
+            print_error "Ownership precondition COULD NOT RUN (exit $rc) — refusing to start."
+            print_error "  A check that asserted nothing is not a pass (FR-010b, §11.4.201(6))."
+            exit 1
+            ;;
+    esac
+
+    if [[ ! -f "$repair" ]]; then
+        print_error "Ownership repair script missing: $repair"
+        print_error "Refusing to start — pre-existing content cannot be brought under the operator (FR-004d)."
+        exit 1
+    fi
+
+    print_info "Ownership repair: bringing any pre-existing content under the operator (FR-004d)..."
+    set +e
+    "${nice_prefix[@]}" bash "$repair"
+    rc=$?
+    set -e
+    if [[ "$rc" -ne 0 ]]; then
+        print_error "Ownership repair did not complete (exit $rc) — refusing to start."
+        print_error "  Each item it could not repair is named in the report above (FR-006)."
+        exit 1
+    fi
+    print_success "Ownership repair complete — every in-scope item is operator-owned"
+}
+
+# ---------------------------------------------------------------------------
+# Systemd state reconciliation notice — feature 002-user-owned-downloads
+# (FR-009), US3 acceptance scenario 3.
+#
+# THE DEFECT THIS ADDRESSES, MEASURED 2026-08-21:
+#   boba-stack.service is Type=oneshot + RemainAfterExit=yes, so systemd's
+#   notion of "active" means "this unit ran start.sh once and it exited 0" —
+#   NOT "the containers are up". Start the stack directly with ./start.sh and
+#   systemd keeps reporting `inactive` while four containers are healthy. The
+#   two paths then disagree about what is running, and nothing says so.
+#
+#   systemd cannot be made to report a stack it did not start as active, so the
+#   disagreement is not removed by hiding it — it is removed by making the
+#   containers the single source of truth and refusing to leave the divergence
+#   SILENT. This prints the real state, the systemd state, and the one command
+#   that reconciles them.
+#
+#   No-op when start.sh is itself being run BY boba-stack.service — in that case
+#   the two already agree and a notice would be noise. The signal is the unit's
+#   own `Environment=BOBA_STARTED_BY=boba-stack.service`, NOT systemd's
+#   INVOCATION_ID: INVOCATION_ID is inherited by anything spawned under ANY
+#   unit, including the operator's own terminal session, so it answers "is some
+#   systemd unit an ancestor of me" rather than "did boba-stack.service start
+#   me". Measured on this host 2026-08-21: an interactive shell already carried
+#   INVOCATION_ID, so the first version of this guard silenced the notice on the
+#   direct ./start.sh path — the very path it exists to report on. That is the
+#   §11.4.201(7) failure of asserting a proxy instead of the real condition, and
+#   it is why the marker is set explicitly by the unit.
+report_systemd_state() {
+    [[ "${BOBA_STARTED_BY:-}" != "boba-stack.service" ]] || return 0
+    command -v systemctl >/dev/null 2>&1 || return 0
+    systemctl --user list-unit-files boba-stack.service >/dev/null 2>&1 || return 0
+
+    local unit_state
+    unit_state="$(systemctl --user is-active boba-stack.service 2>/dev/null || true)"
+    [[ -n "$unit_state" ]] || return 0
+
+    if [[ "$unit_state" == "active" ]]; then
+        print_info "systemd: boba-stack.service is active — the session-scoped path agrees with the running stack (FR-009)."
+        return 0
+    fi
+
+    print_warning "systemd state DIVERGES from the running stack (FR-009):"
+    print_warning "  reality  : the stack was just started by ./start.sh and its containers are up"
+    print_warning "  systemd  : boba-stack.service = $unit_state"
+    print_warning "  The containers are the source of truth. systemd cannot observe a stack it did"
+    print_warning "  not start, so this is reported rather than hidden."
+    print_warning "  Reconcile with:  bash scripts/boba-svc.sh up      (re-runs this same start.sh)"
+}
+
 recreate_stack() {
     print_info "Recreating the full stack ($COMPOSE_CMD down && $COMPOSE_CMD up -d)..."
 
@@ -888,7 +1116,11 @@ main() {
     fi
 
     if [[ "$recreate_flag" == true ]]; then
+        run_ownership_gate
         recreate_stack
+        harden_config_permissions
+        assert_credential_store_mode
+        report_systemd_state
         exit 0
     fi
 
@@ -896,6 +1128,10 @@ main() {
     cleanup_stale_config
     update_qbittorrent_config
     create_data_directories
+
+    # Ownership gate runs here — after the declared locations exist, before any
+    # container writes into them (FR-010 / FR-004d). See run_ownership_gate.
+    run_ownership_gate
 
     if [[ "$build_frontend_flag" == true ]]; then
         build_frontend
@@ -919,7 +1155,9 @@ main() {
     wait_for_container
     ensure_webui_password
     ensure_macos_tunnel
+    assert_credential_store_mode
     show_status
+    report_systemd_state
 }
 
 # On macOS, podman runs containers in a Linux VM and `network_mode: host`

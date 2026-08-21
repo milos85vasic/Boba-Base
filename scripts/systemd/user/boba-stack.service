@@ -26,6 +26,33 @@
 # - EnvironmentFile — optional; if ~/.qbit.env exists it seeds the
 #   tracker credential env before start.sh runs. NOT tracked in git per
 #   §11.4.10.
+# - StartLimitIntervalSec / StartLimitBurst — MEASURED DEFECT, fixed
+#   2026-08-21 (feature 002-user-owned-downloads, T030). This unit sets
+#   RestartSec=30, but systemd's DEFAULT rate-limit window is 10 s
+#   (verified live: `systemctl --user show boba-stack.service -p
+#   StartLimitIntervalUSec -p StartLimitBurst` → 10s / 5). Restarts 30 s
+#   apart therefore NEVER accumulate inside a 10 s window, so the default
+#   limiter could never trip and a persistently-failing start.sh would
+#   re-run a FULL stack start every 30 s, forever, silently. That matters
+#   more now that start.sh is fail-closed on the ownership precondition
+#   (FR-010): a genuine refusal is persistent by design. The window is
+#   widened to 10 min / 3 tries so a real transient (image pull, network)
+#   still self-heals, while a persistent refusal lands in `failed` where
+#   `systemctl --user status` and `boba-svc status` show it — an opaque
+#   forever-loop is exactly the blocked mechanism §11.4.234 forbids.
+#
+# ─── OWNERSHIP GATE: INHERITED, NEVER DUPLICATED ───────────────────────
+# Feature 002-user-owned-downloads (FR-010 / FR-004d) requires the stack
+# to refuse to start when a declared location cannot produce
+# operator-owned files, and to repair pre-existing content first.
+#
+# That gate is NOT declared here as an ExecStartPre. It lives in exactly
+# ONE place — start.sh's run_ownership_gate() — and this unit inherits it
+# by delegating to start.sh. Two copies would be two things that can
+# drift, and a systemd path whose gate had drifted from the start.sh path
+# is precisely the contradiction FR-009 forbids. Whatever start.sh
+# enforces, `systemctl --user start boba.target` enforces, by
+# construction and with no further wiring.
 
 [Unit]
 Description=Boba stack — containers via ./start.sh
@@ -33,12 +60,23 @@ Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/CLAUDE.md
 After=network-online.target
 Wants=network-online.target
 PartOf=boba.target
+# See the StartLimit note in the header: the default 10 s window cannot
+# bound restarts that are 30 s apart, so it is set explicitly here.
+StartLimitIntervalSec=600
+StartLimitBurst=3
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/run/media/milosvasic/DATA4TB/Projects/boba
 EnvironmentFile=-%h/.qbit.env
+# Tells start.sh that THIS unit invoked it, so its FR-009 divergence notice
+# stays quiet on the path where systemd and reality already agree. systemd's own
+# INVOCATION_ID cannot serve here: it is inherited by anything spawned under any
+# unit — including the operator's terminal — so it answers "is a unit an
+# ancestor of me", not "did boba-stack.service start me" (§11.4.201(7):
+# assert the real condition, never a proxy for it).
+Environment=BOBA_STARTED_BY=boba-stack.service
 ExecStart=/usr/bin/bash -lc "./start.sh --no-build"
 ExecStop=/usr/bin/bash -lc "./stop.sh"
 TimeoutStartSec=300

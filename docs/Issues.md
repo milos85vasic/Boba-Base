@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 17
-**Last modified:** 2026-08-21T15:05:33Z
+**Revision:** 19
+**Last modified:** 2026-08-21T15:40:01Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1038,4 +1038,48 @@ grep -rl CM-SCRIPT-DOCS-SYNC --include='*.sh' --include='*.py' . (excluding subm
 
 **Acceptance criteria:**
 Either the gate is implemented and the 24 missing companions are written (the count becoming a monotone-decreasing ratchet so it cannot grow), or the obligation is explicitly scoped down to a defined subset with the reason recorded. What is NOT acceptable is the current state, where the rule is stated and nothing measures it.
+
+## BOB-152 — Constitution sweep walks vendored third-party code: 82% of one gate's 38,291 findings come from submodules/
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T15:10:28Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+The constitution sweep passes --root at the repository root, so every gate walks vendored third-party code the project neither wrote nor ships: submodules/helixqa/tools/opensource/perfetto, chroma, skyvern, mem0 and so on. Measured today, 82% of one gate's findings originate there. This is a false-positive refusal at scale: it fails the sweep over code that cannot be fixed here, and it buries the 4497 first-party findings that might actually matter under 31496 that do not. A second, subtler instance: cm_killpg_pgid_guard flags its OWN golden-bad fixtures and the BOB-126 incident docstrings - the gate reporting on the very artifacts that prove it works. Surfaced while fixing the .worktrees/ half of this problem (BOB-143), which was the smaller 6% slice; that fix was deliberately scoped to .worktrees/ rather than quietly widened to cover this, because excluding submodules/ is a materially larger decision about what the sweep is for and deserves its own review.
+
+**Affected scope / file-scope manifest:**
+scripts/verify-all-constitution-rules.sh, config/constitution-sweep.conf, constitution/scripts/gates/*
+
+**Reproduction / context:**
+config/constitution-sweep.conf line 27 passes 'DEFAULT --root @ROOT@', so every gate walks the whole repository. Per-tree census of cm_oracle_strategy_named_and_independent over the full root: 38291 findings total - 31496 (82%) from submodules/, 2280 (6%) from .worktrees/, 4497 from the real tree. cm_killpg_pgid_guard: 18 findings - 9 from submodules/, and of the 8 in the real tree several are the gate's OWN golden-bad fixtures and BOB-126 docstrings.
+
+**Acceptance criteria:**
+The sweep scans code this project actually ships. Vendored third-party trees under submodules/ are excluded or scoped explicitly, and any gate's own golden-bad fixtures are excluded from its own scan - with the exclusion validated in BOTH directions (a planted violation in first-party code must still FAIL) so this does not become narrow-until-green.
+
+## BOB-153 — Go profile cannot build: go.mod requires go 1.26.2 but the Dockerfile builder is golang:1.23-alpine
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T15:40:00Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+The Go backend profile is unbuildable. qBitTorrent-go/go.mod declares 'go 1.26.2' while qBitTorrent-go/Dockerfile builds with 'FROM golang:1.23-alpine', so the build aborts before compiling anything. Found while attempting feature 002 quickstart Scenario 6, which exercises the go profile to confirm the ownership fix covers every service (FR-016) - the scenario could not run at all, for a reason unrelated to ownership. Two consequences worth separating. First, this is a plain build defect and is pre-existing. Second, and more awkward, it means FR-016 coverage for the go profile currently rests on surface-equivalent measurement (its Dockerfile's final stage is alpine:3.19 with no USER directive, so it runs as container root and inherits the correct rootless mapping) rather than on a live running service. That reasoning is sound but it is not the same evidence as a probe against a real container, and it is recorded as the weaker evidence it is. Also noted while investigating: the go profile has no Hard-Stop-#3-compliant invocation path - start.sh has no --profile flag, so the only route is a raw compose command, and it would collide on port 7187 with the running Python proxy since both use network_mode host.
+
+**Affected scope / file-scope manifest:**
+qBitTorrent-go/go.mod, qBitTorrent-go/Dockerfile
+
+**Reproduction / context:**
+grep '^go ' qBitTorrent-go/go.mod -> 'go 1.26.2'; grep 'FROM golang' qBitTorrent-go/Dockerfile -> 'FROM golang:1.23-alpine AS builder'. Building the go profile fails: 'go: go.mod requires go >= 1.26.2 (running go 1.23.12; GOTOOLCHAIN=local)'.
+
+**Acceptance criteria:**
+The go profile builds. Either the builder image is raised to a toolchain satisfying go.mod, or go.mod's directive is lowered to what the builder provides - and whichever is chosen, a check ties the two together so they cannot drift apart again, because nothing currently compares them.
 

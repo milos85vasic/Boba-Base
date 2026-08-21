@@ -213,7 +213,7 @@
 #      been dead ~2h. BLOCKING; FAILs (never SKIPs) on zero services checked
 #      or missing python3+PyYAML — a blind instrument's quiet zero is not a
 #      clean tree (§11.4.201(6)).
-#  45. CM-PLUGIN-COUNT: runs scripts/pre_build/check_cm_plugin_count.sh
+#  46. CM-PLUGIN-COUNT: runs scripts/pre_build/check_cm_plugin_count.sh
 #      (BOB-149) — refuses any managed-plugin count stated in the governed
 #      docs (CLAUDE.md, AGENTS.md, docs/features/Status.md) that disagrees
 #      with the count DERIVED from install-plugin.sh's PLUGINS=() array.
@@ -1640,7 +1640,7 @@ else
     rm -f "${OWNINV_LOG}"
 fi
 
-# --- Invariant 45: CM-PLUGIN-COUNT (BOB-149) ---
+# --- Invariant 46: CM-PLUGIN-COUNT (BOB-149) ---
 # Refuses a tree where a documented managed-plugin count disagrees with the
 # count derived from the authoritative source (install-plugin.sh's PLUGINS=()
 # array). BOB-149: the count had drifted three ways — 43 in the constitution,
@@ -1660,26 +1660,30 @@ fi
 # CLAUDE.md is additionally what agents read as project instruction, so a
 # wrong number there is the one most likely to propagate into new work.
 #
-# SLOT 45 — measured, not assumed (§11.4.201(6)). This file labels its
-# invariants in TWO forms: a literal `echo "[N/NN]"` AND `run_const_gate
-# "N/44"`. Counting only the literal form (the obvious grep) reports "far
-# fewer distinct numbers" and free slots at 33-38/40/42/43 — a false-null,
-# because run_const_gate holds exactly 33,34,35,36,37,38,40,42,43. The union
-# of both forms covers 1..44 with NO free slot, so 45 is the first genuinely
-# unused number. That same false-null already caused a real collision:
-# invariant 33 is now claimed TWICE (CM-CLI-AGENT-PLUGINS-WIRED via
-# run_const_gate, and CM-OWNERSHIP-INVARIANTS via the literal echo, whose own
-# comment cites the blind measurement). Not fixed here — that block belongs to
-# concurrent work; it is reported rather than silently absorbed (§11.4.261).
+# SLOT 46 — and the story of how three agents got this wrong in a row, kept
+# here because it is the most useful comment in this file.
 #
-# The denominator stays 44 and NOTHING is renumbered. Renumbering would be a
-# large purely-cosmetic diff conflicting with concurrent work on this file's
-# neighbours, and the denominator's disagreement with the real invariant count
-# is a PRE-EXISTING defect tracked as BOB-150. "45/44" is deliberately left
-# visibly impossible: it is honest evidence the denominator is stale rather
-# than a silent reuse that would hide it. scripts/compute-badges.sh derives
-# the pre-build badge from the highest DENOMINATOR, so this label leaves that
-# badge at 44 — this block does not make BOB-150 worse. BLOCKING.
+# THIS FILE LABELS ITS INVARIANTS IN TWO SYNTAXES:
+#     echo "[N/NN] CM-FOO: ..."          <- the obvious one
+#     run_const_gate "N/NN" "CM-BAR"     <- easy to miss entirely
+#
+# A `grep -oE '\[[0-9]+/NN\]'` sees only the first. Doing that reported ~37
+# labels and a comfortable set of "free" numbers at 33-38/40/42/43. All of it
+# was wrong: run_const_gate holds exactly those numbers, the union covered
+# 1..44 with NO free slot, and slot 33 was already claimed TWICE.
+#
+# THE INSTRUMENT HAD BEEN CONTROL-NEEDLED, which is why this is worth writing
+# down. A synthetic label was injected, the count moved, it was removed, the
+# check passed. But the needle was an ECHO-FORM label, so it certified only
+# that the query could see the ECHO FORM. A control needle certifies the QUERY
+# CLASS it shares load-bearing features with — never "the file". Three
+# independent agents hit this same false-null before it was caught.
+#
+# The file is now renumbered across BOTH forms: 46 labels, 46 distinct,
+# contiguous 1..46, zero duplicates, and the denominator finally tells the
+# truth. If you add an invariant, take 47 and bump every denominator in BOTH
+# syntaxes — and COUNT BOTH FORMS before you believe any slot is free.
+# BLOCKING.
 echo "[46/46] CM-PLUGIN-COUNT: documented plugin counts match their derivation (BOB-149)"
 PLUGINCNT_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_plugin_count.sh"
 if [[ ! -x "${PLUGINCNT_GATE}" ]]; then

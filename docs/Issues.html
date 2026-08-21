@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
-2026-08-21T14:46:07Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 19 <strong>Last modified:</strong>
+2026-08-21T15:40:01Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -1664,5 +1664,124 @@ the real number of labelled invariants, or the numbering is compacted to
 be contiguous - and whichever is chosen, a gate or the runner itself
 derives the denominator rather than restating it as a literal, so the
 two cannot drift apart again.</p>
+<h2
+id="bob-151-cm-script-docs-sync-is-a-named-gate-with-no-implementation-and-24-of-36-scripts-have-no-companion-doc">BOB-151
+— CM-SCRIPT-DOCS-SYNC is a named gate with no implementation, and 24 of
+36 scripts have no companion doc</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Severity:</strong> Medium <strong>Created-By:</strong> AI</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>task</code> on 2026-08-21T15:05:33Z <strong>Reported-By:</strong>
+AI</p>
+<p><strong>What (the report, verbatim):</strong> The §11.4.18
+script-documentation rule names a gate CM-SCRIPT-DOCS-SYNC, but no
+executable file in this repository implements it. Because nothing
+measures the obligation, 24 of 36 scripts under scripts/ have no
+docs/scripts/<name>.md companion - two thirds of them. This is the
+named-gate ledger gap the constitution itself warns about: a gate that
+is named but never implemented reads as coverage while providing none,
+and the corpus grows words instead of enforcement. Surfaced while
+writing the two ownership companions, which were themselves only written
+because the feature plan asked for them explicitly - not because any
+gate demanded it. Filing rather than absorbing: an unstated finding
+reads as no finding, and a 67% documentation gap that nothing reports
+will not shrink on its own.</p>
+<p><strong>Affected scope / file-scope manifest:</strong>
+scripts/<em>.sh, docs/scripts/</em>.md,
+scripts/pre_build_verification.sh</p>
+<p><strong>Reproduction / context:</strong> grep -rl CM-SCRIPT-DOCS-SYNC
+–include=‘<em>.sh’ –include=’</em>.py’ . (excluding submodules) -&gt; 0
+files. Control needle in the same command shape: CM-OWNERSHIP-INVARIANTS
+-&gt; 3 files, CM-KILLPG-PGID-GUARD -&gt; 7 files, so the search is not
+blind. Then: for s in scripts/*.sh; do [ -f docs/scripts/$(basename $s
+.sh).md ] || echo missing; done -&gt; 24 of 36 missing.</p>
+<p><strong>Acceptance criteria:</strong> Either the gate is implemented
+and the 24 missing companions are written (the count becoming a
+monotone-decreasing ratchet so it cannot grow), or the obligation is
+explicitly scoped down to a defined subset with the reason recorded.
+What is NOT acceptable is the current state, where the rule is stated
+and nothing measures it.</p>
+<h2
+id="bob-152-constitution-sweep-walks-vendored-third-party-code-82-of-one-gates-38291-findings-come-from-submodules">BOB-152
+— Constitution sweep walks vendored third-party code: 82% of one gate’s
+38,291 findings come from submodules/</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Medium <strong>Created-By:</strong> AI</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-08-21T15:10:28Z <strong>Reported-By:</strong>
+AI</p>
+<p><strong>What (the report, verbatim):</strong> The constitution sweep
+passes –root at the repository root, so every gate walks vendored
+third-party code the project neither wrote nor ships:
+submodules/helixqa/tools/opensource/perfetto, chroma, skyvern, mem0 and
+so on. Measured today, 82% of one gate’s findings originate there. This
+is a false-positive refusal at scale: it fails the sweep over code that
+cannot be fixed here, and it buries the 4497 first-party findings that
+might actually matter under 31496 that do not. A second, subtler
+instance: cm_killpg_pgid_guard flags its OWN golden-bad fixtures and the
+BOB-126 incident docstrings - the gate reporting on the very artifacts
+that prove it works. Surfaced while fixing the .worktrees/ half of this
+problem (BOB-143), which was the smaller 6% slice; that fix was
+deliberately scoped to .worktrees/ rather than quietly widened to cover
+this, because excluding submodules/ is a materially larger decision
+about what the sweep is for and deserves its own review.</p>
+<p><strong>Affected scope / file-scope manifest:</strong>
+scripts/verify-all-constitution-rules.sh,
+config/constitution-sweep.conf, constitution/scripts/gates/*</p>
+<p><strong>Reproduction / context:</strong>
+config/constitution-sweep.conf line 27 passes ‘DEFAULT –root <span
+class="citation" data-cites="ROOT">@ROOT</span>@’, so every gate walks
+the whole repository. Per-tree census of
+cm_oracle_strategy_named_and_independent over the full root: 38291
+findings total - 31496 (82%) from submodules/, 2280 (6%) from
+.worktrees/, 4497 from the real tree. cm_killpg_pgid_guard: 18 findings
+- 9 from submodules/, and of the 8 in the real tree several are the
+gate’s OWN golden-bad fixtures and BOB-126 docstrings.</p>
+<p><strong>Acceptance criteria:</strong> The sweep scans code this
+project actually ships. Vendored third-party trees under submodules/ are
+excluded or scoped explicitly, and any gate’s own golden-bad fixtures
+are excluded from its own scan - with the exclusion validated in BOTH
+directions (a planted violation in first-party code must still FAIL) so
+this does not become narrow-until-green.</p>
+<h2
+id="bob-153-go-profile-cannot-build-go.mod-requires-go-1.26.2-but-the-dockerfile-builder-is-golang1.23-alpine">BOB-153
+— Go profile cannot build: go.mod requires go 1.26.2 but the Dockerfile
+builder is golang:1.23-alpine</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Medium <strong>Created-By:</strong> AI</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-08-21T15:40:00Z <strong>Reported-By:</strong>
+AI</p>
+<p><strong>What (the report, verbatim):</strong> The Go backend profile
+is unbuildable. qBitTorrent-go/go.mod declares ‘go 1.26.2’ while
+qBitTorrent-go/Dockerfile builds with ‘FROM golang:1.23-alpine’, so the
+build aborts before compiling anything. Found while attempting feature
+002 quickstart Scenario 6, which exercises the go profile to confirm the
+ownership fix covers every service (FR-016) - the scenario could not run
+at all, for a reason unrelated to ownership. Two consequences worth
+separating. First, this is a plain build defect and is pre-existing.
+Second, and more awkward, it means FR-016 coverage for the go profile
+currently rests on surface-equivalent measurement (its Dockerfile’s
+final stage is alpine:3.19 with no USER directive, so it runs as
+container root and inherits the correct rootless mapping) rather than on
+a live running service. That reasoning is sound but it is not the same
+evidence as a probe against a real container, and it is recorded as the
+weaker evidence it is. Also noted while investigating: the go profile
+has no Hard-Stop-#3-compliant invocation path - start.sh has no –profile
+flag, so the only route is a raw compose command, and it would collide
+on port 7187 with the running Python proxy since both use network_mode
+host.</p>
+<p><strong>Affected scope / file-scope manifest:</strong>
+qBitTorrent-go/go.mod, qBitTorrent-go/Dockerfile</p>
+<p><strong>Reproduction / context:</strong> grep ‘^go’
+qBitTorrent-go/go.mod -&gt; ‘go 1.26.2’; grep ‘FROM golang’
+qBitTorrent-go/Dockerfile -&gt; ‘FROM golang:1.23-alpine AS builder’.
+Building the go profile fails: ‘go: go.mod requires go &gt;= 1.26.2
+(running go 1.23.12; GOTOOLCHAIN=local)’.</p>
+<p><strong>Acceptance criteria:</strong> The go profile builds. Either
+the builder image is raised to a toolchain satisfying go.mod, or
+go.mod’s directive is lowered to what the builder provides - and
+whichever is chosen, a check ties the two together so they cannot drift
+apart again, because nothing currently compares them.</p>
 </body>
 </html>

@@ -11,15 +11,44 @@
 # ~/.config/systemd/user/. Installation + management is done via
 # scripts/boba-svc.sh; source-of-truth lives here in the repo.
 #
-# The single container-orchestration owner remains ./start.sh
-# (project Hard Stop #3 — CLAUDE.md). boba-stack.service is a thin
-# systemd wrapper around start.sh; it does NOT bypass boba-ctl or
-# podman-compose.
+# ─── DELIBERATE LIFECYCLE-OWNERSHIP DECISION (FR-009, T030) ───────────
+# Two start paths exist — `./start.sh` and `systemctl --user start
+# boba.target` — and the requirement is that they never contradict each
+# other about what is running. The decision, made deliberately rather
+# than left half-wired, is a strict two-layer split:
+#
+#   OUTER layer (systemd)   owns SESSION lifecycle only: autostart at
+#                           login/boot, stop on logout, journal capture,
+#                           restart-on-failure. It issues no container
+#                           command of any kind.
+#   INNER layer (start.sh)  owns CONTAINER orchestration, exclusively —
+#                           project Hard Stop #3 (CLAUDE.md). It is also
+#                           the ONLY place the feature-002 ownership gate
+#                           lives, so the systemd path inherits FR-010
+#                           and FR-004d by construction and cannot
+#                           bypass them.
+#
+# Consequences that follow from the split and are relied on elsewhere:
+#   * No unit in this directory may ever contain a raw podman/docker or
+#     compose command. Every unit delegates to ./start.sh / ./stop.sh.
+#   * start.sh is idempotent, so `systemctl --user start boba.target`
+#     against an already-running stack CONVERGES rather than conflicting.
+#   * The containers are the single source of truth for "what is
+#     running". systemd cannot observe a stack it did not start, so
+#     start.sh reports that divergence out loud instead of hiding it
+#     (see report_systemd_state in start.sh). A divergence the operator
+#     is told about is not a contradiction; a silent one is.
+#
+# boba-resource-pressure-check.{service,timer} are INSTALLED alongside
+# these units but deliberately NOT Wants= here — host resource-pressure
+# monitoring must keep running when the stack is down. Their absence
+# from this Wants= list is intentional, not an omission.
 
 [Unit]
 Description=Boba (qBittorrent + Jackett + Merge Search) stack umbrella
 Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/README.md
 Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/CLAUDE.md
+Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/systemd/UNITS.md
 After=default.target
 # Pull every registered boba-*.service in when the target starts.
 # When a new unit is added, extend this list AND its [Install]

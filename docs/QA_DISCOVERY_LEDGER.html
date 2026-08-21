@@ -1,6 +1,6 @@
 <h1 id="qa-discovery-channel-ledger">QA Discovery-Channel Ledger</h1>
-<p><strong>Revision:</strong> 15 <strong>Last modified:</strong>
-2026-08-20T11:30:00+02:00 <strong>Status:</strong> active
+<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
+2026-08-21T15:05:00Z <strong>Status:</strong> active
 <strong>Constitution:</strong> §11.4.238 (automated QA must be the
 DISCOVERER, not the confirmer — every defect found outside the automated
 HelixQA regime is itself a coverage-escape release blocker, not merely a
@@ -1354,6 +1354,115 @@ fresh-clone measurement is real and repeatable; the migration is not
 attempted because it could not be proven safe within this change’s file
 scope.</li>
 </ul>
+<h3
+id="bob-container-writes-not-operator-owned-every-file-the-system-produced-was-owned-by-an-identity-the-operator-did-not-have">BOB-CONTAINER-WRITES-NOT-OPERATOR-OWNED
+— every file the system produced was owned by an identity the operator
+did not have</h3>
+<ul>
+<li><strong>id:</strong> feature <code>002-user-owned-downloads</code>
+(spec + tasks under <code>specs/002-user-owned-downloads/</code>); no
+single <code>BOB-NNN</code> mints the defect itself.</li>
+<li><strong>date:</strong> 2026-08-21</li>
+<li><strong>channel:</strong> <code>operator-report</code> — the
+operator hit it while using the product: downloaded content, and the
+project’s own <code>config/</code> tree, could not be moved, edited, or
+deleted by the account that started the system. Nothing in the automated
+regime raised it, before or after.</li>
+<li><strong>summary:</strong> Every file the containerised services
+wrote landed at host uid <code>100999</code> — a rootless-container
+sub-uid with <strong>no host account</strong>. Measured on 2026-08-21
+before the fix: the download root rendered as
+<code>UNKNOWN:UNKNOWN</code> and held content at 100999;
+<code>config/</code> held <strong>51</strong> items at 100999; and
+<code>config/boba.db</code> (mode <code>600</code>, owner unresolvable)
+could not be read by the operator at all — which silently made the
+backup procedure that <code>docs/BOBA_DATABASE.md</code> § 3
+<em>mandates</em> impossible to perform. The document prescribed no
+workaround because it never knew it was blocked.</li>
+<li><strong>escape-audit:</strong> <strong>No automated check ever
+asserted the OWNERSHIP of a file the system produced.</strong> This is a
+scope gap with a precise shape, not a missing idea. The suites that
+covered these paths asserted <em>completion</em> and <em>response
+status</em>: a download finished, an endpoint returned success, a file
+appeared where it was expected. Every one of those properties is
+<strong>true of a file owned by 100999</strong> — they stayed green for
+the entire life of the defect, and would have stayed green indefinitely,
+because none of them ever read a produced file’s <code>st_uid</code>
+back from the host and compared it to anything. The defect was therefore
+invisible <strong>by construction</strong> to the whole standing regime,
+not merely missed by it. Two compounding factors, both §11.4.201-class:
+(a) ownership of a location <strong>cannot be inferred from the location
+itself</strong> — the download root was owned by uid 1000 and still
+received 100999-owned files, so any check reading the directory’s own
+owner, the configured <code>PUID</code>, or “no error occurred” would
+have passed while broken (a proxy standing in for the condition); and
+(b) a <strong>host-side</strong> write by the operator produces an
+operator-owned file even in the directory whose <em>container</em>
+writes land at 100999 — measured during Phase 1 of the fix, where the
+shared host probe returned <code>ok</code> for exactly that directory.
+So even the obvious first version of the check would have been a false
+pass. The check that would have caught it is precisely the one that now
+exists: write a real file <strong>through the real application
+path</strong>, read the owner back <strong>from the host</strong>, and
+compare it to the operator’s uid.</li>
+<li><strong>new-check:</strong> four artifacts, all landed on branch
+<code>002-user-owned-downloads</code>:
+<ol type="1">
+<li><code>tests/ownership/test_container_writes_owned_files.py</code> —
+the §11.4.115 <strong>RED</strong>. A throwaway container writes a file
+and a directory tree into the location as the service’s declared
+identity; the test reads the owner back from the host. Observed
+<strong>failing at uid <code>100999</code></strong> before the fix (the
+test’s own docstring records
+<code>RED (pre-fix): owner uid is 100999 — an identity with no host account</code>);
+passes now. Covers FR-002 at every level of a created tree, not only the
+leaf file.</li>
+<li><code>tests/unit/test_ownership_precondition.sh</code> — contract
+suite for <code>scripts/ownership_precondition.sh</code>, the
+fail-closed startup check that refuses to start when a declared location
+cannot produce operator-owned files. Includes the §11.4.201(1)
+both-directions set the contract mandates: golden-bad (wrongly-owned
+location → exit 1), golden-good (→ exit 0), and a negative control (an
+<code>optional: true</code> location that is simply absent → exit 0,
+<strong>not</strong> a refusal).</li>
+<li><code>tests/unit/test_ownership_repair.sh</code> — contract suite
+for <code>scripts/ownership_repair.sh</code>, including the interrupt
+case (kill mid-run → marker absent → next run resumes) and the
+preserve-mode case (<code>config/boba.db</code> keeps its exact bits
+after repair).</li>
+<li><strong><code>CM-OWNERSHIP-INVARIANTS</code></strong> — the standing
+gate, wired as <strong>invariant 33</strong> of
+<code>scripts/pre_build_verification.sh</code>, delegating to
+<code>scripts/pre_build/check_cm_ownership_invariants.sh</code> with its
+paired §1.1 mutation
+<code>check_cm_ownership_invariants_mutation_test.sh</code> (revert one
+service’s ownership route → the gate must FAIL). This is what stops the
+route from being silently reverted later — per §11.4.226, a source-only
+fix with no standing guard is exactly the closure class that reopens the
+next time someone edits <code>docker-compose.yml</code>.</li>
+</ol></li>
+<li><strong>Honest boundary (§11.4.6):</strong> the defect is fixed and
+the checks above are in place, but the escape itself is not undone —
+this is recorded as a <strong>coverage escape</strong>, not as a clean
+closure, because a human using the product was the discovery layer and
+§11.4.238 makes that a failure of the regime regardless of how well the
+defect was then fixed. Two residuals are stated rather than glossed: (a)
+the <code>start.sh</code> wiring (<code>run_ownership_gate()</code>,
+refusing to start on precondition exit <code>1</code>
+<strong>or</strong> <code>2</code> and on a failed repair) is present in
+the working tree as of 2026-08-21T15:10Z but was still
+<strong>uncommitted</strong> when this entry was written — so the gate
+is not yet proven by a run of the committed tree, and task
+<strong>T031</strong> remains the tracking item until it is; (b) the
+container-write probe inside
+<code>scripts/ownership_precondition.sh</code> needs a container runtime
+and a locally-present service image, and honestly SKIPs with a named
+reason where it has neither (§11.4.3) — on such a host the standing
+check verifies the declared ownership <strong>route</strong>
+(configuration) rather than observed <strong>behaviour</strong>, and
+says so in its own output rather than reporting the fallback as the real
+condition.</li>
+</ul>
 <h2 id="discovery-channel-split-tracked-per-11.4.238e">Discovery-channel
 split (tracked, per §11.4.238(E))</h2>
 <table>
@@ -1479,11 +1588,21 @@ EXPORT-SYNC-MTIME-NOT-REPRODUCIBLE-ON-FRESH-CLONE)</td>
 <td>100%</td>
 </tr>
 <tr>
+<td>2026-08-21 (incremental, feature 002-user-owned-downloads — 1 new
+<code>###</code> entry: every container-produced file owned by uid
+100999, reported by the operator while using the product; no automated
+check had ever asserted a produced file’s owner)</td>
+<td>0</td>
+<td>1 (<code>operator-report</code> x1:
+BOB-CONTAINER-WRITES-NOT-OPERATOR-OWNED)</td>
+<td>100%</td>
+</tr>
+<tr>
 <td><strong>Cumulative total (all <code>###</code> entries to date, this
 row is what <code>CM-QA-DISCOVERY-LEDGER-FRESH</code>
 checks)</strong></td>
 <td><strong>0</strong></td>
-<td><strong>22</strong></td>
+<td><strong>23</strong></td>
 <td><strong>100%</strong></td>
 </tr>
 </tbody>
