@@ -31,9 +31,9 @@ Multi-service containerised platform. Paths are repository-root relative, per pl
 **Execution notes**: No special discipline required. These create the declared data and
 shared helper every later phase reads.
 
-- [ ] T001 Create `config/owned_paths.yaml` with the E1 schema from data-model.md (`schema_version`, `paths[].{path,kind,optional,preserve_mode,recursive}`), seeded with the three measured entries: the `QBITTORRENT_DATA_DIR` download root (`downloads`), `config/` (`project-config`), and `config/boba.db` (`credential-store`, `preserve_mode: true`)
-- [ ] T002 [P] Document in `config/owned_paths.yaml` header WHY scope is declared rather than derived — compose env mixes served/dependency values and the download root is host-specific; deriving it reproduces the §11.4.201(1) false-positive refusal the healthcheck manifest already hit
-- [ ] T003 Create `scripts/lib/ownership.sh` with shared helpers: resolve the declared scope, resolve the operator uid, and a `probe_location()` that CREATES a real file, reads back its owner, and removes it (per contracts/startup-precondition.md — never infer from the parent directory or from "no error") [FR-010b, E4]
+- [x] T001 Create `config/owned_paths.yaml` with the E1 schema from data-model.md (`schema_version`, `paths[].{path,kind,optional,preserve_mode,recursive}`), seeded with the three measured entries: the `QBITTORRENT_DATA_DIR` download root (`downloads`), `config/` (`project-config`), and `config/boba.db` (`credential-store`, `preserve_mode: true`)
+- [x] T002 [P] Document in `config/owned_paths.yaml` header WHY scope is declared rather than derived — compose env mixes served/dependency values and the download root is host-specific; deriving it reproduces the §11.4.201(1) false-positive refusal the healthcheck manifest already hit
+- [x] T003 Create `scripts/lib/ownership.sh` with shared helpers: resolve the declared scope, resolve the operator uid, and a `probe_location()` that CREATES a real file, reads back its owner, and removes it (per contracts/startup-precondition.md — never infer from the parent directory or from "no error") [FR-010b, E4]
 
 **Checkpoint**: `bash -n` clean on all new shell files; `config/owned_paths.yaml` parses.
 

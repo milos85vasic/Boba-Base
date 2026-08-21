@@ -1,0 +1,89 @@
+# ============================================================================
+# config/owned_paths.yaml — the locations that MUST end up owned by the
+# operator who starts the system (feature 002-user-owned-downloads).
+# ============================================================================
+#
+# Consumed by:
+#   scripts/ownership_precondition.sh   (FR-010 — refuse to start if a location
+#                                        cannot produce operator-owned files)
+#   scripts/ownership_repair.sh         (FR-004  — repair pre-existing content)
+#   scripts/pre_build/check_cm_ownership_invariants.sh (FR-011 — regression gate)
+#
+# ── WHY THIS IS DECLARED AND NOT DERIVED (T002, §11.4.6 / §11.4.201(1)) ─────
+#
+# These services run `network_mode: host`, so docker-compose.yml carries NO
+# `ports:` mapping and no volume-derived scope to read. The only path-ish and
+# port-ish values in a service block are environment variables, and those mix
+# two meanings that NO syntactic rule separates:
+#
+#     PROXY_PORT=7186          <- a port this service SERVES
+#     MERGE_SERVICE_PORT=7187  <- a port this service SERVES
+#     QBITTORRENT_PORT=7185    <- a port this service CONNECTS TO
+#
+# The same ambiguity applies to paths: the download root comes from
+# QBITTORRENT_DATA_DIR and is host-specific, while `config/` is repo-relative.
+# A gate that swept the environment would demand operator ownership of things
+# the system does not own — a FALSE-POSITIVE REFUSAL, which §11.4.201(1)
+# forbids exactly as firmly as a false pass.
+#
+# THIS TRAP IS NOT HYPOTHETICAL. Its sibling file `config/served_ports.yaml`
+# was first seeded from CLAUDE.md prose rather than from the Dockerfile, and
+# the healthcheck gate built on it then FAILED a service whose healthcheck was
+# already correct (BOB-138/BOB-141). Every entry below is therefore derived
+# from MEASUREMENT on the running system, not from documentation.
+#
+# ── PROVENANCE (measured 2026-08-21, research.md R6) ────────────────────────
+#
+#   download root  : owned by uid 100999, renders as UNKNOWN:UNKNOWN
+#                    6458 items at uid 1000, 1 at 100999
+#   config/        : 51 items at uid 100999
+#   config/boba.db : mode 600, owner does not resolve -> the operator cannot
+#                    read their own credential database, so the backup that
+#                    docs/BOBA_DATABASE.md §3 MANDATES is impossible to perform
+#   tmp/           : already uid 1000 — NOT listed, nothing to fix
+#
+# ── ADDING AN ENTRY ────────────────────────────────────────────────────────
+#
+# A location the system writes but that is absent here is UNDECLARED, and the
+# gate reports it rather than silently passing — silence is not an exemption
+# (§11.4.201(6)). Adding an entry changes the scope fingerprint, which re-arms
+# the repair so the newly-declared path is actually repaired (data-model E2).
+# ============================================================================
+
+schema_version: 1
+
+paths:
+  # The download tree. Path comes from QBITTORRENT_DATA_DIR (see .env); the
+  # value below is the documented default and is overridden at runtime by the
+  # resolver in scripts/lib/ownership.sh — it is NOT hardcoded here, because a
+  # hardcoded host path is exactly the project-literal coupling §11.4.35
+  # forbids in shared logic.
+  - path: "${QBITTORRENT_DATA_DIR:-/mnt/DATA}"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true
+
+  # The project configuration tree. In scope per FR-012: 51 items here were
+  # owned by the mapped identity, so the operator could not edit their own
+  # configuration.
+  - path: "config"
+    kind: project-config
+    optional: false
+    preserve_mode: false
+    recursive: true
+
+  # The encrypted credential store. preserve_mode is TRUE and load-bearing:
+  # FR-015 forbids the repair from relaxing access while changing ownership.
+  # Bringing a credential store under the operator's ownership while widening
+  # who can read it would trade a usability defect for a security one — a
+  # strictly worse outcome. It must remain no more permissive than mode 600.
+  #
+  # Listed explicitly even though `config/` above covers it recursively,
+  # because its preserve_mode differs from its parent's and the more specific
+  # entry must win.
+  - path: "config/boba.db"
+    kind: credential-store
+    optional: true          # absent before first boot; absence is not an error
+    preserve_mode: true
+    recursive: false

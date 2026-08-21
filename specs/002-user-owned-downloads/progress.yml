@@ -1,0 +1,67 @@
+# Execution state for feature 002-user-owned-downloads
+# Written by /speckit-superspec-execute. Updated at each phase boundary.
+
+feature: 002-user-owned-downloads
+branch: 002-user-owned-downloads
+updated: 2026-08-21
+
+superpowers_detected:
+  executing-plans: true
+  subagent-driven-development: true
+  test-driven-development: true
+
+phases:
+  - id: 1
+    name: Setup (Shared Infrastructure)
+    status: complete
+    tasks: [T001, T002, T003]
+    checkpoint:
+      bash_n_clean: true
+      yaml_parses: true          # 3 entries, schema_version 1
+      functional_verified: true  # scope resolved, env expansion confirmed
+      verdicts_exercised: [ok, absent, unwritable]
+      verdicts_NOT_exercised: [wrong-owner]
+  - id: 2
+    name: Foundational (RED)
+    status: in-progress
+    tasks: [T004, T005, T006, T007]
+  - id: 3
+    name: US1 - downloads usable
+    status: not-started
+  - id: 4
+    name: US2 - backlog repaired
+    status: not-started
+  - id: 5
+    name: US3 - session lifecycle
+    status: not-started
+  - id: 6
+    name: Polish
+    status: not-started
+
+open_findings:
+  - id: X1
+    severity: HIGH
+    raised_at: phase-1-checkpoint
+    title: probe_location asserts host-write ownership, not container-write ownership
+    detail: >
+      probe_location() reports "ok" for the download root, a directory owned by
+      uid 100999 that still contains a 100999-owned item. It runs as the host
+      user, so it creates a host-owned file and concludes the location is fine.
+      The defect this feature exists to fix is that CONTAINER writes land at
+      100999 - so the probe answers a different question than FR-010 asks.
+      This is the exact proxy-vs-real-condition failure (§11.4.201) that
+      FR-010b and the function's own docstring forbid.
+    scope: T003 built what its task specified; the defect is in
+      contracts/startup-precondition.md, which did not state WHOSE write must
+      be probed.
+    status: RESOLVED 2026-08-21 - operator approved option C (both probes,
+      each reported for what it proves). contracts/startup-precondition.md
+      amended; T033 must implement P1 + P2 with the honest-SKIP fallback.
+    blocks: nothing - resolution recorded before Phase 2 proceeds
+    options_for_operator:
+      - Probe by running a throwaway container write (真 condition; needs the
+        runtime up at precondition time, and costs seconds per start)
+      - Probe host-write AND assert the per-service route from
+        docker-compose.yml (cheap, but the route check is itself a proxy)
+      - Both - container probe when the runtime is available, route assertion
+        as the fallback, each reported honestly for what it proves
