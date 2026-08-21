@@ -133,6 +133,23 @@ is the cache-bust guard. See
 <code>docs/MERGE_SEARCH_DIAGNOSTICS.md</code> §“Rebuild / restart
 contract” for the full table.</li>
 </ul></li>
+<li><p><strong><code>PUID=0</code>/<code>PGID=0</code> on
+<code>qbittorrent</code> + <code>jackett</code> is DELIBERATE</strong> —
+do not “fix” it back to <code>1000</code>. Rootless podman maps
+container uid 0 to the <strong>host operator</strong> (uid 1000), and
+container uid <em>N</em> to <code>100000+N-1</code>;
+<code>PUID=1000</code> therefore made every download land at host uid
+<strong>100999</strong> (<code>UNKNOWN</code>), which the operator had
+to <code>chown</code> by hand. <code>PUID=0</code> grants <strong>no
+host privilege</strong> — the container is still rootless and still
+confined to the operator’s own account (§11.4.161 preserved). The other
+three services (<code>download-proxy</code>,
+<code>qbittorrent-proxy-go</code>, <code>boba-jackett</code>) already
+run as container root and already write host-uid-1000 files — they need
+no change. <strong>Never add <code>userns_mode: keep-id</code> to any
+service in this stack</strong>: it hangs the linuxserver images
+(measured, twice) and is pointless for the root-running ones. See
+<code>docs/guides/file-ownership.md</code>.</p></li>
 <li><p><strong>WebUI credentials <code>admin</code>/<code>admin</code>
 are hardcoded</strong> — do not change.</p></li>
 <li><p><strong>Never commit <code>.env</code></strong> — it contains

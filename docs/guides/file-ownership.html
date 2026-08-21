@@ -1,0 +1,274 @@
+<h1
+id="file-ownership-why-downloads-landed-unowned-and-how-it-is-fixed">File
+Ownership — Why Downloads Landed Unowned, and How It Is Fixed</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T14:38:55Z <strong>Audience:</strong> Operators running boba
+on a rootless-podman host who have seen downloaded files they cannot
+open, move, or delete without changing ownership first.
+<strong>Authority:</strong> Feature 002-user-owned-downloads. Measured
+evidence in <a
+href="../../specs/002-user-owned-downloads/research.md"><code>specs/002-user-owned-downloads/research.md</code></a>
+R1, R4, and the R9 correction record.</p>
+<hr />
+<h2 id="the-defect">The defect</h2>
+<p>Every file the stack downloaded landed owned by an identity you do
+not have.</p>
+<pre><code>$ ls -l /mnt/DATA/some-download/
+-rw-r--r-- 1 100999 100999  1234567 Aug 21 12:00 file.mkv</code></pre>
+<p><code>100999</code> has no entry in <code>/etc/passwd</code>, so
+tools render it as <code>UNKNOWN:UNKNOWN</code>. The practical
+consequence was not cosmetic. You could not move, rename, delete, or in
+many cases even <em>read</em> your own downloads without first taking
+ownership of them by hand — one <code>chown</code> per download,
+forever. Directories were worse: the operator’s own <code>stat</code> on
+a file inside them returned <code>Permission denied</code>.</p>
+<p>The same defect reached beyond downloads. <code>config/</code> held
+51 items owned by <code>100999</code>, including
+<code>config/boba.db</code> at mode <code>600</code>. Because
+<code>docs/BOBA_DATABASE.md</code> instructs you to back up
+<code>boba.db</code> and <code>.env</code> together, and warns that
+losing the master key is unrecoverable, that documented backup procedure
+<strong>could not be performed at all</strong>.</p>
+<h2 id="why-it-happened">Why it happened</h2>
+<p>Nothing was misconfigured in the ordinary sense. This is a
+consequence of how <strong>rootless</strong> containers map identities,
+meeting a setting that is correct advice everywhere else.</p>
+<p>Under rootless podman your account is granted a block of subordinate
+UIDs:</p>
+<pre><code>$ grep &quot;^$(whoami):&quot; /etc/subuid
+milosvasic:100000:65536</code></pre>
+<p>Read that as: <em>“this user may use 65536 UIDs starting at
+100000.”</em> The kernel then maps identities between the container and
+the host like this:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Inside the container</th>
+<th>On the host</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>uid <strong>0</strong> (root)</td>
+<td><strong>your own uid</strong> (1000)</td>
+<td>The namespace owner is you</td>
+</tr>
+<tr>
+<td>uid <strong>1</strong></td>
+<td>100000</td>
+<td>first subordinate uid</td>
+</tr>
+<tr>
+<td>uid <strong>N</strong></td>
+<td><strong>100000 + N − 1</strong></td>
+<td>the general rule</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Worked example.</strong> The linuxserver.io images take a
+<code>PUID</code> environment variable and run the application as that
+uid. The stack set <code>PUID=1000</code> — which looks obviously right,
+since the operator <em>is</em> uid 1000 on the host. But
+<code>1000</code> is interpreted <strong>inside the container</strong>,
+so the mapping applies:</p>
+<pre><code>100000 + 1000 − 1 = 100999</code></pre>
+<p>Every file the application wrote therefore landed on the host as uid
+<code>100999</code>. The setting that would be correct under rootful
+Docker is precisely the one that breaks things under rootless
+podman.</p>
+<p>The counter-intuitive corollary is the whole fix:</p>
+<blockquote>
+<p>Under rootless podman, <strong>container root is you.</strong> A
+container running as uid 0 writes files owned by your host account — not
+by host root.</p>
+</blockquote>
+<h2 id="the-fix-per-service">The fix, per service</h2>
+<p>Two services needed changing. Three were already correct and were
+deliberately left alone.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Service</th>
+<th>Image</th>
+<th>Change</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qbittorrent</code></td>
+<td>linuxserver.io</td>
+<td><code>PUID=0</code>, <code>PGID=0</code></td>
+<td>Makes the app run as container root → host uid 1000</td>
+</tr>
+<tr>
+<td><code>jackett</code></td>
+<td>linuxserver.io</td>
+<td><code>PUID=0</code>, <code>PGID=0</code></td>
+<td>Same</td>
+</tr>
+<tr>
+<td><code>download-proxy</code></td>
+<td><code>python:3.12-alpine</code></td>
+<td><strong>none</strong></td>
+<td>Already runs as container root; measured writing host-uid-1000
+files</td>
+</tr>
+<tr>
+<td><code>qbittorrent-proxy-go</code></td>
+<td>built Go</td>
+<td><strong>none</strong></td>
+<td>No <code>USER</code> directive in its Dockerfile, so it runs as
+root</td>
+</tr>
+<tr>
+<td><code>boba-jackett</code></td>
+<td>built Go</td>
+<td><strong>none</strong></td>
+<td>Already runs as container root; measured writing host-uid-1000
+files</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="puid0-does-not-give-the-container-host-privilege"><code>PUID=0</code>
+does not give the container host privilege</h3>
+<p>This is the objection worth answering directly, because “set it to
+root” reads like a security regression and is not one here. The
+container’s uid 0 <strong>is</strong> your unprivileged host account,
+uid 1000. It holds no capability on the host that your own shell does
+not already hold. The stack remains fully rootless; nothing runs under
+<code>sudo</code>, and no system-wide service is introduced. What
+changed is which <em>identity inside the namespace</em> the application
+adopts — and that identity maps to you.</p>
+<h3 id="why-userns_mode-keep-id-is-not-used">Why
+<code>userns_mode: keep-id</code> is not used</h3>
+<p><code>--userns=keep-id</code> is the other well-known way to line up
+container and host identities, and it is the wrong tool for this
+stack:</p>
+<ul>
+<li>On the <strong>linuxserver.io images it hangs the container</strong>
+with no output. Those images boot as root to run their s6 init before
+dropping to <code>PUID</code>; under <code>keep-id</code> there is no
+usable root, and the image stalls instead of failing fast. This was
+measured twice.</li>
+<li>On the <strong>three services that already run as root it is
+pointless</strong> — they were already writing host-uid-1000 files.
+Adding <code>keep-id</code> would have changed nothing beneficial while
+introducing the same no-usable-root failure mode.</li>
+</ul>
+<p><strong><code>userns_mode: keep-id</code> must not be added to any
+service in this stack.</strong></p>
+<h2 id="verify-it-yourself">Verify it yourself</h2>
+<p>Do not verify this by reading <code>docker-compose.yml</code>. A
+configuration file states an intention; it does not prove what the
+running container actually writes. Write a real file through the real
+service and read the owner back from the host:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /path/to/boba</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="va">DL</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${QBITTORRENT_DATA_DIR</span><span class="op">:-</span>/mnt/DATA<span class="va">}</span><span class="st">&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec qbittorrent sh <span class="at">-c</span> <span class="st">&#39;s6-setuidgid abc touch /downloads/.ownership-probe&#39;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">stat</span> <span class="at">-c</span> <span class="st">&#39;%u (%U)&#39;</span> <span class="st">&quot;</span><span class="va">$DL</span><span class="st">/.ownership-probe&quot;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> <span class="st">&quot;</span><span class="va">$DL</span><span class="st">/.ownership-probe&quot;</span></span></code></pre></div>
+<p>Expected output — your own uid and username:</p>
+<pre><code>1000 (milosvasic)</code></pre>
+<p>If you see <code>100999 (UNKNOWN)</code>, the fix is not in effect on
+the running container. Note that a <code>PUID</code> change lives in
+<code>docker-compose.yml</code>, and <strong>a restart does not re-read
+the compose file</strong> — you need
+<code>./start.sh --recreate</code>.</p>
+<p>You can check the other services the same way; they mount
+<code>./config</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec qbittorrent-proxy sh <span class="at">-c</span> <span class="st">&#39;touch /config/.ownership-probe&#39;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> exec boba-jackett     sh <span class="at">-c</span> <span class="st">&#39;touch /config/.ownership-probe2&#39;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">stat</span> <span class="at">-c</span> <span class="st">&#39;%n -&gt; %u (%U)&#39;</span> config/.ownership-probe config/.ownership-probe2</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-f</span> config/.ownership-probe config/.ownership-probe2</span></code></pre></div>
+<h3 id="prove-your-probe-can-actually-see-a-failure">Prove your probe
+can actually see a failure</h3>
+<p>A clean reading only means something if the same probe would have
+reported a dirty one. To confirm the probe is not simply blind, run it
+against a throwaway container configured the old, broken way:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="va">T</span><span class="op">=</span><span class="va">$(</span><span class="fu">mktemp</span> <span class="at">-d</span> <span class="st">&quot;</span><span class="va">$PWD</span><span class="st">/tmp/ownprobe.XXXX&quot;</span><span class="va">)</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> run <span class="at">--rm</span> <span class="at">-e</span> PUID=1000 <span class="at">-e</span> PGID=1000 <span class="at">-v</span> <span class="st">&quot;</span><span class="va">$T</span><span class="st">&quot;</span>:/downloads <span class="dt">\</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  lscr.io/linuxserver/qbittorrent:latest <span class="dt">\</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  sh <span class="at">-c</span> <span class="st">&#39;s6-setuidgid abc touch /downloads/control&#39;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="fu">stat</span> <span class="at">-c</span> <span class="st">&#39;%u (%U)&#39;</span> <span class="st">&quot;</span><span class="va">$T</span><span class="st">/control&quot;</span>          <span class="co"># as you: Permission denied</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> unshare stat <span class="at">-c</span> <span class="st">&#39;in-ns uid %u&#39;</span> <span class="st">&quot;</span><span class="va">$T</span><span class="st">/control&quot;</span>   <span class="co"># in-ns uid 1000 = host 100999</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> unshare rm <span class="at">-rf</span> <span class="st">&quot;</span><span class="va">$T</span><span class="st">&quot;</span></span></code></pre></div>
+<p>The <code>Permission denied</code> is the defect seen from your side.
+The in-namespace reading of <code>1000</code> is the same file seen from
+the container’s side, and <code>100000 + 1000 − 1</code> resolves it to
+host <code>100999</code>. A probe that produces this result on a broken
+configuration, and <code>1000 (yourname)</code> on the running stack, is
+a probe you can trust.</p>
+<blockquote>
+<p>Run this in a scratch directory, never against your real download
+tree — the linuxserver init takes ownership of whatever it is given as
+<code>/downloads</code>.</p>
+</blockquote>
+<h2 id="content-that-is-already-wrongly-owned">Content that is already
+wrongly owned</h2>
+<p>Fixing the configuration stops <em>new</em> files from landing
+unowned. It does nothing to the files already on disk — those keep their
+<code>100999</code> ownership until something changes it.</p>
+<p>A repair tool is provided at
+<strong><code>scripts/ownership_repair.sh</code></strong>. It walks the
+in-scope locations (the download tree and the container-written project
+paths such as <code>config/</code>), records what it is about to change
+before changing it, reports progress so a long run stays distinguishable
+from a hang, and resumes where it left off if interrupted. It blocks
+download-writing services while it runs, so a repair and an active
+download cannot race.</p>
+<p><strong>Its command-line interface is documented in <a
+href="../../specs/002-user-owned-downloads/contracts/repair-cli.md"><code>specs/002-user-owned-downloads/contracts/repair-cli.md</code></a></strong>
+— consult that for flags, exit codes, and invocation. This guide
+deliberately does not restate them.</p>
+<p>If you prefer to repair a single path by hand, the underlying
+operation is a <code>chown</code> executed inside the user namespace,
+which is what makes the mapping resolve correctly:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">podman</span> unshare chown <span class="at">-R</span> 0:0 /path/to/thing</span></code></pre></div>
+<p>Inside the namespace that is uid 0; on the host it is your own uid
+1000. Verify with <code>stat -c '%u (%U)'</code> afterwards rather than
+assuming it worked.</p>
+<h2 id="what-not-to-change">What not to change</h2>
+<ul>
+<li>Do not set <code>PUID</code>/<code>PGID</code> back to
+<code>1000</code> on <code>qbittorrent</code> or <code>jackett</code>.
+That reintroduces the defect in full: every future download becomes
+unowned again.</li>
+<li>Do not add <code>userns_mode: keep-id</code> to any service.</li>
+<li>Do not add <code>USER</code> directives to the Go images — they run
+as container root by design, which under rootless podman is the
+operator.</li>
+<li>After any change to <code>docker-compose.yml</code>, use
+<code>./start.sh --recreate</code>. A plain restart does not re-read the
+file, and has previously produced a false “fixed”.</li>
+</ul>
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a
+href="../../specs/002-user-owned-downloads/research.md"><code>specs/002-user-owned-downloads/research.md</code></a>
+— R1 (root cause), R4 (why <code>PUID=0</code> works), R9 (the
+correction that removed <code>keep-id</code> from the plan).</li>
+<li><a
+href="../../specs/002-user-owned-downloads/contracts/repair-cli.md"><code>specs/002-user-owned-downloads/contracts/repair-cli.md</code></a>
+— the repair tool’s interface.</li>
+<li><code>docs/BOBA_DATABASE.md</code> — the <code>boba.db</code> +
+<code>.env</code> backup procedure this defect blocked.</li>
+</ul>

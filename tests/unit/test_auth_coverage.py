@@ -289,18 +289,76 @@ class TestAllTrackersAuthStatus:
         assert t["iptorrents"]["has_session"] is False
 
     @pytest.mark.asyncio
-    async def test_no_credentials(self):
+    async def test_no_saved_credentials_probes_with_default_identity(self, monkeypatch):
+        """BOB-148: with NO saved credentials the status endpoint still probes qBittorrent
+        using the project's hardcoded default WebUI identity (CLAUDE.md: "WebUI credentials
+        are hardcoded"), so a probe that really succeeds legitimately reports
+        has_session=True. This is the design since 176bb4e; the previous ``if creds:`` form
+        skipped the probe entirely, which left has_session permanently false and made every
+        qBit-button click re-prompt for a login that never stuck.
+
+        Hermetic (§11.4.27(A)): aiohttp is fully mocked and the qBit env vars are cleared,
+        so the verdict does not depend on a live stack being up on the host.
+        """
         from api.auth import all_trackers_auth_status
 
         mock_orch = MagicMock()
         mock_orch._tracker_sessions = {}
+        for var in ("QBITTORRENT_USER", "QBITTORRENT_PASS", "QBITTORRENT_URL"):
+            monkeypatch.delenv(var, raising=False)
+
+        qbt_sid = MagicMock()
+        qbt_sid.key = "QBT_SID"
+        mock_resp = AsyncMock()
+        mock_resp.text = AsyncMock(return_value="")
+        mock_resp.status = 204  # modern qBittorrent success: 204 + QBT_SID cookie
+        mock_resp.cookies = {"QBT_SID": qbt_sid}
+        mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
+        mock_resp.__aexit__ = AsyncMock(return_value=False)
+        mock_session = AsyncMock()
+        mock_session.post = MagicMock(return_value=mock_resp)
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=False)
 
         with (
             patch("api.auth._get_orchestrator", return_value=mock_orch),
             patch("api.auth._load_qbit_credentials", return_value=None),
+            patch("aiohttp.ClientSession", return_value=mock_session),
+            patch("aiohttp.ClientTimeout", return_value=None),
         ):
             result = await all_trackers_auth_status()
-            assert result["trackers"]["qbittorrent"]["has_session"] is False
+
+        qbit = result["trackers"]["qbittorrent"]
+        assert qbit["has_session"] is True
+        assert qbit["username"] == "admin"
+        # The probe really was issued with the default identity. Username only —
+        # §11.4.10 forbids asserting on any credential VALUE.
+        assert mock_session.post.call_args.kwargs["data"]["username"] == "admin"
+
+    @pytest.mark.asyncio
+    async def test_no_saved_credentials_and_qbit_unreachable_has_no_session(self, monkeypatch):
+        """BOB-148, the no-false-green half: when the qBittorrent probe cannot complete,
+        has_session MUST stay False. has_session tracks a real probe outcome, never a
+        truthy default and never a cached cookie.
+
+        Hermetic (§11.4.27(A)): the unreachable endpoint is simulated, not depended on.
+        """
+        from api.auth import all_trackers_auth_status
+
+        mock_orch = MagicMock()
+        mock_orch._tracker_sessions = {}
+        for var in ("QBITTORRENT_USER", "QBITTORRENT_PASS", "QBITTORRENT_URL"):
+            monkeypatch.delenv(var, raising=False)
+
+        with (
+            patch("api.auth._get_orchestrator", return_value=mock_orch),
+            patch("api.auth._load_qbit_credentials", return_value=None),
+            patch("aiohttp.ClientSession", side_effect=OSError("connection refused")),
+            patch("aiohttp.ClientTimeout", return_value=None),
+        ):
+            result = await all_trackers_auth_status()
+
+        assert result["trackers"]["qbittorrent"]["has_session"] is False
 
 
 class TestQbittorrentLogout:
@@ -339,8 +397,16 @@ class TestLoadQbitCredentialsEdge:
                 assert creds is not None
                 assert creds["username"] == "u"
 
-    def test_fallback_to_env_vars(self):
+    def test_fallback_to_env_vars(self, monkeypatch):
+        """BOB-148 (incidental, same defect class): QBITTORRENT_USER/QBITTORRENT_PASS
+        outrank QBITTORRENT_USERNAME/QBITTORRENT_PASSWORD inside _load_qbit_credentials,
+        so they MUST be cleared here — otherwise an ambient value on the host silently
+        decides this test's verdict (§11.4.27(A)).
+        """
         from api.auth import _load_qbit_credentials
+
+        monkeypatch.delenv("QBITTORRENT_USER", raising=False)
+        monkeypatch.delenv("QBITTORRENT_PASS", raising=False)
 
         with (
             patch("os.path.exists", return_value=False),

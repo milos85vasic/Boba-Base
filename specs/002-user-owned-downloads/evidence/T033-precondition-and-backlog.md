@@ -97,3 +97,45 @@ boundary, not a pass:
 NOT a failure — `id -u abc` returns 0, so the identity change took, and the write probe
 confirms files land at host uid 1000. Recorded so a future reader does not misread it as
 the fix failing.
+
+---
+
+## ADDENDUM — the repair's real-uid fallback is no longer unproven
+
+The T019 agent recorded an honest gap: `podman unshare chown` runs only after a plain
+`chown` fails, and NOTHING in the unit suite can reach that branch, because an unprivileged
+process cannot create a foreign-uid fixture. It therefore shipped with no machine evidence,
+and the agent correctly refused to claim it worked.
+
+That fixture IS constructible — via `podman unshare chown`, the same mechanism the control
+needle used. Built and run:
+
+```
+BEFORE   items NOT operator-owned: 6      (uid 100999 — operator CANNOT delete them)
+
+[ownership-repair] operator 1000:1000; scope .../scope.yaml (2 declared locations)
+[ownership-repair] 1/2 .../downloads: 4/4 items processed
+[ownership-repair] 2/2 .../config:    2/2 items processed
+[ownership-repair] complete: 6 item(s) repaired
+exit=0
+
+AFTER    items NOT operator-owned: 0
+         operator can now delete? YES
+```
+
+The change record is real and machine-parseable — 6 lines, 0 malformed, carrying the exact
+defect signature rather than a generic success message:
+
+```
+{'path': '.../downloads',           'previous_uid': 100999, 'new_uid': 1000, 'outcome': 'changed'}
+{'path': '.../downloads/movie.mkv', 'previous_uid': 100999, 'new_uid': 1000, 'outcome': 'changed'}
+{'path': '.../downloads/sub',       'previous_uid': 100999, 'new_uid': 1000, 'outcome': 'changed'}
+```
+
+Marker keys: `completed_at`, `items_changed`, `scope_fingerprint` — E2 satisfied.
+
+The fixture's validity was itself checked before trusting the result: the operator was
+confirmed UNABLE to delete a planted file beforehand. A fixture the operator could already
+delete would not have been the defect, and repairing it would have proven nothing.
+
+Fixture and test log removed afterwards; tree clean.

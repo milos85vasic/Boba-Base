@@ -201,6 +201,12 @@ Credentials Manual</a></strong> for the per-tracker matrix,
 browser-export step-by-step, precedence rules, and the security posture
 (§11.4.10.A leak audit, cookie-value-never-logged). Common questions:
 <strong><a href="docs/FAQ.md">FAQ</a></strong>.</p>
+<p>Downloads and directories the system creates are owned by the account
+that started it — no <code>chown</code> step after every download. See
+the <strong><a href="docs/guides/file-ownership.md">File Ownership
+Guide</a></strong> for why that requires <code>PUID=0</code> under
+rootless Podman, how to verify it on your own machine, and how to repair
+content created before the fix.</p>
 <h3 id="at-a-glance">At a glance</h3>
 <table>
 <colgroup>

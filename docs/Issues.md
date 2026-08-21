@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 15
-**Last modified:** 2026-08-20T22:35:55Z
+**Revision:** 16
+**Last modified:** 2026-08-21T14:46:07Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -994,4 +994,26 @@ Count the PLUGINS=() array in install-plugin.sh (43, needle-verified) and compar
 
 **Acceptance criteria:**
 CLAUDE.md says 43; the README badge is derived by compute-badges.sh from the array; the badge guard covers it; both polarities verified.
+
+## BOB-150 — pre_build_verification.sh invariant labels read N/44 but only 35 invariants are labelled
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Low
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-21T14:46:07Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+The pre-build runner announces each invariant as [N/44], but only 35 invariants carry a label and only 35 distinct CM-* gate names are announced. Numbers 33-38, 40, 42 and 43 are unused; there are no duplicates. An operator reading the output sees '[44/44]' scroll past and reasonably concludes 44 invariants ran, when 35 did - the output overstates coverage by 9. This is PRE-EXISTING and was surfaced while wiring CM-OWNERSHIP-INVARIANTS, which deliberately took free slot 33 precisely to avoid a 35-label renumbering that would have conflicted with concurrent work. That gate neither introduced nor fixed this. Filing rather than absorbing it silently, per the closed-or-tracked rule: an unstated finding reads as no finding.
+
+**Affected scope / file-scope manifest:**
+scripts/pre_build_verification.sh
+
+**Reproduction / context:**
+grep -oE '\[[0-9]+/44\]' scripts/pre_build_verification.sh | wc -l  -> 35 (denominator says 44); numbers 33-38, 40, 42, 43 are unused, no duplicates. Distinct CM-* names announced in the file: 35, which agrees with the label count and not with the denominator.
+
+**Acceptance criteria:**
+Either the denominator matches the real number of labelled invariants, or the numbering is compacted to be contiguous - and whichever is chosen, a gate or the runner itself derives the denominator rather than restating it as a literal, so the two cannot drift apart again.
 

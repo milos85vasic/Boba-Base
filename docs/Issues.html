@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 15 <strong>Last modified:</strong>
-2026-08-20T22:35:55Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
+2026-08-21T14:46:07Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -1631,5 +1631,38 @@ in install-plugin.sh (43, needle-verified) and compare against CLAUDE.md
 <p><strong>Acceptance criteria:</strong> CLAUDE.md says 43; the README
 badge is derived by compute-badges.sh from the array; the badge guard
 covers it; both polarities verified.</p>
+<h2
+id="bob-150-pre_build_verification.sh-invariant-labels-read-n44-but-only-35-invariants-are-labelled">BOB-150
+— pre_build_verification.sh invariant labels read N/44 but only 35
+invariants are labelled</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Severity:</strong> Low <strong>Created-By:</strong> AI</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>task</code> on 2026-08-21T14:46:07Z <strong>Reported-By:</strong>
+AI</p>
+<p><strong>What (the report, verbatim):</strong> The pre-build runner
+announces each invariant as [N/44], but only 35 invariants carry a label
+and only 35 distinct CM-* gate names are announced. Numbers 33-38, 40,
+42 and 43 are unused; there are no duplicates. An operator reading the
+output sees ‘[44/44]’ scroll past and reasonably concludes 44 invariants
+ran, when 35 did - the output overstates coverage by 9. This is
+PRE-EXISTING and was surfaced while wiring CM-OWNERSHIP-INVARIANTS,
+which deliberately took free slot 33 precisely to avoid a 35-label
+renumbering that would have conflicted with concurrent work. That gate
+neither introduced nor fixed this. Filing rather than absorbing it
+silently, per the closed-or-tracked rule: an unstated finding reads as
+no finding.</p>
+<p><strong>Affected scope / file-scope manifest:</strong>
+scripts/pre_build_verification.sh</p>
+<p><strong>Reproduction / context:</strong> grep -oE ‘[[0-9]+/44]’
+scripts/pre_build_verification.sh | wc -l -&gt; 35 (denominator says
+44); numbers 33-38, 40, 42, 43 are unused, no duplicates. Distinct CM-*
+names announced in the file: 35, which agrees with the label count and
+not with the denominator.</p>
+<p><strong>Acceptance criteria:</strong> Either the denominator matches
+the real number of labelled invariants, or the numbering is compacted to
+be contiguous - and whichever is chosen, a gate or the runner itself
+derives the denominator rather than restating it as a literal, so the
+two cannot drift apart again.</p>
 </body>
 </html>
