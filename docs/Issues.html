@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 25 <strong>Last modified:</strong>
-2026-08-21T16:51:14Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 27 <strong>Last modified:</strong>
+2026-08-21T17:03:57Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -1005,10 +1005,44 @@ defect; per §11.4.214 that is a link/dedup decision, not a unilateral
 close, and no post-fix re-observation of the multi-hour wedge is
 recorded against BOB-137 itself. Left open pending that linkage
 decision.</p>
-<h2
-id="bob-141-claude.md-claims-the-go-profile-serves-718671877188-but-its-container-binds-only-7187-doc-contradicts-the-dockerfile">BOB-141
-— CLAUDE.md claims the Go profile serves 7186/7187/7188 but its
-container binds only 7187 — doc contradicts the Dockerfile</h2>
+<p><strong>Live verification 2026-08-21 — REDUCED BUT NOT ELIMINATED.
+Deliberately NOT closed.</strong></p>
+<p>The service was confirmed running POST-FIX bytes before any
+measurement, six independent ways: served sha256 == committed ==
+worktree across 20 merge-service/api/main files; fix markers 10 inside
+the container vs 0 at the pre-fix commit; <code>.pyc</code> header
+decode showing embedded source mtime+size matching the actual file (so
+the import reused it and the loaded module was compiled from exactly
+this source); fix markers present in the LOADED bytecode; and the
+process starting 823s AFTER the fix hit disk. A first attempt at this
+comparison reported routes.py as stale — an INSTRUMENT ARTIFACT (marshal
+back-reference encoding differs between a fresh compile and a pyc load),
+caught before it became a false positive.</p>
+<p>Soak, same script and concurrency, precondition reached (11,340
+results over 516 tracker responses / 12 searches ~ 945 per merge, larger
+than BOB-145’s N=800 maximum):</p>
+<pre><code>PRE-FIX  (quoted from the recorded report): 22 of 26 probes dead on 7187 (84.6%)
+POST-FIX (measured):                         2 of 141 dead (1.4%)</code></pre>
+<p>The dead-count alone understates the residual: 25.5% of probes
+stalled &gt;1s (&lt;0.1s 65.2% / 0.1-1s 9.2% / 1-5s 18.4% / &gt;=5s 5.7%
+/ dead 1.4%). Both dead events show the exact BOB-137 asymmetry — 7186
+answering in 0.077s while 7187 timed out at 10s — and both coincide with
+the loop thread sampled at state R with wchan=0, the GIL-starvation
+signature (tid independently confirmed as the loop thread by its idle
+wchan do_epoll_wait).</p>
+<p>WHY THIS ROW STAYS OPEN: the acceptance evidence this item names is
+‘22/26 dead -&gt; 0/N dead’. Achieved: 22/26 -&gt; 2/141. The
+user-visible symptom — 7187 unresponsive while 7186 answers in the same
+process — STILL OCCURS, twice in 15 minutes. That is precisely BOB-145’s
+own predicted residual: search.py:914 is still a plain synchronous call,
+and removing the symptom needs a change at that CALL SITE (offload or
+await), which BOB-145 explicitly scoped out.</p>
+<p>Two criteria that ARE satisfied: no permanently-R thread (48 of 80
+census samples had zero R threads), and the in-process 20s watchdog
+logged 0 stalls — with a control needle, since that same watchdog
+produced 167,971 bytes of dumps pre-fix. ## BOB-141 — CLAUDE.md claims
+the Go profile serves 7186/7187/7188 but its container binds only 7187 —
+doc contradicts the Dockerfile</p>
 <p><strong>Status:</strong> Queued <strong>Type:</strong> Task
 <strong>Severity:</strong> Low <strong>Created-By:</strong> Claude</p>
 <p><strong>Reported-Via:</strong> §11.4.202 reporting directive
@@ -1739,6 +1773,35 @@ refuse; <code>validate</code> has no optional inputs and names its item
 count, so it cannot be blind. Commit seam verified against a
 purpose-built PRE-FIX binary and the fixed one — identical behaviour,
 because all three of its checks already pass –issues/–fixed. Zero
-project literals among added lines, control-needled.</p>
+project literals among added lines, control-needled. ## BOB-156 —
+BOB-145 event-loop regression guard is load-sensitive and flaky: 8786ms
+under host load vs a 900-1500ms ceiling calibrated on a quiet host</p>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Medium <strong>Created-By:</strong> AI</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-08-21T17:01:20Z <strong>Reported-By:</strong>
+AI</p>
+<p><strong>What (the report, verbatim):</strong> The regression guard
+added with the BOB-145 fix asserts an event-loop block ceiling
+calibrated on a quiet host. Under real host contention the block window
+scales with BOTH N and load, so the same code that passes at 349ms
+median can measure 8786ms - worse than the pre-fix number the test
+exists to detect. That makes it FLAKY, and a flaky test is corrosive in
+a specific way this project has already recorded: every ignored red
+trains everyone to dismiss the next one, so a real regression eventually
+gets waved through as ‘that one again’. Two directions are wrong:
+raising the ceiling until it stops failing would blind it to the defect,
+and leaving it flaky poisons every future run. Found while verifying
+BOB-137 against the live service.</p>
+<p><strong>Affected scope / file-scope manifest:</strong>
+tests/unit/merge_service/test_dedup_event_loop_blocking.py</p>
+<p><strong>Reproduction / context:</strong> Under host load 18-24 on 8
+cores (concurrent agents), the same N=400 merge froze the event loop for
+8786ms - WORSE than the 3970ms pre-fix figure the ceiling was calibrated
+against. 2 fail / 2 pass across four runs.</p>
+<p><strong>Acceptance criteria:</strong> The guard gives the same
+verdict on a loaded host as on a quiet one - or it measures something
+contention-independent. A threshold that only holds when nothing else is
+running is not a regression guard, it is a weather report.</p>
 </body>
 </html>

@@ -20,7 +20,7 @@ set -euo pipefail
 DURATION="${1:-900}"
 CONC="${2:-6}"
 HOST="${BOBA_SOAK_HOST:-localhost}"
-OUT="docs/qa/BOB-137"
+OUT="${BOBA_SOAK_OUT:-docs/qa/BOB-137}"
 mkdir -p "$OUT"
 PROBE_LOG="$OUT/soak_probe.log"
 DRIVE_LOG="$OUT/soak_driver.log"
