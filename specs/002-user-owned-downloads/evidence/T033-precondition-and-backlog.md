@@ -47,6 +47,16 @@ BACKUP OK (81920 bytes)
 mode still 600
 ```
 
+> **CORRECTION (2026-08-21, from the T018 independent review — this claim did not hold.)**
+> `stat` really did return 600 when this ran, but "mode still 600" reads as a DURABLE
+> property and it was a SNAPSHOT of a value that changes at runtime. `start.sh:363` runs
+> `podman unshare chmod -R a+rw config/` on every start — including the `--recreate` this
+> feature's own T014 mandates — so a later start re-widened the file to **666**, world-
+> readable AND world-writable, along with all 262 items under `config/`. The live file has
+> been secured back to 600 and the widening is being fixed at its source; a one-off chmod is
+> not a fix, because the next start would undo it. Full analysis:
+> [`T018-review-NOGO.md`](./T018-review-NOGO.md).
+
 The mode check is not decoration. A backup that succeeded because the file had become
 world-readable would be a **failure**, not a pass — it would trade a usability defect for a
 security one (FR-015).
