@@ -1,0 +1,398 @@
+<h1
+id="scriptsflight-recorderflight-recorder.sh-out-of-scope-host-session-flight-recorder">scripts/flight-recorder/flight-recorder.sh
+— out-of-scope host-session flight recorder</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T16:05:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-121 (External watchdog for the forced-logout
+architectural gap)</p>
+<h2 id="overview">Overview</h2>
+<p><code>flight-recorder.sh</code> appends one structured JSONL sample
+per minute describing the health of the operator’s user session, so that
+if <code>user@1000.service</code> is torn down again — the forced-logout
+class recorded in BOB-116 / BOB-120 / BOB-123 / BOB-124 / BOB-125 /
+BOB-126 — the aftermath is diagnosable by reading <strong>one
+file</strong> instead of being reconstructed from
+<code>journalctl</code> over hours.</p>
+<p>It is a <strong>recorder, not a controller</strong>. It observes and
+writes. It never sends a signal to any process, never kills, never
+restarts, and never touches host power state (CONST-033). There is
+deliberately no code path in it that can terminate anything — an
+assertion its own <code>verify</code> subcommand proves against its
+source, not against a claim in this document.</p>
+<h2 id="why-it-exists-the-architectural-gap-bob-121-names">Why it exists
+— the architectural gap BOB-121 names</h2>
+<p>BOB-126 closed the <em>cause</em> of the seven forced-logout
+incidents (a test’s <code>AsyncMock().pid</code> defaulting to
+<code>1</code>, turning <code>os.killpg(1, SIGKILL)</code> into
+<code>kill(-1, SIGKILL)</code>), and a pre-build gate now refuses
+unguarded <code>killpg</code> calls.</p>
+<p>BOB-121 is the <em>remaining</em> gap: <strong>every monitor the
+project had lived inside the scope it was monitoring.</strong> The
+BOB-116 resource-pressure <code>systemd --user</code> timer runs inside
+<code>user@1000.service</code>, so when that unit is SIGKILLed the timer
+dies in the same cascade and records nothing. Incident #3 proved it: the
+timer fired at 22:42 and 22:57, was next due at ~23:42, and never ran —
+the kill landed at 23:45:49 and nothing owned by UID 1000 existed again
+until the operator logged back in at 23:49:00.</p>
+<p>At the time this recorder was written, <strong>nothing was watching
+at all</strong>:</p>
+<pre><code>$ systemctl show boba-user1000-watchdog.service -p LoadState -p ActiveState
+LoadState=not-found
+ActiveState=inactive
+
+$ systemctl --user show boba-resource-pressure-check.timer -p ActiveState
+ActiveState=inactive</code></pre>
+<h2 id="the-design-and-why-cron-rather-than-a-systemd-unit">The design,
+and why cron rather than a systemd unit</h2>
+<p>The load-bearing insight is that <strong>the recorder does not need
+to survive the event as a process — its <em>scheduler</em>
+does.</strong></p>
+<p>A per-minute tick is a fresh, short-lived process. If a tick were
+running at the instant of a teardown and died, that costs one sample.
+What matters is that something still schedules the <em>next</em> tick
+sixty seconds later, inside the dead window, before the operator logs
+back in. On this host that scheduler is <code>crond</code>, and it is
+structurally outside the blast radius:</p>
+<pre><code>$ systemctl show crond -p Slice -p MainPID -p ActiveState
+ActiveState=active
+MainPID=1531
+Slice=system.slice
+
+$ cat /proc/1531/cgroup
+0::/system.slice/crond.service</code></pre>
+<p><code>crond</code> has run continuously through every incident.
+<code>system.slice</code> is a peer of <code>user.slice</code>, not a
+descendant, so a cgroup-subtree kill of <code>user@1000.service</code>
+cannot reach it.</p>
+<h3 id="correction-to-the-bob-121-proposals-stated-rationale">Correction
+to the BOB-121 proposal’s stated rationale</h3>
+<p><code>docs/proposals/external-watchdog-for-forced-logout-architectural-gap.md</code>
+recommended this option (Option B) but predicted that a cron job’s
+process would stay under <code>crond</code>’s own process group in
+<code>system.slice</code>, and flagged the live check as a
+<strong>blocking prerequisite</strong> (its §8 “Phase 1.5”). That check
+has now been run, and <strong>the prediction was wrong while the
+conclusion still holds</strong> — for a different and more precise
+reason.</p>
+<p>Measured on this host (ALT Linux, <code>vixie-cron</code>, systemd
+258):</p>
+<pre><code>--- /proc/self/cgroup ---
+0::/user.slice/user-1000.slice/session-15.scope
+--- ancestry (pid ppid comm) ---
+  pid=2920944 ppid=2920942 comm=(bash)  cgroup=0::/user.slice/user-1000.slice/session-15.scope
+  pid=2920942 ppid=1531    comm=(crond) cgroup=0::/user.slice/user-1000.slice/session-15.scope
+  pid=1531    ppid=1       comm=(crond) cgroup=0::/system.slice/crond.service
+XDG_SESSION_ID=15 XDG_RUNTIME_DIR=/run/user/1000</code></pre>
+<p>This cron build <strong>does</strong> invoke
+<code>pam_systemd</code>: the job got a session id and was moved into
+<code>/user.slice/user-1000.slice/session-15.scope</code>. So the job is
+<em>not</em> in <code>system.slice</code>.</p>
+<p>It is nevertheless outside the blast radius, because
+<code>session-N.scope</code> is a <strong>sibling</strong> of
+<code>user@1000.service</code>, not a descendant of it:</p>
+<pre><code>$ ls -d /sys/fs/cgroup/user.slice/user-1000.slice/*/
+/sys/fs/cgroup/user.slice/user-1000.slice/session-5.scope/
+/sys/fs/cgroup/user.slice/user-1000.slice/session-6.scope/
+/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/</code></pre>
+<p>and the real incident’s kill was scoped precisely to
+<code>user@1000.service</code>. All 73 <code>Killing process</code>
+lines in <code>docs/qa/BOB-120/journalctl_23-42_to_23-46.log</code> are
+attributed to one unit, and the operator’s own session scope was
+<em>deactivated</em>, never killed:</p>
+<pre><code>$ grep -oE &#39;[a-zA-Z0-9@_.\-]+\.(service|scope|slice): Killing process&#39; \
+      docs/qa/BOB-120/journalctl_23-42_to_23-46.log | sort | uniq -c
+     73 user@1000.service: Killing process
+
+$ grep -E &#39;session-[0-9]+\.scope&#39; docs/qa/BOB-120/journalctl_23-42_to_23-46.log
+23:45:49 systemd[1]: session-18.scope: Deactivated successfully.</code></pre>
+<p><strong>Honest boundary.</strong> This makes the recorder survive
+<em>the mechanism actually observed in all seven incidents</em> — a
+<code>user@1000.service</code>-scoped cascade. It does
+<strong>not</strong> make it survive a sweep of the whole
+<code>user-1000.slice</code>, a <code>loginctl terminate-user</code>, or
+a <code>KillUserProcesses=yes</code> logout path that reaps session
+scopes. Against those, only the root-owned <code>system.slice</code>
+unit in <code>scripts/system-slice-watchdog/</code> is structurally
+safe. The two are complements, not alternatives: this recorder is the
+layer that needs <strong>no root and is available today</strong>; that
+watchdog is the deeper layer and still needs the operator’s one-time
+<code>su</code> install.</p>
+<h2 id="what-it-captures-and-why-each-signal">What it captures, and why
+each signal</h2>
+<p>Each tick appends one JSON object. The fields exist to answer the
+project’s own CONST-033 triage protocol <em>continuously</em>, instead
+of reconstructing it later.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ts_utc</code>, <code>epoch</code>,
+<code>uptime_sec</code></td>
+<td>Uptime continuity — triage step 1. A discontinuity distinguishes a
+real suspend from a perceived one.</td>
+</tr>
+<tr>
+<td><code>boot_id</code>, <code>boot_changed</code></td>
+<td>Separates a <strong>reboot</strong> from a <strong>session
+teardown</strong>. Same boot id + restarted manager = forced-logout
+class, definitively.</td>
+</tr>
+<tr>
+<td><code>gap_sec</code>, <code>gap_anomaly</code></td>
+<td>The recording gap <em>is</em> the primary signal. A hole in a
+per-minute log brackets the dead window to within 60s.</td>
+</tr>
+<tr>
+<td><code>unit_active</code>, <code>unit_sub</code>,
+<code>unit_start_mono</code>, <code>unit_restarted</code>,
+<code>unit_down</code></td>
+<td>The teardown fingerprint. A changed non-zero start timestamp means a
+<strong>new instance</strong> of the user manager;
+<code>unit_down</code> marks the tick where it was absent. Tracked
+separately so one event is never counted as two.</td>
+</tr>
+<tr>
+<td><code>unit_pids</code>, <code>unit_pids_peak</code></td>
+<td>Recursive cgroup pid count. Collapse toward zero is the cascade-kill
+signature.</td>
+</tr>
+<tr>
+<td><code>unit_mem_bytes</code>, <code>unit_mem_peak_bytes</code></td>
+<td>Per-slice memory attribution — was the user slice the thing under
+pressure?</td>
+</tr>
+<tr>
+<td><code>mem_avail_kb</code>, <code>swap_free_kb</code>,
+<code>psi_*</code></td>
+<td>The pressure ramp <em>leading into</em> the event, which no post-hoc
+capture can recover. PSI is sampled because averages hide burst
+throttling (§11.4.225).</td>
+</tr>
+<tr>
+<td><code>threads_self_uid</code></td>
+<td>The §12.12 thread-exhaustion axis — the 2026-07-07 incident’s
+mechanism, orthogonal to memory.</td>
+</tr>
+<tr>
+<td><code>k_suspend</code>, <code>k_oom</code>,
+<code>oom_cgroups</code>, <code>k_unit_kill</code></td>
+<td>Triage steps 2–3, sampled per tick from the journal since the
+previous tick’s cursor. <code>oom_cgroups</code> carries the
+<strong>attribution</strong> that decides the verdict: a
+<code>libpod-*</code> cgroup means a container hit its own limit; a
+<code>user@&lt;uid&gt;</code> cgroup means a user-slice OOM perceived as
+a logout.</td>
+</tr>
+<tr>
+<td><code>journal_ok</code></td>
+<td>Distinguishes “queried, found none” from “could not query”. When
+false, the counts above are <code>null</code>, never <code>0</code>
+(§11.4.6).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/flight-recorder.sh</span> tick      <span class="co"># one sample (the cron entry)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/flight-recorder.sh</span> tick-v    <span class="co"># same, echo the record</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/flight-recorder.sh</span> report    <span class="co"># one-step diagnosis</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/flight-recorder.sh</span> status    <span class="co"># recorder health</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/flight-recorder.sh</span> verify    <span class="co"># self-check preconditions</span></span></code></pre></div>
+<p>Install / remove the per-minute tick (<strong>no
+<code>sudo</code>/<code>su</code> required</strong> — this is the reason
+cron was chosen for this layer):</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/install.sh</span> <span class="at">--dry-run</span>   <span class="co"># show the crontab change</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/install.sh</span>             <span class="co"># apply it</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/uninstall.sh</span>           <span class="co"># remove it, keep the journal</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/uninstall.sh</span> <span class="at">--purge</span>   <span class="co"># remove it and delete the journal</span></span></code></pre></div>
+<p><code>install.sh</code> runs <code>verify</code> first and
+<strong>refuses to install if it fails</strong> — a scheduled recorder
+that cannot record is worse than none, because it looks like coverage.
+Both scripts edit only their own marker-delimited block and back up the
+previous crontab.</p>
+<h2 id="outputs">Outputs</h2>
+<p>Everything lives under <code>$BOBA_FR_DIR</code> (default
+<code>$XDG_STATE_HOME/boba-flight-recorder</code>,
+i.e. <code>~/.local/state/boba-flight-recorder</code>):</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>journal.jsonl</code></td>
+<td>Append-only sample history, size-bounded with one rotation
+generation</td>
+</tr>
+<tr>
+<td><code>journal.jsonl.1</code></td>
+<td>Previous rotation generation</td>
+</tr>
+<tr>
+<td><code>latest.json</code></td>
+<td>Last sample, replaced atomically (temp → fsync → rename) so a reader
+after an abrupt teardown always sees a whole record</td>
+</tr>
+<tr>
+<td><code>state.env</code></td>
+<td>Tick-to-tick continuity: previous epoch, journal cursor, last
+non-zero unit start, last active state</td>
+</tr>
+<tr>
+<td><code>tick.err</code></td>
+<td>Stderr of the most recent tick only (truncated each run, so it
+cannot grow)</td>
+</tr>
+<tr>
+<td><code>crontab.backup.&lt;ts&gt;</code></td>
+<td>Pre-change crontab snapshots from install/uninstall</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The state dir must be durable.</strong> The recorder refuses
+to run on <code>tmpfs</code> or <code>ramfs</code>, because recording
+onto them would destroy the evidence in exactly the event it exists to
+document. This is a hard refusal, not a warning:</p>
+<pre><code>$ BOBA_FR_DIR=/tmp/x scripts/flight-recorder/flight-recorder.sh tick
+[flight-recorder] ERROR: state dir &#39;/tmp/x&#39; is on tmpfs (ephemeral). Refusing:
+the record would vanish in exactly the event it exists to document.
+$ echo $?
+1</code></pre>
+<h2 id="environment">Environment</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BOBA_FR_DIR</code></td>
+<td><code>$XDG_STATE_HOME/boba-flight-recorder</code></td>
+<td>State dir; must be durable</td>
+</tr>
+<tr>
+<td><code>BOBA_FR_TARGET</code></td>
+<td><code>user@1000.service</code></td>
+<td>Unit to watch</td>
+</tr>
+<tr>
+<td><code>BOBA_FR_SCOPE</code></td>
+<td><code>system</code></td>
+<td>Manager owning the target: <code>system</code> or <code>user</code>.
+<code>user</code> exists only to drill the teardown path against a
+disposable unit</td>
+</tr>
+<tr>
+<td><code>BOBA_FR_TICK_SEC</code></td>
+<td><code>60</code></td>
+<td>Expected tick spacing; the gap alarm is 2.5× this</td>
+</tr>
+<tr>
+<td><code>BOBA_FR_MAX_BYTES</code></td>
+<td><code>8388608</code></td>
+<td>Rotate above this size; total is bounded at ~2×</td>
+</tr>
+<tr>
+<td><code>BOBA_FR_TIMEOUT</code></td>
+<td><code>15</code></td>
+<td>Per-external-command timeout</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong><code>journalctl</code> unreadable</strong> —
+<code>journal_ok</code> records <code>false</code> and the four journal
+counters record <code>null</code>. They never record <code>0</code>,
+because a blind instrument and a clean host return the same quiet zero
+(§11.4.201(6)).</li>
+<li><strong>State file lost</strong> — the next tick records
+<code>gap_sec: null</code> and resumes. No crash, no false gap.</li>
+<li><strong>Unit stopped, then started later</strong> — the last
+<em>non-zero</em> start timestamp is carried across the intervening
+ticks, so the new instance is still detected after a dead window in
+which the unit reported <code>0</code>.</li>
+<li><strong>Cron scheduler stopped / host asleep</strong> — produces a
+gap with no teardown evidence, and <code>report</code> says so
+explicitly rather than calling it an incident.</li>
+<li><strong>Single late tick</strong> — jitter under the 2.5× threshold
+is not flagged; a false alarm is as much a defect as a missed one
+(§11.4.201(1)).</li>
+</ul>
+<h2 id="anti-bluff-verification">Anti-bluff verification</h2>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/flight-recorder.sh</span> verify</span></code></pre></div>
+<p>asserts four load-bearing conditions <strong>against the host and
+against its own source</strong>, not against this document: state dir
+durability, the scheduler being outside <code>user.slice</code>, the
+absence of any signal-sending call in its own source, and journal
+readability.</p>
+<p>The no-signal assertion is proven non-decorative by a paired §1.1
+mutation — injecting one <code>kill -9</code> line into a copy makes
+<code>verify</code> FAIL while the unmutated script PASSes. The
+journal-extraction patterns are proven by a golden-good fixture: run
+against the real
+<code>docs/qa/BOB-120/journalctl_23-42_to_23-46.log</code> they match
+the actual SIGKILL line once, and against a benign log they match zero
+times.</p>
+<h2 id="honest-boundaries">Honest boundaries</h2>
+<ul>
+<li>It <strong>cannot prevent</strong> a <code>kill(-1)</code>. It makes
+the aftermath legible; that is all it claims.</li>
+<li><strong>Untested against a real forced logout.</strong> Survival
+across a genuine <code>user@1000.service</code> teardown is an inference
+from the cgroup topology and the incident journal, not an observation —
+no such event has occurred since it was installed, and one cannot be
+staged safely.</li>
+<li>The staged analogue exercised the teardown-detection code path
+against a disposable <code>systemctl --user</code> unit, not against
+<code>user@1000.service</code>.</li>
+<li>A tick that happens to be mid-write during a teardown can lose that
+one line; <code>latest.json</code> covers the last complete record.</li>
+<li>One-minute resolution. Sub-minute ordering within the event is not
+recoverable from this log — that is what the <code>system.slice</code>
+watchdog’s journal-window capture is for.</li>
+<li>It records <code>ps</code>-free data only, so unlike the
+<code>system.slice</code> watchdog it does <strong>not</strong> capture
+process cmdlines and therefore carries no §11.4.10 credential exposure
+in its output.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>scripts/system-slice-watchdog/</code> — root-owned
+<code>system.slice</code> watchdog for deep per-incident forensics and
+SIGKILL initiator attribution. Complementary; still requires the
+operator’s one-time <code>su</code> install.</li>
+<li><code>docs/guides/forced-logout-flight-recorder.md</code> — operator
+guide.</li>
+<li><code>docs/proposals/external-watchdog-for-forced-logout-architectural-gap.md</code>
+— the BOB-121 design proposal this implements, with the Phase 1.5
+correction above.</li>
+<li><code>docs/incidents/2026-08-18-3rd-forced-logout.md</code> and
+siblings — incident record.</li>
+</ul>

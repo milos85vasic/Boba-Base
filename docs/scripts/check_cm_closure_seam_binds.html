@@ -1,0 +1,256 @@
+<h1
+id="scriptspre_buildcheck_cm_closure_seam_binds.sh-cm-closure-seam-binds-gate">scripts/pre_build/check_cm_closure_seam_binds.sh
+— CM-CLOSURE-SEAM-BINDS gate</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T16:00:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-136 (closure seam does not bind)</p>
+<h2 id="purpose">Purpose</h2>
+<p>Make the <strong>closure seam</strong> bind mechanically. The gate
+reconciles what the repository’s own git history says happened against
+what the workable-items tracker says the state is, and reports — or, at
+the commit seam, <strong>refuses</strong> — when the two contradict each
+other.</p>
+<h2 id="the-defect-it-closes-bob-136">The defect it closes
+(BOB-136)</h2>
+<p>Nothing in this repo ever linked a commit back to its tracker
+row:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>existing check</th>
+<th>compares</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workable-items validate</code></td>
+<td>the DB against <strong>its own</strong> invariants</td>
+</tr>
+<tr>
+<td><code>workable-items diff</code></td>
+<td>the DB against <strong>the Markdown</strong></td>
+</tr>
+<tr>
+<td><code>docs-sync-commit-seam.sh</code> CHECKS 1–3</td>
+<td>the DB against <strong>the Markdown</strong></td>
+</tr>
+<tr>
+<td><code>docs_chain verify</code></td>
+<td>the Markdown against <strong>its exports</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Every one of those compares the tracker to <em>itself</em>. All four
+are green while a row says <code>Queued</code> and git says the work
+landed weeks ago. Closure therefore depended on a human remembering, and
+demonstrably did not happen — a 2026-08-20 sweep found
+<code>BOB-076</code>, whose commit message literally says
+<code>closes BOB-076</code>, still <code>Queued</code>, and a 2026-08-21
+sweep found 20 more.</p>
+<p>A status field that does not move when work lands stops being
+evidence and becomes decoration, and every downstream reader of status
+silently degrades: release gates, the “is this owed?” question, and the
+§11.4.55 reopen counts used to rank the most fragile work. §11.4.227: an
+item’s done state is its <strong>seam</strong> landing, not its
+<strong>text</strong> landing. This gate is that seam.</p>
+<h2 id="what-it-asserts-and-deliberately-does-not">What it asserts — and
+deliberately does not</h2>
+<p>The gate never decides “this item is finished”. It asserts the far
+narrower, mechanically decidable proposition that a specific <em>status
+literal is false</em>:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>class</th>
+<th>condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CONTRADICTION</code></td>
+<td>a message says it CLOSES/FIXES/RESOLVES <code>&lt;id&gt;</code>, yet
+<code>&lt;id&gt;</code> is non-terminal</td>
+</tr>
+<tr>
+<td><code>UNRECONCILED</code></td>
+<td>a <strong>work-type</strong> commit declares
+<code>&lt;id&gt;</code>, yet <code>&lt;id&gt;</code> is exactly
+<code>Queued</code> — which asserts <em>no work has started</em></td>
+</tr>
+<tr>
+<td><code>UNTRACKED-ID</code></td>
+<td>a commit declares <code>&lt;id&gt;</code> and
+<code>&lt;id&gt;</code> has no row at all</td>
+</tr>
+</tbody>
+</table>
+<p>Remediation for <code>UNRECONCILED</code> is <code>In progress</code>
+<strong>or</strong> a close; the gate does not presume which. Statuses
+that already tell the truth about landed work —
+<code>In progress</code>, <code>Ready for testing</code>,
+<code>In testing</code>, <code>Reopened</code>,
+<code>Operator-blocked</code>, and every terminal
+<code>... (→ Fixed.md)</code> — are never flagged by
+<code>UNRECONCILED</code>. That scoping is what keeps it from firing on
+a healthy tree (§11.4.201(1)).</p>
+<h2
+id="carrier-controls-11.4.2017a-match-structure-not-substring">Carrier
+controls (§11.4.201(7)(a) — match structure, not substring)</h2>
+<p>A gate that flags correctly-tracked work is exactly as broken as one
+that misses stale rows: it gets switched off within a week. Links are
+therefore extracted <strong>structurally</strong> — conventional-commit
+scope token, bare-id subject prefix, closure-keyword adjacency — never
+by “the message contains the string”. Four carrier classes are excluded
+by construction, each with a fixture in the meta-test:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>id</th>
+<th>carrier</th>
+<th>example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>c1</td>
+<td>filing verb</td>
+<td><code>docs(tracker): file BOB-149</code> — filing an item is not
+doing it</td>
+</tr>
+<tr>
+<td>c2</td>
+<td>path component</td>
+<td><code>docs/qa/BOB-117/closure-evidence.md</code></td>
+</tr>
+<tr>
+<td>c3</td>
+<td>quoted text</td>
+<td>a work commit quoting <code>"closes BOB-076"</code>, or an indented
+/ <code>&gt;</code>-quoted pasted ticket</td>
+</tr>
+<tr>
+<td>c4</td>
+<td>non-work type</td>
+<td><code>docs(BOB-141): ...</code>, <code>chore</code>,
+<code>ci</code></td>
+</tr>
+</tbody>
+</table>
+<p>Live proof of c1: <code>BOB-146</code> and <code>BOB-149</code> were
+both <em>filed</em> on 2026-08-21 and the sweep reports neither.</p>
+<p>Both real in-repo spellings are handled: compact runs
+(<code>closes BOB-081/083/089/117</code>,
+<code>docs(BOB-124/125/126)</code>) and suffixed scope tokens
+(<code>BOB-111-followup</code>, <code>BOB-122-fallout</code>). A needle
+exercising only the plain spelling would certify a blind query.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_closure_seam_binds.sh</span>                  <span class="co"># sweep all history</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_closure_seam_binds.sh</span> <span class="at">--report-only</span>    <span class="co"># audit, never exit 1</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_closure_seam_binds.sh</span> <span class="at">--message-file</span> F <span class="co"># COMMIT-SEAM mode</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_closure_seam_binds.sh</span> <span class="at">--message</span> <span class="st">&quot;TEXT&quot;</span> <span class="co"># COMMIT-SEAM mode</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/pre_build/check_cm_closure_seam_binds.sh</span> <span class="at">--self-test</span>      <span class="co"># §11.4.107(10)</span></span></code></pre></div>
+<p>Options: <code>--repo DIR</code> <code>--db PATH</code>
+<code>--prefix P</code> <code>--rev-range R</code> <code>-v</code></p>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ul>
+<li><strong>CHECK A — closure seam.</strong> Extracts structural
+commit↔︎item links, joins them against the tracker (read-only; the gate
+never writes to the DB) and classifies as above.</li>
+<li><strong>CHECK B — flagless-diff callers.</strong> BOB-136 acceptance
+(b). Sweep mode only. <code>workable-items diff --db X</code>
+<em>without</em> <code>--issues</code>/<code>--fixed</code> opens zero
+Markdown files and still prints <code>DB and Markdown are in sync</code>
+— a §11.4.201(6) <strong>false-null</strong>. Until the shared engine
+refuses that invocation, no caller here may use it. Scanned over tracked
+executable files only: docs and this gate’s own header legitimately
+quote the flagless form, and matching those would be the exact carrier
+mistake.</li>
+<li><strong>Control needle (§11.4.201(7)(b)).</strong> A zero-finding
+verdict is worthless if the extractor is blind — a blind query and a
+clean tree return the identical quiet zero. Before reporting, the gate
+runs a synthetic message carrying the <em>same load-bearing
+features</em> as the real query (scope form, compact run, closure
+keyword) and aborts with exit 2 if fewer than 4/4 known links are
+seen.</li>
+</ul>
+<h2 id="commit-seam-mode">Commit-seam mode</h2>
+<p>Evaluates <strong>only</strong> the ids the pending message declares.
+It is monotone by construction: it can refuse the commit about to create
+fresh drift, and is structurally incapable of blocking on the
+pre-existing backlog. That is why it needs no baseline/ratchet file — a
+file which would itself rot (§11.4.215).</p>
+<p>Wired via <code>scripts/hooks/docs-sync-commit-seam.sh</code>
+<strong>CHECK 5</strong>, which <code>scripts/commit-push-all.sh</code>
+invokes with <code>--message "$MSG"</code>. CHECK 5 is placed
+deliberately <em>before</em> the hook’s “no docs-chain source staged”
+early exit: CHECKS 1–4 all trigger on a staged tracker file, but a
+commit landing a pure <strong>code</strong> fix stages no tracker file
+at all — and that is precisely the commit whose row fails to move.
+Running it after the early exit would make it structurally unable to see
+the defect it exists for (§11.4.196(F)). Backward-compatible: without
+<code>--message</code>, CHECK 5 does not run.</p>
+<h2 id="exit-codes">Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>code</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>PASS, or <code>--report-only</code>, or an honest §11.4.3 SKIP</td>
+</tr>
+<tr>
+<td>1</td>
+<td>FAIL — findings, each named on stderr with its remediation</td>
+</tr>
+<tr>
+<td>2</td>
+<td>ERROR — usage, missing repo, or a failed control needle</td>
+</tr>
+</tbody>
+</table>
+<p>An absent DB or <code>sqlite3</code> is a loud SKIP-with-reason
+exiting 0: an unreadable tracker is not evidence of drift, and refusing
+on it would be the §11.4.201(1) false positive this gate exists to
+avoid. CHECK B still runs in that case — sequencing it behind the
+tracker check was a false-null caught by this gate’s own meta-test
+(fixture <code>bad-6</code>).</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p>The gate can only see work that <strong>declares its id</strong>.
+Work landing under a message carrying no id at all is invisible to it —
+that is BOB-136’s second defect verbatim, and <code>BOB-146</code> is a
+live instance: its fix landed under
+<code>fix(fail-open): triage all 36 §11.4.252 hits...</code>, which
+names no item. The gate does not claim to prevent all drift.</p>
+<p>It also proves only that a status literal is false — never that an
+item is finished. Closure evidence remains §11.4.115(F) / §11.4.146(D3)
+territory, and terminal-side integrity (an evidence path that does not
+resolve) is already covered by <code>workable-items validate</code>
+(HXC-217).</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>tests/pre_build/test_check_cm_closure_seam_binds.sh</code> —
+§1.1 paired-mutation meta-test, 29 hermetic checks (golden-bad,
+golden-good, 5 carrier controls, commit-seam polarity).</li>
+<li><code>scripts/hooks/docs-sync-commit-seam.sh</code> — CHECK 5
+wiring.</li>
+<li><code>scripts/commit-push-all.sh</code> — passes
+<code>--message "$MSG"</code> at stage 5a.</li>
+</ul>

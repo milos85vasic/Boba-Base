@@ -280,7 +280,11 @@ _docs_sync_seam_check() {
         return 0
     fi
     echo "[commit-push-all] stage 5a/6 — §11.4.106(F) doc/DB sync seam"
-    if bash "$hook"; then
+    # --message hands the PENDING commit message to the seam so CHECK 5
+    # (BOB-136 closure seam) can refuse a commit that declares work on an
+    # item whose tracked row still says the work never started. The seam is
+    # backward-compatible: without --message CHECK 5 simply does not run.
+    if bash "$hook" --message "$MSG"; then
         return 0
     fi
     echo "ERROR: §11.4.106(F) doc/DB sync seam REFUSED this commit (see report above)." >&2

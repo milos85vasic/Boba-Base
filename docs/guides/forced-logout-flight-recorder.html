@@ -1,0 +1,155 @@
+<h1 id="forced-logout-flight-recorder-operator-guide">Forced-logout
+flight recorder — operator guide</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T16:10:00Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-121 <strong>Audience:</strong> the operator
+of this workstation</p>
+<h2 id="what-this-is">What this is</h2>
+<p>A per-minute recorder that writes down what your user session looked
+like, so that if you get thrown back to the login screen again you can
+find out <em>why</em> by reading one file instead of digging through
+<code>journalctl</code> for an hour.</p>
+<p>It watches. It does not act. It cannot kill anything, restart
+anything, or touch the machine’s power state.</p>
+<h2 id="the-30-second-version">The 30-second version</h2>
+<p>You got logged out. Run this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/flight-recorder.sh</span> report</span></code></pre></div>
+<p>It prints a verdict. There are five, and they are mutually
+exclusive:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Verdict</th>
+<th>What it means</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>REBOOT recorded</strong></td>
+<td>The boot id changed. The machine restarted.</td>
+<td>The teardown is explained. Look for why it rebooted, not for a
+logout bug.</td>
+</tr>
+<tr>
+<td><strong>SUSPEND records present</strong></td>
+<td>The kernel logged a suspend entry.</td>
+<td>Triage as a power-state event first (CONST-033 operational
+note).</td>
+</tr>
+<tr>
+<td><strong>SESSION TEARDOWN of the forced-logout class</strong></td>
+<td>The user manager came back as a new instance, with
+<strong>no</strong> reboot and <strong>no</strong> suspend.</td>
+<td>This is the incident class. Read the OOM attribution line — see
+below.</td>
+</tr>
+<tr>
+<td><strong>RECORDING GAP with no teardown evidence</strong></td>
+<td>The recorder simply was not scheduled then.</td>
+<td>Not an incident. Host was off, cron was stopped, or the tick was
+uninstalled.</td>
+</tr>
+<tr>
+<td><strong>no session-teardown event recorded</strong></td>
+<td>Nothing happened in this window.</td>
+<td>Nothing to do.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="reading-the-oom-attribution">Reading the OOM attribution</h2>
+<p>When the verdict is <strong>SESSION TEARDOWN</strong>, the deciding
+line is the OOM record’s cgroup attribution, because it separates three
+genuinely different causes:</p>
+<ul>
+<li><strong><code>libpod-…</code></strong> — a container hit <em>its
+own</em> memory limit. Containment worked as designed. Your session was
+collateral only if the container was in it.</li>
+<li><strong><code>user@1000.service</code> /
+<code>user-1000.slice</code></strong> — a user-slice OOM. The kernel
+killed your session’s processes because the slice ran out. This is a
+resource problem: look at the <code>mem_avail_kb</code> and
+<code>psi_mem_*</code> ramp in the ticks leading up to it.</li>
+<li><strong>no OOM record at all</strong> — nothing ran out of memory.
+Something <em>sent</em> the kill. This is the BOB-126 shape, and the
+recorder cannot tell you who sent it — escalate to the
+<code>system.slice</code> watchdog (below) for initiator
+attribution.</li>
+</ul>
+<p>That last case is what the seven incidents actually were. Verified
+against the real incident log:</p>
+<pre><code>$ grep -icE &#39;oom-kill|Killed process|Out of memory&#39; docs/qa/BOB-120/journalctl_23-42_to_23-46.log
+0
+$ grep -cE &#39;user@1000.service: Main process exited, code=killed&#39; docs/qa/BOB-120/journalctl_23-42_to_23-46.log
+1</code></pre>
+<p>No OOM. One SIGKILL. External sender.</p>
+<h2 id="install-remove">Install / remove</h2>
+<p>No <code>sudo</code>, no <code>su</code>, no root. That is deliberate
+— it is why this layer exists.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/install.sh</span> <span class="at">--dry-run</span>   <span class="co"># see exactly what would change</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/install.sh</span>             <span class="co"># start recording</span></span></code></pre></div>
+<p>To stop it:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/uninstall.sh</span>           <span class="co"># stop, KEEP everything recorded</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/uninstall.sh</span> <span class="at">--purge</span>   <span class="co"># stop and delete the recordings</span></span></code></pre></div>
+<p>Both only touch their own block in your crontab and back up the
+previous version first. Anything else in your crontab is left alone.</p>
+<p>Check on it any time:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">scripts/flight-recorder/flight-recorder.sh</span> status</span></code></pre></div>
+<h2 id="where-your-data-is">Where your data is</h2>
+<p><code>~/.local/state/boba-flight-recorder/</code> — on
+<code>/home</code>, which is btrfs, so it survives the session dying.
+The recorder <strong>refuses to run</strong> if you point it at
+<code>tmpfs</code>, because a record that evaporates in the event it was
+recording is worse than no record.</p>
+<p>Disk use is bounded at roughly 16 MB total by rotation, whatever
+happens.</p>
+<p>It records numbers from <code>/proc</code>,
+<code>/sys/fs/cgroup</code> and <code>systemctl show</code> — no process
+command lines — so unlike the <code>system.slice</code> watchdog it
+cannot capture credentials that happen to be sitting in someone’s
+<code>argv</code>.</p>
+<h2 id="what-it-will-and-will-not-do-for-you">What it will and will not
+do for you</h2>
+<p><strong>It will</strong>: bracket the dead window to within 60
+seconds; tell you whether the machine rebooted, suspended, or was torn
+down; show you the memory / PSI / thread-count ramp in the minutes
+<em>before</em> it happened, which nothing captured after the fact can
+recover; and tell you honestly when it could not read something rather
+than reporting a zero.</p>
+<p><strong>It will not</strong>: stop the kill. It is a flight recorder
+— it makes the crash investigable, it does not prevent the crash.</p>
+<p><strong>It has not yet been through a real one.</strong> Everything
+about its survival across a genuine <code>user@1000.service</code>
+teardown is reasoned from the cgroup topology and the incident journals,
+and confirmed only against a staged analogue on a disposable unit. The
+first real incident will be the first real test. That is stated plainly
+here rather than dressed up.</p>
+<h2 id="the-other-half-and-it-needs-you">The other half — and it needs
+you</h2>
+<p>This recorder survives the kill <em>mechanism observed in all seven
+incidents</em> (a cascade scoped to <code>user@1000.service</code>; the
+cron tick runs in a session scope that is a sibling of that unit, not a
+child of it). It does <strong>not</strong> survive a sweep of the entire
+<code>user-1000.slice</code>.</p>
+<p>The mechanism that survives <em>everything</em> is the root-owned
+watchdog in <code>scripts/system-slice-watchdog/</code>, which also
+captures the journal window and the process tree around an incident —
+the initiator attribution this recorder cannot give you. It is written,
+reviewed, and <strong>not installed</strong>:</p>
+<pre><code>$ systemctl show boba-user1000-watchdog.service -p LoadState
+LoadState=not-found</code></pre>
+<p>It needs one <code>su</code> from you, once:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/system-slice-watchdog/install.sh   <span class="co"># prints the commands; you run them</span></span></code></pre></div>
+<p>No agent will run that for you. Until you do, this recorder is the
+only thing watching — and it is watching from one layer further out than
+anything the project had before, which was nothing.</p>

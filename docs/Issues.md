@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 21
-**Last modified:** 2026-08-21T15:46:20Z
+**Revision:** 23
+**Last modified:** 2026-08-21T15:59:51Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -385,13 +385,16 @@ user@1000.service SIGKILLed at 23:45:49 (2h55m after BOB-116's 20:50:59 kill, sa
 
 ## BOB-121 — External watchdog for the forced-logout architectural gap (task #85, incident #3)
 
-**Status:** Queued
+**Status:** Ready for testing
 **Type:** Task
 **Severity:** Important
 **Created-By:** Claude
 
 Phase 1 design-only proposal: the BOB-116/task-77 resource-pressure preventive systemd --user timer runs inside user@1000.service, the exact pool it monitors, so it cannot fire when that pool dies (proven by incident #3, docs/qa/BOB-120/, 22:42+22:57 fires then blocked 23:45:49-23:49:00). Recommends Option B (user crontab reusing pre-existing crond.service in system.slice, no new root service) kept alongside the existing timer, with Option A (new root-owned systemd unit) as escalation path if Phase 1.5 live cron/cgroup verification is adverse. Proposal: docs/proposals/external-watchdog-for-forced-logout-architectural-gap.md. Operator decision required per §11.4.66 before any implementation -- NOT implemented in this task.
 
+
+
+**Progress 2026-08-21:** Flight recorder built, installed, and recording. First finding: NOTHING was watching at all — the root watchdog is LoadState=not-found and the BOB-116 user timer inactive. The blocking spike REFUTED the proposal's rationale while confirming its conclusion: this vixie-cron does invoke pam_systemd so the tick lands in session-N.scope, but that scope is a SIBLING of user@1000.service, and the real incident killed exactly one unit (73 'user@1000.service: Killing process' lines while session-18.scope merely deactivated). So the recorder does not need to survive — its SCHEDULER does, and crond in system.slice survived all seven incidents. Captures the pre-event memory/PSI/thread ramp that nothing post-hoc can recover, plus boot id, the gap itself, unit start timestamp, cgroup pids, and OOM cgroup attribution. Evidence: 5 records under real cron at exact 60s spacing; a staged analogue on a DISPOSABLE unit reaching 'VERDICT: SESSION TEARDOWN'; golden-good against the REAL BOB-120 log giving the correct diagnosis (k_unit_kill=1, k_oom=0); healthy-host quiet under load 8.15. NOT CLOSED — two operator decisions are owed: whether to keep it installed (one crontab line, zero signals, zero power verbs, 32K, reversible via uninstall.sh), and the root system.slice watchdog which is written but needs one `su`. UNTESTED AGAINST A REAL FORCED LOGOUT: survival is inferred from cgroup topology, not observed, and it does NOT hold against a whole-slice sweep or KillUserProcesses=yes.
 ## BOB-129 — Potential production slowapi/starlette defect flagged by Task 105 subagent
 
 **Status:** Fixed (→ Fixed.md)
@@ -418,7 +421,7 @@ Task #109 subagent found: tests/unit/test_merge_api_route_contracts.py::TestHook
 
 ## BOB-136 — Closure seam does not bind: 4 tracker rows found stale in one sweep, and workable-items diff is blind to body_md drift
 
-**Status:** Queued
+**Status:** Ready for testing
 **Type:** Task
 **Severity:** High
 
@@ -465,6 +468,9 @@ the commit seam and passes the flags explicitly, plus an independent body_md re-
 EVIDENCE. docs/qa/BOB-117/closure-evidence.md, docs/qa/BOB-076/closure-evidence.md,
 docs/qa/BOB-091/closure-evidence.md.
 
+
+
+**Progress 2026-08-21:** The closure seam now BINDS TO GIT. Finding: every pre-existing check compared the tracker to ITSELF (DB vs its own invariants, DB vs Markdown, Markdown vs exports) — none ever consulted git, so all four stayed green while a row said Queued and the fix had landed weeks earlier. The commit hook also EXITED EARLY when no tracker file was staged, skipping exactly the pure-code-fix commits whose rows fail to move. Built check_cm_closure_seam_binds.sh plus a --message commit-seam mode wired as CHECK 5 before that early exit; it judges only the ids the PENDING message declares, so it is monotone and structurally cannot block on the backlog. Meta-test 29/29, live polarity 2 refused / 2 passed, §1.1 flips both golden-bads to MUTANT=0. PROVEN IN ANGER: it refused the very commit that introduced it, because that message declared BOB-136 and BOB-121 while both rows still read Queued. NOT YET CLOSED — 20 stale rows and 2 untracked ids remain to drain, and the gate is not wired into pre_build_verification.sh (that would break the build immediately on the pre-existing backlog; --report-only first). Honest boundary: it only sees work that DECLARES its id, so a fix landing under a message naming no item stays invisible — which is BOB-136's own second defect.
 ## BOB-137 — Merge service on 7187 wedges while the same process still serves 7186 (GIL starvation by one spinning thread)
 
 **Status:** Queued
@@ -1104,4 +1110,26 @@ download-proxy/requirements.txt, .venv, container qbittorrent-proxy
 
 **Acceptance criteria:**
 The interpreter that runs the tests and the interpreter that serves production resolve the same versions, pinned so they cannot drift apart silently - or, if a divergence is deliberate, it is declared and a check asserts the declared pair rather than leaving it to chance.
+
+## BOB-155 — workable-items diff reports 'DB and Markdown are in sync' having opened zero Markdown files when --issues/--fixed are omitted
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T15:57:00Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+The flagless form of the sync checker is a false-null generator. Called without --issues/--fixed it prints the same reassuring 'DB and Markdown are in sync' it prints after a real successful comparison, while having read no Markdown whatsoever. A blind instrument and a genuinely clean tree return the identical quiet verdict, which is precisely the failure class the constitution's measurement-integrity rules exist to prevent - and here it lives inside the project's own sync-verification tool. This bit for real today: the flagless form was used to VERIFY a reconciliation of five tracker rows and reported 'in sync'. The reconciliation happened to be correct - re-checked afterwards with the path-ful form, which is clean on the current tree and correctly reports 2 differences against a planted divergence - so the conclusion was right and the evidence for it was worthless. Nobody would have noticed, because the output is indistinguishable from a real pass. Surfaced by the BOB-136 investigation. Not fixed there because the file lives in the constitution submodule, which carries its own review and commit discipline and was dirty with concurrent work at the time. The caller-side exposure was closed instead (a gate now asserts zero flagless callers), but the engine itself still ships the trap for every other consumer of that submodule.
+
+**Affected scope / file-scope manifest:**
+constitution/scripts/workable-items/cmd/workable-items/sync.go
+
+**Reproduction / context:**
+Plant a real divergence: change a **Status:** line in docs/Issues.md only. Then: workable-items diff --db docs/workable_items.db -> 'diff: DB and Markdown are in sync' (WRONG - it compared nothing). The same command WITH paths: workable-items diff --db docs/workable_items.db --issues docs/Issues.md --fixed docs/Fixed.md -> '2 difference(s)' (correct). Restored byte-identical after the test.
+
+**Acceptance criteria:**
+Omitting --issues/--fixed either REFUSES with a non-zero exit naming the missing input, or defaults to the conventional paths and says which files it read. What must never happen again is a confident 'in sync' verdict from a comparison that opened no Markdown at all - the verdict must always name its inputs so a reader can tell a real check from a vacuous one.
 

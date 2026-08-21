@@ -46,6 +46,7 @@
 #   bash scripts/hooks/docs-sync-commit-seam.sh              # check staged set
 #   bash scripts/hooks/docs-sync-commit-seam.sh --files a b  # check an explicit set
 #   bash scripts/hooks/docs-sync-commit-seam.sh --self-test  # §11.4.107(10) oracle self-validation
+#   bash scripts/hooks/docs-sync-commit-seam.sh --message M  # + CHECK 5 closure seam (BOB-136)
 #
 # ─── EXIT ─────────────────────────────────────────────────────────────
 #   0 = OK (no chain source staged, or staged and in sync)
@@ -76,11 +77,14 @@ title||char(31)||coalesce(body_md,''),char(13),'<CR>'),char(10),'<LF>') \
 from items order by atm_id,current_location,representation;"
 
 MODE="staged"
+PENDING_MSG=""
 EXPLICIT_FILES=()
 while [ $# -gt 0 ]; do
     case "$1" in
         --files)  MODE="explicit"; shift; while [ $# -gt 0 ]; do EXPLICIT_FILES+=("$1"); shift; done ;;
         --staged) MODE="staged"; shift ;;
+        --message)      PENDING_MSG="$2"; shift 2 ;;
+        --message-file) PENDING_MSG="$(cat "$2")"; shift 2 ;;
         --self-test) MODE="selftest"; shift ;;
         -h|--help) sed -n '/─── USAGE/,/─── EXIT/p' "$0"; exit 0 ;;
         *) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;
@@ -91,6 +95,13 @@ FAILED_CHECKS=()
 TMPDIR_SEAM=""
 _cleanup() { [ -n "$TMPDIR_SEAM" ] && rm -rf "$TMPDIR_SEAM" 2>/dev/null || true; }
 trap _cleanup EXIT
+
+_report_fail() {
+    echo "" >&2
+    echo "  ── $1 ──" >&2
+    shift
+    printf '  %s\n' "$@" >&2
+}
 
 # ── Build a temp DB re-parsed from the given Markdown pair, and print its
 #    per-item projection on stdout. Returns 1 if the engine could not run.
@@ -200,7 +211,39 @@ if [ -d "$CTX_DIR" ]; then
     DC_CONTEXTS="$(printf '%s' "$DC_CONTEXTS" | tr ' ' '\n' | grep -v '^$' | sort -u | tr '\n' ' ' || true)"
 fi
 
+# ── CHECK 5 — CLOSURE SEAM (BOB-136) ──────────────────────────────────
+# Deliberately placed BEFORE the early exit below. CHECKS 1-4 all trigger
+# on a STAGED TRACKER FILE; a commit that lands a pure CODE fix stages no
+# tracker file at all — and that is exactly the commit whose row fails to
+# move. Running this after the early exit would make it structurally
+# unable to see the defect it exists for (§11.4.196(F) configured-but-
+# never-in-use). Gated on --message so every existing caller is unchanged.
+CLOSURE_GATE="scripts/pre_build/check_cm_closure_seam_binds.sh"
+if [ -n "$PENDING_MSG" ]; then
+    if [ ! -f "$CLOSURE_GATE" ]; then
+        echo "WARN (§11.4.3 SKIP): $CLOSURE_GATE missing — closure seam NOT checked." >&2
+        echo "                     Commit proceeds (§11.4.234(D) always-unblocked)." >&2
+    elif bash "$CLOSURE_GATE" --message "$PENDING_MSG" >/dev/null 2>&1; then
+        echo "  CHECK 5 closure seam .................... PASS"
+    else
+        echo "  CHECK 5 closure seam .................... FAIL"
+        FAILED_CHECKS+=("closure-seam")
+        _report_fail "CHECK 5 FAILED — closure seam does not bind (BOB-136)" \
+            "This commit message DECLARES work on the item(s) below, but their" \
+            "tracked rows still say the work has not started (or say the item is" \
+            "open while the message says it closes it). A status that does not" \
+            "move when work lands stops being evidence and becomes decoration —" \
+            "and every downstream reader of status silently degrades."
+        bash "$CLOSURE_GATE" --message "$PENDING_MSG" 2>&1 | sed 's/^/    /' >&2 || true
+    fi
+fi
+
 if [ "$WI_TOUCHED" -eq 0 ] && [ -z "$DC_CONTEXTS" ]; then
+    if [ "${#FAILED_CHECKS[@]}" -gt 0 ]; then
+        echo "" >&2
+        echo "COMMIT REFUSED — closure seam (see CHECK 5 report above)." >&2
+        exit 1
+    fi
     echo "[docs-sync-seam] no docs-chain source in the staged set — check not applicable (OK)"
     exit 0
 fi
@@ -208,13 +251,6 @@ fi
 echo "[docs-sync-seam] §11.4.106(F) commit-seam doc/DB sync check"
 [ "$WI_TOUCHED" -eq 1 ] && echo "                 workable-items chain: STAGED (Issues/Fixed/DB)"
 [ -n "$DC_CONTEXTS" ] && echo "                 docs_chain context(s) staged: ${DC_CONTEXTS% }"
-
-_report_fail() {
-    echo "" >&2
-    echo "  ── $1 ──" >&2
-    shift
-    printf '  %s\n' "$@" >&2
-}
 
 # ── CHECK 1+2+3 — workable-items chain (cheap, always on) ─────────────
 if [ "$WI_TOUCHED" -eq 1 ]; then
