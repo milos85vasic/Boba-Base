@@ -134,7 +134,7 @@ exist and are inactive, and `start.sh` references systemd zero times.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T033 [TDD] Implement `scripts/ownership_precondition.sh` per contracts/startup-precondition.md, driving T006 from RED to GREEN — exit 0/1/2, where 2 (cannot run) is NOT a pass [FR-010, FR-010a]
+- [x] T033 [TDD] Implement `scripts/ownership_precondition.sh` per contracts/startup-precondition.md, driving T006 from RED to GREEN — exit 0/1/2, where 2 (cannot run) is NOT a pass [FR-010, FR-010a]
 - [ ] T034 [TDD] Implement `scripts/pre_build/check_cm_ownership_invariants.sh` (FR-011): assert every compose service that mounts an in-scope path declares a route (E5 completeness map), and FAIL when it checked ZERO services — a quiet zero from a blind instrument is not a clean tree (§11.4.201(6)) [FR-011, FR-014, SC-006]
 - [ ] T035 [TDD] Write the paired §1.1 mutation `scripts/pre_build/check_cm_ownership_invariants_mutation_test.sh` for T034's gate: revert one service's route and confirm the gate FAILs; restore and confirm byte-identical with zero residue. A gate whose mutation does not make it fail is decoration
 - [ ] T036 Wire the new gate into `scripts/pre_build_verification.sh` as invariant 45, following the invariant-44 pattern, and renumber the total consistently
