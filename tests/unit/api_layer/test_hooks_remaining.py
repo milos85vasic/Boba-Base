@@ -20,7 +20,18 @@ def _purge_api_module() -> None:
 
 
 class TestSaveHooksError:
-    def test_save_hooks_error_swallowed(self, tmp_path, monkeypatch):
+    """BOB-173 reconciliation (§11.4.120).
+
+    This case used to be ``test_save_hooks_error_swallowed`` and asserted only
+    that no exception escaped ``_save_hooks`` — it encoded the BOB-173 defect
+    (a write failure with no channel to report it) as the contract, so the fix
+    correctly broke it. It is rewritten to assert the NEW mechanism rather than
+    deleted or weakened: swallowing is now the failure, propagating is the
+    contract. The paired negative half below keeps it honest — the guard must
+    stay silent on a healthy write.
+    """
+
+    def test_save_hooks_error_propagates(self, tmp_path, monkeypatch):
         _purge_api_module()
         import api.hooks
         import os
@@ -28,11 +39,36 @@ class TestSaveHooksError:
         non_writable = tmp_path / "no-write"
         non_writable.mkdir()
         os.chmod(non_writable, stat.S_IRUSR | stat.S_IXUSR)
-        monkeypatch.setattr(api.hooks, "HOOKS_FILE", str(non_writable / "hooks.json"))
+        target = non_writable / "hooks.json"
+
+        # Control needle (§11.4.201(7)(b)): prove the directory really refuses a
+        # new file before concluding anything from what _save_hooks does.
         try:
-            api.hooks._save_hooks([{"hook_id": "abc"}])
+            probe = non_writable / ".probe"
+            probe.write_text("x")
+            probe.unlink()
+            os.chmod(non_writable, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+            # SKIP-OK: BOB-173 — host cannot make an unwritable directory.
+            pytest.skip("host does not enforce 0500 directory permissions")
+        except OSError:
+            pass
+
+        monkeypatch.setattr(api.hooks, "HOOKS_FILE", str(target))
+        try:
+            with pytest.raises(api.hooks.HookPersistenceError):
+                api.hooks._save_hooks([{"hook_id": "abc"}])
         finally:
             os.chmod(non_writable, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+
+    def test_save_hooks_does_not_raise_on_a_healthy_write(self, tmp_path, monkeypatch):
+        """Negative control (§11.4.201(1)) — failing closed ALWAYS is not a fix."""
+        _purge_api_module()
+        import api.hooks
+        import json
+        target = tmp_path / "writable" / "hooks.json"
+        monkeypatch.setattr(api.hooks, "HOOKS_FILE", str(target))
+        api.hooks._save_hooks([{"hook_id": "abc"}])
+        assert json.loads(target.read_text()) == [{"hook_id": "abc"}]
 
 
 class TestHookLogFiltering:

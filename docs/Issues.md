@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 52
-**Last modified:** 2026-08-22T08:38:16Z
+**Revision:** 53
+**Last modified:** 2026-08-22T10:25:05Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1511,7 +1511,7 @@ HONEST BOUNDARY. Measured from ONE host, ONE time, UNAUTHENTICATED. Whether an a
 
 ## BOB-173 — Hook create and delete return HTTP success even when persistence fails, because _save_hooks swallows every exception — a user is told their webhook exists when it does not
 
-**Status:** Queued
+**Status:** Ready for testing
 **Type:** Bug
 **Severity:** High
 **Created-By:** Claude

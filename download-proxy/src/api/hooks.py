@@ -80,6 +80,25 @@ async def extend_hook_logs(entries: list[dict[str, Any]]) -> None:
         _execution_logs.extend(entries)
 
 
+class HookPersistenceError(RuntimeError):
+    """Raised when the hook store could not be written.
+
+    BOB-173: ``_save_hooks`` used to swallow every exception and return ``None``,
+    so its callers had no channel through which to learn the write had failed and
+    reported success unconditionally — a create returned a ``hook_id`` for a hook
+    that was never written, a delete reported removal of a hook still in the file.
+
+    This path combines MUTATION of a shared resource with an EXTERNAL SIDE EFFECT
+    (a hook is an outbound call the system will or will not make later), so it
+    MUST fail closed (§11.4.252). An exception is the channel chosen over a
+    returned status deliberately: a returned bool leaves "caller ignored the
+    failure" representable and therefore reachable by accident, which is the exact
+    state that produced this defect. Raising makes it unrepresentable at the call
+    site (§11.4.241 — prefer the rung that removes the illegal state over the one
+    that merely reports it).
+    """
+
+
 def _load_hooks() -> list[dict[str, Any]]:
     try:
         if os.path.isfile(HOOKS_FILE):
@@ -94,12 +113,19 @@ def _load_hooks() -> list[dict[str, Any]]:
 
 
 def _save_hooks(hooks: list[dict[str, Any]]) -> None:
+    """Persist the hook list, or raise ``HookPersistenceError``.
+
+    The log line is kept for diagnostics — it was never the problem. The problem
+    was that it was the ONLY consequence, so a failed write was indistinguishable
+    from a successful one to every caller (§11.4.201(6) false-null).
+    """
     try:
         os.makedirs(os.path.dirname(HOOKS_FILE), exist_ok=True)
         with open(HOOKS_FILE, "w") as f:
             json.dump(hooks, f, indent=2)
     except Exception as e:
         logger.error(f"Failed to save hooks: {e}")
+        raise HookPersistenceError(str(e)) from e
 
 
 @router.get("")
@@ -149,7 +175,15 @@ async def create_hook(request: HookCreateRequest, _: None = Depends(require_api_
 
     hooks = _load_hooks()
     hooks.append(hook)
-    _save_hooks(hooks)
+    try:
+        _save_hooks(hooks)
+    except HookPersistenceError as e:
+        # Never hand back a hook_id for a hook that does not exist — an id for a
+        # thing that was never written is the same false report in a smaller box.
+        raise HTTPException(
+            status_code=500,
+            detail="Hook was not created: persisting the hook definition failed",
+        ) from e
 
     logger.info(f"Created hook: {request.name} ({hook_id})")
 
@@ -171,7 +205,14 @@ async def delete_hook(hook_id: str, _: None = Depends(require_api_token)):  # ty
     hooks = [h for h in hooks if h["hook_id"] != hook_id]
     if len(hooks) == original_len:
         raise HTTPException(status_code=404, detail="Hook not found")
-    _save_hooks(hooks)
+    try:
+        _save_hooks(hooks)
+    except HookPersistenceError as e:
+        # The hook is still in the file and will still fire — say so.
+        raise HTTPException(
+            status_code=500,
+            detail="Hook was not deleted: persisting the hook list failed",
+        ) from e
     logger.info(f"Deleted hook: {hook_id}")
     return {"message": "Hook deleted", "hook_id": hook_id}
 
@@ -227,4 +268,10 @@ async def dispatch_event(event_type: str, event_data: dict[str, Any]):  # type: 
     await extend_hook_logs(new_logs)
 
 
-__all__ = ["append_hook_log", "dispatch_event", "extend_hook_logs", "router"]
+__all__ = [
+    "HookPersistenceError",
+    "append_hook_log",
+    "dispatch_event",
+    "extend_hook_logs",
+    "router",
+]
