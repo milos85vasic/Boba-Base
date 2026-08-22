@@ -1,9 +1,15 @@
 {
   "axis": "dedup correctness at scale (all-identical union)",
-  "captured_at": "2026-08-21T19:56:03Z",
-  "elapsed_ms": 184.453,
+  "captured_at": "2026-08-21T21:49:47Z",
+  "download_urls_union": 1,
+  "elapsed_ms": 13.018,
   "feature_class": "scaling",
-  "groups_out": 300,
+  "groups_out": 1,
+  "groups_with_cross_wired_downloads": 0,
   "item": "BOB-109",
-  "n_results": 300
+  "n_results": 300,
+  "purpose": "baseline",
+  "run_id": "20260821T214914Z-pid1918585",
+  "sources_aggregated_into_survivor": 300,
+  "verdict": "PASS"
 }

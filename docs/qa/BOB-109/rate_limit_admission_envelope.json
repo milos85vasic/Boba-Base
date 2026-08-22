@@ -1,6 +1,6 @@
 {
   "axis": "admission envelope (non-destructive header read)",
-  "captured_at": "2026-08-21T19:55:23Z",
+  "captured_at": "2026-08-21T21:49:49Z",
   "declared_default_limits": {
     "dashboard": "60/minute",
     "default": "120/minute",
@@ -12,20 +12,23 @@
   "method": "one request per class; limiter never driven to exhaustion because it is a per-IP resource shared with concurrent agents (\u00a711.4.119)",
   "observed": {
     "dashboard_root": {
-      "binding_limit": null,
-      "limit": null,
+      "binding_limit": 60,
+      "limit": "60, 60",
       "path": "/",
-      "remaining": null,
-      "retry_after": null,
-      "status": 404
+      "remaining": "59, 59",
+      "retry_after": "60",
+      "status": 200
     },
     "sse_stream": {
-      "binding_limit": null,
-      "limit": null,
+      "binding_limit": 120,
+      "limit": "120",
       "path": "/api/v1/theme/stream",
-      "remaining": null,
-      "retry_after": null,
-      "status": 404
+      "remaining": "54",
+      "retry_after": "44",
+      "status": 200
     }
-  }
+  },
+  "purpose": "baseline",
+  "run_id": "20260821T214914Z-pid1918585",
+  "verdict": "PASS"
 }

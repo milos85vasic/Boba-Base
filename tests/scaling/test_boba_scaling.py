@@ -55,9 +55,74 @@ def _healthy(url: str, path: str = "/healthz", timeout: float = 2.0) -> bool:
         return False
 
 
+COMMITTED_EVIDENCE_DIR = EVIDENCE_DIR
+def _process_run_id() -> str:
+    """One run id per PROCESS, not per module.
+
+    This used to be computed at each module's import time, so a pytest
+    session importing both scaling modules a second apart stamped TWO
+    different run ids into one corpus — and the doc could only cite one
+    of them. Earlier runs passed only because both imports happened to
+    land inside the same second; the checker caught it the first time
+    they did not. The id is therefore cached in the environment, keyed
+    to this PID so a value inherited from a parent process is never
+    reused.
+    """
+    pid = os.getpid()
+    cached = os.environ.get("BOBA_SCALING_RUN_ID", "")
+    if cached.endswith(f"-pid{pid}"):
+        return cached
+    run_id = f"{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}-pid{pid}"
+    os.environ["BOBA_SCALING_RUN_ID"] = run_id
+    return run_id
+
+
+RUN_ID = _process_run_id()
+
+
 def _emit_evidence(name: str, payload: dict) -> Path:
+    """Write one evidence artifact (BOB-109: self-describing).
+
+    Artifacts from this file are committed, so each one records
+    ``purpose`` (baseline|mutation), a ``verdict``, and a ``run_id``
+    shared by every file one process writes. Without those a reader
+    cannot tell a passing baseline from a failing specimen left behind
+    by an earlier run — this directory has already carried both.
+
+    §11.4.84 GUARD: ``BOBA_SCALING_MUTATION=1`` without an
+    ``EVIDENCE_DIR`` redirect hard-fails rather than overwriting the
+    committed corpus.
+    """
+    mutation = os.getenv("BOBA_SCALING_MUTATION", "").strip() not in ("", "0")
+    # .resolve() BOTH sides: Path.__eq__ is LEXICAL, so a harness that
+    # builds its path with a relative join (docs/qa/../qa/BOB-109) or a
+    # symlinked checkout compares UNEQUAL and slips a mutation artifact
+    # into the committed corpus. Proven live by the reviewer before this
+    # line existed (§11.4.201(7)(c) — the PATH is part of the instrument).
+    if mutation and EVIDENCE_DIR.resolve() == COMMITTED_EVIDENCE_DIR.resolve():
+        raise AssertionError(
+            "§11.4.84 refusing to write a MUTATION run into the committed "
+            f"evidence directory {COMMITTED_EVIDENCE_DIR}. Redirect "
+            "EVIDENCE_DIR to a scratch path before mutating."
+        )
     EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
     out = EVIDENCE_DIR / name
+    payload["purpose"] = "mutation" if mutation else payload.get("purpose", "baseline")
+    if "verdict" not in payload:
+        # Matrices accumulate one row per parametrized N and have no
+        # single outcome of their own; derive the roll-up so no
+        # committed artifact reads as an unlabelled UNKNOWN.
+        rows = [
+            v["verdict"]
+            for v in payload.values()
+            if isinstance(v, dict) and "verdict" in v
+        ]
+        payload["verdict"] = (
+            ("PASS" if all(r == "PASS" for r in rows) else "FAIL")
+            if rows
+            else "UNKNOWN"
+        )
+    payload["run_id"] = RUN_ID
     payload["captured_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     out.write_text(json.dumps(payload, indent=2, sort_keys=True))
     return out
@@ -83,11 +148,34 @@ def _services_up():
 class TestVerticalScaleSSE:
     """One process, N SSE subscribers on ``/api/v1/theme/stream``.
 
-    The endpoint enforces the ``sse`` per-IP rate class (5/minute by
-    contract, §11.4-anti-bluff BOB-111 followup). At vertical scale
-    the throughput envelope is bounded by exactly that class — the
-    real scaling curve maps the accepted-connection count against
-    growing N. A 429 is a healthy back-pressure signal, NOT a defect.
+    BOB-109 CORRECTION (§11.4.6 — the previous wording asserted a
+    contract nobody had measured): this docstring used to state that
+    the endpoint enforces the ``sse_stream`` per-IP class at 5/minute.
+    Measured against the live service 2026-08-21, the route advertises
+    ``x-ratelimit-limit: 120`` — the ``default`` class, not
+    ``sse_stream``.
+
+    A SECOND CORRECTION (§11.4.201(7)(a) — the carrier trap, committed
+    twice in this very docstring). The wording above previously
+    continued: "``sse_limit_decorator`` is defined there and applied to
+    no route, so the declared class never binds." The symbol clause is
+    literally true and the conclusion is FALSE. The wiring does not use
+    that symbol at all — it uses ``@_rl("sse_stream")``
+    (``routes.py:801``) — and the class DOES bind: the sibling route
+    ``/api/v1/search/stream`` serves ``x-ratelimit-limit: 5``, measured
+    directly. What is actually wrong is narrower and is filed as
+    **BOB-167**: ``/theme/stream`` carries no limiter decorator at all
+    and therefore falls to the 120/minute default, while its
+    same-shaped sibling is classed at 5. Searching for one symbol NAME
+    and reading zero hits as "wired nowhere" is exactly the
+    absence-is-not-evidence trap this suite exists to catch.
+
+    The envelope THIS axis measures is therefore the 120/minute
+    default. See
+    ``test_scaling_envelope.py::TestRateLimitAdmissionEnvelope`` and
+    ``docs/qa/BOB-109/rate_limit_class_wiring.json``.
+
+    A 429 is a healthy back-pressure signal, NOT a defect.
 
     §11.4.14 cleanup: every stream response is ``.close()``d in a
     ``finally`` before the executor exits.
@@ -112,7 +200,18 @@ class TestVerticalScaleSSE:
                 r = requests.get(
                     f"{MERGE_URL}/api/v1/theme/stream",
                     stream=True,
-                    timeout=5.0,
+                    # BOB-109: was 5.0s, which sits INSIDE this host's
+                    # contended time-to-first-event band — the committed
+                    # matrix recorded TTFE 3656 ms at N=1 and an all-50
+                    # -errored N=50 row that is contention residue, not a
+                    # service defect (the same axis run live at N=50
+                    # accepted 50/50 at TTFE p50 242 ms). At 5.0s the
+                    # `accepted + rate_limited >= 1` assertion below can
+                    # therefore FALSE-FAIL under load (§11.4.201(1)),
+                    # reporting a healthy SSE plane as dead. 20s clears
+                    # the observed band with margin while still bounding
+                    # a genuinely wedged endpoint.
+                    timeout=20.0,
                     headers={"Accept": "text/event-stream"},
                 )
             except requests.RequestException:
@@ -150,6 +249,7 @@ class TestVerticalScaleSSE:
         accepted = sum(1 for c in status_codes if c == 200)
         rate_limited = sum(1 for c in status_codes if c == 429)
         matrix[str(n_subs)] = {
+            "verdict": "PASS" if (accepted + rate_limited) >= 1 else "FAIL",
             "n_subs": n_subs,
             "wall_s": round(wall_s, 3),
             "accepted": accepted,
@@ -170,6 +270,15 @@ class TestVerticalScaleSSE:
         total = accepted + rate_limited + matrix[str(n_subs)]["other_errors"]
         assert total == n_subs, (
             f"attempts unaccounted at N={n_subs}: got {total} of {n_subs}"
+        )
+        # BOB-109: `total` above is `len(status_codes)` by
+        # construction, so that check only catches a thread that failed
+        # to record — it does NOT catch a dead service. This does: a
+        # 200 or a 429 both prove the SSE plane answered, while an
+        # all-connection-error run (status 0) fails.
+        assert accepted + rate_limited >= 1, (
+            f"SSE plane produced NO HTTP verdict at N={n_subs} "
+            f"(all attempts errored): {status_codes}"
         )
         # At small N some connections MUST land — the SSE plane is
         # non-empty.
@@ -212,7 +321,15 @@ class TestHorizontalScaleProxyFanOut:
         # a data point (recorded as timeout), never wedges the test
         # (§11.4.201(12) shell-instrument footgun applied at the
         # client library layer).
-        client_timeout = 8.0
+        # BOB-109 (§11.4.201(1)): was 8.0s, which sits INSIDE this
+        # host's contended admission band — a full-suite run at loadavg
+        # 24 recorded N=1 as a single client timeout at wall 8.06s, so
+        # the `accepted + rate_limited >= 1` assertion below FALSE-FAILED
+        # against a merge service that was answering fine. Same class of
+        # defect as the SSE axis's 5.0s timeout. 30s clears the observed
+        # band while still bounding a genuinely wedged admission path,
+        # and a timeout remains a recorded data point, never a hang.
+        client_timeout = 30.0
 
         def _one_search(i: int):
             # Vary the query so the orchestrator does not dedup the
@@ -243,6 +360,7 @@ class TestHorizontalScaleProxyFanOut:
         admission_lat_ms = [r[1] for r in results if r[0] == 200]
 
         matrix[str(n_parallel)] = {
+            "verdict": "PASS" if (accepted + rate_limited) >= 1 else "FAIL",
             "n_parallel": n_parallel,
             "wall_s": round(wall_s, 3),
             "accepted": accepted,
@@ -259,11 +377,37 @@ class TestHorizontalScaleProxyFanOut:
         }
         _emit_evidence("proxy_fanout_matrix.json", matrix)
 
-        # Anti-bluff: every attempt MUST have a recorded verdict
-        # (accepted / 429 / timeout / other). No silent drop.
-        assert (
-            accepted + rate_limited + timed_out + other == n_parallel
-        ), f"unaccounted attempts at N={n_parallel}: {results}"
+        # BOB-109: the assertion that used to stand here was a
+        # TAUTOLOGY. `other` is DEFINED above as the residual
+        # `n_parallel - accepted - rate_limited - timed_out`, so
+        # `accepted + rate_limited + timed_out + other == n_parallel`
+        # reduces to `n_parallel == n_parallel` and held for ALL
+        # inputs. Measured 2026-08-21: with MERGE_URL pointed at a
+        # CLOSED port this test still PASSED
+        # (docs/qa/BOB-109/red_tautology_proof.txt) — §11.4.266
+        # green-but-broken. Replaced with two assertions that a dead
+        # service actually fails.
+        #
+        # (1) No attempt is silently dropped by the executor. This is
+        #     real: `results` is what the pool returned, and it is not
+        #     algebraically tied to n_parallel.
+        assert len(results) == n_parallel, (
+            f"executor dropped attempts at N={n_parallel}: "
+            f"got {len(results)} results, expected {n_parallel}"
+        )
+        # (2) The merge service actually answered. A 429 is a healthy
+        #     back-pressure verdict and counts; a client-side timeout
+        #     (-1) does not. All-timeouts means nothing is serving, and
+        #     that MUST fail rather than read as a scaling data point.
+        # A 429 counts: back-pressure IS an answer. Only an all-timeout
+        # run means nothing is serving. The client timeout above must
+        # stay clear of the contended admission band or this assertion
+        # reports a healthy service as dead.
+        assert accepted + rate_limited >= 1, (
+            f"merge service produced NO HTTP verdict at N={n_parallel} "
+            f"(all attempts timed out / errored within {client_timeout}s): "
+            f"{results}"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -293,9 +437,14 @@ class TestCacheWarming:
                 return (0, (time.perf_counter() - t0) * 1000.0)
 
         start = time.perf_counter()
-        # Cap workers to keep FD pressure sane; the burst is still
-        # concurrent by chunks.
-        workers = min(n, 128)
+        # BOB-109 host safety (§12.6/§12.12): was min(n, 128). On this
+        # 8-core host that drove loadavg to 40 during a full-suite run —
+        # far past the 30-40% of host resources tests are allowed, on a
+        # box shared with sibling agents. 16 keeps the burst genuinely
+        # concurrent (2x cores) without wedging the workstation; the
+        # burst still issues all n requests, just through a bounded
+        # pool.
+        workers = min(n, 16)
         with cf.ThreadPoolExecutor(max_workers=workers) as ex:
             for status, dt_ms in ex.map(lambda _: _one(), range(n)):
                 latencies_ms.append(dt_ms)
@@ -318,6 +467,9 @@ class TestCacheWarming:
 
         wall, lats, ok = self._burst(JACKETT_BOBA_URL, "/healthz", n_req)
         matrix[str(n_req)] = {
+            "verdict": "PASS"
+            if (ok >= n_req * 0.98 and statistics.median(lats) < 500.0)
+            else "FAIL",
             "n_req": n_req,
             "wall_s": round(wall, 3),
             "ok": ok,
@@ -374,6 +526,9 @@ class TestCacheWarming:
         red_p50 = statistics.median(red_lats)
 
         evidence = {
+            "verdict": "PASS"
+            if statistics.median(green_lats) < statistics.median(red_lats)
+            else "FAIL",
             "n_req": n_req,
             "cached_path": {
                 "url": f"{JACKETT_BOBA_URL}/healthz",

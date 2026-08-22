@@ -1,43 +1,50 @@
 {
   "1": {
     "accepted": 1,
-    "accepted_throughput_conn_per_s": 0.27,
+    "accepted_throughput_conn_per_s": 1.0,
     "n_subs": 1,
     "other_errors": 0,
     "rate_limited_429": 0,
-    "ttfe_ms_max": 3656.79,
-    "ttfe_ms_p50": 3656.79,
-    "wall_s": 3.658
+    "ttfe_ms_max": 993.56,
+    "ttfe_ms_p50": 993.56,
+    "verdict": "PASS",
+    "wall_s": 1.001
   },
   "10": {
     "accepted": 10,
-    "accepted_throughput_conn_per_s": 2.15,
+    "accepted_throughput_conn_per_s": 8.06,
     "n_subs": 10,
     "other_errors": 0,
     "rate_limited_429": 0,
-    "ttfe_ms_max": 4648.53,
-    "ttfe_ms_p50": 4639.76,
-    "wall_s": 4.656
+    "ttfe_ms_max": 1231.4,
+    "ttfe_ms_p50": 1206.68,
+    "verdict": "PASS",
+    "wall_s": 1.241
   },
   "3": {
     "accepted": 3,
-    "accepted_throughput_conn_per_s": 1.48,
+    "accepted_throughput_conn_per_s": 2.59,
     "n_subs": 3,
     "other_errors": 0,
     "rate_limited_429": 0,
-    "ttfe_ms_max": 2027.29,
-    "ttfe_ms_p50": 2024.96,
-    "wall_s": 2.029
+    "ttfe_ms_max": 1152.74,
+    "ttfe_ms_p50": 1145.39,
+    "verdict": "PASS",
+    "wall_s": 1.158
   },
   "50": {
-    "accepted": 0,
-    "accepted_throughput_conn_per_s": 0.0,
+    "accepted": 50,
+    "accepted_throughput_conn_per_s": 7.78,
     "n_subs": 50,
-    "other_errors": 50,
+    "other_errors": 0,
     "rate_limited_429": 0,
-    "ttfe_ms_max": null,
-    "ttfe_ms_p50": null,
-    "wall_s": 5.111
+    "ttfe_ms_max": 5878.34,
+    "ttfe_ms_p50": 4614.74,
+    "verdict": "PASS",
+    "wall_s": 6.427
   },
-  "captured_at": "2026-08-19T13:27:40Z"
+  "captured_at": "2026-08-21T21:49:42Z",
+  "purpose": "baseline",
+  "run_id": "20260821T214914Z-pid1918585",
+  "verdict": "PASS"
 }

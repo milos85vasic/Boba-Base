@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 50
-**Last modified:** 2026-08-21T21:39:32Z
+**Revision:** 51
+**Last modified:** 2026-08-22T00:47:10Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -242,7 +242,7 @@ Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md SCRATCH-LOSS-2026-08-18 en
 
 ## BOB-109 — BOB-074 followup: scaling-class test coverage absent from mandated test-type matrix
 
-**Status:** Queued
+**Status:** Ready for testing
 **Type:** Task
 **Severity:** Medium
 **Created-By:** Claude

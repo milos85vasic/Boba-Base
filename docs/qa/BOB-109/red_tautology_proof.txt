@@ -1,0 +1,394 @@
+BOB-109 RED EVIDENCE — §11.4.115 / §1.1
+Captured: 2026-08-21T20:01:15Z  host: Linux 6.12.61-6.12-alt1
+
+==============================================================
+PART 1 — the COMMITTED tests/scaling/test_boba_scaling.py
+         fan-out assertion is a TAUTOLOGY
+==============================================================
+Mechanism: line ~242 defines
+    other = n_parallel - accepted - rate_limited - timed_out
+then line ~264 asserts
+    accepted + rate_limited + timed_out + other == n_parallel
+which reduces to n_parallel == n_parallel for ALL inputs.
+
+--- run: point MERGE_URL at a CLOSED port, invoke the test ---
+[RED] pointing MERGE_URL at CLOSED port 39467 (service is DEAD)
+[RED] RESULT: test PASSED against a DEAD service  <-- TAUTOLOGY CONFIRMED
+
+VERDICT: PASSES against a dead service => §11.4.266 green-but-broken.
+
+==============================================================
+PART 2 — every assertion in test_scaling_envelope.py OBSERVED
+         to FAIL under a mutation (§11.4.115(F))
+==============================================================
+
+--- A1 growth gate: polarity BOTH directions ---
+  GREEN OK | real dedup PASSES the growth gate
+  RED OK   | cubic div=2 -> dedup complexity regressed past quadratic: span exponent 2.2213 (N=100->800) > 2.1. Per-step: [{'from_n': 100, 'to_n': 200, 'p50_ratio': 4.917, 'growt
+  RED OK   | cubic div=1 -> dedup complexity regressed past quadratic: span exponent 2.3851 (N=100->800) > 2.1. Per-step: [{'from_n': 100, 'to_n': 200, 'p50_ratio': 3.581, 'growt
+
+A1 POLARITY: 3/3
+
+--- remaining assertions ---
+== Axis A ==
+  RED FAIL | A1 growth gate vs injected O(n^3) comparator -> assertion SURVIVED its mutation (bluff!)
+  RED OK   | A1 correctness guard vs no-op dedup (fast but wrong)
+           | -> dedup did not do the work being timed at N=50: expected 50 groups, saw [0]
+  RED OK   | A2 p99 budget vs inflated p99
+           | -> dedup p99 999999.0ms exceeded 2000.0ms budget at N=200. Evidence: /run/media/milosvasic/DATA4TB/Projects/boba/docs/qa/BOB-109/dedup_latency_distributi
+  RED ??   | A3 collapse guard vs dedup that never matches -> non-assert AttributeError: 'MatchResult' object has no attribute '_replace'
+== Axis B ==
+  RED OK   | B1 limiter gate vs a service with NO limiter headers
+           | -> dashboard_root: rate limiter advertises no x-ratelimit-limit — limiter disabled or unwired. Evidence: /run/media/milosvasic/DATA4TB/Projects/boba/docs
+== Axis C ==
+  RED OK   | C1 ok==N vs DEAD service (the committed file's tautology case)
+           | -> boba-jackett dropped requests at N=20: ok=0/20. Evidence: /run/media/milosvasic/DATA4TB/Projects/boba/docs/qa/BOB-109/healthz_scale_out_curve.json
+  RED OK   | C1 scale-out collapse ratio vs exploding top-rung p99
+           | -> scale-out collapsed: p99 grew from 5.955ms at N=20 to 116370.0ms at N=60 (> 25.0x). Evidence: /run/media/milosvasic/DATA4TB/Projects/boba/docs/qa/BOB-
+
+--- A3 collapse guard (dataclasses.replace variant) ---
+  RED OK   | A3 collapse guard vs dedup that never matches
+           | -> dedup failed to collapse 300 identical releases: got 300 groups, expected 1 — dedup is not deduplicating at scale
+
+--------------------------------------------------------------
+READER'S NOTE on the two non-OK lines in "remaining assertions"
+--------------------------------------------------------------
+Both are artefacts of the FIRST harness revision, retained here
+rather than deleted so the record shows what was actually run
+(§11.4.6 — no quiet edit of an inconvenient transcript):
+
+* "A1 growth gate ... SURVIVED" — that run used a SHORTENED ladder
+  (50/100/200) and the pre-revision gate (max-of-adjacent-steps at
+  2.35). Diagnosing the survival is what produced the current gate:
+  span exponent at 2.10. A1's real polarity is the 3/3 block above,
+  run against the SHIPPED ladder and the SHIPPED threshold.
+
+* "A3 ... non-assert AttributeError" — harness bug, not a suite bug:
+  MatchResult is a @dataclass, so the mutation must use
+  dataclasses.replace(), not NamedTuple._replace(). Corrected run is
+  the final block above (RED OK).
+
+Net: 8/8 assertions in test_scaling_envelope.py are observed to fail
+under mutation, and the growth gate is additionally observed to PASS
+on correct code (no §11.4.201(1) false refusal).
+
+==============================================================
+PART 3 — METRIC VALIDATION (§11.4.201(8)): the growth gate is
+         only valid on a quiescent host
+==============================================================
+The 2.10 threshold was validated at low load, then OBSERVED to
+false-fail correct code at higher load. Measured this session:
+
+  loadavg_1m (8 cpus)   baseline span exponent
+  ~2.8 - 9              1.759 / 1.832 / 1.848
+  ~9.4 - 11.6           1.882
+  ~11.1                 2.136   <-- FALSE FAIL against threshold 2.10
+  ~15 - 23              1.714 / 1.919 / 2.358
+
+  injected-cubic mutants at load 15-23:
+    div=2  median_span=2.331  MIN_span=2.278
+    div=1  median_span=2.280  MIN_span=2.294
+
+  => under contention the cubic SIGNAL (2.28-2.33) is INDISTINGUISHABLE
+     from the loaded BASELINE (up to 2.358). Best-of-N does not rescue
+     it (baseline MIN 1.857 / 1.904 / 2.309).
+
+A metric whose correct end-state can cross its own threshold is INVALID
+and must not gate work (§11.4.201(8)). Resolution: the two timing-derived
+tests require loadavg_1m/nproc <= 0.75 and otherwise SKIP-with-reason
+with the resolved numbers printed. Observed skip under load 18.09:
+
+  SKIP-OK BOB-109 §11.4.201(8): host not quiescent — loadavg_1m 18.09
+  over 8 cpus = 2.26 per cpu > 0.75. A timing-derived complexity
+  exponent is not separable from contention noise at this load;
+  emitting a verdict here would be a coin flip in both directions.
+
+The correctness assertions are deterministic and remain UNGATED.
+
+HONEST BOUNDARY: the growth gate's GREEN polarity was observed at
+loadavg 9.4-11.6 and in three stability runs, all under 2.10, but NOT
+under the new <=0.75/cpu precondition — the host never became that
+quiet during this work, and other agents' load is not ours to clear.
+
+==============================================================
+PART 4 — REVIEW ROUND (§11.4.134 iterate-to-GO), 2026-08-21T20:53:27Z
+==============================================================
+
+IMPORTANT-4 — the reviewer's NINTH mutation, which survived the
+count-based guards. merge_results returns the CORRECT number of
+groups but silently replaces the last 10% with duplicates of
+group 0: real releases vanish, count preserved, timing preserved.
+Guards now pin group IDENTITY (the SET of source links), not count.
+
+== REAL CODE (must PASS — no false refusal, §11.4.201(1)) ==
+  OK   | ungated identity test, real dedup
+         | PASSED
+  OK   | collapse test, real dedup
+         | PASSED
+
+== REVIEWER'S TAIL-TRUNCATION MUTANT (must FAIL) ==
+  OK   | ungated identity test vs tail-truncation
+         | FAILED -> dedup LOST or INVENTED releases at N=400 while preserving the group count: 40 input release(s) missing from the merged view, 0 not from the input. missing sample=['magnet
+  OK   | growth test identity guard vs tail-truncation
+         | FAILED -> dedup LOST or INVENTED releases at N=100 while preserving the group count: 10 input release(s) missing from the merged view, 0 not from the input. missing sample=['magnet
+
+IDENTITY POLARITY: 4/4
+
+BLOCKING-2 — §11.4.84 evidence-residue guard.
+  RED OK   | mutation run aimed at committed dir REFUSED:
+           | §11.4.84 refusing to write a MUTATION run into the committed evidence directory /run/media/milosvasic/DATA4TB/Projects/boba/docs/qa/BOB-109. Redirect 
+  OK       | with EVIDENCE_DIR redirected, write succeeds and is
+           | self-labelled purpose='mutation' run_id=20260821T205350Z-pid1642082
+  OK       | committed dir untouched by the mutation run: True
+
+NET: the residue class that reached HEAD via 7b45113 (a 20/40/60
+mutation ladder carrying a 443,190 ms p99, committed as evidence)
+is now refused mechanically rather than by author vigilance.
+
+==============================================================
+PART 5 — RE-REVIEW ROUND (§11.4.134), 2026-08-21T21:20:39Z
+==============================================================
+
+R4 — the reviewer's TENTH mutation. original_results untouched, so
+the input census was perfect and PASSED; every group's
+download_urls replaced by group 0's. MergedResult.to_dict() serves
+download_urls, so 399 of 400 rows would hand the user the WRONG
+TORRENT. Census extended to the output binding.
+R6 — total==n and aggregated==n had no recorded RED until now.
+
+== REAL CODE — must PASS (no false refusal, §11.4.201(1)) ==
+  OK   | identity+download census, real dedup
+         | PASSED
+  OK   | collapse census, real dedup
+         | PASSED
+
+== R4  TENTH MUTATION: download_urls cross-wired (inputs untouched) ==
+  OK   | identity+download census vs cross-wired downloads
+         | FAILED -> dedup CROSS-WIRED downloads at N=400: 399 group(s) offer download_urls that came from a DIFFERENT group's sources — those rows would hand the user the wrong torrent.
+
+== R6a internal-dup: total == n gets its RED ==
+  OK   | total==n vs duplicated sources
+         | FAILED -> dedup duplicated sources at N=400: merged view holds 799 source rows for 400 distinct inputs
+
+== R6b survivor-drop: aggregated == n gets its RED ==
+  OK   | aggregated==n vs survivor dropping sources
+         | FAILED -> dedup collapsed to 1 group but kept only 150 of 300 sources — 150 tracker row(s) vanished from the merged view
+
+POLARITY: 5/5
+
+--- assertions the above mutants MASK (url_union sits after
+/bin/bash: line 75: not: command not found
+    ), RED-proven in isolation ---
+== url_union assertion, isolated from `mismatched` ==
+  OK   | distinct: one release no longer downloadable
+         | FAILED -> dedup LOST or INVENTED download bindings at N=400: 1 input release(s) no longer downloadable, 0 download url(s) not from the input. missing sample=['magnet
+
+== collapse: survivor download bindings ==
+  OK   | survivor offers a foreign torrent
+         | FAILED -> dedup collapsed to 1 group whose download_urls are not drawn from its own sources — the survivor would hand the user a torrent it never absorbed
+  OK   | survivor offers no torrent at all
+         | FAILED -> dedup collapsed to 1 group but its download bindings are wrong: union=[] expected=['magnet:?xt=urn:btih:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa']
+
+ISOLATED POLARITY: 3/3
+
+R2 — the §11.4.84 guard was BYPASSABLE: Path.__eq__ is lexical, so
+a relative-join or symlinked EVIDENCE_DIR compared UNEQUAL and the
+reviewer wrote a mutation artifact into the committed corpus.
+Both guards now .resolve() each side.
+  RED OK   | envelope: traversal path REFUSED by the resolved guard
+           | committed corpus clean: True
+  RED OK   | boba_scaling: traversal path REFUSED by the resolved guard
+           | committed corpus clean: True
+
+R3 — the doc-vs-evidence checker now ships as
+     tests/scaling/test_doc_evidence_agreement.py (it previously
+     ran from a scratch dir, so its result was reported but not
+     reproducible — §11.4.215 / §11.4.262). Its own RED proofs,
+     including both vacuity cases the reviewer asked about:
+
+== GREEN polarity: unmutated inputs must PASS ==
+  OK   | real doc + real corpus
+         | PASSED
+
+== RED 1: doc quotes a figure no artifact contains ==
+  OK   | unbacked figure injected
+         | FAILED -> doc quotes 1 figure(s) that appear in NO committed artifact under /run/media/milosvasic/DATA4TB/Projects/boba/docs/qa/BOB-109: ['4242.42']. Either re-
+
+== RED 2 (vacuity): section emptied — does it pass with nothing to check? ==
+  OK   | emptied section must NOT pass vacuously
+         | FAILED -> only 0 decimal figures found in the measured-baselines section (floor 12). The section was likely renamed, emptied, or its tables stripped — refusing 
+
+== RED 3 (vacuity): empty evidence corpus ==
+  OK   | no artifacts must NOT pass vacuously
+         | FAILED -> no evidence artifacts under /tmp/.private/milosvasic/tmpv2gorn01/empty — a doc-vs-evidence check against an empty corpus would pass vacuously
+
+== RED 4: doc cites the wrong run_id ==
+  OK   | stale run_id citation
+         | FAILED -> doc does not cite the artifacts' run_id '20260821T205850Z-pid1673915'; without it a reader cannot tell which run the tables were transcribed from
+
+== RED 5: mixed-run corpus ==
+  OK   | artifacts from two different runs
+         | FAILED -> artifacts come from 2 different runs ['20260821T205850Z-pid1673915', 'OTHER-RUN'] — the corpus is mixed, so no single run_id can be cited honestly
+
+== RED 6: stale allowlist entry ==
+  OK   | exemption for a figure not in the doc
+         | FAILED -> ALLOWED_UNBACKED lists 1 figure(s) no longer present in the doc: ['9999.99']. Remove them — a stale allowlist silently exempts figures nobody is readi
+
+== RED 7: committed artifact carrying mutation residue ==
+  OK   | purpose=mutation in the committed corpus
+         | FAILED -> committed artifacts must declare purpose=baseline and a PASS/FAIL verdict: ["healthz_scale_out_curve.json: purpose='mutation' (expected 'baseline')"]
+
+CHECKER POLARITY: 8/8
+
+--------------------------------------------------------------
+CORRECTION to PART 5 (appended, history not rewritten)
+--------------------------------------------------------------
+Line 180 above contains a stray "/bin/bash: line 75: not: command not
+found". That is not a test result. While assembling Part 5 a heading was
+passed inside a DOUBLE-quoted echo containing backticks, so the shell
+performed command substitution on the backticked text and spliced its
+error into the evidence file. The intended heading read:
+
+  --- assertions the above mutants MASK (url_union sits after the
+      "not mismatched" assertion), RED-proven in isolation ---
+
+No verdict in Part 5 is affected. Recorded rather than silently edited
+because it is the same shell class as the §11.4.201(12) footgun
+checklist: backticks inside a double-quoted argument become command
+substitution and corrupt content with no error and no exit code. This
+was the third instance of that class in this session across three
+different actors. Every heredoc from this point uses a QUOTED delimiter
+so no substitution occurs at all.
+
+==============================================================
+PART 6 — ROUND-3 RE-REVIEW: the ELEVENTH mutation
+==============================================================
+
+R3-1. The checker shipped in Part 5 matched doc figures as
+SUBSTRINGS of the concatenated artifact JSON. Three consequences,
+all real, all now closed:
+
+  (1) ROUNDING/TRUNCATION SURVIVED. A table cell rounded while
+      tidying -- the likeliest hand-transcription error there is --
+      passed, because the rounded text is a PREFIX of the true
+      value. The checker's own docstring claimed the opposite.
+  (2) PROSE COUNTED AS BACKING. The extractor pulled 11.4 out of
+      a section citation and matched the string 11.4.119 inside an
+      artifact's method field. Symmetrically, a future section
+      citing another anchor would FALSE-FAIL a good doc.
+  (3) THE FLOOR WAS 10/12ths EXEMPTIONS. All ten allowlisted
+      figures counted toward a floor of 12, so the effective floor
+      on REAL figures was TWO.
+
+FIX: match against parsed NUMERIC VALUES, exclude anchor tokens,
+count only LIVE figures toward the floor (live-floor 10).
+
+--- polarity on the REAL doc and corpus ---
+victim figure in doc: 13.038   rounded-> 13.0   truncated-> 13.03
+
+== GREEN polarity: the REAL doc must PASS ==
+  OK   | real doc, real corpus
+         | PASSED
+
+== RED (ELEVENTH MUTATION): 13.038 -> 13.0 (rounded while tidying) ==
+         | (old substring logic: '13.0' in blob == True  <- the defect)
+  OK   | rounded figure 13.0
+         | FAILED -> doc quotes 1 figure(s) that equal NO numeric value in any committed artifact under /run/media/milosvasic/DATA4TB/Projects/boba/docs/qa/BOB-109: ['13.0
+
+== RED: truncation 13.038 -> 13.03 ==
+  OK   | truncated figure 13.03
+         | FAILED -> doc quotes 1 figure(s) that equal NO numeric value in any committed artifact under /run/media/milosvasic/DATA4TB/Projects/boba/docs/qa/BOB-109: ['13.0
+
+== RED: partial emptiness — live tables stripped to 2 real figures ==
+  OK   | 2 live figures vs live-floor 10
+         | FAILED -> only 2 LIVE (non-allowlisted) decimal figures found in the measured-baselines section (floor 10); 11 figures total. The section was likely renamed, em
+
+== NO FALSE-FAIL: a new §-anchor citation must not break a good doc ==
+  OK   | section citing §12.12 / §11.4.201(8)
+         | PASSED
+
+ROUNDING POLARITY: 5/5
+
+--- the reviewer's EXACT scenario (26.131 -> 26.1), synthetic
+    corpus so the figure genuinely exists as a value ---
+artifact really contains p95_ms = 26.131
+  OK   | exact-26.131: PASSED
+  OK   | rounded-26.1: FAILED -> doc quotes 1 figure(s) that equal NO numeric value in any committed artifact under /tmp/.private/milosvasic/tmpvjdghxjq/ev: ['26.1']. A roun
+
+EXACT-SCENARIO POLARITY: 2/2
+
+==============================================================
+PART 7 — ROUND-4 RE-REVIEW: the TWELFTH mutation (i)
+==============================================================
+
+R4-1. _doc_figures used the trailing lookahead (?![0-9.]), which
+refused a decimal followed by ANY dot -- including a SENTENCE
+PERIOD. A prose figure ending a sentence was therefore never
+extracted, so an unbacked claim passed unseen. That contradicted
+this module's own claim to check EVERY decimal figure in the
+section. Backtracking cannot rescue it: 99.8 fails the digit
+lookahead and 9.87 fails the lookbehind.
+
+FIX (one character class): refuse a dot only when a DIGIT follows.
+  before:  (?<![0-9.])[0-9]+[.][0-9]+(?![0-9.])
+  after :  (?<![0-9.])[0-9]+[.][0-9]+(?![.]?[0-9])
+
+Verified against the real section BEFORE landing: same 26 figures
+extracted, none gained, none lost -- so no false-fail channel was
+opened, and dotted anchor tokens stay refused because ".2" still
+matches the guarded lookahead.
+
+== GREEN: the REAL doc must PASS ==
+  OK   | real doc, real corpus
+         | PASSED
+
+== RED (TWELFTH MUTATION i): sentence-final figure ==
+         | injected: 'The top-rung admission p50 was 99.87.'
+         | old regex extracted: []  <- invisible = the defect
+         | new regex extracts : {'99.87'}
+  OK   | sentence-final unbacked 99.87
+         | FAILED -> doc quotes 1 figure(s) that equal NO numeric value in any committed artifact under /run/media/milosvasic/DATA4TB/Projects/boba/docs/qa/BOB-109: ['99.8
+
+== control: same figure followed by a unit (was already caught) ==
+  OK   | unit-suffixed unbacked 99.87
+         | FAILED -> doc quotes 1 figure(s) that equal NO numeric value in any committed artifact under /run/media/milosvasic/DATA4TB/Projects/boba/docs/qa/BOB-109: ['99.8
+
+== GREEN: dotted anchor tokens must STILL be refused (no false-fail) ==
+  OK   | section citing §12.12 / §11.4.201(8) / 11.4.119
+         | PASSED
+
+SENTENCE-FINAL POLARITY: 4/4
+
+RECORDED, NO ACTION (reviewer agreed): twelfth mutation (ii) --
+a p50 cell replaced by 25.0, the p99_ratio_ceiling constant --
+passes, because that value IS present in the corpus. It is the
+checker's DECLARED boundary: it contains transcription drift and
+does not prove the right figure was quoted for the right axis
+(stated in the module docstring before the attack, not after).
+
+--------------------------------------------------------------
+ROUND-4 SIDE-EFFECT: the checker caught a defect in ITS OWN
+supporting machinery (RUN_ID), unprompted.
+--------------------------------------------------------------
+During the round-4 final run, test_doc_cites_the_artifacts_run_id
+FAILED: the corpus carried TWO run ids.
+
+  cache_warming_matrix.json      -> 20260821T214747Z-pid1912869
+  healthz_scale_out_curve.json   -> 20260821T214746Z-pid1912869
+
+Same PID, one second apart. RUN_ID was computed at each MODULE
+import, so a session importing both scaling modules across a
+second boundary stamped two ids into one corpus and the doc could
+only cite one. Every earlier run passed only because both imports
+happened to land inside the same second -- a latent flake, not a
+property.
+
+FIX: _process_run_id() caches the id in the environment, keyed to
+the PID so a value inherited from a parent process is never
+reused. Re-run of both modules in one session:
+
+  distinct run_ids across 9 artifacts: 1
+
+Recorded because it is the point of the mechanism: the checker
+was written to catch transcription drift and instead caught a
+genuine identity bug in the evidence channel it validates.

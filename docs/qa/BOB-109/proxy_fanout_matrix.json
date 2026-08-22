@@ -8,7 +8,8 @@
     "n_parallel": 1,
     "other": 0,
     "rate_limited_429": 1,
-    "wall_s": 0.969
+    "verdict": "PASS",
+    "wall_s": 2.861
   },
   "2": {
     "accepted": 0,
@@ -19,7 +20,8 @@
     "n_parallel": 2,
     "other": 0,
     "rate_limited_429": 2,
-    "wall_s": 2.084
+    "verdict": "PASS",
+    "wall_s": 2.889
   },
   "5": {
     "accepted": 0,
@@ -30,18 +32,23 @@
     "n_parallel": 5,
     "other": 0,
     "rate_limited_429": 5,
-    "wall_s": 0.897
+    "verdict": "PASS",
+    "wall_s": 3.394
   },
   "8": {
-    "accepted": 0,
-    "admission_ms_max": null,
-    "admission_ms_p50": null,
-    "aggregate_admission_req_per_s": 0.0,
+    "accepted": 8,
+    "admission_ms_max": 1223.27,
+    "admission_ms_p50": 1195.27,
+    "aggregate_admission_req_per_s": 6.467,
     "client_timeout": 0,
     "n_parallel": 8,
     "other": 0,
-    "rate_limited_429": 8,
-    "wall_s": 4.273
+    "rate_limited_429": 0,
+    "verdict": "PASS",
+    "wall_s": 1.237
   },
-  "captured_at": "2026-08-19T13:28:01Z"
+  "captured_at": "2026-08-21T21:49:31Z",
+  "purpose": "baseline",
+  "run_id": "20260821T214914Z-pid1918585",
+  "verdict": "PASS"
 }

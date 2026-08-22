@@ -1,20 +1,23 @@
 {
   "cached_path": {
     "ok": 200,
-    "p50_ms": 55.295,
-    "throughput_req_per_s": 269.6,
+    "p50_ms": 20.286,
+    "throughput_req_per_s": 608.64,
     "url": "http://localhost:7189/healthz",
-    "wall_s": 0.742
+    "wall_s": 0.329
   },
-  "captured_at": "2026-08-19T13:27:46Z",
+  "captured_at": "2026-08-21T21:49:17Z",
   "n_req": 200,
-  "speedup_ratio_p50": 17.79,
-  "throughput_ratio": 6.35,
+  "purpose": "baseline",
+  "run_id": "20260821T214914Z-pid1918585",
+  "speedup_ratio_p50": 8.76,
+  "throughput_ratio": 7.08,
   "upstream_bypass_path": {
     "ok": 200,
-    "p50_ms": 983.594,
-    "throughput_req_per_s": 42.44,
+    "p50_ms": 177.608,
+    "throughput_req_per_s": 85.91,
     "url": "http://localhost:9117/UI/Dashboard",
-    "wall_s": 4.713
-  }
+    "wall_s": 2.328
+  },
+  "verdict": "PASS"
 }

@@ -14,8 +14,8 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 | Task | Completed (→ Fixed.md) | 1 |
 | Task | In progress | 9 |
 | Task | Operator-blocked | 3 |
-| Task | Queued | 21 |
-| Task | Ready for testing | 1 |
+| Task | Queued | 20 |
+| Task | Ready for testing | 2 |
 | **TOTAL** | | **65** |
 
 ## Items
@@ -46,7 +46,7 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 | BOB-104 | Task | In progress | Medium | §11.4.238 followup: CodeGraph 1.5.0 nested-.gitignore regression challenge |
 | BOB-106 | Task | Queued | Medium | §11.4.238 followup: §11.4.84 quiescence-check helper for the unattributed auto-commit path |
 | BOB-107 | Task | Queued | Medium | §11.4.238 followup: pre-dispatch existence check for subagent task-brief source inputs |
-| BOB-109 | Task | Queued | Medium | BOB-074 followup: scaling-class test coverage absent from mandated test-type matrix |
+| BOB-109 | Task | Ready for testing | Medium | BOB-074 followup: scaling-class test coverage absent from mandated test-type matrix |
 | BOB-110 | Task | Queued | Medium | BOB-074 followup: UX-class test coverage (accessibility/usability) absent |
 | BOB-111 | Task | In progress | High | BOB-074 followup: configure real rate limiting for boba's 3 public HTTP endpoints |
 | BOB-114 | Task | Queued | Medium | BOB-074 followup: self-validation golden-bad fixture for the rate-limit detector |

@@ -1,12 +1,26 @@
 {
-  "axis": "declared-vs-served limit class wiring",
-  "captured_at": "2026-08-21T19:54:15Z",
+  "axis": "SSE-shaped routes serve a consistent limit class",
+  "captured_at": "2026-08-21T21:49:48Z",
   "declared_default": "120/minute",
   "declared_sse_stream": "5/minute",
+  "divergent": true,
   "feature_class": "scaling",
   "item": "BOB-109",
-  "route": "/api/v1/theme/stream",
-  "served_binding_limit": 120,
-  "served_limit_raw": "120",
-  "unwired": true
+  "mechanism": "@_rl('<class>') at routes.py:801, NOT a *_limit_decorator symbol",
+  "purpose": "baseline",
+  "routes": {
+    "search_stream": "/api/v1/search/stream/bob109-probe",
+    "theme_stream": "/api/v1/theme/stream"
+  },
+  "run_id": "20260821T214914Z-pid1918585",
+  "served_binding_limit": {
+    "search_stream": 5,
+    "theme_stream": 120
+  },
+  "served_limit_raw": {
+    "search_stream": "5",
+    "theme_stream": "120"
+  },
+  "tracked_as": "BOB-167",
+  "verdict": "FAIL"
 }

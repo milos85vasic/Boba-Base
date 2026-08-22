@@ -1,0 +1,670 @@
+<h1 id="scaling-class-testing-bob-109-11.4.27">Scaling-class testing
+(BOB-109 / §11.4.27)</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-21T21:18:59Z</p>
+<p>Closes the <code>scaling</code> row that
+<code>docs/testing/test_type_matrix.md</code> recorded as
+<strong>ABSENT</strong> (“No scaling-tagged directory, test file, or
+HelixQA bank anywhere in the tree”), filed as <strong>BOB-109</strong>,
+the BOB-074 followup.</p>
+<h2 id="why-a-second-file-next-to-test_boba_scaling.py">Why a second
+file next to <code>test_boba_scaling.py</code></h2>
+<p><code>tests/scaling/test_boba_scaling.py</code> was already tracked
+when this work started, landed by commit <code>12b439b</code>, whose own
+message records it as <em>“recover wave-6 subagent partial output before
+dispatch termination”</em>. Audited before writing anything new (§11.4.6
+— establish the state, do not assume it):</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fan-out axis assertion was a <strong>tautology</strong> —
+<code>other</code> is defined as the residual
+<code>N - accepted - rate_limited - timed_out</code>, then asserted to
+sum back to <code>N</code></td>
+<td><strong>FIXED</strong> (this round)</td>
+</tr>
+<tr>
+<td>SSE axis assertion reduced to <code>len(status_codes) == N</code>;
+caught a non-recording thread but <strong>not a dead
+service</strong></td>
+<td><strong>FIXED</strong> (this round)</td>
+</tr>
+<tr>
+<td>Docstring asserted the SSE route enforces <code>5/minute</code> “by
+contract” — never measured, and <strong>false</strong></td>
+<td><strong>CORRECTED</strong> with the measurement</td>
+</tr>
+<tr>
+<td>No p99 anywhere (§11.4.85 wants p50/p95/p99)</td>
+<td>Addressed in the new file</td>
+</tr>
+<tr>
+<td><code>scripts/run_all_challenges.sh:66</code> lists
+<code>scaling_horizontal_challenge.sh</code>, which <strong>does not
+exist</strong></td>
+<td><strong>OPEN</strong> — reported, out of this scope</td>
+</tr>
+</tbody>
+</table>
+<p>The tautology is not an inference. Pointing <code>MERGE_URL</code> at
+a closed port and invoking the test directly, it <strong>passed against
+a dead service</strong>:</p>
+<pre><code>[RED] pointing MERGE_URL at CLOSED port 39467 (service is DEAD)
+[RED] RESULT: test PASSED against a DEAD service  &lt;-- TAUTOLOGY CONFIRMED</code></pre>
+<p>Full transcript:
+<code>docs/qa/BOB-109/red_tautology_proof.txt</code>. That is §11.4.266
+<code>green-but-broken</code> coverage-theater, so the file could not be
+cited as the coverage BOB-109 asks for. After the fix the same probe
+fails correctly
+(<code>merge service produced NO HTTP verdict at N=5</code>).</p>
+<h2 id="the-scaling-question-actually-asked">The scaling question
+actually asked</h2>
+<p>The merge service fans one query across three trackers in parallel
+and deduplicates the union. The dominant axis is <strong>result-set
+size</strong>, not user count — because the rate limiter binds long
+before the backend does (below). <code>Deduplicator.merge_results</code>
+pops a seed and rescans every remaining candidate, so all-distinct input
+— a broad query — is <strong>quadratic by construction</strong>.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Axis</th>
+<th>What it measures</th>
+<th>Limiter in the way?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong> <code>TestDedupCostScaling</code></td>
+<td>dedup cost vs result-set size; complexity class, latency
+distribution, correctness at scale</td>
+<td>No — offline, deterministic</td>
+</tr>
+<tr>
+<td><strong>B</strong> <code>TestRateLimitAdmissionEnvelope</code></td>
+<td>the admission ceiling itself, declared vs served</td>
+<td>The limiter <strong>is</strong> the subject</td>
+</tr>
+<tr>
+<td><strong>C</strong>
+<code>TestLimiterFreeConcurrencyScaleOut</code></td>
+<td>concurrency scale-out where no limiter distorts it</td>
+<td>No — <code>:7189</code> has no limit headers</td>
+</tr>
+</tbody>
+</table>
+<h2 id="how-the-rate-limiter-was-handled">How the rate limiter was
+handled</h2>
+<p>Measured live 2026-08-21, not assumed:</p>
+<ul>
+<li><code>:7187/</code> → <code>x-ratelimit-limit: 60</code> (dashboard
+class)</li>
+<li><code>:7187/api/v1/theme/stream</code> → <code>120</code> (default
+class)</li>
+<li><code>:7189/healthz</code> → <strong>no limit headers at
+all</strong></li>
+</ul>
+<p>Source of truth <code>api/rate_limit.py::DEFAULT_LIMITS</code>
+declares <code>search=10/minute</code>,
+<code>dashboard=60/minute</code>, <code>sse_stream=5/minute</code>,
+<code>default=120/minute</code>; <code>.env</code> sets no
+<code>RATE_LIMIT_*</code> override.</p>
+<p>Two decisions follow, both deliberate:</p>
+<ol type="1">
+<li><strong>Concurrency scale-out is measured on <code>:7189</code>, not
+<code>:7187</code>.</strong> Driving <code>/api/v1/search</code> past
+N=10 measures the limiter, not the fan-out. The limiter-free plane gives
+the service’s own envelope.</li>
+<li><strong>The limiter is never driven to exhaustion.</strong> It is
+keyed per-IP and therefore <strong>shared with every other agent on this
+host</strong>; exhausting it would cross-contaminate their measurements
+(§11.4.119 single-resource-owner). The ceiling is read from the
+<code>x-ratelimit-*</code> response headers with <strong>one request per
+class</strong> — non-destructive, and still sufficient to detect a
+disabled or unwired limiter.</li>
+</ol>
+<p><code>x-ratelimit-limit</code> arrives as a <strong>list</strong>
+when several limits apply (observed <code>"60, 60"</code>); the binding
+ceiling is the minimum, so it is parsed as such (§11.4.201(9)
+field-identity — capacity list, not scalar).</p>
+<h2
+id="defect-found-by-this-axis-and-a-correction-to-how-i-first-explained-it">Defect
+found by this axis — and a correction to how I first explained it</h2>
+<p><strong>Two SSE routes, one rate-limit class</strong> (filed as
+<strong>BOB-167</strong>).
+<code>/api/v1/search/stream/{search_id}</code> carries
+<code>@_rl("sse_stream")</code> (<code>routes.py:801</code>) and serves
+<code>x-ratelimit-limit: 5</code>. Its sibling
+<code>/api/v1/theme/stream</code> (<code>routes.py:150</code>) carries
+<strong>no limiter decorator at all</strong> and falls through to the
+<code>default</code> class, serving <strong>120</strong>. Both are the
+same expensive shape: long-lived connections that pin a worker and a
+generator for their lifetime.</p>
+<p><strong>A CORRECTION WORTH KEEPING (§11.4.6).</strong> This doc, and
+the test, first explained the finding as <em>“<code>sse_stream</code> is
+declared and wired to nothing — <code>sse_limit_decorator</code> is
+applied nowhere”</em>. <strong>That mechanism was wrong</strong> and the
+coordinator rejected it. The wiring does not use a
+<code>*_limit_decorator</code> symbol at all; it uses
+<code>@_rl("sse_stream")</code>, and the class <strong>is</strong>
+applied — to <code>/search/stream</code>, verified here by direct
+measurement (5). The <em>measurement</em> that started this (120 on
+<code>/theme/stream</code>) was correct and is what makes the finding
+real; the <em>cause</em> was not. Searching for one symbol NAME and
+reading the zero hits as “wired nowhere” is the §11.4.201(7)(a)
+carrier/absence trap — the same class of error this suite exists to
+catch, committed by the suite’s own author. Both halves are recorded so
+the next reader does not re-derive the wrong cause.</p>
+<p>The test was rewritten to the <strong>policy-neutral</strong>
+invariant that survives the correction: two routes of the same SSE shape
+must serve the <strong>same</strong> class. Whether the right resolution
+is to classify <code>/theme/stream</code> or to widen
+<code>sse_stream</code> is an operator decision (BOB-167 acceptance
+(a)), and the test deliberately does not presume it — what it refuses to
+let pass silently is the divergence.</p>
+<p>Per §11.4.238 this is also a <strong>coverage escape</strong>: it was
+found by this investigation, not by the automated regime — precisely the
+gap this file closes.</p>
+<p>It is recorded as a <code>strict=True</code> xfail: a self-clearing
+record, not a suppression. It stays visible as <code>xfailed</code> in
+every report, and the moment both routes agree it flips to XPASS and
+<strong>fails the run</strong>, forcing the marker’s removal. Evidence:
+<code>docs/qa/BOB-109/rate_limit_class_wiring.json</code>
+(<code>verdict: FAIL</code>, <code>tracked_as: BOB-167</code>).</p>
+<h2 id="measured-baselines">Measured baselines</h2>
+<p>Every number below is quoted from <code>docs/qa/BOB-109/*.json</code>
+as committed, all written by a <strong>single run</strong>
+(<code>run_id 20260821T214914Z-pid1918585</code>). Each artifact carries
+its own <code>purpose</code>, <code>verdict</code> and
+<code>run_id</code> — see “Evidence contract”.</p>
+<p>These tables are <strong>hand-transcribed</strong> from those
+artifacts, and the transcription is not asserted — it is
+<strong>checked</strong>. See “Evidence contract” below for the
+mechanism and what defeated its first version.</p>
+<p><strong>An earlier revision of this doc quoted dedup p50
+66.1/232.8/955.9/3308.1 with span 1.882, and healthz throughput “flat at
+~885 req/s”. Those numbers were real measurements from earlier runs in
+the authoring session, but the artifacts they came from had been
+overwritten by later runs, so the doc cited figures its own evidence no
+longer contained.</strong> That is exactly the failure this section now
+prevents, and it is why the evidence contract below exists.</p>
+<h3 id="dedup-identity-at-scale-dedup_identity_at_scale.json">Dedup
+identity at scale — <code>dedup_identity_at_scale.json</code></h3>
+<p>Ungated (runs on a busy host). N=400 distinct releases → 400 groups,
+<strong>400 of 400 source releases preserved</strong>, 0 missing, 0
+invented, 0 cross-wired download binding(s). PASS.</p>
+<h3 id="dedup-collapse-dedup_collapse_identical.json">Dedup collapse —
+<code>dedup_collapse_identical.json</code></h3>
+<p>300 identical releases → <strong>1 group aggregating all 300
+sources</strong>, 13.018 ms. PASS.</p>
+<h3 id="dedup-cost-curve-not-currently-captured">Dedup cost curve — NOT
+CURRENTLY CAPTURED</h3>
+<p><code>dedup_cost_scaling.json</code> and
+<code>dedup_latency_distribution.json</code> are <strong>absent by
+design</strong>. Their tests are quiescence-gated (below) and this host
+has not been quiet enough to produce a valid measurement; the files that
+previously sat here were stale specimens from a contended run — one of
+them a span exponent of 2.1359, which <strong>violates the file’s own
+2.10 gate</strong>. Rather than commit a failing specimen as though it
+were a baseline, they are removed and the baseline is recorded as owed.
+See “Owed: one quiescent run”.</p>
+<h3
+id="limiter-free-scale-out-healthz_scale_out_curve.json">Limiter-free
+scale-out — <code>healthz_scale_out_curve.json</code></h3>
+<p>Captured at loadavg <strong>22.97</strong> (8 cpus), so the p99-ratio
+assertion was recorded but <strong>not applied</strong>
+(<code>p99_ratio_asserted: false</code>); the <code>ok == N</code>
+assertion applies always and passed at every rung.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>N</th>
+<th>workers</th>
+<th>p50</th>
+<th>p95</th>
+<th>p99</th>
+<th>throughput</th>
+<th>ok</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>50</td>
+<td>4</td>
+<td>27.317 ms</td>
+<td>63.734 ms</td>
+<td>74.557 ms</td>
+<td>107.7 req/s</td>
+<td>50/50</td>
+</tr>
+<tr>
+<td>100</td>
+<td>8</td>
+<td>35.735 ms</td>
+<td>60.498 ms</td>
+<td>89.923 ms</td>
+<td>164.86 req/s</td>
+<td>100/100</td>
+</tr>
+<tr>
+<td>200</td>
+<td>16</td>
+<td>96.703 ms</td>
+<td>242.854 ms</td>
+<td>310.0 ms</td>
+<td>111.83 req/s</td>
+<td>200/200</td>
+</tr>
+</tbody>
+</table>
+<p>Read this as a <strong>contended-host</strong> curve, not a clean
+baseline: every request still succeeded (350/350 across the ladder) and
+the p99 ratio across the ladder was 4.158x, inside the 25.0x ceiling —
+but the absolute throughput is depressed by co-tenant load and is
+<strong>not</strong> the service’s ceiling. An earlier quiet-host run of
+the same ladder recorded ~885 req/s with p50 3.65/6.61/11.99 ms; that
+artifact no longer exists, so it is reported here as context, explicitly
+<strong>not</strong> as evidence.</p>
+<h3 id="admission-envelope-rate_limit_admission_envelope.json">Admission
+envelope — <code>rate_limit_admission_envelope.json</code></h3>
+<p>Binding limits read non-destructively, one request per class:
+<code>/</code> → <strong>60</strong>, <code>/api/v1/theme/stream</code>
+→ <strong>120</strong>. PASS (limiter enforced, headers coherent).</p>
+<h3 id="sse-class-divergence-rate_limit_class_wiring.json">SSE class
+divergence — <code>rate_limit_class_wiring.json</code></h3>
+<p><code>/api/v1/search/stream</code> → <strong>5</strong>,
+<code>/api/v1/theme/stream</code> → <strong>120</strong>,
+<code>divergent: true</code>, <code>verdict: FAIL</code>,
+<code>tracked_as: BOB-167</code>. This artifact is a
+<strong>deliberately committed FAIL</strong>: it is the evidence for the
+tracked defect, and it is labelled as such so no reader mistakes it for
+a passing baseline.</p>
+<h2 id="evidence-contract">Evidence contract</h2>
+<p>Every artifact under <code>docs/qa/BOB-109/</code>
+self-describes:</p>
+<ul>
+<li><code>purpose</code> — <code>baseline</code> or
+<code>mutation</code></li>
+<li><code>verdict</code> — <code>PASS</code> / <code>FAIL</code>
+(matrices roll up their per-N rows)</li>
+<li><code>run_id</code> — identical across every file one process
+writes</li>
+</ul>
+<p>Callers compute the pass condition <strong>before</strong> emitting,
+so a committed artifact is never silently a failing specimen.</p>
+<p>These tables are <strong>hand-transcribed</strong> from those
+artifacts. Transcription drifts — it drifted twice while this doc was
+being written — so the agreement is not asserted, it is
+<strong>checked</strong>, by <a
+href="../../tests/scaling/test_doc_evidence_agreement.py"><code>tests/scaling/test_doc_evidence_agreement.py</code></a>:
+every decimal figure in this section must <strong>equal a numeric
+value</strong> in a committed artifact, the cited <code>run_id</code>
+must match the corpus, the corpus must be from one run, and each
+artifact must declare <code>purpose=baseline</code> with a PASS/FAIL
+verdict.</p>
+<p>“Equal a value”, not “appear in the text”, is the load-bearing part.
+The first version of this checker compared figures as substrings of the
+raw JSON, and a reviewer defeated it by <strong>rounding a table
+cell</strong> — <code>26.131</code> retyped as <code>26.1</code> passed,
+because the rounded text is a prefix of the true value. Rounding while
+tidying a table is the likeliest transcription error there is, so the
+mechanism was blind to exactly the drift it exists to catch. Comparing
+against parsed numeric values closes it, along with a second channel
+where prose could “back” a figure (<code>11.4</code> extracted from a
+§-citation matching <code>§11.4.119</code> inside an artifact
+string).</p>
+<p>It refuses to pass vacuously — an emptied section, a section thinned
+to a couple of live figures, or an empty corpus all fail rather than
+reporting agreement on nothing. The anti-vacuity floor counts only
+<strong>live</strong> (non-allowlisted) figures: it previously counted
+all figures against a floor of 12 while ten allowlisted ones sat in the
+section, an effective floor of two. Run it with the suite. It contains
+transcription drift; it does not prove the numbers correct or that the
+right figure was quoted for the right axis (§11.4.6).</p>
+<p>Figures that legitimately appear here WITHOUT backing — the retracted
+ones below, the <code>2.10</code> source constant, and the quiet-host
+context figures — are enumerated with reasons in that file’s
+<code>ALLOWED_UNBACKED</code>, and a further check fails if an exemption
+outlives the text it was granted for.</p>
+<p><code>_emit</code> refuses to write into
+<code>docs/qa/BOB-109/</code> when <code>BOBA_SCALING_MUTATION=1</code>
+is set without redirecting <code>EVIDENCE_DIR</code>. That guard exists
+because this directory has already carried experiment residue: a
+mutation harness once wrote a 20/40/60 ladder with a 443,190 ms p99 into
+<code>healthz_scale_out_curve.json</code>, and it was committed as
+evidence (via <code>7b45113</code>). §11.4.84’s mutation-residue lesson,
+applied at the evidence layer.</p>
+<h2 id="owed-one-quiescent-run">Owed: one quiescent run</h2>
+<p>The two timing-derived tests have <strong>never executed under their
+own precondition</strong>. The ceiling is
+<code>loadavg/nproc &lt;= 0.75</code> (6.0 on this 8-core host); every
+run recorded during this work sat at 9.2-40. The skip is loud and
+legitimate, but nothing currently ensures the gate ever runs — a
+§11.4.226 unexecuted-standing-guard.</p>
+<p><strong>Tracked as BOB-170</strong>: capture one quiescent GREEN run
+of <code>test_dedup_growth_does_not_regress_past_quadratic</code> and
+<code>test_dedup_latency_distribution_at_operating_size</code>, which
+would also regenerate the two absent artifacts above and close the
+honest gap recorded next to <code>MAX_GROWTH_EXPONENT</code> in the
+source. When that run lands, these tables need re-transcribing — and the
+checker above is what will catch it if they are not.</p>
+<h2 id="why-the-gate-reads-a-span-exponent-not-per-step">Why the gate
+reads a span exponent, not per-step</h2>
+<p>Per-step exponents are noise-dominated on a host shared with other
+agents. Measured during this work: a co-tenant load spike produced a
+<code>0.981</code> step, and extending the ladder to N=1600 pushed the
+<strong>baseline</strong> to <code>2.328</code> — a longer lever arm
+made the estimator <em>noisier</em>, not sharper, so the 1600 rung was
+dropped (§11.4.201(6)).</p>
+<p>The span exponent is ratio-based and therefore far more stable than
+per-step: three baseline runs gave 1.832 / 1.848 / 1.759, and a run
+under load average 11.63 still read 1.882. It is <strong>more robust,
+not load-invariant</strong> — see the validity section below, which is
+why the timing tests are quiescence-gated.</p>
+<p>Threshold chosen from measured mutant separation, injecting an O(n³)
+comparator:</p>
+<table>
+<thead>
+<tr>
+<th>Injected cubic term</th>
+<th>Span exponent</th>
+<th>Caught at 2.10?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>none (baseline)</td>
+<td>1.76 – 1.88</td>
+<td>passes, as it must</td>
+</tr>
+<tr>
+<td><code>n/4</code> ops per compare</td>
+<td>1.986</td>
+<td><strong>no</strong></td>
+</tr>
+<tr>
+<td><code>n/2</code> ops per compare</td>
+<td>2.145</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>n</code> ops per compare</td>
+<td>2.450</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Honest sensitivity floor (§11.4.6):</strong> this gate
+catches a cubic term whose per-comparison cost is ≥ ~<code>n/2</code>
+elementary ops. A cubic term 4× smaller is indistinguishable from
+quadratic within N ≤ 800 on this host — its crossover lies beyond the
+tested range. Stated blind spot, not a claim of completeness.</p>
+<h2 id="the-metric-is-only-valid-on-a-quiet-host-11.4.2018">The metric
+is only valid on a quiet host (§11.4.201(8))</h2>
+<p>The 2.10 threshold was validated, then <strong>invalidated by
+measurement</strong>, then re-scoped. Shipping it unconditionally would
+have been a false-positive refusal generator. Measured on this shared
+workstation:</p>
+<table>
+<thead>
+<tr>
+<th>loadavg_1m (8 cpus)</th>
+<th>baseline span exponent</th>
+<th>verdict at 2.10</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>~2.8 – 9</td>
+<td>1.759 / 1.832 / 1.848</td>
+<td>passes correctly</td>
+</tr>
+<tr>
+<td>~9.4 – 11.6</td>
+<td>1.882</td>
+<td>passes correctly</td>
+</tr>
+<tr>
+<td>~11.1</td>
+<td><strong>2.136</strong></td>
+<td><strong>FALSE FAIL on correct code</strong></td>
+</tr>
+<tr>
+<td>~15 – 23</td>
+<td>up to <strong>2.358</strong></td>
+<td>false fail</td>
+</tr>
+</tbody>
+</table>
+<p>And at load 15–23 the injected-cubic mutants read <strong>2.278 –
+2.331</strong> — <em>below</em> the loaded baseline. Under contention
+<strong>the signal is smaller than the noise and the two are not
+separable in either direction</strong>. Best-of-N instead of median does
+not rescue it (baseline 1.857 / 1.904 / 2.309 vs cubic 2.278 / 2.294):
+sustained contention degrades the largest rung disproportionately, which
+is exactly what an exponent measures.</p>
+<p>Per §11.4.201(8) a metric whose <em>correct</em> end-state can cross
+its own threshold is invalid and must not gate work. So the two
+timing-derived tests now require
+<code>loadavg_1m / nproc &lt;= 0.75</code> and otherwise
+<strong>SKIP-with-reason</strong>, printing the resolved numbers
+(§11.4.201(5)):</p>
+<pre><code>SKIP-OK BOB-109 §11.4.201(8): host not quiescent — loadavg_1m 18.09
+over 8 cpus = 2.26 per cpu &gt; 0.75. A timing-derived complexity exponent
+is not separable from contention noise at this load; emitting a verdict
+here would be a coin flip in both directions.</code></pre>
+<p><strong>What actually survives a skip</strong> — stated precisely,
+because an earlier revision of this paragraph overclaimed. The
+ladder-rung identity checks live <em>inside</em> the two
+quiescence-gated tests, so on a busy host they do <strong>not</strong>
+run. What runs regardless of load is:</p>
+<ul>
+<li><code>test_dedup_identity_preserved_at_scale</code> —
+<strong>ungated</strong>, N=400 distinct releases, asserts the merged
+view still contains every input release. This test exists precisely so
+the at-scale distinct-input jurisdiction is not lost when the timing
+tests skip.</li>
+<li><code>test_dedup_collapses_identical_union_to_one_group</code> —
+ungated, and now also asserts the survivor aggregated all 300
+sources.</li>
+</ul>
+<p>Both assert identity, never elapsed time, so contention cannot make
+them lie in either direction.</p>
+<p><strong>Boundary stated honestly (§11.4.6):</strong> the growth
+gate’s GREEN polarity was observed at loadavg 9.4–11.6 (span 1.882) and
+in three stability runs (1.759 / 1.832 / 1.848), all well under 2.10. It
+was <strong>not</strong> observed under the new
+<code>&lt;= 0.75/cpu</code> precondition, because the host did not
+become that quiet while this work ran and other agents’ load is not mine
+to clear. Quiescence is strictly more favourable than the conditions
+those passes were measured under, so the gate passing there follows from
+the data — but it is an inference from measurement, not a run I can
+paste.</p>
+<h2 id="anti-bluff-properties">Anti-bluff properties</h2>
+<ul>
+<li><p><strong>Every shipped assertion is observed to fail under a
+mutation</strong> (§11.4.115). The earlier “8/8” in this section was
+stale — the assertion set grew, and two of the new ones
+(<code>total == n</code>, <code>aggregated == n</code>) had no recorded
+RED until a reviewer supplied it. Full transcript:
+<code>docs/qa/BOB-109/red_tautology_proof.txt</code>.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Assertion</th>
+<th>Mutation that makes it fail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>growth <code>span_exponent &lt;= 2.10</code></td>
+<td>injected O(n³) comparator (2.2213 / 2.3851)</td>
+</tr>
+<tr>
+<td>identity <code>len(groups) == n</code></td>
+<td>no-op dedup returning <code>[]</code></td>
+</tr>
+<tr>
+<td>identity <code>links == expected</code></td>
+<td>tail-truncation (last 10% → dup of group 0)</td>
+</tr>
+<tr>
+<td>identity <code>total == n</code></td>
+<td>sources duplicated (799 rows for 400 inputs)</td>
+</tr>
+<tr>
+<td>identity <code>not mismatched</code></td>
+<td><code>download_urls</code> cross-wired (399 of 400 groups)</td>
+</tr>
+<tr>
+<td>identity <code>url_union == expected</code></td>
+<td>one group’s binding cleared (1 release unclickable)</td>
+</tr>
+<tr>
+<td>distribution <code>p99 &lt; budget</code></td>
+<td>inflated p99</td>
+</tr>
+<tr>
+<td>collapse <code>len(groups) == 1</code></td>
+<td>dedup that never matches</td>
+</tr>
+<tr>
+<td>collapse <code>aggregated == n</code></td>
+<td>survivor drops sources (kept 150 of 300)</td>
+</tr>
+<tr>
+<td>collapse <code>not mismatched</code></td>
+<td>survivor offers a foreign torrent</td>
+</tr>
+<tr>
+<td>collapse <code>url_union == expected</code></td>
+<td>survivor offers nothing</td>
+</tr>
+<tr>
+<td>limiter enforced + coherent</td>
+<td>probe a service with no limit headers</td>
+</tr>
+<tr>
+<td>SSE class consistency</td>
+<td>fails today — it IS the BOB-167 defect</td>
+</tr>
+<tr>
+<td>healthz <code>ok == N</code></td>
+<td>dead service</td>
+</tr>
+<tr>
+<td>healthz p99 ratio</td>
+<td>inflated top-rung p99</td>
+</tr>
+<tr>
+<td>SSE / fan-out <code>accepted + 429 &gt;= 1</code></td>
+<td>dead service; and wedged service (fails at the timeout cap)</td>
+</tr>
+<tr>
+<td>doc-evidence checker (5 tests)</td>
+<td>8 mutations incl. both vacuity cases</td>
+</tr>
+</tbody>
+</table>
+<p>The growth gate is additionally observed to <strong>pass</strong> on
+correct code, so it is not a §11.4.201(1) false-positive refusal.</p>
+<p><strong>Honest exception:</strong>
+<code>len(results) == n_parallel</code> in the fan-out axis has no
+independent mutant. It asserts the thread pool returned one result per
+submission; breaking it would mean breaking
+<code>ThreadPoolExecutor</code> itself. It is listed here rather than
+counted as proven.</p></li>
+<li><p><strong>Timing is tied to real work, and identity to the
+user.</strong> Each timed dedup asserts group count, the SET of
+preserved releases, no duplicated sources, and that every group’s
+<code>download_urls</code> come from its OWN sources. Count alone was
+not enough: a mutation preserving the count while cross-wiring
+<code>download_urls</code> passed every earlier guard while 399 of 400
+rows would have handed the user the wrong torrent.
+<code>MergedResult.to_dict()</code> serves <code>download_urls</code> —
+it is the product’s download binding, so identity of the inputs alone
+left the user-visible half unguarded.</p></li>
+<li><p><strong>Correctness at scale</strong> is asserted separately and
+<strong>ungated</strong> (300 identical releases collapse to 1 group
+carrying all 300 sources, and 400 distinct releases keep their
+identity), so a dedup that stopped matching cannot pass by getting
+quicker — and a busy host still gets real at-scale coverage when the
+timing tests skip.</p></li>
+<li><p><strong>Host safety is a precondition, not an
+afterthought</strong> (§12.6/§12.12). The suite reads memory %, thread
+headroom, CPU count and load average, refuses to scale outside them with
+the resolved numbers printed (§11.4.201(5)), caps workers at 16 on this
+8-core host, and records the reading inside every evidence
+artifact.</p></li>
+<li><p><strong>Cleanup on every exit path</strong> (§11.4.14). Every
+executor is a context manager (joins on all paths) and every response
+closes in a <code>finally</code>; a session-scoped finaliser fails the
+run if a pool leaks.</p></li>
+</ul>
+<h2 id="running-it">Running it</h2>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/scaling/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="at">-p</span> no:schemathesis</span></code></pre></div>
+<p><code>-p no:schemathesis</code> is required on this host for an
+unrelated pre-existing reason: the plugin fails to import
+(<code>No module named 'rpds.rpds'</code>) and takes the whole pytest
+session down with it.</p>
+<p>If you instead disable plugin autoloading wholesale,
+<strong><code>-p timeout</code> is mandatory</strong> — otherwise
+<code>pytest.mark.timeout</code> is silently inert and the per-test
+timeouts this suite relies on do not apply (a
+<code>--strict-config</code> run also needs the addopts’
+<code>--timeout</code> to have a provider):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">PYTEST_DISABLE_PLUGIN_AUTOLOAD</span><span class="op">=</span>1 <span class="ex">python3</span> <span class="at">-m</span> pytest tests/scaling/ <span class="at">-v</span> <span class="dt">\</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="at">-p</span> timeout <span class="at">-p</span> randomly</span></code></pre></div>
+<p>Under <code>nice</code>/<code>ionice</code> on a shared host:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 python3 <span class="at">-m</span> pytest tests/scaling/ <span class="at">-q</span> <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="at">-p</span> no:schemathesis</span></code></pre></div>
+<p>Mutation/experiment runs MUST set
+<code>BOBA_SCALING_MUTATION=1</code> <strong>and</strong> redirect
+<code>EVIDENCE_DIR</code> to a scratch path; with the flag set and no
+redirect, <code>_emit</code> refuses to write rather than overwrite the
+committed corpus. Both sides of that comparison are
+<code>.resolve()</code>d — <code>Path.__eq__</code> is lexical, so a
+relative-join or symlinked path compared unequal and a reviewer used
+exactly that to slip a mutation artifact into the committed corpus
+before the guard was hardened.</p>
+<p><strong>After any full-suite run the artifacts are regenerated with a
+new <code>run_id</code>, so <code>test_doc_evidence_agreement.py</code>
+will FAIL until these tables are re-transcribed.</strong> That is the
+mechanism working, not a broken suite — it caught its first real drift
+on its own first full run. Re-transcribe the measured-baselines section
+from <code>docs/qa/BOB-109/*.json</code> and re-run. Running the checker
+alone never regenerates anything.</p>
+<p>Axis A runs anywhere. Axes B and C SKIP-with-reason when
+<code>:7187</code> / <code>:7189</code> are down — they never start the
+stack.</p>

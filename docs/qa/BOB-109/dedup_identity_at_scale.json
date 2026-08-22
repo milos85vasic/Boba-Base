@@ -1,0 +1,18 @@
+{
+  "axis": "dedup identity preservation at scale (ungated)",
+  "captured_at": "2026-08-21T21:49:47Z",
+  "distinct_sources_preserved": 400,
+  "download_bindings_missing": 0,
+  "download_urls_union": 400,
+  "feature_class": "scaling",
+  "groups_out": 400,
+  "groups_with_cross_wired_downloads": 0,
+  "item": "BOB-109",
+  "n_results": 400,
+  "purpose": "baseline",
+  "releases_invented": 0,
+  "releases_missing": 0,
+  "run_id": "20260821T214914Z-pid1918585",
+  "total_source_rows": 400,
+  "verdict": "PASS"
+}
