@@ -364,6 +364,86 @@ def _classify_plugin_stderr(stderr: str, *, killed_by_deadline: bool, had_result
     return {"error_type": error_type, "error": summary, "stderr_tail": tail[-400:]}
 
 
+# BOB-172. Bot-protection / auth-wall markers a refusal body may carry. Used
+# ONLY to sharpen the human-readable reason -- never as the trigger. The
+# trigger is the HTTP status itself, read from the authoritative source
+# (`resp.status`), per §11.4.201: a guard must assert the REAL condition, not
+# a proxy signal that something which is NOT the condition can satisfy.
+_CHALLENGE_MARKERS = ("just a moment", "cf-chl", "challenge-platform", "cf-browser-verification")
+
+
+def _classify_upstream_http_status(status: int, body_sample: str = "") -> dict[str, Any] | None:
+    """Classify a private-tracker search response's HTTP status.
+
+    Returns ``None`` for any 2xx -- a usable response, whose row count is the
+    real answer -- and a diagnostic dict (the same shape
+    `_classify_plugin_stderr` returns) for anything else.
+
+    WHY THIS EXISTS (BOB-172, measured 2026-08-21 in
+    docs/qa/BOB-172/rutracker_search_403_20260821.log). The private-tracker
+    search paths read `await resp.text()` without ever inspecting
+    `resp.status`. A refusal body therefore flowed straight into the row
+    parser, matched zero rows, and `_run_search`'s
+
+        stat.status = "success" if results else "empty"
+
+    reported a tracker that REFUSED us as merely "empty", with `error=None`.
+    That is the §11.4.201(6) FALSE-NULL at the product layer: a blind
+    instrument and a genuinely empty tracker return the identical quiet zero.
+    From the user's seat it reads as thin results, not as an outage -- which
+    is why `status=empty, results_count=0 in 164ms` was recorded as an
+    unexplained anomaly by TWO separate investigations (BOB-093's live search
+    smoke and the BOB-136 audit) without either finding the cause.
+
+    THE VOCABULARY IS DELIBERATELY SHARED, NOT MINTED (§11.4.28). The
+    `upstream_http_403` / `upstream_http_404` tokens are the ones the
+    plugin-subprocess path already emits via `_classify_plugin_stderr`, so
+    both tracker paths speak ONE dialect and the dashboard has one thing to
+    learn rather than two divergent ones.
+
+    THE INVERSE ERROR IS THE MORE DANGEROUS ONE (§11.4.201(1)). Reporting a
+    legitimately-empty search as an error is a FAIL-bluff: it sends the
+    operator to fix healthy code and teaches them to ignore tracker errors,
+    which would defeat the very signal this function exists to raise. Hence
+    2xx returns None unconditionally -- an empty 200 is empty, full stop.
+    """
+    if 200 <= status < 300:
+        return None
+
+    known = {
+        401: ("upstream_http_401", "upstream returned HTTP 401 Unauthorized for the search request"),
+        403: ("upstream_http_403", "upstream returned HTTP 403 Forbidden for the search request"),
+        404: ("upstream_http_404", "upstream returned HTTP 404 Not Found for the search request (domain moved?)"),
+        429: ("upstream_http_429", "upstream returned HTTP 429 Too Many Requests for the search request (rate limited)"),
+        503: ("upstream_http_503", "upstream returned HTTP 503 Service Unavailable for the search request"),
+    }
+    error_type, summary = known.get(
+        status,
+        (f"upstream_http_{status}", f"upstream returned HTTP {status} for the search request"),
+    )
+
+    lower = (body_sample or "")[:4096].lower()
+    if any(m in lower for m in _CHALLENGE_MARKERS):
+        # FACT, not inference: these markers are present in the body. The
+        # measured BOB-172 case additionally carried ZERO login markers, i.e.
+        # the server refused BEFORE authentication was considered -- so a
+        # fresh cookie jar or valid credentials do not address it.
+        summary += (
+            " -- body carries bot-protection challenge markers, so this is a "
+            "bot-protection refusal rather than an auth prompt; supplying "
+            "credentials or refreshing cookies does not address it (BOB-172)"
+        )
+
+    return {
+        "error_type": error_type,
+        "error": summary,
+        "http_status": status,
+        "stderr_tail": "",
+        "deadline_hit": False,
+        "deadline_seconds": 0.0,
+    }
+
+
 @dataclass
 class TrackerSearchStat:
     """Per-tracker run-time diagnostics for a single search.
@@ -854,6 +934,11 @@ class SearchOrchestrator:
                     # `error: None`.
                     diag = self._last_public_tracker_diag.pop(tracker.name, None)
                     if diag:
+                        # BOB-172: surface the refusing status code on the
+                        # already-declared, already-serialised `http_status`
+                        # field, which no code path had ever assigned.
+                        if diag.get("http_status") is not None:
+                            stat.http_status = diag["http_status"]
                         if diag.get("error_type"):
                             stat.error_type = diag["error_type"]
                             stat.error = diag.get("error")
@@ -864,6 +949,14 @@ class SearchOrchestrator:
                         if diag.get("deadline_hit"):
                             stat.notes["deadline_hit"] = True
                             stat.notes["deadline_seconds"] = diag.get("deadline_seconds")
+                    # BOB-172: a tracker whose stat says "error" must also
+                    # reach `metadata.errors`, the summary channel a caller of
+                    # the merge API actually reads. Returning None here left
+                    # `errors: []` beside an errored chip -- the same
+                    # false-null one layer up, so the top-level response still
+                    # said "nothing to report" about a tracker that refused us.
+                    if stat.status == "error" and stat.error:
+                        return tracker.name, results, stat.error
                     return tracker.name, results, None
                 except TimeoutError as e:
                     stat.status = "timeout"
@@ -1293,7 +1386,15 @@ class SearchOrchestrator:
                     aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session,
                     session.get(search_url, cookies=cookie_dict) as resp,
                 ):
+                    _http_status = resp.status
                     html_content = await resp.text()
+                # BOB-172: read the status BEFORE parsing. A refusal body has
+                # no rows, so parsing it manufactures a zero that is
+                # indistinguishable from a genuinely empty search.
+                _http_diag = _classify_upstream_http_status(_http_status, html_content)
+                if _http_diag is not None:
+                    self._last_public_tracker_diag["rutracker"] = _http_diag
+                    return results
                 if len(html_content) < 1024 and "captcha" in html_content.lower():
                     self._last_public_tracker_diag["rutracker"] = {
                         "error_type": "upstream_captcha",
@@ -1364,7 +1465,15 @@ class SearchOrchestrator:
                     return results
 
                 async with session.get(search_url, cookies=cookies) as resp:
+                    _http_status = resp.status
                     html_content = await resp.text()
+
+                # BOB-172: same guard on the credential path -- the refusal is
+                # served to the search endpoint regardless of how we authed.
+                _http_diag = _classify_upstream_http_status(_http_status, html_content)
+                if _http_diag is not None:
+                    self._last_public_tracker_diag["rutracker"] = _http_diag
+                    return results
 
                 if len(html_content) < 1024 and "captcha" in html_content.lower():
                     self._last_public_tracker_diag["rutracker"] = {
@@ -1536,12 +1645,18 @@ class SearchOrchestrator:
                     params={"s": query},
                     cookies=cookie_dict,
                 ) as resp:
+                    _http_status = resp.status
                     raw = await resp.read()
                     if raw.startswith(b"\x1f\x8b\x08"):
                         raw = gzip.decompress(raw)
                     html = raw.decode("cp1251")
                     for c in resp.cookies.values():
                         cookie_dict[c.key] = c.value
+                # BOB-172: see `_classify_upstream_http_status`.
+                _http_diag = _classify_upstream_http_status(_http_status, html)
+                if _http_diag is not None:
+                    self._last_public_tracker_diag["kinozal"] = _http_diag
+                    return results
 
                 self._tracker_sessions["kinozal"] = {
                     "cookies": cookie_dict,
@@ -1643,8 +1758,16 @@ class SearchOrchestrator:
                     f"{base_url}/forum/tracker.php?{urlencode({'nm': query, 'f': '-1'})}",
                     cookies=cookie_jar,
                 ) as resp:
+                    _http_status = resp.status
                     raw_bytes = await resp.read()
                     html = raw_bytes.decode("cp1251", "ignore")
+                # BOB-172: the identical false-null lived on every private
+                # tracker path, not just rutracker. Fixing one and leaving the
+                # siblings would leave the same silent contributor open here.
+                _http_diag = _classify_upstream_http_status(_http_status, html)
+                if _http_diag is not None:
+                    self._last_public_tracker_diag["nnmclub"] = _http_diag
+                    return results
                 self._tracker_sessions["nnmclub"] = {
                     "cookies": cookie_jar,
                     "base_url": base_url,
@@ -1808,7 +1931,14 @@ class SearchOrchestrator:
                     cookies=cookies,
                     headers={"Referer": f"{base_url}/t"},
                 ) as resp:
+                    _http_status = resp.status
                     html_content = await resp.text()
+
+                # BOB-172: see `_classify_upstream_http_status`.
+                _http_diag = _classify_upstream_http_status(_http_status, html_content)
+                if _http_diag is not None:
+                    self._last_public_tracker_diag["iptorrents"] = _http_diag
+                    return results
 
                 results = self._parse_iptorrents_html(html_content, base_url)
         except Exception as e:

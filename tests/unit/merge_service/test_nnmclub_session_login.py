@@ -103,9 +103,20 @@ class _FakeCookies:
 
 
 class _FakeResp:
-    def __init__(self, *, cookies=None, body=b""):
+    # BOB-172: `status` completes this stub's model of the aiohttp response
+    # contract -- a real `ClientResponse` ALWAYS carries one, and
+    # `_search_nnmclub` now reads it to tell a refused search from an empty
+    # one. Defaulting to 200 keeps every existing assertion in this file
+    # meaning exactly what it meant before (they assert on cookies/session,
+    # not on status); it is a stub reconciliation, NOT a weakened guard
+    # (§11.4.120). The product code deliberately does NOT tolerate a missing
+    # status -- defaulting an unreadable status to "OK" would be a fail-open
+    # on an unverifiable input (§11.4.252) and would re-create the very
+    # false-null BOB-172 exists to close.
+    def __init__(self, *, cookies=None, body=b"", status=200):
         self.cookies = _FakeCookies(cookies or {})
         self._body = body
+        self.status = status
 
     async def __aenter__(self):
         return self

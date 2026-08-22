@@ -2,6 +2,33 @@
 id="bob-168-acceptance-a-answered-what-the-runner-does-with-a-missing-entry">BOB-168
 — acceptance (a) answered: what the runner does with a missing
 entry</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-22T10:45:58Z <strong>Evidence class:</strong> SOURCE as
+originally written (§11.4.226); the exit-semantics claim has since been
+confirmed at RUNTIME — see the supersession note below.</p>
+<p><em>(Revision 1 shipped without a §11.4.44 header; added here on
+first modification, and the counter starts at the revision this edit
+produces.)</em></p>
+<blockquote>
+<p><strong>SUPERSEDED IN PART, 2026-08-22.</strong> The exit-semantics
+analysis below is CORRECT and has since been confirmed at RUNTIME — see
+<code>runtime_confirmation_20260822.md</code>, which observes exit 0
+with 16 SKIPs and 0 challenges executed. Two things below have changed
+status:</p>
+<ul>
+<li>The “Why not runtime evidence” section is discharged. The
+missing-entry path was exercised on the real runner at zero cost,
+because that path runs no challenges by definition.</li>
+<li>The item’s remaining premise did not survive. The entry is
+<strong>not</strong> dangling:
+<code>scaling_horizontal_challenge.sh</code> exists and is executable,
+and all 15 entries plus the meta-runner are present. See
+<code>premise_correction_20260822.md</code>. Acceptance (b) is void —
+there is nothing to author and nothing to remove.</li>
+</ul>
+<p>The decision this document called for is recorded in
+<code>decision_missing_vs_skip.md</code> and is implemented.</p>
+</blockquote>
 <p>Captured 2026-08-21. <strong>Evidence class: SOURCE
 (§11.4.226).</strong> Read from
 <code>scripts/run_all_challenges.sh</code>, not observed at runtime —

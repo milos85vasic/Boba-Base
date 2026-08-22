@@ -5,11 +5,6 @@
     "results_count": 1
   },
   {
-    "name": "bitsearch",
-    "status": "success",
-    "results_count": 20
-  },
-  {
     "name": "iptorrents",
     "status": "success",
     "results_count": 49
@@ -22,12 +17,12 @@
   {
     "name": "limetorrents",
     "status": "success",
-    "results_count": 37
+    "results_count": 53
   },
   {
     "name": "linuxtracker",
     "status": "success",
-    "results_count": 75
+    "results_count": 240
   },
   {
     "name": "nnmclub",
@@ -82,7 +77,7 @@
   {
     "name": "torrentproject",
     "status": "success",
-    "results_count": 66
+    "results_count": 100
   },
   {
     "name": "torrentscsv",

@@ -1,0 +1,250 @@
+<h1
+id="bob-168-runtime-confirmation-redgreen-mutations-negative-control">BOB-168
+— runtime confirmation, RED/GREEN, mutations, negative control</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-22T10:47:10Z <strong>Evidence class:</strong> RUNTIME
+(§11.4.226) — the real aggregator executed, exit codes observed.
+Supersedes the source-class scoping of
+<code>runner_behaviour_20260821.md</code>, whose analysis it confirms.
+<strong>Mandate:</strong> §11.4.224 (test-first), §11.4.115(F)/(G),
+§11.4.201(1)(11), §1.1 (paired mutation), §12.6 / 30-40% host cap.</p>
+<h2 id="how-this-was-confirmed-without-firing-the-bank">How this was
+confirmed without firing the bank</h2>
+<p>The prior round left runtime confirmation OWED for a real reason: the
+bank contains DDoS-class and sustained-load challenges, siblings were
+live, and firing it would breach the host cap. That constraint still
+held. The runner also exposes <strong>no filter, no dry-run, and no
+entry-selection env var</strong> — its <code>CHALLENGES_DIR</code> is
+derived from the script’s own location and its roster is a hardcoded
+array. That absence is itself worth reporting: there is no supported way
+to exercise one path of this aggregator in isolation.</p>
+<p>But the missing-entry path needs no challenge to run — by definition
+it is the path taken when nothing <em>can</em> run. So the real script
+was executed in a directory tree where the challenges submodule is
+absent. <strong>Zero challenges executed; the cost was one shell
+process.</strong></p>
+<p>This is not the replica the previous round correctly refused to
+build. The artifact under test is the real file, and byte-identity was
+asserted before running it:</p>
+<pre><code>real      : 6e4a9c1f0cef119e2c1924a08a6e08b3b71cb4a4e9ecf8c1df9ec068a4e9c0bf
+under-test: 6e4a9c1f0cef119e2c1924a08a6e08b3b71cb4a4e9ecf8c1df9ec068a4e9c0bf
+IDENTICAL — this is the real runner, not a replica</code></pre>
+<p>Only the <em>environment</em> differed, and it differed toward a
+real, reachable state. §11.4.115(G) precondition provenance:
+<strong>OBSERVED-reachable, not constructed</strong> — a
+<code>git clone</code> without <code>--recursive</code> produces exactly
+this, so this is the defect’s natural habitat rather than a hand-built
+precondition.</p>
+<h2 id="the-defect-observed-pre-fix">The defect, observed (pre-fix)</h2>
+<pre><code>=== Boba Challenge Aggregator ===
+  SKIP: no_suspend_calls_challenge.sh — not found
+  SKIP: host_no_auto_suspend_challenge.sh — not found
+  ... (14 more) ...
+  SKIP: challenges_describe_challenge.sh — not found or not executable
+=== Summary ===
+PASS: 0
+FAIL: 0
+SKIP: 16
+TOTAL: 16
+
+############ OBSERVED EXIT CODE: 0 ############</code></pre>
+<p>Sixteen challenges named, <strong>zero executed, exit 0.</strong>
+This is materially worse than the defect as filed. The filed concern was
+one dangling entry tolerated forever; the actual reachable behaviour is
+that an <strong>entirely un-run challenge bank reports success</strong>
+— the un-run bank and the fully-passing bank are indistinguishable to
+the exit code.</p>
+<h2 id="red-11.4.224-test-written-and-observed-failing-first">RED
+(§11.4.224 — test written and observed failing first)</h2>
+<p><code>tests/unit/test_run_all_challenges_missing_entry.sh</code>,
+against the unmodified runner:</p>
+<pre><code>  FAIL: all entries absent -&gt; expected exit 2, got 0 (pre-fix behaviour: 0)
+  FAIL: all entries absent -&gt; expected &#39;MISSING: 16&#39; in summary
+  PASS: NEGATIVE CONTROL: complete roster, all passing -&gt; exit 0
+  FAIL: NEGATIVE CONTROL: complete roster -&gt; expected &#39;MISSING: 0&#39;
+  FAIL: one entry not executable -&gt; expected exit 2, got 0
+  FAIL: one entry not executable -&gt; expected &#39;MISSING: 1&#39;
+  PASS: a real challenge failure -&gt; exit 1 (unchanged, outranks MISSING)
+  PASS: fixture roster is in sync with the runner&#39;s CHALLENGE_SCRIPTS
+RESULT: 3 passed, 5 failed</code></pre>
+<p>The two invariants that must <strong>not</strong> change — a healthy
+roster exits 0, and a real failure exits 1 — already passed here, before
+any edit. That is deliberate: it pins them as pre-existing behaviour the
+fix must preserve, not as new behaviour the fix creates.</p>
+<h2 id="green-post-fix">GREEN (post-fix)</h2>
+<pre><code>  PASS: all entries absent -&gt; exit 2 (bank could not be run)
+  PASS: all entries absent -&gt; MISSING: 16 counted separately from SKIP
+  PASS: NEGATIVE CONTROL: complete roster, all passing -&gt; exit 0
+  PASS: NEGATIVE CONTROL: complete roster -&gt; MISSING: 0
+  PASS: one entry not executable -&gt; exit 2
+  PASS: one entry not executable -&gt; MISSING: 1
+  PASS: a real challenge failure -&gt; exit 1 (unchanged, outranks MISSING)
+  PASS: fixture roster is in sync with the runner&#39;s CHALLENGE_SCRIPTS
+RESULT: 8 passed, 0 failed</code></pre>
+<h2 id="paired-mutations-every-assertion-proved-load-bearing">§1.1
+paired mutations — every assertion proved load-bearing</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>mutation</th>
+<th>expected</th>
+<th>observed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td><code>MISSING -gt 0</code> -&gt; <code>-gt 999999</code> (revert to
+pre-fix: MISSING never blocks)</td>
+<td>the two absent/exit-2 assertions fail</td>
+<td><strong>2 failed</strong></td>
+</tr>
+<tr>
+<td>M2</td>
+<td><code>MISSING -gt 0</code> -&gt; <code>-ge 0</code> (block even at
+zero)</td>
+<td>the NEGATIVE CONTROL fails</td>
+<td><strong>1 failed</strong></td>
+</tr>
+<tr>
+<td>M3</td>
+<td>delete the <code>MISSING: n</code> summary line</td>
+<td>the three count assertions fail</td>
+<td><strong>3 failed</strong></td>
+</tr>
+<tr>
+<td>M4</td>
+<td>add a phantom name to the runner’s roster</td>
+<td>the roster-drift guard fails</td>
+<td><strong>5 failed</strong></td>
+</tr>
+<tr>
+<td>M5</td>
+<td>move the MISSING exit-2 block ABOVE the FAIL exit-1 block
+(reviewer-authored)</td>
+<td>case 4b fails</td>
+<td><strong>1 failed</strong> (survived 8/8 before case 4b existed)</td>
+</tr>
+<tr>
+<td>B-1</td>
+<td>force <code>make_root</code> to <code>exit 1</code> (fixture-setup
+failure)</td>
+<td>every case fails loudly, nothing executes</td>
+<td><strong>all fail, <code>RUN:</code> count 0</strong></td>
+</tr>
+</tbody>
+</table>
+<p>M2 is the one that matters most: it proves the negative control has
+teeth. A fix that reddened a healthy bank would be caught, so “exit 2 on
+MISSING” is not achieved by making the runner red always
+(§11.4.201(1)).</p>
+<p>M1 is the canonical §11.4.115(F) mutation — it restores the pre-fix
+exit semantics and the guard immediately reproduces the original
+defect.</p>
+<p>Restoration verified by sha256 after each mutation; a §11.4.84
+residue scan for <code>999999</code> / <code>phantom_entry</code> /
+<code>MUTAT</code> over the runner returns clean.</p>
+<p><strong>shellcheck:</strong> clean for the test; for the runner the
+accurate statement is <strong>no new findings</strong> — it emits a
+pre-existing info-level SC1091 (a sourced path shellcheck cannot follow)
+that predates this change and is untouched by it.</p>
+<h2 id="review-round-findings-addressed-2026-08-22">Review round —
+findings addressed (2026-08-22)</h2>
+<p>Independent review returned NO-GO with 1 BLOCKING + 2 IMPORTANT + 4
+MINOR against the test and the evidence, not against the core change.
+All are closed.</p>
+<p><strong>B-1 (BLOCKING) — the fixture’s own failure path failed OPEN,
+and could have executed the real bank.</strong> Reproduced here
+link-by-link on bash 5.2.37 before fixing (§11.4.6):</p>
+<pre><code>subshell exit 1 inside R=&quot;$(make_root …)&quot;  -&gt; caller SURVIVES (no set -e)
+cd &quot;&quot;                                       -&gt; rc=0, cwd UNCHANGED
+combined, in a sandbox                      -&gt; the aggregator ran from the
+                                               INVOKER&#39;s cwd</code></pre>
+<p>From the project root that is the real aggregator with the real
+submodule — ddos_health_flood, stress_sustained_load,
+chaos_failure_injection — against the 30-40% host cap with a sibling
+stream live. The anti-replica check whose whole purpose is to catch a
+mid-run edit (the BOB-068 shared-checkout reality) would have
+<em>triggered</em> the outcome it exists to prevent. §11.4.252 fail-open
+on a dangerous combination.</p>
+<p>Fixed by making <code>run_runner</code> and <code>populate_all</code>
+fail CLOSED: an empty or non-conforming root yields <code>RC=97</code>
+and a loud assertion failure with nothing executed. Verified by mutating
+<code>make_root</code> to <code>exit 1</code> and re-running:</p>
+<pre><code>FAIL: all entries absent -&gt; expected exit 2, got 97
+FAIL: case2 fixture setup failed
+... every case FAILs loudly ...
+grep -c &#39;RUN:&#39;  -&gt;  0        # zero challenges executed</code></pre>
+<p><strong>I-1 (IMPORTANT) — a reviewer mutation survived: the FAIL &gt;
+MISSING precedence was unguarded.</strong> Case 4 used a complete
+roster, so no case ever had FAIL and MISSING set at once, and swapping
+the two exit blocks passed 8/8. Added case 4b (complete roster + one
+failing stub + one deleted entry). Re-running the reviewer’s M5 against
+it:</p>
+<pre><code>M5 (exit-2 block moved above exit-1):
+  FAIL: FAIL + MISSING together -&gt; expected exit 1, got 2 (precedence inverted?)
+  RESULT: 9 passed, 1 failed</code></pre>
+<p>The mutation that survived review is now caught. This is the
+§11.4.194(6)(d) lesson in its purest form: six author-written mutations
+all died, and the first reviewer-written mutation the author had not
+thought of walked straight through.</p>
+<p><strong>I-2 / M-1</strong> — export twins regenerated for all four
+BOB-168 documents (12 files, HTML+PDF+DOCX) using the project’s own
+<code>convert_file</code> from
+<code>scripts/generate_markdown_exports.sh</code>, scoped to these files
+rather than running the repo-wide loop (which would have churned a live
+sibling stream’s docs). <code>runner_behaviour_20260821.md</code> gained
+the §11.4.44 header it never had.</p>
+<p>On the DOCX specifically: <code>.gitignore:262-270</code> makes
+<code>*.docx</code> <strong>deliberately untracked</strong> outside two
+named governance files (“Research-doc DOCX exports are on-demand only”).
+The <code>docs/qa</code> convention is therefore three TRACKED formats —
+<code>.md</code> + <code>.html</code> + <code>.pdf</code> — with
+<code>.docx</code> generated on demand and correctly ignored. All four
+documents’ tracked twins verified fresh (no <code>.md</code> newer than
+any sibling) and non-degenerate (each PDF 29-38 KB, <code>%PDF</code>
+magic present). Verifying the reviewer’s own measurement: “SUPERSEDED”
+now returns 1 hit in <code>runner_behaviour_20260821.html</code>, where
+it previously returned 0.</p>
+<p><strong>M-2</strong> — the not-executable reason said “cannot attest
+anything”, which overstates: the runner invokes via
+<code>bash "$path"</code>, which does not require +x, so a mode-stripped
+entry could technically run. Reworded to “refused by the -x gate” with
+the nuance in a code comment. Behaviour deliberately unchanged —
+refusing remains the correct conservative call, and that gate predates
+this change.</p>
+<p><strong>M-4</strong> — accepted as recorded: sharing exit 2 with the
+<code>BOBA_DURABLE</code> helper-missing branch is deliberate, same
+fix-the-checkout class.</p>
+<h2 id="stated-honestly-what-was-not-verified">Stated honestly: what was
+NOT verified</h2>
+<ul>
+<li><strong>The real repository’s aggregator was never run
+end-to-end.</strong> Doing so executes the DDoS and sustained-load
+challenges and would breach the 30-40% host cap with three sibling
+streams live. It remains un-run here by choice.</li>
+<li>Consequently, that the current checkout exits <strong>0</strong> is
+an <strong>inference</strong>, not an observation: all 16 entries were
+probed present and executable, so <code>MISSING</code> is 0 and the exit
+code is decided solely by <code>FAIL</code>, exactly as before this
+change. The change is a <strong>no-op for a healthy checkout</strong>
+and bites only when the roster is broken. The negative-control case
+exercises that same path with stubs and passes — but on stubs, not on
+the real challenges.</li>
+<li><strong>No claim is made that the 16 challenges pass.</strong> This
+work touched the aggregator’s bookkeeping, nothing about what the
+challenges assert.</li>
+<li><code>scripts/pre_build_verification.sh:1792</code> was observed to
+carry the same SKIP/MISSING conflation one level up, for the
+<em>other</em> runner
+(<code>challenges/scripts/run_all_challenges.sh not found or not executable</code>
+-&gt; SKIP). It is <strong>out of scope for this change</strong> and is
+reported, not fixed.</li>
+</ul>

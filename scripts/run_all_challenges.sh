@@ -3,10 +3,37 @@
 #
 # Sources challenge scripts from the challenges submodule
 # and the meta-runner challenges_describe_challenge.sh.
-# Reports pass/fail/skip counts and returns non-zero on any failure.
+#
+# EXIT CONTRACT (BOB-168 — decision recorded in
+# docs/qa/BOB-168/decision_missing_vs_skip.md, do not change it here alone):
+#   0  every listed entry ran and passed
+#   1  at least one challenge FAILED        → fix the code
+#   2  at least one listed entry was MISSING → fix the checkout
+#      (absent, or present-but-not-executable)
+#
+# MISSING is deliberately NOT the same bucket as SKIP. §11.4.3 SKIP-with-reason
+# is for a TOPOLOGY-absent precondition — a fact about the environment, where
+# the check is correct and there is genuinely nothing to assert. A roster entry
+# that names a file which is not there, or cannot be executed, is a fact about
+# the ROSTER: the bank advertises coverage it did not deliver (§11.4.266), and
+# it attested nothing. Counting the second as the first let a listed-but-absent
+# challenge borrow the legitimacy of a topology skip and be tolerated forever.
+#
+# Measured 2026-08-22 against the pre-fix runner, with the challenges submodule
+# not checked out (an ordinary `git clone` without --recursive):
+#   PASS: 0  FAIL: 0  SKIP: 16  TOTAL: 16  → exit 0
+# Sixteen challenges named, ZERO executed, caller told everything was fine —
+# a blind instrument and a clean artifact returning the identical quiet zero
+# (§11.4.201(6)), i.e. §11.4.135's ABSENCE-blocks-as-FAIL not applied here.
+#
+# The SKIP counter is retained at zero so a future genuine topology-skip can be
+# added without re-merging the two conditions.
+#
+# Regression guard: tests/unit/test_run_all_challenges_missing_entry.sh
 #
 # Constitution: §11.4.109 (anti-forgetting), CONST-033 (host power management),
-# §11.4 (anti-bluff covenant), §1.1 (paired mutation)
+# §11.4 (anti-bluff covenant), §11.4.135 / §11.4.266 (absence blocks),
+# §11.4.3 (SKIP is topology-absent only), §1.1 (paired mutation)
 
 set -euo pipefail
 
@@ -71,7 +98,8 @@ CHALLENGE_SCRIPTS=(
 
 PASS=0
 FAIL=0
-SKIP=0
+SKIP=0        # §11.4.3 topology-absent only; no such branch exists yet (see header)
+MISSING=0     # roster integrity: listed but absent or not executable
 TOTAL=0
 
 echo "=== Boba Challenge Aggregator ==="
@@ -86,14 +114,19 @@ for script in "${CHALLENGE_SCRIPTS[@]}"; do
   TOTAL=$((TOTAL + 1))
 
   if [[ ! -f "${script_path}" ]]; then
-    echo "  SKIP: ${script} — not found"
-    SKIP=$((SKIP + 1))
+    echo "  MISSING: ${script} — not found (listed in CHALLENGE_SCRIPTS)"
+    MISSING=$((MISSING + 1))
     continue
   fi
 
+  # NOTE (accuracy): line ~131 invokes via `bash "${script_path}"`, which does
+  # NOT require the +x bit, so a mode-stripped entry could technically still be
+  # run. This -x gate predates the BOB-168 change and refusing remains the
+  # correct conservative call — an entry whose mode says "not runnable" is a
+  # roster-integrity fact — but the reason must not claim more than it knows.
   if [[ ! -x "${script_path}" ]]; then
-    echo "  SKIP: ${script} — not executable"
-    SKIP=$((SKIP + 1))
+    echo "  MISSING: ${script} — not executable (refused by the -x gate)"
+    MISSING=$((MISSING + 1))
     continue
   fi
 
@@ -135,8 +168,8 @@ if [[ -f "${CHALLENGES_META}" ]] && [[ -x "${CHALLENGES_META}" ]]; then
   echo "        (${elapsed}s elapsed)"
   echo ""
 else
-  echo "  SKIP: challenges_describe_challenge.sh — not found or not executable"
-  SKIP=$((SKIP + 1))
+  echo "  MISSING: challenges_describe_challenge.sh — not found or not executable"
+  MISSING=$((MISSING + 1))
 fi
 
 # Summary
@@ -144,9 +177,23 @@ echo "=== Summary ==="
 echo "PASS: ${PASS}"
 echo "FAIL: ${FAIL}"
 echo "SKIP: ${SKIP}"
+echo "MISSING: ${MISSING}"
 echo "TOTAL: ${TOTAL}"
 
+# FAIL outranks MISSING: both are non-zero, so neither is swallowed, but a
+# definite defect in the system under test is the more actionable report. The
+# MISSING lines above are printed either way.
 if [[ "${FAIL}" -gt 0 ]]; then
   exit 1
+fi
+
+if [[ "${MISSING}" -gt 0 ]]; then
+  echo ""
+  echo "BLOCKED: ${MISSING} listed challenge(s) could not be run — this bank did"
+  echo "         not attest what it advertises (§11.4.266). Exit 2 is 'fix the"
+  echo "         checkout', not 'a challenge failed'."
+  echo "         Most common cause: the challenges submodule is not checked out."
+  echo "         Remedy: git submodule update --init --recursive"
+  exit 2
 fi
 exit 0

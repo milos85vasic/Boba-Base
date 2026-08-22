@@ -1,0 +1,226 @@
+<h1
+id="container-death-triage-telling-six-lookalikes-apart-in-one-step">Container
+Death Triage — telling six lookalikes apart in one step</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-21T17:06:26Z <strong>Audience:</strong> Anyone who has just
+found a boba container stopped, restarted, or missing, and needs to know
+<em>what killed it</em> before proposing a fix.
+<strong>Authority:</strong> Derived from BOB-131, where one ticket
+recorded “podman conmon crash” for two unrelated events, neither of
+which was a conmon crash. Full evidence: <a
+href="../incidents/2026-08-21-bob131-container-death-triage.md"><code>docs/incidents/2026-08-21-bob131-container-death-triage.md</code></a>.
+<strong>Tool:</strong> <a
+href="../../scripts/diagnostics/bob131_container_death_triage.sh"><code>scripts/diagnostics/bob131_container_death_triage.sh</code></a></p>
+<hr />
+<h2 id="start-here">Start here</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">S</span><span class="op">=</span>./scripts/diagnostics/bob131_container_death_triage.sh</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="va">$S</span> collect qbittorrent-proxy <span class="st">&quot;2026-08-20 17:55:30&quot;</span> <span class="st">&quot;2026-08-20 17:57:00&quot;</span> <span class="op">&gt;</span> /tmp/bundle.txt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">$S</span> classify /tmp/bundle.txt</span></code></pre></div>
+<p>Timestamps are <strong>host-local</strong> (<code>journalctl</code>
+syntax). The tool is read-only: it never starts, stops, restarts,
+removes or signals anything.</p>
+<hr />
+<h2 id="the-decision-table">The decision table</h2>
+<p>Read <strong>top to bottom</strong> and stop at the first row that
+matches. The order is not cosmetic — the classes overlap in symptoms,
+and the cheap signals lie.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Class</th>
+<th>The one signal that settles it</th>
+<th>What it means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>HOST-POWER-TRANSITION</code></td>
+<td><code>systemd-logind: System is powering down</code> / a boot
+boundary in <code>journalctl --list-boots</code></td>
+<td><strong>The container did not fail.</strong> The host went down.
+Exit code is usually <strong>0</strong>, and <em>every</em> container
+dies at once.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>THREAD-LIMIT-EXHAUSTION</code></td>
+<td><code>EAGAIN</code>, <code>failed to create new OS thread</code>,
+<code>pthread_create failed: Resource temporarily unavailable</code>,
+<code>Cannot allocate memory</code> <strong>on fork/clone</strong></td>
+<td><strong>§12.12.</strong> Not an OOM. Compare <code>ulimit -u</code>
+with <code>ps -L --no-headers -u "$USER" \| wc -l</code>.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>CGROUP-OOM-KILL</code></td>
+<td><code>memory.events: oom_kill</code> <strong>&gt; 0</strong>, or
+kernel <code>Memory cgroup out of memory</code> naming
+<code>libpod-&lt;cid&gt;</code></td>
+<td><strong>§12.6 containment working as designed.</strong> The
+container hit <em>its own</em> limit. Decode <code>oom_memcg</code>:
+<code>libpod-…</code> = the container’s cap;
+<code>user@1000.service</code> = session OOM.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>PROCESS-SIGSEGV</code></td>
+<td><code>died exit=139</code> (128+11), <strong>and</strong> a kernel
+<code>segfault</code> / <code>ANOM_ABEND … sig=11</code></td>
+<td>A real crash <strong>inside</strong> the container. Runtime is
+fine.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>ORCHESTRATED-STOP</code></td>
+<td><code>died exit=137</code> (128+9) ~10 s after a
+<code>restart</code> / <code>stop</code> / <code>down</code> event</td>
+<td>SIGTERM-timeout SIGKILL. Not a crash, not an OOM. PID 1 was too slow
+to shut down.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>CGROUP-MEMORY-CEILING</code></td>
+<td><code>memory.events: max</code> &gt; 0 <strong>with
+<code>oom_kill == 0</code></strong></td>
+<td><strong>Pressure, never a cause of death.</strong> The kernel
+<em>reclaimed</em>; it killed nothing.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="the-three-that-get-confused-and-why">The three that get
+confused, and why</h2>
+<h3
+id="oom_kill-0-vs-max-0-a-kill-vs-a-squeeze"><code>oom_kill &gt; 0</code>
+vs <code>max &gt; 0</code> — a kill vs a squeeze</h3>
+<p>Both live in the same file and read as “memory trouble”. They are not
+the same event.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">CID</span><span class="op">=</span><span class="va">$(</span><span class="ex">podman</span> inspect qbittorrent-proxy <span class="at">--format</span> <span class="st">&#39;{{.Id}}&#39;</span><span class="va">)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">CG</span><span class="op">=</span><span class="va">$(</span><span class="fu">find</span> /sys/fs/cgroup <span class="at">-maxdepth</span> 8 <span class="at">-type</span> d <span class="at">-name</span> <span class="st">&quot;libpod-</span><span class="va">${CID}</span><span class="st">.scope&quot;</span> <span class="kw">|</span> <span class="fu">head</span> <span class="at">-1</span><span class="va">)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> <span class="st">&quot;</span><span class="va">$CG</span><span class="st">/memory.events&quot;</span></span></code></pre></div>
+<ul>
+<li><strong><code>oom_kill</code> &gt; 0</strong> → the kernel
+<strong>killed</strong> something at the cgroup limit.</li>
+<li><strong><code>max</code> &gt; 0, <code>oom_kill</code> 0</strong> →
+the cgroup <strong>reached</strong> its limit and the kernel
+reclaimed/swapped instead. Nothing died of it.</li>
+</ul>
+<p>Measured on this stack (<code>mem_limit: 768m</code> for
+<code>download-proxy</code>):</p>
+<pre><code>memory.max      805306368     # 768 MiB
+memory.peak     805371904     # pinned at the ceiling
+memory.events:  max 1584      # 1584 times in ~48 min
+                oom_kill 0    # ...and killed nothing</code></pre>
+<p>That container lives permanently against its ceiling and reports
+<strong>healthy</strong>. Citing <code>max 1584</code> as a cause of
+death is wrong. It is worth its own ticket as <em>capacity</em>; it is
+not an explanation for a crash.</p>
+<h3
+id="oom-kill-vs-thread-exhaustion-both-say-cannot-allocate-neither-is-the-other">OOM-kill
+vs thread exhaustion — both say “cannot allocate”, neither is the
+other</h3>
+<p>Thread/<code>RLIMIT_NPROC</code> exhaustion (§12.12) fails
+<code>clone(2)</code> with <strong><code>EAGAIN</code></strong> while
+<strong>memory is abundant</strong>. Every memory metric looks healthy
+while it happens, so it is routinely misfiled as an OOM.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">ulimit</span> <span class="at">-u</span><span class="kw">;</span> <span class="bu">ulimit</span> <span class="at">-Hu</span>                       <span class="co"># the ceiling</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ps</span> <span class="at">-L</span> <span class="at">--no-headers</span> <span class="at">-u</span> <span class="st">&quot;</span><span class="va">$USER</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span>       <span class="co"># live threads for this UID</span></span></code></pre></div>
+<p>Current headroom on this host: limit <strong>65536</strong>, observed
+peak <strong>1559</strong> (2.4 %). Thread exhaustion is
+<strong>not</strong> currently plausible here — it was, historically,
+when the limit was 4096.</p>
+<blockquote>
+<p><strong>Never</strong> use <code>pkill -f</code> /
+<code>killall</code> / <code>pgrep -f</code> to investigate: the pattern
+matches your own command line (§11.4.263, §12.12). And never signal pgid
+≤ 1.</p>
+</blockquote>
+<h3 id="conmon-crashed-almost-always-a-carrier-match">“conmon crashed” —
+almost always a carrier match</h3>
+<p><code>conmon &lt;error&gt;: …</code> in the log means conmon
+<strong>reported</strong> a fault. A conmon <em>crash</em> would put
+<code>conmon</code> itself in a kernel <code>segfault</code> /
+<code>ANOM_ABEND</code> line.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># the thing, not a mention of it:</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">journalctl</span> <span class="at">--since</span> <span class="st">&quot;&lt;window&gt;&quot;</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-E</span> <span class="st">&#39;kernel: conmon\[[0-9]+\]: segfault|ANOM_ABEND.*comm=&quot;conmon&quot;&#39;</span></span></code></pre></div>
+<p>Empty ⇒ conmon did not crash, whatever the <code>&lt;error&gt;</code>
+lines say. These two are benign races during teardown, not faults:</p>
+<pre><code>conmon &lt;CID&gt; &lt;error&gt;: Failed to write 137 to exit file: ... No such file or directory
+conmon &lt;CID&gt; &lt;error&gt;: Failed to create container: exit status 1</code></pre>
+<p>Likewise
+<code>conmon &lt;nwarn&gt;: Failed to open cgroups file: /sys/fs/cgroup/memory.events</code>
+is ordinary rootless noise — <strong>50 290</strong> occurrences in one
+week here.</p>
+<hr />
+<h2 id="gotchas-that-will-waste-your-time">Gotchas that will waste your
+time</h2>
+<ul>
+<li><strong>Timezones disagree.</strong> <code>podman ps</code> / some
+<code>podman events</code> records print
+<strong><code>+0300</code></strong> for boba containers while the host
+journal prints <strong><code>+0200 CEST</code></strong>. Always convert
+to UTC before correlating:
+<code>date -u -d "@&lt;epoch&gt;"</code>.</li>
+<li><strong><code>podman events --since/--until</code> may return
+nothing</strong> for a window that plainly contains events. The journal
+is authoritative; the tool falls back to it and does not depend on the
+events stream for its verdict.</li>
+<li><strong>cgroup files are LIVE.</strong> For a historical window they
+describe <em>today’s</em> container carrying that name, not the dead
+one. The bundle labels this.</li>
+<li><strong>A removed container’s <code>podman logs</code> are
+gone</strong>, but its stdout survives in the journal because the log
+driver is <code>journald</code>:
+<code>journalctl CONTAINER_NAME=qbittorrent-proxy --since … --until …</code>.
+This is how BOB-131’s crash was read after the container was long
+gone.</li>
+<li><strong><code>journalctl | grep</code> over the full retention takes
+minutes.</strong> Always bound it with <code>--since</code>, and prefix
+long runs with <code>nice -n 19 ionice -c 3</code>.</li>
+<li><strong><code>find</code> here is <code>bfs</code>, not GNU
+findutils.</strong> Relative <code>-newermt</code> forms are rejected —
+they error to stderr and print nothing to stdout.</li>
+<li><strong><code>grep -q</code> and <code>awk '…; exit'</code> inside a
+pipeline</strong> close the pipe early and SIGPIPE the writer; under
+<code>set -euo pipefail</code> that aborts your script, and it does so
+<em>racily</em> (§11.4.201(12)). Drain instead:
+<code>grep -E … &gt;/dev/null</code>,
+<code>awk '…' | head -1</code>.</li>
+</ul>
+<hr />
+<h2
+id="boot-persistence-why-a-container-can-be-missing-with-nothing-wrong">Boot
+persistence — why a container can be missing with nothing wrong</h2>
+<p><code>restart: unless-stopped</code> is a within-podman policy.
+<strong>It does not survive a host power cycle.</strong> On this host,
+as measured 2026-08-21:</p>
+<pre><code>podman-restart.service   disabled   (user and system scope)
+boba-stack.service       linked, disabled
+Linger=yes</code></pre>
+<p>So after any power-off the boba stack stays down until someone runs
+<code>./start.sh</code>. In BOB-131 that was <strong>14h 06m
+43s</strong>. If a container is <em>absent</em> rather than
+<em>unhealthy</em>, check the boot boundary before looking for a
+crash.</p>
+<hr />
+<h2 id="verifying-the-tool-still-has-teeth">Verifying the tool still has
+teeth</h2>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/diagnostics/bob131_container_death_triage.sh</span> <span class="at">--selftest</span></span></code></pre></div>
+<p>Eight golden fixtures — one per class, a negative control that must
+stay <code>UNKNOWN</code>, and a conmon-carrier fixture that must
+<strong>not</strong> change the verdict. If any mutation of the
+classifier leaves this green, the check is decorative and must be
+repaired before it is trusted (§1.1, §11.4.115(F)).</p>

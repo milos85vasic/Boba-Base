@@ -1,5 +1,30 @@
 # BOB-168 — acceptance (a) answered: what the runner does with a missing entry
 
+**Revision:** 2
+**Last modified:** 2026-08-22T10:45:58Z
+**Evidence class:** SOURCE as originally written (§11.4.226); the exit-semantics
+claim has since been confirmed at RUNTIME — see the supersession note below.
+
+*(Revision 1 shipped without a §11.4.44 header; added here on first modification,
+and the counter starts at the revision this edit produces.)*
+
+> **SUPERSEDED IN PART, 2026-08-22.** The exit-semantics analysis below is
+> CORRECT and has since been confirmed at RUNTIME — see
+> `runtime_confirmation_20260822.md`, which observes exit 0 with 16 SKIPs and
+> 0 challenges executed. Two things below have changed status:
+>
+> - The "Why not runtime evidence" section is discharged. The missing-entry
+>   path was exercised on the real runner at zero cost, because that path runs
+>   no challenges by definition.
+> - The item's remaining premise did not survive. The entry is **not** dangling:
+>   `scaling_horizontal_challenge.sh` exists and is executable, and all 15
+>   entries plus the meta-runner are present. See
+>   `premise_correction_20260822.md`. Acceptance (b) is void — there is nothing
+>   to author and nothing to remove.
+>
+> The decision this document called for is recorded in
+> `decision_missing_vs_skip.md` and is implemented.
+
 Captured 2026-08-21. **Evidence class: SOURCE (§11.4.226).** Read from
 `scripts/run_all_challenges.sh`, not observed at runtime — see "Why not runtime"
 below, which is a real limitation and not a formality.

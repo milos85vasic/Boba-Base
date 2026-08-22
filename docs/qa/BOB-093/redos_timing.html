@@ -1,6 +1,6 @@
 <h1 id="bob-093-rutracker-redos-regex-bounds-measured-timings">BOB-093 —
 rutracker ReDoS regex bounds: measured timings</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
 2026-08-21T00:00:00Z <strong>Scope:</strong> the substantive
 (offline-provable) half of BOB-093. The live compose bring-up half is
 explicitly DEFERRED — see “Deferred” below.</p>
@@ -427,6 +427,16 @@ the same three runs the <em>separations</em> were 846 316× / 467 986× /
 602 566×, never near the 100× threshold. Both halves share the clock, so
 the ratio cancels the variance — the identical argument already used for
 tr_storm, now applied consistently.</p>
+<p>Then a <strong>fourth</strong> box state appeared during round-3
+review that neither of us had seen — load ~1.5 with cores at <strong>3.4
+GHz</strong>, faster than the 2.7 GHz state that produced this finding.
+Historical <code>gtlt_storm</code> measured 0.571 s and 0.563 s there:
+<strong>the retired 0.5 s floor would have been a coin flip
+again</strong>, in a state it was never tuned for. The relative form
+read 831 717×. Across all four states the separations are 467 986–846
+316× (<code>gtlt_storm</code>) and <strong>566–1 052×</strong>
+(<code>ts_text_storm</code>), so the 100× threshold sits
+<strong>5.7×</strong> above the worst arm’s worst-ever reading.</p>
 <p>Note what review did rather than hide: it left the honest FAIL
 artifact in <code>qa-results/</code> instead of re-running until green
 (§11.4.248).</p>
@@ -455,8 +465,31 @@ because it had dropped the teeth-check the absolute arms kept.
 Suite-level the dead-timer control still held via the siblings, so “a
 broken timer cannot pass everything” stayed literally true — but that
 <em>arm’s</em> own §11.4.107(10) self-validation was gone. Observed
-<code>hist_s</code> range across every box state is 3.64–38.1 s, so a
-1.0 s floor keeps ≥3.6× margin. Applying the flat arms’ relative teeth
+<code>hist_s</code> range across every box state is <strong>3.08–38.1
+s</strong>, so a 1.0 s floor keeps <strong>≥3.1×</strong> margin.
+Provenance, because this figure moved twice: round-3 review recorded
+four max-boost samples (3.29 / 3.82 / 4.11 / 4.18 s) and asked for the
+range to be refreshed from an older 3.64 s low; while applying that
+refresh, the very next verification run here measured 3.1290 s, so an
+8-sample probe was taken in the same state and extended the low again to
+<strong>3.084 s</strong> (3.084–3.891 s, min-of-8, load ~1.44). Neither
+correction changes a decision — the floor stays 1.0 and the flat
+threshold stays 100 — but writing 3.29 s while holding a 3.08 s
+measurement would be recording a number already known to be
+superseded.</p>
+<p>This is the one absolute constant left in the harness, so its
+exposure is stated rather than assumed. It is <strong>not R2-1
+repeating</strong>, for a structural reason: the low was measured
+<strong>at max boost</strong>, so unlike the retired 0.5 s floor there
+is no faster state on this hardware waiting to cross it, and residual
+intra-state noise is 1.26× against a 3.1× margin. Its <em>value</em> is
+also not load-bearing for the role it exists for — review weakened it
+1000× to 0.001 s and the dead-timer and broken-payload classes were
+still caught, since they sit 5–6 orders below any sane floor; it sits
+mid-way in a ~3-order-wide valid band. Known cost, accepted: a
+~3.1×-faster single-thread host would false-FAIL it
+<strong>loudly</strong>, never silently, and the derivation above makes
+the retune straightforward. Applying the flat arms’ relative teeth
 closes their dead-timer path by the same mechanism, since
 <code>0 &gt; 100 × 0</code> is False.</p>
 <p>A growth-<strong>ratio</strong> test (<code>time(2n)/time(n)</code>)

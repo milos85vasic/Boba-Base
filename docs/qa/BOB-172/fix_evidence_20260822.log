@@ -1,0 +1,247 @@
+=== BOB-172 — a refused tracker must not be reported as "empty" ===
+captured: 2026-08-22   branch: 002-user-owned-downloads
+NOTE: no credential VALUE appears in this artifact or in any test fixture
+      committed with it — variable NAMES only (§11.4.10). All test fixture
+      values are synthetic placeholders, never real session material.
+
+------------------------------------------------------------------------
+ROOT CAUSE (§11.4.102) — located, not guessed
+------------------------------------------------------------------------
+download-proxy/src/merge_service/search.py, every private-tracker search
+path (rutracker cookie path, rutracker credential path, nnmclub, kinozal,
+iptorrents) did:
+
+    async with session.get(search_url, cookies=...) as resp:
+        html_content = await resp.text()      # <-- resp.status NEVER READ
+
+The refusal body was then handed to the row parser, which found no rows and
+returned []. In `_run_search`:
+
+    stat.status = "success" if results else "empty"
+
+so a tracker that REFUSED us was reported as `status="empty",
+results_count=0, error=None`. That is the §11.4.201(6) FALSE-NULL at the
+product layer: a blind instrument and a genuinely empty tracker return the
+identical quiet zero, and the fan-out still "succeeds".
+
+This is exactly the `status=empty, results_count=0 in 164ms` that TWO prior
+investigations recorded as an unexplained anomaly (BOB-093 live search smoke
+and the BOB-136 audit). 164ms is far too fast for a real remote search and is
+entirely consistent with an immediate 403.
+
+WHY THE PRE-EXISTING GUARD COULD NOT CATCH IT — it fails on BOTH conditions:
+    if len(html_content) < 1024 and "captcha" in html_content.lower():
+The measured challenge body is 5351 B (not < 1024) and carries
+"Just a moment" / "cf-chl" / "challenge-platform", not "captcha".
+
+------------------------------------------------------------------------
+RED — observed BEFORE any source change (§11.4.224)
+------------------------------------------------------------------------
+$ .venv/bin/python -m pytest \
+    tests/unit/merge_service/test_bob172_tracker_http_error_not_empty.py \
+    -p no:schemathesis -q --import-mode=importlib -p no:randomly
+
+  AssertionError: HTTP 500 folded into status='empty'
+  assert 'empty' == 'error'
+  AssertionError: HTTP 503 folded into status='empty'
+  ...
+  8 failed, 4 passed in 4.82s
+
+The 4 that passed pre-fix are the NEGATIVE CONTROLS plus one supplementary
+assertion — correct by construction: a negative control must be green both
+before AND after the fix, or it is not pinning the other direction.
+
+------------------------------------------------------------------------
+GREEN — after the fix
+------------------------------------------------------------------------
+  12 passed in 2.14s
+
+Fix shape (reuse-first, §11.4.28 — nothing new was minted that already
+existed):
+  * `_classify_upstream_http_status(status, body_sample)` returns None for
+    any 2xx and a diagnostic dict otherwise, in the SAME shape
+    `_classify_plugin_stderr` already returns.
+  * It emits the SAME `upstream_http_403` / `upstream_http_404` tokens the
+    plugin-subprocess path already emits, so both tracker paths speak ONE
+    dialect rather than two divergent ones.
+  * It populates `TrackerSearchStat.http_status` — a field already declared
+    and already serialised by `to_dict()`, which no code path had ever
+    assigned.
+  * It rides the existing `_last_public_tracker_diag` side-channel that
+    `_run_search` already drains. No new plumbing.
+  * Body markers ("just a moment" / "cf-chl" / "challenge-platform") sharpen
+    the HUMAN-READABLE reason only. The TRIGGER is the HTTP status read from
+    the authoritative source (`resp.status`) — never a body-text proxy that
+    something which is not the condition could satisfy (§11.4.201).
+
+Applied to ALL FIVE private-tracker search sites, not just rutracker: the
+identical false-null lived on every one of them, and fixing one while leaving
+four siblings open would have left the same silent contributor in place.
+
+------------------------------------------------------------------------
+PAIRED §1.1 MUTATIONS — both directions, neither survives
+------------------------------------------------------------------------
+MUTATION 1 (under-fire — restores the fold-to-empty defect):
+    if 200 <= status < 300:  ->  if True:   # classifier always returns None
+  RESULT: 8 failed, 4 passed  — identical to the pre-fix RED split.
+          The negative controls stayed GREEN, proving they do not
+          accidentally depend on the fix.
+
+MUTATION 2 (over-fire — the false-positive direction, §11.4.201(1)):
+    if 200 <= status < 300:  ->  if False:  # classify even 2xx as refusal
+  RESULT: 3 failed, 9 passed — ALL THREE negative controls went RED.
+          test_http_200_with_zero_rows_stays_empty_and_successful
+          test_http_200_with_zero_rows_carries_no_error
+          test_http_200_zero_rows_is_not_in_metadata_errors
+
+A guard that only caught mutation 1 would be half a guard. Reporting a
+legitimately-empty search as an error is a FAIL-bluff of equal severity to
+the false-null being fixed — it sends the operator to fix healthy code and
+teaches them to ignore tracker errors, defeating the very signal this change
+exists to raise.
+
+Mutation-residue scan after restore: CLEAN (§11.4.84) — zero `MUTATED`
+markers in source or tests.
+
+MECHANISM-LEVEL GUARD (added after a self-review pass, §11.4.115(F)):
+An earlier version of `test_403_body_never_reaches_the_row_parser` asserted
+only on the resulting row COUNT. That passed in BOTH directions -- a challenge
+page yields zero rows whether or not the guard exists -- so it discriminated
+nothing and was unvalidated instrumentation. It now spies on
+`_parse_rutracker_html` and asserts the refusal body never reaches it. Under
+MUTATION 1 it fails with the mechanism named directly:
+
+    AssertionError: the HTTP 403 challenge body was passed to
+    _parse_rutracker_html ([6235] byte(s)).
+
+and it carries its own negative control
+(`test_healthy_200_body_DOES_reach_the_row_parser`) so a guard that skipped
+the parser for EVERY response -- breaking all searches while still passing the
+assertion above -- is caught too.
+
+Final counts: 13 tests in this file, all green; full merge_service suite
+882 passed / 0 failed (was 880 passed / 2 failed mid-fix, from the stub
+reconciliation described below); api_layer search-route tests 80 passed;
+ruff clean; mutation-residue scan clean.
+
+------------------------------------------------------------------------
+STUB RECONCILIATION (§11.4.120) -- an existing test file was edited
+------------------------------------------------------------------------
+tests/unit/merge_service/test_nnmclub_session_login.py FAILED against the
+fix with `'_FakeResp' object has no attribute 'status'`. That is a stub
+modelling gap, not a product defect: a real aiohttp `ClientResponse` always
+carries `.status`.
+
+I record this prominently because "a test failed so I edited the test" is
+exactly the shape a fake-pass takes. What was done and what was NOT:
+  * ADDED: `status=200` default on the `_FakeResp` stub -- completing its
+    model of the aiohttp contract.
+  * NOT TOUCHED: every assertion in that file. They assert cookie/session
+    behaviour, not status, and mean exactly what they meant before.
+  * EXPLICITLY REJECTED: making the product code tolerant via
+    `getattr(resp, "status", 200)`. Defaulting an unreadable status to "OK"
+    is a fail-open on an unverifiable input (§11.4.252) and would re-create
+    the very false-null this item exists to close. The stub was wrong; the
+    guard is right.
+
+------------------------------------------------------------------------
+BLAST RADIUS (§11.4.92 Pass 2) — one deliberate behaviour change, disclosed
+------------------------------------------------------------------------
+`_search_one` previously returned `(name, results, None)` even when the diag
+had already flipped `stat.status` to "error". So `metadata.errors` stayed
+EMPTY beside an errored chip — the same false-null one layer up, in the
+summary channel a caller of the merge API actually reads. It now returns the
+diag's error when `stat.status == "error"`.
+
+CONSEQUENCE THE REVIEWER MUST WEIGH, stated plainly rather than buried:
+download-proxy/src/api/routes.py:727 does
+
+    captcha_errors = [e for e in metadata.errors if "captcha" in e.lower()]
+    if captcha_errors and not results: -> status="captcha_required"
+
+Because `metadata.errors` was never populated from diag, that branch was
+DEAD. It can now fire — specifically for the pre-existing `upstream_captcha`
+diag, whose message contains "CAPTCHA". This appears to be the branch's
+intended behaviour finally becoming reachable (it tells the operator to solve
+the CAPTCHA instead of showing a bare "no results"), and it only fires when
+the whole search returned zero results anyway. It is NOT triggered by this
+change's own 403 messages, which contain no "captcha" substring.
+
+I did not modify routes.py — a sibling stream is live in api/. Flagging it
+for the reviewer's judgement rather than silently changing an out-of-scope
+contract.
+
+------------------------------------------------------------------------
+(a) IS THE 403 PERMANENT POLICY, RATE-BASED, OR CLIENT-SIGNATURE-BASED?
+------------------------------------------------------------------------
+STOPPED AT A CAPABILITY BOUNDARY (§11.4.112). Recorded, not worked around.
+
+FACT (measured, https://rutracker.org/robots.txt, one request):
+  - The file is marked "BEGIN/END Cloudflare Managed content" — the site
+    operator has Cloudflare's managed bot/AI-crawler blocking enabled.
+  - It carries an explicit per-agent denylist:
+        User-agent: ClaudeBot                      Disallow: /
+        User-agent: GPTBot                         Disallow: /
+        User-agent: CCBot                          Disallow: /
+        User-agent: Google-Extended                Disallow: /
+        User-agent: Bytespider                     Disallow: /
+        User-agent: meta-externalagent             Disallow: /
+        User-agent: Amazonbot                      Disallow: /
+        User-agent: Applebot-Extended              Disallow: /
+        User-agent: CloudflareBrowserRenderingCrawler  Disallow: /
+  - For `User-agent: *` it publishes `Allow: /` with
+    `Content-Signal: search=yes,ai-train=no,use=reference`, and it does NOT
+    disallow /forum/tracker.php for a generic agent.
+
+READING (§11.4.6 — what the evidence establishes, and no more):
+  robots.txt and the edge are two SEPARATE enforcement layers. robots.txt
+  does not forbid the search path to a generic client; Cloudflare bot
+  protection refuses it at the edge regardless. So the 403 is a deliberately
+  deployed edge protection, differentiated BY PATH (index open, search
+  endpoint protected), not a misconfiguration on our side and not an auth
+  prompt.
+
+WHY I STOPPED HERE RATHER THAN FINISHING THE CLASSIFICATION:
+  Every remaining discriminator between "permanent policy" / "rate or
+  reputation scoped" / "client-signature triggered" requires varying the
+  client signature to see whether the block lifts. That IS browser-signature
+  evasion, which the task forbids outright — and the operator of that site
+  has expressly denylisted AI-agent crawlers, this agent's class among them
+  (ClaudeBot, Disallow: /). Probing for a way past a protection aimed at
+  precisely this class of client is the circumvention the task's STOP
+  instruction anticipates. The single permitted one-off UA variation was
+  therefore NOT exercised: knowing the operator's express denylist, running
+  it would have been evasion in substance whatever its packet count.
+  No further requests were issued to rutracker beyond the single robots.txt
+  read. No challenge was solved, no proxy rotated, no fingerprint spoofed.
+
+VERDICT: UNKNOWN, deliberately and permanently for this agent.
+  - KNOWN AS FACT: the search endpoint is refused by deliberately deployed
+    Cloudflare bot protection; the refusal precedes authentication (zero
+    login markers, measured 2026-08-21); credentials and fresh cookies do
+    not address it.
+  - UNKNOWN: whether the refusal is permanent-for-all-non-browser-clients,
+    or rate/reputation scoped.
+  - WHAT WOULD SETTLE IT, without anyone circumventing anything: the
+    operator observing, from their OWN environment and their own client
+    identity, whether an ordinary logged-in browser session reaches
+    /forum/tracker.php while this service does not. That is an operator
+    measurement, not an agent one. A rutracker account-level enquiry to the
+    site operator is the other legitimate channel.
+
+------------------------------------------------------------------------
+(d) HONEST CAPABILITY BOUNDARY — REPORTED, NOT ACTED ON
+------------------------------------------------------------------------
+On the evidence above, rutracker SEARCH is not currently available to this
+service, and no change within this codebase makes it available. Until that
+changes, the README and merge-service documentation should stop advertising
+rutracker as a live search source. Per the task's scope I did NOT edit those
+docs; this is the report.
+
+SEPARATE LATENT DEFECT SPOTTED, NOT FIXED (out of scope, reported):
+`_get_enabled_trackers()` gates rutracker on RUTRACKER_USERNAME AND
+RUTRACKER_PASSWORD only — it does not consider RUTRACKER_COOKIES. A
+cookie-only rutracker configuration therefore never enables the tracker at
+all, even though `_search_rutracker` treats cookies as the PREFERRED auth
+path and the nnmclub sibling does check its *_COOKIES var. Distinct from
+BOB-172; recorded so it is not lost.
