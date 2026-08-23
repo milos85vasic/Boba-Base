@@ -78,3 +78,70 @@ BOB-162 brownfield adoption · BOB-163 does-a-429-count-as-responsive ·
 BOB-166 acceptance (c) sequencing (drain the ten rows vs rebuild the binaries) ·
 :7186 and :7189 deployments (§11.4.235, Hard Stop #3 — orchestration is the
 operator's).
+
+
+## SECOND QUOTA INTERRUPTION — 2026-08-22, session limit (resets 15:30 Europe/Belgrade)
+
+Two REVIEWERS killed mid-work. Same §11.4.147(e) treatment: crash class, work
+stays owed, resume from the exact last point. Both had made real progress.
+
+### 3. BOB-168 review round 2 — agent a763dbd65e4d562e1
+Last line: "M5 confirmed dead at case 4b. Job 3: the seventh (reviewer-authored)
+mutation set against the NEW guard itself, both in isolated trees."
+So jobs 1-2 are DONE — the fail-open fix and the precedence guard are confirmed.
+What remains: its own seventh mutation against the new guard (suggested shapes:
+make the guard's -f check pass on a directory; make RC=97 collide with a real
+runner exit code; make case 4b's roster incomplete so it silently stops
+exercising precedence), plus export-twin freshness and the sibling-untouched
+check.
+Round-1 verdict was NO-GO on B-1 (the test could fire the REAL DDoS bank via
+`cd ""` succeeding as a no-op) and I-1 (FAIL>MISSING precedence unguarded).
+Both fixed and reproduced by the author before fixing.
+
+### 4. BOB-172 review — agent a4c8ca7e6d328e7f1
+Last line: "Full suite green (883 passed — one more than the author's 882, zero
+failures; count drift is benign). Now the RED reconstruction: swap in HEAD's
+pre-fix search.py, run, restore byte-identical."
+So the GREEN half is independently confirmed. What remains: the RED
+reconstruction against pre-fix search.py, then the two disclosures it was asked
+to judge — (1) the deliberate `_search_one` error-propagation change that
+revives a dead `captcha_required` branch at api/routes.py:727, and (2) the
+edited `_FakeResp` stub in test_nnmclub_session_login.py — plus its own
+reviewer-authored mutation and the five-site drift check.
+
+## LANDED SINCE THE FIRST RESUME DOC WAS WRITTEN
+
+- BOB-173 committed (GO, zero blocking/important). Both permission seals proven
+  to genuinely seal; the false-RED mechanism confirmed empirically.
+- BOB-166 committed IN THE SUBMODULE as 71589d5 and pushed to all upstreams
+  (origin fans out to 8 push URLs; named remotes report up-to-date). PARENT
+  POINTER BUMP was in progress when the limit hit — verify it landed, and if not,
+  commit `constitution` (pointer 16b67b0..71589d5) in the parent.
+- BOB-168 and BOB-172 fixes are complete and remediated, awaiting only the two
+  reviews above.
+
+## KNOWN-RED, DELIBERATELY, IN THE CONSTITUTION SUBMODULE
+
+`go test ./cmd/workable-items/` has exactly ONE top-level failure:
+TestValidate_OK_RealDocs. That is the new gate correctly reporting the ten
+pre-existing stranded rows in the consumer's trackers — causation proven (under
+the gate-stubbing mutation the test passes). Draining needs per-row evidence and
+is tracked; weakening the gate would be §11.4.120 fake-passing; an exemption
+baseline would embed consumer literals in a shared engine AND pre-empt a
+§11.4.224(E) operator decision. Where a consumer has no such trackers the test
+SKIPs loudly. Do not "fix" this by touching the gate.
+
+## FILED SINCE: BOB-174 (hooks corrupt-load data-loss chain), BOB-175
+## (one-directional update guard), BOB-176 (cookies-only rutracker never enabled)
+
+## A CORRECTION I OWE THE RECORD
+
+BOB-168's original filing was MINE and its premise was FALSE. I measured
+`challenges/scripts/` while the runner reads
+`submodules/challenges/challenges/scripts/` — two similarly-named directories,
+wrong one measured (§11.4.201(9) field identity), and I wrote "verified by
+invocation" having only listed a directory. The item is corrected in-place.
+The generalisable lesson, which is not in §11.4.201(7)(b) as commonly applied:
+A CONTROL NEEDLE PROVES THE INSTRUMENT CAN SEE; IT DOES NOT PROVE IT IS POINTED
+AT THE THING UNDER TEST. I applied a needle correctly to a sibling's work in the
+same commit, then omitted it on my own measurement one paragraph later.

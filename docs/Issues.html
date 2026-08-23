@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 53 <strong>Last modified:</strong>
-2026-08-22T10:25:05Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 54 <strong>Last modified:</strong>
+2026-08-23T09:27:22Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -2463,6 +2463,53 @@ missing challenge must be loud (§11.4.3 SKIP-with-reason at minimum),
 never absent-and-quiet.</p>
 <p>SEVERITY. Low as a defect, but it sits on the challenge-coverage
 seam, so (c) may deserve its own item.</p>
+<p>CORRECTION 2026-08-22 (§11.4.6) — THIS ITEM’S PREMISE WAS FALSE, and
+the error was mine. Recorded openly rather than quietly edited.</p>
+<p>scaling_horizontal_challenge.sh EXISTS. It is at
+submodules/challenges/challenges/scripts/scaling_horizontal_challenge.sh,
+executable, 3107 bytes, dated Aug 7. So do all 14 other entries and the
+meta-runner. It was never deleted: added to the roster at 1c959ba, the
+challenge itself added in the submodule at 873c0b1, and a pickaxe search
+across both repositories and all branches finds ZERO deletions.</p>
+<p>HOW I GOT IT WRONG. run_all_challenges.sh reads
+submodules/challenges/challenges/scripts/. I checked challenges/scripts/
+— a DIFFERENT directory belonging to a DIFFERENT, glob-based runner. Two
+similarly-named directories; I measured the wrong one. That is a
+§11.4.201(9) field-identity error. Worse, I wrote that it was “verified
+by invocation”: I had listed a directory and never run the aggregator,
+so the claim overstated the evidence class as well as getting the answer
+wrong.</p>
+<p>THE LESSON, which generalises past this item. In the SAME commit I
+correctly caught a sibling agent making this exact class of error on
+BOB-167 — a zero-hit produced by searching one symbol name — and applied
+a control needle there. Then I omitted the needle one paragraph later on
+my own measurement. The distinction that would have caught it: A CONTROL
+NEEDLE PROVES THE INSTRUMENT CAN SEE; IT DOES NOT PROVE IT IS POINTED AT
+THE THING UNDER TEST. §11.4.201(7)(b) as commonly applied guards
+blindness; it does not guard mis-aiming. The needle for THIS query would
+have been to resolve the path the runner itself reads, not to confirm
+that some directory listing works.</p>
+<p>WHAT IS ACTUALLY WRONG, and it is worse than what I filed. The
+missing-entry path runs no challenges by definition, so it can be
+exercised safely. Run against a checkout where the submodule is absent —
+the ordinary state of a clone made without –recursive — the REAL runner
+(byte-identity sha-asserted, not a replica) reports:</p>
+<pre><code>PASS: 0   FAIL: 0   SKIP: 16   TOTAL: 16
+OBSERVED EXIT CODE: 0</code></pre>
+<p>An ENTIRELY UN-RUN BANK REPORTS SUCCESS. Not one dangling entry
+tolerated — the whole suite silently passes without executing anything.
+That is §11.4.201(6) false-null verbatim, and it is observed-reachable
+rather than constructed (§11.4.115(G)).</p>
+<p>REVISED ACCEPTANCE. (a) ANSWERED, though not as filed: the runner
+reports a loud, counted SKIP and then never blocks, because the exit
+expression reads only the FAIL count. (b) The dangling-entry half is
+VOID — nothing is dangling. (c) The real work is the exit contract: a
+roster entry the runner cannot execute must not be indistinguishable
+from a healthy run. See the decision recorded in
+docs/qa/BOB-168/decision_missing_vs_skip.md.</p>
+<p>RELATED, REPORTED NOT FIXED: scripts/pre_build_verification.sh:1792
+carries the same SKIP/MISSING conflation one level up, for the other
+runner. Filed separately.</p>
 <h2
 id="bob-169-286-of-326-exported-.html-docs-are-headless-pandoc-fragments-with-no-doctype-and-no-charset-so-utf-8-section-marks-and-arrows-render-as-mojibake-when-opened-directly">BOB-169
 — 286 of 326 exported .html docs are headless pandoc fragments with no
@@ -3010,5 +3057,62 @@ asymmetry it deliberately did not close, independently verified and
 endorsed as an acceptable scope boundary by that item’s reviewer, on the
 condition that it become a tracked item rather than a comment. This is
 that item.</p>
+<h2
+id="bob-176-a-cookies-only-rutracker-configuration-never-enables-the-tracker-because-the-enablement-gate-checks-usernamepassword-while-the-search-path-prefers-cookies">BOB-176
+— A cookies-only rutracker configuration never enables the tracker,
+because the enablement gate checks username/password while the search
+path prefers cookies</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Medium <strong>Created-By:</strong> Claude
+<strong>Assigned-To:</strong> Claude</p>
+<p>WHAT. _get_enabled_trackers() in
+download-proxy/src/merge_service/search.py gates rutracker on
+RUTRACKER_USERNAME and RUTRACKER_PASSWORD only. It never consults
+RUTRACKER_COOKIES. So an operator configured with cookies alone — no
+username, no password — never has rutracker enabled at all, and the
+tracker is silently absent from every fan-out rather than failing
+visibly.</p>
+<p>WHY THAT IS INCOHERENT WITH THE REST OF THE CODE. _search_rutracker
+treats COOKIES as the PREFERRED auth path, not a fallback. And the
+nnmclub sibling DOES check its own *_COOKIES variable. So the same
+codebase holds three positions at once: cookies preferred at the search
+site, cookies ignored at the enablement gate, and cookies honoured for a
+sibling tracker.</p>
+<p>WHY IT MATTERS MORE THAN IT LOOKS. CLAUDE.md documents a standing
+operator mandate (2026-08-15) that per-tracker Netscape cookies files at
+${TRACKER_COOKIE_DIR}/cookies_<tracker>.txt are auto-loaded into .env as
+<TRACKER>_COOKIES before every boba-svc up, restart, install Stage 6 and
+start.sh boot — and rutracker is named in that set. So the SANCTIONED,
+documented configuration path for this tracker produces exactly the
+state this gate ignores. An operator who follows the documented
+instructions gets a tracker that never runs, with no error to explain
+it.</p>
+<p>FAILURE MODE. Silent absence, not a visible failure — the same
+§11.4.201(6) false-null shape as BOB-172, one layer earlier. BOB-172
+fixes a tracker that RAN and was REFUSED being reported as empty; this
+is a tracker that never ran at all, and the merged result simply has one
+fewer contributor with nothing to indicate it.</p>
+<p>PROVENANCE. Found by the BOB-172 implementing agent while tracing the
+enablement path to locate the status-handling defect. Recorded here
+rather than fixed in that change: it is a separate defect on a separate
+seam with its own oracle, and folding it in would have widened BOB-172
+past its captured evidence.</p>
+<p>ACCEPTANCE. (a) The enablement gate honours RUTRACKER_COOKIES as an
+independently sufficient credential, matching what _search_rutracker
+already prefers and what the nnmclub sibling already does. (b) A test
+asserting that a cookies-only configuration ENABLES rutracker, driving
+the real _get_enabled_trackers rather than a replica. (c) Paired §1.1
+mutation restoring the username/password-only gate — the test must go
+red. (d) NEGATIVE CONTROL (§11.4.201(1)): a configuration with NO
+credentials at all must still leave rutracker DISABLED. A fix that
+enables an unauthenticated tracker is worse than the gap, because it
+produces failing searches instead of absent ones. (e) Audit the other
+trackers’ gates for the same asymmetry rather than fixing only the one
+that was noticed — three positions in one codebase suggests nobody has
+checked them together (§11.4.118).</p>
+<p>HONEST BOUNDARY. Not verified against a live cookies-only deployment;
+read from source by the BOB-172 agent and recorded on its report. The
+reading is specific and checkable, but whoever takes this should confirm
+by invocation before relying on it.</p>
 </body>
 </html>
