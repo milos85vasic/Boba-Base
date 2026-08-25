@@ -245,3 +245,57 @@ cookie-only rutracker configuration therefore never enables the tracker at
 all, even though `_search_rutracker` treats cookies as the PREFERRED auth
 path and the nnmclub sibling does check its *_COOKIES var. Distinct from
 BOB-172; recorded so it is not lost.
+
+================================================================================
+STATED GAPS — appended 2026-08-23 per the independent review's IMPORTANT-3
+================================================================================
+
+This log presented the five-site guard coverage without stating its boundary.
+§11.4.194(5) requires un-analysed dimensions be explicit gaps, never silently
+assumed safe. Both gaps below were DEMONSTRATED by the reviewer's probes, both
+are PRE-EXISTING, and neither is a regression introduced by BOB-172 — but a
+reader of this log would otherwise conclude the "tracker refusal reported as
+empty" class is closed. It is not.
+
+GAP A — an exception raised BEFORE resp.status is read.
+  Probe B, captured: a connection-refused rutracker yields
+      status='empty', error=None, http_status=None,
+      metadata.errors=[], metadata.status='completed'
+  Each _search_* method swallows exceptions (except Exception: logger.error;
+  return results) before _search_one's own error handling can observe them. A
+  tracker that is DOWN is therefore indistinguishable from one that is genuinely
+  empty — the BOB-172 signature, reached by a different route. The new guard
+  never runs, because control never reaches the status check.
+  Tracked: BOB-179.
+
+GAP B — a soft refusal delivered at HTTP 200.
+  Probe A, captured: _classify_upstream_http_status(200, <cf-chl body>) returns
+  None. That is CORRECT by design and must stay so: a 2xx is a usable response,
+  and triggering on body markers would risk exactly the over-fire the negative
+  controls exist to prevent (§11.4.201). But all five search GETs use aiohttp's
+  default allow_redirects=True — the only allow_redirects=False in the module are
+  the kinozal and iptorrents login POSTs — so a session-expiry 302 -> login-page
+  -200 chain parses to zero rows and reports empty.
+  The future fix is a DISTINCT detector (final-URL check, or a login-form marker)
+  carrying its own RED. It is explicitly NOT a widening of this change's
+  status-code trigger.
+  Tracked: BOB-179.
+
+ALSO TRACKED FROM THE SAME REVIEW, and likewise not closed by this change:
+  BOB-177 — four of the five guard sites are invisible to the suite. Deleting
+            ONLY the kinozal wiring left the full merge_service suite at 883
+            passed, zero failures. Only the rutracker COOKIE path is
+            mutation-protected.
+  BOB-178 — the kinozal LOGIN leg (search.py:1638-1640) still sets no diagnostic
+            on a non-(200,301,302) response, reproducing this same false-null one
+            leg over.
+  BOB-180 — a zero-result search with any captcha-flavoured diagnostic emits a
+            RuTracker-specific headline, even when the diagnostic came from
+            NNMClub.
+
+COUNT RECONCILIATION (review MINOR-4): the RED figures above read "8 failed, 4
+passed" and GREEN "12 passed" against a final suite of 13; the `500` parameter
+case and the parser-invocation spy were added AFTER the first RED capture (this
+log says so for the spy). The reviewer measured 9 failed / 4 passed on the
+pre-fix code and 883 rather than 882 on the full suite — the +1 is a sibling
+stream's test, benign. Internally honest, now reconciled explicitly.

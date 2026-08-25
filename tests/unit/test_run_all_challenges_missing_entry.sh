@@ -89,6 +89,14 @@ populate_all() {
   chmod 755 "${root}/submodules/challenges/challenges_describe_challenge.sh"
 }
 
+# A fixture root is USABLE only if it is non-empty AND actually holds the runner.
+# ONE definition, consumed by run_runner AND by every pre-run mutation line below
+# (§11.4.251 — a second, weaker inline notion of "valid root" is exactly how the
+# unguarded chmod/printf/rm residue arose). make_root runs in a command
+# substitution and this script is `set -uo pipefail` WITHOUT -e, so a fixture
+# failure leaves R="" and execution CONTINUES — every consumer of R must ask.
+usable_root() { [[ -n "${1:-}" && -f "${1}/scripts/run_all_challenges.sh" ]]; }
+
 run_runner() {  # $1 = root; sets OUT and RC
   # B-1 FAIL CLOSED (§11.4.252). make_root runs in a command substitution, so its
   # `exit 1` — the anti-replica trip, or any mktemp/mkdir/cp failure — kills only
@@ -100,7 +108,7 @@ run_runner() {  # $1 = root; sets OUT and RC
   # stress_sustained_load and chaos_failure_injection against the 30-40% host cap.
   # The guard's designed-FOR failure must never detonate its designed-AGAINST
   # outcome, so a bad root is a loud assertion failure with NOTHING executed.
-  if [[ -z "${1:-}" || ! -f "${1}/scripts/run_all_challenges.sh" ]]; then
+  if ! usable_root "${1:-}"; then
     OUT="fixture setup failed for root='${1:-}' — runner NOT executed"
     RC=97
     return
@@ -146,7 +154,7 @@ fi
 # integrity class as absent: the named entry cannot be run, so it attests
 # nothing. One bad entry in an otherwise healthy bank must still block.
 R="$(make_root case3)"; populate_all "$R" || fail "case3 fixture setup failed"
-chmod 644 "${R}/submodules/challenges/challenges/scripts/scaling_horizontal_challenge.sh"
+usable_root "$R" && chmod 644 "${R}/submodules/challenges/challenges/scripts/scaling_horizontal_challenge.sh"
 run_runner "$R"
 if [[ "$RC" -eq 2 ]]; then
   pass "one entry not executable -> exit 2"
@@ -164,7 +172,7 @@ fi
 # conditions demand different responses (fix the code vs fix the checkout);
 # neither may swallow the other.
 R="$(make_root case4)"; populate_all "$R" || fail "case4 fixture setup failed"
-printf '#!/usr/bin/env bash\nexit 1\n' > "${R}/submodules/challenges/challenges/scripts/bluff_scanner_challenge.sh"
+usable_root "$R" && printf '#!/usr/bin/env bash\nexit 1\n' > "${R}/submodules/challenges/challenges/scripts/bluff_scanner_challenge.sh"
 run_runner "$R"
 if [[ "$RC" -eq 1 ]]; then
   pass "a real challenge failure -> exit 1 (unchanged, outranks MISSING)"
@@ -179,8 +187,8 @@ fi
 # "fix the checkout" (2) while a real challenge was failing, and would find the
 # code defect a cycle late.
 R="$(make_root case4b)"; populate_all "$R" || fail "case4b fixture setup failed"
-printf '#!/usr/bin/env bash\nexit 1\n' > "${R}/submodules/challenges/challenges/scripts/bluff_scanner_challenge.sh"
-rm -f "${R}/submodules/challenges/challenges/scripts/scaling_horizontal_challenge.sh"
+usable_root "$R" && printf '#!/usr/bin/env bash\nexit 1\n' > "${R}/submodules/challenges/challenges/scripts/bluff_scanner_challenge.sh"
+usable_root "$R" && rm -f "${R}/submodules/challenges/challenges/scripts/scaling_horizontal_challenge.sh"
 run_runner "$R"
 if [[ "$RC" -eq 1 ]]; then
   pass "FAIL + MISSING together -> exit 1 (FAIL outranks MISSING)"

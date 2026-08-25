@@ -1,0 +1,14 @@
+dist=/tmp/dist_r2/browser  theme=darcula/dark  scope=_ngcontent-ng-c1837422856  body color=rgb(200, 209, 218)
+  status unknown         fg=rgb(0, 0, 0)           bg=rgb(196, 196, 196)     9.00pt/400  ratio=12.04  floor=4.5  ok
+  status active          fg=rgb(0, 0, 0)           bg=rgb(106, 135, 89)      9.00pt/400  ratio=5.22  floor=4.5  ok
+  status running         fg=rgb(0, 0, 0)           bg=rgb(217, 164, 65)      9.00pt/400  ratio=9.34  floor=4.5  ok
+  status failed          fg=rgb(0, 0, 0)           bg=rgb(204, 120, 50)      9.00pt/400  ratio=6.30  floor=4.5  ok
+  type-badge unknown     fg=rgb(0, 0, 0)           bg=rgb(196, 196, 196)     8.25pt/700  ratio=12.04  floor=4.5  ok
+  type-badge ebook       fg=rgb(0, 0, 0)           bg=rgb(152, 118, 170)     8.25pt/700  ratio=5.51  floor=4.5  ok
+  type-badge movie       fg=rgb(0, 0, 0)           bg=rgb(13, 110, 253)      8.25pt/700  ratio=4.67  floor=4.5  ok
+  quality-badge unknown  fg=rgb(0, 0, 0)           bg=rgb(196, 196, 196)     8.25pt/700  ratio=12.04  floor=4.5  ok
+  quality-badge full_hd  fg=rgb(0, 0, 0)           bg=rgb(106, 135, 89)      8.25pt/700  ratio=5.22  floor=4.5  ok
+  quality-badge hd       fg=rgb(0, 0, 0)           bg=rgb(104, 151, 187)     8.25pt/700  ratio=6.73  floor=4.5  ok
+  quality-badge uhd_4k   fg=rgb(0, 0, 0)           bg=rgb(255, 215, 0)       8.25pt/700  ratio=14.97  floor=4.5  ok
+
+0 of 11 measured nodes below their floor

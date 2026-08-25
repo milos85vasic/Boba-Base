@@ -1,0 +1,14 @@
+dist=download-proxy/src/ui/dist/frontend/browser  theme=darcula/dark  scope=_ngcontent-ng-c1837422856  body color=rgb(169, 183, 198)
+  status unknown         fg=rgb(204, 204, 204)     bg=rgb(128, 128, 128)     9.00pt/400  ratio=2.46  floor=4.5  FAIL
+  status active          fg=rgb(255, 255, 255)     bg=rgb(106, 135, 89)      9.00pt/400  ratio=4.02  floor=4.5  FAIL
+  status running         fg=rgb(51, 51, 51)        bg=rgb(217, 164, 65)      9.00pt/400  ratio=5.62  floor=4.5  ok
+  status failed          fg=rgb(255, 255, 255)     bg=rgb(204, 120, 50)      9.00pt/400  ratio=3.33  floor=4.5  FAIL
+  type-badge unknown     fg=rgb(169, 183, 198)     bg=rgb(128, 128, 128)     8.25pt/700  ratio=1.93  floor=4.5  FAIL
+  type-badge ebook       fg=rgb(169, 183, 198)     bg=rgb(152, 118, 170)     8.25pt/700  ratio=1.87  floor=4.5  FAIL
+  type-badge movie       fg=rgb(169, 183, 198)     bg=rgb(13, 110, 253)      8.25pt/700  ratio=2.20  floor=4.5  FAIL
+  quality-badge unknown  fg=rgb(169, 183, 198)     bg=rgb(128, 128, 128)     8.25pt/700  ratio=1.93  floor=4.5  FAIL
+  quality-badge full_hd  fg=rgb(169, 183, 198)     bg=rgb(106, 135, 89)      8.25pt/700  ratio=1.97  floor=4.5  FAIL
+  quality-badge hd       fg=rgb(169, 183, 198)     bg=rgb(104, 151, 187)     8.25pt/700  ratio=1.53  floor=4.5  FAIL
+  quality-badge uhd_4k   fg=rgb(17, 17, 17)        bg=rgb(255, 215, 0)       8.25pt/700  ratio=13.46  floor=4.5  ok
+
+9 of 11 measured nodes below their floor

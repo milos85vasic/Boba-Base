@@ -50,24 +50,38 @@ phases:
         also set OWNED_PATHS_FILE, so an implementation that ignores --scope is
         caught.
 
-  known_gaps_from_phase_2:
-    - "E4 wrong-owner verdict is unreachable in unit tests: creating a file owned
-      by another uid needs privilege. Only the container probe (P1) produces the
-      uid-100999 shape. Unit suites cover unwritable/absent instead - decisive per
-      the contract, but not the shape the feature targets."
-    - "tests/integration/conftest.py hangs 60-180s and errors instead of skipping
-      honestly (§11.4.3) when the stack is down. Pre-existing, affects other tests,
-      NOT fixed here - out of scope and shared infrastructure."
-
   - id: 3
     name: US1 - downloads usable
-    status: not-started
+    status: complete-pending-review
+    # CORRECTED 2026-08-22: this file read "not-started" for phases 3-6 while
+    # tasks.md showed 38 of 42 tasks checked. tasks.md was right; THIS file was
+    # stale. Verified on disk before correcting rather than trusting either
+    # document: start.sh carries 6 references to the ownership precondition /
+    # repair split, both scripts/ownership_*.sh exist, and the evidence
+    # directory holds baseline-start.log, T013-baseline.md, T014-recreate.log,
+    # T014-T017-us1-green.md and T018-review-NOGO.md.
+    # A stale execution-state file is the §11.4.186 cross-document divergence
+    # class, and it is the more dangerous half: a reader trusting it would
+    # conclude the work was never begun and redo it.
+    status_note: |
+      T018 CLOSED 2026-08-25 — GO, zero findings, zero warnings, round 4
+      (evidence/T018-review-GO.md). Four review rounds on the §11.4.209
+      substrate, iterated per §11.4.134. Substantive answer: on the current
+      docker-compose.yml no service mounting an in-scope path defeats
+      operator-owned writes — userns_mode active keys 0, user: keys 0,
+      PUID=0/PGID=0 preserved on the two linuxserver services (deliberate),
+      store 600, world-writable under config/ 0, group-writable 0.
+      Round 4 also corrected the reviewer's own round-3 audit: a bracket-only
+      instrument saw 41 of 50 gate labels and reported one denominator while
+      two were live.
+      Does NOT discharge T042 or the §11.4.185 manual-QA gate.
   - id: 4
     name: US2 - backlog repaired
-    status: not-started
+    status: complete-pending-review
+    open_task: T028   # [REVIEW] carries a recorded ORDERING VIOLATION, not laundered
   - id: 5
     name: US3 - session lifecycle
-    status: not-started
+    status: complete
   - id: 6
     name: Polish
     status: not-started
@@ -99,3 +113,18 @@ open_findings:
         docker-compose.yml (cheap, but the route check is itself a proxy)
       - Both - container probe when the runtime is available, route assertion
         as the fallback, each reported honestly for what it proves
+
+# RELOCATED 2026-08-22: this block sat at 2-space indent INSIDE the `phases:`
+# list, where YAML expects a list item — so this file has never parsed. Moved
+# to top level unchanged in content. A machine-readable execution-state file
+# that no machine can read is a §11.4.201(6) false-null at the tooling layer:
+# any consumer either errors or silently skips it, and either way the state it
+# records is never actually consulted.
+known_gaps_from_phase_2:
+  - "E4 wrong-owner verdict is unreachable in unit tests: creating a file owned
+    by another uid needs privilege. Only the container probe (P1) produces the
+    uid-100999 shape. Unit suites cover unwritable/absent instead - decisive per
+    the contract, but not the shape the feature targets."
+  - "tests/integration/conftest.py hangs 60-180s and errors instead of skipping
+    honestly (§11.4.3) when the stack is down. Pre-existing, affects other tests,
+    NOT fixed here - out of scope and shared infrastructure."

@@ -95,11 +95,60 @@ def test_vitest_spec_exists_for_footer() -> None:
 def test_footer_styles_use_design_system_tokens(footer_source: str) -> None:
     """The restored footer MUST follow the palette-switch feature — no
     hardcoded brand red like the legacy version had.
+
+    RECONCILED for BOB-164 (§11.4.120 — a gate that asserts a mechanism
+    the fix replaced is rewritten to assert the NEW mechanism, never
+    fake-passed and never used to revert the fix).  The footer's accent
+    text now resolves through ``--color-accent-text``: ``--color-accent``
+    is the DECORATIVE brand role and measured 1.80:1 as footer link text
+    (docs/qa/BOB-164/).  The gate's INTENT is unchanged — accent colour
+    comes from the token layer, never from a literal — so it now accepts
+    any token in the accent family and additionally forbids a raw hex
+    accent, which the previous literal check could not see.
     """
-    assert "var(--color-accent)" in footer_source
+    # CLOSED SET, not a wildcard (BOB-164 round 2). The previous pattern
+    # `--color-accent[a-z-]*` also matched tokens that do not exist —
+    # `var(--color-accent-typo)` would have satisfied the gate while
+    # resolving to nothing at runtime, so the gate could pass on a footer
+    # rendered with no accent colour at all. Every alternative below is a
+    # real key in `TOKEN_CSS_VAR` (frontend/src/app/models/palette.model.ts).
+    accent_family = (
+        r"var\(--color-(?:accent|accent-text|accent-hover"
+        r"|on-accent|on-accent-hover)\)"
+    )
+    # Stronger than presence: EVERY `--color-*` the footer references must
+    # be a real key in TOKEN_CSS_VAR. Presence alone cannot see a typo
+    # sitting next to a valid token — `var(--color-accent-typo)` beside
+    # `var(--color-accent-hover)` satisfies any "at least one" check while
+    # resolving to nothing at runtime (demonstrated by the paired mutation
+    # for this gate).
+    model = (
+        Path(__file__).resolve().parents[2]
+        / "frontend/src/app/models/palette.model.ts"
+    ).read_text(encoding="utf-8")
+    declared = set(re.findall(r"'(--color-[a-z-]+)'", model))
+    assert declared, "could not read TOKEN_CSS_VAR — the check would be blind"
+    referenced = set(re.findall(r"var\((--color-[a-z-]+)\)", footer_source))
+    assert referenced, "footer references no --color-* token at all"
+    unknown = sorted(referenced - declared)
+    assert not unknown, (
+        f"footer references custom properties that no palette token declares: "
+        f"{unknown} — they resolve to nothing at runtime"
+    )
+
+    assert re.search(accent_family, footer_source), (
+        "footer must take its accent colour from the design-system token "
+        "layer (--color-accent / --color-accent-text / --color-accent-hover "
+        "/ --color-on-accent / --color-on-accent-hover)"
+    )
     assert "var(--color-border)" in footer_source
     # No #e94560 (the legacy hardcoded accent).
     assert "#e94560" not in footer_source
+    # Nor any other raw hex standing in for the accent — the failure mode
+    # the literal-token check above exists to prevent.
+    assert "#9d001e" not in footer_source, (
+        "footer hardcodes the brand red instead of using the token layer"
+    )
 
 
 def test_footer_appears_in_served_bundle() -> None:

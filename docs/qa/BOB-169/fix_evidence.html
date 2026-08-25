@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>fix_evidence</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">fix_evidence</h1>
+</header>
+<h1
+id="bob-169-exported-pdfs-corrupted-every-non-ascii-character">BOB-169 —
+exported PDFs corrupted every non-ASCII character</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-23T12:05:00Z</p>
+<h2 id="root-cause-measured-not-inferred">Root cause — measured, not
+inferred</h2>
+<p><code>scripts/generate_markdown_exports.sh:57</code> (pre-fix)
+rendered HTML with</p>
+<pre><code>pandoc -f markdown -t html5 -o &quot;$html&quot; &quot;$md&quot; --metadata title=&quot;...&quot;</code></pre>
+<p>with <strong>no <code>--standalone</code></strong>. Pandoc therefore
+emits a <strong>body fragment</strong> — the generated file begins
+directly at <code>&lt;h1 ...&gt;</code>, with no
+<code>&lt;html&gt;</code>, no <code>&lt;head&gt;</code>, and so no
+<code>&lt;meta charset="utf-8"&gt;</code>.</p>
+<p>The HTML <strong>bytes are correct UTF-8</strong>. Measured on a
+fixture: 0 mojibake, all of <code>§ — →</code> present and intact. The
+corruption is not in the HTML.</p>
+<p><code>weasyprint "$html" "$pdf"</code> then renders the PDF
+<strong>from that charset-less HTML</strong>. With nothing declaring the
+encoding it falls back to a non-UTF-8 default and bakes the mojibake
+into the PDF’s <strong>text layer</strong>, where it is permanent.</p>
+<p>Two sibling legs in the same function were always correct, which is
+what pins the diagnosis: the <code>python-markdown</code> fallback
+writes <code>&lt;meta charset="utf-8"&gt;</code> explicitly, and the
+DOCX leg goes <code>markdown -&gt; docx</code> directly, never reading
+the HTML. Only the pandoc-HTML leg, and the PDF rendered from it, were
+affected.</p>
+<h2 id="the-fix">The fix</h2>
+<p>One flag, plus its rationale in-source: <code>--standalone</code> on
+that pandoc call.</p>
+<h2 id="evidence">Evidence</h2>
+<h3 id="red-pre-fix-captured">RED (pre-fix), captured</h3>
+<pre><code>FAIL: exported HTML has NO &lt;meta charset&gt; element (bare-substring carriers present: 1)
+FAIL: PDF text layer carries mojibake on 2 line(s) — source non-ASCII corrupted
+RESULT: 0 passed, 2 failed</code></pre>
+<h3 id="green-post-fix">GREEN (post-fix)</h3>
+<pre><code>PASS: exported HTML carries a &lt;meta charset&gt; declaration
+PASS: PDF text layer preserves the source&#39;s non-ASCII (needle: 1 line(s) intact, 0 mojibake)
+RESULT: 2 passed, 0 failed</code></pre>
+<h3 id="paired-1.1-mutation">Paired §1.1 mutation</h3>
+<p><code>--standalone</code> removed →
+<code>RESULT: 0 passed, 2 failed</code>. Restored, parse-clean. The flag
+is load-bearing, not cosmetic.</p>
+<h3 id="end-to-end-on-real-documents">End-to-end on real documents</h3>
+<p>Regenerated two real docs and counted characters rather than merely
+looking for corruption:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>document</th>
+<th><code>&lt;meta charset&gt;</code></th>
+<th>PDF mojibake</th>
+<th>PDF <code>§—→</code></th>
+<th>source <code>§—→</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docs/qa/BOB-168/round3_guard_residue_fix</code></td>
+<td>1</td>
+<td><strong>0</strong></td>
+<td><strong>21</strong></td>
+<td>21</td>
+</tr>
+<tr>
+<td><code>docs/qa/SESSION_RESUME_20260822</code></td>
+<td>1</td>
+<td><strong>0</strong></td>
+<td><strong>33</strong></td>
+<td>33</td>
+</tr>
+</tbody>
+</table>
+<p>Counts match exactly for the characters counted. <strong>The column
+counts the three-character set <code>§ — →</code>, not all
+non-ASCII</strong> — labelling it “non-ASCII” (as this table originally
+did) overstated the instrument (§11.4.201(9): a metric must be labelled
+for what it actually measures). The reviewer verified the broader claim
+per-character and it does hold — SESSION_RESUME’s true non-ASCII count
+is 39, including 6 <code>·</code> that also survive intact — but that is
+the reviewer’s measurement, not what this table shows.</p>
+<p>A related caution for anyone extending this table: on
+<code>docs/CONTINUATION</code> the PDF carries MORE non-ASCII than the
+source (581 vs 372). That is not corruption — the
+<code>--standalone</code> template’s default CSS renders list bullets as
+glyphs the source never contained. <strong>Mojibake count is the
+load-bearing measure; a raw non-ASCII equality check is not sound across
+documents with lists.</strong> Before the fix the first of these carried
+<strong>43 mojibake hits</strong> (<code>Â§11</code>, <code>â€"</code>,
+<code>â€œ</code>).</p>
+<h2 id="a-carrier-bug-in-my-own-test-caught-before-it-shipped">A carrier
+bug in my own test, caught before it shipped</h2>
+<p>The first version of the RED test asserted
+<code>grep -qi 'charset'</code> on the HTML — and <strong>PASSED against
+the broken generator</strong>. It was matching the fixture’s own heading
+slug, <code>charset-fixture</code>. A document is not self-describing
+because it contains the word.</p>
+<p>That is the §11.4.201(7)(a) carrier error, committed inside the test
+written to catch a charset defect. The assertion now matches structure —
+<code>&lt;meta[^&gt;]+charset</code> — and its failure message reports
+how many bare-substring carriers were present (1), so the next reader
+sees why the naive form is not equivalent.</p>
+<p>The PDF assertion carries a <strong>control needle</strong> for the
+same reason: it requires the source’s real characters to be PRESENT in
+the extracted text, not merely that mojibake is absent. A blind
+extraction returns zero of both; without the needle an empty text layer
+would pass.</p>
+<h2 id="honest-scope">Honest scope</h2>
+<ul>
+<li><p>The generator is fixed and guarded. <strong>The ~600 existing
+exports in the tree are NOT regenerated by this change</strong> — the
+function is mtime-guarded, so an export refreshes only when its
+<code>.md</code> is newer. Every previously-generated PDF still carries
+the defect until a bulk regeneration runs, which needs a quiescent tree
+and is tracked separately.</p></li>
+<li><p><strong>CORRECTION (2026-08-23 12:10) — the claim originally here
+was FALSE, and the check that produced it was a false-null.</strong> I
+wrote that only two documents were regenerated, “both mine”, citing
+<code>git status</code>. Wrong on both counts. The whole-tree run ALSO
+generated <code>docs/qa/BOB-174/DESIGN_DECISION.{html,pdf,docx}</code>
+at 11:50 — a sibling stream’s document, while its author was still
+editing the source (<code>.md</code> mtime 12:00). Those exports were
+stale on arrival AND carried the pre-fix charset defect.</p>
+<p>Why my check could not see it: <code>docs/qa/BOB-174/</code> is an
+UNTRACKED DIRECTORY, so <code>git status --porcelain</code> collapses it
+to a single line. My <code>grep -E '\.(html|pdf)$'</code> over that
+output was structurally incapable of matching files inside it
+(§11.4.201(7)(a) — I matched the wrong surface, and the quiet zero read
+as “clean”). The correct instrument is
+<code>find docs/qa -newermt</code>, which surfaces all six artifacts
+immediately.</p>
+<p>This is BOB-181 (the generator silently discarding its path argument
+and always scanning the whole tree) instantiated live, on the very run
+that fixed BOB-169 — and the concrete demonstration of why that filing
+matters rather than being cosmetic. Remediated: BOB-174’s twins
+regenerated from its final source with the fixed generator, verified
+below.</p></li>
+<li><p>Rendering fidelity beyond the text layer (fonts, glyph coverage,
+layout) is not asserted. This guards <strong>character
+integrity</strong>, which is what was broken.</p></li>
+</ul>
+<h2 id="guard">Guard</h2>
+<p><code>tests/unit/test_export_pdf_charset_integrity.sh</code> — runs a
+sha-verified COPY of the real generator against a temp tree
+(<code>PROJECT_ROOT</code> derives from <code>BASH_SOURCE</code>, so the
+copy scans the temp tree and cannot touch the repo’s real exports), and
+SKIPs honestly when pandoc/weasyprint/pdftotext are absent rather than
+passing on an unmeasurable claim.</p>
+<h2
+id="review-round-1-returned-no-go-findings-and-their-disposition">Review
+round 1 returned NO-GO — findings and their disposition</h2>
+<p>The reviewer’s four-quadrant polarity test settled the root cause
+more firmly than my own evidence did, and is recorded here because it is
+the better proof:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>variant</th>
+<th>charset decl</th>
+<th>doctype/head/title/CSS</th>
+<th>PDF mojibake</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A fragment (pre-fix)</td>
+<td>0</td>
+<td>none</td>
+<td>1 line — corrupt</td>
+</tr>
+<tr>
+<td>B <code>--standalone</code> (post-fix)</td>
+<td>1</td>
+<td>all</td>
+<td>0 — clean</td>
+</tr>
+<tr>
+<td><strong>C fragment + ONLY
+<code>&lt;meta charset&gt;</code></strong></td>
+<td>1</td>
+<td><strong>none</strong></td>
+<td><strong>0 — clean</strong></td>
+</tr>
+<tr>
+<td><strong>D standalone MINUS the charset line</strong></td>
+<td>0</td>
+<td>all</td>
+<td><strong>2 lines — corrupt</strong></td>
+</tr>
+</tbody>
+</table>
+<p>C clean and D corrupt is the necessary-and-sufficient pair: the
+charset declaration is the causal property; doctype,
+<code>&lt;title&gt;</code>, default CSS and the wrapper are inert to
+this defect. My in-source comment needed no correction.</p>
+<p><strong>F1 (BLOCKING) — CLOSED.</strong> A THIRD producer carried the
+same defect: <code>scripts/regenerate-continuation-exports.sh:75</code>
+rendered <code>docs/CONTINUATION</code> without
+<code>--standalone</code>. Confirmed independently before fixing: 0
+charset declarations, <strong>336 mojibake lines</strong> — the worst in
+the corpus, on the §12.10 session-resumption document, regenerating
+corrupt on every run. Fixed, its stale “identical invocation shape”
+parity comment corrected to record that the claim was false in the
+window between the two fixes, and the document regenerated: <strong>336
+→ 0</strong>, charset 1.</p>
+<p><strong>F2 (IMPORTANT) — CLOSED.</strong> Acceptance (d) was
+genuinely unmet:
+<code>grep charset scripts/pre_build_verification.sh</code> returned
+zero hits, so the corpus census was invisible to the regime — the
+§11.4.238 gap the issue itself calls the interesting half. Now:
+<code>scripts/pre_build/check_cm_export_charset_valid.sh</code>, wired
+as <strong>invariant 50</strong>, with
+<code>tests/pre_build/test_cm_export_charset_valid.sh</code> (6 paired
+mutations, all passing) including <strong>two BLIND cases</strong> — an
+empty corpus and a zero-compliant corpus both REFUSE rather than
+reporting the quiet zero a naive gate would pass. Live: 334 exports
+scanned, 33 compliant, 301 not.</p>
+<p>Adoption is a <strong>monotone-decrease ratchet</strong> (§11.4.135
+pattern), not a hard floor: 301 pre-existing violations would block
+every build immediately. It fails only when the count RISES, and the
+generator now treats a charset-less export as STALE regardless of mtime,
+so the corpus self-heals as documents are touched and the ratchet
+tightens behind it. <strong>This is an operator-owned choice (§11.4.66 /
+§11.4.224(E))</strong> — set <code>BOBA_EXPORT_CHARSET_BASELINE=0</code>
+for an immediate hard floor instead. The gate says so in its own header
+rather than deciding silently.</p>
+<p><strong>F3 (IMPORTANT) — DISCLOSED, and decided AGAINST the cosmetic
+change.</strong> <code>--standalone</code> plus the pre-existing
+<code>--metadata title</code> injects
+<code>&lt;header id="title-block-header"&gt;</code>, so every
+regenerated PDF now begins with the raw filename as a rendered heading;
+<code>&lt;h1&gt;</code> count goes 1 → 2. I tested the obvious remedy:
+<code>--metadata pagetitle=</code> keeps <code>&lt;title&gt;</code> and
+drops the injected header (measured: title-block 0,
+<code>&lt;h1&gt;</code> 1, charset 1, PDF clean, first line = the
+document’s own title). <strong>I did not take it.</strong> The
+docs_chain engine (<code>derived.go:139</code>) passes
+<code>--metadata title=</code> too, which is precisely why the reviewer
+measured my fixed generator as producing byte-identical output to it —
+converging a two-generator disagreement (§11.4.251) that invariant 24
+verifies. Switching one side to <code>pagetitle</code> would re-diverge
+them. Byte-identity between producers outranks a cosmetic duplicate
+heading. Changing BOTH is the better end state and belongs in its own
+tracked item, with the recipe above already proven.</p>
+<p><strong>F4 (MINOR) — CLOSED.</strong> The table’s column was labelled
+“non-ASCII” while the instrument counted only <code>§ — →</code>.
+Relabelled, with the reviewer’s true count (39 for SESSION_RESUME,
+including 6 <code>·</code> that also survive) recorded as theirs.</p>
+<p><strong>F5 (MINOR) — already self-disclosed and remediated</strong>
+before the review landed.</p>
+<p><strong>F6 (MINOR) — CLOSED.</strong> The guard’s header described
+the pre-fix state in the present tense; now marked as what it exists to
+prevent RETURNING.</p>
+<p><strong>F7 (MINOR, latent) — CLOSED at the mechanism.</strong> The
+PDF mtime guard keyed on <code>$md</code>, so a mtime-fresh charset-less
+fragment with a missing <code>.pdf</code> re-baked the mojibake — the
+shape 302 files were in, though the reviewer’s census found 0
+currently-reachable instances. Fixed at the cause rather than the
+symptom: a charset-less HTML is now treated as STALE regardless of
+mtime, which both closes this and gives acceptance (c) its self-healing
+mechanism.</p>
+<p><strong>F8 (MINOR) — CLOSED.</strong> BOB-181’s cited line numbers
+were pre-fix; updated, with the reviewer’s independent
+execution-verification of its substance recorded.</p>
+<p><strong>MINOR-6 from the sibling T018 review, fixed in the same file
+— and its count was low.</strong> It reported one section comment whose
+invariant number disagreed with its own <code>echo</code>. A systematic
+pairing audit found <strong>two</strong> (line 1507 said 40 vs echo 41;
+line 1627 said 33 vs echo 45). Both fixed; re-audit reports 0 remaining.
+A count is a lead; the lines are the finding.</p>
+<p><strong>STILL OPEN, stated rather than implied closed:</strong>
+acceptance (c) — the bulk regeneration of the 301 charset-less exports —
+has a MECHANISM now but has not been RUN. It rewrites ~600 files and
+needs a quiescent tree.</p>
+<h3 id="a-consequence-of-the-f7-fix-that-the-next-operator-must-know">A
+consequence of the F7 fix that the next operator must know</h3>
+<p>Treating a charset-less export as STALE means <strong>the next full
+<code>generate_markdown_exports.sh</code> run IS the bulk
+regeneration</strong> — roughly 301 HTML files plus their PDFs, not the
+handful an incremental run normally touches. That is the intended
+self-healing behaviour and it is what acceptance (c) wants, but it must
+not be triggered casually: it needs a QUIESCENT tree (§11.4.84), because
+the generator also ignores its path argument and always scans everything
+(BOB-181), so the sweep lands in whatever scopes are open at the
+time.</p>
+<p>These very twins were therefore regenerated with a DIRECT
+pandoc/weasyprint call of the identical invocation shape rather than
+through the generator, precisely to avoid firing that sweep while two
+reviews were live.</p>
+<h2 id="a-third-carrier-caught-while-verifying-this-very-document">A
+third carrier, caught while verifying this very document</h2>
+<p>Verifying these twins, the mojibake detector reported <strong>3 hits
+with charset=1</strong> — apparently contradicting the fix. It does not.
+Measured: the source <code>.md</code> contains <strong>exactly the same
+3</strong> strings (<code>Â</code>, <code>â€</code>, <code>â€</code>),
+because this document QUOTES mojibake as examples of the defect it
+documents. Every PDF hit traces verbatim to the source; the real
+non-ASCII count is <strong>70 in the source and 70 in the
+PDF</strong>.</p>
+<p>The detector matched a document that MENTIONS mojibake as though it
+WERE mojibake — §11.4.201(7)(a), the carrier-vs-thing confusion, for the
+<strong>third</strong> time inside this single work item:</p>
+<ol type="1">
+<li><code>grep -qi 'charset'</code> matched the fixture’s heading slug
+<code>charset-fixture</code>, and PASSED against the broken
+generator.</li>
+<li>(Historic, from the constitution’s own record) a mutation-residue
+scan flagged the anchor that DEFINES the mutation markers, because it
+quotes them.</li>
+<li>This one — a corruption detector flagging the corruption
+report.</li>
+</ol>
+<p>The pattern is not a coincidence: <strong>any detector run over the
+documentation of the defect it detects will match the
+documentation.</strong> Anyone extending the mojibake check from
+fixtures to the real corpus must subtract the source’s own occurrences
+(as done above) rather than counting PDF hits absolutely — otherwise
+every evidence document in <code>docs/qa/</code> reads as corrupt
+forever.</p>
+<p>The shipped gate is unaffected:
+<code>check_cm_export_charset_valid.sh</code> asserts the PRESENCE of a
+<code>&lt;meta charset&gt;</code> element and never counts mojibake, so
+it has no carrier surface. The mojibake count lives only in
+<code>tests/unit/test_export_pdf_charset_integrity.sh</code>, against a
+fixture whose content this file controls.</p>
+<h2
+id="review-round-2-returned-no-go-two-blocking-one-of-them-my-regression">Review
+round 2 returned NO-GO — two BLOCKING, one of them my regression</h2>
+<p><strong>R2-F1 (BLOCKING) — CLOSED.</strong> The F7 staleness fix
+healed the HTML half only. <code>generate_markdown_exports.sh</code>
+still keyed PDF staleness on <code>$md</code> alone, so on the
+real-corpus shape (fragment HTML + corrupt PDF, both mtime-fresh,
+<code>.md</code> older than both) a run produced
+<code>html charset 0 → 1</code> while <code>pdf mojibake</code> stayed
+corrupt. <strong>288 real files were in exactly that shape.</strong></p>
+<p>This was worse than inert, and the reviewer named why: invariant 50
+measures HTML only. After a bulk run the charset-less count would fall
+to ~0, the gate would report full compliance and “below baseline”, and
+<strong>288 corrupt PDFs would remain with nothing measuring
+them</strong> — a visible defect converted into an invisible one, a
+§11.4 PASS-bluff at the metric layer, on the half this item is named
+after.</p>
+<p>Fixed by adding the derivation relation the pipeline already has —
+the PDF is rendered FROM the HTML, so HTML freshness is part of PDF
+staleness:</p>
+<pre><code>if [[ ! -f &quot;$pdf&quot; || &quot;$md&quot; -nt &quot;$pdf&quot; || &quot;$html&quot; -nt &quot;$pdf&quot; ]]; then</code></pre>
+<p>Verified on the reviewer’s shape:
+<code>BEFORE html charset=0 pdf mojibake=3</code> →
+<code>AFTER html charset=1 pdf mojibake=0</code>. <strong>Sequencing,
+per the reviewer and adopted: this lands BEFORE any bulk
+regeneration.</strong> Running the sweep first would have been the exact
+conversion described above.</p>
+<p><strong>R2-F2 (BLOCKING) — CLOSED, and half of it was a regression I
+introduced.</strong></p>
+<p>My round-2 renumbering claim was false for <strong>nine</strong>
+sites, and my “fix” of line 1507 <strong>broke a line that was correct
+at HEAD</strong>.</p>
+<p>Root cause, and it is the same shape a fourth time:
+<code>run_const_gate "N/M"</code> carries <strong>no brackets</strong>
+in source — the brackets are added inside the function at :1292. My
+audit matched only the <code>[N/M]</code> bracket literal, so it never
+saw those nine sites, and it paired 1507’s section comment with the next
+<em>bracket</em> label (41) rather than with its own bracket-less call
+at 1524 (40). It then “fixed” a consistent line into an inconsistent
+one, creating both a duplicate section number (41 at 1507 and 1527) and
+a comment/label mismatch where neither existed. The file’s own line 1685
+warns:
+<code>run_const_gate "N/NN" "CM-BAR"  &lt;- easy to miss entirely</code>.</p>
+<p>My “re-audit: 0 remaining” was produced by that blind instrument —
+which is precisely why I asked the reviewer not to take my zero. It
+should not have needed asking; the instrument should have covered both
+forms in the first place.</p>
+<p>Re-audited with an instrument matching BOTH forms, after reverting
+1507 to <code>Invariant 40</code> and renumbering the nine
+<code>run_const_gate</code> labels:</p>
+<pre><code>sites=50 (bracket 41 + run_const_gate 9)   denominators=[50]
+numbers 1..50 complete: True   duplicates: []   comment-vs-label mismatches: []</code></pre>
+<p><strong>R2-F3 (IMPORTANT) — CLOSED honestly rather than by
+building.</strong> The ratchet does not ratchet: <code>BASELINE</code>
+is a constant, nothing lowers it, and after the corpus heals the gate
+would still permit regression back to 301. The header claimed “the
+ratchet tightens behind it” — automatic behaviour that does not exist
+(§11.4.6). Header corrected to state that tightening is MANUAL. The
+auto-lowering baseline is filed as <strong>BOB-182</strong> rather than
+built here, because a gate that writes its own threshold during a
+pre-build run becomes a PRODUCER as well as a GATE (§11.4.249), and that
+is a design change the operator should approve, not receive as a side
+effect of a fix.</p>
+<p>BOB-182 also records the second half of R2-F3: §11.4.224(E) requires
+the brownfield adoption answer be recorded as consumer DATA, and a
+header comment plus an env override documents a decision <em>I</em> made
+rather than an answer the <em>operator</em> gave. The reviewer judged
+the ratchet defensible and would not reverse it; the compliance gap is
+about who decided, not what was decided.</p>
+<p><strong>R2-F4 — my F3 reasoning was incomplete and the reviewer’s is
+better.</strong> I argued <code>pagetitle</code> would re-diverge my two
+scripts. It would also diverge them from <code>derived.go:139</code>
+<strong>inside the constitution submodule</strong>, which I cannot
+change unilaterally. That makes “change all three” not a deferral but
+the only correct sequencing.</p>
+<p><strong>R2-F5 (MINOR) — CLOSED.</strong> The parity comment had
+become an unreadable run-on; split into separate sentences, keeping the
+fact that the claim was false once and that this document was the
+cost.</p>
+</body>
+</html>

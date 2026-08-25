@@ -1,0 +1,118 @@
+{
+  "url": "http://127.0.0.1:49801/",
+  "axe_version": "4.13.0",
+  "themes": {
+    "darcula/dark": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "darcula/light": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "dracula/dark": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "dracula/light": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "solarized/dark": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "solarized/light": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "nord/dark": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "nord/light": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "monokai/dark": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "monokai/light": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "gruvbox/dark": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "gruvbox/light": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "one-dark/dark": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "one-dark/light": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "tokyo-night/dark": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "tokyo-night/light": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    }
+  }
+}

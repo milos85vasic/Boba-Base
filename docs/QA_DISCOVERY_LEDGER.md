@@ -1,7 +1,7 @@
 # QA Discovery-Channel Ledger
 
-**Revision:** 16
-**Last modified:** 2026-08-21T15:05:00Z
+**Revision:** 17
+**Last modified:** 2026-08-25T19:55:00Z
 **Status:** active
 **Constitution:** §11.4.238 (automated QA must be the DISCOVERER, not the confirmer — every
 defect found outside the automated HelixQA regime is itself a coverage-escape release blocker,
@@ -801,6 +801,363 @@ honest about starting now, not claiming a false complete history.
   declared ownership **route** (configuration) rather than observed **behaviour**, and says
   so in its own output rather than reporting the fallback as the real condition.
 
+### BOB-169 — three producers emitted charset-less HTML, weasyprint baked mojibake into the PDF text layer, and every export gate stayed green
+
+- **id:** BOB-169 (status `Queued` in `docs/workable_items.db` as of this audit — the fix is in the
+  working tree, the item is NOT closed)
+- **date:** 2026-08-21 (census + root cause; `docs/qa/BOB-169/root_cause_proven_20260821.md`).
+  Audit written 2026-08-25.
+- **channel:** `agent-code-reading` — an agent opened an exported PDF and read mojibake in its text
+  layer, then traced the generator in source. Invariant 50's own header records the same
+  attribution: "The defect was found by an agent reading a PDF, not by the regime."
+- **summary:** `scripts/generate_markdown_exports.sh` ran `pandoc -f markdown -t html5` with no
+  `--standalone`, so pandoc emitted a BODY FRAGMENT — no `<!DOCTYPE>`, no `<head>`, no
+  `<meta charset>`. `weasyprint` then rendered the PDF **from that fragment**, fell back to a
+  non-UTF-8 codec, and baked the mojibake into the PDF's **text layer** — corruption in the bytes,
+  not a display artifact. Two further producers shared the defect
+  (`scripts/regenerate-continuation-exports.sh`; the docs_chain engine's `derived.go:139` already
+  passed `--standalone`), and the third was found only because a corpus-wide scan was finally run.
+  `docs/CONTINUATION.pdf` — the §12.10 session-resumption document a fresh session is pointed at —
+  regenerated corrupt on every run. **Re-measured for this audit against HEAD's committed blob
+  (`git show HEAD:docs/CONTINUATION.pdf`): 334 corrupted lines; the working-tree copy: 0.** The
+  earlier evidence pack recorded 336; the two numbers come from different mojibake-signature
+  definitions and are left un-harmonised rather than silently reconciled (§11.4.6). Corpus-wide, a
+  live run of the gate on 2026-08-25 reports **301 of 334** generated exports carrying no charset
+  declaration.
+- **escape-audit:** The export regime asserted **PRESENCE and MTIME, never VALIDITY** — and this is
+  readable as two predicates, not as a judgement. `scripts/pre_build_verification.sh` invariant 16
+  (`CM-MARKDOWN-EXPORT-SYNC`, §11.4.65) evaluates exactly:
+
+  ```bash
+  if [[ ! -f "${sib}" ]]; then                      # (1) does the sibling EXIST?
+  elif export_is_stale "${md}" "${sib}" ...; then   # (2) is the SOURCE newer than it?
+  ```
+
+  **Neither predicate opens the file.** A charset-less body fragment and a well-formed standalone
+  document are indistinguishable to both: both exist, both are fresh. That is why 301 violations
+  could accumulate under a gate whose name says "export sync" — it synchronises *existence and
+  ordering*, and was never a content oracle. Verified by reading the produced bytes rather than
+  trusting the count: the charset-less files begin `<h1 id="agents.md">` (`AGENTS.html`),
+  `<h1 id="changelog">` (`CHANGELOG.html`), `<h1 id="claude.md">` (`CLAUDE.html`); the compliant
+  ones begin `<!DOCTYPE html>` … `<meta charset="utf-8" />`.
+
+  A content-aware oracle **did** exist and **did** run — invariant 24 `CM-DOCS-CHAIN-ENGINE-VERIFY`,
+  which hashes content rather than comparing mtimes. It was simply almost empty: measured for this
+  audit, `.docs_chain/contexts/` holds **2 contexts covering 4 authored `.md` sources**
+  (`docs/codegraph/Status.md`, `docs/codegraph/Status_Summary.md`, `docs/features/Status.md`,
+  `docs/features/Status_Summary.md`; an earlier ledger entry measured 3 — the corpus grew).
+  Coverage and correctness coincide **exactly**: all four of those `.html` files carry
+  `<meta charset="utf-8" />`, and the one producer that always passed `--standalone`
+  (`derived.go:139`) is precisely the producer those four run through. Everything outside that
+  4-document island was governed only by existence-and-mtime.
+
+  Two compounding mechanisms explain the age and the silence, both measured rather than inferred.
+  (a) **The generator is mtime-gated**: it rewrites an export only when the source is newer, so a
+  fragment minted once persists indefinitely — the corpus accumulated its violations one document
+  at a time, and no point exists at which anyone could say the corpus was done. (b) **The fallback
+  path was the correct one**: the `else` branch (python-markdown, used only when pandoc is ABSENT)
+  writes `<meta charset="utf-8">`. So a host *without* pandoc produced correct exports and a
+  properly-provisioned host produced broken ones — the defect is invisible on exactly the machines
+  least likely to be treated as degraded.
+
+  Recorded because it is the same shape one level up: **this ledger's own `.html` is one of the 301
+  charset-less fragments, and `docs/QA_DISCOVERY_LEDGER.pdf` carries 494 mojibake lines** measured
+  during this audit. The document that tracks coverage escapes is itself downstream of the escape
+  it records.
+- **new-check:** **PRESENT AND EXECUTED, BUT NOT YET COMMITTED — read the residual before treating
+  this as closed.** Four artifacts, all live in the working tree, all run on 2026-08-25 for this
+  audit with the output pasted below:
+  1. `scripts/pre_build/check_cm_export_charset_valid.sh`, wired as **invariant 50
+     (`CM-EXPORT-CHARSET-VALID`)**. It matches a `<meta ... charset ...>` **ELEMENT**, never the bare
+     substring — the naive `grep -qi charset` PASSED against the broken generator by matching a
+     heading slug (§11.4.201(7)(a)). It carries its own control needle: `TOTAL == 0` or
+     `COMPLIANT == 0` is a REFUSAL, so a blind enumeration can never report a clean zero.
+     Brownfield adoption is a §11.4.135 monotone-decrease ratchet pinned at 301, so it fires on
+     regression only. Live run:
+
+     ```
+     generated exports scanned ......... 334
+     declaring a charset ............... 33
+     MISSING a charset ................. 301   (ratchet baseline 301)
+     PASS: CM-EXPORT-CHARSET-VALID — 301 charset-less exports, at baseline (no regression)
+     ```
+  2. `tests/pre_build/test_cm_export_charset_valid.sh` — the §1.1 paired mutations. Live run:
+     `RESULT: 6 passed, 0 failed`, including both BLIND corpora (a naive gate reports zero and
+     passes) and the §11.4.201(1) negative control (at baseline → PASS, no false refusal).
+  3. `tests/unit/test_export_pdf_charset_integrity.sh` — drives a COPY of the real generator against
+     a temp tree and asserts the PDF **text layer** preserves the source's non-ASCII. Live run:
+     `RESULT: 2 passed, 0 failed` — "PDF text layer preserves the source's non-ASCII (needle: 1
+     line(s) intact, 0 mojibake)".
+  4. The three producers are now in lockstep on `--standalone`, and PDF staleness is keyed on the
+     HTML (`|| "$html" -nt "$pdf"`) so a repaired HTML actually re-renders its PDF instead of
+     leaving the old mojibake baked in.
+- **Honest boundary (§11.4.6) — three residuals, none of them cosmetic:**
+  1. **The gate is not in the repository.** Measured with a needled instrument (the same grep finds
+     `CM-OWNERSHIP-INVARIANTS` 5× at HEAD, so it can see): `git show HEAD:scripts/pre_build_verification.sh`
+     contains **zero** occurrences of `CM-EXPORT-CHARSET-VALID` and its last invariant marker reads
+     `[49/49]`; the working tree reads `[50/50]`. `scripts/pre_build/check_cm_export_charset_valid.sh`,
+     `tests/pre_build/test_cm_export_charset_valid.sh` and `tests/unit/test_export_pdf_charset_integrity.sh`
+     are all **UNTRACKED**. A fresh clone at `dd9fcb5` therefore has 49 invariants and no charset
+     gate at all. Per §11.4.215 an untracked artifact does not bind, and per §11.4.226 a check that
+     exists only in one working copy is the install-gap class this ledger already recorded once
+     (FORCED-LOGOUT-2026-08-19-5TH: "4 authored preventive gates, 0 installed"). **Committing these
+     four artifacts is the outstanding action; this audit does not perform it** (the tree is not
+     quiescent and three sibling agents hold the surrounding files).
+  2. **Acceptance (c) — the bulk regeneration of the 301 charset-less exports — has NOT been run.**
+     The mechanism exists and is correctly sequenced (HTML before PDF, or weasyprint re-bakes the
+     same mojibake), but the corpus is still 301 violations deep and heals only as documents are
+     touched.
+  3. **BOB-182 is open**: the §11.4.224(E) ratchet-adoption decision is owed to the operator, and
+     invariant 50 is already enforcing. Filing the item satisfies the tracking obligation, not the
+     decision obligation.
+
+### BOB-168 — four destructive commands consuming a possibly-empty root, under a suite that passed 10/10 either way
+
+- **id:** BOB-168 (status `Queued` in `docs/workable_items.db`)
+- **date:** 2026-08-23 (`docs/qa/BOB-168/round3_guard_residue_fix.md`)
+- **channel:** `agent-code-reading` — surfaced by the independent §11.4.209 code-review agent in
+  round 2 (NO-GO), reading the test source; no test run, and no gate, reported it.
+- **summary:** Four pre-run mutation lines in `tests/unit/test_run_all_challenges_missing_entry.sh`
+  consumed a possibly-empty `$R` **before** `run_runner`'s own guard could refuse — `chmod`,
+  `printf >` (twice) and `rm -f`. On a failed fixture they operate on `/submodules/…`-rooted paths:
+  the canonical §11.4.252 shape, an unguarded expansion inside a destructive command. Measured
+  pre-guard residue, verbatim: `chmod: cannot access '/submodules/challenges/…'` plus two
+  `No such file or directory` writes, and — proven later at the syscall layer with
+  `strace -e trace=unlink,unlinkat` — one `unlinkat("/submodules/…") = -1 ENOENT` from the `rm -f`,
+  the one line that leaves no shell-level trace at all. Post-guard: 3 → 0 write attempts, 1 → 0
+  unlinkat, with 16 unlink-class syscalls captured in the same trace proving the instrument was
+  watching (a *seen* zero, not a blind one).
+- **escape-audit:** Four independent reasons the standing regime could not have raised this, each
+  read from source or measured, none of them "we didn't think of it":
+  1. **Scope.** The §11.4.252 gate is wired as invariant 39 `CM-DANGEROUS-COMBINATION-FAIL-CLOSED`,
+     and its inclusion list is `DANGER_ROOTS=(download-proxy/src plugins scripts qBitTorrent-go
+     frontend/src)`. **`tests/` is not in it.** In production the gate never looks at the directory
+     where this defect lived.
+  2. **Pattern set.** Even pointed at `tests/unit` by hand for this audit it cannot see this shape.
+     The gate implements exactly two detectors — an empty/comment-only `catch`/`except` body, and a
+     credential defaulting to a literal. It has **no rule for a destructive command consuming a
+     possibly-empty expansion**. Run against `tests/unit` it reports **17 hits, all `.py`, all of the
+     `except: pass` shape, and zero naming `test_run_all_challenges_missing_entry.sh`** — a seen
+     zero, needled by 50 finding lines from the same gate against `plugins/`.
+  3. **Severity.** Invariant 39 is **ADVISORY**: it emits `WARN`, never `fail`. Even a hit would not
+     have blocked anything.
+  4. **The covering suite is blind by construction — this is the sharpest of the four.** The file IS
+     executed by a standing gate (invariant 30 `CM-BASH-UNIT-TESTS-EXECUTED` runs `tests/unit/*.sh`),
+     so this is not a registration gap. But every assertion in that suite is about the runner's exit
+     code and MISSING count — verbatim: "all entries absent -> expected exit 2", "one entry not
+     executable -> expected exit 2", "a real challenge failure -> expected exit 1". **Nothing asserts
+     that no write escaped the fixture root.** The only occurrence of the word "residue" in the file
+     is a comment on line 95 — a carrier, not an assertion (§11.4.201(7)(a)); verified by reading
+     the line, not by trusting the count of 1. The consequence is recorded in the item's own
+     evidence: the suite scored **"GREEN — 10/10, unchanged"** both with the residue and without it.
+     A guard never observed to FAIL on the genuinely-broken artifact is unvalidated instrumentation
+     (§11.4.115(F)), and here the standing gate ran it, went green, and carried no information about
+     the defect in either direction. Re-run for this audit: `RESULT: 10 passed, 0 failed`, with
+     `/submodules` confirmed absent.
+- **new-check:** **STILL OWED — no new automated check exists for this class.** What landed is a
+  *source-level* fix, not a check: one shared predicate
+  `usable_root() { [[ -n "${1:-}" && -f "${1}/scripts/run_all_challenges.sh" ]]; }`, consumed by
+  `run_runner` and by all four mutation lines (now at 157 / 175 / 190 / 191). That is the right rung
+  — §11.4.241 prefers an API-shape guard over four copies of an inline lint-level test, and
+  §11.4.251 names the second, weaker inline notion of "valid root" as the mechanism that produced
+  the residue — and a fifth mutation line added tomorrow inherits it. But **nothing would refuse a
+  fifth line that does not**. The concrete owed work, in the order it should be done:
+  (1) extend the §11.4.252 gate's pattern set with the unguarded-expansion-in-a-destructive-command
+  shape (`rm`/`chmod`/`mv`/`>` with a `${var}`-rooted path and no preceding non-empty test), shipping
+  golden-TRUE and golden-FALSE-with-carrier fixtures per §11.4.201; (2) add `tests` to
+  `DANGER_ROOTS`; (3) promote that specific shape from ADVISORY to blocking, leaving the untriaged
+  `except: pass` backlog advisory so the promotion is not a §11.4.201(1) false-positive refusal.
+  This audit **does not** make those edits — `scripts/pre_build_verification.sh` is held by a live
+  sibling agent — so this is written as a finding, per the standing instruction.
+- **Honest boundary (§11.4.6):** the pre-guard/post-guard comparison quoted above is the item's own
+  captured evidence, re-read for this audit but not re-executed by it (re-running it requires
+  reverting the guard in a tracked file, which would leave residue). What this audit executed
+  directly is the current suite (10/10), the §11.4.252 gate against `tests/unit` (17 hits, none this
+  file) and against `plugins/` (50 hits, the needle).
+
+### BOB-164a — 21 WCAG AA contrast violations on the live dashboard, found by the axe suite on its first run
+
+- **id:** BOB-164 (status `Queued` in `docs/workable_items.db`) — recorded as **164a**, the
+  originally-filed defect, to keep it distinct from the round-1 regression at 164b below, which has a
+  different discovery channel and a different audit.
+- **date:** 2026-08-21T19:56:53Z (filing timestamp recorded in the item's own `Reported-Via` field)
+- **channel:** `automated-helixqa` — **the first entry in this ledger that is not out-of-band.** The
+  item's own filing records it verbatim: "**Reported-By:** BOB-110 UX-class coverage, discovered by
+  the new axe-core suite on its first live run", and "it was found by the automated regime rather
+  than by a human squinting at the page — which is exactly the 11.4.238 posture the project is
+  aiming for." The failing test was deliberately **left failing** rather than silenced or `xfail`-ed,
+  so a red UX suite reads as this item.
+- **summary:** axe-core 4.13.0 against the shipped bundle in a real headless Chromium reported
+  **21 colour-contrast violation nodes** on `darcula/dark` (plus 1 on the light theme, which the
+  filing had not scanned). Root causes: `--color-accent` used as *text* (5 nodes, 1.24:1 declared),
+  `--color-text-secondary` (11 nodes), `--color-text-primary` on `--color-bg-tertiary` (3 nodes), and
+  two `opacity: 0.65` multipliers dragging compliant tokens below the floor. No failing node used
+  inline hex — every one resolved through a `var(--color-*)` token, so the fix belonged at the token
+  layer: accent/danger/warning were **split into disjoint text roles** (§11.4.217) rather than
+  repainting a brand-locked colour. The all-palette scan — the first ever run — exposed a second,
+  pre-existing class: `color: #fff` hardcoded against `background: var(--color-accent)`, which passes
+  on Darcula's dark red and fails on seven lighter accents (worst 2.00:1 on Nord). Whole catalogue:
+  171 violation nodes across 16 themes pre-fix, 0 post-fix, 0 newly introduced.
+- **Why this is recorded as automated rather than out-of-band (§11.4.6):** the briefing for this
+  audit stated all four defects were out-of-band. For BOB-164's *original* discovery the repository's
+  own filing record contradicts that, and recording an automated discovery as out-of-band would
+  falsify the §11.4.238(E) split in the pessimistic direction — as forbidden as flattering it. The
+  genuinely out-of-band escape inside this item is real and is audited separately as **164b**.
+- **Standing-coverage note (§11.4.226), not an escape audit:** the suite that made this discovery,
+  `tests/ux/` (`test_live_dashboard_accessibility.py`, `test_accessibility_axe.py`,
+  `test_keyboard_navigation.py`, with golden-good/golden-bad fixtures), **is tracked in git** — but a
+  needled search (`tests/unit` found in `ci.sh` 1×, `scripts/pre_build_verification.sh` 10×,
+  `run-all-tests.sh` 1×; `tests/ux` found **0×** in all three, and 0 files repo-wide reference it)
+  shows **no runner script executes it**. Its next run depends on someone choosing to invoke it. That
+  is the freshness half of §11.4.226 — registration is not coverage — and wiring `tests/ux/` into a
+  standing runner is owed follow-up work, filed here rather than performed (`ci.sh` and the pre-build
+  script are held by live sibling agents).
+
+### BOB-164b — the round-1 contrast fix drove a background-role token from 2.46:1 to 1.09:1, and both oracles were blind to it
+
+- **id:** BOB-164 (round 2) — the regression introduced by the round-1 fix to 164a
+- **date:** 2026-08-23 (`frontend/src/app/models/style-contrast.spec.ts` header;
+  `docs/qa/BOB-164/README.md`)
+- **channel:** `agent-code-reading` — found by an agent reasoning over the stylesheets while
+  authoring round 2, after both existing oracles had reported clean.
+- **summary:** `--color-text-secondary` is used as a **foreground** in eleven places and as a
+  **background** in at least one: `.status.unknown { background: var(--color-text-secondary);
+  color: #ccc }`. Round 1 lightened the token to clear the 4.5:1 floor in its foreground role, and
+  in doing so drove its background role **from 2.46:1 to 1.09:1** — a disabled hook's "No" rendering
+  at barely above the 1:1 floor. A safe change to one role is a regression in the other, and nothing
+  in the regime connected the two.
+- **escape-audit:** **Three oracles covered this surface and all three were blind at once**, each for
+  a different, structural reason:
+  1. **The new arithmetic oracle was blind by construction.**
+     `frontend/src/app/models/palette.contrast.spec.ts` — authored in round 1, the check that was
+     supposed to close 164a — asserts TEXT tokens against `SURFACES = [bgPrimary, bgSecondary,
+     bgTertiary]`. A token used as a **background** is outside its pair set **by construction**, so
+     the very fix it was written to validate moved a pair it could not name. This is the §11.4.245
+     oracle-scope failure: the pair set was drawn from the token's *intended* role, not from the
+     pairs the stylesheets actually declare.
+  2. **The rendered-DOM oracle never saw the node.** axe only reports what renders, and the results
+     table and the hooks list **render EMPTY against a static `dist` with no backend** — so the
+     `.status.unknown` node was not in the DOM axe scanned. Two oracles, two different blindnesses,
+     one uncovered pair.
+  3. **The long-standing catalogue test asserts identity, not contrast — and contains the word
+     anyway.** `tests/unit/test_palette_catalog.py` asserts token *presence* (a `REQUIRED_TOKENS`
+     tuple), hex *shape* (`^#[0-9a-fA-F]{6}$`), and one exact value:
+     `assert darcula["dark"]["accent"].lower() == "#9d001e"`. That is a brand **lock** — it pins the
+     precise hex that measured 1.24:1 as text, and is green whether the palette is readable or not.
+     Its single occurrence of the string `contrast` is the token **name** `"contrast"` at line 41
+     inside `REQUIRED_TOKENS` — a carrier, verified by reading the line rather than trusting the
+     count of 1. The word was present in the covering test for the entire life of the defect and no
+     ratio was ever computed.
+  4. **The one UI-design gate computes no ratio and does not block.** Invariant 41
+     `CM-OPENDESIGN-UI-SYSTEM` is **ADVISORY**, and its sub-checks are hardcoded-hex-in-theme-sources,
+     design-token-artifact presence, and visual-regression-suite presence. None of them is a contrast
+     assertion.
+- **new-check:** `frontend/src/app/models/style-contrast.spec.ts` — and the important property is
+  that it removes the **class**, not the instance. Rather than patching four ratios, it **reads the
+  real stylesheets, extracts every `(foreground, background)` pair they declare**, and asserts each
+  across all sixteen palette × mode combinations. A token used as a fill is inside the pair set by
+  construction, and any NEW fill anyone adds is picked up without editing the spec. Oracle
+  independence is explicit and satisfies §11.4.245: the oracle is `contrastRatio` recomputed from the
+  published WCAG 2.x formula against the constant 4.5, neither derived from the palette nor from the
+  stylesheets under test — strategy SPECIFIED. The round-1 spec is retained for the token-role layer,
+  and paired §1.1 mutations were run against it, including the one that matters: **M2, replacing an
+  accent with a grey that CLEARS the ratio, is caught by a hue guard** — without it a ratio-only
+  checker accepts turning every brand and error colour grey.
+- **Honest boundary (§11.4.6) — this check is authored, not yet enforced, and NOT executed by this
+  audit:**
+  1. **Both spec files are UNTRACKED** (`palette.contrast.spec.ts`, `style-contrast.spec.ts`). Per
+     §11.4.215 an untracked artifact does not bind.
+  2. **No standing gate runs them.** A needled search for `ng test` / `vitest` / `npm test` across
+     `ci.sh`, `scripts/pre_build_verification.sh` and `run-all-tests.sh` returns zero (the same grep
+     finds `pytest` 10× in `ci.sh`, so it can see). The only vitest reference in the pre-build script
+     is a comment about bounding a wedged invocation.
+  3. **This audit did not execute them.** `frontend/**` is held by a live sibling agent, so the tree
+     is not quiescent; a verdict measured on a racing tree is void (§11.4.84) and would be worse than
+     no verdict. The GREEN figures quoted in `docs/qa/BOB-164/README.md` (652 passed; 0 violation
+     nodes across 16 themes) are the item's captured evidence, read for this audit and attributed,
+     **not** re-measured by it.
+  4. The item's own evidence records three further gaps that remain open regardless: `onAccent` falls
+     short against **`accentHover`** in four combinations (3.74–3.97); roughly twelve
+     `color: #fff`-on-semantic-fill sites were exercised by no scan and are neither proven broken nor
+     proven safe; and the compiled bundle in `download-proxy/src/ui/dist/` was deliberately not
+     rebuilt, so §11.4.108 layer 2 is not closed and the served bundle still carries the defect.
+  5. Contrast is not legibility. No human has looked at these colours; §11.4.185 manual QA is
+     unaffected and still owed.
+
+### BOB-174 — a corrupt hooks file read as zero hooks, and the covering test asserted exactly that
+
+- **id:** BOB-174 (status `Queued` in `docs/workable_items.db`)
+- **date:** 2026-08-23 (`docs/qa/BOB-174/EVIDENCE.md`)
+- **channel:** `agent-code-reading` — found by an agent tracing the corrupt-load path in
+  `download-proxy/src/api/hooks.py` while following on from BOB-173, and confirmed by writing the
+  guard first and running it against the unmodified tree.
+- **summary:** `_load_hooks()` swallowed a parse error and returned `[]`, so a truncated or malformed
+  `hooks.json` presented to the API as **"no hooks"**. The next `create` then wrote a fresh
+  single-element store over it — turning a hand-repairable truncated file into an unrecoverable one.
+  Reproduced verbatim against the unmodified tree: *"'prod-hook-0' is no longer in the hook store. A
+  truncated file is hand-repairable; an overwritten one is not."* Three operator hooks in, one
+  unrelated hook out. The chain closes on itself: a write that failed part-way left
+  `[{"hook_id": "half-writ` on disk — which is precisely the corrupt input the load path then reads
+  as zero and overwrites. `delete` reported `404 not found` for a store it simply could not read.
+  Guard-first RED against the unmodified tree: **15 failed, 13 passed**.
+- **escape-audit:** **The covering test asserted the defect.** This is not a scope gap or a blind
+  instrument — the regime was green *on* the defect and would have gone red on the fix. Verified for
+  this audit against HEAD's committed blob, not from the evidence pack:
+  `git show HEAD:tests/unit/api_layer/test_hooks_coverage.py`, `test_load_hooks_invalid_json`,
+  lines 54–61:
+
+  ```python
+  fake_path.write_text("not json")
+  hooks = api.hooks._load_hooks()
+  assert hooks == []          # the defect, codified as the expectation
+  ```
+
+  That is the §11.4.245 oracle failure in its purest form: the expected value was derived from what
+  the implementation *did*, never from a specification of what a corrupt store *should* cause. Any
+  future correct fix was pre-committed to breaking this test, which is exactly why the swallow
+  "looked deliberate" and survived. The negative control that makes the distinction meaningful was
+  there all along and is correctly untouched: `test_load_hooks_no_file` still asserts `== []` for a
+  **missing** file (HEAD lines 25–31; still present in the working tree at line 31) — MISSING and
+  CORRUPT are different states, and only one of them is legitimately empty.
+
+  A second, independent mechanism kept the write half quiet: **BOB-173's guard was aimed at an
+  operation the code no longer performs.** `seal_for_rewrite` chmod'ed the hooks **file** to 0400 and
+  probed with `open(target, "a")` — the correct needle while `_save_hooks` rewrote in place. Measured
+  rather than assumed: append to a 0400 file is **REFUSED**; `os.replace` over a 0400 file
+  **SUCCEEDS**; `mkstemp` in a 0500 directory is **REFUSED**. So a guard written against in-place
+  rewriting silently stops biting the moment the write becomes atomic — the §11.4.199 shape, a
+  reproduction that no longer reaches its own precondition.
+- **new-check:** `tests/unit/api_layer/test_bob174_corrupt_hook_store.py`. Executed for this audit
+  (collection only — see the boundary below): **35 tests collected**, cleanly, which also proves the
+  current `hooks.py` imports. The item's evidence pack header says 28; the suite grew afterwards and
+  the two figures are left un-harmonised (§11.4.6). Its shape is what makes it a class-closing check
+  rather than an instance patch: corrupt-store behaviour is asserted for **three distinct corruption
+  seeds** (`truncated`, `wrong_shape`, `list_of_non_dicts`) across GET, CREATE, DELETE and dispatch;
+  atomicity is proven by a crash mid-write leaving the previous store intact **and still parseable**;
+  and a non-`OSError` serialisation failure is pinned separately. The two gates the fix legitimately
+  broke were **reconciled, not fake-passed** (§11.4.120) — `test_hooks_coverage.py` now expects
+  `pytest.raises(HookStoreCorruptError)`, and the three BOB-173 DELETE tests were re-aimed at the
+  **directory** seal, which is a closer match to the operation the code now performs than the
+  original was. Both reconciliations were then re-verified to still bite: restoring BOB-173's
+  `_save_hooks` swallow → 5 failed; restoring the A1 `_load_hooks` swallow → 2 failed. A reconciled
+  gate that stopped catching its own defect would be §11.4.120's fake-pass in slow motion, and that
+  was checked rather than assumed.
+- **Honest boundary (§11.4.6):**
+  1. **The guard is UNTRACKED** and the `hooks.py` change is uncommitted; the item remains `Queued`.
+     As with BOB-169, the check exists in one working copy and binds nothing on a fresh clone
+     (§11.4.215).
+  2. **This audit ran collection, not the suite.** `download-proxy/**` is held by a live sibling
+     agent, so the tree is not quiescent and a pass/fail verdict measured against it would be void
+     (§11.4.84). The RED (15 failed / 13 passed), the GREEN, and the mutation results quoted above
+     are the item's captured evidence, attributed and not re-measured here.
+  3. The evidence pack states plainly that three RED members passed pre-fix and do **not** capture
+     the escape by themselves — they pin properties of the new mechanism. That honesty is carried
+     forward rather than smoothed over: the members that captured the defect are named there
+     individually.
+  4. A deliberate behaviour change ships with the fix: a `hooks.json` chmod'ed 0400 no longer refuses
+     a write, because `os.replace` relinks a directory entry and never consults the target's mode. It
+     is accepted, argued, and pinned by its own test rather than left as a docstring claim.
+
 ## Discovery-channel split (tracked, per §11.4.238(E))
 
 | Period | automated-helixqa | out-of-band (all channels) | out-of-band % |
@@ -817,7 +1174,8 @@ honest about starting now, not claiming a false complete history.
 | 2026-08-20 (incremental, systematic-debugging of the 3 quarantined bash suites — 1 new `### ` entry: the non-hermetic dead-scratchpad-path + plain-`cp` mtime-bump root cause behind all three) | 0 | 1 (`agent-code-reading` x1: NON-HERMETIC-TESTS-MUTATE-REAL-TREE) | 100% |
 | 2026-08-20 (incremental, subagent fan-out — 1 new `### ` entry: invariant 16 mtime staleness is non-reproducible across fresh clones, found while investigating the content-hash migration) | 0 | 1 (`agent-code-reading` x1: EXPORT-SYNC-MTIME-NOT-REPRODUCIBLE-ON-FRESH-CLONE) | 100% |
 | 2026-08-21 (incremental, feature 002-user-owned-downloads — 1 new `### ` entry: every container-produced file owned by uid 100999, reported by the operator while using the product; no automated check had ever asserted a produced file's owner) | 0 | 1 (`operator-report` x1: BOB-CONTAINER-WRITES-NOT-OPERATOR-OWNED) | 100% |
-| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **0** | **23** | **100%** |
+| 2026-08-25 (incremental, coverage-escape audit of four defects found during the 002-user-owned-downloads session — 5 new `### ` entries: BOB-169 export charset corruption, BOB-168 guard residue, BOB-164a/BOB-164b split, BOB-174 corrupt hooks store) | 1 (`automated-helixqa` x1: BOB-164a, discovered by the `tests/ux/` axe suite on its first live run) | 4 (`agent-code-reading` x4: BOB-169, BOB-168, BOB-164b, BOB-174) | 80% |
+| **Cumulative total (all `### ` entries to date, this row is what `CM-QA-DISCOVERY-LEDGER-FRESH` checks)** | **1** | **27** | **96%** |
 
 **Pre-existing check-vs-table mismatch, found and fixed during this backfill (§11.4.6, not
 silently patched around):** `scripts/pre_build_verification.sh` invariant 19
@@ -834,13 +1192,32 @@ itself a coverage escape of the same shape this ledger tracks (an `existed-but-m
 own arithmetic silently drifted from the document it gates) but is fixed in the same edit that
 found it since the fix is a one-line table-convention correction, not a new automated check.
 
-**Honest note:** 100% out-of-band is the true, unflattering starting number — every entry above
-was found by an agent reading code, running commands by hand, or hitting a real failure while
-doing unrelated live-verification work; none by a standing HelixQA run. This is exactly the state
-§11.4.238 exists to change; the target is this percentage trending toward zero as the `new-check`
-column above closes each specific gap (RD2-42/RD2-43 are still open — no automated check authored
-yet, tracked honestly as such) and as future work is driven through the HelixQA banks
-(`challenges/helixqa-banks/`) rather than ad-hoc investigation.
+**Honest note (updated 2026-08-25):** the cumulative figure is now **96% out-of-band — 27 of 28
+entries** — down from 100%, and the single point of movement is worth stating precisely rather than
+celebrated. It is **one** entry: BOB-164a, where the `tests/ux/` axe suite found a real user-visible
+defect on its first live run and the failing test was deliberately left failing rather than silenced.
+That is the §11.4.238 posture working exactly once. Every other entry in this ledger, including the
+four audited on 2026-08-25, was still found by an agent reading code, running a command by hand, or
+hitting a real failure during unrelated work.
+
+Direction of travel, stated without editorialising: 100% → 96% over the ledger's life is **one
+automated discovery in 28**, and the two arithmetic caveats both cut against reading it as a trend.
+The denominator grew by 5 in this round, so the percentage would have fallen slightly even if the
+automated column had stayed at 0; and BOB-164a's own follow-on regression (BOB-164b) was itself an
+out-of-band escape, so the one automated discovery did **not** carry its own item to closure without
+the regime being escaped again. §11.4.238(E)'s target is this percentage trending toward zero, and
+on the evidence of this round it has barely begun to.
+
+A structural obstacle is now visible across the round and is recorded here rather than in any single
+entry, because it is the same finding four times: **every new or strengthened check produced by these
+four audits is UNTRACKED in git**, and invariant 50's own gate is present only in an uncommitted
+working tree (`HEAD`'s `scripts/pre_build_verification.sh` reads `[49/49]` and contains zero
+occurrences of `CM-EXPORT-CHARSET-VALID`). Per §11.4.215 an untracked artifact does not bind, and per
+§11.4.226 a check that exists in one working copy is not coverage. Until these are committed, the
+`new-check` column for this round describes work done, not a regime strengthened — the same
+install-gap class this ledger already recorded at FORCED-LOGOUT-2026-08-19-5TH ("4 authored
+preventive gates, 0 installed"). The earlier open items are unchanged: RD2-42/RD2-43 still have no
+automated check authored, and BOB-168's is owed rather than written.
 
 **2026-08-18 backfill note (BOB-069):** this round added four entries discovered during the SAME
 session that produced them (the constitution-curriculum amendment stream + the BOB-072/073/075
@@ -867,3 +1244,15 @@ Between 2026-08-18 20:50 and 2026-08-19 16:43, **SEVEN** forced-logout incidents
 - **BOB-125** (6th): status=Fixed via BOB-126. Doc filed 16:11, Rev 4 correction 16:15.
 - **BOB-126** (7th): status=Fixed. Doc filed + closed same day.
 - Prior 4 (BOB-116, BOB-120, BOB-123 + the base BOB-116's "first" instance): retrospective correction pending — their attribution to PAM/Linger was wrong per BOB-126's captured evidence.
+**2026-08-25 export-staleness note (§11.4.65 / §11.4.12, owed not performed):** this revision edits
+`docs/QA_DISCOVERY_LEDGER.md` only. Its `.html`, `.pdf` and `.docx` siblings are therefore **STALE**
+— measured, not assumed, with the project's own oracle (`scripts/lib/export_staleness.sh`
+`export_is_stale`), which reports STALE for both `.html` and `.pdf`. They were deliberately **not**
+regenerated: the working tree is not quiescent (three sibling agents hold `scripts/`,
+`download-proxy/**` and `frontend/**` during this audit), and running the corpus generator against a
+racing tree is how a half-written export gets committed (§11.4.84, §11.4.121). Consequence stated
+plainly so it is not a surprise: **invariant 16 `CM-MARKDOWN-EXPORT-SYNC` will FAIL on these two
+siblings until they are regenerated**, and the regeneration must run HTML-before-PDF or weasyprint
+re-bakes the mojibake from the stale fragment (BOB-169). Related and recorded in the BOB-169 entry
+above: this ledger's own `.html` is currently one of the 301 charset-less fragments and its `.pdf`
+carries 494 corrupted lines, so the regeneration is also the repair.

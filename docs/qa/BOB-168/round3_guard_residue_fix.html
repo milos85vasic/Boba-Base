@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>round3_guard_residue_fix</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">round3_guard_residue_fix</h1>
+</header>
+<h1
+id="bob-168-round-3-the-reviewers-minor-closed-with-its-paired-mutation">BOB-168
+round 3 — the reviewer’s MINOR closed, with its paired mutation</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-23T11:45:00Z</p>
+<h2 id="the-finding-reviewer-round-2-no-go">The finding (reviewer, round
+2, NO-GO)</h2>
+<p>Four pre-run mutation lines in
+<code>tests/unit/test_run_all_challenges_missing_entry.sh</code>
+consumed a possibly-empty <code>$R</code> <strong>before</strong>
+<code>run_runner</code>’s guard could refuse: <code>chmod</code> (case
+3), <code>printf &gt;</code> (cases 4 and 4b), <code>rm -f</code> (case
+4b). On a failed fixture they operate on
+<code>/submodules/...</code>-rooted paths.</p>
+<p>The reviewer’s prose named four lines; its fix summary said
+“three-line change”. I trusted the lines, not the count (§11.4.201 — a
+count is a lead, the lines are the finding) and measured:
+<strong>four</strong> dereferences, at 149, 167, 182, 183.</p>
+<h2 id="the-fix-one-predicate-not-four-inline-copies">The fix — one
+predicate, not four inline copies</h2>
+<p>Rather than prefixing each line with a raw
+<code>[[ -n "$R" ]]</code>, the “is this root usable” test is extracted
+into ONE definition consumed by <code>run_runner</code> AND by every
+pre-run mutation line:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">usable_root()</span> <span class="kw">{</span> <span class="kw">[[</span> <span class="ot">-n</span> <span class="st">&quot;</span><span class="va">${1</span><span class="op">:-</span><span class="va">}</span><span class="st">&quot;</span> <span class="kw">&amp;&amp;</span> <span class="ot">-f</span> <span class="st">&quot;</span><span class="va">${1}</span><span class="st">/scripts/run_all_challenges.sh&quot;</span> <span class="kw">]];</span> <span class="kw">}</span></span></code></pre></div>
+<p><code>run_runner</code> now calls it instead of restating it. A
+second, weaker inline notion of “valid root” is exactly how this residue
+arose (§11.4.251), and a future case that adds a fifth mutation line
+inherits the same predicate rather than inventing one. That is the
+API-shape rung rather than four copies of a lint-level guard
+(§11.4.241).</p>
+<h2 id="evidence">Evidence</h2>
+<h3 id="green-1010-unchanged">GREEN — 10/10, unchanged</h3>
+<pre><code>RESULT: 10 passed, 0 failed          exit=0</code></pre>
+<h3 id="the-fail-closed-path-with-the-precondition-actually-reached">The
+fail-closed path, with the precondition actually reached</h3>
+<p><strong>First attempt was INVALID and is recorded as such
+(§11.4.199).</strong> I ran the drift probe from the scratchpad; the
+test derives <code>PROJECT_ROOT</code> from <code>BASH_SOURCE</code>
+(<code>:36-38</code>), so it resolved to the scratchpad,
+<code>RUNNER</code> did not exist, and the run bailed at preflight —
+<code>FAIL: runner missing</code>, <code>0 passed, 1 failed</code>. Zero
+anti-replica trips: <strong>the mutation lines were never reached, so
+that run proved nothing about the guard.</strong> Caught by reading the
+tail rather than the counters.</p>
+<p>Redone with the probe inside <code>tests/unit/</code> so
+<code>PROJECT_ROOT</code> resolves correctly:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>pre-guard (my fix reverted)</th>
+<th>post-guard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>anti-replica trips — <strong>precondition reached</strong></td>
+<td>5</td>
+<td>5</td>
+</tr>
+<tr>
+<td>root-path write/rm attempts</td>
+<td><strong>3</strong></td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td><code>RUN:</code> lines (real bank executed)</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>exit</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>Pre-guard residue, verbatim:</p>
+<pre><code>chmod: cannot access &#39;/submodules/challenges/challenges/scripts/scaling_horizontal_challenge.sh&#39;
+line 167: /submodules/challenges/challenges/scripts/bluff_scanner_challenge.sh: No such file or directory
+line 182: /submodules/challenges/challenges/scripts/bluff_scanner_challenge.sh: No such file or directory</code></pre>
+<p>Same precondition on both sides, three attempts before and zero
+after: the guard is load-bearing, not decoration.</p>
+<p><strong>Honest asymmetry worth stating:</strong> only
+<strong>three</strong> of the four lines leave a trace.
+<code>rm -f</code> on a nonexistent path succeeds silently, so line 183
+— the <code>rm -f</code> at a <code>/</code>-rooted path derived from an
+empty variable, the canonical §11.4.252 shape and the most dangerous of
+the four — produces <em>no</em> evidence either way. Its guard is
+verified by construction (same predicate, same call site pattern) and by
+the absence of the two <code>printf</code> attempts from the same case
+body, not by its own observable. A reader should not mistake “3 of 4”
+for “one line unfixed”.</p>
+<h3 id="safety-of-the-demonstration">Safety of the demonstration</h3>
+<p>Run as uid 1000 (non-root, so root-path writes are refused by the OS
+regardless), <code>/submodules</code> verified absent before and after
+both runs, and each probe file was created, run, and deleted inside a
+single command window with a <code>trap ... EXIT</code> — the
+<code>ab41bab</code> auto-commit hazard (BOB-068) was live during this
+work.</p>
+<h2 id="owed-to-round-3">Owed to round 3</h2>
+<p>The reviewer’s other four axes were already GREEN in round 2 (B-1
+closed, M5 dead at case 4b, its seventh reviewer-authored mutation set
+all caught, export twins fresh and correctly scoped, staging empty).
+This closes the one remaining MINOR.</p>
+<h2
+id="the-declared-weak-spot-is-closed-reviewer-round-3-syscall-level-observable">The
+declared weak spot is CLOSED — reviewer round 3, syscall-level
+observable</h2>
+<p>The section above states that line 183’s <code>rm -f</code> has no
+observable in either direction and rests on a by-construction argument.
+<strong>That boundary no longer holds — the reviewer closed it</strong>,
+and the closure belongs in this durable record rather than only in the
+review thread.</p>
+<p>Method: <code>strace -f -e trace=unlink,unlinkat</code>, with the
+instrument proven alive in the same run before its zero was trusted
+(§11.4.201(7)(b)).</p>
+<p>Control needle first — establishing that the shell layer silences
+what the syscall layer sees: <code>rm -f</code> on a nonexistent
+<code>/</code>-rooted path exits 0 with no output, yet emits</p>
+<pre><code>unlinkat(..., &quot;/submodules/.../scaling_horizontal_challenge.sh&quot;, 0) = -1 ENOENT</code></pre>
+<p>Both directions, same drift precondition:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th></th>
+<th>pre-guard</th>
+<th>post-guard</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>unlinkat</code> on a <code>/submodules</code> path (line 183’s
+own evidence)</td>
+<td><strong>1</strong></td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>unlink-class syscalls from fixture cleanup (instrument-alive
+proof)</td>
+<td>—</td>
+<td><strong>16</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The post-guard zero is a <em>seen</em> zero, not a blind one: 16
+unlink-class syscalls were captured in the same trace, so the instrument
+was demonstrably watching the right call on the right path when it
+reported none against <code>/submodules</code>.</p>
+<p><strong>“3 of 4 observable” is now 4 of 4.</strong> No
+by-construction argument remains load-bearing anywhere in this
+change.</p>
+<p>The reviewer also corrected its own count: its round-2 summary said
+“three-line change” because it mentally collapsed case 4b’s two lines
+into one edit; four is right and no guard here is redundant. And it
+accepted <code>usable_root()</code> as a strengthening rather than scope
+creep, on three verified grounds — it is strictly stronger than the
+prescribed <code>[[ -n "$R" ]]</code> (it also requires the runner file,
+i.e. that <code>make_root</code> completed), it has no over-blocking
+channel (any root <code>make_root</code> echoes contains the runner by
+construction, confirmed by GREEN 10/10), and one predicate shared by all
+five consumers kills the divergent-notion channel that produced the
+residue.</p>
+<p><strong>Round 3 verdict: GO, zero findings, zero warnings (§11.4.134
+satisfied).</strong></p>
+</body>
+</html>

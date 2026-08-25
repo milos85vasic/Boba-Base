@@ -1,0 +1,20 @@
+{
+  "url": "http://127.0.0.1:35467/",
+  "axe_version": "4.13.0",
+  "themes": {
+    "darcula/dark": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    },
+    "darcula/light": {
+      "contrast_violation_nodes": 0,
+      "contrast_passing_nodes": 30,
+      "contrast_rule_passed": true,
+      "nodes": [],
+      "other_violations": []
+    }
+  }
+}

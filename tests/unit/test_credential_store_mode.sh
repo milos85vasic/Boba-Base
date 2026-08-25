@@ -176,35 +176,134 @@ echo "  script: ${START_SH}"
 
 C666="$(make_case mode_666 666)"
 expect_mode_case "mode 666 (world read+write) -> REFUSE" "${C666}" 1 \
-    "is mode 666" "more permissive than 600 (FR-015)" \
+    "is mode 666" "grants access to group/other (FR-015)" \
     "Refusing to report a successful start on a widened credential store."
 assert_read_own_file "mode 666" "${C666}"
 
 C660="$(make_case mode_660 660)"
 expect_mode_case "mode 660 (group read+write) -> REFUSE" "${C660}" 1 \
-    "is mode 660" "more permissive than 600 (FR-015)"
+    "is mode 660" "grants access to group/other (FR-015)"
 assert_read_own_file "mode 660" "${C660}"
 
 C640="$(make_case mode_640 640)"
 expect_mode_case "mode 640 (group read) -> REFUSE" "${C640}" 1 \
-    "is mode 640" "more permissive than 600 (FR-015)"
+    "is mode 640" "grants access to group/other (FR-015)"
 assert_read_own_file "mode 640" "${C640}"
 
 # At or below the floor -> PASS. §11.4.201(1): refusing these would be the
 # false-positive refusal, exactly as broken as passing a widened store.
 C600="$(make_case mode_600 600)"
 expect_mode_case "mode 600 (the floor itself) -> PASS" "${C600}" 0 \
-    "mode 600" "no more permissive than 600 (FR-015)"
+    "mode 600" "no non-owner access, no special bits (FR-015)"
 assert_read_own_file "mode 600" "${C600}"
 
 C400="$(make_case mode_400 400)"
 expect_mode_case "mode 400 (stricter than the floor) -> PASS" "${C400}" 0 \
-    "mode 400" "no more permissive than 600 (FR-015)"
+    "mode 400" "no non-owner access, no special bits (FR-015)"
 assert_read_own_file "mode 400" "${C400}"
 
 # ABSENT is the fresh-host negative control: config/boba.db does not exist
 # before first boot, which is why the ownership scope declares it optional.
 # Refusing on absence would refuse every clean install.
+# --- MINOR-4 (T018 re-review): FR-015 is about SEMANTICS, not the octal ---------
+# The assert's 0177 mask includes OWNER-EXECUTE, so it refused 700 and 500 while
+# neither grants a non-owner principal anything — and 500 is strictly LESS
+# permissive than 600 in the write dimension. A refusal on a mode that widens
+# nothing is a §11.4.201(1) FALSE-POSITIVE REFUSAL, forbidden at the same severity
+# as a false pass. Conversely 2600 (setgid) passed SILENTLY, while
+# scripts/ownership_repair.sh:689 deliberately strips setuid/setgid on the
+# explicit reasoning that "FR-015 is about the semantics ... not the octal".
+# Two implementations of one requirement disagreed; these cases pin the semantic
+# reading in BOTH directions.
+C700="$(make_case mode_700 700)"
+expect_mode_case "mode 700 (owner execute; no non-owner access) -> PASS, not a false refusal" "${C700}" 0
+
+C500="$(make_case mode_500 500)"
+expect_mode_case "mode 500 (LESS permissive than 600 in write) -> PASS, not a false refusal" "${C500}" 0
+
+C2600="$(make_case mode_2600 2600)"
+expect_mode_case "mode 2600 (setgid) -> REFUSE: a special bit is a real widening" "${C2600}" 1 \
+    "setgid"
+
+# The refusal must name a remediation path (§11.4.234(D)) — its sibling
+# run_ownership_precondition already prints one; this one did not.
+C666R="$(make_case mode_666_remediation 666)"
+expect_mode_case "refusal names a remediation path" "${C666R}" 1 \
+    "ownership_repair.sh"
+
+# --- IMPORTANT-3 (T018 re-review): the guard is wired, but the WIRING is unguarded
+# The reviewer's RM-5 mutation DELETED ALL FOUR CALL SITES while leaving both
+# function definitions intact — and this suite stayed at 18/18, and
+# test_start_reload_recreate.sh at 11/11. Nothing outside start.sh referenced
+# either function; no gate grepped for the call. A function nothing calls enforces
+# nothing (§11.4.196(F) CONFIGURED != IN USE; §11.4.226 registration is not
+# coverage). This is the original IMPORTANT-1 — "nothing the feature ships
+# enforces the invariant" — recurring one layer up, and it is not hypothetical:
+# T041 has restructured this exact region of main().
+#
+# Source-layer assertion is the RIGHT layer here (§11.4.226): "is this function
+# invoked" is a static property of the script, not a runtime observable.
+START_SH="${PROJECT_ROOT}/start.sh"
+# NOTE ON `|| echo 0` — the first version of these helpers used it and was a
+# FALSE-NEGATIVE that let the RM-5 mutation through while REPORTING "invoked 0".
+# `grep -c` PRINTS "0" and EXITS 1 on no-match, so `|| echo 0` appended a SECOND
+# line: the variable held "0\n0", and `[[ "0\n0" -lt 2 ]]` does not evaluate as
+# intended, so the guard fell to its else branch and passed. grep -c already
+# prints a count on every path, so the ECHO was redundant AND the bug.
+#
+# The second version dropped the fallback entirely — and under this file's
+# `set -e` that made the no-match exit-1 ABORT the script before the wiring block
+# ran at all, producing NO verdict rather than a wrong one. Both versions failed,
+# in opposite directions. `|| true` is the correct form: grep still prints its
+# count, and only the STATUS is neutralised (§11.4.201(6) — a guard must report
+# the right verdict, and a guard that never runs reports nothing).
+# MINOR-7 (T018 round 3): the first version counted call sites ANYWHERE in the
+# file and reported the result as "both start paths covered". Those are different
+# claims. The reviewer proved it with a fixture holding two call sites BOTH inside
+# the --recreate branch and NONE on the default path: the guard passed, printing
+# "both start paths covered", while a plain `./start.sh` had no credential-store
+# assertion at all. A message asserting something the check never measured is
+# §11.4.6, the same class as the IMPORTANT-2 this feature already fixed once.
+#
+# So: resolve the two DISPATCH REGIONS and require a call in EACH.
+#   region R = the `if [[ "$recreate_flag" == true ]]; then ... fi` block
+#   region D = everything else (the default `./start.sh` path)
+# Anchored on the condition TEXT, not line numbers — main() has been restructured
+# in each of the last two rounds, which is exactly how a partial drop happens.
+recreate_region() {  # -> "START END" line numbers of the --recreate branch
+    awk '
+      /^[[:space:]]*if \[\[ "\$recreate_flag" == true \]\]; then/ { start=NR; indent=match($0,/[^ ]/); next }
+      start && /^[[:space:]]*fi[[:space:]]*$/ && match($0,/[^ ]/)==indent { print start" "NR; exit }
+    ' "$START_SH"
+}
+calls_in_range() {  # $1=fn $2=start $3=end (0 0 means "outside any range")
+    grep -nE "^[[:space:]]*${1}([[:space:]]|$)" "$START_SH" 2>/dev/null \
+      | cut -d: -f1 \
+      | awk -v a="$2" -v b="$3" -v inv="$4" '{ inside=($1>=a && $1<=b); if (inv=="1") { if(!inside) n++ } else { if(inside) n++ } } END{ print n+0 }'
+}
+count_defs() { grep -cE "^${1}\(\)[[:space:]]*\{" "$START_SH" 2>/dev/null || true; }
+
+read -r _RSTART _REND <<<"$(recreate_region)"
+if [[ -z "${_RSTART:-}" || -z "${_REND:-}" ]]; then
+    fail "wiring: could not resolve the --recreate dispatch region in start.sh — the scan is BLIND, not evidence of anything"
+else
+    pass "wiring: --recreate dispatch region resolved (lines ${_RSTART}-${_REND})"
+    for _fn in harden_config_permissions assert_credential_store_mode; do
+        _defs="$(count_defs "$_fn")"
+        _in="$(calls_in_range "$_fn" "$_RSTART" "$_REND" 0)"
+        _out="$(calls_in_range "$_fn" "$_RSTART" "$_REND" 1)"
+        if [[ "$_defs" -ne 1 ]]; then
+            fail "wiring: ${_fn} definition not found in start.sh (${_defs}) — the scan is BLIND"
+        elif [[ "$_in" -lt 1 ]]; then
+            fail "wiring: ${_fn} is never called on the --recreate path (${_in} in region, ${_out} outside) (§11.4.196(F))"
+        elif [[ "$_out" -lt 1 ]]; then
+            fail "wiring: ${_fn} is never called on the DEFAULT ./start.sh path (${_out} outside region, ${_in} inside) (§11.4.196(F))"
+        else
+            pass "wiring: ${_fn} called on BOTH paths (--recreate: ${_in}, default: ${_out})"
+        fi
+    done
+fi
+
 CABS="$(make_case mode_absent)"
 expect_mode_case "store ABSENT (fresh host) -> PASS, skipped honestly" "${CABS}" 0 \
     "Credential store not created yet" "absent, not a failure"

@@ -400,10 +400,22 @@ create_directories() {
 #   `_podman_unshare_works` is NOT orphaned by this removal: copy_plugins still
 #   calls it for `podman unshare cp`.
 #
-# DIRECTION IS ONE-WAY (FR-015): this function only ever REMOVES permission
-# bits. `go-w` cannot widen anything, and the credential store is forced DOWN to
-# 600 only when it is currently more permissive. Nothing here can grant access
-# that did not already exist.
+# DIRECTION, STATED PRECISELY (FR-015) — and stated precisely BECAUSE an earlier
+# version of this comment was measurably false, which in a security-invariant
+# comment is the very defect class this feature exists to close.
+#
+# WHAT HOLDS: no group/other principal can gain any access here. `go-w` only ever
+# clears bits, and the credential store is forced DOWN to 600 whenever it is more
+# permissive. That is the guarantee, and it is the one FR-015 asks for.
+#
+# WHAT DOES NOT HOLD: this function does NOT "only ever remove permission bits",
+# and it is NOT true that "nothing here can grant access that did not already
+# exist" — both were claimed here and both are false. MEASURED: a 400 store comes
+# out 600, which GRANTS OWNER-WRITE. Materially harmless, since the owner can
+# chmod at will; but an unqualified absolute in a comment like this is exactly
+# what a reader relies on and must not be left standing (T018 re-review MINOR-5,
+# and its NIT-3 successor when the first correction was appended while the false
+# sentences were left in place).
 harden_config_permissions() {
     local cfg="$SCRIPT_DIR/config"
     [[ -d "$cfg" ]] || return 0
@@ -447,14 +459,37 @@ assert_credential_store_mode() {
         exit 1
     fi
 
-    # Any bit set outside owner rw is more permissive than 600.
-    if [[ "$mode" != "600" ]] && [[ "$((8#$mode & 8#177))" -ne 0 ]]; then
-        print_error "SECURITY: credential store $db is mode $mode (owner $owner) — more permissive than 600 (FR-015)."
+    # FR-015 IS ABOUT SEMANTICS, NOT THE OCTAL (T018 re-review, MINOR-4).
+    #
+    # The former test was `(mode & 0177) != 0`, which includes OWNER-EXECUTE. It
+    # therefore REFUSED mode 700 and mode 500 — while neither grants a non-owner
+    # principal anything, and 500 is strictly LESS permissive than 600 in the
+    # write dimension. Refusing a mode that widens nothing is a §11.4.201(1)
+    # FALSE-POSITIVE REFUSAL, forbidden at the same severity as a false pass, and
+    # the message it printed ("mode 700 — more permissive than 600") was simply
+    # untrue. Conversely 2600 PASSED silently, though setgid is a real widening
+    # and scripts/ownership_repair.sh:689 already strips setuid/setgid on exactly
+    # this reasoning — two implementations of one requirement disagreeing.
+    #
+    # The requirement is: NO NON-OWNER PRINCIPAL MAY HAVE ANY ACCESS, and no
+    # special bit may be set. Owner bits are irrelevant to it. Sticky (1000) is
+    # inert on a regular file and is not treated as a widening, matching the
+    # repair's own 8#1777 mask.
+    local nonowner special
+    nonowner="$((8#$mode & 8#77))"
+    special="$((8#$mode & 8#6000))"
+    if [[ "$nonowner" -ne 0 || "$special" -ne 0 ]]; then
+        if [[ "$nonowner" -ne 0 ]]; then
+            print_error "SECURITY: credential store $db is mode $mode (owner $owner) — grants access to group/other (FR-015)."
+        else
+            print_error "SECURITY: credential store $db is mode $mode (owner $owner) — carries a setuid/setgid bit (FR-015)."
+        fi
         print_error "  This store holds the AES-256-GCM master-key-encrypted tracker credentials."
         print_error "  Refusing to report a successful start on a widened credential store."
+        print_error "  Remediate with: bash scripts/ownership_repair.sh"
         exit 1
     fi
-    print_success "Credential store $db mode $mode owner $owner — no more permissive than 600 (FR-015)"
+    print_success "Credential store $db mode $mode owner $owner — no non-owner access, no special bits (FR-015)"
 }
 
 pull_image() {

@@ -1,0 +1,4 @@
+flag provided but not defined: -issues
+Usage of validate:
+  -db string
+    	path to the workable-items SQLite DB
