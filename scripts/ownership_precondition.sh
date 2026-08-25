@@ -44,11 +44,11 @@
 #             OWNERSHIP-PRECONDITION: CANNOT-RUN    (+ why)
 #   exit 0  every declared location can produce operator-owned files
 #   exit 1  at least one cannot — startup MUST NOT proceed
-#   exit 2  the check could not run (scope missing/unparseable/empty, no
-#           interpreter). 2 is NOT a pass: a check that could not run has
-#           asserted nothing, and reporting that as success is the
-#           §11.4.201(6) blind-instrument failure this feature exists to
-#           prevent.
+#   exit 2  the check could not run (scope missing/unparseable/empty, scope
+#           declares a path the fence refuses, no interpreter). 2 is NOT a
+#           pass: a check that could not run has asserted nothing, and
+#           reporting that as success is the §11.4.201(6) blind-instrument
+#           failure this feature exists to prevent.
 #
 # Side-effects:
 #   One probe file per declared DIRECTORY, created and removed (P2). When a
@@ -597,11 +597,22 @@ path_related() {
 
 # ---------------------------------------------------------------------------
 # absolutise <path> — declared paths may be repo-relative (E1 allows both).
+#
+# The `${p:-/}` restores the filesystem root. `${p%/}` strips a trailing slash,
+# which for the single-character path "/" leaves the EMPTY STRING — so a scope
+# declaring `- path: "/"` used to arrive downstream as "". MEASURED 2026-08-25
+# while wiring the BOB-187 fence: with "" the fence refused on its fail-closed
+# "non-absolute path" branch, so the refusal was correct but its stated reason
+# was wrong, and before the fence `probe_location ""` reported the filesystem
+# root as `absent`. Both are the misdiagnosis FR-010a exists to prevent — the
+# cause is fixed here rather than the message papered over (§11.4.120). The
+# sibling scripts/ownership_repair.sh already carried this guard.
 # ---------------------------------------------------------------------------
 absolutise() {
     local p="$1"
     [[ "${p}" == /* ]] || p="${PROJECT_ROOT}/${p}"
-    printf '%s\n' "${p%/}"
+    p="${p%/}"
+    printf '%s\n' "${p:-/}"
 }
 
 # ---------------------------------------------------------------------------
@@ -1012,6 +1023,64 @@ main() {
         cannot_run \
             "the declared scope contains no locations: ${scope}" \
             "a precondition that checked zero locations has verified nothing"
+    fi
+
+    # ---- THE DECLARED-PATH FENCE (BOB-187, §11.4.252 fail-closed) ---------
+    # This check CREATES A PROBE FILE inside every declared DIRECTORY (see
+    # "Side-effects" in the header). Until now nothing constrained what a
+    # declared path may BE: config/owned_paths.yaml ships
+    #     - path: "${QBITTORRENT_DATA_DIR:-/mnt/DATA}"
+    # and `.env` — untracked by design, unreviewed, and in no review's diff —
+    # supplies that variable. The same unreviewed value that drove a
+    # filesystem-wide `find /` in scripts/ownership_repair.sh (MEASURED
+    # 2026-08-25, observed in `ps` and killed by pid) selected where this
+    # script creates files. Lower blast radius than a recursive chown; the
+    # INPUT is identical and equally unreviewed.
+    #
+    # ownership_path_fence() (scripts/lib/ownership.sh) already holds the rule
+    # and its reasoning. It is called, never reimplemented: §11.4.251 forbids a
+    # second dialect of a predicate, and the whole point of putting it in the
+    # shared library when the repair path was fenced (8a08d49) was that this
+    # caller would use THAT one.
+    #
+    # ONE BAD ENTRY REFUSES THE WHOLE RUN, and exit 2 ("could not run"), not 1:
+    #   * exit 1 means "a declared location cannot produce operator-owned
+    #     files" — a per-location VERDICT this check has not earned, because it
+    #     deliberately never probed the path.
+    #   * exit 2 already means "the check could not run" for a scope that is
+    #     missing, unparseable, or empty (header, "Outputs"). A scope naming a
+    #     path of this shape is the same class: not trusted, nothing asserted.
+    # Refusing per-entry and probing the rest would report OK for a scope this
+    # script does not trust as a whole.
+    #
+    # BEFORE the probes AND before assert_rootless_runtime /
+    # assert_user_downgrade, because both of those also read this scope, and
+    # because at this point nothing has been created anywhere.
+    local -a fence_reasons=()
+    local f_row f_path f_was_rel f_abs f_reason
+    while IFS= read -r f_row; do
+        [[ -n "${f_row}" ]] || continue
+        split_tsv "${f_row}"
+        f_path="${TSV_FIELDS[0]:-}"
+        [[ -n "${f_path}" ]] || continue
+
+        # Captured BEFORE absolutise(): "was this written as a repo-relative
+        # entry?" is unrecoverable once the project root has been prepended,
+        # and it selects which of the fence's rules applies.
+        f_was_rel=1
+        [[ "${f_path}" == /* ]] && f_was_rel=0
+
+        f_abs="$(absolutise "${f_path}")"
+        if ! f_reason="$(ownership_path_fence "${f_abs}" "${f_was_rel}" "${PROJECT_ROOT}" 2>&1)"; then
+            fence_reasons+=("REFUSED ${f_path} — ${f_reason}")
+        fi
+    done <<< "${entries}"
+
+    if [[ "${#fence_reasons[@]}" -gt 0 ]]; then
+        cannot_run \
+            "the declared scope names ${#fence_reasons[@]} path(s) this check must never probe: ${scope}" \
+            "${fence_reasons[@]}" \
+            "nothing was probed, and no probe file was created anywhere"
     fi
 
     RUNTIME="$(resolve_runtime)"

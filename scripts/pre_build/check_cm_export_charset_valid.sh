@@ -42,7 +42,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${HERE}/../.." && pwd)"
 cd "${PROJECT_ROOT}" || exit 1
 
-BASELINE="${BOBA_EXPORT_CHARSET_BASELINE:-301}"
+BASELINE="${BOBA_EXPORT_CHARSET_BASELINE:-0}"
 SCAN_ROOT="${1:-.}"
 
 read -r TOTAL BAD COMPLIANT SAMPLE < <(python3 - "$SCAN_ROOT" <<'PY'

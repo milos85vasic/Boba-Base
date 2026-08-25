@@ -119,19 +119,45 @@ fi
 # ─── stage 3: build frontend ───────────────────────────────────────
 if [ "${BOBA_INSTALL_SKIP_BUILD:-0}" != "1" ] && [ "${BOBA_INSTALL_SKIP_FRONTEND:-0}" != "1" ]; then
     _step "stage 3/7 — build Angular frontend (production configuration)"
+    _fe_built=0
     if [ -d frontend/node_modules ]; then
         _info "node_modules present ($(du -sh frontend/node_modules 2>/dev/null | cut -f1)) — running ng build"
-        ( cd frontend && \
+        if ( cd frontend && \
             if [ -x node_modules/.bin/ng ]; then node_modules/.bin/ng build --configuration production; \
             elif command -v ng >/dev/null 2>&1; then ng build --configuration production; \
-            else _warn "ng not available"; false; fi ) 2>&1 | tail -10 \
-            || _warn "Angular build failed — merge service will serve last successful dist"
+            else _warn "ng not available"; false; fi ) 2>&1 | tail -10; then
+            _fe_built=1
+        else
+            _warn "Angular build failed — merge service will serve last successful dist"
+        fi
     else
         _warn "frontend/node_modules missing — run 'cd frontend && npm ci' first"
         _warn "  (skipping ng build this run; merge service will serve last built dist if any)"
     fi
-    if [ -d download-proxy/src/ui/dist/frontend ]; then
-        _info "dist present at download-proxy/src/ui/dist/frontend ($(du -sh download-proxy/src/ui/dist/frontend 2>/dev/null | cut -f1))"
+
+    # ── CM-SERVED-BUNDLE-FRESH (BOB-183) ────────────────────────────
+    # This block used to assert only that the dist DIRECTORY EXISTED, and it did
+    # not even fail on absence — it printed a size and moved on. dist/ is
+    # gitignored, so a bundle that diverged from frontend/src never showed in a
+    # diff, and the BOB-164 contrast fix shipped GREEN at the source layer while
+    # the artifact users load still carried the defect (§11.4.108 layer 2).
+    #
+    # Re-arm the fingerprint ONLY on a build that actually succeeded. Writing it
+    # after a FAILED build would fingerprint the OLD bundle against the NEW
+    # sources and certify a stale artifact as fresh — the producer writing its
+    # own passing verdict (§11.4.249).
+    _bundle_gate="scripts/pre_build/check_cm_served_bundle_fresh.sh"
+    if [ -x "$_bundle_gate" ]; then
+        if [ "$_fe_built" = "1" ]; then
+            bash "$_bundle_gate" --write 2>&1 | sed 's/^/    /' \
+                || _warn "could not record the served-bundle fingerprint"
+        fi
+        # Then REFUSE to proceed on a bundle that does not correspond to sources.
+        bash "$_bundle_gate" 2>&1 | sed 's/^/    /' \
+            || _fail "CM-SERVED-BUNDLE-FRESH: the served dashboard bundle does not correspond to frontend/src. Users would load a different, older artifact than the reviewed source. Build the frontend (cd frontend && npm ci && ng build --configuration production), then re-run install."
+    else
+        # §11.4.3 honest SKIP — never a silent pass.
+        _warn "SKIP: ${_bundle_gate} absent or not executable — served-bundle freshness NOT verified"
     fi
 else
     _step "stage 3/7 — SKIPPED (build or frontend gated off)"

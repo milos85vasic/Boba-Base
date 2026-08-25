@@ -412,4 +412,183 @@ else
     pass "P1-unavailable: report never claims the container-write probe passed"
 fi
 
+
+# ===========================================================================
+# Case 6 (BOB-187) — THE DECLARED-PATH FENCE
+#
+# scripts/ownership_precondition.sh consumes the SAME `.env`-driven, unreviewed
+# scope as scripts/ownership_repair.sh and CREATES PROBE FILES inside it (see
+# this script's own "Side-effects" header: "One probe file per declared
+# DIRECTORY"), yet nothing constrained what a declared path may BE. The repair
+# path was fenced in 8a08d49 via ownership_path_fence() in
+# scripts/lib/ownership.sh; that commit's message records this sibling as still
+# unfenced and files it as BOB-187.
+#
+# §11.4.251 — ONE predicate. These cases pin the precondition to the SHARED
+# fence, never to a second dialect of its rules. They assert the OBSERVABLE
+# CONSEQUENCE (refusal before any probe), not the fence's internals, which
+# tests/unit/test_ownership_repair.sh already owns.
+#
+# EXIT 2, not 1. A scope naming a path of that shape is one this check does not
+# trust at all — the same class the header at :47 already maps to 2 ("scope
+# missing/unparseable/empty"). A fence refusal is NOT a per-location verdict:
+# reporting it as FAIL(1) would assert "this location cannot produce
+# operator-owned files", which is a different — and unproven — claim.
+#
+# TIMEOUT BELT on every invocation: during T028 remediation a probe declaring
+# the verbatim shipped entry with QBITTORRENT_DATA_DIR=/ hung the suite.
+# ===========================================================================
+
+fence_scope() {   # fence_scope <scope-file> <declared-path>
+    printf '%s\n' \
+        'schema_version: 1' \
+        'paths:' \
+        "  - path: \"$2\"" \
+        '    kind: downloads' \
+        '    optional: false' \
+        '    preserve_mode: false' \
+        '    recursive: true' > "$1"
+}
+
+run_precond_fenced() {   # same documented --scope path, with a timeout belt
+    local scope="$1"; shift
+    OUT="${FIX}/out.$(date +%s%N).$RANDOM"
+    CONTAINER_RUNTIME="" timeout 60 bash "$SCRIPT" --scope "$scope" "$@" >"$OUT" 2>&1
+    RC=$?
+}
+
+# ---- 6a: an absolute entry naming a SYSTEM TREE (fence rule F3) ------------
+fence_scope "${FIX}/scope_fence_systree.yaml" "/etc"
+run_precond_fenced "${FIX}/scope_fence_systree.yaml"
+if [ "$RC" -eq 2 ]; then
+    pass "fence: absolute system tree /etc -> exit 2 (CANNOT-RUN, not a location verdict)"
+else
+    fail "fence: absolute system tree /etc -> exit $RC, expected 2 — the declared path was not fenced"
+    dump_out
+fi
+if grep -q 'OWNERSHIP-PRECONDITION: CANNOT-RUN' "$OUT"; then
+    pass "fence: system-tree refusal carries the contract's CANNOT-RUN banner"
+else
+    fail "fence: system-tree refusal did not emit the CANNOT-RUN banner"
+    dump_out
+fi
+
+# ---- 6b: the FILESYSTEM ROOT (fence rule F2, depth floor) ------------------
+# The exact value that drove `find / ...` in the repair, reaching the walk intact.
+fence_scope "${FIX}/scope_fence_root.yaml" "/"
+run_precond_fenced "${FIX}/scope_fence_root.yaml"
+if [ "$RC" -eq 2 ]; then
+    pass "fence: declared '/' -> exit 2"
+else
+    fail "fence: declared '/' -> exit $RC, expected 2 — the filesystem root was accepted as a scope"
+    dump_out
+fi
+# TEETH: exit 2 must not be reachable by accident. The refusal must NAME the reason.
+if grep -qE "filesystem root|path component" "$OUT"; then
+    pass "fence: '/' refusal names the offending shape rather than failing silently"
+else
+    fail "fence: '/' refusal does not name why it refused (§11.4.201(5))"
+    dump_out
+fi
+
+# ---- 6c: a repo-relative entry that CLIMBS OUT with '..' (fence rule F1) ---
+# THE OBSERVABLE CASE. Pre-fix, absolutise() prepends PROJECT_ROOT and passes
+# the '..' through untouched; the kernel resolves it at syscall time, so the
+# probe file is really created OUTSIDE the project. Post-fix the entry is
+# refused and the directory is never opened.
+#
+# The assertion is a real STATE DELTA (§11.4.69), not "no error": a directory's
+# mtime changes when a file is created in it and again when it is unlinked, so
+# an UNCHANGED mtime is positive evidence that probe_location() never ran there.
+ESCAPE_DIR="${FIX}/escape_target"
+mkdir -p "$ESCAPE_DIR"
+CLIMB=""
+for _ in $(seq 1 24); do CLIMB="${CLIMB}../"; done
+fence_scope "${FIX}/scope_fence_climb.yaml" "${CLIMB}${ESCAPE_DIR#/}"
+
+ESCAPE_MTIME_BEFORE="$(stat -c %y "$ESCAPE_DIR")"
+run_precond_fenced "${FIX}/scope_fence_climb.yaml"
+ESCAPE_MTIME_AFTER="$(stat -c %y "$ESCAPE_DIR")"
+
+if [ "$RC" -eq 2 ]; then
+    pass "fence: repo-relative '..' escape out of PROJECT_ROOT -> exit 2"
+else
+    fail "fence: repo-relative '..' escape -> exit $RC, expected 2 — a relative entry climbed out of the project"
+    dump_out
+fi
+if [ "$ESCAPE_MTIME_BEFORE" = "$ESCAPE_MTIME_AFTER" ]; then
+    pass "fence: no probe file was created in the escaped directory (mtime unchanged — positive evidence)"
+else
+    fail "fence: a probe file WAS created outside the project root — escaped directory mtime changed ($ESCAPE_MTIME_BEFORE -> $ESCAPE_MTIME_AFTER)"
+    dump_out
+fi
+
+# ---- 6d: NEGATIVE CONTROL (§11.4.201(1)) ----------------------------------
+# MANDATORY. A fence that refuses the live configuration is exactly as broken as
+# no fence at all. The six entries SHIPPED in config/owned_paths.yaml must all
+# ACCEPT — one absolute env-driven download root plus five repo-relative paths.
+#
+# Asserted at the FENCE, not by running the precondition: the real scope names
+# the operator's real media library, and this suite must never create probe
+# files there. The fence is the unit BOB-187 wires in, so the fence is the unit
+# under test.
+#
+# Two environments, because both are real:
+#   (i)  QBITTORRENT_DATA_DIR unset -> the shipped default /mnt/DATA, exactly 2
+#        components — the floor the config itself forces.
+#   (ii) a deep /run/media/... value — the shape this host's real library has.
+#        /run is deliberately NOT denylisted; if it were, this control fails.
+# When a real .env is present at the project root its value is used as well, so
+# in the operator's own checkout this control exercises the live value.
+LIVE_SCOPE="${PROJECT_ROOT}/config/owned_paths.yaml"
+if [ ! -f "$LIVE_SCOPE" ]; then
+    fail "negative control: shipped scope missing at ${LIVE_SCOPE}"
+else
+    DATA_DIR_CASES=("" "/run/media/operator/DISK4TB/Downloads")
+    if [ -f "${PROJECT_ROOT}/.env" ]; then
+        ENV_DATA_DIR="$(sed -n 's/^[[:space:]]*QBITTORRENT_DATA_DIR=//p' "${PROJECT_ROOT}/.env" | tail -1)"
+        [ -n "$ENV_DATA_DIR" ] && DATA_DIR_CASES+=("$ENV_DATA_DIR")
+    fi
+
+    for DDIR in "${DATA_DIR_CASES[@]}"; do
+        NC_OUT="${FIX}/nc.$(date +%s%N).$RANDOM"
+        # Subshell: sourcing the library and exporting the scope override must
+        # not leak into the rest of this suite.
+        (
+            set -uo pipefail
+            # shellcheck source=scripts/lib/ownership.sh
+            source "${PROJECT_ROOT}/scripts/lib/ownership.sh" || exit 90
+            export OWNED_PATHS_FILE="$LIVE_SCOPE"
+            if [ -n "$DDIR" ]; then export QBITTORRENT_DATA_DIR="$DDIR"; else unset QBITTORRENT_DATA_DIR; fi
+            rows="$(ownership_scope_entries)" || exit 91
+            n=0; refused=0
+            while IFS=$'\t' read -r p _rest; do
+                [ -n "$p" ] || continue
+                n=$((n+1))
+                wr=1
+                case "$p" in /*) wr=0 ;; esac
+                abs="$p"
+                [ "$wr" -eq 1 ] && abs="${PROJECT_ROOT}/${p}"
+                if ! reason="$(ownership_path_fence "$abs" "$wr" "$PROJECT_ROOT" 2>&1)"; then
+                    echo "REFUSED: ${p} -- ${reason}"
+                    refused=$((refused+1))
+                fi
+            done <<< "$rows"
+            echo "ENTRIES=${n} REFUSED=${refused}"
+        ) > "$NC_OUT" 2>&1
+        NC_RC=$?
+
+        LABEL="QBITTORRENT_DATA_DIR=${DDIR:-<unset, shipped default /mnt/DATA>}"
+        if [ "$NC_RC" -ne 0 ]; then
+            fail "negative control (${LABEL}): harness could not evaluate the live scope (rc=$NC_RC)"
+            sed -n '1,20p' "$NC_OUT" >&2
+        elif grep -q 'ENTRIES=6 REFUSED=0' "$NC_OUT"; then
+            pass "negative control: all 6 shipped entries ACCEPT with ${LABEL}"
+        else
+            fail "negative control (${LABEL}): the fence refuses the live shipped scope — false-positive refusal (§11.4.201(1))"
+            sed -n '1,20p' "$NC_OUT" >&2
+        fi
+    done
+fi
+
 finish

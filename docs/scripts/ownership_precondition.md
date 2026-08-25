@@ -1,10 +1,10 @@
 # `scripts/ownership_precondition.sh` — Ownership Startup Precondition
 
-**Revision:** 2
-**Last modified:** 2026-08-21T18:49:13Z
+**Revision:** 3
+**Last modified:** 2026-08-25T19:28:28Z
 **Purpose:** Operator guide for the startup check that refuses to start the
 system when a declared location cannot produce operator-owned files.
-**Last verified:** 2026-08-21
+**Last verified:** 2026-08-25
 
 ---
 
@@ -204,8 +204,9 @@ No credential value is ever read, printed, or logged by this script.
 
 **`2` is not a pass, and it is not a failure of the system either.** It means
 the check asserted *nothing*: the scope file was missing, unparseable, or
-empty; no python3 with PyYAML was available; or the caller passed an unusable
-argument. Reporting "could not run" as success is the §11.4.201(6)
+empty; **the scope declared a path the fence refuses** (see *The declared-path
+fence* below); no python3 with PyYAML was available; or the caller passed an
+unusable argument. Reporting "could not run" as success is the §11.4.201(6)
 blind-instrument failure — a blind instrument and a clean system return the
 same quiet zero — so this script refuses to conflate them. The `CANNOT-RUN`
 report always names the cause and ends with the literal line:
@@ -216,6 +217,65 @@ This check asserted NOTHING. It is not a pass — fix the cause above and re-run
 
 A caller that treats `2` as success has re-introduced the exact class of defect
 this feature exists to remove.
+
+## The declared-path fence
+
+This script **creates a probe file inside every declared directory** — that is
+the whole point of it (see *Why it PROBES instead of inspecting*). Until
+BOB-187 nothing constrained what a declared path could **be**.
+`config/owned_paths.yaml` ships
+
+```yaml
+  - path: "${QBITTORRENT_DATA_DIR:-/mnt/DATA}"
+```
+
+and `.env` — untracked by design, unreviewed, and in no review's diff —
+supplies that variable. The same unreviewed value that drove a filesystem-wide
+`find /` in `scripts/ownership_repair.sh` (measured 2026-08-25, observed in
+`ps` and killed by pid) also selected where **this** script creates files.
+Lower blast radius than a recursive `chown`; the input is identical.
+
+Before any probe runs, every declared entry is now passed through
+`ownership_path_fence()` in `scripts/lib/ownership.sh` — the **same** predicate
+the repair path uses. It is called, never reimplemented: §11.4.251 forbids a
+second dialect, and the reason the fence was put in the shared library when the
+repair was fenced is precisely so this caller would use that one. Its rules:
+
+| | Rule |
+|---|---|
+| **F0** | Lexical `.` / `..` / `//` normalisation, with **no symlink resolution** — TOCTOU-free, and it must be able to judge a path that does not exist yet (`.env`, `config/boba.db` before first boot). |
+| **F1** | A **repo-relative** entry must still resolve inside `PROJECT_ROOT`. An entry that climbs out with `..` was written to escape, and the scope format does not license that. |
+| **F2** | An **absolute** entry needs at least **2** path components. The shipped default `/mnt/DATA` has exactly 2, so the configuration itself forces this floor. |
+| **F3** | Never a system tree nor anything under one. `/usr/lib` has 2 components and clears F2, which is why F3 is separately load-bearing. |
+
+`/run`, `/home`, `/media`, `/mnt`, `/opt`, `/srv` and `/tmp` are **deliberately
+not** denylisted: this host's real library measures as
+`/run/media/<user>/<disk>/Downloads`, and a denylist that swallowed `/run`
+would refuse the live configuration — the §11.4.201(1) false-positive refusal
+the fence must not become.
+
+**One refused entry refuses the whole run, with exit `2`, not `1`.** Exit `1`
+means "a declared location cannot produce operator-owned files" — a
+per-location verdict this check has *not* earned, because it deliberately never
+probed the path. Exit `2` already means "the check could not run" for a scope
+that is missing, unparseable or empty; a scope naming a path of this shape is
+the same class. Nothing is probed and no probe file is created anywhere:
+
+```
+$ CONTAINER_RUNTIME="" scripts/ownership_precondition.sh --scope /tmp/root-scope.yaml
+OWNERSHIP-PRECONDITION: CANNOT-RUN
+  - the declared scope names 1 path(s) this check must never probe: /tmp/root-scope.yaml
+  - REFUSED / — '/' resolves to the filesystem root '/' — a recursive ownership change of the whole filesystem is never a declared scope
+  - nothing was probed, and no probe file was created anywhere
+This check asserted NOTHING. It is not a pass — fix the cause above and re-run.
+```
+
+**Honest boundary (§11.4.6).** The fence bounds the *shape* of a declared path.
+It cannot decide that a well-formed absolute path is the tree the operator
+*meant* — a deep absolute path outside the project is exactly what a download
+root is, so it must be accepted. What it removes is the class traced to a
+catastrophic outcome: filesystem roots, bare top-level directories, system
+trees, and `..` escapes.
 
 ## Edge cases
 
@@ -377,6 +437,16 @@ this feature exists to remove.
   `killpg` anywhere in it, so the `pgid <= 1` broadcast-kill hazard cannot arise.
 
 ## Last verified
+
+2026-08-25 (BOB-187) — the declared-path fence section was written against
+`ownership_path_fence()` as it actually exists in `scripts/lib/ownership.sh`,
+and the `CANNOT-RUN` transcript quoted there is pasted from a real run in this
+worktree, not composed. The four fence rules, the `MIN_COMPONENTS` value of 2,
+and the contents of `OWNERSHIP_FENCE_SYSTEM_TREES` (which does **not** contain
+`/run`, `/home`, `/media`, `/mnt`, `/opt`, `/srv` or `/tmp`) were read from
+that file rather than from its prose. The live scope was re-checked at the
+fence — all six shipped entries ACCEPT with the real `.env` value — without
+invoking the precondition against the real library.
 
 2026-08-21 — every flag, exit code, environment variable, and skip reason in
 this document was read from `scripts/ownership_precondition.sh` and
