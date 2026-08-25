@@ -1,4 +1,185 @@
-<h1 id="bobalink--user-guide">BobaLink — User Guide</h1>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>USER_GUIDE</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">USER_GUIDE</h1>
+</header>
+<h1 id="bobalink-user-guide">BobaLink — User Guide</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-06-10T21:00:00Z <strong>Scope:</strong> End-user guide for
 BobaLink, the Boba Project browser extension (<code>extension/</code>).
@@ -43,12 +224,17 @@ and UI layers are implemented and tested.</p>
 addition, BobaLink ships a curated selector table
 (<code>SITE_SELECTORS</code> in
 <code>extension/src/shared/constants.ts</code>) tuned for these hosts.
-The content script's <code>matches</code> are derived from this table —
+The content script’s <code>matches</code> are derived from this table —
 BobaLink does <strong>not</strong> request
 <code>&lt;all_urls&gt;</code>.</p>
 <p>The curated table covers <strong>24 entries</strong> (one
 <code>generic</code> pattern set plus 23 site-specific hosts):</p>
 <table>
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 37%" />
+<col style="width: 43%" />
+</colgroup>
 <thead>
 <tr>
 <th>#</th>
@@ -223,7 +409,7 @@ Send / Send-All wiring are implemented and tested.</p>
 </blockquote>
 <hr />
 <h2 id="context-menu-actions">Context-menu actions</h2>
-<p>Right-click a page (or a magnet link) to use BobaLink's context-menu
+<p>Right-click a page (or a magnet link) to use BobaLink’s context-menu
 items (defined in <code>extension/src/background/index.ts</code>):</p>
 <ul>
 <li><strong>Send magnet to Boba</strong> (<code>bobalink-send</code>) —
@@ -234,7 +420,7 @@ send every detected torrent on the current page.</li>
 scan <strong>every tab in the current tab group</strong>, deduplicate
 across the whole group, and send them as one batch.</li>
 </ul>
-<p>The "Send tab group" batch path is wired
+<p>The “Send tab group” batch path is wired
 (<code>MENU_SEND_GROUP</code> → deduped group batch → a single
 <code>addMagnets</code> request). It is a Chrome-family feature (uses
 <code>chrome.tabGroups</code>); on browsers without tab groups it
@@ -246,6 +432,11 @@ context-menu items</strong>.</p>
 <p>Three shortcuts are declared in <code>extension/wxt.config.ts</code>
 (<code>commands</code>):</p>
 <table>
+<colgroup>
+<col style="width: 24%" />
+<col style="width: 54%" />
+<col style="width: 21%" />
+</colgroup>
 <thead>
 <tr>
 <th>Action</th>
@@ -272,14 +463,14 @@ context-menu items</strong>.</p>
 </tbody>
 </table>
 <p>These are <em>suggested</em> keys; your browser may let you remap
-them on its extension shortcuts page (e.g.
-<code>chrome://extensions/shortcuts</code>). You can disable shortcut
-handling from <strong>Options → UI → Enable keyboard
+them on its extension shortcuts page
+(e.g. <code>chrome://extensions/shortcuts</code>). You can disable
+shortcut handling from <strong>Options → UI → Enable keyboard
 shortcuts</strong>.</p>
 <hr />
 <h2 id="the-7-options-tabs">The 7 options tabs</h2>
 <p>Open the options page (right-click the icon → Options, or your
-browser's extension-details "Extension options"). It has <strong>seven
+browser’s extension-details “Extension options”). It has <strong>seven
 tabs</strong> (<code>extension/src/entrypoints/options/index.html</code>
 + <code>src/options/options.ts</code>, <code>TAB_IDS</code>):</p>
 <ol type="1">
@@ -288,7 +479,7 @@ tabs</strong> (<code>extension/src/entrypoints/options/index.html</code>
 (None / Username+Password cookie / API Key / Basic), the optional
 <strong>Boba API token</strong> + <strong>Session passphrase</strong>
 (see below), connection timeout (seconds), health-check interval
-(minutes), and "Verify HTTPS certificates (HTTPS only)".</li>
+(minutes), and “Verify HTTPS certificates (HTTPS only)”.</li>
 <li><strong>Download Prefs</strong> — default category, default save
 path, content layout (Original / Create subfolder / No subfolder),
 pause-after-add, skip hash check, automatic torrent management.</li>
@@ -302,10 +493,10 @@ delay (ms), highlight detected torrents, highlight style (Badge / Border
 <li><strong>UI</strong> — show context-menu items, enable keyboard
 shortcuts.</li>
 <li><strong>Security</strong> — explains the delegate-by-default model
-and offers an "Enable debug logging" toggle.</li>
+and offers an “Enable debug logging” toggle.</li>
 </ol>
 <hr />
-<h2 id="the-optional-boba-api-token--session-passphrase">The optional
+<h2 id="the-optional-boba-api-token-session-passphrase">The optional
 Boba API token + session passphrase</h2>
 <p>BobaLink follows a <strong>delegate-by-default</strong> security
 model: in the normal localhost deployment it stores <strong>no
@@ -338,11 +529,15 @@ landed and tested; the end-to-end against a live token-gated backend is
 <strong>(in progress)</strong>.</p>
 <hr />
 <h2
-id="least-privilege-permissions--what-bobalink-asks-for-and-why">Least-privilege
+id="least-privilege-permissions-what-bobalink-asks-for-and-why">Least-privilege
 permissions — what BobaLink asks for and why</h2>
 <p>BobaLink requests only what it needs
 (<code>extension/wxt.config.ts</code>):</p>
 <table>
+<colgroup>
+<col style="width: 36%" />
+<col style="width: 63%" />
+</colgroup>
 <thead>
 <tr>
 <th>Permission</th>
@@ -369,12 +564,12 @@ history</td>
 </tr>
 <tr>
 <td><code>contextMenus</code></td>
-<td>provide the right-click "Send …" actions</td>
+<td>provide the right-click “Send …” actions</td>
 </tr>
 <tr>
 <td><code>tabGroups</code></td>
-<td>read which group the clicked tab belongs to, for "Send tab
-group"</td>
+<td>read which group the clicked tab belongs to, for “Send tab
+group”</td>
 </tr>
 <tr>
 <td><code>host_permissions: http://localhost:7187/*</code></td>
@@ -393,7 +588,7 @@ URLs/titles/favicons.</li>
 <li><strong><code>cookies</code></strong> — not requested; BobaLink
 never touches your cookies.</li>
 <li><strong><code>&lt;all_urls&gt;</code></strong> — the content
-script's match patterns are derived from the curated
+script’s match patterns are derived from the curated
 <code>SITE_SELECTORS</code> table, not a blanket all-sites grant.</li>
 </ul>
 <p>Its content security policy is tight: <code>script-src 'self'</code>
@@ -402,7 +597,7 @@ script's match patterns are derived from the curated
 (<code>content_security_policy</code> in
 <code>wxt.config.ts</code>).</p>
 <hr />
-<h2 id="internationalization--accessibility">Internationalization &amp;
+<h2 id="internationalization-accessibility">Internationalization &amp;
 accessibility</h2>
 <ul>
 <li>BobaLink ships UI message catalogs for <strong>English
@@ -428,3 +623,5 @@ security/credentials suite (Phase 7), full multi-type test coverage
 (Phase 8), and distribution (Phase 9) are <strong>in progress</strong>.
 See <code>docs/browser_extension/Status.md</code> for the authoritative
 per-phase state.</p>
+</body>
+</html>

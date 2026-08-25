@@ -245,12 +245,26 @@
 <h1 class="title">EVIDENCE</h1>
 </header>
 <h1 id="bob-174-evidence-pack">BOB-174 — Evidence pack</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-23T10:20:00Z <strong>Guard:</strong>
-<code>tests/unit/api_layer/test_bob174_corrupt_hook_store.py</code> (28
-tests) <strong>Change:</strong>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-25T18:36:33Z <strong>Guard:</strong>
+<code>tests/unit/api_layer/test_bob174_corrupt_hook_store.py</code>
+(<strong>35 tests</strong>)</p>
+<blockquote>
+<p><strong>REVISION 2 — WHY THIS DOCUMENT CHANGED.</strong> The
+independent review found <strong>zero defects in the shipped
+code</strong> and a set of defects in <em>this evidence pack</em>:
+figures that did not reproduce, and mutation counts measured against an
+earlier revision of the guard and then presented as the final evidence.
+An evidence pack whose own numbers do not reproduce is a §11.4.262
+failure regardless of how sound the code it describes is — so every
+figure below has been <strong>re-measured against the current
+files</strong> and the stale ones are corrected in place with the
+correction stated, never quietly overwritten. Two new guards were added
+in the same round (§9), closing the two properties the reviewer
+demonstrated were unpinned. <strong>Change:</strong>
 <code>download-proxy/src/api/hooks.py</code> <strong>Decision
 record:</strong> <code>DESIGN_DECISION.md</code> beside this file</p>
+</blockquote>
 <p>Host discipline throughout:
 <code>GOMAXPROCS=2 nice -n 19 ionice -c 3</code>,
 <code>.venv/bin/python -m pytest -p no:schemathesis</code>.
@@ -262,7 +276,12 @@ id="red-observed-against-the-unmodified-tree-before-any-source-change">1.
 RED — observed against the unmodified tree, before any source
 change</h2>
 <p>The guard was written first and run first. <strong>15 failed, 13
-passed.</strong></p>
+passed</strong> — measured against the guard <strong>as it stood at
+Revision 1 (28 tests)</strong>. That scope label is part of the
+measurement and was missing in Revision 1; the guard is now 35 tests, so
+this figure is a historical record of the original RED and is NOT a
+claim about the current file. The RED evidence for the two guards added
+in Revision 2 is in §9.</p>
 <pre><code>15 failed, 13 passed, 1 warning in 9.12s
 FAILED ...::TestCorruptStoreIsNotReportedAsZeroHooks::test_get_does_not_claim_zero_hooks[seed_truncated]
 FAILED ...::TestCorruptStoreIsNotReportedAsZeroHooks::test_get_does_not_claim_zero_hooks[seed_wrong_shape]
@@ -351,16 +370,41 @@ gone from the file. The reasoning is preserved in
 <code>_arm_one_shot_enospc</code>’s docstring so it cannot be
 reintroduced by a future edit.</p>
 <hr />
-<h2 id="green">3. GREEN</h2>
-<pre><code>28 passed, 1 warning in 10.18s</code></pre>
-<p>All five hook-touching test files together, after reconciliation
-(§4):</p>
+<h2 id="green-re-measured-2026-08-25-against-the-current-files">3. GREEN
+— re-measured 2026-08-25 against the current files</h2>
+<p>Revision 1 reported “28 passed” here and “68 passed” for the
+five-file set. Neither reproduces: the guard is now 35 tests (28 at
+Revision 1, +3 landed later in that round, +2 in Revision 2 and +2 for
+the cross-device outcome test). <strong>Corrected figures, all re-run
+today:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_bob174_corrupt_hook_store.py</code> (the guard)</td>
+<td><strong>35 passed</strong></td>
+</tr>
+<tr>
+<td>the five hook-touching files together</td>
+<td><strong>75 passed</strong></td>
+</tr>
+<tr>
+<td><code>tests/unit/api_layer/</code> (full sweep)</td>
+<td><strong>263 passed</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The five files are:</p>
 <pre><code>tests/unit/api_layer/test_bob174_corrupt_hook_store.py
 tests/unit/api_layer/test_bob173_hook_persistence_failure.py
 tests/unit/api_layer/test_hooks_coverage.py
 tests/unit/api_layer/test_hooks_endpoints.py
-tests/unit/api_layer/test_hooks_remaining.py
---&gt; 68 passed, 1 warning in 31.39s</code></pre>
+tests/unit/api_layer/test_hooks_remaining.py</code></pre>
 <p><code>ruff check download-proxy/src/api/hooks.py tests/unit/api_layer/</code>
 → <strong>All checks passed!</strong></p>
 <hr />
@@ -374,10 +418,10 @@ neither was a regression in the fix.</p>
 <h3 id="a-test_hooks_coverage.py-two-tests-asserted-the-defect">(a)
 <code>test_hooks_coverage.py</code> — two tests <strong>asserted the
 defect</strong></h3>
-<div class="sourceCode" id="cb6"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fake_path.write_text(<span class="st">&quot;not json&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>hooks <span class="op">=</span> api.hooks._load_hooks()</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> hooks <span class="op">==</span> []          <span class="co"># &lt;- the defect, codified</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fake_path.write_text(<span class="st">&quot;not json&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>hooks <span class="op">=</span> api.hooks._load_hooks()</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> hooks <span class="op">==</span> []          <span class="co"># &lt;- the defect, codified</span></span></code></pre></div>
 <p>These two tests are the reason the swallow looked deliberate. They
 assert the exact behaviour the item’s acceptance criterion (a) removes.
 <strong>Reconciled</strong> to assert the new mechanism
@@ -421,116 +465,217 @@ docstring claim:
 <p><strong>The reconciled gates still bite</strong> — verified, because
 a reconciled gate that stopped catching its own defect would be the
 §11.4.120 fake-pass in slow motion:</p>
+<p><strong>Re-verified 2026-08-25 against the current source</strong> —
+and unlike §5’s table, these two figures reproduce EXACTLY as Revision 1
+recorded them. Each mutation is scoped to the file that owns the
+reconciled gate (that is the question §4 asks), and the failing tests
+are listed by name so “which gate bit” is measured rather than
+asserted:</p>
 <table>
 <colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
 </colgroup>
 <thead>
 <tr>
 <th>Mutation</th>
+<th>Scoped to</th>
+<th>Baseline</th>
 <th>Result</th>
+<th>Tests that caught it</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>restore BOB-173’s <code>_save_hooks</code> swallow</td>
-<td><strong>5 failed</strong>, 5 passed — including all 3 reconciled
-DELETE tests</td>
+<td><code>test_bob173_hook_persistence_failure.py</code></td>
+<td>10 passed</td>
+<td><strong>5 failed</strong>, 5 passed</td>
+<td><code>TestCreateReportsPersistenceFailure::test_create_does_not_return_a_hook_id_when_write_fails</code>,
+<code>::test_create_returns_error_status_when_write_fails</code>,
+<code>TestDeleteReportsPersistenceFailure::test_delete_does_not_claim_success_when_write_fails</code>,
+<code>::test_delete_returns_error_status_when_write_fails</code>,
+<code>::test_hook_survives_a_failed_delete_and_the_api_admits_it</code></td>
 </tr>
 <tr>
 <td>restore the A1 <code>_load_hooks</code> swallow</td>
-<td><strong>2 failed</strong>, 10 passed — both reconciled coverage
-tests</td>
+<td><code>test_hooks_coverage.py</code></td>
+<td>12 passed</td>
+<td><strong>2 failed</strong>, 10 passed</td>
+<td><code>TestHooksInternal::test_load_hooks_invalid_json_raises_rather_than_reporting_empty</code>,
+<code>::test_load_hooks_not_a_list_raises_rather_than_reporting_empty</code></td>
 </tr>
 </tbody>
 </table>
+<p>Revision 1’s annotations were accurate too: the BOB-173 mutation does
+trip <strong>all three</strong> reconciled DELETE tests (the three
+<code>TestDeleteReportsPersistenceFailure</code> rows above), and the A1
+mutation trips <strong>both</strong> reconciled coverage tests. Both
+reconciled gates therefore still catch the defect they were reconciled
+for — the §11.4.120 check that a reconciliation was not a fake-pass in
+slow motion.</p>
 <hr />
 <h2 id="paired-1.1-mutations-every-guard-proven-load-bearing">5. Paired
 §1.1 mutations — every guard proven load-bearing</h2>
-<p>Each mutation restores one specific pre-fix behaviour; the source was
-restored from a pristine copy after each and the md5 re-verified
-(<code>ea6dcb3441f946f10410d8309e6e8e5b</code>) so no mutation residue
-could survive into the tree (§11.4.84).</p>
+<p><strong>All ten re-measured 2026-08-25 against the current source and
+the current guard</strong>, by a scripted harness
+(<code>mutate.py</code>) that applies one mutation, runs both scopes,
+restores from a pristine copy and re-verifies the md5
+(<code>cc19be67b0548e3ebf84d3bf6cc4a556</code>) before the next — so no
+mutation residue can survive into the tree (§11.4.84). Revision 1’s
+table was measured against an EARLIER revision of the guard and never
+re-run against the final file; its rows summed to 28 while the guard had
+grown past that, which is the defect this re-measurement corrects.</p>
+<p><strong>Two scopes are reported per mutation, because one number
+alone is ambiguous.</strong> Revision 1’s table silently mixed them —
+M6’s “5 failed, 5 passed” was a <em>ten-test BOB-173 file</em>, not the
+28-test guard, so the column could not be read consistently. Here,
+“guard file” is <code>test_bob174_corrupt_hook_store.py</code> alone (35
+tests) and “five files” is that plus the four other hook-touching files
+(75 tests). A mutation that shows failures only in the five-file column
+is caught by a sibling guard rather than by this one, which is
+information the single column destroyed.</p>
+<p>The harness also installs SIGTERM/SIGINT/atexit restore handlers,
+added after a tool-deadline SIGTERM killed an earlier run mid-mutation
+and left a mutated source in the working tree — caught by the md5 check
+(§9c).</p>
 <table>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
 </colgroup>
 <thead>
 <tr>
 <th>#</th>
-<th>Mutation</th>
-<th>Result</th>
-<th>Which guard bit</th>
+<th>Mutation (one pre-fix behaviour restored)</th>
+<th>guard file (35)</th>
+<th>five files (75)</th>
+<th>Guard classes that caught it — measured, not asserted</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong>M1</strong></td>
-<td>restore <code>_load_hooks</code>’s
-<code>except Exception: return []</code></td>
-<td><strong>12 failed</strong>, 16 passed</td>
-<td>A1 — GET, create-refusal, delete-404, data-survival</td>
+<td>restore _load_hooks’ <code>except Exception: return []</code> (the
+A1 swallow)</td>
+<td><strong>13 f</strong>, 22 p</td>
+<td><strong>15 f</strong>, 60 p</td>
+<td><code>TestCorruptStoreIsNotReportedAsZeroHooks</code>,
+<code>TestCreateRefusesRatherThanDestroying</code>,
+<code>TestDeleteRefusesRatherThanDestroying</code></td>
 </tr>
 <tr>
 <td><strong>M2</strong></td>
 <td>restore <code>open(HOOKS_FILE, "w")</code> in place of the atomic
-write</td>
-<td><strong>3 failed</strong>, 25 passed</td>
-<td>A5 — all three atomicity guards, and only those</td>
+write (A5)</td>
+<td><strong>5 f</strong>, 30 p</td>
+<td><strong>9 f</strong>, 66 p</td>
+<td><code>TestAtomicWriteMechanicsArePinned</code>,
+<code>TestNonOSErrorWriteFailureIsPinned</code>,
+<code>TestWriteIsAtomic</code></td>
 </tr>
 <tr>
 <td><strong>M3</strong></td>
-<td>narrow <code>_save_hooks</code>’ <code>except Exception</code> →
+<td>narrow _save_hooks’ outer <code>except Exception</code> -&gt;
 <code>except OSError</code></td>
-<td><strong>2 failed</strong>, 26 passed</td>
-<td>the previously-unpinned arm (BOB-173 review finding)</td>
+<td><strong>2 f</strong>, 33 p</td>
+<td><strong>2 f</strong>, 73 p</td>
+<td><code>TestNonOSErrorWriteFailureIsPinned</code></td>
 </tr>
 <tr>
 <td><strong>M4</strong></td>
-<td>add <code>archive_complete</code> to <code>VALID_EVENTS</code>,
-absent from <code>HookEventType</code></td>
-<td><strong>2 failed</strong>, 26 passed</td>
-<td>A3 — the vocabulary pin</td>
+<td>revert VALID_EVENTS derivation -&gt; divergent hardcoded
+literal</td>
+<td><strong>2 f</strong>, 33 p</td>
+<td><strong>3 f</strong>, 72 p</td>
+<td><code>TestEventVocabularyCannotDrift</code></td>
 </tr>
 <tr>
 <td><strong>M5</strong></td>
-<td>drop <code>create_hook</code>’s refusal, let the misread flow into
-the save</td>
-<td><strong>7 failed</strong>, 21 passed</td>
-<td>A2 — the data-loss path specifically</td>
+<td>drop create_hook’s refusal; let the misread flow into the save
+(A2)</td>
+<td><strong>7 f</strong>, 28 p</td>
+<td><strong>7 f</strong>, 68 p</td>
+<td><code>TestCreateRefusesRatherThanDestroying</code></td>
 </tr>
 <tr>
 <td><strong>M6</strong></td>
-<td>restore BOB-173’s write-failure swallow</td>
-<td><strong>5 failed</strong>, 5 passed</td>
-<td>the reconciled BOB-173 guard</td>
+<td>restore BOB-173’s write-failure swallow (_save_hooks does not
+raise)</td>
+<td><strong>3 f</strong>, 32 p</td>
+<td><strong>9 f</strong>, 66 p</td>
+<td><code>TestNonOSErrorWriteFailureIsPinned</code>,
+<code>TestWriteIsAtomic</code></td>
 </tr>
 <tr>
 <td><strong>M7</strong></td>
 <td>restore <code>os.path.isfile</code> in place of
 <code>os.path.exists</code></td>
-<td><strong>1 failed</strong>, 28 passed</td>
-<td>the non-file-at-store-path guard (§5b)</td>
+<td><strong>1 f</strong>, 34 p</td>
+<td><strong>1 f</strong>, 74 p</td>
+<td><code>TestCorruptStoreIsNotReportedAsZeroHooks</code></td>
 </tr>
 <tr>
 <td><strong>M8</strong></td>
-<td>let <code>dispatch_event</code> propagate the corrupt-store
-error</td>
-<td><strong>2 failed</strong>, 29 passed</td>
-<td>the dispatch fail-closed guards</td>
+<td>let dispatch_event propagate HookStoreCorruptError</td>
+<td><strong>2 f</strong>, 33 p</td>
+<td><strong>2 f</strong>, 73 p</td>
+<td><code>TestDispatchFailsClosedWithoutBreakingUnrelatedRequests</code></td>
+</tr>
+<tr>
+<td><strong>M9</strong></td>
+<td>drop <code>dir=store_dir</code> from mkstemp (reviewer RM3 -
+cross-device)</td>
+<td><strong>3 f</strong>, 32 p</td>
+<td><strong>3 f</strong>, 72 p</td>
+<td><code>TestAtomicWriteMechanicsArePinned</code>,
+<code>TestTheCrossDeviceFailureIsCaughtForReal</code></td>
+</tr>
+<tr>
+<td><strong>M10</strong></td>
+<td>drop the os.fsync, keep os.replace (reviewer RM2 - durability)</td>
+<td><strong>1 f</strong>, 34 p</td>
+<td><strong>1 f</strong>, 74 p</td>
+<td><code>TestAtomicWriteMechanicsArePinned</code></td>
 </tr>
 </tbody>
 </table>
-<p>M2’s narrowness is the useful signal: restoring the non-atomic write
-breaks <strong>only</strong> the atomicity tests and nothing else, which
-is what a correctly-scoped guard looks like.</p>
-<p>M3 confirms the BOB-173 review’s finding directly: before this
+<p><strong>What the re-measurement changed, and what it did
+not.</strong> Every mutation still bites, and no mutation survives — but
+three rows moved, and the movement is informative rather than
+cosmetic:</p>
+<ul>
+<li><strong>M2 rose from 3 failures to 5.</strong> Revision 1 said M2’s
+virtue was its <em>narrowness</em> — “breaks only the atomicity tests
+and nothing else”. That is no longer true and the claim is withdrawn:
+restoring the in-place <code>open(path, "w")</code> removes the temp
+file entirely, so it now also trips both new mechanics pins (there is no
+<code>mkstemp</code> to pass <code>dir=</code> to and no temp fd to
+<code>fsync</code>). The guard got <em>less</em> narrow and
+<em>more</em> correct — an in-place write genuinely violates more
+properties than Revision 1 could see.</li>
+<li><strong>M9 and M10 are the two the review demonstrated were
+UNGUARDED.</strong> Against Revision 1’s suite each passed with zero
+failures; against this one M9 costs 3 tests and M10 costs 1. Those two
+rows are the entire point of Revision 2.</li>
+<li><strong>M6 reads 3 in the guard file but 9 across the five</strong>
+— the clearest argument for reporting both scopes. Restoring BOB-173’s
+write-failure swallow is mostly caught by <em>BOB-173’s own</em> file,
+not by this one; Revision 1’s single ambiguous column showed “5 failed,
+5 passed” and could not express that.</li>
+</ul>
+<p>M3 still confirms the BOB-173 review’s finding directly: before that
 change, <code>except Exception → except OSError</code> passed the entire
-suite. It now costs two tests.</p>
+suite; it now costs two tests, in both scopes.</p>
+<p>M7 and M10 each cost exactly one test, which is what a
+correctly-scoped, single-property guard looks like — the property is
+asserted once, by one assertion, and nothing else is coupled to it.</p>
 <h3
 id="b.-one-defect-found-by-self-review-not-by-the-reported-chain">5b.
 One defect found by self-review, not by the reported chain</h3>
@@ -659,6 +804,18 @@ should change: <code>DESIGN_DECISION.md</code> §3.</li>
 <li><strong>Not verified against a real ENOSPC or a real
 SIGKILL.</strong> The injection models the failure faithfully but is not
 the syscall-level event.</li>
+<li><strong><code>fsync</code> is pinned on the CALL, not on durability
+itself.</strong> <code>TestAtomicWriteMechanicsArePinned</code> asserts
+that <code>os.fsync</code> runs on the temp file’s fd <em>before</em>
+<code>os.replace</code>. It does <strong>not</strong> prove the bytes
+reached stable storage — durability is not in-process observable at all
+(after the replace the new contents are visible to every reader whether
+or not they were ever flushed), and only a real power-cut could
+distinguish the two. The call is asserted because it is the strongest
+thing that <em>can</em> be asserted here, and because the alternative is
+an unguarded line that a future “this looks unnecessary” edit removes in
+silence — which the reviewer demonstrated by removing it against the
+whole suite without a single failure.</li>
 <li><strong>No live-container run.</strong> Everything here is the real
 FastAPI app driven through <code>TestClient</code> over real files on
 real temp paths — no mocks of the code under test — but not a running
@@ -667,15 +824,29 @@ real temp paths — no mocks of the code under test — but not a running
 write closes the crash-mid-write vector this code owns; a bad hand-edit
 or filesystem damage still produces one, which is why the read guard
 exists too.</li>
-<li><strong><code>DESIGN_DECISION.{html,pdf,docx}</code> are
-STALE.</strong> An export pipeline generated them at 11:50 from an
-earlier revision of the <code>.md</code>, which I then edited at 12:00
-(adding the permission-semantics and non-file-path decisions). I did not
-regenerate them: the exporter
-(<code>scripts/generate_markdown_exports.sh</code>) is itself modified
-by a sibling stream right now, and running it would sweep files outside
-this item. Flagged rather than silently left divergent (§11.4.106) — the
-<code>.md</code> is authoritative.</li>
+<li><strong>Export staleness — Revision 1’s statement was FALSE and is
+withdrawn; the exports are stale again now, for a different and stated
+reason.</strong> Revision 1 asserted “I did not regenerate them”.
+Measured: the <code>.html</code>, <code>.pdf</code> and
+<code>.docx</code> twins carry mtime <strong>2026-08-23 12:04</strong>,
+which POSTDATES the <code>.md</code> they were generated from (12:00 /
+12:02) — they <em>had</em> been regenerated, and the bullet claiming
+otherwise was wrong at the moment it was written. <strong>Current state,
+measured 2026-08-25:</strong> the Revision 2 edits to
+<code>DESIGN_DECISION.md</code> and <code>EVIDENCE.md</code> have
+re-staled all six twins, which now predate their sources. They were
+<strong>deliberately not regenerated</strong>, and the reason is
+checkable rather than asserted:
+<code>scripts/generate_markdown_exports.sh</code> is (a) itself modified
+in the index by a sibling stream (<code>git status --short</code>
+reports <code>M</code>), and (b) written to sweep <strong>every</strong>
+<code>*.md</code> under <code>docs/</code>, the project root and
+<code>scripts/</code> — so running it would regenerate exports across
+sibling streams’ in-flight documents, far outside this item’s file
+scope. The <code>.md</code> files are authoritative; regenerating the
+twins is owed work for whoever lands the exporter change (§11.4.106(E) —
+honest staleness beats a silent divergence, and beats sweeping another
+stream’s files).</li>
 <li><strong><code>_save_hooks</code> is still not concurrency-safe
 against a second writer.</strong> <code>os.replace</code> makes each
 write atomic, so no reader ever sees a partial file — a real improvement
@@ -683,6 +854,196 @@ write atomic, so no reader ever sees a partial file — a real improvement
 load→append→save and lose one hook. That is a separate defect
 (last-writer-wins), out of scope here, and <strong>not</strong> claimed
 to be fixed by this change.</li>
+</ul>
+<hr />
+<h2 id="revision-2-two-properties-the-suite-was-blind-to-now-guarded">9.
+Revision 2 — two properties the suite was blind to, now guarded</h2>
+<p>The review found no defect in the shipped code, but demonstrated that
+two of the atomic write’s load-bearing properties were <strong>asserted
+nowhere</strong>: it removed each one and the entire suite stayed green.
+Both are properties of <em>how</em> the write is performed rather than
+of what it leaves behind, which is exactly why no outcome assertion
+could see them.</p>
+<h3
+id="a.-mkstempdir...-a-latent-production-defect-the-suite-could-not-express">9a.
+<code>mkstemp(dir=...)</code> — a latent PRODUCTION defect the suite
+could not express</h3>
+<p><code>_save_hooks</code>’s docstring said the temp file is created in
+the destination directory because <code>os.replace</code> is atomic only
+within a filesystem. That claim was load-bearing and unpinned, and the
+consequence is worse than the docstring implied. Measured on this host
+2026-08-25:</p>
+<pre><code>tempfile.gettempdir() -&gt; /tmp/.private/milosvasic     st_dev = 45
+/dev/shm                                              st_dev = 30
+os.replace(&lt;file on 45&gt;, &lt;file on 30&gt;)
+  -&gt; OSError: [Errno 18] Invalid cross-device link</code></pre>
+<p>A cross-device rename does not silently become non-atomic — it
+<strong>raises</strong>, so every hook write fails. And the test suite
+is <strong>structurally</strong> unable to observe it: pytest’s
+<code>tmp_path</code> lives under <code>tempfile.gettempdir()</code>, so
+<code>mkstemp</code>’s default directory and the store directory are
+always the same filesystem under test. In the container they are not —
+the store is the bind-mounted <code>/config</code>, <code>/tmp</code> is
+the image overlay — so this defect class fails on <strong>every</strong>
+hook write in production while passing on <strong>every</strong>
+developer machine.</p>
+<p>Closed at two layers:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Guard</th>
+<th>Asserts</th>
+<th>Runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TestAtomicWriteMechanicsArePinned::test_the_temp_file_is_created_in_the_destination_directory</code></td>
+<td>the <code>dir=</code> kwarg is present, equals the store dir, and
+the file renamed in is the temp file written</td>
+<td>every host (device-independent — asserts the CALL)</td>
+</tr>
+<tr>
+<td><code>TestTheCrossDeviceFailureIsCaughtForReal</code> (2 tests)</td>
+<td>a real create, and a real append onto seeded hooks, succeed with the
+store on a genuinely different filesystem</td>
+<td>hosts with a second writable fs; honest §11.4.3 SKIP-with-reason
+otherwise</td>
+</tr>
+</tbody>
+</table>
+<p>The second stages the real condition — <strong>nothing is
+simulated</strong>: no <code>os.replace</code> is patched, no EXDEV is
+injected, the store is created under <code>/dev/shm</code> and the
+kernel decides. On this host both tests RAN (not skipped), confirmed by
+<code>-v</code>.</p>
+<p><strong>RED, observed against the un-pinned code</strong>
+(<code>dir=store_dir</code> removed — the reviewer’s RM3), verbatim:</p>
+<pre><code>E  AssertionError: creating a hook FAILED (500) with the store on a different filesystem from
+E  tempfile.gettempdir(). ... Response: {&quot;detail&quot;:&quot;Hook was not created: persisting the hook
+E  definition failed&quot;}
+ERROR api.hooks:hooks.py:245 Failed to save hooks: [Errno 18] Invalid cross-device link:
+  &#39;/tmp/.private/milosvasic/.hooks-zwrc_rj1.json&#39; -&gt; &#39;/dev/shm/bob174-xdev-store-nahelgsk/hooks.json&#39;</code></pre>
+<p>That is the production symptom reproduced end-to-end through the real
+FastAPI app — a runtime-class observable, not a source-class one
+(§11.4.226). With the kwarg dropped the guard file reports <strong>3
+failed, 32 passed</strong>; restoring it returns <strong>35
+passed</strong>, and the source was restored byte-identically with md5
+re-verified (§11.4.84).</p>
+<p><strong>A false positive of my own, found by self-review and closed
+(§11.4.201(1)).</strong> The pin was first written as
+<code>assert "dir" in kwargs</code>.
+<code>tempfile.mkstemp(suffix, prefix, dir, text)</code> accepts
+<code>dir</code> <strong>positionally</strong>, so that assertion would
+have REFUSED a behaviourally-correct call — a false-positive refusal,
+precisely the failure mode the rest of this file’s guards are written to
+avoid, shipped inside the guard added to prevent one. Re-pinned on the
+property that is true regardless of call form: <strong>where the temp
+file actually landed</strong> (<code>os.path.dirname</code> of the path
+<code>mkstemp</code> returned). Both polarities are now proven, which is
+what makes it a validated guard rather than an asserted one
+(§11.4.107(10)):</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Source under test</th>
+<th>Guard file result</th>
+<th>Correct?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>golden-TRUE</td>
+<td><code>dir=</code> dropped (RM3)</td>
+<td><strong>3 failed</strong>, 32 passed</td>
+<td>fires — yes</td>
+</tr>
+<tr>
+<td>golden-FALSE</td>
+<td><code>mkstemp(".json", ".hooks-", store_dir)</code> — same
+directory, <strong>positional</strong></td>
+<td><strong>35 passed</strong></td>
+<td>does NOT fire — yes</td>
+</tr>
+<tr>
+<td>baseline</td>
+<td>unmodified</td>
+<td><strong>35 passed</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>A second assertion on the kwarg itself was drafted and then
+<strong>deleted</strong>: once the placement assertion passes it is
+unreachable, and a test that cannot fail is decoration (§11.4.224(C)).
+The kwarg is named in the failure message, where it belongs — as the
+likely cause, not as a gate.</p>
+<h3 id="b.-os.fsync-present-correct-and-asserted-nowhere">9b.
+<code>os.fsync</code> — present, correct, and asserted nowhere</h3>
+<p>Dropping the <code>fsync</code> while keeping <code>os.replace</code>
+(the reviewer’s RM2) passed the entire suite, because durability leaves
+no in-process trace: after the replace the new bytes are readable
+whether or not they were ever flushed. Pinned on the call —
+<code>os.fsync</code> must run <strong>on the temp file’s fd</strong>
+and <strong>before</strong> <code>os.replace</code> — since that is the
+strongest assertion available, with the honest boundary recorded in
+§8.</p>
+<p>RED observed against the un-pinned code (fsync removed): the fsync
+pin fails and <strong>nothing else does</strong>, which is what a
+correctly-scoped guard looks like. Per-mutation figures at current
+scope: §5, M10.</p>
+<h3 id="c.-a-note-on-the-instrument-not-the-product-11.4.20112">9c. A
+note on the instrument, not the product (§11.4.201(12))</h3>
+<p>Three measurement footguns bit during this round and are recorded so
+the next reader does not repeat them. All three share ONE shape —
+<strong>a zero produced by a broken instrument, indistinguishable from a
+zero produced by a clean artifact</strong> (§11.4.201(6)) — and all
+three were caught by the same discipline: running a needle of the SAME
+SHAPE, for something known present, through the SAME path before
+believing any zero.</p>
+<ul>
+<li><strong>A line-wrapped literal is invisible to a line-oriented
+search.</strong> <code>grep "14 call sites"</code> reported
+<strong>0</strong> hits in <code>DESIGN_DECISION.md</code> for a string
+that was demonstrably there — it was wrapped as
+<code>14 call\nsites</code>. The zero was caught only because a control
+needle of the same shape, for a phrase <em>known</em> present, also
+returned 0 (§11.4.201(7)(b)). Both occurrences were then found with a
+wrap-tolerant regex.</li>
+<li><strong><code>find</code> here is <code>bfs</code>, and it rejects a
+relative <code>-newermt</code>.</strong>
+<code>find … -newermt '-90 minutes'</code> returned <strong>0 files
+modified in the last 90 minutes</strong> on a tree being actively
+edited. The binary is <code>bfs</code>, not GNU findutils; it answers
+that argument with <code>bfs: error: Invalid timestamp.</code> on
+<strong>stderr</strong> — which a habitual <code>2&gt;/dev/null</code>
+swallowed, converting a hard error into a confident empty result. The
+fix is an absolute cutoff
+(<code>-newermt "$(date -d '90 minutes ago' '+%F %T')"</code>), verified
+with a negative control (an impossible future cutoff → 0) and a positive
+one (a file just edited → present). Worth recording beyond this item:
+<code>2&gt;/dev/null</code> on a measurement command converts <em>tool
+failure</em> into <em>measured absence</em>, and the two are not the
+same finding.</li>
+<li><strong>A tool timeout can leave mutation residue in the working
+tree.</strong> The first mutation-harness run was SIGTERMed at a
+10-minute tool deadline <em>mid-mutation</em>, leaving a mutated
+<code>hooks.py</code> behind — caught by the §11.4.84 md5 check, not by
+anything else. The harness now installs SIGTERM/SIGINT/atexit handlers
+that restore the pristine source before exiting, and is run detached
+(§11.4.89) rather than against a foreground deadline.</li>
 </ul>
 </body>
 </html>

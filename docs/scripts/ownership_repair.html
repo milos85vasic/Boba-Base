@@ -1,8 +1,254 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ownership_repair</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">ownership_repair</h1>
+</header>
 <h1
 id="scriptsownership_repair.sh-ownership-repair"><code>scripts/ownership_repair.sh</code>
 — Ownership Repair</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-08-21T19:05:00Z <strong>Purpose:</strong> Operator guide for the
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-08-25T00:00:00Z <strong>Purpose:</strong> Operator guide for the
 tool that brings pre-existing content back under the ownership of the
 person who started the system. <strong>Last verified:</strong>
 2026-08-21</p>
@@ -270,12 +516,94 @@ declared scope.</td>
 </tr>
 <tr>
 <td><code>2</code></td>
-<td>Could not run: the scope is missing/unparseable, the fingerprint
-cannot be computed, the state directory cannot be created, or the change
-record cannot be opened for append. Nothing was touched.</td>
+<td>Could not run: the scope is missing/unparseable, <strong>the scope
+declares zero locations</strong>, <strong>the scope declares a path this
+repair must never walk</strong> (see <em>The declared-path fence</em>
+below), the fingerprint cannot be computed, the state directory cannot
+be created, or the change record cannot be opened for append. Nothing
+was touched.</td>
 </tr>
 </tbody>
 </table>
+<h3 id="why-an-empty-scope-is-2-and-not-0">Why an empty scope is
+<code>2</code> and not <code>0</code></h3>
+<p>A scope file that reads cleanly but yields <strong>no</strong>
+locations walked nothing and therefore asserted nothing. Before Revision
+3 that produced exit <code>0</code> and a completion marker carrying the
+fingerprint of the empty string (<code>e3b0c442…b855</code>), which
+<code>start.sh</code> then read as “already repaired” — so the repair
+was skipped on every subsequent start. Three real shapes produce it:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">paths</span><span class="kw">:</span><span class="at"> </span><span class="kw">[]</span><span class="co">            # an explicitly empty list</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">path</span><span class="kw">:</span><span class="co">                # the top-level key mistyped — valid YAML, parses, yields nothing</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;config&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">paths</span><span class="kw">:</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;${QBITTORRENT_DATA_DIR}&quot;</span><span class="co">   # …with the variable unset, expands to nothing</span></span></code></pre></div>
+<p>All three now exit <code>2</code>.
+<code>scripts/ownership_precondition.sh</code> has always refused them
+the same way; the two consumers of one scope file now agree.</p>
+<h3 id="the-declared-path-fence">The declared-path fence</h3>
+<p>The walk only ever names items <em>under</em> a declared path — but
+until Revision 3 nothing constrained what a declared path could
+<strong>be</strong>, and the shipped scope declares
+<code>${QBITTORRENT_DATA_DIR:-/mnt/DATA}</code>, whose value comes from
+<code>.env</code>. Measured 2026-08-25: with
+<code>QBITTORRENT_DATA_DIR=/</code> the repair really did start
+<code>find / \( ! -uid … \)</code> — a recursive walk of the whole
+filesystem.</p>
+<p>A declared path is now checked before anything is walked:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Entry written as</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>repo-relative (<code>config</code>, <code>.env</code>,
+<code>tmp</code>)</td>
+<td>after <code>..</code>/<code>.</code>/<code>//</code> are resolved it
+must still be <strong>inside the project root</strong></td>
+</tr>
+<tr>
+<td>absolute (<code>/mnt/DATA</code>,
+<code>${QBITTORRENT_DATA_DIR}</code>)</td>
+<td>at least <strong>2 path components</strong>, and never a system tree
+(<code>/bin /boot /dev /etc /lib /lib32 /lib64 /libx32 /proc /root /sbin /sys /usr /var</code>)
+nor anything under one</td>
+</tr>
+</tbody>
+</table>
+<p>The floor is 2 because the shipped default <code>/mnt/DATA</code> has
+exactly 2 — it is the depth the shipped configuration forces, not a
+number picked by taste. The denylist is needed as well as the floor:
+<code>/usr/lib</code> has 2 components and clears the floor.
+<code>/run</code>, <code>/home</code>, <code>/media</code>,
+<code>/mnt</code>, <code>/opt</code>, <code>/srv</code> and
+<code>/tmp</code> are deliberately <strong>not</strong> denylisted —
+this host’s real library is
+<code>/run/media/&lt;user&gt;/&lt;disk&gt;/Downloads</code>, and
+refusing it would be a false alarm about a correct configuration.</p>
+<p><strong>One refused entry refuses the whole run</strong> (exit
+<code>2</code>, nothing touched). A scope naming such a path is not one
+the repair trusts in part.</p>
+<p><strong>What the fence does not do</strong> (§11.4.6): it bounds the
+<em>shape</em> of a declared path. It cannot decide that a well-shaped
+absolute path is the tree you meant — an absolute path outside the
+project with enough depth is exactly what a download root is, so it is
+accepted. It also does not require the path to be operator-owned,
+because a root-owned mount point with operator-owned content beneath it
+is the ordinary state of a removable disk.</p>
+<p>If you see <code>REFUSED &lt;path&gt; — …</code>, fix
+<code>config/owned_paths.yaml</code> or the environment variable it
+reads; the message names the resolved path and the rule.</p>
 <p>Two signal exits are also possible and are deliberate:
 <code>130</code> on <code>SIGINT</code> and <code>143</code> on
 <code>SIGTERM</code>, both printing
@@ -301,6 +629,38 @@ E1 an absent non-optional path is an error, not a skip.</li>
 non-zero status; both halves are honoured. The readable part is
 repaired, the unreadable part is a named failure line, and the run exits
 <code>1</code>. It is never a silent gap.</li>
+<li><strong>A hardlink inside the scope</strong> → <code>chown(2)</code>
+acts on the <strong>inode</strong>, so if an in-scope name and an
+out-of-scope name share one inode, repairing the in-scope name changes
+the out-of-scope file’s owner too. Measured: <code>1000:10</code> →
+<code>1000:1000</code>. The reach is bounded — hardlinks cannot cross
+filesystems, it needs a writer inside the scope able to create the link,
+it moves ownership only (never content), and the new owner is always
+<em>you</em>. It is <strong>not</strong> fenced, deliberately: refusing
+every item with more than one link would refuse the ordinary case,
+because hardlinking is how a torrent client and a media manager share
+one payload between the download tree and the library.</li>
+<li><strong>A declared root that cannot be chowned</strong> → reported
+with an explicit note that the failing item is the <em>declared root of
+the entry</em>, not a file inside it. The usual cause is a mount point
+owned by another identity, and the remedy is the mount, not the files.
+The run still exits <code>1</code> and writes no marker, so the whole
+scope is re-walked next start — that is deliberate, but it means an
+unresolved mount point makes every start re-walk the library.</li>
+<li><strong>A mode restore that fails</strong> → the item’s ownership
+<em>was</em> repaired, but the FR-015 bit-restore did not happen. It is
+named
+(<code>FAILED … mode … could not be restored (FR-015): &lt;reason&gt;</code>),
+recorded with <code>outcome: "mode-restore-failed"</code>, and the run
+exits <code>1</code> with no marker. The direction is narrowing-only, so
+it is never an access <em>widening</em> — but “the exact bits are
+preserved” is a promise, and an unkept promise is not reported as
+success.</li>
+<li><strong>A chown that fails</strong> → the reason <code>chown</code>
+(and the namespace fallback) gave is printed with the failing path, so
+<code>EPERM</code>, <code>EROFS</code> and <code>ENOENT</code> — three
+different remedies — are distinguishable instead of collapsing into one
+sentence.</li>
 <li><strong>A symlink inside the scope</strong> → <code>chown -h</code>
 acts on the link itself, never on its target. Without <code>-h</code>, a
 symlink pointing anywhere on the filesystem would let the repair mutate
@@ -376,8 +736,8 @@ for an operational log. The location is overridable per run via
 the <strong>E3 change record</strong> of the run currently <strong>in
 flight</strong>. Appended to, one JSON object per line, greppable by
 path:</p>
-<div class="sourceCode" id="cb7"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;path&quot;</span><span class="fu">:</span><span class="st">&quot;/…/config/some.file&quot;</span><span class="fu">,</span><span class="dt">&quot;previous_uid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_gid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_mode&quot;</span><span class="fu">:</span><span class="st">&quot;644&quot;</span><span class="fu">,</span><span class="dt">&quot;new_uid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;new_gid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;changed_at&quot;</span><span class="fu">:</span><span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span><span class="dt">&quot;outcome&quot;</span><span class="fu">:</span><span class="st">&quot;changed&quot;</span><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;path&quot;</span><span class="fu">:</span><span class="st">&quot;/…/config/some.file&quot;</span><span class="fu">,</span><span class="dt">&quot;previous_uid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_gid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_mode&quot;</span><span class="fu">:</span><span class="st">&quot;644&quot;</span><span class="fu">,</span><span class="dt">&quot;new_uid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;new_gid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;changed_at&quot;</span><span class="fu">:</span><span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span><span class="dt">&quot;outcome&quot;</span><span class="fu">:</span><span class="st">&quot;changed&quot;</span><span class="fu">}</span></span></code></pre></div>
 <p><code>outcome</code> is one of <code>changed</code> |
 <code>skipped</code> | <code>failed</code>. For a declared path that
 does not exist there is no previous ownership state, so every ownership
@@ -428,13 +788,13 @@ this document does not claim it does.</p>
 <code>--state-dir</code> somewhere outside the repository.</p>
 <p><strong><code>logs/ownership/repair-marker.json</code></strong> — the
 <strong>E2 completion marker</strong>:</p>
-<div class="sourceCode" id="cb9"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;completed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;scope_fingerprint&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;sha256 of the sorted declared scope&gt;&quot;</span><span class="fu">,</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;items_changed&quot;</span><span class="fu">:</span> <span class="dv">52</span><span class="fu">,</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;record_file&quot;</span><span class="fu">:</span> <span class="st">&quot;repair-changes.20260821T140000Z.ndjson&quot;</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;completed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;scope_fingerprint&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;sha256 of the sorted declared scope&gt;&quot;</span><span class="fu">,</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;items_changed&quot;</span><span class="fu">:</span> <span class="dv">52</span><span class="fu">,</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;record_file&quot;</span><span class="fu">:</span> <span class="st">&quot;repair-changes.20260821T140000Z.ndjson&quot;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 <p>Written via <code>mktemp</code> + <code>mv -f</code>, so a
 half-written marker can never be read by the next start. Validity is a
 literal match on the current fingerprint inside the file — a stale
@@ -597,3 +957,39 @@ entries.</li>
 </ul>
 <p>Suite: 34 assertions passing before this change, 44 after, 0 failed,
 0 skipped.</p>
+<p>2026-08-25 (Revision 3) — re-verified after the T028 independent
+review returned NO-GO (0 blocking, 2 important, 3 minor, 2 nit). Every
+remediation captured a RED in
+<code>tests/unit/test_ownership_repair.sh</code> against the pre-fix
+artifact before its fix existed, and every new test was proven to catch
+its own negation by a paired §1.1 mutation:</p>
+<ul>
+<li><strong>an empty scope is no longer a completed repair</strong>
+(Case 16). Measured pre-fix: <code>paths: []</code>, a mistyped
+top-level key, and an unset <code>${VAR}</code> each exited
+<code>0</code> and wrote a marker with the fingerprint of the empty
+string.</li>
+<li><strong>the declared path is itself fenced</strong> (Case 17).
+Measured pre-fix: the shipped
+<code>${QBITTORRENT_DATA_DIR:-/mnt/DATA}</code> entry with the variable
+repointed launched <code>find /</code> over the whole filesystem —
+observed in <code>ps</code> and killed by pid. <code>..</code> was never
+resolved, and <code>absolutise("/")</code> returned <code>/</code>.</li>
+<li><strong>the hardlink escape is documented instead of denied</strong>
+(Case 18) — the header had claimed out-of-scope reach was impossible by
+construction; it is not, and the correction is machine-checked against
+the measured behaviour.</li>
+<li><strong>a failed <code>chown</code> prints its reason</strong> (Case
+19); <strong>a failed mode restore is reported and blocks the
+marker</strong> (Case 20); <strong>the fingerprint comment describes the
+environment-expanded parse it is actually computed from</strong> (Case
+21); <strong>a failure on the declared root is diagnosed as
+such</strong> (Case 22).</li>
+</ul>
+<p>Suite: 44 assertions passing before this change, 86 after, 0 failed,
+0 skipped. The live shipped scope was re-checked against the new fence
+with the real <code>.env</code>: all six declared entries ACCEPT, and
+the scope fingerprint is byte-identical to the pre-change one, so no
+existing marker is invalidated.</p>
+</body>
+</html>

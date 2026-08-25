@@ -1,11 +1,257 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ownership_precondition</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">ownership_precondition</h1>
+</header>
 <h1
 id="scriptsownership_precondition.sh-ownership-startup-precondition"><code>scripts/ownership_precondition.sh</code>
 — Ownership Startup Precondition</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-08-21T18:49:13Z <strong>Purpose:</strong> Operator guide for the
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-08-25T19:28:28Z <strong>Purpose:</strong> Operator guide for the
 startup check that refuses to start the system when a declared location
 cannot produce operator-owned files. <strong>Last verified:</strong>
-2026-08-21</p>
+2026-08-25</p>
 <hr />
 <h2 id="overview">Overview</h2>
 <p><code>scripts/ownership_precondition.sh</code> answers exactly one
@@ -314,16 +560,107 @@ Each offending location is named individually.</td>
 </table>
 <p><strong><code>2</code> is not a pass, and it is not a failure of the
 system either.</strong> It means the check asserted <em>nothing</em>:
-the scope file was missing, unparseable, or empty; no python3 with
-PyYAML was available; or the caller passed an unusable argument.
-Reporting “could not run” as success is the §11.4.201(6)
-blind-instrument failure — a blind instrument and a clean system return
-the same quiet zero — so this script refuses to conflate them. The
-<code>CANNOT-RUN</code> report always names the cause and ends with the
-literal line:</p>
+the scope file was missing, unparseable, or empty; <strong>the scope
+declared a path the fence refuses</strong> (see <em>The declared-path
+fence</em> below); no python3 with PyYAML was available; or the caller
+passed an unusable argument. Reporting “could not run” as success is the
+§11.4.201(6) blind-instrument failure — a blind instrument and a clean
+system return the same quiet zero — so this script refuses to conflate
+them. The <code>CANNOT-RUN</code> report always names the cause and ends
+with the literal line:</p>
 <pre><code>This check asserted NOTHING. It is not a pass — fix the cause above and re-run.</code></pre>
 <p>A caller that treats <code>2</code> as success has re-introduced the
 exact class of defect this feature exists to remove.</p>
+<h2 id="the-declared-path-fence">The declared-path fence</h2>
+<p>This script <strong>creates a probe file inside every declared
+directory</strong> — that is the whole point of it (see <em>Why it
+PROBES instead of inspecting</em>). Until BOB-187 nothing constrained
+what a declared path could <strong>be</strong>.
+<code>config/owned_paths.yaml</code> ships</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;${QBITTORRENT_DATA_DIR:-/mnt/DATA}&quot;</span></span></code></pre></div>
+<p>and <code>.env</code> — untracked by design, unreviewed, and in no
+review’s diff — supplies that variable. The same unreviewed value that
+drove a filesystem-wide <code>find /</code> in
+<code>scripts/ownership_repair.sh</code> (measured 2026-08-25, observed
+in <code>ps</code> and killed by pid) also selected where
+<strong>this</strong> script creates files. Lower blast radius than a
+recursive <code>chown</code>; the input is identical.</p>
+<p>Before any probe runs, every declared entry is now passed through
+<code>ownership_path_fence()</code> in
+<code>scripts/lib/ownership.sh</code> — the <strong>same</strong>
+predicate the repair path uses. It is called, never reimplemented:
+§11.4.251 forbids a second dialect, and the reason the fence was put in
+the shared library when the repair was fenced is precisely so this
+caller would use that one. Its rules:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th></th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F0</strong></td>
+<td>Lexical <code>.</code> / <code>..</code> / <code>//</code>
+normalisation, with <strong>no symlink resolution</strong> —
+TOCTOU-free, and it must be able to judge a path that does not exist yet
+(<code>.env</code>, <code>config/boba.db</code> before first boot).</td>
+</tr>
+<tr>
+<td><strong>F1</strong></td>
+<td>A <strong>repo-relative</strong> entry must still resolve inside
+<code>PROJECT_ROOT</code>. An entry that climbs out with <code>..</code>
+was written to escape, and the scope format does not license that.</td>
+</tr>
+<tr>
+<td><strong>F2</strong></td>
+<td>An <strong>absolute</strong> entry needs at least <strong>2</strong>
+path components. The shipped default <code>/mnt/DATA</code> has exactly
+2, so the configuration itself forces this floor.</td>
+</tr>
+<tr>
+<td><strong>F3</strong></td>
+<td>Never a system tree nor anything under one. <code>/usr/lib</code>
+has 2 components and clears F2, which is why F3 is separately
+load-bearing.</td>
+</tr>
+</tbody>
+</table>
+<p><code>/run</code>, <code>/home</code>, <code>/media</code>,
+<code>/mnt</code>, <code>/opt</code>, <code>/srv</code> and
+<code>/tmp</code> are <strong>deliberately not</strong> denylisted: this
+host’s real library measures as
+<code>/run/media/&lt;user&gt;/&lt;disk&gt;/Downloads</code>, and a
+denylist that swallowed <code>/run</code> would refuse the live
+configuration — the §11.4.201(1) false-positive refusal the fence must
+not become.</p>
+<p><strong>One refused entry refuses the whole run, with exit
+<code>2</code>, not <code>1</code>.</strong> Exit <code>1</code> means
+“a declared location cannot produce operator-owned files” — a
+per-location verdict this check has <em>not</em> earned, because it
+deliberately never probed the path. Exit <code>2</code> already means
+“the check could not run” for a scope that is missing, unparseable or
+empty; a scope naming a path of this shape is the same class. Nothing is
+probed and no probe file is created anywhere:</p>
+<pre><code>$ CONTAINER_RUNTIME=&quot;&quot; scripts/ownership_precondition.sh --scope /tmp/root-scope.yaml
+OWNERSHIP-PRECONDITION: CANNOT-RUN
+  - the declared scope names 1 path(s) this check must never probe: /tmp/root-scope.yaml
+  - REFUSED / — &#39;/&#39; resolves to the filesystem root &#39;/&#39; — a recursive ownership change of the whole filesystem is never a declared scope
+  - nothing was probed, and no probe file was created anywhere
+This check asserted NOTHING. It is not a pass — fix the cause above and re-run.</code></pre>
+<p><strong>Honest boundary (§11.4.6).</strong> The fence bounds the
+<em>shape</em> of a declared path. It cannot decide that a well-formed
+absolute path is the tree the operator <em>meant</em> — a deep absolute
+path outside the project is exactly what a download root is, so it must
+be accepted. What it removes is the class traced to a catastrophic
+outcome: filesystem roots, bare top-level directories, system trees, and
+<code>..</code> escapes.</p>
 <h2 id="edge-cases">Edge cases</h2>
 <ul>
 <li><strong>A declared path that is absent and
@@ -536,6 +873,18 @@ in it, so the <code>pgid &lt;= 1</code> broadcast-kill hazard cannot
 arise.</li>
 </ul>
 <h2 id="last-verified">Last verified</h2>
+<p>2026-08-25 (BOB-187) — the declared-path fence section was written
+against <code>ownership_path_fence()</code> as it actually exists in
+<code>scripts/lib/ownership.sh</code>, and the <code>CANNOT-RUN</code>
+transcript quoted there is pasted from a real run in this worktree, not
+composed. The four fence rules, the <code>MIN_COMPONENTS</code> value of
+2, and the contents of <code>OWNERSHIP_FENCE_SYSTEM_TREES</code> (which
+does <strong>not</strong> contain <code>/run</code>, <code>/home</code>,
+<code>/media</code>, <code>/mnt</code>, <code>/opt</code>,
+<code>/srv</code> or <code>/tmp</code>) were read from that file rather
+than from its prose. The live scope was re-checked at the fence — all
+six shipped entries ACCEPT with the real <code>.env</code> value —
+without invoking the precondition against the real library.</p>
 <p>2026-08-21 — every flag, exit code, environment variable, and skip
 reason in this document was read from
 <code>scripts/ownership_precondition.sh</code> and
@@ -544,3 +893,5 @@ script’s own usage text alone. The <code>start.sh</code> wiring is
 described from the invocation actually present in the working tree at
 2026-08-21T15:10Z (<code>run_ownership_gate()</code>, called at two
 sites), not from the contract’s word for it.</p>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>round4_GO</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">round4_GO</h1>
+</header>
+<h1 id="bob-169-export-charset-corruption-review-go-round-4">BOB-169 —
+export charset corruption: review <strong>GO</strong> (round 4)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-25T17:50:00Z</p>
+<p>Four review rounds on the §11.4.209 substrate, iterated to zero
+findings per §11.4.134. <strong>BOB-169 is NOT closable on this
+change</strong> — see “Still owed” below.</p>
+<h2 id="what-was-wrong">What was wrong</h2>
+<p>Three producers emitted HTML with no
+<code>&lt;meta charset&gt;</code>; weasyprint rendered PDFs from those
+body fragments, fell back to a non-UTF-8 codec, and baked mojibake into
+the PDF <strong>text layer</strong> — not a display artifact, corruption
+in the bytes.</p>
+<p><code>docs/CONTINUATION.pdf</code> — the §12.10 session-resumption
+document — carried <strong>336 corrupted lines</strong> and regenerated
+corrupt on every run. Corpus-wide, <strong>301 of 334</strong> exports
+carried no charset declaration while every export-sync gate reported
+green.</p>
+<h2 id="the-three-producers-now-in-lockstep">The three producers, now in
+lockstep</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Producer</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/generate_markdown_exports.sh</code></td>
+<td><code>--standalone</code> + charset-aware staleness + PDF staleness
+keyed on the HTML</td>
+</tr>
+<tr>
+<td><code>scripts/regenerate-continuation-exports.sh</code></td>
+<td><code>--standalone</code> (the third producer, found only because
+the corpus scan was run)</td>
+</tr>
+<tr>
+<td>docs_chain <code>derived.go:139</code></td>
+<td>already passed <code>--standalone</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="verified-closed-by-round">Verified closed, by round</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Finding</th>
+<th>Closure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R2-F1 (BLOCKING) — PDF staleness ignored the HTML, so a fixed HTML
+never re-rendered its PDF</td>
+<td><code>[[ ! -f "$pdf" \|\| "$md" -nt "$pdf" \|\| "$html" -nt "$pdf" ]]</code>.
+Reviewer re-ran the real-corpus shape on an unmodified copy:
+<code>BEFORE charset=0 pdf_moj=1</code> →
+<code>AFTER charset=1 pdf_moj=0</code>, plus an <strong>idempotence
+control</strong> it added and I had not run: a second consecutive run
+leaves the PDF md5 unchanged, so the clause heals without churning clean
+pairs</td>
+</tr>
+<tr>
+<td>R2-F2 — gate renumbering</td>
+<td>Re-derived a third time on a three-shape needled instrument:
+<code>sites=50 {bracket:41, run_const_gate:9}</code>, denominators
+<code>[50]</code>, 1..50 complete, zero duplicates, strictly
+increasing</td>
+</tr>
+<tr>
+<td>R2-F3 — baseline honesty</td>
+<td>Header states <code>BASELINE</code> is a CONSTANT, nothing lowers
+it, tightening is manual</td>
+</tr>
+<tr>
+<td>R2-F5 / R3-F1 — my inserted paragraph severed a sentence</td>
+<td>Reflowed; sentence reads whole; <code>bash -n</code> clean</td>
+</tr>
+</tbody>
+</table>
+<h2 id="round-4-regression-sweep-reviewer-executed">Round-4 regression
+sweep (reviewer-executed)</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr>
+<td><code>test_export_pdf_charset_integrity.sh</code></td>
+<td>2 passed, 0 failed</td>
+</tr>
+<tr>
+<td><code>test_cm_export_charset_valid.sh</code></td>
+<td>6 passed, 0 failed</td>
+</tr>
+<tr>
+<td><code>CM-EXPORT-CHARSET-VALID</code> (invariant 50)</td>
+<td>PASS at baseline 301, no regression</td>
+</tr>
+<tr>
+<td><code>docs/CONTINUATION</code></td>
+<td>charset <strong>1</strong>, mojibake <strong>0</strong> (was
+336)</td>
+</tr>
+<tr>
+<td>§11.4.263 / residue / staging</td>
+<td>clean; <code>HEAD</code> still <code>dd9fcb5</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-comment-only-claim-two-needles-not-one">The comment-only
+claim — two needles, not one</h2>
+<p>I proved the reflow was comment-only by stripping full-line comments
+and blanks from HEAD’s copy and the working copy and diffing: 26 body
+lines each, exactly one differing (<code>pandoc … -o</code> →
+<code>pandoc … --standalone -o</code>, the fix itself). I ran ONE needle
+(<code>echo NEEDLE</code> → diff fires).</p>
+<p>The reviewer ran <strong>two</strong>, and the second is the better
+instrument: it appended a comment-only line and confirmed the body diff
+stays SILENT. One positive needle proves an instrument is not dead; it
+does not prove it is aimed correctly. With both, “comment-only” is a
+measured property rather than an inference.</p>
+<h2 id="still-owed-stated-so-nothing-reads-as-closed">Still owed —
+stated so nothing reads as closed</h2>
+<p><strong>Acceptance (c)</strong> — bulk regeneration of the 301
+charset-less exports. Mechanism present, correctly sequenced behind
+R2-F1, <strong>run not performed</strong>, needs a quiescent tree.</p>
+<p><strong>BOB-182</strong> — the §11.4.224(E) ratchet-adoption
+decision. Filing it satisfies the TRACKING obligation, not the DECISION
+obligation: the clause requires the operator’s answer recorded as
+consumer DATA <em>before first enforcement</em>, and invariant 50 is
+already enforcing. The item stays OPEN. The interim is deliberate and
+matches §11.4.201(8)’s own precedence for the §11.4.135 ratchet — pinned
+at baseline it can only fire on regression, so enforcement today is
+near-inert while the decision is owed.</p>
+<h2
+id="carrierblindness-census-for-this-item-five-instances-three-of-them-mine">Carrier/blindness
+census for this item — five instances, three of them mine</h2>
+<ol type="1">
+<li><code>grep -qi 'charset'</code> in my own test matched
+<code>charset-fixture</code> and PASSED against a broken generator</li>
+<li>my bracket-only renumber audit saw 41 of 50 labels</li>
+<li>the reviewer’s bracket-only scan, same blindness</li>
+<li>the reviewer’s name-requiring scan, which silently dropped
+invariants 1–4 and 11–15</li>
+<li>mojibake counted inside quoted examples</li>
+</ol>
+<p>Every one was caught by the same discipline: <strong>refuse to report
+a zero until a needle of the same shape as the query proves the
+instrument can see it.</strong></p>
+<h2
+id="what-could-not-be-analysed-reviewers-own-statement-carried-verbatim-in-substance">What
+could not be analysed (reviewer’s own statement, carried verbatim in
+substance)</h2>
+<ul>
+<li>The full 50-invariant sweep — invariant 50 run in isolation,
+numbering audited statically; the other 49 gates’ behaviour under the
+renumbered file unverified.</li>
+<li>The nine <code>run_const_gate</code> gate scripts themselves — only
+their labels.</li>
+<li>weasyprint’s specific fallback codec — established non-UTF-8 and
+charset-driven, not identified.</li>
+<li>The python-markdown fallback branch — never executes on this host,
+unexercised by the guard.</li>
+<li>Rendering fidelity beyond the text layer.</li>
+<li>The tree was never quiescent across any round.</li>
+</ul>
+</body>
+</html>

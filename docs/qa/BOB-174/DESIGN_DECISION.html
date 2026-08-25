@@ -247,8 +247,8 @@
 <h1
 id="bob-174-design-decision-how-a-corrupt-hook-store-behaves-and-why">BOB-174
 — Design decision: how a CORRUPT hook store behaves, and why</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-23T09:55:00Z <strong>Item:</strong> BOB-174 (Bug, High) — a
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-25T18:36:33Z <strong>Item:</strong> BOB-174 (Bug, High) — a
 corrupt hooks file reads as zero hooks, and the next create destroys the
 rest <strong>Scope of this document:</strong> the decisions the item
 required to be <em>recorded rather than inferred</em>, and the reasoning
@@ -432,12 +432,67 @@ does <strong>not</strong> raise</h2>
 decision most in tension with the rest of the item, so the reasoning is
 recorded in full.</p>
 <p><code>dispatch_event</code> is awaited <strong>inline</strong> by the
-search and download handlers (<code>api/routes.py</code>, 14 call
-sites). Raising <code>HookStoreCorruptError</code> out of it would turn
-an unreadable hooks file into a <strong>500 on SEARCH and on
-DOWNLOAD</strong> — a §11.4.201(1) false-positive refusal that breaks
-the product’s primary capabilities over an unrelated subsystem’s state.
-That is strictly worse than the gap it would close.</p>
+search and download handlers. Raising <code>HookStoreCorruptError</code>
+out of it would turn an unreadable hooks file into a <strong>500 on
+SEARCH and on DOWNLOAD</strong> — a §11.4.201(1) false-positive refusal
+that breaks the product’s primary capabilities over an unrelated
+subsystem’s state. That is strictly worse than the gap it would
+close.</p>
+<p><strong>CORRECTION (Revision 2, §11.4.201(9)).</strong> Revision 1
+said “14 call sites”. That number does not reproduce and has been
+withdrawn. Re-measured 2026-08-25 by an <strong>AST walk</strong> of
+<code>api/routes.py</code> rather than by grep, because grep answers a
+different question here:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Measurement</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>await dispatch_event(...)</code> call sites (AST)</td>
+<td><strong>8</strong> — lines 488, 507, 598, 760, 1190, 1309, 1373,
+1419</td>
+</tr>
+<tr>
+<td>Total textual occurrences of <code>dispatch_event</code></td>
+<td>13 — the 8 above plus 5
+<code>from .hooks import dispatch_event</code> lines</td>
+</tr>
+<tr>
+<td>Revision 1’s claim</td>
+<td>14 — matches neither</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The substance is unchanged, and it was established by RUNNING
+the code, not by counting.</strong> The independent review removed the
+corrupt-store arm and drove a real corrupt store through the real app:
+<code>/api/v1/search</code> (routes.py:488) and
+<code>/api/v1/download</code> (routes.py:1190) both returned
+<strong>HTTP 500</strong>. That is the measurement the decision rests
+on.</p>
+<p>The AST walk explains <em>why</em> it propagates: of the 8 call
+sites, <strong>7 have no LEXICALLY enclosing
+<code>try</code>/<code>except</code></strong> — only line 507, inside
+<code>_background()</code>, sits in one (<code>try</code> at line 501).
+“Lexically” is the honest qualifier, because an ancestor walk sees only
+the syntactic nesting in this file; it cannot rule out a handler further
+up a dynamic call chain. It does not need to: the end-to-end run above
+already settled the question, and the static reading merely accounts for
+the result rather than substituting for it (§11.4.226 — runtime evidence
+for a runtime claim).</p>
+<p>So a wrong call count changed nothing about the conclusion — which is
+precisely why it is corrected here rather than quietly dropped
+(§11.4.194(2)): an unproven figure that happens not to be load-bearing
+is still an unproven figure, and leaving it standing invites the next
+reader to trust the next one.</p>
 <p>So the chosen behaviour is: <strong>dispatch no hooks</strong> (fail
 closed on the side effect — the set of hooks to run is unknown, so none
 run), <strong>log an ERROR</strong> naming the file, and
@@ -527,10 +582,72 @@ DECISION — the atomic write is theme_state’s pattern, reused</h2>
 established in this codebase by
 <code>download-proxy/src/api/theme_state.py::_write_atomic</code>
 (§11.4.28 — reuse, do not re-derive). The temp file is created
-<strong>in the destination directory</strong>, not <code>/tmp</code>,
-because <code>os.replace</code> is only atomic within a filesystem; a
-cross-device rename would silently reintroduce the window being
-closed.</p>
+<strong>in the destination directory</strong>, not
+<code>/tmp</code>.</p>
+<p><strong>CORRECTION (Revision 2).</strong> Revision 1 justified that
+with “a cross-device rename would silently reintroduce the window being
+closed”. Measured 2026-08-25, the failure mode is worse than “silently
+non-atomic” — it does not degrade, it <strong>raises</strong>:</p>
+<pre><code>os.replace(&#39;/tmp/.private/milosvasic/.hooks-zwrc_rj1.json&#39;,
+           &#39;/dev/shm/bob174-xdev-store-nahelgsk/hooks.json&#39;)
+-&gt; OSError: [Errno 18] Invalid cross-device link</code></pre>
+<p>So losing the <code>dir=</code> kwarg does not weaken durability, it
+makes <strong>every hook write fail with HTTP 500</strong>. That matters
+because it is the container’s ordinary geometry, not an exotic one —
+<strong>verified against <code>docker-compose.yml</code>, not
+assumed.</strong> <code>HOOKS_FILE</code> is
+<code>/config/download-proxy/hooks.json</code>, and the
+<code>download-proxy</code> service mounts:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">volumes</span><span class="kw">:</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> ./config:/config</span><span class="co">                              # line 247</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> ./download-proxy:/config/download-proxy</span><span class="co">       # line 249  &lt;- the store&#39;s directory</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> ./tmp:/shared-tmp</span><span class="co">                             # line 250  &lt;- note: /shared-tmp, NOT /tmp</span></span></code></pre></div>
+<p>So the store’s directory is a <strong>host bind-mount</strong>, while
+<code>/tmp</code> has <strong>no mount entry at all</strong> and is
+therefore the container’s own writable overlay layer. Different
+filesystems — which is exactly the condition under which
+<code>os.replace</code> raises EXDEV. A hooks write is cross-device in
+<strong>every deployed instance</strong> and same-device in
+<strong>every ordinary test</strong>, because pytest’s
+<code>tmp_path</code> lives under <code>tempfile.gettempdir()</code>.
+The suite was therefore <em>structurally</em> blind to it, and the
+reviewer’s mutation dropping the kwarg passed the entire suite.</p>
+<p>Closed at two layers, because neither alone is sufficient:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Guard</th>
+<th>What it asserts</th>
+<th>Where it runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TestAtomicWriteMechanicsArePinned</code></td>
+<td>the <code>dir=</code> kwarg is passed and equals the store
+directory, and the file replaced in is the temp file written</td>
+<td><strong>every host</strong> — device-independent, asserts the
+call</td>
+</tr>
+<tr>
+<td><code>TestTheCrossDeviceFailureIsCaughtForReal</code></td>
+<td>a real create against a store on a genuinely different filesystem
+succeeds</td>
+<td>hosts with a second writable filesystem; honest §11.4.3
+SKIP-with-reason elsewhere</td>
+</tr>
+</tbody>
+</table>
+<p>The second is the outcome oracle — nothing is simulated, no
+<code>os.replace</code> is patched, the kernel raises EXDEV or it does
+not — and it fails on the un-pinned code with the verbatim errno-18
+message above.</p>
 <p>It was <strong>not</strong> extracted into a shared helper, which is
 the obvious right end-state, because that means editing
 <code>theme_state.py</code> — outside this item’s file scope. Recorded
@@ -542,10 +659,14 @@ destroying the store and leaves the operator with a repair job; the
 guard downstream turns silent data loss into a visible 500, which is
 better but is not the same as not losing the data.</p>
 <h3
-id="decision-the-permission-semantics-change-this-carries-accepted-knowingly">DECISION
-— the permission-semantics change this carries, accepted knowingly</h3>
-<p>An atomic write changes <em>which permission governs</em>. Measured,
-not assumed:</p>
+id="decision-the-permission-semantics-changes-this-carries-accepted-knowingly">DECISION
+— the permission-semantics changes this carries, accepted knowingly</h3>
+<p>An atomic write changes <em>which permission governs</em> <strong>and
+what mode the file ends up with</strong>. Both were measured, not
+assumed. Revision 1 documented only the first; the second was an
+enumeration gap in the section whose whole job is to enumerate, and is
+added here (Revision 2).</p>
+<p><strong>(a) WHICH permission governs.</strong></p>
 <pre><code>append to a 0400 file : REFUSED (Permission denied)
 os.replace over 0400  : SUCCEEDS
 mkstemp in a 0500 dir : REFUSED (Permission denied)   &lt;- the atomic write fails here</code></pre>
@@ -553,6 +674,40 @@ mkstemp in a 0500 dir : REFUSED (Permission denied)   &lt;- the atomic write fai
 write.</strong> <code>os.replace</code> relinks a directory entry and
 never consults the target file’s mode; what governs now is write
 permission on the <strong>directory</strong>.</p>
+<p><strong>(b) WHAT MODE the store ends up with — every write now resets
+it 0644 → 0600.</strong> Measured 2026-08-25 on a host with umask
+022:</p>
+<pre><code>1. fresh in-place open(w) creates mode : 0644
+2. operator/umask state on disk        : 0644
+3. after an IN-PLACE rewrite           : 0644   &lt;- the OLD path PRESERVED the mode
+4. mkstemp creates the temp file at    : 0600   &lt;- mkstemp is owner-only by design
+5. after the ATOMIC replace, target is : 0600   &lt;- the TEMP file&#39;s mode is CARRIED</code></pre>
+<p><code>os.replace</code> does not copy content into the destination
+inode, it <strong>relinks the temp file’s inode into the destination
+name</strong> — so the destination inherits the temp file’s mode, owner
+and timestamps, and whatever mode <code>hooks.json</code> previously had
+is gone. <code>mkstemp</code> deliberately creates 0600, so the store
+goes owner-only on the first write after this change.</p>
+<p><strong>Accepted, and arguably desirable.</strong> The direction is
+strictly <strong>more restrictive</strong> — no reader that could open
+the store loses access except <em>other users</em>, and the service runs
+as the file’s owner (§ the <code>PUID=0</code>/<code>PGID=0</code> note
+in <code>CLAUDE.md</code>; container uid 0 maps to the host operator
+under rootless podman). It is a defensible default on its own merits:
+<code>hook.environment</code> is a free-form <code>dict[str, Any]</code>
+persisted verbatim into this file, so an operator can and will put API
+tokens and credentials in it, and §11.4.10 wants those owner-only rather
+than world-readable. A hooks store that silently became
+<strong>less</strong> restrictive would have been a finding; becoming
+more restrictive is recorded here so that it is a known consequence
+rather than a surprise, and so that anything later found to depend on
+group-readability of <code>hooks.json</code> has a documented cause to
+look at first.</p>
+<p><strong>Not claimed:</strong> that anything in the deployment
+currently depends on the store’s mode either way. Nothing in this
+project sets, reads or documents it (point 1 of the list below), which
+is why this is recorded as an accepted consequence rather than tracked
+as a defect.</p>
 <p>This was surfaced by three of BOB-173’s DELETE tests going red — that
 file sealed the <em>file</em> and probed with
 <code>open(target, "a")</code>, a needle that matched the old in-place
@@ -602,12 +757,13 @@ faithfully at the point that matters (the file is truncated at
 syscall-level event itself.</li>
 </ul>
 <hr />
-<h2 id="a3-the-event-vocabulary-pin-pinned-not-deduplicated">7. A3 — the
-event-vocabulary pin: <strong>pinned, not deduplicated</strong></h2>
+<h2
+id="a3-the-event-vocabulary-derived-not-pinned-decision-reversed-in-revision-2">7.
+A3 — the event vocabulary: <strong>DERIVED, not pinned</strong>
+(decision REVERSED in Revision 2)</h2>
 <p><code>VALID_EVENTS</code> (api/hooks.py) and
-<code>HookEventType</code> (merge_service/hooks.py) are two sources of
-truth for one closed set. <strong>Verified identical today</strong>
-(both hold the same 8 values).</p>
+<code>HookEventType</code> (merge_service/hooks.py) were two sources of
+truth for one closed set.</p>
 <p>The drift consequence is worth stating because it is silent:
 <code>create_hook</code> validates against <code>VALID_EVENTS</code>,
 while <code>dispatch_event</code> resolves
@@ -615,19 +771,81 @@ while <code>dispatch_event</code> resolves
 early</strong> on <code>ValueError</code>. An event present in one and
 not the other therefore registers with <strong>HTTP 200</strong> and
 then <strong>never fires</strong>, logging a warning nobody reads.</p>
-<p><strong>Decision: pinned by assertion, not unified.</strong>
-<code>TestEventVocabularyCannotDrift</code> asserts set equality and
-that every accepted event is dispatchable. Unifying the two — deriving
-<code>VALID_EVENTS</code> from the enum — is the better end-state but
-requires editing <code>merge_service/hooks.py</code>, which is outside
-this item’s scope and live under a sibling stream. The pin costs one
-assertion and makes the drift impossible to land silently, which is the
-property that was missing.</p>
+<h3 id="the-revision-1-decision-and-why-it-was-wrong">The Revision 1
+decision, and why it was wrong</h3>
+<p>Revision 1 chose <em>pin by assertion, not unify</em>, on this stated
+rationale: “requires editing <code>merge_service/hooks.py</code>, which
+is outside this item’s scope and live under a sibling stream”. The
+independent review measured that rationale <strong>FALSE on all three
+counts</strong>, and it is corrected here rather than quietly dropped —
+an unproven-then-false assumption is a review-layer bluff of PASS-bluff
+severity (§11.4.194(2)):</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Revision 1 claim</th>
+<th>Measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>requires editing <code>merge_service/hooks.py</code></td>
+<td><strong>False</strong> — that file is untouched by this item; the
+change is one line in <code>api/hooks.py</code></td>
+</tr>
+<tr>
+<td>that file is live under a sibling stream</td>
+<td><strong>False</strong> — it is not modified in the working tree</td>
+</tr>
+<tr>
+<td>(implied) unifying risks an import cycle</td>
+<td><strong>False</strong> — <code>merge_service.hooks</code> imports
+only stdlib</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-revision-2-decision-derive">The Revision 2 decision —
+derive</h3>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> merge_service.hooks <span class="im">import</span> HookEventType</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>VALID_EVENTS <span class="op">=</span> [event.value <span class="cf">for</span> event <span class="kw">in</span> HookEventType]</span></code></pre></div>
+<p>Re-measured before taking it: the derived list is
+<strong>order-identical</strong> to the literal it replaces, so this is
+a pure de-duplication with no behaviour change. §11.4.241 — pinning by
+assertion DETECTS drift at rung 4; deriving makes drift
+<strong>unrepresentable</strong> at rung 2, which is the stronger rung
+and the one the ladder says to prefer when the toolchain supports
+it.</p>
+<p><strong>Import form matters.</strong> The import is
+<strong>absolute</strong>
+(<code>from merge_service.hooks import ...</code>), matching the
+convention already in this package (<code>api/routes.py:23</code>)
+because <code>download-proxy/src</code> is on <code>sys.path</code>. A
+relative form (<code>from ..merge_service.hooks import ...</code>)
+raises “attempted relative import beyond top-level package” and breaks
+176 tests — measured, not theorised.</p>
+<h3 id="what-the-guard-now-guards">What the guard now guards</h3>
+<p><code>TestEventVocabularyCannotDrift</code>’s two assertions were
+written against two literals and, against the source as it now stands,
+<strong>cannot fail</strong> — the derivation makes the state they check
+unrepresentable. They were kept, not deleted, because their target
+moved: what they catch now is <strong>the derivation itself being
+reverted to a divergent literal</strong>. Measured rather than argued —
+replacing the comprehension with a hardcoded list carrying one extra
+event fails both (see <code>EVIDENCE.md</code>, mutation M4). A guard
+whose mutation still bites is load-bearing; this one bites at its new
+target.</p>
 <hr />
 <h2 id="guard">Guard</h2>
 <p><code>tests/unit/api_layer/test_bob174_corrupt_hook_store.py</code> —
-28 tests. Evidence, including the observed RED, the GREEN, and five
-paired §1.1 mutations, is in <code>EVIDENCE.md</code> beside this
-file.</p>
+<strong>35 tests</strong> (28 at Revision 1; +3 later in that round, +4
+in Revision 2: two pinning the atomic write’s mechanics and two staging
+a real cross-filesystem store). Evidence — the observed REDs, the GREEN,
+and <strong>ten</strong> paired §1.1 mutations, each re-measured against
+the current file — is in <code>EVIDENCE.md</code> beside this file.</p>
 </body>
 </html>

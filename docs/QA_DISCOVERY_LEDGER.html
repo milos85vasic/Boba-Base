@@ -1,6 +1,252 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>QA_DISCOVERY_LEDGER</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">QA_DISCOVERY_LEDGER</h1>
+</header>
 <h1 id="qa-discovery-channel-ledger">QA Discovery-Channel Ledger</h1>
-<p><strong>Revision:</strong> 16 <strong>Last modified:</strong>
-2026-08-21T15:05:00Z <strong>Status:</strong> active
+<p><strong>Revision:</strong> 17 <strong>Last modified:</strong>
+2026-08-25T19:55:00Z <strong>Status:</strong> active
 <strong>Constitution:</strong> §11.4.238 (automated QA must be the
 DISCOVERER, not the confirmer — every defect found outside the automated
 HelixQA regime is itself a coverage-escape release blocker, not merely a
@@ -1463,6 +1709,569 @@ check verifies the declared ownership <strong>route</strong>
 says so in its own output rather than reporting the fallback as the real
 condition.</li>
 </ul>
+<h3
+id="bob-169-three-producers-emitted-charset-less-html-weasyprint-baked-mojibake-into-the-pdf-text-layer-and-every-export-gate-stayed-green">BOB-169
+— three producers emitted charset-less HTML, weasyprint baked mojibake
+into the PDF text layer, and every export gate stayed green</h3>
+<ul>
+<li><p><strong>id:</strong> BOB-169 (status <code>Queued</code> in
+<code>docs/workable_items.db</code> as of this audit — the fix is in the
+working tree, the item is NOT closed)</p></li>
+<li><p><strong>date:</strong> 2026-08-21 (census + root cause;
+<code>docs/qa/BOB-169/root_cause_proven_20260821.md</code>). Audit
+written 2026-08-25.</p></li>
+<li><p><strong>channel:</strong> <code>agent-code-reading</code> — an
+agent opened an exported PDF and read mojibake in its text layer, then
+traced the generator in source. Invariant 50’s own header records the
+same attribution: “The defect was found by an agent reading a PDF, not
+by the regime.”</p></li>
+<li><p><strong>summary:</strong>
+<code>scripts/generate_markdown_exports.sh</code> ran
+<code>pandoc -f markdown -t html5</code> with no
+<code>--standalone</code>, so pandoc emitted a BODY FRAGMENT — no
+<code>&lt;!DOCTYPE&gt;</code>, no <code>&lt;head&gt;</code>, no
+<code>&lt;meta charset&gt;</code>. <code>weasyprint</code> then rendered
+the PDF <strong>from that fragment</strong>, fell back to a non-UTF-8
+codec, and baked the mojibake into the PDF’s <strong>text layer</strong>
+— corruption in the bytes, not a display artifact. Two further producers
+shared the defect
+(<code>scripts/regenerate-continuation-exports.sh</code>; the docs_chain
+engine’s <code>derived.go:139</code> already passed
+<code>--standalone</code>), and the third was found only because a
+corpus-wide scan was finally run. <code>docs/CONTINUATION.pdf</code> —
+the §12.10 session-resumption document a fresh session is pointed at —
+regenerated corrupt on every run. <strong>Re-measured for this audit
+against HEAD’s committed blob
+(<code>git show HEAD:docs/CONTINUATION.pdf</code>): 334 corrupted lines;
+the working-tree copy: 0.</strong> The earlier evidence pack recorded
+336; the two numbers come from different mojibake-signature definitions
+and are left un-harmonised rather than silently reconciled (§11.4.6).
+Corpus-wide, a live run of the gate on 2026-08-25 reports <strong>301 of
+334</strong> generated exports carrying no charset declaration.</p></li>
+<li><p><strong>escape-audit:</strong> The export regime asserted
+<strong>PRESENCE and MTIME, never VALIDITY</strong> — and this is
+readable as two predicates, not as a judgement.
+<code>scripts/pre_build_verification.sh</code> invariant 16
+(<code>CM-MARKDOWN-EXPORT-SYNC</code>, §11.4.65) evaluates exactly:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">[[</span> <span class="ot">!</span> <span class="ot">-f</span> <span class="st">&quot;</span><span class="va">${sib}</span><span class="st">&quot;</span> <span class="kw">]];</span> <span class="cf">then</span>                      <span class="co"># (1) does the sibling EXIST?</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="cf">elif</span> <span class="ex">export_is_stale</span> <span class="st">&quot;</span><span class="va">${md}</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">${sib}</span><span class="st">&quot;</span> ...<span class="kw">;</span> <span class="cf">then</span>   <span class="co"># (2) is the SOURCE newer than it?</span></span></code></pre></div>
+<p><strong>Neither predicate opens the file.</strong> A charset-less
+body fragment and a well-formed standalone document are
+indistinguishable to both: both exist, both are fresh. That is why 301
+violations could accumulate under a gate whose name says “export sync” —
+it synchronises <em>existence and ordering</em>, and was never a content
+oracle. Verified by reading the produced bytes rather than trusting the
+count: the charset-less files begin
+<code>&lt;h1 id="agents.md"&gt;</code> (<code>AGENTS.html</code>),
+<code>&lt;h1 id="changelog"&gt;</code> (<code>CHANGELOG.html</code>),
+<code>&lt;h1 id="claude.md"&gt;</code> (<code>CLAUDE.html</code>); the
+compliant ones begin <code>&lt;!DOCTYPE html&gt;</code> …
+<code>&lt;meta charset="utf-8" /&gt;</code>.</p>
+<p>A content-aware oracle <strong>did</strong> exist and
+<strong>did</strong> run — invariant 24
+<code>CM-DOCS-CHAIN-ENGINE-VERIFY</code>, which hashes content rather
+than comparing mtimes. It was simply almost empty: measured for this
+audit, <code>.docs_chain/contexts/</code> holds <strong>2 contexts
+covering 4 authored <code>.md</code> sources</strong>
+(<code>docs/codegraph/Status.md</code>,
+<code>docs/codegraph/Status_Summary.md</code>,
+<code>docs/features/Status.md</code>,
+<code>docs/features/Status_Summary.md</code>; an earlier ledger entry
+measured 3 — the corpus grew). Coverage and correctness coincide
+<strong>exactly</strong>: all four of those <code>.html</code> files
+carry <code>&lt;meta charset="utf-8" /&gt;</code>, and the one producer
+that always passed <code>--standalone</code>
+(<code>derived.go:139</code>) is precisely the producer those four run
+through. Everything outside that 4-document island was governed only by
+existence-and-mtime.</p>
+<p>Two compounding mechanisms explain the age and the silence, both
+measured rather than inferred.</p>
+<ol type="a">
+<li><strong>The generator is mtime-gated</strong>: it rewrites an export
+only when the source is newer, so a fragment minted once persists
+indefinitely — the corpus accumulated its violations one document at a
+time, and no point exists at which anyone could say the corpus was done.
+(b) <strong>The fallback path was the correct one</strong>: the
+<code>else</code> branch (python-markdown, used only when pandoc is
+ABSENT) writes <code>&lt;meta charset="utf-8"&gt;</code>. So a host
+<em>without</em> pandoc produced correct exports and a
+properly-provisioned host produced broken ones — the defect is invisible
+on exactly the machines least likely to be treated as degraded.</li>
+</ol>
+<p>Recorded because it is the same shape one level up: <strong>this
+ledger’s own <code>.html</code> is one of the 301 charset-less
+fragments, and <code>docs/QA_DISCOVERY_LEDGER.pdf</code> carries 494
+mojibake lines</strong> measured during this audit. The document that
+tracks coverage escapes is itself downstream of the escape it
+records.</p></li>
+<li><p><strong>new-check:</strong> <strong>PRESENT AND EXECUTED, BUT NOT
+YET COMMITTED — read the residual before treating this as
+closed.</strong> Four artifacts, all live in the working tree, all run
+on 2026-08-25 for this audit with the output pasted below:</p>
+<ol type="1">
+<li><p><code>scripts/pre_build/check_cm_export_charset_valid.sh</code>,
+wired as <strong>invariant 50
+(<code>CM-EXPORT-CHARSET-VALID</code>)</strong>. It matches a
+<code>&lt;meta ... charset ...&gt;</code> <strong>ELEMENT</strong>,
+never the bare substring — the naive <code>grep -qi charset</code>
+PASSED against the broken generator by matching a heading slug
+(§11.4.201(7)(a)). It carries its own control needle:
+<code>TOTAL == 0</code> or <code>COMPLIANT == 0</code> is a REFUSAL, so
+a blind enumeration can never report a clean zero. Brownfield adoption
+is a §11.4.135 monotone-decrease ratchet pinned at 301, so it fires on
+regression only. Live run:</p>
+<pre><code>generated exports scanned ......... 334
+declaring a charset ............... 33
+MISSING a charset ................. 301   (ratchet baseline 301)
+PASS: CM-EXPORT-CHARSET-VALID — 301 charset-less exports, at baseline (no regression)</code></pre></li>
+<li><p><code>tests/pre_build/test_cm_export_charset_valid.sh</code> —
+the §1.1 paired mutations. Live run:
+<code>RESULT: 6 passed, 0 failed</code>, including both BLIND corpora (a
+naive gate reports zero and passes) and the §11.4.201(1) negative
+control (at baseline → PASS, no false refusal).</p></li>
+<li><p><code>tests/unit/test_export_pdf_charset_integrity.sh</code> —
+drives a COPY of the real generator against a temp tree and asserts the
+PDF <strong>text layer</strong> preserves the source’s non-ASCII. Live
+run: <code>RESULT: 2 passed, 0 failed</code> — “PDF text layer preserves
+the source’s non-ASCII (needle: 1 line(s) intact, 0 mojibake)”.</p></li>
+<li><p>The three producers are now in lockstep on
+<code>--standalone</code>, and PDF staleness is keyed on the HTML
+(<code>|| "$html" -nt "$pdf"</code>) so a repaired HTML actually
+re-renders its PDF instead of leaving the old mojibake baked
+in.</p></li>
+</ol></li>
+<li><p><strong>Honest boundary (§11.4.6) — three residuals, none of them
+cosmetic:</strong></p>
+<ol type="1">
+<li><strong>The gate is not in the repository.</strong> Measured with a
+needled instrument (the same grep finds
+<code>CM-OWNERSHIP-INVARIANTS</code> 5× at HEAD, so it can see):
+<code>git show HEAD:scripts/pre_build_verification.sh</code> contains
+<strong>zero</strong> occurrences of
+<code>CM-EXPORT-CHARSET-VALID</code> and its last invariant marker reads
+<code>[49/49]</code>; the working tree reads <code>[50/50]</code>.
+<code>scripts/pre_build/check_cm_export_charset_valid.sh</code>,
+<code>tests/pre_build/test_cm_export_charset_valid.sh</code> and
+<code>tests/unit/test_export_pdf_charset_integrity.sh</code> are all
+<strong>UNTRACKED</strong>. A fresh clone at <code>dd9fcb5</code>
+therefore has 49 invariants and no charset gate at all. Per §11.4.215 an
+untracked artifact does not bind, and per §11.4.226 a check that exists
+only in one working copy is the install-gap class this ledger already
+recorded once (FORCED-LOGOUT-2026-08-19-5TH: “4 authored preventive
+gates, 0 installed”). <strong>Committing these four artifacts is the
+outstanding action; this audit does not perform it</strong> (the tree is
+not quiescent and three sibling agents hold the surrounding files).</li>
+<li><strong>Acceptance (c) — the bulk regeneration of the 301
+charset-less exports — has NOT been run.</strong> The mechanism exists
+and is correctly sequenced (HTML before PDF, or weasyprint re-bakes the
+same mojibake), but the corpus is still 301 violations deep and heals
+only as documents are touched.</li>
+<li><strong>BOB-182 is open</strong>: the §11.4.224(E) ratchet-adoption
+decision is owed to the operator, and invariant 50 is already enforcing.
+Filing the item satisfies the tracking obligation, not the decision
+obligation.</li>
+</ol></li>
+</ul>
+<h3
+id="bob-168-four-destructive-commands-consuming-a-possibly-empty-root-under-a-suite-that-passed-1010-either-way">BOB-168
+— four destructive commands consuming a possibly-empty root, under a
+suite that passed 10/10 either way</h3>
+<ul>
+<li><strong>id:</strong> BOB-168 (status <code>Queued</code> in
+<code>docs/workable_items.db</code>)</li>
+<li><strong>date:</strong> 2026-08-23
+(<code>docs/qa/BOB-168/round3_guard_residue_fix.md</code>)</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — surfaced
+by the independent §11.4.209 code-review agent in round 2 (NO-GO),
+reading the test source; no test run, and no gate, reported it.</li>
+<li><strong>summary:</strong> Four pre-run mutation lines in
+<code>tests/unit/test_run_all_challenges_missing_entry.sh</code>
+consumed a possibly-empty <code>$R</code> <strong>before</strong>
+<code>run_runner</code>’s own guard could refuse — <code>chmod</code>,
+<code>printf &gt;</code> (twice) and <code>rm -f</code>. On a failed
+fixture they operate on <code>/submodules/…</code>-rooted paths: the
+canonical §11.4.252 shape, an unguarded expansion inside a destructive
+command. Measured pre-guard residue, verbatim:
+<code>chmod: cannot access '/submodules/challenges/…'</code> plus two
+<code>No such file or directory</code> writes, and — proven later at the
+syscall layer with <code>strace -e trace=unlink,unlinkat</code> — one
+<code>unlinkat("/submodules/…") = -1 ENOENT</code> from the
+<code>rm -f</code>, the one line that leaves no shell-level trace at
+all. Post-guard: 3 → 0 write attempts, 1 → 0 unlinkat, with 16
+unlink-class syscalls captured in the same trace proving the instrument
+was watching (a <em>seen</em> zero, not a blind one).</li>
+<li><strong>escape-audit:</strong> Four independent reasons the standing
+regime could not have raised this, each read from source or measured,
+none of them “we didn’t think of it”:
+<ol type="1">
+<li><strong>Scope.</strong> The §11.4.252 gate is wired as invariant 39
+<code>CM-DANGEROUS-COMBINATION-FAIL-CLOSED</code>, and its inclusion
+list is
+<code>DANGER_ROOTS=(download-proxy/src plugins scripts qBitTorrent-go frontend/src)</code>.
+<strong><code>tests/</code> is not in it.</strong> In production the
+gate never looks at the directory where this defect lived.</li>
+<li><strong>Pattern set.</strong> Even pointed at
+<code>tests/unit</code> by hand for this audit it cannot see this shape.
+The gate implements exactly two detectors — an empty/comment-only
+<code>catch</code>/<code>except</code> body, and a credential defaulting
+to a literal. It has <strong>no rule for a destructive command consuming
+a possibly-empty expansion</strong>. Run against <code>tests/unit</code>
+it reports <strong>17 hits, all <code>.py</code>, all of the
+<code>except: pass</code> shape, and zero naming
+<code>test_run_all_challenges_missing_entry.sh</code></strong> — a seen
+zero, needled by 50 finding lines from the same gate against
+<code>plugins/</code>.</li>
+<li><strong>Severity.</strong> Invariant 39 is
+<strong>ADVISORY</strong>: it emits <code>WARN</code>, never
+<code>fail</code>. Even a hit would not have blocked anything.</li>
+<li><strong>The covering suite is blind by construction — this is the
+sharpest of the four.</strong> The file IS executed by a standing gate
+(invariant 30 <code>CM-BASH-UNIT-TESTS-EXECUTED</code> runs
+<code>tests/unit/*.sh</code>), so this is not a registration gap. But
+every assertion in that suite is about the runner’s exit code and
+MISSING count — verbatim: “all entries absent -&gt; expected exit 2”,
+“one entry not executable -&gt; expected exit 2”, “a real challenge
+failure -&gt; expected exit 1”. <strong>Nothing asserts that no write
+escaped the fixture root.</strong> The only occurrence of the word
+“residue” in the file is a comment on line 95 — a carrier, not an
+assertion (§11.4.201(7)(a)); verified by reading the line, not by
+trusting the count of 1. The consequence is recorded in the item’s own
+evidence: the suite scored <strong>“GREEN — 10/10, unchanged”</strong>
+both with the residue and without it. A guard never observed to FAIL on
+the genuinely-broken artifact is unvalidated instrumentation
+(§11.4.115(F)), and here the standing gate ran it, went green, and
+carried no information about the defect in either direction. Re-run for
+this audit: <code>RESULT: 10 passed, 0 failed</code>, with
+<code>/submodules</code> confirmed absent.</li>
+</ol></li>
+<li><strong>new-check:</strong> <strong>STILL OWED — no new automated
+check exists for this class.</strong> What landed is a
+<em>source-level</em> fix, not a check: one shared predicate
+<code>usable_root() { [[ -n "${1:-}" &amp;&amp; -f "${1}/scripts/run_all_challenges.sh" ]]; }</code>,
+consumed by <code>run_runner</code> and by all four mutation lines (now
+at 157 / 175 / 190 / 191). That is the right rung — §11.4.241 prefers an
+API-shape guard over four copies of an inline lint-level test, and
+§11.4.251 names the second, weaker inline notion of “valid root” as the
+mechanism that produced the residue — and a fifth mutation line added
+tomorrow inherits it. But <strong>nothing would refuse a fifth line that
+does not</strong>. The concrete owed work, in the order it should be
+done:
+<ol type="1">
+<li>extend the §11.4.252 gate’s pattern set with the
+unguarded-expansion-in-a-destructive-command shape
+(<code>rm</code>/<code>chmod</code>/<code>mv</code>/<code>&gt;</code>
+with a <code>${var}</code>-rooted path and no preceding non-empty test),
+shipping golden-TRUE and golden-FALSE-with-carrier fixtures per
+§11.4.201; (2) add <code>tests</code> to <code>DANGER_ROOTS</code>; (3)
+promote that specific shape from ADVISORY to blocking, leaving the
+untriaged <code>except: pass</code> backlog advisory so the promotion is
+not a §11.4.201(1) false-positive refusal. This audit <strong>does
+not</strong> make those edits —
+<code>scripts/pre_build_verification.sh</code> is held by a live sibling
+agent — so this is written as a finding, per the standing
+instruction.</li>
+</ol></li>
+<li><strong>Honest boundary (§11.4.6):</strong> the pre-guard/post-guard
+comparison quoted above is the item’s own captured evidence, re-read for
+this audit but not re-executed by it (re-running it requires reverting
+the guard in a tracked file, which would leave residue). What this audit
+executed directly is the current suite (10/10), the §11.4.252 gate
+against <code>tests/unit</code> (17 hits, none this file) and against
+<code>plugins/</code> (50 hits, the needle).</li>
+</ul>
+<h3
+id="bob-164a-21-wcag-aa-contrast-violations-on-the-live-dashboard-found-by-the-axe-suite-on-its-first-run">BOB-164a
+— 21 WCAG AA contrast violations on the live dashboard, found by the axe
+suite on its first run</h3>
+<ul>
+<li><strong>id:</strong> BOB-164 (status <code>Queued</code> in
+<code>docs/workable_items.db</code>) — recorded as
+<strong>164a</strong>, the originally-filed defect, to keep it distinct
+from the round-1 regression at 164b below, which has a different
+discovery channel and a different audit.</li>
+<li><strong>date:</strong> 2026-08-21T19:56:53Z (filing timestamp
+recorded in the item’s own <code>Reported-Via</code> field)</li>
+<li><strong>channel:</strong> <code>automated-helixqa</code> —
+<strong>the first entry in this ledger that is not out-of-band.</strong>
+The item’s own filing records it verbatim:
+“<strong>Reported-By:</strong> BOB-110 UX-class coverage, discovered by
+the new axe-core suite on its first live run”, and “it was found by the
+automated regime rather than by a human squinting at the page — which is
+exactly the 11.4.238 posture the project is aiming for.” The failing
+test was deliberately <strong>left failing</strong> rather than silenced
+or <code>xfail</code>-ed, so a red UX suite reads as this item.</li>
+<li><strong>summary:</strong> axe-core 4.13.0 against the shipped bundle
+in a real headless Chromium reported <strong>21 colour-contrast
+violation nodes</strong> on <code>darcula/dark</code> (plus 1 on the
+light theme, which the filing had not scanned). Root causes:
+<code>--color-accent</code> used as <em>text</em> (5 nodes, 1.24:1
+declared), <code>--color-text-secondary</code> (11 nodes),
+<code>--color-text-primary</code> on <code>--color-bg-tertiary</code> (3
+nodes), and two <code>opacity: 0.65</code> multipliers dragging
+compliant tokens below the floor. No failing node used inline hex —
+every one resolved through a <code>var(--color-*)</code> token, so the
+fix belonged at the token layer: accent/danger/warning were
+<strong>split into disjoint text roles</strong> (§11.4.217) rather than
+repainting a brand-locked colour. The all-palette scan — the first ever
+run — exposed a second, pre-existing class: <code>color: #fff</code>
+hardcoded against <code>background: var(--color-accent)</code>, which
+passes on Darcula’s dark red and fails on seven lighter accents (worst
+2.00:1 on Nord). Whole catalogue: 171 violation nodes across 16 themes
+pre-fix, 0 post-fix, 0 newly introduced.</li>
+<li><strong>Why this is recorded as automated rather than out-of-band
+(§11.4.6):</strong> the briefing for this audit stated all four defects
+were out-of-band. For BOB-164’s <em>original</em> discovery the
+repository’s own filing record contradicts that, and recording an
+automated discovery as out-of-band would falsify the §11.4.238(E) split
+in the pessimistic direction — as forbidden as flattering it. The
+genuinely out-of-band escape inside this item is real and is audited
+separately as <strong>164b</strong>.</li>
+<li><strong>Standing-coverage note (§11.4.226), not an escape
+audit:</strong> the suite that made this discovery,
+<code>tests/ux/</code>
+(<code>test_live_dashboard_accessibility.py</code>,
+<code>test_accessibility_axe.py</code>,
+<code>test_keyboard_navigation.py</code>, with golden-good/golden-bad
+fixtures), <strong>is tracked in git</strong> — but a needled search
+(<code>tests/unit</code> found in <code>ci.sh</code> 1×,
+<code>scripts/pre_build_verification.sh</code> 10×,
+<code>run-all-tests.sh</code> 1×; <code>tests/ux</code> found
+<strong>0×</strong> in all three, and 0 files repo-wide reference it)
+shows <strong>no runner script executes it</strong>. Its next run
+depends on someone choosing to invoke it. That is the freshness half of
+§11.4.226 — registration is not coverage — and wiring
+<code>tests/ux/</code> into a standing runner is owed follow-up work,
+filed here rather than performed (<code>ci.sh</code> and the pre-build
+script are held by live sibling agents).</li>
+</ul>
+<h3
+id="bob-164b-the-round-1-contrast-fix-drove-a-background-role-token-from-2.461-to-1.091-and-both-oracles-were-blind-to-it">BOB-164b
+— the round-1 contrast fix drove a background-role token from 2.46:1 to
+1.09:1, and both oracles were blind to it</h3>
+<ul>
+<li><strong>id:</strong> BOB-164 (round 2) — the regression introduced
+by the round-1 fix to 164a</li>
+<li><strong>date:</strong> 2026-08-23
+(<code>frontend/src/app/models/style-contrast.spec.ts</code> header;
+<code>docs/qa/BOB-164/README.md</code>)</li>
+<li><strong>channel:</strong> <code>agent-code-reading</code> — found by
+an agent reasoning over the stylesheets while authoring round 2, after
+both existing oracles had reported clean.</li>
+<li><strong>summary:</strong> <code>--color-text-secondary</code> is
+used as a <strong>foreground</strong> in eleven places and as a
+<strong>background</strong> in at least one:
+<code>.status.unknown { background: var(--color-text-secondary); color: #ccc }</code>.
+Round 1 lightened the token to clear the 4.5:1 floor in its foreground
+role, and in doing so drove its background role <strong>from 2.46:1 to
+1.09:1</strong> — a disabled hook’s “No” rendering at barely above the
+1:1 floor. A safe change to one role is a regression in the other, and
+nothing in the regime connected the two.</li>
+<li><strong>escape-audit:</strong> <strong>Three oracles covered this
+surface and all three were blind at once</strong>, each for a different,
+structural reason:
+<ol type="1">
+<li><strong>The new arithmetic oracle was blind by
+construction.</strong>
+<code>frontend/src/app/models/palette.contrast.spec.ts</code> — authored
+in round 1, the check that was supposed to close 164a — asserts TEXT
+tokens against
+<code>SURFACES = [bgPrimary, bgSecondary, bgTertiary]</code>. A token
+used as a <strong>background</strong> is outside its pair set <strong>by
+construction</strong>, so the very fix it was written to validate moved
+a pair it could not name. This is the §11.4.245 oracle-scope failure:
+the pair set was drawn from the token’s <em>intended</em> role, not from
+the pairs the stylesheets actually declare.</li>
+<li><strong>The rendered-DOM oracle never saw the node.</strong> axe
+only reports what renders, and the results table and the hooks list
+<strong>render EMPTY against a static <code>dist</code> with no
+backend</strong> — so the <code>.status.unknown</code> node was not in
+the DOM axe scanned. Two oracles, two different blindnesses, one
+uncovered pair.</li>
+<li><strong>The long-standing catalogue test asserts identity, not
+contrast — and contains the word anyway.</strong>
+<code>tests/unit/test_palette_catalog.py</code> asserts token
+<em>presence</em> (a <code>REQUIRED_TOKENS</code> tuple), hex
+<em>shape</em> (<code>^#[0-9a-fA-F]{6}$</code>), and one exact value:
+<code>assert darcula["dark"]["accent"].lower() == "#9d001e"</code>. That
+is a brand <strong>lock</strong> — it pins the precise hex that measured
+1.24:1 as text, and is green whether the palette is readable or not. Its
+single occurrence of the string <code>contrast</code> is the token
+<strong>name</strong> <code>"contrast"</code> at line 41 inside
+<code>REQUIRED_TOKENS</code> — a carrier, verified by reading the line
+rather than trusting the count of 1. The word was present in the
+covering test for the entire life of the defect and no ratio was ever
+computed.</li>
+<li><strong>The one UI-design gate computes no ratio and does not
+block.</strong> Invariant 41 <code>CM-OPENDESIGN-UI-SYSTEM</code> is
+<strong>ADVISORY</strong>, and its sub-checks are
+hardcoded-hex-in-theme-sources, design-token-artifact presence, and
+visual-regression-suite presence. None of them is a contrast
+assertion.</li>
+</ol></li>
+<li><strong>new-check:</strong>
+<code>frontend/src/app/models/style-contrast.spec.ts</code> — and the
+important property is that it removes the <strong>class</strong>, not
+the instance. Rather than patching four ratios, it <strong>reads the
+real stylesheets, extracts every <code>(foreground, background)</code>
+pair they declare</strong>, and asserts each across all sixteen palette
+× mode combinations. A token used as a fill is inside the pair set by
+construction, and any NEW fill anyone adds is picked up without editing
+the spec. Oracle independence is explicit and satisfies §11.4.245: the
+oracle is <code>contrastRatio</code> recomputed from the published WCAG
+2.x formula against the constant 4.5, neither derived from the palette
+nor from the stylesheets under test — strategy SPECIFIED. The round-1
+spec is retained for the token-role layer, and paired §1.1 mutations
+were run against it, including the one that matters: <strong>M2,
+replacing an accent with a grey that CLEARS the ratio, is caught by a
+hue guard</strong> — without it a ratio-only checker accepts turning
+every brand and error colour grey.</li>
+<li><strong>Honest boundary (§11.4.6) — this check is authored, not yet
+enforced, and NOT executed by this audit:</strong>
+<ol type="1">
+<li><strong>Both spec files are UNTRACKED</strong>
+(<code>palette.contrast.spec.ts</code>,
+<code>style-contrast.spec.ts</code>). Per §11.4.215 an untracked
+artifact does not bind.</li>
+<li><strong>No standing gate runs them.</strong> A needled search for
+<code>ng test</code> / <code>vitest</code> / <code>npm test</code>
+across <code>ci.sh</code>,
+<code>scripts/pre_build_verification.sh</code> and
+<code>run-all-tests.sh</code> returns zero (the same grep finds
+<code>pytest</code> 10× in <code>ci.sh</code>, so it can see). The only
+vitest reference in the pre-build script is a comment about bounding a
+wedged invocation.</li>
+<li><strong>This audit did not execute them.</strong>
+<code>frontend/**</code> is held by a live sibling agent, so the tree is
+not quiescent; a verdict measured on a racing tree is void (§11.4.84)
+and would be worse than no verdict. The GREEN figures quoted in
+<code>docs/qa/BOB-164/README.md</code> (652 passed; 0 violation nodes
+across 16 themes) are the item’s captured evidence, read for this audit
+and attributed, <strong>not</strong> re-measured by it.</li>
+<li>The item’s own evidence records three further gaps that remain open
+regardless: <code>onAccent</code> falls short against
+<strong><code>accentHover</code></strong> in four combinations
+(3.74–3.97); roughly twelve <code>color: #fff</code>-on-semantic-fill
+sites were exercised by no scan and are neither proven broken nor proven
+safe; and the compiled bundle in
+<code>download-proxy/src/ui/dist/</code> was deliberately not rebuilt,
+so §11.4.108 layer 2 is not closed and the served bundle still carries
+the defect.</li>
+<li>Contrast is not legibility. No human has looked at these colours;
+§11.4.185 manual QA is unaffected and still owed.</li>
+</ol></li>
+</ul>
+<h3
+id="bob-174-a-corrupt-hooks-file-read-as-zero-hooks-and-the-covering-test-asserted-exactly-that">BOB-174
+— a corrupt hooks file read as zero hooks, and the covering test
+asserted exactly that</h3>
+<ul>
+<li><p><strong>id:</strong> BOB-174 (status <code>Queued</code> in
+<code>docs/workable_items.db</code>)</p></li>
+<li><p><strong>date:</strong> 2026-08-23
+(<code>docs/qa/BOB-174/EVIDENCE.md</code>)</p></li>
+<li><p><strong>channel:</strong> <code>agent-code-reading</code> — found
+by an agent tracing the corrupt-load path in
+<code>download-proxy/src/api/hooks.py</code> while following on from
+BOB-173, and confirmed by writing the guard first and running it against
+the unmodified tree.</p></li>
+<li><p><strong>summary:</strong> <code>_load_hooks()</code> swallowed a
+parse error and returned <code>[]</code>, so a truncated or malformed
+<code>hooks.json</code> presented to the API as <strong>“no
+hooks”</strong>. The next <code>create</code> then wrote a fresh
+single-element store over it — turning a hand-repairable truncated file
+into an unrecoverable one. Reproduced verbatim against the unmodified
+tree: <em>“‘prod-hook-0’ is no longer in the hook store. A truncated
+file is hand-repairable; an overwritten one is not.”</em> Three operator
+hooks in, one unrelated hook out. The chain closes on itself: a write
+that failed part-way left <code>[{"hook_id": "half-writ</code> on disk —
+which is precisely the corrupt input the load path then reads as zero
+and overwrites. <code>delete</code> reported <code>404 not found</code>
+for a store it simply could not read. Guard-first RED against the
+unmodified tree: <strong>15 failed, 13 passed</strong>.</p></li>
+<li><p><strong>escape-audit:</strong> <strong>The covering test asserted
+the defect.</strong> This is not a scope gap or a blind instrument — the
+regime was green <em>on</em> the defect and would have gone red on the
+fix. Verified for this audit against HEAD’s committed blob, not from the
+evidence pack:
+<code>git show HEAD:tests/unit/api_layer/test_hooks_coverage.py</code>,
+<code>test_load_hooks_invalid_json</code>, lines 54–61:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fake_path.write_text(<span class="st">&quot;not json&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>hooks <span class="op">=</span> api.hooks._load_hooks()</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> hooks <span class="op">==</span> []          <span class="co"># the defect, codified as the expectation</span></span></code></pre></div>
+<p>That is the §11.4.245 oracle failure in its purest form: the expected
+value was derived from what the implementation <em>did</em>, never from
+a specification of what a corrupt store <em>should</em> cause. Any
+future correct fix was pre-committed to breaking this test, which is
+exactly why the swallow “looked deliberate” and survived. The negative
+control that makes the distinction meaningful was there all along and is
+correctly untouched: <code>test_load_hooks_no_file</code> still asserts
+<code>== []</code> for a <strong>missing</strong> file (HEAD lines
+25–31; still present in the working tree at line 31) — MISSING and
+CORRUPT are different states, and only one of them is legitimately
+empty.</p>
+<p>A second, independent mechanism kept the write half quiet:
+<strong>BOB-173’s guard was aimed at an operation the code no longer
+performs.</strong> <code>seal_for_rewrite</code> chmod’ed the hooks
+<strong>file</strong> to 0400 and probed with
+<code>open(target, "a")</code> — the correct needle while
+<code>_save_hooks</code> rewrote in place. Measured rather than assumed:
+append to a 0400 file is <strong>REFUSED</strong>;
+<code>os.replace</code> over a 0400 file <strong>SUCCEEDS</strong>;
+<code>mkstemp</code> in a 0500 directory is <strong>REFUSED</strong>. So
+a guard written against in-place rewriting silently stops biting the
+moment the write becomes atomic — the §11.4.199 shape, a reproduction
+that no longer reaches its own precondition.</p></li>
+<li><p><strong>new-check:</strong>
+<code>tests/unit/api_layer/test_bob174_corrupt_hook_store.py</code>.
+Executed for this audit (collection only — see the boundary below):
+<strong>35 tests collected</strong>, cleanly, which also proves the
+current <code>hooks.py</code> imports. The item’s evidence pack header
+says 28; the suite grew afterwards and the two figures are left
+un-harmonised (§11.4.6). Its shape is what makes it a class-closing
+check rather than an instance patch: corrupt-store behaviour is asserted
+for <strong>three distinct corruption seeds</strong>
+(<code>truncated</code>, <code>wrong_shape</code>,
+<code>list_of_non_dicts</code>) across GET, CREATE, DELETE and dispatch;
+atomicity is proven by a crash mid-write leaving the previous store
+intact <strong>and still parseable</strong>; and a
+non-<code>OSError</code> serialisation failure is pinned separately. The
+two gates the fix legitimately broke were <strong>reconciled, not
+fake-passed</strong> (§11.4.120) — <code>test_hooks_coverage.py</code>
+now expects <code>pytest.raises(HookStoreCorruptError)</code>, and the
+three BOB-173 DELETE tests were re-aimed at the
+<strong>directory</strong> seal, which is a closer match to the
+operation the code now performs than the original was. Both
+reconciliations were then re-verified to still bite: restoring BOB-173’s
+<code>_save_hooks</code> swallow → 5 failed; restoring the A1
+<code>_load_hooks</code> swallow → 2 failed. A reconciled gate that
+stopped catching its own defect would be §11.4.120’s fake-pass in slow
+motion, and that was checked rather than assumed.</p></li>
+<li><p><strong>Honest boundary (§11.4.6):</strong></p>
+<ol type="1">
+<li><strong>The guard is UNTRACKED</strong> and the
+<code>hooks.py</code> change is uncommitted; the item remains
+<code>Queued</code>. As with BOB-169, the check exists in one working
+copy and binds nothing on a fresh clone (§11.4.215).</li>
+<li><strong>This audit ran collection, not the suite.</strong>
+<code>download-proxy/**</code> is held by a live sibling agent, so the
+tree is not quiescent and a pass/fail verdict measured against it would
+be void (§11.4.84). The RED (15 failed / 13 passed), the GREEN, and the
+mutation results quoted above are the item’s captured evidence,
+attributed and not re-measured here.</li>
+<li>The evidence pack states plainly that three RED members passed
+pre-fix and do <strong>not</strong> capture the escape by themselves —
+they pin properties of the new mechanism. That honesty is carried
+forward rather than smoothed over: the members that captured the defect
+are named there individually.</li>
+<li>A deliberate behaviour change ships with the fix: a
+<code>hooks.json</code> chmod’ed 0400 no longer refuses a write, because
+<code>os.replace</code> relinks a directory entry and never consults the
+target’s mode. It is accepted, argued, and pinned by its own test rather
+than left as a docstring claim.</li>
+</ol></li>
+</ul>
 <h2 id="discovery-channel-split-tracked-per-11.4.238e">Discovery-channel
 split (tracked, per §11.4.238(E))</h2>
 <table>
@@ -1598,12 +2407,23 @@ BOB-CONTAINER-WRITES-NOT-OPERATOR-OWNED)</td>
 <td>100%</td>
 </tr>
 <tr>
+<td>2026-08-25 (incremental, coverage-escape audit of four defects found
+during the 002-user-owned-downloads session — 5 new <code>###</code>
+entries: BOB-169 export charset corruption, BOB-168 guard residue,
+BOB-164a/BOB-164b split, BOB-174 corrupt hooks store)</td>
+<td>1 (<code>automated-helixqa</code> x1: BOB-164a, discovered by the
+<code>tests/ux/</code> axe suite on its first live run)</td>
+<td>4 (<code>agent-code-reading</code> x4: BOB-169, BOB-168, BOB-164b,
+BOB-174)</td>
+<td>80%</td>
+</tr>
+<tr>
 <td><strong>Cumulative total (all <code>###</code> entries to date, this
 row is what <code>CM-QA-DISCOVERY-LEDGER-FRESH</code>
 checks)</strong></td>
-<td><strong>0</strong></td>
-<td><strong>23</strong></td>
-<td><strong>100%</strong></td>
+<td><strong>1</strong></td>
+<td><strong>27</strong></td>
+<td><strong>96%</strong></td>
 </tr>
 </tbody>
 </table>
@@ -1630,17 +2450,42 @@ finding is itself a coverage escape of the same shape this ledger tracks
 drifted from the document it gates) but is fixed in the same edit that
 found it since the fix is a one-line table-convention correction, not a
 new automated check.</p>
-<p><strong>Honest note:</strong> 100% out-of-band is the true,
-unflattering starting number — every entry above was found by an agent
-reading code, running commands by hand, or hitting a real failure while
-doing unrelated live-verification work; none by a standing HelixQA run.
-This is exactly the state §11.4.238 exists to change; the target is this
-percentage trending toward zero as the <code>new-check</code> column
-above closes each specific gap (RD2-42/RD2-43 are still open — no
-automated check authored yet, tracked honestly as such) and as future
-work is driven through the HelixQA banks
-(<code>challenges/helixqa-banks/</code>) rather than ad-hoc
-investigation.</p>
+<p><strong>Honest note (updated 2026-08-25):</strong> the cumulative
+figure is now <strong>96% out-of-band — 27 of 28 entries</strong> — down
+from 100%, and the single point of movement is worth stating precisely
+rather than celebrated. It is <strong>one</strong> entry: BOB-164a,
+where the <code>tests/ux/</code> axe suite found a real user-visible
+defect on its first live run and the failing test was deliberately left
+failing rather than silenced. That is the §11.4.238 posture working
+exactly once. Every other entry in this ledger, including the four
+audited on 2026-08-25, was still found by an agent reading code, running
+a command by hand, or hitting a real failure during unrelated work.</p>
+<p>Direction of travel, stated without editorialising: 100% → 96% over
+the ledger’s life is <strong>one automated discovery in 28</strong>, and
+the two arithmetic caveats both cut against reading it as a trend. The
+denominator grew by 5 in this round, so the percentage would have fallen
+slightly even if the automated column had stayed at 0; and BOB-164a’s
+own follow-on regression (BOB-164b) was itself an out-of-band escape, so
+the one automated discovery did <strong>not</strong> carry its own item
+to closure without the regime being escaped again. §11.4.238(E)’s target
+is this percentage trending toward zero, and on the evidence of this
+round it has barely begun to.</p>
+<p>A structural obstacle is now visible across the round and is recorded
+here rather than in any single entry, because it is the same finding
+four times: <strong>every new or strengthened check produced by these
+four audits is UNTRACKED in git</strong>, and invariant 50’s own gate is
+present only in an uncommitted working tree (<code>HEAD</code>’s
+<code>scripts/pre_build_verification.sh</code> reads
+<code>[49/49]</code> and contains zero occurrences of
+<code>CM-EXPORT-CHARSET-VALID</code>). Per §11.4.215 an untracked
+artifact does not bind, and per §11.4.226 a check that exists in one
+working copy is not coverage. Until these are committed, the
+<code>new-check</code> column for this round describes work done, not a
+regime strengthened — the same install-gap class this ledger already
+recorded at FORCED-LOGOUT-2026-08-19-5TH (“4 authored preventive gates,
+0 installed”). The earlier open items are unchanged: RD2-42/RD2-43 still
+have no automated check authored, and BOB-168’s is owed rather than
+written.</p>
 <p><strong>2026-08-18 backfill note (BOB-069):</strong> this round added
 four entries discovered during the SAME session that produced them (the
 constitution-curriculum amendment stream + the BOB-072/073/075 parallel
@@ -1713,5 +2558,28 @@ retrospectively.</li>
 same day.</li>
 <li>Prior 4 (BOB-116, BOB-120, BOB-123 + the base BOB-116’s “first”
 instance): retrospective correction pending — their attribution to
-PAM/Linger was wrong per BOB-126’s captured evidence.</li>
+PAM/Linger was wrong per BOB-126’s captured evidence. <strong>2026-08-25
+export-staleness note (§11.4.65 / §11.4.12, owed not
+performed):</strong> this revision edits
+<code>docs/QA_DISCOVERY_LEDGER.md</code> only. Its <code>.html</code>,
+<code>.pdf</code> and <code>.docx</code> siblings are therefore
+<strong>STALE</strong> — measured, not assumed, with the project’s own
+oracle (<code>scripts/lib/export_staleness.sh</code>
+<code>export_is_stale</code>), which reports STALE for both
+<code>.html</code> and <code>.pdf</code>. They were deliberately
+<strong>not</strong> regenerated: the working tree is not quiescent
+(three sibling agents hold <code>scripts/</code>,
+<code>download-proxy/**</code> and <code>frontend/**</code> during this
+audit), and running the corpus generator against a racing tree is how a
+half-written export gets committed (§11.4.84, §11.4.121). Consequence
+stated plainly so it is not a surprise: <strong>invariant 16
+<code>CM-MARKDOWN-EXPORT-SYNC</code> will FAIL on these two siblings
+until they are regenerated</strong>, and the regeneration must run
+HTML-before-PDF or weasyprint re-bakes the mojibake from the stale
+fragment (BOB-169). Related and recorded in the BOB-169 entry above:
+this ledger’s own <code>.html</code> is currently one of the 301
+charset-less fragments and its <code>.pdf</code> carries 494 corrupted
+lines, so the regeneration is also the repair.</li>
 </ul>
+</body>
+</html>

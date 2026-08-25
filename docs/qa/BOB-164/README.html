@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">README</h1>
+</header>
+<h1
+id="bob-164-wcag-aa-colour-contrast-failures-on-the-live-dashboard">BOB-164
+— WCAG AA colour-contrast failures on the live dashboard</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-25T18:20:00Z</p>
+<p>Round 2. Round 1’s fix was correct at the token layer and introduced
+a regression at the <em>background</em> layer that neither oracle could
+see. This document records the fix for that regression, the oracle
+change that makes the whole class visible, and the corrections owed to
+round 1’s claims. Every number below was produced by a command in this
+directory or by <code>npx ng test</code> in <code>frontend/</code>; none
+is carried over unmeasured.</p>
+<hr />
+<h2 id="what-round-1-got-wrong-precisely">1. What round 1 got wrong,
+precisely</h2>
+<p>Round 1 raised <code>--color-text-secondary</code> for legibility as
+TEXT. That token is also painted as a BACKGROUND, and a change safe for
+one role is a regression in the other.</p>
+<table>
+<thead>
+<tr>
+<th>node</th>
+<th>role of the token</th>
+<th>pre-fix</th>
+<th>after round 1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.status.unknown</code> (<code>color: #ccc</code>)</td>
+<td>fill</td>
+<td>2.46:1</td>
+<td><strong>1.09:1</strong></td>
+</tr>
+<tr>
+<td><code>.type-badge.unknown</code></td>
+<td>fill</td>
+<td>1.93:1</td>
+<td>1.13:1</td>
+</tr>
+<tr>
+<td><code>.quality-badge.unknown</code></td>
+<td>fill</td>
+<td>1.93:1</td>
+<td>1.13:1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Framing correction (§11.4.6).</strong> These were not passing
+nodes that the fix broke. All three were <em>already below the
+floor</em> before round 1 — <code>.status.unknown</code> at 2.46:1, both
+badges at 1.93:1. Round 1 made an existing, unseen defect substantially
+worse; it did not create it. The distinction matters because it locates
+the real failure in DISCOVERY, not in the round-1 edit.</p>
+<p><strong>Measurement correction.</strong> The round-2 review reported
+the badges as “white on that background, 3.95 → 1.74”. The rendered
+foreground is not white. Measured in a real headless Chromium against
+the shipped bundle (<code>measure_rendered_cascade.py</code>),
+<code>.type-badge.unknown</code> resolves to
+<code>rgb(169,183,198)</code> — <code>--color-text-primary</code>,
+inherited through <code>html, body</code> in <code>styles.scss</code> —
+giving 1.93:1, not 3.95:1. The class the review identified is real and
+its severity was understated.</p>
+<h2 id="why-both-oracles-were-blind-and-what-changed">2. Why both
+oracles were blind, and what changed</h2>
+<p>Neither blindness was an oversight; both were structural.</p>
+<ul>
+<li><strong>The arithmetic oracle</strong> asserted text tokens against
+<code>SURFACES = [bgPrimary, bgSecondary, bgTertiary]</code>. A token
+used as a BACKGROUND was outside its pair set <em>by
+construction</em>.</li>
+<li><strong>The rendered-DOM oracle</strong> scans a static dist with no
+backend, so the results table and the hooks list render EMPTY. The nodes
+simply were not on the page it measured.</li>
+</ul>
+<p>Patching the four ratios would have fixed one instance. The class is
+removed instead:
+<strong><code>frontend/src/app/models/style-contrast.spec.ts</code></strong>
+reads the real stylesheets, extracts every declared
+<code>(foreground, background)</code> pair — resolving inherited
+foregrounds through the SCSS ancestor chain, same-file sibling rules,
+and the global <code>html, body</code> default — and asserts each across
+all sixteen palette × mode combinations. A token used as a fill is now
+inside the pair set by construction, and a fill added tomorrow is picked
+up without editing the spec.</p>
+<p>Its honest boundary is stated in the file header and repeated here:
+it is a static extractor, not a CSS cascade engine; it holds every pair
+to 4.5:1 rather than inferring the 3:1 large-text exemption from CSS;
+and unresolvable values (<code>color-mix</code>, <code>rgba</code>,
+gradients) are SKIPPED, counted, and surfaced rather than silently
+passed.</p>
+<h2 id="the-fix">3. The fix</h2>
+<p>The root cause is a ROLE error, not four bad numbers: a literal
+(<code>#fff</code>, <code>#ccc</code>, <code>#333</code>) cannot be
+correct against a fill that changes with the palette. Round 1 had
+already established the remedy for one fill with <code>onAccent</code>;
+round 2 generalises it.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>new token</th>
+<th>fill it sits on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>onAccentHover</code></td>
+<td><code>accentHover</code></td>
+</tr>
+<tr>
+<td><code>onSuccess</code> / <code>onInfo</code> /
+<code>onWarning</code> / <code>onDanger</code> /
+<code>onPurple</code></td>
+<td>the semantic fills</td>
+</tr>
+<tr>
+<td><code>onMuted</code></td>
+<td><code>textSecondary</code>-as-a-fill</td>
+</tr>
+<tr>
+<td><code>onBorder</code></td>
+<td><code>border</code>-as-a-fill</td>
+</tr>
+</tbody>
+</table>
+<p>Every value is pure black or pure white — whichever contrasts more
+with that palette’s fill. That always clears 4.5:1:
+<code>contrast(#000,F)</code> and <code>contrast(#fff,F)</code> are
+equal only where BOTH equal 4.58, so their maximum never drops below
+4.58 and <strong>no fill colour had to move</strong>.</p>
+<p>Also added: <strong><code>contrastText</code></strong>, an AA-pinned,
+hue-preserving text variant of <code>contrast</code>. The secondary
+brand gold was serving as the <code>code</code> foreground in the
+Jackett tables and measured 2.47:1 on nord/light — the same
+brand-as-text confusion round 1 fixed for <code>accent</code>, missed
+because no scan renders those tables.</p>
+<p>Static badge fills (<code>.movie</code>, <code>.tv</code>, …)
+previously <em>inherited</em> <code>--color-text-primary</code>, which
+varies per palette; they now declare a palette-independent literal
+chosen against their own static fill.</p>
+<h2 id="red-green-measured-like-for-like">4. RED → GREEN, measured
+like-for-like</h2>
+<p>Round 1 reported RED <code>74 failed / 479 passed (553)</code>
+against GREEN <code>652 passed (652)</code>. Those were produced by
+<strong>different versions of the spec</strong>, so the pair did not
+measure one change — the matching <code>479 passed</code> is what made
+it look continuous. Re-measured here with the FINAL oracle against the
+pre-fix sources (<code>git show HEAD:</code> for every non-spec file,
+specs kept current):</p>
+<pre><code>RED    Test Files   1 failed | 31 passed (32)          [+ 1 more failing file]
+       Tests      878 failed | 1736 passed (2614)
+GREEN  Test Files  32 passed (32)
+       Tests     2742 passed (2742)                     exit 0</code></pre>
+<p>The RED total breaks down as (counted from the per-test FAIL lines,
+not from assertion text, which vitest prints twice):</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>count</th>
+<th>class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>192</td>
+<td><code>accentText</code> / <code>dangerText</code> /
+<code>warningText</code> / <code>contrastText</code> absent at HEAD (4
+tokens × 16 themes × 3 surfaces)</td>
+</tr>
+<tr>
+<td><strong>25</strong></td>
+<td>genuine sub-floor DECLARED TOKEN pairs — 23
+<code>textSecondary</code>, 2 <code>textPrimary</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>catalogue-level tests (runtime wiring, hue family, on-fill,
+no-hardcoded-foreground)</td>
+</tr>
+<tr>
+<td>657</td>
+<td>declared FOREGROUND-ON-FILL pairs
+(<code>style-contrast.spec.ts</code>, new this round)</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>25</strong> reproduces the reviewer’s independent count
+exactly. My total differs from the reviewer’s 173 by 48 — precisely the
+<code>contrastText</code> assertions this round adds (16 themes × 3
+surfaces).</p>
+<p><strong>The totals differ (2614 vs 2742) and that is
+expected</strong>, not hidden: the fix adds tokens, and new tokens
+create new test cases. A test count is not a like-for-like axis; the
+failure classes above are.</p>
+<h2 id="rendered-dom-verification-of-the-nodes-the-scan-cannot-reach">5.
+Rendered-DOM verification of the nodes the scan cannot reach</h2>
+<p><code>measure_rendered_cascade.py</code> injects the exact markup
+<code>dashboard.component.html</code> emits, with the component’s
+Angular style-scoping attribute, and reads <code>getComputedStyle</code>
+— a real cascade, not a static inference.</p>
+<pre><code>PRE-FIX  (shipped bundle)          9 of 11 measured nodes below their floor
+POST-FIX (fresh build, same theme) 0 of 11 measured nodes below their floor</code></pre>
+<p>Full transcripts: <code>cascade_PREFIX_darcula_dark.txt</code>,
+<code>cascade_POSTFIX_darcula_dark.txt</code>.</p>
+<h2 id="the-scanner-was-blind-to-axes-incomplete-channel">6. The scanner
+was blind to axe’s <code>incomplete</code> channel</h2>
+<p><code>_summarise()</code> read only <code>violations</code>. axe
+reports <code>incomplete</code> when its own heuristics decline to
+decide — and a white-on-white node at 1.0:1, the most flagrant failure a
+contrast oracle can face, lands there with
+<code>messageKey: equalRatio</code>. Round 1 scored it as a PASS. That
+is a §11.4.201(6) false-null living inside the contrast oracle
+itself.</p>
+<p>The channel is now read, adjudicated from the same WCAG formula, and
+counted in the exit code. axe abstaining does not mean the page is fine;
+where the colours resolve, this script decides.</p>
+<p><code>--self-check</code> proves the oracle can SEE before any clean
+run is believed (§11.4.107(10)):</p>
+<pre><code>  golden-bad  #golden-bad-equal    CAUGHT      (white on white, via `incomplete`)
+  golden-bad  #golden-bad-plain    CAUGHT      (ordinary sub-floor, via `violations`)
+  neg-control #negative-control    correctly silent
+self-check: PASS</code></pre>
+<p><strong>Glyph nodes, decided honestly.</strong> Post-fix the channel
+holds 40 nodes across 16 themes for three icon-glyph controls
+(<code>.bridge-retry</code>, <code>.theme-toggle</code>,
+<code>.caret</code>) where axe resolves NEITHER foreground NOR
+background, so no oracle here can compute a ratio. Reporting them as
+failures would be a §11.4.201(1) false-positive refusal; dropping them
+silently would rebuild the false-null. They are a NAMED class,
+<code>GLYPH_UNMEASURED</code>: printed every run, recorded in the JSON,
+excluded from the exit code, and <strong>fenced</strong> — a glyph node
+outside the checked-in allow-list still BLOCKS. Their SC 1.4.11 3:1
+obligation remains genuinely unproven and is tracked as
+<strong>BOB-184</strong>, not claimed clean.</p>
+<p>Whole-catalogue result on a fresh build:</p>
+<pre><code>TOTAL colour-contrast violation nodes across 16 theme(s): 0
+TOTAL blocking `incomplete` nodes (FAIL / UNDECIDABLE / GLYPH_FAIL): 0
+TOTAL fenced GLYPH_UNMEASURED nodes (reported, not blocking): 40</code></pre>
+<h2 id="paired-1.1-mutations-every-one-caught">7. Paired §1.1 mutations
+— every one caught</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>mutation</th>
+<th>result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R2A</td>
+<td><code>.status.unknown</code> reverted to
+<code>color: #ccc</code></td>
+<td>CAUGHT — 13 failed</td>
+</tr>
+<tr>
+<td>R2B</td>
+<td><code>onMuted</code> → a mid-grey that clears nothing</td>
+<td>CAUGHT — 3 failed</td>
+</tr>
+<tr>
+<td>R2C</td>
+<td>extractor reads only <code>background-color</code>, dropping the
+shorthand</td>
+<td>CAUGHT — control needle fired: 7 failed</td>
+</tr>
+<tr>
+<td>R2D</td>
+<td><code>non-text</code> exclusion pointed at <code>.status</code>, a
+real text node</td>
+<td>CAUGHT — the fence rejects a class the CSS does not support</td>
+</tr>
+<tr>
+<td>R2E</td>
+<td>a <code>code</code> site reverted to
+<code>var(--color-contrast)</code></td>
+<td>CAUGHT — 5 failed</td>
+</tr>
+<tr>
+<td>R2F</td>
+<td>scanner ignores the <code>incomplete</code> channel (round-1
+behaviour)</td>
+<td>CAUGHT — <code>#golden-bad-equal</code> MISSED → self-check
+FAIL</td>
+</tr>
+<tr>
+<td>R2G</td>
+<td><code>.caret</code> removed from the glyph fence</td>
+<td>CAUGHT — exit 1, 2 blocking nodes</td>
+</tr>
+<tr>
+<td>R2H</td>
+<td>footer token <code>--color-accent-text</code> →
+<code>--color-accent-typo</code></td>
+<td>CAUGHT <em>after</em> strengthening — see §8</td>
+</tr>
+</tbody>
+</table>
+<p>R2C is the load-bearing one: a blinded extractor is reported as
+BLIND, not as clean. R2D closes the fence’s real risk, which is not a
+stale entry but a false one.</p>
+<p>Round 1’s own mutation set was re-run against the CHANGED oracle to
+confirm it still bites (the round-1 review’s
+<code>R1</code>–<code>R4</code> labels appear in no artifact in this
+repository, so the set re-run is the one round 1 documented as
+<code>M1</code>–<code>M4</code>; stated rather than guessed):</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>mutation</th>
+<th>result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td><code>accentText</code> → <code>#9d001e</code> (the fix undone)</td>
+<td>CAUGHT — 1 failed</td>
+</tr>
+<tr>
+<td>M2</td>
+<td><code>accentText</code> → <code>#c4c4c4</code> (a grey that clears
+the ratio)</td>
+<td>CAUGHT — hue guard, 1 failed</td>
+</tr>
+<tr>
+<td>M3</td>
+<td><code>onAccent</code> → <code>#000000</code></td>
+<td>CAUGHT — 1 failed</td>
+</tr>
+<tr>
+<td>M4</td>
+<td><code>textSecondary</code> → <code>#808080</code></td>
+<td>CAUGHT — <strong>3</strong> failed</td>
+</tr>
+</tbody>
+</table>
+<p>M4 now trips three assertions rather than one: reverting the token is
+caught by the surface-pair oracle as before, and additionally by the new
+fill-pair oracle, which is exactly the coverage that was missing.</p>
+<p>Exit statuses were read directly from <code>$?</code> with no pipe in
+between (§11.4.201(12)).</p>
+<h2 id="corrections-owed-to-round-1s-claims">8. Corrections owed to
+round 1’s claims</h2>
+<ul>
+<li><strong>“NEW failures introduced by the fix: 0”</strong> (round 1
+§5) — <strong>false as stated</strong>. The fix drove
+<code>.status.unknown</code> from 2.46:1 to 1.09:1. The claim was true
+only <em>within the 30 nodes axe rendered</em>, and it was written
+without that scope. Scope now stated everywhere it appears.</li>
+<li><strong>“Previously-passing nodes now reported failing: 0”</strong>
+(round 1 §7) — true only of the same 30-node scanned view, which
+excluded every data-driven node. Re-stated with its scope.</li>
+<li><strong>“TWO INDEPENDENT ORACLES (§11.4.245 structural
+independence)”</strong> — <strong>overstated for the DOM path.</strong>
+<code>axe_contrast_scan.py</code> takes <code>fgColor</code> /
+<code>bgColor</code> / <code>shadowColor</code> FROM axe and re-does
+only the arithmetic; that is <em>arithmetic</em> independence, not
+<em>measurement</em> independence, and a wrong colour read by axe would
+be reproduced faithfully by the Python side. The vitest spec IS
+genuinely independent for declared pairs — it resolves colours from the
+palette source, never from a browser. The file header now says exactly
+this.</li>
+<li><strong>The <code>accentHover</code> sub-floor finding</strong>
+(round 1, recorded unfixed in four palettes) is <strong>fixed</strong>,
+not filed: <code>onAccentHover</code> covers that fill and the
+generalised on-fill test asserts it in all 16 combinations. The round-1
+note claiming otherwise is removed with it.</li>
+<li><strong>The footer regex</strong>
+<code>var\(--color-accent[a-z-]*\)</code> accepted tokens that do not
+exist. Narrowing it to a closed alternation was <em>not enough</em> —
+the paired mutation still passed, because a valid sibling token
+satisfied an “at least one” check. The gate now asserts that
+<strong>every</strong> <code>--color-*</code> the footer references is a
+real key in <code>TOKEN_CSS_VAR</code>; R2H then fails as it
+should.</li>
+</ul>
+<h2 id="what-this-evidence-does-not-cover">9. What this evidence does
+NOT cover</h2>
+<ul>
+<li><strong>Legibility is not contrast.</strong> No human has looked at
+these colours. §11.4.185 manual QA is unaffected and still owed.</li>
+<li><strong>The served bundle is still stale.</strong>
+<code>download-proxy/src/ui/dist/</code> carries the pre-fix defect
+verbatim; <code>scripts/install.sh:133</code> checks only that the
+directory EXISTS, never that it is newer than its sources, and
+<code>dist/</code> is gitignored so the divergence never shows in a
+diff. §11.4.108 layer 2 is <strong>not</strong> closed. Tracked as
+<strong>BOB-183</strong>; deliberately not rebuilt here (a sibling
+stream owns that tree).</li>
+<li><strong>Data-driven nodes are arithmetic-only in a rendered
+DOM.</strong> The badge and status nodes are asserted by
+<code>style-contrast.spec.ts</code> and were measured once by
+<code>measure_rendered_cascade.py</code>, but the standing scan still
+cannot see them. Tracked as <strong>BOB-185</strong>.</li>
+<li><strong>Icon glyphs are unmeasured</strong>, per §6. Tracked as
+<strong>BOB-184</strong>.</li>
+<li><strong>Resting state only.</strong> Hover states are now covered
+where a stylesheet declares them (<code>onAccentHover</code>), but
+focus, active and error states were not rendered.</li>
+<li><strong><code>/jackett/*</code> was not scanned in a rendered
+DOM</strong>; its tokens are covered by the arithmetic oracles
+only.</li>
+</ul>
+<h2 id="reproducing">10. Reproducing</h2>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># both arithmetic oracles</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> ng test <span class="at">--watch</span><span class="op">=</span>false          <span class="co"># 2742 passed, exit 0</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># the rendered-DOM oracle, validated before use</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> docs/qa/BOB-164/axe_contrast_scan.py <span class="at">--self-check</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> ng build <span class="at">--output-path</span><span class="op">=</span>/tmp/dist_r2 <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> ..</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> docs/qa/BOB-164/axe_contrast_scan.py <span class="dt">\</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">--dist</span> /tmp/dist_r2/browser <span class="at">--all-palettes</span> <span class="dt">\</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">--out</span> docs/qa/BOB-164/scan_GREEN_round2_all_palettes.json   <span class="co"># exit 0</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="co"># the rendered cascade for nodes the scan cannot reach</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> docs/qa/BOB-164/measure_rendered_cascade.py <span class="at">--dist</span> /tmp/dist_r2/browser</span></code></pre></div>
+<h2 id="files">Files</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>axe_contrast_scan.py</code></td>
+<td>rendered-DOM oracle; reads <code>violations</code> AND
+<code>incomplete</code>; <code>--self-check</code> validates it against
+golden-good/golden-bad fixtures</td>
+</tr>
+<tr>
+<td><code>measure_rendered_cascade.py</code></td>
+<td>measures the real cascade for badge/status nodes the scan cannot
+render</td>
+</tr>
+<tr>
+<td><code>cascade_PREFIX_darcula_dark.txt</code> /
+<code>cascade_POSTFIX_darcula_dark.txt</code></td>
+<td>those measurements, 9/11 failing → 0/11</td>
+</tr>
+<tr>
+<td><code>scan_GREEN_round2_all_palettes.json</code></td>
+<td>post-fix, all 16 themes — 0 violations, 0 blocking incomplete</td>
+</tr>
+<tr>
+<td><code>scan_RED_shipped.json</code> /
+<code>scan_RED_all_palettes.json</code></td>
+<td>round-1 pre-fix scans, retained</td>
+</tr>
+<tr>
+<td><code>scan_GREEN_darcula.json</code> /
+<code>scan_GREEN_all_palettes.json</code></td>
+<td>round-1 post-fix scans, retained</td>
+</tr>
+<tr>
+<td><code>frontend/src/app/models/palette.contrast.spec.ts</code></td>
+<td>declared TOKEN-PAIR oracle (text on surfaces, on-fill tokens, hue
+guard)</td>
+</tr>
+<tr>
+<td><code>frontend/src/app/models/style-contrast.spec.ts</code></td>
+<td>declared FILL-PAIR oracle — closes the background-role
+blindness</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
