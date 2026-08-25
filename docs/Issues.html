@@ -176,12 +176,9 @@
   </style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">Issues</h1>
-</header>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 59 <strong>Last modified:</strong>
-2026-08-25T19:33:40Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 61 <strong>Last modified:</strong>
+2026-08-25T19:55:20Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -2895,5 +2892,60 @@ the six live shipped entries still ACCEPT so the fix is not a
 11.4.201(1) false-positive refusal. Discovered out-of-band during T028
 remediation and reported by the agent as needing tracking, so it is also
 a 11.4.238 coverage escape.</p>
+<h2
+id="bob-188-gate-invariant-17-runs-a-stale-tracked-binary-that-structurally-cannot-see-the-violations-it-exists-to-catch">BOB-188
+— Gate invariant 17 runs a STALE TRACKED binary that structurally cannot
+see the violations it exists to catch</h2>
+<p><strong>Status:</strong> In progress <strong>Type:</strong> Bug</p>
+<p>pre_build_verification.sh invariant 17 (CM-WORKABLE-ITEMS-VALIDATE)
+resolves its binary through the candidate loop at :534, whose FIRST
+entry is constitution/scripts/workable-items/bin/workable-items. That
+file is GIT-TRACKED (md5 17644a248363, identical to
+bin/workable-items-linux) and executable, so it WINS resolution over the
+current untracked sibling
+constitution/scripts/workable-items/workable-items (md5 43376a6d0184).
+The tracked binary is STALE: it does not contain the guards its own
+source now has.</p>
+<p>MEASURED, needle-proven, 2026-08-25. String presence in the tracked
+binary: “refusing to set terminal status” -&gt; 0; “Issues-location item
+has TERMINAL status” -&gt; 0; control needle from the SAME updateCmd,
+“at least one mutable field flag is required” -&gt; 2 (so the instrument
+sees through that path and the zeros are real absences, not a blind
+read). The untracked sibling returns 1 / 1 / 2 for the same three
+queries. A check whose message string is absent from the binary cannot
+fire.</p>
+<p>RUNTIME PROOF: the same injected violation (a row set to terminal
+status while current_location=Issues) run through both binaries -&gt;
+stale reports 1 violation (only the body_md desync class), current
+reports 2 including the location-status class verbatim. This is exactly
+why the ten BOB-166 rows (BOB-087/129/131/144/145/146/148/153/155/157)
+survived undetected: the gate that was supposed to catch them was
+running a binary structurally incapable of seeing them.</p>
+<p>The 11.4.108 SOURCE-&gt;ARTIFACT gap: source correct, artifact stale,
+every gate reading the artifact reports green. This is the THIRD
+instance of that class found in one session, alongside BOB-169 (a
+charset gate that never opened a file) and BOB-183 (a served bundle five
+days older than its sources).</p>
+<p>COMPOUNDING: the comment at :519-523 directly above the loop asserts
+“The naive bin/workable-items path never existed in this checkout (bin/
+is a gitignored local build-output dir nothing ever populated)”. That
+statement is now FALSE - bin/ holds two tracked binaries. A stale
+comment asserting the absence of the very file that now shadows
+resolution is how this stayed invisible.</p>
+<p>Also an 11.4.30 question the operator owns: bin/workable-items and
+bin/workable-items-linux are VERSIONED BUILD ARTIFACTS in a constitution
+submodule that is inherited by reference by every consumer, so every
+consumer inherits whichever binary was last committed. Flagged
+independently by two separate agents this session.</p>
+<p>ACCEPTANCE: (a) resolution must never prefer a stale artifact over a
+current one - either the tracked binaries are removed and resolution
+falls through to build-on-demand, or a freshness check refuses a binary
+older than its sources (see the BOB-183 fingerprint gate for a working
+pattern); (b) the false comment at :519-523 corrected; (c) a paired 1.1
+mutation proving the new refusal fires, plus a negative control proving
+a genuinely fresh binary still passes so the fix is not an 11.4.201(1)
+false-positive refusal; (d) the 11.4.30 tracked-binary decision recorded
+as operator DATA. Discovered out-of-band during BOB-166 remediation - a
+11.4.238 coverage escape in its own right.</p>
 </body>
 </html>

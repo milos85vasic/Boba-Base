@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>check_cm_workable_items_binary_fresh</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">check_cm_workable_items_binary_fresh</h1>
+</header>
+<h1
+id="check_cm_workable_items_binary_fresh.sh">check_cm_workable_items_binary_fresh.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-25T20:55:00Z</p>
+<h2 id="overview">Overview</h2>
+<p>Gate <code>CM-WORKABLE-ITEMS-BINARY-FRESH</code> (pre-build invariant
+52). Proves the <strong>shipped, git-tracked</strong>
+<code>workable-items</code> binary matches the Go sources it was built
+from.</p>
+<h2 id="why-this-exists">Why this exists</h2>
+<p><code>constitution/scripts/workable-items/bin/workable-items</code>
+is not a stray build output — it is <strong>deliberately
+shipped</strong>, so a project that inherits the constitution by
+reference can run the tool with no Go toolchain installed.
+<code>docs/QA_DISCOVERY_LEDGER.md</code> and
+<code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code> both cite that
+exact path as the canonical invocation.</p>
+<p>Being tracked and executable, it <strong>wins the invariant-17
+candidate loop</strong> ahead of any freshly-built sibling — on every
+fresh clone, for every consumer. So when it drifts behind its source,
+invariant 17 quietly runs an older build and enforces whatever guard set
+<em>that</em> build happened to contain.</p>
+<p>That is BOB-188, measured 2026-08-25:</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 56%" />
+<col style="width: 10%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>string</th>
+<th>source</th>
+<th>tracked bin</th>
+<th>current bin</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>refusing to set terminal status</code></td>
+<td>1</td>
+<td><strong>0</strong></td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>Issues-location item has TERMINAL status</code></td>
+<td>1</td>
+<td><strong>0</strong></td>
+<td>1</td>
+</tr>
+<tr>
+<td>needle <code>workable-items</code> (proves <code>strings</code>
+sees)</td>
+<td>—</td>
+<td>34</td>
+<td>34</td>
+</tr>
+</tbody>
+</table>
+<p>The needle row is what makes the zeros admissible as evidence rather
+than a comfortable silence: <code>strings(1)</code> reads 34 hits from
+the <em>same</em> tracked binary, so it was not blind — those guard
+strings were genuinely absent (§11.4.201(7)(b)). A check whose message
+string is missing from the binary cannot fire, which is why ten
+un-migrated terminal-status rows survived the gate meant to catch
+them.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<p>None to run the gate. Remediating a FAIL needs a Go toolchain
+matching <code>go.mod</code> (currently <code>go 1.21</code>; built here
+with go1.26.2).</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_workable_items_binary_fresh.sh</span></code></pre></div>
+<p>Runs automatically as pre-build invariant 52.</p>
+<h2 id="verdicts">Verdicts</h2>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr>
+<th>Exit</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Binary matches its sources, <strong>or</strong> no binary is shipped
+(§11.4.69 <code>artifact_not_yet_built</code>)</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Binary is STALE, carries no fingerprint, or the input scan went
+BLIND</td>
+</tr>
+</tbody>
+</table>
+<h2 id="remediation">Remediation</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> constitution/scripts/workable-items</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">GOMAXPROCS</span><span class="op">=</span>2 <span class="fu">nice</span> <span class="at">-n</span> 19 go build <span class="at">-o</span> bin/workable-items ./cmd/workable-items</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> bin/workable-items bin/workable-items-linux        <span class="co"># kept identical by convention</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># re-record the fingerprint:</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">{</span> <span class="fu">find</span> . <span class="at">-name</span> <span class="st">&#39;*.go&#39;</span> <span class="at">-not</span> <span class="at">-path</span> <span class="st">&#39;./bin/*&#39;</span> <span class="at">-print</span><span class="kw">;</span> <span class="fu">ls</span> go.mod go.sum <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">sed</span> <span class="st">&#39;s|^|./|&#39;</span><span class="kw">;</span> <span class="kw">}</span> <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">|</span> <span class="fu">sort</span> <span class="kw">|</span> <span class="fu">xargs</span> <span class="at">-r</span> sha256sum <span class="kw">|</span> <span class="fu">sha256sum</span> <span class="kw">|</span> <span class="fu">cut</span> <span class="at">-d</span><span class="st">&#39; &#39;</span> <span class="at">-f1</span> <span class="op">&gt;</span> bin/.source.sha256</span></code></pre></div>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<p>Fingerprint = sha256 over the sorted <code>sha256sum</code> of every
+<code>*.go</code> (excluding <code>bin/</code>) plus
+<code>go.mod</code>/<code>go.sum</code>, persisted at
+<code>bin/.source.sha256</code>.</p>
+<p><strong>Content hash, never mtime</strong> (§11.4.86): a
+<code>touch</code> must not clear staleness and a revert must restore
+freshness. Mutation M5 asserts exactly that.</p>
+<p><strong>Zero inputs is never “clean”</strong> (§11.4.201(6)): a
+<code>find</code> that returns nothing and a source tree with no Go in
+it produce the identical quiet zero, and only one of them is honest — so
+an empty scan FAILs as BLIND rather than passing.</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>No binary shipped</strong> → exit 0 with an honest skip.
+Absence is not staleness.</li>
+<li><strong>Fingerprint present, binary absent</strong> → exit 0;
+nothing is being shipped.</li>
+<li><strong>Binary present, fingerprint absent</strong> → FAIL. A
+shipped binary that cannot be proven fresh is the precondition of
+BOB-188, not a lesser state of it.</li>
+</ul>
+<h2 id="open-question-operator-owned-11.4.30">Open question
+(operator-owned, §11.4.30)</h2>
+<p>These binaries are <strong>versioned build artifacts</strong>, which
+§11.4.30 forbids. They are tracked deliberately, to spare consumers a Go
+toolchain. Whether to keep shipping them or to require a build is a
+§11.4.122-class decision the operator owns; it is recorded on BOB-188.
+This gate takes no position on it — it makes the <em>staleness</em>
+impossible while the decision is pending, which is the part that was
+actively causing harm.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>scripts/pre_build/check_cm_served_bundle_fresh.sh</code> — the
+sibling freshness gate for the served dashboard bundle (BOB-183). Same
+class of defect (§11.4.108 SOURCE→ARTIFACT), different artifact, and it
+uses <code>--if-present</code> because a <em>local</em> build output may
+honestly be absent — this one does not, because a <em>committed</em>
+artifact that exists is being shipped.</li>
+<li><code>tests/pre_build/test_cm_workable_items_binary_fresh.sh</code>
+— 7 paired §1.1 mutations (3 golden-TRUE, 4 golden-FALSE).</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-08-25 — 7/7 mutations pass; gate RED against the stale binary,
+GREEN after rebuild.</p>
+</body>
+</html>

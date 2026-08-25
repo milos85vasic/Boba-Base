@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 60
-**Last modified:** 2026-08-25T19:45:02Z
+**Revision:** 61
+**Last modified:** 2026-08-25T19:55:20Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1418,7 +1418,7 @@ scripts/ownership_precondition.sh consumes the SAME unreviewed .env-driven scope
 
 ## BOB-188 — Gate invariant 17 runs a STALE TRACKED binary that structurally cannot see the violations it exists to catch
 
-**Status:** Queued
+**Status:** In progress
 **Type:** Bug
 
 pre_build_verification.sh invariant 17 (CM-WORKABLE-ITEMS-VALIDATE) resolves its binary through the candidate loop at :534, whose FIRST entry is constitution/scripts/workable-items/bin/workable-items. That file is GIT-TRACKED (md5 17644a248363, identical to bin/workable-items-linux) and executable, so it WINS resolution over the current untracked sibling constitution/scripts/workable-items/workable-items (md5 43376a6d0184). The tracked binary is STALE: it does not contain the guards its own source now has.

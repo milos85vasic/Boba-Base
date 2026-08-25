@@ -191,13 +191,8 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tbody>
 <tr>
 <td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>9</td>
-</tr>
-<tr>
-<td>Bug</td>
 <td>In progress</td>
-<td>2</td>
+<td>8</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -207,22 +202,17 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>17</td>
+<td>18</td>
 </tr>
 <tr>
 <td>Bug</td>
 <td>Ready for testing</td>
-<td>3</td>
-</tr>
-<tr>
-<td>Task</td>
-<td>Completed (→ Fixed.md)</td>
-<td>1</td>
+<td>4</td>
 </tr>
 <tr>
 <td>Task</td>
 <td>In progress</td>
-<td>9</td>
+<td>10</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -232,7 +222,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>21</td>
+<td>24</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -242,7 +232,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>68</strong></td>
+<td><strong>70</strong></td>
 </tr>
 </tbody>
 </table>
@@ -351,14 +341,6 @@ findings (closes GA-05)</td>
 <td>Medium</td>
 <td>RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness
 ledger (closes GA-10)</td>
-</tr>
-<tr>
-<td>BOB-087</td>
-<td>Task</td>
-<td>Completed (→ Fixed.md)</td>
-<td>High</td>
-<td>RD2-20: Wire docs_chain / commit-seam sync hook per §11.4.106(F) so
-DB writes cannot land without MD mirror</td>
 </tr>
 <tr>
 <td>BOB-088</td>
@@ -505,22 +487,6 @@ preventive-timer-inside-user-slice architectural gap</td>
 incident #3)</td>
 </tr>
 <tr>
-<td>BOB-129</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Medium</td>
-<td>Potential production slowapi/starlette defect flagged by Task 105
-subagent</td>
-</tr>
-<tr>
-<td>BOB-131</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Medium</td>
-<td>qbittorrent-proxy podman conmon crash — pre-existing, surfaced
-during BOB-129 investigation</td>
-</tr>
-<tr>
 <td>BOB-135</td>
 <td>Bug</td>
 <td>Ready for testing</td>
@@ -551,41 +517,6 @@ container binds only 7187 — doc contradicts the Dockerfile</td>
 <td>Medium</td>
 <td>Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate
 scan scope and manufacture false BOB-126-class findings</td>
-</tr>
-<tr>
-<td>BOB-144</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Low</td>
-<td>/theme/stream calls the disconnect probe unguarded — fail-closed but
-via an uncaught traceback, inconsistent with the two SSE generators</td>
-</tr>
-<tr>
-<td>BOB-145</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>High</td>
-<td>Fix the 7187 wedge: offload and/or memoise
-Deduplicator.merge_results so O(N^2) regex work stops blocking the
-asyncio event loop</td>
-</tr>
-<tr>
-<td>BOB-146</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>High</td>
-<td>Constitution §11.4.252 detector undercounts by 29% (30 vs 42 AST
-ground truth) — 4 distinct blind spots make its output a floor, not a
-census</td>
-</tr>
-<tr>
-<td>BOB-148</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Medium</td>
-<td>Standing red unit test nothing tracked: test_no_credentials asserts
-has_session False, gets True — real defect or non-hermetic test,
-undecided</td>
 </tr>
 <tr>
 <td>BOB-149</td>
@@ -621,28 +552,12 @@ of 36 scripts have no companion doc</td>
 gate’s 38,291 findings come from submodules/</td>
 </tr>
 <tr>
-<td>BOB-153</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Medium</td>
-<td>Go profile cannot build: go.mod requires go 1.26.2 but the
-Dockerfile builder is golang:1.23-alpine</td>
-</tr>
-<tr>
 <td>BOB-154</td>
 <td>Bug</td>
 <td>Ready for testing</td>
 <td>Medium</td>
 <td>Host venv and production container run different starlette versions
 (1.4.1 vs 1.6.0)</td>
-</tr>
-<tr>
-<td>BOB-155</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>High</td>
-<td>workable-items diff reports ‘DB and Markdown are in sync’ having
-opened zero Markdown files when –issues/–fixed are omitted</td>
 </tr>
 <tr>
 <td>BOB-156</td>
@@ -652,15 +567,6 @@ opened zero Markdown files when –issues/–fixed are omitted</td>
 <td>BOB-145 event-loop regression guard is load-sensitive and flaky:
 8786ms under host load vs a 900-1500ms ceiling calibrated on a quiet
 host</td>
-</tr>
-<tr>
-<td>BOB-157</td>
-<td>Bug</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>High</td>
-<td>Our own BOB-137 stall watchdog can segfault the merge service:
-faulthandler dump_traceback(all_threads=True) hits an unpatched CPython
-3.12 defect</td>
 </tr>
 <tr>
 <td>BOB-158</td>
@@ -932,7 +838,7 @@ sibling endpoint – narrowing it must not blind it (11.4.201(1)).</td>
 <tr>
 <td>BOB-164</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
 <td><strong>Reported-Via:</strong> §11.4.202 reporting directive
 <code>bug</code> on 2026-08-21T19:56:53Z <strong>Reported-By:</strong>
@@ -1167,7 +1073,7 @@ with concurrent agents on this host (§11.4.119).</td>
 <tr>
 <td>BOB-168</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Low</td>
 <td>WHAT. scripts/run_all_challenges.sh:66 lists
 “scaling_horizontal_challenge.sh” in its challenge set.
@@ -1239,7 +1145,7 @@ separately.</td>
 <tr>
 <td>BOB-169</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
 <td>WHAT. The §11.4.65 markdown-export mandate requires every in-scope
 doc to ship .html/.pdf twins. 286 of the 326 .html files under docs/
@@ -1353,7 +1259,7 @@ Both sites still parse leftmost; the flag still defaults off.</td>
 <tr>
 <td>BOB-172</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>Ready for testing</td>
 <td>High</td>
 <td>WHAT. The rutracker SEARCH endpoint is refused by bot protection
 while the site itself is fully reachable. Measured unauthenticated
@@ -1430,7 +1336,7 @@ instrument, and it failed without erroring.</td>
 <tr>
 <td>BOB-174</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>High</td>
 <td>WHAT. A corrupt hooks file is silently indistinguishable from “no
 hooks configured”, and the next create then DESTROYS every existing hook
@@ -1562,44 +1468,403 @@ username, no password — never has rutracker enabled at all, and the
 tracker is silently absent from every fan-out rather than failing
 visibly. WHY THAT IS INCOHERENT WITH THE REST OF THE CODE.
 _search_rutracker treats COOKIES as the PREFERRED auth path, not a
-fallback. And the nnmclub sibling DOES check its own *<em>COOKIES
-variable. So the same codebase holds three positions at once: cookies
-preferred at the search site, cookies ignored at the enablement gate,
-and cookies honoured for a sibling tracker. WHY IT MATTERS MORE THAN IT
-LOOKS. CLAUDE.md documents a standing operator mandate (2026-08-15) that
-per-tracker Netscape cookies files at
-${TRACKER_COOKIE_DIR}/cookies</em><tracker>.txt are auto-loaded into
-.env as <TRACKER>_COOKIES before every boba-svc up, restart, install
-Stage 6 and start.sh boot — and rutracker is named in that set. So the
-SANCTIONED, documented configuration path for this tracker produces
-exactly the state this gate ignores. An operator who follows the
-documented instructions gets a tracker that never runs, with no error to
-explain it. FAILURE MODE. Silent absence, not a visible failure — the
-same §11.4.201(6) false-null shape as BOB-172, one layer earlier.
-BOB-172 fixes a tracker that RAN and was REFUSED being reported as
-empty; this is a tracker that never ran at all, and the merged result
-simply has one fewer contributor with nothing to indicate it.
-PROVENANCE. Found by the BOB-172 implementing agent while tracing the
-enablement path to locate the status-handling defect. Recorded here
-rather than fixed in that change: it is a separate defect on a separate
-seam with its own oracle, and folding it in would have widened BOB-172
-past its captured evidence. ACCEPTANCE. (a) The enablement gate honours
-RUTRACKER_COOKIES as an independently sufficient credential, matching
-what _search_rutracker already prefers and what the nnmclub sibling
-already does. (b) A test asserting that a cookies-only configuration
-ENABLES rutracker, driving the real _get_enabled_trackers rather than a
-replica. (c) Paired §1.1 mutation restoring the username/password-only
-gate — the test must go red. (d) NEGATIVE CONTROL (§11.4.201(1)): a
-configuration with NO credentials at all must still leave rutracker
-DISABLED. A fix that enables an unauthenticated tracker is worse than
-the gap, because it produces failing searches instead of absent ones.
-(e) Audit the other trackers’ gates for the same asymmetry rather than
-fixing only the one that was noticed — three positions in one codebase
-suggests nobody has checked them together (§11.4.118). HONEST BOUNDARY.
-Not verified against a live cookies-only deployment; read from source by
-the BOB-172 agent and recorded on its report. The reading is specific
-and checkable, but whoever takes this should confirm by invocation
-before relying on it.</td>
+fallback. And the nnmclub sibling DOES check its own *_COOKIES variable.
+So the same codebase holds three positions at once: cookies preferred at
+the search site, cookies ignored at the enablement gate, and cookies
+honoured for a sibling tracker. WHY IT MATTERS MORE THAN IT LOOKS.
+CLAUDE.md documents a standing operator mandate (2026-08-15) that
+per-tracker Netscape cookies files at <span
+class="math inline">${TRACKER_COOKIE_DIR}/cookies_&lt;tracker&gt;.txt
+are auto-loaded into .env as &lt;TRACKER&gt;_COOKIES before every
+boba-svc up, restart, install Stage 6 and start.sh boot — and rutracker
+is named in that set. So the SANCTIONED, documented configuration path
+for this tracker produces exactly the state this gate ignores. An
+operator who follows the documented instructions gets a tracker that
+never runs, with no error to explain it.  FAILURE MODE. Silent absence,
+not a visible failure — the same §11.4.201(6) false-null shape as
+BOB-172, one layer earlier. BOB-172 fixes a tracker that RAN and was
+REFUSED being reported as empty; this is a tracker that never ran at
+all, and the merged result simply has one fewer contributor with nothing
+to indicate it.  PROVENANCE. Found by the BOB-172 implementing agent
+while tracing the enablement path to locate the status-handling defect.
+Recorded here rather than fixed in that change: it is a separate defect
+on a separate seam with its own oracle, and folding it in would have
+widened BOB-172 past its captured evidence.  ACCEPTANCE. (a) The
+enablement gate honours RUTRACKER_COOKIES as an independently sufficient
+credential, matching what _search_rutracker already prefers and what the
+nnmclub sibling already does. (b) A test asserting that a cookies-only
+configuration ENABLES rutracker, driving the real _get_enabled_trackers
+rather than a replica. (c) Paired §1.1 mutation restoring the
+username/password-only gate — the test must go red. (d) NEGATIVE CONTROL
+(§11.4.201(1)): a configuration with NO credentials at all must still
+leave rutracker DISABLED. A fix that enables an unauthenticated tracker
+is worse than the gap, because it produces failing searches instead of
+absent ones. (e) Audit the other trackers' gates for the same asymmetry
+rather than fixing only the one that was noticed — three positions in
+one codebase suggests nobody has checked them together
+(§11.4.118).  HONEST BOUNDARY. Not verified against a live cookies-only
+deployment; read from source by the BOB-172 agent and recorded on its
+report. The reading is specific and checkable, but whoever takes this
+should confirm by invocation before relying on it. |
+| BOB-177 | Bug | Queued | High | WHAT: BOB-172 wired an identical
+4-line HTTP-refusal guard at five private-tracker fetch sites in
+download-proxy/src/merge_service/search.py (rutracker cookie :1390,
+rutracker credential :1468, kinozal :1648, nnmclub :1761, iptorrents
+:1934). Only the rutracker COOKIE path is exercised by tests.  EVIDENCE
+(reviewer-authored mutation R1, per 11.4.194(6)(d), during the BOB-172
+independent review): deleting ONLY the kinozal guard wiring
+(search.py:1655-1658) while leaving the classifier intact left the full
+merge_service suite at 883 passed, ZERO failures. The suite cannot see
+four of the five sites.  FAILING SCENARIO: a refactor drops or subtly
+breaks the wiring at kinozal, nnmclub, iptorrents, or
+rutracker-credential. A 403 at that site silently folds back to
+status=empty with error=None -- the exact BOB-172 signature -- and no
+test reddens.  FIX DIRECTION (reviewer preferred): collapse the five
+duplicated wirings into one shared helper, e.g.
+_check_search_response(tracker_name, status, body) -&gt; bool, so there
+is ONE copy to test and a sixth site cannot be added unguarded (11.4.251
+byte-identical-fork extraction). Alternative: parametrise the guard
+tests across all five sites with per-site stub sessions.  ACCEPTANCE:
+mutating the wiring at ANY of the five sites reddens at least one test.
+Prove it by running the same R1 deletion at each site in turn. |
+| BOB-178 | Bug | Queued | Medium | WHAT:
+download-proxy/src/merge_service/search.py:1638-1640 handles a failed
+kinozal LOGIN response with if login_resp.status not in (200, 301, 302):
+logger.error(...); return [] -- and sets NO diagnostic.  FAILING
+SCENARIO: Cloudflare returns 403 on takelogin.php. The kinozal chip
+reads status=empty, error=None. That is the BOB-172 signature exactly: a
+refusal reported to the user as an empty result set.  CONTRAST
+establishing this is an oversight, not a design choice: the rutracker
+and nnmclub login failures DO set diagnostics (upstream_captcha /
+auth_failure), and the iptorrents login failure falls through to the
+search fetch where BOB-172's new guard catches it. Kinozal is the one
+leg with neither.  FIX DIRECTION: stash
+_classify_upstream_http_status(login_resp.status, "") before the early
+return, or an auth_failure diag for the
+status-in-(200,301,302)-but-no-cookie case.  ACCEPTANCE: a stubbed 403
+on the kinozal login endpoint produces a non-None error on the kinozal
+chip, with a RED captured against the pre-fix code first (11.4.115). |
+| BOB-179 | Task | Queued | Medium | WHAT: the BOB-172 independent
+review demonstrated two further paths that still report a refusing or
+unreachable tracker as an empty result. Both are PRE-EXISTING and
+neither is a regression from BOB-172, but the fix evidence log presents
+the five-site coverage without stating the boundary (11.4.194(5)
+requires un-analysed dimensions be explicit gaps, never silently assumed
+safe).  GAP A -- exception before resp.status is read. Reviewer probe B,
+captured: a connection-refused rutracker yields status=empty,
+error=None, http_status=None, metadata.errors=[],
+metadata.status=completed. Each _search_* method swallows exceptions
+(except Exception: logger.error; return results) before _search_one's
+error handling can see them, so a tracker that is DOWN is
+indistinguishable from one that is genuinely empty.  GAP B -- soft
+refusal at HTTP 200. Reviewer probe A, captured:
+_classify_upstream_http_status(200, &lt;cf-chl body&gt;) returns None,
+which is CORRECT by design (a 2xx is a usable response; body-marker
+triggering would risk the over-fire the negative controls exist to
+prevent). But all five search GETs use aiohttp's default
+allow_redirects=True, so a session-expiry 302 -&gt; login-page-200 chain
+parses to zero rows and reports empty.  FIX DIRECTION: Gap A needs the
+exception to reach a diagnostic rather than being swallowed. Gap B needs
+a DISTINCT detector (final-URL check or login-form marker) with its own
+RED -- explicitly NOT a widening of the status-code
+trigger.  ACCEPTANCE: both gaps closed with their own REDs, or
+explicitly closed per 11.4.112 with evidence. Immediate sub-task: append
+a stated-gaps paragraph to docs/qa/BOB-172/fix_evidence_20260822.log. |
+| BOB-180 | Bug | Queued | Low | WHAT:
+download-proxy/src/api/routes.py:727-745 sets status=captcha_required
+with a hardcoded message naming RuTracker: 'RuTracker requires CAPTCHA.
+Use /api/v1/auth/rutracker/captcha'.  FAILING SCENARIO: a whole search
+returns zero results and the captcha-flavoured diagnostic came from
+NNMClub's Turnstile, not RuTracker. The user is told to visit a
+RuTracker captcha endpoint for an NNMClub problem.  SEVERITY BOUNDED:
+the full errors[] and tracker_stats travel in the same response payload,
+so the truth is present and a client that reads them is not misled --
+only the headline is wrong. The branch was revived by BOB-172's error
+propagation (correctly: suppressing that propagation would recreate the
+same false-null one layer up, 11.4.247) and is already covered at the
+routes layer by tests/unit/api_layer/test_routes_coverage.py:782.  FIX
+DIRECTION: derive the message from the tracker(s) that actually erred
+rather than hardcoding one.  SCOPE NOTE: api/ was owned by a sibling
+stream during BOB-172; the author was correct not to touch
+it.  ACCEPTANCE: an NNMClub-only captcha diagnostic on a zero-result
+search produces a headline naming NNMClub. |
+| BOB-181 | Bug | Queued | High | WHAT:
+scripts/generate_markdown_exports.sh accepts no arguments. It
+unconditionally scans PROJECT_ROOT/*.md, docs/ recursively and scripts/
+recursively (scan loops at lines 105/111/116 as of 2026-08-23; they were
+96-109 when this was filed — line numbers shifted with the BOB-169 fix,
+the substance is unchanged and was independently verified by execution:
+invoking the generator with an explicit path produced an out-of-scope
+export and NOT the requested one), and PROJECT_ROOT is derived from
+BASH_SOURCE (line 17). A caller who writes 'bash
+scripts/generate_markdown_exports.sh docs/qa/SOME/file.md' gets a
+WHOLE-TREE run with the argument silently discarded.  WHY IT MATTERS:
+the caller reasonably believes the run was scoped to one file. It was
+not. In a shared checkout with parallel work streams this regenerates
+any export whose .md is newer than its derived files anywhere in the
+tree -- landing artifacts in other streams' scopes and, with the BOB-068
+auto-commit hazard, into another stream's commit.  CLASS: a false
+affordance -- the script's interface implies a capability it does not
+have (11.4.201: an interface must mean what it claims).  FIX DIRECTION:
+either accept optional path arguments and honour them (scoping the run
+to exactly those files), or REFUSE with a clear message when arguments
+are passed. Silently discarding them is the one option that must not
+remain.  ACCEPTANCE: passing a path either scopes the run to it, or
+exits non-zero naming the unsupported argument. A RED capturing today's
+silent-discard behaviour first (11.4.115).  LIVE INSTANCE, MEASURED
+2026-08-23 (this is no longer hypothetical): During the BOB-169 fix the
+conductor invoked the generator with an explicit path to regenerate ONE
+document. The argument was discarded and the whole tree was scanned. It
+generated docs/qa/BOB-174/DESIGN_DECISION.{html,pdf,docx} at 11:50 -- a
+SIBLING STREAM's document, while that stream's author was still editing
+the source (.md mtime 12:00). The exports were therefore stale on
+arrival, and additionally carried the pre-fix BOB-169 charset defect.
+The sibling author independently reported them as stale in its own
+hand-off, having no idea another stream had created them.  SECOND-ORDER
+LESSON worth keeping with this item: the conductor's attempt to verify
+the blast radius ALSO failed, and failed silently. 'git status
+--porcelain \| grep -E "\.(html\|pdf)$</span>“’ returned only its own
+files and read as clean – but docs/qa/BOB-174/ is an UNTRACKED
+DIRECTORY, which porcelain collapses to a single line, so the grep was
+structurally incapable of seeing the files inside it (11.4.201(7)(a):
+matched the wrong surface; the quiet zero read as absence). The
+instrument that DOES see it is ’find </td>
+</tr>
+<tr>
+<td>BOB-182</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>WHAT: CM-EXPORT-CHARSET-VALID (pre-build invariant 50) adopts its
+301 pre-existing violations via a monotone-decrease ratchet rather than
+a hard floor. Two things are owed. (1) THE ADOPTION DECISION IS THE
+OPERATOR’S, NOT THE SCRIPT’S. 11.4.224(E) requires the brownfield
+adoption question be SURFACED to the operator and the answer recorded as
+consumer DATA – never an invented ratchet. What exists today is a header
+comment plus a BOBA_EXPORT_CHARSET_BASELINE override: that DOCUMENTS a
+decision the agent made, it does not RECORD an answer the operator gave.
+The independent reviewer judged the choice defensible and would not
+reverse it (a hard floor on 301 violations makes the build unreachable,
+which 11.4.234 forbids; 11.4.101 favours the reversible option) but
+correctly held that it is not yet compliant. Options for the operator:
+immediate hard floor (BASELINE=0) / keep the monotone ratchet /
+per-corpus phase-in / changed-code-only with a scheduled full-corpus
+deadline. (2) THE RATCHET DOES NOT ACTUALLY RATCHET. BASELINE is a
+hardcoded constant. On improvement the gate PASSES and PRINTS the value
+to lower it to, but nothing lowers it, so the gate keeps permitting
+regression all the way back to 301 after the corpus heals. The header
+now says tightening is MANUAL rather than claiming automatic behaviour
+that does not exist (11.4.6), but the honest statement is a stopgap, not
+the fix. WHY IT WAS NOT BUILT WITH THE FIX: a gate that writes its own
+threshold during a pre-build run becomes a PRODUCER as well as a GATE
+(11.4.249 role separation), and that is a design change the operator
+should approve rather than receive as a side effect. ACCEPTANCE: the
+operator’s adoption answer recorded as consumer DATA; and either a
+persisted baseline the gate lowers and never raises (with the
+role-separation question answered), or an explicit decision that manual
+tightening is acceptable.</td>
+</tr>
+<tr>
+<td>BOB-183</td>
+<td>Bug</td>
+<td>In progress</td>
+<td>High</td>
+<td>The compiled Angular bundle shipped at
+download-proxy/src/ui/dist/frontend/browser still carries the BOB-164
+colour-contrast defect verbatim: scanned 2026-08-23 it reports 21
+violation nodes on darcula/dark and 1 on darcula/light, while the same
+sources built to a scratch path report 0 across all 16 palette x mode
+combinations. The fix is therefore correct at the SOURCE layer and
+absent at the ARTIFACT layer, so §11.4.108 layer 2 is NOT closed and end
+users still see the low-contrast dashboard. Two compounding facts make
+this silent rather than obvious: dist/ is gitignored, so the divergence
+never shows in a diff; and scripts/install.sh:133 asserts only that the
+directory EXISTS, never that it is newer than the sources it was built
+from, so a stale bundle passes install unchallenged. Acceptance: install
+(or an equivalent gate) FAILS on a bundle older than its sources, the
+bundle is rebuilt, and docs/qa/BOB-164/axe_contrast_scan.py run against
+download-proxy/src/ui/dist/frontend/browser exits 0 with zero violation
+nodes and zero blocking incomplete nodes.</td>
+</tr>
+<tr>
+<td>BOB-184</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>Three icon-glyph controls (.bridge-retry, .theme-toggle, .caret)
+render text made of non-BMP code points. axe-core declines to decide
+their contrast, reporting them under the incomplete channel with
+messageKey nonBmp and resolving NEITHER fgColor NOR bgColor, so the
+Python recomputation in docs/qa/BOB-164/axe_contrast_scan.py cannot
+decide either: 40 such nodes across 16 palette x mode combinations.
+BOB-164 round 2 stopped them being scored as silent passes by naming
+them GLYPH_UNMEASURED, printing them on every run and fencing them, so
+any NEW unmeasured glyph node blocks. What remains genuinely unproven is
+their contrast itself: as non-text user-interface components they owe
+3:1 under WCAG SC 1.4.11, and no oracle in this repo measures that
+today. Acceptance: a measurement path that resolves the effective
+foreground and backdrop for glyph controls (for example reading
+getComputedStyle colour against the composited backdrop, or replacing
+the glyphs with inline SVG carrying explicit fill tokens), each of the
+three controls shown to clear 3:1 in all 16 palette x mode combinations,
+and the GLYPH_UNMEASURED fence shrunk by exactly the nodes then
+proven.</td>
+</tr>
+<tr>
+<td>BOB-185</td>
+<td>Task</td>
+<td>Queued</td>
+<td>Medium</td>
+<td>docs/qa/BOB-164/axe_contrast_scan.py scans a static dist with no
+backend, so every node whose existence depends on fetched data is absent
+from the page it measures: the results table renders empty, so
+.type-badge and .quality-badge never appear, and the hooks list renders
+empty, so .status pills never appear. That is precisely why the BOB-164
+round-1 regression went unseen in a rendered DOM even though it was
+scanned in all 16 themes, and it is why round 2 had to close the class
+in the arithmetic oracle instead. Those nodes are now covered by
+frontend/src/app/models/style-contrast.spec.ts, which extracts declared
+foreground-on-fill pairs from the stylesheets, but that is an ARITHMETIC
+claim about declared colour pairs, not a rendered-pixel one: it cannot
+see opacity applied by an ancestor, a composited backdrop, or a cascade
+this repo’s static extractor does not model. Acceptance: the scan drives
+the dashboard with seeded fixture data (a stub backend, a route fixture,
+or an injected component harness) so the badge and status nodes are
+present in the DOM, axe measures them directly, and a control needle
+proves the rendered oracle sees a seeded sub-floor badge before any
+clean result from it is believed.</td>
+</tr>
+<tr>
+<td>BOB-186</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>—</td>
+<td>workable-items diff returned exit 0 and the verdict “DB and Markdown
+are in sync” on a PARTIAL read: invoked with –issues but without –fixed
+it compared 77 Markdown items against 184 DB items and called that in
+sync, printing both mismatched counts in its own output while 107 DB
+items were never compared against anything. Measured 2026-08-25: (A) no
+markdown paths -&gt; correctly REFUSES exit 1; (B) –db-only -&gt;
+honest, “no Markdown compared”; (C) –issues alone -&gt; exit 0, “in sync
+(compared 77 Markdown item(s) against 184 DB item(s))”. The 11.4.201(6)
+false-null: a partially blind instrument returned the same quiet green a
+genuinely-synced corpus returns. IMPACT — CORRECTED 2026-08-25, my
+original filing OVERSTATED this. I wrote that CHECK 2 of the 11.4.106(F)
+commit seam was exposed. It was NOT.
+scripts/hooks/docs-sync-commit-seam.sh:277 passes BOTH –issues and
+–fixed, and a repo-wide sweep found NO executable caller that breaks:
+the two real callers (that seam and pre_build_verification.sh:549) both
+pass both paths; the single-path hits are prose evidence files plus a
+static-scan test fixture. So the defect was real and latent, never live
+in this project. The corrected claim is: any FUTURE single-path caller
+would have been silently mis-told. PROVENANCE, twice corrected. A
+subagent first attributed the false-null to the no-paths form, which
+actually refuses correctly; the conductor re-measured and relocated it
+to the partial read. Then the fixing agent corrected the conductor on
+impact. Both corrections are recorded so neither wrong version
+propagates. FIXED (uncommitted, constitution submodule, fetched to
+upstream tip 7f16739 before edit per 11.4.26). Design: refuse by default
+(11.4.201(4)); the narrow per-tracker comparison PRESERVED behind an
+explicit –partial-scope rather than deleted (deleting an existing
+documented capability would be an 11.4.122 silent removal), mirroring
+how –db-only preserved the no-Markdown shape. Keyed on MEASURED DB
+content, never on flag presence — a DB with zero Fixed rows IS fully
+accounted for by –issues alone and still passes, so flag-keying would
+have traded the false-null for an 11.4.201(1) false-positive refusal.
+Resulting property: “in sync” is reachable only when the two printed
+counts account for each other. RED 4 fail/5 pass -&gt; GREEN 9/9; paired
+1.1 mutation is the fixs own revert, killing exactly the 4
+defect-guarding tests while the 5 preservation tests stay green. Case C
+now refuses naming “107 item(s) located in Fixed (supply –fixed)”, the
+107 confirmed against an independent sqlite3 count (107 Fixed + 78
+Issues = 185). Incidentally closed an 11.4.238 gap: case As refusal had
+no test anywhere; TestDiffCmd_NoPathsStillRefuses now guards it. OPEN:
+–partial-scope is the agents naming choice, not an operator decision,
+and renaming is cheap now and expensive after other consumers adopt it.
+Other consumers of this shared submodule were not swept.</td>
+</tr>
+<tr>
+<td>BOB-187</td>
+<td>Bug</td>
+<td>In progress</td>
+<td>—</td>
+<td>scripts/ownership_precondition.sh consumes the SAME unreviewed
+.env-driven scope as ownership_repair.sh and creates probe files inside
+it, but it is NOT fenced. T028 remediation added ownership_path_fence()
+to scripts/lib/ownership.sh and wired it into ownership_repair.sh,
+closing the path-escape class there; the precondition was outside that
+agents file scope and still accepts whatever config/owned_paths.yaml
+expands to. Blast radius is lower than a recursive chown (it writes
+probe files rather than mutating ownership of an existing tree) but the
+INPUT is identical and equally unreviewed, so the same
+QBITTORRENT_DATA_DIR value that would have driven a filesystem-wide
+chown will drive probe-file creation at an arbitrary location. Note the
+escape is empirically confirmed for the repair path, not merely
+reasoned: during T028 remediation a probe declaring the verbatim shipped
+entry with QBITTORRENT_DATA_DIR=/ hung the suite, and ps showed the real
+artifact executing “find / ( ! -uid 1000 -o ! -gid 1000 ) -printf …”
+before it was killed by verified pid. Acceptance:
+ownership_precondition.sh calls the SAME ownership_path_fence()
+predicate from scripts/lib/ownership.sh (never a second dialect,
+11.4.251), refuses fail-closed on a rejected entry, and ships a paired
+1.1 mutation proving the refusal fires PLUS a negative control proving
+the six live shipped entries still ACCEPT so the fix is not a
+11.4.201(1) false-positive refusal. Discovered out-of-band during T028
+remediation and reported by the agent as needing tracking, so it is also
+a 11.4.238 coverage escape.</td>
+</tr>
+<tr>
+<td>BOB-188</td>
+<td>Bug</td>
+<td>In progress</td>
+<td>—</td>
+<td>pre_build_verification.sh invariant 17 (CM-WORKABLE-ITEMS-VALIDATE)
+resolves its binary through the candidate loop at :534, whose FIRST
+entry is constitution/scripts/workable-items/bin/workable-items. That
+file is GIT-TRACKED (md5 17644a248363, identical to
+bin/workable-items-linux) and executable, so it WINS resolution over the
+current untracked sibling
+constitution/scripts/workable-items/workable-items (md5 43376a6d0184).
+The tracked binary is STALE: it does not contain the guards its own
+source now has. MEASURED, needle-proven, 2026-08-25. String presence in
+the tracked binary: “refusing to set terminal status” -&gt; 0;
+“Issues-location item has TERMINAL status” -&gt; 0; control needle from
+the SAME updateCmd, “at least one mutable field flag is required” -&gt;
+2 (so the instrument sees through that path and the zeros are real
+absences, not a blind read). The untracked sibling returns 1 / 1 / 2 for
+the same three queries. A check whose message string is absent from the
+binary cannot fire. RUNTIME PROOF: the same injected violation (a row
+set to terminal status while current_location=Issues) run through both
+binaries -&gt; stale reports 1 violation (only the body_md desync
+class), current reports 2 including the location-status class verbatim.
+This is exactly why the ten BOB-166 rows
+(BOB-087/129/131/144/145/146/148/153/155/157) survived undetected: the
+gate that was supposed to catch them was running a binary structurally
+incapable of seeing them. The 11.4.108 SOURCE-&gt;ARTIFACT gap: source
+correct, artifact stale, every gate reading the artifact reports green.
+This is the THIRD instance of that class found in one session, alongside
+BOB-169 (a charset gate that never opened a file) and BOB-183 (a served
+bundle five days older than its sources). COMPOUNDING: the comment at
+:519-523 directly above the loop asserts “The naive bin/workable-items
+path never existed in this checkout (bin/ is a gitignored local
+build-output dir nothing ever populated)”. That statement is now FALSE -
+bin/ holds two tracked binaries. A stale comment asserting the absence
+of the very file that now shadows resolution is how this stayed
+invisible. Also an 11.4.30 question the operator owns:
+bin/workable-items and bin/workable-items-linux are VERSIONED BUILD
+ARTIFACTS in a constitution submodule that is inherited by reference by
+every consumer, so every consumer inherits whichever binary was last
+committed. Flagged independently by two separate agents this session.
+ACCEPTANCE: (a) resolution must never prefer a stale artifact over a
+current one - either the tracked binaries are removed and resolution
+falls through to build-on-demand, or a freshness check refuses a binary
+older than its sources (see the BOB-183 fingerprint gate for a working
+pattern); (b) the false comment at :519-523 corrected; (c) a paired 1.1
+mutation proving the new refusal fires, plus a negative control proving
+a genuinely fresh binary still passes so the fix is not an 11.4.201(1)
+false-positive refusal; (d) the 11.4.30 tracked-binary decision recorded
+as operator DATA. Discovered out-of-band during BOB-166 remediation - a
+11.4.238 coverage escape in its own right.</td>
 </tr>
 </tbody>
 </table>
