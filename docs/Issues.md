@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 54
-**Last modified:** 2026-08-23T09:27:22Z
+**Revision:** 55
+**Last modified:** 2026-08-25T18:11:25Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -886,7 +886,7 @@ Count the PLUGINS=() array in install-plugin.sh (43, needle-verified) and compar
 **Acceptance criteria:**
 CLAUDE.md says 43; the README badge is derived by compute-badges.sh from the array; the badge guard covers it; both polarities verified.
 
-## BOB-150 — pre_build_verification.sh invariant labels read N/44 but only 35 invariants are labelled
+## BOB-150 — pre_build_verification.sh invariant labels read N/50 but only 41 invariants are labelled
 
 **Status:** Queued
 **Type:** Task
@@ -1413,7 +1413,7 @@ RELATED, REPORTED NOT FIXED: scripts/pre_build_verification.sh:1792 carries the 
 
 ## BOB-169 — 286 of 326 exported .html docs are headless pandoc fragments with no DOCTYPE and no charset, so UTF-8 section marks and arrows render as mojibake when opened directly
 
-**Status:** Queued
+**Status:** In progress
 **Type:** Bug
 **Severity:** Medium
 **Created-By:** Claude
@@ -1503,7 +1503,7 @@ NOT CLAIMED. No change made. Both sites still parse leftmost; the flag still def
 
 ## BOB-172 — rutracker search endpoint returns HTTP 403 with Cloudflare challenge markers and zero login markers, so one of three merge-search trackers silently contributes no results
 
-**Status:** Queued
+**Status:** Ready for testing
 **Type:** Bug
 **Severity:** High
 **Created-By:** Claude
@@ -1644,4 +1644,119 @@ PROVENANCE. Found by the BOB-172 implementing agent while tracing the enablement
 ACCEPTANCE. (a) The enablement gate honours RUTRACKER_COOKIES as an independently sufficient credential, matching what _search_rutracker already prefers and what the nnmclub sibling already does. (b) A test asserting that a cookies-only configuration ENABLES rutracker, driving the real _get_enabled_trackers rather than a replica. (c) Paired §1.1 mutation restoring the username/password-only gate — the test must go red. (d) NEGATIVE CONTROL (§11.4.201(1)): a configuration with NO credentials at all must still leave rutracker DISABLED. A fix that enables an unauthenticated tracker is worse than the gap, because it produces failing searches instead of absent ones. (e) Audit the other trackers' gates for the same asymmetry rather than fixing only the one that was noticed — three positions in one codebase suggests nobody has checked them together (§11.4.118).
 
 HONEST BOUNDARY. Not verified against a live cookies-only deployment; read from source by the BOB-172 agent and recorded on its report. The reading is specific and checkable, but whoever takes this should confirm by invocation before relying on it.
+
+## BOB-177 — Four of five private-tracker HTTP-refusal guards are invisible to the test suite
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT: BOB-172 wired an identical 4-line HTTP-refusal guard at five private-tracker fetch sites in download-proxy/src/merge_service/search.py (rutracker cookie :1390, rutracker credential :1468, kinozal :1648, nnmclub :1761, iptorrents :1934). Only the rutracker COOKIE path is exercised by tests.
+
+EVIDENCE (reviewer-authored mutation R1, per 11.4.194(6)(d), during the BOB-172 independent review): deleting ONLY the kinozal guard wiring (search.py:1655-1658) while leaving the classifier intact left the full merge_service suite at 883 passed, ZERO failures. The suite cannot see four of the five sites.
+
+FAILING SCENARIO: a refactor drops or subtly breaks the wiring at kinozal, nnmclub, iptorrents, or rutracker-credential. A 403 at that site silently folds back to status=empty with error=None -- the exact BOB-172 signature -- and no test reddens.
+
+FIX DIRECTION (reviewer preferred): collapse the five duplicated wirings into one shared helper, e.g. _check_search_response(tracker_name, status, body) -> bool, so there is ONE copy to test and a sixth site cannot be added unguarded (11.4.251 byte-identical-fork extraction). Alternative: parametrise the guard tests across all five sites with per-site stub sessions.
+
+ACCEPTANCE: mutating the wiring at ANY of the five sites reddens at least one test. Prove it by running the same R1 deletion at each site in turn.
+
+## BOB-178 — Kinozal login-leg HTTP failure sets no diagnostic, reproducing the BOB-172 false-null one leg over
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Medium
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT: download-proxy/src/merge_service/search.py:1638-1640 handles a failed kinozal LOGIN response with if login_resp.status not in (200, 301, 302): logger.error(...); return [] -- and sets NO diagnostic.
+
+FAILING SCENARIO: Cloudflare returns 403 on takelogin.php. The kinozal chip reads status=empty, error=None. That is the BOB-172 signature exactly: a refusal reported to the user as an empty result set.
+
+CONTRAST establishing this is an oversight, not a design choice: the rutracker and nnmclub login failures DO set diagnostics (upstream_captcha / auth_failure), and the iptorrents login failure falls through to the search fetch where BOB-172's new guard catches it. Kinozal is the one leg with neither.
+
+FIX DIRECTION: stash _classify_upstream_http_status(login_resp.status, "") before the early return, or an auth_failure diag for the status-in-(200,301,302)-but-no-cookie case.
+
+ACCEPTANCE: a stubbed 403 on the kinozal login endpoint produces a non-None error on the kinozal chip, with a RED captured against the pre-fix code first (11.4.115).
+
+## BOB-179 — Two adjacent tracker false-null classes remain open and must be stated as gaps, not implied closed
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Medium
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT: the BOB-172 independent review demonstrated two further paths that still report a refusing or unreachable tracker as an empty result. Both are PRE-EXISTING and neither is a regression from BOB-172, but the fix evidence log presents the five-site coverage without stating the boundary (11.4.194(5) requires un-analysed dimensions be explicit gaps, never silently assumed safe).
+
+GAP A -- exception before resp.status is read. Reviewer probe B, captured: a connection-refused rutracker yields status=empty, error=None, http_status=None, metadata.errors=[], metadata.status=completed. Each _search_* method swallows exceptions (except Exception: logger.error; return results) before _search_one's error handling can see them, so a tracker that is DOWN is indistinguishable from one that is genuinely empty.
+
+GAP B -- soft refusal at HTTP 200. Reviewer probe A, captured: _classify_upstream_http_status(200, <cf-chl body>) returns None, which is CORRECT by design (a 2xx is a usable response; body-marker triggering would risk the over-fire the negative controls exist to prevent). But all five search GETs use aiohttp's default allow_redirects=True, so a session-expiry 302 -> login-page-200 chain parses to zero rows and reports empty.
+
+FIX DIRECTION: Gap A needs the exception to reach a diagnostic rather than being swallowed. Gap B needs a DISTINCT detector (final-URL check or login-form marker) with its own RED -- explicitly NOT a widening of the status-code trigger.
+
+ACCEPTANCE: both gaps closed with their own REDs, or explicitly closed per 11.4.112 with evidence. Immediate sub-task: append a stated-gaps paragraph to docs/qa/BOB-172/fix_evidence_20260822.log.
+
+## BOB-180 — Zero-result search with any captcha-flavoured diagnostic emits a RuTracker-specific headline
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Low
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT: download-proxy/src/api/routes.py:727-745 sets status=captcha_required with a hardcoded message naming RuTracker: 'RuTracker requires CAPTCHA. Use /api/v1/auth/rutracker/captcha'.
+
+FAILING SCENARIO: a whole search returns zero results and the captcha-flavoured diagnostic came from NNMClub's Turnstile, not RuTracker. The user is told to visit a RuTracker captcha endpoint for an NNMClub problem.
+
+SEVERITY BOUNDED: the full errors[] and tracker_stats travel in the same response payload, so the truth is present and a client that reads them is not misled -- only the headline is wrong. The branch was revived by BOB-172's error propagation (correctly: suppressing that propagation would recreate the same false-null one layer up, 11.4.247) and is already covered at the routes layer by tests/unit/api_layer/test_routes_coverage.py:782.
+
+FIX DIRECTION: derive the message from the tracker(s) that actually erred rather than hardcoding one.
+
+SCOPE NOTE: api/ was owned by a sibling stream during BOB-172; the author was correct not to touch it.
+
+ACCEPTANCE: an NNMClub-only captcha diagnostic on a zero-result search produces a headline naming NNMClub.
+
+## BOB-181 — Export generator silently ignores a path argument and always scans the whole tree
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** High
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT: scripts/generate_markdown_exports.sh accepts no arguments. It unconditionally scans PROJECT_ROOT/*.md, docs/ recursively and scripts/ recursively (scan loops at lines 105/111/116 as of 2026-08-23; they were 96-109 when this was filed — line numbers shifted with the BOB-169 fix, the substance is unchanged and was independently verified by execution: invoking the generator with an explicit path produced an out-of-scope export and NOT the requested one), and PROJECT_ROOT is derived from BASH_SOURCE (line 17). A caller who writes 'bash scripts/generate_markdown_exports.sh docs/qa/SOME/file.md' gets a WHOLE-TREE run with the argument silently discarded.
+
+WHY IT MATTERS: the caller reasonably believes the run was scoped to one file. It was not. In a shared checkout with parallel work streams this regenerates any export whose .md is newer than its derived files anywhere in the tree -- landing artifacts in other streams' scopes and, with the BOB-068 auto-commit hazard, into another stream's commit.
+
+CLASS: a false affordance -- the script's interface implies a capability it does not have (11.4.201: an interface must mean what it claims).
+
+FIX DIRECTION: either accept optional path arguments and honour them (scoping the run to exactly those files), or REFUSE with a clear message when arguments are passed. Silently discarding them is the one option that must not remain.
+
+ACCEPTANCE: passing a path either scopes the run to it, or exits non-zero naming the unsupported argument. A RED capturing today's silent-discard behaviour first (11.4.115).
+
+LIVE INSTANCE, MEASURED 2026-08-23 (this is no longer hypothetical):
+During the BOB-169 fix the conductor invoked the generator with an explicit path to regenerate ONE document. The argument was discarded and the whole tree was scanned. It generated docs/qa/BOB-174/DESIGN_DECISION.{html,pdf,docx} at 11:50 -- a SIBLING STREAM's document, while that stream's author was still editing the source (.md mtime 12:00). The exports were therefore stale on arrival, and additionally carried the pre-fix BOB-169 charset defect. The sibling author independently reported them as stale in its own hand-off, having no idea another stream had created them.
+
+SECOND-ORDER LESSON worth keeping with this item: the conductor's attempt to verify the blast radius ALSO failed, and failed silently. 'git status --porcelain | grep -E "\.(html|pdf)$"' returned only its own files and read as clean -- but docs/qa/BOB-174/ is an UNTRACKED DIRECTORY, which porcelain collapses to a single line, so the grep was structurally incapable of seeing the files inside it (11.4.201(7)(a): matched the wrong surface; the quiet zero read as absence). The instrument that DOES see it is 'find <dir> -newermt <t>'. Any future verification of 'which files did this run touch' must not use porcelain output as the corpus.
+
+## BOB-182 — Operator decision owed on the export-charset ratchet, plus an auto-lowering baseline
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Medium
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT: CM-EXPORT-CHARSET-VALID (pre-build invariant 50) adopts its 301 pre-existing violations via a monotone-decrease ratchet rather than a hard floor. Two things are owed.
+
+(1) THE ADOPTION DECISION IS THE OPERATOR'S, NOT THE SCRIPT'S. 11.4.224(E) requires the brownfield adoption question be SURFACED to the operator and the answer recorded as consumer DATA -- never an invented ratchet. What exists today is a header comment plus a BOBA_EXPORT_CHARSET_BASELINE override: that DOCUMENTS a decision the agent made, it does not RECORD an answer the operator gave. The independent reviewer judged the choice defensible and would not reverse it (a hard floor on 301 violations makes the build unreachable, which 11.4.234 forbids; 11.4.101 favours the reversible option) but correctly held that it is not yet compliant. Options for the operator: immediate hard floor (BASELINE=0) / keep the monotone ratchet / per-corpus phase-in / changed-code-only with a scheduled full-corpus deadline.
+
+(2) THE RATCHET DOES NOT ACTUALLY RATCHET. BASELINE is a hardcoded constant. On improvement the gate PASSES and PRINTS the value to lower it to, but nothing lowers it, so the gate keeps permitting regression all the way back to 301 after the corpus heals. The header now says tightening is MANUAL rather than claiming automatic behaviour that does not exist (11.4.6), but the honest statement is a stopgap, not the fix.
+
+WHY IT WAS NOT BUILT WITH THE FIX: a gate that writes its own threshold during a pre-build run becomes a PRODUCER as well as a GATE (11.4.249 role separation), and that is a design change the operator should approve rather than receive as a side effect.
+
+ACCEPTANCE: the operator's adoption answer recorded as consumer DATA; and either a persisted baseline the gate lowers and never raises (with the role-separation question answered), or an explicit decision that manual tightening is acceptable.
 

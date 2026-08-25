@@ -18,6 +18,11 @@
 # other exported doc in the project without touching that script or any
 # docs_chain-managed file.
 #
+# THAT PARITY CLAIM WAS FALSE ONCE, and the cost was this document. Between the
+# BOB-169 fix landing in generate_markdown_exports.sh and landing here, the two
+# diverged, and CONTINUATION.pdf kept regenerating with 336 corrupted lines. Keep
+# the two invocations in lockstep.
+#
 # Usage:
 #   bash scripts/regenerate-continuation-exports.sh
 #
@@ -72,7 +77,17 @@ if ! command -v pandoc &>/dev/null; then
 fi
 
 echo "[regen] docs/CONTINUATION.md -> docs/CONTINUATION.html"
-pandoc -f markdown -t html5 -o "${HTML}" "${MD}" --metadata title="CONTINUATION"
+# --standalone is load-bearing, NOT cosmetic (BOB-169). Without it pandoc emits a
+# BODY FRAGMENT with no <head>, so the file carries no <meta charset="utf-8">;
+# weasyprint then renders the PDF from it, falls back to a non-UTF-8 default, and
+# bakes mojibake into the PDF TEXT LAYER. MEASURED on this very document before
+# the fix: docs/CONTINUATION.html had 0 charset declarations and
+# docs/CONTINUATION.pdf carried 336 corrupted lines — the worst in the corpus, on
+# the §12.10 session-resumption document. Keep this invocation IDENTICAL to
+# scripts/generate_markdown_exports.sh (and to the docs_chain engine's
+# derived.go:139, which also passes --standalone + --metadata title): three
+# producers write these artifacts and a divergence between them is §11.4.251.
+pandoc -f markdown -t html5 --standalone -o "${HTML}" "${MD}" --metadata title="CONTINUATION"
 echo "[regen] wrote ${HTML}"
 
 if command -v weasyprint &>/dev/null && python3 -c "from weasyprint import HTML" &>/dev/null 2>&1; then
