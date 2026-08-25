@@ -1461,12 +1461,12 @@ fi
 # its own script location, so NO --root is passed (passing boba's project
 # root would point them at a tree that does not contain their inputs and
 # manufacture a §11.4.201(1) false refusal).
-run_const_gate "33/50" "CM-CLI-AGENT-PLUGINS-WIRED"             blocking cm_cli_agent_plugins_wired.sh
-run_const_gate "34/50" "CM-MULTITRACK-ENGINE-IN-CONSTITUTION"   blocking cm_multitrack_engine_in_constitution.sh
-run_const_gate "35/50" "CM-SUBSYSTEM-SHORTCUTS"                 blocking cm_subsystem_shortcuts.sh
-run_const_gate "36/50" "CM-REPORTING-DIRECTIVES"                blocking cm_reporting_directives.sh
-run_const_gate "37/50" "CM-FEATURE-DIRECTIVE"                   blocking cm_feature_directive.sh
-run_const_gate "38/50" "CM-GATE-LEDGER-RATCHET"                 blocking cm_gate_ledger_ratchet.sh
+run_const_gate "33/52" "CM-CLI-AGENT-PLUGINS-WIRED"             blocking cm_cli_agent_plugins_wired.sh
+run_const_gate "34/52" "CM-MULTITRACK-ENGINE-IN-CONSTITUTION"   blocking cm_multitrack_engine_in_constitution.sh
+run_const_gate "35/52" "CM-SUBSYSTEM-SHORTCUTS"                 blocking cm_subsystem_shortcuts.sh
+run_const_gate "36/52" "CM-REPORTING-DIRECTIVES"                blocking cm_reporting_directives.sh
+run_const_gate "37/52" "CM-FEATURE-DIRECTIVE"                   blocking cm_feature_directive.sh
+run_const_gate "38/52" "CM-GATE-LEDGER-RATCHET"                 blocking cm_gate_ledger_ratchet.sh
 
 # --- Invariant 39: CM-DANGEROUS-COMBINATION-FAIL-CLOSED (§11.4.252, ADVISORY) ---
 # Refuses fail-open shapes (swallowed exceptions, credentials defaulting to a
@@ -1547,7 +1547,7 @@ fi
 # §11.4.234 forbids. The count is printed on every run so the gap cannot be
 # forgotten; promote to BLOCKING once the operator picks an adoption path
 # (immediate floor / monotone-decrease ratchet / changed-tests-only).
-run_const_gate "40/50" "CM-ORACLE-STRATEGY-NAMED-AND-INDEPENDENT" advisory \
+run_const_gate "40/52" "CM-ORACLE-STRATEGY-NAMED-AND-INDEPENDENT" advisory \
     cm_oracle_strategy_named_and_independent.sh --root "${PROJECT_ROOT}/tests" --quiet
 
 # --- Invariant 41: CM-OPENDESIGN-UI-SYSTEM (§11.4.162/§11.4.190, ADVISORY) ---
@@ -1608,8 +1608,8 @@ fi
 #      test_instrumentation_blocking to real marker paths.
 #   43 CM-VERSION-INCREMENT-ON-DEPLOY (§11.4.235(B)) needs an append-only
 #      deploy ledger TSV of <version_id><TAB><artifact_fingerprint> rows.
-run_const_gate "42/50" "CM-BUILD-ON-SOURCE-PROVEN-NOT-TEST-SIDE" blocking cm_build_on_source_proven_not_test_side.sh
-run_const_gate "43/50" "CM-VERSION-INCREMENT-ON-DEPLOY"          blocking cm_version_increment_on_deploy.sh
+run_const_gate "42/52" "CM-BUILD-ON-SOURCE-PROVEN-NOT-TEST-SIDE" blocking cm_build_on_source_proven_not_test_side.sh
+run_const_gate "43/52" "CM-VERSION-INCREMENT-ON-DEPLOY"          blocking cm_version_increment_on_deploy.sh
 
 # --- Invariant 44: CM-HEALTHCHECK-COVERS-SERVED-PORTS (§11.4.201/§11.4.254) ---
 # Every container healthcheck must probe EVERY port its service actually

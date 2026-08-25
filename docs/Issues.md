@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 62
-**Last modified:** 2026-08-25T20:00:18Z
+**Revision:** 63
+**Last modified:** 2026-08-25T20:10:33Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1424,4 +1424,25 @@ COMPOUNDING: the comment at :519-523 directly above the loop asserts "The naive 
 Also an 11.4.30 question the operator owns: bin/workable-items and bin/workable-items-linux are VERSIONED BUILD ARTIFACTS in a constitution submodule that is inherited by reference by every consumer, so every consumer inherits whichever binary was last committed. Flagged independently by two separate agents this session.
 
 ACCEPTANCE: (a) resolution must never prefer a stale artifact over a current one - either the tracked binaries are removed and resolution falls through to build-on-demand, or a freshness check refuses a binary older than its sources (see the BOB-183 fingerprint gate for a working pattern); (b) the false comment at :519-523 corrected; (c) a paired 1.1 mutation proving the new refusal fires, plus a negative control proving a genuinely fresh binary still passes so the fix is not an 11.4.201(1) false-positive refusal; (d) the 11.4.30 tracked-binary decision recorded as operator DATA. Discovered out-of-band during BOB-166 remediation - a 11.4.238 coverage escape in its own right.
+
+## BOB-189 — CM-NO-FAIL-OPEN-SKIP scanner flags fail-CLOSED SSRF guards as fail-open (§11.4.201(1) FAIL-bluff in our own gate)
+
+**Status:** Queued
+**Type:** Bug
+
+WHAT: the fail-open scanner's shape-(A2) heuristic cannot distinguish 'return False' meaning PROCEED-AS-IF-FINE from 'return False' meaning REFUSE. It flags six textbook fail-CLOSED guards as fail-open defects: _is_safe_fetch_url (x3), _qbit_add_succeeded (x2), and the hooks path-boundary guard. INDEPENDENTLY VERIFIED 2026-08-25 by the conductor rather than taken on the triage agent's word: download-proxy/src/api/routes.py:1122 defines _is_safe_fetch_url returning bool, and its only call site at :1476 reads 'if not _is_safe_fetch_url(url): logger.warning(Refusing SSRF-unsafe download URL (non-public target); skipping); continue' - a False return REFUSES the URL. WHY THIS MATTERS: per §11.4.201(1) a false-positive refusal is a FAIL-bluff of equal severity to a false-negative pass, and here the consequence is worse than noise - acting on the finding would mean making the SSRF guard stop returning False, i.e. deleting an SSRF protection to satisfy a gate. A gate that instructs you to remove a security control is actively dangerous, not merely imprecise. REPRO: run the fail-open scan; observe six hits; read each call site. ACCEPTANCE: the scanner distinguishes refuse-shaped from proceed-shaped False returns (call-site-aware, or an audited waiver list with per-entry justification), the six drop out, AND a golden-FALSE fixture containing a real fail-closed guard is added so the discrimination is itself falsifiable per §1.1.
+
+## BOB-190 — Host site-packages holds cpython-313 ABI wheels under Python 3.14, breaking the CLAUDE.md-documented 'python3 -m pytest' path
+
+**Status:** Queued
+**Type:** Bug
+
+WHAT: ~/.local/lib/python3/site-packages contains binaries built for the cpython-313 ABI while the interpreter is Python 3.14, so pydantic_core and rpds fail to import and every test importing FastAPI dies at import time. CONFIRMED NOT OURS: an untouched test file fails identically, so this is environmental and pre-existing. WHY IT MATTERS: CLAUDE.md documents 'python3 -m pytest tests/unit/ -v --import-mode=importlib' as the canonical invocation and that documented command currently cannot run - docs and host disagree, the §11.4.99 misguidance class at the environment layer. scripts/run-tests.sh already sidesteps it by selecting .venv/bin/python, so a working path exists and simply is not what the docs tell a reader to type. IMPACT: anyone following CLAUDE.md literally concludes the suite is broken; worse, an agent could chase green by rewriting tests. ACCEPTANCE: either repair the host site-packages so the documented command works, or correct CLAUDE.md + docs/TESTING.md to name the venv interpreter as canonical - decided explicitly, not left to whoever hits it next. Discovered out-of-band by the fail-open triage agent, so per §11.4.238 this also owes a coverage-escape note: no automated check asserts the documented test invocation actually runs.
+
+## BOB-191 — Fail-open scanner is BLIND to Go: qBitTorrent-go's zero hits is a false null, not a clean bill (§11.4.201(6))
+
+**Status:** Queued
+**Type:** Bug
+
+WHAT: the §11.4.252 fail-open scan reports 0 hits for qBitTorrent-go, and that zero is NOT evidence. The triage agent ran control needles through the scanner's own path per §11.4.201(7)(b): a Python 'except Exception: pass' needle was SEEN, a TypeScript 'catch (e) {}' needle was SEEN (so frontend/src's zero IS a real zero), but a Go empty-'if err != nil {}' needle was NOT SEEN. An instrument that cannot see the idiom returns the same quiet zero as a clean tree, and only one of those is honest. DISTINCT FROM BOB-189, deliberately not merged with it per §11.4.214: BOB-189 is a false MATCH (fail-closed guards reported as fail-open); this is a false NULL (an entire language unscanned). Same scanner, opposite failure directions, different fixes - merging them would hide one behind the other. IMPACT: Go is the language of qbittorrent-proxy-go and boba-jackett (port 7189, which owns encrypted tracker credentials), so the unscanned surface is exactly where §11.4.252's credential-plus-mutation combination is most likely. Nobody has assessed it; the dashboard says clean. ACCEPTANCE: the scanner grows a Go arm covering the empty-err-block and swallowed-error idioms, its needle is SEEN through the real path, qBitTorrent-go's result is re-derived, and every finding is triaged as this Python/TS pass was. Until then qBitTorrent-go's fail-open posture is UNKNOWN and must be reported as UNKNOWN, never as 0.
 

@@ -56,3 +56,17 @@ explicit production rebuild produced BYTE-IDENTICAL output -
 which additionally demonstrates the frontend build is reproducible across runs on
 this host (§11.4.246 reproducibility, single-host evidence only - not a claim
 about other hosts).
+
+--- 7. OPERATIONAL NOTE: the fingerprint does not survive a rebuild ---
+The sidecar .build-inputs.sha256 lives INSIDE ng's outputPath
+("../download-proxy/src/ui/dist/frontend"), so every 'ng build' deletes it. That
+is by design, not a defect: install.sh:149-157 pairs build -> --write and refuses
+to write after a FAILED build, because fingerprinting the OLD bundle against NEW
+sources would certify a stale artifact - the producer writing its own passing
+verdict (§11.4.249).
+The sharp edge for a human: running 'ng build' by hand and then the gate yields
+FAIL "never fingerprinted", which reads like staleness but means "you have not
+re-recorded". The gate's own message says "Rebuild, then run with --write", so it
+is actionable rather than misleading. Observed live here: the production-equivalence
+rebuild wiped the sidecar; re-recording produced the SAME fingerprint
+08b3b4c1e05e972d, which is itself the proof the two builds agree.
