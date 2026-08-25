@@ -29,3 +29,30 @@ verdict:    MATCH — the bytes on the wire are the bytes just built
 
 --- 5. the gate is still falsifiable (§1.1) ---
 RESULT: 17 passed, 0 failed
+
+--- 6. ADDENDUM (correction + reproducibility), 2026-08-25T20:04:11Z ---
+SCOPE CORRECTION. The closing commit 440dcd3 reads as though the rebuilt bundle
+shipped with it. It did not and could not: .gitignore:143 ignores
+download-proxy/src/ui/dist/, so BOTH the bundle and its .build-inputs.sha256
+fingerprint are local build output. 440dcd3 carries 14 files, none of them bundle
+artifacts - trackers, exports, and this evidence log.
+
+What this does and does not mean:
+  - the runtime match IS real and IS closure-grade for this host (served md5 ==
+    built md5, measured against the live container, §11.4.226 runtime class);
+  - the rebuilt bytes do NOT propagate to any other clone;
+  - what propagates is the GATE. scripts/install.sh:126 runs
+    'ng build --configuration production', then :149-157 records the fingerprint
+    (--write, only when the build succeeded) and re-runs the gate STRICTLY,
+    _fail-ing the install on mismatch. So a fresh clone cannot serve a stale
+    bundle silently - it either rebuilds or install refuses.
+
+CONFIGURATION EQUIVALENCE (checked, not assumed). install.sh builds with
+--configuration production; the closing rebuild used plain 'npm run build'. These
+are the same build: angular.json declares defaultConfiguration=production, and an
+explicit production rebuild produced BYTE-IDENTICAL output -
+  before 79b4bd322b3bc9f7f36ab6660c7625b4
+  after  79b4bd322b3bc9f7f36ab6660c7625b4
+which additionally demonstrates the frontend build is reproducible across runs on
+this host (§11.4.246 reproducibility, single-host evidence only - not a claim
+about other hosts).
