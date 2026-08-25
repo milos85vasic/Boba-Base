@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>review_round2_NOGO</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">review_round2_NOGO</h1>
+</header>
+<h1
+id="bob-161-cm-no-fail-open-skip-11.4.209-independent-review-round-2">BOB-161
+CM-NO-FAIL-OPEN-SKIP — §11.4.209 independent review, round 2</h1>
+<p><strong>Verdict: NO-GO</strong> — 0 BLOCKING / <strong>1 IMPORTANT /
+1 MINOR</strong> (round 1 was 5 / 7). Substrate: Fable. Reviewer
+distinct from round 1’s. 2026-08-25. Loop re-arms (§11.4.134).</p>
+<h2
+id="every-round-1-finding-verified-fixed-by-execution-not-by-reading-claims">Every
+round-1 finding verified fixed BY EXECUTION, not by reading claims</h2>
+<p>Suite 31/31 with 9 mutations · <code>bash -n</code> +
+<code>shellcheck -x</code> clean · all three round-1 killers re-run in a
+scratch mirror and now caught (SESSION_HINTS → 29/2, subscript arm →
+29/2, tuple-flag → 29/2) · <code>RESPONSE_DERIVERS</code> gone from code
+· live corpus unchanged at exactly 6, same files same lines · all three
+author-self-reported suite defects genuinely fixed, including the
+chmod-000 file now persisting into the mutation section so
+<code>unreadable_blind</code> bites · ratchet honest (synthetic 7th →
+exit 1; no self-write path; the new warning lives only in the
+PASS-below-baseline branch) · wiring proven wiring-only by mechanical
+diff partition, charset baseline 301 untouched · companion doc accurate
+rather than aspirational, twins real.</p>
+<p><strong>The <code>.status</code> narrowing is load-bearing, not
+decorative</strong> — the reviewer rebuilt the pre-fix syntactic
+version: it produces 2 false positives on the domain-status shape where
+the current gate passes, and both report the identical 6 on the real
+corpus. FP surface removed at zero detection cost.</p>
+<h2
+id="important-a-the-with-...-as-sub-rule-carries-a-real-finding-and-has-zero-coverage">IMPORTANT-A
+— the <code>with ... as</code> sub-rule carries a real finding and has
+zero coverage</h2>
+<p><code>check_cm_no_fail_open_skip.sh:425-427</code> (the
+<code>ast.withitem</code> clause in <code>response_names</code>). No
+fixture anywhere uses <code>urlopen</code> or <code>with … as</code>.
+Mutation <code>elif False and isinstance(n, ast.withitem):</code> leaves
+the suite <strong>31/31 GREEN</strong> while real detection drops
+<strong>6 → 5</strong> — the vanished finding is
+<code>tests/integration/test_tracker_auth_live.py:108</code>, whose
+taint seeds exclusively through
+<code>with urllib.request.urlopen(req, timeout=1) as resp:</code>. The
+gate header (line 55) and the doc’s R2 row both advertise that form.</p>
+<p><strong>It defeats the defense added for its own
+predecessor.</strong> An author drops the withitem clause, runs the
+suite (green), sees 5 against baseline 6, obeys the new warning verbatim
+— “FIRST run the mutation suite and confirm every mutation still bites”,
+and all 9 do — then lowers BASELINE to 5. A genuine fail-open and a
+detection rule are both gone with every defense reporting clean.
+§11.4.115(F): a sub-rule never observed to fail on its broken form is
+unvalidated instrumentation. Round 1 rated this identical shape
+(SESSION_HINTS, 6→4) IMPORTANT.</p>
+<h2 id="minor-b-the-alias-as-arm-is-half-unvalidated">MINOR-B — the
+alias <code>as</code> arm is half-unvalidated</h2>
+<p>HONEST LIMITS (129-130), the <code>skip_aliases</code> docstring
+(250) and the doc all claim <code>from pytest import skip [as x]</code>
+is tracked. The code genuinely handles it — the reviewer confirmed the
+gate flags a <code>skip as s</code> fail-open — but the ALIAS fixture
+(suite line 399) uses only the plain form, and mutation
+<code>out.add(a.asname or a.name)</code> → <code>out.add(a.name)</code>
+survives 31/31. Round 1’s MINOR-4 class exactly.</p>
+<h2 id="correction-to-the-conductors-own-round-1-brief">Correction to
+the conductor’s own round-1 brief</h2>
+<p>The six findings live under <code>tests/integration/</code>, not
+<code>tests/unit/</code> as the dispatch brief said. The gate header had
+it right; the brief did not.</p>
+<h2 id="could-not-analyse-stated-never-assumed-safe">Could not analyse
+(stated, never assumed safe)</h2>
+<p>The 6 baseline findings’ own remediation (needs the live stack;
+tracked as BOB-192) · the ~170 dirty <code>docs/**</code> html/pdf —
+BOB-169 regen fallout, out of scope, confirmed only that the charset
+baseline was not lowered · root-privileged runs, where a chmod-000
+fixture cannot be unreadable (the suite would fail loudly on a grep
+mismatch, never pass silently) · the declared honest limits
+(helper-returned bools, fixture-boundary dataflow, non-Python
+harnesses).</p>
+</body>
+</html>
