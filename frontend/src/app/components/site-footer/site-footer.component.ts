@@ -38,7 +38,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
       font-size: 13px;
     }
     .site-footer .heart {
-      color: var(--color-accent);
+      color: var(--color-accent-text);
       margin: 0 2px;
       display: inline-block;
       animation: footer-heart-pulse 1.6s ease-in-out infinite;
@@ -47,7 +47,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
       text-shadow: var(--shadow-text-sm);
     }
     .site-footer .vd-link {
-      color: var(--color-accent);
+      color: var(--color-accent-text);
       text-decoration: none;
       font-weight: 600;
       margin-left: 4px;

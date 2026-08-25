@@ -11,7 +11,7 @@
   margin-bottom: 16px;
   h2 {
     margin: 0 0 4px;
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     text-shadow: var(--shadow-text-md);
     font-size: 22px;
   }
@@ -38,7 +38,7 @@
     transition: color 0.15s, border-color 0.15s;
     &:hover { color: var(--color-text-primary); }
     &.active {
-      color: var(--color-accent);
+      color: var(--color-accent-text);
       border-bottom-color: var(--color-accent);
     }
   }

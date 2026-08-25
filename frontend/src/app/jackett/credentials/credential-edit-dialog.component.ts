@@ -108,7 +108,7 @@ import { CredentialMetadata, CredentialUpsertBody } from './credentials.service'
       justify-content: space-between;
       padding: 14px 18px;
       border-bottom: 1px solid var(--color-border);
-      h3 { margin: 0; font-size: 16px; color: var(--color-accent); text-shadow: var(--shadow-text-md); }
+      h3 { margin: 0; font-size: 16px; color: var(--color-accent-text); text-shadow: var(--shadow-text-md); }
       .close {
         background: transparent; border: 0; color: var(--color-text-secondary);
         font-size: 22px; line-height: 1; cursor: pointer;
@@ -138,9 +138,9 @@ import { CredentialMetadata, CredentialUpsertBody } from './credentials.service'
       &.primary {
         background: var(--color-accent);
         border-color: var(--color-accent);
-        color: #fff;
+        color: var(--color-on-accent);
         box-shadow: var(--shadow-elev-2);
-        &:hover { background: var(--color-accent-hover); }
+        &:hover { background: var(--color-accent-hover); color: var(--color-on-accent-hover); }
       }
     }
   `],

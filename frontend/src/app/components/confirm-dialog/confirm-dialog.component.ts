@@ -49,7 +49,7 @@ import { DialogService } from '../../services/dialog.service';
       box-shadow: var(--shadow-elev-3);
     }
     .modal h3 {
-      color: var(--color-accent);
+      color: var(--color-accent-text);
       margin-bottom: 14px;
       font-size: 20px;
       text-shadow: var(--shadow-text-md);
@@ -79,10 +79,10 @@ import { DialogService } from '../../services/dialog.service';
     .modal-actions button:hover { box-shadow: var(--shadow-elev-2); transform: translateY(-1px); }
     .modal-actions button:active { transform: translateY(0); box-shadow: var(--shadow-elev-1); }
     .cancel-btn { background: var(--color-bg-tertiary); color: var(--color-text-primary); }
-    .cancel-btn:hover { background: var(--color-border); }
-    .submit-btn { background: var(--color-accent); color: #fff; }
-    .submit-btn:hover { background: var(--color-accent-hover); }
-    .btn-danger { background: var(--color-danger) !important; }
+    .cancel-btn:hover { background: var(--color-border); color: var(--color-on-border); }
+    .submit-btn { background: var(--color-accent); color: var(--color-on-accent); }
+    .submit-btn:hover { background: var(--color-accent-hover); color: var(--color-on-accent-hover); }
+    .btn-danger { background: var(--color-danger) !important; color: var(--color-on-danger) !important; }
   `]
 })
 export class ConfirmDialogComponent {

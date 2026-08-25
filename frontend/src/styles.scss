@@ -14,14 +14,39 @@
   --color-bg-secondary:   #3c3f41;
   --color-bg-tertiary:    #4e5254;
   --color-border:         #555555;
-  --color-text-primary:   #a9b7c6;
-  --color-text-secondary: #808080;
+  --color-text-primary:   #c8d1da;
+  --color-text-secondary: #c4c4c4;
   --color-accent:         #9d001e;
   --color-accent-hover:   #c4002a;
+  /* BOB-164: readable accent-as-TEXT variant — `--color-accent` is the
+   * DECORATIVE brand role (fills / borders / focus rings) and is NOT
+   * legible as text on these surfaces (1.24:1 on --color-bg-secondary). */
+  --color-accent-text:    #ffaebd;
+  /* Foreground for text sitting ON an accent FILL (CTA buttons). */
+  --color-on-accent:      #ffffff;
+  /* BOB-164 round 2: the same role generalised to every OTHER token a
+   * stylesheet paints text on top of. A literal `#fff` / `#ccc` / `#333`
+   * cannot be correct against a fill that changes with the palette —
+   * `.status.unknown` measured 1.09:1 once round 1 lightened
+   * `--color-text-secondary`. Pure black or white per fill, whichever
+   * contrasts more, which always clears 4.5:1. */
+  --color-on-accent-hover: #ffffff;
+  --color-on-success:     #000000;
+  --color-on-info:        #000000;
+  --color-on-warning:     #000000;
+  --color-on-danger:      #000000;
+  --color-on-purple:      #000000;
+  --color-on-muted:       #000000;
+  --color-on-border:      #ffffff;
   --color-contrast:       #d9a441;
+  /* AA-pinned TEXT variant of --color-contrast (BOB-164 round 2). */
+  --color-contrast-text:  #e4bf79;
   --color-success:        #6a8759;
   --color-danger:         #cc7832;
   --color-warning:        #d9a441;
+  /* BOB-164: AA-pinned TEXT variants of the semantic tokens above. */
+  --color-danger-text:    #e6bc99;
+  --color-warning-text:   #e4bf79;
   --color-info:           #6897bb;
   --color-purple:         #9876aa;
   --color-shadow:         rgba(0,0,0,0.55);

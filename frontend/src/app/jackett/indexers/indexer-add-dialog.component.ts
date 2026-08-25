@@ -111,7 +111,7 @@ import { IptorrentsCookieFlowComponent } from './iptorrents-cookie-flow.componen
       display: flex; align-items: center; justify-content: space-between;
       padding: 14px 18px;
       border-bottom: 1px solid var(--color-border);
-      h3 { margin: 0; font-size: 16px; color: var(--color-accent); }
+      h3 { margin: 0; font-size: 16px; color: var(--color-accent-text); }
       .close {
         background: transparent; border: 0;
         color: var(--color-text-secondary);
@@ -157,7 +157,7 @@ import { IptorrentsCookieFlowComponent } from './iptorrents-cookie-flow.componen
       &.primary {
         background: var(--color-accent);
         border-color: var(--color-accent);
-        color: #fff;
+        color: var(--color-on-accent);
         &:disabled { opacity: 0.5; cursor: not-allowed; }
       }
     }

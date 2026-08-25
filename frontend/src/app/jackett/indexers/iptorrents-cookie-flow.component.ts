@@ -121,7 +121,7 @@ import { IndexersService } from './indexers.service';
       &.primary {
         background: var(--color-accent);
         border-color: var(--color-accent);
-        color: #fff;
+        color: var(--color-on-accent);
         &:disabled { opacity: 0.5; cursor: not-allowed; }
       }
     }

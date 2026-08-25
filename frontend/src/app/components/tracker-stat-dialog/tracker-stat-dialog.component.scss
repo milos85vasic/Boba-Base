@@ -47,7 +47,7 @@
 
   h3 {
     margin: 0;
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     font-size: 18px;
     text-shadow: var(--shadow-text-md);
   }
@@ -60,7 +60,7 @@
     line-height: 1;
     cursor: pointer;
     padding: 0 6px;
-    &:hover { color: var(--color-accent); }
+    &:hover { color: var(--color-accent-text); }
   }
 }
 
@@ -91,9 +91,9 @@
   box-shadow: var(--shadow-elev-1);
   text-shadow: var(--shadow-text-xs);
   &.status-success { background: color-mix(in srgb, var(--color-success) 30%, transparent); color: var(--color-success); }
-  &.status-empty { background: color-mix(in srgb, var(--color-warning) 22%, transparent); color: var(--color-warning); }
+  &.status-empty { background: color-mix(in srgb, var(--color-warning) 22%, transparent); color: var(--color-warning-text); }
   &.status-error,
-  &.status-timeout { background: color-mix(in srgb, var(--color-danger) 30%, transparent); color: var(--color-danger); }
+  &.status-timeout { background: color-mix(in srgb, var(--color-danger) 30%, transparent); color: var(--color-danger-text); }
   &.status-running { background: color-mix(in srgb, var(--color-info) 28%, transparent); color: var(--color-info); }
 }
 
@@ -117,7 +117,7 @@
   padding: 10px 12px;
 
   h4 {
-    color: var(--color-danger);
+    color: var(--color-danger-text);
   }
 }
 
@@ -188,8 +188,8 @@
   border: none;
   cursor: pointer;
   font-size: 13px;
-  &.btn-primary { background: var(--color-accent); color: #fff; }
+  &.btn-primary { background: var(--color-accent); color: var(--color-on-accent); }
   &.btn-primary:hover { filter: brightness(1.1); }
   &.btn-secondary { background: var(--color-bg-tertiary); color: var(--color-text-primary); }
-  &.btn-secondary:hover { background: var(--color-accent); color: #fff; }
+  &.btn-secondary:hover { background: var(--color-accent); color: var(--color-on-accent); }
 }

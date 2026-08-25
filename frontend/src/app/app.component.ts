@@ -72,7 +72,7 @@ import { SiteFooterComponent } from './components/site-footer/site-footer.compon
     }
     .brand {
       font-weight: 700;
-      color: var(--color-accent);
+      color: var(--color-accent-text);
       letter-spacing: 0.02em;
       text-shadow: var(--shadow-text-md);
     }
@@ -95,7 +95,7 @@ import { SiteFooterComponent } from './components/site-footer/site-footer.compon
     .nav-links a:hover { background: var(--color-bg-tertiary); }
     .nav-links a.active {
       background: var(--color-accent);
-      color: #fff;
+      color: var(--color-on-accent);
       box-shadow: var(--shadow-elev-1);
     }
     .app-main {

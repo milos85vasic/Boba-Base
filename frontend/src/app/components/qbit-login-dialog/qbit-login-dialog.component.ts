@@ -34,18 +34,18 @@ import { ToastService } from '../../services/toast.service';
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; justify-content: center; align-items: center; }
     .modal-overlay.show { display: flex; }
     .modal { background: var(--color-bg-secondary); padding: 28px; border-radius: 12px; border: 1px solid var(--color-border); max-width: 400px; width: 90%; color: var(--color-text-primary); box-shadow: var(--shadow-elev-3); }
-    .modal h3 { color: var(--color-accent); margin-bottom: 6px; font-size: 20px; text-shadow: var(--shadow-text-md); }
+    .modal h3 { color: var(--color-accent-text); margin-bottom: 6px; font-size: 20px; text-shadow: var(--shadow-text-md); }
     .hint { color: var(--color-text-secondary); font-size: 13px; margin-bottom: 16px; }
     input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-primary); color: var(--color-text-primary); font-size: 15px; }
     .save-label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-text-secondary); margin-bottom: 14px; }
     .save-label input { width: auto; }
-    .error { color: var(--color-danger); font-size: 13px; margin-bottom: 12px; text-shadow: var(--shadow-text-xs); }
+    .error { color: var(--color-danger-text); font-size: 13px; margin-bottom: 12px; text-shadow: var(--shadow-text-xs); }
     .modal-actions { display: flex; gap: 10px; }
     .modal-actions button { flex: 1; padding: 10px; border-radius: 8px; border: none; cursor: pointer; font-size: 15px; box-shadow: var(--shadow-elev-1); transition: box-shadow 0.12s ease, transform 0.08s ease; }
     .modal-actions button:hover { box-shadow: var(--shadow-elev-2); transform: translateY(-1px); }
     .modal-actions button:active { transform: translateY(0); box-shadow: var(--shadow-elev-1); }
     .cancel-btn { background: var(--color-bg-tertiary); color: var(--color-text-primary); }
-    .submit-btn { background: var(--color-accent); color: #fff; }
+    .submit-btn { background: var(--color-accent); color: var(--color-on-accent); }
     .submit-btn:disabled { background: var(--color-text-secondary); cursor: not-allowed; box-shadow: none; transform: none; }
   `]
 })

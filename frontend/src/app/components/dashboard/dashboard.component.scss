@@ -49,7 +49,7 @@ header {
 }
 
 h1 {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   font-size: 24px;
   margin: 0;
   font-weight: 700;
@@ -71,8 +71,8 @@ h1 {
     text-decoration: none;
     font-size: 13px;
     border: 1px solid var(--color-border);
-    &:hover { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
-    &.current { background: var(--color-accent); color: #fff; border-color: var(--color-accent); cursor: default; }
+    &:hover { background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent); }
+    &.current { background: var(--color-accent); color: var(--color-on-accent); border-color: var(--color-accent); cursor: default; }
   }
 }
 
@@ -104,7 +104,7 @@ h1 {
     border-left: 1px solid var(--color-border);
   }
   .chip-logout {
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     cursor: pointer;
     text-decoration: underline;
     font-size: 12px;
@@ -130,7 +130,7 @@ h1 {
   /* Lift cards off the page — softer / larger shadow than buttons. */
   box-shadow: var(--shadow-elev-3);
   h2 {
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     font-size: 22px;
     margin-bottom: 16px;
     margin-top: 0;
@@ -153,7 +153,7 @@ h1 {
   .stat-value {
     font-size: 28px;
     font-weight: 700;
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     /* Big accent number — strong shadow to match h1's weight. */
     text-shadow: var(--shadow-text-lg);
   }
@@ -177,7 +177,7 @@ h1 {
   button {
     padding: 14px 28px;
     background: var(--color-accent);
-    color: #fff;
+    color: var(--color-on-accent);
     border: none;
     border-radius: 10px;
     cursor: pointer;
@@ -188,6 +188,7 @@ h1 {
     transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s ease;
     &:hover {
       background: var(--color-accent-hover);
+      color: var(--color-on-accent-hover);
       box-shadow: var(--shadow-elev-3);
       transform: translateY(-1px);
     }
@@ -198,7 +199,7 @@ h1 {
       box-shadow: none;
       transform: none;
     }
-    &.btn-abort { background: var(--color-danger); }
+    &.btn-abort { background: var(--color-danger); color: var(--color-on-danger); }
   }
 }
 
@@ -239,7 +240,7 @@ h1 {
   &:hover { color: var(--color-text-primary); }
   &.active {
     border-bottom: 2px solid var(--color-accent);
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     font-weight: 600;
     /* Active tab label is accent-coloured — small shadow lifts it
      * off the tab bar so it's unmistakable. */
@@ -265,7 +266,7 @@ h1 {
   td:first-child { max-width: 450px; word-break: break-word; }
   td:last-child { white-space: nowrap; }
   th {
-    color: var(--color-accent);
+    color: var(--color-accent-text);
     font-weight: 600;
     cursor: pointer;
     user-select: none;
@@ -282,7 +283,7 @@ h1 {
 .download-btn {
   padding: 6px 14px;
   background: var(--color-success);
-  color: #fff;
+  color: var(--color-on-success);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -329,17 +330,18 @@ h1 {
 
 .btn-magnet {
   background: var(--color-purple);
+  color: var(--color-on-purple);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
 }
 
-.btn-schedule { background: var(--color-info); }
+.btn-schedule { background: var(--color-info); color: var(--color-on-info); }
 
 .delete-btn {
   padding: 6px 14px;
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-on-danger);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -360,23 +362,23 @@ h1 {
 }
 
 .type-badge {
-  &.movie { background: #0d6efd; }
-  &.tv { background: #6610f2; }
-  &.anime { background: #d63384; }
-  &.music { background: #fd7e14; }
-  &.audiobook { background: #20c997; }
-  &.game { background: #795548; }
-  &.software { background: #009688; }
-  &.ebook { background: var(--color-purple); }
-  &.unknown { background: var(--color-text-secondary); }
+  &.movie { background: #0d6efd; color: #000000; }
+  &.tv { background: #6610f2; color: #ffffff; }
+  &.anime { background: #d63384; color: #000000; }
+  &.music { background: #fd7e14; color: #000000; }
+  &.audiobook { background: #20c997; color: #000000; }
+  &.game { background: #795548; color: #ffffff; }
+  &.software { background: #009688; color: #000000; }
+  &.ebook { background: var(--color-purple); color: var(--color-on-purple); }
+  &.unknown { background: var(--color-text-secondary); color: var(--color-on-muted); }
 }
 
 .quality-badge {
-  &.uhd_4k, &.uhd_8k { background: #ffd700; color: #111; }
-  &.full_hd { background: var(--color-success); }
-  &.hd { background: var(--color-info); }
-  &.sd { background: #6c757d; }
-  &.unknown { background: var(--color-text-secondary); }
+  &.uhd_4k, &.uhd_8k { background: #ffd700; color: #000000; }
+  &.full_hd { background: var(--color-success); color: var(--color-on-success); }
+  &.hd { background: var(--color-info); color: var(--color-on-info); }
+  &.sd { background: #6c757d; color: #ffffff; }
+  &.unknown { background: var(--color-text-secondary); color: var(--color-on-muted); }
 }
 
 .tracker-tag {
@@ -391,7 +393,7 @@ h1 {
   box-shadow: var(--shadow-elev-1);
   &.freeleech {
     background: color-mix(in srgb, var(--color-warning) 25%, transparent);
-    color: var(--color-warning);
+    color: var(--color-warning-text);
     text-shadow: var(--shadow-text-xs);
   }
 }
@@ -405,7 +407,7 @@ h1 {
   font-size: 12px;
   font-weight: 600;
   background: color-mix(in srgb, var(--color-accent) 20%, transparent);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   margin-right: 8px;
   margin-bottom: 4px;
   /* Accent-coloured pill — tight shadow so it pops from the row. */
@@ -413,12 +415,19 @@ h1 {
   text-shadow: var(--shadow-text-xs);
 }
 
+/* BOB-164: a blanket `opacity` multiplies EVERY descendant's colour
+ * against the backdrop, so it silently drags an AA-compliant token
+ * below the floor (measured: textPrimary #a9b7c6 3.86:1 -> #838d97
+ * 2.60:1; danger #cc7832 -> #9a6437 1.77:1).  The unavailable state is
+ * now carried by a token that is itself AA-compliant plus a non-colour
+ * cue, never by fading the text out. */
 .disabled-link {
-  opacity: 0.65;
+  color: var(--color-text-secondary);
   cursor: not-allowed;
+  text-decoration: line-through;
   .bridge-down-hint {
     font-size: 11px;
-    color: var(--color-danger);
+    color: var(--color-danger-text);
     margin-left: 4px;
     display: inline-flex;
     align-items: center;
@@ -428,7 +437,10 @@ h1 {
 
 /* Unknown / probing state — link still looks interactive but muted. */
 .service-links a.checking {
-  opacity: 0.8;
+  /* BOB-164: same reason as `.disabled-link` — no opacity multiplier on
+   * text.  The probing state is carried by the cursor + the inline
+   * spinner, both of which survive a contrast audit. */
+  color: var(--color-text-secondary);
   cursor: progress;
   .bridge-down-hint {
     font-size: 11px;
@@ -453,7 +465,7 @@ h1 {
 
 .bridge-retry {
   background: var(--color-bg-tertiary);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   border: 1px solid var(--color-border);
   border-radius: 4px;
   width: 18px;
@@ -479,7 +491,7 @@ h1 {
   summary {
     cursor: pointer;
     padding: 6px 0;
-    color: var(--color-warning);
+    color: var(--color-warning-text);
     &:hover { color: color-mix(in srgb, var(--color-warning) 85%, white); }
   }
   ul {
@@ -529,13 +541,13 @@ h1 {
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 12px;
-  &.running { background: var(--color-warning); color: #333; }
-  &.completed, &.active, &.healthy { background: var(--color-success); color: #fff; }
-  &.failed { background: var(--color-danger); color: #fff; }
-  &.unknown { background: var(--color-text-secondary); color: #ccc; }
-  &.downloading { background: var(--color-info); color: #fff; }
-  &.seeding { background: var(--color-success); color: #fff; }
-  &.paused { background: var(--color-warning); color: #333; }
+  &.running { background: var(--color-warning); color: var(--color-on-warning); }
+  &.completed, &.active, &.healthy { background: var(--color-success); color: var(--color-on-success); }
+  &.failed { background: var(--color-danger); color: var(--color-on-danger); }
+  &.unknown { background: var(--color-text-secondary); color: var(--color-on-muted); }
+  &.downloading { background: var(--color-info); color: var(--color-on-info); }
+  &.seeding { background: var(--color-success); color: var(--color-on-success); }
+  &.paused { background: var(--color-warning); color: var(--color-on-warning); }
 }
 
 .inline-form {
@@ -553,7 +565,7 @@ h1 {
   button {
     padding: 8px 16px;
     background: var(--color-accent);
-    color: #fff;
+    color: var(--color-on-accent);
     border: none;
     border-radius: 6px;
     cursor: pointer;
@@ -585,8 +597,8 @@ h1 {
     font-size: 11px;
     font-weight: 700;
     &.success { background: color-mix(in srgb, var(--color-success) 25%, transparent); color: var(--color-success); }
-    &.empty   { background: color-mix(in srgb, var(--color-warning) 18%, transparent); color: var(--color-warning); }
-    &.error   { background: color-mix(in srgb, var(--color-danger) 25%, transparent);  color: var(--color-danger); }
+    &.empty   { background: color-mix(in srgb, var(--color-warning) 18%, transparent); color: var(--color-warning-text); }
+    &.error   { background: color-mix(in srgb, var(--color-danger) 25%, transparent);  color: var(--color-danger-text); }
     &.running { background: color-mix(in srgb, var(--color-info) 25%, transparent);    color: var(--color-info); }
   }
 
