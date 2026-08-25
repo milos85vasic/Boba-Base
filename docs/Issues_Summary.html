@@ -202,7 +202,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>20</td>
+<td>19</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -222,7 +222,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>24</td>
+<td>25</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -956,60 +956,6 @@ not change the root cause (the venv’s rpds ships a cpython-313 ABI tag
 CPython 3.14 cannot import) or the fix (rebuild the venv — BOB-154). It
 documents that the interim recipe has a blast radius, so nobody reads a
 workaround artifact as a regression.</td>
-</tr>
-<tr>
-<td>BOB-166</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>High</td>
-<td>WHAT. §11.4.19 requires closure migration to be ATOMIC: a resolving
-item moves to Fixed.md, DISAPPEARS from Issues_Summary (open-only) and
-APPEARS in Fixed_Summary (closed-only). Ten rows violate all three
-properties right now — they carry a terminal status yet
-current_location=‘Issues’, so they render in docs/Issues.md and are
-listed in docs/Issues_Summary.md with a status that literally reads ‘(→
-Fixed.md)’, while appearing 0 times in Fixed_Summary.md. Any reader of
-the canonical open tracker is told these are open work. MANIFEST
-(measured 2026-08-21): BOB-087 (Completed), BOB-129, BOB-131, BOB-144,
-BOB-145, BOB-146, BOB-148, BOB-153, BOB-155, BOB-157 (all ‘Fixed (→
-Fixed.md)’). Confirmed rendering: BOB-155/087/157 each grep 1 in
-Issues.md, 0 in Fixed.md, present in Issues_Summary.md, 0 hits in
-Fixed_Summary.md. ROOT CAUSE (reproduced at runtime, not inferred).
-‘close’ performs the atomic migration and REQUIRES –evidence. ‘update
-–status’ sets any §11.4.15 closed-set value with NO evidence and NO
-migration — and it knows the location, because it prints it. On a COPY
-of the real DB: $ workable-items update –id BOB-065 –db repro.db –status
-‘Fixed (→ Fixed.md)’ update: BOB-065 updated in Issues (status=Fixed (→
-Fixed.md), type=Task) $ sqlite3 repro.db ‘SELECT
-atm_id,status,current_location …’ BOB-065|Fixed (→ Fixed.md)|Issues So
-the seam that is supposed to be the ONLY closure path (close,
-evidence-gated per §11.4.146(D3)) has a parallel unguarded path that
-reaches the same status while skipping BOTH the evidence requirement and
-the migration. WHY NOTHING CAUGHT IT (§11.4.238 coverage-escape audit).
-Three standing checks stay GREEN on a DB holding the forbidden row,
-verified on the poisoned copy from the repo root so no cwd artifact is
-involved: (1) ‘validate’ → ‘OK — 164 items, all invariants satisfied’
-(it has no status↔︎location coherence invariant); (2) ‘diff’ → ‘in sync’
-(DB and Markdown agree — on the WRONG state; agreement is not
-correctness); (3) CM-CLOSURE-SEAM-BINDS CHECK A → PASS (it flags
-NON-terminal rows whose id appears in a work commit; these rows are
-terminal, so they are outside its predicate by construction). This was
-found by reading a status tally, not by the automated regime — a
-§11.4.238 discovery-channel escape, which is itself a defect of equal
-standing to the mis-located rows. ACCEPTANCE. (a) ‘update’ REFUSES a
-terminal status and names ‘close’ as the correct path, with a paired
-§1.1 mutation proving the refusal (removing the guard must make the
-mutation pass). (b) ‘validate’ grows a status↔︎location coherence
-invariant that FAILS on the forbidden state, with a golden-bad fixture
-and a negative control (a legitimately terminal row in Fixed must NOT
-fire — §11.4.201(1)). (c) The 10 existing rows are drained to Fixed with
-class-matched evidence per row, or, where a row’s evidence cannot be
-produced, honestly re-opened rather than migrated on a bare assertion.
-(d) Honest boundary: this closes the update-path hole and the detection
-gap; it does not claim every historical status write was
-evidence-backed. NOT CLAIMED. No fix is implemented by this filing. The
-10 rows are untouched; draining them is acceptance (c) and each needs
-its own evidence, not a bulk UPDATE.</td>
 </tr>
 <tr>
 <td>BOB-167</td>
@@ -1915,6 +1861,35 @@ needle is SEEN through the real path, qBitTorrent-go’s result is
 re-derived, and every finding is triaged as this Python/TS pass was.
 Until then qBitTorrent-go’s fail-open posture is UNKNOWN and must be
 reported as UNKNOWN, never as 0.</td>
+</tr>
+<tr>
+<td>BOB-192</td>
+<td>Task</td>
+<td>Queued</td>
+<td>—</td>
+<td>WHAT: the BOB-161 gate lands with 6 real fail-open skips RATCHETED
+rather than fixed. Ratcheting is the constitution’s named brownfield
+default (§11.4.135/§11.4.224(E)) and this repo’s own precedent, so the
+choice is correct - but the remediation it defers is real work that must
+be owned somewhere. WHY THIS ITEM EXISTS: the gate’s own header asserted
+the 6 were ‘TRACKED SEPARATELY (§11.4.197)’ while no tracker row
+existed. The §11.4.209 independent review verified the absence and
+raised it as IMPORTANT-5, noting that without a row those findings are
+precisely the parked-unverified debt class §11.4.226(4) names - the
+population an operator samples and finds broken. A prose claim of being
+tracked is not tracking. WHAT EACH NEEDS: a skip that fires on evidence
+the host ANSWERED must either classify the response and FAIL on it, or
+take a §11.4.69 reason that is honestly derivable from the environment
+rather than from the response - verified against the live stack, not
+asserted. Two of the six sit under ‘# allow-skip:’ markers at
+tests/unit/test_tracker_auth_live.py:105 and :108, which the reviewer
+confirmed genuinely are fail-open, so that marker must not be treated as
+absolution. ACCEPTANCE: all 6 remediated with RED-first evidence per
+§11.4.115, the gate’s BASELINE ratcheted to 0, and the ratchet’s
+monotone-decreasing property preserved throughout (§11.4.227(A)). NOTE
+the reviewer’s MINOR-1: a count-baseline absorbs a one-out-one-in swap,
+so remediation progress must be checked against the finding SET, not
+only the count.</td>
 </tr>
 </tbody>
 </table>

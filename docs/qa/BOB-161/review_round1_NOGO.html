@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>review_round1_NOGO</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">review_round1_NOGO</h1>
+</header>
+<h1
+id="bob-161-cm-no-fail-open-skip-11.4.209-independent-review-round-1">BOB-161
+CM-NO-FAIL-OPEN-SKIP — §11.4.209 independent review, round 1</h1>
+<p><strong>Verdict: NO-GO</strong> — 0 BLOCKING / 5 IMPORTANT / 7 MINOR
+Substrate: Fable (§11.4.209). Reviewer structurally separate from the
+author (§11.4.70). Date: 2026-08-25. Loop re-arms per §11.4.134 —
+remediate, re-review to zero findings AND zero warnings.</p>
+<h2 id="why-this-is-a-no-go-and-not-a-nitpick">Why this is a NO-GO and
+not a nitpick</h2>
+<p>A <strong>reviewer-authored</strong> mutation survives the entire
+suite while silently halving real detection. That is the §11.4.115(F)
+unvalidated-instrumentation condition, and §11.4.194(6)(d) predicts
+exactly this: the author’s own six mutations were all caught; the
+reviewer’s first different one was not.</p>
+<pre><code>mutation: SESSION_HINTS = ()
+suite:    19/19 GREEN  (unchanged)
+corpus:   6 findings -&gt; 4      (test_merge_api.py:180 and :484 vanish)
+and then: gate prints &quot;BELOW baseline — lower BASELINE to 4&quot;</code></pre>
+<p>The last line is the dangerous part: weakening the instrument
+presents itself as progress, and the baseline would lock it in.</p>
+<h2 id="findings">Findings</h2>
+<h3 id="important">IMPORTANT</h3>
+<ol type="1">
+<li><strong>R3 evasion — tuple-form broad except.</strong>
+<code>except (Exception,):</code> /
+<code>except (ValueError, Exception):</code> over a probe PASSES though
+semantically identical to <code>except Exception:</code>. Live shape at
+<code>tests/unit/api_layer/test_theme_stream.py:145</code> (a
+<code>pass</code> today, one keystroke from an escape).</li>
+<li><strong>SESSION_HINTS unvalidated</strong> — see above. A third of
+the live baseline rests on it.</li>
+<li><strong>Fifth blind condition: unreadable files vanish.</strong>
+<code>except OSError: continue</code> (analyzer 368-370). Demonstrated:
+2-file corpus, one chmod-000 containing a real fail-open → “parsed 1” →
+<strong>PASS</strong>. Same false-null class the four blind checks exist
+to close, applied to OSError. Broken symlink is the realistic
+trigger.</li>
+<li><strong>R1’s “unambiguous attribute” assumption refuted
+(§11.4.194(2)).</strong> <code>job.status</code> on a domain object
+fires R1 on an honest environmental skip; this repo already uses
+<code>stat.status</code> / <code>metadata.status</code> in probe-capable
+dirs. Zero live FPs — latent, not active.</li>
+<li><strong>“TRACKED SEPARATELY (§11.4.197)” had no tracker
+row.</strong> Filed by the conductor as <strong>BOB-192</strong>.</li>
+</ol>
+<h3 id="minor">MINOR</h3>
+<ol type="1">
+<li>Ratchet absorbs a one-out-one-in swap (count-baseline); pre-build
+discards stdout on PASS so the changed finding-SET is invisible at the
+seam. Matches sanctioned precedent; a fingerprint-set baseline would
+close it.</li>
+<li><code>from pytest import skip</code> evades all rules. Zero corpus
+instances.</li>
+<li><code>RESPONSE_DERIVERS</code> is dead code — bare-Name propagation
+subsumes it.</li>
+<li><code>["status_code"]</code> subscript arm of
+<code>reads_status</code> covered by no test and no corpus
+instance.</li>
+<li>Two latent FP vectors absent from HONEST LIMITS (environmental skip
+nested under a status-success branch; rebound-name taint with no
+kill-set).</li>
+<li>Wiring comment says “18 cases”; the suite reports 19.</li>
+<li>§11.4.18 companion doc absent. The author’s “four gates have none”
+is literally true but inverts the evidence — <strong>7 of 12</strong>
+sibling gates DO have companions, so skipping grows a
+monotone-decreasing debt class (§11.4.261).</li>
+</ol>
+<h2 id="verified-good-proven-by-execution-not-assumed">Verified good
+(proven by execution, not assumed)</h2>
+<p>19/19 suite confirmed by real run · all 6 baseline findings read and
+confirmed genuinely fail-open · narrow-except skips beside them
+correctly untouched · both prior author-fixed false positives hold, with
+correct R2 attribution · carriers hold including three the author did
+not write (f-string text, multi-line raw string containing complete
+fail-open code, <code># type:</code> comments) · four blind refusals
+distinct · exact BOB-092 SKIP-on-404 repro caught in a fresh file · exit
+codes 0/1/2 measured · no self-tightening (sha-verified) · wiring
+top-level, uses the file’s pass/fail helpers, honest §11.4.3 SKIP when
+absent, self-scopes to its checkout · <code>bash -n</code> +
+<code>shellcheck -S warning</code> clean.</p>
+<p>Nothing found invalidates the detector’s core definition, the ratchet
+mechanism, or the wiring.</p>
+<h2 id="not-analysed-stated-never-assumed-safe">Not analysed (stated,
+never assumed safe)</h2>
+<p>python3-absent exit-2 branch (host has python3; read-only
+verification) · behaviour on Python versions other than the host’s
+3.14.6 · skips outside <code>pytest.skip</code> in shell/Go harnesses
+(outside the gate’s declared scope) · the 175 dirty exports in the
+worktree (excluded by instruction, and not authored by this change).</p>
+</body>
+</html>
