@@ -309,3 +309,221 @@ for name, svc in (doc.get("services") or {}).items():
     print("\t".join([name, image, userns, puid, ",".join(sources), user]))
 PYEOF
 }
+
+# ---------------------------------------------------------------------------
+# ownership_normalise_path <path> — LEXICAL normalisation. Collapses `//`,
+# drops `.`, and resolves `..` against the preceding component. Echoes the
+# result; the input's absolute/relative character is preserved.
+#
+# WHY LEXICAL AND NOT `realpath`/`readlink -f`:
+#   (a) TOCTOU. Resolving symlinks answers a question about the filesystem at
+#       resolve time, and the declared path is walked LATER — a link swapped in
+#       between check and walk would make the fence assert about a path the
+#       repair never touches. A lexical answer is a property of the STRING and
+#       cannot be raced.
+#   (b) It buys nothing. find's default -P does not descend a symlinked root,
+#       and scripts/ownership_repair.sh's absolutise() strips the trailing
+#       slash that would otherwise make find traverse one. A symlinked declared
+#       root is already contained without resolving it.
+#   (c) It must work on paths that DO NOT EXIST. `.env` and config/boba.db are
+#       declared `optional: true` precisely because they are legitimately absent
+#       before first boot, and a fence that could not judge an absent path would
+#       have to either skip it (a hole) or refuse it (a §11.4.201(1) false
+#       positive).
+#
+# `..` above the root of an absolute path is the root itself, per POSIX
+# (`/..` == `/`) — so a `..` climb can never escape upward into nothing.
+# ---------------------------------------------------------------------------
+ownership_normalise_path() {
+    local p="$1" abs=0 seg rest joined="" i
+    local -a stack=()
+    [[ -n "${p}" ]] || { printf '%s' ''; return 1; }
+    [[ "${p}" == /* ]] && abs=1
+    rest="${p}"
+    while [[ -n "${rest}" ]]; do
+        seg="${rest%%/*}"
+        if [[ "${seg}" == "${rest}" ]]; then rest=""; else rest="${rest#*/}"; fi
+        case "${seg}" in
+            ''|'.') ;;
+            '..')
+                if [[ ${#stack[@]} -gt 0 && "${stack[$(( ${#stack[@]} - 1 ))]}" != ".." ]]; then
+                    unset "stack[$(( ${#stack[@]} - 1 ))]"
+                    stack=("${stack[@]}")
+                elif [[ "${abs}" -eq 0 ]]; then
+                    stack+=("..")
+                fi
+                ;;
+            *) stack+=("${seg}") ;;
+        esac
+    done
+    for (( i = 0; i < ${#stack[@]}; i++ )); do
+        joined="${joined}/${stack[${i}]}"
+    done
+    if [[ "${abs}" -eq 1 ]]; then
+        printf '%s' "${joined:-/}"
+    else
+        printf '%s' "${joined:+${joined#/}}"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# THE DECLARED-PATH FENCE (§11.4.252 fail-closed).
+#
+# WHY IT EXISTS
+#   scripts/ownership_repair.sh filters the WALK to items under a declared
+#   path and called that "the scope fence". That is circular: it fences to the
+#   declared path, and nothing constrained what a declared path may BE. The
+#   shipped config/owned_paths.yaml declares
+#       - path: "${QBITTORRENT_DATA_DIR:-/mnt/DATA}"
+#   and `.env` — untracked, unreviewed, and not in any review's diff — supplies
+#   that variable. MEASURED 2026-08-25: with QBITTORRENT_DATA_DIR=/ the repair
+#   really did launch
+#       find / \( ! -uid 1000 -o ! -gid 1000 \) -printf '%U\t%G\t%m\t%p\0'
+#   — a recursive walk of the entire filesystem, observed in `ps` and killed by
+#   pid. That is the condition this fence removes.
+#
+# WHY NOT SIMPLY "MUST BE UNDER THE PROJECT ROOT"
+#   Because that would break the feature. The download root is INTENTIONALLY
+#   outside the project; refusing it would be the §11.4.201(1) false-positive
+#   refusal — a guard refusing on a condition that is absent. The fence
+#   therefore splits on how the entry was WRITTEN:
+#
+#     RELATIVE entries  A repo-relative path denotes something in the
+#                       repository. After normalisation it must still be inside
+#                       the project root. An entry that climbs out with `..` was
+#                       written to escape, and the scope format does not license
+#                       that. (The project root must itself clear the depth
+#                       floor, so a pathological root cannot smuggle one in.)
+#
+#     ABSOLUTE entries  Bounded by SHAPE, since nothing else bounds them:
+#                        * at least MIN_COMPONENTS path components, and
+#                        * never a system tree, nor anything under one.
+#
+# WHY THE FLOOR IS 2, MEASURED NOT CHOSEN
+#   The shipped default is `/mnt/DATA` — exactly 2 components. 2 is therefore
+#   the floor the shipped configuration forces; a lower floor would admit `/`
+#   and the bare top-level directories, and a higher one would refuse the
+#   documented default. This host's real root, /run/media/<user>/<disk>/Downloads,
+#   has 5.
+#
+# WHY THE DENYLIST IS ALSO NEEDED
+#   The floor alone does not catch `/usr/lib` — 2 components, passes the floor.
+#   Both rules are load-bearing; neither subsumes the other.
+#
+# WHY /run, /home, /media, /mnt, /opt, /srv, /tmp ARE **NOT** DENYLISTED
+#   MEASURED from this host's .env: the operator's real library is
+#   /run/media/<user>/<disk>/Downloads. A denylist that swallowed /run would
+#   refuse the live configuration — the same false-positive class the fence
+#   must not become. Only trees where a recursive ownership rewrite is
+#   destructive or meaningless are listed.
+#
+# HONEST BOUNDARY (§11.4.6)
+#   This fence bounds the SHAPE of a declared path. It cannot decide that a
+#   well-shaped absolute path is the tree the operator MEANT: an absolute
+#   out-of-project path with enough depth is exactly what a download root is,
+#   so it must be accepted. What it removes is the class traced to a
+#   catastrophic outcome — filesystem roots, bare top-level directories, system
+#   trees, and `..` escapes. It is also SHAPE-only: it deliberately does not
+#   require the path to be operator-owned, because a root-owned mount point
+#   with operator-owned content beneath it is the ordinary state of a removable
+#   disk, and refusing it would refuse the very case the feature exists for.
+# ---------------------------------------------------------------------------
+OWNERSHIP_FENCE_MIN_COMPONENTS=2
+
+# Closed set. Absolute, no trailing slash. Extending it can only ever narrow
+# what the repair may touch, never widen it.
+OWNERSHIP_FENCE_SYSTEM_TREES="/bin /boot /dev /etc /lib /lib32 /lib64 /libx32 /proc /root /sbin /sys /usr /var"
+
+# ownership_path_components <abs-path> — number of non-empty path components.
+ownership_path_components() {
+    local p="$1" n=0 seg rest
+    rest="${p}"
+    while [[ -n "${rest}" ]]; do
+        seg="${rest%%/*}"
+        if [[ "${seg}" == "${rest}" ]]; then rest=""; else rest="${rest#*/}"; fi
+        [[ -n "${seg}" ]] && n=$(( n + 1 ))
+    done
+    printf '%s' "${n}"
+}
+
+# ownership_path_fence <resolved-abs-path> <declared-was-relative:0|1> <project-root>
+#
+# Returns 0  the path may be walked.
+# Returns 1  REFUSED — the reason is printed on stderr.
+#
+# FAIL-CLOSED (§11.4.252): every input that is not exactly what this predicate
+# expects returns 1. An argument it cannot judge is refused, never waved
+# through — an unjudgeable declared path is precisely the case where a
+# permissive default would hand the repair an unbounded tree.
+ownership_path_fence() {
+    local p="${1:-}" was_rel="${2:-}" root="${3:-}" norm root_norm sys ncomp
+
+    if [[ $# -ne 3 ]]; then
+        echo "ownership: fence called with $# arguments, expected 3 — refusing" >&2
+        return 1
+    fi
+    if [[ -z "${p}" || "${p}" != /* ]]; then
+        echo "ownership: fence received a non-absolute path: '${p}' — refusing" >&2
+        return 1
+    fi
+    if [[ "${was_rel}" != "0" && "${was_rel}" != "1" ]]; then
+        echo "ownership: fence received an unusable relative-flag: '${was_rel}' — refusing" >&2
+        return 1
+    fi
+    if [[ -z "${root}" || "${root}" != /* ]]; then
+        echo "ownership: fence received a non-absolute project root: '${root}' — refusing" >&2
+        return 1
+    fi
+
+    norm="$(ownership_normalise_path "${p}")"
+    if [[ -z "${norm}" || "${norm}" != /* ]]; then
+        echo "ownership: '${p}' could not be normalised — refusing" >&2
+        return 1
+    fi
+
+    # --- system trees: refused for relative and absolute entries alike, and
+    # checked FIRST so the message names the strongest reason. ---------------
+    for sys in ${OWNERSHIP_FENCE_SYSTEM_TREES}; do
+        if [[ "${norm}" == "${sys}" || "${norm}" == "${sys}"/* ]]; then
+            # A repository legitimately checked out under a system tree (say
+            # /usr/local/src) keeps working: its RELATIVE entries are judged by
+            # containment below, which is the stronger guarantee. Only an
+            # ABSOLUTE entry naming a system tree is refused here.
+            if [[ "${was_rel}" -eq 0 ]]; then
+                echo "'${norm}' is inside the system tree ${sys}; a recursive ownership change there is never a download root" >&2
+                return 1
+            fi
+        fi
+    done
+
+    if [[ "${was_rel}" -eq 1 ]]; then
+        # --- relative: must stay inside the project root -------------------
+        root_norm="$(ownership_normalise_path "${root}")"
+        if [[ -z "${root_norm}" || "${root_norm}" != /* ]]; then
+            echo "the project root '${root}' could not be normalised — refusing" >&2
+            return 1
+        fi
+        ncomp="$(ownership_path_components "${root_norm}")"
+        if [[ "${ncomp}" -lt "${OWNERSHIP_FENCE_MIN_COMPONENTS}" ]]; then
+            echo "the project root '${root_norm}' has ${ncomp} path component(s), fewer than the ${OWNERSHIP_FENCE_MIN_COMPONENTS} required — a repo-relative entry cannot be bounded against it" >&2
+            return 1
+        fi
+        if [[ "${norm}" != "${root_norm}" && "${norm}" != "${root_norm}"/* ]]; then
+            echo "'${norm}' was declared as a repo-relative path but resolves OUTSIDE the project root '${root_norm}' — a relative entry may not climb out with '..'" >&2
+            return 1
+        fi
+        return 0
+    fi
+
+    # --- absolute: bounded by shape ---------------------------------------
+    ncomp="$(ownership_path_components "${norm}")"
+    if [[ "${ncomp}" -lt "${OWNERSHIP_FENCE_MIN_COMPONENTS}" ]]; then
+        if [[ "${norm}" == "/" ]]; then
+            echo "'${p}' resolves to the filesystem root '/' — a recursive ownership change of the whole filesystem is never a declared scope" >&2
+        else
+            echo "'${norm}' has ${ncomp} path component(s), fewer than the ${OWNERSHIP_FENCE_MIN_COMPONENTS} required (the shipped default /mnt/DATA has 2) — a bare top-level directory is never a download root" >&2
+        fi
+        return 1
+    fi
+    return 0
+}

@@ -129,15 +129,66 @@
 #   `absolutise()` helper), so the two readers of ONE scope file disagreed about
 #   what a relative entry means. This script now resolves the same way.
 #
-#   The FINGERPRINT is deliberately computed BEFORE this resolution, from the
-#   scope file's literal text, so it stays independent of where the run started
-#   — a marker must not be invalidated by a change of directory.
+#   The FINGERPRINT is deliberately computed BEFORE this resolution — from the
+#   scope's PARSED, ENVIRONMENT-EXPANDED entry rows (scripts/lib/ownership.sh
+#   `ownership_scope_fingerprint`, which hashes `ownership_scope_entries`), NOT
+#   from the scope file's literal bytes. Two consequences, and both are
+#   deliberate:
+#
+#     * It is independent of the caller's CWD, because relative entries are
+#       still relative at that point — a marker is not invalidated by a change
+#       of directory.
+#     * It DOES move with the ENVIRONMENT, because `${VAR}` in a declared path
+#       is expanded before hashing. MEASURED 2026-08-25 on one unchanged scope
+#       file whose only entry is `${QBITTORRENT_DATA_DIR:-/mnt/DATA}`:
+#           env unset                     -> 76b3930629a1e422...
+#           QBITTORRENT_DATA_DIR=/tmp/aaa -> cc412df3ff7e2435...
+#           sha256 of the file's bytes    -> a73b307a006a3117...  (matches neither)
+#       That is the correct behaviour — repointing the download root MUST
+#       re-arm the repair — but it has an operational edge worth knowing: a
+#       hand-run repair from a shell that has NOT sourced `.env` computes a
+#       different fingerprint, so its marker does not satisfy start.sh's check,
+#       and vice versa. Source the environment the stack runs with, or pass
+#       --state-dir so the ad-hoc run keeps its own trail.
 #
 # WHY chown -h
 #   `-h` acts on a symlink itself rather than its target. Without it a symlink
 #   inside the declared scope pointing anywhere on the filesystem would let the
-#   repair mutate a file OUTSIDE the scope — FR-005 requires out-of-scope reach to
-#   be impossible by construction, not merely unintended.
+#   repair mutate a file OUTSIDE the scope. `-h`, plus find's default -P (which
+#   does not descend a symlinked directory), closes the SYMLINK dimension of
+#   FR-005 by construction.
+#
+# THE ONE OUT-OF-SCOPE REACH THAT REMAINS: HARDLINKS
+#   An earlier revision of this header claimed FR-005 makes out-of-scope reach
+#   "impossible by construction". That was an OVERCLAIM (§11.4.6), and it is
+#   corrected here rather than left standing.
+#
+#   MEASURED against this script, 2026-08-25: a hardlink INSIDE the declared
+#   scope names an inode whose other link lives OUTSIDE every declared path.
+#   chown(2) acts on the INODE, not on the name, so the out-of-scope file's
+#   ownership changed with it:
+#       BEFORE 1000:10 links=2   ->   AFTER 1000:1000 links=2
+#
+#   The reach is BOUNDED and the bounds are what make it tolerable:
+#     * hard links cannot cross filesystems, so the reach cannot leave the
+#       device the declared path lives on;
+#     * it needs a writer INSIDE the declared scope able to create the link —
+#       a container running as root in a declared bind mount is exactly such a
+#       writer, so this is not theoretical;
+#     * it moves OWNERSHIP only. Content is never read or written by this
+#       script (machine-checked: tests/unit/test_ownership_repair.sh Case 18
+#       asserts the out-of-scope file's bytes are unchanged), and the new owner
+#       is always the operator — the repair can only ever hand an inode TO the
+#       operator, never away from them.
+#
+#   FENCING IT WAS CONSIDERED AND REJECTED, and the reason is recorded so the
+#   decision is not silently re-litigated: refusing every item with st_nlink > 1
+#   would refuse the ORDINARY case, because hardlinking is how a torrent client
+#   and a media manager share one payload between the download tree and the
+#   library. A fence there would break the feature for its primary user in
+#   order to close a bounded, ownership-only, same-device escape. The claim is
+#   corrected instead, and Case 18 machine-checks that this text and the real
+#   behaviour still agree.
 
 set -euo pipefail
 
@@ -359,6 +410,34 @@ if ! ENTRIES_RAW="$(ownership_scope_entries)"; then
     exit 2
 fi
 
+# ...and a scope that READS fine but yields ZERO entries is the OTHER half of
+# the same rule. The paragraph above defended only the unreadable case, so a
+# scope that was valid YAML declaring nothing walked nothing, asserted nothing,
+# and — MEASURED 2026-08-25 against the pre-fix script — exited 0 and wrote a
+# completion marker carrying fingerprint
+#   e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+# which is sha256("") — the fingerprint of nothing. start.sh then reads that
+# marker as "already repaired" and skips the walk on every subsequent start.
+# Three real shapes produce it: `paths: []`, the top-level key mistyped as
+# `path:`, and every entry's ${VAR} expanding empty (the shipped scope's FIRST
+# entry is ${QBITTORRENT_DATA_DIR:-/mnt/DATA}, so that shape is live).
+#
+# The DECISION is mirrored from the sibling consumer of this same scope file,
+# scripts/ownership_precondition.sh:1011-1013, which already refuses all three
+# with exit 2 — §11.4.251: one predicate, both callers, never a second dialect.
+# The test is byte-identical to that one, deliberately.
+#
+# exit 2 and NOT exit 1: exit 1 means "an item could not be repaired" and
+# invites a retry. No item is wrong here; the SCOPE is unusable, and 2 is what
+# the contract reserves for "could not run" (§11.4.201(6) — a run that asserted
+# nothing must never be coloured the same as a clean tree).
+if [[ -z "${ENTRIES_RAW//[[:space:]]/}" ]]; then
+    log_err "the declared scope contains no locations: ${SCOPE_FILE}"
+    log_err "a repair that walked zero locations has asserted nothing"
+    log_err "refusing to write a completion marker — nothing was touched"
+    exit 2
+fi
+
 FINGERPRINT=""
 if ! FINGERPRINT="$(ownership_scope_fingerprint)" || [[ -z "${FINGERPRINT}" ]]; then
     log_err "cannot compute the scope fingerprint from ${SCOPE_FILE}"
@@ -384,15 +463,60 @@ absolutise() {
     printf '%s' "${p}"
 }
 
+# THE DECLARED PATH IS ITSELF FENCED (§11.4.252 fail-closed).
+#
+# The walk filter below only ever names items UNDER a declared path, and an
+# earlier revision called that "the scope fence". It is circular: it fences to
+# the declared path and nothing constrained what a declared path may BE.
+# `absolutise()` prepends the project root to a relative entry and otherwise
+# passes text through — no normalisation, no bound. MEASURED 2026-08-25, with
+# the shipped `${QBITTORRENT_DATA_DIR:-/mnt/DATA}` entry unchanged and only the
+# environment moved, this script really did launch
+#     find / \( ! -uid 1000 -o ! -gid 1000 \) -printf '%U\t%G\t%m\t%p\0'
+# — a recursive walk of the entire filesystem, observed in `ps` and killed by
+# pid. `.env` is untracked and unreviewed, so an unreviewed file fully
+# determined which tree got recursively chowned.
+#
+# ownership_path_fence() (scripts/lib/ownership.sh) holds the rule and the
+# reasoning; it lives in the shared library so there can never be a second
+# dialect of it (§11.4.251). It normalises `..` first, requires a repo-relative
+# entry to stay inside the project root, and bounds an absolute entry by shape
+# (depth floor + system-tree denylist).
+#
+# ONE BAD ENTRY REFUSES THE WHOLE RUN, and exit 2 ("could not run"), not 1: a
+# scope containing a path of that shape is a scope this script does not trust
+# at all, and nothing has been touched at this point. Refusing per-entry and
+# proceeding with the rest would silently repair a partial scope while writing
+# a marker that claims the whole one.
 declare -a E_PATH=() E_KIND=() E_OPTIONAL=() E_PRESERVE=() E_RECURSIVE=()
+FENCE_REFUSALS=0
 while IFS=$'\t' read -r e_path e_kind e_opt e_pres e_rec; do
     [[ -n "${e_path}" ]] || continue
-    E_PATH+=("$(absolutise "${e_path}")")
+
+    # Captured BEFORE absolutise(), because "was this written as a repo-relative
+    # entry?" is unrecoverable once the project root has been prepended.
+    e_was_rel=1
+    [[ "${e_path}" == /* ]] && e_was_rel=0
+
+    e_abs="$(absolutise "${e_path}")"
+    if ! fence_reason="$(ownership_path_fence "${e_abs}" "${e_was_rel}" "${PROJECT_ROOT}" 2>&1)"; then
+        log_err "REFUSED ${e_path} — ${fence_reason}"
+        FENCE_REFUSALS=$((FENCE_REFUSALS + 1))
+        continue
+    fi
+
+    E_PATH+=("$(ownership_normalise_path "${e_abs}")")
     E_KIND+=("${e_kind}")
     E_OPTIONAL+=("${e_opt}")
     E_PRESERVE+=("${e_pres}")
     E_RECURSIVE+=("${e_rec}")
 done <<< "${ENTRIES_RAW}"
+
+if [[ "${FENCE_REFUSALS}" -gt 0 ]]; then
+    log_err "the declared scope names ${FENCE_REFUSALS} path(s) this repair must never walk: ${SCOPE_FILE}"
+    log_err "nothing was touched, no record was written, no marker was written"
+    exit 2
+fi
 
 declare -a ORDER=()
 for idx in "${!E_PATH[@]}"; do
@@ -567,17 +691,59 @@ record_absent() {
 # Ownership mutation
 # ---------------------------------------------------------------------------
 
+# WHY chown's STDERR IS CAPTURED AND NOT DISCARDED
+#   An earlier revision sent it to /dev/null, so the per-item report read
+#       FAILED <path> — cannot change ownership to 1000:1000 (<label>)
+#   and nothing else. MEASURED 2026-08-25 with an injected EROFS from chown: the
+#   string "Read-only file system" appeared ZERO times in the entire run output.
+#   EPERM (the identity is wrong), EROFS (the filesystem is mounted read-only)
+#   and ENOENT (it vanished under us) are three DIFFERENT remediations behind
+#   one undifferentiated sentence, and §11.4.201(5) requires every refusal to
+#   print its resolved evidence. The reason is now carried to the operator.
+#
+#   Captured via command substitution rather than a temp file so it has no
+#   lifetime to manage and cannot outlive the call. No background subshell is
+#   involved, so the §11.4.201(12) command-substitution/watchdog footgun does
+#   not apply here.
+#
+#   CHOWN_ERR / UNSHARE_ERR are deliberately globals: flush_batch reads them
+#   after the call, and a `local` would be invisible to it.
+CHOWN_ERR=""
+UNSHARE_ERR=""
+
 # chown_paths <paths…> — plain chown over a whole batch. Returns non-zero if any
-# path failed; chown itself continues past individual failures.
+# path failed; chown itself continues past individual failures. Sets CHOWN_ERR
+# to whatever chown said on the way out.
 chown_paths() {
-    chown -h -- "${OP_UID}:${OP_GID}" "$@" 2>/dev/null
+    CHOWN_ERR=""
+    CHOWN_ERR="$(chown -h -- "${OP_UID}:${OP_GID}" "$@" 2>&1 >/dev/null)" && return 0
+    return 1
 }
 
 # unshare_chown_paths <paths…> — the namespace fallback. Inside `<runtime> unshare`
 # the host operator uid IS uid 0, so 0:0 is what makes the item host-operator-owned.
 unshare_chown_paths() {
-    [[ -n "${RUNTIME}" ]] || return 1
-    "${RUNTIME}" unshare chown -h -- 0:0 "$@" >/dev/null 2>&1
+    UNSHARE_ERR=""
+    if [[ -z "${RUNTIME}" ]]; then
+        UNSHARE_ERR="no container runtime available for the namespace fallback"
+        return 1
+    fi
+    UNSHARE_ERR="$("${RUNTIME}" unshare chown -h -- 0:0 "$@" 2>&1 >/dev/null)" && return 0
+    return 1
+}
+
+# failure_reason — the operator-facing WHY for the item that just failed, built
+# from what chown and the namespace fallback actually said. Never empty: a
+# refusal that cannot say why must say THAT, rather than say nothing.
+failure_reason() {
+    local r=""
+    [[ -n "${CHOWN_ERR}" ]]   && r="chown: ${CHOWN_ERR}"
+    if [[ -n "${UNSHARE_ERR}" ]]; then
+        [[ -n "${r}" ]] && r="${r}; "
+        r="${r}fallback: ${UNSHARE_ERR}"
+    fi
+    [[ -n "${r}" ]] || r="no reason reported by chown or the namespace fallback"
+    printf '%s' "${r//$'\n'/; }"
 }
 
 # repair_one <path> — plain first, namespace fallback second. Returns non-zero
@@ -601,6 +767,12 @@ TMP_ERR="${TMP_DIR}/find_err"
 
 TOTAL_CHANGED=0
 TOTAL_FAILED=0
+# FR-015 mode restores that failed. Distinct from TOTAL_FAILED because the item
+# WAS chowned: it is a broken preservation promise, not an unrepaired item.
+TOTAL_MODE_FAILED=0
+# The declared root of the entry currently being walked, so a failure ON that
+# root can be diagnosed differently from a failure on a file inside it (NIT-2).
+CURRENT_ENTRY_ROOT=""
 RC=0
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
@@ -637,7 +809,29 @@ flush_batch() {
             else
                 TOTAL_FAILED=$((TOTAL_FAILED + 1))
                 RC=1
-                log_err "FAILED ${p} — cannot change ownership to ${OP_UID}:${OP_GID} (${label})"
+                log_err "FAILED ${p} — cannot change ownership to ${OP_UID}:${OP_GID} (${label}): $(failure_reason)"
+                # NIT-2: the walk names the DECLARED ROOT itself, so the single
+                # most likely failure here is a root-owned mount point — the
+                # ordinary state of a removable disk before its filesystem hands
+                # ownership over. Reported identically to a bad file, the
+                # operator could not tell the two apart, and the consequence is
+                # not cosmetic: the run exits 1, no marker is written, and the
+                # whole library is re-walked on EVERY subsequent start.
+                #
+                # The failure itself is PRESERVED, deliberately. An in-scope item
+                # that could not be repaired must not be reported as repaired
+                # (§11.4.201), and §11.4.120 forbids weakening an assertion to
+                # make a gate pass. What is added is the diagnosis, so the
+                # remediation — fix the MOUNT, not the files — is reachable from
+                # the message instead of requiring the operator to know that the
+                # declared root is walked alongside its contents.
+                if [[ "${p}" == "${CURRENT_ENTRY_ROOT}" ]]; then
+                    log_err "  ^ that path is the DECLARED ROOT of this entry, not a file inside it."
+                    log_err "    A declared root that cannot be chowned is usually a mount point owned by another"
+                    log_err "    identity: the remedy is the mount (mount options / ownership of the mountpoint),"
+                    log_err "    not the files under it. Until it is resolved this run exits 1, writes no marker,"
+                    log_err "    and the next start re-walks the whole declared scope."
+                fi
                 # `new_uid`/`new_gid` here are the identity that was ATTEMPTED;
                 # `outcome: failed` is what says it was not applied.
                 record_emit "${p}" "${BATCH_PUID[${i}]}" "${BATCH_PGID[${i}]}" "${BATCH_MODES[${i}]}" "failed"
@@ -699,7 +893,32 @@ flush_batch() {
                 _mode="$(( 8#${_mode} & 8#1777 ))"
                 _mode="$(printf '%o' "${_mode}")"
             fi
-            chmod "${_mode}" -- "${BATCH_PATHS[${i}]}" 2>/dev/null || true
+            # A FAILED MODE RESTORE IS NOT SWALLOWED.
+            #
+            # This is the step that DELIVERS FR-015 ("the exact bits are
+            # preserved"). An earlier revision ended it with `2>/dev/null || true`,
+            # so it reported nothing at all: no log line, no record entry, no
+            # effect on the exit code. MEASURED 2026-08-25 with an injected chmod
+            # failure on a preserve_mode entry, every restore failed and the run
+            # still printed "complete: 2 item(s) repaired", exited 0, and WROTE A
+            # COMPLETION MARKER — FR-015 claimed and never delivered.
+            #
+            # The direction is narrowing-only (chown(2) can only CLEAR
+            # setuid/setgid, never set them), so a failed restore is not an
+            # access WIDENING and is not a security regression. It is a broken
+            # promise, and §11.4/§11.4.1 make an unkept promise reported as
+            # success the defect — so it is named, recorded, and it blocks the
+            # marker so the next run retries.
+            #
+            # Counted separately from TOTAL_FAILED: the item WAS chowned and is
+            # already counted in TOTAL_CHANGED, and adding it to the failure
+            # count as well would report one item twice.
+            if ! _chmod_err="$(chmod "${_mode}" -- "${BATCH_PATHS[${i}]}" 2>&1 >/dev/null)"; then
+                TOTAL_MODE_FAILED=$((TOTAL_MODE_FAILED + 1))
+                RC=1
+                log_err "FAILED ${BATCH_PATHS[${i}]} — ownership repaired, but mode ${_mode} could not be restored (FR-015): ${_chmod_err:-no reason reported by chmod}"
+                record_emit "${BATCH_PATHS[${i}]}" "${BATCH_PUID[${i}]}" "${BATCH_PGID[${i}]}" "${BATCH_MODES[${i}]}" "mode-restore-failed"
+            fi
         fi
     done
 
@@ -719,6 +938,7 @@ for idx in "${ORDER[@]}"; do
     e_pres="${E_PRESERVE[${idx}]}"
     e_rec="${E_RECURSIVE[${idx}]}"
     label="${entry_no}/${#ORDER[@]} ${e_path}"
+    CURRENT_ENTRY_ROOT="${e_path}"
 
     if [[ ! -e "${e_path}" ]]; then
         if [[ "${e_opt}" == "1" ]]; then
@@ -834,6 +1054,6 @@ if [[ "${RC}" -eq 0 ]]; then
 fi
 
 # No marker: this pass did not fully succeed, so the next start must resume.
-log_err "incomplete: ${TOTAL_CHANGED} item(s) repaired, ${TOTAL_FAILED} item(s) could not be repaired (listed above)"
+log_err "incomplete: ${TOTAL_CHANGED} item(s) repaired, ${TOTAL_FAILED} item(s) could not be repaired, ${TOTAL_MODE_FAILED} item(s) repaired but could not have their mode restored (all listed above)"
 log_err "no marker written — the next run will retry the whole declared scope"
 exit 1

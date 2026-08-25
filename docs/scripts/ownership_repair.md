@@ -1,7 +1,7 @@
 # `scripts/ownership_repair.sh` — Ownership Repair
 
-**Revision:** 2
-**Last modified:** 2026-08-21T19:05:00Z
+**Revision:** 3
+**Last modified:** 2026-08-25T00:00:00Z
 **Purpose:** Operator guide for the tool that brings pre-existing content back
 under the ownership of the person who started the system.
 **Last verified:** 2026-08-21
@@ -175,7 +175,66 @@ gates and test suites run the script without touching a runtime.
 |---|---|
 | `0` | Every in-scope item is operator-owned — repaired now, or already correct. The marker is written. |
 | `1` | At least one item could not be repaired. Each is named individually. **No marker is written**, so the next run retries the whole declared scope. |
-| `2` | Could not run: the scope is missing/unparseable, the fingerprint cannot be computed, the state directory cannot be created, or the change record cannot be opened for append. Nothing was touched. |
+| `2` | Could not run: the scope is missing/unparseable, **the scope declares zero locations**, **the scope declares a path this repair must never walk** (see *The declared-path fence* below), the fingerprint cannot be computed, the state directory cannot be created, or the change record cannot be opened for append. Nothing was touched. |
+
+### Why an empty scope is `2` and not `0`
+
+A scope file that reads cleanly but yields **no** locations walked nothing and
+therefore asserted nothing. Before Revision 3 that produced exit `0` and a
+completion marker carrying the fingerprint of the empty string
+(`e3b0c442…b855`), which `start.sh` then read as "already repaired" — so the
+repair was skipped on every subsequent start. Three real shapes produce it:
+
+```yaml
+paths: []            # an explicitly empty list
+```
+```yaml
+path:                # the top-level key mistyped — valid YAML, parses, yields nothing
+  - path: "config"
+```
+```yaml
+paths:
+  - path: "${QBITTORRENT_DATA_DIR}"   # …with the variable unset, expands to nothing
+```
+
+All three now exit `2`. `scripts/ownership_precondition.sh` has always refused
+them the same way; the two consumers of one scope file now agree.
+
+### The declared-path fence
+
+The walk only ever names items *under* a declared path — but until Revision 3
+nothing constrained what a declared path could **be**, and the shipped scope
+declares `${QBITTORRENT_DATA_DIR:-/mnt/DATA}`, whose value comes from `.env`.
+Measured 2026-08-25: with `QBITTORRENT_DATA_DIR=/` the repair really did start
+`find / \( ! -uid … \)` — a recursive walk of the whole filesystem.
+
+A declared path is now checked before anything is walked:
+
+| Entry written as | Rule |
+|---|---|
+| repo-relative (`config`, `.env`, `tmp`) | after `..`/`.`/`//` are resolved it must still be **inside the project root** |
+| absolute (`/mnt/DATA`, `${QBITTORRENT_DATA_DIR}`) | at least **2 path components**, and never a system tree (`/bin /boot /dev /etc /lib /lib32 /lib64 /libx32 /proc /root /sbin /sys /usr /var`) nor anything under one |
+
+The floor is 2 because the shipped default `/mnt/DATA` has exactly 2 — it is
+the depth the shipped configuration forces, not a number picked by taste. The
+denylist is needed as well as the floor: `/usr/lib` has 2 components and clears
+the floor. `/run`, `/home`, `/media`, `/mnt`, `/opt`, `/srv` and `/tmp` are
+deliberately **not** denylisted — this host's real library is
+`/run/media/<user>/<disk>/Downloads`, and refusing it would be a false alarm
+about a correct configuration.
+
+**One refused entry refuses the whole run** (exit `2`, nothing touched). A scope
+naming such a path is not one the repair trusts in part.
+
+**What the fence does not do** (§11.4.6): it bounds the *shape* of a declared
+path. It cannot decide that a well-shaped absolute path is the tree you meant —
+an absolute path outside the project with enough depth is exactly what a
+download root is, so it is accepted. It also does not require the path to be
+operator-owned, because a root-owned mount point with operator-owned content
+beneath it is the ordinary state of a removable disk.
+
+If you see `REFUSED <path> — …`, fix `config/owned_paths.yaml` or the
+environment variable it reads; the message names the resolved path and the rule.
 
 Two signal exits are also possible and are deliberate: `130` on `SIGINT` and
 `143` on `SIGTERM`, both printing `no marker written; the next run resumes`.
@@ -196,6 +255,32 @@ Exiting `0` there would make `--dry-run` useless as a pre-flight check.
   read *and* a non-zero status; both halves are honoured. The readable part is
   repaired, the unreadable part is a named failure line, and the run exits `1`.
   It is never a silent gap.
+- **A hardlink inside the scope** → `chown(2)` acts on the **inode**, so if an
+  in-scope name and an out-of-scope name share one inode, repairing the
+  in-scope name changes the out-of-scope file's owner too. Measured: `1000:10`
+  → `1000:1000`. The reach is bounded — hardlinks cannot cross filesystems, it
+  needs a writer inside the scope able to create the link, it moves ownership
+  only (never content), and the new owner is always *you*. It is **not** fenced,
+  deliberately: refusing every item with more than one link would refuse the
+  ordinary case, because hardlinking is how a torrent client and a media manager
+  share one payload between the download tree and the library.
+- **A declared root that cannot be chowned** → reported with an explicit note
+  that the failing item is the *declared root of the entry*, not a file inside
+  it. The usual cause is a mount point owned by another identity, and the remedy
+  is the mount, not the files. The run still exits `1` and writes no marker, so
+  the whole scope is re-walked next start — that is deliberate, but it means an
+  unresolved mount point makes every start re-walk the library.
+- **A mode restore that fails** → the item's ownership *was* repaired, but the
+  FR-015 bit-restore did not happen. It is named
+  (`FAILED … mode … could not be restored (FR-015): <reason>`), recorded with
+  `outcome: "mode-restore-failed"`, and the run exits `1` with no marker. The
+  direction is narrowing-only, so it is never an access *widening* — but "the
+  exact bits are preserved" is a promise, and an unkept promise is not reported
+  as success.
+- **A chown that fails** → the reason `chown` (and the namespace fallback) gave
+  is printed with the failing path, so `EPERM`, `EROFS` and `ENOENT` — three
+  different remedies — are distinguishable instead of collapsing into one
+  sentence.
 - **A symlink inside the scope** → `chown -h` acts on the link itself, never on
   its target. Without `-h`, a symlink pointing anywhere on the filesystem would
   let the repair mutate a file **outside** the declared scope; FR-005 requires
@@ -445,3 +530,29 @@ test-first RED observed in `tests/unit/test_ownership_repair.sh` before the fix:
 * a destroyed record named by the marker is reported (Case 11).
 
 Suite: 34 assertions passing before this change, 44 after, 0 failed, 0 skipped.
+
+2026-08-25 (Revision 3) — re-verified after the T028 independent review returned
+NO-GO (0 blocking, 2 important, 3 minor, 2 nit). Every remediation captured a
+RED in `tests/unit/test_ownership_repair.sh` against the pre-fix artifact before
+its fix existed, and every new test was proven to catch its own negation by a
+paired §1.1 mutation:
+
+* **an empty scope is no longer a completed repair** (Case 16). Measured
+  pre-fix: `paths: []`, a mistyped top-level key, and an unset `${VAR}` each
+  exited `0` and wrote a marker with the fingerprint of the empty string.
+* **the declared path is itself fenced** (Case 17). Measured pre-fix: the
+  shipped `${QBITTORRENT_DATA_DIR:-/mnt/DATA}` entry with the variable
+  repointed launched `find /` over the whole filesystem — observed in `ps` and
+  killed by pid. `..` was never resolved, and `absolutise("/")` returned `/`.
+* **the hardlink escape is documented instead of denied** (Case 18) — the
+  header had claimed out-of-scope reach was impossible by construction; it is
+  not, and the correction is machine-checked against the measured behaviour.
+* **a failed `chown` prints its reason** (Case 19); **a failed mode restore is
+  reported and blocks the marker** (Case 20); **the fingerprint comment
+  describes the environment-expanded parse it is actually computed from**
+  (Case 21); **a failure on the declared root is diagnosed as such** (Case 22).
+
+Suite: 44 assertions passing before this change, 86 after, 0 failed, 0 skipped.
+The live shipped scope was re-checked against the new fence with the real
+`.env`: all six declared entries ACCEPT, and the scope fingerprint is byte-identical
+to the pre-change one, so no existing marker is invalidated.

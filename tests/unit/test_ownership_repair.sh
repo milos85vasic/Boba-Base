@@ -158,6 +158,13 @@ echo " 12 record rotation : a superseded change record is preserved as its own a
 echo " 13 state dir       : OWNERSHIP_STATE_DIR overrides; the default path is unchanged"
 echo " 14 relative scope  : a repo-relative entry resolves against the project root (E1)"
 echo " 15 dotenv shape    : the shipped .env entry keeps a 600 credential file at 600"
+echo " 16 empty scope     : a scope yielding ZERO locations is 'could not run', not 'complete'"
+echo " 17 declared-path fence: a scope may not name /, a system tree, or a .. escape"
+echo " 18 hardlink claim   : the out-of-scope hardlink reach is measured and documented"
+echo " 19 chown reason     : a failed chown reports WHY it failed"
+echo " 20 mode-restore     : a failed FR-015 mode restore is reported, not swallowed"
+echo " 21 fingerprint prose: the comment matches what the fingerprint is computed from"
+echo " 22 declared-root    : a failure on the declared root itself is named as such"
 echo
 
 # ---------------------------------------------------------------------------
@@ -1386,5 +1393,717 @@ else
     fi
 fi
 
+
+
+# ===========================================================================
+# T028 REVIEW REMEDIATION — Cases 16-22.
+#
+# The T028 independent review returned NO-GO with 2 IMPORTANT, 3 MINOR and
+# 2 NIT findings, and MEASURED that this suite had ZERO coverage for the two
+# IMPORTANT ones:
+#
+#     grep -niE 'empty scope|no locations|paths: \[\]|absolute|traversal' \
+#          tests/unit/test_ownership_repair.sh          ->  0
+#
+# A zero is not a finding until the instrument is proven able to see through
+# the SAME path (§11.4.201(7)(b)). Re-measured 2026-08-25 with a same-shape
+# needle (identical tool, identical -E alternation, identical file):
+#
+#     grep -ncE 'scope|marker|fixture|record|symlink' <this file>   ->  257
+#     grep -ncE 'zzzz_nonexistent_token_qqq'          <this file>   ->    0
+#
+# The instrument sees, the negative control is silent, so the 0 was real: the
+# gaps below were genuinely uncovered, and every case here captured a RED
+# against the pre-fix artifact before the fix existed.
+#
+# HELPERS USED ONLY BY THESE CASES
+# ---------------------------------------------------------------------------
+# Two findings (MINOR-2, MINOR-3) are about what the run REPORTS when `chown`
+# or `chmod` FAILS. This suite's own header measured (2026-08-21, three ways)
+# that a real foreign-uid item is NOT constructible unprivileged, and a real
+# unprivileged chown/chmod failure on an item the walk batched is subject to
+# the same wall: every fixture item is created BY this account, so this account
+# owns it, so chown-to-self and chmod-on-own both succeed.
+#
+# The failure is therefore injected by PATH, not by a production test hook:
+# a directory holding a `chown`/`chmod` shim is prepended to PATH for the run.
+# This is the environment the run executes in, not a branch inside the artifact
+# (§11.4.27 forbids test scaffolding in production code, and there is none
+# here — the artifact is byte-identical to the shipped one, sha256-verified by
+# sb_new). The REAL call site, the REAL failure handling and the REAL operator
+# output are what get exercised.
+#
+# §11.4.115(G) PRECONDITION PROVENANCE: `constructed`, and stated as such.
+# The constructed part is the CAUSE of the failure (an injected non-zero exit),
+# not the condition under test — the finding is that a non-zero chown/chmod is
+# reported without its reason (MINOR-2) or not reported at all (MINOR-3), and
+# that condition is reproduced exactly. No defect-closing claim is made about
+# any particular errno reaching the operator on a real filesystem.
+#
+# §11.4.263: the shims exec nothing and signal nothing; they print and exit.
+# ---------------------------------------------------------------------------
+
+# shim_dir <sb> <tool> <body> — build a PATH shim directory containing ONE
+# executable named <tool>. Echoes the directory. Lives inside the sandbox, so
+# the EXIT trap reaps it (§11.4.14).
+shim_dir() {
+    local sb="$1" tool="$2" body="$3" d
+    d="$(mktemp -d "${sb}/shim.XXXXXX")"
+    printf '%s\n' "${body}" > "${d}/${tool}"
+    chmod +x "${d}/${tool}"
+    printf '%s\n' "${d}"
+}
+
+# run_repair_with_path <sb> <shim-dir> [args…] — run_repair with the shim dir
+# prepended to PATH. `nice`/`ionice` are deliberately NOT shimmed, so the
+# artifact's own host-safety re-exec still happens exactly as in production.
+run_repair_with_path() {
+    local sb="$1" shim="$2"; shift 2
+    RUN_OUT="$(
+        cd "${sb}" && PATH="${shim}:${PATH}" \
+            OWNED_PATHS_FILE="${sb}/config/owned_paths.yaml" \
+            bash "${sb}/scripts/ownership_repair.sh" \
+                --scope "${sb}/config/owned_paths.yaml" "$@" 2>&1
+    )"
+    RUN_RC=$?
+    return 0
+}
+
+# sb_raw_scope <sb> <yaml-text> — write a scope file VERBATIM. sb_scope() can
+# only emit well-formed entry rows, and three of the four shapes below are
+# precisely the malformed/empty ones it cannot express.
+sb_raw_scope() { printf '%s\n' "$2" > "$1/config/owned_paths.yaml"; }
+
+# fence_verdict <sb> <path> <was_relative> <project_root> — call the fence
+# predicate DIRECTLY. Used for shapes that cannot be exercised end to end
+# because the path must not be created (e.g. `/mnt/DATA`, `/etc/passwd`).
+# Echoes "accept" or "refuse"; "missing" when the predicate does not exist.
+fence_verdict() {
+    local sb="$1" p="$2" rel="$3" root="$4"
+    (
+        # shellcheck disable=SC1090
+        source "${sb}/scripts/lib/ownership.sh"
+        if ! declare -F ownership_path_fence >/dev/null 2>&1; then
+            printf 'missing\n'; exit 0
+        fi
+        if ownership_path_fence "${p}" "${rel}" "${root}" >/dev/null 2>&1; then
+            printf 'accept\n'
+        else
+            printf 'refuse\n'
+        fi
+    )
+}
+
+# ===========================================================================
+# CASE 16 — AN EMPTY SCOPE IS NOT A COMPLETED REPAIR (IMPORTANT-1, §11.4.252).
+#
+# The artifact guards an UNREADABLE scope and an UNPARSEABLE scope (exit 2) and
+# its own header at scripts/ownership_repair.sh:351-353 declares why:
+#
+#   "Reporting an unreadable scope as an empty scope would be the
+#    §11.4.201(6) false-null: a blind instrument and a clean tree return the
+#    same quiet zero."
+#
+# It defended only half of what it claimed. A scope that is valid YAML yielding
+# ZERO entries walked nothing, asserted nothing, and — measured against the
+# pre-fix artifact, 2026-08-25 — exited 0 and WROTE A COMPLETION MARKER
+# carrying fingerprint e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,
+# which is sha256("") — the fingerprint of nothing. `start.sh` then reads that
+# marker as "already repaired" and skips the walk on every subsequent start.
+#
+# Three shapes, all three measured green-and-complete before the fix:
+#   (a) `paths: []`                — an explicitly empty list
+#   (b) the top-level key mistyped `path:` instead of `paths:` — valid YAML,
+#       parses cleanly, yields nothing
+#   (c) every entry's ${VAR} expanding empty — the shipped scope's FIRST entry
+#       is `${QBITTORRENT_DATA_DIR:-/mnt/DATA}`, so this is a live shape
+#
+# The sibling scripts/ownership_precondition.sh:1011-1013 already refuses all
+# three (exit 2). This case pins the repair to the SAME decision — §11.4.251:
+# one predicate, both callers, never a second dialect.
+#
+# WHY exit 2 AND NOT exit 1: exit 1 means "an item could not be repaired" and
+# invites a retry. Nothing was wrong with any item; the SCOPE is unusable, and
+# the contract already reserves 2 for "could not run" (Case 7b pins that
+# boundary from the other side).
+# ===========================================================================
+echo
+echo "Case 16: a scope that yields ZERO locations is 'could not run', not 'complete' (IMPORTANT-1)"
+
+# Non-vacuity control FIRST (§11.4.201(7)(b)): the same sandbox shape with a
+# REAL entry must exit 0 and DO write a marker. Without this, "exit 2 / no
+# marker" below could be produced by a sandbox that never ran at all.
+SB16C="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN16C="${SB16C}/fixture/nonempty"
+seed_tree "${IN16C}" 3 "${WRONG_GID}"
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN16C}" | sb_scope "${SB16C}"
+run_repair "${SB16C}"
+if [[ "${RUN_RC}" -eq 0 ]] && marker_present "${SB16C}"; then
+    pass "empty scope [control needle]: a NON-empty scope in the same sandbox shape exits 0 and writes a marker — the assertions below are not vacuous"
+    _C16_NEEDLE=1
+else
+    _C16_NEEDLE=0
+    fail "empty scope [control needle]: a non-empty scope gave rc=${RUN_RC} / marker=$(marker_present "${SB16C}" && echo present || echo absent) — the instrument is blind, so no 'refused' verdict below can be trusted"
+fi
+
+_c16_probe() {
+    local label="$1" yaml="$2" sb
+    sb="$(sb_new)" || { fail "empty scope [${label}]: could not build sandbox"; return 0; }
+    mkdir -p "${sb}/fixture/present"
+    : > "${sb}/fixture/present/f.bin"
+    sb_raw_scope "${sb}" "${yaml}"
+    run_repair "${sb}"
+
+    if [[ "${RUN_RC}" -eq 2 ]]; then
+        pass "empty scope [${label}]: exit 2 — the run reported 'could not run' rather than 'complete'"
+    elif [[ "${RUN_RC}" -eq 0 ]]; then
+        fail "empty scope [${label}]: exit 0 — a run that walked ZERO locations reported SUCCESS (§11.4.252 fail-open; §11.4.201(6) false-null)"
+    else
+        fail "empty scope [${label}]: exit ${RUN_RC} — the contract reserves 2 for 'could not run'"
+    fi
+
+    if [[ "${_C16_NEEDLE}" -ne 1 ]]; then
+        fail "empty scope [${label}]: marker verdict WITHHELD — the control needle above never fired, so 'no marker' cannot be distinguished from 'detector blind' (§11.4.201(7)(b))"
+    elif marker_present "${sb}"; then
+        fail "empty scope [${label}]: a COMPLETION MARKER was written for a scope of zero locations — start.sh will skip the repair from now on"
+    else
+        pass "empty scope [${label}]: no completion marker written — the next start still repairs"
+    fi
+
+    if printf '%s' "${RUN_OUT}" | grep -qiE 'no locations|zero locations'; then
+        pass "empty scope [${label}]: the operator is told the scope declares no locations"
+    else
+        fail "empty scope [${label}]: output never says the scope is empty — the refusal must print its resolved evidence (§11.4.201(5))"
+    fi
+}
+
+_c16_probe "paths: []" 'schema_version: 1
+paths: []'
+
+_c16_probe "top-level key mistyped 'path:'" 'schema_version: 1
+path:
+  - path: "fixture/present"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+_c16_probe 'every ${VAR} expands empty' 'schema_version: 1
+paths:
+  - path: "${BOBA_NO_SUCH_VARIABLE_QQQ}"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+# ===========================================================================
+# CASE 17 — THE DECLARED PATH ITSELF IS FENCED (IMPORTANT-2, the dangerous one).
+#
+# scripts/ownership_repair.sh:741-742 claimed:
+#   "The filter IS the scope fence: only items under a declared path are ever
+#    named, so an out-of-scope item cannot be reached even by accident."
+# That is circular. It fences to the DECLARED path; nothing constrained what a
+# declared path may BE. `absolutise()` prepended PROJECT_ROOT to a relative
+# path and otherwise passed text through — no normalisation, no bound.
+#
+# MEASURED against the pre-fix artifact (2026-08-25, all under --dry-run):
+#   * an absolute path outside the project      -> 2 items named for chown
+#   * "inside/../../mirror/outside_tree"        -> named; `..` never resolved
+#   * the shipped entry `${QBITTORRENT_DATA_DIR:-/mnt/DATA}` copied VERBATIM
+#     with the env var repointed                -> walked an arbitrary tree
+#   * absolutise("/") == "/"  (the `|| p="/"` branch at :381-384)
+#     -> a recursive walk of the entire filesystem
+#
+# `.env` is untracked and unreviewed, and carries QBITTORRENT_DATA_DIR, so an
+# unreviewed file fully determined which tree got recursively chowned.
+#
+# THE FENCE THIS CASE PINS (and why it is shaped this way)
+# ---------------------------------------------------------------------------
+# A naive "must be under PROJECT_ROOT" rule would BREAK the feature: the
+# download root is INTENTIONALLY outside the project. The fence therefore
+# splits on how the entry was written:
+#
+#   F0 normalise  — `.`/`..`/`//` collapsed LEXICALLY, no symlink resolution.
+#                   Lexical because resolving symlinks would be a TOCTOU (the
+#                   link is swappable between check and walk) and because
+#                   find's default -P already refuses to descend a symlinked
+#                   root, so nothing is gained by following one.
+#   F1 relative   — a repo-relative entry DENOTES something in the repository,
+#                   so after F0 it must still be inside PROJECT_ROOT. An entry
+#                   that climbs out with `..` was written to escape, and the
+#                   scope format does not license that.
+#   F2 absolute   — at least 2 path components. MEASURED: the shipped default
+#                   `/mnt/DATA` has exactly 2, so 2 is the floor the shipped
+#                   configuration forces. Below it lies `/` itself and the bare
+#                   top-level directories.
+#   F3 absolute   — never a system tree (`/etc`, `/usr`, `/proc`, …) nor
+#                   anything under one. F2 alone does NOT catch these:
+#                   `/usr/lib` has 2 components and passes the floor.
+#
+# `/run` is deliberately NOT a system tree here: MEASURED from this host's
+# `.env`, the operator's real library is /run/media/milosvasic/DATA4TB/Downloads
+# (5 components). A denylist that swallowed /run would be a §11.4.201(1)
+# false-positive refusal of the live configuration.
+#
+# HONEST BOUNDARY (§11.4.6), stated rather than papered over: this fence bounds
+# the SHAPE of a declared path. It does NOT and cannot decide that a
+# well-shaped absolute path is the tree the operator meant — an absolute
+# out-of-project path with enough depth is exactly what the download root is,
+# so it must be accepted. What it removes is the class the review traced to a
+# catastrophic outcome: filesystem roots, bare top-level directories, system
+# trees, and `..` escapes.
+# ===========================================================================
+echo
+echo "Case 17: the DECLARED path is itself fenced — a scope may not name /, a system tree, or a .. escape (IMPORTANT-2)"
+
+# --- 17d FIRST: the golden-FALSE / false-positive guard (§11.4.201(1)). ------
+# Every refusal below is worthless if the fence refuses everything. The two
+# LEGITIMATE shapes must still work, end to end, and actually repair.
+SB17OK="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN17ABS="${SB17OK}/fixture/legit_abs"      # absolute, outside no-one's project
+IN17REL="rel_legit"                         # repo-relative, inside PROJECT_ROOT
+seed_tree "${IN17ABS}" 3 "${WRONG_GID}"
+seed_tree "${SB17OK}/${IN17REL}" 3 "${WRONG_GID}"
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n%s\tdownloads\tfalse\tfalse\ttrue\n' \
+    "${IN17ABS}" "${IN17REL}" | sb_scope "${SB17OK}"
+_C17_WRONG_BEFORE=$(( $(wrong_owned_count "${IN17ABS}") + $(wrong_owned_count "${SB17OK}/${IN17REL}") ))
+run_repair "${SB17OK}"
+if [[ "${_C17_WRONG_BEFORE}" -eq 0 ]]; then
+    fail "fence [legitimate shapes]: fixture seeded 0 wrongly-owned items — the case is blind"
+    _C17_NEEDLE=0
+elif [[ "${RUN_RC}" -ne 0 ]]; then
+    _C17_NEEDLE=0
+    fail "fence [legitimate shapes]: exit ${RUN_RC} — the fence REFUSED a legitimate scope (absolute out-of-project download root + repo-relative entry). That is the §11.4.201(1) false-positive refusal the fence must not be."
+    printf '%s\n' "${RUN_OUT}" | sed 's/^/        /' | head -6
+elif [[ "$(wrong_owned_count "${IN17ABS}")" -ne 0 || "$(wrong_owned_count "${SB17OK}/${IN17REL}")" -ne 0 ]]; then
+    _C17_NEEDLE=0
+    fail "fence [legitimate shapes]: exit 0 but the trees were NOT repaired"
+else
+    _C17_NEEDLE=1
+    pass "fence [legitimate shapes]: an absolute out-of-project path AND a repo-relative path are both accepted and repaired (the fence is not a blanket refusal)"
+fi
+
+# _c17_refuse <label> <yaml> [env-assignments…] — the scope must be REFUSED
+# with exit 2, and NOTHING may be named for chown.
+#
+# TWO SAFETY BELTS, and they are not decoration — this case ALREADY ran away
+# once. MEASURED 2026-08-25: an earlier draft of 17a declared the shipped
+# `${QBITTORRENT_DATA_DIR:-/mnt/DATA}` entry with QBITTORRENT_DATA_DIR=/ and the
+# pre-fix artifact really did start
+#     find / \( ! -uid 1000 -o ! -gid 1000 \) -printf '%U\t%G\t%m\t%p\0'
+# — a walk of the entire filesystem, observed in `ps` and killed by pid. That is
+# IMPORTANT-2 reproduced directly rather than traced in code, and it is why the
+# probes below never point a possibly-unfenced walk at a tree that exists:
+#
+#   BELT 1  --dry-run: even unfenced, the RED reproduces the defect and never
+#           performs it — nothing is mutated on any path, ever.
+#   BELT 2  every dangerous shape names a NON-EXISTENT path of the dangerous
+#           SHAPE. The fence is a property of the path, not of its existence,
+#           so the shape is what must be refused; and an unfenced run hits the
+#           artifact's "declared path does not exist" branch (exit 1) instead of
+#           walking anything. The `/` and `/mnt` shapes — the ones that cannot
+#           be made non-existent — are pinned by the direct predicate calls in
+#           17e, which resolve a verdict without walking at all.
+#   BELT 3  `timeout`: if a future change ever makes an unfenced walk reachable
+#           here again, it is bounded to seconds instead of the operator's disk.
+_c17_refuse() {
+    local label="$1" yaml="$2"; shift 2
+    local sb out rc
+    sb="$(sb_new)" || { fail "fence [${label}]: could not build sandbox"; return 0; }
+    sb_raw_scope "${sb}" "${yaml}"
+    out="$(cd "${sb}" && timeout 25 env "$@" OWNED_PATHS_FILE="${sb}/config/owned_paths.yaml" \
+        bash "${sb}/scripts/ownership_repair.sh" \
+        --scope "${sb}/config/owned_paths.yaml" --dry-run 2>&1)"
+    rc=$?
+    if [[ "${rc}" -eq 124 ]]; then
+        fail "fence [${label}]: the run did not refuse and was still walking after 25s — the declared path was ACCEPTED and the walk started (timeout belt fired)"
+        return 0
+    fi
+
+    if [[ "${rc}" -eq 2 ]]; then
+        pass "fence [${label}]: exit 2 — refused before anything was walked"
+    else
+        fail "fence [${label}]: exit ${rc} — the scope was ACCEPTED; a declared path of this shape must be refused (exit 2, 'could not run')"
+    fi
+
+    if printf '%s' "${out}" | grep -q 'would chown'; then
+        fail "fence [${label}]: the run NAMED items for chown — the walk reached a tree this shape must never reach"
+        printf '%s\n' "${out}" | grep 'would chown' | head -2 | sed 's/^/        /'
+    else
+        pass "fence [${label}]: no item was named for chown"
+    fi
+
+    if printf '%s' "${out}" | grep -q 'REFUSED'; then
+        pass "fence [${label}]: the refusal names the offending entry (§11.4.201(5) resolved evidence)"
+    else
+        fail "fence [${label}]: no REFUSED line — a refusal must print what it refused and why"
+    fi
+}
+
+# 17a — THE LIVE VECTOR. The entry is byte-for-byte the shipped
+# config/owned_paths.yaml entry; only the environment moves — which is the whole
+# finding, because `.env` is untracked, unreviewed, and carries that variable.
+# The value is a bare top-level directory rather than `/` itself for the belt-2
+# reason above; `/` is pinned by the predicate call in 17e.
+_c17_refuse 'shipped entry, env repointed to a bare top-level dir' 'schema_version: 1
+paths:
+  - path: "${QBITTORRENT_DATA_DIR:-/mnt/DATA}"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true' QBITTORRENT_DATA_DIR=/boba_fence_probe_qqq
+
+# 17b — a repo-relative entry that climbs out of the project with `..`.
+_c17_refuse 'relative entry escaping the project root with ..' 'schema_version: 1
+paths:
+  - path: "fixture/../../boba_fence_escape_probe_qqq"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+# 17c — an absolute system tree. Note this one has TWO components, so the
+# depth floor alone does not catch it; the system-tree rule is what does.
+_c17_refuse 'absolute system tree (under /usr/lib)' 'schema_version: 1
+paths:
+  - path: "/usr/lib/boba_fence_probe_qqq"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+# 17e — the fence PREDICATE, called directly, on shapes that must never be
+# created on this host to be tested (§11.4.201(11): probe the artifact, and do
+# not manufacture a system directory to do it).
+_C17_ROOT="/srv/example/project"
+_c17_pred() {
+    local label="$1" p="$2" rel="$3" want="$4" got
+    got="$(fence_verdict "${SB17OK}" "${p}" "${rel}" "${_C17_ROOT}")"
+    if [[ "${got}" == "missing" ]]; then
+        fail "fence predicate [${label}]: ownership_path_fence is not defined in scripts/lib/ownership.sh — the fence does not exist"
+    elif [[ "${got}" == "${want}" ]]; then
+        pass "fence predicate [${label}]: ${got} (expected ${want})"
+    else
+        fail "fence predicate [${label}]: ${got}, expected ${want}"
+    fi
+}
+_c17_pred 'the shipped default /mnt/DATA'          "/mnt/DATA"                 0 accept
+_c17_pred 'this host real root /run/media/.../DL'  "/run/media/u/DISK/Downloads" 0 accept
+_c17_pred 'filesystem root /'                      "/"                         0 refuse
+_c17_pred 'bare top-level /mnt'                    "/mnt"                      0 refuse
+_c17_pred 'system tree /etc'                       "/etc"                      0 refuse
+_c17_pred 'under a system tree /var/lib/x/y'       "/var/lib/x/y"              0 refuse
+_c17_pred 'absolute .. escape /mnt/DATA/../..'     "/mnt/DATA/../.."           0 refuse
+_c17_pred 'relative staying inside the root'       "${_C17_ROOT}/config"       1 accept
+_c17_pred 'relative escaping the root'             "${_C17_ROOT}/../elsewhere" 1 refuse
+
+# ===========================================================================
+# CASE 18 — THE HARDLINK CLAIM MUST MATCH THE HARDLINK BEHAVIOUR (MINOR-1).
+#
+# scripts/ownership_repair.sh:136-140 asserted, of `chown -h`:
+#   "FR-005 requires out-of-scope reach to be impossible by construction."
+#
+# MEASURED against the artifact (2026-08-25): a hardlink INSIDE the declared
+# scope names an inode whose other link lives OUTSIDE every declared path.
+# chown(2) acts on the INODE, so the out-of-scope file's ownership changed:
+#   BEFORE 1000:10 links=2   ->   AFTER 1000:1000 links=2
+#
+# So the claim is false as written. It is bounded — the escape needs a writer
+# inside the declared scope able to create the link, and both links must be on
+# ONE filesystem — but a container running as root inside a declared bind mount
+# is exactly such a writer.
+#
+# FENCING IT WAS CONSIDERED AND REJECTED, and the reason is recorded rather
+# than left implicit: refusing every item with st_nlink > 1 would refuse the
+# ordinary case, because hardlinking is how a torrent client and a media
+# manager share one payload between the download tree and the library. A fence
+# there would break the feature for its primary user to close a bounded escape.
+#
+# So the CLAIM is corrected instead — §11.4.6: an overclaiming comment is
+# itself a finding. This case exists so the corrected claim is MACHINE-CHECKED
+# rather than prose: it measures the real behaviour AND asserts the header
+# documents that behaviour explicitly.
+# ===========================================================================
+echo
+echo "Case 18: the hardlink escape is real, bounded, and the header says so (MINOR-1)"
+SB18="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN18="${SB18}/fixture/in_scope"
+OUT18="${SB18}/fixture/out_of_scope"
+mkdir -p "${IN18}" "${OUT18}"
+printf 'payload\n' > "${OUT18}/outside_file.bin"
+if ! ln "${OUT18}/outside_file.bin" "${IN18}/inside_link.bin" 2>/dev/null; then
+    skip "hardlink escape: this filesystem refuses hardlinks — the behaviour cannot be measured here (topology_unsupported)"
+else
+    chgrp "${WRONG_GID}" "${OUT18}/outside_file.bin"
+    _C18_BEFORE="$(stat -c '%u:%g' "${OUT18}/outside_file.bin")"
+    _C18_LINKS="$(stat -c '%h' "${OUT18}/outside_file.bin")"
+    printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN18}" | sb_scope "${SB18}"
+
+    if [[ "${_C18_LINKS}" -ne 2 || "${_C18_BEFORE}" == "${OP_UID}:${OP_GID}" ]]; then
+        fail "hardlink escape: fixture is links=${_C18_LINKS} owner=${_C18_BEFORE} — a reach would be invisible"
+    else
+        run_repair "${SB18}"
+        _C18_AFTER="$(stat -c '%u:%g' "${OUT18}/outside_file.bin")"
+
+        # The measurement is reported as FACT either way; what is ASSERTED is
+        # that the header's claim agrees with it.
+        if [[ "${_C18_AFTER}" == "${OP_UID}:${OP_GID}" ]]; then
+            _C18_REACHES=1
+            echo "    measured: the out-of-scope hardlink target went ${_C18_BEFORE} -> ${_C18_AFTER} (the escape is REAL)"
+        else
+            _C18_REACHES=0
+            echo "    measured: the out-of-scope hardlink target stayed ${_C18_AFTER} (no escape on this filesystem)"
+        fi
+
+        _C18_DOCUMENTED=0
+        grep -qiE 'hard *link' "${SCRIPT}" && _C18_DOCUMENTED=1
+
+        if [[ "${_C18_REACHES}" -eq 1 && "${_C18_DOCUMENTED}" -eq 1 ]]; then
+            pass "hardlink escape: the escape is real AND the artifact documents it — the header no longer overclaims (§11.4.6)"
+        elif [[ "${_C18_REACHES}" -eq 1 ]]; then
+            fail "hardlink escape: chown reached an out-of-scope inode through a hardlink, and the artifact says out-of-scope reach is 'impossible by construction' — the claim is false as written (§11.4.6 overclaim)"
+        else
+            skip "hardlink escape: not reproducible on this filesystem — no claim made either way"
+        fi
+
+        # The out-of-scope file's CONTENT must be untouched regardless: an
+        # ownership escape is bad; a content escape would be worse.
+        if [[ "$(cat "${OUT18}/outside_file.bin")" == "payload" ]]; then
+            pass "hardlink escape: the out-of-scope file's CONTENT is untouched (the escape is ownership-only, as documented)"
+        else
+            fail "hardlink escape: the out-of-scope file's CONTENT changed — the escape is wider than documented"
+        fi
+    fi
+fi
+
+# ===========================================================================
+# CASE 19 — A FAILED chown MUST PRINT ITS REASON (MINOR-2, §11.4.201(5)).
+#
+# scripts/ownership_repair.sh:573/:580 discarded chown's stderr with
+# `2>/dev/null`, and the FAILED line at :640 named the path but no errno:
+#
+#   FAILED <path> — cannot change ownership to 1000:1000 (<label>)
+#
+# MEASURED against the pre-fix artifact with an injected EROFS from chown:
+#   grep -ci 'Read-only file system' over the whole run output  ->  0
+#
+# So the operator could not tell EPERM (wrong identity) from EROFS (remount the
+# filesystem) from ENOENT (it vanished) — three different remediations behind
+# one undifferentiated sentence. §11.4.201(5): every refusal prints its
+# resolved evidence.
+# ===========================================================================
+echo
+echo "Case 19: a failed chown reports the reason it failed, not just that it failed (MINOR-2)"
+SB19="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN19="${SB19}/fixture/tree"
+seed_tree "${IN19}" 2 "${WRONG_GID}"
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN19}" | sb_scope "${SB19}"
+_C19_NEEDLE='Read-only file system'
+_C19_SHIM="$(shim_dir "${SB19}" chown \
+    '#!/bin/sh
+echo "chown: changing ownership: '"${_C19_NEEDLE}"'" >&2
+exit 1')"
+# A runtime `unshare` fallback would mask the shim, so it is switched off the
+# way the artifact's own header documents: a SET-BUT-EMPTY CONTAINER_RUNTIME is
+# honoured as "no runtime available" (scripts/ownership_repair.sh:325-333).
+RUN_OUT="$(
+    cd "${SB19}" && PATH="${_C19_SHIM}:${PATH}" CONTAINER_RUNTIME="" \
+        OWNED_PATHS_FILE="${SB19}/config/owned_paths.yaml" \
+        bash "${SB19}/scripts/ownership_repair.sh" \
+            --scope "${SB19}/config/owned_paths.yaml" 2>&1
+)"
+RUN_RC=$?
+
+if [[ "${RUN_RC}" -eq 0 ]]; then
+    fail "chown reason: exit 0 while every chown failed — the shim never took effect, so this case proved nothing (instrument blind, §11.4.201(7)(b))"
+else
+    pass "chown reason [control needle]: the injected chown failure really reached the artifact (exit ${RUN_RC}, not 0)"
+    if printf '%s' "${RUN_OUT}" | grep -qF -- "${_C19_NEEDLE}"; then
+        pass "chown reason: the FAILED report carries the reason chown gave ('${_C19_NEEDLE}')"
+    else
+        fail "chown reason: the reason chown gave was DISCARDED — the operator sees 'cannot change ownership' with no errno, and EPERM/EROFS/ENOENT need three different remediations (§11.4.201(5))"
+        printf '%s\n' "${RUN_OUT}" | grep -i 'FAILED' | head -2 | sed 's/^/        /'
+    fi
+fi
+
+# ===========================================================================
+# CASE 20 — A FAILED MODE RESTORE MUST NOT BE SWALLOWED (MINOR-3, FR-015).
+#
+# scripts/ownership_repair.sh:702 was:
+#     chmod "${_mode}" -- "${path}" 2>/dev/null || true
+# The step that DELIVERS FR-015 ("the exact bits are preserved") swallowed its
+# own failure: no record entry, no log line, no effect on the exit code.
+#
+# MEASURED against the pre-fix artifact with an injected chmod failure on a
+# preserve_mode entry — every mode restore failed and the run still reported:
+#     [ownership-repair] complete: 2 item(s) repaired; ... marker s6/repair-marker.json
+#     rc=0
+# So it exited 0, WROTE A COMPLETION MARKER, and claimed the bits were
+# preserved when not one of them had been restored. The direction is
+# narrowing-only, so this is not a widening risk — but "exact bits preserved"
+# is claimed by FR-015 and was never verified.
+# ===========================================================================
+echo
+echo "Case 20: a failed mode restore is reported and blocks the completion marker (MINOR-3, FR-015)"
+SB20="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN20="${SB20}/fixture/preserved"
+mkdir -p "${IN20}"
+printf 'x\n' > "${IN20}/f.bin"
+chmod 640 "${IN20}/f.bin"
+chgrp -R "${WRONG_GID}" "${IN20}"
+printf '%s\tcredential-store\tfalse\ttrue\ttrue\n' "${IN20}" | sb_scope "${SB20}"
+_C20_SHIM="$(shim_dir "${SB20}" chmod \
+    '#!/bin/sh
+echo "chmod: cannot change permissions: injected failure" >&2
+exit 1')"
+RUN_OUT="$(
+    cd "${SB20}" && PATH="${_C20_SHIM}:${PATH}" CONTAINER_RUNTIME="" \
+        OWNED_PATHS_FILE="${SB20}/config/owned_paths.yaml" \
+        bash "${SB20}/scripts/ownership_repair.sh" \
+            --scope "${SB20}/config/owned_paths.yaml" 2>&1
+)"
+RUN_RC=$?
+
+if printf '%s' "${RUN_OUT}" | grep -qiE 'mode|chmod|permission'; then
+    pass "mode-restore failure: the run REPORTS that a mode could not be restored"
+else
+    fail "mode-restore failure: silence — the FR-015 mode restore failed for every item and nothing said so (no log line, no record, no exit-code effect)"
+fi
+
+if [[ "${RUN_RC}" -eq 0 ]]; then
+    fail "mode-restore failure: exit 0 — the run claimed the exact bits were preserved while every restore failed (§11.4 PASS-bluff at the FR-015 layer)"
+else
+    pass "mode-restore failure: did not exit 0 with FR-015 undelivered"
+fi
+
+if [[ "${MARKER_DETECTOR_PROVEN}" -ne 1 ]]; then
+    fail "mode-restore failure: marker verdict WITHHELD — the detector needle never fired (§11.4.201(7)(b))"
+elif marker_present "${SB20}"; then
+    fail "mode-restore failure: a COMPLETION MARKER was written although FR-015 was not delivered — the next start will skip the repair"
+else
+    pass "mode-restore failure: no completion marker — the next run retries"
+fi
+
+# ===========================================================================
+# CASE 21 — THE FINGERPRINT COMMENT MUST DESCRIBE THE FINGERPRINT (NIT-1).
+#
+# scripts/ownership_repair.sh:132-134 said the fingerprint is computed
+# "from the scope file's literal text". It is not: scripts/lib/ownership.sh
+# :161-163 computes it over `ownership_scope_entries`, which is the PARSED and
+# ENVIRONMENT-EXPANDED row set.
+#
+# MEASURED 2026-08-25 on one unchanged scope file whose only entry is the
+# shipped `${QBITTORRENT_DATA_DIR:-/mnt/DATA}`:
+#   env unset                 -> 76b3930629a1e422...
+#   QBITTORRENT_DATA_DIR=/tmp/aaa -> cc412df3ff7e2435...
+#   QBITTORRENT_DATA_DIR=/tmp/bbb -> e4a6c4b467dc0ce3...
+#   sha256 of the file's literal bytes -> a73b307a006a3117...   (matches none)
+#
+# The consequence is operational, not cosmetic: the fingerprint moves with the
+# ENVIRONMENT, so a hand-run repair in a shell that has not sourced `.env`
+# computes a different fingerprint and its marker does not satisfy start.sh's
+# check — and vice versa. That is the behaviour; the comment must say so.
+# ===========================================================================
+echo
+echo "Case 21: the fingerprint comment matches what the fingerprint actually is (NIT-1)"
+SB21="$(sb_new)" || { fail "could not build sandbox"; finish; }
+sb_raw_scope "${SB21}" 'schema_version: 1
+paths:
+  - path: "${QBITTORRENT_DATA_DIR:-/mnt/DATA}"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+_c21_fp() {
+    (
+        export OWNED_PATHS_FILE="${SB21}/config/owned_paths.yaml"
+        [[ -n "${1:-}" ]] && export QBITTORRENT_DATA_DIR="$1"
+        # shellcheck disable=SC1090
+        source "${SB21}/scripts/lib/ownership.sh"
+        ownership_scope_fingerprint
+    )
+}
+_C21_A="$(_c21_fp "")"
+_C21_B="$(_c21_fp "/tmp/boba_c21_alpha")"
+_C21_LITERAL="$(sha256sum "${SB21}/config/owned_paths.yaml" | cut -d' ' -f1)"
+
+if [[ -z "${_C21_A}" || -z "${_C21_B}" ]]; then
+    fail "fingerprint prose: the fingerprint helper returned nothing — the measurement is blind"
+elif [[ "${_C21_A}" == "${_C21_B}" ]]; then
+    fail "fingerprint prose: the fingerprint did NOT move with the environment — this case's premise no longer holds and its assertions below are stale"
+else
+    pass "fingerprint prose [measured]: one unchanged scope file yields two fingerprints under two environments — it is NOT the file's literal text"
+    if [[ "${_C21_A}" == "${_C21_LITERAL}" || "${_C21_B}" == "${_C21_LITERAL}" ]]; then
+        fail "fingerprint prose: a fingerprint equals sha256 of the file's literal bytes — contradicts the measurement above"
+    else
+        pass "fingerprint prose [measured]: neither fingerprint equals sha256 of the file's literal bytes"
+    fi
+fi
+
+if grep -qF "scope file's literal text" "${SCRIPT}"; then
+    fail "fingerprint prose: the artifact still claims the fingerprint comes from \"the scope file's literal text\" — measured false above (§11.4.6)"
+else
+    pass "fingerprint prose: the artifact no longer claims the fingerprint is the file's literal text"
+fi
+if grep -qiE 'expand|environment' <(sed -n '120,150p' "${SCRIPT}"); then
+    pass "fingerprint prose: the corrected comment names the environment-expanded parse as the fingerprint's input"
+else
+    fail "fingerprint prose: the corrected comment does not say the fingerprint is computed over the ENVIRONMENT-EXPANDED parse, which is what makes an unsourced .env invalidate a marker"
+fi
+
+# ===========================================================================
+# CASE 22 — A FAILURE ON THE DECLARED ROOT ITSELF IS DIAGNOSED AS SUCH (NIT-2).
+#
+# scripts/ownership_repair.sh:743 has find name the declared root itself, so a
+# root-owned mount point (the ordinary state of `/mnt/DATA` before udisks hands
+# it over) fails both chown paths, sets RC=1, suppresses the marker, and forces
+# a full re-walk of the whole library on every start — with an operator-facing
+# message identical to the one a single unreadable file produces.
+#
+# The failure itself is CORRECT and is deliberately preserved: an in-scope item
+# that could not be repaired must not be reported as repaired (§11.4.201, and
+# §11.4.120 forbids weakening an assertion to make a gate pass). What was wrong
+# is that the operator could not tell WHICH failure they had. This case pins
+# the diagnosis: when the item that failed IS the declared root of the entry,
+# the report must say so, so the remediation (fix the mount, not the files) is
+# reachable from the message.
+# ===========================================================================
+echo
+echo "Case 22: a chown failure on the DECLARED ROOT itself is named as such (NIT-2)"
+SB22="$(sb_new)" || { fail "could not build sandbox"; finish; }
+IN22="${SB22}/fixture/mountpoint"
+seed_tree "${IN22}" 2 "${WRONG_GID}"
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN22}" | sb_scope "${SB22}"
+# Fail ONLY on the declared root, exactly as an unowned mount point does; every
+# child still chowns normally, so the case distinguishes "the root failed" from
+# "everything failed".
+_C22_SHIM="$(shim_dir "${SB22}" chown \
+    '#!/bin/sh
+for a in "$@"; do
+  if [ "$a" = "'"${IN22}"'" ]; then
+    echo "chown: changing ownership of '"'"''"${IN22}"''"'"': Operation not permitted" >&2
+    exit 1
+  fi
+done
+exec /usr/bin/chown "$@"')"
+RUN_OUT="$(
+    cd "${SB22}" && PATH="${_C22_SHIM}:${PATH}" CONTAINER_RUNTIME="" \
+        OWNED_PATHS_FILE="${SB22}/config/owned_paths.yaml" \
+        bash "${SB22}/scripts/ownership_repair.sh" \
+            --scope "${SB22}/config/owned_paths.yaml" 2>&1
+)"
+RUN_RC=$?
+
+if [[ "${RUN_RC}" -eq 0 ]]; then
+    fail "declared-root failure: exit 0 — the shim never took effect, so this case proved nothing (instrument blind)"
+else
+    pass "declared-root failure [control needle]: the injected root-only failure really reached the artifact (exit ${RUN_RC})"
+    if printf '%s' "${RUN_OUT}" | grep -qiE 'declared (path|root)|mount point'; then
+        pass "declared-root failure: the report identifies the failing item as the DECLARED ROOT, so the remediation is the mount and not the files"
+    else
+        fail "declared-root failure: the failing declared root is reported exactly like an ordinary in-scope file — the operator cannot tell a root-owned mount point from a bad file, and the consequence is a full re-walk of the library on every start"
+        printf '%s\n' "${RUN_OUT}" | grep -i 'FAILED' | head -3 | sed 's/^/        /'
+    fi
+fi
 
 finish
