@@ -1,0 +1,54 @@
+BOB-166 — closure-migration guard: RUNTIME evidence (§11.4.226 runtime class)
+captured: 2026-08-25T20:18:27Z
+
+WHY THIS COULD NOT CLOSE EARLIER. Ten rows carried a terminal status while still
+located in 'Issues'. Moving them was a STATE-ONLY repair, and §11.4.226(5) is
+explicit that a state repair cannot close a defect as fixed — nothing stopped the
+eleventh row. The mechanism was missing, so the item stayed open. Correctly.
+
+WHAT WAS ACTUALLY WRONG — and it was not what it looked like. The guard already
+existed. Constitution commit 71589d5 ("refuse a terminal status that skips its own
+migration") is an ancestor of the current constitution HEAD and has been for some
+time. The guard was in the SOURCE the whole while.
+
+It was not in the BINARY. pre_build invariant 17 resolves through a candidate loop
+whose first entry is the git-TRACKED bin/workable-items, and that binary was six
+days stale (BOB-188). Measured then and now:
+
+  "Issues-location item has TERMINAL status"   in source: 1   in shipped binary: 0
+  after the BOB-188 rebuild                    in source: 1   in shipped binary: 1
+
+So BOB-166's fix was inert for exactly as long as the shipped artifact lagged its
+source. The ten rows did not survive a missing guard; they survived a guard that
+could not run. BOB-188 is what made BOB-166 operative — this is a §11.4.108
+SOURCE->ARTIFACT gap wearing a tracker defect's clothes.
+
+--- RUNTIME PROBE (on a COPY of the DB, never the live one) ---
+victim: BOB-065, status=Queued, current_location=Issues
+
+GOLDEN-TRUE — set a terminal status without migrating:
+  $ workable-items update --id BOB-065 --status "Fixed (→ Fixed.md)"
+  exit=1
+  update: refusing to set terminal status "Fixed (→ Fixed.md)" on BOB-065 while it
+  is located in Issues — a terminal status without the migration strands a closed
+  item in the OPEN tracker (§11.4.19 requires the closure move to be atomic;
+  §11.4.15/ATM-627 INTEG-03).
+    new closure (records captured evidence):  close ... --evidence <path>
+    already closed elsewhere (reconcile):     move --id ... --to Fixed --why <text>
+  row after refusal: ('BOB-065', 'Queued', 'Issues')   <- did NOT move
+
+GOLDEN-FALSE — §11.4.201(1) false-positive guard, a legitimate change:
+  $ workable-items update --id BOB-065 --status "In progress"
+  exit=0   update: BOB-065 updated in Issues (status=In progress, type=Task)
+
+Both directions hold: it bites the violation and stays silent on lawful use. A
+guard that only ever refused would be a FAIL-bluff of equal severity.
+
+--- STATE ---
+terminal-status rows still located in 'Issues': 0
+
+--- HONEST BOUNDARY (§11.4.6) ---
+This proves the guard refuses at the update seam of THIS binary. It does not prove
+every write path is covered — a direct SQL write bypasses it entirely, which is why
+§11.4.146(D3) mandates a full-table SWEEP gate as the second seam rather than
+trusting the engine alone. That sweep's presence is not asserted here.

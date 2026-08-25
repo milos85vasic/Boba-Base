@@ -25,12 +25,12 @@
 </p>
 
 <p align="center">
-  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-5617%20collected-blue">
+  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-5618%20collected-blue">
   <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-2742%20collected-blue">
   <img alt="plugins"        src="https://img.shields.io/badge/plugins-43-blue">
   <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
   <img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">
-  <img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-51-blue">
+  <img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-52-blue">
   <img alt="challenges"     src="https://img.shields.io/badge/challenges-38-blue">
   <img alt="scan"           src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
   <img alt="license"        src="https://img.shields.io/badge/license-Apache%202.0-green">

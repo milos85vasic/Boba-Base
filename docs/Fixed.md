@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 30
-**Last modified:** 2026-08-25T20:15:56Z
+**Revision:** 31
+**Last modified:** 2026-08-25T20:21:27Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1799,4 +1799,30 @@ The compiled Angular bundle shipped at download-proxy/src/ui/dist/frontend/brows
 **Created-By:** AI
 
 3rd forced-logout incident 2026-08-18 23:45:49 — SIGKILL user@1000 + preventive-timer-inside-user-slice architectural gap
+
+## BOB-166 — update --status accepts a terminal status without migrating the row, so 10 closed items sit in the open tracker while validate/diff/closure-seam all report green
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-166/runtime_guard_refuses_evidence.log
+**Severity:** High
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT. §11.4.19 requires closure migration to be ATOMIC: a resolving item moves to Fixed.md, DISAPPEARS from Issues_Summary (open-only) and APPEARS in Fixed_Summary (closed-only). Ten rows violate all three properties right now — they carry a terminal status yet current_location='Issues', so they render in docs/Issues.md and are listed in docs/Issues_Summary.md with a status that literally reads '(→ Fixed.md)', while appearing 0 times in Fixed_Summary.md. Any reader of the canonical open tracker is told these are open work.
+
+MANIFEST (measured 2026-08-21): BOB-087 (Completed), BOB-129, BOB-131, BOB-144, BOB-145, BOB-146, BOB-148, BOB-153, BOB-155, BOB-157 (all 'Fixed (→ Fixed.md)'). Confirmed rendering: BOB-155/087/157 each grep 1 in Issues.md, 0 in Fixed.md, present in Issues_Summary.md, 0 hits in Fixed_Summary.md.
+
+ROOT CAUSE (reproduced at runtime, not inferred). 'close' performs the atomic migration and REQUIRES --evidence. 'update --status' sets any §11.4.15 closed-set value with NO evidence and NO migration — and it knows the location, because it prints it. On a COPY of the real DB:
+    $ workable-items update --id BOB-065 --db repro.db --status 'Fixed (→ Fixed.md)'
+      update: BOB-065 updated in Issues (status=Fixed (→ Fixed.md), type=Task)
+    $ sqlite3 repro.db 'SELECT atm_id,status,current_location ...'
+      BOB-065|Fixed (→ Fixed.md)|Issues
+So the seam that is supposed to be the ONLY closure path (close, evidence-gated per §11.4.146(D3)) has a parallel unguarded path that reaches the same status while skipping BOTH the evidence requirement and the migration.
+
+WHY NOTHING CAUGHT IT (§11.4.238 coverage-escape audit). Three standing checks stay GREEN on a DB holding the forbidden row, verified on the poisoned copy from the repo root so no cwd artifact is involved: (1) 'validate' → 'OK — 164 items, all invariants satisfied' (it has no status↔location coherence invariant); (2) 'diff' → 'in sync' (DB and Markdown agree — on the WRONG state; agreement is not correctness); (3) CM-CLOSURE-SEAM-BINDS CHECK A → PASS (it flags NON-terminal rows whose id appears in a work commit; these rows are terminal, so they are outside its predicate by construction). This was found by reading a status tally, not by the automated regime — a §11.4.238 discovery-channel escape, which is itself a defect of equal standing to the mis-located rows.
+
+ACCEPTANCE. (a) 'update' REFUSES a terminal status and names 'close' as the correct path, with a paired §1.1 mutation proving the refusal (removing the guard must make the mutation pass). (b) 'validate' grows a status↔location coherence invariant that FAILS on the forbidden state, with a golden-bad fixture and a negative control (a legitimately terminal row in Fixed must NOT fire — §11.4.201(1)). (c) The 10 existing rows are drained to Fixed with class-matched evidence per row, or, where a row's evidence cannot be produced, honestly re-opened rather than migrated on a bare assertion. (d) Honest boundary: this closes the update-path hole and the detection gap; it does not claim every historical status write was evidence-backed.
+
+NOT CLAIMED. No fix is implemented by this filing. The 10 rows are untouched; draining them is acceptance (c) and each needs its own evidence, not a bulk UPDATE.
 
