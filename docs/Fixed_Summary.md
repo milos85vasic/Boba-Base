@@ -6,12 +6,12 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 52 |
+| Bug | Fixed (→ Fixed.md) | 53 |
 | Feature | Implemented (→ Fixed.md) | 17 |
 | Task | Completed (→ Fixed.md) | 28 |
 | Task | Fixed (→ Fixed.md) | 4 |
 | Task | Implemented (→ Fixed.md) | 17 |
-| **TOTAL** | | **118** |
+| **TOTAL** | | **119** |
 
 ## Items
 
@@ -109,29 +109,30 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | 90 | High | Fixed (→ Fixed.md) | Bug | — | BOB-117 — rutracker login diag still uses forbidden §11.4.6 'likely' vocabulary + wrong error_type (unfixed sibling of nnmclub fix) |
 | 91 | High | Fixed (→ Fixed.md) | Bug | — | BOB-118 — README.md python-tests badge claims 585 passing; pytest --collect-only measures 5235 (9x stale/wrong) |
 | 92 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-119 — docs/MERGE_SEARCH_DIAGNOSTICS.md states ENABLE_DEAD_TRACKERS default=1; actual code + compose default=0 (contradicts sibling doc) |
-| 93 | High | Fixed (→ Fixed.md) | Bug | — | BOB-122 — IPTorrents seed/leech parsing reports 0/0 despite real swarm data — outdated markup selectors in plugins/iptorrents.py AND download-proxy/src/merge_service/search.py |
-| 94 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-123 — 4th forced-logout incident 2026-08-19 00:37:11 — PAM/Linger contradiction breakthrough (retro-registered: id used in 6 commits with no tracker row) |
-| 95 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-124 — 5th forced-logout 2026-08-19 15:28:22 — architectural install-gap: 4 authored preventive gates never installed by operator |
-| 96 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-125 — 6th forced-logout 2026-08-19 16:04:54 — RESOLVED via BOB-126 (root cause was pytest kill(-1,9)) |
-| 97 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-126 — 7th forced-logout 2026-08-19 16:43:43 — REAL ROOT CAUSE: pytest kill(-1,9) via MagicMock.__int__==1; §11.4.263 anchor + boba defense-in-depth |
-| 98 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-127 — Task 8 audit: 2 tests fired real killpg/getpgid on hardcoded PIDs (fixed 8bedc5a) |
-| 99 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-128 — killpg-carrier collision between CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID and sibling CM-KILLPG-PGID-GUARD (retro-registered: id used in 3 commits with no tracker row) |
-| 100 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-129 — Potential production slowapi/starlette defect flagged by Task 105 subagent |
-| 101 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-130 — Badge-test timeout deterministic — synced_fixtures fixture 93s vs --timeout=60 |
-| 102 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-131 — qbittorrent-proxy podman conmon crash — pre-existing, surfaced during BOB-129 investigation |
-| 103 | High | Fixed (→ Fixed.md) | Bug | — | BOB-132 — qbittorrent-proxy post-recovery: unhealthy — connection refused to qbittorrent sidecar on localhost:7185 |
-| 104 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-133 — CRITICAL: fleet-wide container dead-but-healthy — podman stale-cache masks service outage |
-| 105 | High | Completed (→ Fixed.md) | Task | — | BOB-136 — Closure seam does not bind: 4 tracker rows found stale in one sweep, and workable-items diff is blind to body_md drift |
-| 106 | High | Fixed (→ Fixed.md) | Bug | — | BOB-138 — qbittorrent-proxy health check probes only 7186, so a dead 7187 merge service reports healthy forever |
-| 107 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-139 — SSE _client_gone() swallows every exception into 'client still connected', so a raising disconnect probe streams forever (fail-open) |
-| 108 | Medium | Completed (→ Fixed.md) | Task | — | BOB-140 — Upstream the healthcheck-covers-served-ports gate into constitution/scripts/gates/ and thin boba's copy to a delegator (§11.4.177) |
-| 109 | High | Fixed (→ Fixed.md) | Bug | — | BOB-142 — SearchRequest fields were unbounded, so one request could amplify into a 43-tracker fan-out carrying arbitrary payload |
-| 110 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-144 — /theme/stream calls the disconnect probe unguarded — fail-closed but via an uncaught traceback, inconsistent with the two SSE generators |
-| 111 | High | Fixed (→ Fixed.md) | Bug | — | BOB-145 — Fix the 7187 wedge: offload and/or memoise Deduplicator.merge_results so O(N^2) regex work stops blocking the asyncio event loop |
-| 112 | High | Fixed (→ Fixed.md) | Bug | — | BOB-146 — Constitution §11.4.252 detector undercounts by 29% (30 vs 42 AST ground truth) — 4 distinct blind spots make its output a floor, not a census |
-| 113 | Medium | Completed (→ Fixed.md) | Task | — | BOB-147 — Triage all 36 §11.4.252 fail-open hits: 9 real defects fixed, 14 correct idioms, 14 vendored |
-| 114 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-148 — Standing red unit test nothing tracked: test_no_credentials asserts has_session False, gets True — real defect or non-hermetic test, undecided |
-| 115 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-153 — Go profile cannot build: go.mod requires go 1.26.2 but the Dockerfile builder is golang:1.23-alpine |
-| 116 | High | Fixed (→ Fixed.md) | Bug | — | BOB-155 — workable-items diff reports 'DB and Markdown are in sync' having opened zero Markdown files when --issues/--fixed are omitted |
-| 117 | High | Fixed (→ Fixed.md) | Bug | — | BOB-157 — Our own BOB-137 stall watchdog can segfault the merge service: faulthandler dump_traceback(all_threads=True) hits an unpatched CPython 3.12 defect |
-| 118 | High | Fixed (→ Fixed.md) | Bug | — | BOB-183 — The compiled Angular bundle shipped at download-proxy/src/ui/dist/frontend/browser still carries the BOB-164 colour-contrast defect verbatim: scanned 2026-08-23 it reports 21 violation nodes on darcula/dark and 1 on darcula/light, while the same sources built to a scratch path report 0 across all 16 palette x mode combinations. The fix is therefore correct at the SOURCE layer and absent at the ARTIFACT layer, so §11.4.108 layer 2 is NOT closed and end users still see the low-contrast dashboard. Two compounding facts make this silent rather than obvious: dist/ is gitignored, so the divergence never shows in a diff; and scripts/install.sh:133 asserts only that the directory EXISTS, never that it is newer than the sources it was built from, so a stale bundle passes install unchallenged. Acceptance: install (or an equivalent gate) FAILS on a bundle older than its sources, the bundle is rebuilt, and docs/qa/BOB-164/axe_contrast_scan.py run against download-proxy/src/ui/dist/frontend/browser exits 0 with zero violation nodes and zero blocking incomplete nodes. |
+| 93 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-120 — 3rd forced-logout incident 2026-08-18 23:45:49 — SIGKILL user@1000 + preventive-timer-inside-user-slice architectural gap |
+| 94 | High | Fixed (→ Fixed.md) | Bug | — | BOB-122 — IPTorrents seed/leech parsing reports 0/0 despite real swarm data — outdated markup selectors in plugins/iptorrents.py AND download-proxy/src/merge_service/search.py |
+| 95 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-123 — 4th forced-logout incident 2026-08-19 00:37:11 — PAM/Linger contradiction breakthrough (retro-registered: id used in 6 commits with no tracker row) |
+| 96 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-124 — 5th forced-logout 2026-08-19 15:28:22 — architectural install-gap: 4 authored preventive gates never installed by operator |
+| 97 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-125 — 6th forced-logout 2026-08-19 16:04:54 — RESOLVED via BOB-126 (root cause was pytest kill(-1,9)) |
+| 98 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-126 — 7th forced-logout 2026-08-19 16:43:43 — REAL ROOT CAUSE: pytest kill(-1,9) via MagicMock.__int__==1; §11.4.263 anchor + boba defense-in-depth |
+| 99 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-127 — Task 8 audit: 2 tests fired real killpg/getpgid on hardcoded PIDs (fixed 8bedc5a) |
+| 100 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-128 — killpg-carrier collision between CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID and sibling CM-KILLPG-PGID-GUARD (retro-registered: id used in 3 commits with no tracker row) |
+| 101 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-129 — Potential production slowapi/starlette defect flagged by Task 105 subagent |
+| 102 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-130 — Badge-test timeout deterministic — synced_fixtures fixture 93s vs --timeout=60 |
+| 103 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-131 — qbittorrent-proxy podman conmon crash — pre-existing, surfaced during BOB-129 investigation |
+| 104 | High | Fixed (→ Fixed.md) | Bug | — | BOB-132 — qbittorrent-proxy post-recovery: unhealthy — connection refused to qbittorrent sidecar on localhost:7185 |
+| 105 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-133 — CRITICAL: fleet-wide container dead-but-healthy — podman stale-cache masks service outage |
+| 106 | High | Completed (→ Fixed.md) | Task | — | BOB-136 — Closure seam does not bind: 4 tracker rows found stale in one sweep, and workable-items diff is blind to body_md drift |
+| 107 | High | Fixed (→ Fixed.md) | Bug | — | BOB-138 — qbittorrent-proxy health check probes only 7186, so a dead 7187 merge service reports healthy forever |
+| 108 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-139 — SSE _client_gone() swallows every exception into 'client still connected', so a raising disconnect probe streams forever (fail-open) |
+| 109 | Medium | Completed (→ Fixed.md) | Task | — | BOB-140 — Upstream the healthcheck-covers-served-ports gate into constitution/scripts/gates/ and thin boba's copy to a delegator (§11.4.177) |
+| 110 | High | Fixed (→ Fixed.md) | Bug | — | BOB-142 — SearchRequest fields were unbounded, so one request could amplify into a 43-tracker fan-out carrying arbitrary payload |
+| 111 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-144 — /theme/stream calls the disconnect probe unguarded — fail-closed but via an uncaught traceback, inconsistent with the two SSE generators |
+| 112 | High | Fixed (→ Fixed.md) | Bug | — | BOB-145 — Fix the 7187 wedge: offload and/or memoise Deduplicator.merge_results so O(N^2) regex work stops blocking the asyncio event loop |
+| 113 | High | Fixed (→ Fixed.md) | Bug | — | BOB-146 — Constitution §11.4.252 detector undercounts by 29% (30 vs 42 AST ground truth) — 4 distinct blind spots make its output a floor, not a census |
+| 114 | Medium | Completed (→ Fixed.md) | Task | — | BOB-147 — Triage all 36 §11.4.252 fail-open hits: 9 real defects fixed, 14 correct idioms, 14 vendored |
+| 115 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-148 — Standing red unit test nothing tracked: test_no_credentials asserts has_session False, gets True — real defect or non-hermetic test, undecided |
+| 116 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-153 — Go profile cannot build: go.mod requires go 1.26.2 but the Dockerfile builder is golang:1.23-alpine |
+| 117 | High | Fixed (→ Fixed.md) | Bug | — | BOB-155 — workable-items diff reports 'DB and Markdown are in sync' having opened zero Markdown files when --issues/--fixed are omitted |
+| 118 | High | Fixed (→ Fixed.md) | Bug | — | BOB-157 — Our own BOB-137 stall watchdog can segfault the merge service: faulthandler dump_traceback(all_threads=True) hits an unpatched CPython 3.12 defect |
+| 119 | High | Fixed (→ Fixed.md) | Bug | — | BOB-183 — The compiled Angular bundle shipped at download-proxy/src/ui/dist/frontend/browser still carries the BOB-164 colour-contrast defect verbatim: scanned 2026-08-23 it reports 21 violation nodes on darcula/dark and 1 on darcula/light, while the same sources built to a scratch path report 0 across all 16 palette x mode combinations. The fix is therefore correct at the SOURCE layer and absent at the ARTIFACT layer, so §11.4.108 layer 2 is NOT closed and end users still see the low-contrast dashboard. Two compounding facts make this silent rather than obvious: dist/ is gitignored, so the divergence never shows in a diff; and scripts/install.sh:133 asserts only that the directory EXISTS, never that it is newer than the sources it was built from, so a stale bundle passes install unchallenged. Acceptance: install (or an equivalent gate) FAILS on a bundle older than its sources, the bundle is rebuilt, and docs/qa/BOB-164/axe_contrast_scan.py run against download-proxy/src/ui/dist/frontend/browser exits 0 with zero violation nodes and zero blocking incomplete nodes. |

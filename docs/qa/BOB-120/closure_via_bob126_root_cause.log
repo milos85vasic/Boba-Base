@@ -1,0 +1,38 @@
+BOB-120 — 3rd forced-logout incident: closure evidence
+captured: 2026-08-25T20:14:46Z
+
+BOB-120 is an INCIDENT REPORT, not an independent defect. Its root cause was found
+and fixed under BOB-126, and five sibling incidents in the same family are already
+closed on that same basis — BOB-125's own title records it verbatim: "RESOLVED via
+BOB-126 (root cause was pytest kill(-1,9))".
+
+FAMILY STATE (read from the DB, not asserted):
+  BOB-116  Fixed   2nd forced logout
+  BOB-120  <- this one, the only member still open
+  BOB-123  Fixed   4th
+  BOB-124  Fixed   5th
+  BOB-125  Fixed   6th  "RESOLVED via BOB-126"
+  BOB-126  Fixed   7th  REAL ROOT CAUSE: pytest kill(-1,9) via MagicMock.__int__==1
+  BOB-127  Fixed   test-audit follow-up
+  BOB-128  Fixed   killpg-carrier gate collision
+
+--- SOURCE-layer evidence that the root-cause fix is live ---
+download-proxy/src/merge_service/search.py:1305   if isinstance(_pgid, int) and _pgid > 1:
+download-proxy/src/merge_service/search.py:1331   if isinstance(_pgid, int) and _pgid > 1:
+tests/unit/merge_service/test_deadline_tunable.py:212  assert pgid > 1, (...)
+pre_build gate references (CM-KILLPG-PGID-GUARD / CM-TEST-MOCK-PID-*): 18
+
+--- what this closure does NOT claim (§11.4.6) ---
+It does NOT rest on "no incidents since 2026-08-19". Six days have elapsed with no
+new forced-logout incident document (the series stops at the 6th, and the 7th IS
+BOB-126), but absence of a report is not proof of absence of an event — §11.4.201(6).
+The load-bearing evidence is the root-cause fix being present and gated, plus the
+established family precedent, NOT a quiet interval.
+
+--- THE HALF THAT DOES NOT CLOSE HERE ---
+BOB-120's title names TWO things: the incident, and a "preventive-timer-inside-
+user-slice architectural gap". Only the incident closes. The architectural gap is
+carried by BOB-121 ("External watchdog for the forced-logout architectural gap",
+status: Ready for testing), which remains OPEN. This is recorded explicitly so the
+gap is transferred, never absorbed — closing BOB-120 without saying this would
+silently retire an unfixed architectural concern along with a fixed incident.

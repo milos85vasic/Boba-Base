@@ -8,13 +8,13 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 |---|---|---|
 | Bug | In progress | 7 |
 | Bug | Operator-blocked | 1 |
-| Bug | Queued | 21 |
+| Bug | Queued | 20 |
 | Bug | Ready for testing | 4 |
 | Task | In progress | 10 |
 | Task | Operator-blocked | 3 |
 | Task | Queued | 24 |
 | Task | Ready for testing | 2 |
-| **TOTAL** | | **72** |
+| **TOTAL** | | **71** |
 
 ## Items
 
@@ -47,7 +47,6 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 | BOB-110 | Task | Queued | Medium | BOB-074 followup: UX-class test coverage (accessibility/usability) absent |
 | BOB-111 | Task | In progress | High | BOB-074 followup: configure real rate limiting for boba's 3 public HTTP endpoints |
 | BOB-114 | Task | Queued | Medium | BOB-074 followup: self-validation golden-bad fixture for the rate-limit detector |
-| BOB-120 | Bug | Queued | Critical | 3rd forced-logout incident 2026-08-18 23:45:49 — SIGKILL user@1000 + preventive-timer-inside-user-slice architectural gap |
 | BOB-121 | Task | Ready for testing | Important | External watchdog for the forced-logout architectural gap (task #85, incident #3) |
 | BOB-135 | Bug | Ready for testing | Low | Test isolation: test_list_hooks_after_create fails in bulk suite (Permission denied /config) |
 | BOB-137 | Bug | In progress | High | Merge service on 7187 wedges while the same process still serves 7186 (GIL starvation by one spinning thread) |
