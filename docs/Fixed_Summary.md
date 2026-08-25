@@ -6,12 +6,12 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 
 | Type | Status | Count |
 |---|---|---|
-| Bug | Fixed (→ Fixed.md) | 51 |
+| Bug | Fixed (→ Fixed.md) | 52 |
 | Feature | Implemented (→ Fixed.md) | 17 |
 | Task | Completed (→ Fixed.md) | 28 |
 | Task | Fixed (→ Fixed.md) | 4 |
 | Task | Implemented (→ Fixed.md) | 17 |
-| **TOTAL** | | **117** |
+| **TOTAL** | | **118** |
 
 ## Items
 
@@ -134,3 +134,4 @@ Closed workable items (current_location = Fixed), regenerated from the SQLite si
 | 115 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-153 — Go profile cannot build: go.mod requires go 1.26.2 but the Dockerfile builder is golang:1.23-alpine |
 | 116 | High | Fixed (→ Fixed.md) | Bug | — | BOB-155 — workable-items diff reports 'DB and Markdown are in sync' having opened zero Markdown files when --issues/--fixed are omitted |
 | 117 | High | Fixed (→ Fixed.md) | Bug | — | BOB-157 — Our own BOB-137 stall watchdog can segfault the merge service: faulthandler dump_traceback(all_threads=True) hits an unpatched CPython 3.12 defect |
+| 118 | High | Fixed (→ Fixed.md) | Bug | — | BOB-183 — The compiled Angular bundle shipped at download-proxy/src/ui/dist/frontend/browser still carries the BOB-164 colour-contrast defect verbatim: scanned 2026-08-23 it reports 21 violation nodes on darcula/dark and 1 on darcula/light, while the same sources built to a scratch path report 0 across all 16 palette x mode combinations. The fix is therefore correct at the SOURCE layer and absent at the ARTIFACT layer, so §11.4.108 layer 2 is NOT closed and end users still see the low-contrast dashboard. Two compounding facts make this silent rather than obvious: dist/ is gitignored, so the divergence never shows in a diff; and scripts/install.sh:133 asserts only that the directory EXISTS, never that it is newer than the sources it was built from, so a stale bundle passes install unchallenged. Acceptance: install (or an equivalent gate) FAILS on a bundle older than its sources, the bundle is rebuilt, and docs/qa/BOB-164/axe_contrast_scan.py run against download-proxy/src/ui/dist/frontend/browser exits 0 with zero violation nodes and zero blocking incomplete nodes. |

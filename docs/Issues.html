@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 61 <strong>Last modified:</strong>
-2026-08-25T19:55:20Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 62 <strong>Last modified:</strong>
+2026-08-25T20:00:18Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -2740,29 +2740,6 @@ should approve rather than receive as a side effect.</p>
 and either a persisted baseline the gate lowers and never raises (with
 the role-separation question answered), or an explicit decision that
 manual tightening is acceptable.</p>
-<h2
-id="bob-183-served-dashboard-bundle-is-stale-and-no-gate-checks-its-freshness-so-contrast-fixes-never-reach-users">BOB-183
-— Served dashboard bundle is stale and no gate checks its freshness, so
-contrast fixes never reach users</h2>
-<p><strong>Status:</strong> In progress <strong>Type:</strong> Bug
-<strong>Severity:</strong> High <strong>Created-By:</strong> Claude
-<strong>Assigned-To:</strong> Claude</p>
-<p>The compiled Angular bundle shipped at
-download-proxy/src/ui/dist/frontend/browser still carries the BOB-164
-colour-contrast defect verbatim: scanned 2026-08-23 it reports 21
-violation nodes on darcula/dark and 1 on darcula/light, while the same
-sources built to a scratch path report 0 across all 16 palette x mode
-combinations. The fix is therefore correct at the SOURCE layer and
-absent at the ARTIFACT layer, so §11.4.108 layer 2 is NOT closed and end
-users still see the low-contrast dashboard. Two compounding facts make
-this silent rather than obvious: dist/ is gitignored, so the divergence
-never shows in a diff; and scripts/install.sh:133 asserts only that the
-directory EXISTS, never that it is newer than the sources it was built
-from, so a stale bundle passes install unchallenged. Acceptance: install
-(or an equivalent gate) FAILS on a bundle older than its sources, the
-bundle is rebuilt, and docs/qa/BOB-164/axe_contrast_scan.py run against
-download-proxy/src/ui/dist/frontend/browser exits 0 with zero violation
-nodes and zero blocking incomplete nodes.</p>
 <h2
 id="bob-184-icon-glyph-controls-are-unverified-for-non-text-contrast-because-neither-contrast-oracle-can-measure-them">BOB-184
 — Icon-glyph controls are unverified for non-text contrast because

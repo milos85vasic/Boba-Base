@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 61
-**Last modified:** 2026-08-25T19:55:20Z
+**Revision:** 62
+**Last modified:** 2026-08-25T20:00:18Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1363,16 +1363,6 @@ WHAT: CM-EXPORT-CHARSET-VALID (pre-build invariant 50) adopts its 301 pre-existi
 WHY IT WAS NOT BUILT WITH THE FIX: a gate that writes its own threshold during a pre-build run becomes a PRODUCER as well as a GATE (11.4.249 role separation), and that is a design change the operator should approve rather than receive as a side effect.
 
 ACCEPTANCE: the operator's adoption answer recorded as consumer DATA; and either a persisted baseline the gate lowers and never raises (with the role-separation question answered), or an explicit decision that manual tightening is acceptable.
-
-## BOB-183 — Served dashboard bundle is stale and no gate checks its freshness, so contrast fixes never reach users
-
-**Status:** In progress
-**Type:** Bug
-**Severity:** High
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-The compiled Angular bundle shipped at download-proxy/src/ui/dist/frontend/browser still carries the BOB-164 colour-contrast defect verbatim: scanned 2026-08-23 it reports 21 violation nodes on darcula/dark and 1 on darcula/light, while the same sources built to a scratch path report 0 across all 16 palette x mode combinations. The fix is therefore correct at the SOURCE layer and absent at the ARTIFACT layer, so §11.4.108 layer 2 is NOT closed and end users still see the low-contrast dashboard. Two compounding facts make this silent rather than obvious: dist/ is gitignored, so the divergence never shows in a diff; and scripts/install.sh:133 asserts only that the directory EXISTS, never that it is newer than the sources it was built from, so a stale bundle passes install unchallenged. Acceptance: install (or an equivalent gate) FAILS on a bundle older than its sources, the bundle is rebuilt, and docs/qa/BOB-164/axe_contrast_scan.py run against download-proxy/src/ui/dist/frontend/browser exits 0 with zero violation nodes and zero blocking incomplete nodes.
 
 ## BOB-184 — Icon-glyph controls are unverified for non-text contrast because neither contrast oracle can measure them
 

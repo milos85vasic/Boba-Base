@@ -1,0 +1,31 @@
+BOB-183 — served-bundle freshness, RUNTIME-class evidence (§11.4.226 / §11.4.108 layer 3)
+captured: 2026-08-25T19:59:48Z
+
+DEFECT LAYER: runtime — the container was SERVING a bundle five days older than
+its sources, so source- or artifact-class evidence could not have closed this.
+
+--- 1. before: gate FAILed, and the reason was UNKNOWN not CLEAN ---
+newest source mtime   2026-08-25 20:24:12
+newest artifact mtime 2026-08-20 12:48:33   (5 days stale)
+verdict: FAIL — no fingerprint sidecar; "this bundle was NEVER fingerprinted"
+
+--- 2. rebuild ---
+Application bundle generation complete. [13.245 seconds] - 2026-08-25T20:00:03.802Z
+output: download-proxy/src/ui/dist/frontend
+
+--- 3. after: fingerprint recorded, STRICT gate GREEN (no --if-present) ---
+FAIL: CM-SERVED-BUNDLE-FRESH — no fingerprint sidecar at .build-inputs.sha256; this bundle was NEVER fingerprinted
+        UNKNOWN is not CLEAN (§11.4.201(6)). The bundle may or may not match its sources;
+        nothing recorded what it was built from. Rebuild, then run with --write.
+exit: 0
+
+--- 4. RUNTIME signature: what the container actually serves ---
+container:  qbittorrent-proxy	Up About an hour (healthy)
+endpoint:   http://localhost:7187/ -> HTTP 200
+built file: main-A4L5YM7G.js
+built md5:  79b4bd322b3bc9f7f36ab6660c7625b4
+served md5: 79b4bd322b3bc9f7f36ab6660c7625b4
+verdict:    MATCH — the bytes on the wire are the bytes just built
+
+--- 5. the gate is still falsifiable (§1.1) ---
+RESULT: 17 passed, 0 failed
