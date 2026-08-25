@@ -157,14 +157,34 @@ class _HooksHarness:
             )
 
     def seal_for_rewrite(self) -> None:
-        """Block REWRITING an existing hooks.json. Proven, or the test skips."""
+        """Block REPLACING an existing hooks.json. Proven, or the test skips.
+
+        RECONCILED under BOB-174 (§11.4.120). This used to chmod the FILE to 0400
+        and probe with ``open(target, "a")``, which was the right needle while
+        ``_save_hooks`` rewrote the file in place. BOB-174 made the write ATOMIC
+        (mkstemp + fsync + ``os.replace``, reusing theme_state.py's pattern), and
+        ``os.replace`` does not consult the target's mode at all — it relinks a
+        directory entry. Measured:
+
+            append to a 0400 file : REFUSED (Permission denied)
+            os.replace over 0400  : SUCCEEDS
+            mkstemp in a 0500 dir : REFUSED (Permission denied)
+
+        So the old needle certified a permission the code no longer needs, and the
+        delete write sailed through while the test expected a failure — the same
+        §11.4.199 false-reproduction shape this file's header already warns about,
+        now inverted. The needle that MATCHES the new write is the CREATE one: an
+        atomic write must be able to make a new file in the DIRECTORY. Sealing the
+        directory is therefore both correct and a closer match to the operation
+        under test than the original was.
+        """
         assert self.hooks_file.exists(), "seal_for_rewrite needs an existing hooks.json"
-        os.chmod(self.hooks_file, stat.S_IRUSR)
-        if not _rewrite_is_refused(self.hooks_file):
-            os.chmod(self.hooks_file, stat.S_IRUSR | stat.S_IWUSR)
+        os.chmod(self.store_dir, _RO_DIR_MODE)
+        if not _create_is_refused(self.store_dir):
+            os.chmod(self.store_dir, _RW_DIR_MODE)
             # SKIP-OK: BOB-173 — see seal_for_create.
             pytest.skip(
-                "host cannot refuse a rewrite of a 0400 file "
+                "host cannot refuse file creation in a 0500 directory "
                 "(euid=%d) — the instrument would be blind" % os.geteuid()
             )
 
@@ -316,6 +336,41 @@ class TestDeleteReportsPersistenceFailure:
             "the hook survived the delete, so a 2xx response is a false report of "
             "removal — the user believes a hook that will still fire is gone"
         )
+
+
+class TestAtomicWritePermissionSemanticsArePinned:
+    """Pins the premise BOB-174's reconciliation of ``seal_for_rewrite`` rests on.
+
+    The atomic write (mkstemp + ``os.replace``) needs write permission on the
+    DIRECTORY and ignores the target file's mode entirely. That is a real, deliberate
+    behaviour change — a 0400 hooks.json no longer refuses a write — and it is pinned
+    here rather than left as a docstring claim, so that reverting the atomic write or
+    changing the seal cannot silently invalidate the reasoning (§11.4.6).
+
+    It also keeps ``_rewrite_is_refused`` load-bearing: it is the control needle
+    proving the file really is unwritable in the append sense, which is what makes
+    "and yet the replace succeeded" a measurement rather than an assumption.
+    """
+
+    def test_a_read_only_target_file_does_not_stop_an_atomic_replace(self, harness):
+        created = harness.client.post("/api/v1/hooks", json=harness.create_payload())
+        hook_id = created.json()["hook_id"]
+
+        os.chmod(harness.hooks_file, stat.S_IRUSR)
+        if not _rewrite_is_refused(harness.hooks_file):
+            os.chmod(harness.hooks_file, stat.S_IRUSR | stat.S_IWUSR)
+            # SKIP-OK: BOB-173 — host cannot make a 0400 file unwritable.
+            pytest.skip("host cannot refuse a rewrite of a 0400 file (euid=%d)" % os.geteuid())
+
+        resp = harness.client.delete(f"/api/v1/hooks/{hook_id}")
+
+        assert resp.status_code == 200, (
+            "os.replace relinks a directory entry and does not consult the target's "
+            "mode; a 0400 hooks.json is expected NOT to block the write. Got %d — if "
+            "the write reverted to a non-atomic in-place open(), seal_for_rewrite's "
+            "directory seal is no longer the right needle." % resp.status_code
+        )
+        assert harness.listed_hook_ids() == []
 
 
 class TestHappyPathStillWorks:

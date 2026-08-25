@@ -51,23 +51,36 @@ class TestHooksInternal:
         assert len(hooks) == 1
         assert hooks[0]["hook_id"] == "abc"
 
-    def test_load_hooks_invalid_json(self, tmp_path, monkeypatch):
+    # RECONCILED under BOB-174 (§11.4.120 — a gate the fix legitimately breaks is
+    # rewritten to assert the NEW mechanism, never fake-passed and never reverted).
+    #
+    # Both tests below previously asserted ``_load_hooks() == []`` for an unreadable
+    # store. That WAS the defect: a corrupt file and an empty one returned the same
+    # value, so the API answered "you have no hooks" about a file it could not read,
+    # and the next create wrote a one-element list over the operator's real hooks.
+    # These two tests are the reason that behaviour looked deliberate.
+    #
+    # The new contract: MISSING stays ``[]`` (see ``test_load_hooks_no_file`` above,
+    # unchanged and still passing — that is the negative control); EXISTS-but-
+    # unreadable raises. See docs/qa/BOB-174/DESIGN_DECISION.md.
+
+    def test_load_hooks_invalid_json_raises_rather_than_reporting_empty(self, tmp_path, monkeypatch):
         _purge_hooks_module()
         import api.hooks
         fake_path = tmp_path / "hooks.json"
         fake_path.write_text("not json")
         monkeypatch.setattr(api.hooks, "HOOKS_FILE", str(fake_path))
-        hooks = api.hooks._load_hooks()
-        assert hooks == []
+        with pytest.raises(api.hooks.HookStoreCorruptError):
+            api.hooks._load_hooks()
 
-    def test_load_hooks_not_a_list(self, tmp_path, monkeypatch):
+    def test_load_hooks_not_a_list_raises_rather_than_reporting_empty(self, tmp_path, monkeypatch):
         _purge_hooks_module()
         import api.hooks
         fake_path = tmp_path / "hooks.json"
         fake_path.write_text('{"key": "value"}')
         monkeypatch.setattr(api.hooks, "HOOKS_FILE", str(fake_path))
-        hooks = api.hooks._load_hooks()
-        assert hooks == []
+        with pytest.raises(api.hooks.HookStoreCorruptError):
+            api.hooks._load_hooks()
 
     def test_save_hooks_creates_file(self, tmp_path, monkeypatch):
         _purge_hooks_module()

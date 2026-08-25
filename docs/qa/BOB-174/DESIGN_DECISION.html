@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>DESIGN_DECISION</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">DESIGN_DECISION</h1>
+</header>
+<h1
+id="bob-174-design-decision-how-a-corrupt-hook-store-behaves-and-why">BOB-174
+— Design decision: how a CORRUPT hook store behaves, and why</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-23T09:55:00Z <strong>Item:</strong> BOB-174 (Bug, High) — a
+corrupt hooks file reads as zero hooks, and the next create destroys the
+rest <strong>Scope of this document:</strong> the decisions the item
+required to be <em>recorded rather than inferred</em>, and the reasoning
+and measurements behind each.</p>
+<hr />
+<h2 id="the-root-stated-once">0. The root, stated once</h2>
+<p><code>_load_hooks</code> had one return value — <code>[]</code> — for
+two states with opposite meanings:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>State</th>
+<th>What it means</th>
+<th>Correct answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>hooks.json <strong>MISSING</strong></td>
+<td>No hooks configured. The fresh-install state.</td>
+<td><code>[]</code> — genuinely empty</td>
+</tr>
+<tr>
+<td>hooks.json <strong>EXISTS but unreadable</strong></td>
+<td>The configured hooks are <strong>UNKNOWN</strong> to the server.
+They may still be firing.</td>
+<td><em>not</em> <code>[]</code> — the server cannot answer</td>
+</tr>
+</tbody>
+</table>
+<p>Collapsing them is the whole defect. Everything below follows from
+separating them.</p>
+<p>This is a §11.4.201(6) <strong>FALSE-NULL</strong>: a blind
+instrument and a clean artifact returned the identical quiet zero. The
+fix is not “handle the exception better” — it is to make the two states
+<strong>distinguishable at the API surface</strong>, which is why a new
+exception type (<code>HookStoreCorruptError</code>) was introduced
+rather than a sentinel value or a <code>None</code> return.</p>
+<hr />
+<h2 id="decision-get-returns-500-not-200-with-a-degraded-marker">1.
+DECISION — GET returns <strong>500</strong>, not 200 with a degraded
+marker</h2>
+<p><strong>Chosen:</strong> <code>GET /api/v1/hooks</code> answers a
+corrupt store with <strong>HTTP 500</strong> and a <code>detail</code>
+naming the file and the consequence. The error body carries <strong>no
+<code>hooks</code> key at all</strong>.</p>
+<p><strong>Rejected:</strong>
+<code>200 {"hooks": [], "count": 0, "degraded": "..."}</code>.</p>
+<h3 id="the-measurement-that-decided-it">The measurement that decided
+it</h3>
+<p>The item flagged that this endpoint is consumed by the frontend, so a
+bare 200→5xx flip has UI consequences. It was checked rather than
+assumed.</p>
+<p><code>frontend/src/app/components/dashboard/dashboard.component.ts:794</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">loadHooks</span>()<span class="op">:</span> <span class="dt">void</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">this</span><span class="op">.</span><span class="at">api</span><span class="op">.</span><span class="fu">getHooks</span>()<span class="op">.</span><span class="fu">subscribe</span>(h <span class="kw">=&gt;</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">hooks</span><span class="op">.</span><span class="fu">set</span>(h<span class="op">.</span><span class="at">hooks</span> <span class="op">||</span> [])<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><code>subscribe()</code> is called with a <strong>next callback
+only</strong> — no error callback. <code>getHooks()</code> pipes only
+<code>timeout(...)</code>; there is no <code>catchError</code>, no HTTP
+interceptor and no custom <code>ErrorHandler</code> anywhere in the
+non-spec frontend sources (verified by grep over
+<code>frontend/src/app</code>, 2026-08-23). The template renders
+<code>&lt;tr *ngIf="hooks().length === 0"&gt;No hooks registered&lt;/tr&gt;</code>.</p>
+<p>So, with the frontend <strong>as it stands today</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Option</th>
+<th>What the <code>hooks</code> signal does</th>
+<th>What the operator sees</th>
+<th>Any signal at all?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>500</strong> (chosen)</td>
+<td>never updated — stream errors</td>
+<td>“No hooks registered”</td>
+<td><strong>yes</strong> — RxJS rethrows to Angular’s default
+<code>ErrorHandler</code> → <code>console.error</code>, plus a red row
+in the Network tab</td>
+</tr>
+<tr>
+<td><strong>200 + marker</strong></td>
+<td><code>h.hooks \|\| []</code> → <code>[]</code></td>
+<td>“No hooks registered”</td>
+<td><strong>no</strong> — a clean 200, nothing anywhere</td>
+</tr>
+</tbody>
+</table>
+<p>Both render the same wrong sentence today. That is the honest
+finding, and it is why the argument had to be decided on something other
+than the current UI. Three things decided it:</p>
+<ol type="1">
+<li><strong>A marker only helps consumers that opt in to reading
+it.</strong> Every consumer that exists today — the dashboard,
+<code>curl</code>, any operator script — checks the status or nothing. A
+new field they do not read is silence, which is the §11.4.201(6) shape
+the item exists to remove. A 500 is understood by every HTTP consumer
+that already exists, with no coordinated change.</li>
+<li><strong><code>count: 0</code> on a 200 is a false statement on the
+wire.</strong> It is not merely uninformative; it is the original lie,
+re-emitted with a footnote. An error response with no <code>hooks</code>
+key cannot be misread by a consumer that ignores the status, because
+there is nothing there to misread — which is why the guard asserts
+<code>"hooks" not in body</code>.</li>
+<li><strong>The 500 leaves a trace even untouched.</strong> A console
+error and a red network row are not a good UI, but they are a
+<em>distinguishable</em> state, and they are what turns “the hooks tab
+looks empty” from a dead end into a five-second diagnosis.</li>
+</ol>
+<h3 id="status-code-500-not-503">Status code: 500, not 503</h3>
+<p>503 means “temporarily unavailable, retry may help”. A corrupt file
+does not repair itself and a retry will fail identically; 503 would
+invite exactly the wrong response. 500 also matches what BOB-173 already
+established for the write-failure path in this same module, so the two
+persistence faults present consistently.</p>
+<h3 id="honest-boundary-what-this-decision-does-not-fix">HONEST BOUNDARY
+— what this decision does <strong>not</strong> fix</h3>
+<p><strong>The dashboard still shows “No hooks registered” on a corrupt
+store.</strong> This change makes the <em>API</em> honest; it does not
+make the <em>UI</em> honest. Making the UI render a distinct degraded
+state requires an error callback in <code>loadHooks()</code> and a
+template branch — both in <code>frontend/</code>, which is outside this
+item’s file scope and live under a sibling stream. That is a
+<strong>known, unfixed gap</strong>, recorded here so it is a tracked
+decision rather than an oversight, and it is the natural follow-up item.
+The API contract chosen above is deliberately the one that makes such a
+frontend fix a pure addition (read the status) rather than a
+renegotiation (agree on a new field).</p>
+<hr />
+<h2 id="decision-create-and-delete-refuse-they-never-clobber">2.
+DECISION — create and delete <strong>refuse</strong>; they never
+clobber</h2>
+<p><code>POST</code> and <code>DELETE</code> both answer a corrupt store
+with <strong>500</strong> and change nothing on disk.</p>
+<p>This is §11.4.252 applied literally: the path combines
+<strong>mutation of a shared resource</strong> (rewriting the store)
+with an <strong>external side effect</strong> (a hook is an outbound
+call the system will or will not later make), so when an input to its
+correctness is unverifiable it <strong>fails closed</strong>.</p>
+<p>The alternative — “read what we can, write what we have” — is
+precisely the defect. Pre-fix, <code>create</code> received
+<code>[]</code> from a misread of a three-hook file, appended one hook,
+and wrote a one-element list over the top. Measured on the
+fixed-but-for-this tree:</p>
+<pre><code>&#39;prod-hook-0&#39; is no longer in the hook store.
+assert &#39;prod-hook-0&#39; in &#39;[{&quot;hook_id&quot;: &quot;f71c5ebb-...&quot;, &quot;name&quot;: &quot;bob174-new-hook&quot;, ...}]&#39;</code></pre>
+<p>Note what is destroyed. A truncated file still contains the
+operator’s hook definitions in plain text — it is
+<strong>hand-repairable</strong>. After the clobber it is not. The
+create turned a recoverable state into an unrecoverable one, and
+reported 200.
+<code>test_recoverable_operator_data_is_still_recoverable</code> is the
+guard that pins exactly that property.</p>
+<p><code>DELETE</code> gets the same treatment for a second reason: its
+404 is a <em>claim about the file’s contents</em> (“Hook not found”).
+Making that claim about a file that was never successfully read is a
+false report, not a null result — pre-fix, deleting a hook that
+<strong>was</strong> in the store answered 404.</p>
+<hr />
+<h2
+id="decision-dispatch_event-logs-and-dispatches-nothing-it-does-not-raise">3.
+DECISION — <code>dispatch_event</code> logs and dispatches nothing; it
+does <strong>not</strong> raise</h2>
+<p>This is the one place a log-only arm was accepted, and it is the
+decision most in tension with the rest of the item, so the reasoning is
+recorded in full.</p>
+<p><code>dispatch_event</code> is awaited <strong>inline</strong> by the
+search and download handlers (<code>api/routes.py</code>, 14 call
+sites). Raising <code>HookStoreCorruptError</code> out of it would turn
+an unreadable hooks file into a <strong>500 on SEARCH and on
+DOWNLOAD</strong> — a §11.4.201(1) false-positive refusal that breaks
+the product’s primary capabilities over an unrelated subsystem’s state.
+That is strictly worse than the gap it would close.</p>
+<p>So the chosen behaviour is: <strong>dispatch no hooks</strong> (fail
+closed on the side effect — the set of hooks to run is unknown, so none
+run), <strong>log an ERROR</strong> naming the file, and
+<strong>return</strong>.</p>
+<p><strong>HONEST BOUNDARY (§11.4.6):</strong> a log-only arm is the
+exact shape this item condemns everywhere else. It is accepted <em>here
+and only here</em> because <code>dispatch_event</code> is
+fire-and-forget and has <strong>no response channel of its own to be
+honest on</strong>. <code>GET /api/v1/hooks</code> is the surface where
+the operator learns the store is broken, and it now says so loudly. If a
+future change gives the dispatch path a status surface (a health field,
+an SSE event, a hook-execution log entry), that surface should carry
+this state and this arm should stop being log-only.</p>
+<hr />
+<h2
+id="decision-corrupt-includes-wrong-shape-bounded-at-list-of-objects">4.
+DECISION — “corrupt” includes wrong <strong>shape</strong>, bounded at
+list-of-objects</h2>
+<p><code>HookStoreCorruptError</code> is raised for:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Input</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>unreadable file (<code>OSError</code>)</td>
+<td>exists, contents unobtainable</td>
+</tr>
+<tr>
+<td>truncated / malformed JSON (<code>ValueError</code>)</td>
+<td>the crash-mid-write case A5 produces</td>
+</tr>
+<tr>
+<td>valid JSON that is not a list (<code>{"hooks": [...]}</code>,
+<code>"x"</code>, <code>42</code>)</td>
+<td>parses cleanly; a fix hardening only <code>json.load</code> would
+still collapse it to <code>[]</code></td>
+</tr>
+<tr>
+<td>a list containing non-objects (<code>["a","b"]</code>)</td>
+<td>every accessor in this module is <code>h["hook_id"]</code> /
+<code>h.get("event")</code></td>
+</tr>
+</tbody>
+</table>
+<p>And, found by self-review rather than by the reported chain: a
+<strong>directory</strong> (or fifo/socket/device) at the store path.
+<code>os.path.isfile</code> is False for those, so the original guard —
+and any fix that kept <code>isfile</code> — reported them as MISSING,
+i.e. “no hooks configured”. That is the same conflation in a rarer
+flavour, so the guard is now <code>os.path.exists</code>, letting such a
+path fall through to the <code>open</code> where the existing
+<code>OSError</code> handler covers it. A broken symlink deliberately
+stays MISSING (<code>exists</code> follows links) — nothing readable is
+there, and that reading is correct.</p>
+<p><strong>Deliberately NOT validated:</strong> individual keys within
+each hook object. A hook missing <code>hook_id</code> would still fail
+later in <code>delete_hook</code>. That was left alone on purpose —
+per-key validation risks refusing hand-edited-but-workable files and
+files carrying fields added by a future version, which is a §11.4.201(1)
+false-positive refusal of a <em>healthy</em> store. The line drawn is:
+<strong>“could the contents be obtained in the shape this module
+contracts for”</strong> — not “is every hook well-formed”. Stricter
+validation is a defensible future change, but it is a different decision
+with a different risk profile and should be made on its own
+evidence.</p>
+<p><code>HookStoreCorruptError</code> is kept <strong>distinct</strong>
+from BOB-173’s <code>HookPersistenceError</code> rather than merged: one
+means a READ failed, the other a WRITE. They arrive at different points
+and an operator repairs them differently. Collapsing them would
+recreate, one level up, the same “two states, one signal” defect this
+item exists to remove.</p>
+<hr />
+<h2 id="decision-the-atomic-write-is-theme_states-pattern-reused">5.
+DECISION — the atomic write is theme_state’s pattern, reused</h2>
+<p><code>_save_hooks</code> now writes via <code>tempfile.mkstemp</code>
+→ <code>json.dump</code> → <code>flush</code> → <code>fsync</code> →
+<code>os.replace</code>, with the temp file unlinked on any failure.</p>
+<p>This is <strong>not invented here</strong>. It is the pattern already
+established in this codebase by
+<code>download-proxy/src/api/theme_state.py::_write_atomic</code>
+(§11.4.28 — reuse, do not re-derive). The temp file is created
+<strong>in the destination directory</strong>, not <code>/tmp</code>,
+because <code>os.replace</code> is only atomic within a filesystem; a
+cross-device rename would silently reintroduce the window being
+closed.</p>
+<p>It was <strong>not</strong> extracted into a shared helper, which is
+the obvious right end-state, because that means editing
+<code>theme_state.py</code> — outside this item’s file scope. Recorded
+as a follow-up.</p>
+<p>Why fix the write at all when A1 now catches the corruption it
+produces? Because A5 is the link that <strong>manufactures</strong> the
+corrupt file. Guarding only the read leaves every crash mid-write
+destroying the store and leaves the operator with a repair job; the
+guard downstream turns silent data loss into a visible 500, which is
+better but is not the same as not losing the data.</p>
+<h3
+id="decision-the-permission-semantics-change-this-carries-accepted-knowingly">DECISION
+— the permission-semantics change this carries, accepted knowingly</h3>
+<p>An atomic write changes <em>which permission governs</em>. Measured,
+not assumed:</p>
+<pre><code>append to a 0400 file : REFUSED (Permission denied)
+os.replace over 0400  : SUCCEEDS
+mkstemp in a 0500 dir : REFUSED (Permission denied)   &lt;- the atomic write fails here</code></pre>
+<p>So <strong>a hooks.json chmod’ed 0400 no longer refuses a
+write.</strong> <code>os.replace</code> relinks a directory entry and
+never consults the target file’s mode; what governs now is write
+permission on the <strong>directory</strong>.</p>
+<p>This was surfaced by three of BOB-173’s DELETE tests going red — that
+file sealed the <em>file</em> and probed with
+<code>open(target, "a")</code>, a needle that matched the old in-place
+rewrite and no longer matches the code (the inverse of the §11.4.199
+false reproduction its own header warns about). It was investigated
+before anything was touched, and the change is <strong>accepted
+deliberately</strong>, because:</p>
+<ol type="1">
+<li>File mode on the application’s own state store is not a documented
+protection mechanism anywhere in this project — nothing sets it, nothing
+relies on it.</li>
+<li><code>theme_state.py</code> already behaves exactly this way; the
+alternative would leave two state stores in the same service with
+different durability guarantees.</li>
+<li>The realistic deployment failure — the
+EACCES-on-<code>/config</code> case BOB-135 actually hit — is a
+<strong>directory</strong> permission problem, and it is still caught.
+That is why BOB-173’s <em>create</em> tests never failed: only the
+file-sealed delete ones did.</li>
+<li>The thing traded away (an undocumented chmod-based lock) is worth
+far less than the thing gained (the store can never be truncated by an
+interrupted write).</li>
+</ol>
+<p>BOB-173’s seal was reconciled to seal the directory using the needle
+that matches what the code now does (§11.4.120 — assert the NEW
+mechanism), and the premise above is pinned by a test rather than left
+as a docstring claim, so reverting the atomic write cannot silently
+invalidate the seal choice.</p>
+<hr />
+<h2 id="what-is-not-claimed">6. What is NOT claimed</h2>
+<ul>
+<li><strong>Not claimed:</strong> that the write currently fails in the
+operator’s deployment, or how often. The chain is reproduced under
+controlled conditions; its real-world frequency is unmeasured.</li>
+<li><strong>Not claimed:</strong> that the dashboard now shows anything
+useful on a corrupt store. It does not — see §1.</li>
+<li><strong>Not claimed:</strong> that a corrupt store is now
+impossible. The atomic write closes the crash-mid-write vector this code
+owns; external corruption (a bad hand-edit, filesystem damage, a restore
+from a truncated backup) remains possible, which is exactly why the read
+guard exists as well.</li>
+<li><strong>Not verified:</strong> behaviour under a real ENOSPC or a
+real SIGKILL mid-write. The reproduction injects a partial write
+followed by <code>OSError(ENOSPC)</code>, which models the failure
+faithfully at the point that matters (the file is truncated at
+<code>open</code> before serialisation completes) but is not the
+syscall-level event itself.</li>
+</ul>
+<hr />
+<h2 id="a3-the-event-vocabulary-pin-pinned-not-deduplicated">7. A3 — the
+event-vocabulary pin: <strong>pinned, not deduplicated</strong></h2>
+<p><code>VALID_EVENTS</code> (api/hooks.py) and
+<code>HookEventType</code> (merge_service/hooks.py) are two sources of
+truth for one closed set. <strong>Verified identical today</strong>
+(both hold the same 8 values).</p>
+<p>The drift consequence is worth stating because it is silent:
+<code>create_hook</code> validates against <code>VALID_EVENTS</code>,
+while <code>dispatch_event</code> resolves
+<code>HookEventType(event_type)</code> first and <strong>returns
+early</strong> on <code>ValueError</code>. An event present in one and
+not the other therefore registers with <strong>HTTP 200</strong> and
+then <strong>never fires</strong>, logging a warning nobody reads.</p>
+<p><strong>Decision: pinned by assertion, not unified.</strong>
+<code>TestEventVocabularyCannotDrift</code> asserts set equality and
+that every accepted event is dispatchable. Unifying the two — deriving
+<code>VALID_EVENTS</code> from the enum — is the better end-state but
+requires editing <code>merge_service/hooks.py</code>, which is outside
+this item’s scope and live under a sibling stream. The pin costs one
+assertion and makes the drift impossible to land silently, which is the
+property that was missing.</p>
+<hr />
+<h2 id="guard">Guard</h2>
+<p><code>tests/unit/api_layer/test_bob174_corrupt_hook_store.py</code> —
+28 tests. Evidence, including the observed RED, the GREEN, and five
+paired §1.1 mutations, is in <code>EVIDENCE.md</code> beside this
+file.</p>
+</body>
+</html>

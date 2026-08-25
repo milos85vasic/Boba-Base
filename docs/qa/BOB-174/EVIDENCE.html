@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>EVIDENCE</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">EVIDENCE</h1>
+</header>
+<h1 id="bob-174-evidence-pack">BOB-174 — Evidence pack</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-23T10:20:00Z <strong>Guard:</strong>
+<code>tests/unit/api_layer/test_bob174_corrupt_hook_store.py</code> (28
+tests) <strong>Change:</strong>
+<code>download-proxy/src/api/hooks.py</code> <strong>Decision
+record:</strong> <code>DESIGN_DECISION.md</code> beside this file</p>
+<p>Host discipline throughout:
+<code>GOMAXPROCS=2 nice -n 19 ionice -c 3</code>,
+<code>.venv/bin/python -m pytest -p no:schemathesis</code>.
+<code>PYTEST_DISABLE_PLUGIN_AUTOLOAD</code> deliberately NOT used
+(BOB-165).</p>
+<hr />
+<h2
+id="red-observed-against-the-unmodified-tree-before-any-source-change">1.
+RED — observed against the unmodified tree, before any source
+change</h2>
+<p>The guard was written first and run first. <strong>15 failed, 13
+passed.</strong></p>
+<pre><code>15 failed, 13 passed, 1 warning in 9.12s
+FAILED ...::TestCorruptStoreIsNotReportedAsZeroHooks::test_get_does_not_claim_zero_hooks[seed_truncated]
+FAILED ...::TestCorruptStoreIsNotReportedAsZeroHooks::test_get_does_not_claim_zero_hooks[seed_wrong_shape]
+FAILED ...::TestCorruptStoreIsNotReportedAsZeroHooks::test_get_does_not_claim_zero_hooks[seed_list_of_non_dicts]
+FAILED ...::TestCorruptStoreIsNotReportedAsZeroHooks::test_error_detail_names_the_problem_so_the_operator_can_fix_it
+FAILED ...::TestCreateRefusesRatherThanDestroying::test_create_is_refused_on_a_corrupt_store[seed_truncated]
+FAILED ...::TestCreateRefusesRatherThanDestroying::test_create_is_refused_on_a_corrupt_store[seed_wrong_shape]
+FAILED ...::TestCreateRefusesRatherThanDestroying::test_create_is_refused_on_a_corrupt_store[seed_list_of_non_dicts]
+FAILED ...::TestCreateRefusesRatherThanDestroying::test_the_operators_hooks_survive_the_refused_create[seed_truncated]
+FAILED ...::TestCreateRefusesRatherThanDestroying::test_the_operators_hooks_survive_the_refused_create[seed_wrong_shape]
+FAILED ...::TestCreateRefusesRatherThanDestroying::test_the_operators_hooks_survive_the_refused_create[seed_list_of_non_dicts]
+FAILED ...::TestCreateRefusesRatherThanDestroying::test_recoverable_operator_data_is_still_recoverable
+FAILED ...::TestDeleteRefusesRatherThanDestroying::test_delete_does_not_report_not_found_for_an_unreadable_store
+FAILED ...::TestWriteIsAtomic::test_a_crash_mid_write_leaves_the_previous_store_intact
+FAILED ...::TestWriteIsAtomic::test_the_surviving_store_is_still_parseable_after_a_failed_write
+FAILED ...::TestNonOSErrorWriteFailureIsPinned::test_a_serialisation_failure_does_not_destroy_the_existing_store</code></pre>
+<h3 id="the-a2-data-loss-reproduced-verbatim">The A2 data loss,
+reproduced verbatim</h3>
+<pre><code>E  AssertionError: &#39;prod-hook-0&#39; is no longer in the hook store. A truncated file is
+E  hand-repairable; an overwritten one is not. The create turned a recoverable state
+E  into an unrecoverable one.
+E  assert &#39;prod-hook-0&#39; in &#39;[\n  {\n    &quot;hook_id&quot;: &quot;f71c5ebb-2d81-492b-87d8-61ed82e41549&quot;,
+E    \n    &quot;name&quot;: &quot;bob174-new-hook&quot;, ... }\n]&#39;</code></pre>
+<p>Three operator hooks in, one unrelated hook out. This is the item’s
+reported chain, on the already-BOB-173-fixed tree.</p>
+<h3 id="the-a5-corruption-being-manufactured-verbatim">The A5 corruption
+being manufactured, verbatim</h3>
+<pre><code>E  AssertionError: a write that FAILED PART-WAY left the store truncated. The previous
+E  contents are gone and what remains is the exact corrupt input that BOB-174&#39;s A1/A2
+E  chain then reads as &#39;no hooks&#39; and overwrites.
+E  assert &#39;[{&quot;hook_id&quot;: &quot;half-writ&#39; == &#39;[\n  {\n    &quot;hook_id&quot;: &quot;seeded-0&quot;, ...&#39;</code></pre>
+<p><code>[{"hook_id": "half-writ</code> — the fragment left by a failure
+mid-serialisation. That fragment is precisely the A1 input. The chain
+closes on itself, which is why the three defects are one item.</p>
+<h3 id="red-members-that-passed-pre-fix-stated-honestly-11.4.6">RED
+members that passed pre-fix, stated honestly (§11.4.6)</h3>
+<p>Two guards pass against the broken code and do <strong>not</strong>
+capture the escape by themselves. Neither is claimed to:</p>
+<ul>
+<li><code>test_the_store_survives_a_refused_delete</code> — pre-fix,
+<code>delete</code> raised 404 <em>before</em> reaching the write, so
+the file was untouched for the wrong reason. It asserts the reality half
+that makes the 404 a lie;
+<code>test_delete_does_not_report_not_found_for_an_unreadable_store</code>
+is the member that captured the defect.</li>
+<li><code>test_no_partial_or_temp_file_is_left_observable_after_a_failed_write</code>
+— pre-fix there were no temp files to leave. It pins a property of the
+new mechanism, not the old escape.</li>
+<li><code>test_dispatch_runs_no_hooks_on_a_corrupt_store</code> (added
+later, §5c) — pre-fix <code>_load_hooks</code> returned <code>[]</code>,
+so no hooks were dispatched then either. It pins the
+<strong>fail-closed</strong> half of the dispatch decision against a
+future implementation that tries to salvage partial data; its partner
+<code>test_dispatch_does_not_raise_on_a_corrupt_store</code> is the one
+that constrains the new code.</li>
+</ul>
+<hr />
+<h2
+id="two-test-bugs-found-and-fixed-during-the-redgreen-transition-11.4.1">2.
+Two test bugs found and fixed during the RED→GREEN transition
+(§11.4.1)</h2>
+<p>Both were <strong>instrument</strong> defects, not product defects,
+and both are recorded because one of them was dangerous.</p>
+<p><strong>(a) An impossible assertion.</strong>
+<code>test_recoverable_operator_data_is_still_recoverable</code>
+demanded all three hook names survive a 70%-truncated seed — but a
+truncation by definition cut <code>prod-hook-2</code> off, so the seed
+never contained it. No fix could deliver it. Corrected to assert on the
+names the seed <em>actually retains</em>.</p>
+<p><strong>(b) <code>monkeypatch.undo()</code> silently re-pointed the
+app at production state.</strong> The atomicity tests patched
+<code>json.dump</code>, then called <code>monkeypatch.undo()</code> to
+restore it mid-test. <code>monkeypatch</code> is a single
+function-scoped instance <strong>shared with the <code>harness</code>
+fixture</strong>, so <code>undo()</code> reverted <em>every</em> patch
+it had made — including <code>HOOKS_FILE</code>. The app was thereby
+re-pointed at the real <code>/config/download-proxy/hooks.json</code>, a
+GET read that non-existent path, and the test failed with
+<code>assert [] == ['prod-hook-0', ...]</code> for a reason having
+nothing to do with the code under test.</p>
+<p>This is a §11.4.201(7)(c) instrument-path defect: <strong>had the
+expected value been <code>[]</code>, it would have passed vacuously
+while reading production state.</strong> Replaced with a self-restoring
+one-shot patch, so no <code>undo()</code> is needed and the footgun is
+gone from the file. The reasoning is preserved in
+<code>_arm_one_shot_enospc</code>’s docstring so it cannot be
+reintroduced by a future edit.</p>
+<hr />
+<h2 id="green">3. GREEN</h2>
+<pre><code>28 passed, 1 warning in 10.18s</code></pre>
+<p>All five hook-touching test files together, after reconciliation
+(§4):</p>
+<pre><code>tests/unit/api_layer/test_bob174_corrupt_hook_store.py
+tests/unit/api_layer/test_bob173_hook_persistence_failure.py
+tests/unit/api_layer/test_hooks_coverage.py
+tests/unit/api_layer/test_hooks_endpoints.py
+tests/unit/api_layer/test_hooks_remaining.py
+--&gt; 68 passed, 1 warning in 31.39s</code></pre>
+<p><code>ruff check download-proxy/src/api/hooks.py tests/unit/api_layer/</code>
+→ <strong>All checks passed!</strong></p>
+<hr />
+<h2
+id="two-gates-the-fix-legitimately-broke-reconciled-not-fake-passed-11.4.120">4.
+Two gates the fix legitimately broke — RECONCILED, not fake-passed
+(§11.4.120)</h2>
+<p>The full <code>tests/unit/api_layer/</code> sweep surfaced 5
+failures. Both causes were investigated before anything was touched;
+neither was a regression in the fix.</p>
+<h3 id="a-test_hooks_coverage.py-two-tests-asserted-the-defect">(a)
+<code>test_hooks_coverage.py</code> — two tests <strong>asserted the
+defect</strong></h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fake_path.write_text(<span class="st">&quot;not json&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>hooks <span class="op">=</span> api.hooks._load_hooks()</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> hooks <span class="op">==</span> []          <span class="co"># &lt;- the defect, codified</span></span></code></pre></div>
+<p>These two tests are the reason the swallow looked deliberate. They
+assert the exact behaviour the item’s acceptance criterion (a) removes.
+<strong>Reconciled</strong> to assert the new mechanism
+(<code>pytest.raises(HookStoreCorruptError)</code>), with the reasoning
+in-source. Note the sibling <code>test_load_hooks_no_file</code> was
+<strong>left untouched and still passes</strong> — that is the negative
+control proving MISSING still returns <code>[]</code>.</p>
+<h3
+id="b-test_bob173_hook_persistence_failure.py-three-delete-tests-and-a-real-behaviour-change">(b)
+<code>test_bob173_hook_persistence_failure.py</code> — three DELETE
+tests, and a real behaviour change</h3>
+<p>BOB-173’s <code>seal_for_rewrite</code> chmod’ed the hooks
+<strong>file</strong> to 0400 and probed with
+<code>open(target, "a")</code>. That was the correct needle while
+<code>_save_hooks</code> rewrote in place. The atomic write does not
+rewrite in place, so the seal stopped blocking anything and the delete
+write succeeded while the test expected a failure — the inverse of the
+§11.4.199 false-reproduction that file’s own header warns about.</p>
+<p>Measured before deciding (§11.4.6), not assumed:</p>
+<pre><code>append to a 0400 file : REFUSED (Permission denied)
+os.replace over 0400  : SUCCEEDS
+mkstemp in a 0500 dir : REFUSED (Permission denied)   &lt;- the atomic write fails here</code></pre>
+<p><strong>This is a genuine, deliberate behaviour change and is
+recorded as one:</strong> a hooks.json chmod’ed 0400 no longer refuses a
+write, because <code>os.replace</code> relinks a directory entry and
+never consults the target’s mode. It is accepted because (i) file mode
+on the app’s own state store is not a documented protection mechanism
+anywhere in this project, (ii) <code>theme_state.py</code> already
+behaves this way, and (iii) the realistic deployment failure — the
+EACCES-on-<code>/config</code> case BOB-135 actually hit — is a
+<strong>directory</strong> permission problem and is still caught, which
+is why BOB-173’s <em>create</em> tests never failed.</p>
+<p><strong>Reconciled</strong> by sealing the DIRECTORY with the needle
+that matches the operation the code now performs
+(<code>_create_is_refused</code> — an atomic write must be able to
+create a new file). The resulting guard is a closer match to the code
+under test than the original was.</p>
+<p>The premise is now pinned by a new test rather than left as a
+docstring claim:
+<code>TestAtomicWritePermissionSemanticsArePinned::test_a_read_only_target_file_does_not_stop_an_atomic_replace</code>.</p>
+<p><strong>The reconciled gates still bite</strong> — verified, because
+a reconciled gate that stopped catching its own defect would be the
+§11.4.120 fake-pass in slow motion:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Mutation</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>restore BOB-173’s <code>_save_hooks</code> swallow</td>
+<td><strong>5 failed</strong>, 5 passed — including all 3 reconciled
+DELETE tests</td>
+</tr>
+<tr>
+<td>restore the A1 <code>_load_hooks</code> swallow</td>
+<td><strong>2 failed</strong>, 10 passed — both reconciled coverage
+tests</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="paired-1.1-mutations-every-guard-proven-load-bearing">5. Paired
+§1.1 mutations — every guard proven load-bearing</h2>
+<p>Each mutation restores one specific pre-fix behaviour; the source was
+restored from a pristine copy after each and the md5 re-verified
+(<code>ea6dcb3441f946f10410d8309e6e8e5b</code>) so no mutation residue
+could survive into the tree (§11.4.84).</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Mutation</th>
+<th>Result</th>
+<th>Which guard bit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M1</strong></td>
+<td>restore <code>_load_hooks</code>’s
+<code>except Exception: return []</code></td>
+<td><strong>12 failed</strong>, 16 passed</td>
+<td>A1 — GET, create-refusal, delete-404, data-survival</td>
+</tr>
+<tr>
+<td><strong>M2</strong></td>
+<td>restore <code>open(HOOKS_FILE, "w")</code> in place of the atomic
+write</td>
+<td><strong>3 failed</strong>, 25 passed</td>
+<td>A5 — all three atomicity guards, and only those</td>
+</tr>
+<tr>
+<td><strong>M3</strong></td>
+<td>narrow <code>_save_hooks</code>’ <code>except Exception</code> →
+<code>except OSError</code></td>
+<td><strong>2 failed</strong>, 26 passed</td>
+<td>the previously-unpinned arm (BOB-173 review finding)</td>
+</tr>
+<tr>
+<td><strong>M4</strong></td>
+<td>add <code>archive_complete</code> to <code>VALID_EVENTS</code>,
+absent from <code>HookEventType</code></td>
+<td><strong>2 failed</strong>, 26 passed</td>
+<td>A3 — the vocabulary pin</td>
+</tr>
+<tr>
+<td><strong>M5</strong></td>
+<td>drop <code>create_hook</code>’s refusal, let the misread flow into
+the save</td>
+<td><strong>7 failed</strong>, 21 passed</td>
+<td>A2 — the data-loss path specifically</td>
+</tr>
+<tr>
+<td><strong>M6</strong></td>
+<td>restore BOB-173’s write-failure swallow</td>
+<td><strong>5 failed</strong>, 5 passed</td>
+<td>the reconciled BOB-173 guard</td>
+</tr>
+<tr>
+<td><strong>M7</strong></td>
+<td>restore <code>os.path.isfile</code> in place of
+<code>os.path.exists</code></td>
+<td><strong>1 failed</strong>, 28 passed</td>
+<td>the non-file-at-store-path guard (§5b)</td>
+</tr>
+<tr>
+<td><strong>M8</strong></td>
+<td>let <code>dispatch_event</code> propagate the corrupt-store
+error</td>
+<td><strong>2 failed</strong>, 29 passed</td>
+<td>the dispatch fail-closed guards</td>
+</tr>
+</tbody>
+</table>
+<p>M2’s narrowness is the useful signal: restoring the non-atomic write
+breaks <strong>only</strong> the atomicity tests and nothing else, which
+is what a correctly-scoped guard looks like.</p>
+<p>M3 confirms the BOB-173 review’s finding directly: before this
+change, <code>except Exception → except OSError</code> passed the entire
+suite. It now costs two tests.</p>
+<h3
+id="b.-one-defect-found-by-self-review-not-by-the-reported-chain">5b.
+One defect found by self-review, not by the reported chain</h3>
+<p><code>_load_hooks</code> guarded with <code>os.path.isfile</code>,
+which is <strong>also False for a directory</strong> (or fifo, socket,
+device node) at the store path. Probed rather than assumed:</p>
+<pre><code>os.path.isfile(dir) : False   -&gt; treated as MISSING, GET says 0 hooks
+os.path.exists(dir) : True
+open(dir) raises    : IsADirectoryError (an OSError -&gt; already handled)</code></pre>
+<p>So a directory at <code>hooks.json</code> was reported as “no hooks
+configured” — the <em>same</em> conflation the item is about, in a rarer
+flavour, and it would have survived a fix that kept <code>isfile</code>.
+Closed by changing one word to <code>os.path.exists</code> and letting
+it fall through to the <code>open</code>, where the existing
+<code>OSError</code> handler already covers it. A broken symlink stays
+MISSING under both spellings (<code>exists</code> follows links), which
+is correct — nothing readable is there.</p>
+<p>Pinned by
+<code>test_a_directory_at_the_store_path_is_not_reported_as_zero_hooks</code>,
+and M7 confirms it is load-bearing.</p>
+<h3 id="c.-a-decision-that-was-recorded-but-not-guarded">5c. A decision
+that was recorded but not guarded</h3>
+<p><code>dispatch_event</code>’s corrupt-store behaviour (§3 of the
+decision record — log, dispatch nothing, do not propagate) was
+<strong>decided and written down but initially left untested</strong>. A
+recorded decision with no guard is one edit away from silently
+reverting, and the reverting edit is an attractive one: “why is this
+swallowing an exception?” is exactly what a future reader will ask.
+Closed by
+<code>TestDispatchFailsClosedWithoutBreakingUnrelatedRequests</code>,
+which asserts <strong>both</strong> halves — it does not raise (so a
+corrupt hooks file cannot 500 an unrelated search or download)
+<strong>and</strong> it runs no hooks (so the side effect fails closed).
+Each half alone is satisfiable by a wrong implementation, which is why
+both are asserted. M8 confirms they bite.</p>
+<hr />
+<h2
+id="negative-controls-11.4.2011-the-fix-does-not-fail-closed-by-failing-always">6.
+Negative controls (§11.4.201(1)) — the fix does not fail closed by
+failing always</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Assertion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_get_returns_an_empty_list_when_no_store_exists</code></td>
+<td>MISSING file → <code>200 {"hooks": [], "count": 0}</code></td>
+</tr>
+<tr>
+<td><code>test_create_works_on_a_fresh_install</code></td>
+<td>MISSING file → create succeeds and persists</td>
+</tr>
+<tr>
+<td><code>test_an_empty_json_list_is_a_healthy_store_not_a_corrupt_one</code></td>
+<td><code>[]</code> on disk stays healthy (what deleting the last hook
+leaves)</td>
+</tr>
+<tr>
+<td><code>test_get_lists_the_configured_hooks</code></td>
+<td>VALID file → all three listed</td>
+</tr>
+<tr>
+<td><code>test_create_appends_and_preserves_the_existing_hooks</code></td>
+<td>VALID file → appends, does not replace</td>
+</tr>
+<tr>
+<td><code>test_delete_removes_only_the_named_hook</code></td>
+<td>VALID file → removes exactly one</td>
+</tr>
+<tr>
+<td><code>test_delete_of_an_absent_hook_still_404s_on_a_valid_store</code></td>
+<td>the ordinary not-found path is not swallowed by the corrupt-store
+guard</td>
+</tr>
+<tr>
+<td><code>test_load_hooks_no_file</code> (pre-existing, untouched)</td>
+<td>the MISSING-is-not-CORRUPT boundary, asserted at the unit layer</td>
+</tr>
+</tbody>
+</table>
+<p>The missing-file controls are the sharp ones: <code>[]</code> was the
+<strong>correct</strong> answer for that state, and a fix that collapsed
+it into the corrupt case would 500 every fresh install’s hooks tab and
+refuse every create — worse than the defect being fixed.</p>
+<hr />
+<h2 id="atomicity-proof-not-merely-it-still-writes">7. Atomicity proof —
+not merely “it still writes”</h2>
+<p><code>TestWriteIsAtomic</code> drives a <strong>faithful</strong>
+failure rather than a synthetic one: <code>json.dump</code> writes a
+partial fragment and then raises <code>OSError(ENOSPC)</code>, modelling
+a full disk or a kill mid-serialisation at the point that matters. Four
+assertions:</p>
+<ol type="1">
+<li>the previous store is <strong>byte-identical</strong> afterwards
+(the atomicity proof — with an in-place <code>open</code> the original
+is destroyed at open time, before the failure even occurs);</li>
+<li>the store is <strong>still parseable and still lists the original
+hooks</strong> through the real API afterwards;</li>
+<li><strong>no partial or temp file is observable</strong> after a
+failed write;</li>
+<li><strong>no temp file is left</strong> after a successful write.</li>
+</ol>
+<p>M2 confirms (1) and (2) are the load-bearing pair.</p>
+<hr />
+<h2 id="honest-boundaries">8. Honest boundaries</h2>
+<ul>
+<li><strong>The dashboard still shows “No hooks registered” on a corrupt
+store.</strong> The API is now honest; the UI is not. Fixing it needs an
+error callback in <code>loadHooks()</code> and a template branch, both
+in <code>frontend/</code> — outside this item’s scope and live under a
+sibling stream. Recorded in <code>DESIGN_DECISION.md</code> §1 as a
+known gap and the natural follow-up.</li>
+<li><strong><code>dispatch_event</code>’s corrupt-store arm is
+log-only.</strong> Accepted only there, because that coroutine is
+awaited inline by the search and download handlers and raising would 500
+unrelated capabilities. Reasoning and the conditions under which it
+should change: <code>DESIGN_DECISION.md</code> §3.</li>
+<li><strong>Not verified against a real ENOSPC or a real
+SIGKILL.</strong> The injection models the failure faithfully but is not
+the syscall-level event.</li>
+<li><strong>No live-container run.</strong> Everything here is the real
+FastAPI app driven through <code>TestClient</code> over real files on
+real temp paths — no mocks of the code under test — but not a running
+<code>qbittorrent-proxy</code> container.</li>
+<li><strong>A corrupt store is not now impossible.</strong> The atomic
+write closes the crash-mid-write vector this code owns; a bad hand-edit
+or filesystem damage still produces one, which is why the read guard
+exists too.</li>
+<li><strong><code>DESIGN_DECISION.{html,pdf,docx}</code> are
+STALE.</strong> An export pipeline generated them at 11:50 from an
+earlier revision of the <code>.md</code>, which I then edited at 12:00
+(adding the permission-semantics and non-file-path decisions). I did not
+regenerate them: the exporter
+(<code>scripts/generate_markdown_exports.sh</code>) is itself modified
+by a sibling stream right now, and running it would sweep files outside
+this item. Flagged rather than silently left divergent (§11.4.106) — the
+<code>.md</code> is authoritative.</li>
+<li><strong><code>_save_hooks</code> is still not concurrency-safe
+against a second writer.</strong> <code>os.replace</code> makes each
+write atomic, so no reader ever sees a partial file — a real improvement
+— but two concurrent create requests can still interleave
+load→append→save and lose one hook. That is a separate defect
+(last-writer-wins), out of scope here, and <strong>not</strong> claimed
+to be fixed by this change.</li>
+</ul>
+</body>
+</html>
