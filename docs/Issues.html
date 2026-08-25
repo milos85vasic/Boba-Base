@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 68 <strong>Last modified:</strong>
-2026-08-25T20:31:16Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 70 <strong>Last modified:</strong>
+2026-08-25T20:53:30Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -2910,5 +2910,82 @@ semantics — with a RED observed first per §11.4.115. Raised as MINOR-1
 by the independent review of the fail-open batch; filed rather than
 absorbed so the residual defect is not retired along with the logging
 that revealed it.</p>
+<h2
+id="bob-194-pre-build-gates-walk-.claudeworktrees-so-a-stale-agent-worktree-can-fail-the-main-build-11.4.2011">BOB-194
+— Pre-build gates walk .claude/worktrees, so a stale agent worktree can
+fail the main build (§11.4.201(1))</h2>
+<p><strong>Status:</strong> In progress <strong>Type:</strong> Bug</p>
+<p>WHAT: agent worktrees under .claude/worktrees/ are ephemeral copies
+pinned at arbitrary commits - never built, never shipped, deleted when
+the agent finishes. Pre-build gates that walk the tree with find(1) from
+the repo root descend into them anyway. MEASURED INSTANCE (2026-08-25):
+CM-GO-TOOLCHAIN-MATCHES-BUILDER FAILED the main build with exactly one
+finding, and it came from .claude/worktrees/agent-afda1df906c537ab4 - a
+worktree 86 commits behind still carrying ‘FROM golang:1.23-alpine’
+against a go.mod that had since moved to 1.26.2. The main tree was
+CORRECT throughout (Dockerfile golang:1.26.2-alpine, go.mod go 1.26.2).
+Per §11.4.201(1) a false-positive refusal is a FAIL-bluff of equal
+severity to a false pass: it blocks real work and teaches people to
+bypass the gate. FIXED FOR ONE GATE, ONE INSTANCE OF A CLASS: ‘.claude’
+added to that gate’s PRUNE_DIRS, with a deterministic §1.1 pair - a
+stale mismatch inside .claude/worktrees must NOT fail a healthy tree,
+the SAME mismatch outside it MUST still fail, so the prune cannot widen
+into blindness (§11.4.201(6)). Mutation verified: reverting the prune
+makes 2 checks fail. SURVEY, measured not inferred: 8 of 13 pre_build
+gates walk the tree; only the fixed one prunes .claude. Gates using ‘git
+ls-files’ are structurally immune - worktrees are untracked (1 tracked
+file under .claude/). Empirically probed so far:
+check_cm_closure_seam_binds, check_cm_killpg_pgid_guard,
+check_cm_no_production_mutation_residue all rc=0 with ZERO worktree
+references, so they are clean in practice today. check_cm_plugin_count
+TIMED OUT at 90s (rc=124) - unexplained, and worth its own look since a
+whole-tree walk multiplied by 5 worktrees is a candidate cause. UNKNOWN:
+check_cm_test_mock_pid_explicit_int and
+check_cm_test_mock_pid_patched_when_real_pid were not reached before the
+probe budget expired; their exposure is UNMEASURED, not clean.
+ACCEPTANCE: every tree-walking gate either prunes agent scratch or is
+proven immune by measurement, each with a paired mutation;
+plugin_count’s runtime explained. NOTE the asymmetry that makes this
+worth closing properly: a stale worktree can only ever ADD findings to a
+security-relevant scan (killpg, mutation-residue), never remove them -
+so the risk here is false refusal and wasted trust, not a missed
+defect.</p>
+<h2
+id="bob-195-cm-dangerous-combination-fail-closed-cannot-see-contextlib.suppress-and-ruff-sim105-pushes-authors-into-that-blind-spot">BOB-195
+— CM-DANGEROUS-COMBINATION-FAIL-CLOSED cannot see contextlib.suppress,
+and ruff SIM105 pushes authors into that blind spot</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug</p>
+<p>WHAT: the §11.4.252 fail-open scanner matches Try-handler shapes
+(A1)/(A2). contextlib.suppress is a With node, so a swallow written that
+way is invisible. VERIFIED BY THE CONDUCTOR with a control needle
+through the same invocation path (§11.4.201(7)(b)), because a first
+attempt returned 0 for BOTH forms and was itself blind - the gate takes
+–root, not a positional, so a bare path exits on an unknown arg
+(§11.4.201(7)(c): the invocation path is part of the instrument).
+Correct run: try/except/pass around os.unlink(user_supplied_path) -&gt;
+‘FAIL - swallowed exception … :5’, the needle sees.
+contextlib.suppress(Exception) around the IDENTICAL call -&gt; ‘PASS -
+no swallowed-exception … anti-patterns found’. Both combine untrusted
+input with an irreversible unlink; both swallow everything; one is
+caught and one is not. WHY IT IS WORSE THAN A PLAIN GAP: pyproject.toml
+enables ruff’s SIM ruleset, and SIM105 is ‘use contextlib.suppress
+instead of try-except-pass’. Our own linter therefore instructs authors
+to rewrite the form this gate CAN see into the form it CANNOT. The two
+tools are pulling in opposite directions and the lint one runs more
+often. Every SIM105 autofix silently shrinks this gate’s coverage while
+the count goes down, which reads as progress. CONSEQUENCE FOR THE
+NUMBER: the scanner’s finding count is a FLOOR over try/except shapes,
+not a census of swallows. Any statement of the form ‘N fail-open sites
+remain’ must be read as ‘N among try/except shapes’. ACCEPTANCE: the
+scanner recognises contextlib.suppress (a With whose items call
+contextlib.suppress with a broad exception type) and applies the same
+≥2-capability test; a golden-TRUE fixture in suppress form; a
+golden-FALSE fixture where suppress wraps a single-capability diagnostic
+emitter and must NOT fire; and an explicit decision on the SIM105
+tension - either exempt the shapes this gate governs, or accept suppress
+and teach the gate to read it. Discovered by the §11.4.252 remediation
+agent when its own MINOR-3 fix required using contextlib.suppress at
+three diagnostic-emitter sites; those three uses are legitimate and
+justified in-source.</p>
 </body>
 </html>

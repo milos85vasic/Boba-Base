@@ -226,6 +226,38 @@ printf 'module example.com/zp\n\ngo 1.26.2\n' > "$zp/svc/go.mod"
 printf 'FROM alpine:3.19\nRUN echo no-go-builder-here\n' > "$zp/svc/Dockerfile"
 run_gate "$zp"; assert_rc "bad-zero-pairs BLIND-INSTRUMENT GUARD (zero checked must fail loudly)" 1
 
+# --- agent-scratch pruning (§11.4.201(1) false-positive guard) ---------------
+# A stale AGENT WORKTREE under .claude/ must not fail the real build. Worktrees
+# are ephemeral copies pinned at arbitrary commits: they are never built, never
+# shipped, and are deleted when the agent finishes. Before .claude was pruned, a
+# worktree 86 commits behind — still carrying golang:1.23-alpine against a
+# go.mod that had since moved to 1.26.2 — made this gate FAIL the main build.
+# That is a §11.4.201(1) false-positive refusal, the FAIL-bluff twin of a false
+# pass: it blocks real work and teaches people to bypass the gate.
+#
+# The pair below is deterministic and does not depend on a worktree happening to
+# exist on disk, which is how the real-tree case caught it only by luck.
+scratch="$TMPDIR_ROOT/prune-agent-scratch"
+mkdir -p "$scratch/.claude/worktrees/agent-stale/svc" "$scratch/real/svc"
+# A REAL pair so the run is never zero-checked (the blind-instrument guard would
+# otherwise fire and mask what this case is actually asserting).
+printf 'module example.com/real\n\ngo 1.26.2\n'   > "$scratch/real/svc/go.mod"
+printf 'FROM golang:1.26.2-alpine AS builder\nRUN go build ./...\n' > "$scratch/real/svc/Dockerfile"
+# The poison: a genuine mismatch, but parked in agent scratch.
+printf 'module example.com/stale\n\ngo 1.26.2\n' > "$scratch/.claude/worktrees/agent-stale/svc/go.mod"
+printf 'FROM golang:1.23-alpine AS builder\nRUN go build ./...\n' > "$scratch/.claude/worktrees/agent-stale/svc/Dockerfile"
+run_gate "$scratch"
+assert_rc "prune-agent-scratch (stale .claude worktree must NOT fail a healthy tree)" 0
+
+# The paired half: the SAME mismatch outside .claude MUST still fail, so the
+# prune cannot be widened into blindness (§11.4.201(6)).
+notscratch="$TMPDIR_ROOT/prune-does-not-blind"
+mkdir -p "$notscratch/worktrees/agent-stale/svc"
+printf 'module example.com/stale\n\ngo 1.26.2\n' > "$notscratch/worktrees/agent-stale/svc/go.mod"
+printf 'FROM golang:1.23-alpine AS builder\nRUN go build ./...\n' > "$notscratch/worktrees/agent-stale/svc/Dockerfile"
+run_gate "$notscratch"
+assert_rc "prune-does-not-blind (same mismatch outside .claude MUST still fail)" 1
+
 # --- real tree --------------------------------------------------------------
 run_gate "$REPO_ROOT"
 assert_rc "real-tree (the actual boba checkout, post-BOB-153-fix)" 0

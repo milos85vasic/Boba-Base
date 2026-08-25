@@ -116,7 +116,7 @@ DEFAULT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Consumer-owned scope DATA (§11.4.35): directory names pruned from discovery.
 # `submodules` and `constitution` are upstream-owned (§11.4.28/§11.4.177).
-PRUNE_DIRS=".git node_modules vendor submodules constitution"
+PRUNE_DIRS=".git .claude node_modules vendor submodules constitution"
 
 ROOT="$DEFAULT_ROOT"
 VERBOSE=0
