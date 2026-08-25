@@ -202,7 +202,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>19</td>
+<td>18</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -232,7 +232,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>71</strong></td>
+<td><strong>70</strong></td>
 </tr>
 </tbody>
 </table>
@@ -559,15 +559,6 @@ gate’s 38,291 findings come from submodules/</td>
 <td>BOB-145 event-loop regression guard is load-sensitive and flaky:
 8786ms under host load vs a 900-1500ms ceiling calibrated on a quiet
 host</td>
-</tr>
-<tr>
-<td>BOB-158</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>High</td>
-<td>tests/conftest.py cannot run on the production interpreter: binds
-asyncio.events._get_event_loop_policy, a 3.13+ private API, while
-production is 3.12.13</td>
 </tr>
 <tr>
 <td>BOB-159</td>
@@ -1811,31 +1802,6 @@ a real fail-closed guard is added so the discrimination is itself
 falsifiable per §1.1.</td>
 </tr>
 <tr>
-<td>BOB-190</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>—</td>
-<td>WHAT: ~/.local/lib/python3/site-packages contains binaries built for
-the cpython-313 ABI while the interpreter is Python 3.14, so
-pydantic_core and rpds fail to import and every test importing FastAPI
-dies at import time. CONFIRMED NOT OURS: an untouched test file fails
-identically, so this is environmental and pre-existing. WHY IT MATTERS:
-CLAUDE.md documents ‘python3 -m pytest tests/unit/ -v
-–import-mode=importlib’ as the canonical invocation and that documented
-command currently cannot run - docs and host disagree, the §11.4.99
-misguidance class at the environment layer. scripts/run-tests.sh already
-sidesteps it by selecting .venv/bin/python, so a working path exists and
-simply is not what the docs tell a reader to type. IMPACT: anyone
-following CLAUDE.md literally concludes the suite is broken; worse, an
-agent could chase green by rewriting tests. ACCEPTANCE: either repair
-the host site-packages so the documented command works, or correct
-CLAUDE.md + docs/TESTING.md to name the venv interpreter as canonical -
-decided explicitly, not left to whoever hits it next. Discovered
-out-of-band by the fail-open triage agent, so per §11.4.238 this also
-owes a coverage-escape note: no automated check asserts the documented
-test invocation actually runs.</td>
-</tr>
-<tr>
 <td>BOB-191</td>
 <td>Bug</td>
 <td>Queued</td>
@@ -1890,6 +1856,39 @@ monotone-decreasing property preserved throughout (§11.4.227(A)). NOTE
 the reviewer’s MINOR-1: a count-baseline absorbs a one-out-one-in swap,
 so remediation progress must be checked against the finding SET, not
 only the count.</td>
+</tr>
+<tr>
+<td>BOB-193</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>—</td>
+<td>WHAT: in download-proxy/src/api/streaming.py the dedup set is
+written BEFORE the yield — seen_hashes.add() / seen_hashes_local.add()
+execute at :317 and :356 ahead of emitting. If format_event raises, the
+result is never sent AND its hash is already recorded, so it is
+permanently dropped. Independently verified by the §11.4.209 reviewer at
+both sites: mid-search the hash persists across subsequent polls so the
+result never re-emits; at completion the stream breaks immediately
+after, so there is no later chance either. Results later in the SAME
+batch are not yet added and do re-emit on the next poll, which is why
+the observed symptom is partial loss rather than total. WHY IT IS FILED
+SEPARATELY: the §11.4.252 fail-open pass made this loss OBSERVABLE by
+adding a log line, which is the right first move — but observability is
+not repair. The underlying at-most-once semantics remain, and per
+§11.4.226(5) a mitigation cannot close the defect it mitigates. THE
+DECISION IS A REAL TRADE, not an oversight to correct blindly: moving to
+add-after-successful-yield gives at-least-once, but a DETERMINISTIC
+serialization failure would then retry the same result on every poll
+forever — trading silent loss for a hot loop. Options are (a) keep
+at-most-once and treat the log line as the contract, (b)
+add-after-successful-yield with a bounded per-hash retry budget, (c)
+add-before-yield but remove the hash on emit failure so exactly one
+retry occurs. ACCEPTANCE: an explicit decision recorded, implemented,
+and covered by a test that drives a raising emit and asserts the chosen
+semantics — with a RED observed first per §11.4.115. Raised as MINOR-1
+by the independent review of the fail-open batch; filed rather than
+absorbed so the residual defect is not retired along with the logging
+that revealed it.</td>
 </tr>
 </tbody>
 </table>

@@ -1,0 +1,32 @@
+BOB-158 — conftest.py asyncio compatibility: RUNTIME evidence on BOTH interpreters
+captured: 2026-08-25T20:28:18Z
+
+THE DEFECT WAS ALREADY FIXED; THE TRACKER NEVER MOVED. Commit 7b45113 (2026-08-21)
+states "Closed: BOB-079, BOB-158" in its own message, and the fix is present at HEAD.
+The row still read Queued/Issues four days later — the §11.4.146(D3) status-custody
+class running in the direction people forget: not a status outrunning its evidence,
+but evidence outrunning its status. Both leave the tracker lying.
+
+--- the mechanism at HEAD (tests/conftest.py:227) ---
+_get_policy = getattr(asyncio.events, "_get_event_loop_policy", None)
+with a documented version matrix in the surrounding comment:
+  3.14.6   _get_event_loop_policy present; public getter WARNS
+  3.12.13  _get_event_loop_policy ABSENT;  public getter is silent
+Feature detection, not a version check — which is why it spans both.
+
+--- RUNTIME probe, -W error::DeprecationWarning so a warning is fatal ---
+venv       (3.14.6): OK python=3.14.6  policy=_UnixDefaultEventLoopPolicy
+container  (3.12.13): OK python=3.12.13 policy=_UnixDefaultEventLoopPolicy
+
+Both failure modes named in the ticket are absent:
+  - AttributeError on 3.12 from hardcoding the private API  -> not raised
+  - DeprecationWarning-as-error from policy.get_event_loop() -> not raised
+The production interpreter here is the REAL one: podman exec into the running
+qbittorrent-proxy container (python:3.12-alpine), not a local simulation.
+
+--- consequence for BOB-154 ---
+BOB-154's remediation note said it was blocked on BOB-158 landing. It is not, and has
+not been since 2026-08-21. BOB-154's actual blocker is different and is recorded on
+that item: .venv has simply never been rebuilt on 3.12 with
+download-proxy/requirements.txt, and exclusive .venv access is unavailable while
+another stream holds it (§11.4.119).

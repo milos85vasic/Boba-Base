@@ -1,0 +1,45 @@
+BOB-190 — the documented test command could not run. Fixed at the docs layer.
+captured: 2026-08-25T20:29:07Z
+
+THE DEFECT: CLAUDE.md documented 'python3 -m pytest tests/unit/ ...' as canonical, and
+that command could not execute at all.
+
+--- BEFORE (the command CLAUDE.md told you to type) ---
+$ python3 -m pytest tests/unit/merge_service/ -q --import-mode=importlib --co
+  File "/home/milosvasic/.local/lib/python3/site-packages/rpds/__init__.py", line 1
+    from .rpds import *
+ModuleNotFoundError: No module named 'rpds.rpds'
+
+--- AFTER (the command CLAUDE.md documents now) ---
+$ .venv/bin/python -m pytest tests/unit/merge_service/ -q --import-mode=importlib --co
+883 tests collected in 1.99s
+
+ROOT CAUSE, measured not inferred: ~/.local/lib/python3/site-packages ships
+_pydantic_core.cpython-313-x86_64-linux-gnu.so — a cp313 ABI binary — under a Python
+3.14.6 interpreter. Same for rpds_py. That directory is the HOST-WIDE 'pip install
+--user' tree shared with aider, bandit, asciinema and others, all pinned to those cp313
+builds. It is NOT .venv, which is unaffected: .venv carries pydantic_core 2.46.4 /
+fastapi 0.141.1 and imports cleanly.
+
+WHY THE DOCS FIX IS THE RIGHT ONE HERE, not a workaround:
+  - scripts/run-tests.sh ALREADY selects .venv/bin/python — the working path predates
+    this item and is what the project actually runs.
+  - docs/TESTING.md ALREADY documents '.venv/bin/python -m pytest' (2 occurrences).
+    CLAUDE.md was the SOLE remaining place naming the broken interpreter, so this is
+    an internal-consistency repair, not a new convention.
+  - Repairing the host tree would touch state shared by unrelated tools and is outside
+    this repository entirely.
+
+DECIDED AUTONOMOUSLY under §11.4.101: reversible (a one-line-per-line doc edit),
+determinable from captured evidence (the two runs above), bounded blast radius (a
+documentation string), and it aligns three sources that already disagreed. The
+alternative — repairing host site-packages — remains available to the operator and is
+NOT foreclosed by this closure; it is simply not boba's to do.
+
+HONEST BOUNDARY (§11.4.6): the host interpreter is still broken for anything that
+imports FastAPI through it. Nothing in this repository now points anyone at it, but
+this closure does not repair the host and does not claim to.
+
+§11.4.238 coverage-escape note: this was found out-of-band by an agent, not by any
+automated check. No gate asserts that the commands our own documentation prints can
+actually execute. That gap is real and is recorded here rather than closed silently.

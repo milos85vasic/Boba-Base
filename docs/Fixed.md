@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 31
-**Last modified:** 2026-08-25T20:21:27Z
+**Revision:** 32
+**Last modified:** 2026-08-25T20:29:07Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1825,4 +1825,22 @@ WHY NOTHING CAUGHT IT (§11.4.238 coverage-escape audit). Three standing checks 
 ACCEPTANCE. (a) 'update' REFUSES a terminal status and names 'close' as the correct path, with a paired §1.1 mutation proving the refusal (removing the guard must make the mutation pass). (b) 'validate' grows a status↔location coherence invariant that FAILS on the forbidden state, with a golden-bad fixture and a negative control (a legitimately terminal row in Fixed must NOT fire — §11.4.201(1)). (c) The 10 existing rows are drained to Fixed with class-matched evidence per row, or, where a row's evidence cannot be produced, honestly re-opened rather than migrated on a bare assertion. (d) Honest boundary: this closes the update-path hole and the detection gap; it does not claim every historical status write was evidence-backed.
 
 NOT CLAIMED. No fix is implemented by this filing. The 10 rows are untouched; draining them is acceptance (c) and each needs its own evidence, not a bulk UPDATE.
+
+## BOB-158 — tests/conftest.py cannot run on the production interpreter: binds asyncio.events._get_event_loop_policy, a 3.13+ private API, while production is 3.12.13
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-158/runtime_both_interpreters.log
+**Severity:** High
+**Created-By:** AI
+
+tests/conftest.py cannot run on the production interpreter: binds asyncio.events._get_event_loop_policy, a 3.13+ private API, while production is 3.12.13
+
+## BOB-190 — Host site-packages holds cpython-313 ABI wheels under Python 3.14, breaking the CLAUDE.md-documented 'python3 -m pytest' path
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-190/documented_command_now_runs.log
+
+WHAT: ~/.local/lib/python3/site-packages contains binaries built for the cpython-313 ABI while the interpreter is Python 3.14, so pydantic_core and rpds fail to import and every test importing FastAPI dies at import time. CONFIRMED NOT OURS: an untouched test file fails identically, so this is environmental and pre-existing. WHY IT MATTERS: CLAUDE.md documents 'python3 -m pytest tests/unit/ -v --import-mode=importlib' as the canonical invocation and that documented command currently cannot run - docs and host disagree, the §11.4.99 misguidance class at the environment layer. scripts/run-tests.sh already sidesteps it by selecting .venv/bin/python, so a working path exists and simply is not what the docs tell a reader to type. IMPACT: anyone following CLAUDE.md literally concludes the suite is broken; worse, an agent could chase green by rewriting tests. ACCEPTANCE: either repair the host site-packages so the documented command works, or correct CLAUDE.md + docs/TESTING.md to name the venv interpreter as canonical - decided explicitly, not left to whoever hits it next. Discovered out-of-band by the fail-open triage agent, so per §11.4.238 this also owes a coverage-escape note: no automated check asserts the documented test invocation actually runs.
 

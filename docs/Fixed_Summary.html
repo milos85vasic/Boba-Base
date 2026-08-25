@@ -192,7 +192,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>54</td>
+<td>56</td>
 </tr>
 <tr>
 <td>Feature</td>
@@ -217,7 +217,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>120</strong></td>
+<td><strong>122</strong></td>
 </tr>
 </tbody>
 </table>
@@ -1099,6 +1099,16 @@ CPython 3.12 defect</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
 <td>—</td>
+<td>BOB-158 — tests/conftest.py cannot run on the production
+interpreter: binds asyncio.events._get_event_loop_policy, a 3.13+
+private API, while production is 3.12.13</td>
+</tr>
+<tr>
+<td>120</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
 <td>BOB-166 — WHAT. §11.4.19 requires closure migration to be ATOMIC: a
 resolving item moves to Fixed.md, DISAPPEARS from Issues_Summary
 (open-only) and APPEARS in Fixed_Summary (closed-only). Ten rows violate
@@ -1149,7 +1159,7 @@ evidence-backed. NOT CLAIMED. No fix is implemented by this filing. The
 its own evidence, not a bulk UPDATE.</td>
 </tr>
 <tr>
-<td>120</td>
+<td>121</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1170,6 +1180,32 @@ from, so a stale bundle passes install unchallenged. Acceptance: install
 bundle is rebuilt, and docs/qa/BOB-164/axe_contrast_scan.py run against
 download-proxy/src/ui/dist/frontend/browser exits 0 with zero violation
 nodes and zero blocking incomplete nodes.</td>
+</tr>
+<tr>
+<td>122</td>
+<td>—</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-190 — WHAT: ~/.local/lib/python3/site-packages contains binaries
+built for the cpython-313 ABI while the interpreter is Python 3.14, so
+pydantic_core and rpds fail to import and every test importing FastAPI
+dies at import time. CONFIRMED NOT OURS: an untouched test file fails
+identically, so this is environmental and pre-existing. WHY IT MATTERS:
+CLAUDE.md documents ‘python3 -m pytest tests/unit/ -v
+–import-mode=importlib’ as the canonical invocation and that documented
+command currently cannot run - docs and host disagree, the §11.4.99
+misguidance class at the environment layer. scripts/run-tests.sh already
+sidesteps it by selecting .venv/bin/python, so a working path exists and
+simply is not what the docs tell a reader to type. IMPACT: anyone
+following CLAUDE.md literally concludes the suite is broken; worse, an
+agent could chase green by rewriting tests. ACCEPTANCE: either repair
+the host site-packages so the documented command works, or correct
+CLAUDE.md + docs/TESTING.md to name the venv interpreter as canonical -
+decided explicitly, not left to whoever hits it next. Discovered
+out-of-band by the fail-open triage agent, so per §11.4.238 this also
+owes a coverage-escape note: no automated check asserts the documented
+test invocation actually runs.</td>
 </tr>
 </tbody>
 </table>

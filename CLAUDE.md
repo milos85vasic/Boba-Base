@@ -184,10 +184,10 @@ bash -n start.sh stop.sh test.sh install-plugin.sh # Bash syntax check
 
 ### Merge Service Tests (live in `./tests/`, not `download-proxy/tests/`)
 ```bash
-python3 -m pytest tests/unit/ -v --import-mode=importlib              # Unit tests
-python3 -m pytest tests/unit/merge_service/ -v --import-mode=importlib # Merge service only
-python3 -m pytest tests/integration/ -v --import-mode=importlib        # Integration tests
-python3 -m pytest tests/unit/ -k "search" -v --import-mode=importlib   # Filter by keyword
+.venv/bin/python -m pytest tests/unit/ -v --import-mode=importlib              # Unit tests
+.venv/bin/python -m pytest tests/unit/merge_service/ -v --import-mode=importlib # Merge service only
+.venv/bin/python -m pytest tests/integration/ -v --import-mode=importlib        # Integration tests
+.venv/bin/python -m pytest tests/unit/ -k "search" -v --import-mode=importlib   # Filter by keyword
 ```
 
 ### Linting

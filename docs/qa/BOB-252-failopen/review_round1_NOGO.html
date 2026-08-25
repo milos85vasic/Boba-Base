@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>review_round1_NOGO</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">review_round1_NOGO</h1>
+</header>
+<h1 id="fail-open-batch-11.4.209-independent-review-round-1">§11.4.252
+fail-open batch — §11.4.209 independent review, round 1</h1>
+<p><strong>Verdict: NO-GO</strong> — 0 BLOCKING / 4 IMPORTANT / 6 MINOR
+Substrate: Fable. Reviewer structurally separate from the author
+(§11.4.70). 2026-08-25. Loop re-arms per §11.4.134. Nothing from this
+batch is committed.</p>
+<h2
+id="two-closure-claims-are-materially-false-both-proven-at-runtime">Two
+closure claims are materially false — both proven at runtime</h2>
+<p><strong>IMPORTANT-1
+<code>plugins/community/jackett.py:266-283</code>.</strong>
+<code>urllib.error.HTTPError</code> matches the EARLIER
+<code>except urllib.request.HTTPError</code> clause, where only
+<code>e.code == 302</code> is handled; every other code falls through
+with <code>response = None</code> and zero output. The new logging
+branch is <strong>unreachable for HTTP errors</strong>. A real 401 and a
+real 500 driven through <code>get_response</code> both returned
+<code>None</code> with stderr <code>''</code>. The in-code comment
+claims “a 401 rejected apikey and a 500 … the reason is now surfaced” —
+it is not, and the 401 IS the named defect (“a misconfigured apikey
+looked exactly like an empty search”). §11.4.194(1): two independent
+branches, one fixed.</p>
+<p><strong>IMPORTANT-2
+<code>scripts/extract-jackett-key.py:34</code>.</strong>
+<code>except (json.JSONDecodeError, OSError)</code> does not catch
+<code>UnicodeDecodeError</code> — it subclasses <code>ValueError</code>.
+Feeding a <code>ServerConfig.json</code> containing <code>\xff</code>
+makes <code>extract_key</code> <strong>propagate</strong>: the script
+crashes mid-poll and the traceback prints
+<code>can't decode byte 0xff in position 19</code> — a byte OF THE
+CREDENTIAL FILE — to stderr. The comment’s §11.4.10 rationale cites
+<code>UnicodeDecodeError</code> by name as the reason for class-only
+logging, so it claims a protection this site does not provide
+(§11.4.194(2)).</p>
+<p><strong>IMPORTANT-3 — the §11.4.10 guard is unvalidated
+instrumentation (§11.4.115(F)).</strong> Reviewer mutation: reinstate
+the exception MESSAGE into the <code>auth.py:470</code> credential log →
+<strong>all 6 tests still pass</strong>. The sentinel tests plant the
+sentinel in the ENV VAR while driving
+<code>OSError("permission denied")</code> /
+<code>ConnectionResetError</code>, whose messages never contain it. So
+the class-only discipline at <code>auth.py:470</code>,
+<code>auth.py:534</code> and <code>routes.py:1000</code> (no sentinel
+test at all) is unguarded against the exact named regression. The
+author’s own extract-jackett-key test puts the sentinel IN the payload
+and would catch it — the right shape existed and was not applied.</p>
+<p><strong>IMPORTANT-4 — 3 of 4 streaming handlers have no RED-capable
+test.</strong> The SSE test pins <code>metadata.status="running"</code>
+and <code>tracker_stats={}</code>, so <code>:276</code>,
+<code>:314-326</code>, <code>:412-423</code> never fire; the assertion
+is satisfied by <code>:377</code> alone. Those three would survive their
+own fix-revert.</p>
+<h2 id="minor">MINOR</h2>
+<p>M1 add-before-yield permanent drop still exists (observability ≠
+repair) — filed as its own item. M2
+<code>extract-jackett-key.py main()</code> still returns 0 with empty
+output at poll exhaustion. M3 the three
+<code>print(file=sys.stderr)</code> sites can now raise
+(<code>BrokenPipeError</code>); in <code>nova2.import_engine</code> that
+propagates to <code>:163/:227/:248</code>. The <code>logger</code> sites
+are immune. M4 <code>auth.py:556</code> logs <code>qbit_url</code>
+verbatim — userinfo in the URL would leak. M5 the nova2 test compiles
+into a synthetic namespace supplying
+<code>sys</code>/<code>importlib</code>, so it could not catch a missing
+import in the real module (no live defect — <code>sys</code> IS imported
+at <code>:38</code>). M6 the 74→63 scanner figure could not be
+independently reproduced; the arithmetic matches the 11 removed sites.
+REAL-LOW path is
+<code>merge_service/jackett_autoconfig.py:283-291</code>, not
+<code>api/</code>.</p>
+<h2 id="confirmed-good-proof-basis-recorded">Confirmed good (proof basis
+recorded)</h2>
+<p>GREEN independently reproduced 10/10 (.venv 3.14.6, pytest 9.1.1) ·
+fix-revert mutations re-run in a scratch copy: pre-fix
+<code>streaming.py</code> fails the SSE test, pre-fix
+<code>auth.py</code>+<code>search.py</code> fail exactly 4 — the tests
+ARE RED-capable · regressions 269 passed (api_layer) + 440 passed
+(merge_service subset) · ruff + py_compile clean on all 9 ·
+<strong>return contracts unchanged in all 9 files, callers
+enumerated</strong> · the add-before-yield analysis verified precisely
+at <code>:317</code>/<code>:356</code>, including that same-batch later
+results DO re-emit — the author’s “at least one result” wording is
+accurate · <code>search.py:833</code> proportionality verified:
+<code>_run_search</code> re-selects trackers at <code>:895</code> and
+its handler at <code>:1047</code> flips the search to
+<code>failed</code>, so log-only at the seeding site is right · log-only
+judgment endorsed for auth, status probe, all four streaming sites,
+search.py and nova2 — refusing in nova2 would be a §11.4.201(1) false
+positive, one broken engine killing the roster · 4 REAL-LOW triage
+confirmed with no mis-triage.</p>
+<h2 id="not-analysed-stated-never-assumed-safe">Not analysed (stated,
+never assumed safe)</h2>
+<p>Full <code>tests/unit/</code> suite (same environmental constraint
+the author hit) · import-time raise surfaces of all 43+ engine modules ·
+the exact scanner behind 74→63.</p>
+</body>
+</html>

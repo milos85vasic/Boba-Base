@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 66
-**Last modified:** 2026-08-25T20:26:01Z
+**Revision:** 68
+**Last modified:** 2026-08-25T20:31:16Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -663,28 +663,6 @@ Under host load 18-24 on 8 cores (concurrent agents), the same N=400 merge froze
 
 **Acceptance criteria:**
 The guard gives the same verdict on a loaded host as on a quiet one - or it measures something contention-independent. A threshold that only holds when nothing else is running is not a regression guard, it is a weather report.
-
-## BOB-158 — tests/conftest.py cannot run on the production interpreter: binds asyncio.events._get_event_loop_policy, a 3.13+ private API, while production is 3.12.13
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** High
-**Created-By:** AI
-
-**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T17:29:10Z
-**Reported-By:** AI
-
-**What (the report, verbatim):**
-The test suite has silently acquired a dependency on an interpreter production does not run. tests/conftest.py:207 calls asyncio.events._get_event_loop_policy() - a PRIVATE API that does not exist before Python 3.13 - in an AUTOUSE fixture, so it affects every test. The host venv is CPython 3.14.6; the container is 3.12.13, pinned deliberately in docker-compose.yml as python:3.12-alpine and independently declared twice more in pyproject.toml (ruff target-version py312, mypy python_version 3.12). So the venv contradicts the project's own declared target by documentary evidence, not opinion. THIS IS NOT A THEORETICAL GAP: every green suite run to date is evidence about 3.14.6 while users are served 3.12.13, and this specific incompatibility means the suite CANNOT run on the production interpreter at all - it produces 870 teardown errors. It went unnoticed because nobody had ever run the suite on 3.12. Found while fixing BOB-154 (dependency drift), whose reconciliation is BLOCKED on this: rebuilding the venv on 3.12 is the fix for the drift, and doing so makes the suite unrunnable until this is resolved. A candidate patch shape was verified in isolation on BOTH 3.12.13 and 3.14.6 under -W error::DeprecationWarning, but not as an integrated change - and another stream was editing conftest.py concurrently, so it was deliberately not applied.
-
-**Affected scope / file-scope manifest:**
-tests/conftest.py:207 (_cleanup_event_loop fixture)
-
-**Reproduction / context:**
-.venv/bin/python -c 'import asyncio.events as e; print(hasattr(e,"_get_event_loop_policy"))' -> True (3.14.6). podman exec qbittorrent-proxy python -c same -> False (3.12.13). Running the suite on 3.12.13 produces 870 teardown errors. A second incompatibility in the same fixture: policy.get_event_loop() raises DeprecationWarning on 3.12, which this project's pytest config turns into an error.
-
-**Acceptance criteria:**
-The suite runs on the interpreter production runs. Both incompatibilities in _cleanup_event_loop are resolved, verified on 3.12.13 under -W error::DeprecationWarning, and the venv is rebuilt on 3.12 so every subsequent test result is evidence about the deployed runtime.
 
 ## BOB-159 — Warm ./start.sh over an already-running stack leaves the FR-004d repair window open
 
@@ -1396,13 +1374,6 @@ ACCEPTANCE: (a) resolution must never prefer a stale artifact over a current one
 
 WHAT: the fail-open scanner's shape-(A2) heuristic cannot distinguish 'return False' meaning PROCEED-AS-IF-FINE from 'return False' meaning REFUSE. It flags six textbook fail-CLOSED guards as fail-open defects: _is_safe_fetch_url (x3), _qbit_add_succeeded (x2), and the hooks path-boundary guard. INDEPENDENTLY VERIFIED 2026-08-25 by the conductor rather than taken on the triage agent's word: download-proxy/src/api/routes.py:1122 defines _is_safe_fetch_url returning bool, and its only call site at :1476 reads 'if not _is_safe_fetch_url(url): logger.warning(Refusing SSRF-unsafe download URL (non-public target); skipping); continue' - a False return REFUSES the URL. WHY THIS MATTERS: per §11.4.201(1) a false-positive refusal is a FAIL-bluff of equal severity to a false-negative pass, and here the consequence is worse than noise - acting on the finding would mean making the SSRF guard stop returning False, i.e. deleting an SSRF protection to satisfy a gate. A gate that instructs you to remove a security control is actively dangerous, not merely imprecise. REPRO: run the fail-open scan; observe six hits; read each call site. ACCEPTANCE: the scanner distinguishes refuse-shaped from proceed-shaped False returns (call-site-aware, or an audited waiver list with per-entry justification), the six drop out, AND a golden-FALSE fixture containing a real fail-closed guard is added so the discrimination is itself falsifiable per §1.1.
 
-## BOB-190 — Host site-packages holds cpython-313 ABI wheels under Python 3.14, breaking the CLAUDE.md-documented 'python3 -m pytest' path
-
-**Status:** Queued
-**Type:** Bug
-
-WHAT: ~/.local/lib/python3/site-packages contains binaries built for the cpython-313 ABI while the interpreter is Python 3.14, so pydantic_core and rpds fail to import and every test importing FastAPI dies at import time. CONFIRMED NOT OURS: an untouched test file fails identically, so this is environmental and pre-existing. WHY IT MATTERS: CLAUDE.md documents 'python3 -m pytest tests/unit/ -v --import-mode=importlib' as the canonical invocation and that documented command currently cannot run - docs and host disagree, the §11.4.99 misguidance class at the environment layer. scripts/run-tests.sh already sidesteps it by selecting .venv/bin/python, so a working path exists and simply is not what the docs tell a reader to type. IMPACT: anyone following CLAUDE.md literally concludes the suite is broken; worse, an agent could chase green by rewriting tests. ACCEPTANCE: either repair the host site-packages so the documented command works, or correct CLAUDE.md + docs/TESTING.md to name the venv interpreter as canonical - decided explicitly, not left to whoever hits it next. Discovered out-of-band by the fail-open triage agent, so per §11.4.238 this also owes a coverage-escape note: no automated check asserts the documented test invocation actually runs.
-
 ## BOB-191 — Fail-open scanner is BLIND to Go: qBitTorrent-go's zero hits is a false null, not a clean bill (§11.4.201(6))
 
 **Status:** Queued
@@ -1416,4 +1387,11 @@ WHAT: the §11.4.252 fail-open scan reports 0 hits for qBitTorrent-go, and that 
 **Type:** Task
 
 WHAT: the BOB-161 gate lands with 6 real fail-open skips RATCHETED rather than fixed. Ratcheting is the constitution's named brownfield default (§11.4.135/§11.4.224(E)) and this repo's own precedent, so the choice is correct - but the remediation it defers is real work that must be owned somewhere. WHY THIS ITEM EXISTS: the gate's own header asserted the 6 were 'TRACKED SEPARATELY (§11.4.197)' while no tracker row existed. The §11.4.209 independent review verified the absence and raised it as IMPORTANT-5, noting that without a row those findings are precisely the parked-unverified debt class §11.4.226(4) names - the population an operator samples and finds broken. A prose claim of being tracked is not tracking. WHAT EACH NEEDS: a skip that fires on evidence the host ANSWERED must either classify the response and FAIL on it, or take a §11.4.69 reason that is honestly derivable from the environment rather than from the response - verified against the live stack, not asserted. Two of the six sit under '# allow-skip:' markers at tests/unit/test_tracker_auth_live.py:105 and :108, which the reviewer confirmed genuinely are fail-open, so that marker must not be treated as absolution. ACCEPTANCE: all 6 remediated with RED-first evidence per §11.4.115, the gate's BASELINE ratcheted to 0, and the ratchet's monotone-decreasing property preserved throughout (§11.4.227(A)). NOTE the reviewer's MINOR-1: a count-baseline absorbs a one-out-one-in swap, so remediation progress must be checked against the finding SET, not only the count.
+
+## BOB-193 — SSE result loss is add-before-yield: a raising emit permanently drops a result and the dedup set already recorded it
+
+**Status:** Queued
+**Type:** Bug
+
+WHAT: in download-proxy/src/api/streaming.py the dedup set is written BEFORE the yield — seen_hashes.add() / seen_hashes_local.add() execute at :317 and :356 ahead of emitting. If format_event raises, the result is never sent AND its hash is already recorded, so it is permanently dropped. Independently verified by the §11.4.209 reviewer at both sites: mid-search the hash persists across subsequent polls so the result never re-emits; at completion the stream breaks immediately after, so there is no later chance either. Results later in the SAME batch are not yet added and do re-emit on the next poll, which is why the observed symptom is partial loss rather than total. WHY IT IS FILED SEPARATELY: the §11.4.252 fail-open pass made this loss OBSERVABLE by adding a log line, which is the right first move — but observability is not repair. The underlying at-most-once semantics remain, and per §11.4.226(5) a mitigation cannot close the defect it mitigates. THE DECISION IS A REAL TRADE, not an oversight to correct blindly: moving to add-after-successful-yield gives at-least-once, but a DETERMINISTIC serialization failure would then retry the same result on every poll forever — trading silent loss for a hot loop. Options are (a) keep at-most-once and treat the log line as the contract, (b) add-after-successful-yield with a bounded per-hash retry budget, (c) add-before-yield but remove the hash on emit failure so exactly one retry occurs. ACCEPTANCE: an explicit decision recorded, implemented, and covered by a test that drives a raising emit and asserts the chosen semantics — with a RED observed first per §11.4.115. Raised as MINOR-1 by the independent review of the fail-open batch; filed rather than absorbed so the residual defect is not retired along with the logging that revealed it.
 
