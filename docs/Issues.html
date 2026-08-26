@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 72 <strong>Last modified:</strong>
-2026-08-25T21:11:03Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 73 <strong>Last modified:</strong>
+2026-08-26T09:04:50Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -191,29 +191,32 @@ authoritative for open work. The SQLite single-source-of-truth +
 <hr />
 <h2 id="bob-008-rutracker-automated-login-blocked-by-captcha">BOB-008 —
 RuTracker automated login blocked by CAPTCHA</h2>
-<p><strong>Status:</strong> Operator-blocked <strong>Type:</strong> Bug
-<strong>Created:</strong> 2026-06-06
-<strong>Operator-Block-Details:</strong> WHAT — RuTracker login with
-stored creds returns no session cookie (CAPTCHA wall). WHY — automated
-user/pass login is CAPTCHA-gated; self-resolution exhausted (creds
-correct + wired, login attempted, <code>auth=True</code>). UNBLOCK — [A]
-operator completes the CAPTCHA flow at
-<code>/api/v1/auth/rutracker/captcha</code> + <code>/login</code>. [B]
-operator pastes a fresh <code>bb_session</code> cookie via
-<code>/auth/rutracker/cookie-login</code>. WHO — operator.</p>
-<p><strong>Evidence:</strong> live search per-tracker stat
-<code>rutracker status=error auth=True</code>. The diagnostic now
-reports <code>error_type="upstream_captcha"</code> with the FACT-based
-message “rutracker login.php returned no session cookie — this is the
-rutracker anti-abuse CAPTCHA wall (gates login.php when logins spike),
-not a credential failure. Set RUTRACKER_COOKIES from a logged-in browser
-session to bypass the login round-trip.”
-(<code>download-proxy/src/merge_service/search.py</code>). The earlier
-quote here —
-<code>error="login returned no session cookie — likely CAPTCHA"</code> —
-was SUPERSEDED when BOB-117 landed and no longer exists in source; it is
-corrected rather than left as stale evidence (§11.4.6 no-guessing,
-§11.4.7 evidence must reflect the conditions it claims).</p>
+<p><strong>Status:</strong> Operator-blocked <strong>Type:</strong>
+Bug</p>
+<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): COMPLETE THE CAPTCHA FLOW ONCE</strong></p>
+<p>Session establishment path is DECIDED: the operator drives the
+interactive CAPTCHA flow at <code>/api/v1/auth/rutracker/captcha</code>
+then <code>/login</code> once, and the proxy stores the resulting
+<code>bb_session</code>. The cookie-paste path and the cookies-file
+autoload path were both offered and NOT chosen. THE BLOCK NARROWS BUT
+DOES NOT LIFT: the operator must physically drive the flow — no agent
+can solve a CAPTCHA (§11.4.52 honest operator_attended boundary). AGENT
+PREP OWED BEFORE THE HAND-OFF, so the operator’s single attempt succeeds
+rather than discovering a broken endpoint mid-flow: verify both
+endpoints are reachable and correctly wired end-to-end, verify the
+session is actually PERSISTED after a successful post (not merely
+accepted), and verify a stored session is actually USED by a subsequent
+search. Honest limitation to state up front: a stored bb_session
+expires, so this path requires repeating — that cost was accepted with
+the decision.</p>
+<p>This answer is recorded as consumer DATA per §11.4.35 — it is the
+operator’s stated choice, not an agent inference, and supersedes any
+prior agent-chosen default on this question. Options not chosen are
+named above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions).</p>
+<p>— prior item text follows —</p>
+<p>RuTracker automated login blocked by CAPTCHA</p>
 <h2
 id="bob-065-lava-p2-egress-diagnosis-and-vpn-host-socks-routing-containers-pkgegress">BOB-065
 — Lava P2: Egress diagnosis and VPN-host SOCKS routing (containers
@@ -316,31 +319,31 @@ complete.</p>
 id="bob-077-rd2-10-identify-second-host-running-the-auto-commit-rsyncsync-mechanism-operator-decision">BOB-077
 — RD2-10: Identify second host running the Auto-commit rsync/sync
 mechanism (OPERATOR-DECISION)</h2>
-<p><strong>Status:</strong> Operator-blocked <strong>Type:</strong> Task
-<strong>Operator-Block-Details:</strong> WHAT: OPERATOR must identify
-which second host holds push credentials + confirms whether the
-rsync/sync mechanism is intentional or a stale job to retire. This
-session cannot inspect a host it has no access to (§11.4.6/§11.4.101).
-WHY: This session cannot inspect or reach the +0500 host that produced
-the Auto-commit fast-forwards (§11.4.6 no-guessing, §11.4.101
-reversible-safe default). UNBLOCK: [A] operator names the second host +
-confirms intentional (proceed to RD2-11 wiring) · [B] operator confirms
-stale/misconfigured (retire the job) · [C] operator confirms the second
-live Claude session/device is the source (Rev-6 Update 2 root cause,
-proceed to per-session discipline enforcement) WHO: Operator
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
 <strong>Severity:</strong> High</p>
-<p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-10, P0
-OPERATOR-DECISION] Root-caused as far as this host allows (see RD2-00
-Update): reflog proves the two newest commits arrived via plain pull:
-Fast-forward from a +0500 host, matching this project established
-2026-06-28 cross-host rsync-sync pattern (cdb555f/55b8671). Needs
-operator input to go further — which second host runs it, and is it the
-intended mechanism (just needs a real message + review gate) or a stale
-job to retire. Not auto-executed (§11.4.6/§11.4.101 — this session
-cannot inspect or guess at a host it has no access to). Rev-6 update:
-root cause narrowed to a second live Claude session (Opus 5, same +0500
-host) that independently landed constitution 177f2b0. Priority: P0
-(operator-blocked).</p>
+<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): UNKNOWN — INSTRUMENT THE NEXT OCCURRENCE</strong></p>
+<p>The operator does not currently know which host produces the +0500
+Auto-commit fast-forwards, so the three candidate answers (second Claude
+session / intentional rsync job / stale job) all remain open. DECIDED
+ACTION: stop hunting a host this session cannot reach (§11.4.6 — remote
+state is not knowable without access) and instead INSTRUMENT the
+mechanism so the next occurrence identifies itself. Forensic capture to
+add: committer identity, hostname, timezone offset, push timing, and the
+git remote used, recorded at Auto-commit time into a tracked forensic
+log. ACCEPTANCE: the next Auto-commit event yields a captured record
+naming its origin host — at which point this item resolves to one of the
+three original branches with evidence rather than a guess. This is the
+§11.4.101 reversible-safe move: it costs little, blocks nothing, and
+converts a recurring mystery into a self-identifying event.</p>
+<p>This answer is recorded as consumer DATA per §11.4.35 — it is the
+operator’s stated choice, not an agent inference, and supersedes any
+prior agent-chosen default on this question. Options not chosen are
+named above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions).</p>
+<p>— prior item text follows —</p>
+<p>RD2-10: Identify second host running the Auto-commit rsync/sync
+mechanism (OPERATOR-DECISION)</p>
 <h2
 id="bob-078-rd2-11-once-identified-wire-auto-commit-mechanism-through-11.4.234-dedicated-commitpush-script-or-retire-it">BOB-078
 — RD2-11: Once identified, wire Auto-commit mechanism through §11.4.234
@@ -495,40 +498,55 @@ submodules/jackett one commit (RD2-09). Priority: P3.</p>
 id="bob-101-ga-19rw-09-is-profile-go-parity-still-a-release-goal-gates-rw-10..13-operator-decision">BOB-101
 — GA-19/RW-09: Is –profile go parity still a release goal? (gates
 RW-10..13) — OPERATOR-DECISION</h2>
-<p><strong>Status:</strong> Operator-blocked <strong>Type:</strong> Task
-<strong>Operator-Block-Details:</strong> WHAT: OPERATOR must decide
-whether Go –profile go parity remains a v1.0.0 release goal; gates
-downstream RW-10..13. WHY: §11.4.66 forbids autonomous decision on
-release scope; §11.4.122 forbids silent removal of an existing
-capability. UNBLOCK: [A] operator states YES — parity remains a release
-goal (schedule RW-10..13 work) · [B] operator states NO — mark parity
-Obsolete/superseded per §11.4.90 (reason=feature-removed with operator
-citation, §11.4.122) WHO: Operator <strong>Severity:</strong> High</p>
-<p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md GA-19/RW-09,
-OPERATOR-DECISION] Confirmed unchanged: zero time.Ticker anywhere in
-qBitTorrent-go, no enricher package, zero exec.Command fan-out. Is
-–profile go parity still a release goal? Gates RW-10..13. Surfaced only,
-not auto-executed, per §11.4.66. Priority: OPERATOR-DECISION.</p>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<strong>Severity:</strong> High</p>
+<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): DEFER PAST v1.0.0</strong></p>
+<p>Go <code>--profile go</code> parity remains a goal but is NO LONGER a
+v1.0.0 release blocker. RW-10..13 move to a post-1.0 milestone and stop
+gating the tag. Nothing advertised is removed, so §11.4.122 stays clean
+and no §11.4.90 Obsolete closure is warranted. The BOB-141 measured fact
+stands unchanged: the Go container’s Dockerfile runs ONE binary binding
+only :7187; nothing binds :7186 or :7188 despite compose setting
+PROXY_PORT/BRIDGE_PORT. CLAUDE.md’s port map already describes what the
+container ACTUALLY does and needs no amendment under this decision.</p>
+<p>This answer is recorded as consumer DATA per §11.4.35 — it is the
+operator’s stated choice, not an agent inference, and supersedes any
+prior agent-chosen default on this question. Options not chosen are
+named above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions).</p>
+<p>— prior item text follows —</p>
+<p>GA-19/RW-09: Is –profile go parity still a release goal? (gates
+RW-10..13) — OPERATOR-DECISION</p>
 <h2
 id="bob-102-rw-05-lan-exposure-threat-model-bind-tunnel-127.0.0.1-or-keep-0.0.0.0-operator-decision">BOB-102
 — RW-05: LAN-exposure threat model — bind tunnel 127.0.0.1 or keep
 0.0.0.0? — OPERATOR-DECISION</h2>
-<p><strong>Status:</strong> Operator-blocked <strong>Type:</strong> Task
-<strong>Operator-Block-Details:</strong> WHAT: OPERATOR must decide
-LAN-exposure posture: bind tunnel to 127.0.0.1 (loopback-only) OR keep
-0.0.0.0 (LAN-reachable, relying on post-RD2-22 complete auth coverage).
-WHY: This is a security-posture policy call the agent cannot make
-autonomously (§11.4.66 operator-decision, §11.4.101 high-blast-radius
-reversible-only-if-explicit). UNBLOCK: [A] operator states BIND
-127.0.0.1 (loopback-only; agent will change compose/service binding +
-regression-test LAN unreachability) · [B] operator states KEEP 0.0.0.0
-(rely on §RD2-22 completed auth coverage; agent will add a permanent
-§11.4.135 LAN-auth regression guard) WHO: Operator
+<p><strong>Status:</strong> In progress <strong>Type:</strong> Task
 <strong>Severity:</strong> Medium</p>
-<p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RW-05 ungrouped,
-OPERATOR-DECISION] LAN-exposure threat model — bind the tunnel 127.0.0.1
-or keep 0.0.0.0 with the now-complete auth coverage (post Root Cause 3)?
-Priority: OPERATOR-DECISION.</p>
+<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): KEEP 0.0.0.0 + MANDATORY AUTH GUARD</strong></p>
+<p>The tunnel STAYS LAN-reachable — no bind address changes to
+127.0.0.1. The operator explicitly chose to preserve access from other
+devices on the network. THE DECISION CARRIES A BINDING OBLIGATION: a
+permanent §11.4.135 regression guard MUST land that FAILS THE BUILD if
+any LAN-reachable route ever stops demanding authentication. The
+operator accepted 0.0.0.0 ON THE CONDITION that guard exists — without
+it this decision is unprotected and the item is NOT closeable. Guard
+requirements: enumerate routes from the authoritative source (FastAPI
+app, Go handlers, boba-jackett) never a hand-maintained list; resolve
+real auth coverage not a grep for the string ‘auth’ (§11.4.201
+real-condition); deliberately-public routes exempt ONLY via a checked-in
+list with per-entry justification, enumerated as honest gaps never
+silent; golden-TRUE + golden-FALSE fixtures per §11.4.107(10).</p>
+<p>This answer is recorded as consumer DATA per §11.4.35 — it is the
+operator’s stated choice, not an agent inference, and supersedes any
+prior agent-chosen default on this question. Options not chosen are
+named above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions).</p>
+<p>— prior item text follows —</p>
+<p>RW-05: LAN-exposure threat model — bind tunnel 127.0.0.1 or keep
+0.0.0.0? — OPERATOR-DECISION</p>
 <h2
 id="bob-104-11.4.238-followup-codegraph-1.5.0-nested-.gitignore-regression-challenge">BOB-104
 — §11.4.238 followup: CodeGraph 1.5.0 nested-.gitignore regression
@@ -1448,10 +1466,33 @@ never an invented ratchet.</p>
 id="bob-163-now-that-7187-really-rate-limits-the-ddos-challenges-cross-endpoint-isolation-assertion-reads-a-sibling-429-as-endpoint-degraded">BOB-163
 — Now that :7187 really rate-limits, the DDoS challenge’s cross-endpoint
 isolation assertion reads a sibling 429 as endpoint-degraded</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<p><strong>Status:</strong> In progress <strong>Type:</strong> Bug
 <strong>Severity:</strong> Medium <strong>Created-By:</strong> BOB-114
 remediation, pre-existing defect surfaced by BOB-111 landing a real
 limiter</p>
+<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): YES — 429 IS RESPONSIVE IF Retry-After IS
+WELL-FORMED</strong></p>
+<p>A 429 carrying a VALID Retry-After header counts as the sibling
+endpoint being RESPONSIVE. Assertion (c) of the DDoS challenge accepts
+2xx OR a well-formed 429 (positive integer seconds or valid HTTP-date —
+PARSED, not merely present/non-empty). DEGRADED remains: connection
+failure, timeout, any 5xx, and a 429 with absent or malformed
+Retry-After. RESIDUAL RISK, accepted knowingly and to be stated in the
+script source per §11.4.6: a genuinely wedged endpoint that happens to
+answer 429-with-Retry-After would pass — the Retry-After parse narrows
+that window, it does not close it. Options (b) limiter-aware drain and
+(c) exempt healthz probe were both offered and NOT chosen. STILL OPEN,
+not covered by this decision: the detector counts 429 only, not 503,
+though the script header says ‘429 (or equivalent)’; counting 503 would
+collide with the crash detector’s 5xx tally. Decide when BOB-111 lands
+limiters on :7185 and :7189.</p>
+<p>This answer is recorded as consumer DATA per §11.4.35 — it is the
+operator’s stated choice, not an agent inference, and supersedes any
+prior agent-chosen default on this question. Options not chosen are
+named above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions).</p>
+<p>— prior item text follows —</p>
 <p><strong>Reported-Via:</strong> §11.4.202 reporting directive
 <code>bug</code> on 2026-08-21T19:41:08Z <strong>Reported-By:</strong>
 BOB-114 remediation, pre-existing defect surfaced by BOB-111 landing a
@@ -2577,9 +2618,33 @@ touch’ must not use porcelain output as the corpus.</p>
 id="bob-182-operator-decision-owed-on-the-export-charset-ratchet-plus-an-auto-lowering-baseline">BOB-182
 — Operator decision owed on the export-charset ratchet, plus an
 auto-lowering baseline</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
+<p><strong>Status:</strong> In progress <strong>Type:</strong> Task
 <strong>Severity:</strong> Medium <strong>Created-By:</strong> Claude
 <strong>Assigned-To:</strong> Claude</p>
+<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): KEEP THE MONOTONE RATCHET</strong></p>
+<p>§11.4.224(E) brownfield adoption answer, recorded as consumer DATA:
+the adoption model for CM-EXPORT-CHARSET-VALID is the MONOTONE-DECREASE
+RATCHET. The count may only go down, never up. Immediate hard floor,
+changed-code-only-with-deadline, and per-corpus phase-in were all
+offered and NOT chosen. This closes half of BOB-182 — the half that was
+genuinely the operator’s. THE REMAINING HALF IS A REAL DEFECT STILL
+OWED: BASELINE is a hardcoded constant, so the ratchet does not actually
+ratchet — on improvement the gate PASSES and PRINTS the value to lower
+it to, but nothing lowers it, and the gate keeps permitting regression
+back to the original count after the corpus heals. The fix must NOT
+collapse §11.4.249 role separation: a gate that writes its own threshold
+during a pre-build run becomes a PRODUCER as well as a GATE. Acceptable
+shapes include a persisted baseline the gate READS but never writes with
+lowering via a separate explicitly-invoked command, or a gate that FAILS
+loudly when the live count is below baseline so drift becomes an
+actionable refusal.</p>
+<p>This answer is recorded as consumer DATA per §11.4.35 — it is the
+operator’s stated choice, not an agent inference, and supersedes any
+prior agent-chosen default on this question. Options not chosen are
+named above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions).</p>
+<p>— prior item text follows —</p>
 <p>WHAT: CM-EXPORT-CHARSET-VALID (pre-build invariant 50) adopts its 301
 pre-existing violations via a monotone-decrease ratchet rather than a
 hard floor. Two things are owed.</p>
@@ -2747,6 +2812,29 @@ id="bob-188-gate-invariant-17-runs-a-stale-tracked-binary-that-structurally-cann
 — Gate invariant 17 runs a STALE TRACKED binary that structurally cannot
 see the violations it exists to catch</h2>
 <p><strong>Status:</strong> In progress <strong>Type:</strong> Bug</p>
+<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): UNTRACK THE BINARY — BUILD ON DEMAND</strong></p>
+<p>§11.4.30 answer, recorded as consumer DATA: the compiled
+<code>workable-items</code> binary is NOT to be git-tracked. ‘Any build
+derivate which we can recreate by executing proper mechanism for
+generating MUST NOT be versioned’ applies without exception here.
+Keeping it tracked with only the invariant-52 fingerprint gate, and
+keeping it tracked with a commit-time rebuild, were both offered and NOT
+chosen. REQUIRED END STATE: the gate builds from source, or REFUSES
+HONESTLY when the Go toolchain is absent (§11.4.201(11) — probe the
+artifact through its real invocation path, never fake a pass, never
+silently fall back to a stale binary). Staleness becomes structurally
+impossible rather than merely detected. ACCEPTED COST: a fresh clone
+needs a Go toolchain before invariant 17 can run — already true for the
+qBitTorrent-go backend, so this adds no new host requirement. The
+invariant-52 fingerprint gate remains useful as defence-in-depth for as
+long as any binary exists on disk.</p>
+<p>This answer is recorded as consumer DATA per §11.4.35 — it is the
+operator’s stated choice, not an agent inference, and supersedes any
+prior agent-chosen default on this question. Options not chosen are
+named above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions).</p>
+<p>— prior item text follows —</p>
 <p>pre_build_verification.sh invariant 17 (CM-WORKABLE-ITEMS-VALIDATE)
 resolves its binary through the candidate loop at :534, whose FIRST
 entry is constitution/scripts/workable-items/bin/workable-items. That
@@ -2955,7 +3043,33 @@ and eroded trust, not a missed defect.</p>
 id="bob-195-cm-dangerous-combination-fail-closed-cannot-see-contextlib.suppress-and-ruff-sim105-pushes-authors-into-that-blind-spot">BOB-195
 — CM-DANGEROUS-COMBINATION-FAIL-CLOSED cannot see contextlib.suppress,
 and ruff SIM105 pushes authors into that blind spot</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug</p>
+<p><strong>Status:</strong> In progress <strong>Type:</strong> Bug</p>
+<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): TEACH THE SCANNER With NODES — KEEP SIM105</strong></p>
+<p>The §11.4.252 fail-open scanner is FIXED to see
+<code>contextlib.suppress</code>; ruff’s SIM105 rule STAYS ENABLED in
+pyproject.toml. Disabling SIM105, and the belt-and-braces both-at-once
+option, were offered and NOT chosen. Rationale carried with the
+decision: fixing the gate makes SIM105 harmless, whereas disabling
+SIM105 alone would leave the gate blind to any suppress written by hand,
+inherited from a dependency’s style, or already present in the tree.
+REQUIRED BEHAVIOUR: <code>with contextlib.suppress(...)</code> and
+<code>with suppress(...)</code> (the
+<code>from contextlib import suppress</code> binding) wrapping a
+dangerous-combination call are DETECTED with the same severity and
+message shape as the try/except/pass form; a narrow
+<code>suppress(SpecificError)</code> around a NON-dangerous call must
+NOT fire, since a false-positive refusal is a §11.4.201(1) FAIL-bluff of
+equal severity to a missed real one. CONSEQUENCE FOR THE NUMBER: once
+landed, the scanner’s finding count stops being a floor over try/except
+shapes and becomes a genuine census — any prior count citing
+completeness was scoped to try/except only.</p>
+<p>This answer is recorded as consumer DATA per §11.4.35 — it is the
+operator’s stated choice, not an agent inference, and supersedes any
+prior agent-chosen default on this question. Options not chosen are
+named above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions).</p>
+<p>— prior item text follows —</p>
 <p>WHAT: the §11.4.252 fail-open scanner matches Try-handler shapes
 (A1)/(A2). contextlib.suppress is a With node, so a swallow written that
 way is invisible. VERIFIED BY THE CONDUCTOR with a control needle

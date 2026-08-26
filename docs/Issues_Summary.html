@@ -192,7 +192,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>In progress</td>
-<td>8</td>
+<td>10</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -202,7 +202,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>19</td>
+<td>17</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -212,17 +212,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>In progress</td>
-<td>10</td>
-</tr>
-<tr>
-<td>Task</td>
-<td>Operator-blocked</td>
-<td>3</td>
+<td>12</td>
 </tr>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>26</td>
+<td>27</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -260,7 +255,28 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <td>Bug</td>
 <td>Operator-blocked</td>
 <td>—</td>
-<td>RuTracker automated login blocked by CAPTCHA</td>
+<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): COMPLETE THE CAPTCHA FLOW ONCE</strong> Session
+establishment path is DECIDED: the operator drives the interactive
+CAPTCHA flow at <code>/api/v1/auth/rutracker/captcha</code> then
+<code>/login</code> once, and the proxy stores the resulting
+<code>bb_session</code>. The cookie-paste path and the cookies-file
+autoload path were both offered and NOT chosen. THE BLOCK NARROWS BUT
+DOES NOT LIFT: the operator must physically drive the flow — no agent
+can solve a CAPTCHA (§11.4.52 honest operator_attended boundary). AGENT
+PREP OWED BEFORE THE HAND-OFF, so the operator’s single attempt succeeds
+rather than discovering a broken endpoint mid-flow: verify both
+endpoints are reachable and correctly wired end-to-end, verify the
+session is actually PERSISTED after a successful post (not merely
+accepted), and verify a stored session is actually USED by a subsequent
+search. Honest limitation to state up front: a stored bb_session
+expires, so this path requires repeating — that cost was accepted with
+the decision. This answer is recorded as consumer DATA per §11.4.35 — it
+is the operator’s stated choice, not an agent inference, and supersedes
+any prior agent-chosen default on this question. Options not chosen are
+named above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions). — prior
+item text follows — RuTracker automated login blocked by CAPTCHA</td>
 </tr>
 <tr>
 <td>BOB-065</td>
@@ -305,10 +321,30 @@ matrix</td>
 <tr>
 <td>BOB-077</td>
 <td>Task</td>
-<td>Operator-blocked</td>
+<td>Queued</td>
 <td>High</td>
-<td>RD2-10: Identify second host running the Auto-commit rsync/sync
-mechanism (OPERATOR-DECISION)</td>
+<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): UNKNOWN — INSTRUMENT THE NEXT OCCURRENCE</strong> The
+operator does not currently know which host produces the +0500
+Auto-commit fast-forwards, so the three candidate answers (second Claude
+session / intentional rsync job / stale job) all remain open. DECIDED
+ACTION: stop hunting a host this session cannot reach (§11.4.6 — remote
+state is not knowable without access) and instead INSTRUMENT the
+mechanism so the next occurrence identifies itself. Forensic capture to
+add: committer identity, hostname, timezone offset, push timing, and the
+git remote used, recorded at Auto-commit time into a tracked forensic
+log. ACCEPTANCE: the next Auto-commit event yields a captured record
+naming its origin host — at which point this item resolves to one of the
+three original branches with evidence rather than a guess. This is the
+§11.4.101 reversible-safe move: it costs little, blocks nothing, and
+converts a recurring mystery into a self-identifying event. This answer
+is recorded as consumer DATA per §11.4.35 — it is the operator’s stated
+choice, not an agent inference, and supersedes any prior agent-chosen
+default on this question. Options not chosen are named above so a future
+reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict
+discipline applied to decisions). — prior item text follows — RD2-10:
+Identify second host running the Auto-commit rsync/sync mechanism
+(OPERATOR-DECISION)</td>
 </tr>
 <tr>
 <td>BOB-078</td>
@@ -401,18 +437,53 @@ RD2-09)</td>
 <tr>
 <td>BOB-101</td>
 <td>Task</td>
-<td>Operator-blocked</td>
+<td>Queued</td>
 <td>High</td>
-<td>GA-19/RW-09: Is –profile go parity still a release goal? (gates
-RW-10..13) — OPERATOR-DECISION</td>
+<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): DEFER PAST v1.0.0</strong> Go <code>--profile go</code>
+parity remains a goal but is NO LONGER a v1.0.0 release blocker.
+RW-10..13 move to a post-1.0 milestone and stop gating the tag. Nothing
+advertised is removed, so §11.4.122 stays clean and no §11.4.90 Obsolete
+closure is warranted. The BOB-141 measured fact stands unchanged: the Go
+container’s Dockerfile runs ONE binary binding only :7187; nothing binds
+:7186 or :7188 despite compose setting PROXY_PORT/BRIDGE_PORT.
+CLAUDE.md’s port map already describes what the container ACTUALLY does
+and needs no amendment under this decision. This answer is recorded as
+consumer DATA per §11.4.35 — it is the operator’s stated choice, not an
+agent inference, and supersedes any prior agent-chosen default on this
+question. Options not chosen are named above so a future reader does not
+re-litigate a settled call (§11.4.112(5) bounded-verdict discipline
+applied to decisions). — prior item text follows — GA-19/RW-09: Is
+–profile go parity still a release goal? (gates RW-10..13) —
+OPERATOR-DECISION</td>
 </tr>
 <tr>
 <td>BOB-102</td>
 <td>Task</td>
-<td>Operator-blocked</td>
+<td>In progress</td>
 <td>Medium</td>
-<td>RW-05: LAN-exposure threat model — bind tunnel 127.0.0.1 or keep
-0.0.0.0? — OPERATOR-DECISION</td>
+<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): KEEP 0.0.0.0 + MANDATORY AUTH GUARD</strong> The tunnel
+STAYS LAN-reachable — no bind address changes to 127.0.0.1. The operator
+explicitly chose to preserve access from other devices on the network.
+THE DECISION CARRIES A BINDING OBLIGATION: a permanent §11.4.135
+regression guard MUST land that FAILS THE BUILD if any LAN-reachable
+route ever stops demanding authentication. The operator accepted 0.0.0.0
+ON THE CONDITION that guard exists — without it this decision is
+unprotected and the item is NOT closeable. Guard requirements: enumerate
+routes from the authoritative source (FastAPI app, Go handlers,
+boba-jackett) never a hand-maintained list; resolve real auth coverage
+not a grep for the string ‘auth’ (§11.4.201 real-condition);
+deliberately-public routes exempt ONLY via a checked-in list with
+per-entry justification, enumerated as honest gaps never silent;
+golden-TRUE + golden-FALSE fixtures per §11.4.107(10). This answer is
+recorded as consumer DATA per §11.4.35 — it is the operator’s stated
+choice, not an agent inference, and supersedes any prior agent-chosen
+default on this question. Options not chosen are named above so a future
+reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict
+discipline applied to decisions). — prior item text follows — RW-05:
+LAN-exposure threat model — bind tunnel 127.0.0.1 or keep 0.0.0.0? —
+OPERATOR-DECISION</td>
 </tr>
 <tr>
 <td>BOB-104</td>
@@ -762,40 +833,61 @@ never an invented ratchet.</td>
 <tr>
 <td>BOB-163</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>bug</code> on 2026-08-21T19:41:08Z <strong>Reported-By:</strong>
-BOB-114 remediation, pre-existing defect surfaced by BOB-111 landing a
-real limiter <strong>What (the report, verbatim):</strong> PRE-EXISTING,
-NOT INTRODUCED – and proven so rather than asserted: git diff shows
-assertion (c) is BYTE-IDENTICAL to HEAD, and the failure reproduces
-against the unmodified HEAD script. What changed is not the challenge
-but the SYSTEM: BOB-111 appears at least partially delivered, because
-:7187 now returns real 429s where it previously returned none. :7185 and
-:7189 still produce zero 429s. This is a 11.4.248-class corrosion risk
-and that is why it is filed rather than left as a footnote:
-run_all_challenges.sh will now fail INTERMITTENTLY, and an intermittent
-red trains everyone to re-run until green, at which point a real
-regression is dismissed as ‘probably the flaky rate-limit one’. THE
-DECISION, which is an operator call under 11.4.66 and which I
-deliberately did NOT invent: Does a 429 from a WORKING limiter count as
-the sibling endpoint being RESPONSIVE? (a) YES – a 429 proves the
-endpoint is alive and correctly protecting itself. Assertion (c) accepts
-2xx OR 429, and only a connection failure / 5xx / timeout counts as
-degraded. Risk: a genuinely wedged endpoint that happens to answer 429
-would pass. (b) NO – keep requiring 2xx, but make the challenge
-limiter-aware: drain or wait out the window before the sibling probe
-(retry-after is served, so the budget is knowable rather than guessed).
-(c) Probe siblings on a path the limiter exempts (a healthz-class
-route), so the isolation question is asked without spending the bucket.
-Recommendation with reasoning, not just a pick: (a) composed with a
-bounded liveness check – a 429 carrying a well-formed Retry-After IS
-evidence of a live, correctly-behaving service, and (b) makes the
-challenge slower and couples it to a window value that will drift. But
-the semantics of ‘responsive’ here are a product judgement, so the
-answer is recorded, not assumed. RELATED, stated as fact rather than
-folded in: the detector counts 429 only, not 503, though the script
+<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): YES — 429 IS RESPONSIVE IF Retry-After IS
+WELL-FORMED</strong> A 429 carrying a VALID Retry-After header counts as
+the sibling endpoint being RESPONSIVE. Assertion (c) of the DDoS
+challenge accepts 2xx OR a well-formed 429 (positive integer seconds or
+valid HTTP-date — PARSED, not merely present/non-empty). DEGRADED
+remains: connection failure, timeout, any 5xx, and a 429 with absent or
+malformed Retry-After. RESIDUAL RISK, accepted knowingly and to be
+stated in the script source per §11.4.6: a genuinely wedged endpoint
+that happens to answer 429-with-Retry-After would pass — the Retry-After
+parse narrows that window, it does not close it. Options (b)
+limiter-aware drain and (c) exempt healthz probe were both offered and
+NOT chosen. STILL OPEN, not covered by this decision: the detector
+counts 429 only, not 503, though the script header says ‘429 (or
+equivalent)’; counting 503 would collide with the crash detector’s 5xx
+tally. Decide when BOB-111 lands limiters on :7185 and :7189. This
+answer is recorded as consumer DATA per §11.4.35 — it is the operator’s
+stated choice, not an agent inference, and supersedes any prior
+agent-chosen default on this question. Options not chosen are named
+above so a future reader does not re-litigate a settled call
+(§11.4.112(5) bounded-verdict discipline applied to decisions). — prior
+item text follows — <strong>Reported-Via:</strong> §11.4.202 reporting
+directive <code>bug</code> on 2026-08-21T19:41:08Z
+<strong>Reported-By:</strong> BOB-114 remediation, pre-existing defect
+surfaced by BOB-111 landing a real limiter <strong>What (the report,
+verbatim):</strong> PRE-EXISTING, NOT INTRODUCED – and proven so rather
+than asserted: git diff shows assertion (c) is BYTE-IDENTICAL to HEAD,
+and the failure reproduces against the unmodified HEAD script. What
+changed is not the challenge but the SYSTEM: BOB-111 appears at least
+partially delivered, because :7187 now returns real 429s where it
+previously returned none. :7185 and :7189 still produce zero 429s. This
+is a 11.4.248-class corrosion risk and that is why it is filed rather
+than left as a footnote: run_all_challenges.sh will now fail
+INTERMITTENTLY, and an intermittent red trains everyone to re-run until
+green, at which point a real regression is dismissed as ‘probably the
+flaky rate-limit one’. THE DECISION, which is an operator call under
+11.4.66 and which I deliberately did NOT invent: Does a 429 from a
+WORKING limiter count as the sibling endpoint being RESPONSIVE? (a) YES
+– a 429 proves the endpoint is alive and correctly protecting itself.
+Assertion (c) accepts 2xx OR 429, and only a connection failure / 5xx /
+timeout counts as degraded. Risk: a genuinely wedged endpoint that
+happens to answer 429 would pass. (b) NO – keep requiring 2xx, but make
+the challenge limiter-aware: drain or wait out the window before the
+sibling probe (retry-after is served, so the budget is knowable rather
+than guessed). (c) Probe siblings on a path the limiter exempts (a
+healthz-class route), so the isolation question is asked without
+spending the bucket. Recommendation with reasoning, not just a pick: (a)
+composed with a bounded liveness check – a 429 carrying a well-formed
+Retry-After IS evidence of a live, correctly-behaving service, and (b)
+makes the challenge slower and couples it to a window value that will
+drift. But the semantics of ‘responsive’ here are a product judgement,
+so the answer is recorded, not assumed. RELATED, stated as fact rather
+than folded in: the detector counts 429 only, not 503, though the script
 header says ‘429 (or equivalent)’. Counting 503 would collide with the
 crash detector’s 5xx tally. Worth deciding when BOB-111 lands limiters
 on :7185 and :7189. <strong>Affected scope / file-scope
@@ -1562,36 +1654,59 @@ instrument that DOES see it is ’find </td>
 <tr>
 <td>BOB-182</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
-<td>WHAT: CM-EXPORT-CHARSET-VALID (pre-build invariant 50) adopts its
-301 pre-existing violations via a monotone-decrease ratchet rather than
-a hard floor. Two things are owed. (1) THE ADOPTION DECISION IS THE
-OPERATOR’S, NOT THE SCRIPT’S. 11.4.224(E) requires the brownfield
-adoption question be SURFACED to the operator and the answer recorded as
-consumer DATA – never an invented ratchet. What exists today is a header
-comment plus a BOBA_EXPORT_CHARSET_BASELINE override: that DOCUMENTS a
-decision the agent made, it does not RECORD an answer the operator gave.
-The independent reviewer judged the choice defensible and would not
-reverse it (a hard floor on 301 violations makes the build unreachable,
-which 11.4.234 forbids; 11.4.101 favours the reversible option) but
-correctly held that it is not yet compliant. Options for the operator:
-immediate hard floor (BASELINE=0) / keep the monotone ratchet /
-per-corpus phase-in / changed-code-only with a scheduled full-corpus
-deadline. (2) THE RATCHET DOES NOT ACTUALLY RATCHET. BASELINE is a
-hardcoded constant. On improvement the gate PASSES and PRINTS the value
-to lower it to, but nothing lowers it, so the gate keeps permitting
-regression all the way back to 301 after the corpus heals. The header
-now says tightening is MANUAL rather than claiming automatic behaviour
-that does not exist (11.4.6), but the honest statement is a stopgap, not
-the fix. WHY IT WAS NOT BUILT WITH THE FIX: a gate that writes its own
-threshold during a pre-build run becomes a PRODUCER as well as a GATE
-(11.4.249 role separation), and that is a design change the operator
-should approve rather than receive as a side effect. ACCEPTANCE: the
-operator’s adoption answer recorded as consumer DATA; and either a
-persisted baseline the gate lowers and never raises (with the
-role-separation question answered), or an explicit decision that manual
-tightening is acceptable.</td>
+<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): KEEP THE MONOTONE RATCHET</strong> §11.4.224(E)
+brownfield adoption answer, recorded as consumer DATA: the adoption
+model for CM-EXPORT-CHARSET-VALID is the MONOTONE-DECREASE RATCHET. The
+count may only go down, never up. Immediate hard floor,
+changed-code-only-with-deadline, and per-corpus phase-in were all
+offered and NOT chosen. This closes half of BOB-182 — the half that was
+genuinely the operator’s. THE REMAINING HALF IS A REAL DEFECT STILL
+OWED: BASELINE is a hardcoded constant, so the ratchet does not actually
+ratchet — on improvement the gate PASSES and PRINTS the value to lower
+it to, but nothing lowers it, and the gate keeps permitting regression
+back to the original count after the corpus heals. The fix must NOT
+collapse §11.4.249 role separation: a gate that writes its own threshold
+during a pre-build run becomes a PRODUCER as well as a GATE. Acceptable
+shapes include a persisted baseline the gate READS but never writes with
+lowering via a separate explicitly-invoked command, or a gate that FAILS
+loudly when the live count is below baseline so drift becomes an
+actionable refusal. This answer is recorded as consumer DATA per
+§11.4.35 — it is the operator’s stated choice, not an agent inference,
+and supersedes any prior agent-chosen default on this question. Options
+not chosen are named above so a future reader does not re-litigate a
+settled call (§11.4.112(5) bounded-verdict discipline applied to
+decisions). — prior item text follows — WHAT: CM-EXPORT-CHARSET-VALID
+(pre-build invariant 50) adopts its 301 pre-existing violations via a
+monotone-decrease ratchet rather than a hard floor. Two things are owed.
+(1) THE ADOPTION DECISION IS THE OPERATOR’S, NOT THE SCRIPT’S.
+11.4.224(E) requires the brownfield adoption question be SURFACED to the
+operator and the answer recorded as consumer DATA – never an invented
+ratchet. What exists today is a header comment plus a
+BOBA_EXPORT_CHARSET_BASELINE override: that DOCUMENTS a decision the
+agent made, it does not RECORD an answer the operator gave. The
+independent reviewer judged the choice defensible and would not reverse
+it (a hard floor on 301 violations makes the build unreachable, which
+11.4.234 forbids; 11.4.101 favours the reversible option) but correctly
+held that it is not yet compliant. Options for the operator: immediate
+hard floor (BASELINE=0) / keep the monotone ratchet / per-corpus
+phase-in / changed-code-only with a scheduled full-corpus deadline. (2)
+THE RATCHET DOES NOT ACTUALLY RATCHET. BASELINE is a hardcoded constant.
+On improvement the gate PASSES and PRINTS the value to lower it to, but
+nothing lowers it, so the gate keeps permitting regression all the way
+back to 301 after the corpus heals. The header now says tightening is
+MANUAL rather than claiming automatic behaviour that does not exist
+(11.4.6), but the honest statement is a stopgap, not the fix. WHY IT WAS
+NOT BUILT WITH THE FIX: a gate that writes its own threshold during a
+pre-build run becomes a PRODUCER as well as a GATE (11.4.249 role
+separation), and that is a design change the operator should approve
+rather than receive as a side effect. ACCEPTANCE: the operator’s
+adoption answer recorded as consumer DATA; and either a persisted
+baseline the gate lowers and never raises (with the role-separation
+question answered), or an explicit decision that manual tightening is
+acceptable.</td>
 </tr>
 <tr>
 <td>BOB-184</td>
@@ -1725,7 +1840,29 @@ a 11.4.238 coverage escape.</td>
 <td>Bug</td>
 <td>In progress</td>
 <td>—</td>
-<td>pre_build_verification.sh invariant 17 (CM-WORKABLE-ITEMS-VALIDATE)
+<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): UNTRACK THE BINARY — BUILD ON DEMAND</strong> §11.4.30
+answer, recorded as consumer DATA: the compiled
+<code>workable-items</code> binary is NOT to be git-tracked. ‘Any build
+derivate which we can recreate by executing proper mechanism for
+generating MUST NOT be versioned’ applies without exception here.
+Keeping it tracked with only the invariant-52 fingerprint gate, and
+keeping it tracked with a commit-time rebuild, were both offered and NOT
+chosen. REQUIRED END STATE: the gate builds from source, or REFUSES
+HONESTLY when the Go toolchain is absent (§11.4.201(11) — probe the
+artifact through its real invocation path, never fake a pass, never
+silently fall back to a stale binary). Staleness becomes structurally
+impossible rather than merely detected. ACCEPTED COST: a fresh clone
+needs a Go toolchain before invariant 17 can run — already true for the
+qBitTorrent-go backend, so this adds no new host requirement. The
+invariant-52 fingerprint gate remains useful as defence-in-depth for as
+long as any binary exists on disk. This answer is recorded as consumer
+DATA per §11.4.35 — it is the operator’s stated choice, not an agent
+inference, and supersedes any prior agent-chosen default on this
+question. Options not chosen are named above so a future reader does not
+re-litigate a settled call (§11.4.112(5) bounded-verdict discipline
+applied to decisions). — prior item text follows —
+pre_build_verification.sh invariant 17 (CM-WORKABLE-ITEMS-VALIDATE)
 resolves its binary through the candidate loop at :534, whose FIRST
 entry is constitution/scripts/workable-items/bin/workable-items. That
 file is GIT-TRACKED (md5 17644a248363, identical to
@@ -1935,33 +2072,57 @@ and eroded trust, not a missed defect.</td>
 <tr>
 <td>BOB-195</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>—</td>
-<td>WHAT: the §11.4.252 fail-open scanner matches Try-handler shapes
-(A1)/(A2). contextlib.suppress is a With node, so a swallow written that
-way is invisible. VERIFIED BY THE CONDUCTOR with a control needle
-through the same invocation path (§11.4.201(7)(b)), because a first
-attempt returned 0 for BOTH forms and was itself blind - the gate takes
-–root, not a positional, so a bare path exits on an unknown arg
-(§11.4.201(7)(c): the invocation path is part of the instrument).
-Correct run: try/except/pass around os.unlink(user_supplied_path) -&gt;
-‘FAIL - swallowed exception … :5’, the needle sees.
-contextlib.suppress(Exception) around the IDENTICAL call -&gt; ‘PASS -
-no swallowed-exception … anti-patterns found’. Both combine untrusted
-input with an irreversible unlink; both swallow everything; one is
-caught and one is not. WHY IT IS WORSE THAN A PLAIN GAP: pyproject.toml
-enables ruff’s SIM ruleset, and SIM105 is ‘use contextlib.suppress
-instead of try-except-pass’. Our own linter therefore instructs authors
-to rewrite the form this gate CAN see into the form it CANNOT. The two
-tools are pulling in opposite directions and the lint one runs more
-often. Every SIM105 autofix silently shrinks this gate’s coverage while
-the count goes down, which reads as progress. CONSEQUENCE FOR THE
-NUMBER: the scanner’s finding count is a FLOOR over try/except shapes,
-not a census of swallows. Any statement of the form ‘N fail-open sites
-remain’ must be read as ‘N among try/except shapes’. ACCEPTANCE: the
-scanner recognises contextlib.suppress (a With whose items call
-contextlib.suppress with a broad exception type) and applies the same
-≥2-capability test; a golden-TRUE fixture in suppress form; a
+<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
+clarification): TEACH THE SCANNER With NODES — KEEP SIM105</strong> The
+§11.4.252 fail-open scanner is FIXED to see
+<code>contextlib.suppress</code>; ruff’s SIM105 rule STAYS ENABLED in
+pyproject.toml. Disabling SIM105, and the belt-and-braces both-at-once
+option, were offered and NOT chosen. Rationale carried with the
+decision: fixing the gate makes SIM105 harmless, whereas disabling
+SIM105 alone would leave the gate blind to any suppress written by hand,
+inherited from a dependency’s style, or already present in the tree.
+REQUIRED BEHAVIOUR: <code>with contextlib.suppress(...)</code> and
+<code>with suppress(...)</code> (the
+<code>from contextlib import suppress</code> binding) wrapping a
+dangerous-combination call are DETECTED with the same severity and
+message shape as the try/except/pass form; a narrow
+<code>suppress(SpecificError)</code> around a NON-dangerous call must
+NOT fire, since a false-positive refusal is a §11.4.201(1) FAIL-bluff of
+equal severity to a missed real one. CONSEQUENCE FOR THE NUMBER: once
+landed, the scanner’s finding count stops being a floor over try/except
+shapes and becomes a genuine census — any prior count citing
+completeness was scoped to try/except only. This answer is recorded as
+consumer DATA per §11.4.35 — it is the operator’s stated choice, not an
+agent inference, and supersedes any prior agent-chosen default on this
+question. Options not chosen are named above so a future reader does not
+re-litigate a settled call (§11.4.112(5) bounded-verdict discipline
+applied to decisions). — prior item text follows — WHAT: the §11.4.252
+fail-open scanner matches Try-handler shapes (A1)/(A2).
+contextlib.suppress is a With node, so a swallow written that way is
+invisible. VERIFIED BY THE CONDUCTOR with a control needle through the
+same invocation path (§11.4.201(7)(b)), because a first attempt returned
+0 for BOTH forms and was itself blind - the gate takes –root, not a
+positional, so a bare path exits on an unknown arg (§11.4.201(7)(c): the
+invocation path is part of the instrument). Correct run: try/except/pass
+around os.unlink(user_supplied_path) -&gt; ‘FAIL - swallowed exception …
+:5’, the needle sees. contextlib.suppress(Exception) around the
+IDENTICAL call -&gt; ‘PASS - no swallowed-exception … anti-patterns
+found’. Both combine untrusted input with an irreversible unlink; both
+swallow everything; one is caught and one is not. WHY IT IS WORSE THAN A
+PLAIN GAP: pyproject.toml enables ruff’s SIM ruleset, and SIM105 is ‘use
+contextlib.suppress instead of try-except-pass’. Our own linter
+therefore instructs authors to rewrite the form this gate CAN see into
+the form it CANNOT. The two tools are pulling in opposite directions and
+the lint one runs more often. Every SIM105 autofix silently shrinks this
+gate’s coverage while the count goes down, which reads as progress.
+CONSEQUENCE FOR THE NUMBER: the scanner’s finding count is a FLOOR over
+try/except shapes, not a census of swallows. Any statement of the form
+‘N fail-open sites remain’ must be read as ‘N among try/except shapes’.
+ACCEPTANCE: the scanner recognises contextlib.suppress (a With whose
+items call contextlib.suppress with a broad exception type) and applies
+the same ≥2-capability test; a golden-TRUE fixture in suppress form; a
 golden-FALSE fixture where suppress wraps a single-capability diagnostic
 emitter and must NOT fire; and an explicit decision on the SIM105
 tension - either exempt the shapes this gate governs, or accept suppress
