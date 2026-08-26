@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>check_cm_lan_routes_authenticated</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">check_cm_lan_routes_authenticated</h1>
+</header>
+<h1
+id="check_cm_lan_routes_authenticated.sh">check_cm_lan_routes_authenticated.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T00:00:00Z <strong>Gate:</strong>
+<code>CM-LAN-ROUTES-AUTHENTICATED</code> <strong>Authority:</strong>
+operator decision BOB-102 (2026-08-26) · §11.4.135 · §11.4.201</p>
+<h2 id="overview">Overview</h2>
+<p>On 2026-08-26 the operator decided BOB-102 as <strong>“Keep 0.0.0.0 +
+auth guard”</strong>. The tunnel stays LAN-reachable — no bind address
+moves to <code>127.0.0.1</code> — and that exposure was accepted
+<strong>on the condition</strong> that a permanent regression guard
+fails the build if any LAN-reachable route ever stops demanding
+authentication. This gate is that condition made mechanical.</p>
+<p>It enumerates every route served by a listener declared LAN-bound,
+resolves per route whether authentication genuinely reaches it, and
+refuses the build when a route is neither auth-wired nor covered by a
+justified, checked-in exemption.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code>, <code>python3</code> (&gt;= 3.9), and
+<code>PyYAML</code>.</li>
+<li>The sibling analyzer engine
+<code>scripts/pre_build/lan_route_auth_analyzer.py</code>.</li>
+<li>The policy file <code>config/lan_route_auth_policy.yaml</code>.</li>
+</ul>
+<p>No container, no running service, and no network access is required —
+the gate is pure static analysis.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/pre_build/check_cm_lan_routes_authenticated.sh</span>            <span class="co"># default scope</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/pre_build/check_cm_lan_routes_authenticated.sh</span> <span class="at">--list</span>     <span class="co"># JSON inventory</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/pre_build/check_cm_lan_routes_authenticated.sh</span> <span class="at">--policy</span> P <span class="at">--root</span> R</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">./scripts/pre_build/check_cm_lan_routes_authenticated.sh</span> <span class="at">--help</span></span></code></pre></div>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Exit</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>PASS — every LAN-reachable route is auth-wired or justly
+exempted</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>FAIL — one or more findings, each printed with resolved
+evidence</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>ERROR — usage error, missing analyzer/policy, or no usable
+<code>python3</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="why-it-does-not-grep-for-auth">Why it does not grep for
+“auth”</h2>
+<p>A gate that greps for a token <em>mentioning</em> auth asserts a
+<strong>proxy signal</strong>, not the real condition (§11.4.201). A
+comment, a variable name or a log string would satisfy it while the
+route stayed wide open. This gate resolves the real wiring from the
+authoritative source, per framework:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Service kind</th>
+<th>A route counts as protected when…</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fastapi</code></td>
+<td>the module parses with <code>ast</code> and a
+<code>Depends(&lt;marker&gt;)</code> genuinely reaches the route — as a
+handler parameter default, as the decorator’s
+<code>dependencies=[...]</code>, or via its
+<code>APIRouter(dependencies=[...])</code>.</td>
+</tr>
+<tr>
+<td><code>gin</code></td>
+<td>an auth marker is actually installed with <code>.Use(...)</code> on
+the owning engine or route group. Group prefixes are resolved so the
+reported path is the real one.</td>
+</tr>
+<tr>
+<td><code>gomux</code></td>
+<td>the constructor’s returned handler is really wrapped by an auth
+marker (e.g. <code>return WithAuth(mux)</code>).</td>
+</tr>
+</tbody>
+</table>
+<p>Every refusal prints the route, its <code>file:line</code>, how the
+verdict was reached, and whether the method is mutating — so a false
+positive is diagnosable in one step rather than by re-deriving the
+gate’s reasoning.</p>
+<h2 id="false-positives-are-failures-too">False positives are failures
+too</h2>
+<p>A refusal on a genuinely public route is a FAIL-bluff of the same
+severity as a missed route (§11.4.201(1)). Deliberately-public routes
+are therefore declarable — but <strong>never silently</strong>. Every
+exemption entry requires:</p>
+<ul>
+<li><code>class:</code> — either <code>public-by-design</code> or
+<code>known-gap</code></li>
+<li><code>justification:</code> — a non-empty explanation</li>
+</ul>
+<p>The gate refuses an entry missing either, so a blanket skip is
+impossible.</p>
+<p><code>known-gap</code> entries are <strong>real holes carried
+honestly</strong>, not endorsements. The gate prints their count loudly
+on every run. They are expected to shrink and never grow
+(§11.4.261).</p>
+<h2
+id="the-drift-property-why-the-route-set-is-derived-never-listed">The
+drift property (why the route set is derived, never listed)</h2>
+<p>The inventory is re-derived from source on every run. A
+hand-maintained list drifts silently, and silent drift is exactly what
+this guard exists to stop. The consequence is the useful one:</p>
+<ul>
+<li>A <strong>new route</strong> is in neither the auth-wired set nor
+the exemption list, so it FAILS until somebody consciously protects or
+justifies it.</li>
+<li>A route whose auth wiring is <strong>removed</strong> drops out of
+the auth-wired set and is not exempted, so it FAILS — the literal
+regression BOB-102 is conditioned on.</li>
+<li>A <strong>stale exemption</strong> for a route that no longer exists
+FAILS, so the list cannot rot into fiction.</li>
+<li>A declared LAN service resolving <strong>zero routes</strong> FAILS
+as BLIND rather than passing quietly, because a blind extractor and a
+route-free service return the identical quiet zero (§11.4.201(6)
+FALSE-NULL).</li>
+</ul>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Loopback services.</strong> A service declared
+<code>lan_bound: false</code> is out of scope and is not scanned. Firing
+on it would be a false-positive refusal.</li>
+<li><strong>Redundant exemptions.</strong> An entry for a route that
+<em>is</em> auth-wired is tolerated (it is harmless) rather than failed,
+to avoid a false positive on a defensively-listed route.</li>
+<li><strong><code>method: ANY</code>.</strong> Matches any method for
+that path — used for stdlib-mux routes, which multiplex methods inside
+the handler.</li>
+<li><strong>Method-scoped keys.</strong> Exemptions are keyed on
+<code>(service, method, path)</code>, so a path exempted for
+<code>GET</code> is <strong>not</strong> exempted when it later gains a
+<code>POST</code>.</li>
+</ul>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p>This gate asserts <strong>static route wiring</strong>: that each
+LAN-reachable route is attached to an auth mechanism. It does
+<strong>not</strong> assert that the mechanism is armed at runtime. The
+merge-service token gate is env-conditional — with
+<code>BOBA_API_TOKEN</code> unset, <code>require_api_token</code>
+returns immediately and the route is open in practice. That is a
+boot-time invariant (§11.4.254), not a static one, and belongs to a
+separate runtime check. Claiming otherwise here would be the bluff this
+guard exists to prevent.</p>
+<p>Likewise the gate proves coverage of the routes it can resolve; it
+does not prove the auth mechanisms themselves are correctly
+implemented.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li>Policy/exemption data:
+<code>config/lan_route_auth_policy.yaml</code></li>
+<li>Analyzer engine:
+<code>scripts/pre_build/lan_route_auth_analyzer.py</code></li>
+<li>Paired §1.1 meta-test:
+<code>tests/pre_build/test_check_cm_lan_routes_authenticated.sh</code></li>
+<li>Sibling gates:
+<code>check_cm_healthcheck_covers_served_ports.sh</code>,
+<code>check_cm_killpg_pgid_guard.sh</code></li>
+</ul>
+</body>
+</html>
