@@ -1,7 +1,7 @@
 # DDoS Resilience Testing
 
-**Revision:** 3
-**Last modified:** 2026-08-21T19:40:00Z
+**Revision:** 4
+**Last modified:** 2026-08-26T00:00:00Z
 
 Documents `challenges/scripts/ddos_resilience_challenge.sh` — the DDoS-class
 testing scaffold added by **BOB-074** to close a gap in boba's §11.4.27
@@ -28,10 +28,20 @@ asserts:
    (including client-side timeouts under load — see "Terminology" below)
    across all three tiers.
 2. **Rate limiting** — a 429 (or equivalent) appears once load is heavy
-   enough. See "RED/GREEN polarity" below — this is currently an honest
-   `SKIP` because **no rate limiter exists anywhere in boba's stack**.
+   enough, **per endpoint**. See "RED/GREEN polarity" below. **Superseded
+   2026-08-26:** the 2026-08-18 finding that no rate limiter existed anywhere
+   in the stack is no longer true — `merge_search :7187` now enforces one
+   (`x-ratelimit-limit: 120` with a `retry-after`; measured live 33 x 429 at
+   c=50), so it **PASSes** in GREEN and would FAIL in RED — exactly the
+   polarity flip the original clause predicted. `:7185` and `:7189` still
+   `SKIP` as `extension_absent`.
 3. **Cross-endpoint isolation** — while one endpoint is under its heaviest
-   tier, the other two stay responsive (2xx within a bounded timeout).
+   tier, the other two stay **responsive** within a bounded timeout.
+   "Responsive" is **any 2xx, OR a 429 carrying a well-formed `Retry-After`**
+   (BOB-163). "Degraded" is a connection failure, a timeout, any 5xx, any
+   other non-2xx, and a 429 whose `Retry-After` is **absent or malformed**.
+   See "Detector 3" below for why, and for the two residual risks this
+   assertion does **not** close.
 
 ### Terminology: "crash" includes client-side timeout
 
@@ -149,6 +159,104 @@ current state happens to hit:
 | `engaged` | `PASS` | `FAIL` |
 | `absent` | `SKIP` (`extension_absent`) | `PASS` |
 
+### Detector 3 — sibling responsiveness (added by BOB-163)
+
+Assertion (c)'s oracle previously had **no fixture at all** and had therefore
+never been observed to FAIL on a genuinely broken artifact — unvalidated
+instrumentation in the §11.4.115(F) sense, exactly the gap BOB-114 closed for
+detector 2.
+
+**Why the rule changed.** Assertion (c) required a sibling probe to answer
+`^2`. `:7187` now enforces a real limiter (measured live 2026-08-26:
+`x-ratelimit-limit: 120`, `retry-after: 45`, `server: uvicorn`). A full run
+sends ~250 requests to `:7187`, so a sibling probe fired while *another*
+endpoint is under its heaviest tier lands on an exhausted bucket and gets a
+429 — which the `^2` rule read as "endpoint degraded". That is a §11.4.1
+**FAIL-bluff**: it condemns a service that is working correctly and
+protecting itself as designed.
+
+**Operator decision (§11.4.66, 2026-08-26):** *"Yes, if Retry-After is
+well-formed"* — a 429 carrying a valid `Retry-After` is evidence of a live
+service correctly protecting itself.
+
+**Well-formed means parsed, not present.** `retry_after_wellformed` accepts a
+**positive** `1*DIGIT` delta-seconds (RFC 9110 §10.2.3 — so `0` and `-5` are
+rejected) or an HTTP-date matched **structurally** as IMF-fixdate / RFC 850 /
+asctime (RFC 9110 §5.6.7 requires a *recipient* to accept all three; refusing
+a legal obsolete form would be its own §11.4.201(1) false positive) and then
+**semantically parsed** via `date -d`, which rejects a correctly-shaped but
+impossible date. `HAVE_DATE_PARSE` is itself a §11.4.201(7)(b) control
+needle: a known-good IMF-fixdate is run through the parser at load, and if it
+fails the host has no parser, the semantic step is skipped, and the fixture
+that depends on it reports `NOT EXERCISED (reason=no_date_parser_on_host)`
+rather than accusing the detector.
+
+| Fixture | `Retry-After` sent | Detector must classify |
+|---|---|---|
+| `ok200` | — (status 200) | `responsive` |
+| `r429_valid_seconds` | `30` | `responsive` |
+| `r429_valid_httpdate` | `Wed, 21 Oct 2015 07:28:00 GMT` | `responsive` |
+| `r429_missing` | *header absent* | `degraded` |
+| `r429_garbage` | `soon-ish` | `degraded` |
+| `r429_zero` | `0` | `degraded` |
+| `r429_neg` | `-5` | `degraded` |
+| `r429_baddate` | `Sun, 32 Nov 1994 25:99:99 GMT` | `degraded` (skipped honestly where `date -d` is absent) |
+| `srv500` | — (status 500) | `degraded` |
+| `refused` | — (nothing listening) | `degraded` |
+
+The four rows `r429_garbage` / `r429_zero` / `r429_neg` / `r429_baddate` are
+**golden-bad-with-carrier**: the header *is* present on every one of them, so
+a detector that merely checks for a non-empty header passes them all. Only a
+real parse separates them — which is what the M1 mutation below flips.
+
+The **decision** is fixture-covered too, not just the classification:
+`sibling_isolation_report` is driven through all three polarities —
+all-responsive (`rc=0`), one-degraded (`rc=1`), and **empty log** (`rc=1`,
+fail-closed: zero observations is not evidence of isolation, the
+§11.4.201(6) false-null where a blind probe and a healthy stack return the
+same quiet zero).
+
+#### Mutation evidence (2026-08-26)
+
+| Mutation | Effect | Result |
+|---|---|---|
+| **M1** — `retry_after_wellformed` accepts any non-empty value | the parse degrades to a presence check | all four carrier fixtures flip to `responsive` → **FAIL** (6 assertions) |
+| **M2** — the decision seam reverted to the pre-fix `^2`-only rule | classifier intact but unconsulted | `decision 'all-responsive'` flips to `rc=1` → **FAIL** (3 assertions) |
+| **M3** — drop the 429 branch entirely | every 429 is degraded | both well-formed-429 fixtures flip to `degraded` → **FAIL** (5 assertions) |
+| **M-DATE** (reviewer-authored, §11.4.194(6)(d)) — PATH-shim a `date` that refuses `-d` | the documented portability branch engages | pre-fix: the whole challenge exited `1` accusing the detector; now: `NOT EXERCISED (reason=no_date_parser_on_host)` → **honest refusal naming its cause** |
+| **M-SEAM** (reviewer-authored) — delete the live call site, inline `isolation_bad=0` | live verdict bypasses the oracle | **undetected, 16/16 green** — see "Residual risks" below |
+
+#### Residual risks (§11.4.6 — stated, not closed)
+
+1. **A wedged endpoint that still answers 429-with-well-formed-`Retry-After`**
+   classifies `responsive` and passes assertion (c). Parsing the header
+   *narrows* this (a limiter emitting a real, positive, parseable "come back
+   in N" is running enough code to compute and serialize one, and
+   reset/timeout/5xx/429-with-no-header are all still caught) but does not
+   close it. Closing it needs a semantic liveness oracle — assert the sibling
+   still serves its own payload once its window reopens — which is outside
+   this challenge's bounded localhost chaos budget and is **not** claimed.
+   Assertion (c) proves *"the sibling's HTTP stack is alive and answering
+   coherently under a neighbour's load"*, never *"the sibling is fully
+   functional"*.
+2. **The live call site itself is unguarded.** Every *rule* it applies is
+   fixture-covered, but deleting or bypassing the one
+   `sibling_isolation_report` call — inlining a different rule, or hardcoding
+   `isolation_bad=0` — is not detected by any test (measured: M-SEAM above
+   left the unit test fully green — 16/16 when first demonstrated, 22/22 after the review-round hardening). Guarding it needs the real
+   `:7185`/`:7187`/`:7189` topology under real load, which no localhost
+   fixture can own. A grep-gate asserting the call site "looks right" is
+   **not** the closure — that is the §11.4.201(7)(a) substring check this
+   challenge forbids elsewhere. The honest control is the §11.4.142 review of
+   any diff touching that line; the gap is named in-source at the call site so
+   that review is possible.
+3. **`Retry-After: 999999999`** (~31.7 years) classifies `responsive` — within
+   the recorded operator decision, though a cap would narrow risk 1 further.
+   Conversely a 20-digit value goes `degraded` on bash integer limits where
+   RFC 9111 says treat overflow as max — a deviation in the conservative
+   direction. Carried to the operator as a §11.4.66 question rather than
+   guessed.
+
 ### One detector, two consumers
 
 `ratelimit_classify` and `ratelimit_verdict_kind` are the **single**
@@ -211,7 +319,18 @@ test run.
 Authoring this scaffold immediately surfaced two real gaps — consistent
 with §11.4.238's mandate that automated QA be the discovery channel:
 
-### 1. No rate limiting anywhere (see "RED/GREEN polarity" above)
+### 1. No rate limiting anywhere — SUPERSEDED 2026-08-26 (see "RED/GREEN polarity" above)
+
+> **Superseded.** This finding was true when written on 2026-08-18 and is no
+> longer. `merge_search :7187` now enforces a limiter (`x-ratelimit-limit:
+> 120` with a `retry-after`; 33 x 429 at c=50 measured live 2026-08-26), so it
+> PASSes assertion (b) in GREEN. `:7185` and `:7189` are still unprotected and
+> still `SKIP` as `extension_absent`. The source-inspection record below is
+> retained as the dated evidence it was, not as current state. Its arrival is
+> also what surfaced BOB-163: assertion (c) read `:7187`'s own 429 as a
+> degraded sibling.
+
+
 
 Verified by source inspection across the whole stack — no
 `slowapi`/`limiter`/`throttle` import in `download-proxy/src/`, no

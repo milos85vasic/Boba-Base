@@ -194,10 +194,20 @@
 #  39. CM-DANGEROUS-COMBINATION-FAIL-CLOSED (§11.4.252) over boba's
 #      first-party source roots (download-proxy/src, plugins, scripts,
 #      qBitTorrent-go, frontend/src) — an INCLUSION list, not an exclusion
-#      fence. ADVISORY: 36 real hits on first run, a MIXED set of true
-#      fail-opens and benign narrow-exception cleanup idioms; see the block
-#      comment for why blocking an un-triaged mix would be a §11.4.201(1)
-#      false refusal, and what promoting it to BLOCKING requires.
+#      fence. ADVISORY: the count is a FLOOR over the shapes the scanner
+#      models, never a census. First run 2026-08-20 saw 36 hits over
+#      try/except shapes only; after BOB-195 taught it `contextlib.suppress`
+#      (a With node it was structurally blind to, while ruff SIM105 actively
+#      rewrites the visible form into the invisible one) an independent
+#      review measured 80 hit lines on these same roots, 2026-08-26 — a
+#      SCOPE change, not a regression, and this conductor did not re-run it
+#      independently. The 5 newly-visible criticals are the BOB-126 killpg
+#      cleanup path in merge_service/search.py; the §11.4.263 pgid guard was
+#      verified PRESENT and correct at both sites, so they are true by the
+#      scanner's definition and safe in fact. Still a MIXED set of true
+#      fail-opens and benign narrow-exception idioms; see the block comment
+#      for why blocking an un-triaged mix would be a §11.4.201(1) false
+#      refusal, and what promoting it to BLOCKING requires.
 #  40. CM-ORACLE-STRATEGY-NAMED-AND-INDEPENDENT (§11.4.245) over tests/.
 #      ADVISORY: 4475 unannotated test functions — a real whole-corpus gap
 #      whose brownfield adoption path is an operator decision per
@@ -1859,19 +1869,52 @@ fi
 # reached an agent reading a PDF before it reached the regime — a §11.4.238
 # coverage escape, where closing only the defect and not the gap IS the violation.
 #
-# Ratchet, not hard floor: 301 pre-existing violations would block every build
-# from day one. This FAILS ONLY WHEN THE COUNT RISES, and the generators now treat
-# a charset-less export as stale regardless of mtime so the corpus self-heals.
-# Paired §1.1 mutations: tests/pre_build/test_cm_export_charset_valid.sh (6 cases,
-# including both BLIND corpora — a naive gate reports zero violations and passes).
-echo "[50/52] CM-EXPORT-CHARSET-VALID: every generated .html declares a charset (§11.4.238)"
+# TWO invariants, not one (BOB-182, operator decision 2026-08-26 recorded as
+# §11.4.224(E) consumer DATA — the adoption model is the monotone ratchet):
+#   (1) the count MUST NOT RISE above the persisted baseline, and
+#   (2) the ratchet MUST BE CURRENT — a count BELOW the baseline now FAILS with
+#       exit 3, because a baseline the corpus has already beaten is a threshold
+#       that silently re-permits every violation it once tolerated.
+# The earlier "FAILS ONLY WHEN THE COUNT RISES" text described the pre-BOB-182
+# gate and is retired: a fall is now a refusal naming its one-command remedy.
+#
+# The threshold lives in scripts/pre_build/cm_export_charset_valid.baseline as
+# DATA (§11.4.35). The gate READS it and has no write path; lowering is a
+# separate, explicitly-invoked producer that never runs on this pre-build path
+# (§11.4.249 role separation — a gate that writes its own threshold is also a
+# producer). While that baseline file is UNTRACKED, none of this binds: a raise
+# can be laundered by deleting it, so the tracked diff is the real defence.
+#
+# Paired §1.1 mutations: tests/pre_build/test_cm_export_charset_valid.sh — 25
+# cases, including both BLIND corpora (a naive gate reports zero and passes),
+# the env-override bypass, and the octal-baseline family (`08` parses as legal
+# under a naive [0-9]+ regex, then bash arithmetic errors and `if` swallows the
+# error as false, so the gate PASSES with violations present and the producer
+# prints a RAISE labelled as a lowering — found by review mutation, not by the
+# author's own set).
+echo "[50/52] CM-EXPORT-CHARSET-VALID: exports declare a charset AND the ratchet is current (§11.4.238)"
 if [[ -x "${PROJECT_ROOT}/scripts/pre_build/check_cm_export_charset_valid.sh" ]]; then
-    if bash "${PROJECT_ROOT}/scripts/pre_build/check_cm_export_charset_valid.sh" >/dev/null 2>&1; then
-        pass "CM-EXPORT-CHARSET-VALID: charset-less export count at or below the ratchet baseline"
-    else
-        fail "CM-EXPORT-CHARSET-VALID: a NEW charset-less export landed, or the scan went blind"
-        bash "${PROJECT_ROOT}/scripts/pre_build/check_cm_export_charset_valid.sh" 2>&1 | sed 's/^/        /' >&2 || true
-    fi
+    # Run ONCE and branch on the captured status: re-executing the gate to print
+    # its reason races the corpus it just measured (§11.4.121-shaped TOCTOU) and
+    # can report a cause that no longer holds.
+    CHARSET_LOG="$(mktemp)"
+    CHARSET_EXIT=0
+    bash "${PROJECT_ROOT}/scripts/pre_build/check_cm_export_charset_valid.sh" >"${CHARSET_LOG}" 2>&1 || CHARSET_EXIT=$?
+    case "${CHARSET_EXIT}" in
+        0)
+            pass "CM-EXPORT-CHARSET-VALID: $(tail -n1 "${CHARSET_LOG}")"
+            ;;
+        3)
+            # §11.4.201(5): name the RESOLVED cause, never a generic failure.
+            fail "CM-EXPORT-CHARSET-VALID: STALE RATCHET — the corpus is cleaner than the baseline; tighten it (see gate output)"
+            sed 's/^/        /' "${CHARSET_LOG}" >&2
+            ;;
+        *)
+            fail "CM-EXPORT-CHARSET-VALID: a NEW charset-less export landed, the scan went blind, or the baseline is missing/malformed (exit ${CHARSET_EXIT})"
+            sed 's/^/        /' "${CHARSET_LOG}" >&2
+            ;;
+    esac
+    rm -f "${CHARSET_LOG}"
 else
     # §11.4.3 honest SKIP — never a silent pass.
     echo "  SKIP: scripts/pre_build/check_cm_export_charset_valid.sh absent or not executable"

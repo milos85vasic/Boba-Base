@@ -246,8 +246,9 @@
 </header>
 <h1
 id="check_cm_lan_routes_authenticated.sh">check_cm_lan_routes_authenticated.sh</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-26T00:00:00Z <strong>Gate:</strong>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-26T00:00:00Z <strong>Review round:</strong> 2 (independent Fable
+review, §11.4.209 → §11.4.134) <strong>Gate:</strong>
 <code>CM-LAN-ROUTES-AUTHENTICATED</code> <strong>Authority:</strong>
 operator decision BOB-102 (2026-08-26) · §11.4.135 · §11.4.201</p>
 <h2 id="overview">Overview</h2>
@@ -257,10 +258,13 @@ moves to <code>127.0.0.1</code> — and that exposure was accepted
 <strong>on the condition</strong> that a permanent regression guard
 fails the build if any LAN-reachable route ever stops demanding
 authentication. This gate is that condition made mechanical.</p>
-<p>It enumerates every route served by a listener declared LAN-bound,
-resolves per route whether authentication genuinely reaches it, and
-refuses the build when a route is neither auth-wired nor covered by a
-justified, checked-in exemption.</p>
+<p>It enumerates every route served by a listener declared LAN-bound
+<strong>through the registration idioms it models</strong>, resolves per
+route whether authentication genuinely reaches it, and refuses the build
+when such a route is neither auth-wired nor covered by a justified,
+checked-in exemption. Registration forms it does <em>not</em> model fail
+closed rather than passing silently — see <a
+href="#modelled-scope-and-fail-closed-behaviour">Modelled scope</a>.</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li><code>bash</code>, <code>python3</code> (&gt;= 3.9), and
@@ -341,15 +345,51 @@ reported path is the real one.</td>
 </tr>
 <tr>
 <td><code>gomux</code></td>
-<td>the constructor’s returned handler is really wrapped by an auth
-marker (e.g. <code>return WithAuth(mux)</code>).</td>
+<td>the <strong>specific</strong> <code>http.NewServeMux()</code> value
+the route was registered on is the one an auth marker wraps in a
+<code>return</code>. Resolution is <strong>per mux variable</strong>,
+never per file.</td>
 </tr>
 </tbody>
 </table>
+<h3 id="per-mux-wrap-resolution">Per-mux wrap resolution</h3>
+<p>A whole-file “does an auth wrap appear anywhere” test would mark a
+second, bare mux as protected just because a <em>different</em> mux in
+the same file is wrapped — a <strong>false attribution of
+safety</strong>, which is categorically worse than failing to see a
+route at all. This gate resolves the wrap for the exact mux variable a
+route was registered on, following one level of assignment indirection,
+and treats an unresolvable wrap as <strong>unwrapped</strong> (fail
+closed).</p>
 <p>Every refusal prints the route, its <code>file:line</code>, how the
 verdict was reached, and whether the method is mutating — so a false
 positive is diagnosable in one step rather than by re-deriving the
 gate’s reasoning.</p>
+<h2 id="modelled-scope-and-fail-closed-behaviour">Modelled scope and
+fail-closed behaviour</h2>
+<p>This gate does <strong>not</strong> claim to see every route a
+framework can express. It claims to see the forms in the table above,
+and to <strong>fail closed</strong> on any it does not model:</p>
+<ul>
+<li>FastAPI <code>add_api_route</code> / <code>add_route</code> /
+<code>.mount</code> / <code>.websocket</code></li>
+<li>gin <code>.Any</code> / <code>.Match</code> / <code>.Handle</code> /
+<code>.Static*</code> / <code>.NoRoute</code> /
+<code>.NoMethod</code></li>
+<li>a multi-line or computed (non-literal) path expression in any
+framework</li>
+<li>registration on the global <code>http.DefaultServeMux</code></li>
+</ul>
+<p>Each is reported as an <code>UNMODELLED REGISTRATION IDIOM</code> and
+<strong>fails the gate</strong>. It is never silently skipped. A guard
+whose stated purpose is catching tomorrow’s drift must not answer
+“clean” about a construct it cannot see (§11.4.201(7)(c) — the path is
+part of the instrument). Note that the zero-routes FALSE-NULL check
+cannot catch this case, because the service still resolves its
+<em>other</em> routes and returns a confident, wrong count.</p>
+<p>To ship a route in an unmodelled form, either re-express it in a
+modelled one or extend the analyzer to model it — and add a fixture so
+it stays guarded.</p>
 <h2 id="false-positives-are-failures-too">False positives are failures
 too</h2>
 <p>A refusal on a genuinely public route is a FAIL-bluff of the same
@@ -382,6 +422,13 @@ the auth-wired set and is not exempted, so it FAILS — the literal
 regression BOB-102 is conditioned on.</li>
 <li>A <strong>stale exemption</strong> for a route that no longer exists
 FAILS, so the list cannot rot into fiction.</li>
+<li>A <strong>duplicate exemption</strong> for the same
+<code>(service, method, path)</code> FAILS, so a <code>known-gap</code>
+cannot be silently masked by a later <code>public-by-design</code> entry
+and the honest-gap count cannot be skewed (§11.4.261).</li>
+<li>An <strong>unmodelled registration idiom</strong> FAILS, so a route
+added tomorrow in a form this engine cannot parse cannot slip through
+unseen.</li>
 <li>A declared LAN service resolving <strong>zero routes</strong> FAILS
 as BLIND rather than passing quietly, because a blind extractor and a
 route-free service return the identical quiet zero (§11.4.201(6)
@@ -398,6 +445,14 @@ to avoid a false positive on a defensively-listed route.</li>
 <li><strong><code>method: ANY</code>.</strong> Matches any method for
 that path — used for stdlib-mux routes, which multiplex methods inside
 the handler.</li>
+<li><strong>Aliased dependencies.</strong> A module-level
+<code>_g = Depends(require_api_token)</code> used as
+<code>_: None = _g</code> is recognised as genuine protection, including
+when imported from a sibling module. Refusing it would be a spurious
+build failure, and a gate that cries wolf gets bypassed.</li>
+<li><strong>Malformed policy.</strong> Unparseable YAML exits
+<code>2</code> (ERROR) with the real cause, never <code>1</code> with a
+misattributed “routes do not demand authentication”.</li>
 <li><strong>Method-scoped keys.</strong> Exemptions are keyed on
 <code>(service, method, path)</code>, so a path exempted for
 <code>GET</code> is <strong>not</strong> exempted when it later gains a
@@ -413,6 +468,10 @@ returns immediately and the route is open in practice. That is a
 boot-time invariant (§11.4.254), not a static one, and belongs to a
 separate runtime check. Claiming otherwise here would be the bluff this
 guard exists to prevent.</p>
+<p>The operator has since decided to arm <code>BOBA_API_TOKEN</code> and
+back it with a boot-time invariant; that work is tracked as
+<strong>BOB-197</strong>. This gate is the static half of the pair and
+does not supersede it.</p>
 <p>Likewise the gate proves coverage of the routes it can resolve; it
 does not prove the auth mechanisms themselves are correctly
 implemented.</p>

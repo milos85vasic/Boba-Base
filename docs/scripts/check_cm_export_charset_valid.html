@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>check_cm_export_charset_valid</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">check_cm_export_charset_valid</h1>
+</header>
+<h1
+id="check_cm_export_charset_valid.sh-cm-export-charset-valid">check_cm_export_charset_valid.sh
+— CM-EXPORT-CHARSET-VALID</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-26T10:12:00Z <strong>Authority:</strong> §11.4.238 (automated QA
+is the discoverer) · §11.4.135 (monotone ratchet) · §11.4.249 (role
+separation) · §11.4.18 (script documentation) <strong>Scope:</strong>
+pre-build invariant 50 and the two scripts that surround it</p>
+<h2 id="overview">Overview</h2>
+<p>Every generated <code>.html</code> export must declare its own
+character encoding. This gate counts the ones that do not, and compares
+that count to a <strong>persisted ratchet baseline</strong>.</p>
+<p>It exists because of a measured coverage escape. During BOB-169 the
+export regime asserted <em>presence</em> and <em>mtime</em> but never
+<em>validity</em>: 301 of 334 generated exports were charset-less
+fragments, the PDFs rendered from them carried 12,629 corrupted lines
+across 281 files, and every gate stayed green. An agent reading a PDF
+found it — not the regime. Under §11.4.238 that out-of-band discovery
+<strong>is</strong> the defect; closing the corruption without closing
+the detection gap would have been the violation.</p>
+<h2 id="the-two-invariants">The two invariants</h2>
+<p>This gate asserts two things, and either one can refuse:</p>
+<ol type="1">
+<li><strong>The corpus</strong> — the charset-less count does not
+<em>exceed</em> the baseline.</li>
+<li><strong>The ratchet</strong> — the baseline is <em>current</em>. A
+count <strong>below</strong> the baseline means the corpus healed and
+the bar never followed it down, so the gate would be silently licensing
+a regression back to the old count. That staleness is itself a finding
+(BOB-182), and it is refused rather than mentioned in passing prose that
+a human may never read.</li>
+</ol>
+<h2 id="adoption-model-operator-decision">Adoption model — operator
+decision</h2>
+<p>Recorded 2026-08-26 under §11.4.66 / §11.4.224(E), verbatim:
+<strong>“Keep the monotone ratchet.”</strong> The count may only go
+down, never up.</p>
+<p>An immediate hard floor was offered and <strong>not</strong> chosen —
+301 pre-existing violations would have made the build unreachable, which
+§11.4.234 forbids. Per-corpus phase-in and
+changed-code-only-with-deadline were also offered and not chosen. This
+is consumer DATA per §11.4.35: the operator’s stated choice, not an
+agent’s invented default. It is recorded here so a future reader does
+not re-litigate a settled call (§11.4.112(5)).</p>
+<h2 id="the-three-components-and-their-roles-11.4.249">The three
+components and their roles (§11.4.249)</h2>
+<p>The threshold is data, not code, and the component that
+<em>enforces</em> it is not the component that <em>writes</em> it. A
+gate that wrote its own threshold during a pre-build run would be a
+PRODUCER as well as a GATE — the collapse §11.4.240(C) names as the one
+that yields weakened thresholds.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>§11.4.249 role</th>
+<th>Writes the baseline?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/pre_build/lib/cm_export_charset_scan.py</code></td>
+<td><strong>ORACLE</strong> — counts violations; knows nothing about
+thresholds</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_export_charset_valid.sh</code></td>
+<td><strong>GATE</strong> — compares the count to the persisted
+baseline</td>
+<td><strong>no — contains no write path at all</strong></td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/tighten_cm_export_charset_baseline.sh</code></td>
+<td><strong>PRODUCER</strong> — explicitly invoked, never on the
+pre-build path</td>
+<td><strong>yes, and only downward</strong></td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/cm_export_charset_valid.baseline</code></td>
+<td>the threshold as <strong>DATA</strong> (§11.4.35)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>tests/pre_build/test_cm_export_charset_valid.sh</code></td>
+<td><strong>VERIFIER</strong> — §1.1 paired mutations, outside the
+gate</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>The gate and the tightener share <strong>one</strong> oracle, so the
+number the tightener records and the number the gate later enforces
+cannot diverge.</p>
+<p>The separation is a <strong>capability</strong>, not an instruction
+(§11.4.240(B)): the gate source has no line that could write the
+baseline, and the test suite asserts this both structurally (the source
+contains no write to <code>BASELINE_FILE</code>) and at runtime (the
+baseline file’s sha256 is unchanged across a below-baseline gate run,
+which is precisely the moment a self-writing gate would rewrite its own
+bar).</p>
+<h3 id="honest-boundary">Honest boundary</h3>
+<p>The oracle and the gate are adjacent, not remote — the gate invokes
+the scan directly. That is acceptable for the precise reason §11.4.249
+gives: the forbidden oracle=gate collapse is an oracle that <em>cannot
+say “cannot decide”</em> and therefore defaults to
+<strong>allow</strong>. Every cannot-decide branch here fails
+<strong>closed</strong> (§11.4.252): a blind enumeration, a detector
+that cannot be shown to discriminate, and a missing or malformed
+baseline all refuse.</p>
+<h2 id="loosening-is-a-tracked-diff-never-ambient">Loosening is a
+tracked diff, never ambient</h2>
+<p>There is deliberately <strong>no environment variable that injects a
+baseline value</strong>. Raising the bar requires editing a git-tracked
+file, which a reviewer sees (§11.4.142).</p>
+<p>The previous <code>BOBA_EXPORT_CHARSET_BASELINE</code> override let
+any caller pass a broken corpus while leaving no reviewable trace.
+Measured 2026-08-26 against the pre-fix gate:
+<code>BOBA_EXPORT_CHARSET_BASELINE=9999</code> turned a planted
+violation into a <code>PASS</code>. That channel is closed, and the
+suite probes both shapes of the exploit — an absurd injected value and
+one set exactly equal to the live count.</p>
+<p><strong>What that guarantee rests on.</strong> The scripts’ refusals
+raise the <em>cost</em> of a raise; they do not make one impossible.
+Delete-then-<code>--adopt</code>, or a hand-edited number, both reach a
+higher bar. What stops those is that each leaves a diff in a
+<strong>tracked</strong> file. So the guarantee exists <strong>only once
+<code>cm_export_charset_valid.baseline</code> is committed</strong> —
+while it is untracked, every loosening route is traceless and the
+defence is void. The tightener says exactly this on every successful
+write (“an untracked ratchet binds nothing”), and it is the literal
+state of the file until the commit lands.</p>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The gate. No arguments: scans the project root. Wired as pre-build invariant 50.</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_export_charset_valid.sh <span class="pp">[</span><span class="ss">SCAN_ROOT</span><span class="pp">]</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># The producer. Explicitly invoked; never runs during a build.</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/tighten_cm_export_charset_baseline.sh <span class="pp">[</span><span class="ss">SCAN_ROOT</span><span class="pp">]</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/tighten_cm_export_charset_baseline.sh <span class="at">--adopt</span> <span class="pp">[</span><span class="ss">SCAN_ROOT</span><span class="pp">]</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># The verifier — §1.1 paired mutations.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/pre_build/test_cm_export_charset_valid.sh</span></code></pre></div>
+<h3 id="gate-exit-codes">Gate exit codes</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Exit</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>count is at the baseline; no regression and the ratchet is
+current</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>a regression, a blind scan, a non-discriminating detector, or a
+missing/malformed baseline</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td><strong>stale ratchet</strong> — the corpus improved and the bar did
+not follow; run the tightener</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tightener-exit-codes">Tightener exit codes</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Exit</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>baseline lowered, or already current (no-op)</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>refused — would raise the bar, blind scan, or wrong mode for the
+file’s existence</td>
+</tr>
+<tr>
+<td><code>2</code></td>
+<td>usage error</td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-counts-as-an-export-and-as-compliant">What counts as an
+export, and as compliant</h2>
+<ul>
+<li><strong>A generated export</strong> is an <code>.html</code> with a
+sibling <code>.md</code>. Hand-authored page furniture has no
+<code>.md</code> twin and is out of scope.</li>
+<li><strong>Compliant</strong> means a
+<code>&lt;meta ... charset...&gt;</code> <strong>element</strong>.
+Structure, never the bare substring — a document is not self-describing
+because its prose contains the word “charset”. Measured during BOB-169:
+a naive <code>grep -qi charset</code> <em>passed</em> against the broken
+generator by matching a heading slug (§11.4.201(7)(a)).</li>
+</ul>
+<h2 id="scanned-scope">Scanned scope</h2>
+<p><code>docs/</code>, <code>scripts/</code>, and the repository root —
+340 pairs as of 2026-08-26. Deliberately excluded: <code>.claude/</code>
+(agent and plugin furniture), <code>constitution/</code> and
+<code>submodules/</code> (separate repositories with their own
+governance — policing a submodule’s corpus from here would violate
+§11.4.28 decoupling). This scope is currently implicit in the oracle’s
+walk rather than declared in a checked-in map; see “Known gaps”.</p>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>Empty corpus</strong> → refuses. A blind scan and a perfect
+corpus return the same quiet zero, so a nonzero <em>compliant</em> count
+is required before any zero is believed (§11.4.201(6) / (7)(b) control
+needle).</li>
+<li><strong>No compliant file at all</strong> → refuses; the detector
+cannot be shown to discriminate.</li>
+<li><strong>Baseline missing</strong> → refuses, and names
+<code>--adopt</code>. The threshold is an input to the gate’s
+correctness; a gate that invents one is asserting a condition it never
+checked (§11.4.252).</li>
+<li><strong>Baseline malformed</strong> → refuses. An unresolvable
+signal takes the conservative-safe default (§11.4.201(4)).</li>
+<li><strong><code>--adopt</code> when a baseline already exists</strong>
+→ refuses. This blocks the careless raise, <strong>not</strong> the
+determined one: deleting the file and re-adopting still reaches a higher
+bar. The real defence is the tracked diff, not this refusal — see
+“Loosening is a tracked diff” below for what that does and does not
+guarantee.</li>
+<li><strong>Leading-zero baseline (<code>08</code>, <code>010</code>,
+<code>007</code>)</strong> → refuses as malformed. Bash reads these as
+octal and <em>errors</em>; <code>if</code> swallows the error as false,
+so before this was fixed both comparisons fell through and the gate
+reached <code>PASS</code> with violations present (measured 2026-08-26:
+<code>baseline=08</code> + 3 violations → <code>exit 0</code>, and
+invariant 50 swallows stderr, so the build went green). The parse is now
+strict: <code>^baseline=(0|[1-9][0-9]*)$</code>.</li>
+<li><strong>Baseline path is a directory</strong> → the gate fails
+closed, and the tightener refuses rather than reporting a write it did
+not perform (<code>mv</code> would otherwise succeed by depositing the
+temp file <em>inside</em> the directory).</li>
+</ul>
+<h2 id="known-gaps">Known gaps</h2>
+<ul>
+<li>The scanned scope above is implicit in the oracle’s directory walk
+rather than declared as a checked-in topology map with per-exclusion
+justification, which is what §11.4.135 asks of an exemption set. Not
+addressed here (out of BOB-182’s scope); worth a tracked item.</li>
+<li>This guide covers all three scripts; the producer additionally has
+its own per-script guide at
+<code>docs/scripts/tighten_cm_export_charset_baseline.md</code>.</li>
+<li>This document’s <code>.html</code> / <code>.pdf</code> /
+<code>.docx</code> twins are not generated here. The export pipeline is
+owned elsewhere in this round (§11.4.119), and hand-forging a file that
+claims to be a generated export would be worse than an honest gap —
+particularly for a document about export validity.</li>
+</ul>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>scripts/pre_build_verification.sh</code> — invariant 50
+invokes the gate</li>
+<li><code>docs/scripts/tighten_cm_export_charset_baseline.md</code> —
+the producer’s guide</li>
+<li><code>docs/QA_DISCOVERY_LEDGER.md</code> — the §11.4.238
+coverage-escape entry for BOB-169</li>
+<li>BOB-169 (the escape and the original gate), BOB-182 (the ratchet
+that did not ratchet)</li>
+</ul>
+</body>
+</html>
