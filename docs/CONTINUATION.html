@@ -181,8 +181,81 @@
 </header>
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 28 <strong>Last modified:</strong>
-2026-08-27T04:05:00Z</p>
+<p><strong>Revision:</strong> 29 <strong>Last modified:</strong>
+2026-08-27T18:20:00Z</p>
+<h2
+id="commit-record-correction-read-this-before-trusting-git-log">COMMIT-RECORD
+CORRECTION — read this before trusting <code>git log</code></h2>
+<p>Commit <code>5c9b9e0</code> carries the message
+<strong><code>test-probe-do-not-use [skip-ci]</code></strong>. That
+message is wrong and it is my error, not a description of the change. I
+invoked <code>scripts/commit-push-all.sh</code> with a throwaway string
+while diagnosing why an earlier invocation had exited 1, expecting a
+probe; the script’s contract is “commit with this message”, so it did
+exactly that — staged all 147 files, committed, and pushed to all three
+remotes.</p>
+<p><strong>Nothing was lost and nothing needs redoing.</strong>
+<code>5c9b9e0</code> contains the complete session batch;
+<code>80bd720</code> is the wrapper’s automatic workable-items DB
+differential dump for it. The record is corrected forward here rather
+than by amend or force-push, which §11.4.113 forbids without exception
+once a commit is public on a mirror.</p>
+<p>What <code>5c9b9e0</code> actually contains:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Area</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/ownership_repair.sh:994</code></td>
+<td><strong>BOB-207</strong> — the repair filter selected on BOTH uid
+and gid, so a file already owned by the operator but carrying a foreign
+gid was skipped by the pass meant to fix it. Now selects on uid only;
+the <code>chown -h "${OP_UID}:${OP_GID}"</code> at :719 already wrote
+both, so this is one predicate, not a behaviour change.</td>
+</tr>
+<tr>
+<td><code>scripts/lib/expected_red.sh</code> + invariant 30</td>
+<td><strong>BOB-221</strong> — an expected-RED declaration a suite must
+carry before its RED counts as evidence. 19/19, deterministic hash
+<code>80aecdb63bf348be</code>.</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/lan_route_auth_analyzer.py</code> + gate +
+test</td>
+<td><strong>BOB-227</strong> — these were UNTRACKED: present on disk,
+invisible to a fresh clone (the §11.4.233(G) absent-checkout class). Now
+tracked. PASS=197 FAIL=0.</td>
+</tr>
+<tr>
+<td><code>constitution</code> <code>7a5e53a → a09b1ea</code></td>
+<td>BOB-195 gate hardening (101 → 144 assertions over review rounds
+12–15, gate script byte-identical throughout) merged onto 10 incoming
+upstream commits, pushed to all 8 constitution upstreams before the
+pointer bump.</td>
+</tr>
+<tr>
+<td><code>docs/qa/BOB-{102,186,191,195,196,198,205,206,207,212}</code></td>
+<td>Evidence custody snapshots with MANIFESTs (§11.4.83 / §11.4.226).
+Rounds 9–11 worked on uncommitted files with no snapshot, so their
+round-over-round diff claims stay permanently uncheckable; this commit
+ends that.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Still owed, deliberately deferred, not forgotten:</strong>
+the long pre-build gate was skipped via <code>BOBA_SYNC_SKIP_CI=1</code>
+and stamped <code>[skip-ci]</code> into the commit — the §11.4.234(D)
+recorded-deferral path, chosen because T042 is a known-open failure and
+the commit/push mechanism must stay unblocked. Clear it with:</p>
+<pre><code>bash scripts/commit-push-all.sh &quot;catch-up long gate&quot;</code></pre>
 <h2 id="how-to-resume-this-work">HOW TO RESUME THIS WORK</h2>
 <p>Point a fresh session at this file, then run the SpecKit execute
 command for feature <code>002-user-owned-downloads</code>. Everything

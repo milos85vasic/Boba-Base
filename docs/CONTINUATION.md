@@ -1,7 +1,39 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 28
-**Last modified:** 2026-08-27T04:05:00Z
+**Revision:** 29
+**Last modified:** 2026-08-27T18:20:00Z
+
+## COMMIT-RECORD CORRECTION — read this before trusting `git log`
+
+Commit `5c9b9e0` carries the message **`test-probe-do-not-use [skip-ci]`**. That
+message is wrong and it is my error, not a description of the change. I invoked
+`scripts/commit-push-all.sh` with a throwaway string while diagnosing why an
+earlier invocation had exited 1, expecting a probe; the script's contract is
+"commit with this message", so it did exactly that — staged all 147 files,
+committed, and pushed to all three remotes.
+
+**Nothing was lost and nothing needs redoing.** `5c9b9e0` contains the complete
+session batch; `80bd720` is the wrapper's automatic workable-items DB
+differential dump for it. The record is corrected forward here rather than by
+amend or force-push, which §11.4.113 forbids without exception once a commit is
+public on a mirror.
+
+What `5c9b9e0` actually contains:
+
+| Area | Change |
+|---|---|
+| `scripts/ownership_repair.sh:994` | **BOB-207** — the repair filter selected on BOTH uid and gid, so a file already owned by the operator but carrying a foreign gid was skipped by the pass meant to fix it. Now selects on uid only; the `chown -h "${OP_UID}:${OP_GID}"` at :719 already wrote both, so this is one predicate, not a behaviour change. |
+| `scripts/lib/expected_red.sh` + invariant 30 | **BOB-221** — an expected-RED declaration a suite must carry before its RED counts as evidence. 19/19, deterministic hash `80aecdb63bf348be`. |
+| `scripts/pre_build/lan_route_auth_analyzer.py` + gate + test | **BOB-227** — these were UNTRACKED: present on disk, invisible to a fresh clone (the §11.4.233(G) absent-checkout class). Now tracked. PASS=197 FAIL=0. |
+| `constitution` `7a5e53a → a09b1ea` | BOB-195 gate hardening (101 → 144 assertions over review rounds 12–15, gate script byte-identical throughout) merged onto 10 incoming upstream commits, pushed to all 8 constitution upstreams before the pointer bump. |
+| `docs/qa/BOB-{102,186,191,195,196,198,205,206,207,212}` | Evidence custody snapshots with MANIFESTs (§11.4.83 / §11.4.226). Rounds 9–11 worked on uncommitted files with no snapshot, so their round-over-round diff claims stay permanently uncheckable; this commit ends that. |
+
+**Still owed, deliberately deferred, not forgotten:** the long pre-build gate was
+skipped via `BOBA_SYNC_SKIP_CI=1` and stamped `[skip-ci]` into the commit — the
+§11.4.234(D) recorded-deferral path, chosen because T042 is a known-open failure
+and the commit/push mechanism must stay unblocked. Clear it with:
+
+    bash scripts/commit-push-all.sh "catch-up long gate"
 
 ## HOW TO RESUME THIS WORK
 
